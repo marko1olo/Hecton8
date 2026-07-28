@@ -1,11 +1,54 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS247_SERVICE_DECK_ANTI_SLIP_FLOOR_ARTICLE",
-  "title": "Wet Service Deck Anti-Slip Floor Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS247_SERVICE_DECK_ANTI_SLIP_FLOOR_ARTICLE",
+ "title": "Wet Service Deck Anti-Slip Floor Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1417_SERVICE_DECK_ANTI_SLIP_LEDGER",
+   "release_set_id": "RS247_SERVICE_DECK_ANTI_SLIP_FLOOR_ARTICLE",
+   "article_id": "applied_lore.service_deck_anti_slip_ledger",
+   "title_key": "LORE_SERVICE_DECK_ANTI_SLIP_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/WriterScenarioAgentPrompt.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,261 +56,219 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1417_SERVICE_DECK_ANTI_SLIP_LEDGER",
-      "release_set_id": "RS247_SERVICE_DECK_ANTI_SLIP_FLOOR_ARTICLE",
-      "article_id": "applied_lore.service_deck_anti_slip_ledger",
-      "title_key": "LORE_SERVICE_DECK_ANTI_SLIP_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/WriterScenarioAgentPrompt.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.service_deck_anti_slip_ledger",
-        "secondary": [
-          "unlock.first_service_deck_scan",
-          "unlock.first_oil_slick_deck_read",
-          "unlock.first_airlock_traffic_trace"
-        ],
-        "poi_tags": [
-          "poi.service_deck_anti_slip_plate",
-          "poi.yellow_paint_turn_arc",
-          "poi.oily_trough_streak",
-          "poi.rust_broken_deck_seam"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.service_corridor",
-          "biome.pressure_route"
-        ],
-        "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Service Deck Scanner",
-          "terminal": "Old Colony Deck Wear Readout",
-          "audio": "Marauder Movement Instructor",
-          "in_game_wiki": "PDA Service Deck Field Guide",
-          "external_site": "Public Site Service Deck Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_service_deck_scan_or_airlock_traffic_trace",
-        "truth_payload": "Wet service deck materials record traffic, fluid hazards, cargo turns and post-evacuation airlock movement.",
-        "player_question": "Which scuffs happened after the colony was supposed to be empty?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Wet Service Deck Anti-Slip Ledger",
-          "scanner": "SERVICE DECK // Dark raised anti-slip metal, worn off-white and yellow paint, salt scuffs on ridge tops, oily wet streaks in troughs. Rust stays in seams. The traffic line bends toward the airlock.",
-          "terminal": "DECK READ // Raised tread is a movement record. Bright ridge wear marks boot traffic; dark wet troughs mark oil or coolant drift. Yellow paint worn into arcs means turning with cargo, not decorative striping. Cross the seam only after checking whether the rust line is broken.",
-          "audio": "A floor remembers panic better than a wall. People look up when they lie; their boots tell the route.",
-          "in_game_wiki": "A HECTON-8 service deck is not generic floor texture. It is the colony's last handwriting. The raised anti-slip pattern kept boots from skating during normal work, then became a recorder when normal work stopped. Salt catches on ridge tops, oil settles in troughs, yellow safety paint wears into crescents where people turned with tools or cylinders, and rust stays where traffic stopped touching the seam.\n\nThe player can read a wet deck before entering a room. A bright line across dark plate means repeated passage after flooding. A clean semicircle beside a hatch means someone turned there often enough to polish the paint. Oily streaks running downhill from a service cart show a leak path, not random dirt. Rust crossing the full seam means nobody has opened that boundary in a long time; rust broken by scuffs means late movement, salvage, or return.\n\nThis makes deck material useful without turning it into a signpost. It can reveal the safer route through a corridor, show where cargo was dragged, warn that a platform is slick, or prove that a supposedly sealed airlock cycled after the evacuation story ended. A good deck does not explain itself. It gives the player enough physical evidence to be clever.",
-          "external_site": "A field article on wet anti-slip service decks: how tread wear, salt, oil and safety paint reveal traffic, hazards and post-evacuation movement.",
-          "external_site_article": "The best floors in HECTON-8 are not clean. Clean floors would be lies. A drowned service deck should show the difference between design and use: the intended grid of raised tread, the practical stripe of yellow paint, the human arc where a boot kept turning, and the ocean's slow edits in salt and rust.\n\nAnti-slip plate tells time through contact. The top of a ridge becomes pale where boots and dragged crates polished it. The trough between ridges grows darker when oil, coolant or brine settles there. Safety paint disappears first on the routes that mattered. Rust grows only where hands, boots, carts and water no longer disturb it. Those marks can point toward an airlock, a dry pocket, a dead end or a place where the official evacuation record no longer fits.\n\nIn the field, those marks become choices: trust the worn line, avoid the glossy trough, preserve a late scuff as proof, or follow yellow paint into a maintenance space that Deep Reach never put on tourist maps.\n\nThe floor is not dramatic. That is why it works. Under pressure, the most useful witnesses are usually the ones everyone stepped on.",
-          "field_note": "Do not ask where they went first. Ask where the paint stopped surviving."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал мокрой противоскользящей сервисной палубы",
-          "scanner": "СЕРВИСНАЯ ПАЛУБА // Темный рифленый металл, стертая белая и желтая краска, соляные потертости на гребнях, масляные мокрые полосы в канавках. Ржавчина держится в швах. Линия движения загибается к шлюзу.",
-          "terminal": "ЧТЕНИЕ ПАЛУБЫ // Рифление записывает движение. Светлые гребни показывают ход ног; темные канавки - дрейф масла или охлаждающей жидкости. Желтая краска, стертая дугой, означает поворот с грузом, а не декоративную полосу. Пересекай шов только после проверки, сломана ли линия ржавчины.",
-          "audio": "Пол лучше стен помнит панику. Люди врут глазами вверх; ботинки говорят маршрут.",
-          "in_game_wiki": "Сервисная палуба HECTON-8 - не обычная текстура пола. Это последняя рукопись колонии. Рифленый рисунок удерживал ботинки во время нормальной работы, а когда нормальная работа закончилась, стал регистратором. Соль цепляется за гребни, масло оседает в канавках, желтая краска стирается полумесяцами там, где люди разворачивались с инструментами или баллонами, а ржавчина остается там, где движение перестало трогать шов.\n\nИгрок может читать мокрую палубу до входа в комнату. Светлая линия на темной плите означает повторный проход после затопления. Чистый полукруг у люка - место частых разворотов. Масляные полосы вниз от сервисной тележки показывают путь утечки, не случайную грязь. Ржавчина через весь шов значит, что границу давно не открывали; ржавчина, перебитая потертостями, значит позднее движение, разбор или возвращение.\n\nТакой материал полезен без стрелок и подсказок. Он показывает безопаснее направление в коридоре, след волоченого груза, скользкую платформу или доказательство, что якобы закрытый шлюз работал после официальной эвакуации. Хорошая палуба не объясняет себя. Она дает игроку достаточно физики, чтобы догадаться самому.",
-          "external_site": "Полевой материал о мокрых противоскользящих сервисных палубах: как рифление, соль, масло и краска раскрывают движение, опасность и активность после эвакуации.",
-          "external_site_article": "Лучшие полы в HECTON-8 не чистые. Чистый пол был бы ложью. Утонувшая сервисная палуба должна показывать разницу между проектом и использованием: расчетную сетку рифления, практическую желтую полосу, человеческую дугу постоянного разворота и медленные правки океана в соли и ржавчине.\n\nПротивоскользящая плита говорит о времени через контакт. Верх гребня светлеет там, где его полировали ботинки и ящики. Канавка темнеет, когда туда садится масло, рассол или охлаждающая жидкость. Сервисная краска исчезает первой на маршрутах, которые действительно использовали. Ржавчина растет там, где руки, ноги, тележки и вода больше ничего не тревожат.\n\nВ поле эти следы становятся выбором: довериться стертым гребням, обойти блестящую канавку, сохранить позднюю потертость как доказательство или пойти по желтой краске в сервисное место, которого Deep Reach не показывал на туристических схемах.\n\nПол не драматичен. Поэтому ему веришь. Под давлением самые полезные свидетели обычно те, по которым все ходили.",
-          "field_note": "Не спрашивай сначала, куда они ушли. Спроси, где краска перестала выживать."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "濡れた滑り止め作業床台帳",
-          "scanner": "作業床 // 暗い滑り止め金属、削れた白と黄の塗装、山の上の塩擦れ、溝の油じみ。錆は継ぎ目に残る。通行線はエアロックへ曲がる。",
-          "terminal": "床読取 // 凸凹は移動記録だ。明るい山は足跡、暗い溝は油や冷却液の流れ。黄塗装の弧は荷物を持った旋回を示す。継ぎ目を越える前に錆の線が切れているかを見る。",
-          "audio": "床は壁より恐慌をよく覚える。人は上を見て嘘をつくが、靴は経路を残す。",
-          "in_game_wiki": "HECTON-8の作業床はただの床ではない。滑り止めの山は通常作業では足を止め、崩壊後は記録係になった。塩は山の上に残り、油は溝に沈み、黄塗装は工具やボンベを持って曲がった場所で半月に消える。錆は誰も通らなくなった継ぎ目に残る。\n\nプレイヤーは部屋に入る前に床を読める。暗い板を横切る明るい線は浸水後の反復通行だ。ハッチ横のきれいな半円は、そこで何度も旋回した証拠になる。下り方向の油筋は漏れの道筋で、ただの汚れではない。継ぎ目を横切る錆が削れていれば、後日の通行や解体があった。\n\nこの床は標識にならずに役に立つ。安全な廊下、引きずられた荷物、滑る足場、避難記録の後に動いたエアロックを示す。良い床は説明しない。プレイヤーに判断できるだけの物理を渡す。",
-          "external_site": "濡れた滑り止め作業床の記事。踏面の摩耗、塩、油、安全塗装から通行、危険、避難後の活動を読む。",
-          "external_site_article": "HECTON-8で信じられる床はきれいではない。きれいな床は嘘だ。沈んだ作業床は設計と使用の差を見せる。計算された滑り止め、実用の黄線、人間が何度も曲がった弧、塩と錆による海の修正。\n\n滑り止め板は接触で時間を語る。山の上は靴と箱で白く磨かれる。溝は油や冷却液で暗くなる。安全塗装は重要な経路から先に消える。錆はもう誰も触れない場所に育つ。\n\n現場では、それらの跡が選択になる。摩耗線を信じるか、光る溝を避けるか、遅い足跡を証拠として残すか、Deep Reachが隠した保守区画へ黄線を追うかを選べる。",
-          "field_note": "彼らがどこへ行ったかより、どこで塗装が死んだかを見ろ。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "湿滑防滑服务甲板账本",
-          "scanner": "服务甲板 // 深色凸纹防滑金属、磨损的白色和黄色油漆、凸脊上的盐痕、槽里的油湿条纹。锈停在接缝里。通行线弯向气闸。",
-          "terminal": "甲板读取 // 凸纹是移动记录。发亮的凸脊是脚步；暗槽是油或冷却液漂移。黄色油漆磨成弧形，说明有人带货转身，不是装饰。跨缝前先看锈线是否被踩断。",
-          "audio": "地板比墙更记得恐慌。人抬头时会撒谎，靴子会留下路线。",
-          "in_game_wiki": "HECTON-8的服务甲板不是普通地面纹理。它是殖民地最后的笔迹。防滑凸纹在正常工作时防止打滑，在正常工作结束后变成记录器。盐卡在凸脊上，油沉进槽里，黄色安全漆在携带工具或气瓶转身的地方磨成月牙，锈留在交通不再触碰的接缝。\n\n玩家进入房间前就能读湿甲板。深色金属上的亮线表示洪水后仍有人反复通过。舱门旁的干净半圆表示频繁转身。服务车下坡方向的油迹是泄漏路径，不是随机污垢。整条锈线跨过接缝说明很久没人开过；被磨断的锈线说明后期移动、拆解或返回。\n\n这样的材料不用箭头也能有用。它能给出更安全的走廊、拖拽货物的路线、湿滑平台的警告，或证明所谓封闭的气闸在官方撤离后仍然运转。好的甲板不解释自己，它给玩家足够的物理证据去聪明地判断。",
-          "external_site": "关于湿滑防滑服务甲板的现场文章：凸纹磨损、盐、油和安全漆如何揭示通行、危险和撤离后的活动。",
-          "external_site_article": "HECTON-8里最可信的地板并不干净。干净的地板会撒谎。被淹的服务甲板应该显示设计与使用的差异：计划中的防滑网格、实用的黄色线、人类反复转身的弧线，以及海水用盐和锈写下的慢修订。\n\n防滑板通过接触讲时间。凸脊顶部被靴子和箱子磨亮。槽里因为油、冷却液或卤水变暗。安全漆最先从真正重要的路线消失。锈只在手、脚、车和水不再打扰的地方生长。\n\n到了现场，这些痕迹就是选择：相信磨损线、避开发亮的湿槽、保存一处后期擦痕作为证据，或沿黄色漆进入Deep Reach从未放进公开地图的维护空间。",
-          "field_note": "先别问他们去了哪里。先问油漆在哪里停止幸存。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre de pont de service antidérapant humide",
-          "scanner": "PONT DE SERVICE // Métal sombre à relief antidérapant, peinture blanche et jaune usée, sel sur les crêtes, traînées huileuses dans les creux. La rouille reste dans les joints. La ligne de passage courbe vers le sas.",
-          "terminal": "LECTURE DU PONT // Le relief enregistre le mouvement. Les crêtes claires marquent les bottes ; les creux sombres marquent huile ou liquide de refroidissement. La peinture jaune usée en arc indique un virage avec charge. Avant de franchir un joint, vérifier si la ligne de rouille est brisée.",
-          "audio": "Un sol se souvient mieux de la panique qu'un mur. Les yeux mentent vers le haut ; les bottes donnent la route.",
-          "in_game_wiki": "Un pont de service HECTON-8 n'est pas une texture de sol banale. C'est la dernière écriture de la colonie. Le relief antidérapant gardait les bottes en place pendant le travail normal, puis il est devenu enregistreur. Le sel accroche les crêtes, l'huile dort dans les creux, la peinture jaune disparaît en croissants là où l'on tournait avec outils ou bouteilles.\n\nLe joueur peut lire un pont humide avant d'entrer. Une ligne claire sur plaque sombre signifie passage répété après inondation. Un demi-cercle propre près d'une trappe signifie rotation fréquente. Une traînée huileuse qui descend d'un chariot est un chemin de fuite, pas de la saleté décorative. Une rouille brisée sur le joint signale mouvement tardif ou retour.\n\nCe matériau aide sans devenir panneau. Il montre la route plus sûre, une charge traînée, une plateforme glissante, ou prouve qu'un sas supposé scellé a encore cyclé après l'évacuation officielle.",
-          "external_site": "Article de terrain sur les ponts antidérapants humides : usure du relief, sel, huile et peinture de sécurité révèlent trafic, danger et mouvement post-évacuation.",
-          "external_site_article": "Les meilleurs sols de HECTON-8 ne sont pas propres. Un sol propre mentirait. Un pont de service noyé doit montrer la différence entre conception et usage : grille antidérapante prévue, bande jaune pratique, arc humain d'un virage répété, corrections lentes de sel et de rouille.\n\nLa plaque antidérapante raconte le temps par contact. La crête pâlit sous les bottes et les caisses. Le creux noircit avec huile, saumure ou refroidissement. La peinture de sécurité disparaît d'abord sur les vrais trajets. La rouille pousse là où plus rien ne dérange le métal.\n\nSur place, ces traces deviennent un choix : suivre la ligne usée, éviter un creux brillant, préserver une trace tardive comme preuve, ou suivre le jaune vers un espace de maintenance que Deep Reach ne montrait pas.",
-          "field_note": "Ne demande pas d'abord où ils sont allés. Demande où la peinture a cessé de survivre."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de cubierta de servicio antideslizante mojada",
-          "scanner": "CUBIERTA DE SERVICIO // Metal oscuro con relieve antideslizante, pintura blanca y amarilla gastada, sal en las crestas, vetas húmedas de aceite en los surcos. El óxido queda en las juntas. La línea de tráfico gira hacia la esclusa.",
-          "terminal": "LECTURA DE CUBIERTA // El relieve registra movimiento. Crestas claras: botas; surcos oscuros: aceite o refrigerante. Pintura amarilla gastada en arcos: giro con carga, no decoración. Cruza una junta solo tras comprobar si la línea de óxido está rota.",
-          "audio": "Un suelo recuerda el pánico mejor que una pared. La gente miente mirando arriba; las botas dan la ruta.",
-          "in_game_wiki": "Una cubierta de servicio de HECTON-8 no es un suelo genérico. Es la última escritura de la colonia. El patrón antideslizante sostuvo botas durante el trabajo normal y, cuando el trabajo terminó, se volvió registro. La sal queda en las crestas, el aceite se asienta en surcos, la pintura amarilla se borra en medias lunas donde alguien giró con herramientas o cilindros.\n\nEl jugador puede leer la cubierta antes de entrar. Una línea clara sobre placa oscura significa paso repetido tras la inundación. Un semicírculo limpio junto a una escotilla indica giros frecuentes. Vetas de aceite cuesta abajo desde un carro son una ruta de fuga. Óxido intacto en toda la junta indica frontera cerrada; óxido roto por rozaduras indica movimiento tardío.\n\nEl material funciona sin flechas. Puede revelar el corredor más seguro, carga arrastrada, plataforma resbaladiza o una esclusa que siguió funcionando después de la evacuación oficial.",
-          "external_site": "Artículo de campo sobre cubiertas antideslizantes mojadas: desgaste, sal, aceite y pintura de seguridad revelan tráfico, peligros y movimiento posterior a la evacuación.",
-          "external_site_article": "Los mejores suelos de HECTON-8 no están limpios. Un suelo limpio sería mentira. Una cubierta de servicio ahogada debe mostrar la diferencia entre diseño y uso: la cuadrícula antideslizante prevista, la franja amarilla práctica, el arco humano de un giro repetido y las ediciones lentas del océano.\n\nLa placa antideslizante cuenta el tiempo por contacto. La cresta se aclara por botas y cajas. El surco se oscurece con aceite, salmuera o refrigerante. La pintura de seguridad desaparece primero en las rutas reales. El óxido crece donde ya no molestan manos, botas, carros ni agua.\n\nEn campo, esas marcas se vuelven decisión: seguir la línea gastada, evitar el surco brillante, conservar una rozadura tardía como prueba, o seguir la pintura amarilla hacia un espacio de mantenimiento que Deep Reach ocultó.",
-          "field_note": "No preguntes primero adónde fueron. Pregunta dónde dejó de sobrevivir la pintura."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Protokoll für nasses rutschhemmendes Servicedeck",
-          "scanner": "SERVICEDECK // Dunkles rutschhemmendes Metall, abgenutzte weiße und gelbe Farbe, Salzabrieb auf Rippen, ölige Nassspuren in Rinnen. Rost bleibt in Nähten. Die Verkehrslinie biegt zum Luftschleusentor.",
-          "terminal": "DECKLESUNG // Das Profil zeichnet Bewegung auf. Helle Rippen bedeuten Stiefelverkehr; dunkle Rinnen Öl- oder Kühlmitteldrift. Gelbe Farbe in Bögen bedeutet Drehen mit Last. Eine Naht erst kreuzen, wenn die Rostlinie geprüft ist.",
-          "audio": "Ein Boden erinnert Panik besser als eine Wand. Menschen lügen nach oben; Stiefel geben die Route.",
-          "in_game_wiki": "Ein HECTON-8-Servicedeck ist kein generischer Boden. Es ist die letzte Handschrift der Kolonie. Das rutschhemmende Profil hielt Stiefel im Normalbetrieb fest und wurde danach zum Schreiber. Salz bleibt auf Rippen, Öl in Rinnen, gelbe Farbe verschwindet in Halbmonden dort, wo Menschen mit Werkzeug oder Flaschen drehten.\n\nDer Spieler kann ein nasses Deck vor dem Eintritt lesen. Eine helle Linie über dunklem Metall bedeutet wiederholten Durchgang nach der Flutung. Ein sauberer Halbkreis an einer Luke zeigt häufige Drehung. Ölige Spuren bergab von einem Wagen zeigen einen Leckpfad. Rost über eine ganze Naht bedeutet lange keine Öffnung; unterbrochener Rost bedeutet spätere Bewegung.\n\nSo hilft Material ohne Wegweiser. Es zeigt sicherere Korridore, gezogene Last, glatte Plattformen oder beweist, dass eine angeblich geschlossene Schleuse nach der Evakuierung noch lief.",
-          "external_site": "Feldartikel über nasse rutschhemmende Servicedecks: Profilabrieb, Salz, Öl und Sicherheitsfarbe zeigen Verkehr, Gefahren und Bewegung nach Evakuierung.",
-          "external_site_article": "Die besten Böden in HECTON-8 sind nicht sauber. Saubere Böden wären Lügen. Ein ertrunkenes Servicedeck muss den Unterschied zwischen Entwurf und Gebrauch zeigen: geplantes Profil, praktische gelbe Linie, menschlicher Drehbogen, langsame Korrekturen aus Salz und Rost.\n\nRutschhemmende Platte erzählt Zeit durch Kontakt. Rippen werden durch Stiefel und Kisten hell. Rinnen dunkeln mit Öl, Sole oder Kühlmittel. Sicherheitsfarbe verschwindet zuerst auf echten Routen. Rost wächst dort, wo niemand mehr stört.\n\nVor Ort werden diese Spuren zur Entscheidung: der abgenutzten Linie folgen, glänzende Rinnen meiden, späte Schrammen als Beweis bewahren oder der gelben Farbe in einen Wartungsraum folgen, den Deep Reach nie öffentlich markierte.",
-          "field_note": "Frag nicht zuerst, wohin sie gingen. Frag, wo die Farbe aufhörte zu überleben."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr mokrego antypoślizgowego pokładu serwisowego",
-          "scanner": "POKŁAD SERWISOWY // Ciemny metal antypoślizgowy, starta biała i żółta farba, sól na grzbietach, mokre smugi oleju w rowkach. Rdza trzyma się szwów. Linia ruchu skręca ku śluzie.",
-          "terminal": "ODCZYT POKŁADU // Wzór zapisuje ruch. Jasne grzbiety to buty; ciemne rowki to olej albo chłodziwo. Żółta farba starta w łuk oznacza obrót z ładunkiem. Przed przejściem przez szew sprawdź, czy linia rdzy jest przerwana.",
-          "audio": "Podłoga lepiej pamięta panikę niż ściana. Ludzie kłamią oczami w górę; buty zostawiają trasę.",
-          "in_game_wiki": "Pokład serwisowy HECTON-8 nie jest zwykłą podłogą. To ostatnie pismo kolonii. Antypoślizgowy wzór trzymał buty podczas normalnej pracy, a potem stał się rejestratorem. Sól łapie się grzbietów, olej leży w rowkach, żółta farba znika półksiężycem tam, gdzie ktoś obracał się z narzędziami lub butlą.\n\nGracz może czytać mokry pokład przed wejściem do sali. Jasna linia na ciemnej płycie oznacza powtarzane przejście po zalaniu. Czysty półokrąg przy włazie oznacza częste skręty. Smuga oleju w dół od wózka to droga wycieku. Rdza przez cały szew znaczy brak otwarcia; rdza przecięta otarciami oznacza późny ruch.\n\nMateriał pomaga bez strzałek. Pokazuje bezpieczniejszy korytarz, ciągnięty ładunek, śliską platformę albo dowód, że rzekomo zamknięta śluza działała po ewakuacji.",
-          "external_site": "Artykuł o mokrych pokładach antypoślizgowych: zużycie wzoru, sól, olej i farba bezpieczeństwa ujawniają ruch, zagrożenia i aktywność po ewakuacji.",
-          "external_site_article": "Najlepsze podłogi HECTON-8 nie są czyste. Czysta podłoga byłaby kłamstwem. Zatopiony pokład powinien pokazać różnicę między projektem a użyciem: siatkę antypoślizgową, żółtą linię praktyczną, ludzki łuk powtarzanego skrętu i poprawki oceanu w soli oraz rdzy.\n\nPłyta antypoślizgowa mówi czasem przez kontakt. Grzbiet jaśnieje od butów i skrzyń. Rowek ciemnieje od oleju, solanki lub chłodziwa. Farba znika najpierw na prawdziwych trasach. Rdza rośnie tam, gdzie nikt już nie przeszkadza.\n\nW terenie te ślady stają się wyborem: zaufać wytartej linii, ominąć błyszczący rowek, zachować późne otarcie jako dowód lub pójść za żółtym śladem do serwisu, którego Deep Reach nie pokazywał.",
-          "field_note": "Nie pytaj najpierw, dokąd poszli. Spytaj, gdzie farba przestała przeżywać."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал мокрої протиковзної сервісної палуби",
-          "scanner": "СЕРВІСНА ПАЛУБА // Темний рифлений метал, стерта біла й жовта фарба, сіль на гребенях, мокрі олійні смуги в канавках. Іржа тримається у швах. Лінія руху згинається до шлюзу.",
-          "terminal": "ЧИТАННЯ ПАЛУБИ // Рифлення записує рух. Світлі гребені - хід ніг; темні канавки - дрейф олії або охолоджувача. Жовта фарба, стерта дугою, означає поворот із вантажем. Перетинай шов лише після перевірки, чи зламана лінія іржі.",
-          "audio": "Підлога краще пам'ятає паніку, ніж стіна. Люди брешуть поглядом угору; черевики лишають маршрут.",
-          "in_game_wiki": "Сервісна палуба HECTON-8 - не звичайна підлога. Це останній почерк колонії. Протиковзне рифлення тримало черевики під час нормальної роботи, а потім стало реєстратором. Сіль чіпляється за гребені, олія сідає в канавки, жовта фарба стирається півмісяцями там, де люди розверталися з інструментами або балонами.\n\nГравець може читати мокру палубу до входу в кімнату. Світла лінія на темній плиті означає повторний прохід після затоплення. Чисте півколо біля люка - часті розвороти. Олійний слід вниз від візка показує шлях витоку. Іржа через увесь шов означає довгу закритість; іржа, перебита потертостями, означає пізній рух.\n\nТакий матеріал працює без стрілок. Він показує безпечніший коридор, волочений вантаж, слизьку платформу або доказ, що нібито закритий шлюз працював після евакуації.",
-          "external_site": "Польова стаття про мокрі протиковзні палуби: зношення рифлення, сіль, олія і захисна фарба показують рух, небезпеку та активність після евакуації.",
-          "external_site_article": "Найкращі підлоги HECTON-8 не чисті. Чиста підлога брехала б. Затоплена сервісна палуба має показувати різницю між проєктом і використанням: сітку рифлення, практичну жовту смугу, людську дугу повторного повороту, повільні правки океану в солі й іржі.\n\nПротиковзна плита говорить про час через контакт. Гребінь світлішає від черевиків і ящиків. Канавка темніє від олії, розсолу або охолоджувача. Захисна фарба першою зникає на справжніх маршрутах. Іржа росте там, де більше ніщо не турбує метал.\n\nУ полі ці сліди стають вибором: довіритися стертій лінії, оминути блискучу канавку, зберегти пізню потертість як доказ або піти жовтою фарбою до сервісного місця, якого Deep Reach не показував.",
-          "field_note": "Не питай спершу, куди вони пішли. Спитай, де фарба перестала виживати."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل سطح الخدمة الرطب المضاد للانزلاق",
-          "scanner": "سطح خدمة // معدن داكن بارز مضاد للانزلاق، طلاء أبيض وأصفر متآكل، ملح على القمم، خطوط زيت رطبة في الأخاديد. الصدأ يبقى في الشقوق. خط الحركة ينحني نحو غرفة الضغط.",
-          "terminal": "قراءة السطح // النتوءات تسجل الحركة. القمم الفاتحة تعني عبور أحذية؛ الأخاديد الداكنة تعني زيتا أو سائلا مبردا. الطلاء الأصفر المتآكل على شكل قوس يعني دوران شخص يحمل حملا. لا تعبر الشق قبل فحص خط الصدأ.",
-          "audio": "الأرضية تتذكر الذعر أفضل من الجدار. الناس يكذبون بنظرهم إلى الأعلى؛ الأحذية تترك الطريق.",
-          "in_game_wiki": "سطح الخدمة في HECTON-8 ليس أرضية عادية. إنه آخر خط يد للمستعمرة. النمط المضاد للانزلاق منع الأحذية من التزحلق أثناء العمل، ثم صار مسجلا بعد توقف العمل. الملح يمسك بالقمم، والزيت يستقر في الأخاديد، والطلاء الأصفر يختفي في أهلة حيث دار الناس بالأدوات أو الأسطوانات.\n\nيستطيع اللاعب قراءة السطح الرطب قبل دخول الغرفة. خط فاتح فوق لوحة داكنة يعني عبورا متكررا بعد الغمر. نصف دائرة نظيف قرب فتحة يعني دورانا كثيرا. خط زيت نازل من عربة خدمة هو مسار تسرب. صدأ كامل عبر الشق يعني أن الحدود لم تفتح طويلا؛ صدأ مكسور بالخدوش يعني حركة لاحقة.\n\nهذه المادة تساعد دون أن تصبح سهما. تكشف ممرا أكثر أمانا، حملا مسحوبا، منصة زلقة، أو دليلا على أن غرفة ضغط قيل إنها أغلقت عملت بعد الإخلاء الرسمي.",
-          "external_site": "مقال ميداني عن أسطح الخدمة الرطبة المضادة للانزلاق: كيف يكشف تآكل النتوءات والملح والزيت وطلاء السلامة حركة وخطرا ونشاطا بعد الإخلاء.",
-          "external_site_article": "أفضل الأرضيات في HECTON-8 ليست نظيفة. الأرضية النظيفة ستكون كذبة. يجب أن يظهر سطح الخدمة الغارق الفرق بين التصميم والاستخدام: شبكة النتوءات المقصودة، الخط الأصفر العملي، قوس دوران البشر المتكرر، وتعديلات البحر البطيئة بالملح والصدأ.\n\nاللوحة المضادة للانزلاق تروي الزمن باللمس. القمة تفتح لونها بالأحذية والصناديق. الأخدود يظلم بالزيت أو المحلول الملحي أو المبرد. طلاء السلامة يختفي أولا على الطرق المهمة. الصدأ ينمو حيث لا تعود الأيدي والأحذية والعربات والماء تزعجه.\n\nفي الميدان تصبح هذه العلامات قرارا: اتباع الخط المتآكل، تجنب الأخدود اللامع، حفظ خدش متأخر كدليل، أو اتباع الطلاء الأصفر إلى مساحة صيانة لم تعرضها Deep Reach.",
-          "field_note": "لا تسأل أولا إلى أين ذهبوا. اسأل أين توقف الطلاء عن النجاة."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Catatan Dek Servis Basah Anti-Selip",
-          "scanner": "DEK SERVIS // Logam gelap berpola anti-selip, cat putih dan kuning aus, garam di puncak tekstur, jejak minyak basah di alur. Karat bertahan di sambungan. Garis lalu lintas berbelok ke ruang udara.",
-          "terminal": "BACAAN DEK // Pola timbul mencatat gerak. Puncak terang berarti lalu lintas sepatu; alur gelap berarti minyak atau cairan pendingin. Cat kuning yang aus membentuk busur berarti orang berputar membawa beban. Lewati sambungan hanya setelah garis karat diperiksa.",
-          "audio": "Lantai mengingat panik lebih baik daripada dinding. Orang berbohong dengan mata ke atas; sepatu memberi rute.",
-          "in_game_wiki": "Dek servis HECTON-8 bukan tekstur lantai biasa. Itu tulisan tangan terakhir koloni. Pola anti-selip menahan sepatu saat kerja normal, lalu menjadi perekam setelah kerja berhenti. Garam menempel di puncak tekstur, minyak tidur di alur, cat kuning hilang membentuk sabit di tempat orang berputar dengan alat atau tabung.\n\nPemain dapat membaca dek basah sebelum masuk ruangan. Garis terang di atas pelat gelap berarti jalan yang diulang setelah banjir. Setengah lingkaran bersih di samping palka berarti banyak putaran. Jejak minyak turun dari kereta servis adalah jalur bocor. Karat utuh melintasi sambungan berarti lama tak dibuka; karat terputus berarti gerak terlambat.\n\nBahan ini berguna tanpa panah. Ia menunjukkan koridor yang lebih aman, muatan yang diseret, platform licin, atau bukti bahwa ruang udara yang disebut tertutup masih berputar setelah evakuasi.",
-          "external_site": "Artikel lapangan tentang dek servis basah anti-selip: aus tekstur, garam, minyak, dan cat keselamatan mengungkap lalu lintas, bahaya, dan gerak setelah evakuasi.",
-          "external_site_article": "Lantai terbaik di HECTON-8 tidak bersih. Lantai bersih akan berbohong. Dek servis tenggelam harus menunjukkan beda antara desain dan pemakaian: kisi anti-selip, garis kuning praktis, busur putar manusia, dan koreksi laut lewat garam serta karat.\n\nPelat anti-selip menceritakan waktu melalui kontak. Puncak memucat oleh sepatu dan peti. Alur menggelap oleh minyak, air asin, atau pendingin. Cat keselamatan hilang paling awal di rute sungguhan. Karat tumbuh di tempat yang tidak lagi diganggu.\n\nDi lapangan, jejak itu menjadi pilihan: mengikuti garis aus, menghindari alur mengilap, menyimpan lecet terlambat sebagai bukti, atau mengikuti cat kuning ke ruang servis yang tidak pernah dipetakan Deep Reach.",
-          "field_note": "Jangan tanya dulu mereka pergi ke mana. Tanya di mana cat berhenti bertahan."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "젖은 미끄럼 방지 서비스 데크 장부",
-          "scanner": "서비스 데크 // 어두운 돌기 미끄럼 방지 금속, 닳은 흰색과 노란색 도색, 돌기 위 소금 자국, 홈의 젖은 기름 줄기. 녹은 이음에 남는다. 이동선은 에어록 쪽으로 휜다.",
-          "terminal": "데크 판독 // 돌기 무늬는 이동 기록이다. 밝은 돌기는 부츠 통행, 어두운 홈은 기름이나 냉각수 흐름이다. 호로 닳은 노란 도색은 짐을 들고 돈 흔적이다. 이음을 건너기 전 녹선이 끊겼는지 확인하라.",
-          "audio": "바닥은 벽보다 공황을 잘 기억한다. 사람은 위를 보며 거짓말하지만, 부츠는 길을 남긴다.",
-          "in_game_wiki": "HECTON-8의 서비스 데크는 평범한 바닥이 아니다. 식민지의 마지막 필체다. 미끄럼 방지 돌기는 정상 작업 때 부츠를 붙잡았고, 정상 작업이 끝난 뒤 기록 장치가 되었다. 소금은 돌기 위에 붙고, 기름은 홈에 가라앉고, 노란 도색은 공구나 실린더를 든 사람이 돌던 곳에서 초승달처럼 사라진다.\n\n플레이어는 방에 들어가기 전 젖은 데크를 읽을 수 있다. 어두운 판 위의 밝은 선은 침수 후 반복 통행이다. 해치 옆 깨끗한 반원은 잦은 회전이다. 서비스 카트에서 내려가는 기름줄기는 누수 경로다. 이음 전체의 녹은 오랜 폐쇄를 뜻하고, 흠집으로 끊긴 녹은 늦은 이동을 뜻한다.\n\n이 재료는 화살표가 아니어도 유용하다. 더 안전한 복도, 끌린 화물, 미끄러운 플랫폼, 공식 대피 이후에도 돌았던 에어록을 보여 준다.",
-          "external_site": "젖은 미끄럼 방지 서비스 데크에 대한 현장 글. 마모, 소금, 기름, 안전 도색이 통행, 위험, 대피 이후 움직임을 드러낸다.",
-          "external_site_article": "HECTON-8에서 믿을 만한 바닥은 깨끗하지 않다. 깨끗한 바닥은 거짓말이다. 침수된 서비스 데크는 설계와 사용의 차이를 보여야 한다. 계획된 돌기 격자, 실용적인 노란 선, 사람이 반복해서 돈 호, 소금과 녹이 남긴 바다의 수정.\n\n미끄럼 방지 판은 접촉으로 시간을 말한다. 돌기 위는 부츠와 상자로 밝아진다. 홈은 기름, 염수, 냉각수로 어두워진다. 안전 도색은 진짜 길에서 먼저 사라진다. 녹은 더 이상 아무도 방해하지 않는 곳에서 자란다.\n\n현장에서는 그 흔적이 선택이 된다. 닳은 선을 믿고, 빛나는 홈을 피하고, 늦은 흠집을 증거로 남기거나, Deep Reach가 공개하지 않은 정비 구역으로 노란 도색을 따라간다.",
-          "field_note": "먼저 어디로 갔는지 묻지 마라. 도색이 어디서 살아남지 못했는지 보라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן סיפון שירות רטוב נגד החלקה",
-          "scanner": "סיפון שירות // מתכת כהה עם בליטות נגד החלקה, צבע לבן וצהוב שחוק, מלח על הפסגות, פסי שמן רטובים בתעלות. חלודה נשארת בתפרים. קו התנועה מתעקל אל מנעל האוויר.",
-          "terminal": "קריאת סיפון // הבליטות רושמות תנועה. פסגות בהירות הן תנועת מגפיים; תעלות כהות הן שמן או נוזל קירור. צבע צהוב שנשחק בקשת אומר סיבוב עם מטען. חצה תפר רק אחרי בדיקת קו החלודה.",
-          "audio": "רצפה זוכרת פאניקה טוב מקיר. אנשים משקרים כשהם מביטים למעלה; המגפיים נותנים מסלול.",
-          "in_game_wiki": "סיפון שירות ב-HECTON-8 אינו רצפה רגילה. הוא כתב היד האחרון של המושבה. דגם נגד החלקה החזיק מגפיים בזמן עבודה, ואחר כך הפך לרושם. מלח נאחז בפסגות, שמן שוקע בתעלות, צבע צהוב נעלם בחצי ירח במקום שבו אנשים הסתובבו עם כלים או מכלים.\n\nהשחקן יכול לקרוא סיפון רטוב לפני כניסה לחדר. קו בהיר על לוח כהה הוא מעבר חוזר אחרי הצפה. חצי עיגול נקי ליד פתח הוא סיבוב תכוף. פס שמן שיורד מעגלת שירות הוא נתיב דליפה. חלודה רציפה על תפר אומרת שלא נפתח זמן רב; חלודה שנשברה בשפשופים אומרת תנועה מאוחרת.\n\nהחומר הזה מועיל בלי חצים. הוא מראה מסדרון בטוח יותר, מטען שנגרר, משטח חלקלק, או ראיה שמנעל אוויר שלכאורה נסגר המשיך לפעול אחרי הפינוי.",
-          "external_site": "מאמר שטח על סיפוני שירות רטובים נגד החלקה: שחיקת בליטות, מלח, שמן וצבע בטיחות חושפים תנועה, סכנה ופעילות אחרי פינוי.",
-          "external_site_article": "הרצפות הטובות ב-HECTON-8 אינן נקיות. רצפה נקייה הייתה משקרת. סיפון שירות שטבע צריך להראות את ההבדל בין תכנון לשימוש: רשת נגד החלקה, קו צהוב מעשי, קשת סיבוב אנושית ותיקונים איטיים של הים במלח וחלודה.\n\nלוח נגד החלקה מספר זמן דרך מגע. הפסגה מתבהרת ממגפיים וארגזים. התעלה מחשיכה משמן, תמלחת או קירור. צבע בטיחות נעלם קודם במסלולים אמיתיים. חלודה גדלה במקום שבו דבר כבר אינו מפריע.\n\nבשטח הסימנים האלה הופכים להחלטה: לעקוב אחרי קו שחוק, להימנע מתעלה מבריקה, לשמור שפשוף מאוחר כראיה, או ללכת אחרי הצבע הצהוב למרחב תחזוקה ש-Deep Reach לא הראתה.",
-          "field_note": "אל תשאל קודם לאן הלכו. שאל איפה הצבע הפסיק לשרוד."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de piso de serviço molhado antiderrapante",
-          "scanner": "PISO DE SERVIÇO // Metal escuro antiderrapante em relevo, tinta branca e amarela gasta, sal nos pontos altos, trilhas úmidas de óleo nos sulcos. Ferrugem fica nas emendas. A linha de tráfego curva para a câmara de ar.",
-          "terminal": "LEITURA DE PISO // O relevo registra movimento. Pontos altos claros marcam botas; sulcos escuros marcam óleo ou fluido de resfriamento. Tinta amarela gasta em arco indica giro com carga. Cruze a emenda só depois de ver se a ferrugem foi quebrada.",
-          "audio": "Um piso lembra pânico melhor que uma parede. Pessoas mentem olhando para cima; botas entregam a rota.",
-          "in_game_wiki": "Um piso de serviço de HECTON-8 não é textura genérica. É a última caligrafia da colônia. O padrão antiderrapante segurava botas no trabalho normal e virou registrador quando o normal acabou. Sal prende nos pontos altos, óleo dorme nos sulcos, tinta amarela some em meias-luas onde alguém girou com ferramentas ou cilindros.\n\nO jogador pode ler o piso molhado antes de entrar. Linha clara sobre placa escura significa passagem repetida depois da inundação. Semicírculo limpo perto de escotilha indica giro frequente. Trilha de óleo descendo de carrinho de serviço é caminho de vazamento. Ferrugem inteira na emenda indica longa falta de abertura; ferrugem quebrada indica movimento tardio.\n\nEsse material ajuda sem virar placa. Mostra corredor mais seguro, carga arrastada, plataforma escorregadia ou prova de que uma câmara de ar supostamente selada continuou ciclando após a evacuação.",
-          "external_site": "Artigo de campo sobre pisos de serviço molhados antiderrapantes: desgaste, sal, óleo e tinta de segurança revelam tráfego, riscos e movimento pós-evacuação.",
-          "external_site_article": "Os melhores pisos de HECTON-8 não são limpos. Piso limpo mentiria. Um piso de serviço afogado deve mostrar a diferença entre projeto e uso: grade antiderrapante planejada, faixa amarela prática, arco humano de giro repetido e edições lentas do oceano em sal e ferrugem.\n\nA chapa antiderrapante conta tempo por contato. O alto clareia com botas e caixas. O sulco escurece com óleo, salmoura ou fluido de resfriamento. Tinta de segurança desaparece primeiro nas rotas reais. Ferrugem cresce onde nada mais perturba.\n\nNo campo, essas marcas viram decisão: seguir a linha gasta, evitar o sulco brilhante, preservar um arranhão tardio como prova ou seguir a tinta amarela para um espaço de manutenção que a Deep Reach não mostrou.",
-          "field_note": "Não pergunte primeiro para onde foram. Pergunte onde a tinta parou de sobreviver."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Logboek voor nat antislip-servicedek",
-          "scanner": "SERVICEDEK // Donker antislipmetaal met reliëf, afgesleten witte en gele verf, zoutslijtage op ribben, natte oliesporen in groeven. Roest blijft in naden. De verkeerslijn buigt naar de luchtsluis.",
-          "terminal": "DEKLEZING // Het reliëf registreert beweging. Lichte ribben tonen laarzen; donkere groeven olie of koelvloeistof. Gele verf in bogen betekent draaien met last. Kruis een naad pas na controle of de roestlijn gebroken is.",
-          "audio": "Een vloer onthoudt paniek beter dan een wand. Mensen liegen omhoog; laarzen geven de route.",
-          "in_game_wiki": "Een HECTON-8-servicedek is geen gewone vloertextuur. Het is het laatste handschrift van de kolonie. Het antislipreliëf hield laarzen vast tijdens normaal werk en werd daarna een recorder. Zout blijft op ribben hangen, olie zakt in groeven, gele verf verdwijnt in halve manen waar mensen met gereedschap of cilinders draaiden.\n\nDe speler kan een nat dek lezen vóór binnenkomst. Een lichte lijn over donkere plaat betekent herhaalde passage na overstroming. Een schone halve cirkel bij een luik betekent vaak draaien. Een oliespoor omlaag van een servicekar is een lekpad. Roest over de hele naad betekent lang niet geopend; doorbroken roest betekent late beweging.\n\nDit materiaal helpt zonder pijl. Het toont een veiligere gang, gesleepte lading, glad platform of bewijs dat een zogenaamd gesloten luchtsluis na evacuatie nog werkte.",
-          "external_site": "Veldartikel over natte antislip-servicedekken: slijtage, zout, olie en veiligheidsverf onthullen verkeer, gevaar en beweging na evacuatie.",
-          "external_site_article": "De beste vloeren in HECTON-8 zijn niet schoon. Een schone vloer zou liegen. Een verdronken servicedek moet verschil tonen tussen ontwerp en gebruik: antisliprooster, praktische gele lijn, menselijke draaiboog, trage oceaancorrecties in zout en roest.\n\nAntislipplaat vertelt tijd via contact. De rib wordt licht door laarzen en kratten. De groef wordt donker door olie, pekel of koelvloeistof. Veiligheidsverf verdwijnt eerst op echte routes. Roest groeit waar niets meer stoort.\n\nIn het veld worden die sporen een keuze: een versleten lijn volgen, glanzende groeven vermijden, een late schuurplek als bewijs bewaren of geel volgen naar een onderhoudsruimte die Deep Reach niet toonde.",
-          "field_note": "Vraag niet eerst waar ze heen gingen. Vraag waar de verf ophield te overleven."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.service_deck_anti_slip_ledger",
+    "secondary": [
+     "unlock.first_service_deck_scan",
+     "unlock.first_oil_slick_deck_read",
+     "unlock.first_airlock_traffic_trace"
+    ],
+    "poi_tags": [
+     "poi.service_deck_anti_slip_plate",
+     "poi.yellow_paint_turn_arc",
+     "poi.oily_trough_streak",
+     "poi.rust_broken_deck_seam"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.service_corridor",
+     "biome.pressure_route"
+    ],
+    "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Service Deck Scanner",
+     "terminal": "Old Colony Deck Wear Readout",
+     "audio": "Marauder Movement Instructor",
+     "in_game_wiki": "PDA Service Deck Field Guide",
+     "external_site": "Public Site Service Deck Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_service_deck_scan_or_airlock_traffic_trace",
+    "truth_payload": "Wet service deck materials record traffic, fluid hazards, cargo turns and post-evacuation airlock movement.",
+    "player_question": "Which scuffs happened after the colony was supposed to be empty?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Wet Service Deck Anti-Slip Ledger",
+     "scanner": "SERVICE DECK // Dark raised anti-slip metal, worn off-white and yellow paint, salt scuffs on ridge tops, oily wet streaks in troughs. Rust stays in seams. The traffic line bends toward the airlock.",
+     "terminal": "DECK READ // Raised tread is a movement record. Bright ridge wear marks boot traffic; dark wet troughs mark oil or coolant drift. Yellow paint worn into arcs means turning with cargo, not decorative striping. Cross the seam only after checking whether the rust line is broken.",
+     "audio": "A floor remembers panic better than a wall. People look up when they lie; their boots tell the route.",
+     "in_game_wiki": "A HECTON-8 service deck is not generic floor texture. It is the colony's last handwriting. The raised anti-slip pattern kept boots from skating during normal work, then became a recorder when normal work stopped. Salt catches on ridge tops, oil settles in troughs, yellow safety paint wears into crescents where people turned with tools or cylinders, and rust stays where traffic stopped touching the seam.\n\nThe player can read a wet deck before entering a room. A bright line across dark plate means repeated passage after flooding. A clean semicircle beside a hatch means someone turned there often enough to polish the paint. Oily streaks running downhill from a service cart show a leak path, not random dirt. Rust crossing the full seam means nobody has opened that boundary in a long time; rust broken by scuffs means late movement, salvage, or return.\n\nThis makes deck material useful without turning it into a signpost. It can reveal the safer route through a corridor, show where cargo was dragged, warn that a platform is slick, or prove that a supposedly sealed airlock cycled after the evacuation story ended. A good deck does not explain itself. It gives the player enough physical evidence to be clever.",
+     "external_site": "A field article on wet anti-slip service decks: how tread wear, salt, oil and safety paint reveal traffic, hazards and post-evacuation movement.",
+     "external_site_article": "The best floors in HECTON-8 are not clean. Clean floors would be lies. A drowned service deck should show the difference between design and use: the intended grid of raised tread, the practical stripe of yellow paint, the human arc where a boot kept turning, and the ocean's slow edits in salt and rust.\n\nAnti-slip plate tells time through contact. The top of a ridge becomes pale where boots and dragged crates polished it. The trough between ridges grows darker when oil, coolant or brine settles there. Safety paint disappears first on the routes that mattered. Rust grows only where hands, boots, carts and water no longer disturb it. Those marks can point toward an airlock, a dry pocket, a dead end or a place where the official evacuation record no longer fits.\n\nIn the field, those marks become choices: trust the worn line, avoid the glossy trough, preserve a late scuff as proof, or follow yellow paint into a maintenance space that Deep Reach never put on tourist maps.\n\nThe floor is not dramatic. That is why it works. Under pressure, the most useful witnesses are usually the ones everyone stepped on.",
+     "field_note": "Do not ask where they went first. Ask where the paint stopped surviving."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал мокрой противоскользящей сервисной палубы",
+     "scanner": "СЕРВИСНАЯ ПАЛУБА // Темный рифленый металл, стертая белая и желтая краска, соляные потертости на гребнях, масляные мокрые полосы в канавках. Ржавчина держится в швах. Линия движения загибается к шлюзу.",
+     "terminal": "ЧТЕНИЕ ПАЛУБЫ // Рифление записывает движение. Светлые гребни показывают ход ног; темные канавки - дрейф масла или охлаждающей жидкости. Желтая краска, стертая дугой, означает поворот с грузом, а не декоративную полосу. Пересекай шов только после проверки, сломана ли линия ржавчины.",
+     "audio": "Пол лучше стен помнит панику. Люди врут глазами вверх; ботинки говорят маршрут.",
+     "in_game_wiki": "Сервисная палуба HECTON-8 - не обычная текстура пола. Это последняя рукопись колонии. Рифленый рисунок удерживал ботинки во время нормальной работы, а когда нормальная работа закончилась, стал регистратором. Соль цепляется за гребни, масло оседает в канавках, желтая краска стирается полумесяцами там, где люди разворачивались с инструментами или баллонами, а ржавчина остается там, где движение перестало трогать шов.\n\nИгрок может читать мокрую палубу до входа в комнату. Светлая линия на темной плите означает повторный проход после затопления. Чистый полукруг у люка - место частых разворотов. Масляные полосы вниз от сервисной тележки показывают путь утечки, не случайную грязь. Ржавчина через весь шов значит, что границу давно не открывали; ржавчина, перебитая потертостями, значит позднее движение, разбор или возвращение.\n\nТакой материал полезен без стрелок и подсказок. Он показывает безопаснее направление в коридоре, след волоченого груза, скользкую платформу или доказательство, что якобы закрытый шлюз работал после официальной эвакуации. Хорошая палуба не объясняет себя. Она дает игроку достаточно физики, чтобы догадаться самому.",
+     "external_site": "Полевой материал о мокрых противоскользящих сервисных палубах: как рифление, соль, масло и краска раскрывают движение, опасность и активность после эвакуации.",
+     "external_site_article": "Лучшие полы в HECTON-8 не чистые. Чистый пол был бы ложью. Утонувшая сервисная палуба должна показывать разницу между проектом и использованием: расчетную сетку рифления, практическую желтую полосу, человеческую дугу постоянного разворота и медленные правки океана в соли и ржавчине.\n\nПротивоскользящая плита говорит о времени через контакт. Верх гребня светлеет там, где его полировали ботинки и ящики. Канавка темнеет, когда туда садится масло, рассол или охлаждающая жидкость. Сервисная краска исчезает первой на маршрутах, которые действительно использовали. Ржавчина растет там, где руки, ноги, тележки и вода больше ничего не тревожат.\n\nВ поле эти следы становятся выбором: довериться стертым гребням, обойти блестящую канавку, сохранить позднюю потертость как доказательство или пойти по желтой краске в сервисное место, которого Deep Reach не показывал на туристических схемах.\n\nПол не драматичен. Поэтому ему веришь. Под давлением самые полезные свидетели обычно те, по которым все ходили.",
+     "field_note": "Не спрашивай сначала, куда они ушли. Спроси, где краска перестала выживать."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "濡れた滑り止め作業床台帳",
+     "scanner": "作業床 // 暗い滑り止め金属、削れた白と黄の塗装、山の上の塩擦れ、溝の油じみ。錆は継ぎ目に残る。通行線はエアロックへ曲がる。",
+     "terminal": "床読取 // 凸凹は移動記録だ。明るい山は足跡、暗い溝は油や冷却液の流れ。黄塗装の弧は荷物を持った旋回を示す。継ぎ目を越える前に錆の線が切れているかを見る。",
+     "audio": "床は壁より恐慌をよく覚える。人は上を見て嘘をつくが、靴は経路を残す。",
+     "in_game_wiki": "HECTON-8の作業床はただの床ではない。滑り止めの山は通常作業では足を止め、崩壊後は記録係になった。塩は山の上に残り、油は溝に沈み、黄塗装は工具やボンベを持って曲がった場所で半月に消える。錆は誰も通らなくなった継ぎ目に残る。\n\nプレイヤーは部屋に入る前に床を読める。暗い板を横切る明るい線は浸水後の反復通行だ。ハッチ横のきれいな半円は、そこで何度も旋回した証拠になる。下り方向の油筋は漏れの道筋で、ただの汚れではない。継ぎ目を横切る錆が削れていれば、後日の通行や解体があった。\n\nこの床は標識にならずに役に立つ。安全な廊下、引きずられた荷物、滑る足場、避難記録の後に動いたエアロックを示す。良い床は説明しない。プレイヤーに判断できるだけの物理を渡す。",
+     "external_site": "濡れた滑り止め作業床の記事。踏面の摩耗、塩、油、安全塗装から通行、危険、避難後の活動を読む。",
+     "external_site_article": "HECTON-8で信じられる床はきれいではない。きれいな床は嘘だ。沈んだ作業床は設計と使用の差を見せる。計算された滑り止め、実用の黄線、人間が何度も曲がった弧、塩と錆による海の修正。\n\n滑り止め板は接触で時間を語る。山の上は靴と箱で白く磨かれる。溝は油や冷却液で暗くなる。安全塗装は重要な経路から先に消える。錆はもう誰も触れない場所に育つ。\n\n現場では、それらの跡が選択になる。摩耗線を信じるか、光る溝を避けるか、遅い足跡を証拠として残すか、Deep Reachが隠した保守区画へ黄線を追うかを選べる。",
+     "field_note": "彼らがどこへ行ったかより、どこで塗装が死んだかを見ろ。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "湿滑防滑服务甲板账本",
+     "scanner": "服务甲板 // 深色凸纹防滑金属、磨损的白色和黄色油漆、凸脊上的盐痕、槽里的油湿条纹。锈停在接缝里。通行线弯向气闸。",
+     "terminal": "甲板读取 // 凸纹是移动记录。发亮的凸脊是脚步；暗槽是油或冷却液漂移。黄色油漆磨成弧形，说明有人带货转身，不是装饰。跨缝前先看锈线是否被踩断。",
+     "audio": "地板比墙更记得恐慌。人抬头时会撒谎，靴子会留下路线。",
+     "in_game_wiki": "HECTON-8的服务甲板不是普通地面纹理。它是殖民地最后的笔迹。防滑凸纹在正常工作时防止打滑，在正常工作结束后变成记录器。盐卡在凸脊上，油沉进槽里，黄色安全漆在携带工具或气瓶转身的地方磨成月牙，锈留在交通不再触碰的接缝。\n\n玩家进入房间前就能读湿甲板。深色金属上的亮线表示洪水后仍有人反复通过。舱门旁的干净半圆表示频繁转身。服务车下坡方向的油迹是泄漏路径，不是随机污垢。整条锈线跨过接缝说明很久没人开过；被磨断的锈线说明后期移动、拆解或返回。\n\n这样的材料不用箭头也能有用。它能给出更安全的走廊、拖拽货物的路线、湿滑平台的警告，或证明所谓封闭的气闸在官方撤离后仍然运转。好的甲板不解释自己，它给玩家足够的物理证据去聪明地判断。",
+     "external_site": "关于湿滑防滑服务甲板的现场文章：凸纹磨损、盐、油和安全漆如何揭示通行、危险和撤离后的活动。",
+     "external_site_article": "HECTON-8里最可信的地板并不干净。干净的地板会撒谎。被淹的服务甲板应该显示设计与使用的差异：计划中的防滑网格、实用的黄色线、人类反复转身的弧线，以及海水用盐和锈写下的慢修订。\n\n防滑板通过接触讲时间。凸脊顶部被靴子和箱子磨亮。槽里因为油、冷却液或卤水变暗。安全漆最先从真正重要的路线消失。锈只在手、脚、车和水不再打扰的地方生长。\n\n到了现场，这些痕迹就是选择：相信磨损线、避开发亮的湿槽、保存一处后期擦痕作为证据，或沿黄色漆进入Deep Reach从未放进公开地图的维护空间。",
+     "field_note": "先别问他们去了哪里。先问油漆在哪里停止幸存。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre de pont de service antidérapant humide",
+     "scanner": "PONT DE SERVICE // Métal sombre à relief antidérapant, peinture blanche et jaune usée, sel sur les crêtes, traînées huileuses dans les creux. La rouille reste dans les joints. La ligne de passage courbe vers le sas.",
+     "terminal": "LECTURE DU PONT // Le relief enregistre le mouvement. Les crêtes claires marquent les bottes ; les creux sombres marquent huile ou liquide de refroidissement. La peinture jaune usée en arc indique un virage avec charge. Avant de franchir un joint, vérifier si la ligne de rouille est brisée.",
+     "audio": "Un sol se souvient mieux de la panique qu'un mur. Les yeux mentent vers le haut ; les bottes donnent la route.",
+     "in_game_wiki": "Un pont de service HECTON-8 n'est pas une texture de sol banale. C'est la dernière écriture de la colonie. Le relief antidérapant gardait les bottes en place pendant le travail normal, puis il est devenu enregistreur. Le sel accroche les crêtes, l'huile dort dans les creux, la peinture jaune disparaît en croissants là où l'on tournait avec outils ou bouteilles.\n\nLe joueur peut lire un pont humide avant d'entrer. Une ligne claire sur plaque sombre signifie passage répété après inondation. Un demi-cercle propre près d'une trappe signifie rotation fréquente. Une traînée huileuse qui descend d'un chariot est un chemin de fuite, pas de la saleté décorative. Une rouille brisée sur le joint signale mouvement tardif ou retour.\n\nCe matériau aide sans devenir panneau. Il montre la route plus sûre, une charge traînée, une plateforme glissante, ou prouve qu'un sas supposé scellé a encore cyclé après l'évacuation officielle.",
+     "external_site": "Article de terrain sur les ponts antidérapants humides : usure du relief, sel, huile et peinture de sécurité révèlent trafic, danger et mouvement post-évacuation.",
+     "external_site_article": "Les meilleurs sols de HECTON-8 ne sont pas propres. Un sol propre mentirait. Un pont de service noyé doit montrer la différence entre conception et usage : grille antidérapante prévue, bande jaune pratique, arc humain d'un virage répété, corrections lentes de sel et de rouille.\n\nLa plaque antidérapante raconte le temps par contact. La crête pâlit sous les bottes et les caisses. Le creux noircit avec huile, saumure ou refroidissement. La peinture de sécurité disparaît d'abord sur les vrais trajets. La rouille pousse là où plus rien ne dérange le métal.\n\nSur place, ces traces deviennent un choix : suivre la ligne usée, éviter un creux brillant, préserver une trace tardive comme preuve, ou suivre le jaune vers un espace de maintenance que Deep Reach ne montrait pas.",
+     "field_note": "Ne demande pas d'abord où ils sont allés. Demande où la peinture a cessé de survivre."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de cubierta de servicio antideslizante mojada",
+     "scanner": "CUBIERTA DE SERVICIO // Metal oscuro con relieve antideslizante, pintura blanca y amarilla gastada, sal en las crestas, vetas húmedas de aceite en los surcos. El óxido queda en las juntas. La línea de tráfico gira hacia la esclusa.",
+     "terminal": "LECTURA DE CUBIERTA // El relieve registra movimiento. Crestas claras: botas; surcos oscuros: aceite o refrigerante. Pintura amarilla gastada en arcos: giro con carga, no decoración. Cruza una junta solo tras comprobar si la línea de óxido está rota.",
+     "audio": "Un suelo recuerda el pánico mejor que una pared. La gente miente mirando arriba; las botas dan la ruta.",
+     "in_game_wiki": "Una cubierta de servicio de HECTON-8 no es un suelo genérico. Es la última escritura de la colonia. El patrón antideslizante sostuvo botas durante el trabajo normal y, cuando el trabajo terminó, se volvió registro. La sal queda en las crestas, el aceite se asienta en surcos, la pintura amarilla se borra en medias lunas donde alguien giró con herramientas o cilindros.\n\nEl jugador puede leer la cubierta antes de entrar. Una línea clara sobre placa oscura significa paso repetido tras la inundación. Un semicírculo limpio junto a una escotilla indica giros frecuentes. Vetas de aceite cuesta abajo desde un carro son una ruta de fuga. Óxido intacto en toda la junta indica frontera cerrada; óxido roto por rozaduras indica movimiento tardío.\n\nEl material funciona sin flechas. Puede revelar el corredor más seguro, carga arrastrada, plataforma resbaladiza o una esclusa que siguió funcionando después de la evacuación oficial.",
+     "external_site": "Artículo de campo sobre cubiertas antideslizantes mojadas: desgaste, sal, aceite y pintura de seguridad revelan tráfico, peligros y movimiento posterior a la evacuación.",
+     "external_site_article": "Los mejores suelos de HECTON-8 no están limpios. Un suelo limpio sería mentira. Una cubierta de servicio ahogada debe mostrar la diferencia entre diseño y uso: la cuadrícula antideslizante prevista, la franja amarilla práctica, el arco humano de un giro repetido y las ediciones lentas del océano.\n\nLa placa antideslizante cuenta el tiempo por contacto. La cresta se aclara por botas y cajas. El surco se oscurece con aceite, salmuera o refrigerante. La pintura de seguridad desaparece primero en las rutas reales. El óxido crece donde ya no molestan manos, botas, carros ni agua.\n\nEn campo, esas marcas se vuelven decisión: seguir la línea gastada, evitar el surco brillante, conservar una rozadura tardía como prueba, o seguir la pintura amarilla hacia un espacio de mantenimiento que Deep Reach ocultó.",
+     "field_note": "No preguntes primero adónde fueron. Pregunta dónde dejó de sobrevivir la pintura."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Protokoll für nasses rutschhemmendes Servicedeck",
+     "scanner": "SERVICEDECK // Dunkles rutschhemmendes Metall, abgenutzte weiße und gelbe Farbe, Salzabrieb auf Rippen, ölige Nassspuren in Rinnen. Rost bleibt in Nähten. Die Verkehrslinie biegt zum Luftschleusentor.",
+     "terminal": "DECKLESUNG // Das Profil zeichnet Bewegung auf. Helle Rippen bedeuten Stiefelverkehr; dunkle Rinnen Öl- oder Kühlmitteldrift. Gelbe Farbe in Bögen bedeutet Drehen mit Last. Eine Naht erst kreuzen, wenn die Rostlinie geprüft ist.",
+     "audio": "Ein Boden erinnert Panik besser als eine Wand. Menschen lügen nach oben; Stiefel geben die Route.",
+     "in_game_wiki": "Ein HECTON-8-Servicedeck ist kein generischer Boden. Es ist die letzte Handschrift der Kolonie. Das rutschhemmende Profil hielt Stiefel im Normalbetrieb fest und wurde danach zum Schreiber. Salz bleibt auf Rippen, Öl in Rinnen, gelbe Farbe verschwindet in Halbmonden dort, wo Menschen mit Werkzeug oder Flaschen drehten.\n\nDer Spieler kann ein nasses Deck vor dem Eintritt lesen. Eine helle Linie über dunklem Metall bedeutet wiederholten Durchgang nach der Flutung. Ein sauberer Halbkreis an einer Luke zeigt häufige Drehung. Ölige Spuren bergab von einem Wagen zeigen einen Leckpfad. Rost über eine ganze Naht bedeutet lange keine Öffnung; unterbrochener Rost bedeutet spätere Bewegung.\n\nSo hilft Material ohne Wegweiser. Es zeigt sicherere Korridore, gezogene Last, glatte Plattformen oder beweist, dass eine angeblich geschlossene Schleuse nach der Evakuierung noch lief.",
+     "external_site": "Feldartikel über nasse rutschhemmende Servicedecks: Profilabrieb, Salz, Öl und Sicherheitsfarbe zeigen Verkehr, Gefahren und Bewegung nach Evakuierung.",
+     "external_site_article": "Die besten Böden in HECTON-8 sind nicht sauber. Saubere Böden wären Lügen. Ein ertrunkenes Servicedeck muss den Unterschied zwischen Entwurf und Gebrauch zeigen: geplantes Profil, praktische gelbe Linie, menschlicher Drehbogen, langsame Korrekturen aus Salz und Rost.\n\nRutschhemmende Platte erzählt Zeit durch Kontakt. Rippen werden durch Stiefel und Kisten hell. Rinnen dunkeln mit Öl, Sole oder Kühlmittel. Sicherheitsfarbe verschwindet zuerst auf echten Routen. Rost wächst dort, wo niemand mehr stört.\n\nVor Ort werden diese Spuren zur Entscheidung: der abgenutzten Linie folgen, glänzende Rinnen meiden, späte Schrammen als Beweis bewahren oder der gelben Farbe in einen Wartungsraum folgen, den Deep Reach nie öffentlich markierte.",
+     "field_note": "Frag nicht zuerst, wohin sie gingen. Frag, wo die Farbe aufhörte zu überleben."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr mokrego antypoślizgowego pokładu serwisowego",
+     "scanner": "POKŁAD SERWISOWY // Ciemny metal antypoślizgowy, starta biała i żółta farba, sól na grzbietach, mokre smugi oleju w rowkach. Rdza trzyma się szwów. Linia ruchu skręca ku śluzie.",
+     "terminal": "ODCZYT POKŁADU // Wzór zapisuje ruch. Jasne grzbiety to buty; ciemne rowki to olej albo chłodziwo. Żółta farba starta w łuk oznacza obrót z ładunkiem. Przed przejściem przez szew sprawdź, czy linia rdzy jest przerwana.",
+     "audio": "Podłoga lepiej pamięta panikę niż ściana. Ludzie kłamią oczami w górę; buty zostawiają trasę.",
+     "in_game_wiki": "Pokład serwisowy HECTON-8 nie jest zwykłą podłogą. To ostatnie pismo kolonii. Antypoślizgowy wzór trzymał buty podczas normalnej pracy, a potem stał się rejestratorem. Sól łapie się grzbietów, olej leży w rowkach, żółta farba znika półksiężycem tam, gdzie ktoś obracał się z narzędziami lub butlą.\n\nGracz może czytać mokry pokład przed wejściem do sali. Jasna linia na ciemnej płycie oznacza powtarzane przejście po zalaniu. Czysty półokrąg przy włazie oznacza częste skręty. Smuga oleju w dół od wózka to droga wycieku. Rdza przez cały szew znaczy brak otwarcia; rdza przecięta otarciami oznacza późny ruch.\n\nMateriał pomaga bez strzałek. Pokazuje bezpieczniejszy korytarz, ciągnięty ładunek, śliską platformę albo dowód, że rzekomo zamknięta śluza działała po ewakuacji.",
+     "external_site": "Artykuł o mokrych pokładach antypoślizgowych: zużycie wzoru, sól, olej i farba bezpieczeństwa ujawniają ruch, zagrożenia i aktywność po ewakuacji.",
+     "external_site_article": "Najlepsze podłogi HECTON-8 nie są czyste. Czysta podłoga byłaby kłamstwem. Zatopiony pokład powinien pokazać różnicę między projektem a użyciem: siatkę antypoślizgową, żółtą linię praktyczną, ludzki łuk powtarzanego skrętu i poprawki oceanu w soli oraz rdzy.\n\nPłyta antypoślizgowa mówi czasem przez kontakt. Grzbiet jaśnieje od butów i skrzyń. Rowek ciemnieje od oleju, solanki lub chłodziwa. Farba znika najpierw na prawdziwych trasach. Rdza rośnie tam, gdzie nikt już nie przeszkadza.\n\nW terenie te ślady stają się wyborem: zaufać wytartej linii, ominąć błyszczący rowek, zachować późne otarcie jako dowód lub pójść za żółtym śladem do serwisu, którego Deep Reach nie pokazywał.",
+     "field_note": "Nie pytaj najpierw, dokąd poszli. Spytaj, gdzie farba przestała przeżywać."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал мокрої протиковзної сервісної палуби",
+     "scanner": "СЕРВІСНА ПАЛУБА // Темний рифлений метал, стерта біла й жовта фарба, сіль на гребенях, мокрі олійні смуги в канавках. Іржа тримається у швах. Лінія руху згинається до шлюзу.",
+     "terminal": "ЧИТАННЯ ПАЛУБИ // Рифлення записує рух. Світлі гребені - хід ніг; темні канавки - дрейф олії або охолоджувача. Жовта фарба, стерта дугою, означає поворот із вантажем. Перетинай шов лише після перевірки, чи зламана лінія іржі.",
+     "audio": "Підлога краще пам'ятає паніку, ніж стіна. Люди брешуть поглядом угору; черевики лишають маршрут.",
+     "in_game_wiki": "Сервісна палуба HECTON-8 - не звичайна підлога. Це останній почерк колонії. Протиковзне рифлення тримало черевики під час нормальної роботи, а потім стало реєстратором. Сіль чіпляється за гребені, олія сідає в канавки, жовта фарба стирається півмісяцями там, де люди розверталися з інструментами або балонами.\n\nГравець може читати мокру палубу до входу в кімнату. Світла лінія на темній плиті означає повторний прохід після затоплення. Чисте півколо біля люка - часті розвороти. Олійний слід вниз від візка показує шлях витоку. Іржа через увесь шов означає довгу закритість; іржа, перебита потертостями, означає пізній рух.\n\nТакий матеріал працює без стрілок. Він показує безпечніший коридор, волочений вантаж, слизьку платформу або доказ, що нібито закритий шлюз працював після евакуації.",
+     "external_site": "Польова стаття про мокрі протиковзні палуби: зношення рифлення, сіль, олія і захисна фарба показують рух, небезпеку та активність після евакуації.",
+     "external_site_article": "Найкращі підлоги HECTON-8 не чисті. Чиста підлога брехала б. Затоплена сервісна палуба має показувати різницю між проєктом і використанням: сітку рифлення, практичну жовту смугу, людську дугу повторного повороту, повільні правки океану в солі й іржі.\n\nПротиковзна плита говорить про час через контакт. Гребінь світлішає від черевиків і ящиків. Канавка темніє від олії, розсолу або охолоджувача. Захисна фарба першою зникає на справжніх маршрутах. Іржа росте там, де більше ніщо не турбує метал.\n\nУ полі ці сліди стають вибором: довіритися стертій лінії, оминути блискучу канавку, зберегти пізню потертість як доказ або піти жовтою фарбою до сервісного місця, якого Deep Reach не показував.",
+     "field_note": "Не питай спершу, куди вони пішли. Спитай, де фарба перестала виживати."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل سطح الخدمة الرطب المضاد للانزلاق",
+     "scanner": "سطح خدمة // معدن داكن بارز مضاد للانزلاق، طلاء أبيض وأصفر متآكل، ملح على القمم، خطوط زيت رطبة في الأخاديد. الصدأ يبقى في الشقوق. خط الحركة ينحني نحو غرفة الضغط.",
+     "terminal": "قراءة السطح // النتوءات تسجل الحركة. القمم الفاتحة تعني عبور أحذية؛ الأخاديد الداكنة تعني زيتا أو سائلا مبردا. الطلاء الأصفر المتآكل على شكل قوس يعني دوران شخص يحمل حملا. لا تعبر الشق قبل فحص خط الصدأ.",
+     "audio": "الأرضية تتذكر الذعر أفضل من الجدار. الناس يكذبون بنظرهم إلى الأعلى؛ الأحذية تترك الطريق.",
+     "in_game_wiki": "سطح الخدمة في HECTON-8 ليس أرضية عادية. إنه آخر خط يد للمستعمرة. النمط المضاد للانزلاق منع الأحذية من التزحلق أثناء العمل، ثم صار مسجلا بعد توقف العمل. الملح يمسك بالقمم، والزيت يستقر في الأخاديد، والطلاء الأصفر يختفي في أهلة حيث دار الناس بالأدوات أو الأسطوانات.\n\nيستطيع اللاعب قراءة السطح الرطب قبل دخول الغرفة. خط فاتح فوق لوحة داكنة يعني عبورا متكررا بعد الغمر. نصف دائرة نظيف قرب فتحة يعني دورانا كثيرا. خط زيت نازل من عربة خدمة هو مسار تسرب. صدأ كامل عبر الشق يعني أن الحدود لم تفتح طويلا؛ صدأ مكسور بالخدوش يعني حركة لاحقة.\n\nهذه المادة تساعد دون أن تصبح سهما. تكشف ممرا أكثر أمانا، حملا مسحوبا، منصة زلقة، أو دليلا على أن غرفة ضغط قيل إنها أغلقت عملت بعد الإخلاء الرسمي.",
+     "external_site": "مقال ميداني عن أسطح الخدمة الرطبة المضادة للانزلاق: كيف يكشف تآكل النتوءات والملح والزيت وطلاء السلامة حركة وخطرا ونشاطا بعد الإخلاء.",
+     "external_site_article": "أفضل الأرضيات في HECTON-8 ليست نظيفة. الأرضية النظيفة ستكون كذبة. يجب أن يظهر سطح الخدمة الغارق الفرق بين التصميم والاستخدام: شبكة النتوءات المقصودة، الخط الأصفر العملي، قوس دوران البشر المتكرر، وتعديلات البحر البطيئة بالملح والصدأ.\n\nاللوحة المضادة للانزلاق تروي الزمن باللمس. القمة تفتح لونها بالأحذية والصناديق. الأخدود يظلم بالزيت أو المحلول الملحي أو المبرد. طلاء السلامة يختفي أولا على الطرق المهمة. الصدأ ينمو حيث لا تعود الأيدي والأحذية والعربات والماء تزعجه.\n\nفي الميدان تصبح هذه العلامات قرارا: اتباع الخط المتآكل، تجنب الأخدود اللامع، حفظ خدش متأخر كدليل، أو اتباع الطلاء الأصفر إلى مساحة صيانة لم تعرضها Deep Reach.",
+     "field_note": "لا تسأل أولا إلى أين ذهبوا. اسأل أين توقف الطلاء عن النجاة."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Catatan Dek Servis Basah Anti-Selip",
+     "scanner": "DEK SERVIS // Logam gelap berpola anti-selip, cat putih dan kuning aus, garam di puncak tekstur, jejak minyak basah di alur. Karat bertahan di sambungan. Garis lalu lintas berbelok ke ruang udara.",
+     "terminal": "BACAAN DEK // Pola timbul mencatat gerak. Puncak terang berarti lalu lintas sepatu; alur gelap berarti minyak atau cairan pendingin. Cat kuning yang aus membentuk busur berarti orang berputar membawa beban. Lewati sambungan hanya setelah garis karat diperiksa.",
+     "audio": "Lantai mengingat panik lebih baik daripada dinding. Orang berbohong dengan mata ke atas; sepatu memberi rute.",
+     "in_game_wiki": "Dek servis HECTON-8 bukan tekstur lantai biasa. Itu tulisan tangan terakhir koloni. Pola anti-selip menahan sepatu saat kerja normal, lalu menjadi perekam setelah kerja berhenti. Garam menempel di puncak tekstur, minyak tidur di alur, cat kuning hilang membentuk sabit di tempat orang berputar dengan alat atau tabung.\n\nPemain dapat membaca dek basah sebelum masuk ruangan. Garis terang di atas pelat gelap berarti jalan yang diulang setelah banjir. Setengah lingkaran bersih di samping palka berarti banyak putaran. Jejak minyak turun dari kereta servis adalah jalur bocor. Karat utuh melintasi sambungan berarti lama tak dibuka; karat terputus berarti gerak terlambat.\n\nBahan ini berguna tanpa panah. Ia menunjukkan koridor yang lebih aman, muatan yang diseret, platform licin, atau bukti bahwa ruang udara yang disebut tertutup masih berputar setelah evakuasi.",
+     "external_site": "Artikel lapangan tentang dek servis basah anti-selip: aus tekstur, garam, minyak, dan cat keselamatan mengungkap lalu lintas, bahaya, dan gerak setelah evakuasi.",
+     "external_site_article": "Lantai terbaik di HECTON-8 tidak bersih. Lantai bersih akan berbohong. Dek servis tenggelam harus menunjukkan beda antara desain dan pemakaian: kisi anti-selip, garis kuning praktis, busur putar manusia, dan koreksi laut lewat garam serta karat.\n\nPelat anti-selip menceritakan waktu melalui kontak. Puncak memucat oleh sepatu dan peti. Alur menggelap oleh minyak, air asin, atau pendingin. Cat keselamatan hilang paling awal di rute sungguhan. Karat tumbuh di tempat yang tidak lagi diganggu.\n\nDi lapangan, jejak itu menjadi pilihan: mengikuti garis aus, menghindari alur mengilap, menyimpan lecet terlambat sebagai bukti, atau mengikuti cat kuning ke ruang servis yang tidak pernah dipetakan Deep Reach.",
+     "field_note": "Jangan tanya dulu mereka pergi ke mana. Tanya di mana cat berhenti bertahan."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "젖은 미끄럼 방지 서비스 데크 장부",
+     "scanner": "서비스 데크 // 어두운 돌기 미끄럼 방지 금속, 닳은 흰색과 노란색 도색, 돌기 위 소금 자국, 홈의 젖은 기름 줄기. 녹은 이음에 남는다. 이동선은 에어록 쪽으로 휜다.",
+     "terminal": "데크 판독 // 돌기 무늬는 이동 기록이다. 밝은 돌기는 부츠 통행, 어두운 홈은 기름이나 냉각수 흐름이다. 호로 닳은 노란 도색은 짐을 들고 돈 흔적이다. 이음을 건너기 전 녹선이 끊겼는지 확인하라.",
+     "audio": "바닥은 벽보다 공황을 잘 기억한다. 사람은 위를 보며 거짓말하지만, 부츠는 길을 남긴다.",
+     "in_game_wiki": "HECTON-8의 서비스 데크는 평범한 바닥이 아니다. 식민지의 마지막 필체다. 미끄럼 방지 돌기는 정상 작업 때 부츠를 붙잡았고, 정상 작업이 끝난 뒤 기록 장치가 되었다. 소금은 돌기 위에 붙고, 기름은 홈에 가라앉고, 노란 도색은 공구나 실린더를 든 사람이 돌던 곳에서 초승달처럼 사라진다.\n\n플레이어는 방에 들어가기 전 젖은 데크를 읽을 수 있다. 어두운 판 위의 밝은 선은 침수 후 반복 통행이다. 해치 옆 깨끗한 반원은 잦은 회전이다. 서비스 카트에서 내려가는 기름줄기는 누수 경로다. 이음 전체의 녹은 오랜 폐쇄를 뜻하고, 흠집으로 끊긴 녹은 늦은 이동을 뜻한다.\n\n이 재료는 화살표가 아니어도 유용하다. 더 안전한 복도, 끌린 화물, 미끄러운 플랫폼, 공식 대피 이후에도 돌았던 에어록을 보여 준다.",
+     "external_site": "젖은 미끄럼 방지 서비스 데크에 대한 현장 글. 마모, 소금, 기름, 안전 도색이 통행, 위험, 대피 이후 움직임을 드러낸다.",
+     "external_site_article": "HECTON-8에서 믿을 만한 바닥은 깨끗하지 않다. 깨끗한 바닥은 거짓말이다. 침수된 서비스 데크는 설계와 사용의 차이를 보여야 한다. 계획된 돌기 격자, 실용적인 노란 선, 사람이 반복해서 돈 호, 소금과 녹이 남긴 바다의 수정.\n\n미끄럼 방지 판은 접촉으로 시간을 말한다. 돌기 위는 부츠와 상자로 밝아진다. 홈은 기름, 염수, 냉각수로 어두워진다. 안전 도색은 진짜 길에서 먼저 사라진다. 녹은 더 이상 아무도 방해하지 않는 곳에서 자란다.\n\n현장에서는 그 흔적이 선택이 된다. 닳은 선을 믿고, 빛나는 홈을 피하고, 늦은 흠집을 증거로 남기거나, Deep Reach가 공개하지 않은 정비 구역으로 노란 도색을 따라간다.",
+     "field_note": "먼저 어디로 갔는지 묻지 마라. 도색이 어디서 살아남지 못했는지 보라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן סיפון שירות רטוב נגד החלקה",
+     "scanner": "סיפון שירות // מתכת כהה עם בליטות נגד החלקה, צבע לבן וצהוב שחוק, מלח על הפסגות, פסי שמן רטובים בתעלות. חלודה נשארת בתפרים. קו התנועה מתעקל אל מנעל האוויר.",
+     "terminal": "קריאת סיפון // הבליטות רושמות תנועה. פסגות בהירות הן תנועת מגפיים; תעלות כהות הן שמן או נוזל קירור. צבע צהוב שנשחק בקשת אומר סיבוב עם מטען. חצה תפר רק אחרי בדיקת קו החלודה.",
+     "audio": "רצפה זוכרת פאניקה טוב מקיר. אנשים משקרים כשהם מביטים למעלה; המגפיים נותנים מסלול.",
+     "in_game_wiki": "סיפון שירות ב-HECTON-8 אינו רצפה רגילה. הוא כתב היד האחרון של המושבה. דגם נגד החלקה החזיק מגפיים בזמן עבודה, ואחר כך הפך לרושם. מלח נאחז בפסגות, שמן שוקע בתעלות, צבע צהוב נעלם בחצי ירח במקום שבו אנשים הסתובבו עם כלים או מכלים.\n\nהשחקן יכול לקרוא סיפון רטוב לפני כניסה לחדר. קו בהיר על לוח כהה הוא מעבר חוזר אחרי הצפה. חצי עיגול נקי ליד פתח הוא סיבוב תכוף. פס שמן שיורד מעגלת שירות הוא נתיב דליפה. חלודה רציפה על תפר אומרת שלא נפתח זמן רב; חלודה שנשברה בשפשופים אומרת תנועה מאוחרת.\n\nהחומר הזה מועיל בלי חצים. הוא מראה מסדרון בטוח יותר, מטען שנגרר, משטח חלקלק, או ראיה שמנעל אוויר שלכאורה נסגר המשיך לפעול אחרי הפינוי.",
+     "external_site": "מאמר שטח על סיפוני שירות רטובים נגד החלקה: שחיקת בליטות, מלח, שמן וצבע בטיחות חושפים תנועה, סכנה ופעילות אחרי פינוי.",
+     "external_site_article": "הרצפות הטובות ב-HECTON-8 אינן נקיות. רצפה נקייה הייתה משקרת. סיפון שירות שטבע צריך להראות את ההבדל בין תכנון לשימוש: רשת נגד החלקה, קו צהוב מעשי, קשת סיבוב אנושית ותיקונים איטיים של הים במלח וחלודה.\n\nלוח נגד החלקה מספר זמן דרך מגע. הפסגה מתבהרת ממגפיים וארגזים. התעלה מחשיכה משמן, תמלחת או קירור. צבע בטיחות נעלם קודם במסלולים אמיתיים. חלודה גדלה במקום שבו דבר כבר אינו מפריע.\n\nבשטח הסימנים האלה הופכים להחלטה: לעקוב אחרי קו שחוק, להימנע מתעלה מבריקה, לשמור שפשוף מאוחר כראיה, או ללכת אחרי הצבע הצהוב למרחב תחזוקה ש-Deep Reach לא הראתה.",
+     "field_note": "אל תשאל קודם לאן הלכו. שאל איפה הצבע הפסיק לשרוד."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de piso de serviço molhado antiderrapante",
+     "scanner": "PISO DE SERVIÇO // Metal escuro antiderrapante em relevo, tinta branca e amarela gasta, sal nos pontos altos, trilhas úmidas de óleo nos sulcos. Ferrugem fica nas emendas. A linha de tráfego curva para a câmara de ar.",
+     "terminal": "LEITURA DE PISO // O relevo registra movimento. Pontos altos claros marcam botas; sulcos escuros marcam óleo ou fluido de resfriamento. Tinta amarela gasta em arco indica giro com carga. Cruze a emenda só depois de ver se a ferrugem foi quebrada.",
+     "audio": "Um piso lembra pânico melhor que uma parede. Pessoas mentem olhando para cima; botas entregam a rota.",
+     "in_game_wiki": "Um piso de serviço de HECTON-8 não é textura genérica. É a última caligrafia da colônia. O padrão antiderrapante segurava botas no trabalho normal e virou registrador quando o normal acabou. Sal prende nos pontos altos, óleo dorme nos sulcos, tinta amarela some em meias-luas onde alguém girou com ferramentas ou cilindros.\n\nO jogador pode ler o piso molhado antes de entrar. Linha clara sobre placa escura significa passagem repetida depois da inundação. Semicírculo limpo perto de escotilha indica giro frequente. Trilha de óleo descendo de carrinho de serviço é caminho de vazamento. Ferrugem inteira na emenda indica longa falta de abertura; ferrugem quebrada indica movimento tardio.\n\nEsse material ajuda sem virar placa. Mostra corredor mais seguro, carga arrastada, plataforma escorregadia ou prova de que uma câmara de ar supostamente selada continuou ciclando após a evacuação.",
+     "external_site": "Artigo de campo sobre pisos de serviço molhados antiderrapantes: desgaste, sal, óleo e tinta de segurança revelam tráfego, riscos e movimento pós-evacuação.",
+     "external_site_article": "Os melhores pisos de HECTON-8 não são limpos. Piso limpo mentiria. Um piso de serviço afogado deve mostrar a diferença entre projeto e uso: grade antiderrapante planejada, faixa amarela prática, arco humano de giro repetido e edições lentas do oceano em sal e ferrugem.\n\nA chapa antiderrapante conta tempo por contato. O alto clareia com botas e caixas. O sulco escurece com óleo, salmoura ou fluido de resfriamento. Tinta de segurança desaparece primeiro nas rotas reais. Ferrugem cresce onde nada mais perturba.\n\nNo campo, essas marcas viram decisão: seguir a linha gasta, evitar o sulco brilhante, preservar um arranhão tardio como prova ou seguir a tinta amarela para um espaço de manutenção que a Deep Reach não mostrou.",
+     "field_note": "Não pergunte primeiro para onde foram. Pergunte onde a tinta parou de sobreviver."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Logboek voor nat antislip-servicedek",
+     "scanner": "SERVICEDEK // Donker antislipmetaal met reliëf, afgesleten witte en gele verf, zoutslijtage op ribben, natte oliesporen in groeven. Roest blijft in naden. De verkeerslijn buigt naar de luchtsluis.",
+     "terminal": "DEKLEZING // Het reliëf registreert beweging. Lichte ribben tonen laarzen; donkere groeven olie of koelvloeistof. Gele verf in bogen betekent draaien met last. Kruis een naad pas na controle of de roestlijn gebroken is.",
+     "audio": "Een vloer onthoudt paniek beter dan een wand. Mensen liegen omhoog; laarzen geven de route.",
+     "in_game_wiki": "Een HECTON-8-servicedek is geen gewone vloertextuur. Het is het laatste handschrift van de kolonie. Het antislipreliëf hield laarzen vast tijdens normaal werk en werd daarna een recorder. Zout blijft op ribben hangen, olie zakt in groeven, gele verf verdwijnt in halve manen waar mensen met gereedschap of cilinders draaiden.\n\nDe speler kan een nat dek lezen vóór binnenkomst. Een lichte lijn over donkere plaat betekent herhaalde passage na overstroming. Een schone halve cirkel bij een luik betekent vaak draaien. Een oliespoor omlaag van een servicekar is een lekpad. Roest over de hele naad betekent lang niet geopend; doorbroken roest betekent late beweging.\n\nDit materiaal helpt zonder pijl. Het toont een veiligere gang, gesleepte lading, glad platform of bewijs dat een zogenaamd gesloten luchtsluis na evacuatie nog werkte.",
+     "external_site": "Veldartikel over natte antislip-servicedekken: slijtage, zout, olie en veiligheidsverf onthullen verkeer, gevaar en beweging na evacuatie.",
+     "external_site_article": "De beste vloeren in HECTON-8 zijn niet schoon. Een schone vloer zou liegen. Een verdronken servicedek moet verschil tonen tussen ontwerp en gebruik: antisliprooster, praktische gele lijn, menselijke draaiboog, trage oceaancorrecties in zout en roest.\n\nAntislipplaat vertelt tijd via contact. De rib wordt licht door laarzen en kratten. De groef wordt donker door olie, pekel of koelvloeistof. Veiligheidsverf verdwijnt eerst op echte routes. Roest groeit waar niets meer stoort.\n\nIn het veld worden die sporen een keuze: een versleten lijn volgen, glanzende groeven vermijden, een late schuurplek als bewijs bewaren of geel volgen naar een onderhoudsruimte die Deep Reach niet toonde.",
+     "field_note": "Vraag niet eerst waar ze heen gingen. Vraag waar de verf ophield te overleven."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

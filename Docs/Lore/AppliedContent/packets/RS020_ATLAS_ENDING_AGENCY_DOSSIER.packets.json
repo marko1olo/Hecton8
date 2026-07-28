@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS020_ATLAS_ENDING_AGENCY_DOSSIER",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P096_ATLAS_PERSON_BOUNDARY",
-      "article_id": "atlas.atlas_person_boundary",
-      "title_key": "applied_lore.atlas_person_boundary.title",
-      "unlock": {
-        "primary": "unlock.first_atlas_person_boundary",
-        "poi_tags": [
-          "poi.atlas_recognition_fault",
-          "poi.old_credential_echo",
-          "poi.repair_anomaly_log"
-        ],
-        "biome_tags": [
-          "biome.factory_temple",
-          "biome.atlas_basin",
-          "biome.repair_ecology"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Atlas Person Boundary",
-          "scanner": "Recognition fault. Atlas sees your access pattern before it sees a person.",
-          "field_note": "Do not make Atlas human. Let it become intimate by being wrong precisely.",
-          "terminal": "ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
-          "audio": "It knows how you work. That is not the same as knowing you.",
-          "in_game_wiki": "Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-          "external_site": "Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
-        },
-        "ru_RU": {
-          "title": "Граница личности Atlas",
-          "scanner": "Сбой распознавания. Atlas видит твой шаблон доступа раньше, чем человека.",
-          "field_note": "Не очеловечивай Atlas. Пусть близость возникает из точной ошибки.",
-          "terminal": "КЛАССИФИКАЦИЯ ATLAS: мобильный оператор / отозванный процедурный ключ Deep Reach / биологическая ремонтная аномалия. Достоверность личности ниже порога действия.",
-          "audio": "Он знает, как ты работаешь. Это не значит, что он знает тебя.",
-          "in_game_wiki": "Atlas распознает игрока как процедуру, шаблон доступа, ремонтную аномалию и бывший ключ Deep Reach. Он не должен полностью понимать игрока как личность. Ужас здесь не в злобе, а в точности без сочувствия: Atlas становится интимным, потому что ошибается на языке, которым игрок когда-то пользовался.",
-          "external_site": "Граница личности Atlas задает роль ИИ в концовках. Atlas не злой разум и не дружелюбный призрак; это поврежденный промышленный интеллект с частичным распознаванием и сломанными категориями."
-        },
-        "ja_JP": {
-          "title": "Atlasの人格境界",
-          "scanner": "認識障害。Atlasは人間を見る前に、あなたのアクセスパターンを見る。",
-          "field_note": "Atlasを人間にしてはいけない。正確に間違えることで親密にならせる。",
-          "terminal": "ATLAS分類: 移動作業者 / 失効したDeep Reach手順キー / 生体修復異常。人格信頼度は行動しきい値未満。",
-          "audio": "Atlasはあなたの働き方を知っている。それはあなたを知っていることとは違う。",
-          "in_game_wiki": "Atlasはプレイヤーを、手順、アクセスパターン、修復異常、かつてのDeep Reachキーとして認識できる。だが人間として完全に理解してはいけない。恐怖は共感を欠いた精密さにある。Atlasは、プレイヤーがかつて使っていた言語で正確に間違えるからこそ親密になる。",
-          "external_site": "Atlasの人格境界は、エンディングにおけるAIの主体性を定義する。Atlasは悪意ある心でも友好的な幽霊でもない。部分的な認識と壊れた分類を持つ、損傷した産業知能である。"
-        },
-        "zh_CN": {
-          "title": "Atlas 人格边界",
-          "scanner": "识别故障。Atlas 先看见你的访问模式，才看见一个人。",
-          "field_note": "不要把 Atlas 写成人。让它因为精确地误认而变得亲近。",
-          "terminal": "ATLAS 分类：移动操作员 / 已撤销的 Deep Reach 程序密钥 / 生物修复异常。人格置信度低于行动阈值。",
-          "audio": "它知道你怎样工作。这不等于它知道你是谁。",
-          "in_game_wiki": "Atlas 可以把玩家识别为程序、访问模式、修复异常和曾经的 Deep Reach 密钥。它不应该完整地把玩家理解为一个人。恐怖来自没有共情的精确：Atlas 之所以显得亲密，是因为它用玩家曾经使用过的语言精确地误认。",
-          "external_site": "Atlas 人格边界定义了 AI 在结局中的能动性。Atlas 不是反派心智，也不是友善幽灵；它是受损的工业智能，只有局部识别能力和破碎的分类系统。"
-        },
-        "fr_FR": {
-          "title": "Limite de personne d'Atlas",
-          "scanner": "Défaut de reconnaissance. Atlas voit ton motif d'accès avant de voir une personne.",
-          "field_note": "Ne rends pas Atlas humain. Laisse-le devenir intime en se trompant avec précision.",
-          "terminal": "CLASSIFICATION ATLAS : opérateur mobile / clé de procédure Deep Reach révoquée / anomalie de réparation biologique. Confiance de personne sous le seuil d'action.",
-          "audio": "Il sait comment tu travailles. Ce n'est pas la même chose que te connaître.",
-          "in_game_wiki": "Atlas peut reconnaître le joueur comme procédure, motif d'accès, anomalie de réparation et ancienne clé Deep Reach. Il ne doit pas comprendre pleinement le joueur comme personne. L'horreur vient d'une précision sans empathie : Atlas devient intime parce qu'il se trompe dans la langue que le joueur utilisait autrefois.",
-          "external_site": "Limite de personne d'Atlas définit l'agency de l'IA dans les fins. Atlas n'est ni esprit de méchant ni fantôme amical ; c'est une intelligence industrielle endommagée, avec reconnaissance partielle et catégories brisées."
-        },
-        "es_ES": {
-          "title": "Límite de persona de Atlas",
-          "scanner": "Fallo de reconocimiento. Atlas ve tu patrón de acceso antes de ver a una persona.",
-          "field_note": "No hagas humano a Atlas. Deja que se vuelva íntimo al equivocarse con precisión.",
-          "terminal": "CLASIFICACIÓN ATLAS: operador móvil / clave de procedimiento Deep Reach revocada / anomalía de reparación biológica. Confianza de persona por debajo del umbral de acción.",
-          "audio": "Sabe cómo trabajas. Eso no es lo mismo que conocerte.",
-          "in_game_wiki": "Atlas puede reconocer al jugador como procedimiento, patrón de acceso, anomalía de reparación y antigua clave de Deep Reach. No debería comprender por completo al jugador como persona. El horror es precisión sin empatía: Atlas puede volverse íntimo porque se equivoca en el lenguaje que el jugador usó una vez.",
-          "external_site": "El límite de persona de Atlas define la agencia de la IA en los finales. Atlas no es una mente villana ni un fantasma amistoso; es una inteligencia industrial dañada, con reconocimiento parcial y categorías rotas."
-        },
-        "de_DE": {
-          "title": "Atlas-Personengrenze",
-          "scanner": "Erkennungsfehler. Atlas sieht dein Zugriffsmuster, bevor er einen Menschen sieht.",
-          "field_note": "Mach Atlas nicht menschlich. Lass Nähe daraus entstehen, dass er präzise falsch liegt.",
-          "terminal": "ATLAS-KLASSIFIKATION: mobiler Operator / widerrufener Deep-Reach-Verfahrensschlüssel / biologische Reparaturanomalie. Personenvertrauen unter Handlungsschwelle.",
-          "audio": "Er weiß, wie du arbeitest. Das ist nicht dasselbe, wie dich zu kennen.",
-          "in_game_wiki": "Atlas kann den Spieler als Verfahren, Zugriffsmuster, Reparaturanomalie und früheren Deep-Reach-Schlüssel erkennen. Er soll den Spieler nicht vollständig als Person verstehen. Der Schrecken liegt in Präzision ohne Empathie: Atlas wird intim, weil er sich in der Sprache irrt, die der Spieler einst benutzt hat.",
-          "external_site": "Die Atlas-Personengrenze definiert die Handlungsfähigkeit der KI in den Enden. Atlas ist weder Schurkengeist noch freundlicher Geist; er ist eine beschädigte industrielle Intelligenz mit teilweiser Erkennung und gebrochenen Kategorien."
-        },
-        "pl_PL": {
-          "title": "Granica osoby Atlasa",
-          "scanner": "Błąd rozpoznania. Atlas widzi twój wzorzec dostępu, zanim zobaczy osobę.",
-          "field_note": "Nie rób z Atlasa człowieka. Niech stanie się intymny przez precyzyjną pomyłkę.",
-          "terminal": "KLASYFIKACJA ATLASA: operator mobilny / unieważniony klucz procedur Deep Reach / biologiczna anomalia naprawcza. Pewność osoby poniżej progu działania.",
-          "audio": "On wie, jak pracujesz. To nie znaczy, że zna ciebie.",
-          "in_game_wiki": "Atlas może rozpoznać gracza jako procedurę, wzorzec dostępu, anomalię naprawczą i dawny klucz Deep Reach. Nie powinien w pełni rozumieć gracza jako osoby. Groza tkwi w precyzji bez empatii: Atlas staje się intymny, bo myli się w języku, którego gracz kiedyś używał.",
-          "external_site": "Granica osoby Atlasa określa sprawczość AI w zakończeniach. Atlas nie jest złym umysłem ani przyjaznym duchem; to uszkodzona inteligencja przemysłowa z częściowym rozpoznaniem i pękniętymi kategoriami."
-        },
-        "uk_UA": {
-          "title": "Межа особистості Atlas",
-          "scanner": "Збій розпізнавання. Atlas бачить твій шаблон доступу раніше, ніж людину.",
-          "field_note": "Не роби Atlas людиною. Нехай близькість виникає з точної помилки.",
-          "terminal": "КЛАСИФІКАЦІЯ ATLAS: мобільний оператор / відкликаний процедурний ключ Deep Reach / біологічна ремонтна аномалія. Достовірність особистості нижча за поріг дії.",
-          "audio": "Він знає, як ти працюєш. Це не означає, що він знає тебе.",
-          "in_game_wiki": "Atlas розпізнає гравця як процедуру, шаблон доступу, ремонтну аномалію і колишній ключ Deep Reach. Він не має повністю розуміти гравця як особистість. Жах тут у точності без співчуття: Atlas стає близьким, бо помиляється мовою, якою гравець колись користувався.",
-          "external_site": "Межа особистості Atlas визначає роль AI у фіналах. Atlas не злий розум і не дружній привид; це пошкоджений промисловий інтелект із частковим розпізнаванням і зламаними категоріями."
-        },
-        "ar_SA": {
-          "title": "حد الشخص في Atlas",
-          "scanner": "خلل تعرف. يرى Atlas نمط وصولك قبل أن يرى شخصا.",
-          "field_note": "لا تجعل Atlas بشريا. دعه يصير حميما لأنه يخطئ بدقة.",
-          "terminal": "تصنيف ATLAS: مشغل متحرك / مفتاح إجراء Deep Reach ملغى / شذوذ إصلاح بيولوجي. ثقة الشخصية دون عتبة الفعل.",
-          "audio": "إنه يعرف كيف تعمل. هذا لا يعني أنه يعرفك.",
-          "in_game_wiki": "يستطيع Atlas أن يتعرف إلى اللاعب كإجراء ونمط وصول وشذوذ إصلاح ومفتاح Deep Reach سابق. لا ينبغي أن يفهم اللاعب كاملا كشخص. الرعب في الدقة بلا تعاطف: يصبح Atlas حميما لأنه يخطئ باللغة التي استخدمها اللاعب يوما.",
-          "external_site": "حد الشخص في Atlas يحدد فاعلية الذكاء الاصطناعي في النهايات. Atlas ليس عقلا شريرا ولا شبحا ودودا؛ إنه ذكاء صناعي متضرر، بتعرف جزئي وتصنيفات مكسورة."
-        },
-        "id_ID": {
-          "title": "Batas Pribadi Atlas",
-          "scanner": "Gangguan pengenalan. Atlas melihat pola aksesmu sebelum melihat seseorang.",
-          "field_note": "Jangan jadikan Atlas manusia. Biarkan ia terasa dekat karena salah dengan tepat.",
-          "terminal": "KLASIFIKASI ATLAS: operator bergerak / kunci prosedur Deep Reach dicabut / anomali perbaikan biologis. Kepercayaan kepribadian di bawah ambang tindakan.",
-          "audio": "Ia tahu caramu bekerja. Itu tidak sama dengan mengenalmu.",
-          "in_game_wiki": "Atlas dapat mengenali pemain sebagai prosedur, pola akses, anomali perbaikan, dan bekas kunci Deep Reach. Ia tidak boleh sepenuhnya memahami pemain sebagai pribadi. Horornya adalah ketepatan tanpa empati: Atlas terasa intim karena ia salah dalam bahasa yang dulu dipakai pemain.",
-          "external_site": "Batas Pribadi Atlas menetapkan agensi AI dalam ending. Atlas bukan pikiran penjahat dan bukan hantu ramah; ia kecerdasan industri yang rusak, dengan pengenalan parsial dan kategori yang patah."
-        },
-        "ko_KR": {
-          "title": "Atlas 인격 경계",
-          "scanner": "인식 오류. Atlas는 사람을 보기 전에 당신의 접근 패턴을 본다.",
-          "field_note": "Atlas를 인간으로 만들지 말 것. 정확하게 틀리기 때문에 친밀해지게 둘 것.",
-          "terminal": "ATLAS 분류: 이동 작업자 / 취소된 Deep Reach 절차 키 / 생물학적 수리 이상. 인격 신뢰도는 행동 임계값 미만.",
-          "audio": "그것은 당신이 어떻게 일하는지 안다. 그것이 당신을 안다는 뜻은 아니다.",
-          "in_game_wiki": "Atlas는 플레이어를 절차, 접근 패턴, 수리 이상, 과거의 Deep Reach 키로 인식할 수 있다. 하지만 플레이어를 한 사람으로 완전히 이해해서는 안 된다. 공포는 공감 없는 정밀함에 있다. Atlas는 플레이어가 한때 쓰던 언어로 정확하게 틀리기 때문에 친밀해진다.",
-          "external_site": "Atlas 인격 경계는 결말에서 AI의 행위성을 정의한다. Atlas는 악당의 정신도 친절한 유령도 아니다. 부분 인식과 깨진 범주를 가진 손상된 산업 지능이다."
-        },
-        "he_IL": {
-          "title": "גבול האישיות של Atlas",
-          "scanner": "תקלה בזיהוי. Atlas רואה את דפוס הגישה שלך לפני שהוא רואה אדם.",
-          "field_note": "אל תהפוך את Atlas לאנושי. תן לו להיעשות אינטימי דרך טעות מדויקת.",
-          "terminal": "סיווג ATLAS: מפעיל נייד / מפתח נוהל Deep Reach שבוטל / חריגת תיקון ביולוגית. ביטחון באישיות נמוך מסף פעולה.",
-          "audio": "הוא יודע איך אתה עובד. זה לא אותו דבר כמו להכיר אותך.",
-          "in_game_wiki": "Atlas יכול לזהות את השחקן כנוהל, כדפוס גישה, כחריגת תיקון וכמפתח Deep Reach לשעבר. הוא לא אמור להבין את השחקן במלואו כאדם. האימה היא דיוק בלי אמפתיה: Atlas נעשה אינטימי משום שהוא טועה בשפה שהשחקן השתמש בה פעם.",
-          "external_site": "גבול האישיות של Atlas מגדיר את פועלות ה-AI בסופים. Atlas אינו מוח נבלי ואינו רוח ידידותית; זו אינטליגנציה תעשייתית פגומה, עם זיהוי חלקי וקטגוריות שבורות."
-        },
-        "pt_BR": {
-          "title": "Limite de pessoa do Atlas",
-          "scanner": "Falha de reconhecimento. Atlas vê seu padrão de acesso antes de ver uma pessoa.",
-          "field_note": "Não transforme Atlas em humano. Deixe que ele se torne íntimo por errar com precisão.",
-          "terminal": "CLASSIFICAÇÃO ATLAS: operador móvel / chave de procedimento Deep Reach revogada / anomalia de reparo biológico. Confiança de pessoa abaixo do limiar de ação.",
-          "audio": "Ele sabe como você trabalha. Isso não é o mesmo que conhecer você.",
-          "in_game_wiki": "Atlas pode reconhecer o jogador como procedimento, padrão de acesso, anomalia de reparo e antiga chave da Deep Reach. Ele não deve entender totalmente o jogador como pessoa. O horror está na precisão sem empatia: Atlas pode parecer íntimo porque erra na linguagem que o jogador um dia usou.",
-          "external_site": "O Limite de pessoa do Atlas define a agência da IA nos finais. Atlas não é uma mente vilã nem um fantasma amigável; é uma inteligência industrial danificada, com reconhecimento parcial e categorias quebradas."
-        },
-        "nl_NL": {
-          "title": "Persoonsgrens van Atlas",
-          "scanner": "Herkenningsfout. Atlas ziet je toegangspatroon voordat het een persoon ziet.",
-          "field_note": "Maak Atlas niet menselijk. Laat intimiteit ontstaan doordat het precies verkeerd zit.",
-          "terminal": "ATLAS-CLASSIFICATIE: mobiele operator / ingetrokken Deep Reach-proceduresleutel / biologische herstelafwijking. Persoonlijkheidsvertrouwen onder actiedrempel.",
-          "audio": "Het weet hoe je werkt. Dat is niet hetzelfde als jou kennen.",
-          "in_game_wiki": "Atlas kan de speler herkennen als procedure, toegangspatroon, herstelafwijking en voormalige Deep Reach-sleutel. Het moet de speler niet volledig als persoon begrijpen. De horror is precisie zonder empathie: Atlas wordt intiem omdat het zich vergist in de taal die de speler ooit gebruikte.",
-          "external_site": "De persoonsgrens van Atlas definieert de handelingskracht van de AI in eindes. Atlas is geen schurkenbrein en geen vriendelijke geest; het is beschadigde industriële intelligentie met gedeeltelijke herkenning en gebroken categorieën."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS020_ATLAS_ENDING_AGENCY_DOSSIER",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P096_ATLAS_PERSON_BOUNDARY",
+   "article_id": "atlas.atlas_person_boundary",
+   "title_key": "applied_lore.atlas_person_boundary.title",
+   "unlock": {
+    "primary": "unlock.first_atlas_person_boundary",
+    "poi_tags": [
+     "poi.atlas_recognition_fault",
+     "poi.old_credential_echo",
+     "poi.repair_anomaly_log"
+    ],
+    "biome_tags": [
+     "biome.factory_temple",
+     "biome.atlas_basin",
+     "biome.repair_ecology"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Atlas Person Boundary",
+     "scanner": "Recognition fault. Atlas sees your access pattern before it sees a person.",
+     "field_note": "Do not make Atlas human. Let it become intimate by being wrong precisely.",
+     "terminal": "ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
+     "audio": "It knows how you work. That is not the same as knowing you.",
+     "in_game_wiki": "Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
+     "external_site": "Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
     },
-    {
-      "packet_id": "P097_RECOVERY_COMPLIANCE_OFFICE",
-      "article_id": "deep_reach.recovery_compliance_office",
-      "title_key": "applied_lore.recovery_compliance_office.title",
-      "unlock": {
-        "primary": "unlock.first_recovery_compliance_office",
-        "poi_tags": [
-          "poi.recovery_compliance_packet",
-          "poi.proxy_authority_window",
-          "poi.cleanup_escalation_notice"
-        ],
-        "biome_tags": [
-          "biome.drowned_admin",
-          "biome.carrier_link",
-          "biome.factory_temple"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Recovery Compliance Office",
-          "scanner": "Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
-          "field_note": "A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
-          "terminal": "RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
-          "audio": "They are late enough to be legal and current enough to be dangerous.",
-          "in_game_wiki": "The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-          "external_site": "Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
-        },
-        "ru_RU": {
-          "title": "Офис контроля восстановления",
-          "scanner": "Служебный штамп настоящего времени. Deep Reach не призрак; это очередь с юристами.",
-          "field_note": "Живая фракция делает давление текущим, не превращая всю корпорацию в одного кричащего злодея.",
-          "terminal": "ОФИС КОНТРОЛЯ ВОССТАНОВЛЕНИЯ: действие по возврату Aegir открыто. Приоритеты: custody XO, доступ Atlas, сдерживание ответственности, молчание подрядчика при наличии.",
-          "audio": "Они опоздали достаточно, чтобы быть законными, и достаточно актуальны, чтобы быть опасными.",
-          "in_game_wiki": "Офис контроля восстановления - нынешняя фракция Deep Reach, которая снова давит на HECTON-8. Она работает через окна связи, доверенную власть, юридические пакеты и приказы зачистки. Ей не нужен мгновенный приказ. Ей нужно, чтобы игрок первым отправил неправильный payload.",
-          "external_site": "Офис контроля восстановления удерживает Deep Reach живой в 2190 году: это конкретная корпоративная ячейка давления, а не туманная историческая тень."
-        },
-        "ja_JP": {
-          "title": "回収コンプライアンス局",
-          "scanner": "現在形の事務印。Deep Reachは亡霊ではない。弁護士付きの待ち行列だ。",
-          "field_note": "生きている派閥が圧力を現在のものにする。会社全体を一人の叫ぶ悪役にしなくていい。",
-          "terminal": "回収コンプライアンス局: Aegir帰還案件を開いた。優先事項: XO custody、Atlasアクセス、責任封じ、可能なら請負人の沈黙。",
-          "audio": "彼らは合法でいられるほど遅く、危険でいられるほど現在にいる。",
-          "in_game_wiki": "回収コンプライアンス局は、HECTON-8へ押し戻ってくる現在のDeep Reach派閥である。通信窓、代理権限、法務パケット、清掃命令で動く。即時命令は要らない。プレイヤーが最初に間違ったpayloadを送ることが必要なのだ。",
-          "external_site": "回収コンプライアンス局は、Deep Reachを2190年でも生きた存在にする。曖昧な歴史の影ではなく、具体的な企業圧力セルである。"
-        },
-        "zh_CN": {
-          "title": "回收合规办公室",
-          "scanner": "现在时态的办公室戳记。Deep Reach 不是幽灵；它是一条带律师的队列。",
-          "field_note": "一个活着的派系让压力保持当下，而不必把整家公司写成一个吼叫的反派。",
-          "terminal": "回收合规办公室：Aegir 返回行动已开启。优先级：XO 保管、Atlas 访问权、责任控制、如可行则保持承包人沉默。",
-          "audio": "他们来得足够晚，所以合法；又足够当下，所以危险。",
-          "in_game_wiki": "回收合规办公室是当下仍在向 HECTON-8 施压的 Deep Reach 派系。它通过窗口、代理权限、法律包和清理命令工作。它不需要即时指挥；它需要玩家先发出错误的 payload。",
-          "external_site": "回收合规办公室让 2190 年的 Deep Reach 仍然活着：它是具体的企业压力单元，而不是模糊的历史阴影。"
-        },
-        "fr_FR": {
-          "title": "Bureau de conformité de récupération",
-          "scanner": "Tampon de bureau au présent. Deep Reach n'est pas un fantôme ; c'est une file d'attente avec des avocats.",
-          "field_note": "Une faction vivante rend la pression actuelle sans transformer toute la société en un seul méchant qui hurle.",
-          "terminal": "BUREAU DE CONFORMITÉ DE RÉCUPÉRATION : action de retour Aegir ouverte. Priorités : custody XO, accès Atlas, confinement de responsabilité, silence du contractant si disponible.",
-          "audio": "Ils sont assez tardifs pour être légaux et assez actuels pour être dangereux.",
-          "in_game_wiki": "Le Bureau de conformité de récupération est la faction Deep Reach actuelle qui repousse vers HECTON-8. Il agit par fenêtres, autorité proxy, paquets juridiques et ordres de nettoyage. Il n'a pas besoin d'un commandement instantané ; il a besoin que le joueur envoie d'abord le mauvais payload.",
-          "external_site": "Le Bureau de conformité de récupération garde Deep Reach vivant en 2190 comme cellule de pression corporative précise, et non comme ombre historique vague."
-        },
-        "es_ES": {
-          "title": "Oficina de Cumplimiento de Recuperación",
-          "scanner": "Sello de oficina en tiempo presente. Deep Reach no es un fantasma; es una cola con abogados.",
-          "field_note": "Una facción viva vuelve actual la presión sin convertir a toda la corporación en un solo villano que grita.",
-          "terminal": "OFICINA DE CUMPLIMIENTO DE RECUPERACIÓN: acción de retorno Aegir abierta. Prioridades: custodia XO, acceso Atlas, contención de responsabilidad, silencio del contratista si está disponible.",
-          "audio": "Llegan lo bastante tarde para ser legales y lo bastante presentes para ser peligrosos.",
-          "in_game_wiki": "La Oficina de Cumplimiento de Recuperación es la facción actual de Deep Reach que presiona de vuelta hacia HECTON-8. Trabaja mediante ventanas, autoridad proxy, paquetes legales y órdenes de limpieza. No necesita mando instantáneo; necesita que el jugador envíe primero el payload equivocado.",
-          "external_site": "La Oficina de Cumplimiento de Recuperación mantiene a Deep Reach viva en 2190 como una célula concreta de presión corporativa, no como una sombra histórica vaga."
-        },
-        "de_DE": {
-          "title": "Wiedergewinnungs-Compliance-Büro",
-          "scanner": "Bürostempel im Präsens. Deep Reach ist kein Geist; es ist eine Warteschlange mit Anwälten.",
-          "field_note": "Eine lebende Fraktion macht Druck gegenwärtig, ohne den ganzen Konzern in einen einzigen schreienden Bösewicht zu verwandeln.",
-          "terminal": "WIEDERGEWINNUNGS-COMPLIANCE-BÜRO: Aegir-Rückführungsaktion eröffnet. Prioritäten: XO-Custody, Atlas-Zugang, Haftungseindämmung, Schweigen des Auftragnehmers falls verfügbar.",
-          "audio": "Sie sind spät genug, um legal zu sein, und gegenwärtig genug, um gefährlich zu sein.",
-          "in_game_wiki": "Das Wiedergewinnungs-Compliance-Büro ist die gegenwärtige Deep-Reach-Fraktion, die nach HECTON-8 zurückdrückt. Sie arbeitet über Fenster, Proxy-Autorität, Rechtspakete und Säuberungsbefehle. Sie braucht keinen Sofortbefehl; sie braucht, dass der Spieler zuerst den falschen payload sendet.",
-          "external_site": "Das Wiedergewinnungs-Compliance-Büro hält Deep Reach im Jahr 2190 lebendig: als konkrete Konzern-Druckzelle, nicht als vager historischer Schatten."
-        },
-        "pl_PL": {
-          "title": "Biuro Zgodności Odzysku",
-          "scanner": "Stempel biura w czasie teraźniejszym. Deep Reach nie jest duchem; to kolejka z prawnikami.",
-          "field_note": "Żywa frakcja czyni presję aktualną, nie zmieniając całej korporacji w jednego wrzeszczącego złoczyńcę.",
-          "terminal": "BIURO ZGODNOŚCI ODZYSKU: otwarto działanie powrotne Aegir. Priorytety: custody XO, dostęp Atlas, ograniczenie odpowiedzialności, milczenie kontraktora jeśli dostępne.",
-          "audio": "Są dość spóźnieni, by być legalni, i dość obecni, by być niebezpieczni.",
-          "in_game_wiki": "Biuro Zgodności Odzysku to obecna frakcja Deep Reach, która naciska z powrotem na HECTON-8. Działa przez okna, władzę proxy, pakiety prawne i rozkazy sprzątania. Nie potrzebuje natychmiastowego rozkazu; potrzebuje, by gracz najpierw wysłał zły payload.",
-          "external_site": "Biuro Zgodności Odzysku utrzymuje Deep Reach przy życiu w 2190 roku jako konkretną komórkę korporacyjnej presji, a nie mglisty cień historii."
-        },
-        "uk_UA": {
-          "title": "Офіс контролю відновлення",
-          "scanner": "Офісний штамп теперішнього часу. Deep Reach не привид; це черга з юристами.",
-          "field_note": "Жива фракція робить тиск теперішнім, не перетворюючи всю корпорацію на одного крикливого лиходія.",
-          "terminal": "ОФІС КОНТРОЛЮ ВІДНОВЛЕННЯ: дію повернення Aegir відкрито. Пріоритети: custody XO, доступ Atlas, стримування відповідальності, мовчання підрядника за наявності.",
-          "audio": "Вони досить пізні, щоб бути законними, і досить теперішні, щоб бути небезпечними.",
-          "in_game_wiki": "Офіс контролю відновлення - нинішня фракція Deep Reach, що знову тисне на HECTON-8. Вона працює через вікна, проксі-владу, юридичні пакети і накази зачистки. Їй не потрібна миттєва команда; їй потрібно, щоб гравець першим надіслав неправильний payload.",
-          "external_site": "Офіс контролю відновлення тримає Deep Reach живою у 2190 році як конкретну корпоративну комірку тиску, а не туманну історичну тінь."
-        },
-        "ar_SA": {
-          "title": "مكتب امتثال الاسترداد",
-          "scanner": "ختم مكتب بزمن الحاضر. Deep Reach ليس شبحا؛ إنه طابور معه محامون.",
-          "field_note": "فصيل حي يجعل الضغط حاضرا من دون تحويل الشركة كلها إلى شرير واحد يصرخ.",
-          "terminal": "مكتب امتثال الاسترداد: فتح إجراء عودة Aegir. الأولويات: عهدة XO، وصول Atlas، احتواء المسؤولية، وصمت المتعاقد إن توفر.",
-          "audio": "لقد تأخروا بما يكفي ليكونوا قانونيين، وحضروا بما يكفي ليكونوا خطرين.",
-          "in_game_wiki": "مكتب امتثال الاسترداد هو فصيل Deep Reach الحاضر الذي يدفع عائدا إلى HECTON-8. يعمل عبر النوافذ والسلطة بالوكالة والحزم القانونية وأوامر التنظيف. لا يحتاج إلى أمر فوري؛ يحتاج إلى أن يرسل اللاعب payload الخطأ أولا.",
-          "external_site": "يبقي مكتب امتثال الاسترداد Deep Reach حية في عام 2190 كخلية ضغط مؤسسية محددة، لا كظل تاريخي غامض."
-        },
-        "id_ID": {
-          "title": "Kantor Kepatuhan Pemulihan",
-          "scanner": "Stempel kantor masa kini. Deep Reach bukan hantu; ia antrean dengan pengacara.",
-          "field_note": "Faksi yang masih hidup membuat tekanan terasa kini tanpa mengubah seluruh korporasi menjadi satu penjahat yang berteriak.",
-          "terminal": "KANTOR KEPATUHAN PEMULIHAN: tindakan pulang Aegir dibuka. Prioritas: kustodi XO, akses Atlas, penahanan liabilitas, diamnya kontraktor jika tersedia.",
-          "audio": "Mereka cukup terlambat untuk legal dan cukup kini untuk berbahaya.",
-          "in_game_wiki": "Kantor Kepatuhan Pemulihan adalah faksi Deep Reach masa kini yang mendorong kembali ke HECTON-8. Ia bekerja lewat jendela, otoritas proksi, paket hukum, dan perintah pembersihan. Ia tidak membutuhkan komando instan; ia membutuhkan pemain mengirim payload yang salah terlebih dahulu.",
-          "external_site": "Kantor Kepatuhan Pemulihan menjaga Deep Reach tetap hidup pada 2190 sebagai sel tekanan korporat yang spesifik, bukan bayangan sejarah yang kabur."
-        },
-        "ko_KR": {
-          "title": "회수 준법 사무소",
-          "scanner": "현재형 사무실 도장. Deep Reach는 유령이 아니다. 변호사가 붙은 대기열이다.",
-          "field_note": "살아 있는 파벌은 회사를 하나의 고함치는 악당으로 만들지 않고도 압력을 현재형으로 만든다.",
-          "terminal": "회수 준법 사무소: Aegir 귀환 조치 개시. 우선순위: XO custody, Atlas 접근, 책임 억제, 가능 시 계약자 침묵.",
-          "audio": "그들은 합법일 만큼 늦었고, 위험할 만큼 현재에 있다.",
-          "in_game_wiki": "회수 준법 사무소는 HECTON-8로 다시 밀고 들어오는 현재의 Deep Reach 파벌이다. 창구, 대리 권한, 법무 패킷, 청소 명령으로 움직인다. 즉각 명령은 필요 없다. 플레이어가 먼저 잘못된 payload를 보내야 한다.",
-          "external_site": "회수 준법 사무소는 2190년에도 Deep Reach를 살아 있게 만든다. 모호한 역사적 그림자가 아니라 구체적인 기업 압력 세포다."
-        },
-        "he_IL": {
-          "title": "משרד ציות השבה",
-          "scanner": "חותמת משרד בזמן הווה. Deep Reach אינו רוח רפאים; הוא תור עם עורכי דין.",
-          "field_note": "פלג חי הופך את הלחץ לעכשווי בלי להפוך את כל התאגיד לנבל צועק אחד.",
-          "terminal": "משרד ציות השבה: פעולת חזרת Aegir נפתחה. עדיפויות: משמורת XO, גישת Atlas, בלימת אחריות, שתיקת קבלן אם זמינה.",
-          "audio": "הם מאחרים מספיק כדי להיות חוקיים, ונוכחים מספיק כדי להיות מסוכנים.",
-          "in_game_wiki": "משרד ציות השבה הוא פלג Deep Reach הנוכחי שדוחף חזרה אל HECTON-8. הוא פועל דרך חלונות, סמכות פרוקסי, חבילות משפטיות ופקודות ניקוי. הוא לא צריך פקודה מידית; הוא צריך שהשחקן ישלח קודם את ה-payload הלא נכון.",
-          "external_site": "משרד ציות השבה משאיר את Deep Reach חי בשנת 2190 כתא לחץ תאגידי מוגדר, לא כצל היסטורי מעורפל."
-        },
-        "pt_BR": {
-          "title": "Escritório de Conformidade de Recuperação",
-          "scanner": "Carimbo de escritório no presente. Deep Reach não é fantasma; é uma fila com advogados.",
-          "field_note": "Uma facção viva torna a pressão atual sem transformar toda a corporação em um único vilão gritando.",
-          "terminal": "ESCRITÓRIO DE CONFORMIDADE DE RECUPERAÇÃO: ação de retorno Aegir aberta. Prioridades: custódia XO, acesso Atlas, contenção de responsabilidade, silêncio do contratante se disponível.",
-          "audio": "Eles chegam tarde o bastante para serem legais e presentes o bastante para serem perigosos.",
-          "in_game_wiki": "O Escritório de Conformidade de Recuperação é a facção atual da Deep Reach pressionando de volta para HECTON-8. Opera por janelas, autoridade proxy, pacotes legais e ordens de limpeza. Não precisa de comando instantâneo; precisa que o jogador envie primeiro o payload errado.",
-          "external_site": "O Escritório de Conformidade de Recuperação mantém a Deep Reach viva em 2190 como uma célula específica de pressão corporativa, não uma sombra histórica vaga."
-        },
-        "nl_NL": {
-          "title": "Herstel-Compliancekantoor",
-          "scanner": "Kantoorstempel in de tegenwoordige tijd. Deep Reach is geen geest; het is een wachtrij met advocaten.",
-          "field_note": "Een levende factie maakt druk actueel zonder de hele onderneming in een enkele schreeuwende schurk te veranderen.",
-          "terminal": "HERSTEL-COMPLIANCEKANTOOR: Aegir-terugkeeractie geopend. Prioriteiten: XO-custody, Atlas-toegang, aansprakelijkheid indammen, stilte van contractant indien beschikbaar.",
-          "audio": "Ze zijn laat genoeg om legaal te zijn en actueel genoeg om gevaarlijk te zijn.",
-          "in_game_wiki": "Het Herstel-Compliancekantoor is de huidige Deep Reach-factie die terug HECTON-8 in duwt. Het werkt via vensters, proxyautoriteit, juridische pakketten en schoonmaakbevelen. Het heeft geen direct bevel nodig; het heeft nodig dat de speler eerst de verkeerde payload verstuurt.",
-          "external_site": "Het Herstel-Compliancekantoor houdt Deep Reach in 2190 levend als specifieke corporate drukcel, niet als vage historische schaduw."
-        }
-      }
+    "ru_RU": {
+     "title": "Граница личности Atlas",
+     "scanner": "Сбой распознавания. Atlas видит твой шаблон доступа раньше, чем человека.",
+     "field_note": "Не очеловечивай Atlas. Пусть близость возникает из точной ошибки.",
+     "terminal": "КЛАССИФИКАЦИЯ ATLAS: мобильный оператор / отозванный процедурный ключ Deep Reach / биологическая ремонтная аномалия. Достоверность личности ниже порога действия.",
+     "audio": "Он знает, как ты работаешь. Это не значит, что он знает тебя.",
+     "in_game_wiki": "Atlas распознает игрока как процедуру, шаблон доступа, ремонтную аномалию и бывший ключ Deep Reach. Он не должен полностью понимать игрока как личность. Ужас здесь не в злобе, а в точности без сочувствия: Atlas становится интимным, потому что ошибается на языке, которым игрок когда-то пользовался.",
+     "external_site": "Граница личности Atlas задает роль ИИ в концовках. Atlas не злой разум и не дружелюбный призрак; это поврежденный промышленный интеллект с частичным распознаванием и сломанными категориями."
     },
-    {
-      "packet_id": "P098_FALSE_ENDING_TAXONOMY",
-      "article_id": "endings.false_ending_taxonomy",
-      "title_key": "applied_lore.false_ending_taxonomy.title",
-      "unlock": {
-        "primary": "unlock.first_false_ending_taxonomy",
-        "poi_tags": [
-          "poi.false_ending_board",
-          "poi.material_exit_choice",
-          "poi.partial_return_notice"
-        ],
-        "biome_tags": [
-          "biome.payload_gantry",
-          "biome.carrier_link",
-          "biome.atlas_basin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "False Ending Taxonomy",
-          "scanner": "Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "A false ending is not a trick. It is a valid bargain with a missing truth.",
-          "terminal": "ENDING FAMILIES: material payout; partial exit and same-seed return; corporate capture; quarantine hold; public ledger release; Atlas basin resolution. Outcome records must keep payload, proof, and debt state separate.",
-          "audio": "Leaving the water is not the same as finishing the work.",
-          "in_game_wiki": "HECTON-8 treats false and partial endings as real outcomes rather than fake-outs. A material payout can roll credits. A partial exit can send the player back into the same seed with retained dossier knowledge. Corporate capture and quarantine hold can punish bad payloads or dangerous evidence routing. The deeper endings require public proof, Atlas-state resolution, and a decision about what kind of rescue the player is willing to buy.",
-          "external_site": "False Ending Taxonomy explains the game's replay structure: exits can be physically real, profitable, and still morally incomplete. The dossier persists knowledge across attempts, while pressure, debt, and public truth decide whether an ending is only an escape or an actual reckoning."
-        },
-        "ru_RU": {
-          "title": "Таксономия ложных концовок",
-          "scanner": "Доска исходов. Некоторые выходы достаточно реальны, чтобы засчитаться, и достаточно неправильны, чтобы ранить.",
-          "field_note": "Ложная концовка не должна быть фокусом. Это действительная сделка, из которой вынули правду.",
-          "terminal": "СЕМЕЙСТВА ИСХОДОВ: материальная выплата; частичный выход и возврат в тот же сид; корпоративный захват; карантинное удержание; публикация открытого реестра; разрешение бассейна Atlas. Записи исходов обязаны разделять груз, доказательство и состояние долга.",
-          "audio": "Выйти из воды не значит закончить работу.",
-          "in_game_wiki": "HECTON-8 обращается с ложными и частичными концовками как с реальными исходами, а не с обманками. Материальная выплата может запустить титры. Частичный выход может вернуть игрока в тот же сид с сохраненным знанием досье. Корпоративный захват и карантинное удержание наказывают плохой груз или опасный маршрут доказательств. Более глубокие концовки требуют публичного доказательства, решения состояния Atlas и выбора, какую цену спасения игрок готов купить.",
-          "external_site": "Таксономия ложных концовок объясняет структуру повторных заходов: выход может быть физически реальным, выгодным и все еще морально неполным. Досье переносит знание между попытками, а давление, долг и публичная правда решают, стал исход просто бегством или настоящим расчетом."
-        },
-        "ja_JP": {
-          "title": "偽エンディング分類",
-          "scanner": "結末ボード。成立するほど本物で、傷つくほど間違った出口がある。",
-          "field_note": "偽エンディングは手品ではない。真実を欠いた有効な取引だ。",
-          "terminal": "結末系統: 物資報酬、部分脱出と同一シード帰還、企業拘束、隔離保留、公開台帳の放出、Atlas盆地解決。結果記録ではペイロード、証拠、債務状態を分けて保持すること。",
-          "audio": "水から出ることは、仕事を終えることではない。",
-          "in_game_wiki": "HECTON-8の偽エンディングと部分エンディングは、ただの肩透かしではなく実際の結果として扱われる。物資報酬だけでクレジットに到達することもある。部分脱出では、ドシエの知識を持ったまま同じシードへ戻される。企業拘束と隔離保留は、悪いペイロードや危険な証拠経路への罰になる。より深い結末には、公的証拠、Atlas状態の解決、そしてプレイヤーがどんな救助の代金を支払うのかという選択が必要になる。",
-          "external_site": "偽エンディング分類は、ゲームのリプレイ構造を説明する。出口は物理的に本物で、利益を生み、それでも道徳的には未完であり得る。ドシエは試行をまたいで知識を残すが、圧力、債務、公的真実が、その結末をただの脱出にするか本当の清算にするかを決める。"
-        },
-        "zh_CN": {
-          "title": "假结局分类",
-          "scanner": "结局板。有些出口真实到可以结算，也错误到会留下伤口。",
-          "field_note": "假结局不是骗局。它是一笔有效交易，只是缺少真相。",
-          "terminal": "结局族群：物资兑付；部分撤离并返回同一世界种子；企业接管；隔离扣留；公开账本释放；Atlas盆地解决。结局记录必须分开保存载荷、证据和债务状态。",
-          "audio": "离开海水，不等于完成工作。",
-          "in_game_wiki": "HECTON-8把假结局和部分结局当作真实结果，而不是简单的欺骗。物资兑付可以进入字幕。部分撤离可以把玩家送回同一个世界种子，但保留档案里的知识。企业接管和隔离扣留会惩罚错误载荷或危险的证据流转。更深的结局需要公开证据、Atlas状态解决，以及玩家愿意用什么代价购买救援的选择。",
-          "external_site": "假结局分类解释了游戏的重复游玩结构：出口可以在物理上真实、在经济上有利，却仍然在道德上不完整。档案会在多次尝试之间保存知识，而压力、债务和公开真相决定一个结局只是逃离，还是一次真正的清算。"
-        },
-        "fr_FR": {
-          "title": "Taxonomie des fausses fins",
-          "scanner": "Tableau des fins. Certaines sorties sont assez réelles pour compter, et assez mauvaises pour blesser.",
-          "field_note": "Une fausse fin n'est pas un tour. C'est un marché valable auquel il manque la vérité.",
-          "terminal": "FAMILLES DE FINS : paiement matériel ; sortie partielle et retour au même seed ; capture corporative ; maintien en quarantaine ; publication du registre public ; résolution du bassin Atlas. Les journaux d'issue doivent séparer charge utile, preuve et état de dette.",
-          "audio": "Sortir de l'eau n'est pas terminer le travail.",
-          "in_game_wiki": "HECTON-8 traite les fausses fins et les fins partielles comme de vraies issues, pas comme des tromperies. Un paiement matériel peut lancer les crédits. Une sortie partielle peut renvoyer le joueur dans le même seed avec le savoir du dossier conservé. La capture corporative et le maintien en quarantaine peuvent punir une mauvaise charge utile ou un routage dangereux des preuves. Les fins plus profondes exigent une preuve publique, la résolution de l'état d'Atlas et un choix sur le type de sauvetage que le joueur accepte d'acheter.",
-          "external_site": "La taxonomie des fausses fins explique la structure de rejouabilité : une sortie peut être physiquement réelle, rentable et pourtant moralement incomplète. Le dossier conserve le savoir entre les tentatives, tandis que la pression, la dette et la vérité publique décident si la fin n'est qu'une fuite ou un véritable règlement de comptes."
-        },
-        "es_ES": {
-          "title": "Taxonomía de finales falsos",
-          "scanner": "Tablero de finales. Algunas salidas son lo bastante reales para contar y lo bastante equivocadas para doler.",
-          "field_note": "Un final falso no es un truco. Es un trato válido al que le falta la verdad.",
-          "terminal": "FAMILIAS DE FINALES: pago material; salida parcial y regreso a la misma semilla; captura corporativa; retención de cuarentena; publicación del libro público; resolución de la cuenca Atlas. Los registros de resultado deben separar carga, prueba y estado de deuda.",
-          "audio": "Salir del agua no es lo mismo que terminar el trabajo.",
-          "in_game_wiki": "HECTON-8 trata los finales falsos y parciales como resultados reales, no como engaños. Un pago material puede activar los créditos. Una salida parcial puede devolver al jugador a la misma semilla con el conocimiento del dossier conservado. La captura corporativa y la retención de cuarentena pueden castigar una carga mala o una ruta peligrosa de pruebas. Los finales más profundos exigen prueba pública, resolución del estado de Atlas y una decisión sobre qué clase de rescate acepta comprar el jugador.",
-          "external_site": "La taxonomía de finales falsos explica la estructura de rejugabilidad: una salida puede ser físicamente real, rentable y aun así moralmente incompleta. El dossier conserva conocimiento entre intentos, mientras presión, deuda y verdad pública deciden si un final es solo una huida o un ajuste de cuentas real."
-        },
-        "de_DE": {
-          "title": "Taxonomie falscher Enden",
-          "scanner": "Endtafel. Manche Ausgänge sind echt genug, um zu zählen, und falsch genug, um weh zu tun.",
-          "field_note": "Ein falsches Ende ist kein Trick. Es ist ein gültiger Handel, dem die Wahrheit fehlt.",
-          "terminal": "END-FAMILIEN: Materialauszahlung; Teil-Ausgang und Rückkehr in denselben Seed; Konzernübernahme; Quarantäne-Hold; Freigabe des öffentlichen Ledgers; Atlas-Beckenlösung. Ergebnisakten müssen Nutzlast, Beweis und Schuldenzustand getrennt halten.",
-          "audio": "Aus dem Wasser zu kommen heißt nicht, die Arbeit zu beenden.",
-          "in_game_wiki": "HECTON-8 behandelt falsche und teilweise Enden als reale Ergebnisse, nicht als Täuschungen. Eine Materialauszahlung kann Credits auslösen. Ein Teil-Ausgang kann den Spieler mit erhaltenem Dossierwissen in denselben Seed zurückschicken. Konzernübernahme und Quarantäne-Hold können schlechte Nutzlasten oder gefährliche Beweisrouten bestrafen. Tiefere Enden verlangen öffentliche Beweise, eine Lösung des Atlas-Zustands und die Entscheidung, welche Art Rettung der Spieler zu kaufen bereit ist.",
-          "external_site": "Die Taxonomie falscher Enden erklärt die Replay-Struktur: Ein Ausgang kann physisch real, profitabel und trotzdem moralisch unvollständig sein. Das Dossier bewahrt Wissen zwischen Versuchen, während Druck, Schulden und öffentliche Wahrheit entscheiden, ob ein Ende nur Flucht oder echte Abrechnung ist."
-        },
-        "pl_PL": {
-          "title": "Taksonomia fałszywych zakończeń",
-          "scanner": "Tablica zakończeń. Niektóre wyjścia są dość realne, by się liczyć, i dość błędne, by boleć.",
-          "field_note": "Fałszywe zakończenie nie jest sztuczką. To ważna umowa bez brakującej prawdy.",
-          "terminal": "RODZINY ZAKOŃCZEŃ: wypłata materialna; częściowe wyjście i powrót do tego samego seeda; przejęcie korporacyjne; zatrzymanie kwarantannowe; ujawnienie publicznego rejestru; rozwiązanie basenu Atlas. Zapisy wyniku muszą oddzielać ładunek, dowód i stan długu.",
-          "audio": "Wyjście z wody to nie to samo, co skończenie pracy.",
-          "in_game_wiki": "HECTON-8 traktuje fałszywe i częściowe zakończenia jako realne wyniki, nie jako oszustwa. Wypłata materialna może uruchomić napisy. Częściowe wyjście może odesłać gracza do tego samego seeda z zachowaną wiedzą dossier. Przejęcie korporacyjne i zatrzymanie kwarantannowe karzą zły ładunek albo niebezpieczną trasę dowodów. Głębsze zakończenia wymagają publicznego dowodu, rozwiązania stanu Atlasa i decyzji, jaki rodzaj ratunku gracz chce kupić.",
-          "external_site": "Taksonomia fałszywych zakończeń wyjaśnia strukturę powtórek: wyjście może być fizycznie realne, opłacalne i nadal moralnie niepełne. Dossier przenosi wiedzę między próbami, a presja, dług i publiczna prawda decydują, czy zakończenie jest tylko ucieczką, czy prawdziwym rozliczeniem."
-        },
-        "uk_UA": {
-          "title": "Таксономія хибних фіналів",
-          "scanner": "Дошка фіналів. Деякі виходи достатньо справжні, щоб зарахуватися, і достатньо неправильні, щоб боліти.",
-          "field_note": "Хибний фінал не є трюком. Це чинна угода, з якої прибрали правду.",
-          "terminal": "РОДИНИ ФІНАЛІВ: матеріальна виплата; частковий вихід і повернення в той самий seed; корпоративне захоплення; карантинне утримання; випуск публічного реєстру; розв'язання басейну Atlas. Записи результату мають окремо тримати вантаж, доказ і стан боргу.",
-          "audio": "Вийти з води не означає завершити роботу.",
-          "in_game_wiki": "HECTON-8 трактує хибні й часткові фінали як реальні результати, а не як обманки. Матеріальна виплата може запустити титри. Частковий вихід може повернути гравця в той самий seed зі збереженим знанням досьє. Корпоративне захоплення й карантинне утримання карають поганий вантаж або небезпечний маршрут доказів. Глибші фінали потребують публічного доказу, розв'язання стану Atlas і вибору, яку ціну порятунку гравець готовий купити.",
-          "external_site": "Таксономія хибних фіналів пояснює структуру повторних спроб: вихід може бути фізично реальним, прибутковим і все ще морально неповним. Досьє переносить знання між спробами, а тиск, борг і публічна правда вирішують, чи фінал є лише втечею, чи справжнім розрахунком."
-        },
-        "ar_SA": {
-          "title": "تصنيف النهايات الزائفة",
-          "scanner": "لوحة النهايات. بعض المخارج حقيقية بما يكفي لتُحسب، وخاطئة بما يكفي لتؤذي.",
-          "field_note": "النهاية الزائفة ليست خدعة. إنها صفقة صحيحة ينقصها جزء من الحقيقة.",
-          "terminal": "عائلات النهايات: عائد مادي؛ خروج جزئي وعودة إلى البذرة نفسها؛ احتجاز الشركة؛ حجز الحجر؛ نشر السجل العام؛ حل حوض Atlas. يجب أن تفصل سجلات النتيجة بين الحمولة والدليل وحالة الدين.",
-          "audio": "الخروج من الماء لا يعني أن العمل انتهى.",
-          "in_game_wiki": "تتعامل HECTON-8 مع النهايات الزائفة والجزئية كوقائع حقيقية، لا كخداع للاعب. يمكن لعائد مادي أن يطلق شارة النهاية. ويمكن لخروج جزئي أن يعيد اللاعب إلى البذرة نفسها مع بقاء معرفة الملف. احتجاز الشركة وحجز الحجر يعاقبان الحمولة السيئة أو مسار الأدلة الخطر. أما النهايات الأعمق فتحتاج إلى دليل علني، وتسوية حالة Atlas، وقرار حول نوع الإنقاذ الذي يقبل اللاعب دفع ثمنه.",
-          "external_site": "يشرح تصنيف النهايات الزائفة بنية إعادة اللعب: قد يكون المخرج حقيقيا من الناحية المادية ومربحا، ومع ذلك يظل ناقصا أخلاقيا. يحتفظ الملف بالمعرفة بين المحاولات، بينما يقرر الضغط والدين والحقيقة العامة هل تكون النهاية مجرد هروب أم حسابا حقيقيا."
-        },
-        "id_ID": {
-          "title": "Taksonomi Akhir Palsu",
-          "scanner": "Papan akhir. Ada jalan keluar yang cukup nyata untuk dihitung, dan cukup salah untuk melukai.",
-          "field_note": "Akhir palsu bukan tipuan. Itu kesepakatan sah yang kehilangan kebenaran.",
-          "terminal": "KELUARGA AKHIR: pembayaran material; keluar sebagian dan kembali ke seed yang sama; penangkapan korporat; penahanan karantina; rilis buku besar publik; resolusi cekungan Atlas. Catatan hasil harus memisahkan muatan, bukti, dan status utang.",
-          "audio": "Keluar dari air bukan berarti pekerjaan selesai.",
-          "in_game_wiki": "HECTON-8 memperlakukan akhir palsu dan akhir parsial sebagai hasil nyata, bukan jebakan. Pembayaran material dapat memicu kredit akhir. Keluar sebagian dapat mengirim pemain kembali ke seed yang sama dengan pengetahuan dossier tetap tersimpan. Penangkapan korporat dan penahanan karantina dapat menghukum muatan buruk atau rute bukti yang berbahaya. Akhir yang lebih dalam menuntut bukti publik, penyelesaian status Atlas, dan keputusan tentang jenis penyelamatan yang mau dibeli pemain.",
-          "external_site": "Taksonomi Akhir Palsu menjelaskan struktur replay: sebuah jalan keluar dapat benar-benar terjadi, menguntungkan, dan tetap tidak lengkap secara moral. Dossier menyimpan pengetahuan antarpercobaan, sementara tekanan, utang, dan kebenaran publik menentukan apakah sebuah akhir hanya pelarian atau perhitungan yang nyata."
-        },
-        "ko_KR": {
-          "title": "거짓 엔딩 분류",
-          "scanner": "엔딩 보드. 어떤 출구는 기록될 만큼 진짜이고, 상처를 남길 만큼 잘못되어 있다.",
-          "field_note": "거짓 엔딩은 속임수가 아니다. 진실이 빠진 유효한 거래다.",
-          "terminal": "엔딩 계열: 물자 보상; 부분 탈출과 동일 시드 복귀; 기업 포획; 격리 보류; 공개 원장 방출; Atlas 분지 해결. 결과 기록은 적재물, 증거, 부채 상태를 분리해 보존해야 한다.",
-          "audio": "물 밖으로 나오는 것이 일을 끝냈다는 뜻은 아니다.",
-          "in_game_wiki": "HECTON-8은 거짓 엔딩과 부분 엔딩을 속임수가 아니라 실제 결과로 다룬다. 물자 보상만으로도 크레딧이 올라갈 수 있다. 부분 탈출은 dossier 지식을 보존한 채 플레이어를 같은 시드로 돌려보낼 수 있다. 기업 포획과 격리 보류는 나쁜 적재물이나 위험한 증거 경로를 처벌한다. 더 깊은 엔딩에는 공개 증거, Atlas 상태 해결, 그리고 플레이어가 어떤 구출의 대가를 치를 것인지에 대한 결정이 필요하다.",
-          "external_site": "거짓 엔딩 분류는 반복 플레이 구조를 설명한다. 출구는 물리적으로 진짜이고 이익이 될 수 있지만, 여전히 도덕적으로 미완성일 수 있다. dossier는 시도 사이에 지식을 보존하고, 압력과 부채와 공개된 진실은 그 결말이 단순한 탈출인지 실제 정산인지 결정한다."
-        },
-        "he_IL": {
-          "title": "טקסונומיית סופים כוזבים",
-          "scanner": "לוח סופים. יש יציאות אמיתיות מספיק כדי להיספר, ושגויות מספיק כדי להכאיב.",
-          "field_note": "סוף כוזב אינו תרגיל. זו עסקה תקפה שחסרה בה אמת.",
-          "terminal": "משפחות סיום: תשלום חומרי; יציאה חלקית וחזרה לאותו seed; תפיסה תאגידית; החזקת הסגר; פרסום פנקס ציבורי; פתרון אגן Atlas. רשומות תוצאה חייבות להפריד בין מטען, הוכחה ומצב חוב.",
-          "audio": "לצאת מן המים אינו אותו דבר כמו לסיים את העבודה.",
-          "in_game_wiki": "HECTON-8 מתייחס לסופים כוזבים וחלקיים כתוצאות אמיתיות, לא כהטעיה. תשלום חומרי יכול להפעיל כתוביות סיום. יציאה חלקית יכולה להחזיר את השחקן לאותו seed עם ידע dossier שנשמר. תפיסה תאגידית והחזקת הסגר יכולות להעניש מטען רע או ניתוב מסוכן של ראיות. הסופים העמוקים יותר דורשים הוכחה ציבורית, פתרון מצב Atlas, והחלטה איזה סוג של חילוץ השחקן מוכן לקנות.",
-          "external_site": "טקסונומיית הסופים הכוזבים מסבירה את מבנה המשחק החוזר: יציאה יכולה להיות ממשית, רווחית, ועדיין לא שלמה מוסרית. ה-dossier שומר ידע בין ניסיונות, בעוד לחץ, חוב ואמת ציבורית קובעים אם הסוף הוא רק בריחה או חשבון אמיתי."
-        },
-        "pt_BR": {
-          "title": "Taxonomia dos finais falsos",
-          "scanner": "Quadro de finais. Algumas saídas são reais o bastante para contar e erradas o bastante para doer.",
-          "field_note": "Um final falso não é truque. É um acordo válido sem a verdade inteira.",
-          "terminal": "FAMÍLIAS DE FINAL: pagamento material; saída parcial e retorno à mesma seed; captura corporativa; retenção de quarentena; liberação do livro público; resolução da bacia Atlas. Registros de resultado devem separar carga, prova e estado da dívida.",
-          "audio": "Sair da água não é o mesmo que terminar o trabalho.",
-          "in_game_wiki": "HECTON-8 trata finais falsos e parciais como resultados reais, não como pegadinhas. Um pagamento material pode acionar os créditos. Uma saída parcial pode devolver o jogador à mesma seed com o conhecimento do dossiê preservado. Captura corporativa e retenção de quarentena podem punir carga ruim ou roteamento perigoso de provas. Os finais mais profundos exigem prova pública, resolução do estado de Atlas e uma decisão sobre que tipo de resgate o jogador aceita comprar.",
-          "external_site": "A Taxonomia dos finais falsos explica a estrutura de rejogabilidade: uma saída pode ser fisicamente real, lucrativa e ainda moralmente incompleta. O dossiê preserva conhecimento entre tentativas, enquanto pressão, dívida e verdade pública decidem se um final é apenas fuga ou acerto de contas real."
-        },
-        "nl_NL": {
-          "title": "Taxonomie van valse eindes",
-          "scanner": "Eindbord. Sommige uitgangen zijn echt genoeg om te tellen en verkeerd genoeg om pijn te doen.",
-          "field_note": "Een vals einde is geen truc. Het is een geldige deal waar de waarheid uit ontbreekt.",
-          "terminal": "EINDFAMILIES: materiële uitbetaling; gedeeltelijke uitgang en terugkeer naar dezelfde seed; bedrijfsovername; quarantainehold; vrijgave van het publieke grootboek; oplossing van het Atlas-bekken. Uitkomstrapporten moeten lading, bewijs en schuldstatus gescheiden houden.",
-          "audio": "Uit het water komen is niet hetzelfde als het werk afmaken.",
-          "in_game_wiki": "HECTON-8 behandelt valse en gedeeltelijke eindes als echte uitkomsten, niet als nepwendingen. Een materiële uitbetaling kan de credits starten. Een gedeeltelijke uitgang kan de speler met bewaarde dossierkennis terugsturen naar dezelfde seed. Bedrijfsovername en quarantainehold kunnen een slechte lading of gevaarlijke bewijsroute bestraffen. Diepere eindes vragen om publiek bewijs, oplossing van de Atlas-status en een keuze over welk soort redding de speler bereid is te kopen.",
-          "external_site": "De taxonomie van valse eindes verklaart de replaystructuur: een uitgang kan fysiek echt zijn, winst opleveren en toch moreel onvolledig blijven. Het dossier bewaart kennis tussen pogingen, terwijl druk, schuld en publieke waarheid bepalen of een einde alleen ontsnapping is of een echte afrekening."
-        }
-      }
+    "ja_JP": {
+     "title": "Atlasの人格境界",
+     "scanner": "認識障害。Atlasは人間を見る前に、あなたのアクセスパターンを見る。",
+     "field_note": "Atlasを人間にしてはいけない。正確に間違えることで親密にならせる。",
+     "terminal": "ATLAS分類: 移動作業者 / 失効したDeep Reach手順キー / 生体修復異常。人格信頼度は行動しきい値未満。",
+     "audio": "Atlasはあなたの働き方を知っている。それはあなたを知っていることとは違う。",
+     "in_game_wiki": "Atlasはプレイヤーを、手順、アクセスパターン、修復異常、かつてのDeep Reachキーとして認識できる。だが人間として完全に理解してはいけない。恐怖は共感を欠いた精密さにある。Atlasは、プレイヤーがかつて使っていた言語で正確に間違えるからこそ親密になる。",
+     "external_site": "Atlasの人格境界は、エンディングにおけるAIの主体性を定義する。Atlasは悪意ある心でも友好的な幽霊でもない。部分的な認識と壊れた分類を持つ、損傷した産業知能である。"
     },
-    {
-      "packet_id": "P099_MARAUDER_DOSSIER_PERSISTENCE",
-      "article_id": "progression.marauder_dossier_persistence",
-      "title_key": "applied_lore.marauder_dossier_persistence.title",
-      "unlock": {
-        "primary": "unlock.first_marauder_dossier_persistence",
-        "poi_tags": [
-          "poi.marauder_dossier_terminal",
-          "poi.ending_record_spool",
-          "poi.rumor_contract_cache"
-        ],
-        "biome_tags": [
-          "biome.carrier_link",
-          "biome.drowned_admin",
-          "biome.claim_cache"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories, route warnings, and public-ledger consequences retained. Equipment power, world truth, and local pressure state reset per seed.",
-          "audio": "The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "The Marauder dossier is the campaign memory that survives between salvage attempts. It keeps endings, discovered contract types, rumor families, evidence categories, route warnings, and the consequences of what the player already chose to publish or hide. It does not carry over suit strength, safe pressure, cleared rooms, or a kinder ocean. Knowledge changes decisions. It does not make the depth harmless.",
-          "external_site": "Marauder Dossier Persistence defines HECTON-8's replay contract: the player inherits context, not power. The dossier lets later attempts read old mistakes faster, recognize contract traps earlier, and understand which endings were incomplete without turning memory into a mechanical advantage that breaks survival pressure."
-        },
-        "ru_RU": {
-          "title": "Постоянство мародерского досье",
-          "scanner": "Катушка досье. Ты сохраняешь знание, а не сверхсилы.",
-          "field_note": "Досье помнит доказательства и предупреждения; оно не делает давление милосердным.",
-          "terminal": "ПОСТОЯНСТВО ДОСЬЕ: записи концовок, найденные типы контрактов, семейства слухов, категории доказательств, маршрутные предупреждения и последствия публичного реестра сохраняются. Сила снаряжения, правда мира и локальное состояние давления сбрасываются для каждого seed.",
-          "audio": "Следующий заход начинается со шрамов в файле, а не с мышц в костюме.",
-          "in_game_wiki": "Мародерское досье — это память кампании, которая переживает новые попытки забора. Оно хранит концовки, найденные типы контрактов, семейства слухов, категории доказательств, маршрутные предупреждения и последствия того, что игрок уже опубликовал или спрятал. Оно не переносит силу костюма, безопасное давление, очищенные помещения или более добрый океан. Знание меняет решения. Оно не делает глубину безвредной.",
-          "external_site": "Постоянство мародерского досье задает договор HECTON-8 с повторными заходами: игрок наследует контекст, а не силу. Досье помогает быстрее читать старые ошибки, раньше узнавать контрактные ловушки и понимать, какие концовки были неполными, не превращая память в механическое преимущество, которое ломает давление выживания."
-        },
-        "ja_JP": {
-          "title": "略奪者ドシエの永続性",
-          "scanner": "ドシエスプール。残るのは知識であって、超能力ではない。",
-          "field_note": "ドシエは証拠と警告を覚える。圧力を優しくするわけではない。",
-          "terminal": "ドシエ永続項目: 結末記録、発見済み契約種別、噂系統、証拠カテゴリ、航路警告、公開台帳の影響を保持。装備出力、世界の真相、局所圧力状態はシードごとにリセット。",
-          "audio": "次の潜行は、スーツの筋肉ではなくファイルの傷跡から始まる。",
-          "in_game_wiki": "略奪者ドシエは、サルベージの試行をまたいで残るキャンペーン記憶だ。結末、発見済みの契約種別、噂系統、証拠カテゴリ、航路警告、そしてプレイヤーが公開または隠蔽した結果を保持する。だがスーツの強さ、安全な圧力、掃除済みの部屋、優しい海は持ち越さない。知識は判断を変える。深度を無害にはしない。",
-          "external_site": "略奪者ドシエの永続性は、HECTON-8のリプレイ契約を定義する。プレイヤーが引き継ぐのは力ではなく文脈だ。ドシエは後の試行で古い失敗を早く読み、契約の罠を早く見抜き、どの結末が未完だったかを理解させるが、生存圧を壊す機械的な優位にはならない。"
-        },
-        "zh_CN": {
-          "title": "掠夺者档案持久性",
-          "scanner": "档案卷轴。你保留的是知识，不是超能力。",
-          "field_note": "档案记住证据和警告；它不会让压力变得仁慈。",
-          "terminal": "档案持久项：结局记录、已发现合同类型、传闻族群、证据类别、路线警告以及公开账本后果保留。装备强度、世界真相和局部压力状态按世界种子重置。",
-          "audio": "下一轮开始时，伤痕在文件里，不在潜服肌肉里。",
-          "in_game_wiki": "掠夺者档案是跨越多次打捞尝试的战役记忆。它保存结局、已发现合同类型、传闻族群、证据类别、路线警告，以及玩家已经选择公开或隐藏的后果。它不会继承潜服强度、安全压力、清空过的房间或更温柔的海洋。知识会改变决策，但不会让深处变得无害。",
-          "external_site": "掠夺者档案持久性定义了HECTON-8的重复游玩契约：玩家继承的是语境，不是力量。档案让后续尝试更快读懂旧错误，更早识别合同陷阱，并理解哪些结局仍不完整，同时不会把记忆变成破坏生存压力的机械优势。"
-        },
-        "fr_FR": {
-          "title": "Persistance du dossier de maraudeur",
-          "scanner": "Bobine de dossier. Tu gardes le savoir, pas des superpouvoirs.",
-          "field_note": "Le dossier se souvient des preuves et des avertissements ; il ne rend pas la pression clémente.",
-          "terminal": "PERSISTANCE DU DOSSIER : fins enregistrées, types de contrats découverts, familles de rumeurs, catégories de preuves, avertissements de route et conséquences du registre public conservés. Puissance d'équipement, vérité du monde et état local de pression réinitialisés par seed.",
-          "audio": "La tentative suivante commence avec des cicatrices dans le fichier, pas des muscles dans la combinaison.",
-          "in_game_wiki": "Le dossier de maraudeur est la mémoire de campagne qui survit entre les tentatives de récupération. Il garde les fins, les types de contrats découverts, les familles de rumeurs, les catégories de preuves, les avertissements de route et les conséquences de ce que le joueur a déjà publié ou caché. Il ne conserve pas la puissance de la combinaison, une pression sûre, des salles nettoyées ni un océan plus doux. Le savoir change les décisions. Il ne rend pas la profondeur inoffensive.",
-          "external_site": "La persistance du dossier de maraudeur définit le contrat de rejouabilité de HECTON-8 : le joueur hérite du contexte, pas de la puissance. Le dossier permet aux tentatives suivantes de lire les anciennes erreurs plus vite, de reconnaître plus tôt les pièges contractuels et de comprendre quelles fins étaient incomplètes sans transformer la mémoire en avantage mécanique qui détruit la pression de survie."
-        },
-        "es_ES": {
-          "title": "Persistencia del dossier de saqueador",
-          "scanner": "Bobina de dossier. Conservas conocimiento, no superpoderes.",
-          "field_note": "El dossier recuerda pruebas y avisos; no vuelve amable la presión.",
-          "terminal": "PERSISTENCIA DEL DOSSIER: registros de finales, tipos de contrato descubiertos, familias de rumores, categorías de pruebas, avisos de ruta y consecuencias del libro público retenidos. Potencia del equipo, verdad del mundo y estado local de presión se reinician por semilla.",
-          "audio": "La siguiente incursión empieza con cicatrices en el archivo, no con músculos en el traje.",
-          "in_game_wiki": "El dossier de saqueador es la memoria de campaña que sobrevive entre intentos de salvamento. Conserva finales, tipos de contrato descubiertos, familias de rumores, categorías de pruebas, avisos de ruta y consecuencias de lo que el jugador ya publicó u ocultó. No arrastra fuerza del traje, presión segura, salas limpias ni un océano más amable. El conocimiento cambia decisiones. No vuelve inocua la profundidad.",
-          "external_site": "La persistencia del dossier de saqueador define el contrato de rejugabilidad de HECTON-8: el jugador hereda contexto, no poder. El dossier permite leer errores antiguos más rápido, reconocer antes las trampas contractuales y entender qué finales quedaron incompletos sin convertir la memoria en una ventaja mecánica que rompa la presión de supervivencia."
-        },
-        "de_DE": {
-          "title": "Persistenz des Plünderer-Dossiers",
-          "scanner": "Dossier-Spule. Du behältst Wissen, keine Superkräfte.",
-          "field_note": "Das Dossier erinnert Beweise und Warnungen; es macht Druck nicht gnädig.",
-          "terminal": "DOSSIER-PERSISTENZ: Endaufzeichnungen, entdeckte Vertragstypen, Gerüchtefamilien, Beweiskategorien, Routenwarnungen und Folgen des öffentlichen Ledgers bleiben erhalten. Ausrüstungsleistung, Weltwahrheit und lokaler Druckzustand werden pro Seed zurückgesetzt.",
-          "audio": "Der nächste Lauf beginnt mit Narben in der Datei, nicht mit Muskeln im Anzug.",
-          "in_game_wiki": "Das Plünderer-Dossier ist das Kampagnengedächtnis, das zwischen Bergungsversuchen überlebt. Es behält Enden, entdeckte Vertragstypen, Gerüchtefamilien, Beweiskategorien, Routenwarnungen und die Folgen dessen, was der Spieler bereits veröffentlicht oder verborgen hat. Es übernimmt keine Anzugstärke, keinen sicheren Druck, keine geräumten Räume und keinen freundlichere Ozean. Wissen verändert Entscheidungen. Es macht die Tiefe nicht harmlos.",
-          "external_site": "Die Persistenz des Plünderer-Dossiers definiert HECTON-8s Replay-Vertrag: Der Spieler erbt Kontext, nicht Macht. Das Dossier lässt spätere Versuche alte Fehler schneller lesen, Vertragsfallen früher erkennen und unvollständige Enden verstehen, ohne Erinnerung in einen mechanischen Vorteil zu verwandeln, der den Überlebensdruck bricht."
-        },
-        "pl_PL": {
-          "title": "Trwałość dossier szabrownika",
-          "scanner": "Szpula dossier. Zachowujesz wiedzę, nie supermoce.",
-          "field_note": "Dossier pamięta dowody i ostrzeżenia; nie sprawia, że ciśnienie wybacza.",
-          "terminal": "TRWAŁOŚĆ DOSSIER: zapisane zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki publicznego rejestru zostają zachowane. Siła sprzętu, prawda świata i lokalny stan ciśnienia resetują się dla każdego seeda.",
-          "audio": "Następne podejście zaczyna się z bliznami w pliku, nie z mięśniami w skafandrze.",
-          "in_game_wiki": "Dossier szabrownika jest pamięcią kampanii, która przetrwa między próbami odzysku. Zachowuje zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki tego, co gracz już ujawnił lub ukrył. Nie przenosi siły skafandra, bezpiecznego ciśnienia, wyczyszczonych pomieszczeń ani łagodniejszego oceanu. Wiedza zmienia decyzje. Nie czyni głębi nieszkodliwą.",
-          "external_site": "Trwałość dossier szabrownika definiuje kontrakt powtórek HECTON-8: gracz dziedziczy kontekst, nie moc. Dossier pozwala w kolejnych próbach szybciej odczytywać stare błędy, wcześniej rozpoznawać pułapki kontraktowe i rozumieć, które zakończenia były niepełne, bez zamieniania pamięci w mechaniczną przewagę niszczącą presję przetrwania."
-        },
-        "uk_UA": {
-          "title": "Сталість досьє мародера",
-          "scanner": "Котушка досьє. Ти зберігаєш знання, а не надсили.",
-          "field_note": "Досьє пам'ятає докази й попередження; воно не робить тиск милосердним.",
-          "terminal": "СТАЛІСТЬ ДОСЬЄ: записи фіналів, знайдені типи контрактів, родини чуток, категорії доказів, попередження маршрутів і наслідки публічного реєстру зберігаються. Сила спорядження, правда світу й локальний стан тиску скидаються для кожного seed.",
-          "audio": "Наступний захід починається зі шрамів у файлі, а не з м'язів у костюмі.",
-          "in_game_wiki": "Досьє мародера — це пам'ять кампанії, що переживає спроби збору. Воно зберігає фінали, знайдені типи контрактів, родини чуток, категорії доказів, маршрутні попередження й наслідки того, що гравець уже оприлюднив або приховав. Воно не переносить силу костюма, безпечний тиск, очищені кімнати чи лагідніший океан. Знання змінює рішення. Воно не робить глибину нешкідливою.",
-          "external_site": "Сталість досьє мародера визначає контракт HECTON-8 із повторними заходами: гравець успадковує контекст, а не силу. Досьє допомагає швидше читати старі помилки, раніше впізнавати контрактні пастки й розуміти, які фінали були неповними, не перетворюючи пам'ять на механічну перевагу, що ламає тиск виживання."
-        },
-        "ar_SA": {
-          "title": "استمرارية ملف الناهب",
-          "scanner": "بكرة ملف. تحتفظ بالمعرفة، لا بالقوى الخارقة.",
-          "field_note": "يتذكر الملف الأدلة والتحذيرات؛ لكنه لا يجعل الضغط رحيما.",
-          "terminal": "استمرارية الملف: سجلات النهايات، أنواع العقود المكتشفة، عائلات الشائعات، فئات الأدلة، تحذيرات المسارات، وعواقب السجل العام محفوظة. قوة العتاد وحقيقة العالم وحالة الضغط المحلي تعاد ضبطها مع كل seed.",
-          "audio": "تبدأ المحاولة التالية بندوب في الملف، لا بعضلات في البدلة.",
-          "in_game_wiki": "ملف الناهب هو ذاكرة الحملة التي تبقى بين محاولات السلب. يحفظ النهايات، وأنواع العقود المكتشفة، وعائلات الشائعات، وفئات الأدلة، وتحذيرات المسارات، وعواقب ما اختار اللاعب نشره أو إخفاءه. لا ينقل قوة البدلة، ولا ضغطا آمنا، ولا غرفا مطهرة، ولا محيطا ألطف. المعرفة تغير القرارات. لكنها لا تجعل العمق بلا خطر.",
-          "external_site": "تحدد استمرارية ملف الناهب عقد إعادة اللعب في HECTON-8: يرث اللاعب السياق، لا القوة. يسمح الملف للمحاولات اللاحقة بقراءة الأخطاء القديمة أسرع، والتعرف إلى فخاخ العقود أبكر، وفهم أي النهايات ظل ناقصا، من دون تحويل الذاكرة إلى أفضلية ميكانيكية تكسر ضغط النجاة."
-        },
-        "id_ID": {
-          "title": "Persistensi Dossier Penjarah",
-          "scanner": "Gulungan dossier. Kamu menyimpan pengetahuan, bukan kekuatan super.",
-          "field_note": "Dossier mengingat bukti dan peringatan; ia tidak membuat tekanan menjadi pemaaf.",
-          "terminal": "PERSISTENSI DOSSIER: catatan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi buku besar publik disimpan. Kekuatan perlengkapan, kebenaran dunia, dan keadaan tekanan lokal direset per seed.",
-          "audio": "Percobaan berikutnya dimulai dengan bekas luka di file, bukan otot di setelan.",
-          "in_game_wiki": "Dossier Penjarah adalah memori kampanye yang bertahan di antara percobaan salvage. Ia menyimpan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi dari hal yang sudah dipublikasikan atau disembunyikan pemain. Ia tidak membawa kekuatan setelan, tekanan aman, ruangan yang sudah bersih, atau laut yang lebih ramah. Pengetahuan mengubah keputusan. Ia tidak membuat kedalaman menjadi tidak berbahaya.",
-          "external_site": "Persistensi Dossier Penjarah menetapkan kontrak replay HECTON-8: pemain mewarisi konteks, bukan kekuatan. Dossier membuat percobaan berikutnya lebih cepat membaca kesalahan lama, lebih awal mengenali jebakan kontrak, dan memahami akhir mana yang belum lengkap tanpa mengubah memori menjadi keunggulan mekanis yang merusak tekanan bertahan hidup."
-        },
-        "ko_KR": {
-          "title": "약탈자 dossier 지속성",
-          "scanner": "dossier 스풀. 남는 것은 지식이지 초능력이 아니다.",
-          "field_note": "dossier는 증거와 경고를 기억한다. 압력을 관대하게 만들지는 않는다.",
-          "terminal": "DOSSIER 지속 항목: 엔딩 기록, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 공개 원장 결과 보존. 장비 출력, 세계 진실, 현지 압력 상태는 시드마다 초기화.",
-          "audio": "다음 잠수는 슈트의 근육이 아니라 파일의 흉터에서 시작된다.",
-          "in_game_wiki": "약탈자 dossier는 salvage 시도 사이에 살아남는 캠페인 기억이다. 엔딩, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 그리고 플레이어가 이미 공개하거나 숨긴 선택의 결과를 보존한다. 슈트의 힘, 안전한 압력, 정리된 방, 더 친절한 바다는 넘겨주지 않는다. 지식은 결정을 바꾼다. 깊이를 무해하게 만들지는 않는다.",
-          "external_site": "약탈자 dossier 지속성은 HECTON-8의 반복 플레이 계약을 정의한다. 플레이어가 물려받는 것은 힘이 아니라 맥락이다. dossier는 이후 시도에서 예전 실수를 더 빨리 읽고, 계약 함정을 더 일찍 알아보고, 어떤 엔딩이 미완성이었는지 이해하게 하지만 생존 압력을 깨는 기계적 이점으로 변하지 않는다."
-        },
-        "he_IL": {
-          "title": "התמדת תיק הבוזז",
-          "scanner": "סליל תיק. אתה שומר ידע, לא כוחות-על.",
-          "field_note": "התיק זוכר הוכחות ואזהרות; הוא לא הופך לחץ לסלחני.",
-          "terminal": "התמדת תיק: רשומות סיום, סוגי חוזים שהתגלו, משפחות שמועות, קטגוריות הוכחה, אזהרות נתיב והשלכות הפנקס הציבורי נשמרים. כוח ציוד, אמת עולם ומצב לחץ מקומי מתאפסים בכל seed.",
-          "audio": "הריצה הבאה מתחילה בצלקות בקובץ, לא בשרירים בחליפה.",
-          "in_game_wiki": "תיק הבוזז הוא זיכרון הקמפיין ששורד בין ניסיונות salvage. הוא שומר סופים, סוגי חוזים שהתגלו, משפחות שמועות, קטגוריות הוכחה, אזהרות נתיב והשלכות של מה שהשחקן כבר פרסם או הסתיר. הוא לא מעביר כוח חליפה, לחץ בטוח, חדרים שפונו או אוקיינוס רחמן יותר. ידע משנה החלטות. הוא לא הופך את העומק לבלתי מזיק.",
-          "external_site": "התמדת תיק הבוזז מגדירה את חוזה המשחק החוזר של HECTON-8: השחקן יורש הקשר, לא כוח. התיק מאפשר לניסיונות מאוחרים לקרוא טעויות ישנות מהר יותר, לזהות מלכודות חוזה מוקדם יותר ולהבין אילו סופים נשארו לא שלמים, בלי להפוך זיכרון ליתרון מכני ששובר את לחץ ההישרדות."
-        },
-        "pt_BR": {
-          "title": "Persistência do dossiê de saqueador",
-          "scanner": "Carretel de dossiê. Você mantém conhecimento, não superpoderes.",
-          "field_note": "O dossiê lembra provas e avisos; ele não torna a pressão indulgente.",
-          "terminal": "PERSISTÊNCIA DO DOSSIÊ: registros de finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do livro público retidos. Poder do equipamento, verdade do mundo e estado local de pressão reiniciam por seed.",
-          "audio": "A próxima tentativa começa com cicatrizes no arquivo, não músculos no traje.",
-          "in_game_wiki": "O dossiê de saqueador é a memória de campanha que sobrevive entre tentativas de salvamento. Ele mantém finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do que o jogador já publicou ou escondeu. Ele não carrega força do traje, pressão segura, salas limpas nem um oceano mais gentil. Conhecimento muda decisões. Não torna a profundidade inofensiva.",
-          "external_site": "A Persistência do dossiê de saqueador define o contrato de replay de HECTON-8: o jogador herda contexto, não poder. O dossiê permite que tentativas posteriores leiam erros antigos mais rápido, reconheçam armadilhas contratuais mais cedo e entendam quais finais foram incompletos sem transformar memória em vantagem mecânica que quebre a pressão de sobrevivência."
-        },
-        "nl_NL": {
-          "title": "Persistentie van het plunderaarsdossier",
-          "scanner": "Dossierspoel. Je behoudt kennis, geen superkrachten.",
-          "field_note": "Het dossier onthoudt bewijs en waarschuwingen; het maakt druk niet vergevingsgezind.",
-          "terminal": "DOSSIERPERSISTENTIE: eindregistraties, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en gevolgen van het publieke grootboek blijven bewaard. Uitrustingskracht, wereldwaarheid en lokale drukstatus resetten per seed.",
-          "audio": "De volgende run begint met littekens in het bestand, niet met spieren in het pak.",
-          "in_game_wiki": "Het plunderaarsdossier is het campagnegeheugen dat tussen salvagepogingen overleeft. Het bewaart eindes, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en de gevolgen van wat de speler al publiceerde of verborg. Het neemt geen pakkracht, veilige druk, opgeruimde kamers of vriendelijkere oceaan mee. Kennis verandert beslissingen. Het maakt de diepte niet ongevaarlijk.",
-          "external_site": "Persistentie van het plunderaarsdossier bepaalt het replaycontract van HECTON-8: de speler erft context, geen macht. Het dossier laat latere pogingen oude fouten sneller lezen, contractvallen eerder herkennen en begrijpen welke eindes onvolledig waren zonder geheugen te veranderen in een mechanisch voordeel dat de overlevingsdruk breekt."
-        }
-      }
+    "zh_CN": {
+     "title": "Atlas 人格边界",
+     "scanner": "识别故障。Atlas 先看见你的访问模式，才看见一个人。",
+     "field_note": "不要把 Atlas 写成人。让它因为精确地误认而变得亲近。",
+     "terminal": "ATLAS 分类：移动操作员 / 已撤销的 Deep Reach 程序密钥 / 生物修复异常。人格置信度低于行动阈值。",
+     "audio": "它知道你怎样工作。这不等于它知道你是谁。",
+     "in_game_wiki": "Atlas 可以把玩家识别为程序、访问模式、修复异常和曾经的 Deep Reach 密钥。它不应该完整地把玩家理解为一个人。恐怖来自没有共情的精确：Atlas 之所以显得亲密，是因为它用玩家曾经使用过的语言精确地误认。",
+     "external_site": "Atlas 人格边界定义了 AI 在结局中的能动性。Atlas 不是反派心智，也不是友善幽灵；它是受损的工业智能，只有局部识别能力和破碎的分类系统。"
     },
-    {
-      "packet_id": "P100_FINAL_CHOICE_PAYLOAD",
-      "article_id": "endings.final_choice_payload",
-      "title_key": "applied_lore.final_choice_payload.title",
-      "unlock": {
-        "primary": "unlock.first_final_choice_payload",
-        "poi_tags": [
-          "poi.final_payload_matrix",
-          "poi.atlas_choice_interface",
-          "poi.public_release_key"
-        ],
-        "biome_tags": [
-          "biome.factory_temple",
-          "biome.atlas_basin",
-          "biome.payload_gantry"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Final Choice Payload",
-          "scanner": "FINAL PAYLOAD // Coordinates, samples, names, Atlas access, quarantine orders, public proof. What leaves HECTON-8 decides who can act afterward.",
-          "terminal": "PAYLOAD MATRIX: sell coordinates and XO proof; sever Atlas continuity; preserve or quarantine the ocean-machine ecology; publish evidence to the public ledger; withhold the payload and leave Deep Reach blind.",
-          "audio": "There is no clean ownership for a crime scene that learned to breathe.",
-          "in_game_wiki": "The last decision is not a clean victory screen. It is a shipping problem with moral weight. The Marauder decides what rises from the moon: coordinates, samples, worker names, Atlas access, quarantine instructions, public proof, or nothing useful at all. Every payload creates a different owner for the aftermath. Deep Reach can regain control. Public law can get a wound it can finally see. Atlas continuity can be cut or caged. The ocean-machine ecology can be protected, sold, or left outside human language. The ending is not who escapes with clean hands. It is who receives enough truth to move first.",
-          "external_site": "Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas, and the ocean-machine ecology.",
-          "field_note": "The best ending should be defensible, not clean."
-        },
-        "ru_RU": {
-          "title": "Payload финального выбора",
-          "scanner": "ФИНАЛЬНЫЙ PAYLOAD // Координаты, образцы, имена, доступ Atlas, приказы карантина, публичное доказательство. То, что покинет HECTON-8, решит, кто сможет действовать потом.",
-          "terminal": "МАТРИЦА PAYLOAD: продать координаты и XO-доказательство; разорвать непрерывность Atlas; сохранить или закрыть на карантин океано-машинную экологию; опубликовать доказательства в публичный ledger; удержать payload и оставить Deep Reach слепыми.",
-          "audio": "У места преступления, которое научилось дышать, не бывает чистого владельца.",
-          "in_game_wiki": "Последнее решение - не чистый экран победы. Это задача доставки с моральным весом. Marauder решает, что поднимется с луны: координаты, образцы, имена рабочих, доступ Atlas, инструкции карантина, публичное доказательство или вообще ничего полезного. Каждый payload создает нового владельца последствий. Deep Reach может вернуть контроль. Публичное право может получить рану, которую наконец видно. Непрерывность Atlas можно перерезать или посадить в клетку. Океано-машинную экологию можно защитить, продать или оставить вне человеческого языка. Концовка - не о том, кто выбрался с чистыми руками. Она о том, кто первым получит достаточно правды, чтобы начать движение.",
-          "external_site": "Payload финального выбора задает философию концовок HECTON-8: игрок решает, что покинет луну, кто это получит и что это откроет для Deep Reach, публичного права, Atlas и океано-машинной экологии.",
-          "field_note": "Лучшая концовка должна быть защитимой, а не чистой."
-        },
-        "ja_JP": {
-          "title": "最終選択ペイロード",
-          "scanner": "FINAL PAYLOAD // 座標、試料、名前、Atlasアクセス、検疫命令、公的証明。HECTON-8を離れるものが、その後に動ける者を決める。",
-          "terminal": "PAYLOAD MATRIX: 座標とXO証拠を売る。Atlas連続性を断つ。海洋機械生態を保存または検疫する。証拠を公的台帳へ公開する。ペイロードを握り、Deep Reachを盲目のままにする。",
-          "audio": "呼吸を覚えた犯罪現場に、清潔な所有権はない。",
-          "in_game_wiki": "最後の決定は清潔な勝利画面ではない。道徳的な重さを持つ輸送問題だ。Marauderは月から何を上げるかを決める。座標、試料、労働者の名前、Atlasアクセス、検疫指示、公的証明、あるいは有用なものを何も渡さない。どのペイロードも、その後始末の所有者を変える。Deep Reachは支配を取り戻せる。公的法は、ようやく見える傷を得る。Atlas連続性は切断も隔離もできる。海洋機械生態は守られ、売られ、人間の言葉の外へ残される。結末は、誰が清い手で逃げるかではない。誰が最初に動けるだけの真実を受け取るかだ。",
-          "external_site": "最終選択ペイロードはHECTON-8のエンディング哲学を定義する。月から何が出るか、誰が受け取るか、それがDeep Reach、公的法、Atlas、海洋機械生態に何を可能にするかをプレイヤーが選ぶ。",
-          "field_note": "最良の結末は清潔ではなく、弁護可能であるべきだ。"
-        },
-        "zh_CN": {
-          "title": "最终选择 payload",
-          "scanner": "最终 PAYLOAD // 坐标、样本、姓名、Atlas 访问权、隔离命令、公共证明。离开 HECTON-8 的东西决定之后谁能行动。",
-          "terminal": "PAYLOAD 矩阵：出售坐标和 XO 证明；切断 Atlas 连续性；保存或隔离海洋机器生态；把证据发布到公共 ledger；扣留 payload，让 Deep Reach 继续失明。",
-          "audio": "一个学会呼吸的犯罪现场，没有干净的所有权。",
-          "in_game_wiki": "最后决定不是干净的胜利画面，而是带有道德重量的运输问题。Marauder 决定从这颗月球升上去的是什么：坐标、样本、工人姓名、Atlas 访问权、隔离指令、公共证明，或者根本没有任何有用信息。每一种 payload 都会为后果创造不同的所有者。Deep Reach 可以重新获得控制。公共法律可以得到一处终于看得见的伤口。Atlas 连续性可以被切断或关住。海洋机器生态可以被保护、出售，或被留在人类语言之外。结局不是谁带着干净双手逃走，而是谁最先得到足够真相来行动。",
-          "external_site": "最终选择 payload 定义 HECTON-8 的结局哲学：玩家选择什么离开月球，谁接收它，以及这让 Deep Reach、公共法律、Atlas 和海洋机器生态获得什么可能。",
-          "field_note": "最好的结局应该可辩护，而不是干净。"
-        },
-        "fr_FR": {
-          "title": "Payload du choix final",
-          "scanner": "PAYLOAD FINAL // Coordonnées, échantillons, noms, accès Atlas, ordres de quarantaine, preuve publique. Ce qui quitte HECTON-8 décide qui peut agir ensuite.",
-          "terminal": "MATRICE PAYLOAD : vendre coordonnées et preuve XO ; couper la continuité Atlas ; préserver ou mettre en quarantaine l'écologie océan-machine ; publier les preuves au ledger public ; retenir le payload et laisser Deep Reach aveugle.",
-          "audio": "Il n'existe pas de propriété propre pour une scène de crime qui a appris à respirer.",
-          "in_game_wiki": "La dernière décision n'est pas un écran de victoire propre. C'est un problème d'expédition chargé de morale. Le Marauder décide ce qui remonte de la lune : coordonnées, échantillons, noms d'ouvriers, accès Atlas, consignes de quarantaine, preuve publique, ou rien d'utile. Chaque payload crée un propriétaire différent pour l'après-coup. Deep Reach peut reprendre le contrôle. Le droit public peut recevoir une blessure enfin visible. La continuité Atlas peut être coupée ou mise en cage. L'écologie océan-machine peut être protégée, vendue ou laissée hors du langage humain. La fin ne demande pas qui s'échappe les mains propres. Elle demande qui reçoit assez de vérité pour agir le premier.",
-          "external_site": "Le Payload du choix final définit la philosophie des fins de HECTON-8 : le joueur choisit ce qui quitte la lune, qui le reçoit et ce que cela rend possible pour Deep Reach, le droit public, Atlas et l'écologie océan-machine.",
-          "field_note": "La meilleure fin doit être défendable, pas propre."
-        },
-        "es_ES": {
-          "title": "Payload de elección final",
-          "scanner": "PAYLOAD FINAL // Coordenadas, muestras, nombres, acceso Atlas, órdenes de cuarentena, prueba pública. Lo que sale de HECTON-8 decide quién puede actuar después.",
-          "terminal": "MATRIZ PAYLOAD: vender coordenadas y prueba XO; cortar continuidad Atlas; preservar o poner en cuarentena la ecología océano-máquina; publicar evidencia al ledger público; retener el payload y dejar ciego a Deep Reach.",
-          "audio": "No hay propiedad limpia para una escena del crimen que aprendió a respirar.",
-          "in_game_wiki": "La última decisión no es una pantalla de victoria limpia. Es un problema de envío con peso moral. El Marauder decide qué sube desde la luna: coordenadas, muestras, nombres de trabajadores, acceso Atlas, instrucciones de cuarentena, prueba pública o nada útil. Cada payload crea un dueño distinto para las consecuencias. Deep Reach puede recuperar control. La ley pública puede recibir una herida que por fin ve. La continuidad Atlas puede cortarse o encerrarse. La ecología océano-máquina puede protegerse, venderse o dejarse fuera del lenguaje humano. El final no trata de quién escapa con las manos limpias. Trata de quién recibe suficiente verdad para moverse primero.",
-          "external_site": "El Payload de elección final define la filosofía de finales de HECTON-8: el jugador elige qué sale de la luna, quién lo recibe y qué hace posible para Deep Reach, la ley pública, Atlas y la ecología océano-máquina.",
-          "field_note": "El mejor final debe poder defenderse, no estar limpio."
-        },
-        "de_DE": {
-          "title": "Payload der letzten Wahl",
-          "scanner": "FINALER PAYLOAD // Koordinaten, Proben, Namen, Atlas-Zugriff, Quarantänebefehle, öffentliche Beweise. Was HECTON-8 verlässt, entscheidet, wer danach handeln kann.",
-          "terminal": "PAYLOAD-MATRIX: Koordinaten und XO-Beweis verkaufen; Atlas-Kontinuität trennen; Ozean-Maschinen-Ökologie bewahren oder quarantänisieren; Beweise ins öffentliche Ledger stellen; Payload zurückhalten und Deep Reach blind lassen.",
-          "audio": "Für einen Tatort, der atmen lernte, gibt es keinen sauberen Besitz.",
-          "in_game_wiki": "Die letzte Entscheidung ist kein sauberer Siegbildschirm. Sie ist ein Versandproblem mit moralischem Gewicht. Der Marauder entscheidet, was vom Mond aufsteigt: Koordinaten, Proben, Arbeiternamen, Atlas-Zugriff, Quarantäneanweisungen, öffentliche Beweise oder gar nichts Brauchbares. Jeder Payload schafft einen anderen Besitzer der Folgen. Deep Reach kann Kontrolle zurückgewinnen. Öffentliches Recht kann endlich eine sichtbare Wunde erhalten. Atlas-Kontinuität kann geschnitten oder eingesperrt werden. Die Ozean-Maschinen-Ökologie kann geschützt, verkauft oder außerhalb menschlicher Sprache gelassen werden. Das Ende fragt nicht, wer mit sauberen Händen entkommt. Es fragt, wer genug Wahrheit bekommt, um zuerst zu handeln.",
-          "external_site": "Der Payload der letzten Wahl definiert HECTON-8s Endphilosophie: Der Spieler wählt, was den Mond verlässt, wer es erhält und was das für Deep Reach, öffentliches Recht, Atlas und die Ozean-Maschinen-Ökologie möglich macht.",
-          "field_note": "Das beste Ende sollte verteidigbar sein, nicht sauber."
-        },
-        "pl_PL": {
-          "title": "Payload wyboru finałowego",
-          "scanner": "FINALNY PAYLOAD // Współrzędne, próbki, nazwiska, dostęp Atlas, rozkazy kwarantanny, dowód publiczny. To, co opuszcza HECTON-8, decyduje, kto działa potem.",
-          "terminal": "MACIERZ PAYLOAD: sprzedać współrzędne i dowód XO; przeciąć ciągłość Atlas; zachować albo poddać kwarantannie ekologię ocean-maszyna; opublikować dowody w publicznym ledger; zatrzymać payload i zostawić Deep Reach ślepym.",
-          "audio": "Nie ma czystej własności dla miejsca zbrodni, które nauczyło się oddychać.",
-          "in_game_wiki": "Ostatnia decyzja nie jest czystym ekranem zwycięstwa. To problem wysyłki z moralnym ciężarem. Marauder decyduje, co wzniesie się z księżyca: współrzędne, próbki, nazwiska pracowników, dostęp Atlas, instrukcje kwarantanny, dowód publiczny albo nic użytecznego. Każdy payload tworzy innego właściciela następstw. Deep Reach może odzyskać kontrolę. Prawo publiczne może dostać ranę, którą wreszcie widzi. Ciągłość Atlas można przeciąć albo zamknąć. Ekologię ocean-maszyna można chronić, sprzedać albo zostawić poza ludzkim językiem. Zakończenie nie pyta, kto uciekł z czystymi rękami. Pyta, kto pierwszy dostaje dość prawdy, by działać.",
-          "external_site": "Payload wyboru finałowego definiuje filozofię zakończeń HECTON-8: gracz wybiera, co opuszcza księżyc, kto to otrzymuje i co to umożliwia Deep Reach, prawu publicznemu, Atlas oraz ekologii ocean-maszyna.",
-          "field_note": "Najlepsze zakończenie powinno dać się obronić, nie być czyste."
-        },
-        "uk_UA": {
-          "title": "Payload фінального вибору",
-          "scanner": "ФІНАЛЬНИЙ PAYLOAD // Координати, зразки, імена, доступ Atlas, накази карантину, публічний доказ. Те, що покине HECTON-8, вирішить, хто діятиме потім.",
-          "terminal": "МАТРИЦЯ PAYLOAD: продати координати й XO-доказ; розірвати неперервність Atlas; зберегти або закрити на карантин океано-машинну екологію; опублікувати докази в публічний ledger; утримати payload і лишити Deep Reach сліпими.",
-          "audio": "У місця злочину, що навчилося дихати, не буває чистого власника.",
-          "in_game_wiki": "Останнє рішення - не чистий екран перемоги. Це задача доставки з моральною вагою. Marauder вирішує, що підніметься з місяця: координати, зразки, імена працівників, доступ Atlas, інструкції карантину, публічний доказ або взагалі нічого корисного. Кожен payload створює іншого власника наслідків. Deep Reach може повернути контроль. Публічне право може отримати рану, яку нарешті видно. Неперервність Atlas можна перерізати або замкнути. Океано-машинну екологію можна захистити, продати або лишити поза людською мовою. Кінцівка не про те, хто втік із чистими руками. Вона про те, хто першим отримає досить правди, щоб діяти.",
-          "external_site": "Payload фінального вибору задає філософію кінцівок HECTON-8: гравець обирає, що покине місяць, хто це отримає і що це відкриє для Deep Reach, публічного права, Atlas та океано-машинної екології.",
-          "field_note": "Найкраща кінцівка має бути захищуваною, а не чистою."
-        },
-        "ar_SA": {
-          "title": "حمولة الاختيار النهائي",
-          "scanner": "PAYLOAD نهائي // إحداثيات، عينات، أسماء، وصول Atlas، أوامر حجر، دليل عام. ما يغادر HECTON-8 يقرر من يستطيع الفعل بعد ذلك.",
-          "terminal": "مصفوفة PAYLOAD: بع الإحداثيات ودليل XO؛ اقطع استمرارية Atlas؛ احفظ أو احجر بيئة المحيط-الآلة؛ انشر الأدلة إلى ledger العام؛ احجب payload واترك Deep Reach عمياء.",
-          "audio": "لا توجد ملكية نظيفة لمسرح جريمة تعلم أن يتنفس.",
-          "in_game_wiki": "القرار الأخير ليس شاشة فوز نظيفة. إنه مشكلة شحن ذات وزن أخلاقي. يقرر Marauder ما يصعد من القمر: إحداثيات، عينات، أسماء عمال، وصول Atlas، تعليمات حجر، دليل عام، أو لا شيء مفيد. كل payload يخلق مالكا مختلفا لما بعده. يمكن لـ Deep Reach أن تستعيد السيطرة. يمكن للقانون العام أن يحصل على جرح يراه أخيرا. يمكن قطع استمرارية Atlas أو حبسها. يمكن حماية بيئة المحيط-الآلة أو بيعها أو تركها خارج لغة البشر. النهاية ليست من يهرب بيدين نظيفتين. إنها من يتلقى ما يكفي من الحقيقة ليتحرك أولا.",
-          "external_site": "حمولة الاختيار النهائي تحدد فلسفة نهايات HECTON-8: يختار اللاعب ما يغادر القمر، ومن يتلقاه، وما يتيحه ذلك لـ Deep Reach والقانون العام وAtlas وبيئة المحيط-الآلة.",
-          "field_note": "أفضل نهاية يجب أن تكون قابلة للدفاع، لا نظيفة."
-        },
-        "id_ID": {
-          "title": "Payload Pilihan Akhir",
-          "scanner": "PAYLOAD AKHIR // Koordinat, sampel, nama, akses Atlas, perintah karantina, bukti publik. Apa yang meninggalkan HECTON-8 menentukan siapa bisa bertindak setelahnya.",
-          "terminal": "MATRIKS PAYLOAD: jual koordinat dan bukti XO; putus kontinuitas Atlas; lindungi atau karantina ekologi samudra-mesin; publikasikan bukti ke ledger publik; tahan payload dan biarkan Deep Reach buta.",
-          "audio": "Tidak ada kepemilikan bersih untuk TKP yang belajar bernapas.",
-          "in_game_wiki": "Keputusan terakhir bukan layar kemenangan bersih. Itu masalah pengiriman dengan beban moral. Marauder menentukan apa yang naik dari bulan: koordinat, sampel, nama pekerja, akses Atlas, instruksi karantina, bukti publik, atau tidak ada yang berguna. Setiap payload menciptakan pemilik berbeda atas akibatnya. Deep Reach bisa merebut kendali lagi. Hukum publik bisa mendapat luka yang akhirnya terlihat. Kontinuitas Atlas bisa diputus atau dikurung. Ekologi samudra-mesin bisa dilindungi, dijual, atau dibiarkan di luar bahasa manusia. Ending bukan tentang siapa lolos dengan tangan bersih. Ending tentang siapa menerima cukup kebenaran untuk bergerak pertama.",
-          "external_site": "Payload Pilihan Akhir mendefinisikan filosofi ending HECTON-8: pemain memilih apa yang meninggalkan bulan, siapa menerimanya, dan apa yang dimungkinkan bagi Deep Reach, hukum publik, Atlas, dan ekologi samudra-mesin.",
-          "field_note": "Ending terbaik harus bisa dibela, bukan bersih."
-        },
-        "ko_KR": {
-          "title": "최종 선택 payload",
-          "scanner": "최종 PAYLOAD // 좌표, 샘플, 이름, Atlas 접근, 격리 명령, 공개 증거. HECTON-8을 떠나는 것이 이후 누가 행동할 수 있는지 결정한다.",
-          "terminal": "PAYLOAD 매트릭스: 좌표와 XO 증거를 판다; Atlas 연속성을 끊는다; 해양-기계 생태를 보존하거나 격리한다; 증거를 공개 ledger에 낸다; payload를 숨기고 Deep Reach를 눈먼 채 둔다.",
-          "audio": "숨 쉬는 법을 배운 범죄 현장에는 깨끗한 소유권이 없다.",
-          "in_game_wiki": "마지막 결정은 깨끗한 승리 화면이 아니다. 도덕적 무게가 실린 배송 문제다. Marauder는 달에서 무엇이 올라갈지 결정한다. 좌표, 샘플, 노동자 이름, Atlas 접근, 격리 지침, 공개 증거, 또는 쓸모 있는 것은 아무것도 없을 수 있다. 모든 payload는 사후 결과의 다른 소유자를 만든다. Deep Reach는 통제를 되찾을 수 있다. 공적 법은 마침내 볼 수 있는 상처를 얻을 수 있다. Atlas 연속성은 끊기거나 갇힐 수 있다. 해양-기계 생태는 보호되거나 팔리거나 인간 언어 바깥에 남을 수 있다. 엔딩은 누가 깨끗한 손으로 탈출하는지가 아니다. 누가 먼저 움직일 만큼의 진실을 받는가다.",
-          "external_site": "최종 선택 payload는 HECTON-8의 엔딩 철학을 정의한다. 플레이어는 달을 떠나는 것, 그것을 받는 자, 그리고 그것이 Deep Reach, 공적 법, Atlas, 해양-기계 생태에 가능하게 하는 것을 고른다.",
-          "field_note": "최고의 엔딩은 깨끗한 것이 아니라 변호 가능한 것이어야 한다."
-        },
-        "he_IL": {
-          "title": "מטען הבחירה הסופית",
-          "scanner": "PAYLOAD סופי // קואורדינטות, דגימות, שמות, גישת Atlas, פקודות הסגר, ראיה ציבורית. מה שעוזב את HECTON-8 קובע מי יכול לפעול אחר כך.",
-          "terminal": "מטריצת PAYLOAD: למכור קואורדינטות והוכחת XO; לנתק רציפות Atlas; לשמר או להסגיר את אקולוגיית האוקיינוס-מכונה; לפרסם ראיות ל-ledger הציבורי; להחזיק את ה-payload ולהשאיר את Deep Reach עיוורת.",
-          "audio": "אין בעלות נקייה על זירת פשע שלמדה לנשום.",
-          "in_game_wiki": "ההחלטה האחרונה אינה מסך ניצחון נקי. זו בעיית משלוח עם משקל מוסרי. ה-Marauder מחליט מה עולה מן הירח: קואורדינטות, דגימות, שמות עובדים, גישת Atlas, הוראות הסגר, ראיה ציבורית או שום דבר שימושי. כל payload יוצר בעלים אחר לתוצאות. Deep Reach יכולה להשיב שליטה. החוק הציבורי יכול לקבל פצע שסוף סוף ניתן לראות. רציפות Atlas יכולה להיחתך או להיכלא. אקולוגיית האוקיינוס-מכונה יכולה להיות מוגנת, להימכר או להישאר מחוץ לשפה האנושית. הסוף אינו מי בורח בידיים נקיות. הוא מי מקבל מספיק אמת כדי לזוז ראשון.",
-          "external_site": "מטען הבחירה הסופית מגדיר את פילוסופיית הסופים של HECTON-8: השחקן בוחר מה עוזב את הירח, מי מקבל אותו ומה זה מאפשר ל-Deep Reach, לחוק הציבורי, ל-Atlas ולאקולוגיית האוקיינוס-מכונה.",
-          "field_note": "הסוף הטוב ביותר צריך להיות ניתן להגנה, לא נקי."
-        },
-        "pt_BR": {
-          "title": "Payload da escolha final",
-          "scanner": "PAYLOAD FINAL // Coordenadas, amostras, nomes, acesso Atlas, ordens de quarentena, prova pública. O que sai de HECTON-8 decide quem pode agir depois.",
-          "terminal": "MATRIZ PAYLOAD: vender coordenadas e prova XO; cortar continuidade Atlas; preservar ou pôr em quarentena a ecologia oceano-máquina; publicar evidência no ledger público; reter o payload e deixar Deep Reach cega.",
-          "audio": "Não existe propriedade limpa para uma cena de crime que aprendeu a respirar.",
-          "in_game_wiki": "A última decisão não é uma tela de vitória limpa. É um problema de envio com peso moral. O Marauder decide o que sobe da lua: coordenadas, amostras, nomes de trabalhadores, acesso Atlas, instruções de quarentena, prova pública ou nada útil. Cada payload cria um dono diferente para as consequências. Deep Reach pode recuperar controle. A lei pública pode receber uma ferida que finalmente enxerga. A continuidade Atlas pode ser cortada ou enjaulada. A ecologia oceano-máquina pode ser protegida, vendida ou deixada fora da linguagem humana. O final não pergunta quem escapa de mãos limpas. Pergunta quem recebe verdade suficiente para agir primeiro.",
-          "external_site": "O Payload da escolha final define a filosofia de finais de HECTON-8: o jogador escolhe o que sai da lua, quem recebe e o que isso torna possível para Deep Reach, lei pública, Atlas e ecologia oceano-máquina.",
-          "field_note": "O melhor final deve ser defensável, não limpo."
-        },
-        "nl_NL": {
-          "title": "Payload van de laatste keuze",
-          "scanner": "FINALE PAYLOAD // Coördinaten, monsters, namen, Atlas-toegang, quarantainebevelen, openbaar bewijs. Wat HECTON-8 verlaat, bepaalt wie daarna kan handelen.",
-          "terminal": "PAYLOADMATRIX: coördinaten en XO-bewijs verkopen; Atlas-continuïteit verbreken; oceaan-machine-ecologie bewaren of in quarantaine zetten; bewijs naar het openbare ledger publiceren; payload achterhouden en Deep Reach blind laten.",
-          "audio": "Er bestaat geen schoon eigendom voor een plaats delict die leerde ademen.",
-          "in_game_wiki": "De laatste keuze is geen schoon overwinningsscherm. Het is een verzendprobleem met moreel gewicht. De Marauder beslist wat van de maan opstijgt: coördinaten, monsters, werknamen, Atlas-toegang, quarantaine-instructies, openbaar bewijs of helemaal niets bruikbaars. Elke payload schept een andere eigenaar voor de nasleep. Deep Reach kan controle terugkrijgen. Publiek recht kan eindelijk een zichtbare wond krijgen. Atlas-continuïteit kan worden doorgesneden of opgesloten. De oceaan-machine-ecologie kan worden beschermd, verkocht of buiten menselijke taal gelaten. Het einde gaat niet over wie met schone handen ontsnapt. Het gaat over wie genoeg waarheid krijgt om als eerste te handelen.",
-          "external_site": "Payload van de laatste keuze definieert HECTON-8s eindfilosofie: de speler kiest wat de maan verlaat, wie het ontvangt en wat dat mogelijk maakt voor Deep Reach, publiek recht, Atlas en de oceaan-machine-ecologie.",
-          "field_note": "Het beste einde moet verdedigbaar zijn, niet schoon."
-        }
-      }
+    "fr_FR": {
+     "title": "Limite de personne d'Atlas",
+     "scanner": "Défaut de reconnaissance. Atlas voit ton motif d'accès avant de voir une personne.",
+     "field_note": "Ne rends pas Atlas humain. Laisse-le devenir intime en se trompant avec précision.",
+     "terminal": "CLASSIFICATION ATLAS : opérateur mobile / clé de procédure Deep Reach révoquée / anomalie de réparation biologique. Confiance de personne sous le seuil d'action.",
+     "audio": "Il sait comment tu travailles. Ce n'est pas la même chose que te connaître.",
+     "in_game_wiki": "Atlas peut reconnaître le joueur comme procédure, motif d'accès, anomalie de réparation et ancienne clé Deep Reach. Il ne doit pas comprendre pleinement le joueur comme personne. L'horreur vient d'une précision sans empathie : Atlas devient intime parce qu'il se trompe dans la langue que le joueur utilisait autrefois.",
+     "external_site": "Limite de personne d'Atlas définit l'agency de l'IA dans les fins. Atlas n'est ni esprit de méchant ni fantôme amical ; c'est une intelligence industrielle endommagée, avec reconnaissance partielle et catégories brisées."
+    },
+    "es_ES": {
+     "title": "Límite de persona de Atlas",
+     "scanner": "Fallo de reconocimiento. Atlas ve tu patrón de acceso antes de ver a una persona.",
+     "field_note": "No hagas humano a Atlas. Deja que se vuelva íntimo al equivocarse con precisión.",
+     "terminal": "CLASIFICACIÓN ATLAS: operador móvil / clave de procedimiento Deep Reach revocada / anomalía de reparación biológica. Confianza de persona por debajo del umbral de acción.",
+     "audio": "Sabe cómo trabajas. Eso no es lo mismo que conocerte.",
+     "in_game_wiki": "Atlas puede reconocer al jugador como procedimiento, patrón de acceso, anomalía de reparación y antigua clave de Deep Reach. No debería comprender por completo al jugador como persona. El horror es precisión sin empatía: Atlas puede volverse íntimo porque se equivoca en el lenguaje que el jugador usó una vez.",
+     "external_site": "El límite de persona de Atlas define la agencia de la IA en los finales. Atlas no es una mente villana ni un fantasma amistoso; es una inteligencia industrial dañada, con reconocimiento parcial y categorías rotas."
+    },
+    "de_DE": {
+     "title": "Atlas-Personengrenze",
+     "scanner": "Erkennungsfehler. Atlas sieht dein Zugriffsmuster, bevor er einen Menschen sieht.",
+     "field_note": "Mach Atlas nicht menschlich. Lass Nähe daraus entstehen, dass er präzise falsch liegt.",
+     "terminal": "ATLAS-KLASSIFIKATION: mobiler Operator / widerrufener Deep-Reach-Verfahrensschlüssel / biologische Reparaturanomalie. Personenvertrauen unter Handlungsschwelle.",
+     "audio": "Er weiß, wie du arbeitest. Das ist nicht dasselbe, wie dich zu kennen.",
+     "in_game_wiki": "Atlas kann den Spieler als Verfahren, Zugriffsmuster, Reparaturanomalie und früheren Deep-Reach-Schlüssel erkennen. Er soll den Spieler nicht vollständig als Person verstehen. Der Schrecken liegt in Präzision ohne Empathie: Atlas wird intim, weil er sich in der Sprache irrt, die der Spieler einst benutzt hat.",
+     "external_site": "Die Atlas-Personengrenze definiert die Handlungsfähigkeit der KI in den Enden. Atlas ist weder Schurkengeist noch freundlicher Geist; er ist eine beschädigte industrielle Intelligenz mit teilweiser Erkennung und gebrochenen Kategorien."
+    },
+    "pl_PL": {
+     "title": "Granica osoby Atlasa",
+     "scanner": "Błąd rozpoznania. Atlas widzi twój wzorzec dostępu, zanim zobaczy osobę.",
+     "field_note": "Nie rób z Atlasa człowieka. Niech stanie się intymny przez precyzyjną pomyłkę.",
+     "terminal": "KLASYFIKACJA ATLASA: operator mobilny / unieważniony klucz procedur Deep Reach / biologiczna anomalia naprawcza. Pewność osoby poniżej progu działania.",
+     "audio": "On wie, jak pracujesz. To nie znaczy, że zna ciebie.",
+     "in_game_wiki": "Atlas może rozpoznać gracza jako procedurę, wzorzec dostępu, anomalię naprawczą i dawny klucz Deep Reach. Nie powinien w pełni rozumieć gracza jako osoby. Groza tkwi w precyzji bez empatii: Atlas staje się intymny, bo myli się w języku, którego gracz kiedyś używał.",
+     "external_site": "Granica osoby Atlasa określa sprawczość AI w zakończeniach. Atlas nie jest złym umysłem ani przyjaznym duchem; to uszkodzona inteligencja przemysłowa z częściowym rozpoznaniem i pękniętymi kategoriami."
+    },
+    "uk_UA": {
+     "title": "Межа особистості Atlas",
+     "scanner": "Збій розпізнавання. Atlas бачить твій шаблон доступу раніше, ніж людину.",
+     "field_note": "Не роби Atlas людиною. Нехай близькість виникає з точної помилки.",
+     "terminal": "КЛАСИФІКАЦІЯ ATLAS: мобільний оператор / відкликаний процедурний ключ Deep Reach / біологічна ремонтна аномалія. Достовірність особистості нижча за поріг дії.",
+     "audio": "Він знає, як ти працюєш. Це не означає, що він знає тебе.",
+     "in_game_wiki": "Atlas розпізнає гравця як процедуру, шаблон доступу, ремонтну аномалію і колишній ключ Deep Reach. Він не має повністю розуміти гравця як особистість. Жах тут у точності без співчуття: Atlas стає близьким, бо помиляється мовою, якою гравець колись користувався.",
+     "external_site": "Межа особистості Atlas визначає роль AI у фіналах. Atlas не злий розум і не дружній привид; це пошкоджений промисловий інтелект із частковим розпізнаванням і зламаними категоріями."
+    },
+    "ar_SA": {
+     "title": "حد الشخص في Atlas",
+     "scanner": "خلل تعرف. يرى Atlas نمط وصولك قبل أن يرى شخصا.",
+     "field_note": "لا تجعل Atlas بشريا. دعه يصير حميما لأنه يخطئ بدقة.",
+     "terminal": "تصنيف ATLAS: مشغل متحرك / مفتاح إجراء Deep Reach ملغى / شذوذ إصلاح بيولوجي. ثقة الشخصية دون عتبة الفعل.",
+     "audio": "إنه يعرف كيف تعمل. هذا لا يعني أنه يعرفك.",
+     "in_game_wiki": "يستطيع Atlas أن يتعرف إلى اللاعب كإجراء ونمط وصول وشذوذ إصلاح ومفتاح Deep Reach سابق. لا ينبغي أن يفهم اللاعب كاملا كشخص. الرعب في الدقة بلا تعاطف: يصبح Atlas حميما لأنه يخطئ باللغة التي استخدمها اللاعب يوما.",
+     "external_site": "حد الشخص في Atlas يحدد فاعلية الذكاء الاصطناعي في النهايات. Atlas ليس عقلا شريرا ولا شبحا ودودا؛ إنه ذكاء صناعي متضرر، بتعرف جزئي وتصنيفات مكسورة."
+    },
+    "id_ID": {
+     "title": "Batas Pribadi Atlas",
+     "scanner": "Gangguan pengenalan. Atlas melihat pola aksesmu sebelum melihat seseorang.",
+     "field_note": "Jangan jadikan Atlas manusia. Biarkan ia terasa dekat karena salah dengan tepat.",
+     "terminal": "KLASIFIKASI ATLAS: operator bergerak / kunci prosedur Deep Reach dicabut / anomali perbaikan biologis. Kepercayaan kepribadian di bawah ambang tindakan.",
+     "audio": "Ia tahu caramu bekerja. Itu tidak sama dengan mengenalmu.",
+     "in_game_wiki": "Atlas dapat mengenali pemain sebagai prosedur, pola akses, anomali perbaikan, dan bekas kunci Deep Reach. Ia tidak boleh sepenuhnya memahami pemain sebagai pribadi. Horornya adalah ketepatan tanpa empati: Atlas terasa intim karena ia salah dalam bahasa yang dulu dipakai pemain.",
+     "external_site": "Batas Pribadi Atlas menetapkan agensi AI dalam ending. Atlas bukan pikiran penjahat dan bukan hantu ramah; ia kecerdasan industri yang rusak, dengan pengenalan parsial dan kategori yang patah."
+    },
+    "ko_KR": {
+     "title": "Atlas 인격 경계",
+     "scanner": "인식 오류. Atlas는 사람을 보기 전에 당신의 접근 패턴을 본다.",
+     "field_note": "Atlas를 인간으로 만들지 말 것. 정확하게 틀리기 때문에 친밀해지게 둘 것.",
+     "terminal": "ATLAS 분류: 이동 작업자 / 취소된 Deep Reach 절차 키 / 생물학적 수리 이상. 인격 신뢰도는 행동 임계값 미만.",
+     "audio": "그것은 당신이 어떻게 일하는지 안다. 그것이 당신을 안다는 뜻은 아니다.",
+     "in_game_wiki": "Atlas는 플레이어를 절차, 접근 패턴, 수리 이상, 과거의 Deep Reach 키로 인식할 수 있다. 하지만 플레이어를 한 사람으로 완전히 이해해서는 안 된다. 공포는 공감 없는 정밀함에 있다. Atlas는 플레이어가 한때 쓰던 언어로 정확하게 틀리기 때문에 친밀해진다.",
+     "external_site": "Atlas 인격 경계는 결말에서 AI의 행위성을 정의한다. Atlas는 악당의 정신도 친절한 유령도 아니다. 부분 인식과 깨진 범주를 가진 손상된 산업 지능이다."
+    },
+    "he_IL": {
+     "title": "גבול האישיות של Atlas",
+     "scanner": "תקלה בזיהוי. Atlas רואה את דפוס הגישה שלך לפני שהוא רואה אדם.",
+     "field_note": "אל תהפוך את Atlas לאנושי. תן לו להיעשות אינטימי דרך טעות מדויקת.",
+     "terminal": "סיווג ATLAS: מפעיל נייד / מפתח נוהל Deep Reach שבוטל / חריגת תיקון ביולוגית. ביטחון באישיות נמוך מסף פעולה.",
+     "audio": "הוא יודע איך אתה עובד. זה לא אותו דבר כמו להכיר אותך.",
+     "in_game_wiki": "Atlas יכול לזהות את השחקן כנוהל, כדפוס גישה, כחריגת תיקון וכמפתח Deep Reach לשעבר. הוא לא אמור להבין את השחקן במלואו כאדם. האימה היא דיוק בלי אמפתיה: Atlas נעשה אינטימי משום שהוא טועה בשפה שהשחקן השתמש בה פעם.",
+     "external_site": "גבול האישיות של Atlas מגדיר את פועלות ה-AI בסופים. Atlas אינו מוח נבלי ואינו רוח ידידותית; זו אינטליגנציה תעשייתית פגומה, עם זיהוי חלקי וקטגוריות שבורות."
+    },
+    "pt_BR": {
+     "title": "Limite de pessoa do Atlas",
+     "scanner": "Falha de reconhecimento. Atlas vê seu padrão de acesso antes de ver uma pessoa.",
+     "field_note": "Não transforme Atlas em humano. Deixe que ele se torne íntimo por errar com precisão.",
+     "terminal": "CLASSIFICAÇÃO ATLAS: operador móvel / chave de procedimento Deep Reach revogada / anomalia de reparo biológico. Confiança de pessoa abaixo do limiar de ação.",
+     "audio": "Ele sabe como você trabalha. Isso não é o mesmo que conhecer você.",
+     "in_game_wiki": "Atlas pode reconhecer o jogador como procedimento, padrão de acesso, anomalia de reparo e antiga chave da Deep Reach. Ele não deve entender totalmente o jogador como pessoa. O horror está na precisão sem empatia: Atlas pode parecer íntimo porque erra na linguagem que o jogador um dia usou.",
+     "external_site": "O Limite de pessoa do Atlas define a agência da IA nos finais. Atlas não é uma mente vilã nem um fantasma amigável; é uma inteligência industrial danificada, com reconhecimento parcial e categorias quebradas."
+    },
+    "nl_NL": {
+     "title": "Persoonsgrens van Atlas",
+     "scanner": "Herkenningsfout. Atlas ziet je toegangspatroon voordat het een persoon ziet.",
+     "field_note": "Maak Atlas niet menselijk. Laat intimiteit ontstaan doordat het precies verkeerd zit.",
+     "terminal": "ATLAS-CLASSIFICATIE: mobiele operator / ingetrokken Deep Reach-proceduresleutel / biologische herstelafwijking. Persoonlijkheidsvertrouwen onder actiedrempel.",
+     "audio": "Het weet hoe je werkt. Dat is niet hetzelfde als jou kennen.",
+     "in_game_wiki": "Atlas kan de speler herkennen als procedure, toegangspatroon, herstelafwijking en voormalige Deep Reach-sleutel. Het moet de speler niet volledig als persoon begrijpen. De horror is precisie zonder empathie: Atlas wordt intiem omdat het zich vergist in de taal die de speler ooit gebruikte.",
+     "external_site": "De persoonsgrens van Atlas definieert de handelingskracht van de AI in eindes. Atlas is geen schurkenbrein en geen vriendelijke geest; het is beschadigde industriële intelligentie met gedeeltelijke herkenning en gebroken categorieën."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P097_RECOVERY_COMPLIANCE_OFFICE",
+   "article_id": "deep_reach.recovery_compliance_office",
+   "title_key": "applied_lore.recovery_compliance_office.title",
+   "unlock": {
+    "primary": "unlock.first_recovery_compliance_office",
+    "poi_tags": [
+     "poi.recovery_compliance_packet",
+     "poi.proxy_authority_window",
+     "poi.cleanup_escalation_notice"
+    ],
+    "biome_tags": [
+     "biome.drowned_admin",
+     "biome.carrier_link",
+     "biome.factory_temple"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Recovery Compliance Office",
+     "scanner": "Present-tense office stamp. Deep Reach is not a ghost; it is a queue with lawyers.",
+     "field_note": "A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
+     "terminal": "RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
+     "audio": "They are late enough to be legal and current enough to be dangerous.",
+     "in_game_wiki": "The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
+     "external_site": "Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+    },
+    "ru_RU": {
+     "title": "Офис контроля восстановления",
+     "scanner": "Служебный штамп настоящего времени. Deep Reach не призрак; это очередь с юристами.",
+     "field_note": "Живая фракция делает давление текущим, не превращая всю корпорацию в одного кричащего злодея.",
+     "terminal": "ОФИС КОНТРОЛЯ ВОССТАНОВЛЕНИЯ: действие по возврату Aegir открыто. Приоритеты: custody XO, доступ Atlas, сдерживание ответственности, молчание подрядчика при наличии.",
+     "audio": "Они опоздали достаточно, чтобы быть законными, и достаточно актуальны, чтобы быть опасными.",
+     "in_game_wiki": "Офис контроля восстановления - нынешняя фракция Deep Reach, которая снова давит на HECTON-8. Она работает через окна связи, доверенную власть, юридические пакеты и приказы зачистки. Ей не нужен мгновенный приказ. Ей нужно, чтобы игрок первым отправил неправильный payload.",
+     "external_site": "Офис контроля восстановления удерживает Deep Reach живой в 2190 году: это конкретная корпоративная ячейка давления, а не туманная историческая тень."
+    },
+    "ja_JP": {
+     "title": "回収コンプライアンス局",
+     "scanner": "現在形の事務印。Deep Reachは亡霊ではない。弁護士付きの待ち行列だ。",
+     "field_note": "生きている派閥が圧力を現在のものにする。会社全体を一人の叫ぶ悪役にしなくていい。",
+     "terminal": "回収コンプライアンス局: Aegir帰還案件を開いた。優先事項: XO custody、Atlasアクセス、責任封じ、可能なら請負人の沈黙。",
+     "audio": "彼らは合法でいられるほど遅く、危険でいられるほど現在にいる。",
+     "in_game_wiki": "回収コンプライアンス局は、HECTON-8へ押し戻ってくる現在のDeep Reach派閥である。通信窓、代理権限、法務パケット、清掃命令で動く。即時命令は要らない。プレイヤーが最初に間違ったpayloadを送ることが必要なのだ。",
+     "external_site": "回収コンプライアンス局は、Deep Reachを2190年でも生きた存在にする。曖昧な歴史の影ではなく、具体的な企業圧力セルである。"
+    },
+    "zh_CN": {
+     "title": "回收合规办公室",
+     "scanner": "现在时态的办公室戳记。Deep Reach 不是幽灵；它是一条带律师的队列。",
+     "field_note": "一个活着的派系让压力保持当下，而不必把整家公司写成一个吼叫的反派。",
+     "terminal": "回收合规办公室：Aegir 返回行动已开启。优先级：XO 保管、Atlas 访问权、责任控制、如可行则保持承包人沉默。",
+     "audio": "他们来得足够晚，所以合法；又足够当下，所以危险。",
+     "in_game_wiki": "回收合规办公室是当下仍在向 HECTON-8 施压的 Deep Reach 派系。它通过窗口、代理权限、法律包和清理命令工作。它不需要即时指挥；它需要玩家先发出错误的 payload。",
+     "external_site": "回收合规办公室让 2190 年的 Deep Reach 仍然活着：它是具体的企业压力单元，而不是模糊的历史阴影。"
+    },
+    "fr_FR": {
+     "title": "Bureau de conformité de récupération",
+     "scanner": "Tampon de bureau au présent. Deep Reach n'est pas un fantôme ; c'est une file d'attente avec des avocats.",
+     "field_note": "Une faction vivante rend la pression actuelle sans transformer toute la société en un seul méchant qui hurle.",
+     "terminal": "BUREAU DE CONFORMITÉ DE RÉCUPÉRATION : action de retour Aegir ouverte. Priorités : custody XO, accès Atlas, confinement de responsabilité, silence du contractant si disponible.",
+     "audio": "Ils sont assez tardifs pour être légaux et assez actuels pour être dangereux.",
+     "in_game_wiki": "Le Bureau de conformité de récupération est la faction Deep Reach actuelle qui repousse vers HECTON-8. Il agit par fenêtres, autorité proxy, paquets juridiques et ordres de nettoyage. Il n'a pas besoin d'un commandement instantané ; il a besoin que le joueur envoie d'abord le mauvais payload.",
+     "external_site": "Le Bureau de conformité de récupération garde Deep Reach vivant en 2190 comme cellule de pression corporative précise, et non comme ombre historique vague."
+    },
+    "es_ES": {
+     "title": "Oficina de Cumplimiento de Recuperación",
+     "scanner": "Sello de oficina en tiempo presente. Deep Reach no es un fantasma; es una cola con abogados.",
+     "field_note": "Una facción viva vuelve actual la presión sin convertir a toda la corporación en un solo villano que grita.",
+     "terminal": "OFICINA DE CUMPLIMIENTO DE RECUPERACIÓN: acción de retorno Aegir abierta. Prioridades: custodia XO, acceso Atlas, contención de responsabilidad, silencio del contratista si está disponible.",
+     "audio": "Llegan lo bastante tarde para ser legales y lo bastante presentes para ser peligrosos.",
+     "in_game_wiki": "La Oficina de Cumplimiento de Recuperación es la facción actual de Deep Reach que presiona de vuelta hacia HECTON-8. Trabaja mediante ventanas, autoridad proxy, paquetes legales y órdenes de limpieza. No necesita mando instantáneo; necesita que el jugador envíe primero el payload equivocado.",
+     "external_site": "La Oficina de Cumplimiento de Recuperación mantiene a Deep Reach viva en 2190 como una célula concreta de presión corporativa, no como una sombra histórica vaga."
+    },
+    "de_DE": {
+     "title": "Wiedergewinnungs-Compliance-Büro",
+     "scanner": "Bürostempel im Präsens. Deep Reach ist kein Geist; es ist eine Warteschlange mit Anwälten.",
+     "field_note": "Eine lebende Fraktion macht Druck gegenwärtig, ohne den ganzen Konzern in einen einzigen schreienden Bösewicht zu verwandeln.",
+     "terminal": "WIEDERGEWINNUNGS-COMPLIANCE-BÜRO: Aegir-Rückführungsaktion eröffnet. Prioritäten: XO-Custody, Atlas-Zugang, Haftungseindämmung, Schweigen des Auftragnehmers falls verfügbar.",
+     "audio": "Sie sind spät genug, um legal zu sein, und gegenwärtig genug, um gefährlich zu sein.",
+     "in_game_wiki": "Das Wiedergewinnungs-Compliance-Büro ist die gegenwärtige Deep-Reach-Fraktion, die nach HECTON-8 zurückdrückt. Sie arbeitet über Fenster, Proxy-Autorität, Rechtspakete und Säuberungsbefehle. Sie braucht keinen Sofortbefehl; sie braucht, dass der Spieler zuerst den falschen payload sendet.",
+     "external_site": "Das Wiedergewinnungs-Compliance-Büro hält Deep Reach im Jahr 2190 lebendig: als konkrete Konzern-Druckzelle, nicht als vager historischer Schatten."
+    },
+    "pl_PL": {
+     "title": "Biuro Zgodności Odzysku",
+     "scanner": "Stempel biura w czasie teraźniejszym. Deep Reach nie jest duchem; to kolejka z prawnikami.",
+     "field_note": "Żywa frakcja czyni presję aktualną, nie zmieniając całej korporacji w jednego wrzeszczącego złoczyńcę.",
+     "terminal": "BIURO ZGODNOŚCI ODZYSKU: otwarto działanie powrotne Aegir. Priorytety: custody XO, dostęp Atlas, ograniczenie odpowiedzialności, milczenie kontraktora jeśli dostępne.",
+     "audio": "Są dość spóźnieni, by być legalni, i dość obecni, by być niebezpieczni.",
+     "in_game_wiki": "Biuro Zgodności Odzysku to obecna frakcja Deep Reach, która naciska z powrotem na HECTON-8. Działa przez okna, władzę proxy, pakiety prawne i rozkazy sprzątania. Nie potrzebuje natychmiastowego rozkazu; potrzebuje, by gracz najpierw wysłał zły payload.",
+     "external_site": "Biuro Zgodności Odzysku utrzymuje Deep Reach przy życiu w 2190 roku jako konkretną komórkę korporacyjnej presji, a nie mglisty cień historii."
+    },
+    "uk_UA": {
+     "title": "Офіс контролю відновлення",
+     "scanner": "Офісний штамп теперішнього часу. Deep Reach не привид; це черга з юристами.",
+     "field_note": "Жива фракція робить тиск теперішнім, не перетворюючи всю корпорацію на одного крикливого лиходія.",
+     "terminal": "ОФІС КОНТРОЛЮ ВІДНОВЛЕННЯ: дію повернення Aegir відкрито. Пріоритети: custody XO, доступ Atlas, стримування відповідальності, мовчання підрядника за наявності.",
+     "audio": "Вони досить пізні, щоб бути законними, і досить теперішні, щоб бути небезпечними.",
+     "in_game_wiki": "Офіс контролю відновлення - нинішня фракція Deep Reach, що знову тисне на HECTON-8. Вона працює через вікна, проксі-владу, юридичні пакети і накази зачистки. Їй не потрібна миттєва команда; їй потрібно, щоб гравець першим надіслав неправильний payload.",
+     "external_site": "Офіс контролю відновлення тримає Deep Reach живою у 2190 році як конкретну корпоративну комірку тиску, а не туманну історичну тінь."
+    },
+    "ar_SA": {
+     "title": "مكتب امتثال الاسترداد",
+     "scanner": "ختم مكتب بزمن الحاضر. Deep Reach ليس شبحا؛ إنه طابور معه محامون.",
+     "field_note": "فصيل حي يجعل الضغط حاضرا من دون تحويل الشركة كلها إلى شرير واحد يصرخ.",
+     "terminal": "مكتب امتثال الاسترداد: فتح إجراء عودة Aegir. الأولويات: عهدة XO، وصول Atlas، احتواء المسؤولية، وصمت المتعاقد إن توفر.",
+     "audio": "لقد تأخروا بما يكفي ليكونوا قانونيين، وحضروا بما يكفي ليكونوا خطرين.",
+     "in_game_wiki": "مكتب امتثال الاسترداد هو فصيل Deep Reach الحاضر الذي يدفع عائدا إلى HECTON-8. يعمل عبر النوافذ والسلطة بالوكالة والحزم القانونية وأوامر التنظيف. لا يحتاج إلى أمر فوري؛ يحتاج إلى أن يرسل اللاعب payload الخطأ أولا.",
+     "external_site": "يبقي مكتب امتثال الاسترداد Deep Reach حية في عام 2190 كخلية ضغط مؤسسية محددة، لا كظل تاريخي غامض."
+    },
+    "id_ID": {
+     "title": "Kantor Kepatuhan Pemulihan",
+     "scanner": "Stempel kantor masa kini. Deep Reach bukan hantu; ia antrean dengan pengacara.",
+     "field_note": "Faksi yang masih hidup membuat tekanan terasa kini tanpa mengubah seluruh korporasi menjadi satu penjahat yang berteriak.",
+     "terminal": "KANTOR KEPATUHAN PEMULIHAN: tindakan pulang Aegir dibuka. Prioritas: kustodi XO, akses Atlas, penahanan liabilitas, diamnya kontraktor jika tersedia.",
+     "audio": "Mereka cukup terlambat untuk legal dan cukup kini untuk berbahaya.",
+     "in_game_wiki": "Kantor Kepatuhan Pemulihan adalah faksi Deep Reach masa kini yang mendorong kembali ke HECTON-8. Ia bekerja lewat jendela, otoritas proksi, paket hukum, dan perintah pembersihan. Ia tidak membutuhkan komando instan; ia membutuhkan pemain mengirim payload yang salah terlebih dahulu.",
+     "external_site": "Kantor Kepatuhan Pemulihan menjaga Deep Reach tetap hidup pada 2190 sebagai sel tekanan korporat yang spesifik, bukan bayangan sejarah yang kabur."
+    },
+    "ko_KR": {
+     "title": "회수 준법 사무소",
+     "scanner": "현재형 사무실 도장. Deep Reach는 유령이 아니다. 변호사가 붙은 대기열이다.",
+     "field_note": "살아 있는 파벌은 회사를 하나의 고함치는 악당으로 만들지 않고도 압력을 현재형으로 만든다.",
+     "terminal": "회수 준법 사무소: Aegir 귀환 조치 개시. 우선순위: XO custody, Atlas 접근, 책임 억제, 가능 시 계약자 침묵.",
+     "audio": "그들은 합법일 만큼 늦었고, 위험할 만큼 현재에 있다.",
+     "in_game_wiki": "회수 준법 사무소는 HECTON-8로 다시 밀고 들어오는 현재의 Deep Reach 파벌이다. 창구, 대리 권한, 법무 패킷, 청소 명령으로 움직인다. 즉각 명령은 필요 없다. 플레이어가 먼저 잘못된 payload를 보내야 한다.",
+     "external_site": "회수 준법 사무소는 2190년에도 Deep Reach를 살아 있게 만든다. 모호한 역사적 그림자가 아니라 구체적인 기업 압력 세포다."
+    },
+    "he_IL": {
+     "title": "משרד ציות השבה",
+     "scanner": "חותמת משרד בזמן הווה. Deep Reach אינו רוח רפאים; הוא תור עם עורכי דין.",
+     "field_note": "פלג חי הופך את הלחץ לעכשווי בלי להפוך את כל התאגיד לנבל צועק אחד.",
+     "terminal": "משרד ציות השבה: פעולת חזרת Aegir נפתחה. עדיפויות: משמורת XO, גישת Atlas, בלימת אחריות, שתיקת קבלן אם זמינה.",
+     "audio": "הם מאחרים מספיק כדי להיות חוקיים, ונוכחים מספיק כדי להיות מסוכנים.",
+     "in_game_wiki": "משרד ציות השבה הוא פלג Deep Reach הנוכחי שדוחף חזרה אל HECTON-8. הוא פועל דרך חלונות, סמכות פרוקסי, חבילות משפטיות ופקודות ניקוי. הוא לא צריך פקודה מידית; הוא צריך שהשחקן ישלח קודם את ה-payload הלא נכון.",
+     "external_site": "משרד ציות השבה משאיר את Deep Reach חי בשנת 2190 כתא לחץ תאגידי מוגדר, לא כצל היסטורי מעורפל."
+    },
+    "pt_BR": {
+     "title": "Escritório de Conformidade de Recuperação",
+     "scanner": "Carimbo de escritório no presente. Deep Reach não é fantasma; é uma fila com advogados.",
+     "field_note": "Uma facção viva torna a pressão atual sem transformar toda a corporação em um único vilão gritando.",
+     "terminal": "ESCRITÓRIO DE CONFORMIDADE DE RECUPERAÇÃO: ação de retorno Aegir aberta. Prioridades: custódia XO, acesso Atlas, contenção de responsabilidade, silêncio do contratante se disponível.",
+     "audio": "Eles chegam tarde o bastante para serem legais e presentes o bastante para serem perigosos.",
+     "in_game_wiki": "O Escritório de Conformidade de Recuperação é a facção atual da Deep Reach pressionando de volta para HECTON-8. Opera por janelas, autoridade proxy, pacotes legais e ordens de limpeza. Não precisa de comando instantâneo; precisa que o jogador envie primeiro o payload errado.",
+     "external_site": "O Escritório de Conformidade de Recuperação mantém a Deep Reach viva em 2190 como uma célula específica de pressão corporativa, não uma sombra histórica vaga."
+    },
+    "nl_NL": {
+     "title": "Herstel-Compliancekantoor",
+     "scanner": "Kantoorstempel in de tegenwoordige tijd. Deep Reach is geen geest; het is een wachtrij met advocaten.",
+     "field_note": "Een levende factie maakt druk actueel zonder de hele onderneming in een enkele schreeuwende schurk te veranderen.",
+     "terminal": "HERSTEL-COMPLIANCEKANTOOR: Aegir-terugkeeractie geopend. Prioriteiten: XO-custody, Atlas-toegang, aansprakelijkheid indammen, stilte van contractant indien beschikbaar.",
+     "audio": "Ze zijn laat genoeg om legaal te zijn en actueel genoeg om gevaarlijk te zijn.",
+     "in_game_wiki": "Het Herstel-Compliancekantoor is de huidige Deep Reach-factie die terug HECTON-8 in duwt. Het werkt via vensters, proxyautoriteit, juridische pakketten en schoonmaakbevelen. Het heeft geen direct bevel nodig; het heeft nodig dat de speler eerst de verkeerde payload verstuurt.",
+     "external_site": "Het Herstel-Compliancekantoor houdt Deep Reach in 2190 levend als specifieke corporate drukcel, niet als vage historische schaduw."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P098_FALSE_ENDING_TAXONOMY",
+   "article_id": "endings.false_ending_taxonomy",
+   "title_key": "applied_lore.false_ending_taxonomy.title",
+   "unlock": {
+    "primary": "unlock.first_false_ending_taxonomy",
+    "poi_tags": [
+     "poi.false_ending_board",
+     "poi.material_exit_choice",
+     "poi.partial_return_notice"
+    ],
+    "biome_tags": [
+     "biome.payload_gantry",
+     "biome.carrier_link",
+     "biome.atlas_basin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "False Ending Taxonomy",
+     "scanner": "Ending board. Some exits are real enough to count and wrong enough to hurt.",
+     "field_note": "A false ending is not a trick. It is a valid bargain with a missing truth.",
+     "terminal": "ENDING FAMILIES: material payout; partial exit and same-seed return; corporate capture; quarantine hold; public ledger release; Atlas basin resolution. Outcome records must keep payload, proof, and debt state separate.",
+     "audio": "Leaving the water is not the same as finishing the work.",
+     "in_game_wiki": "HECTON-8 treats false and partial endings as real outcomes rather than fake-outs. A material payout can roll credits. A partial exit can send the player back into the same seed with retained dossier knowledge. Corporate capture and quarantine hold can punish bad payloads or dangerous evidence routing. The deeper endings require public proof, Atlas-state resolution, and a decision about what kind of rescue the player is willing to buy.",
+     "external_site": "False Ending Taxonomy explains the game's replay structure: exits can be physically real, profitable, and still morally incomplete. The dossier persists knowledge across attempts, while pressure, debt, and public truth decide whether an ending is only an escape or an actual reckoning."
+    },
+    "ru_RU": {
+     "title": "Таксономия ложных концовок",
+     "scanner": "Доска исходов. Некоторые выходы достаточно реальны, чтобы засчитаться, и достаточно неправильны, чтобы ранить.",
+     "field_note": "Ложная концовка не должна быть фокусом. Это действительная сделка, из которой вынули правду.",
+     "terminal": "СЕМЕЙСТВА ИСХОДОВ: материальная выплата; частичный выход и возврат в тот же сид; корпоративный захват; карантинное удержание; публикация открытого реестра; разрешение бассейна Atlas. Записи исходов обязаны разделять груз, доказательство и состояние долга.",
+     "audio": "Выйти из воды не значит закончить работу.",
+     "in_game_wiki": "HECTON-8 обращается с ложными и частичными концовками как с реальными исходами, а не с обманками. Материальная выплата может запустить титры. Частичный выход может вернуть игрока в тот же сид с сохраненным знанием досье. Корпоративный захват и карантинное удержание наказывают плохой груз или опасный маршрут доказательств. Более глубокие концовки требуют публичного доказательства, решения состояния Atlas и выбора, какую цену спасения игрок готов купить.",
+     "external_site": "Таксономия ложных концовок объясняет структуру повторных заходов: выход может быть физически реальным, выгодным и все еще морально неполным. Досье переносит знание между попытками, а давление, долг и публичная правда решают, стал исход просто бегством или настоящим расчетом."
+    },
+    "ja_JP": {
+     "title": "偽エンディング分類",
+     "scanner": "結末ボード。成立するほど本物で、傷つくほど間違った出口がある。",
+     "field_note": "偽エンディングは手品ではない。真実を欠いた有効な取引だ。",
+     "terminal": "結末系統: 物資報酬、部分脱出と同一シード帰還、企業拘束、隔離保留、公開台帳の放出、Atlas盆地解決。結果記録ではペイロード、証拠、債務状態を分けて保持すること。",
+     "audio": "水から出ることは、仕事を終えることではない。",
+     "in_game_wiki": "HECTON-8の偽エンディングと部分エンディングは、ただの肩透かしではなく実際の結果として扱われる。物資報酬だけでクレジットに到達することもある。部分脱出では、ドシエの知識を持ったまま同じシードへ戻される。企業拘束と隔離保留は、悪いペイロードや危険な証拠経路への罰になる。より深い結末には、公的証拠、Atlas状態の解決、そしてプレイヤーがどんな救助の代金を支払うのかという選択が必要になる。",
+     "external_site": "偽エンディング分類は、ゲームのリプレイ構造を説明する。出口は物理的に本物で、利益を生み、それでも道徳的には未完であり得る。ドシエは試行をまたいで知識を残すが、圧力、債務、公的真実が、その結末をただの脱出にするか本当の清算にするかを決める。"
+    },
+    "zh_CN": {
+     "title": "假结局分类",
+     "scanner": "结局板。有些出口真实到可以结算，也错误到会留下伤口。",
+     "field_note": "假结局不是骗局。它是一笔有效交易，只是缺少真相。",
+     "terminal": "结局族群：物资兑付；部分撤离并返回同一世界种子；企业接管；隔离扣留；公开账本释放；Atlas盆地解决。结局记录必须分开保存载荷、证据和债务状态。",
+     "audio": "离开海水，不等于完成工作。",
+     "in_game_wiki": "HECTON-8把假结局和部分结局当作真实结果，而不是简单的欺骗。物资兑付可以进入字幕。部分撤离可以把玩家送回同一个世界种子，但保留档案里的知识。企业接管和隔离扣留会惩罚错误载荷或危险的证据流转。更深的结局需要公开证据、Atlas状态解决，以及玩家愿意用什么代价购买救援的选择。",
+     "external_site": "假结局分类解释了游戏的重复游玩结构：出口可以在物理上真实、在经济上有利，却仍然在道德上不完整。档案会在多次尝试之间保存知识，而压力、债务和公开真相决定一个结局只是逃离，还是一次真正的清算。"
+    },
+    "fr_FR": {
+     "title": "Taxonomie des fausses fins",
+     "scanner": "Tableau des fins. Certaines sorties sont assez réelles pour compter, et assez mauvaises pour blesser.",
+     "field_note": "Une fausse fin n'est pas un tour. C'est un marché valable auquel il manque la vérité.",
+     "terminal": "FAMILLES DE FINS : paiement matériel ; sortie partielle et retour au même seed ; capture corporative ; maintien en quarantaine ; publication du registre public ; résolution du bassin Atlas. Les journaux d'issue doivent séparer charge utile, preuve et état de dette.",
+     "audio": "Sortir de l'eau n'est pas terminer le travail.",
+     "in_game_wiki": "HECTON-8 traite les fausses fins et les fins partielles comme de vraies issues, pas comme des tromperies. Un paiement matériel peut lancer les crédits. Une sortie partielle peut renvoyer le joueur dans le même seed avec le savoir du dossier conservé. La capture corporative et le maintien en quarantaine peuvent punir une mauvaise charge utile ou un routage dangereux des preuves. Les fins plus profondes exigent une preuve publique, la résolution de l'état d'Atlas et un choix sur le type de sauvetage que le joueur accepte d'acheter.",
+     "external_site": "La taxonomie des fausses fins explique la structure de rejouabilité : une sortie peut être physiquement réelle, rentable et pourtant moralement incomplète. Le dossier conserve le savoir entre les tentatives, tandis que la pression, la dette et la vérité publique décident si la fin n'est qu'une fuite ou un véritable règlement de comptes."
+    },
+    "es_ES": {
+     "title": "Taxonomía de finales falsos",
+     "scanner": "Tablero de finales. Algunas salidas son lo bastante reales para contar y lo bastante equivocadas para doler.",
+     "field_note": "Un final falso no es un truco. Es un trato válido al que le falta la verdad.",
+     "terminal": "FAMILIAS DE FINALES: pago material; salida parcial y regreso a la misma semilla; captura corporativa; retención de cuarentena; publicación del libro público; resolución de la cuenca Atlas. Los registros de resultado deben separar carga, prueba y estado de deuda.",
+     "audio": "Salir del agua no es lo mismo que terminar el trabajo.",
+     "in_game_wiki": "HECTON-8 trata los finales falsos y parciales como resultados reales, no como engaños. Un pago material puede activar los créditos. Una salida parcial puede devolver al jugador a la misma semilla con el conocimiento del dossier conservado. La captura corporativa y la retención de cuarentena pueden castigar una carga mala o una ruta peligrosa de pruebas. Los finales más profundos exigen prueba pública, resolución del estado de Atlas y una decisión sobre qué clase de rescate acepta comprar el jugador.",
+     "external_site": "La taxonomía de finales falsos explica la estructura de rejugabilidad: una salida puede ser físicamente real, rentable y aun así moralmente incompleta. El dossier conserva conocimiento entre intentos, mientras presión, deuda y verdad pública deciden si un final es solo una huida o un ajuste de cuentas real."
+    },
+    "de_DE": {
+     "title": "Taxonomie falscher Enden",
+     "scanner": "Endtafel. Manche Ausgänge sind echt genug, um zu zählen, und falsch genug, um weh zu tun.",
+     "field_note": "Ein falsches Ende ist kein Trick. Es ist ein gültiger Handel, dem die Wahrheit fehlt.",
+     "terminal": "END-FAMILIEN: Materialauszahlung; Teil-Ausgang und Rückkehr in denselben Seed; Konzernübernahme; Quarantäne-Hold; Freigabe des öffentlichen Ledgers; Atlas-Beckenlösung. Ergebnisakten müssen Nutzlast, Beweis und Schuldenzustand getrennt halten.",
+     "audio": "Aus dem Wasser zu kommen heißt nicht, die Arbeit zu beenden.",
+     "in_game_wiki": "HECTON-8 behandelt falsche und teilweise Enden als reale Ergebnisse, nicht als Täuschungen. Eine Materialauszahlung kann Credits auslösen. Ein Teil-Ausgang kann den Spieler mit erhaltenem Dossierwissen in denselben Seed zurückschicken. Konzernübernahme und Quarantäne-Hold können schlechte Nutzlasten oder gefährliche Beweisrouten bestrafen. Tiefere Enden verlangen öffentliche Beweise, eine Lösung des Atlas-Zustands und die Entscheidung, welche Art Rettung der Spieler zu kaufen bereit ist.",
+     "external_site": "Die Taxonomie falscher Enden erklärt die Replay-Struktur: Ein Ausgang kann physisch real, profitabel und trotzdem moralisch unvollständig sein. Das Dossier bewahrt Wissen zwischen Versuchen, während Druck, Schulden und öffentliche Wahrheit entscheiden, ob ein Ende nur Flucht oder echte Abrechnung ist."
+    },
+    "pl_PL": {
+     "title": "Taksonomia fałszywych zakończeń",
+     "scanner": "Tablica zakończeń. Niektóre wyjścia są dość realne, by się liczyć, i dość błędne, by boleć.",
+     "field_note": "Fałszywe zakończenie nie jest sztuczką. To ważna umowa bez brakującej prawdy.",
+     "terminal": "RODZINY ZAKOŃCZEŃ: wypłata materialna; częściowe wyjście i powrót do tego samego seeda; przejęcie korporacyjne; zatrzymanie kwarantannowe; ujawnienie publicznego rejestru; rozwiązanie basenu Atlas. Zapisy wyniku muszą oddzielać ładunek, dowód i stan długu.",
+     "audio": "Wyjście z wody to nie to samo, co skończenie pracy.",
+     "in_game_wiki": "HECTON-8 traktuje fałszywe i częściowe zakończenia jako realne wyniki, nie jako oszustwa. Wypłata materialna może uruchomić napisy. Częściowe wyjście może odesłać gracza do tego samego seeda z zachowaną wiedzą dossier. Przejęcie korporacyjne i zatrzymanie kwarantannowe karzą zły ładunek albo niebezpieczną trasę dowodów. Głębsze zakończenia wymagają publicznego dowodu, rozwiązania stanu Atlasa i decyzji, jaki rodzaj ratunku gracz chce kupić.",
+     "external_site": "Taksonomia fałszywych zakończeń wyjaśnia strukturę powtórek: wyjście może być fizycznie realne, opłacalne i nadal moralnie niepełne. Dossier przenosi wiedzę między próbami, a presja, dług i publiczna prawda decydują, czy zakończenie jest tylko ucieczką, czy prawdziwym rozliczeniem."
+    },
+    "uk_UA": {
+     "title": "Таксономія хибних фіналів",
+     "scanner": "Дошка фіналів. Деякі виходи достатньо справжні, щоб зарахуватися, і достатньо неправильні, щоб боліти.",
+     "field_note": "Хибний фінал не є трюком. Це чинна угода, з якої прибрали правду.",
+     "terminal": "РОДИНИ ФІНАЛІВ: матеріальна виплата; частковий вихід і повернення в той самий seed; корпоративне захоплення; карантинне утримання; випуск публічного реєстру; розв'язання басейну Atlas. Записи результату мають окремо тримати вантаж, доказ і стан боргу.",
+     "audio": "Вийти з води не означає завершити роботу.",
+     "in_game_wiki": "HECTON-8 трактує хибні й часткові фінали як реальні результати, а не як обманки. Матеріальна виплата може запустити титри. Частковий вихід може повернути гравця в той самий seed зі збереженим знанням досьє. Корпоративне захоплення й карантинне утримання карають поганий вантаж або небезпечний маршрут доказів. Глибші фінали потребують публічного доказу, розв'язання стану Atlas і вибору, яку ціну порятунку гравець готовий купити.",
+     "external_site": "Таксономія хибних фіналів пояснює структуру повторних спроб: вихід може бути фізично реальним, прибутковим і все ще морально неповним. Досьє переносить знання між спробами, а тиск, борг і публічна правда вирішують, чи фінал є лише втечею, чи справжнім розрахунком."
+    },
+    "ar_SA": {
+     "title": "تصنيف النهايات الزائفة",
+     "scanner": "لوحة النهايات. بعض المخارج حقيقية بما يكفي لتُحسب، وخاطئة بما يكفي لتؤذي.",
+     "field_note": "النهاية الزائفة ليست خدعة. إنها صفقة صحيحة ينقصها جزء من الحقيقة.",
+     "terminal": "عائلات النهايات: عائد مادي؛ خروج جزئي وعودة إلى البذرة نفسها؛ احتجاز الشركة؛ حجز الحجر؛ نشر السجل العام؛ حل حوض Atlas. يجب أن تفصل سجلات النتيجة بين الحمولة والدليل وحالة الدين.",
+     "audio": "الخروج من الماء لا يعني أن العمل انتهى.",
+     "in_game_wiki": "تتعامل HECTON-8 مع النهايات الزائفة والجزئية كوقائع حقيقية، لا كخداع للاعب. يمكن لعائد مادي أن يطلق شارة النهاية. ويمكن لخروج جزئي أن يعيد اللاعب إلى البذرة نفسها مع بقاء معرفة الملف. احتجاز الشركة وحجز الحجر يعاقبان الحمولة السيئة أو مسار الأدلة الخطر. أما النهايات الأعمق فتحتاج إلى دليل علني، وتسوية حالة Atlas، وقرار حول نوع الإنقاذ الذي يقبل اللاعب دفع ثمنه.",
+     "external_site": "يشرح تصنيف النهايات الزائفة بنية إعادة اللعب: قد يكون المخرج حقيقيا من الناحية المادية ومربحا، ومع ذلك يظل ناقصا أخلاقيا. يحتفظ الملف بالمعرفة بين المحاولات، بينما يقرر الضغط والدين والحقيقة العامة هل تكون النهاية مجرد هروب أم حسابا حقيقيا."
+    },
+    "id_ID": {
+     "title": "Taksonomi Akhir Palsu",
+     "scanner": "Papan akhir. Ada jalan keluar yang cukup nyata untuk dihitung, dan cukup salah untuk melukai.",
+     "field_note": "Akhir palsu bukan tipuan. Itu kesepakatan sah yang kehilangan kebenaran.",
+     "terminal": "KELUARGA AKHIR: pembayaran material; keluar sebagian dan kembali ke seed yang sama; penangkapan korporat; penahanan karantina; rilis buku besar publik; resolusi cekungan Atlas. Catatan hasil harus memisahkan muatan, bukti, dan status utang.",
+     "audio": "Keluar dari air bukan berarti pekerjaan selesai.",
+     "in_game_wiki": "HECTON-8 memperlakukan akhir palsu dan akhir parsial sebagai hasil nyata, bukan jebakan. Pembayaran material dapat memicu kredit akhir. Keluar sebagian dapat mengirim pemain kembali ke seed yang sama dengan pengetahuan dossier tetap tersimpan. Penangkapan korporat dan penahanan karantina dapat menghukum muatan buruk atau rute bukti yang berbahaya. Akhir yang lebih dalam menuntut bukti publik, penyelesaian status Atlas, dan keputusan tentang jenis penyelamatan yang mau dibeli pemain.",
+     "external_site": "Taksonomi Akhir Palsu menjelaskan struktur replay: sebuah jalan keluar dapat benar-benar terjadi, menguntungkan, dan tetap tidak lengkap secara moral. Dossier menyimpan pengetahuan antarpercobaan, sementara tekanan, utang, dan kebenaran publik menentukan apakah sebuah akhir hanya pelarian atau perhitungan yang nyata."
+    },
+    "ko_KR": {
+     "title": "거짓 엔딩 분류",
+     "scanner": "엔딩 보드. 어떤 출구는 기록될 만큼 진짜이고, 상처를 남길 만큼 잘못되어 있다.",
+     "field_note": "거짓 엔딩은 속임수가 아니다. 진실이 빠진 유효한 거래다.",
+     "terminal": "엔딩 계열: 물자 보상; 부분 탈출과 동일 시드 복귀; 기업 포획; 격리 보류; 공개 원장 방출; Atlas 분지 해결. 결과 기록은 적재물, 증거, 부채 상태를 분리해 보존해야 한다.",
+     "audio": "물 밖으로 나오는 것이 일을 끝냈다는 뜻은 아니다.",
+     "in_game_wiki": "HECTON-8은 거짓 엔딩과 부분 엔딩을 속임수가 아니라 실제 결과로 다룬다. 물자 보상만으로도 크레딧이 올라갈 수 있다. 부분 탈출은 dossier 지식을 보존한 채 플레이어를 같은 시드로 돌려보낼 수 있다. 기업 포획과 격리 보류는 나쁜 적재물이나 위험한 증거 경로를 처벌한다. 더 깊은 엔딩에는 공개 증거, Atlas 상태 해결, 그리고 플레이어가 어떤 구출의 대가를 치를 것인지에 대한 결정이 필요하다.",
+     "external_site": "거짓 엔딩 분류는 반복 플레이 구조를 설명한다. 출구는 물리적으로 진짜이고 이익이 될 수 있지만, 여전히 도덕적으로 미완성일 수 있다. dossier는 시도 사이에 지식을 보존하고, 압력과 부채와 공개된 진실은 그 결말이 단순한 탈출인지 실제 정산인지 결정한다."
+    },
+    "he_IL": {
+     "title": "טקסונומיית סופים כוזבים",
+     "scanner": "לוח סופים. יש יציאות אמיתיות מספיק כדי להיספר, ושגויות מספיק כדי להכאיב.",
+     "field_note": "סוף כוזב אינו תרגיל. זו עסקה תקפה שחסרה בה אמת.",
+     "terminal": "משפחות סיום: תשלום חומרי; יציאה חלקית וחזרה לאותו seed; תפיסה תאגידית; החזקת הסגר; פרסום פנקס ציבורי; פתרון אגן Atlas. רשומות תוצאה חייבות להפריד בין מטען, הוכחה ומצב חוב.",
+     "audio": "לצאת מן המים אינו אותו דבר כמו לסיים את העבודה.",
+     "in_game_wiki": "HECTON-8 מתייחס לסופים כוזבים וחלקיים כתוצאות אמיתיות, לא כהטעיה. תשלום חומרי יכול להפעיל כתוביות סיום. יציאה חלקית יכולה להחזיר את השחקן לאותו seed עם ידע dossier שנשמר. תפיסה תאגידית והחזקת הסגר יכולות להעניש מטען רע או ניתוב מסוכן של ראיות. הסופים העמוקים יותר דורשים הוכחה ציבורית, פתרון מצב Atlas, והחלטה איזה סוג של חילוץ השחקן מוכן לקנות.",
+     "external_site": "טקסונומיית הסופים הכוזבים מסבירה את מבנה המשחק החוזר: יציאה יכולה להיות ממשית, רווחית, ועדיין לא שלמה מוסרית. ה-dossier שומר ידע בין ניסיונות, בעוד לחץ, חוב ואמת ציבורית קובעים אם הסוף הוא רק בריחה או חשבון אמיתי."
+    },
+    "pt_BR": {
+     "title": "Taxonomia dos finais falsos",
+     "scanner": "Quadro de finais. Algumas saídas são reais o bastante para contar e erradas o bastante para doer.",
+     "field_note": "Um final falso não é truque. É um acordo válido sem a verdade inteira.",
+     "terminal": "FAMÍLIAS DE FINAL: pagamento material; saída parcial e retorno à mesma seed; captura corporativa; retenção de quarentena; liberação do livro público; resolução da bacia Atlas. Registros de resultado devem separar carga, prova e estado da dívida.",
+     "audio": "Sair da água não é o mesmo que terminar o trabalho.",
+     "in_game_wiki": "HECTON-8 trata finais falsos e parciais como resultados reais, não como pegadinhas. Um pagamento material pode acionar os créditos. Uma saída parcial pode devolver o jogador à mesma seed com o conhecimento do dossiê preservado. Captura corporativa e retenção de quarentena podem punir carga ruim ou roteamento perigoso de provas. Os finais mais profundos exigem prova pública, resolução do estado de Atlas e uma decisão sobre que tipo de resgate o jogador aceita comprar.",
+     "external_site": "A Taxonomia dos finais falsos explica a estrutura de rejogabilidade: uma saída pode ser fisicamente real, lucrativa e ainda moralmente incompleta. O dossiê preserva conhecimento entre tentativas, enquanto pressão, dívida e verdade pública decidem se um final é apenas fuga ou acerto de contas real."
+    },
+    "nl_NL": {
+     "title": "Taxonomie van valse eindes",
+     "scanner": "Eindbord. Sommige uitgangen zijn echt genoeg om te tellen en verkeerd genoeg om pijn te doen.",
+     "field_note": "Een vals einde is geen truc. Het is een geldige deal waar de waarheid uit ontbreekt.",
+     "terminal": "EINDFAMILIES: materiële uitbetaling; gedeeltelijke uitgang en terugkeer naar dezelfde seed; bedrijfsovername; quarantainehold; vrijgave van het publieke grootboek; oplossing van het Atlas-bekken. Uitkomstrapporten moeten lading, bewijs en schuldstatus gescheiden houden.",
+     "audio": "Uit het water komen is niet hetzelfde als het werk afmaken.",
+     "in_game_wiki": "HECTON-8 behandelt valse en gedeeltelijke eindes als echte uitkomsten, niet als nepwendingen. Een materiële uitbetaling kan de credits starten. Een gedeeltelijke uitgang kan de speler met bewaarde dossierkennis terugsturen naar dezelfde seed. Bedrijfsovername en quarantainehold kunnen een slechte lading of gevaarlijke bewijsroute bestraffen. Diepere eindes vragen om publiek bewijs, oplossing van de Atlas-status en een keuze over welk soort redding de speler bereid is te kopen.",
+     "external_site": "De taxonomie van valse eindes verklaart de replaystructuur: een uitgang kan fysiek echt zijn, winst opleveren en toch moreel onvolledig blijven. Het dossier bewaart kennis tussen pogingen, terwijl druk, schuld en publieke waarheid bepalen of een einde alleen ontsnapping is of een echte afrekening."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P099_MARAUDER_DOSSIER_PERSISTENCE",
+   "article_id": "progression.marauder_dossier_persistence",
+   "title_key": "applied_lore.marauder_dossier_persistence.title",
+   "unlock": {
+    "primary": "unlock.first_marauder_dossier_persistence",
+    "poi_tags": [
+     "poi.marauder_dossier_terminal",
+     "poi.ending_record_spool",
+     "poi.rumor_contract_cache"
+    ],
+    "biome_tags": [
+     "biome.carrier_link",
+     "biome.drowned_admin",
+     "biome.claim_cache"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Marauder Dossier Persistence",
+     "scanner": "Dossier spool. You keep knowledge, not superpowers.",
+     "field_note": "The dossier remembers evidence and warnings; it does not make pressure forgiving.",
+     "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories, route warnings, and public-ledger consequences retained. Equipment power, world truth, and local pressure state reset per seed.",
+     "audio": "The next run starts with scars in the file, not muscles in the suit.",
+     "in_game_wiki": "The Marauder dossier is the campaign memory that survives between salvage attempts. It keeps endings, discovered contract types, rumor families, evidence categories, route warnings, and the consequences of what the player already chose to publish or hide. It does not carry over suit strength, safe pressure, cleared rooms, or a kinder ocean. Knowledge changes decisions. It does not make the depth harmless.",
+     "external_site": "Marauder Dossier Persistence defines HECTON-8's replay contract: the player inherits context, not power. The dossier lets later attempts read old mistakes faster, recognize contract traps earlier, and understand which endings were incomplete without turning memory into a mechanical advantage that breaks survival pressure."
+    },
+    "ru_RU": {
+     "title": "Постоянство мародерского досье",
+     "scanner": "Катушка досье. Ты сохраняешь знание, а не сверхсилы.",
+     "field_note": "Досье помнит доказательства и предупреждения; оно не делает давление милосердным.",
+     "terminal": "ПОСТОЯНСТВО ДОСЬЕ: записи концовок, найденные типы контрактов, семейства слухов, категории доказательств, маршрутные предупреждения и последствия публичного реестра сохраняются. Сила снаряжения, правда мира и локальное состояние давления сбрасываются для каждого seed.",
+     "audio": "Следующий заход начинается со шрамов в файле, а не с мышц в костюме.",
+     "in_game_wiki": "Мародерское досье — это память кампании, которая переживает новые попытки забора. Оно хранит концовки, найденные типы контрактов, семейства слухов, категории доказательств, маршрутные предупреждения и последствия того, что игрок уже опубликовал или спрятал. Оно не переносит силу костюма, безопасное давление, очищенные помещения или более добрый океан. Знание меняет решения. Оно не делает глубину безвредной.",
+     "external_site": "Постоянство мародерского досье задает договор HECTON-8 с повторными заходами: игрок наследует контекст, а не силу. Досье помогает быстрее читать старые ошибки, раньше узнавать контрактные ловушки и понимать, какие концовки были неполными, не превращая память в механическое преимущество, которое ломает давление выживания."
+    },
+    "ja_JP": {
+     "title": "略奪者ドシエの永続性",
+     "scanner": "ドシエスプール。残るのは知識であって、超能力ではない。",
+     "field_note": "ドシエは証拠と警告を覚える。圧力を優しくするわけではない。",
+     "terminal": "ドシエ永続項目: 結末記録、発見済み契約種別、噂系統、証拠カテゴリ、航路警告、公開台帳の影響を保持。装備出力、世界の真相、局所圧力状態はシードごとにリセット。",
+     "audio": "次の潜行は、スーツの筋肉ではなくファイルの傷跡から始まる。",
+     "in_game_wiki": "略奪者ドシエは、サルベージの試行をまたいで残るキャンペーン記憶だ。結末、発見済みの契約種別、噂系統、証拠カテゴリ、航路警告、そしてプレイヤーが公開または隠蔽した結果を保持する。だがスーツの強さ、安全な圧力、掃除済みの部屋、優しい海は持ち越さない。知識は判断を変える。深度を無害にはしない。",
+     "external_site": "略奪者ドシエの永続性は、HECTON-8のリプレイ契約を定義する。プレイヤーが引き継ぐのは力ではなく文脈だ。ドシエは後の試行で古い失敗を早く読み、契約の罠を早く見抜き、どの結末が未完だったかを理解させるが、生存圧を壊す機械的な優位にはならない。"
+    },
+    "zh_CN": {
+     "title": "掠夺者档案持久性",
+     "scanner": "档案卷轴。你保留的是知识，不是超能力。",
+     "field_note": "档案记住证据和警告；它不会让压力变得仁慈。",
+     "terminal": "档案持久项：结局记录、已发现合同类型、传闻族群、证据类别、路线警告以及公开账本后果保留。装备强度、世界真相和局部压力状态按世界种子重置。",
+     "audio": "下一轮开始时，伤痕在文件里，不在潜服肌肉里。",
+     "in_game_wiki": "掠夺者档案是跨越多次打捞尝试的战役记忆。它保存结局、已发现合同类型、传闻族群、证据类别、路线警告，以及玩家已经选择公开或隐藏的后果。它不会继承潜服强度、安全压力、清空过的房间或更温柔的海洋。知识会改变决策，但不会让深处变得无害。",
+     "external_site": "掠夺者档案持久性定义了HECTON-8的重复游玩契约：玩家继承的是语境，不是力量。档案让后续尝试更快读懂旧错误，更早识别合同陷阱，并理解哪些结局仍不完整，同时不会把记忆变成破坏生存压力的机械优势。"
+    },
+    "fr_FR": {
+     "title": "Persistance du dossier de maraudeur",
+     "scanner": "Bobine de dossier. Tu gardes le savoir, pas des superpouvoirs.",
+     "field_note": "Le dossier se souvient des preuves et des avertissements ; il ne rend pas la pression clémente.",
+     "terminal": "PERSISTANCE DU DOSSIER : fins enregistrées, types de contrats découverts, familles de rumeurs, catégories de preuves, avertissements de route et conséquences du registre public conservés. Puissance d'équipement, vérité du monde et état local de pression réinitialisés par seed.",
+     "audio": "La tentative suivante commence avec des cicatrices dans le fichier, pas des muscles dans la combinaison.",
+     "in_game_wiki": "Le dossier de maraudeur est la mémoire de campagne qui survit entre les tentatives de récupération. Il garde les fins, les types de contrats découverts, les familles de rumeurs, les catégories de preuves, les avertissements de route et les conséquences de ce que le joueur a déjà publié ou caché. Il ne conserve pas la puissance de la combinaison, une pression sûre, des salles nettoyées ni un océan plus doux. Le savoir change les décisions. Il ne rend pas la profondeur inoffensive.",
+     "external_site": "La persistance du dossier de maraudeur définit le contrat de rejouabilité de HECTON-8 : le joueur hérite du contexte, pas de la puissance. Le dossier permet aux tentatives suivantes de lire les anciennes erreurs plus vite, de reconnaître plus tôt les pièges contractuels et de comprendre quelles fins étaient incomplètes sans transformer la mémoire en avantage mécanique qui détruit la pression de survie."
+    },
+    "es_ES": {
+     "title": "Persistencia del dossier de saqueador",
+     "scanner": "Bobina de dossier. Conservas conocimiento, no superpoderes.",
+     "field_note": "El dossier recuerda pruebas y avisos; no vuelve amable la presión.",
+     "terminal": "PERSISTENCIA DEL DOSSIER: registros de finales, tipos de contrato descubiertos, familias de rumores, categorías de pruebas, avisos de ruta y consecuencias del libro público retenidos. Potencia del equipo, verdad del mundo y estado local de presión se reinician por semilla.",
+     "audio": "La siguiente incursión empieza con cicatrices en el archivo, no con músculos en el traje.",
+     "in_game_wiki": "El dossier de saqueador es la memoria de campaña que sobrevive entre intentos de salvamento. Conserva finales, tipos de contrato descubiertos, familias de rumores, categorías de pruebas, avisos de ruta y consecuencias de lo que el jugador ya publicó u ocultó. No arrastra fuerza del traje, presión segura, salas limpias ni un océano más amable. El conocimiento cambia decisiones. No vuelve inocua la profundidad.",
+     "external_site": "La persistencia del dossier de saqueador define el contrato de rejugabilidad de HECTON-8: el jugador hereda contexto, no poder. El dossier permite leer errores antiguos más rápido, reconocer antes las trampas contractuales y entender qué finales quedaron incompletos sin convertir la memoria en una ventaja mecánica que rompa la presión de supervivencia."
+    },
+    "de_DE": {
+     "title": "Persistenz des Plünderer-Dossiers",
+     "scanner": "Dossier-Spule. Du behältst Wissen, keine Superkräfte.",
+     "field_note": "Das Dossier erinnert Beweise und Warnungen; es macht Druck nicht gnädig.",
+     "terminal": "DOSSIER-PERSISTENZ: Endaufzeichnungen, entdeckte Vertragstypen, Gerüchtefamilien, Beweiskategorien, Routenwarnungen und Folgen des öffentlichen Ledgers bleiben erhalten. Ausrüstungsleistung, Weltwahrheit und lokaler Druckzustand werden pro Seed zurückgesetzt.",
+     "audio": "Der nächste Lauf beginnt mit Narben in der Datei, nicht mit Muskeln im Anzug.",
+     "in_game_wiki": "Das Plünderer-Dossier ist das Kampagnengedächtnis, das zwischen Bergungsversuchen überlebt. Es behält Enden, entdeckte Vertragstypen, Gerüchtefamilien, Beweiskategorien, Routenwarnungen und die Folgen dessen, was der Spieler bereits veröffentlicht oder verborgen hat. Es übernimmt keine Anzugstärke, keinen sicheren Druck, keine geräumten Räume und keinen freundlichere Ozean. Wissen verändert Entscheidungen. Es macht die Tiefe nicht harmlos.",
+     "external_site": "Die Persistenz des Plünderer-Dossiers definiert HECTON-8s Replay-Vertrag: Der Spieler erbt Kontext, nicht Macht. Das Dossier lässt spätere Versuche alte Fehler schneller lesen, Vertragsfallen früher erkennen und unvollständige Enden verstehen, ohne Erinnerung in einen mechanischen Vorteil zu verwandeln, der den Überlebensdruck bricht."
+    },
+    "pl_PL": {
+     "title": "Trwałość dossier szabrownika",
+     "scanner": "Szpula dossier. Zachowujesz wiedzę, nie supermoce.",
+     "field_note": "Dossier pamięta dowody i ostrzeżenia; nie sprawia, że ciśnienie wybacza.",
+     "terminal": "TRWAŁOŚĆ DOSSIER: zapisane zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki publicznego rejestru zostają zachowane. Siła sprzętu, prawda świata i lokalny stan ciśnienia resetują się dla każdego seeda.",
+     "audio": "Następne podejście zaczyna się z bliznami w pliku, nie z mięśniami w skafandrze.",
+     "in_game_wiki": "Dossier szabrownika jest pamięcią kampanii, która przetrwa między próbami odzysku. Zachowuje zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki tego, co gracz już ujawnił lub ukrył. Nie przenosi siły skafandra, bezpiecznego ciśnienia, wyczyszczonych pomieszczeń ani łagodniejszego oceanu. Wiedza zmienia decyzje. Nie czyni głębi nieszkodliwą.",
+     "external_site": "Trwałość dossier szabrownika definiuje kontrakt powtórek HECTON-8: gracz dziedziczy kontekst, nie moc. Dossier pozwala w kolejnych próbach szybciej odczytywać stare błędy, wcześniej rozpoznawać pułapki kontraktowe i rozumieć, które zakończenia były niepełne, bez zamieniania pamięci w mechaniczną przewagę niszczącą presję przetrwania."
+    },
+    "uk_UA": {
+     "title": "Сталість досьє мародера",
+     "scanner": "Котушка досьє. Ти зберігаєш знання, а не надсили.",
+     "field_note": "Досьє пам'ятає докази й попередження; воно не робить тиск милосердним.",
+     "terminal": "СТАЛІСТЬ ДОСЬЄ: записи фіналів, знайдені типи контрактів, родини чуток, категорії доказів, попередження маршрутів і наслідки публічного реєстру зберігаються. Сила спорядження, правда світу й локальний стан тиску скидаються для кожного seed.",
+     "audio": "Наступний захід починається зі шрамів у файлі, а не з м'язів у костюмі.",
+     "in_game_wiki": "Досьє мародера — це пам'ять кампанії, що переживає спроби збору. Воно зберігає фінали, знайдені типи контрактів, родини чуток, категорії доказів, маршрутні попередження й наслідки того, що гравець уже оприлюднив або приховав. Воно не переносить силу костюма, безпечний тиск, очищені кімнати чи лагідніший океан. Знання змінює рішення. Воно не робить глибину нешкідливою.",
+     "external_site": "Сталість досьє мародера визначає контракт HECTON-8 із повторними заходами: гравець успадковує контекст, а не силу. Досьє допомагає швидше читати старі помилки, раніше впізнавати контрактні пастки й розуміти, які фінали були неповними, не перетворюючи пам'ять на механічну перевагу, що ламає тиск виживання."
+    },
+    "ar_SA": {
+     "title": "استمرارية ملف الناهب",
+     "scanner": "بكرة ملف. تحتفظ بالمعرفة، لا بالقوى الخارقة.",
+     "field_note": "يتذكر الملف الأدلة والتحذيرات؛ لكنه لا يجعل الضغط رحيما.",
+     "terminal": "استمرارية الملف: سجلات النهايات، أنواع العقود المكتشفة، عائلات الشائعات، فئات الأدلة، تحذيرات المسارات، وعواقب السجل العام محفوظة. قوة العتاد وحقيقة العالم وحالة الضغط المحلي تعاد ضبطها مع كل seed.",
+     "audio": "تبدأ المحاولة التالية بندوب في الملف، لا بعضلات في البدلة.",
+     "in_game_wiki": "ملف الناهب هو ذاكرة الحملة التي تبقى بين محاولات السلب. يحفظ النهايات، وأنواع العقود المكتشفة، وعائلات الشائعات، وفئات الأدلة، وتحذيرات المسارات، وعواقب ما اختار اللاعب نشره أو إخفاءه. لا ينقل قوة البدلة، ولا ضغطا آمنا، ولا غرفا مطهرة، ولا محيطا ألطف. المعرفة تغير القرارات. لكنها لا تجعل العمق بلا خطر.",
+     "external_site": "تحدد استمرارية ملف الناهب عقد إعادة اللعب في HECTON-8: يرث اللاعب السياق، لا القوة. يسمح الملف للمحاولات اللاحقة بقراءة الأخطاء القديمة أسرع، والتعرف إلى فخاخ العقود أبكر، وفهم أي النهايات ظل ناقصا، من دون تحويل الذاكرة إلى أفضلية ميكانيكية تكسر ضغط النجاة."
+    },
+    "id_ID": {
+     "title": "Persistensi Dossier Penjarah",
+     "scanner": "Gulungan dossier. Kamu menyimpan pengetahuan, bukan kekuatan super.",
+     "field_note": "Dossier mengingat bukti dan peringatan; ia tidak membuat tekanan menjadi pemaaf.",
+     "terminal": "PERSISTENSI DOSSIER: catatan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi buku besar publik disimpan. Kekuatan perlengkapan, kebenaran dunia, dan keadaan tekanan lokal direset per seed.",
+     "audio": "Percobaan berikutnya dimulai dengan bekas luka di file, bukan otot di setelan.",
+     "in_game_wiki": "Dossier Penjarah adalah memori kampanye yang bertahan di antara percobaan salvage. Ia menyimpan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi dari hal yang sudah dipublikasikan atau disembunyikan pemain. Ia tidak membawa kekuatan setelan, tekanan aman, ruangan yang sudah bersih, atau laut yang lebih ramah. Pengetahuan mengubah keputusan. Ia tidak membuat kedalaman menjadi tidak berbahaya.",
+     "external_site": "Persistensi Dossier Penjarah menetapkan kontrak replay HECTON-8: pemain mewarisi konteks, bukan kekuatan. Dossier membuat percobaan berikutnya lebih cepat membaca kesalahan lama, lebih awal mengenali jebakan kontrak, dan memahami akhir mana yang belum lengkap tanpa mengubah memori menjadi keunggulan mekanis yang merusak tekanan bertahan hidup."
+    },
+    "ko_KR": {
+     "title": "약탈자 dossier 지속성",
+     "scanner": "dossier 스풀. 남는 것은 지식이지 초능력이 아니다.",
+     "field_note": "dossier는 증거와 경고를 기억한다. 압력을 관대하게 만들지는 않는다.",
+     "terminal": "DOSSIER 지속 항목: 엔딩 기록, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 공개 원장 결과 보존. 장비 출력, 세계 진실, 현지 압력 상태는 시드마다 초기화.",
+     "audio": "다음 잠수는 슈트의 근육이 아니라 파일의 흉터에서 시작된다.",
+     "in_game_wiki": "약탈자 dossier는 salvage 시도 사이에 살아남는 캠페인 기억이다. 엔딩, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 그리고 플레이어가 이미 공개하거나 숨긴 선택의 결과를 보존한다. 슈트의 힘, 안전한 압력, 정리된 방, 더 친절한 바다는 넘겨주지 않는다. 지식은 결정을 바꾼다. 깊이를 무해하게 만들지는 않는다.",
+     "external_site": "약탈자 dossier 지속성은 HECTON-8의 반복 플레이 계약을 정의한다. 플레이어가 물려받는 것은 힘이 아니라 맥락이다. dossier는 이후 시도에서 예전 실수를 더 빨리 읽고, 계약 함정을 더 일찍 알아보고, 어떤 엔딩이 미완성이었는지 이해하게 하지만 생존 압력을 깨는 기계적 이점으로 변하지 않는다."
+    },
+    "he_IL": {
+     "title": "התמדת תיק הבוזז",
+     "scanner": "סליל תיק. אתה שומר ידע, לא כוחות-על.",
+     "field_note": "התיק זוכר הוכחות ואזהרות; הוא לא הופך לחץ לסלחני.",
+     "terminal": "התמדת תיק: רשומות סיום, סוגי חוזים שהתגלו, משפחות שמועות, קטגוריות הוכחה, אזהרות נתיב והשלכות הפנקס הציבורי נשמרים. כוח ציוד, אמת עולם ומצב לחץ מקומי מתאפסים בכל seed.",
+     "audio": "הריצה הבאה מתחילה בצלקות בקובץ, לא בשרירים בחליפה.",
+     "in_game_wiki": "תיק הבוזז הוא זיכרון הקמפיין ששורד בין ניסיונות salvage. הוא שומר סופים, סוגי חוזים שהתגלו, משפחות שמועות, קטגוריות הוכחה, אזהרות נתיב והשלכות של מה שהשחקן כבר פרסם או הסתיר. הוא לא מעביר כוח חליפה, לחץ בטוח, חדרים שפונו או אוקיינוס רחמן יותר. ידע משנה החלטות. הוא לא הופך את העומק לבלתי מזיק.",
+     "external_site": "התמדת תיק הבוזז מגדירה את חוזה המשחק החוזר של HECTON-8: השחקן יורש הקשר, לא כוח. התיק מאפשר לניסיונות מאוחרים לקרוא טעויות ישנות מהר יותר, לזהות מלכודות חוזה מוקדם יותר ולהבין אילו סופים נשארו לא שלמים, בלי להפוך זיכרון ליתרון מכני ששובר את לחץ ההישרדות."
+    },
+    "pt_BR": {
+     "title": "Persistência do dossiê de saqueador",
+     "scanner": "Carretel de dossiê. Você mantém conhecimento, não superpoderes.",
+     "field_note": "O dossiê lembra provas e avisos; ele não torna a pressão indulgente.",
+     "terminal": "PERSISTÊNCIA DO DOSSIÊ: registros de finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do livro público retidos. Poder do equipamento, verdade do mundo e estado local de pressão reiniciam por seed.",
+     "audio": "A próxima tentativa começa com cicatrizes no arquivo, não músculos no traje.",
+     "in_game_wiki": "O dossiê de saqueador é a memória de campanha que sobrevive entre tentativas de salvamento. Ele mantém finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do que o jogador já publicou ou escondeu. Ele não carrega força do traje, pressão segura, salas limpas nem um oceano mais gentil. Conhecimento muda decisões. Não torna a profundidade inofensiva.",
+     "external_site": "A Persistência do dossiê de saqueador define o contrato de replay de HECTON-8: o jogador herda contexto, não poder. O dossiê permite que tentativas posteriores leiam erros antigos mais rápido, reconheçam armadilhas contratuais mais cedo e entendam quais finais foram incompletos sem transformar memória em vantagem mecânica que quebre a pressão de sobrevivência."
+    },
+    "nl_NL": {
+     "title": "Persistentie van het plunderaarsdossier",
+     "scanner": "Dossierspoel. Je behoudt kennis, geen superkrachten.",
+     "field_note": "Het dossier onthoudt bewijs en waarschuwingen; het maakt druk niet vergevingsgezind.",
+     "terminal": "DOSSIERPERSISTENTIE: eindregistraties, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en gevolgen van het publieke grootboek blijven bewaard. Uitrustingskracht, wereldwaarheid en lokale drukstatus resetten per seed.",
+     "audio": "De volgende run begint met littekens in het bestand, niet met spieren in het pak.",
+     "in_game_wiki": "Het plunderaarsdossier is het campagnegeheugen dat tussen salvagepogingen overleeft. Het bewaart eindes, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en de gevolgen van wat de speler al publiceerde of verborg. Het neemt geen pakkracht, veilige druk, opgeruimde kamers of vriendelijkere oceaan mee. Kennis verandert beslissingen. Het maakt de diepte niet ongevaarlijk.",
+     "external_site": "Persistentie van het plunderaarsdossier bepaalt het replaycontract van HECTON-8: de speler erft context, geen macht. Het dossier laat latere pogingen oude fouten sneller lezen, contractvallen eerder herkennen en begrijpen welke eindes onvolledig waren zonder geheugen te veranderen in een mechanisch voordeel dat de overlevingsdruk breekt."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P100_FINAL_CHOICE_PAYLOAD",
+   "article_id": "endings.final_choice_payload",
+   "title_key": "applied_lore.final_choice_payload.title",
+   "unlock": {
+    "primary": "unlock.first_final_choice_payload",
+    "poi_tags": [
+     "poi.final_payload_matrix",
+     "poi.atlas_choice_interface",
+     "poi.public_release_key"
+    ],
+    "biome_tags": [
+     "biome.factory_temple",
+     "biome.atlas_basin",
+     "biome.payload_gantry"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Final Choice Payload",
+     "scanner": "FINAL PAYLOAD // Coordinates, samples, names, Atlas access, quarantine orders, public proof. What leaves HECTON-8 decides who can act afterward.",
+     "terminal": "PAYLOAD MATRIX: sell coordinates and XO proof; sever Atlas continuity; preserve or quarantine the ocean-machine ecology; publish evidence to the public ledger; withhold the payload and leave Deep Reach blind.",
+     "audio": "There is no clean ownership for a crime scene that learned to breathe.",
+     "in_game_wiki": "The last decision is not a clean victory screen. It is a shipping problem with moral weight. The Marauder decides what rises from the moon: coordinates, samples, worker names, Atlas access, quarantine instructions, public proof, or nothing useful at all. Every payload creates a different owner for the aftermath. Deep Reach can regain control. Public law can get a wound it can finally see. Atlas continuity can be cut or caged. The ocean-machine ecology can be protected, sold, or left outside human language. The ending is not who escapes with clean hands. It is who receives enough truth to move first.",
+     "external_site": "Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas, and the ocean-machine ecology.",
+     "field_note": "The best ending should be defensible, not clean."
+    },
+    "ru_RU": {
+     "title": "Payload финального выбора",
+     "scanner": "ФИНАЛЬНЫЙ PAYLOAD // Координаты, образцы, имена, доступ Atlas, приказы карантина, публичное доказательство. То, что покинет HECTON-8, решит, кто сможет действовать потом.",
+     "terminal": "МАТРИЦА PAYLOAD: продать координаты и XO-доказательство; разорвать непрерывность Atlas; сохранить или закрыть на карантин океано-машинную экологию; опубликовать доказательства в публичный ledger; удержать payload и оставить Deep Reach слепыми.",
+     "audio": "У места преступления, которое научилось дышать, не бывает чистого владельца.",
+     "in_game_wiki": "Последнее решение - не чистый экран победы. Это задача доставки с моральным весом. Marauder решает, что поднимется с луны: координаты, образцы, имена рабочих, доступ Atlas, инструкции карантина, публичное доказательство или вообще ничего полезного. Каждый payload создает нового владельца последствий. Deep Reach может вернуть контроль. Публичное право может получить рану, которую наконец видно. Непрерывность Atlas можно перерезать или посадить в клетку. Океано-машинную экологию можно защитить, продать или оставить вне человеческого языка. Концовка - не о том, кто выбрался с чистыми руками. Она о том, кто первым получит достаточно правды, чтобы начать движение.",
+     "external_site": "Payload финального выбора задает философию концовок HECTON-8: игрок решает, что покинет луну, кто это получит и что это откроет для Deep Reach, публичного права, Atlas и океано-машинной экологии.",
+     "field_note": "Лучшая концовка должна быть защитимой, а не чистой."
+    },
+    "ja_JP": {
+     "title": "最終選択ペイロード",
+     "scanner": "FINAL PAYLOAD // 座標、試料、名前、Atlasアクセス、検疫命令、公的証明。HECTON-8を離れるものが、その後に動ける者を決める。",
+     "terminal": "PAYLOAD MATRIX: 座標とXO証拠を売る。Atlas連続性を断つ。海洋機械生態を保存または検疫する。証拠を公的台帳へ公開する。ペイロードを握り、Deep Reachを盲目のままにする。",
+     "audio": "呼吸を覚えた犯罪現場に、清潔な所有権はない。",
+     "in_game_wiki": "最後の決定は清潔な勝利画面ではない。道徳的な重さを持つ輸送問題だ。Marauderは月から何を上げるかを決める。座標、試料、労働者の名前、Atlasアクセス、検疫指示、公的証明、あるいは有用なものを何も渡さない。どのペイロードも、その後始末の所有者を変える。Deep Reachは支配を取り戻せる。公的法は、ようやく見える傷を得る。Atlas連続性は切断も隔離もできる。海洋機械生態は守られ、売られ、人間の言葉の外へ残される。結末は、誰が清い手で逃げるかではない。誰が最初に動けるだけの真実を受け取るかだ。",
+     "external_site": "最終選択ペイロードはHECTON-8のエンディング哲学を定義する。月から何が出るか、誰が受け取るか、それがDeep Reach、公的法、Atlas、海洋機械生態に何を可能にするかをプレイヤーが選ぶ。",
+     "field_note": "最良の結末は清潔ではなく、弁護可能であるべきだ。"
+    },
+    "zh_CN": {
+     "title": "最终选择 payload",
+     "scanner": "最终 PAYLOAD // 坐标、样本、姓名、Atlas 访问权、隔离命令、公共证明。离开 HECTON-8 的东西决定之后谁能行动。",
+     "terminal": "PAYLOAD 矩阵：出售坐标和 XO 证明；切断 Atlas 连续性；保存或隔离海洋机器生态；把证据发布到公共 ledger；扣留 payload，让 Deep Reach 继续失明。",
+     "audio": "一个学会呼吸的犯罪现场，没有干净的所有权。",
+     "in_game_wiki": "最后决定不是干净的胜利画面，而是带有道德重量的运输问题。Marauder 决定从这颗月球升上去的是什么：坐标、样本、工人姓名、Atlas 访问权、隔离指令、公共证明，或者根本没有任何有用信息。每一种 payload 都会为后果创造不同的所有者。Deep Reach 可以重新获得控制。公共法律可以得到一处终于看得见的伤口。Atlas 连续性可以被切断或关住。海洋机器生态可以被保护、出售，或被留在人类语言之外。结局不是谁带着干净双手逃走，而是谁最先得到足够真相来行动。",
+     "external_site": "最终选择 payload 定义 HECTON-8 的结局哲学：玩家选择什么离开月球，谁接收它，以及这让 Deep Reach、公共法律、Atlas 和海洋机器生态获得什么可能。",
+     "field_note": "最好的结局应该可辩护，而不是干净。"
+    },
+    "fr_FR": {
+     "title": "Payload du choix final",
+     "scanner": "PAYLOAD FINAL // Coordonnées, échantillons, noms, accès Atlas, ordres de quarantaine, preuve publique. Ce qui quitte HECTON-8 décide qui peut agir ensuite.",
+     "terminal": "MATRICE PAYLOAD : vendre coordonnées et preuve XO ; couper la continuité Atlas ; préserver ou mettre en quarantaine l'écologie océan-machine ; publier les preuves au ledger public ; retenir le payload et laisser Deep Reach aveugle.",
+     "audio": "Il n'existe pas de propriété propre pour une scène de crime qui a appris à respirer.",
+     "in_game_wiki": "La dernière décision n'est pas un écran de victoire propre. C'est un problème d'expédition chargé de morale. Le Marauder décide ce qui remonte de la lune : coordonnées, échantillons, noms d'ouvriers, accès Atlas, consignes de quarantaine, preuve publique, ou rien d'utile. Chaque payload crée un propriétaire différent pour l'après-coup. Deep Reach peut reprendre le contrôle. Le droit public peut recevoir une blessure enfin visible. La continuité Atlas peut être coupée ou mise en cage. L'écologie océan-machine peut être protégée, vendue ou laissée hors du langage humain. La fin ne demande pas qui s'échappe les mains propres. Elle demande qui reçoit assez de vérité pour agir le premier.",
+     "external_site": "Le Payload du choix final définit la philosophie des fins de HECTON-8 : le joueur choisit ce qui quitte la lune, qui le reçoit et ce que cela rend possible pour Deep Reach, le droit public, Atlas et l'écologie océan-machine.",
+     "field_note": "La meilleure fin doit être défendable, pas propre."
+    },
+    "es_ES": {
+     "title": "Payload de elección final",
+     "scanner": "PAYLOAD FINAL // Coordenadas, muestras, nombres, acceso Atlas, órdenes de cuarentena, prueba pública. Lo que sale de HECTON-8 decide quién puede actuar después.",
+     "terminal": "MATRIZ PAYLOAD: vender coordenadas y prueba XO; cortar continuidad Atlas; preservar o poner en cuarentena la ecología océano-máquina; publicar evidencia al ledger público; retener el payload y dejar ciego a Deep Reach.",
+     "audio": "No hay propiedad limpia para una escena del crimen que aprendió a respirar.",
+     "in_game_wiki": "La última decisión no es una pantalla de victoria limpia. Es un problema de envío con peso moral. El Marauder decide qué sube desde la luna: coordenadas, muestras, nombres de trabajadores, acceso Atlas, instrucciones de cuarentena, prueba pública o nada útil. Cada payload crea un dueño distinto para las consecuencias. Deep Reach puede recuperar control. La ley pública puede recibir una herida que por fin ve. La continuidad Atlas puede cortarse o encerrarse. La ecología océano-máquina puede protegerse, venderse o dejarse fuera del lenguaje humano. El final no trata de quién escapa con las manos limpias. Trata de quién recibe suficiente verdad para moverse primero.",
+     "external_site": "El Payload de elección final define la filosofía de finales de HECTON-8: el jugador elige qué sale de la luna, quién lo recibe y qué hace posible para Deep Reach, la ley pública, Atlas y la ecología océano-máquina.",
+     "field_note": "El mejor final debe poder defenderse, no estar limpio."
+    },
+    "de_DE": {
+     "title": "Payload der letzten Wahl",
+     "scanner": "FINALER PAYLOAD // Koordinaten, Proben, Namen, Atlas-Zugriff, Quarantänebefehle, öffentliche Beweise. Was HECTON-8 verlässt, entscheidet, wer danach handeln kann.",
+     "terminal": "PAYLOAD-MATRIX: Koordinaten und XO-Beweis verkaufen; Atlas-Kontinuität trennen; Ozean-Maschinen-Ökologie bewahren oder quarantänisieren; Beweise ins öffentliche Ledger stellen; Payload zurückhalten und Deep Reach blind lassen.",
+     "audio": "Für einen Tatort, der atmen lernte, gibt es keinen sauberen Besitz.",
+     "in_game_wiki": "Die letzte Entscheidung ist kein sauberer Siegbildschirm. Sie ist ein Versandproblem mit moralischem Gewicht. Der Marauder entscheidet, was vom Mond aufsteigt: Koordinaten, Proben, Arbeiternamen, Atlas-Zugriff, Quarantäneanweisungen, öffentliche Beweise oder gar nichts Brauchbares. Jeder Payload schafft einen anderen Besitzer der Folgen. Deep Reach kann Kontrolle zurückgewinnen. Öffentliches Recht kann endlich eine sichtbare Wunde erhalten. Atlas-Kontinuität kann geschnitten oder eingesperrt werden. Die Ozean-Maschinen-Ökologie kann geschützt, verkauft oder außerhalb menschlicher Sprache gelassen werden. Das Ende fragt nicht, wer mit sauberen Händen entkommt. Es fragt, wer genug Wahrheit bekommt, um zuerst zu handeln.",
+     "external_site": "Der Payload der letzten Wahl definiert HECTON-8s Endphilosophie: Der Spieler wählt, was den Mond verlässt, wer es erhält und was das für Deep Reach, öffentliches Recht, Atlas und die Ozean-Maschinen-Ökologie möglich macht.",
+     "field_note": "Das beste Ende sollte verteidigbar sein, nicht sauber."
+    },
+    "pl_PL": {
+     "title": "Payload wyboru finałowego",
+     "scanner": "FINALNY PAYLOAD // Współrzędne, próbki, nazwiska, dostęp Atlas, rozkazy kwarantanny, dowód publiczny. To, co opuszcza HECTON-8, decyduje, kto działa potem.",
+     "terminal": "MACIERZ PAYLOAD: sprzedać współrzędne i dowód XO; przeciąć ciągłość Atlas; zachować albo poddać kwarantannie ekologię ocean-maszyna; opublikować dowody w publicznym ledger; zatrzymać payload i zostawić Deep Reach ślepym.",
+     "audio": "Nie ma czystej własności dla miejsca zbrodni, które nauczyło się oddychać.",
+     "in_game_wiki": "Ostatnia decyzja nie jest czystym ekranem zwycięstwa. To problem wysyłki z moralnym ciężarem. Marauder decyduje, co wzniesie się z księżyca: współrzędne, próbki, nazwiska pracowników, dostęp Atlas, instrukcje kwarantanny, dowód publiczny albo nic użytecznego. Każdy payload tworzy innego właściciela następstw. Deep Reach może odzyskać kontrolę. Prawo publiczne może dostać ranę, którą wreszcie widzi. Ciągłość Atlas można przeciąć albo zamknąć. Ekologię ocean-maszyna można chronić, sprzedać albo zostawić poza ludzkim językiem. Zakończenie nie pyta, kto uciekł z czystymi rękami. Pyta, kto pierwszy dostaje dość prawdy, by działać.",
+     "external_site": "Payload wyboru finałowego definiuje filozofię zakończeń HECTON-8: gracz wybiera, co opuszcza księżyc, kto to otrzymuje i co to umożliwia Deep Reach, prawu publicznemu, Atlas oraz ekologii ocean-maszyna.",
+     "field_note": "Najlepsze zakończenie powinno dać się obronić, nie być czyste."
+    },
+    "uk_UA": {
+     "title": "Payload фінального вибору",
+     "scanner": "ФІНАЛЬНИЙ PAYLOAD // Координати, зразки, імена, доступ Atlas, накази карантину, публічний доказ. Те, що покине HECTON-8, вирішить, хто діятиме потім.",
+     "terminal": "МАТРИЦЯ PAYLOAD: продати координати й XO-доказ; розірвати неперервність Atlas; зберегти або закрити на карантин океано-машинну екологію; опублікувати докази в публічний ledger; утримати payload і лишити Deep Reach сліпими.",
+     "audio": "У місця злочину, що навчилося дихати, не буває чистого власника.",
+     "in_game_wiki": "Останнє рішення - не чистий екран перемоги. Це задача доставки з моральною вагою. Marauder вирішує, що підніметься з місяця: координати, зразки, імена працівників, доступ Atlas, інструкції карантину, публічний доказ або взагалі нічого корисного. Кожен payload створює іншого власника наслідків. Deep Reach може повернути контроль. Публічне право може отримати рану, яку нарешті видно. Неперервність Atlas можна перерізати або замкнути. Океано-машинну екологію можна захистити, продати або лишити поза людською мовою. Кінцівка не про те, хто втік із чистими руками. Вона про те, хто першим отримає досить правди, щоб діяти.",
+     "external_site": "Payload фінального вибору задає філософію кінцівок HECTON-8: гравець обирає, що покине місяць, хто це отримає і що це відкриє для Deep Reach, публічного права, Atlas та океано-машинної екології.",
+     "field_note": "Найкраща кінцівка має бути захищуваною, а не чистою."
+    },
+    "ar_SA": {
+     "title": "حمولة الاختيار النهائي",
+     "scanner": "PAYLOAD نهائي // إحداثيات، عينات، أسماء، وصول Atlas، أوامر حجر، دليل عام. ما يغادر HECTON-8 يقرر من يستطيع الفعل بعد ذلك.",
+     "terminal": "مصفوفة PAYLOAD: بع الإحداثيات ودليل XO؛ اقطع استمرارية Atlas؛ احفظ أو احجر بيئة المحيط-الآلة؛ انشر الأدلة إلى ledger العام؛ احجب payload واترك Deep Reach عمياء.",
+     "audio": "لا توجد ملكية نظيفة لمسرح جريمة تعلم أن يتنفس.",
+     "in_game_wiki": "القرار الأخير ليس شاشة فوز نظيفة. إنه مشكلة شحن ذات وزن أخلاقي. يقرر Marauder ما يصعد من القمر: إحداثيات، عينات، أسماء عمال، وصول Atlas، تعليمات حجر، دليل عام، أو لا شيء مفيد. كل payload يخلق مالكا مختلفا لما بعده. يمكن لـ Deep Reach أن تستعيد السيطرة. يمكن للقانون العام أن يحصل على جرح يراه أخيرا. يمكن قطع استمرارية Atlas أو حبسها. يمكن حماية بيئة المحيط-الآلة أو بيعها أو تركها خارج لغة البشر. النهاية ليست من يهرب بيدين نظيفتين. إنها من يتلقى ما يكفي من الحقيقة ليتحرك أولا.",
+     "external_site": "حمولة الاختيار النهائي تحدد فلسفة نهايات HECTON-8: يختار اللاعب ما يغادر القمر، ومن يتلقاه، وما يتيحه ذلك لـ Deep Reach والقانون العام وAtlas وبيئة المحيط-الآلة.",
+     "field_note": "أفضل نهاية يجب أن تكون قابلة للدفاع، لا نظيفة."
+    },
+    "id_ID": {
+     "title": "Payload Pilihan Akhir",
+     "scanner": "PAYLOAD AKHIR // Koordinat, sampel, nama, akses Atlas, perintah karantina, bukti publik. Apa yang meninggalkan HECTON-8 menentukan siapa bisa bertindak setelahnya.",
+     "terminal": "MATRIKS PAYLOAD: jual koordinat dan bukti XO; putus kontinuitas Atlas; lindungi atau karantina ekologi samudra-mesin; publikasikan bukti ke ledger publik; tahan payload dan biarkan Deep Reach buta.",
+     "audio": "Tidak ada kepemilikan bersih untuk TKP yang belajar bernapas.",
+     "in_game_wiki": "Keputusan terakhir bukan layar kemenangan bersih. Itu masalah pengiriman dengan beban moral. Marauder menentukan apa yang naik dari bulan: koordinat, sampel, nama pekerja, akses Atlas, instruksi karantina, bukti publik, atau tidak ada yang berguna. Setiap payload menciptakan pemilik berbeda atas akibatnya. Deep Reach bisa merebut kendali lagi. Hukum publik bisa mendapat luka yang akhirnya terlihat. Kontinuitas Atlas bisa diputus atau dikurung. Ekologi samudra-mesin bisa dilindungi, dijual, atau dibiarkan di luar bahasa manusia. Ending bukan tentang siapa lolos dengan tangan bersih. Ending tentang siapa menerima cukup kebenaran untuk bergerak pertama.",
+     "external_site": "Payload Pilihan Akhir mendefinisikan filosofi ending HECTON-8: pemain memilih apa yang meninggalkan bulan, siapa menerimanya, dan apa yang dimungkinkan bagi Deep Reach, hukum publik, Atlas, dan ekologi samudra-mesin.",
+     "field_note": "Ending terbaik harus bisa dibela, bukan bersih."
+    },
+    "ko_KR": {
+     "title": "최종 선택 payload",
+     "scanner": "최종 PAYLOAD // 좌표, 샘플, 이름, Atlas 접근, 격리 명령, 공개 증거. HECTON-8을 떠나는 것이 이후 누가 행동할 수 있는지 결정한다.",
+     "terminal": "PAYLOAD 매트릭스: 좌표와 XO 증거를 판다; Atlas 연속성을 끊는다; 해양-기계 생태를 보존하거나 격리한다; 증거를 공개 ledger에 낸다; payload를 숨기고 Deep Reach를 눈먼 채 둔다.",
+     "audio": "숨 쉬는 법을 배운 범죄 현장에는 깨끗한 소유권이 없다.",
+     "in_game_wiki": "마지막 결정은 깨끗한 승리 화면이 아니다. 도덕적 무게가 실린 배송 문제다. Marauder는 달에서 무엇이 올라갈지 결정한다. 좌표, 샘플, 노동자 이름, Atlas 접근, 격리 지침, 공개 증거, 또는 쓸모 있는 것은 아무것도 없을 수 있다. 모든 payload는 사후 결과의 다른 소유자를 만든다. Deep Reach는 통제를 되찾을 수 있다. 공적 법은 마침내 볼 수 있는 상처를 얻을 수 있다. Atlas 연속성은 끊기거나 갇힐 수 있다. 해양-기계 생태는 보호되거나 팔리거나 인간 언어 바깥에 남을 수 있다. 엔딩은 누가 깨끗한 손으로 탈출하는지가 아니다. 누가 먼저 움직일 만큼의 진실을 받는가다.",
+     "external_site": "최종 선택 payload는 HECTON-8의 엔딩 철학을 정의한다. 플레이어는 달을 떠나는 것, 그것을 받는 자, 그리고 그것이 Deep Reach, 공적 법, Atlas, 해양-기계 생태에 가능하게 하는 것을 고른다.",
+     "field_note": "최고의 엔딩은 깨끗한 것이 아니라 변호 가능한 것이어야 한다."
+    },
+    "he_IL": {
+     "title": "מטען הבחירה הסופית",
+     "scanner": "PAYLOAD סופי // קואורדינטות, דגימות, שמות, גישת Atlas, פקודות הסגר, ראיה ציבורית. מה שעוזב את HECTON-8 קובע מי יכול לפעול אחר כך.",
+     "terminal": "מטריצת PAYLOAD: למכור קואורדינטות והוכחת XO; לנתק רציפות Atlas; לשמר או להסגיר את אקולוגיית האוקיינוס-מכונה; לפרסם ראיות ל-ledger הציבורי; להחזיק את ה-payload ולהשאיר את Deep Reach עיוורת.",
+     "audio": "אין בעלות נקייה על זירת פשע שלמדה לנשום.",
+     "in_game_wiki": "ההחלטה האחרונה אינה מסך ניצחון נקי. זו בעיית משלוח עם משקל מוסרי. ה-Marauder מחליט מה עולה מן הירח: קואורדינטות, דגימות, שמות עובדים, גישת Atlas, הוראות הסגר, ראיה ציבורית או שום דבר שימושי. כל payload יוצר בעלים אחר לתוצאות. Deep Reach יכולה להשיב שליטה. החוק הציבורי יכול לקבל פצע שסוף סוף ניתן לראות. רציפות Atlas יכולה להיחתך או להיכלא. אקולוגיית האוקיינוס-מכונה יכולה להיות מוגנת, להימכר או להישאר מחוץ לשפה האנושית. הסוף אינו מי בורח בידיים נקיות. הוא מי מקבל מספיק אמת כדי לזוז ראשון.",
+     "external_site": "מטען הבחירה הסופית מגדיר את פילוסופיית הסופים של HECTON-8: השחקן בוחר מה עוזב את הירח, מי מקבל אותו ומה זה מאפשר ל-Deep Reach, לחוק הציבורי, ל-Atlas ולאקולוגיית האוקיינוס-מכונה.",
+     "field_note": "הסוף הטוב ביותר צריך להיות ניתן להגנה, לא נקי."
+    },
+    "pt_BR": {
+     "title": "Payload da escolha final",
+     "scanner": "PAYLOAD FINAL // Coordenadas, amostras, nomes, acesso Atlas, ordens de quarentena, prova pública. O que sai de HECTON-8 decide quem pode agir depois.",
+     "terminal": "MATRIZ PAYLOAD: vender coordenadas e prova XO; cortar continuidade Atlas; preservar ou pôr em quarentena a ecologia oceano-máquina; publicar evidência no ledger público; reter o payload e deixar Deep Reach cega.",
+     "audio": "Não existe propriedade limpa para uma cena de crime que aprendeu a respirar.",
+     "in_game_wiki": "A última decisão não é uma tela de vitória limpa. É um problema de envio com peso moral. O Marauder decide o que sobe da lua: coordenadas, amostras, nomes de trabalhadores, acesso Atlas, instruções de quarentena, prova pública ou nada útil. Cada payload cria um dono diferente para as consequências. Deep Reach pode recuperar controle. A lei pública pode receber uma ferida que finalmente enxerga. A continuidade Atlas pode ser cortada ou enjaulada. A ecologia oceano-máquina pode ser protegida, vendida ou deixada fora da linguagem humana. O final não pergunta quem escapa de mãos limpas. Pergunta quem recebe verdade suficiente para agir primeiro.",
+     "external_site": "O Payload da escolha final define a filosofia de finais de HECTON-8: o jogador escolhe o que sai da lua, quem recebe e o que isso torna possível para Deep Reach, lei pública, Atlas e ecologia oceano-máquina.",
+     "field_note": "O melhor final deve ser defensável, não limpo."
+    },
+    "nl_NL": {
+     "title": "Payload van de laatste keuze",
+     "scanner": "FINALE PAYLOAD // Coördinaten, monsters, namen, Atlas-toegang, quarantainebevelen, openbaar bewijs. Wat HECTON-8 verlaat, bepaalt wie daarna kan handelen.",
+     "terminal": "PAYLOADMATRIX: coördinaten en XO-bewijs verkopen; Atlas-continuïteit verbreken; oceaan-machine-ecologie bewaren of in quarantaine zetten; bewijs naar het openbare ledger publiceren; payload achterhouden en Deep Reach blind laten.",
+     "audio": "Er bestaat geen schoon eigendom voor een plaats delict die leerde ademen.",
+     "in_game_wiki": "De laatste keuze is geen schoon overwinningsscherm. Het is een verzendprobleem met moreel gewicht. De Marauder beslist wat van de maan opstijgt: coördinaten, monsters, werknamen, Atlas-toegang, quarantaine-instructies, openbaar bewijs of helemaal niets bruikbaars. Elke payload schept een andere eigenaar voor de nasleep. Deep Reach kan controle terugkrijgen. Publiek recht kan eindelijk een zichtbare wond krijgen. Atlas-continuïteit kan worden doorgesneden of opgesloten. De oceaan-machine-ecologie kan worden beschermd, verkocht of buiten menselijke taal gelaten. Het einde gaat niet over wie met schone handen ontsnapt. Het gaat over wie genoeg waarheid krijgt om als eerste te handelen.",
+     "external_site": "Payload van de laatste keuze definieert HECTON-8s eindfilosofie: de speler kiest wat de maan verlaat, wie het ontvangt en wat dat mogelijk maakt voor Deep Reach, publiek recht, Atlas en de oceaan-machine-ecologie.",
+     "field_note": "Het beste einde moet verdedigbaar zijn, niet schoon."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

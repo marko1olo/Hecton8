@@ -1,271 +1,271 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS286_BLANK_QUARANTINE_BERTH_RECEIPT",
-  "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS286_BLANK_QUARANTINE_BERTH_RECEIPT",
+ "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P6804_BLANK_QUARANTINE_BERTH_RECEIPT",
+   "release_set_id": "RS286_BLANK_QUARANTINE_BERTH_RECEIPT",
+   "article_id": "applied_lore.blank_quarantine_berth_receipt",
+   "title_key": "LORE_BLANK_QUARANTINE_BERTH_RECEIPT_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Codex_Delivery_Map.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/SourceArticles/SA001_BLACK_KEEL_RECOVERY_WINDOW_AND_BATHYDROP_LOSS.md",
+    "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1410_CLAIM_WINDOW_RESCUE_DELAY_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1411_RETURN_RIGHTS_QUARANTINE_HANDSHAKE_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1427_RECEIVER_BRAKING_DEBT_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1429_QUARANTINE_BERTH_CUSTODY_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P6803_TONNE_WINDOW_BODY_LEDGER.md",
+    ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
+    ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
+    ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P6804_BLANK_QUARANTINE_BERTH_RECEIPT",
-      "release_set_id": "RS286_BLANK_QUARANTINE_BERTH_RECEIPT",
-      "article_id": "applied_lore.blank_quarantine_berth_receipt",
-      "title_key": "LORE_BLANK_QUARANTINE_BERTH_RECEIPT_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Codex_Delivery_Map.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/SourceArticles/SA001_BLACK_KEEL_RECOVERY_WINDOW_AND_BATHYDROP_LOSS.md",
-        "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1410_CLAIM_WINDOW_RESCUE_DELAY_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1411_RETURN_RIGHTS_QUARANTINE_HANDSHAKE_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1427_RECEIVER_BRAKING_DEBT_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1429_QUARANTINE_BERTH_CUSTODY_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P6803_TONNE_WINDOW_BODY_LEDGER.md",
-        ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
-        ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
-        ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.blank_quarantine_berth_receipt",
-        "secondary": [
-          "unlock.first_receiver_line_blank",
-          "unlock.first_quarantine_room_null",
-          "unlock.first_body_line_no_berth",
-          "unlock.first_custody_state_block"
-        ],
-        "poi_tags": [
-          "poi.blank_quarantine_berth_receipt",
-          "poi.receiver_berth_null_stamp",
-          "poi.keelmark_quarantine_slot_printer",
-          "poi.black_keel_window_timer",
-          "poi.return_rights_handshake_console"
-        ],
-        "biome_tags": [
-          "biome.carrier_link",
-          "biome.surface_relay",
-          "biome.photic_shelf",
-          "biome.claim_admin",
-          "biome.quarantine"
-        ],
-        "first_20_boundary": "Shows that a live body line can be acknowledged and still blocked because no receiver has named quarantine custody."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Suit Berth Field Classifier",
-          "terminal": "Keelmark Quarantine Slot Printer",
-          "audio": "Black Keel Receiver Null Tone",
-          "in_game_wiki": "Recovered Quarantine Receipt Note",
-          "external_site": "Public Site Receiver-Custody Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "depth_band": "surface_to_photic_shelf",
-        "route_moment": "first_receiver_line_blank_after_body_ledger",
-        "truth_payload": "A blank quarantine berth receipt means the route has accepted the packet and priced the living body, but no receiver has accepted a room; rescue remains blocked as custody state until the berth field is filled.",
-        "player_question": "What does it mean when the carrier accepts the body line but leaves the quarantine berth blank?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Blank Quarantine Berth Receipt",
-          "scanner": "BERTH FIELD READ // Body line accepted. Quarantine berth field blank. Receiver custody absent; lift allocation remains blocked.",
-          "terminal": "NULL BERTH RECEIPT // Packet accepted, body priced, quarantine volume not named. Do not treat carrier acknowledgement as rescue.",
-          "audio": "Receiver line present. Berth blank. Keep ascent sleeve closed until a room accepts the body.",
-          "in_game_wiki": "A blank quarantine berth receipt is the visible difference between being heard and being received. Black Keel has a live body line and a priced tonne-window, but no receiver has named a quarantine room, medical owner or custody door. Treat the receipt as evidence: the route is active, the refusal is procedural, and the missing room is the blocker.",
-          "external_site": "A longform receiver-custody primer on the empty berth field that can stop a live body line after Black Keel has already answered.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/en_US_external_site.md",
-          "field_note": "A blank berth is not an empty room. It is a door nobody has agreed to own.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Пустая квитанция карантинного берта",
-          "scanner": "ЧТЕНИЕ BERTH FIELD // Body line принята. Quarantine berth пуст. Receiver custody отсутствует; lift allocation остается заблокированным.",
-          "terminal": "NULL BERTH RECEIPT // Packet принят, body оценено, quarantine volume не назван. Не принимай carrier acknowledgement за rescue.",
-          "audio": "Receiver line есть. Berth пуст. Держи ascent sleeve закрытым, пока комната не примет тело.",
-          "in_game_wiki": "Пустая квитанция quarantine berth показывает разницу между тем, что тебя услышали, и тем, что тебя приняли. У Black Keel есть живая body line и оцененное tonne-window, но receiver не назвал карантинную комнату, medical owner или custody door. Читай receipt как evidence: маршрут активен, отказ процедурный, а отсутствующая комната и есть блокер.",
-          "external_site": "Большой primer о receiver custody и пустом berth field, который может остановить живую body line уже после ответа Black Keel.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/ru_RU_external_site.md",
-          "field_note": "Пустой berth не пустая комната. Это дверь, которую никто не согласился владеть.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Leerer Quarantäne-Berth-Beleg",
-          "scanner": "BERTH-FIELD-READ // Body line akzeptiert. Quarantine berth leer. Receiver custody fehlt; lift allocation bleibt blockiert.",
-          "terminal": "NULL BERTH RECEIPT // Packet akzeptiert, body bepreist, quarantine volume nicht benannt. Carrier acknowledgement ist kein rescue.",
-          "audio": "Receiver line vorhanden. Berth leer. Ascent sleeve geschlossen halten, bis ein Raum den Körper annimmt.",
-          "in_game_wiki": "Ein leerer quarantine berth receipt zeigt den Unterschied zwischen gehört werden und aufgenommen werden. Black Keel hat eine lebende body line und ein bepreistes tonne-window, aber kein receiver hat Quarantäneraum, medical owner oder custody door benannt. Lies den receipt als evidence: die Route ist aktiv, die Weigerung ist prozedural, und der fehlende Raum ist der Blocker.",
-          "external_site": "Ein Longform-Primer über receiver custody und das leere berth field, das eine lebende body line nach Black Keels Antwort stoppen kann.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/de_DE_external_site.md",
-          "field_note": "Ein leerer berth ist kein leerer Raum. Es ist eine Tür, die niemand besitzen will.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Recibo de atraque de cuarentena en blanco",
-          "scanner": "LECTURA BERTH FIELD // Body line aceptada. Quarantine berth en blanco. Falta receiver custody; lift allocation sigue bloqueada.",
-          "terminal": "NULL BERTH RECEIPT // Packet aceptado, body tasado, quarantine volume sin nombre. No confundas carrier acknowledgement con rescue.",
-          "audio": "Receiver line presente. Berth en blanco. Mantén cerrado el ascent sleeve hasta que una sala acepte el cuerpo.",
-          "in_game_wiki": "Un recibo de quarantine berth en blanco muestra la diferencia entre ser oído y ser recibido. Black Keel tiene una body line viva y un tonne-window tasado, pero ningún receiver ha nombrado sala de cuarentena, medical owner o custody door. Lee el receipt como evidence: la ruta está activa, la negativa es procedimental y la sala ausente es el bloqueo.",
-          "external_site": "Un primer longform sobre receiver custody y el berth field vacío que puede detener una body line viva después de que Black Keel ya respondió.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/es_ES_external_site.md",
-          "field_note": "Un berth en blanco no es una sala vacía. Es una puerta que nadie aceptó poseer.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Reçu de berth de quarantaine vide",
-          "scanner": "LECTURE BERTH FIELD // Body line acceptée. Quarantine berth vide. Receiver custody absente; lift allocation reste bloquée.",
-          "terminal": "NULL BERTH RECEIPT // Packet accepté, body chiffré, quarantine volume non nommé. Ne prends pas carrier acknowledgement pour rescue.",
-          "audio": "Receiver line présente. Berth vide. Garde l'ascent sleeve fermé jusqu'à ce qu'une salle accepte le corps.",
-          "in_game_wiki": "Un reçu de quarantine berth vide montre la différence entre être entendu et être reçu. Black Keel possède une body line vivante et un tonne-window chiffré, mais aucun receiver n'a nommé salle de quarantaine, medical owner ou custody door. Lis le receipt comme evidence: la route est active, le refus est procédural, et la salle manquante est le blocage.",
-          "external_site": "Un primer longform sur receiver custody et le berth field vide qui peut arrêter une body line vivante après la réponse de Black Keel.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/fr_FR_external_site.md",
-          "field_note": "Un berth vide n'est pas une salle vide. C'est une porte que personne n'a accepté de posséder.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Pusty kwit berth kwarantanny",
-          "scanner": "ODCZYT BERTH FIELD // Body line przyjęta. Quarantine berth pusty. Brak receiver custody; lift allocation pozostaje zablokowane.",
-          "terminal": "NULL BERTH RECEIPT // Packet przyjęty, body wycenione, quarantine volume bez nazwy. Carrier acknowledgement nie oznacza rescue.",
-          "audio": "Receiver line obecna. Berth pusty. Trzymaj ascent sleeve zamknięty, dopóki sala nie przyjmie ciała.",
-          "in_game_wiki": "Pusty quarantine berth receipt pokazuje różnicę między tym, że ktoś cię usłyszał, a tym, że ktoś cię przyjął. Black Keel ma żywą body line i wycenione tonne-window, ale żaden receiver nie wskazał sali kwarantanny, medical owner ani custody door. Czytaj receipt jako evidence: trasa działa, odmowa jest proceduralna, a brakująca sala jest blokadą.",
-          "external_site": "Długi primer o receiver custody i pustym berth field, który może zatrzymać żywą body line po odpowiedzi Black Keel.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/pl_PL_external_site.md",
-          "field_note": "Pusty berth to nie pusta sala. To drzwi, których nikt nie zgodził się posiadać.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Leeg quarantaine-berth ontvangstbewijs",
-          "scanner": "BERTH-FIELD-LEZING // Body line geaccepteerd. Quarantine berth leeg. Receiver custody ontbreekt; lift allocation blijft geblokkeerd.",
-          "terminal": "NULL BERTH RECEIPT // Packet geaccepteerd, body geprijsd, quarantine volume niet benoemd. Carrier acknowledgement is geen rescue.",
-          "audio": "Receiver line aanwezig. Berth leeg. Houd de ascent sleeve gesloten tot een kamer het lichaam accepteert.",
-          "in_game_wiki": "Een leeg quarantine berth receipt toont het verschil tussen gehoord worden en ontvangen worden. Black Keel heeft een levende body line en een geprijsd tonne-window, maar geen receiver heeft een quarantaineruimte, medical owner of custody door benoemd. Lees de receipt als evidence: de route is actief, de weigering is procedureel, en de ontbrekende kamer is de blokkade.",
-          "external_site": "Een lange receiver-custody primer over het lege berth field dat een levende body line kan stoppen nadat Black Keel al heeft geantwoord.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/nl_NL_external_site.md",
-          "field_note": "Een lege berth is geen lege kamer. Het is een deur die niemand wil bezitten.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Recibo de berth de quarentena em branco",
-          "scanner": "LEITURA BERTH FIELD // Body line aceita. Quarantine berth em branco. Receiver custody ausente; lift allocation continua bloqueada.",
-          "terminal": "NULL BERTH RECEIPT // Packet aceito, body precificado, quarantine volume sem nome. Carrier acknowledgement não é rescue.",
-          "audio": "Receiver line presente. Berth em branco. Mantenha o ascent sleeve fechado até uma sala aceitar o corpo.",
-          "in_game_wiki": "Um quarantine berth receipt em branco mostra a diferença entre ser ouvido e ser recebido. Black Keel tem uma body line viva e um tonne-window precificado, mas nenhum receiver nomeou sala de quarentena, medical owner ou custody door. Leia o receipt como evidence: a rota está ativa, a recusa é procedural, e a sala ausente é o bloqueio.",
-          "external_site": "Um primer longo sobre receiver custody e o berth field vazio que pode deter uma body line viva depois da resposta de Black Keel.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/pt_BR_external_site.md",
-          "field_note": "Um berth em branco não é uma sala vazia. É uma porta que ninguém aceitou possuir.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Порожня квитанція карантинного berth",
-          "scanner": "ЧИТАННЯ BERTH FIELD // Body line прийнято. Quarantine berth порожній. Receiver custody відсутня; lift allocation лишається заблокованим.",
-          "terminal": "NULL BERTH RECEIPT // Packet прийнято, body оцінено, quarantine volume не названо. Carrier acknowledgement не є rescue.",
-          "audio": "Receiver line присутня. Berth порожній. Тримай ascent sleeve закритим, доки кімната не прийме тіло.",
-          "in_game_wiki": "Порожній quarantine berth receipt показує різницю між тим, що тебе почули, і тим, що тебе прийняли. Black Keel має живу body line і оцінене tonne-window, але жоден receiver не назвав карантинну кімнату, medical owner або custody door. Читай receipt як evidence: маршрут активний, відмова процедурна, а відсутня кімната є блокером.",
-          "external_site": "Великий primer про receiver custody і порожнє berth field, яке може зупинити живу body line після відповіді Black Keel.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/uk_UA_external_site.md",
-          "field_note": "Порожній berth не є порожньою кімнатою. Це двері, якими ніхто не погодився володіти.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Tanda terima berth karantina kosong",
-          "scanner": "BACAAN BERTH FIELD // Body line diterima. Quarantine berth kosong. Receiver custody tidak ada; lift allocation tetap diblokir.",
-          "terminal": "NULL BERTH RECEIPT // Packet diterima, body dihitung, quarantine volume belum dinamai. Carrier acknowledgement bukan rescue.",
-          "audio": "Receiver line ada. Berth kosong. Biarkan ascent sleeve tertutup sampai sebuah ruang menerima tubuh.",
-          "in_game_wiki": "Quarantine berth receipt yang kosong menunjukkan perbedaan antara didengar dan diterima. Black Keel memiliki body line hidup dan tonne-window yang sudah dihitung, tetapi tidak ada receiver yang menamai ruang karantina, medical owner, atau custody door. Baca receipt sebagai evidence: rute aktif, penolakan bersifat prosedural, dan ruang yang hilang adalah penghalangnya.",
-          "external_site": "Primer panjang tentang receiver custody dan berth field kosong yang dapat menghentikan body line hidup setelah Black Keel menjawab.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/id_ID_external_site.md",
-          "field_note": "Berth kosong bukan ruang kosong. Itu pintu yang tak seorang pun setuju untuk miliki.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "إيصال رصيف حجر صحي فارغ",
-          "scanner": "قراءة BERTH FIELD // تم قبول body line. حقل quarantine berth فارغ. Receiver custody غائبة؛ lift allocation ما زال محظورا.",
-          "terminal": "NULL BERTH RECEIPT // تم قبول packet، وتسعير body، ولم يسم quarantine volume. لا تعامل carrier acknowledgement كأنه rescue.",
-          "audio": "Receiver line موجودة. Berth فارغ. أبق ascent sleeve مغلقا حتى تقبل غرفة الجسد.",
-          "in_game_wiki": "يوضح quarantine berth receipt الفارغ الفرق بين أن يسمعك أحد وأن يستقبلك أحد. لدى Black Keel body line حية وtonne-window محسوب، لكن لا يوجد receiver سمى غرفة حجر، أو medical owner، أو custody door. اقرأ receipt كـ evidence: الطريق نشط، والرفض إجرائي، والغرفة الغائبة هي العائق.",
-          "external_site": "Primer طويل عن receiver custody وحقل berth الفارغ الذي يستطيع إيقاف body line حية بعد أن يجيب Black Keel.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/ar_SA_external_site.md",
-          "field_note": "Berth الفارغ ليس غرفة فارغة. إنه باب لم يوافق أحد على امتلاكه.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "קבלת berth הסגר ריקה",
-          "scanner": "קריאת BERTH FIELD // body line התקבלה. quarantine berth ריק. receiver custody חסרה; lift allocation נשאר חסום.",
-          "terminal": "NULL BERTH RECEIPT // packet התקבל, body תומחר, quarantine volume לא נקרא בשם. carrier acknowledgement אינו rescue.",
-          "audio": "receiver line קיימת. berth ריק. השאר את ascent sleeve סגור עד שחדר יקבל את הגוף.",
-          "in_game_wiki": "quarantine berth receipt ריק מציג את ההבדל בין להישמע לבין להתקבל. ל-Black Keel יש body line חיה ו-tonne-window מתומחר, אבל שום receiver לא נקב בחדר הסגר, medical owner או custody door. קרא את receipt כ-evidence: המסלול פעיל, הסירוב פרוצדורלי, והחדר החסר הוא החסימה.",
-          "external_site": "Primer ארוך על receiver custody ועל berth field ריק שיכול לעצור body line חיה אחרי ש-Black Keel כבר ענה.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/he_IL_external_site.md",
-          "field_note": "berth ריק אינו חדר ריק. זו דלת שאף אחד לא הסכים להיות בעליה.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "空白の quarantine berth receipt",
-          "scanner": "BERTH FIELD READ // body line 受理。quarantine berth は空白。receiver custody 不在、lift allocation は blocked。",
-          "terminal": "NULL BERTH RECEIPT // packet 受理、body 価格化、quarantine volume 未命名。carrier acknowledgement を rescue と読むな。",
-          "audio": "receiver line あり。berth 空白。部屋が body を受け入れるまで ascent sleeve を閉じておけ。",
-          "in_game_wiki": "空白の quarantine berth receipt は、聞かれたことと受け入れられたことの差を示す。Black Keel には生きた body line と価格化された tonne-window があるが、どの receiver も quarantine room、medical owner、custody door を名指ししていない。receipt は evidence として読む。route は動いており、拒否は手続きで、欠けた部屋こそが blocker だ。",
-          "external_site": "Black Keel が応答した後でも生きた body line を止められる、空白 berth field と receiver custody についての長文 primer。",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/ja_JP_external_site.md",
-          "field_note": "空白の berth は空室ではない。誰も所有を引き受けていない扉だ。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "빈 quarantine berth receipt",
-          "scanner": "BERTH FIELD 판독 // body line 수락. quarantine berth 공란. receiver custody 없음; lift allocation 차단 유지.",
-          "terminal": "NULL BERTH RECEIPT // packet 수락, body 가격화, quarantine volume 미지정. carrier acknowledgement를 rescue로 보지 말 것.",
-          "audio": "receiver line 존재. berth 공란. 방이 body를 수락할 때까지 ascent sleeve를 닫아 두어라.",
-          "in_game_wiki": "빈 quarantine berth receipt는 들렸다는 사실과 받아들여졌다는 사실의 차이를 보여 준다. Black Keel에는 살아 있는 body line과 가격화된 tonne-window가 있지만, 어떤 receiver도 quarantine room, medical owner, custody door를 지정하지 않았다. receipt를 evidence로 읽어라. route는 활성이고, 거절은 절차적이며, 사라진 방이 blocker다.",
-          "external_site": "Black Keel이 응답한 뒤에도 살아 있는 body line을 멈출 수 있는 빈 berth field와 receiver custody에 대한 장문 primer.",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/ko_KR_external_site.md",
-          "field_note": "빈 berth는 빈 방이 아니다. 아무도 소유하겠다고 동의하지 않은 문이다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "空白 quarantine berth receipt",
-          "scanner": "BERTH FIELD 读数 // body line 已接受。quarantine berth 为空。receiver custody 缺失；lift allocation 仍被阻断。",
-          "terminal": "NULL BERTH RECEIPT // packet 已接受，body 已计价，quarantine volume 未命名。不要把 carrier acknowledgement 当作 rescue。",
-          "audio": "receiver line 存在。berth 空白。等某个房间接受 body 之前，保持 ascent sleeve 关闭。",
-          "in_game_wiki": "空白 quarantine berth receipt 展示了被听见和被接收之间的差别。Black Keel 已有活体 body line 和定价后的 tonne-window，但没有 receiver 命名隔离房间、medical owner 或 custody door。把 receipt 当作 evidence 阅读：route 是活的，拒绝是流程性的，而缺失的房间就是 blocker。",
-          "external_site": "一篇关于 receiver custody 与空白 berth field 的长文 primer：即使 Black Keel 已经回应，它仍能阻止一条活体 body line。",
-          "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/zh_CN_external_site.md",
-          "field_note": "空白 berth 不是空房间。它是一扇无人同意拥有的门。",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.blank_quarantine_berth_receipt",
+    "secondary": [
+     "unlock.first_receiver_line_blank",
+     "unlock.first_quarantine_room_null",
+     "unlock.first_body_line_no_berth",
+     "unlock.first_custody_state_block"
+    ],
+    "poi_tags": [
+     "poi.blank_quarantine_berth_receipt",
+     "poi.receiver_berth_null_stamp",
+     "poi.keelmark_quarantine_slot_printer",
+     "poi.black_keel_window_timer",
+     "poi.return_rights_handshake_console"
+    ],
+    "biome_tags": [
+     "biome.carrier_link",
+     "biome.surface_relay",
+     "biome.photic_shelf",
+     "biome.claim_admin",
+     "biome.quarantine"
+    ],
+    "first_20_boundary": "Shows that a live body line can be acknowledged and still blocked because no receiver has named quarantine custody."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Suit Berth Field Classifier",
+     "terminal": "Keelmark Quarantine Slot Printer",
+     "audio": "Black Keel Receiver Null Tone",
+     "in_game_wiki": "Recovered Quarantine Receipt Note",
+     "external_site": "Public Site Receiver-Custody Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "depth_band": "surface_to_photic_shelf",
+    "route_moment": "first_receiver_line_blank_after_body_ledger",
+    "truth_payload": "A blank quarantine berth receipt means the route has accepted the packet and priced the living body, but no receiver has accepted a room; rescue remains blocked as custody state until the berth field is filled.",
+    "player_question": "What does it mean when the carrier accepts the body line but leaves the quarantine berth blank?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Blank Quarantine Berth Receipt",
+     "scanner": "BERTH FIELD READ // Body line accepted. Quarantine berth field blank. Receiver custody absent; lift allocation remains blocked.",
+     "terminal": "NULL BERTH RECEIPT // Packet accepted, body priced, quarantine volume not named. Do not treat carrier acknowledgement as rescue.",
+     "audio": "Receiver line present. Berth blank. Keep ascent sleeve closed until a room accepts the body.",
+     "in_game_wiki": "A blank quarantine berth receipt is the visible difference between being heard and being received. Black Keel has a live body line and a priced tonne-window, but no receiver has named a quarantine room, medical owner or custody door. Treat the receipt as evidence: the route is active, the refusal is procedural, and the missing room is the blocker.",
+     "external_site": "A longform receiver-custody primer on the empty berth field that can stop a live body line after Black Keel has already answered.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/en_US_external_site.md",
+     "field_note": "A blank berth is not an empty room. It is a door nobody has agreed to own.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Пустая квитанция карантинного берта",
+     "scanner": "ЧТЕНИЕ BERTH FIELD // Body line принята. Quarantine berth пуст. Receiver custody отсутствует; lift allocation остается заблокированным.",
+     "terminal": "NULL BERTH RECEIPT // Packet принят, body оценено, quarantine volume не назван. Не принимай carrier acknowledgement за rescue.",
+     "audio": "Receiver line есть. Berth пуст. Держи ascent sleeve закрытым, пока комната не примет тело.",
+     "in_game_wiki": "Пустая квитанция quarantine berth показывает разницу между тем, что тебя услышали, и тем, что тебя приняли. У Black Keel есть живая body line и оцененное tonne-window, но receiver не назвал карантинную комнату, medical owner или custody door. Читай receipt как evidence: маршрут активен, отказ процедурный, а отсутствующая комната и есть блокер.",
+     "external_site": "Большой primer о receiver custody и пустом berth field, который может остановить живую body line уже после ответа Black Keel.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/ru_RU_external_site.md",
+     "field_note": "Пустой berth не пустая комната. Это дверь, которую никто не согласился владеть.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Leerer Quarantäne-Berth-Beleg",
+     "scanner": "BERTH-FIELD-READ // Body line akzeptiert. Quarantine berth leer. Receiver custody fehlt; lift allocation bleibt blockiert.",
+     "terminal": "NULL BERTH RECEIPT // Packet akzeptiert, body bepreist, quarantine volume nicht benannt. Carrier acknowledgement ist kein rescue.",
+     "audio": "Receiver line vorhanden. Berth leer. Ascent sleeve geschlossen halten, bis ein Raum den Körper annimmt.",
+     "in_game_wiki": "Ein leerer quarantine berth receipt zeigt den Unterschied zwischen gehört werden und aufgenommen werden. Black Keel hat eine lebende body line und ein bepreistes tonne-window, aber kein receiver hat Quarantäneraum, medical owner oder custody door benannt. Lies den receipt als evidence: die Route ist aktiv, die Weigerung ist prozedural, und der fehlende Raum ist der Blocker.",
+     "external_site": "Ein Longform-Primer über receiver custody und das leere berth field, das eine lebende body line nach Black Keels Antwort stoppen kann.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/de_DE_external_site.md",
+     "field_note": "Ein leerer berth ist kein leerer Raum. Es ist eine Tür, die niemand besitzen will.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Recibo de atraque de cuarentena en blanco",
+     "scanner": "LECTURA BERTH FIELD // Body line aceptada. Quarantine berth en blanco. Falta receiver custody; lift allocation sigue bloqueada.",
+     "terminal": "NULL BERTH RECEIPT // Packet aceptado, body tasado, quarantine volume sin nombre. No confundas carrier acknowledgement con rescue.",
+     "audio": "Receiver line presente. Berth en blanco. Mantén cerrado el ascent sleeve hasta que una sala acepte el cuerpo.",
+     "in_game_wiki": "Un recibo de quarantine berth en blanco muestra la diferencia entre ser oído y ser recibido. Black Keel tiene una body line viva y un tonne-window tasado, pero ningún receiver ha nombrado sala de cuarentena, medical owner o custody door. Lee el receipt como evidence: la ruta está activa, la negativa es procedimental y la sala ausente es el bloqueo.",
+     "external_site": "Un primer longform sobre receiver custody y el berth field vacío que puede detener una body line viva después de que Black Keel ya respondió.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/es_ES_external_site.md",
+     "field_note": "Un berth en blanco no es una sala vacía. Es una puerta que nadie aceptó poseer.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Reçu de berth de quarantaine vide",
+     "scanner": "LECTURE BERTH FIELD // Body line acceptée. Quarantine berth vide. Receiver custody absente; lift allocation reste bloquée.",
+     "terminal": "NULL BERTH RECEIPT // Packet accepté, body chiffré, quarantine volume non nommé. Ne prends pas carrier acknowledgement pour rescue.",
+     "audio": "Receiver line présente. Berth vide. Garde l'ascent sleeve fermé jusqu'à ce qu'une salle accepte le corps.",
+     "in_game_wiki": "Un reçu de quarantine berth vide montre la différence entre être entendu et être reçu. Black Keel possède une body line vivante et un tonne-window chiffré, mais aucun receiver n'a nommé salle de quarantaine, medical owner ou custody door. Lis le receipt comme evidence: la route est active, le refus est procédural, et la salle manquante est le blocage.",
+     "external_site": "Un primer longform sur receiver custody et le berth field vide qui peut arrêter une body line vivante après la réponse de Black Keel.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/fr_FR_external_site.md",
+     "field_note": "Un berth vide n'est pas une salle vide. C'est une porte que personne n'a accepté de posséder.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Pusty kwit berth kwarantanny",
+     "scanner": "ODCZYT BERTH FIELD // Body line przyjęta. Quarantine berth pusty. Brak receiver custody; lift allocation pozostaje zablokowane.",
+     "terminal": "NULL BERTH RECEIPT // Packet przyjęty, body wycenione, quarantine volume bez nazwy. Carrier acknowledgement nie oznacza rescue.",
+     "audio": "Receiver line obecna. Berth pusty. Trzymaj ascent sleeve zamknięty, dopóki sala nie przyjmie ciała.",
+     "in_game_wiki": "Pusty quarantine berth receipt pokazuje różnicę między tym, że ktoś cię usłyszał, a tym, że ktoś cię przyjął. Black Keel ma żywą body line i wycenione tonne-window, ale żaden receiver nie wskazał sali kwarantanny, medical owner ani custody door. Czytaj receipt jako evidence: trasa działa, odmowa jest proceduralna, a brakująca sala jest blokadą.",
+     "external_site": "Długi primer o receiver custody i pustym berth field, który może zatrzymać żywą body line po odpowiedzi Black Keel.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/pl_PL_external_site.md",
+     "field_note": "Pusty berth to nie pusta sala. To drzwi, których nikt nie zgodził się posiadać.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Leeg quarantaine-berth ontvangstbewijs",
+     "scanner": "BERTH-FIELD-LEZING // Body line geaccepteerd. Quarantine berth leeg. Receiver custody ontbreekt; lift allocation blijft geblokkeerd.",
+     "terminal": "NULL BERTH RECEIPT // Packet geaccepteerd, body geprijsd, quarantine volume niet benoemd. Carrier acknowledgement is geen rescue.",
+     "audio": "Receiver line aanwezig. Berth leeg. Houd de ascent sleeve gesloten tot een kamer het lichaam accepteert.",
+     "in_game_wiki": "Een leeg quarantine berth receipt toont het verschil tussen gehoord worden en ontvangen worden. Black Keel heeft een levende body line en een geprijsd tonne-window, maar geen receiver heeft een quarantaineruimte, medical owner of custody door benoemd. Lees de receipt als evidence: de route is actief, de weigering is procedureel, en de ontbrekende kamer is de blokkade.",
+     "external_site": "Een lange receiver-custody primer over het lege berth field dat een levende body line kan stoppen nadat Black Keel al heeft geantwoord.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/nl_NL_external_site.md",
+     "field_note": "Een lege berth is geen lege kamer. Het is een deur die niemand wil bezitten.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Recibo de berth de quarentena em branco",
+     "scanner": "LEITURA BERTH FIELD // Body line aceita. Quarantine berth em branco. Receiver custody ausente; lift allocation continua bloqueada.",
+     "terminal": "NULL BERTH RECEIPT // Packet aceito, body precificado, quarantine volume sem nome. Carrier acknowledgement não é rescue.",
+     "audio": "Receiver line presente. Berth em branco. Mantenha o ascent sleeve fechado até uma sala aceitar o corpo.",
+     "in_game_wiki": "Um quarantine berth receipt em branco mostra a diferença entre ser ouvido e ser recebido. Black Keel tem uma body line viva e um tonne-window precificado, mas nenhum receiver nomeou sala de quarentena, medical owner ou custody door. Leia o receipt como evidence: a rota está ativa, a recusa é procedural, e a sala ausente é o bloqueio.",
+     "external_site": "Um primer longo sobre receiver custody e o berth field vazio que pode deter uma body line viva depois da resposta de Black Keel.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/pt_BR_external_site.md",
+     "field_note": "Um berth em branco não é uma sala vazia. É uma porta que ninguém aceitou possuir.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Порожня квитанція карантинного berth",
+     "scanner": "ЧИТАННЯ BERTH FIELD // Body line прийнято. Quarantine berth порожній. Receiver custody відсутня; lift allocation лишається заблокованим.",
+     "terminal": "NULL BERTH RECEIPT // Packet прийнято, body оцінено, quarantine volume не названо. Carrier acknowledgement не є rescue.",
+     "audio": "Receiver line присутня. Berth порожній. Тримай ascent sleeve закритим, доки кімната не прийме тіло.",
+     "in_game_wiki": "Порожній quarantine berth receipt показує різницю між тим, що тебе почули, і тим, що тебе прийняли. Black Keel має живу body line і оцінене tonne-window, але жоден receiver не назвав карантинну кімнату, medical owner або custody door. Читай receipt як evidence: маршрут активний, відмова процедурна, а відсутня кімната є блокером.",
+     "external_site": "Великий primer про receiver custody і порожнє berth field, яке може зупинити живу body line після відповіді Black Keel.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/uk_UA_external_site.md",
+     "field_note": "Порожній berth не є порожньою кімнатою. Це двері, якими ніхто не погодився володіти.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Tanda terima berth karantina kosong",
+     "scanner": "BACAAN BERTH FIELD // Body line diterima. Quarantine berth kosong. Receiver custody tidak ada; lift allocation tetap diblokir.",
+     "terminal": "NULL BERTH RECEIPT // Packet diterima, body dihitung, quarantine volume belum dinamai. Carrier acknowledgement bukan rescue.",
+     "audio": "Receiver line ada. Berth kosong. Biarkan ascent sleeve tertutup sampai sebuah ruang menerima tubuh.",
+     "in_game_wiki": "Quarantine berth receipt yang kosong menunjukkan perbedaan antara didengar dan diterima. Black Keel memiliki body line hidup dan tonne-window yang sudah dihitung, tetapi tidak ada receiver yang menamai ruang karantina, medical owner, atau custody door. Baca receipt sebagai evidence: rute aktif, penolakan bersifat prosedural, dan ruang yang hilang adalah penghalangnya.",
+     "external_site": "Primer panjang tentang receiver custody dan berth field kosong yang dapat menghentikan body line hidup setelah Black Keel menjawab.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/id_ID_external_site.md",
+     "field_note": "Berth kosong bukan ruang kosong. Itu pintu yang tak seorang pun setuju untuk miliki.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "إيصال رصيف حجر صحي فارغ",
+     "scanner": "قراءة BERTH FIELD // تم قبول body line. حقل quarantine berth فارغ. Receiver custody غائبة؛ lift allocation ما زال محظورا.",
+     "terminal": "NULL BERTH RECEIPT // تم قبول packet، وتسعير body، ولم يسم quarantine volume. لا تعامل carrier acknowledgement كأنه rescue.",
+     "audio": "Receiver line موجودة. Berth فارغ. أبق ascent sleeve مغلقا حتى تقبل غرفة الجسد.",
+     "in_game_wiki": "يوضح quarantine berth receipt الفارغ الفرق بين أن يسمعك أحد وأن يستقبلك أحد. لدى Black Keel body line حية وtonne-window محسوب، لكن لا يوجد receiver سمى غرفة حجر، أو medical owner، أو custody door. اقرأ receipt كـ evidence: الطريق نشط، والرفض إجرائي، والغرفة الغائبة هي العائق.",
+     "external_site": "Primer طويل عن receiver custody وحقل berth الفارغ الذي يستطيع إيقاف body line حية بعد أن يجيب Black Keel.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/ar_SA_external_site.md",
+     "field_note": "Berth الفارغ ليس غرفة فارغة. إنه باب لم يوافق أحد على امتلاكه.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "קבלת berth הסגר ריקה",
+     "scanner": "קריאת BERTH FIELD // body line התקבלה. quarantine berth ריק. receiver custody חסרה; lift allocation נשאר חסום.",
+     "terminal": "NULL BERTH RECEIPT // packet התקבל, body תומחר, quarantine volume לא נקרא בשם. carrier acknowledgement אינו rescue.",
+     "audio": "receiver line קיימת. berth ריק. השאר את ascent sleeve סגור עד שחדר יקבל את הגוף.",
+     "in_game_wiki": "quarantine berth receipt ריק מציג את ההבדל בין להישמע לבין להתקבל. ל-Black Keel יש body line חיה ו-tonne-window מתומחר, אבל שום receiver לא נקב בחדר הסגר, medical owner או custody door. קרא את receipt כ-evidence: המסלול פעיל, הסירוב פרוצדורלי, והחדר החסר הוא החסימה.",
+     "external_site": "Primer ארוך על receiver custody ועל berth field ריק שיכול לעצור body line חיה אחרי ש-Black Keel כבר ענה.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/he_IL_external_site.md",
+     "field_note": "berth ריק אינו חדר ריק. זו דלת שאף אחד לא הסכים להיות בעליה.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "空白の quarantine berth receipt",
+     "scanner": "BERTH FIELD READ // body line 受理。quarantine berth は空白。receiver custody 不在、lift allocation は blocked。",
+     "terminal": "NULL BERTH RECEIPT // packet 受理、body 価格化、quarantine volume 未命名。carrier acknowledgement を rescue と読むな。",
+     "audio": "receiver line あり。berth 空白。部屋が body を受け入れるまで ascent sleeve を閉じておけ。",
+     "in_game_wiki": "空白の quarantine berth receipt は、聞かれたことと受け入れられたことの差を示す。Black Keel には生きた body line と価格化された tonne-window があるが、どの receiver も quarantine room、medical owner、custody door を名指ししていない。receipt は evidence として読む。route は動いており、拒否は手続きで、欠けた部屋こそが blocker だ。",
+     "external_site": "Black Keel が応答した後でも生きた body line を止められる、空白 berth field と receiver custody についての長文 primer。",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/ja_JP_external_site.md",
+     "field_note": "空白の berth は空室ではない。誰も所有を引き受けていない扉だ。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "빈 quarantine berth receipt",
+     "scanner": "BERTH FIELD 판독 // body line 수락. quarantine berth 공란. receiver custody 없음; lift allocation 차단 유지.",
+     "terminal": "NULL BERTH RECEIPT // packet 수락, body 가격화, quarantine volume 미지정. carrier acknowledgement를 rescue로 보지 말 것.",
+     "audio": "receiver line 존재. berth 공란. 방이 body를 수락할 때까지 ascent sleeve를 닫아 두어라.",
+     "in_game_wiki": "빈 quarantine berth receipt는 들렸다는 사실과 받아들여졌다는 사실의 차이를 보여 준다. Black Keel에는 살아 있는 body line과 가격화된 tonne-window가 있지만, 어떤 receiver도 quarantine room, medical owner, custody door를 지정하지 않았다. receipt를 evidence로 읽어라. route는 활성이고, 거절은 절차적이며, 사라진 방이 blocker다.",
+     "external_site": "Black Keel이 응답한 뒤에도 살아 있는 body line을 멈출 수 있는 빈 berth field와 receiver custody에 대한 장문 primer.",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/ko_KR_external_site.md",
+     "field_note": "빈 berth는 빈 방이 아니다. 아무도 소유하겠다고 동의하지 않은 문이다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "空白 quarantine berth receipt",
+     "scanner": "BERTH FIELD 读数 // body line 已接受。quarantine berth 为空。receiver custody 缺失；lift allocation 仍被阻断。",
+     "terminal": "NULL BERTH RECEIPT // packet 已接受，body 已计价，quarantine volume 未命名。不要把 carrier acknowledgement 当作 rescue。",
+     "audio": "receiver line 存在。berth 空白。等某个房间接受 body 之前，保持 ascent sleeve 关闭。",
+     "in_game_wiki": "空白 quarantine berth receipt 展示了被听见和被接收之间的差别。Black Keel 已有活体 body line 和定价后的 tonne-window，但没有 receiver 命名隔离房间、medical owner 或 custody door。把 receipt 当作 evidence 阅读：route 是活的，拒绝是流程性的，而缺失的房间就是 blocker。",
+     "external_site": "一篇关于 receiver custody 与空白 berth field 的长文 primer：即使 Black Keel 已经回应，它仍能阻止一条活体 body line。",
+     "external_site_article_path": "articles/RS286_BLANK_QUARANTINE_BERTH_RECEIPT/zh_CN_external_site.md",
+     "field_note": "空白 berth 不是空房间。它是一扇无人同意拥有的门。",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }
-

@@ -1,782 +1,787 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS015_HUMAN_DOMAINS_ROUTE_ECONOMY",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P071_SOL_CORE_AUTHORITY",
-      "article_id": "human.sol_core_authority",
-      "title_key": "applied_lore.sol_core_authority.title",
-      "unlock": {
-        "primary": "unlock.first_sol_core_authority",
-        "poi_tags": [
-          "poi.old_law_plate",
-          "poi.sol_cert_seal",
-          "poi.insurance_stamp"
-        ],
-        "biome_tags": [
-          "biome.drowned_admin",
-          "biome.contract_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Sol Core Authority",
-          "scanner": "Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
-          "field_note": "Sol is not home here. It is the oldest signature on the document that can still ruin you.",
-          "terminal": "SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
-          "audio": "The seal came from Earth space. The rescue clause did not.",
-          "in_game_wiki": "Sol Core is the legal and financial root of human expansion, not a personal birthplace and not a rescue office. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
-          "external_site": "Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
-        },
-        "ru_RU": {
-          "title": "Полномочия Sol Core",
-          "scanner": "Старая правовая печать Sol. Она способна владеть фронтирным трупом, даже находясь слишком далеко, чтобы почувствовать утечку давления.",
-          "field_note": "Здесь Sol не дом. Это самая старая подпись на документе, которая все еще может тебя раздавить.",
-          "terminal": "СТАНДАРТ SOL CORE: непрерывность претензии признана через лицензированное хранение перевозчиком, маршрутное страхование и отложенное разбирательство. Приоритет извлечения людей не установлен до местной сертификации угроз.",
-          "audio": "Печать пришла из земного пространства. Пункт о спасении - нет.",
-          "in_game_wiki": "Sol Core - юридический и финансовый корень человеческой экспансии, но не личная родина и не служба спасения. На HECTON-8 его стандарты уцелели как печати, формы ответственности, таблички безопасности и страховой язык, переживший людей, которых эти системы должны были защищать.",
-          "external_site": "Полномочия Sol Core объясняют, почему HECTON-8 может быть далекой и все равно юридически присвоенной. В HECTON-8 старая цивилизация приходит бумагами, стандартами и долгом раньше, чем приходит помощь."
-        },
-        "ja_JP": {
-          "title": "ソル・コア管轄局",
-          "scanner": "古いソル法の封印。圧力漏れの臭いを嗅げる距離になくても、辺境の死体を所有できる。",
-          "field_note": "ここでソルは故郷ではない。君をまだ破滅させられる、文書上で最も古い署名だ。",
-          "terminal": "SOL CORE STANDARD: 請求権の継続は、認可輸送者の保管、航路保険、遅延審理によって承認される。人員回収の優先度は、現地危険認証まで未確定。",
-          "audio": "封印は地球圏から来た。救助条項は来なかった。",
-          "in_game_wiki": "Sol Core は人類拡張の法的、金融的な根であり、個人の故郷でも救助窓口でもない。HECTON-8 では、その標準が封印、責任書式、安全銘板、保険文言として残り、それらが守るはずだった人間より長く生き残った。",
-          "external_site": "ソル・コア管轄局は、HECTON-8 が遠隔地でありながら法的には所有され得る理由を示す。HECTON-8 では、古い文明は救援より先に、書類、標準、負債として到着する。"
-        },
-        "zh_CN": {
-          "title": "Sol Core 管辖权",
-          "scanner": "旧 Sol 法印。它离得远到闻不到压力泄漏，却仍能拥有一具边境尸体。",
-          "field_note": "Sol 在这里不是家。它是文件上最古老的签名，至今还能毁掉你。",
-          "terminal": "SOL CORE STANDARD: 经由持证承运保管、航路保险与延后裁决，索赔连续性获承认。人员回收优先级需等待本地危险认证后裁定。",
-          "audio": "印章来自地球空间。救援条款没有一同抵达。",
-          "in_game_wiki": "Sol Core 是人类扩张的法律与金融根系，不是私人故乡，也不是救援办公室。它的标准在 HECTON-8 上以印章、责任表格、安全铭牌和保险措辞的形式幸存，比这些系统原本要保护的人活得更久。",
-          "external_site": "Sol Core 管辖权解释了为什么 HECTON-8 即使遥远，仍能被法律占有。在 HECTON-8，旧文明先以文书、标准和债务到来，然后才可能轮到援助。"
-        },
-        "fr_FR": {
-          "title": "Autorité Sol Core",
-          "scanner": "Vieux sceau juridique de Sol. Il peut posséder un cadavre de frontière sans être assez proche pour sentir la fuite de pression.",
-          "field_note": "Sol n'est pas chez soi ici. C'est la plus ancienne signature du document, et elle peut encore te ruiner.",
-          "terminal": "NORME SOL CORE : continuité de réclamation reconnue par garde de transporteur licencié, assurance de route et arbitrage différé. Priorité de récupération humaine non résolue avant certification locale des risques.",
-          "audio": "Le sceau venait de l'espace terrestre. Pas la clause de secours.",
-          "in_game_wiki": "Sol Core est la racine juridique et financière de l'expansion humaine, ni patrie personnelle ni bureau de secours. Sur HECTON-8, ses normes survivent sous forme de sceaux, formulaires de responsabilité, plaques de sécurité et langage d'assurance qui ont survécu aux gens qu'ils étaient censés protéger.",
-          "external_site": "L'Autorité Sol Core explique pourquoi HECTON-8 peut être lointaine et tout de même possédée légalement. Dans HECTON-8, l'ancienne civilisation arrive sous forme de paperasse, de normes et de dette avant d'arriver sous forme d'aide."
-        },
-        "es_ES": {
-          "title": "Autoridad Sol Core",
-          "scanner": "Viejo sello legal de Sol. Puede poseer un cadáver de frontera sin estar lo bastante cerca para oler la fuga de presión.",
-          "field_note": "Sol no es hogar aquí. Es la firma más antigua del documento que todavía puede hundirte.",
-          "terminal": "ESTÁNDAR SOL CORE: continuidad de reclamación reconocida mediante custodia de transportista autorizado, seguro de ruta y adjudicación diferida. Prioridad de recuperación humana pendiente de certificación local de riesgos.",
-          "audio": "El sello vino del espacio terrestre. La cláusula de rescate no.",
-          "in_game_wiki": "Sol Core es la raíz legal y financiera de la expansión humana, no una patria personal ni una oficina de rescate. En HECTON-8, sus estándares sobreviven como sellos, formularios de responsabilidad, placas de seguridad y lenguaje de seguros que duraron más que las personas a las que debían proteger.",
-          "external_site": "La Autoridad Sol Core explica por qué HECTON-8 puede estar remota y aun así tener dueño legal. En HECTON-8, la vieja civilización llega como papeleo, estándares y deuda antes de llegar como ayuda."
-        },
-        "de_DE": {
-          "title": "Sol-Core-Autorität",
-          "scanner": "Altes Sol-Rechtssiegel. Es kann eine Grenzland-Leiche besitzen, ohne nah genug zu sein, um das Druckleck zu riechen.",
-          "field_note": "Sol ist hier kein Zuhause. Es ist die älteste Unterschrift auf dem Dokument, die dich immer noch ruinieren kann.",
-          "terminal": "SOL CORE STANDARD: Anspruchskontinuität anerkannt durch lizenzierte Frachtverwahrung, Routenversicherung und verzögerte Entscheidung. Priorität menschlicher Bergung bis zur lokalen Gefahrenzertifizierung ungeklärt.",
-          "audio": "Das Siegel kam aus dem Erdraum. Die Rettungsklausel nicht.",
-          "in_game_wiki": "Sol Core ist die juristische und finanzielle Wurzel menschlicher Expansion, kein persönlicher Geburtsort und keine Rettungsstelle. Auf HECTON-8 überleben seine Standards als Siegel, Haftungsformulare, Sicherheitsschilder und Versicherungssprache, die die Menschen überdauert hat, die sie schützen sollte.",
-          "external_site": "Die Sol-Core-Autorität erklärt, warum HECTON-8 abgelegen und trotzdem rechtlich besessen sein kann. In HECTON-8 kommt alte Zivilisation zuerst als Papier, Standard und Schuld, erst später vielleicht als Hilfe."
-        },
-        "pl_PL": {
-          "title": "Władza Sol Core",
-          "scanner": "Stara pieczęć prawa Sol. Może posiadać pograniczne zwłoki, choć jest zbyt daleko, by poczuć wyciek ciśnienia.",
-          "field_note": "Sol nie jest tutaj domem. To najstarszy podpis na dokumencie, który wciąż może cię zniszczyć.",
-          "terminal": "STANDARD SOL CORE: ciągłość roszczenia uznana przez licencjonowaną pieczę przewoźnika, ubezpieczenie trasy i odroczone orzeczenie. Priorytet odzysku ludzi nierozstrzygnięty do lokalnej certyfikacji zagrożeń.",
-          "audio": "Pieczęć przyszła z przestrzeni Ziemi. Klauzula ratunkowa nie.",
-          "in_game_wiki": "Sol Core jest prawnym i finansowym korzeniem ludzkiej ekspansji, a nie osobistą ojczyzną ani biurem ratunkowym. Na HECTON-8 jego standardy przetrwały jako pieczęcie, formularze odpowiedzialności, tablice bezpieczeństwa i język ubezpieczeń, który przeżył ludzi, których miał chronić.",
-          "external_site": "Władza Sol Core wyjaśnia, dlaczego HECTON-8 może być odległy, a mimo to prawnie zawłaszczony. W HECTON-8 stara cywilizacja przychodzi jako papiery, standardy i dług wcześniej niż jako pomoc."
-        },
-        "uk_UA": {
-          "title": "Повноваження Sol Core",
-          "scanner": "Стара правова печатка Sol. Вона може володіти фронтирним трупом, навіть не будучи досить близько, щоб відчути витік тиску.",
-          "field_note": "Sol тут не дім. Це найстаріший підпис на документі, який досі може тебе зламати.",
-          "terminal": "СТАНДАРТ SOL CORE: безперервність претензії визнана через ліцензоване зберігання перевізником, маршрутне страхування та відкладений розгляд. Пріоритет повернення людей не визначено до місцевої сертифікації загроз.",
-          "audio": "Печатка прийшла із земного простору. Пункт про порятунок - ні.",
-          "in_game_wiki": "Sol Core - юридичний і фінансовий корінь людської експансії, але не особиста батьківщина й не служба порятунку. На HECTON-8 його стандарти вціліли як печатки, форми відповідальності, таблички безпеки й страхова мова, що пережила людей, яких ці системи мали захищати.",
-          "external_site": "Повноваження Sol Core пояснюють, чому HECTON-8 може бути далекою і все одно юридично присвоєною. У HECTON-8 стара цивілізація приходить паперами, стандартами й боргом раніше, ніж приходить допомога."
-        },
-        "ar_SA": {
-          "title": "سلطة سول كور",
-          "scanner": "ختم قانوني قديم من سول. يستطيع امتلاك جثة على التخوم من دون أن يكون قريبا بما يكفي ليشم تسرب الضغط.",
-          "field_note": "سول ليست وطنا هنا. إنها أقدم توقيع على الوثيقة، وما زالت قادرة على تدميرك.",
-          "terminal": "معيار SOL CORE: تم الاعتراف باستمرارية المطالبة عبر عهدة ناقل مرخص، وتأمين مسار، وحكم مؤجل. أولوية استعادة البشر غير محسومة حتى اعتماد الأخطار المحلية.",
-          "audio": "جاء الختم من فضاء الأرض. أما بند الإنقاذ فلم يأت.",
-          "in_game_wiki": "سول كور هو الجذر القانوني والمالي للتوسع البشري، لا وطن شخصي ولا مكتب إنقاذ. على HECTON-8 بقيت معاييره كأختام ونماذج مسؤولية ولوحات سلامة ولغة تأمين عاشت أطول من الناس الذين كان يفترض أن تحميهم.",
-          "external_site": "تشرح سلطة سول كور كيف يمكن أن تكون HECTON-8 بعيدة ومع ذلك مملوكة قانونيا. في HECTON-8 تصل الحضارة القديمة في صورة أوراق ومعايير وديون قبل أن تصل في صورة مساعدة."
-        },
-        "id_ID": {
-          "title": "Otoritas Sol Core",
-          "scanner": "Segel hukum Sol lama. Ia bisa memiliki mayat perbatasan tanpa cukup dekat untuk mencium kebocoran tekanan.",
-          "field_note": "Sol bukan rumah di sini. Ia tanda tangan tertua di dokumen yang masih bisa menghancurkanmu.",
-          "terminal": "STANDAR SOL CORE: kesinambungan klaim diakui melalui kustodi pengangkut berlisensi, asuransi rute, dan putusan tertunda. Prioritas pemulihan manusia belum ditetapkan sampai sertifikasi bahaya lokal.",
-          "audio": "Segelnya datang dari ruang Bumi. Klausul penyelamatannya tidak.",
-          "in_game_wiki": "Sol Core adalah akar hukum dan finansial ekspansi manusia, bukan tanah asal pribadi dan bukan kantor penyelamatan. Di HECTON-8, standarnya bertahan sebagai segel, formulir tanggung jawab, pelat keselamatan, dan bahasa asuransi yang hidup lebih lama daripada orang-orang yang seharusnya dilindungi.",
-          "external_site": "Otoritas Sol Core menjelaskan mengapa HECTON-8 bisa jauh tetapi tetap dimiliki secara hukum. Dalam HECTON-8, peradaban lama tiba sebagai dokumen, standar, dan utang sebelum tiba sebagai bantuan."
-        },
-        "ko_KR": {
-          "title": "솔 코어 권한",
-          "scanner": "오래된 솔 법률 인장. 압력 누출 냄새를 맡을 만큼 가까이 있지 않아도, 변경의 시체를 소유할 수 있다.",
-          "field_note": "여기서 솔은 고향이 아니다. 아직도 너를 망칠 수 있는 문서 위의 가장 오래된 서명이다.",
-          "terminal": "SOL CORE STANDARD: 허가 운송자 보관, 항로 보험, 지연 심리를 통해 청구 연속성이 인정됨. 인간 회수 우선권은 현지 위험 인증 전까지 미결.",
-          "audio": "인장은 지구권에서 왔다. 구조 조항은 오지 않았다.",
-          "in_game_wiki": "솔 코어는 인류 확장의 법적, 금융적 뿌리이지 개인의 고향도 구조 사무소도 아니다. HECTON-8에서 그 표준은 인장, 책임 서식, 안전 표지, 보험 문구로 남아, 보호해야 했던 사람들보다 오래 살아남았다.",
-          "external_site": "솔 코어 권한은 HECTON-8이 멀리 떨어져 있으면서도 법적으로 소유될 수 있는 이유를 설명한다. HECTON-8에서 오래된 문명은 도움보다 먼저 서류, 표준, 빚으로 도착한다."
-        },
-        "he_IL": {
-          "title": "סמכות Sol Core",
-          "scanner": "חותם חוק ישן של Sol. הוא יכול להחזיק בגופה של ספר גם בלי להיות קרוב מספיק להריח דליפת לחץ.",
-          "field_note": "Sol אינו בית כאן. זו החתימה העתיקה ביותר במסמך, והיא עדיין יכולה להרוס אותך.",
-          "terminal": "תקן SOL CORE: רציפות התביעה מוכרת דרך משמורת מוביל מורשה, ביטוח מסלול והכרעה נדחית. עדיפות חילוץ אנושי לא נקבעה עד אישור סיכונים מקומי.",
-          "audio": "החותם הגיע ממרחב כדור הארץ. סעיף החילוץ לא.",
-          "in_game_wiki": "Sol Core הוא השורש המשפטי והפיננסי של ההתפשטות האנושית, לא מולדת אישית ולא משרד חילוץ. על HECTON-8 התקנים שלו שרדו כחותמות, טפסי אחריות, לוחות בטיחות ושפת ביטוח שחיו מעבר לאנשים שהיו אמורים להגן עליהם.",
-          "external_site": "סמכות Sol Core מסבירה מדוע HECTON-8 יכולה להיות רחוקה ועדיין שייכת משפטית. ב-HECTON-8 הציוויליזציה הישנה מגיעה כניירת, תקנים וחוב לפני שהיא מגיעה כעזרה."
-        },
-        "pt_BR": {
-          "title": "Autoridade Sol Core",
-          "scanner": "Velho selo jurídico de Sol. Ele pode possuir um cadáver de fronteira sem estar perto o bastante para sentir o vazamento de pressão.",
-          "field_note": "Sol não é casa aqui. É a assinatura mais antiga no documento que ainda pode acabar com você.",
-          "terminal": "PADRÃO SOL CORE: continuidade de reivindicação reconhecida por custódia de transportador licenciado, seguro de rota e adjudicação adiada. Prioridade de recuperação humana pendente até certificação local de riscos.",
-          "audio": "O selo veio do espaço terrestre. A cláusula de resgate não.",
-          "in_game_wiki": "Sol Core é a raiz jurídica e financeira da expansão humana, não uma terra natal pessoal nem um posto de resgate. Em HECTON-8, seus padrões sobrevivem como selos, formulários de responsabilidade, placas de segurança e linguagem de seguro que durou mais que as pessoas que deveria proteger.",
-          "external_site": "A Autoridade Sol Core explica por que HECTON-8 pode ser remota e ainda assim legalmente possuída. Em HECTON-8, a velha civilização chega como papelada, padrões e dívida antes de chegar como ajuda."
-        },
-        "nl_NL": {
-          "title": "Sol Core-autoriteit",
-          "scanner": "Oud juridisch zegel van Sol. Het kan een grenslijk bezitten zonder dichtbij genoeg te zijn om het druklek te ruiken.",
-          "field_note": "Sol is hier geen thuis. Het is de oudste handtekening op het document die je nog steeds kapot kan maken.",
-          "terminal": "SOL CORE STANDARD: continuïteit van de claim erkend via erkende vervoerdersbewaring, routeverzekering en uitgestelde uitspraak. Prioriteit voor menselijke berging onbeslist tot lokale gevarencertificering.",
-          "audio": "Het zegel kwam uit de aardruimte. De reddingsclausule niet.",
-          "in_game_wiki": "Sol Core is de juridische en financiële wortel van menselijke expansie, geen persoonlijke herkomst en geen reddingskantoor. Op HECTON-8 overleven zijn normen als zegels, aansprakelijkheidsformulieren, veiligheidsplaten en verzekeringstaal die de mensen overleefde die ze moest beschermen.",
-          "external_site": "De Sol Core-autoriteit legt uit waarom HECTON-8 afgelegen kan zijn en toch juridisch eigendom kan blijven. In HECTON-8 arriveert oude beschaving als papierwerk, normen en schuld voordat ze als hulp arriveert."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS015_HUMAN_DOMAINS_ROUTE_ECONOMY",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P071_SOL_CORE_AUTHORITY",
+   "article_id": "human.sol_core_authority",
+   "title_key": "applied_lore.sol_core_authority.title",
+   "unlock": {
+    "primary": "unlock.first_sol_core_authority",
+    "poi_tags": [
+     "poi.old_law_plate",
+     "poi.sol_cert_seal",
+     "poi.insurance_stamp"
+    ],
+    "biome_tags": [
+     "biome.drowned_admin",
+     "biome.contract_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Sol Core Authority",
+     "scanner": "Old Sol law seal. It can own a frontier corpse without being close enough to smell the pressure leak.",
+     "field_note": "Sol is not home here. It is the oldest signature on the document that can still ruin you.",
+     "terminal": "SOL CORE STANDARD: claim continuity recognized through licensed carrier custody, route insurance and delayed adjudication. Human recovery priority unresolved pending local hazard certification.",
+     "audio": "The seal came from Earth space. The rescue clause did not.",
+     "in_game_wiki": "Sol Core is the legal and financial root of human expansion, not a personal birthplace and not a rescue office. Its standards survive at HECTON-8 as seals, liability forms, safety plates and insurance language that outlived the people those systems were meant to protect.",
+     "external_site": "Sol Core Authority explains why HECTON-8 can be remote and still legally owned. In HECTON-8, old civilization arrives as paperwork, standards and debt before it arrives as help."
     },
-    {
-      "packet_id": "P072_CENTAURI_COMPACT_LEGITIMACY",
-      "article_id": "human.centauri_compact_legitimacy",
-      "title_key": "applied_lore.centauri_compact_legitimacy.title",
-      "unlock": {
-        "primary": "unlock.first_centauri_compact_legitimacy",
-        "poi_tags": [
-          "poi.centauri_hardware_stamp",
-          "poi.compact_audit_tag",
-          "poi.old_pressure_case"
-        ],
-        "biome_tags": [
-          "biome.wreck_claim",
-          "biome.route_depot"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Centauri Compact Legitimacy",
-          "scanner": "Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
-          "field_note": "The Compact made distant claims respectable. Respectability is not rescue.",
-          "terminal": "CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
-          "audio": "First legitimacy became old metal under a newer lie.",
-          "in_game_wiki": "The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
-          "external_site": "Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
-        },
-        "ru_RU": {
-          "title": "Легитимность Centauri Compact",
-          "scanner": "Аудитная метка Centauri. Ранняя внесолнечная легитимность, позднее - фронтирные оправдания.",
-          "field_note": "Compact сделал далекие претензии респектабельными. Респектабельность не спасает.",
-          "terminal": "ОБОРУДОВАНИЕ CENTAURI COMPACT: гермокейс сертифицирован для гражданского транзита. Аудитный канал неактивен. Гарантия аннулирована после сторонней модернизации Deep Reach.",
-          "audio": "Первая легитимность стала старым металлом под новой ложью.",
-          "in_game_wiki": "Centauri Compact - ранняя внесолнечная опора человеческой легитимности: настоящие колонии, настоящие стандарты, настоящий гражданский престиж. На HECTON-8 он появляется как импортные гермокейсы и аудитные метки, на которые Deep Reach могла ссылаться, игнорируя смысл, ради которого они существовали.",
-          "external_site": "Легитимность Centauri Compact заземляет широкий сеттинг: человеческая экспансия в некоторых местах уже работает, поэтому Aegir выглядит не героическим фронтиром, а коррумпированной окраиной."
-        },
-        "ja_JP": {
-          "title": "ケンタウリ協約の正統性",
-          "scanner": "ケンタウリ監査タグ。初期の太陽系外正統性が、後には辺境の言い訳になった。",
-          "field_note": "協約は遠い請求を立派に見せた。立派さは救助ではない。",
-          "terminal": "CENTAURI COMPACT HARDWARE: 圧力ケースは民間輸送用に認証済み。監査チャンネル停止。Deep Reach の第三者改造後、保証無効。",
-          "audio": "最初の正統性は、新しい嘘の下で古い金属になった。",
-          "in_game_wiki": "Centauri Compact は、人類初期の太陽系外正統性を支えた存在だ。実在の植民地、実在の標準、実在の市民的名声があった。HECTON-8 では、Deep Reach がその精神を無視しながら引用できた輸入圧力ケースと監査タグとして現れる。",
-          "external_site": "ケンタウリ協約の正統性は、広い設定を現実に結びつける。人類拡張は一部ではすでに機能している。だから Aegir は英雄的ではなく、より腐敗して見える。"
-        },
-        "zh_CN": {
-          "title": "Centauri Compact 合法性",
-          "scanner": "Centauri 审计标签。早期太阳系外合法性，后来成了边境借口。",
-          "field_note": "Compact 让遥远的索赔显得体面。体面不是救援。",
-          "terminal": "CENTAURI COMPACT HARDWARE: 压力箱已获民用转运认证。审计通道 inactive。经 Deep Reach 第三方改装后保修失效。",
-          "audio": "最初的合法性，后来成了新谎言下面的旧金属。",
-          "in_game_wiki": "Centauri Compact 是人类早期太阳系外合法性的锚点：真实殖民地、真实标准、真实的公民声望。在 HECTON-8，它表现为进口压力箱和审计标签，Deep Reach 可以引用这些东西，却无视它们背后的精神。",
-          "external_site": "Centauri Compact 合法性让更大的设定落地：人类扩张在某些地方已经能运转，这让 Aegir 不像英雄边疆，更像腐败边区。"
-        },
-        "fr_FR": {
-          "title": "Légitimité du Centauri Compact",
-          "scanner": "Étiquette d'audit Centauri. Légitimité extrasolaire précoce, puis excuses de frontière.",
-          "field_note": "Le Compact a rendu les réclamations lointaines respectables. La respectabilité n'est pas un secours.",
-          "terminal": "MATÉRIEL CENTAURI COMPACT : caisson de pression certifié pour transit civil. Canal d'audit inactif. Garantie annulée après rétrofit tiers Deep Reach.",
-          "audio": "La première légitimité est devenue du vieux métal sous un mensonge plus récent.",
-          "in_game_wiki": "Le Centauri Compact est l'ancre de légitimité extrasolaire des débuts humains : vraies colonies, vrais standards, vrai prestige civique. Sur HECTON-8, il apparaît sous forme de caissons de pression importés et d'étiquettes d'audit que Deep Reach pouvait citer tout en ignorant l'esprit qu'ils portaient.",
-          "external_site": "La légitimité du Centauri Compact ancre le cadre plus large : l'expansion humaine fonctionne déjà par endroits, ce qui rend Aegir moins héroïque et plus corrompu."
-        },
-        "es_ES": {
-          "title": "Legitimidad del Centauri Compact",
-          "scanner": "Etiqueta de auditoría Centauri. Legitimidad extrasolar temprana, luego excusas de frontera.",
-          "field_note": "El Compact volvió respetables las reclamaciones lejanas. La respetabilidad no es rescate.",
-          "terminal": "HARDWARE CENTAURI COMPACT: caja de presión certificada para tránsito civil. Canal de auditoría inactivo. Garantía anulada tras retrofit de Deep Reach por terceros.",
-          "audio": "La primera legitimidad se volvió metal viejo bajo una mentira más nueva.",
-          "in_game_wiki": "El Centauri Compact es el ancla de legitimidad extrasolar temprana de la humanidad: colonias reales, estándares reales, prestigio cívico real. En HECTON-8 aparece como cajas de presión importadas y etiquetas de auditoría que Deep Reach podía citar mientras ignoraba el espíritu que representaban.",
-          "external_site": "La legitimidad del Centauri Compact mantiene firme el marco general: la expansión humana ya funciona en algunos lugares, lo que hace que Aegir sea menos heroico y más corrupto."
-        },
-        "de_DE": {
-          "title": "Legitimität des Centauri Compact",
-          "scanner": "Centauri-Prüfmarke. Frühe extrasolare Legitimität, später Grenzland-Ausreden.",
-          "field_note": "Der Compact machte ferne Ansprüche respektabel. Respektabilität ist keine Rettung.",
-          "terminal": "CENTAURI COMPACT HARDWARE: Druckkoffer für zivilen Transit zertifiziert. Prüfkanal inaktiv. Garantie nach Deep-Reach-Nachrüstung durch Dritte erloschen.",
-          "audio": "Erste Legitimität wurde altes Metall unter einer neueren Lüge.",
-          "in_game_wiki": "Der Centauri Compact ist der frühe extrasolare Legitimitätsanker der Menschheit: echte Kolonien, echte Standards, echtes ziviles Prestige. Auf HECTON-8 erscheint er als importierte Druckkoffer und Prüfmarken, die Deep Reach anführen konnte, während der Geist dahinter ignoriert wurde.",
-          "external_site": "Die Legitimität des Centauri Compact erdet den weiteren Schauplatz: Menschliche Expansion funktioniert an manchen Orten bereits, wodurch Aegir weniger heroisch und korrupter wirkt."
-        },
-        "pl_PL": {
-          "title": "Legitymacja Centauri Compact",
-          "scanner": "Znacznik audytu Centauri. Wczesna legitymacja poza Układem Słonecznym, później wymówki pogranicza.",
-          "field_note": "Compact uczynił odległe roszczenia szacownymi. Szacunek nie jest ratunkiem.",
-          "terminal": "SPRZĘT CENTAURI COMPACT: kaseta ciśnieniowa certyfikowana do tranzytu cywilnego. Kanał audytu nieaktywny. Gwarancja nieważna po modernizacji Deep Reach przez stronę trzecią.",
-          "audio": "Pierwsza legitymacja stała się starym metalem pod nowszym kłamstwem.",
-          "in_game_wiki": "Centauri Compact jest wczesną pozasłoneczną kotwicą ludzkiej legitymacji: prawdziwe kolonie, prawdziwe standardy, prawdziwy prestiż obywatelski. Na HECTON-8 pojawia się jako importowane kasety ciśnieniowe i znaczniki audytu, na które Deep Reach mogło się powoływać, ignorując ich sens.",
-          "external_site": "Legitymacja Centauri Compact uziemia szerszy świat: ludzka ekspansja w niektórych miejscach już działa, przez co Aegir jest mniej heroiczny, a bardziej skorumpowany."
-        },
-        "uk_UA": {
-          "title": "Легітимність Centauri Compact",
-          "scanner": "Аудитна мітка Centauri. Рання позасонячна легітимність, пізніше - фронтирні виправдання.",
-          "field_note": "Compact зробив далекі претензії поважними. Поважність не рятує.",
-          "terminal": "ОБЛАДНАННЯ CENTAURI COMPACT: гермокейс сертифіковано для цивільного транзиту. Канал аудиту неактивний. Гарантію скасовано після сторонньої модернізації Deep Reach.",
-          "audio": "Перша легітимність стала старим металом під новішою брехнею.",
-          "in_game_wiki": "Centauri Compact - рання позасонячна опора людської легітимності: справжні колонії, справжні стандарти, справжній громадянський престиж. На HECTON-8 він з'являється як імпортовані гермокейси та аудитні мітки, на які Deep Reach могла посилатися, ігноруючи їхній дух.",
-          "external_site": "Легітимність Centauri Compact заземлює ширший сетинг: людська експансія подекуди вже працює, тому Aegir здається не героїчним, а корумпованим."
-        },
-        "ar_SA": {
-          "title": "شرعية ميثاق سنتوري",
-          "scanner": "وسم تدقيق من سنتوري. شرعية مبكرة خارج النظام الشمسي، ثم أعذار للتخوم.",
-          "field_note": "جعل الميثاق المطالبات البعيدة محترمة. الاحترام ليس إنقاذا.",
-          "terminal": "عتاد CENTAURI COMPACT: حافظة ضغط معتمدة للنقل المدني. قناة التدقيق غير نشطة. الضمان ملغى بعد تعديل Deep Reach من طرف ثالث.",
-          "audio": "تحولت الشرعية الأولى إلى معدن قديم تحت كذبة أحدث.",
-          "in_game_wiki": "يمثل Centauri Compact مرساة الشرعية البشرية المبكرة خارج النظام الشمسي: مستعمرات حقيقية، ومعايير حقيقية، وهيبة مدنية حقيقية. على HECTON-8 يظهر كحافظات ضغط مستوردة ووسوم تدقيق استطاعت Deep Reach الاستشهاد بها بينما تجاهلت الروح التي قامت عليها.",
-          "external_site": "تثبت شرعية Centauri Compact العالم الأوسع: التوسع البشري يعمل بالفعل في بعض الأماكن، وهذا يجعل Aegir أقل بطولة وأكثر فسادا."
-        },
-        "id_ID": {
-          "title": "Legitimasi Centauri Compact",
-          "scanner": "Tag audit Centauri. Legitimasi ekstrasurya awal, lalu alasan perbatasan.",
-          "field_note": "Compact membuat klaim jauh terlihat terhormat. Kehormatan bukan penyelamatan.",
-          "terminal": "PERANGKAT CENTAURI COMPACT: peti tekanan tersertifikasi untuk transit sipil. Kanal audit tidak aktif. Garansi batal setelah retrofit pihak ketiga Deep Reach.",
-          "audio": "Legitimasi pertama menjadi logam tua di bawah kebohongan yang lebih baru.",
-          "in_game_wiki": "Centauri Compact adalah jangkar legitimasi ekstrasurya awal umat manusia: koloni nyata, standar nyata, prestise sipil nyata. Di HECTON-8, ia muncul sebagai peti tekanan impor dan tag audit yang bisa dikutip Deep Reach sambil mengabaikan semangat di baliknya.",
-          "external_site": "Legitimasi Centauri Compact membuat latar luas tetap membumi: ekspansi manusia sudah berjalan di beberapa tempat, sehingga Aegir terasa kurang heroik dan lebih korup."
-        },
-        "ko_KR": {
-          "title": "센타우리 컴팩트의 정당성",
-          "scanner": "센타우리 감사 태그. 초기 외태양계 정당성, 나중에는 변경의 변명.",
-          "field_note": "컴팩트는 먼 청구를 그럴듯하게 만들었다. 그럴듯함은 구조가 아니다.",
-          "terminal": "CENTAURI COMPACT HARDWARE: 민간 운송용 압력 케이스 인증 완료. 감사 채널 비활성. Deep Reach 제3자 개조 후 보증 무효.",
-          "audio": "처음의 정당성은 새 거짓말 아래의 낡은 금속이 되었다.",
-          "in_game_wiki": "센타우리 컴팩트는 인류 초기 외태양계 정당성의 닻이다. 실제 식민지, 실제 표준, 실제 시민적 권위가 있었다. HECTON-8에서는 Deep Reach가 그 정신을 무시하면서도 인용할 수 있었던 수입 압력 케이스와 감사 태그로 나타난다.",
-          "external_site": "센타우리 컴팩트의 정당성은 더 넓은 설정을 현실에 묶는다. 인간 확장은 이미 일부 지역에서 작동하고 있으며, 그래서 Aegir는 영웅적이라기보다 더 부패해 보인다."
-        },
-        "he_IL": {
-          "title": "הלגיטימיות של Centauri Compact",
-          "scanner": "תג ביקורת של Centauri. לגיטימיות חוץ-שמשית מוקדמת, ואחר כך תירוצי ספר.",
-          "field_note": "ה-Compact הפך תביעות רחוקות למכובדות. מכובדות אינה חילוץ.",
-          "terminal": "חומרת CENTAURI COMPACT: מארז לחץ מאושר לתעבורה אזרחית. ערוץ ביקורת לא פעיל. האחריות בטלה לאחר הסבה של Deep Reach בידי צד שלישי.",
-          "audio": "הלגיטימיות הראשונה הפכה למתכת ישנה מתחת לשקר חדש יותר.",
-          "in_game_wiki": "Centauri Compact הוא עוגן הלגיטימיות החוץ-שמשית המוקדמת של האנושות: מושבות אמיתיות, תקנים אמיתיים, יוקרה אזרחית אמיתית. על HECTON-8 הוא מופיע כמארזי לחץ מיובאים ותגי ביקורת ש-Deep Reach יכלה לצטט תוך התעלמות מהרוח שמאחוריהם.",
-          "external_site": "הלגיטימיות של Centauri Compact מקרקעת את העולם הרחב: התפשטות אנושית כבר עובדת במקומות מסוימים, ולכן Aegir נראה פחות הירואי ויותר מושחת."
-        },
-        "pt_BR": {
-          "title": "Legitimidade do Centauri Compact",
-          "scanner": "Etiqueta de auditoria Centauri. Legitimidade extrassolar inicial, depois desculpas de fronteira.",
-          "field_note": "O Compact tornou reivindicações distantes respeitáveis. Respeitabilidade não é resgate.",
-          "terminal": "HARDWARE CENTAURI COMPACT: caixa de pressão certificada para trânsito civil. Canal de auditoria inativo. Garantia anulada após retrofit de terceiro da Deep Reach.",
-          "audio": "A primeira legitimidade virou metal velho sob uma mentira mais nova.",
-          "in_game_wiki": "O Centauri Compact é a âncora de legitimidade extrassolar inicial da humanidade: colônias reais, padrões reais, prestígio cívico real. Em HECTON-8, ele aparece como caixas de pressão importadas e etiquetas de auditoria que a Deep Reach podia citar enquanto ignorava o espírito por trás delas.",
-          "external_site": "A Legitimidade do Centauri Compact mantém o cenário mais amplo no chão: a expansão humana já funciona em alguns lugares, o que torna Aegir menos heroico e mais corrupto."
-        },
-        "nl_NL": {
-          "title": "Legitimiteit van het Centauri Compact",
-          "scanner": "Centauri-auditlabel. Vroege extrasolaire legitimiteit, later grensland-excuses.",
-          "field_note": "Het Compact maakte verre claims respectabel. Respectabiliteit is geen redding.",
-          "terminal": "CENTAURI COMPACT HARDWARE: drukcase gecertificeerd voor civiel transport. Auditkanaal inactief. Garantie vervallen na retrofit door derde partij Deep Reach.",
-          "audio": "De eerste legitimiteit werd oud metaal onder een nieuwere leugen.",
-          "in_game_wiki": "Het Centauri Compact is de vroege extrasolaire legitimiteitsanker van de mensheid: echte kolonies, echte normen, echt civiel prestige. Op HECTON-8 verschijnt het als ingevoerde drukcases en auditlabels die Deep Reach kon citeren terwijl het de geest erachter negeerde.",
-          "external_site": "De legitimiteit van het Centauri Compact houdt de bredere setting geaard: menselijke expansie werkt al op sommige plekken, waardoor Aegir minder heldhaftig en corrupter voelt."
-        }
-      }
+    "ru_RU": {
+     "title": "Полномочия Sol Core",
+     "scanner": "Старая правовая печать Sol. Она способна владеть фронтирным трупом, даже находясь слишком далеко, чтобы почувствовать утечку давления.",
+     "field_note": "Здесь Sol не дом. Это самая старая подпись на документе, которая все еще может тебя раздавить.",
+     "terminal": "СТАНДАРТ SOL CORE: непрерывность претензии признана через лицензированное хранение перевозчиком, маршрутное страхование и отложенное разбирательство. Приоритет извлечения людей не установлен до местной сертификации угроз.",
+     "audio": "Печать пришла из земного пространства. Пункт о спасении - нет.",
+     "in_game_wiki": "Sol Core - юридический и финансовый корень человеческой экспансии, но не личная родина и не служба спасения. На HECTON-8 его стандарты уцелели как печати, формы ответственности, таблички безопасности и страховой язык, переживший людей, которых эти системы должны были защищать.",
+     "external_site": "Полномочия Sol Core объясняют, почему HECTON-8 может быть далекой и все равно юридически присвоенной. В HECTON-8 старая цивилизация приходит бумагами, стандартами и долгом раньше, чем приходит помощь."
     },
-    {
-      "packet_id": "P073_BARNARD_YARDS_MARAUDER_ORIGIN",
-      "article_id": "human.barnard_yards_marauder_origin",
-      "title_key": "applied_lore.barnard_yards_marauder_origin.title",
-      "unlock": {
-        "primary": "unlock.first_barnard_yards_marauder_origin",
-        "poi_tags": [
-          "poi.barnard_tool_stamp",
-          "poi.salvage_belt_patch",
-          "poi.cutters_license_plate"
-        ],
-        "biome_tags": [
-          "biome.shallow_cache",
-          "biome.marauder_route"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Barnard Yards Marauder Origin",
-          "scanner": "Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
-          "field_note": "Closer than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
-          "terminal": "BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
-          "audio": "You learned this hand motion before HECTON-8. That is the problem.",
-          "in_game_wiki": "Barnard Yards is the current working origin culture behind HECTON-8's Marauder: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It explains competence without turning the salvage worker into an Earth tourist or a rescue myth.",
-          "external_site": "Barnard Yards Marauder Origin defines HECTON-8's debt-bound salvage class. The Marauder comes from a working culture where a dead claim is not mystery tourism; it is a job with bad math."
-        },
-        "ru_RU": {
-          "title": "Мародерское происхождение Barnard Yards",
-          "scanner": "Клеймо инструмента Barnard. Культура разделки кораблей. Место, где учат не верить чистым пунктам о спасении.",
-          "field_note": "Ближе Земли: арендованные резаки, старые привычки давления, долг и ободранные корпуса.",
-          "terminal": "СЕРВИСНАЯ МЕТКА BARNARD YARDS: аварийный зажим принят. Сертификация salvage действительна для заброшенной гермосреды, мертвого отсека carrier и покинутого claim hull.",
-          "audio": "Ты выучил это движение руки до HECTON-8. В этом и проблема.",
-          "in_game_wiki": "Barnard Yards - текущая рабочая культура происхождения мародера HECTON-8: промышленный salvage, разделка кораблей, гермооборудование и работа с мертвыми претензиями. Она объясняет компетентность, не превращая salvage-работника в туриста с Земли или легенду спасения.",
-          "external_site": "Мародерское происхождение Barnard Yards задает долговой salvage-класс HECTON-8. Мародер приходит из рабочей культуры, где мертвая претензия - не мистический туризм, а работа с плохой арифметикой."
-        },
-        "ja_JP": {
-          "title": "バーナード造船場のマローダー起源",
-          "scanner": "バーナードの工具刻印。船体解体の文化。きれいな救助条項を疑うことを教える場所だ。",
-          "field_note": "地球より近いもの: 借り物のカッター、古い圧力作法、負債、剥がされた船体。",
-          "terminal": "BARNARD YARDS SERVICE MARK: 緊急クランプ承認。サルベージ認証は、放棄圧力居住区、死んだ carrier 区画、放棄 claim hull に有効。",
-          "audio": "君は HECTON-8 の前にこの手の動きを覚えた。それが問題だ。",
-          "in_game_wiki": "Barnard Yards は HECTON-8 のマローダーを支える現在の労働出身文化だ。工業サルベージ、船体解体、圧力機器、死んだ請求権の仕事。サルベージ労働者を地球観光客や救助神話にせず、能力の理由を与える。",
-          "external_site": "バーナード造船場のマローダー起源は、HECTON-8 の債務漬けサルベージ階級を定義する。マローダーは、死んだ請求権を神秘観光ではなく割に合わない仕事として扱う労働文化から来る。"
-        },
-        "zh_CN": {
-          "title": "Barnard Yards 掠夺者出身",
-          "scanner": "Barnard 工具印。拆船文化。那种教你别信干净救援条款的地方。",
-          "field_note": "比地球更近：租来的切割器、老旧压力习惯、债务和被剥空的船壳。",
-          "terminal": "BARNARD YARDS SERVICE MARK: 应急夹具已接受。打捞认证适用于废弃压力居住体、死亡 carrier 舱段和遗弃 claim hull。",
-          "audio": "你在 HECTON-8 之前就学会了这个手势。问题就在这里。",
-          "in_game_wiki": "Barnard Yards 是 HECTON-8 掠夺者背后的当代工作出身文化：工业打捞、拆船、压力硬件和死亡索赔工作。它解释了能力来源，却不会把打捞工变成地球游客或救援神话。",
-          "external_site": "Barnard Yards 掠夺者出身定义了 HECTON-8 的负债打捞阶层。掠夺者来自一种工作文化，在那里，死亡索赔不是神秘观光，而是一份算账很难看的工作。"
-        },
-        "fr_FR": {
-          "title": "Origine maraudeuse des Barnard Yards",
-          "scanner": "Marque d'outil Barnard. Culture du démantèlement naval. Le genre d'endroit qui apprend à se méfier des clauses de secours trop propres.",
-          "field_note": "Plus proche que la Terre : découpeurs loués, vieux réflexes de pression, dette et coques dépouillées.",
-          "terminal": "MARQUE DE SERVICE BARNARD YARDS : pince d'urgence acceptée. Certification de salvage valide pour habitat pressurisé abandonné, compartiment de carrier mort et claim hull déserté.",
-          "audio": "Tu as appris ce geste avant HECTON-8. C'est bien le problème.",
-          "in_game_wiki": "Barnard Yards est la culture de travail qui soutient le Maraudeur de HECTON-8 : salvage industriel, démantèlement de vaisseaux, matériel de pression et dossiers de réclamation morts. Elle explique la compétence sans transformer le travailleur du salvage en touriste terrien ni en mythe de secours.",
-          "external_site": "L'origine maraudeuse des Barnard Yards définit la classe de salvage endettée de HECTON-8. Le Maraudeur vient d'une culture de travail où une réclamation morte n'est pas du tourisme mystérieux, mais un travail avec de mauvais calculs."
-        },
-        "es_ES": {
-          "title": "Origen merodeador de Barnard Yards",
-          "scanner": "Marca de herramienta Barnard. Cultura de desguace naval. El tipo de lugar que te enseña a desconfiar de las cláusulas de rescate limpias.",
-          "field_note": "Más cerca que la Tierra: cortadores alquilados, viejos hábitos de presión, deuda y cascos pelados.",
-          "terminal": "MARCA DE SERVICIO BARNARD YARDS: abrazadera de emergencia aceptada. Certificación de salvage válida para hábitat presurizado abandonado, compartimento carrier muerto y claim hull abandonado.",
-          "audio": "Aprendiste este movimiento de mano antes de HECTON-8. Ese es el problema.",
-          "in_game_wiki": "Barnard Yards es la cultura laboral que sostiene al merodeador de HECTON-8: salvage industrial, desguace de naves, hardware de presión y trabajo con reclamaciones muertas. Explica la competencia sin convertir al trabajador de salvage en turista terrestre ni en mito de rescate.",
-          "external_site": "El origen merodeador de Barnard Yards define la clase de salvage endeudada de HECTON-8. El merodeador viene de una cultura de trabajo donde una reclamación muerta no es turismo de misterio; es un trabajo con malas cuentas."
-        },
-        "de_DE": {
-          "title": "Marauder-Herkunft der Barnard Yards",
-          "scanner": "Barnard-Werkzeugstempel. Schiffsausschlachtungs-Kultur. Ein Ort, der lehrt, sauberen Rettungsklauseln zu misstrauen.",
-          "field_note": "Näher als die Erde: gemietete Schneidgeräte, alte Druckgewohnheiten, Schulden und ausgeschlachtete Rümpfe.",
-          "terminal": "BARNARD YARDS SERVICE MARK: Notfallklemme akzeptiert. Salvage-Zertifizierung gültig für aufgegebenes Druckhabitat, totes carrier compartment und verlassenes claim hull.",
-          "audio": "Diese Handbewegung hast du vor HECTON-8 gelernt. Genau das ist das Problem.",
-          "in_game_wiki": "Barnard Yards ist die Arbeits-Herkunftskultur hinter dem HECTON-8-Marauder: industrielles Salvage, Schiffsausschlachtung, Druckhardware und Arbeit an toten Ansprüchen. Sie erklärt Kompetenz, ohne die Salvage-Arbeitskraft zum Erdtouristen oder Rettungsmythos zu machen.",
-          "external_site": "Die Marauder-Herkunft der Barnard Yards definiert HECTON-8s schuldengebundene Salvage-Klasse. Der Marauder stammt aus einer Arbeitskultur, in der ein toter Anspruch keine Mysterienreise ist, sondern ein Job mit schlechter Rechnung."
-        },
-        "pl_PL": {
-          "title": "Marauderskie pochodzenie Barnard Yards",
-          "scanner": "Stempel narzędziowy Barnard. Kultura rozbiórki statków. Miejsce, które uczy nie ufać czystym klauzulom ratunkowym.",
-          "field_note": "Bliżej niż Ziemia: wynajęte palniki, stare nawyki ciśnieniowe, dług i ogołocone kadłuby.",
-          "terminal": "ZNAK SERWISOWY BARNARD YARDS: zacisk awaryjny przyjęty. Certyfikacja salvage ważna dla opuszczonego habitatu ciśnieniowego, martwego przedziału carrier i porzuconego claim hull.",
-          "audio": "Nauczyłeś się tego ruchu dłoni przed HECTON-8. W tym problem.",
-          "in_game_wiki": "Barnard Yards to kultura pracy stojąca za Marauderem HECTON-8: przemysłowy salvage, rozbiórka statków, sprzęt ciśnieniowy i praca przy martwych roszczeniach. Wyjaśnia kompetencję, nie robiąc z pracownika salvage turysty z Ziemi ani mitu ratunkowego.",
-          "external_site": "Marauderskie pochodzenie Barnard Yards definiuje zadłużoną klasę salvage HECTON-8. Marauder wywodzi się z kultury pracy, gdzie martwe roszczenie nie jest tajemniczą wycieczką, lecz robotą ze złą matematyką."
-        },
-        "uk_UA": {
-          "title": "Мародерське походження Barnard Yards",
-          "scanner": "Клеймо інструмента Barnard. Культура розбирання кораблів. Місце, де вчать не довіряти чистим пунктам про порятунок.",
-          "field_note": "Ближче за Землю: орендовані різаки, старі звички тиску, борг і обдерті корпуси.",
-          "terminal": "СЕРВІСНА МІТКА BARNARD YARDS: аварійний затискач прийнято. Сертифікація salvage чинна для покинутого гермосередовища, мертвого відсіку carrier і залишеного claim hull.",
-          "audio": "Ти вивчив цей рух руки ще до HECTON-8. У цьому й проблема.",
-          "in_game_wiki": "Barnard Yards - робоча культура походження мародера HECTON-8: промисловий salvage, розбирання кораблів, гермообладнання й робота з мертвими претензіями. Вона пояснює компетентність, не перетворюючи salvage-працівника на туриста із Землі чи рятувальну легенду.",
-          "external_site": "Мародерське походження Barnard Yards задає борговий salvage-клас HECTON-8. Мародер приходить із робочої культури, де мертва претензія - не містичний туризм, а робота з поганою арифметикою."
-        },
-        "ar_SA": {
-          "title": "أصل المغير من ساحات بارنارد",
-          "scanner": "ختم أداة من Barnard. ثقافة تفكيك السفن. نوع المكان الذي يعلمك ألا تثق ببنود الإنقاذ النظيفة.",
-          "field_note": "أقرب من الأرض: قواطع مستأجرة، عادات ضغط قديمة، دين، وهياكل منزوعة.",
-          "terminal": "علامة خدمة BARNARD YARDS: مشبك طوارئ مقبول. شهادة salvage صالحة لموطن ضغط مهجور، ومقصورة carrier ميتة، وclaim hull متروك.",
-          "audio": "تعلمت حركة اليد هذه قبل HECTON-8. هذه هي المشكلة.",
-          "in_game_wiki": "Barnard Yards هي ثقافة العمل التي تقف خلف مغير HECTON-8: salvage صناعي، تفكيك سفن، عتاد ضغط، وعمل على مطالبات ميتة. تشرح الكفاءة من دون تحويل عامل salvage إلى سائح من الأرض أو أسطورة إنقاذ.",
-          "external_site": "يحدد أصل المغير من Barnard Yards طبقة salvage المربوطة بالديون في HECTON-8. يأتي المغير من ثقافة عمل حيث لا تكون المطالبة الميتة سياحة غموض، بل عملا بحسابات سيئة."
-        },
-        "id_ID": {
-          "title": "Asal Marauder Barnard Yards",
-          "scanner": "Stempel alat Barnard. Budaya pemotongan kapal. Tempat yang mengajarimu mencurigai klausul penyelamatan yang terlalu bersih.",
-          "field_note": "Lebih dekat daripada Bumi: pemotong sewaan, kebiasaan tekanan lama, utang, dan lambung yang dilucuti.",
-          "terminal": "TANDA LAYANAN BARNARD YARDS: klem darurat diterima. Sertifikasi salvage berlaku untuk habitat tekanan terlantar, kompartemen carrier mati, dan claim hull yang ditinggalkan.",
-          "audio": "Kau mempelajari gerakan tangan ini sebelum HECTON-8. Itulah masalahnya.",
-          "in_game_wiki": "Barnard Yards adalah budaya kerja asal di balik Marauder HECTON-8: salvage industri, pembongkaran kapal, perangkat tekanan, dan pekerjaan klaim mati. Itu menjelaskan kompetensi tanpa menjadikan pekerja salvage turis dari Bumi atau mitos penyelamatan.",
-          "external_site": "Asal Marauder Barnard Yards menetapkan kelas salvage terikat utang di HECTON-8. Marauder datang dari budaya kerja tempat klaim mati bukan wisata misteri, melainkan pekerjaan dengan hitungan buruk."
-        },
-        "ko_KR": {
-          "title": "바너드 야드 마로더 기원",
-          "scanner": "바너드 공구 각인. 선박 해체 문화. 깔끔한 구조 조항을 의심하는 법을 가르치는 곳.",
-          "field_note": "지구보다 가까운 것: 빌린 절단기, 오래된 압력 습관, 빚, 벗겨진 선체.",
-          "terminal": "BARNARD YARDS SERVICE MARK: 비상 클램프 승인. Salvage 인증은 버려진 압력 거주구, 죽은 carrier compartment, 방치된 claim hull에 유효.",
-          "audio": "너는 HECTON-8 이전에 이 손동작을 배웠다. 그게 문제다.",
-          "in_game_wiki": "바너드 야드는 HECTON-8 마로더 뒤에 있는 현재 노동 출신 문화다. 산업 salvage, 선박 해체, 압력 장비, 죽은 청구 작업. salvage 노동자를 지구 관광객이나 구조 신화로 만들지 않고도 능력의 이유를 설명한다.",
-          "external_site": "바너드 야드 마로더 기원은 HECTON-8의 빚 묶인 salvage 계급을 규정한다. 마로더는 죽은 청구를 미스터리 관광이 아니라 계산이 나쁜 일로 다루는 노동 문화에서 온다."
-        },
-        "he_IL": {
-          "title": "מוצא המראודר של Barnard Yards",
-          "scanner": "חותמת כלי של Barnard. תרבות פירוק ספינות. המקום שמלמד אותך לא לסמוך על סעיפי חילוץ נקיים.",
-          "field_note": "קרוב יותר מכדור הארץ: חותכים שכורים, הרגלי לחץ ישנים, חוב וגופים מפורקים.",
-          "terminal": "סימן שירות BARNARD YARDS: מהדק חירום התקבל. אישור salvage תקף לבית גידול לחץ נטוש, מדור carrier מת ו-claim hull נטוש.",
-          "audio": "למדת את תנועת היד הזו לפני HECTON-8. זו הבעיה.",
-          "in_game_wiki": "Barnard Yards היא תרבות העבודה שמאחורי המראודר של HECTON-8: salvage תעשייתי, פירוק ספינות, חומרת לחץ ועבודה על תביעות מתות. היא מסבירה כשירות בלי להפוך עובד salvage לתייר מכדור הארץ או למיתוס חילוץ.",
-          "external_site": "מוצא המראודר של Barnard Yards מגדיר את מעמד ה-salvage הכבול בחוב של HECTON-8. המראודר מגיע מתרבות עבודה שבה תביעה מתה אינה תיירות מסתורין, אלא עבודה עם חשבון רע."
-        },
-        "pt_BR": {
-          "title": "Origem Marauder de Barnard Yards",
-          "scanner": "Marca de ferramenta Barnard. Cultura de desmanche naval. O tipo de lugar que ensina você a desconfiar de cláusulas de resgate limpas.",
-          "field_note": "Mais perto que a Terra: cortadores alugados, velhos hábitos de pressão, dívida e cascos depenados.",
-          "terminal": "MARCA DE SERVIÇO BARNARD YARDS: braçadeira de emergência aceita. Certificação de salvage válida para habitat pressurizado abandonado, compartimento carrier morto e claim hull abandonado.",
-          "audio": "Você aprendeu esse movimento de mão antes de HECTON-8. Esse é o problema.",
-          "in_game_wiki": "Barnard Yards é a cultura de trabalho por trás do Marauder de HECTON-8: salvage industrial, desmanche de naves, hardware de pressão e trabalho com reivindicações mortas. Ela explica competência sem transformar o trabalhador de salvage em turista da Terra nem mito de resgate.",
-          "external_site": "A Origem Marauder de Barnard Yards define a classe de salvage endividada de HECTON-8. O Marauder vem de uma cultura de trabalho onde uma reivindicação morta não é turismo de mistério; é trabalho com conta ruim."
-        },
-        "nl_NL": {
-          "title": "Marauder-oorsprong van Barnard Yards",
-          "scanner": "Barnard-gereedschapsstempel. Cultuur van scheepssloperij. Het soort plek dat je leert schone reddingsclausules te wantrouwen.",
-          "field_note": "Dichterbij dan de aarde: gehuurde snijders, oude drukgewoonten, schuld en gestript rompwerk.",
-          "terminal": "BARNARD YARDS SERVICE MARK: noodklem geaccepteerd. Salvage-certificering geldig voor verlaten drukhabitat, dood carrier compartment en verlaten claim hull.",
-          "audio": "Je leerde deze handbeweging vóór HECTON-8. Dat is het probleem.",
-          "in_game_wiki": "Barnard Yards is de werkcultuur achter de HECTON-8-Marauder: industriële salvage, scheepssloperij, drukhardware en dood-claimwerk. Ze verklaart bekwaamheid zonder de salvagewerker een toerist van de aarde of reddingsmythe te maken.",
-          "external_site": "De Marauder-oorsprong van Barnard Yards definieert HECTON-8s schuldgebonden salvageklasse. De Marauder komt uit een werkcultuur waar een dode claim geen mysterietoerisme is, maar werk met slechte rekensom."
-        }
-      }
+    "ja_JP": {
+     "title": "ソル・コア管轄局",
+     "scanner": "古いソル法の封印。圧力漏れの臭いを嗅げる距離になくても、辺境の死体を所有できる。",
+     "field_note": "ここでソルは故郷ではない。君をまだ破滅させられる、文書上で最も古い署名だ。",
+     "terminal": "SOL CORE STANDARD: 請求権の継続は、認可輸送者の保管、航路保険、遅延審理によって承認される。人員回収の優先度は、現地危険認証まで未確定。",
+     "audio": "封印は地球圏から来た。救助条項は来なかった。",
+     "in_game_wiki": "Sol Core は人類拡張の法的、金融的な根であり、個人の故郷でも救助窓口でもない。HECTON-8 では、その標準が封印、責任書式、安全銘板、保険文言として残り、それらが守るはずだった人間より長く生き残った。",
+     "external_site": "ソル・コア管轄局は、HECTON-8 が遠隔地でありながら法的には所有され得る理由を示す。HECTON-8 では、古い文明は救援より先に、書類、標準、負債として到着する。"
     },
-    {
-      "packet_id": "P074_TAU_CETI_PUBLIC_LEDGER",
-      "article_id": "human.tau_ceti_public_ledger",
-      "title_key": "applied_lore.tau_ceti_public_ledger.title",
-      "unlock": {
-        "primary": "unlock.first_tau_ceti_public_ledger",
-        "poi_tags": [
-          "poi.public_ledger_node",
-          "poi.civic_law_cache",
-          "poi.redacted_hearing_file"
-        ],
-        "biome_tags": [
-          "biome.admin_spine",
-          "biome.relay_spine"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Tau Ceti Public Ledger",
-          "scanner": "Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
-          "field_note": "Oversight can arrive clean and late. Late is still dead.",
-          "terminal": "TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
-          "audio": "A court can be honest and useless when light itself is late.",
-          "in_game_wiki": "The Tau Ceti League gives Aegir-era public law a credible counterweight. It matters for evidence custody and outside pressure against Deep Reach, but distance keeps it from pulling a trapped diver out of HECTON-8 in real time.",
-          "external_site": "Tau Ceti Public Ledger is hard-sci-fi accountability: real public institutions exist, but distance turns justice into an afterimage unless evidence is preserved with chain-of-custody discipline."
-        },
-        "ru_RU": {
-          "title": "Публичный реестр Tau Ceti",
-          "scanner": "Фрагмент гражданского реестра Tau Ceti. Достаточно публичный, чтобы пугать Deep Reach, слишком запоздалый, чтобы спасти колонию.",
-          "field_note": "Надзор может прийти чистым и поздним. Поздно - значит все равно мертвы.",
-          "terminal": "ЗЕРКАЛО РЕЕСТРА TAU CETI: запечатанные доказательства допустимы после relay-аутентификации. Ожидаемое окно публичного пересмотра превышает местный интервал выживания на 31.4 года.",
-          "audio": "Суд может быть честным и бесполезным, когда сам свет опаздывает.",
-          "in_game_wiki": "Tau Ceti League дает публичному праву эпохи Aegir правдоподобный противовес. Она важна для custody доказательств и внешнего давления на Deep Reach, но расстояние не позволяет ей вытащить застрявшего водолаза из HECTON-8 в реальном времени.",
-          "external_site": "Публичный реестр Tau Ceti - жесткая научно-фантастическая подотчетность: реальные публичные институты существуют, но расстояние превращает правосудие в послесвечение, если доказательства не сохранены с дисциплиной цепочки custody."
-        },
-        "ja_JP": {
-          "title": "タウ・セティ公開台帳",
-          "scanner": "タウ・セティ市民台帳の断片。Deep Reach を怖がらせるには十分公開され、植民地を救うには遅すぎる。",
-          "field_note": "監督は清潔に、そして遅れて到着できる。遅いなら、死は死だ。",
-          "terminal": "TAU CETI LEDGER MIRROR: 封印済み証拠はリレー認証後に受理可能。予想公開審査窓は現地生存間隔を 31.4 年超過。",
-          "audio": "光そのものが遅れる時、裁判所は誠実でも役に立たない。",
-          "in_game_wiki": "Tau Ceti League は、Aegir 時代の公法に信頼できる釣り合いを与える。証拠保管と Deep Reach への外圧では重要だが、距離のせいで HECTON-8 に閉じ込められた潜水者をリアルタイムで引き上げることはできない。",
-          "external_site": "タウ・セティ公開台帳は、硬派SFの責任追及だ。公的機関は実在するが、証拠が保管連鎖の規律で守られなければ、距離は正義を残光に変えてしまう。"
-        },
-        "zh_CN": {
-          "title": "Tau Ceti 公共账簿",
-          "scanner": "Tau Ceti 公民账簿碎片。公开到足以吓住 Deep Reach，却迟到到救不了殖民地。",
-          "field_note": "监督可以干净地到来，也可以迟到。迟到仍然是死亡。",
-          "terminal": "TAU CETI LEDGER MIRROR: 密封证据经中继认证后可受理。预计公共复审窗口超过本地生存间隔 31.4 年。",
-          "audio": "当光本身都迟到时，法庭可以诚实，也可以毫无用处。",
-          "in_game_wiki": "Tau Ceti League 为 Aegir 时代公共法提供可信的制衡。它影响证据保管，也能对 Deep Reach 形成外部压力，但距离让它无法实时把困在 HECTON-8 下方的潜水员拉出来。",
-          "external_site": "Tau Ceti 公共账簿是硬科幻式问责：真实公共机构存在，但如果证据没有按监管链纪律保存，距离会把正义变成余辉。"
-        },
-        "fr_FR": {
-          "title": "Registre public de Tau Ceti",
-          "scanner": "Fragment de registre civique Tau Ceti. Assez public pour effrayer Deep Reach, trop retardé pour sauver la colonie.",
-          "field_note": "La surveillance peut arriver propre et tard. Tard, c'est quand même mort.",
-          "terminal": "MIROIR DE REGISTRE TAU CETI : preuves scellées recevables après authentification relais. Fenêtre de revue publique prévue supérieure de 31,4 ans à l'intervalle de survie local.",
-          "audio": "Un tribunal peut être honnête et inutile quand la lumière elle-même est en retard.",
-          "in_game_wiki": "La Tau Ceti League donne au droit public de l'ère Aegir un contrepoids crédible. Elle compte pour la garde des preuves et la pression extérieure contre Deep Reach, mais la distance l'empêche de sortir en temps réel un plongeur piégé sous HECTON-8.",
-          "external_site": "Le Registre public de Tau Ceti est une responsabilité hard-SF : de vraies institutions publiques existent, mais la distance transforme la justice en rémanence si les preuves ne sont pas préservées avec discipline de chaîne de garde."
-        },
-        "es_ES": {
-          "title": "Registro público de Tau Ceti",
-          "scanner": "Fragmento de registro cívico Tau Ceti. Lo bastante público para asustar a Deep Reach, demasiado tardío para salvar la colonia.",
-          "field_note": "La supervisión puede llegar limpia y tarde. Tarde sigue siendo muerto.",
-          "terminal": "ESPEJO DEL REGISTRO TAU CETI: pruebas selladas admisibles tras autenticación de relé. Ventana prevista de revisión pública supera el intervalo local de supervivencia por 31,4 años.",
-          "audio": "Un tribunal puede ser honesto e inútil cuando la propia luz llega tarde.",
-          "in_game_wiki": "La Tau Ceti League da al derecho público de la era Aegir un contrapeso creíble. Importa para custodia de evidencia y presión externa contra Deep Reach, pero la distancia le impide sacar en tiempo real a un buzo atrapado bajo HECTON-8.",
-          "external_site": "El Registro público de Tau Ceti es rendición de cuentas hard-SF: existen instituciones públicas reales, pero la distancia convierte la justicia en resplandor residual si la evidencia no se preserva con disciplina de cadena de custodia."
-        },
-        "de_DE": {
-          "title": "Öffentliches Tau-Ceti-Ledger",
-          "scanner": "Tau-Ceti-Bürgerledgerfragment. Öffentlich genug, um Deep Reach zu erschrecken, zu verzögert, um die Kolonie zu retten.",
-          "field_note": "Aufsicht kann sauber und spät ankommen. Spät ist trotzdem tot.",
-          "terminal": "TAU CETI LEDGER MIRROR: versiegelte Beweise nach Relaisauthentifizierung zulässig. Erwartetes öffentliches Prüfungsfenster übersteigt lokales Überlebensintervall um 31,4 Jahre.",
-          "audio": "Ein Gericht kann ehrlich und nutzlos sein, wenn das Licht selbst zu spät kommt.",
-          "in_game_wiki": "Die Tau Ceti League gibt dem öffentlichen Recht der Aegir-Ära ein glaubwürdiges Gegengewicht. Sie zählt für Beweisverwahrung und äußeren Druck gegen Deep Reach, doch Entfernung hindert sie daran, einen unter HECTON-8 gefangenen Taucher in Echtzeit herauszuholen.",
-          "external_site": "Das öffentliche Tau-Ceti-Ledger ist Hard-SF-Verantwortlichkeit: Echte öffentliche Institutionen existieren, doch Entfernung verwandelt Gerechtigkeit in ein Nachbild, wenn Beweise nicht mit Chain-of-Custody-Disziplin bewahrt werden."
-        },
-        "pl_PL": {
-          "title": "Publiczny rejestr Tau Ceti",
-          "scanner": "Fragment obywatelskiego rejestru Tau Ceti. Dość publiczny, by przestraszyć Deep Reach, zbyt spóźniony, by ocalić kolonię.",
-          "field_note": "Nadzór może przyjść czysty i późny. Późno nadal znaczy martwy.",
-          "terminal": "LUSTRO REJESTRU TAU CETI: zapieczętowane dowody dopuszczalne po uwierzytelnieniu przekaźnika. Oczekiwane okno publicznego przeglądu przekracza lokalny interwał przetrwania o 31,4 roku.",
-          "audio": "Sąd może być uczciwy i bezużyteczny, kiedy samo światło się spóźnia.",
-          "in_game_wiki": "Tau Ceti League daje prawu publicznemu epoki Aegir wiarygodną przeciwwagę. Ma znaczenie dla nadzoru nad dowodami i zewnętrznej presji na Deep Reach, ale odległość nie pozwala jej w czasie rzeczywistym wyciągnąć nurka uwięzionego pod HECTON-8.",
-          "external_site": "Publiczny rejestr Tau Ceti to hard-SF odpowiedzialność: prawdziwe instytucje publiczne istnieją, lecz odległość zmienia sprawiedliwość w powidok, jeśli dowody nie zostaną zachowane z dyscypliną łańcucha nadzoru."
-        },
-        "uk_UA": {
-          "title": "Публічний реєстр Tau Ceti",
-          "scanner": "Фрагмент громадянського реєстру Tau Ceti. Досить публічний, щоб лякати Deep Reach, надто запізнілий, щоб урятувати колонію.",
-          "field_note": "Нагляд може прийти чистим і пізнім. Пізно - це все одно мертво.",
-          "terminal": "ДЗЕРКАЛО РЕЄСТРУ TAU CETI: запечатані докази прийнятні після relay-автентифікації. Очікуване вікно публічного перегляду перевищує місцевий інтервал виживання на 31.4 року.",
-          "audio": "Суд може бути чесним і марним, коли саме світло запізнюється.",
-          "in_game_wiki": "Tau Ceti League дає публічному праву епохи Aegir правдоподібну противагу. Вона важлива для custody доказів і зовнішнього тиску на Deep Reach, але відстань не дозволяє їй у реальному часі витягнути водолаза, замкненого під HECTON-8.",
-          "external_site": "Публічний реєстр Tau Ceti - жорстка науково-фантастична підзвітність: реальні публічні інституції існують, але відстань перетворює правосуддя на післясвітіння, якщо докази не збережені з дисципліною ланцюга custody."
-        },
-        "ar_SA": {
-          "title": "السجل العام لتاو سيتي",
-          "scanner": "جزء من سجل مدني في Tau Ceti. علني بما يكفي لإخافة Deep Reach، ومتأخر أكثر مما يلزم لإنقاذ المستعمرة.",
-          "field_note": "قد تصل الرقابة نظيفة ومتأخرة. المتأخر ما زال ميتا.",
-          "terminal": "مرآة سجل TAU CETI: الأدلة المختومة مقبولة بعد مصادقة المرحل. نافذة المراجعة العامة المتوقعة تتجاوز فترة النجاة المحلية بـ 31.4 سنة.",
-          "audio": "يمكن للمحكمة أن تكون نزيهة وعديمة الفائدة عندما يتأخر الضوء نفسه.",
-          "in_game_wiki": "تمنح Tau Ceti League القانون العام في عصر Aegir ثقلا مضادا موثوقا. تهم في حيازة الأدلة والضغط الخارجي على Deep Reach، لكن المسافة تمنعها من إخراج غواص عالق تحت HECTON-8 في الزمن الحقيقي.",
-          "external_site": "السجل العام لتاو سيتي هو مساءلة خيال علمي صارم: توجد مؤسسات عامة حقيقية، لكن المسافة تحول العدالة إلى أثر ضوئي ما لم تحفظ الأدلة بانضباط سلسلة الحيازة."
-        },
-        "id_ID": {
-          "title": "Buku Besar Publik Tau Ceti",
-          "scanner": "Fragmen ledger sipil Tau Ceti. Cukup publik untuk menakuti Deep Reach, terlalu terlambat untuk menyelamatkan koloni.",
-          "field_note": "Pengawasan bisa tiba bersih dan terlambat. Terlambat tetap mati.",
-          "terminal": "CERMIN LEDGER TAU CETI: bukti tersegel dapat diterima setelah autentikasi relai. Jendela peninjauan publik diperkirakan melampaui interval bertahan lokal sebesar 31,4 tahun.",
-          "audio": "Pengadilan bisa jujur dan sia-sia ketika cahaya sendiri datang terlambat.",
-          "in_game_wiki": "Tau Ceti League memberi hukum publik era Aegir penyeimbang yang kredibel. Ia penting untuk kustodi bukti dan tekanan luar terhadap Deep Reach, tetapi jarak membuatnya tidak bisa menarik penyelam yang terjebak di bawah HECTON-8 secara real time.",
-          "external_site": "Buku Besar Publik Tau Ceti adalah akuntabilitas hard-SF: lembaga publik nyata ada, tetapi jarak mengubah keadilan menjadi sisa cahaya jika bukti tidak dijaga dengan disiplin rantai kustodi."
-        },
-        "ko_KR": {
-          "title": "타우 세티 공공 원장",
-          "scanner": "타우 세티 시민 원장 조각. Deep Reach를 겁주기엔 충분히 공개적이고, 식민지를 구하기엔 너무 늦다.",
-          "field_note": "감시는 깨끗하게, 그리고 늦게 도착할 수 있다. 늦으면 여전히 죽음이다.",
-          "terminal": "TAU CETI LEDGER MIRROR: 봉인 증거는 중계 인증 후 수리 가능. 예상 공공 검토 창은 현지 생존 간격을 31.4년 초과.",
-          "audio": "빛 자체가 늦는다면 법정은 정직하고도 쓸모없을 수 있다.",
-          "in_game_wiki": "타우 세티 리그는 Aegir 시대 공법에 믿을 만한 균형추를 제공한다. 증거 보관과 Deep Reach에 대한 외부 압력에는 중요하지만, 거리는 HECTON-8 아래 갇힌 잠수사를 실시간으로 끌어올리지 못하게 한다.",
-          "external_site": "타우 세티 공공 원장은 하드 SF식 책임 추궁이다. 실제 공공 기관은 존재하지만, 증거가 보관 사슬의 규율로 지켜지지 않으면 거리는 정의를 잔광으로 바꾼다."
-        },
-        "he_IL": {
-          "title": "המרשם הציבורי של Tau Ceti",
-          "scanner": "שבר מרשם אזרחי של Tau Ceti. פומבי מספיק כדי להפחיד את Deep Reach, מאוחר מדי כדי להציל את המושבה.",
-          "field_note": "פיקוח יכול להגיע נקי ומאוחר. מאוחר עדיין מת.",
-          "terminal": "מראת מרשם TAU CETI: ראיות חתומות קבילות לאחר אימות ממסר. חלון הביקורת הציבורית הצפוי עולה על מרווח ההישרדות המקומי ב-31.4 שנים.",
-          "audio": "בית משפט יכול להיות ישר וחסר תועלת כשהאור עצמו מאחר.",
-          "in_game_wiki": "Tau Ceti League נותנת למשפט הציבורי של עידן Aegir משקל נגד אמין. היא חשובה למשמורת ראיות וללחץ חיצוני נגד Deep Reach, אבל המרחק מונע ממנה למשוך בזמן אמת צולל הלכוד מתחת ל-HECTON-8.",
-          "external_site": "המרשם הציבורי של Tau Ceti הוא אחריותיות במדע בדיוני קשיח: מוסדות ציבוריים אמיתיים קיימים, אך המרחק הופך צדק להד אור אם ראיות אינן נשמרות במשמעת שרשרת משמורת."
-        },
-        "pt_BR": {
-          "title": "Registro Público de Tau Ceti",
-          "scanner": "Fragmento de ledger cívico de Tau Ceti. Público o bastante para assustar a Deep Reach, atrasado demais para salvar a colônia.",
-          "field_note": "A supervisão pode chegar limpa e tarde. Tarde ainda é morto.",
-          "terminal": "ESPELHO DO LEDGER TAU CETI: evidência selada admissível após autenticação de relé. Janela esperada de revisão pública excede o intervalo local de sobrevivência em 31,4 anos.",
-          "audio": "Um tribunal pode ser honesto e inútil quando a própria luz chega tarde.",
-          "in_game_wiki": "A Tau Ceti League dá ao direito público da era Aegir um contrapeso crível. Ela importa para custódia de evidências e pressão externa contra a Deep Reach, mas a distância a impede de puxar em tempo real um mergulhador preso sob HECTON-8.",
-          "external_site": "O Registro Público de Tau Ceti é responsabilização hard-SF: instituições públicas reais existem, mas a distância transforma justiça em pós-imagem se evidências não forem preservadas com disciplina de cadeia de custódia."
-        },
-        "nl_NL": {
-          "title": "Openbaar Tau Ceti-ledger",
-          "scanner": "Fragment van een Tau Ceti-burgerledger. Openbaar genoeg om Deep Reach bang te maken, te vertraagd om de kolonie te redden.",
-          "field_note": "Toezicht kan schoon en laat arriveren. Laat is nog steeds dood.",
-          "terminal": "TAU CETI LEDGER MIRROR: verzegeld bewijs toelaatbaar na relaisauthenticatie. Verwacht publiek beoordelingsvenster overschrijdt lokaal overlevingsinterval met 31,4 jaar.",
-          "audio": "Een rechtbank kan eerlijk en nutteloos zijn wanneer licht zelf te laat komt.",
-          "in_game_wiki": "De Tau Ceti League geeft publiek recht uit het Aegir-tijdperk een geloofwaardig tegengewicht. Ze telt voor bewijsbewaring en externe druk tegen Deep Reach, maar afstand verhindert haar om een onder HECTON-8 vastzittende duiker in realtime omhoog te trekken.",
-          "external_site": "Het openbare Tau Ceti-ledger is hard-SF-verantwoording: echte publieke instellingen bestaan, maar afstand verandert gerechtigheid in een nabeeld als bewijs niet met chain-of-custody-discipline wordt bewaard."
-        }
-      }
+    "zh_CN": {
+     "title": "Sol Core 管辖权",
+     "scanner": "旧 Sol 法印。它离得远到闻不到压力泄漏，却仍能拥有一具边境尸体。",
+     "field_note": "Sol 在这里不是家。它是文件上最古老的签名，至今还能毁掉你。",
+     "terminal": "SOL CORE STANDARD: 经由持证承运保管、航路保险与延后裁决，索赔连续性获承认。人员回收优先级需等待本地危险认证后裁定。",
+     "audio": "印章来自地球空间。救援条款没有一同抵达。",
+     "in_game_wiki": "Sol Core 是人类扩张的法律与金融根系，不是私人故乡，也不是救援办公室。它的标准在 HECTON-8 上以印章、责任表格、安全铭牌和保险措辞的形式幸存，比这些系统原本要保护的人活得更久。",
+     "external_site": "Sol Core 管辖权解释了为什么 HECTON-8 即使遥远，仍能被法律占有。在 HECTON-8，旧文明先以文书、标准和债务到来，然后才可能轮到援助。"
     },
-    {
-      "packet_id": "P075_LUYTEN_JUNCTION_PACKET_CUSTODY",
-      "article_id": "human.luyten_junction_packet_custody",
-      "title_key": "applied_lore.luyten_junction_packet_custody.title",
-      "unlock": {
-        "primary": "unlock.first_luyten_junction_packet_custody",
-        "poi_tags": [
-          "poi.packet_custody_spool",
-          "poi.relay_tariff_panel",
-          "poi.luyten_route_key"
-        ],
-        "biome_tags": [
-          "biome.relay_spine",
-          "biome.drowned_comms"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Luyten Junction Packet Custody",
-          "scanner": "Luyten custody spool. Messages do not travel free; neither does truth.",
-          "field_note": "A relay is a machine that decides which grief gets bandwidth.",
-          "terminal": "LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
-          "audio": "No ansible. No mercy. Just custody, tariff and time.",
-          "in_game_wiki": "Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
-          "external_site": "Luyten Junction Packet Custody turns interstellar communication into route pressure. HECTON-8 has no instant rescue channel, so every message must survive custody, cost and orbital timing."
-        },
-        "ru_RU": {
-          "title": "Packet custody Luyten Junction",
-          "scanner": "Кассета custody Luyten. Сообщения не ходят бесплатно; правда тоже.",
-          "field_note": "Relay - это машина, решающая, чьему горю достанется bandwidth.",
-          "terminal": "МАРШРУТ LUYTEN JUNCTION: packet custody передана через тарифную очередь. Live command запрещена. Приоритет доказательств покупается через emergency claim escrow.",
-          "audio": "Никакого ansible. Никакого милосердия. Только custody, tariff и время.",
-          "in_game_wiki": "Luyten Junction - скорее инфраструктура, чем общество: relays, beam custody, depot law и packet accounting. Он объясняет, как Deep Reach может давить на Aegir без живой FTL-команды и как доказательство можно задержать, купить, потерять или превратить в оружие.",
-          "external_site": "Packet custody Luyten Junction превращает межзвездную связь в давление маршрута. У HECTON-8 нет мгновенного канала спасения, поэтому каждое сообщение должно пережить custody, стоимость и орбитальный тайминг."
-        },
-        "ja_JP": {
-          "title": "ルイテン分岐点のパケット保管",
-          "scanner": "ルイテンの custody スプール。メッセージは無料では移動しない。真実も同じだ。",
-          "field_note": "リレーとは、どの悲嘆に bandwidth を与えるか決める機械だ。",
-          "terminal": "LUYTEN JUNCTION ROUTE: packet custody は料金キュー経由で転送。live command 禁止。証拠優先度は emergency claim escrow の下で購入可能。",
-          "audio": "ansible はない。慈悲もない。custody と tariff と時間だけだ。",
-          "in_game_wiki": "Luyten Junction は社会というよりインフラだ。リレー、beam custody、depot law、packet accounting。Deep Reach がライブ FTL 命令なしに Aegir へ圧力をかけ、証拠が遅延し、買われ、失われ、武器化され得る理由を説明する。",
-          "external_site": "ルイテン分岐点のパケット保管は、星間通信を航路圧力に変える。HECTON-8 には即時救助チャンネルがない。だからすべてのメッセージは custody、費用、軌道タイミングを生き延びなければならない。"
-        },
-        "zh_CN": {
-          "title": "Luyten Junction 数据包保管",
-          "scanner": "Luyten 保管卷轴。消息不会免费旅行，真相也不会。",
-          "field_note": "中继是一台机器，决定哪一种悲伤能拿到 bandwidth。",
-          "terminal": "LUYTEN JUNCTION ROUTE: packet custody 已通过资费队列转交。live command 禁止。证据优先级可在 emergency claim escrow 下购买。",
-          "audio": "没有 ansible。没有慈悲。只有 custody、tariff 和时间。",
-          "in_game_wiki": "Luyten Junction 与其说是社会，不如说是基础设施：relays、beam custody、depot law 和 packet accounting。它解释了 Deep Reach 如何在没有实时 FTL 命令的情况下压迫 Aegir，也解释了证据如何被拖延、购买、遗失或武器化。",
-          "external_site": "Luyten Junction 数据包保管把星际通信变成航路压力。HECTON-8 没有即时救援频道，所以每条消息都必须熬过 custody、成本和轨道时机。"
-        },
-        "fr_FR": {
-          "title": "Garde des paquets de Luyten Junction",
-          "scanner": "Bobine de garde Luyten. Les messages ne voyagent pas gratuitement ; la vérité non plus.",
-          "field_note": "Un relais est une machine qui décide quel chagrin reçoit de la bande passante.",
-          "terminal": "ROUTE LUYTEN JUNCTION : packet custody transférée par file tarifaire. Live command interdite. Priorité de preuve achetable sous emergency claim escrow.",
-          "audio": "Pas d'ansible. Pas de pitié. Juste la garde, le tarif et le temps.",
-          "in_game_wiki": "Luyten Junction est plus une infrastructure qu'une société : relais, beam custody, depot law et packet accounting. Elle explique comment Deep Reach peut faire pression sur Aegir sans commande FTL en direct, et comment une preuve peut être retardée, achetée, perdue ou transformée en arme.",
-          "external_site": "La garde des paquets de Luyten Junction transforme la communication interstellaire en pression de route. HECTON-8 n'a pas de canal de secours instantané, donc chaque message doit survivre à la garde, au coût et au timing orbital."
-        },
-        "es_ES": {
-          "title": "Custodia de paquetes de Luyten Junction",
-          "scanner": "Bobina de custodia Luyten. Los mensajes no viajan gratis; la verdad tampoco.",
-          "field_note": "Un relé es una máquina que decide qué duelo recibe ancho de banda.",
-          "terminal": "RUTA LUYTEN JUNCTION: packet custody transferida por cola tarifaria. Live command prohibido. Prioridad de evidencia comprable bajo emergency claim escrow.",
-          "audio": "Sin ansible. Sin misericordia. Solo custodia, tarifa y tiempo.",
-          "in_game_wiki": "Luyten Junction es más infraestructura que sociedad: relés, beam custody, depot law y packet accounting. Explica cómo Deep Reach puede presionar a Aegir sin mando FTL en vivo y cómo la evidencia puede retrasarse, comprarse, perderse o convertirse en arma.",
-          "external_site": "La custodia de paquetes de Luyten Junction convierte la comunicación interestelar en presión de ruta. HECTON-8 no tiene canal de rescate instantáneo, así que cada mensaje debe sobrevivir a custodia, coste y sincronía orbital."
-        },
-        "de_DE": {
-          "title": "Paketverwahrung von Luyten Junction",
-          "scanner": "Luyten-Verwahrungsspule. Nachrichten reisen nicht kostenlos; Wahrheit auch nicht.",
-          "field_note": "Ein Relais ist eine Maschine, die entscheidet, welcher Trauer Bandbreite zusteht.",
-          "terminal": "LUYTEN JUNCTION ROUTE: packet custody durch Tarifwarteschlange übertragen. Live command verboten. Beweispriorität unter emergency claim escrow käuflich.",
-          "audio": "Kein ansible. Keine Gnade. Nur custody, tariff und Zeit.",
-          "in_game_wiki": "Luyten Junction ist eher Infrastruktur als Gesellschaft: Relais, beam custody, depot law und packet accounting. Es erklärt, wie Deep Reach ohne Live-FTL-Befehl Druck auf Aegir ausüben kann und wie Beweise verzögert, gekauft, verloren oder zur Waffe gemacht werden können.",
-          "external_site": "Die Paketverwahrung von Luyten Junction verwandelt interstellare Kommunikation in Routendruck. HECTON-8 hat keinen Sofortrettungskanal, also muss jede Nachricht custody, Kosten und Orbitaltiming überstehen."
-        },
-        "pl_PL": {
-          "title": "Pieczę nad pakietami Luyten Junction",
-          "scanner": "Szpula custody Luyten. Wiadomości nie podróżują za darmo; prawda też nie.",
-          "field_note": "Przekaźnik to maszyna, która decyduje, czyja żałoba dostanie bandwidth.",
-          "terminal": "TRASA LUYTEN JUNCTION: packet custody przekazane przez kolejkę taryfową. Live command zabronione. Priorytet dowodów do kupienia pod emergency claim escrow.",
-          "audio": "Żadnego ansible. Żadnej litości. Tylko custody, tariff i czas.",
-          "in_game_wiki": "Luyten Junction jest bardziej infrastrukturą niż społeczeństwem: przekaźniki, beam custody, depot law i packet accounting. Wyjaśnia, jak Deep Reach może naciskać na Aegir bez żywego rozkazu FTL oraz jak dowód można opóźnić, kupić, zgubić albo zamienić w broń.",
-          "external_site": "Piecza nad pakietami Luyten Junction zamienia komunikację międzygwiezdną w presję trasy. HECTON-8 nie ma natychmiastowego kanału ratunkowego, więc każda wiadomość musi przetrwać custody, koszt i orbitalny timing."
-        },
-        "uk_UA": {
-          "title": "Packet custody Luyten Junction",
-          "scanner": "Котушка custody Luyten. Повідомлення не ходять безкоштовно; правда теж.",
-          "field_note": "Relay - це машина, яка вирішує, чиє горе отримає bandwidth.",
-          "terminal": "МАРШРУТ LUYTEN JUNCTION: packet custody передано через тарифну чергу. Live command заборонено. Пріоритет доказів можна купити через emergency claim escrow.",
-          "audio": "Жодного ansible. Жодного милосердя. Тільки custody, tariff і час.",
-          "in_game_wiki": "Luyten Junction - радше інфраструктура, ніж суспільство: relays, beam custody, depot law і packet accounting. Він пояснює, як Deep Reach може тиснути на Aegir без живої FTL-команди і як доказ можна затримати, купити, втратити або перетворити на зброю.",
-          "external_site": "Packet custody Luyten Junction перетворює міжзоряний зв'язок на тиск маршруту. У HECTON-8 немає миттєвого каналу порятунку, тому кожне повідомлення має пережити custody, вартість і орбітальний таймінг."
-        },
-        "ar_SA": {
-          "title": "عهدة الحزم في Luyten Junction",
-          "scanner": "بكرة custody من Luyten. الرسائل لا تسافر مجانا؛ والحقيقة كذلك.",
-          "field_note": "المرحل آلة تقرر أي حزن يحصل على bandwidth.",
-          "terminal": "مسار LUYTEN JUNCTION: تم نقل packet custody عبر طابور التعرفة. live command محظور. يمكن شراء أولوية الأدلة تحت emergency claim escrow.",
-          "audio": "لا ansible. لا رحمة. فقط custody وtariff والوقت.",
-          "in_game_wiki": "Luyten Junction بنية تحتية أكثر منها مجتمعا: relays وbeam custody وdepot law وpacket accounting. تشرح كيف تستطيع Deep Reach الضغط على Aegir من دون أمر FTL حي، وكيف يمكن تأخير الأدلة أو شراؤها أو فقدانها أو تحويلها إلى سلاح.",
-          "external_site": "تحول عهدة الحزم في Luyten Junction الاتصال بين النجوم إلى ضغط مسار. لا تملك HECTON-8 قناة إنقاذ فورية، لذلك يجب على كل رسالة أن تنجو من custody والكلفة والتوقيت المداري."
-        },
-        "id_ID": {
-          "title": "Kustodi Paket Luyten Junction",
-          "scanner": "Spul kustodi Luyten. Pesan tidak berjalan gratis; kebenaran juga tidak.",
-          "field_note": "Relai adalah mesin yang memutuskan duka mana yang mendapat bandwidth.",
-          "terminal": "RUTE LUYTEN JUNCTION: packet custody dipindahkan melalui antrean tarif. Live command dilarang. Prioritas bukti dapat dibeli di bawah emergency claim escrow.",
-          "audio": "Tidak ada ansible. Tidak ada belas kasihan. Hanya custody, tariff, dan waktu.",
-          "in_game_wiki": "Luyten Junction lebih berupa infrastruktur daripada masyarakat: relai, beam custody, depot law, dan packet accounting. Ia menjelaskan bagaimana Deep Reach dapat menekan Aegir tanpa perintah FTL langsung dan bagaimana bukti dapat ditunda, dibeli, hilang, atau dijadikan senjata.",
-          "external_site": "Kustodi Paket Luyten Junction mengubah komunikasi antarbintang menjadi tekanan rute. HECTON-8 tidak punya kanal penyelamatan instan, jadi setiap pesan harus selamat dari custody, biaya, dan waktu orbit."
-        },
-        "ko_KR": {
-          "title": "루이텐 정션 패킷 보관",
-          "scanner": "루이텐 custody 스풀. 메시지는 공짜로 이동하지 않는다. 진실도 마찬가지다.",
-          "field_note": "중계기는 어떤 슬픔에 bandwidth를 줄지 결정하는 기계다.",
-          "terminal": "LUYTEN JUNCTION ROUTE: packet custody가 요금 대기열을 통해 이전됨. live command 금지. 증거 우선권은 emergency claim escrow 하에서 구매 가능.",
-          "audio": "ansible은 없다. 자비도 없다. custody, tariff, 시간뿐.",
-          "in_game_wiki": "루이텐 정션은 사회라기보다 기반 시설이다. relays, beam custody, depot law, packet accounting. Deep Reach가 실시간 FTL 명령 없이 Aegir를 압박하는 방식과 증거가 지연되고, 팔리고, 사라지고, 무기화되는 방식을 설명한다.",
-          "external_site": "루이텐 정션 패킷 보관은 성간 통신을 항로 압박으로 바꾼다. HECTON-8에는 즉시 구조 채널이 없으므로 모든 메시지는 custody, 비용, 궤도 타이밍을 견뎌야 한다."
-        },
-        "he_IL": {
-          "title": "משמורת חבילות של Luyten Junction",
-          "scanner": "סליל custody של Luyten. הודעות אינן נוסעות בחינם; גם האמת לא.",
-          "field_note": "ממסר הוא מכונה שמחליטה לאיזה אבל מגיע bandwidth.",
-          "terminal": "מסלול LUYTEN JUNCTION: packet custody הועברה דרך תור תעריף. live command אסורה. עדיפות ראיות ניתנת לרכישה תחת emergency claim escrow.",
-          "audio": "אין ansible. אין רחמים. רק custody, tariff וזמן.",
-          "in_game_wiki": "Luyten Junction היא יותר תשתית מחברה: relays, beam custody, depot law ו-packet accounting. היא מסבירה איך Deep Reach יכולה ללחוץ על Aegir בלי פקודת FTL חיה, ואיך ראיות יכולות להתעכב, להיקנות, ללכת לאיבוד או להפוך לנשק.",
-          "external_site": "משמורת החבילות של Luyten Junction הופכת תקשורת בין-כוכבית ללחץ נתיב. ל-HECTON-8 אין ערוץ חילוץ מיידי, ולכן כל הודעה חייבת לשרוד custody, עלות ותזמון מסלולי."
-        },
-        "pt_BR": {
-          "title": "Custódia de Pacotes de Luyten Junction",
-          "scanner": "Bobina de custódia Luyten. Mensagens não viajam de graça; a verdade também não.",
-          "field_note": "Um relé é uma máquina que decide qual luto recebe bandwidth.",
-          "terminal": "ROTA LUYTEN JUNCTION: packet custody transferida por fila tarifária. Live command proibido. Prioridade de evidência comprável sob emergency claim escrow.",
-          "audio": "Sem ansible. Sem misericórdia. Só custody, tariff e tempo.",
-          "in_game_wiki": "Luyten Junction é mais infraestrutura do que sociedade: relés, beam custody, depot law e packet accounting. Ela explica como a Deep Reach pode pressionar Aegir sem comando FTL ao vivo e como evidências podem ser atrasadas, compradas, perdidas ou usadas como arma.",
-          "external_site": "A Custódia de Pacotes de Luyten Junction transforma comunicação interestelar em pressão de rota. HECTON-8 não tem canal de resgate instantâneo, então cada mensagem precisa sobreviver a custody, custo e tempo orbital."
-        },
-        "nl_NL": {
-          "title": "Pakketbewaring van Luyten Junction",
-          "scanner": "Luyten custody-spoel. Berichten reizen niet gratis; waarheid ook niet.",
-          "field_note": "Een relais is een machine die beslist welk verdriet bandbreedte krijgt.",
-          "terminal": "LUYTEN JUNCTION ROUTE: packet custody overgedragen via tariefwachtrij. Live command verboden. Bewijsprioriteit koopbaar onder emergency claim escrow.",
-          "audio": "Geen ansible. Geen genade. Alleen custody, tariff en tijd.",
-          "in_game_wiki": "Luyten Junction is meer infrastructuur dan samenleving: relays, beam custody, depot law en packet accounting. Het verklaart hoe Deep Reach druk kan zetten op Aegir zonder live FTL-commando en hoe bewijs kan worden vertraagd, gekocht, verloren of tot wapen gemaakt.",
-          "external_site": "Pakketbewaring van Luyten Junction verandert interstellaire communicatie in routedruk. HECTON-8 heeft geen direct reddingskanaal, dus elk bericht moet custody, kosten en orbitale timing overleven."
-        }
-      }
+    "fr_FR": {
+     "title": "Autorité Sol Core",
+     "scanner": "Vieux sceau juridique de Sol. Il peut posséder un cadavre de frontière sans être assez proche pour sentir la fuite de pression.",
+     "field_note": "Sol n'est pas chez soi ici. C'est la plus ancienne signature du document, et elle peut encore te ruiner.",
+     "terminal": "NORME SOL CORE : continuité de réclamation reconnue par garde de transporteur licencié, assurance de route et arbitrage différé. Priorité de récupération humaine non résolue avant certification locale des risques.",
+     "audio": "Le sceau venait de l'espace terrestre. Pas la clause de secours.",
+     "in_game_wiki": "Sol Core est la racine juridique et financière de l'expansion humaine, ni patrie personnelle ni bureau de secours. Sur HECTON-8, ses normes survivent sous forme de sceaux, formulaires de responsabilité, plaques de sécurité et langage d'assurance qui ont survécu aux gens qu'ils étaient censés protéger.",
+     "external_site": "L'Autorité Sol Core explique pourquoi HECTON-8 peut être lointaine et tout de même possédée légalement. Dans HECTON-8, l'ancienne civilisation arrive sous forme de paperasse, de normes et de dette avant d'arriver sous forme d'aide."
+    },
+    "es_ES": {
+     "title": "Autoridad Sol Core",
+     "scanner": "Viejo sello legal de Sol. Puede poseer un cadáver de frontera sin estar lo bastante cerca para oler la fuga de presión.",
+     "field_note": "Sol no es hogar aquí. Es la firma más antigua del documento que todavía puede hundirte.",
+     "terminal": "ESTÁNDAR SOL CORE: continuidad de reclamación reconocida mediante custodia de transportista autorizado, seguro de ruta y adjudicación diferida. Prioridad de recuperación humana pendiente de certificación local de riesgos.",
+     "audio": "El sello vino del espacio terrestre. La cláusula de rescate no.",
+     "in_game_wiki": "Sol Core es la raíz legal y financiera de la expansión humana, no una patria personal ni una oficina de rescate. En HECTON-8, sus estándares sobreviven como sellos, formularios de responsabilidad, placas de seguridad y lenguaje de seguros que duraron más que las personas a las que debían proteger.",
+     "external_site": "La Autoridad Sol Core explica por qué HECTON-8 puede estar remota y aun así tener dueño legal. En HECTON-8, la vieja civilización llega como papeleo, estándares y deuda antes de llegar como ayuda."
+    },
+    "de_DE": {
+     "title": "Sol-Core-Autorität",
+     "scanner": "Altes Sol-Rechtssiegel. Es kann eine Grenzland-Leiche besitzen, ohne nah genug zu sein, um das Druckleck zu riechen.",
+     "field_note": "Sol ist hier kein Zuhause. Es ist die älteste Unterschrift auf dem Dokument, die dich immer noch ruinieren kann.",
+     "terminal": "SOL CORE STANDARD: Anspruchskontinuität anerkannt durch lizenzierte Frachtverwahrung, Routenversicherung und verzögerte Entscheidung. Priorität menschlicher Bergung bis zur lokalen Gefahrenzertifizierung ungeklärt.",
+     "audio": "Das Siegel kam aus dem Erdraum. Die Rettungsklausel nicht.",
+     "in_game_wiki": "Sol Core ist die juristische und finanzielle Wurzel menschlicher Expansion, kein persönlicher Geburtsort und keine Rettungsstelle. Auf HECTON-8 überleben seine Standards als Siegel, Haftungsformulare, Sicherheitsschilder und Versicherungssprache, die die Menschen überdauert hat, die sie schützen sollte.",
+     "external_site": "Die Sol-Core-Autorität erklärt, warum HECTON-8 abgelegen und trotzdem rechtlich besessen sein kann. In HECTON-8 kommt alte Zivilisation zuerst als Papier, Standard und Schuld, erst später vielleicht als Hilfe."
+    },
+    "pl_PL": {
+     "title": "Władza Sol Core",
+     "scanner": "Stara pieczęć prawa Sol. Może posiadać pograniczne zwłoki, choć jest zbyt daleko, by poczuć wyciek ciśnienia.",
+     "field_note": "Sol nie jest tutaj domem. To najstarszy podpis na dokumencie, który wciąż może cię zniszczyć.",
+     "terminal": "STANDARD SOL CORE: ciągłość roszczenia uznana przez licencjonowaną pieczę przewoźnika, ubezpieczenie trasy i odroczone orzeczenie. Priorytet odzysku ludzi nierozstrzygnięty do lokalnej certyfikacji zagrożeń.",
+     "audio": "Pieczęć przyszła z przestrzeni Ziemi. Klauzula ratunkowa nie.",
+     "in_game_wiki": "Sol Core jest prawnym i finansowym korzeniem ludzkiej ekspansji, a nie osobistą ojczyzną ani biurem ratunkowym. Na HECTON-8 jego standardy przetrwały jako pieczęcie, formularze odpowiedzialności, tablice bezpieczeństwa i język ubezpieczeń, który przeżył ludzi, których miał chronić.",
+     "external_site": "Władza Sol Core wyjaśnia, dlaczego HECTON-8 może być odległy, a mimo to prawnie zawłaszczony. W HECTON-8 stara cywilizacja przychodzi jako papiery, standardy i dług wcześniej niż jako pomoc."
+    },
+    "uk_UA": {
+     "title": "Повноваження Sol Core",
+     "scanner": "Стара правова печатка Sol. Вона може володіти фронтирним трупом, навіть не будучи досить близько, щоб відчути витік тиску.",
+     "field_note": "Sol тут не дім. Це найстаріший підпис на документі, який досі може тебе зламати.",
+     "terminal": "СТАНДАРТ SOL CORE: безперервність претензії визнана через ліцензоване зберігання перевізником, маршрутне страхування та відкладений розгляд. Пріоритет повернення людей не визначено до місцевої сертифікації загроз.",
+     "audio": "Печатка прийшла із земного простору. Пункт про порятунок - ні.",
+     "in_game_wiki": "Sol Core - юридичний і фінансовий корінь людської експансії, але не особиста батьківщина й не служба порятунку. На HECTON-8 його стандарти вціліли як печатки, форми відповідальності, таблички безпеки й страхова мова, що пережила людей, яких ці системи мали захищати.",
+     "external_site": "Повноваження Sol Core пояснюють, чому HECTON-8 може бути далекою і все одно юридично присвоєною. У HECTON-8 стара цивілізація приходить паперами, стандартами й боргом раніше, ніж приходить допомога."
+    },
+    "ar_SA": {
+     "title": "سلطة سول كور",
+     "scanner": "ختم قانوني قديم من سول. يستطيع امتلاك جثة على التخوم من دون أن يكون قريبا بما يكفي ليشم تسرب الضغط.",
+     "field_note": "سول ليست وطنا هنا. إنها أقدم توقيع على الوثيقة، وما زالت قادرة على تدميرك.",
+     "terminal": "معيار SOL CORE: تم الاعتراف باستمرارية المطالبة عبر عهدة ناقل مرخص، وتأمين مسار، وحكم مؤجل. أولوية استعادة البشر غير محسومة حتى اعتماد الأخطار المحلية.",
+     "audio": "جاء الختم من فضاء الأرض. أما بند الإنقاذ فلم يأت.",
+     "in_game_wiki": "سول كور هو الجذر القانوني والمالي للتوسع البشري، لا وطن شخصي ولا مكتب إنقاذ. على HECTON-8 بقيت معاييره كأختام ونماذج مسؤولية ولوحات سلامة ولغة تأمين عاشت أطول من الناس الذين كان يفترض أن تحميهم.",
+     "external_site": "تشرح سلطة سول كور كيف يمكن أن تكون HECTON-8 بعيدة ومع ذلك مملوكة قانونيا. في HECTON-8 تصل الحضارة القديمة في صورة أوراق ومعايير وديون قبل أن تصل في صورة مساعدة."
+    },
+    "id_ID": {
+     "title": "Otoritas Sol Core",
+     "scanner": "Segel hukum Sol lama. Ia bisa memiliki mayat perbatasan tanpa cukup dekat untuk mencium kebocoran tekanan.",
+     "field_note": "Sol bukan rumah di sini. Ia tanda tangan tertua di dokumen yang masih bisa menghancurkanmu.",
+     "terminal": "STANDAR SOL CORE: kesinambungan klaim diakui melalui kustodi pengangkut berlisensi, asuransi rute, dan putusan tertunda. Prioritas pemulihan manusia belum ditetapkan sampai sertifikasi bahaya lokal.",
+     "audio": "Segelnya datang dari ruang Bumi. Klausul penyelamatannya tidak.",
+     "in_game_wiki": "Sol Core adalah akar hukum dan finansial ekspansi manusia, bukan tanah asal pribadi dan bukan kantor penyelamatan. Di HECTON-8, standarnya bertahan sebagai segel, formulir tanggung jawab, pelat keselamatan, dan bahasa asuransi yang hidup lebih lama daripada orang-orang yang seharusnya dilindungi.",
+     "external_site": "Otoritas Sol Core menjelaskan mengapa HECTON-8 bisa jauh tetapi tetap dimiliki secara hukum. Dalam HECTON-8, peradaban lama tiba sebagai dokumen, standar, dan utang sebelum tiba sebagai bantuan."
+    },
+    "ko_KR": {
+     "title": "솔 코어 권한",
+     "scanner": "오래된 솔 법률 인장. 압력 누출 냄새를 맡을 만큼 가까이 있지 않아도, 변경의 시체를 소유할 수 있다.",
+     "field_note": "여기서 솔은 고향이 아니다. 아직도 너를 망칠 수 있는 문서 위의 가장 오래된 서명이다.",
+     "terminal": "SOL CORE STANDARD: 허가 운송자 보관, 항로 보험, 지연 심리를 통해 청구 연속성이 인정됨. 인간 회수 우선권은 현지 위험 인증 전까지 미결.",
+     "audio": "인장은 지구권에서 왔다. 구조 조항은 오지 않았다.",
+     "in_game_wiki": "솔 코어는 인류 확장의 법적, 금융적 뿌리이지 개인의 고향도 구조 사무소도 아니다. HECTON-8에서 그 표준은 인장, 책임 서식, 안전 표지, 보험 문구로 남아, 보호해야 했던 사람들보다 오래 살아남았다.",
+     "external_site": "솔 코어 권한은 HECTON-8이 멀리 떨어져 있으면서도 법적으로 소유될 수 있는 이유를 설명한다. HECTON-8에서 오래된 문명은 도움보다 먼저 서류, 표준, 빚으로 도착한다."
+    },
+    "he_IL": {
+     "title": "סמכות Sol Core",
+     "scanner": "חותם חוק ישן של Sol. הוא יכול להחזיק בגופה של ספר גם בלי להיות קרוב מספיק להריח דליפת לחץ.",
+     "field_note": "Sol אינו בית כאן. זו החתימה העתיקה ביותר במסמך, והיא עדיין יכולה להרוס אותך.",
+     "terminal": "תקן SOL CORE: רציפות התביעה מוכרת דרך משמורת מוביל מורשה, ביטוח מסלול והכרעה נדחית. עדיפות חילוץ אנושי לא נקבעה עד אישור סיכונים מקומי.",
+     "audio": "החותם הגיע ממרחב כדור הארץ. סעיף החילוץ לא.",
+     "in_game_wiki": "Sol Core הוא השורש המשפטי והפיננסי של ההתפשטות האנושית, לא מולדת אישית ולא משרד חילוץ. על HECTON-8 התקנים שלו שרדו כחותמות, טפסי אחריות, לוחות בטיחות ושפת ביטוח שחיו מעבר לאנשים שהיו אמורים להגן עליהם.",
+     "external_site": "סמכות Sol Core מסבירה מדוע HECTON-8 יכולה להיות רחוקה ועדיין שייכת משפטית. ב-HECTON-8 הציוויליזציה הישנה מגיעה כניירת, תקנים וחוב לפני שהיא מגיעה כעזרה."
+    },
+    "pt_BR": {
+     "title": "Autoridade Sol Core",
+     "scanner": "Velho selo jurídico de Sol. Ele pode possuir um cadáver de fronteira sem estar perto o bastante para sentir o vazamento de pressão.",
+     "field_note": "Sol não é casa aqui. É a assinatura mais antiga no documento que ainda pode acabar com você.",
+     "terminal": "PADRÃO SOL CORE: continuidade de reivindicação reconhecida por custódia de transportador licenciado, seguro de rota e adjudicação adiada. Prioridade de recuperação humana pendente até certificação local de riscos.",
+     "audio": "O selo veio do espaço terrestre. A cláusula de resgate não.",
+     "in_game_wiki": "Sol Core é a raiz jurídica e financeira da expansão humana, não uma terra natal pessoal nem um posto de resgate. Em HECTON-8, seus padrões sobrevivem como selos, formulários de responsabilidade, placas de segurança e linguagem de seguro que durou mais que as pessoas que deveria proteger.",
+     "external_site": "A Autoridade Sol Core explica por que HECTON-8 pode ser remota e ainda assim legalmente possuída. Em HECTON-8, a velha civilização chega como papelada, padrões e dívida antes de chegar como ajuda."
+    },
+    "nl_NL": {
+     "title": "Sol Core-autoriteit",
+     "scanner": "Oud juridisch zegel van Sol. Het kan een grenslijk bezitten zonder dichtbij genoeg te zijn om het druklek te ruiken.",
+     "field_note": "Sol is hier geen thuis. Het is de oudste handtekening op het document die je nog steeds kapot kan maken.",
+     "terminal": "SOL CORE STANDARD: continuïteit van de claim erkend via erkende vervoerdersbewaring, routeverzekering en uitgestelde uitspraak. Prioriteit voor menselijke berging onbeslist tot lokale gevarencertificering.",
+     "audio": "Het zegel kwam uit de aardruimte. De reddingsclausule niet.",
+     "in_game_wiki": "Sol Core is de juridische en financiële wortel van menselijke expansie, geen persoonlijke herkomst en geen reddingskantoor. Op HECTON-8 overleven zijn normen als zegels, aansprakelijkheidsformulieren, veiligheidsplaten en verzekeringstaal die de mensen overleefde die ze moest beschermen.",
+     "external_site": "De Sol Core-autoriteit legt uit waarom HECTON-8 afgelegen kan zijn en toch juridisch eigendom kan blijven. In HECTON-8 arriveert oude beschaving als papierwerk, normen en schuld voordat ze als hulp arriveert."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P072_CENTAURI_COMPACT_LEGITIMACY",
+   "article_id": "human.centauri_compact_legitimacy",
+   "title_key": "applied_lore.centauri_compact_legitimacy.title",
+   "unlock": {
+    "primary": "unlock.first_centauri_compact_legitimacy",
+    "poi_tags": [
+     "poi.centauri_hardware_stamp",
+     "poi.compact_audit_tag",
+     "poi.old_pressure_case"
+    ],
+    "biome_tags": [
+     "biome.wreck_claim",
+     "biome.route_depot"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Centauri Compact Legitimacy",
+     "scanner": "Centauri audit tag. Early extrasolar legitimacy, later frontier excuses.",
+     "field_note": "The Compact made distant claims respectable. Respectability is not rescue.",
+     "terminal": "CENTAURI COMPACT HARDWARE: pressure case certified for civilian transit. Audit channel inactive. Warranty void after third-party Deep Reach retrofit.",
+     "audio": "First legitimacy became old metal under a newer lie.",
+     "in_game_wiki": "The Centauri Compact is humanity's early extrasolar legitimacy anchor: real colonies, real standards, real civic prestige. On HECTON-8 it appears as imported pressure cases and audit tags that Deep Reach could cite while ignoring the spirit behind them.",
+     "external_site": "Centauri Compact Legitimacy keeps the wider setting grounded: human expansion already works in some places, which makes Aegir less heroic and more corrupt."
+    },
+    "ru_RU": {
+     "title": "Легитимность Centauri Compact",
+     "scanner": "Аудитная метка Centauri. Ранняя внесолнечная легитимность, позднее - фронтирные оправдания.",
+     "field_note": "Compact сделал далекие претензии респектабельными. Респектабельность не спасает.",
+     "terminal": "ОБОРУДОВАНИЕ CENTAURI COMPACT: гермокейс сертифицирован для гражданского транзита. Аудитный канал неактивен. Гарантия аннулирована после сторонней модернизации Deep Reach.",
+     "audio": "Первая легитимность стала старым металлом под новой ложью.",
+     "in_game_wiki": "Centauri Compact - ранняя внесолнечная опора человеческой легитимности: настоящие колонии, настоящие стандарты, настоящий гражданский престиж. На HECTON-8 он появляется как импортные гермокейсы и аудитные метки, на которые Deep Reach могла ссылаться, игнорируя смысл, ради которого они существовали.",
+     "external_site": "Легитимность Centauri Compact заземляет широкий сеттинг: человеческая экспансия в некоторых местах уже работает, поэтому Aegir выглядит не героическим фронтиром, а коррумпированной окраиной."
+    },
+    "ja_JP": {
+     "title": "ケンタウリ協約の正統性",
+     "scanner": "ケンタウリ監査タグ。初期の太陽系外正統性が、後には辺境の言い訳になった。",
+     "field_note": "協約は遠い請求を立派に見せた。立派さは救助ではない。",
+     "terminal": "CENTAURI COMPACT HARDWARE: 圧力ケースは民間輸送用に認証済み。監査チャンネル停止。Deep Reach の第三者改造後、保証無効。",
+     "audio": "最初の正統性は、新しい嘘の下で古い金属になった。",
+     "in_game_wiki": "Centauri Compact は、人類初期の太陽系外正統性を支えた存在だ。実在の植民地、実在の標準、実在の市民的名声があった。HECTON-8 では、Deep Reach がその精神を無視しながら引用できた輸入圧力ケースと監査タグとして現れる。",
+     "external_site": "ケンタウリ協約の正統性は、広い設定を現実に結びつける。人類拡張は一部ではすでに機能している。だから Aegir は英雄的ではなく、より腐敗して見える。"
+    },
+    "zh_CN": {
+     "title": "Centauri Compact 合法性",
+     "scanner": "Centauri 审计标签。早期太阳系外合法性，后来成了边境借口。",
+     "field_note": "Compact 让遥远的索赔显得体面。体面不是救援。",
+     "terminal": "CENTAURI COMPACT HARDWARE: 压力箱已获民用转运认证。审计通道 inactive。经 Deep Reach 第三方改装后保修失效。",
+     "audio": "最初的合法性，后来成了新谎言下面的旧金属。",
+     "in_game_wiki": "Centauri Compact 是人类早期太阳系外合法性的锚点：真实殖民地、真实标准、真实的公民声望。在 HECTON-8，它表现为进口压力箱和审计标签，Deep Reach 可以引用这些东西，却无视它们背后的精神。",
+     "external_site": "Centauri Compact 合法性让更大的设定落地：人类扩张在某些地方已经能运转，这让 Aegir 不像英雄边疆，更像腐败边区。"
+    },
+    "fr_FR": {
+     "title": "Légitimité du Centauri Compact",
+     "scanner": "Étiquette d'audit Centauri. Légitimité extrasolaire précoce, puis excuses de frontière.",
+     "field_note": "Le Compact a rendu les réclamations lointaines respectables. La respectabilité n'est pas un secours.",
+     "terminal": "MATÉRIEL CENTAURI COMPACT : caisson de pression certifié pour transit civil. Canal d'audit inactif. Garantie annulée après rétrofit tiers Deep Reach.",
+     "audio": "La première légitimité est devenue du vieux métal sous un mensonge plus récent.",
+     "in_game_wiki": "Le Centauri Compact est l'ancre de légitimité extrasolaire des débuts humains : vraies colonies, vrais standards, vrai prestige civique. Sur HECTON-8, il apparaît sous forme de caissons de pression importés et d'étiquettes d'audit que Deep Reach pouvait citer tout en ignorant l'esprit qu'ils portaient.",
+     "external_site": "La légitimité du Centauri Compact ancre le cadre plus large : l'expansion humaine fonctionne déjà par endroits, ce qui rend Aegir moins héroïque et plus corrompu."
+    },
+    "es_ES": {
+     "title": "Legitimidad del Centauri Compact",
+     "scanner": "Etiqueta de auditoría Centauri. Legitimidad extrasolar temprana, luego excusas de frontera.",
+     "field_note": "El Compact volvió respetables las reclamaciones lejanas. La respetabilidad no es rescate.",
+     "terminal": "HARDWARE CENTAURI COMPACT: caja de presión certificada para tránsito civil. Canal de auditoría inactivo. Garantía anulada tras retrofit de Deep Reach por terceros.",
+     "audio": "La primera legitimidad se volvió metal viejo bajo una mentira más nueva.",
+     "in_game_wiki": "El Centauri Compact es el ancla de legitimidad extrasolar temprana de la humanidad: colonias reales, estándares reales, prestigio cívico real. En HECTON-8 aparece como cajas de presión importadas y etiquetas de auditoría que Deep Reach podía citar mientras ignoraba el espíritu que representaban.",
+     "external_site": "La legitimidad del Centauri Compact mantiene firme el marco general: la expansión humana ya funciona en algunos lugares, lo que hace que Aegir sea menos heroico y más corrupto."
+    },
+    "de_DE": {
+     "title": "Legitimität des Centauri Compact",
+     "scanner": "Centauri-Prüfmarke. Frühe extrasolare Legitimität, später Grenzland-Ausreden.",
+     "field_note": "Der Compact machte ferne Ansprüche respektabel. Respektabilität ist keine Rettung.",
+     "terminal": "CENTAURI COMPACT HARDWARE: Druckkoffer für zivilen Transit zertifiziert. Prüfkanal inaktiv. Garantie nach Deep-Reach-Nachrüstung durch Dritte erloschen.",
+     "audio": "Erste Legitimität wurde altes Metall unter einer neueren Lüge.",
+     "in_game_wiki": "Der Centauri Compact ist der frühe extrasolare Legitimitätsanker der Menschheit: echte Kolonien, echte Standards, echtes ziviles Prestige. Auf HECTON-8 erscheint er als importierte Druckkoffer und Prüfmarken, die Deep Reach anführen konnte, während der Geist dahinter ignoriert wurde.",
+     "external_site": "Die Legitimität des Centauri Compact erdet den weiteren Schauplatz: Menschliche Expansion funktioniert an manchen Orten bereits, wodurch Aegir weniger heroisch und korrupter wirkt."
+    },
+    "pl_PL": {
+     "title": "Legitymacja Centauri Compact",
+     "scanner": "Znacznik audytu Centauri. Wczesna legitymacja poza Układem Słonecznym, później wymówki pogranicza.",
+     "field_note": "Compact uczynił odległe roszczenia szacownymi. Szacunek nie jest ratunkiem.",
+     "terminal": "SPRZĘT CENTAURI COMPACT: kaseta ciśnieniowa certyfikowana do tranzytu cywilnego. Kanał audytu nieaktywny. Gwarancja nieważna po modernizacji Deep Reach przez stronę trzecią.",
+     "audio": "Pierwsza legitymacja stała się starym metalem pod nowszym kłamstwem.",
+     "in_game_wiki": "Centauri Compact jest wczesną pozasłoneczną kotwicą ludzkiej legitymacji: prawdziwe kolonie, prawdziwe standardy, prawdziwy prestiż obywatelski. Na HECTON-8 pojawia się jako importowane kasety ciśnieniowe i znaczniki audytu, na które Deep Reach mogło się powoływać, ignorując ich sens.",
+     "external_site": "Legitymacja Centauri Compact uziemia szerszy świat: ludzka ekspansja w niektórych miejscach już działa, przez co Aegir jest mniej heroiczny, a bardziej skorumpowany."
+    },
+    "uk_UA": {
+     "title": "Легітимність Centauri Compact",
+     "scanner": "Аудитна мітка Centauri. Рання позасонячна легітимність, пізніше - фронтирні виправдання.",
+     "field_note": "Compact зробив далекі претензії поважними. Поважність не рятує.",
+     "terminal": "ОБЛАДНАННЯ CENTAURI COMPACT: гермокейс сертифіковано для цивільного транзиту. Канал аудиту неактивний. Гарантію скасовано після сторонньої модернізації Deep Reach.",
+     "audio": "Перша легітимність стала старим металом під новішою брехнею.",
+     "in_game_wiki": "Centauri Compact - рання позасонячна опора людської легітимності: справжні колонії, справжні стандарти, справжній громадянський престиж. На HECTON-8 він з'являється як імпортовані гермокейси та аудитні мітки, на які Deep Reach могла посилатися, ігноруючи їхній дух.",
+     "external_site": "Легітимність Centauri Compact заземлює ширший сетинг: людська експансія подекуди вже працює, тому Aegir здається не героїчним, а корумпованим."
+    },
+    "ar_SA": {
+     "title": "شرعية ميثاق سنتوري",
+     "scanner": "وسم تدقيق من سنتوري. شرعية مبكرة خارج النظام الشمسي، ثم أعذار للتخوم.",
+     "field_note": "جعل الميثاق المطالبات البعيدة محترمة. الاحترام ليس إنقاذا.",
+     "terminal": "عتاد CENTAURI COMPACT: حافظة ضغط معتمدة للنقل المدني. قناة التدقيق غير نشطة. الضمان ملغى بعد تعديل Deep Reach من طرف ثالث.",
+     "audio": "تحولت الشرعية الأولى إلى معدن قديم تحت كذبة أحدث.",
+     "in_game_wiki": "يمثل Centauri Compact مرساة الشرعية البشرية المبكرة خارج النظام الشمسي: مستعمرات حقيقية، ومعايير حقيقية، وهيبة مدنية حقيقية. على HECTON-8 يظهر كحافظات ضغط مستوردة ووسوم تدقيق استطاعت Deep Reach الاستشهاد بها بينما تجاهلت الروح التي قامت عليها.",
+     "external_site": "تثبت شرعية Centauri Compact العالم الأوسع: التوسع البشري يعمل بالفعل في بعض الأماكن، وهذا يجعل Aegir أقل بطولة وأكثر فسادا."
+    },
+    "id_ID": {
+     "title": "Legitimasi Centauri Compact",
+     "scanner": "Tag audit Centauri. Legitimasi ekstrasurya awal, lalu alasan perbatasan.",
+     "field_note": "Compact membuat klaim jauh terlihat terhormat. Kehormatan bukan penyelamatan.",
+     "terminal": "PERANGKAT CENTAURI COMPACT: peti tekanan tersertifikasi untuk transit sipil. Kanal audit tidak aktif. Garansi batal setelah retrofit pihak ketiga Deep Reach.",
+     "audio": "Legitimasi pertama menjadi logam tua di bawah kebohongan yang lebih baru.",
+     "in_game_wiki": "Centauri Compact adalah jangkar legitimasi ekstrasurya awal umat manusia: koloni nyata, standar nyata, prestise sipil nyata. Di HECTON-8, ia muncul sebagai peti tekanan impor dan tag audit yang bisa dikutip Deep Reach sambil mengabaikan semangat di baliknya.",
+     "external_site": "Legitimasi Centauri Compact membuat latar luas tetap membumi: ekspansi manusia sudah berjalan di beberapa tempat, sehingga Aegir terasa kurang heroik dan lebih korup."
+    },
+    "ko_KR": {
+     "title": "센타우리 컴팩트의 정당성",
+     "scanner": "센타우리 감사 태그. 초기 외태양계 정당성, 나중에는 변경의 변명.",
+     "field_note": "컴팩트는 먼 청구를 그럴듯하게 만들었다. 그럴듯함은 구조가 아니다.",
+     "terminal": "CENTAURI COMPACT HARDWARE: 민간 운송용 압력 케이스 인증 완료. 감사 채널 비활성. Deep Reach 제3자 개조 후 보증 무효.",
+     "audio": "처음의 정당성은 새 거짓말 아래의 낡은 금속이 되었다.",
+     "in_game_wiki": "센타우리 컴팩트는 인류 초기 외태양계 정당성의 닻이다. 실제 식민지, 실제 표준, 실제 시민적 권위가 있었다. HECTON-8에서는 Deep Reach가 그 정신을 무시하면서도 인용할 수 있었던 수입 압력 케이스와 감사 태그로 나타난다.",
+     "external_site": "센타우리 컴팩트의 정당성은 더 넓은 설정을 현실에 묶는다. 인간 확장은 이미 일부 지역에서 작동하고 있으며, 그래서 Aegir는 영웅적이라기보다 더 부패해 보인다."
+    },
+    "he_IL": {
+     "title": "הלגיטימיות של Centauri Compact",
+     "scanner": "תג ביקורת של Centauri. לגיטימיות חוץ-שמשית מוקדמת, ואחר כך תירוצי ספר.",
+     "field_note": "ה-Compact הפך תביעות רחוקות למכובדות. מכובדות אינה חילוץ.",
+     "terminal": "חומרת CENTAURI COMPACT: מארז לחץ מאושר לתעבורה אזרחית. ערוץ ביקורת לא פעיל. האחריות בטלה לאחר הסבה של Deep Reach בידי צד שלישי.",
+     "audio": "הלגיטימיות הראשונה הפכה למתכת ישנה מתחת לשקר חדש יותר.",
+     "in_game_wiki": "Centauri Compact הוא עוגן הלגיטימיות החוץ-שמשית המוקדמת של האנושות: מושבות אמיתיות, תקנים אמיתיים, יוקרה אזרחית אמיתית. על HECTON-8 הוא מופיע כמארזי לחץ מיובאים ותגי ביקורת ש-Deep Reach יכלה לצטט תוך התעלמות מהרוח שמאחוריהם.",
+     "external_site": "הלגיטימיות של Centauri Compact מקרקעת את העולם הרחב: התפשטות אנושית כבר עובדת במקומות מסוימים, ולכן Aegir נראה פחות הירואי ויותר מושחת."
+    },
+    "pt_BR": {
+     "title": "Legitimidade do Centauri Compact",
+     "scanner": "Etiqueta de auditoria Centauri. Legitimidade extrassolar inicial, depois desculpas de fronteira.",
+     "field_note": "O Compact tornou reivindicações distantes respeitáveis. Respeitabilidade não é resgate.",
+     "terminal": "HARDWARE CENTAURI COMPACT: caixa de pressão certificada para trânsito civil. Canal de auditoria inativo. Garantia anulada após retrofit de terceiro da Deep Reach.",
+     "audio": "A primeira legitimidade virou metal velho sob uma mentira mais nova.",
+     "in_game_wiki": "O Centauri Compact é a âncora de legitimidade extrassolar inicial da humanidade: colônias reais, padrões reais, prestígio cívico real. Em HECTON-8, ele aparece como caixas de pressão importadas e etiquetas de auditoria que a Deep Reach podia citar enquanto ignorava o espírito por trás delas.",
+     "external_site": "A Legitimidade do Centauri Compact mantém o cenário mais amplo no chão: a expansão humana já funciona em alguns lugares, o que torna Aegir menos heroico e mais corrupto."
+    },
+    "nl_NL": {
+     "title": "Legitimiteit van het Centauri Compact",
+     "scanner": "Centauri-auditlabel. Vroege extrasolaire legitimiteit, later grensland-excuses.",
+     "field_note": "Het Compact maakte verre claims respectabel. Respectabiliteit is geen redding.",
+     "terminal": "CENTAURI COMPACT HARDWARE: drukcase gecertificeerd voor civiel transport. Auditkanaal inactief. Garantie vervallen na retrofit door derde partij Deep Reach.",
+     "audio": "De eerste legitimiteit werd oud metaal onder een nieuwere leugen.",
+     "in_game_wiki": "Het Centauri Compact is de vroege extrasolaire legitimiteitsanker van de mensheid: echte kolonies, echte normen, echt civiel prestige. Op HECTON-8 verschijnt het als ingevoerde drukcases en auditlabels die Deep Reach kon citeren terwijl het de geest erachter negeerde.",
+     "external_site": "De legitimiteit van het Centauri Compact houdt de bredere setting geaard: menselijke expansie werkt al op sommige plekken, waardoor Aegir minder heldhaftig en corrupter voelt."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P073_BARNARD_YARDS_MARAUDER_ORIGIN",
+   "article_id": "human.barnard_yards_marauder_origin",
+   "title_key": "applied_lore.barnard_yards_marauder_origin.title",
+   "unlock": {
+    "primary": "unlock.first_barnard_yards_marauder_origin",
+    "poi_tags": [
+     "poi.barnard_tool_stamp",
+     "poi.salvage_belt_patch",
+     "poi.cutters_license_plate"
+    ],
+    "biome_tags": [
+     "biome.shallow_cache",
+     "biome.marauder_route"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Barnard Yards Marauder Origin",
+     "scanner": "Barnard tool stamp. Shipbreaking culture. The kind of place that teaches you to distrust clean rescue clauses.",
+     "field_note": "Closer than Earth: rented cutters, old pressure habits, debt and stripped hulls.",
+     "terminal": "BARNARD YARDS SERVICE MARK: emergency clamp accepted. Salvage certification valid for derelict pressure habitat, dead carrier compartment and abandoned claim hull.",
+     "audio": "You learned this hand motion before HECTON-8. That is the problem.",
+     "in_game_wiki": "Barnard Yards is the current working origin culture behind HECTON-8's Marauder: industrial salvage, shipbreaking, pressure hardware and dead-claim work. It explains competence without turning the salvage worker into an Earth tourist or a rescue myth.",
+     "external_site": "Barnard Yards Marauder Origin defines HECTON-8's debt-bound salvage class. The Marauder comes from a working culture where a dead claim is not mystery tourism; it is a job with bad math."
+    },
+    "ru_RU": {
+     "title": "Мародерское происхождение Barnard Yards",
+     "scanner": "Клеймо инструмента Barnard. Культура разделки кораблей. Место, где учат не верить чистым пунктам о спасении.",
+     "field_note": "Ближе Земли: арендованные резаки, старые привычки давления, долг и ободранные корпуса.",
+     "terminal": "СЕРВИСНАЯ МЕТКА BARNARD YARDS: аварийный зажим принят. Сертификация salvage действительна для заброшенной гермосреды, мертвого отсека carrier и покинутого claim hull.",
+     "audio": "Ты выучил это движение руки до HECTON-8. В этом и проблема.",
+     "in_game_wiki": "Barnard Yards - текущая рабочая культура происхождения мародера HECTON-8: промышленный salvage, разделка кораблей, гермооборудование и работа с мертвыми претензиями. Она объясняет компетентность, не превращая salvage-работника в туриста с Земли или легенду спасения.",
+     "external_site": "Мародерское происхождение Barnard Yards задает долговой salvage-класс HECTON-8. Мародер приходит из рабочей культуры, где мертвая претензия - не мистический туризм, а работа с плохой арифметикой."
+    },
+    "ja_JP": {
+     "title": "バーナード造船場のマローダー起源",
+     "scanner": "バーナードの工具刻印。船体解体の文化。きれいな救助条項を疑うことを教える場所だ。",
+     "field_note": "地球より近いもの: 借り物のカッター、古い圧力作法、負債、剥がされた船体。",
+     "terminal": "BARNARD YARDS SERVICE MARK: 緊急クランプ承認。サルベージ認証は、放棄圧力居住区、死んだ carrier 区画、放棄 claim hull に有効。",
+     "audio": "君は HECTON-8 の前にこの手の動きを覚えた。それが問題だ。",
+     "in_game_wiki": "Barnard Yards は HECTON-8 のマローダーを支える現在の労働出身文化だ。工業サルベージ、船体解体、圧力機器、死んだ請求権の仕事。サルベージ労働者を地球観光客や救助神話にせず、能力の理由を与える。",
+     "external_site": "バーナード造船場のマローダー起源は、HECTON-8 の債務漬けサルベージ階級を定義する。マローダーは、死んだ請求権を神秘観光ではなく割に合わない仕事として扱う労働文化から来る。"
+    },
+    "zh_CN": {
+     "title": "Barnard Yards 掠夺者出身",
+     "scanner": "Barnard 工具印。拆船文化。那种教你别信干净救援条款的地方。",
+     "field_note": "比地球更近：租来的切割器、老旧压力习惯、债务和被剥空的船壳。",
+     "terminal": "BARNARD YARDS SERVICE MARK: 应急夹具已接受。打捞认证适用于废弃压力居住体、死亡 carrier 舱段和遗弃 claim hull。",
+     "audio": "你在 HECTON-8 之前就学会了这个手势。问题就在这里。",
+     "in_game_wiki": "Barnard Yards 是 HECTON-8 掠夺者背后的当代工作出身文化：工业打捞、拆船、压力硬件和死亡索赔工作。它解释了能力来源，却不会把打捞工变成地球游客或救援神话。",
+     "external_site": "Barnard Yards 掠夺者出身定义了 HECTON-8 的负债打捞阶层。掠夺者来自一种工作文化，在那里，死亡索赔不是神秘观光，而是一份算账很难看的工作。"
+    },
+    "fr_FR": {
+     "title": "Origine maraudeuse des Barnard Yards",
+     "scanner": "Marque d'outil Barnard. Culture du démantèlement naval. Le genre d'endroit qui apprend à se méfier des clauses de secours trop propres.",
+     "field_note": "Plus proche que la Terre : découpeurs loués, vieux réflexes de pression, dette et coques dépouillées.",
+     "terminal": "MARQUE DE SERVICE BARNARD YARDS : pince d'urgence acceptée. Certification de salvage valide pour habitat pressurisé abandonné, compartiment de carrier mort et claim hull déserté.",
+     "audio": "Tu as appris ce geste avant HECTON-8. C'est bien le problème.",
+     "in_game_wiki": "Barnard Yards est la culture de travail qui soutient le Maraudeur de HECTON-8 : salvage industriel, démantèlement de vaisseaux, matériel de pression et dossiers de réclamation morts. Elle explique la compétence sans transformer le travailleur du salvage en touriste terrien ni en mythe de secours.",
+     "external_site": "L'origine maraudeuse des Barnard Yards définit la classe de salvage endettée de HECTON-8. Le Maraudeur vient d'une culture de travail où une réclamation morte n'est pas du tourisme mystérieux, mais un travail avec de mauvais calculs."
+    },
+    "es_ES": {
+     "title": "Origen merodeador de Barnard Yards",
+     "scanner": "Marca de herramienta Barnard. Cultura de desguace naval. El tipo de lugar que te enseña a desconfiar de las cláusulas de rescate limpias.",
+     "field_note": "Más cerca que la Tierra: cortadores alquilados, viejos hábitos de presión, deuda y cascos pelados.",
+     "terminal": "MARCA DE SERVICIO BARNARD YARDS: abrazadera de emergencia aceptada. Certificación de salvage válida para hábitat presurizado abandonado, compartimento carrier muerto y claim hull abandonado.",
+     "audio": "Aprendiste este movimiento de mano antes de HECTON-8. Ese es el problema.",
+     "in_game_wiki": "Barnard Yards es la cultura laboral que sostiene al merodeador de HECTON-8: salvage industrial, desguace de naves, hardware de presión y trabajo con reclamaciones muertas. Explica la competencia sin convertir al trabajador de salvage en turista terrestre ni en mito de rescate.",
+     "external_site": "El origen merodeador de Barnard Yards define la clase de salvage endeudada de HECTON-8. El merodeador viene de una cultura de trabajo donde una reclamación muerta no es turismo de misterio; es un trabajo con malas cuentas."
+    },
+    "de_DE": {
+     "title": "Marauder-Herkunft der Barnard Yards",
+     "scanner": "Barnard-Werkzeugstempel. Schiffsausschlachtungs-Kultur. Ein Ort, der lehrt, sauberen Rettungsklauseln zu misstrauen.",
+     "field_note": "Näher als die Erde: gemietete Schneidgeräte, alte Druckgewohnheiten, Schulden und ausgeschlachtete Rümpfe.",
+     "terminal": "BARNARD YARDS SERVICE MARK: Notfallklemme akzeptiert. Salvage-Zertifizierung gültig für aufgegebenes Druckhabitat, totes carrier compartment und verlassenes claim hull.",
+     "audio": "Diese Handbewegung hast du vor HECTON-8 gelernt. Genau das ist das Problem.",
+     "in_game_wiki": "Barnard Yards ist die Arbeits-Herkunftskultur hinter dem HECTON-8-Marauder: industrielles Salvage, Schiffsausschlachtung, Druckhardware und Arbeit an toten Ansprüchen. Sie erklärt Kompetenz, ohne die Salvage-Arbeitskraft zum Erdtouristen oder Rettungsmythos zu machen.",
+     "external_site": "Die Marauder-Herkunft der Barnard Yards definiert HECTON-8s schuldengebundene Salvage-Klasse. Der Marauder stammt aus einer Arbeitskultur, in der ein toter Anspruch keine Mysterienreise ist, sondern ein Job mit schlechter Rechnung."
+    },
+    "pl_PL": {
+     "title": "Marauderskie pochodzenie Barnard Yards",
+     "scanner": "Stempel narzędziowy Barnard. Kultura rozbiórki statków. Miejsce, które uczy nie ufać czystym klauzulom ratunkowym.",
+     "field_note": "Bliżej niż Ziemia: wynajęte palniki, stare nawyki ciśnieniowe, dług i ogołocone kadłuby.",
+     "terminal": "ZNAK SERWISOWY BARNARD YARDS: zacisk awaryjny przyjęty. Certyfikacja salvage ważna dla opuszczonego habitatu ciśnieniowego, martwego przedziału carrier i porzuconego claim hull.",
+     "audio": "Nauczyłeś się tego ruchu dłoni przed HECTON-8. W tym problem.",
+     "in_game_wiki": "Barnard Yards to kultura pracy stojąca za Marauderem HECTON-8: przemysłowy salvage, rozbiórka statków, sprzęt ciśnieniowy i praca przy martwych roszczeniach. Wyjaśnia kompetencję, nie robiąc z pracownika salvage turysty z Ziemi ani mitu ratunkowego.",
+     "external_site": "Marauderskie pochodzenie Barnard Yards definiuje zadłużoną klasę salvage HECTON-8. Marauder wywodzi się z kultury pracy, gdzie martwe roszczenie nie jest tajemniczą wycieczką, lecz robotą ze złą matematyką."
+    },
+    "uk_UA": {
+     "title": "Мародерське походження Barnard Yards",
+     "scanner": "Клеймо інструмента Barnard. Культура розбирання кораблів. Місце, де вчать не довіряти чистим пунктам про порятунок.",
+     "field_note": "Ближче за Землю: орендовані різаки, старі звички тиску, борг і обдерті корпуси.",
+     "terminal": "СЕРВІСНА МІТКА BARNARD YARDS: аварійний затискач прийнято. Сертифікація salvage чинна для покинутого гермосередовища, мертвого відсіку carrier і залишеного claim hull.",
+     "audio": "Ти вивчив цей рух руки ще до HECTON-8. У цьому й проблема.",
+     "in_game_wiki": "Barnard Yards - робоча культура походження мародера HECTON-8: промисловий salvage, розбирання кораблів, гермообладнання й робота з мертвими претензіями. Вона пояснює компетентність, не перетворюючи salvage-працівника на туриста із Землі чи рятувальну легенду.",
+     "external_site": "Мародерське походження Barnard Yards задає борговий salvage-клас HECTON-8. Мародер приходить із робочої культури, де мертва претензія - не містичний туризм, а робота з поганою арифметикою."
+    },
+    "ar_SA": {
+     "title": "أصل المغير من ساحات بارنارد",
+     "scanner": "ختم أداة من Barnard. ثقافة تفكيك السفن. نوع المكان الذي يعلمك ألا تثق ببنود الإنقاذ النظيفة.",
+     "field_note": "أقرب من الأرض: قواطع مستأجرة، عادات ضغط قديمة، دين، وهياكل منزوعة.",
+     "terminal": "علامة خدمة BARNARD YARDS: مشبك طوارئ مقبول. شهادة salvage صالحة لموطن ضغط مهجور، ومقصورة carrier ميتة، وclaim hull متروك.",
+     "audio": "تعلمت حركة اليد هذه قبل HECTON-8. هذه هي المشكلة.",
+     "in_game_wiki": "Barnard Yards هي ثقافة العمل التي تقف خلف مغير HECTON-8: salvage صناعي، تفكيك سفن، عتاد ضغط، وعمل على مطالبات ميتة. تشرح الكفاءة من دون تحويل عامل salvage إلى سائح من الأرض أو أسطورة إنقاذ.",
+     "external_site": "يحدد أصل المغير من Barnard Yards طبقة salvage المربوطة بالديون في HECTON-8. يأتي المغير من ثقافة عمل حيث لا تكون المطالبة الميتة سياحة غموض، بل عملا بحسابات سيئة."
+    },
+    "id_ID": {
+     "title": "Asal Marauder Barnard Yards",
+     "scanner": "Stempel alat Barnard. Budaya pemotongan kapal. Tempat yang mengajarimu mencurigai klausul penyelamatan yang terlalu bersih.",
+     "field_note": "Lebih dekat daripada Bumi: pemotong sewaan, kebiasaan tekanan lama, utang, dan lambung yang dilucuti.",
+     "terminal": "TANDA LAYANAN BARNARD YARDS: klem darurat diterima. Sertifikasi salvage berlaku untuk habitat tekanan terlantar, kompartemen carrier mati, dan claim hull yang ditinggalkan.",
+     "audio": "Kau mempelajari gerakan tangan ini sebelum HECTON-8. Itulah masalahnya.",
+     "in_game_wiki": "Barnard Yards adalah budaya kerja asal di balik Marauder HECTON-8: salvage industri, pembongkaran kapal, perangkat tekanan, dan pekerjaan klaim mati. Itu menjelaskan kompetensi tanpa menjadikan pekerja salvage turis dari Bumi atau mitos penyelamatan.",
+     "external_site": "Asal Marauder Barnard Yards menetapkan kelas salvage terikat utang di HECTON-8. Marauder datang dari budaya kerja tempat klaim mati bukan wisata misteri, melainkan pekerjaan dengan hitungan buruk."
+    },
+    "ko_KR": {
+     "title": "바너드 야드 마로더 기원",
+     "scanner": "바너드 공구 각인. 선박 해체 문화. 깔끔한 구조 조항을 의심하는 법을 가르치는 곳.",
+     "field_note": "지구보다 가까운 것: 빌린 절단기, 오래된 압력 습관, 빚, 벗겨진 선체.",
+     "terminal": "BARNARD YARDS SERVICE MARK: 비상 클램프 승인. Salvage 인증은 버려진 압력 거주구, 죽은 carrier compartment, 방치된 claim hull에 유효.",
+     "audio": "너는 HECTON-8 이전에 이 손동작을 배웠다. 그게 문제다.",
+     "in_game_wiki": "바너드 야드는 HECTON-8 마로더 뒤에 있는 현재 노동 출신 문화다. 산업 salvage, 선박 해체, 압력 장비, 죽은 청구 작업. salvage 노동자를 지구 관광객이나 구조 신화로 만들지 않고도 능력의 이유를 설명한다.",
+     "external_site": "바너드 야드 마로더 기원은 HECTON-8의 빚 묶인 salvage 계급을 규정한다. 마로더는 죽은 청구를 미스터리 관광이 아니라 계산이 나쁜 일로 다루는 노동 문화에서 온다."
+    },
+    "he_IL": {
+     "title": "מוצא המראודר של Barnard Yards",
+     "scanner": "חותמת כלי של Barnard. תרבות פירוק ספינות. המקום שמלמד אותך לא לסמוך על סעיפי חילוץ נקיים.",
+     "field_note": "קרוב יותר מכדור הארץ: חותכים שכורים, הרגלי לחץ ישנים, חוב וגופים מפורקים.",
+     "terminal": "סימן שירות BARNARD YARDS: מהדק חירום התקבל. אישור salvage תקף לבית גידול לחץ נטוש, מדור carrier מת ו-claim hull נטוש.",
+     "audio": "למדת את תנועת היד הזו לפני HECTON-8. זו הבעיה.",
+     "in_game_wiki": "Barnard Yards היא תרבות העבודה שמאחורי המראודר של HECTON-8: salvage תעשייתי, פירוק ספינות, חומרת לחץ ועבודה על תביעות מתות. היא מסבירה כשירות בלי להפוך עובד salvage לתייר מכדור הארץ או למיתוס חילוץ.",
+     "external_site": "מוצא המראודר של Barnard Yards מגדיר את מעמד ה-salvage הכבול בחוב של HECTON-8. המראודר מגיע מתרבות עבודה שבה תביעה מתה אינה תיירות מסתורין, אלא עבודה עם חשבון רע."
+    },
+    "pt_BR": {
+     "title": "Origem Marauder de Barnard Yards",
+     "scanner": "Marca de ferramenta Barnard. Cultura de desmanche naval. O tipo de lugar que ensina você a desconfiar de cláusulas de resgate limpas.",
+     "field_note": "Mais perto que a Terra: cortadores alugados, velhos hábitos de pressão, dívida e cascos depenados.",
+     "terminal": "MARCA DE SERVIÇO BARNARD YARDS: braçadeira de emergência aceita. Certificação de salvage válida para habitat pressurizado abandonado, compartimento carrier morto e claim hull abandonado.",
+     "audio": "Você aprendeu esse movimento de mão antes de HECTON-8. Esse é o problema.",
+     "in_game_wiki": "Barnard Yards é a cultura de trabalho por trás do Marauder de HECTON-8: salvage industrial, desmanche de naves, hardware de pressão e trabalho com reivindicações mortas. Ela explica competência sem transformar o trabalhador de salvage em turista da Terra nem mito de resgate.",
+     "external_site": "A Origem Marauder de Barnard Yards define a classe de salvage endividada de HECTON-8. O Marauder vem de uma cultura de trabalho onde uma reivindicação morta não é turismo de mistério; é trabalho com conta ruim."
+    },
+    "nl_NL": {
+     "title": "Marauder-oorsprong van Barnard Yards",
+     "scanner": "Barnard-gereedschapsstempel. Cultuur van scheepssloperij. Het soort plek dat je leert schone reddingsclausules te wantrouwen.",
+     "field_note": "Dichterbij dan de aarde: gehuurde snijders, oude drukgewoonten, schuld en gestript rompwerk.",
+     "terminal": "BARNARD YARDS SERVICE MARK: noodklem geaccepteerd. Salvage-certificering geldig voor verlaten drukhabitat, dood carrier compartment en verlaten claim hull.",
+     "audio": "Je leerde deze handbeweging vóór HECTON-8. Dat is het probleem.",
+     "in_game_wiki": "Barnard Yards is de werkcultuur achter de HECTON-8-Marauder: industriële salvage, scheepssloperij, drukhardware en dood-claimwerk. Ze verklaart bekwaamheid zonder de salvagewerker een toerist van de aarde of reddingsmythe te maken.",
+     "external_site": "De Marauder-oorsprong van Barnard Yards definieert HECTON-8s schuldgebonden salvageklasse. De Marauder komt uit een werkcultuur waar een dode claim geen mysterietoerisme is, maar werk met slechte rekensom."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P074_TAU_CETI_PUBLIC_LEDGER",
+   "article_id": "human.tau_ceti_public_ledger",
+   "title_key": "applied_lore.tau_ceti_public_ledger.title",
+   "unlock": {
+    "primary": "unlock.first_tau_ceti_public_ledger",
+    "poi_tags": [
+     "poi.public_ledger_node",
+     "poi.civic_law_cache",
+     "poi.redacted_hearing_file"
+    ],
+    "biome_tags": [
+     "biome.admin_spine",
+     "biome.relay_spine"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Tau Ceti Public Ledger",
+     "scanner": "Tau Ceti civic ledger fragment. Public enough to scare Deep Reach, too delayed to save the colony.",
+     "field_note": "Oversight can arrive clean and late. Late is still dead.",
+     "terminal": "TAU CETI LEDGER MIRROR: sealed evidence acceptable after relay authentication. Expected public review window exceeds local survival interval by 31.4 years.",
+     "audio": "A court can be honest and useless when light itself is late.",
+     "in_game_wiki": "The Tau Ceti League gives Aegir-era public law a credible counterweight. It matters for evidence custody and outside pressure against Deep Reach, but distance keeps it from pulling a trapped diver out of HECTON-8 in real time.",
+     "external_site": "Tau Ceti Public Ledger is hard-sci-fi accountability: real public institutions exist, but distance turns justice into an afterimage unless evidence is preserved with chain-of-custody discipline."
+    },
+    "ru_RU": {
+     "title": "Публичный реестр Tau Ceti",
+     "scanner": "Фрагмент гражданского реестра Tau Ceti. Достаточно публичный, чтобы пугать Deep Reach, слишком запоздалый, чтобы спасти колонию.",
+     "field_note": "Надзор может прийти чистым и поздним. Поздно - значит все равно мертвы.",
+     "terminal": "ЗЕРКАЛО РЕЕСТРА TAU CETI: запечатанные доказательства допустимы после relay-аутентификации. Ожидаемое окно публичного пересмотра превышает местный интервал выживания на 31.4 года.",
+     "audio": "Суд может быть честным и бесполезным, когда сам свет опаздывает.",
+     "in_game_wiki": "Tau Ceti League дает публичному праву эпохи Aegir правдоподобный противовес. Она важна для custody доказательств и внешнего давления на Deep Reach, но расстояние не позволяет ей вытащить застрявшего водолаза из HECTON-8 в реальном времени.",
+     "external_site": "Публичный реестр Tau Ceti - жесткая научно-фантастическая подотчетность: реальные публичные институты существуют, но расстояние превращает правосудие в послесвечение, если доказательства не сохранены с дисциплиной цепочки custody."
+    },
+    "ja_JP": {
+     "title": "タウ・セティ公開台帳",
+     "scanner": "タウ・セティ市民台帳の断片。Deep Reach を怖がらせるには十分公開され、植民地を救うには遅すぎる。",
+     "field_note": "監督は清潔に、そして遅れて到着できる。遅いなら、死は死だ。",
+     "terminal": "TAU CETI LEDGER MIRROR: 封印済み証拠はリレー認証後に受理可能。予想公開審査窓は現地生存間隔を 31.4 年超過。",
+     "audio": "光そのものが遅れる時、裁判所は誠実でも役に立たない。",
+     "in_game_wiki": "Tau Ceti League は、Aegir 時代の公法に信頼できる釣り合いを与える。証拠保管と Deep Reach への外圧では重要だが、距離のせいで HECTON-8 に閉じ込められた潜水者をリアルタイムで引き上げることはできない。",
+     "external_site": "タウ・セティ公開台帳は、硬派SFの責任追及だ。公的機関は実在するが、証拠が保管連鎖の規律で守られなければ、距離は正義を残光に変えてしまう。"
+    },
+    "zh_CN": {
+     "title": "Tau Ceti 公共账簿",
+     "scanner": "Tau Ceti 公民账簿碎片。公开到足以吓住 Deep Reach，却迟到到救不了殖民地。",
+     "field_note": "监督可以干净地到来，也可以迟到。迟到仍然是死亡。",
+     "terminal": "TAU CETI LEDGER MIRROR: 密封证据经中继认证后可受理。预计公共复审窗口超过本地生存间隔 31.4 年。",
+     "audio": "当光本身都迟到时，法庭可以诚实，也可以毫无用处。",
+     "in_game_wiki": "Tau Ceti League 为 Aegir 时代公共法提供可信的制衡。它影响证据保管，也能对 Deep Reach 形成外部压力，但距离让它无法实时把困在 HECTON-8 下方的潜水员拉出来。",
+     "external_site": "Tau Ceti 公共账簿是硬科幻式问责：真实公共机构存在，但如果证据没有按监管链纪律保存，距离会把正义变成余辉。"
+    },
+    "fr_FR": {
+     "title": "Registre public de Tau Ceti",
+     "scanner": "Fragment de registre civique Tau Ceti. Assez public pour effrayer Deep Reach, trop retardé pour sauver la colonie.",
+     "field_note": "La surveillance peut arriver propre et tard. Tard, c'est quand même mort.",
+     "terminal": "MIROIR DE REGISTRE TAU CETI : preuves scellées recevables après authentification relais. Fenêtre de revue publique prévue supérieure de 31,4 ans à l'intervalle de survie local.",
+     "audio": "Un tribunal peut être honnête et inutile quand la lumière elle-même est en retard.",
+     "in_game_wiki": "La Tau Ceti League donne au droit public de l'ère Aegir un contrepoids crédible. Elle compte pour la garde des preuves et la pression extérieure contre Deep Reach, mais la distance l'empêche de sortir en temps réel un plongeur piégé sous HECTON-8.",
+     "external_site": "Le Registre public de Tau Ceti est une responsabilité hard-SF : de vraies institutions publiques existent, mais la distance transforme la justice en rémanence si les preuves ne sont pas préservées avec discipline de chaîne de garde."
+    },
+    "es_ES": {
+     "title": "Registro público de Tau Ceti",
+     "scanner": "Fragmento de registro cívico Tau Ceti. Lo bastante público para asustar a Deep Reach, demasiado tardío para salvar la colonia.",
+     "field_note": "La supervisión puede llegar limpia y tarde. Tarde sigue siendo muerto.",
+     "terminal": "ESPEJO DEL REGISTRO TAU CETI: pruebas selladas admisibles tras autenticación de relé. Ventana prevista de revisión pública supera el intervalo local de supervivencia por 31,4 años.",
+     "audio": "Un tribunal puede ser honesto e inútil cuando la propia luz llega tarde.",
+     "in_game_wiki": "La Tau Ceti League da al derecho público de la era Aegir un contrapeso creíble. Importa para custodia de evidencia y presión externa contra Deep Reach, pero la distancia le impide sacar en tiempo real a un buzo atrapado bajo HECTON-8.",
+     "external_site": "El Registro público de Tau Ceti es rendición de cuentas hard-SF: existen instituciones públicas reales, pero la distancia convierte la justicia en resplandor residual si la evidencia no se preserva con disciplina de cadena de custodia."
+    },
+    "de_DE": {
+     "title": "Öffentliches Tau-Ceti-Ledger",
+     "scanner": "Tau-Ceti-Bürgerledgerfragment. Öffentlich genug, um Deep Reach zu erschrecken, zu verzögert, um die Kolonie zu retten.",
+     "field_note": "Aufsicht kann sauber und spät ankommen. Spät ist trotzdem tot.",
+     "terminal": "TAU CETI LEDGER MIRROR: versiegelte Beweise nach Relaisauthentifizierung zulässig. Erwartetes öffentliches Prüfungsfenster übersteigt lokales Überlebensintervall um 31,4 Jahre.",
+     "audio": "Ein Gericht kann ehrlich und nutzlos sein, wenn das Licht selbst zu spät kommt.",
+     "in_game_wiki": "Die Tau Ceti League gibt dem öffentlichen Recht der Aegir-Ära ein glaubwürdiges Gegengewicht. Sie zählt für Beweisverwahrung und äußeren Druck gegen Deep Reach, doch Entfernung hindert sie daran, einen unter HECTON-8 gefangenen Taucher in Echtzeit herauszuholen.",
+     "external_site": "Das öffentliche Tau-Ceti-Ledger ist Hard-SF-Verantwortlichkeit: Echte öffentliche Institutionen existieren, doch Entfernung verwandelt Gerechtigkeit in ein Nachbild, wenn Beweise nicht mit Chain-of-Custody-Disziplin bewahrt werden."
+    },
+    "pl_PL": {
+     "title": "Publiczny rejestr Tau Ceti",
+     "scanner": "Fragment obywatelskiego rejestru Tau Ceti. Dość publiczny, by przestraszyć Deep Reach, zbyt spóźniony, by ocalić kolonię.",
+     "field_note": "Nadzór może przyjść czysty i późny. Późno nadal znaczy martwy.",
+     "terminal": "LUSTRO REJESTRU TAU CETI: zapieczętowane dowody dopuszczalne po uwierzytelnieniu przekaźnika. Oczekiwane okno publicznego przeglądu przekracza lokalny interwał przetrwania o 31,4 roku.",
+     "audio": "Sąd może być uczciwy i bezużyteczny, kiedy samo światło się spóźnia.",
+     "in_game_wiki": "Tau Ceti League daje prawu publicznemu epoki Aegir wiarygodną przeciwwagę. Ma znaczenie dla nadzoru nad dowodami i zewnętrznej presji na Deep Reach, ale odległość nie pozwala jej w czasie rzeczywistym wyciągnąć nurka uwięzionego pod HECTON-8.",
+     "external_site": "Publiczny rejestr Tau Ceti to hard-SF odpowiedzialność: prawdziwe instytucje publiczne istnieją, lecz odległość zmienia sprawiedliwość w powidok, jeśli dowody nie zostaną zachowane z dyscypliną łańcucha nadzoru."
+    },
+    "uk_UA": {
+     "title": "Публічний реєстр Tau Ceti",
+     "scanner": "Фрагмент громадянського реєстру Tau Ceti. Досить публічний, щоб лякати Deep Reach, надто запізнілий, щоб урятувати колонію.",
+     "field_note": "Нагляд може прийти чистим і пізнім. Пізно - це все одно мертво.",
+     "terminal": "ДЗЕРКАЛО РЕЄСТРУ TAU CETI: запечатані докази прийнятні після relay-автентифікації. Очікуване вікно публічного перегляду перевищує місцевий інтервал виживання на 31.4 року.",
+     "audio": "Суд може бути чесним і марним, коли саме світло запізнюється.",
+     "in_game_wiki": "Tau Ceti League дає публічному праву епохи Aegir правдоподібну противагу. Вона важлива для custody доказів і зовнішнього тиску на Deep Reach, але відстань не дозволяє їй у реальному часі витягнути водолаза, замкненого під HECTON-8.",
+     "external_site": "Публічний реєстр Tau Ceti - жорстка науково-фантастична підзвітність: реальні публічні інституції існують, але відстань перетворює правосуддя на післясвітіння, якщо докази не збережені з дисципліною ланцюга custody."
+    },
+    "ar_SA": {
+     "title": "السجل العام لتاو سيتي",
+     "scanner": "جزء من سجل مدني في Tau Ceti. علني بما يكفي لإخافة Deep Reach، ومتأخر أكثر مما يلزم لإنقاذ المستعمرة.",
+     "field_note": "قد تصل الرقابة نظيفة ومتأخرة. المتأخر ما زال ميتا.",
+     "terminal": "مرآة سجل TAU CETI: الأدلة المختومة مقبولة بعد مصادقة المرحل. نافذة المراجعة العامة المتوقعة تتجاوز فترة النجاة المحلية بـ 31.4 سنة.",
+     "audio": "يمكن للمحكمة أن تكون نزيهة وعديمة الفائدة عندما يتأخر الضوء نفسه.",
+     "in_game_wiki": "تمنح Tau Ceti League القانون العام في عصر Aegir ثقلا مضادا موثوقا. تهم في حيازة الأدلة والضغط الخارجي على Deep Reach، لكن المسافة تمنعها من إخراج غواص عالق تحت HECTON-8 في الزمن الحقيقي.",
+     "external_site": "السجل العام لتاو سيتي هو مساءلة خيال علمي صارم: توجد مؤسسات عامة حقيقية، لكن المسافة تحول العدالة إلى أثر ضوئي ما لم تحفظ الأدلة بانضباط سلسلة الحيازة."
+    },
+    "id_ID": {
+     "title": "Buku Besar Publik Tau Ceti",
+     "scanner": "Fragmen ledger sipil Tau Ceti. Cukup publik untuk menakuti Deep Reach, terlalu terlambat untuk menyelamatkan koloni.",
+     "field_note": "Pengawasan bisa tiba bersih dan terlambat. Terlambat tetap mati.",
+     "terminal": "CERMIN LEDGER TAU CETI: bukti tersegel dapat diterima setelah autentikasi relai. Jendela peninjauan publik diperkirakan melampaui interval bertahan lokal sebesar 31,4 tahun.",
+     "audio": "Pengadilan bisa jujur dan sia-sia ketika cahaya sendiri datang terlambat.",
+     "in_game_wiki": "Tau Ceti League memberi hukum publik era Aegir penyeimbang yang kredibel. Ia penting untuk kustodi bukti dan tekanan luar terhadap Deep Reach, tetapi jarak membuatnya tidak bisa menarik penyelam yang terjebak di bawah HECTON-8 secara real time.",
+     "external_site": "Buku Besar Publik Tau Ceti adalah akuntabilitas hard-SF: lembaga publik nyata ada, tetapi jarak mengubah keadilan menjadi sisa cahaya jika bukti tidak dijaga dengan disiplin rantai kustodi."
+    },
+    "ko_KR": {
+     "title": "타우 세티 공공 원장",
+     "scanner": "타우 세티 시민 원장 조각. Deep Reach를 겁주기엔 충분히 공개적이고, 식민지를 구하기엔 너무 늦다.",
+     "field_note": "감시는 깨끗하게, 그리고 늦게 도착할 수 있다. 늦으면 여전히 죽음이다.",
+     "terminal": "TAU CETI LEDGER MIRROR: 봉인 증거는 중계 인증 후 수리 가능. 예상 공공 검토 창은 현지 생존 간격을 31.4년 초과.",
+     "audio": "빛 자체가 늦는다면 법정은 정직하고도 쓸모없을 수 있다.",
+     "in_game_wiki": "타우 세티 리그는 Aegir 시대 공법에 믿을 만한 균형추를 제공한다. 증거 보관과 Deep Reach에 대한 외부 압력에는 중요하지만, 거리는 HECTON-8 아래 갇힌 잠수사를 실시간으로 끌어올리지 못하게 한다.",
+     "external_site": "타우 세티 공공 원장은 하드 SF식 책임 추궁이다. 실제 공공 기관은 존재하지만, 증거가 보관 사슬의 규율로 지켜지지 않으면 거리는 정의를 잔광으로 바꾼다."
+    },
+    "he_IL": {
+     "title": "המרשם הציבורי של Tau Ceti",
+     "scanner": "שבר מרשם אזרחי של Tau Ceti. פומבי מספיק כדי להפחיד את Deep Reach, מאוחר מדי כדי להציל את המושבה.",
+     "field_note": "פיקוח יכול להגיע נקי ומאוחר. מאוחר עדיין מת.",
+     "terminal": "מראת מרשם TAU CETI: ראיות חתומות קבילות לאחר אימות ממסר. חלון הביקורת הציבורית הצפוי עולה על מרווח ההישרדות המקומי ב-31.4 שנים.",
+     "audio": "בית משפט יכול להיות ישר וחסר תועלת כשהאור עצמו מאחר.",
+     "in_game_wiki": "Tau Ceti League נותנת למשפט הציבורי של עידן Aegir משקל נגד אמין. היא חשובה למשמורת ראיות וללחץ חיצוני נגד Deep Reach, אבל המרחק מונע ממנה למשוך בזמן אמת צולל הלכוד מתחת ל-HECTON-8.",
+     "external_site": "המרשם הציבורי של Tau Ceti הוא אחריותיות במדע בדיוני קשיח: מוסדות ציבוריים אמיתיים קיימים, אך המרחק הופך צדק להד אור אם ראיות אינן נשמרות במשמעת שרשרת משמורת."
+    },
+    "pt_BR": {
+     "title": "Registro Público de Tau Ceti",
+     "scanner": "Fragmento de ledger cívico de Tau Ceti. Público o bastante para assustar a Deep Reach, atrasado demais para salvar a colônia.",
+     "field_note": "A supervisão pode chegar limpa e tarde. Tarde ainda é morto.",
+     "terminal": "ESPELHO DO LEDGER TAU CETI: evidência selada admissível após autenticação de relé. Janela esperada de revisão pública excede o intervalo local de sobrevivência em 31,4 anos.",
+     "audio": "Um tribunal pode ser honesto e inútil quando a própria luz chega tarde.",
+     "in_game_wiki": "A Tau Ceti League dá ao direito público da era Aegir um contrapeso crível. Ela importa para custódia de evidências e pressão externa contra a Deep Reach, mas a distância a impede de puxar em tempo real um mergulhador preso sob HECTON-8.",
+     "external_site": "O Registro Público de Tau Ceti é responsabilização hard-SF: instituições públicas reais existem, mas a distância transforma justiça em pós-imagem se evidências não forem preservadas com disciplina de cadeia de custódia."
+    },
+    "nl_NL": {
+     "title": "Openbaar Tau Ceti-ledger",
+     "scanner": "Fragment van een Tau Ceti-burgerledger. Openbaar genoeg om Deep Reach bang te maken, te vertraagd om de kolonie te redden.",
+     "field_note": "Toezicht kan schoon en laat arriveren. Laat is nog steeds dood.",
+     "terminal": "TAU CETI LEDGER MIRROR: verzegeld bewijs toelaatbaar na relaisauthenticatie. Verwacht publiek beoordelingsvenster overschrijdt lokaal overlevingsinterval met 31,4 jaar.",
+     "audio": "Een rechtbank kan eerlijk en nutteloos zijn wanneer licht zelf te laat komt.",
+     "in_game_wiki": "De Tau Ceti League geeft publiek recht uit het Aegir-tijdperk een geloofwaardig tegengewicht. Ze telt voor bewijsbewaring en externe druk tegen Deep Reach, maar afstand verhindert haar om een onder HECTON-8 vastzittende duiker in realtime omhoog te trekken.",
+     "external_site": "Het openbare Tau Ceti-ledger is hard-SF-verantwoording: echte publieke instellingen bestaan, maar afstand verandert gerechtigheid in een nabeeld als bewijs niet met chain-of-custody-discipline wordt bewaard."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P075_LUYTEN_JUNCTION_PACKET_CUSTODY",
+   "article_id": "human.luyten_junction_packet_custody",
+   "title_key": "applied_lore.luyten_junction_packet_custody.title",
+   "unlock": {
+    "primary": "unlock.first_luyten_junction_packet_custody",
+    "poi_tags": [
+     "poi.packet_custody_spool",
+     "poi.relay_tariff_panel",
+     "poi.luyten_route_key"
+    ],
+    "biome_tags": [
+     "biome.relay_spine",
+     "biome.drowned_comms"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Luyten Junction Packet Custody",
+     "scanner": "Luyten custody spool. Messages do not travel free; neither does truth.",
+     "field_note": "A relay is a machine that decides which grief gets bandwidth.",
+     "terminal": "LUYTEN JUNCTION ROUTE: packet custody transferred through tariff queue. Live command prohibited. Evidence priority purchasable under emergency claim escrow.",
+     "audio": "No ansible. No mercy. Just custody, tariff and time.",
+     "in_game_wiki": "Luyten Junction is more infrastructure than society: relays, beam custody, depot law and packet accounting. It explains how Deep Reach can pressure Aegir without live FTL command and how evidence can be delayed, bought, lost or weaponized.",
+     "external_site": "Luyten Junction Packet Custody turns interstellar communication into route pressure. HECTON-8 has no instant rescue channel, so every message must survive custody, cost and orbital timing."
+    },
+    "ru_RU": {
+     "title": "Packet custody Luyten Junction",
+     "scanner": "Кассета custody Luyten. Сообщения не ходят бесплатно; правда тоже.",
+     "field_note": "Relay - это машина, решающая, чьему горю достанется bandwidth.",
+     "terminal": "МАРШРУТ LUYTEN JUNCTION: packet custody передана через тарифную очередь. Live command запрещена. Приоритет доказательств покупается через emergency claim escrow.",
+     "audio": "Никакого ansible. Никакого милосердия. Только custody, tariff и время.",
+     "in_game_wiki": "Luyten Junction - скорее инфраструктура, чем общество: relays, beam custody, depot law и packet accounting. Он объясняет, как Deep Reach может давить на Aegir без живой FTL-команды и как доказательство можно задержать, купить, потерять или превратить в оружие.",
+     "external_site": "Packet custody Luyten Junction превращает межзвездную связь в давление маршрута. У HECTON-8 нет мгновенного канала спасения, поэтому каждое сообщение должно пережить custody, стоимость и орбитальный тайминг."
+    },
+    "ja_JP": {
+     "title": "ルイテン分岐点のパケット保管",
+     "scanner": "ルイテンの custody スプール。メッセージは無料では移動しない。真実も同じだ。",
+     "field_note": "リレーとは、どの悲嘆に bandwidth を与えるか決める機械だ。",
+     "terminal": "LUYTEN JUNCTION ROUTE: packet custody は料金キュー経由で転送。live command 禁止。証拠優先度は emergency claim escrow の下で購入可能。",
+     "audio": "ansible はない。慈悲もない。custody と tariff と時間だけだ。",
+     "in_game_wiki": "Luyten Junction は社会というよりインフラだ。リレー、beam custody、depot law、packet accounting。Deep Reach がライブ FTL 命令なしに Aegir へ圧力をかけ、証拠が遅延し、買われ、失われ、武器化され得る理由を説明する。",
+     "external_site": "ルイテン分岐点のパケット保管は、星間通信を航路圧力に変える。HECTON-8 には即時救助チャンネルがない。だからすべてのメッセージは custody、費用、軌道タイミングを生き延びなければならない。"
+    },
+    "zh_CN": {
+     "title": "Luyten Junction 数据包保管",
+     "scanner": "Luyten 保管卷轴。消息不会免费旅行，真相也不会。",
+     "field_note": "中继是一台机器，决定哪一种悲伤能拿到 bandwidth。",
+     "terminal": "LUYTEN JUNCTION ROUTE: packet custody 已通过资费队列转交。live command 禁止。证据优先级可在 emergency claim escrow 下购买。",
+     "audio": "没有 ansible。没有慈悲。只有 custody、tariff 和时间。",
+     "in_game_wiki": "Luyten Junction 与其说是社会，不如说是基础设施：relays、beam custody、depot law 和 packet accounting。它解释了 Deep Reach 如何在没有实时 FTL 命令的情况下压迫 Aegir，也解释了证据如何被拖延、购买、遗失或武器化。",
+     "external_site": "Luyten Junction 数据包保管把星际通信变成航路压力。HECTON-8 没有即时救援频道，所以每条消息都必须熬过 custody、成本和轨道时机。"
+    },
+    "fr_FR": {
+     "title": "Garde des paquets de Luyten Junction",
+     "scanner": "Bobine de garde Luyten. Les messages ne voyagent pas gratuitement ; la vérité non plus.",
+     "field_note": "Un relais est une machine qui décide quel chagrin reçoit de la bande passante.",
+     "terminal": "ROUTE LUYTEN JUNCTION : packet custody transférée par file tarifaire. Live command interdite. Priorité de preuve achetable sous emergency claim escrow.",
+     "audio": "Pas d'ansible. Pas de pitié. Juste la garde, le tarif et le temps.",
+     "in_game_wiki": "Luyten Junction est plus une infrastructure qu'une société : relais, beam custody, depot law et packet accounting. Elle explique comment Deep Reach peut faire pression sur Aegir sans commande FTL en direct, et comment une preuve peut être retardée, achetée, perdue ou transformée en arme.",
+     "external_site": "La garde des paquets de Luyten Junction transforme la communication interstellaire en pression de route. HECTON-8 n'a pas de canal de secours instantané, donc chaque message doit survivre à la garde, au coût et au timing orbital."
+    },
+    "es_ES": {
+     "title": "Custodia de paquetes de Luyten Junction",
+     "scanner": "Bobina de custodia Luyten. Los mensajes no viajan gratis; la verdad tampoco.",
+     "field_note": "Un relé es una máquina que decide qué duelo recibe ancho de banda.",
+     "terminal": "RUTA LUYTEN JUNCTION: packet custody transferida por cola tarifaria. Live command prohibido. Prioridad de evidencia comprable bajo emergency claim escrow.",
+     "audio": "Sin ansible. Sin misericordia. Solo custodia, tarifa y tiempo.",
+     "in_game_wiki": "Luyten Junction es más infraestructura que sociedad: relés, beam custody, depot law y packet accounting. Explica cómo Deep Reach puede presionar a Aegir sin mando FTL en vivo y cómo la evidencia puede retrasarse, comprarse, perderse o convertirse en arma.",
+     "external_site": "La custodia de paquetes de Luyten Junction convierte la comunicación interestelar en presión de ruta. HECTON-8 no tiene canal de rescate instantáneo, así que cada mensaje debe sobrevivir a custodia, coste y sincronía orbital."
+    },
+    "de_DE": {
+     "title": "Paketverwahrung von Luyten Junction",
+     "scanner": "Luyten-Verwahrungsspule. Nachrichten reisen nicht kostenlos; Wahrheit auch nicht.",
+     "field_note": "Ein Relais ist eine Maschine, die entscheidet, welcher Trauer Bandbreite zusteht.",
+     "terminal": "LUYTEN JUNCTION ROUTE: packet custody durch Tarifwarteschlange übertragen. Live command verboten. Beweispriorität unter emergency claim escrow käuflich.",
+     "audio": "Kein ansible. Keine Gnade. Nur custody, tariff und Zeit.",
+     "in_game_wiki": "Luyten Junction ist eher Infrastruktur als Gesellschaft: Relais, beam custody, depot law und packet accounting. Es erklärt, wie Deep Reach ohne Live-FTL-Befehl Druck auf Aegir ausüben kann und wie Beweise verzögert, gekauft, verloren oder zur Waffe gemacht werden können.",
+     "external_site": "Die Paketverwahrung von Luyten Junction verwandelt interstellare Kommunikation in Routendruck. HECTON-8 hat keinen Sofortrettungskanal, also muss jede Nachricht custody, Kosten und Orbitaltiming überstehen."
+    },
+    "pl_PL": {
+     "title": "Pieczę nad pakietami Luyten Junction",
+     "scanner": "Szpula custody Luyten. Wiadomości nie podróżują za darmo; prawda też nie.",
+     "field_note": "Przekaźnik to maszyna, która decyduje, czyja żałoba dostanie bandwidth.",
+     "terminal": "TRASA LUYTEN JUNCTION: packet custody przekazane przez kolejkę taryfową. Live command zabronione. Priorytet dowodów do kupienia pod emergency claim escrow.",
+     "audio": "Żadnego ansible. Żadnej litości. Tylko custody, tariff i czas.",
+     "in_game_wiki": "Luyten Junction jest bardziej infrastrukturą niż społeczeństwem: przekaźniki, beam custody, depot law i packet accounting. Wyjaśnia, jak Deep Reach może naciskać na Aegir bez żywego rozkazu FTL oraz jak dowód można opóźnić, kupić, zgubić albo zamienić w broń.",
+     "external_site": "Piecza nad pakietami Luyten Junction zamienia komunikację międzygwiezdną w presję trasy. HECTON-8 nie ma natychmiastowego kanału ratunkowego, więc każda wiadomość musi przetrwać custody, koszt i orbitalny timing."
+    },
+    "uk_UA": {
+     "title": "Packet custody Luyten Junction",
+     "scanner": "Котушка custody Luyten. Повідомлення не ходять безкоштовно; правда теж.",
+     "field_note": "Relay - це машина, яка вирішує, чиє горе отримає bandwidth.",
+     "terminal": "МАРШРУТ LUYTEN JUNCTION: packet custody передано через тарифну чергу. Live command заборонено. Пріоритет доказів можна купити через emergency claim escrow.",
+     "audio": "Жодного ansible. Жодного милосердя. Тільки custody, tariff і час.",
+     "in_game_wiki": "Luyten Junction - радше інфраструктура, ніж суспільство: relays, beam custody, depot law і packet accounting. Він пояснює, як Deep Reach може тиснути на Aegir без живої FTL-команди і як доказ можна затримати, купити, втратити або перетворити на зброю.",
+     "external_site": "Packet custody Luyten Junction перетворює міжзоряний зв'язок на тиск маршруту. У HECTON-8 немає миттєвого каналу порятунку, тому кожне повідомлення має пережити custody, вартість і орбітальний таймінг."
+    },
+    "ar_SA": {
+     "title": "عهدة الحزم في Luyten Junction",
+     "scanner": "بكرة custody من Luyten. الرسائل لا تسافر مجانا؛ والحقيقة كذلك.",
+     "field_note": "المرحل آلة تقرر أي حزن يحصل على bandwidth.",
+     "terminal": "مسار LUYTEN JUNCTION: تم نقل packet custody عبر طابور التعرفة. live command محظور. يمكن شراء أولوية الأدلة تحت emergency claim escrow.",
+     "audio": "لا ansible. لا رحمة. فقط custody وtariff والوقت.",
+     "in_game_wiki": "Luyten Junction بنية تحتية أكثر منها مجتمعا: relays وbeam custody وdepot law وpacket accounting. تشرح كيف تستطيع Deep Reach الضغط على Aegir من دون أمر FTL حي، وكيف يمكن تأخير الأدلة أو شراؤها أو فقدانها أو تحويلها إلى سلاح.",
+     "external_site": "تحول عهدة الحزم في Luyten Junction الاتصال بين النجوم إلى ضغط مسار. لا تملك HECTON-8 قناة إنقاذ فورية، لذلك يجب على كل رسالة أن تنجو من custody والكلفة والتوقيت المداري."
+    },
+    "id_ID": {
+     "title": "Kustodi Paket Luyten Junction",
+     "scanner": "Spul kustodi Luyten. Pesan tidak berjalan gratis; kebenaran juga tidak.",
+     "field_note": "Relai adalah mesin yang memutuskan duka mana yang mendapat bandwidth.",
+     "terminal": "RUTE LUYTEN JUNCTION: packet custody dipindahkan melalui antrean tarif. Live command dilarang. Prioritas bukti dapat dibeli di bawah emergency claim escrow.",
+     "audio": "Tidak ada ansible. Tidak ada belas kasihan. Hanya custody, tariff, dan waktu.",
+     "in_game_wiki": "Luyten Junction lebih berupa infrastruktur daripada masyarakat: relai, beam custody, depot law, dan packet accounting. Ia menjelaskan bagaimana Deep Reach dapat menekan Aegir tanpa perintah FTL langsung dan bagaimana bukti dapat ditunda, dibeli, hilang, atau dijadikan senjata.",
+     "external_site": "Kustodi Paket Luyten Junction mengubah komunikasi antarbintang menjadi tekanan rute. HECTON-8 tidak punya kanal penyelamatan instan, jadi setiap pesan harus selamat dari custody, biaya, dan waktu orbit."
+    },
+    "ko_KR": {
+     "title": "루이텐 정션 패킷 보관",
+     "scanner": "루이텐 custody 스풀. 메시지는 공짜로 이동하지 않는다. 진실도 마찬가지다.",
+     "field_note": "중계기는 어떤 슬픔에 bandwidth를 줄지 결정하는 기계다.",
+     "terminal": "LUYTEN JUNCTION ROUTE: packet custody가 요금 대기열을 통해 이전됨. live command 금지. 증거 우선권은 emergency claim escrow 하에서 구매 가능.",
+     "audio": "ansible은 없다. 자비도 없다. custody, tariff, 시간뿐.",
+     "in_game_wiki": "루이텐 정션은 사회라기보다 기반 시설이다. relays, beam custody, depot law, packet accounting. Deep Reach가 실시간 FTL 명령 없이 Aegir를 압박하는 방식과 증거가 지연되고, 팔리고, 사라지고, 무기화되는 방식을 설명한다.",
+     "external_site": "루이텐 정션 패킷 보관은 성간 통신을 항로 압박으로 바꾼다. HECTON-8에는 즉시 구조 채널이 없으므로 모든 메시지는 custody, 비용, 궤도 타이밍을 견뎌야 한다."
+    },
+    "he_IL": {
+     "title": "משמורת חבילות של Luyten Junction",
+     "scanner": "סליל custody של Luyten. הודעות אינן נוסעות בחינם; גם האמת לא.",
+     "field_note": "ממסר הוא מכונה שמחליטה לאיזה אבל מגיע bandwidth.",
+     "terminal": "מסלול LUYTEN JUNCTION: packet custody הועברה דרך תור תעריף. live command אסורה. עדיפות ראיות ניתנת לרכישה תחת emergency claim escrow.",
+     "audio": "אין ansible. אין רחמים. רק custody, tariff וזמן.",
+     "in_game_wiki": "Luyten Junction היא יותר תשתית מחברה: relays, beam custody, depot law ו-packet accounting. היא מסבירה איך Deep Reach יכולה ללחוץ על Aegir בלי פקודת FTL חיה, ואיך ראיות יכולות להתעכב, להיקנות, ללכת לאיבוד או להפוך לנשק.",
+     "external_site": "משמורת החבילות של Luyten Junction הופכת תקשורת בין-כוכבית ללחץ נתיב. ל-HECTON-8 אין ערוץ חילוץ מיידי, ולכן כל הודעה חייבת לשרוד custody, עלות ותזמון מסלולי."
+    },
+    "pt_BR": {
+     "title": "Custódia de Pacotes de Luyten Junction",
+     "scanner": "Bobina de custódia Luyten. Mensagens não viajam de graça; a verdade também não.",
+     "field_note": "Um relé é uma máquina que decide qual luto recebe bandwidth.",
+     "terminal": "ROTA LUYTEN JUNCTION: packet custody transferida por fila tarifária. Live command proibido. Prioridade de evidência comprável sob emergency claim escrow.",
+     "audio": "Sem ansible. Sem misericórdia. Só custody, tariff e tempo.",
+     "in_game_wiki": "Luyten Junction é mais infraestrutura do que sociedade: relés, beam custody, depot law e packet accounting. Ela explica como a Deep Reach pode pressionar Aegir sem comando FTL ao vivo e como evidências podem ser atrasadas, compradas, perdidas ou usadas como arma.",
+     "external_site": "A Custódia de Pacotes de Luyten Junction transforma comunicação interestelar em pressão de rota. HECTON-8 não tem canal de resgate instantâneo, então cada mensagem precisa sobreviver a custody, custo e tempo orbital."
+    },
+    "nl_NL": {
+     "title": "Pakketbewaring van Luyten Junction",
+     "scanner": "Luyten custody-spoel. Berichten reizen niet gratis; waarheid ook niet.",
+     "field_note": "Een relais is een machine die beslist welk verdriet bandbreedte krijgt.",
+     "terminal": "LUYTEN JUNCTION ROUTE: packet custody overgedragen via tariefwachtrij. Live command verboden. Bewijsprioriteit koopbaar onder emergency claim escrow.",
+     "audio": "Geen ansible. Geen genade. Alleen custody, tariff en tijd.",
+     "in_game_wiki": "Luyten Junction is meer infrastructuur dan samenleving: relays, beam custody, depot law en packet accounting. Het verklaart hoe Deep Reach druk kan zetten op Aegir zonder live FTL-commando en hoe bewijs kan worden vertraagd, gekocht, verloren of tot wapen gemaakt.",
+     "external_site": "Pakketbewaring van Luyten Junction verandert interstellaire communicatie in routedruk. HECTON-8 heeft geen direct reddingskanaal, dus elk bericht moet custody, kosten en orbitale timing overleven."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

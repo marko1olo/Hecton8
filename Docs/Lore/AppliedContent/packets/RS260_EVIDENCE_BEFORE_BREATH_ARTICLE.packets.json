@@ -1,11 +1,55 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS260_EVIDENCE_BEFORE_BREATH_ARTICLE",
-  "title": "Evidence Before Breath Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS260_EVIDENCE_BEFORE_BREATH_ARTICLE",
+ "title": "Evidence Before Breath Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1428_EVIDENCE_BEFORE_BREATH_LEDGER",
+   "release_set_id": "RS260_EVIDENCE_BEFORE_BREATH_ARTICLE",
+   "article_id": "applied_lore.evidence_before_breath_ledger",
+   "title_key": "LORE_EVIDENCE_BEFORE_BREATH_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
+    "Docs/Lore/AppliedContent/packets/RS240_CLAIM_WINDOW_RESCUE_DELAY_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS259_RECEIVER_BRAKING_DEBT_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,263 +57,220 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1428_EVIDENCE_BEFORE_BREATH_LEDGER",
-      "release_set_id": "RS260_EVIDENCE_BEFORE_BREATH_ARTICLE",
-      "article_id": "applied_lore.evidence_before_breath_ledger",
-      "title_key": "LORE_EVIDENCE_BEFORE_BREATH_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
-        "Docs/Lore/AppliedContent/packets/RS240_CLAIM_WINDOW_RESCUE_DELAY_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS259_RECEIVER_BRAKING_DEBT_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.evidence_before_breath_ledger",
-        "secondary": [
-          "unlock.first_distress_hash_notary",
-          "unlock.first_packet_integrity_cradle",
-          "unlock.first_proof_route_not_rescue_route"
-        ],
-        "poi_tags": [
-          "poi.distress_hash_notary",
-          "poi.packet_integrity_cradle",
-          "poi.black_keel_return_action_queue",
-          "poi.sample_chain_of_custody"
-        ],
-        "biome_tags": [
-          "biome.claim_admin",
-          "biome.carrier_link",
-          "biome.pressure_base_interior",
-          "biome.old_colony_ruins"
-        ],
-        "first_20_boundary": "Explains why an outgoing distress hash, claim packet, sample receipt or proof chain can move before the player can: evidence is small and legally legible, while a breathing body needs lift, custody, braking and quarantine."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Distress Hash Notary Scanner",
-          "terminal": "Return Action Queue Terminal",
-          "audio": "Old Packet Clerk Rule",
-          "in_game_wiki": "PDA Proof Route Primer",
-          "external_site": "Public Site Proof Before Rescue Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_contact_or_no_instant_rescue_question",
-        "truth_payload": "Evidence can depart ahead of a person because it is small, sealed and legally legible; it raises claim pressure and sale value but does not allocate air, lift, receiver custody, quarantine or braking for the body.",
-        "player_question": "Why can my proof leave HECTON-8 while I am still trapped below it?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Distress Hash Notary Ledger",
-          "scanner": "Salt-pitted notary cradle. Witness seal intact. Accepted: identity hash, sample hash, time window, pressure telemetry. Life-support allocation absent.",
-          "terminal": "RETURN ACTION QUEUE RAQ-08\nEvidence chain: verified\nExtraction language: suspended\nMissing fields: route owner; breathing-mass custody; quarantine berth; lift reservation; braking margin\nInstruction: acknowledgement is not extraction.",
-          "audio": "Hash accepted. Seat not assigned. Air still counts down.",
-          "in_game_wiki": "A distress hash leaves fast because it is small: identity, sample mark, witness time, pressure telemetry and a checksum. It can cross a relay window in pieces. It can be copied, challenged, priced and stored without cabin volume or medical risk.\n\nA living body uses a different ledger. It needs temperature, pressure, contamination handling, route authority, quarantine, braking margin and somebody willing to own the stop. Black Keel can accept the hash while refusing the mass. That makes the first answer useful but not safe. The operator has made the event harder to deny, not easier to survive.",
-          "external_site": "HECTON-8 separates the proof route from the rescue route. A distress hash can move through custody before any berth, lift slot or braking margin exists for the operator who sent it.",
-          "external_site_article": "## Distress Hash Notary Ledger\n\nThe cradle records what can travel first: identity hash, sample hash, time window, pressure telemetry, witness seal. Those fields are compact enough for a relay window and useful enough for claim desks, insurers and public mirrors. They do not reserve a seat.\n\nThe missing fields sit below the accepted stamp: route owner, breathing-mass custody, quarantine berth, lift reservation, braking margin. Until those are assigned, the route has accepted evidence rather than the person who made it.\n\nThe ledger is useful because it prevents a false comfort. An answered packet is not silence breaking into rescue. It is proof entering custody while the body remains under pressure. That proof can create leverage later. It cannot warm the suit, clear contamination or stop the air counter by itself.",
-          "field_note": "When the terminal says accepted, read the next noun. Evidence accepted is not person accepted."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал доказательства до дыхания",
-          "scanner": "НОТАРИУС DISTRESS HASH // Соляная cradle с целой witness seal. Пакет принят: identity hash, sample hash, time window, pressure telemetry. Человек не принят. Жизнеобеспечение идет отдельным счетом.",
-          "terminal": "ОЧЕРЕДЬ RETURN ACTION // Цепочка доказательств проверена. Формулировка спасения остановлена до назначения владельца маршрута, custody живой массы, карантинной койки и резерва lift. Не путай подтверждение с извлечением.",
-          "audio": "Доказательство путешествует потому, что оно не кашляет, не паникует, не мерзнет и не требует места.",
-          "in_game_wiki": "Distress hash может покинуть HECTON-8 раньше игрока, потому что доказательство специально сделано маленьким. Это checksum, custody, witness time и узкое утверждение о том, что существовало. Оно может пройти relay window частями. Его можно хранить, оценивать, оспаривать и копировать, не спрашивая никого, кто будет держать его в тепле.\n\nЧеловек не такой payload. Дышащему телу нужны температура, давление, медицина, обработка заражения, маршрутное право, юридическая custody и приемник, готовый владеть остановкой. Маршрут может принять твое доказательство и все еще отказать твоей массе. В HECTON-8 это не противоречие. Это жестокость системы, которая точно знает, сколько человек стоит по частям.\n\nПоэтому первый отвеченный пакет не должен звучать как спасение. Black Keel может подтвердить hash. Broker может ранжировать sample. Return desk может запросить координаты, substrate и proof integrity, пока твой запас воздуха продолжает тикать. Игрок не пытается сделать цивилизацию осведомленной. Цивилизация уже осведомлена. Задача в том, чтобы живое тело стало труднее игнорировать, чем данные, которые оно произвело.",
-          "external_site": "HECTON-8 разделяет маршрут доказательства и маршрут спасения. Evidence быстро идет через relay custody, но живому оператору все еще нужны масса, custody и braking rights.",
-          "external_site_article": "Самая сильная изоляция HECTON-8 не в радиомолчании. Это отвеченное сообщение, которое почти ничего не меняет. Distress hash, сертификат образца или claim packet могут двигаться потому, что они компактны, дублируемы и юридически полезны. Им не нужен объем кабины, карантин, медицинский риск или тепловой запас приемника.\n\nЭто различие держит сеттинг жестким. Игрока могут услышать и не спасти. Его данные могут стать ценными раньше, чем тело станет извлекаемым. Black Keel и экономика маршрутов не отсутствуют; они присутствуют как системы с приоритетами, построенными под груз, ответственность и владение раньше милосердия.\n\nДля wiki и сайта правило простое: доказательство может обогнать спасение. Драма начинается там, где живого человека приходится проталкивать обратно в маршрут, который уже был счастлив нести одни его доказательства.",
-          "field_note": "Если терминал пишет accepted, читай следующее существительное. Evidence accepted не значит person accepted."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "呼吸より先に届く証拠台帳",
-          "scanner": "DISTRESS HASH公証器 // 塩に食われたcradle、witness sealは無傷。受理: identity hash、sample hash、time window、pressure telemetry。人間は未受理。生命維持は別請求。",
-          "terminal": "RETURN ACTION QUEUE // 証拠チェーン検証済み。救助表現は、route ownership、breathing-mass custody、隔離寝台、lift予約が割り当てられるまで停止。acknowledgementをextractionと混同するな。",
-          "audio": "証拠は咳をせず、怯えず、凍えず、席を要らないから移動できる。",
-          "in_game_wiki": "distress hashはプレイヤーより先にHECTON-8を離れられる。証拠は小さく作られているからだ。checksum、custody、witness time、そして何が存在したかについての狭い主張。relay windowを分割して通過できる。保存、値付け、異議、複写ができ、誰かに温めてもらう必要がない。\n\n人間はその種類のpayloadではない。呼吸する身体には温度、圧力、医療、汚染処理、route authority、法的custody、そして停止を所有するreceiverが必要だ。航路は君の証拠を受け入れても、君の質量を拒める。HECTON-8では矛盾ではない。人間を部品ごとに値付けできる制度の残酷さだ。\n\nだから最初の返信パケットは救助に聞こえてはいけない。Black Keelはhashを認める。brokerはsampleを順位づける。return deskは座標、substrate、proof integrityを求める。その間にも空気計は進む。プレイヤーは文明に気づかせようとしているのではない。文明はもう気づいている。仕事は、生きた身体を、それが生んだデータより無視しにくくすることだ。",
-          "external_site": "HECTON-8はproof routeとrescue routeを分ける。証拠はrelay custodyを速く動けるが、呼吸するoperatorにはまだ質量、custody、braking rightsが必要だ。",
-          "external_site_article": "HECTON-8で最も強い孤立は無線沈黙ではない。返答があり、それでもほとんど何も変わらない状態だ。distress hash、sample certificate、claim packetは、コンパクトで冗長で法的に有用だから動ける。船室容量、隔離、医療リスク、receiver heat marginを求めない。\n\nこの違いが設定を硬く保つ。プレイヤーは聞かれても救われないことがある。データは身体より先に価値を持つ。Black Keelと航路経済は不在ではない。慈悲より前に貨物、責任、所有のために作られた優先順位として存在している。\n\nwikiとサイトでは、Evidence Before Breathを単純な規則として扱う。証拠は救助を追い越せる。ドラマは、証拠だけなら喜んで運んだ航路へ、生きた人間を押し戻すところから始まる。",
-          "field_note": "terminalがacceptedと言ったら次の名詞を読め。evidence acceptedはperson acceptedではない。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "证据先于呼吸账册",
-          "scanner": "DISTRESS HASH 公证器 // 盐蚀 cradle，witness seal 完整。已接收：identity hash、sample hash、time window、pressure telemetry。人员未接收。生命维持另行计费。",
-          "terminal": "RETURN ACTION QUEUE // 证据链已验证。救援措辞暂停，直到 route ownership、breathing-mass custody、隔离床位和 lift 预留被分配。不要把 acknowledgement 当成 extraction。",
-          "audio": "证据会旅行，因为它不会咳嗽、恐慌、结冰，也不需要座位。",
-          "in_game_wiki": "distress hash 可以比玩家更早离开 HECTON-8，因为证据被设计得很小。它是 checksum、custody、witness time，以及关于某物曾经存在的窄声明。它能分段穿过 relay window。它能被保存、定价、质疑和复制，而不需要任何人让它保持温暖。\n\n人不是这种 payload。会呼吸的身体需要温度、压力、医疗、污染处理、route authority、法律 custody，以及愿意拥有这次停止的 receiver。航路可以接收你的证据，同时拒绝你的质量。在 HECTON-8 这不是矛盾。这是一个能把人按部件估价的系统的残酷。\n\n所以第一条得到回应的 packet 不该像救援。Black Keel 可以确认 hash。broker 可以给 sample 排序。return desk 可以索取坐标、substrate 和 proof integrity，而你的空气计时仍在继续。玩家不是在让文明知道。文明已经知道。真正的工作，是让活着的身体比它产生的数据更难被忽略。",
-          "external_site": "HECTON-8 把 proof route 和 rescue route 分开。证据能通过 relay custody 快速移动，但会呼吸的 operator 仍需要质量、custody 和 braking rights。",
-          "external_site_article": "HECTON-8 最强的孤立不是无线电沉默，而是一条得到回应却几乎不改变任何事的消息。distress hash、sample certificate 或 claim packet 可以移动，因为它们紧凑、可冗余、且在法律上有用。它们不需要舱室体积、隔离、医疗风险或 receiver heat margin。\n\n这个区别让设定保持坚硬。玩家可以被听见，却没有被救出。数据可能比身体更早变得有价值。Black Keel 和更大的航路经济并没有缺席；它们作为系统存在，而这些系统先为货物、责任和所有权设计，然后才轮到怜悯。\n\n对 wiki 和网站来说，Evidence Before Breath 是一条清楚规则：证据可以跑在救援前面。戏剧来自把一个活人重新塞进一条本来只愿意运送其证据的航路。",
-          "field_note": "如果终端写 accepted，先看下一个名词。Evidence accepted 不是 person accepted。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre preuve avant souffle",
-          "scanner": "NOTAIRE DISTRESS HASH // Cradle piqué par le sel, witness seal intact. Paquet accepté : identity hash, sample hash, time window, pressure telemetry. Personne non acceptée. Le support-vie reste une facture séparée.",
-          "terminal": "RETURN ACTION QUEUE // Chaîne de preuve vérifiée. Langage de sauvetage suspendu jusqu'à assignation de route ownership, breathing-mass custody, couchette de quarantaine et réservation lift. Ne confondez pas acknowledgement et extraction.",
-          "audio": "La preuve voyage parce qu'elle ne tousse pas, ne panique pas, ne gèle pas et ne demande pas de siège.",
-          "in_game_wiki": "Un distress hash peut quitter HECTON-8 avant le joueur parce que la preuve est conçue pour être petite. C'est checksum, custody, witness time et une affirmation étroite sur ce qui a existé. Elle peut traverser une relay window par morceaux. Elle peut être stockée, chiffrée, contestée et copiée sans demander à quelqu'un de la garder au chaud.\n\nUne personne n'est pas ce genre de payload. Un corps qui respire exige température, pression, médecine, gestion de contamination, route authority, custody légale et un receiver prêt à posséder l'arrêt. La route peut accepter votre preuve et refuser encore votre masse. Dans HECTON-8, ce n'est pas une contradiction. C'est la cruauté d'un système qui sait exactement combien vaut un humain en pièces.\n\nC'est pourquoi le premier paquet répondu ne doit pas ressembler à un sauvetage. Black Keel peut reconnaître le hash. Un broker peut classer le sample. Un return desk peut demander coordonnées, substrate et proof integrity pendant que votre minuteur d'air continue. Le joueur ne tente pas d'informer la civilisation. Elle est déjà informée. Le travail consiste à rendre le corps vivant plus difficile à ignorer que les données qu'il a produites.",
-          "external_site": "HECTON-8 sépare proof route et rescue route. La preuve circule vite par relay custody, mais un operator vivant a encore besoin de masse, custody et braking rights.",
-          "external_site_article": "L'isolement le plus fort de HECTON-8 n'est pas le silence radio. C'est un message reçu qui ne change presque rien. Un distress hash, un certificat de sample ou un claim packet peuvent se déplacer parce qu'ils sont compacts, redondants et utiles juridiquement. Ils ne demandent ni volume de cabine, ni quarantaine, ni risque médical, ni receiver heat margin.\n\nCette distinction garde le décor dur. Le joueur peut être entendu sans être sauvé. Ses données peuvent prendre de la valeur avant que son corps ne devienne récupérable. Black Keel et l'économie des routes ne sont pas absents; ils sont présents comme systèmes dont les priorités furent bâties pour fret, responsabilité et propriété avant la pitié.\n\nPour le wiki et le site, Evidence Before Breath est la règle nette : la preuve peut dépasser le sauvetage. Le drame vient quand il faut forcer une personne vivante à rentrer dans une route qui acceptait volontiers de porter sa preuve seule.",
-          "field_note": "Si le terminal dit accepted, lisez le nom suivant. Evidence accepted n'est pas person accepted."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de prueba antes que aliento",
-          "scanner": "NOTARIO DISTRESS HASH // Cradle picada por sal, witness seal intacto. Paquete aceptado: identity hash, sample hash, time window, pressure telemetry. Persona no aceptada. El soporte vital sigue como factura aparte.",
-          "terminal": "RETURN ACTION QUEUE // Cadena de prueba verificada. Lenguaje de rescate suspendido hasta asignar route ownership, breathing-mass custody, litera de cuarentena y reserva lift. No confundas acknowledgement con extraction.",
-          "audio": "La prueba viaja porque no tose, no entra en pánico, no se congela y no necesita asiento.",
-          "in_game_wiki": "Un distress hash puede salir de HECTON-8 antes que el jugador porque la prueba está hecha para ser pequeña. Es checksum, custody, witness time y una afirmación estrecha sobre lo que existió. Puede cruzar una relay window en pedazos. Puede guardarse, tasarse, impugnarse y copiarse sin pedir a nadie que la mantenga caliente.\n\nUna persona no es ese tipo de payload. Un cuerpo que respira necesita temperatura, presión, medicina, manejo de contaminación, route authority, custody legal y un receiver dispuesto a poseer la parada. La ruta puede aceptar tu prueba y rechazar tu masa. En HECTON-8 no es contradicción. Es la crueldad de un sistema que sabe cuánto vale un humano por piezas.\n\nPor eso el primer paquete respondido no debe sentirse como rescate. Black Keel puede reconocer el hash. Un broker puede ordenar el sample. Un return desk puede pedir coordenadas, substrate y proof integrity mientras tu aire sigue contando. El jugador no intenta avisar a la civilización. La civilización ya sabe. La tarea es hacer que el cuerpo vivo sea más difícil de ignorar que los datos que produjo.",
-          "external_site": "HECTON-8 separa proof route de rescue route. La evidencia se mueve rápido por relay custody, pero un operator vivo todavía necesita masa, custody y braking rights.",
-          "external_site_article": "El aislamiento más fuerte de HECTON-8 no es silencio de radio. Es un mensaje respondido que casi no cambia nada. Un distress hash, certificado de sample o claim packet puede moverse porque es compacto, redundante y legalmente útil. No exige volumen de cabina, cuarentena, riesgo médico ni receiver heat margin.\n\nEsa distinción mantiene duro el escenario. El jugador puede ser oído sin ser salvado. Sus datos pueden volverse valiosos antes que su cuerpo sea recuperable. Black Keel y la economía de rutas no están ausentes; están presentes como sistemas con prioridades construidas para carga, responsabilidad y propiedad antes que piedad.\n\nPara wiki y sitio, Evidence Before Breath es la regla limpia: la prueba puede adelantar al rescate. El drama nace al obligar a una persona viva a entrar en una ruta que aceptaba felizmente llevar solo su evidencia.",
-          "field_note": "Si la terminal dice accepted, lee el siguiente sustantivo. Evidence accepted no es person accepted."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Beweis-vor-Atem-Ledger",
-          "scanner": "DISTRESS-HASH-NOTAR // Salzzerfressene Cradle mit intaktem witness seal. Paket akzeptiert: identity hash, sample hash, time window, pressure telemetry. Person nicht akzeptiert. Lebenserhaltung bleibt eine eigene Rechnung.",
-          "terminal": "RETURN ACTION QUEUE // Beweiskette verifiziert. Rettungssprache ausgesetzt, bis route ownership, breathing-mass custody, Quarantänekoje und lift reservation zugewiesen sind. Acknowledgement nicht mit extraction verwechseln.",
-          "audio": "Beweis reist, weil er nicht hustet, nicht panisch wird, nicht friert und keinen Sitz braucht.",
-          "in_game_wiki": "Ein distress hash kann HECTON-8 vor dem Spieler verlassen, weil Beweis klein gebaut ist. Er ist checksum, custody, witness time und eine enge Behauptung darüber, was existierte. Er kann eine relay window in Stücken queren. Er kann gespeichert, bepreist, angefochten und kopiert werden, ohne dass jemand ihn warm halten muss.\n\nEine Person ist keine solche payload. Ein atmender Körper braucht Temperatur, Druck, Medizin, Kontaminationsbehandlung, route authority, rechtliche custody und einen receiver, der den Stopp besitzen will. Die Route kann deinen Beweis akzeptieren und deine Masse trotzdem verweigern. In HECTON-8 ist das kein Widerspruch. Es ist die Härte eines Systems, das genau weiß, was ein Mensch in Teilen wert ist.\n\nDarum darf das erste beantwortete Paket nicht wie Rettung wirken. Black Keel kann den hash anerkennen. Ein broker kann das sample bewerten. Ein return desk kann Koordinaten, substrate und proof integrity verlangen, während dein Lufttimer weiterläuft. Der Spieler versucht nicht, Zivilisation aufmerksam zu machen. Zivilisation weiß es bereits. Die Arbeit ist, den lebenden Körper schwerer ignorierbar zu machen als die Daten, die er erzeugt hat.",
-          "external_site": "HECTON-8 trennt proof route von rescue route. Beweis bewegt sich schnell durch relay custody, doch ein atmender operator braucht weiter Masse, custody und braking rights.",
-          "external_site_article": "Die stärkste Isolation in HECTON-8 ist nicht Funkstille. Es ist eine beantwortete Nachricht, die fast nichts ändert. Ein distress hash, sample certificate oder claim packet kann sich bewegen, weil er kompakt, redundant und juristisch nützlich ist. Er verlangt kein Kabinenvolumen, keine Quarantäne, kein medizinisches Risiko und keine receiver heat margin.\n\nDiese Unterscheidung hält das Setting hart. Der Spieler kann gehört und trotzdem nicht gerettet werden. Seine Daten können wertvoll werden, bevor sein Körper bergbar wird. Black Keel und die Routenökonomie fehlen nicht; sie sind als Systeme präsent, deren Prioritäten für Fracht, Haftung und Besitz vor Gnade gebaut wurden.\n\nFür Wiki und Website ist Evidence Before Breath die klare Regel: Beweis kann Rettung überholen. Das Drama beginnt, wenn eine lebende Person zurück in eine Route gezwungen werden muss, die glücklich war, nur ihren Beweis zu tragen.",
-          "field_note": "Wenn das Terminal accepted sagt, lies das nächste Substantiv. Evidence accepted ist nicht person accepted."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr dowodu przed oddechem",
-          "scanner": "NOTARIUSZ DISTRESS HASH // Solna cradle, witness seal nienaruszony. Pakiet przyjęty: identity hash, sample hash, time window, pressure telemetry. Osoba nieprzyjęta. Podtrzymanie życia jest osobnym rachunkiem.",
-          "terminal": "RETURN ACTION QUEUE // Łańcuch dowodowy zweryfikowany. Język ratunkowy wstrzymany do przydziału route ownership, breathing-mass custody, koi kwarantanny i rezerwacji lift. Nie myl acknowledgement z extraction.",
-          "audio": "Dowód podróżuje, bo nie kaszle, nie panikuje, nie marznie i nie potrzebuje miejsca.",
-          "in_game_wiki": "distress hash może opuścić HECTON-8 przed graczem, bo dowód jest zbudowany jako mały. To checksum, custody, witness time i wąskie twierdzenie o tym, co istniało. Może przejść przez relay window w częściach. Można go przechować, wycenić, podważyć i skopiować bez pytania, kto utrzyma go przy cieple.\n\nCzłowiek nie jest takim payload. Oddychające ciało potrzebuje temperatury, ciśnienia, medycyny, obsługi skażenia, route authority, prawnej custody i receivera gotowego posiadać zatrzymanie. Trasa może przyjąć twój dowód i nadal odrzucić twoją masę. W HECTON-8 to nie sprzeczność. To okrucieństwo systemu, który dokładnie wie, ile człowiek wart jest w częściach.\n\nDlatego pierwszy odebrany pakiet nie powinien brzmieć jak ratunek. Black Keel może uznać hash. Broker może wycenić sample. Return desk może prosić o koordynaty, substrate i proof integrity, gdy licznik powietrza idzie dalej. Gracz nie próbuje powiadomić cywilizacji. Cywilizacja już wie. Praca polega na tym, by żywe ciało było trudniejsze do zignorowania niż dane, które wytworzyło.",
-          "external_site": "HECTON-8 rozdziela proof route od rescue route. Dowód szybko idzie przez relay custody, ale żywy operator wciąż potrzebuje masy, custody i braking rights.",
-          "external_site_article": "Najmocniejszą izolacją HECTON-8 nie jest cisza radiowa. To odpowiedź, która prawie nic nie zmienia. distress hash, sample certificate albo claim packet mogą się przemieszczać, bo są zwarte, redundantne i prawnie użyteczne. Nie wymagają objętości kabiny, kwarantanny, ryzyka medycznego ani receiver heat margin.\n\nTa różnica utrzymuje twardość świata. Gracz może zostać usłyszany bez ocalenia. Dane mogą stać się cenne wcześniej niż ciało stanie się wydobywalne. Black Keel i ekonomia tras nie są nieobecne; są obecne jako systemy z priorytetami budowanymi pod ładunek, odpowiedzialność i własność przed miłosierdziem.\n\nDla wiki i strony Evidence Before Breath to prosta reguła: dowód może wyprzedzić ratunek. Dramat zaczyna się, gdy żywego człowieka trzeba wcisnąć z powrotem w trasę, która chętnie niosła sam jego dowód.",
-          "field_note": "Jeśli terminal mówi accepted, przeczytaj następny rzeczownik. Evidence accepted to nie person accepted."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал доказу перед диханням",
-          "scanner": "НОТАРІУС DISTRESS HASH // Соляна cradle з цілою witness seal. Пакет прийнято: identity hash, sample hash, time window, pressure telemetry. Людину не прийнято. Життєзабезпечення окремим рахунком.",
-          "terminal": "RETURN ACTION QUEUE // Ланцюг доказів перевірено. Мова порятунку зупинена до призначення route ownership, breathing-mass custody, карантинної койки й резерву lift. Не плутай acknowledgement з extraction.",
-          "audio": "Доказ подорожує, бо він не кашляє, не панікує, не мерзне й не потребує місця.",
-          "in_game_wiki": "distress hash може покинути HECTON-8 раніше за гравця, бо доказ створений малим. Це checksum, custody, witness time і вузьке твердження про те, що існувало. Він може пройти relay window частинами. Його можна зберігати, оцінювати, оскаржувати й копіювати, не питаючи, хто триматиме його в теплі.\n\nЛюдина не такий payload. Тілу, що дихає, потрібні температура, тиск, медицина, обробка зараження, route authority, юридична custody і receiver, готовий володіти зупинкою. Маршрут може прийняти твій доказ і все ще відмовити твоїй масі. У HECTON-8 це не суперечність. Це жорстокість системи, яка точно знає, скільки людина варта по частинах.\n\nТому перший відповідний пакет не має звучати як порятунок. Black Keel може підтвердити hash. Broker може ранжувати sample. Return desk може просити координати, substrate і proof integrity, поки твій лічильник повітря йде далі. Гравець не намагається повідомити цивілізацію. Цивілізація вже знає. Завдання — зробити живе тіло важчим для ігнорування, ніж дані, які воно створило.",
-          "external_site": "HECTON-8 розділяє proof route і rescue route. Доказ швидко йде через relay custody, але живому operator все ще потрібні маса, custody і braking rights.",
-          "external_site_article": "Найсильніша ізоляція HECTON-8 — не радіомовчання. Це відповідь, яка майже нічого не змінює. distress hash, sample certificate або claim packet можуть рухатися, бо вони компактні, резервовані й юридично корисні. Їм не потрібні об'єм кабіни, карантин, медичний ризик чи receiver heat margin.\n\nЦя різниця тримає світ жорстким. Гравця можуть почути й не врятувати. Дані можуть стати цінними раніше, ніж тіло стане придатним до повернення. Black Keel і економіка маршрутів не відсутні; вони присутні як системи, чиї пріоритети будувалися під вантаж, відповідальність і власність раніше за милість.\n\nДля wiki й сайту Evidence Before Breath — проста норма: доказ може обігнати порятунок. Драма починається там, де живу людину треба проштовхнути назад у маршрут, який охоче ніс лише її доказ.",
-          "field_note": "Якщо термінал пише accepted, читай наступний іменник. Evidence accepted не означає person accepted."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل الدليل قبل النفس",
-          "scanner": "موثق DISTRESS HASH // cradle متآكلة بالملح مع witness seal سليم. الحزمة مقبولة: identity hash وsample hash وtime window وpressure telemetry. الشخص غير مقبول. دعم الحياة فاتورة منفصلة.",
-          "terminal": "RETURN ACTION QUEUE // سلسلة الدليل موثقة. لغة الإنقاذ معلقة حتى تعيين route ownership وbreathing-mass custody وسرير حجر وحجز lift. لا تخلط acknowledgement مع extraction.",
-          "audio": "الدليل يسافر لأنه لا يسعل ولا يهلع ولا يتجمد ولا يحتاج مقعدا.",
-          "in_game_wiki": "يمكن أن يغادر distress hash من HECTON-8 قبل اللاعب لأن الدليل مصمم ليكون صغيرا. إنه checksum وcustody وwitness time وادعاء ضيق حول ما كان موجودا. يمكنه عبور relay window على أجزاء. يمكن تخزينه وتسعيره والطعن فيه ونسخه من دون أن يطلب من أحد أن يبقيه دافئا.\n\nالشخص ليس هذا النوع من payload. الجسد الذي يتنفس يحتاج حرارة وضغطا وطبابة ومعالجة تلوث وroute authority وcustody قانونية وreceiver يقبل امتلاك التوقف. يمكن للطريق قبول دليلك ورفض كتلتك. في HECTON-8 هذا ليس تناقضا. إنها قسوة نظام يعرف بالضبط قيمة الإنسان كأجزاء.\n\nلذلك يجب ألا يبدو أول packet مجاب كإنقاذ. يمكن لـ Black Keel أن يعترف بالـ hash. يمكن لـ broker أن يرتب sample. يمكن لـ return desk طلب الإحداثيات وsubstrate وproof integrity بينما عداد الهواء يستمر. اللاعب لا يحاول إبلاغ الحضارة. الحضارة تعرف بالفعل. العمل هو جعل الجسد الحي أصعب تجاهلا من البيانات التي أنتجها.",
-          "external_site": "تفصل HECTON-8 بين proof route وrescue route. يتحرك الدليل بسرعة عبر relay custody، لكن operator يتنفس ما زال يحتاج كتلة وcustody وbraking rights.",
-          "external_site_article": "أقوى عزلة في HECTON-8 ليست صمت الراديو. إنها رسالة مجاب عنها لا تغير شيئا تقريبا. يمكن لـ distress hash أو sample certificate أو claim packet أن يتحرك لأنه مدمج ومكرر ومفيد قانونيا. لا يحتاج حجم مقصورة أو حجرا أو خطرا طبيا أو receiver heat margin.\n\nهذا الفرق يبقي العالم قاسيا. يمكن أن يسمع اللاعب ولا ينقذ. يمكن لبياناته أن تصبح ثمينة قبل أن يصبح جسده قابلا للاستعادة. Black Keel واقتصاد الطرق ليسا غائبين؛ إنهما حاضران كأنظمة بنيت أولوياتها للشحن والمسؤولية والملكية قبل الرحمة.\n\nللاستخدام في الويكي والموقع، Evidence Before Breath قاعدة واضحة: الدليل يمكن أن يسبق الإنقاذ. الدراما تبدأ حين يجب دفع شخص حي إلى طريق كان سعيدا بحمل دليله وحده.",
-          "field_note": "إذا قال الطرفية accepted فاقرأ الاسم التالي. Evidence accepted لا تعني person accepted."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Buku Bukti Sebelum Napas",
-          "scanner": "NOTARIS DISTRESS HASH // Cradle bopeng garam dengan witness seal utuh. Paket diterima: identity hash, sample hash, time window, pressure telemetry. Orang tidak diterima. Life support tetap tagihan terpisah.",
-          "terminal": "RETURN ACTION QUEUE // Rantai bukti terverifikasi. Bahasa penyelamatan ditahan sampai route ownership, breathing-mass custody, ranjang karantina, dan reservasi lift ditetapkan. Jangan samakan acknowledgement dengan extraction.",
-          "audio": "Bukti bisa pergi karena ia tidak batuk, panik, membeku, atau butuh kursi.",
-          "in_game_wiki": "distress hash dapat meninggalkan HECTON-8 sebelum pemain karena bukti dibuat kecil. Ia adalah checksum, custody, witness time, dan klaim sempit tentang apa yang pernah ada. Ia bisa melewati relay window dalam potongan. Ia bisa disimpan, diberi harga, digugat, dan disalin tanpa meminta siapa pun menjaganya tetap hangat.\n\nManusia bukan payload seperti itu. Tubuh bernapas membutuhkan suhu, tekanan, medis, penanganan kontaminasi, route authority, custody legal, dan receiver yang mau memiliki penghentian. Rute bisa menerima buktimu dan tetap menolak massamu. Di HECTON-8 itu bukan kontradiksi. Itu kekejaman sistem yang tahu persis berapa nilai manusia dalam bagian-bagian.\n\nKarena itu paket pertama yang dijawab tidak boleh terasa seperti penyelamatan. Black Keel bisa mengakui hash. Broker bisa memberi peringkat sample. Return desk bisa meminta koordinat, substrate, dan proof integrity sementara timer udara terus berjalan. Pemain tidak sedang membuat peradaban sadar. Peradaban sudah sadar. Tugasnya adalah membuat tubuh hidup lebih sulit diabaikan daripada data yang dibuatnya.",
-          "external_site": "HECTON-8 memisahkan proof route dari rescue route. Bukti bergerak cepat lewat relay custody, tetapi operator bernapas tetap butuh massa, custody, dan braking rights.",
-          "external_site_article": "Isolasi terkuat HECTON-8 bukan radio yang diam. Itu adalah pesan yang dijawab tetapi hampir tidak mengubah apa pun. distress hash, sample certificate, atau claim packet bisa bergerak karena ringkas, redundan, dan berguna secara hukum. Ia tidak meminta volume kabin, karantina, risiko medis, atau receiver heat margin.\n\nPerbedaan ini menjaga dunia tetap keras. Pemain bisa didengar tanpa diselamatkan. Datanya bisa bernilai sebelum tubuhnya bisa diambil. Black Keel dan ekonomi rute tidak absen; mereka hadir sebagai sistem yang prioritasnya dibangun untuk kargo, tanggung jawab, dan kepemilikan sebelum belas kasihan.\n\nUntuk wiki dan situs, Evidence Before Breath adalah aturan bersih: bukti dapat mendahului penyelamatan. Drama muncul saat manusia hidup harus dipaksa kembali ke rute yang rela membawa buktinya saja.",
-          "field_note": "Jika terminal berkata accepted, baca kata benda berikutnya. Evidence accepted bukan person accepted."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "호흡보다 앞선 증거 장부",
-          "scanner": "DISTRESS HASH 공증기 // 소금에 패인 cradle, witness seal 온전함. 수락됨: identity hash, sample hash, time window, pressure telemetry. 사람은 미수락. 생명유지는 별도 청구.",
-          "terminal": "RETURN ACTION QUEUE // 증거 체인 검증됨. 구조 언어는 route ownership, breathing-mass custody, 격리 침상, lift 예약이 배정될 때까지 보류. acknowledgement를 extraction과 혼동하지 말 것.",
-          "audio": "증거는 기침하지 않고, 패닉에 빠지지 않고, 얼지 않고, 좌석을 요구하지 않아서 이동한다.",
-          "in_game_wiki": "distress hash는 플레이어보다 먼저 HECTON-8을 떠날 수 있다. 증거는 작게 만들어졌기 때문이다. 그것은 checksum, custody, witness time, 그리고 무엇이 존재했는지에 대한 좁은 주장이다. relay window를 조각으로 통과할 수 있다. 따뜻하게 유지할 사람 없이 저장되고, 가격이 매겨지고, 이의가 제기되고, 복사될 수 있다.\n\n사람은 그런 payload가 아니다. 숨 쉬는 몸에는 온도, 압력, 의료, 오염 처리, route authority, 법적 custody, 그리고 정지를 소유할 receiver가 필요하다. 항로는 네 증거를 받아들이고도 네 질량을 거부할 수 있다. HECTON-8에서 이것은 모순이 아니다. 인간을 부품별로 얼마인지 아는 시스템의 잔혹함이다.\n\n그래서 첫 응답 packet이 구조처럼 느껴지면 안 된다. Black Keel은 hash를 인정할 수 있다. broker는 sample을 순위 매길 수 있다. return desk는 좌표, substrate, proof integrity를 요구할 수 있고 공기 타이머는 계속 간다. 플레이어는 문명에게 알리려는 것이 아니다. 문명은 이미 안다. 일은 살아 있는 몸을 그 몸이 만든 데이터보다 무시하기 어렵게 만드는 것이다.",
-          "external_site": "HECTON-8은 proof route와 rescue route를 분리한다. 증거는 relay custody를 빠르게 움직이지만, 숨 쉬는 operator는 여전히 질량, custody, braking rights가 필요하다.",
-          "external_site_article": "HECTON-8의 가장 강한 고립은 무전 침묵이 아니다. 답을 받았지만 거의 아무것도 바뀌지 않는 메시지다. distress hash, sample certificate, claim packet은 작고, 중복 가능하고, 법적으로 유용해서 움직인다. 선실 부피, 격리, 의료 위험, receiver heat margin을 요구하지 않는다.\n\n이 구분이 세계를 단단하게 만든다. 플레이어는 들릴 수 있지만 구조되지 않을 수 있다. 데이터는 몸보다 먼저 가치가 생길 수 있다. Black Keel과 항로 경제는 부재하지 않는다. 화물, 책임, 소유를 자비보다 먼저 위해 만든 우선순위로 존재한다.\n\nwiki와 사이트에서 Evidence Before Breath는 명확한 규칙이다. 증거는 구조를 앞지를 수 있다. 드라마는 증거만 싣는 데 만족하던 항로에 살아 있는 사람을 다시 밀어 넣는 데서 시작된다.",
-          "field_note": "터미널이 accepted라고 말하면 다음 명사를 읽어라. Evidence accepted는 person accepted가 아니다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן ראיה לפני נשימה",
-          "scanner": "נוטריון DISTRESS HASH // cradle מחורר במלח עם witness seal שלם. חבילה התקבלה: identity hash, sample hash, time window, pressure telemetry. אדם לא התקבל. תמיכת חיים היא חשבון נפרד.",
-          "terminal": "RETURN ACTION QUEUE // שרשרת ראיות אומתה. לשון חילוץ מושעית עד הקצאת route ownership, breathing-mass custody, מיטת הסגר והזמנת lift. אל תבלבל acknowledgement עם extraction.",
-          "audio": "ראיה נוסעת כי היא לא משתעלת, לא נבהלת, לא קופאת ולא צריכה מושב.",
-          "in_game_wiki": "distress hash יכול לעזוב את HECTON-8 לפני השחקן מפני שראיה בנויה להיות קטנה. היא checksum, custody, witness time וטענה צרה על מה שהיה קיים. היא יכולה לחצות relay window בחלקים. אפשר לאחסן, לתמחר, לערער ולהעתיק אותה בלי לשאול מי יחזיק אותה חמה.\n\nאדם אינו payload כזה. גוף נושם צריך טמפרטורה, לחץ, רפואה, טיפול בזיהום, route authority, custody משפטית ו-receiver שמוכן להיות בעל העצירה. הנתיב יכול לקבל את הראיה שלך ועדיין לסרב למסה שלך. ב-HECTON-8 זו לא סתירה. זו אכזריות של מערכת שיודעת בדיוק כמה אדם שווה בחלקים.\n\nלכן packet ראשון שקיבל תשובה לא צריך להרגיש כמו חילוץ. Black Keel יכול להכיר ב-hash. broker יכול לדרג sample. return desk יכול לבקש קואורדינטות, substrate ו-proof integrity בזמן שמד האוויר ממשיך. השחקן לא מנסה לגרום לציוויליזציה לדעת. היא כבר יודעת. העבודה היא להפוך את הגוף החי לקשה יותר להתעלמות מן הנתונים שהוא יצר.",
-          "external_site": "HECTON-8 מפרידה proof route מ-rescue route. ראיה יכולה לנוע מהר דרך relay custody, אבל operator נושם עדיין צריך מסה, custody ו-braking rights.",
-          "external_site_article": "הבידוד החזק ביותר ב-HECTON-8 אינו דממת רדיו. זו הודעה שנענתה וכמעט לא שינתה דבר. distress hash, sample certificate או claim packet יכולים לנוע כי הם קומפקטיים, יתירים ושימושיים משפטית. הם אינם דורשים נפח תא, הסגר, סיכון רפואי או receiver heat margin.\n\nההבחנה הזו שומרת על העולם קשה. השחקן יכול להישמע בלי להינצל. הנתונים שלו יכולים להיות בעלי ערך לפני שהגוף ניתן להשבה. Black Keel וכלכלת הנתיבים אינם נעדרים; הם נוכחים כמערכות שסדרי העדיפויות שלהן נבנו למטען, אחריות ובעלות לפני חמלה.\n\nלוויקי ולאתר, Evidence Before Breath הוא כלל נקי: ראיה יכולה לעקוף חילוץ. הדרמה מתחילה כשצריך לדחוף אדם חי חזרה אל נתיב ששמח לשאת רק את ראייתו.",
-          "field_note": "אם הטרמינל אומר accepted, קרא את שם העצם הבא. Evidence accepted אינו person accepted."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Prova Antes do Fôlego",
-          "scanner": "NOTÁRIO DISTRESS HASH // Cradle corroído por sal com witness seal intacto. Pacote aceito: identity hash, sample hash, time window, pressure telemetry. Pessoa não aceita. Suporte de vida segue como conta separada.",
-          "terminal": "RETURN ACTION QUEUE // Cadeia de prova verificada. Linguagem de resgate suspensa até atribuir route ownership, breathing-mass custody, leito de quarentena e reserva lift. Não confunda acknowledgement com extraction.",
-          "audio": "Prova viaja porque não tosse, não entra em pânico, não congela e não precisa de assento.",
-          "in_game_wiki": "Um distress hash pode sair de HECTON-8 antes do jogador porque prova é feita para ser pequena. É checksum, custody, witness time e uma afirmação estreita sobre o que existiu. Pode atravessar uma relay window em pedaços. Pode ser armazenada, precificada, contestada e copiada sem pedir que alguém a mantenha aquecida.\n\nUma pessoa não é esse tipo de payload. Um corpo respirando precisa de temperatura, pressão, medicina, tratamento de contaminação, route authority, custody legal e um receiver disposto a possuir a parada. A rota pode aceitar sua prova e ainda recusar sua massa. Em HECTON-8 isso não é contradição. É a crueldade de um sistema que sabe exatamente quanto um humano vale em partes.\n\nPor isso o primeiro pacote respondido não deve soar como resgate. Black Keel pode reconhecer o hash. Um broker pode ranquear o sample. Um return desk pode pedir coordenadas, substrate e proof integrity enquanto seu contador de ar continua. O jogador não está tentando avisar a civilização. A civilização já sabe. O trabalho é tornar o corpo vivo mais difícil de ignorar do que os dados que ele produziu.",
-          "external_site": "HECTON-8 separa proof route de rescue route. Evidência se move rápido por relay custody, mas um operator respirando ainda precisa de massa, custody e braking rights.",
-          "external_site_article": "O isolamento mais forte de HECTON-8 não é silêncio de rádio. É uma mensagem respondida que quase não muda nada. Um distress hash, sample certificate ou claim packet pode se mover porque é compacto, redundante e juridicamente útil. Não exige volume de cabine, quarentena, risco médico ou receiver heat margin.\n\nEssa distinção mantém o cenário duro. O jogador pode ser ouvido sem ser salvo. Seus dados podem ficar valiosos antes que seu corpo seja recuperável. Black Keel e a economia de rotas não estão ausentes; estão presentes como sistemas cujas prioridades foram feitas para carga, responsabilidade e posse antes de misericórdia.\n\nPara wiki e site, Evidence Before Breath é a regra limpa: prova pode ultrapassar resgate. O drama vem de forçar uma pessoa viva de volta para uma rota que aceitava levar só sua prova.",
-          "field_note": "Se o terminal diz accepted, leia o próximo substantivo. Evidence accepted não é person accepted."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Bewijs-voor-adem-log",
-          "scanner": "DISTRESS HASH-NOTARIS // Door zout aangevreten cradle met intact witness seal. Pakket geaccepteerd: identity hash, sample hash, time window, pressure telemetry. Persoon niet geaccepteerd. Levensondersteuning blijft een aparte rekening.",
-          "terminal": "RETURN ACTION QUEUE // Bewijsketen geverifieerd. Reddingstaal opgeschort tot route ownership, breathing-mass custody, quarantainebed en lift reservation zijn toegewezen. Verwar acknowledgement niet met extraction.",
-          "audio": "Bewijs reist omdat het niet hoest, niet panikeert, niet bevriest en geen stoel nodig heeft.",
-          "in_game_wiki": "Een distress hash kan HECTON-8 verlaten voor de speler, omdat bewijs klein is gebouwd. Het is checksum, custody, witness time en een smalle claim over wat bestond. Het kan in stukken door een relay window. Het kan worden opgeslagen, geprijsd, betwist en gekopieerd zonder iemand te vragen het warm te houden.\n\nEen persoon is niet dat soort payload. Een ademend lichaam heeft temperatuur, druk, medische zorg, besmettingsafhandeling, route authority, wettelijke custody en een receiver nodig die de stop wil bezitten. De route kan je bewijs accepteren en nog steeds je massa weigeren. In HECTON-8 is dat geen tegenspraak. Het is de wreedheid van een systeem dat exact weet wat een mens in onderdelen waard is.\n\nDaarom mag het eerste beantwoorde packet niet voelen als redding. Black Keel kan de hash erkennen. Een broker kan het sample rangschikken. Een return desk kan coördinaten, substrate en proof integrity vragen terwijl je luchttimer doorloopt. De speler probeert beschaving niet bewust te maken. Beschaving weet het al. Het werk is het levende lichaam moeilijker te negeren maken dan de data die het produceerde.",
-          "external_site": "HECTON-8 scheidt proof route van rescue route. Bewijs beweegt snel via relay custody, maar een ademende operator heeft nog steeds massa, custody en braking rights nodig.",
-          "external_site_article": "De sterkste isolatie in HECTON-8 is geen radiostilte. Het is een beantwoord bericht dat bijna niets verandert. Een distress hash, sample certificate of claim packet kan bewegen omdat het compact, redundant en juridisch nuttig is. Het vraagt geen cabinevolume, quarantaine, medisch risico of receiver heat margin.\n\nDat onderscheid houdt de setting hard. De speler kan gehoord worden zonder gered te zijn. Zijn data kan waardevol worden voordat zijn lichaam terughaalbaar is. Black Keel en de route-economie zijn niet afwezig; ze zijn aanwezig als systemen met prioriteiten die voor vracht, aansprakelijkheid en bezit werden gebouwd vóór genade.\n\nVoor wiki en site is Evidence Before Breath de heldere regel: bewijs kan redding inhalen. Het drama begint wanneer een levend mens terug in een route moet worden geduwd die blij was alleen zijn bewijs te dragen.",
-          "field_note": "Als de terminal accepted zegt, lees het volgende zelfstandig naamwoord. Evidence accepted is niet person accepted."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.evidence_before_breath_ledger",
+    "secondary": [
+     "unlock.first_distress_hash_notary",
+     "unlock.first_packet_integrity_cradle",
+     "unlock.first_proof_route_not_rescue_route"
+    ],
+    "poi_tags": [
+     "poi.distress_hash_notary",
+     "poi.packet_integrity_cradle",
+     "poi.black_keel_return_action_queue",
+     "poi.sample_chain_of_custody"
+    ],
+    "biome_tags": [
+     "biome.claim_admin",
+     "biome.carrier_link",
+     "biome.pressure_base_interior",
+     "biome.old_colony_ruins"
+    ],
+    "first_20_boundary": "Explains why an outgoing distress hash, claim packet, sample receipt or proof chain can move before the player can: evidence is small and legally legible, while a breathing body needs lift, custody, braking and quarantine."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Distress Hash Notary Scanner",
+     "terminal": "Return Action Queue Terminal",
+     "audio": "Old Packet Clerk Rule",
+     "in_game_wiki": "PDA Proof Route Primer",
+     "external_site": "Public Site Proof Before Rescue Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_contact_or_no_instant_rescue_question",
+    "truth_payload": "Evidence can depart ahead of a person because it is small, sealed and legally legible; it raises claim pressure and sale value but does not allocate air, lift, receiver custody, quarantine or braking for the body.",
+    "player_question": "Why can my proof leave HECTON-8 while I am still trapped below it?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Distress Hash Notary Ledger",
+     "scanner": "Salt-pitted notary cradle. Witness seal intact. Accepted: identity hash, sample hash, time window, pressure telemetry. Life-support allocation absent.",
+     "terminal": "RETURN ACTION QUEUE RAQ-08\nEvidence chain: verified\nExtraction language: suspended\nMissing fields: route owner; breathing-mass custody; quarantine berth; lift reservation; braking margin\nInstruction: acknowledgement is not extraction.",
+     "audio": "Hash accepted. Seat not assigned. Air still counts down.",
+     "in_game_wiki": "A distress hash leaves fast because it is small: identity, sample mark, witness time, pressure telemetry and a checksum. It can cross a relay window in pieces. It can be copied, challenged, priced and stored without cabin volume or medical risk.\n\nA living body uses a different ledger. It needs temperature, pressure, contamination handling, route authority, quarantine, braking margin and somebody willing to own the stop. Black Keel can accept the hash while refusing the mass. That makes the first answer useful but not safe. The operator has made the event harder to deny, not easier to survive.",
+     "external_site": "HECTON-8 separates the proof route from the rescue route. A distress hash can move through custody before any berth, lift slot or braking margin exists for the operator who sent it.",
+     "external_site_article": "## Distress Hash Notary Ledger\n\nThe cradle records what can travel first: identity hash, sample hash, time window, pressure telemetry, witness seal. Those fields are compact enough for a relay window and useful enough for claim desks, insurers and public mirrors. They do not reserve a seat.\n\nThe missing fields sit below the accepted stamp: route owner, breathing-mass custody, quarantine berth, lift reservation, braking margin. Until those are assigned, the route has accepted evidence rather than the person who made it.\n\nThe ledger is useful because it prevents a false comfort. An answered packet is not silence breaking into rescue. It is proof entering custody while the body remains under pressure. That proof can create leverage later. It cannot warm the suit, clear contamination or stop the air counter by itself.",
+     "field_note": "When the terminal says accepted, read the next noun. Evidence accepted is not person accepted."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал доказательства до дыхания",
+     "scanner": "НОТАРИУС DISTRESS HASH // Соляная cradle с целой witness seal. Пакет принят: identity hash, sample hash, time window, pressure telemetry. Человек не принят. Жизнеобеспечение идет отдельным счетом.",
+     "terminal": "ОЧЕРЕДЬ RETURN ACTION // Цепочка доказательств проверена. Формулировка спасения остановлена до назначения владельца маршрута, custody живой массы, карантинной койки и резерва lift. Не путай подтверждение с извлечением.",
+     "audio": "Доказательство путешествует потому, что оно не кашляет, не паникует, не мерзнет и не требует места.",
+     "in_game_wiki": "Distress hash может покинуть HECTON-8 раньше игрока, потому что доказательство специально сделано маленьким. Это checksum, custody, witness time и узкое утверждение о том, что существовало. Оно может пройти relay window частями. Его можно хранить, оценивать, оспаривать и копировать, не спрашивая никого, кто будет держать его в тепле.\n\nЧеловек не такой payload. Дышащему телу нужны температура, давление, медицина, обработка заражения, маршрутное право, юридическая custody и приемник, готовый владеть остановкой. Маршрут может принять твое доказательство и все еще отказать твоей массе. В HECTON-8 это не противоречие. Это жестокость системы, которая точно знает, сколько человек стоит по частям.\n\nПоэтому первый отвеченный пакет не должен звучать как спасение. Black Keel может подтвердить hash. Broker может ранжировать sample. Return desk может запросить координаты, substrate и proof integrity, пока твой запас воздуха продолжает тикать. Игрок не пытается сделать цивилизацию осведомленной. Цивилизация уже осведомлена. Задача в том, чтобы живое тело стало труднее игнорировать, чем данные, которые оно произвело.",
+     "external_site": "HECTON-8 разделяет маршрут доказательства и маршрут спасения. Evidence быстро идет через relay custody, но живому оператору все еще нужны масса, custody и braking rights.",
+     "external_site_article": "Самая сильная изоляция HECTON-8 не в радиомолчании. Это отвеченное сообщение, которое почти ничего не меняет. Distress hash, сертификат образца или claim packet могут двигаться потому, что они компактны, дублируемы и юридически полезны. Им не нужен объем кабины, карантин, медицинский риск или тепловой запас приемника.\n\nЭто различие держит сеттинг жестким. Игрока могут услышать и не спасти. Его данные могут стать ценными раньше, чем тело станет извлекаемым. Black Keel и экономика маршрутов не отсутствуют; они присутствуют как системы с приоритетами, построенными под груз, ответственность и владение раньше милосердия.\n\nДля wiki и сайта правило простое: доказательство может обогнать спасение. Драма начинается там, где живого человека приходится проталкивать обратно в маршрут, который уже был счастлив нести одни его доказательства.",
+     "field_note": "Если терминал пишет accepted, читай следующее существительное. Evidence accepted не значит person accepted."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "呼吸より先に届く証拠台帳",
+     "scanner": "DISTRESS HASH公証器 // 塩に食われたcradle、witness sealは無傷。受理: identity hash、sample hash、time window、pressure telemetry。人間は未受理。生命維持は別請求。",
+     "terminal": "RETURN ACTION QUEUE // 証拠チェーン検証済み。救助表現は、route ownership、breathing-mass custody、隔離寝台、lift予約が割り当てられるまで停止。acknowledgementをextractionと混同するな。",
+     "audio": "証拠は咳をせず、怯えず、凍えず、席を要らないから移動できる。",
+     "in_game_wiki": "distress hashはプレイヤーより先にHECTON-8を離れられる。証拠は小さく作られているからだ。checksum、custody、witness time、そして何が存在したかについての狭い主張。relay windowを分割して通過できる。保存、値付け、異議、複写ができ、誰かに温めてもらう必要がない。\n\n人間はその種類のpayloadではない。呼吸する身体には温度、圧力、医療、汚染処理、route authority、法的custody、そして停止を所有するreceiverが必要だ。航路は君の証拠を受け入れても、君の質量を拒める。HECTON-8では矛盾ではない。人間を部品ごとに値付けできる制度の残酷さだ。\n\nだから最初の返信パケットは救助に聞こえてはいけない。Black Keelはhashを認める。brokerはsampleを順位づける。return deskは座標、substrate、proof integrityを求める。その間にも空気計は進む。プレイヤーは文明に気づかせようとしているのではない。文明はもう気づいている。仕事は、生きた身体を、それが生んだデータより無視しにくくすることだ。",
+     "external_site": "HECTON-8はproof routeとrescue routeを分ける。証拠はrelay custodyを速く動けるが、呼吸するoperatorにはまだ質量、custody、braking rightsが必要だ。",
+     "external_site_article": "HECTON-8で最も強い孤立は無線沈黙ではない。返答があり、それでもほとんど何も変わらない状態だ。distress hash、sample certificate、claim packetは、コンパクトで冗長で法的に有用だから動ける。船室容量、隔離、医療リスク、receiver heat marginを求めない。\n\nこの違いが設定を硬く保つ。プレイヤーは聞かれても救われないことがある。データは身体より先に価値を持つ。Black Keelと航路経済は不在ではない。慈悲より前に貨物、責任、所有のために作られた優先順位として存在している。\n\nwikiとサイトでは、Evidence Before Breathを単純な規則として扱う。証拠は救助を追い越せる。ドラマは、証拠だけなら喜んで運んだ航路へ、生きた人間を押し戻すところから始まる。",
+     "field_note": "terminalがacceptedと言ったら次の名詞を読め。evidence acceptedはperson acceptedではない。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "证据先于呼吸账册",
+     "scanner": "DISTRESS HASH 公证器 // 盐蚀 cradle，witness seal 完整。已接收：identity hash、sample hash、time window、pressure telemetry。人员未接收。生命维持另行计费。",
+     "terminal": "RETURN ACTION QUEUE // 证据链已验证。救援措辞暂停，直到 route ownership、breathing-mass custody、隔离床位和 lift 预留被分配。不要把 acknowledgement 当成 extraction。",
+     "audio": "证据会旅行，因为它不会咳嗽、恐慌、结冰，也不需要座位。",
+     "in_game_wiki": "distress hash 可以比玩家更早离开 HECTON-8，因为证据被设计得很小。它是 checksum、custody、witness time，以及关于某物曾经存在的窄声明。它能分段穿过 relay window。它能被保存、定价、质疑和复制，而不需要任何人让它保持温暖。\n\n人不是这种 payload。会呼吸的身体需要温度、压力、医疗、污染处理、route authority、法律 custody，以及愿意拥有这次停止的 receiver。航路可以接收你的证据，同时拒绝你的质量。在 HECTON-8 这不是矛盾。这是一个能把人按部件估价的系统的残酷。\n\n所以第一条得到回应的 packet 不该像救援。Black Keel 可以确认 hash。broker 可以给 sample 排序。return desk 可以索取坐标、substrate 和 proof integrity，而你的空气计时仍在继续。玩家不是在让文明知道。文明已经知道。真正的工作，是让活着的身体比它产生的数据更难被忽略。",
+     "external_site": "HECTON-8 把 proof route 和 rescue route 分开。证据能通过 relay custody 快速移动，但会呼吸的 operator 仍需要质量、custody 和 braking rights。",
+     "external_site_article": "HECTON-8 最强的孤立不是无线电沉默，而是一条得到回应却几乎不改变任何事的消息。distress hash、sample certificate 或 claim packet 可以移动，因为它们紧凑、可冗余、且在法律上有用。它们不需要舱室体积、隔离、医疗风险或 receiver heat margin。\n\n这个区别让设定保持坚硬。玩家可以被听见，却没有被救出。数据可能比身体更早变得有价值。Black Keel 和更大的航路经济并没有缺席；它们作为系统存在，而这些系统先为货物、责任和所有权设计，然后才轮到怜悯。\n\n对 wiki 和网站来说，Evidence Before Breath 是一条清楚规则：证据可以跑在救援前面。戏剧来自把一个活人重新塞进一条本来只愿意运送其证据的航路。",
+     "field_note": "如果终端写 accepted，先看下一个名词。Evidence accepted 不是 person accepted。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre preuve avant souffle",
+     "scanner": "NOTAIRE DISTRESS HASH // Cradle piqué par le sel, witness seal intact. Paquet accepté : identity hash, sample hash, time window, pressure telemetry. Personne non acceptée. Le support-vie reste une facture séparée.",
+     "terminal": "RETURN ACTION QUEUE // Chaîne de preuve vérifiée. Langage de sauvetage suspendu jusqu'à assignation de route ownership, breathing-mass custody, couchette de quarantaine et réservation lift. Ne confondez pas acknowledgement et extraction.",
+     "audio": "La preuve voyage parce qu'elle ne tousse pas, ne panique pas, ne gèle pas et ne demande pas de siège.",
+     "in_game_wiki": "Un distress hash peut quitter HECTON-8 avant le joueur parce que la preuve est conçue pour être petite. C'est checksum, custody, witness time et une affirmation étroite sur ce qui a existé. Elle peut traverser une relay window par morceaux. Elle peut être stockée, chiffrée, contestée et copiée sans demander à quelqu'un de la garder au chaud.\n\nUne personne n'est pas ce genre de payload. Un corps qui respire exige température, pression, médecine, gestion de contamination, route authority, custody légale et un receiver prêt à posséder l'arrêt. La route peut accepter votre preuve et refuser encore votre masse. Dans HECTON-8, ce n'est pas une contradiction. C'est la cruauté d'un système qui sait exactement combien vaut un humain en pièces.\n\nC'est pourquoi le premier paquet répondu ne doit pas ressembler à un sauvetage. Black Keel peut reconnaître le hash. Un broker peut classer le sample. Un return desk peut demander coordonnées, substrate et proof integrity pendant que votre minuteur d'air continue. Le joueur ne tente pas d'informer la civilisation. Elle est déjà informée. Le travail consiste à rendre le corps vivant plus difficile à ignorer que les données qu'il a produites.",
+     "external_site": "HECTON-8 sépare proof route et rescue route. La preuve circule vite par relay custody, mais un operator vivant a encore besoin de masse, custody et braking rights.",
+     "external_site_article": "L'isolement le plus fort de HECTON-8 n'est pas le silence radio. C'est un message reçu qui ne change presque rien. Un distress hash, un certificat de sample ou un claim packet peuvent se déplacer parce qu'ils sont compacts, redondants et utiles juridiquement. Ils ne demandent ni volume de cabine, ni quarantaine, ni risque médical, ni receiver heat margin.\n\nCette distinction garde le décor dur. Le joueur peut être entendu sans être sauvé. Ses données peuvent prendre de la valeur avant que son corps ne devienne récupérable. Black Keel et l'économie des routes ne sont pas absents; ils sont présents comme systèmes dont les priorités furent bâties pour fret, responsabilité et propriété avant la pitié.\n\nPour le wiki et le site, Evidence Before Breath est la règle nette : la preuve peut dépasser le sauvetage. Le drame vient quand il faut forcer une personne vivante à rentrer dans une route qui acceptait volontiers de porter sa preuve seule.",
+     "field_note": "Si le terminal dit accepted, lisez le nom suivant. Evidence accepted n'est pas person accepted."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de prueba antes que aliento",
+     "scanner": "NOTARIO DISTRESS HASH // Cradle picada por sal, witness seal intacto. Paquete aceptado: identity hash, sample hash, time window, pressure telemetry. Persona no aceptada. El soporte vital sigue como factura aparte.",
+     "terminal": "RETURN ACTION QUEUE // Cadena de prueba verificada. Lenguaje de rescate suspendido hasta asignar route ownership, breathing-mass custody, litera de cuarentena y reserva lift. No confundas acknowledgement con extraction.",
+     "audio": "La prueba viaja porque no tose, no entra en pánico, no se congela y no necesita asiento.",
+     "in_game_wiki": "Un distress hash puede salir de HECTON-8 antes que el jugador porque la prueba está hecha para ser pequeña. Es checksum, custody, witness time y una afirmación estrecha sobre lo que existió. Puede cruzar una relay window en pedazos. Puede guardarse, tasarse, impugnarse y copiarse sin pedir a nadie que la mantenga caliente.\n\nUna persona no es ese tipo de payload. Un cuerpo que respira necesita temperatura, presión, medicina, manejo de contaminación, route authority, custody legal y un receiver dispuesto a poseer la parada. La ruta puede aceptar tu prueba y rechazar tu masa. En HECTON-8 no es contradicción. Es la crueldad de un sistema que sabe cuánto vale un humano por piezas.\n\nPor eso el primer paquete respondido no debe sentirse como rescate. Black Keel puede reconocer el hash. Un broker puede ordenar el sample. Un return desk puede pedir coordenadas, substrate y proof integrity mientras tu aire sigue contando. El jugador no intenta avisar a la civilización. La civilización ya sabe. La tarea es hacer que el cuerpo vivo sea más difícil de ignorar que los datos que produjo.",
+     "external_site": "HECTON-8 separa proof route de rescue route. La evidencia se mueve rápido por relay custody, pero un operator vivo todavía necesita masa, custody y braking rights.",
+     "external_site_article": "El aislamiento más fuerte de HECTON-8 no es silencio de radio. Es un mensaje respondido que casi no cambia nada. Un distress hash, certificado de sample o claim packet puede moverse porque es compacto, redundante y legalmente útil. No exige volumen de cabina, cuarentena, riesgo médico ni receiver heat margin.\n\nEsa distinción mantiene duro el escenario. El jugador puede ser oído sin ser salvado. Sus datos pueden volverse valiosos antes que su cuerpo sea recuperable. Black Keel y la economía de rutas no están ausentes; están presentes como sistemas con prioridades construidas para carga, responsabilidad y propiedad antes que piedad.\n\nPara wiki y sitio, Evidence Before Breath es la regla limpia: la prueba puede adelantar al rescate. El drama nace al obligar a una persona viva a entrar en una ruta que aceptaba felizmente llevar solo su evidencia.",
+     "field_note": "Si la terminal dice accepted, lee el siguiente sustantivo. Evidence accepted no es person accepted."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Beweis-vor-Atem-Ledger",
+     "scanner": "DISTRESS-HASH-NOTAR // Salzzerfressene Cradle mit intaktem witness seal. Paket akzeptiert: identity hash, sample hash, time window, pressure telemetry. Person nicht akzeptiert. Lebenserhaltung bleibt eine eigene Rechnung.",
+     "terminal": "RETURN ACTION QUEUE // Beweiskette verifiziert. Rettungssprache ausgesetzt, bis route ownership, breathing-mass custody, Quarantänekoje und lift reservation zugewiesen sind. Acknowledgement nicht mit extraction verwechseln.",
+     "audio": "Beweis reist, weil er nicht hustet, nicht panisch wird, nicht friert und keinen Sitz braucht.",
+     "in_game_wiki": "Ein distress hash kann HECTON-8 vor dem Spieler verlassen, weil Beweis klein gebaut ist. Er ist checksum, custody, witness time und eine enge Behauptung darüber, was existierte. Er kann eine relay window in Stücken queren. Er kann gespeichert, bepreist, angefochten und kopiert werden, ohne dass jemand ihn warm halten muss.\n\nEine Person ist keine solche payload. Ein atmender Körper braucht Temperatur, Druck, Medizin, Kontaminationsbehandlung, route authority, rechtliche custody und einen receiver, der den Stopp besitzen will. Die Route kann deinen Beweis akzeptieren und deine Masse trotzdem verweigern. In HECTON-8 ist das kein Widerspruch. Es ist die Härte eines Systems, das genau weiß, was ein Mensch in Teilen wert ist.\n\nDarum darf das erste beantwortete Paket nicht wie Rettung wirken. Black Keel kann den hash anerkennen. Ein broker kann das sample bewerten. Ein return desk kann Koordinaten, substrate und proof integrity verlangen, während dein Lufttimer weiterläuft. Der Spieler versucht nicht, Zivilisation aufmerksam zu machen. Zivilisation weiß es bereits. Die Arbeit ist, den lebenden Körper schwerer ignorierbar zu machen als die Daten, die er erzeugt hat.",
+     "external_site": "HECTON-8 trennt proof route von rescue route. Beweis bewegt sich schnell durch relay custody, doch ein atmender operator braucht weiter Masse, custody und braking rights.",
+     "external_site_article": "Die stärkste Isolation in HECTON-8 ist nicht Funkstille. Es ist eine beantwortete Nachricht, die fast nichts ändert. Ein distress hash, sample certificate oder claim packet kann sich bewegen, weil er kompakt, redundant und juristisch nützlich ist. Er verlangt kein Kabinenvolumen, keine Quarantäne, kein medizinisches Risiko und keine receiver heat margin.\n\nDiese Unterscheidung hält das Setting hart. Der Spieler kann gehört und trotzdem nicht gerettet werden. Seine Daten können wertvoll werden, bevor sein Körper bergbar wird. Black Keel und die Routenökonomie fehlen nicht; sie sind als Systeme präsent, deren Prioritäten für Fracht, Haftung und Besitz vor Gnade gebaut wurden.\n\nFür Wiki und Website ist Evidence Before Breath die klare Regel: Beweis kann Rettung überholen. Das Drama beginnt, wenn eine lebende Person zurück in eine Route gezwungen werden muss, die glücklich war, nur ihren Beweis zu tragen.",
+     "field_note": "Wenn das Terminal accepted sagt, lies das nächste Substantiv. Evidence accepted ist nicht person accepted."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr dowodu przed oddechem",
+     "scanner": "NOTARIUSZ DISTRESS HASH // Solna cradle, witness seal nienaruszony. Pakiet przyjęty: identity hash, sample hash, time window, pressure telemetry. Osoba nieprzyjęta. Podtrzymanie życia jest osobnym rachunkiem.",
+     "terminal": "RETURN ACTION QUEUE // Łańcuch dowodowy zweryfikowany. Język ratunkowy wstrzymany do przydziału route ownership, breathing-mass custody, koi kwarantanny i rezerwacji lift. Nie myl acknowledgement z extraction.",
+     "audio": "Dowód podróżuje, bo nie kaszle, nie panikuje, nie marznie i nie potrzebuje miejsca.",
+     "in_game_wiki": "distress hash może opuścić HECTON-8 przed graczem, bo dowód jest zbudowany jako mały. To checksum, custody, witness time i wąskie twierdzenie o tym, co istniało. Może przejść przez relay window w częściach. Można go przechować, wycenić, podważyć i skopiować bez pytania, kto utrzyma go przy cieple.\n\nCzłowiek nie jest takim payload. Oddychające ciało potrzebuje temperatury, ciśnienia, medycyny, obsługi skażenia, route authority, prawnej custody i receivera gotowego posiadać zatrzymanie. Trasa może przyjąć twój dowód i nadal odrzucić twoją masę. W HECTON-8 to nie sprzeczność. To okrucieństwo systemu, który dokładnie wie, ile człowiek wart jest w częściach.\n\nDlatego pierwszy odebrany pakiet nie powinien brzmieć jak ratunek. Black Keel może uznać hash. Broker może wycenić sample. Return desk może prosić o koordynaty, substrate i proof integrity, gdy licznik powietrza idzie dalej. Gracz nie próbuje powiadomić cywilizacji. Cywilizacja już wie. Praca polega na tym, by żywe ciało było trudniejsze do zignorowania niż dane, które wytworzyło.",
+     "external_site": "HECTON-8 rozdziela proof route od rescue route. Dowód szybko idzie przez relay custody, ale żywy operator wciąż potrzebuje masy, custody i braking rights.",
+     "external_site_article": "Najmocniejszą izolacją HECTON-8 nie jest cisza radiowa. To odpowiedź, która prawie nic nie zmienia. distress hash, sample certificate albo claim packet mogą się przemieszczać, bo są zwarte, redundantne i prawnie użyteczne. Nie wymagają objętości kabiny, kwarantanny, ryzyka medycznego ani receiver heat margin.\n\nTa różnica utrzymuje twardość świata. Gracz może zostać usłyszany bez ocalenia. Dane mogą stać się cenne wcześniej niż ciało stanie się wydobywalne. Black Keel i ekonomia tras nie są nieobecne; są obecne jako systemy z priorytetami budowanymi pod ładunek, odpowiedzialność i własność przed miłosierdziem.\n\nDla wiki i strony Evidence Before Breath to prosta reguła: dowód może wyprzedzić ratunek. Dramat zaczyna się, gdy żywego człowieka trzeba wcisnąć z powrotem w trasę, która chętnie niosła sam jego dowód.",
+     "field_note": "Jeśli terminal mówi accepted, przeczytaj następny rzeczownik. Evidence accepted to nie person accepted."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал доказу перед диханням",
+     "scanner": "НОТАРІУС DISTRESS HASH // Соляна cradle з цілою witness seal. Пакет прийнято: identity hash, sample hash, time window, pressure telemetry. Людину не прийнято. Життєзабезпечення окремим рахунком.",
+     "terminal": "RETURN ACTION QUEUE // Ланцюг доказів перевірено. Мова порятунку зупинена до призначення route ownership, breathing-mass custody, карантинної койки й резерву lift. Не плутай acknowledgement з extraction.",
+     "audio": "Доказ подорожує, бо він не кашляє, не панікує, не мерзне й не потребує місця.",
+     "in_game_wiki": "distress hash може покинути HECTON-8 раніше за гравця, бо доказ створений малим. Це checksum, custody, witness time і вузьке твердження про те, що існувало. Він може пройти relay window частинами. Його можна зберігати, оцінювати, оскаржувати й копіювати, не питаючи, хто триматиме його в теплі.\n\nЛюдина не такий payload. Тілу, що дихає, потрібні температура, тиск, медицина, обробка зараження, route authority, юридична custody і receiver, готовий володіти зупинкою. Маршрут може прийняти твій доказ і все ще відмовити твоїй масі. У HECTON-8 це не суперечність. Це жорстокість системи, яка точно знає, скільки людина варта по частинах.\n\nТому перший відповідний пакет не має звучати як порятунок. Black Keel може підтвердити hash. Broker може ранжувати sample. Return desk може просити координати, substrate і proof integrity, поки твій лічильник повітря йде далі. Гравець не намагається повідомити цивілізацію. Цивілізація вже знає. Завдання — зробити живе тіло важчим для ігнорування, ніж дані, які воно створило.",
+     "external_site": "HECTON-8 розділяє proof route і rescue route. Доказ швидко йде через relay custody, але живому operator все ще потрібні маса, custody і braking rights.",
+     "external_site_article": "Найсильніша ізоляція HECTON-8 — не радіомовчання. Це відповідь, яка майже нічого не змінює. distress hash, sample certificate або claim packet можуть рухатися, бо вони компактні, резервовані й юридично корисні. Їм не потрібні об'єм кабіни, карантин, медичний ризик чи receiver heat margin.\n\nЦя різниця тримає світ жорстким. Гравця можуть почути й не врятувати. Дані можуть стати цінними раніше, ніж тіло стане придатним до повернення. Black Keel і економіка маршрутів не відсутні; вони присутні як системи, чиї пріоритети будувалися під вантаж, відповідальність і власність раніше за милість.\n\nДля wiki й сайту Evidence Before Breath — проста норма: доказ може обігнати порятунок. Драма починається там, де живу людину треба проштовхнути назад у маршрут, який охоче ніс лише її доказ.",
+     "field_note": "Якщо термінал пише accepted, читай наступний іменник. Evidence accepted не означає person accepted."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل الدليل قبل النفس",
+     "scanner": "موثق DISTRESS HASH // cradle متآكلة بالملح مع witness seal سليم. الحزمة مقبولة: identity hash وsample hash وtime window وpressure telemetry. الشخص غير مقبول. دعم الحياة فاتورة منفصلة.",
+     "terminal": "RETURN ACTION QUEUE // سلسلة الدليل موثقة. لغة الإنقاذ معلقة حتى تعيين route ownership وbreathing-mass custody وسرير حجر وحجز lift. لا تخلط acknowledgement مع extraction.",
+     "audio": "الدليل يسافر لأنه لا يسعل ولا يهلع ولا يتجمد ولا يحتاج مقعدا.",
+     "in_game_wiki": "يمكن أن يغادر distress hash من HECTON-8 قبل اللاعب لأن الدليل مصمم ليكون صغيرا. إنه checksum وcustody وwitness time وادعاء ضيق حول ما كان موجودا. يمكنه عبور relay window على أجزاء. يمكن تخزينه وتسعيره والطعن فيه ونسخه من دون أن يطلب من أحد أن يبقيه دافئا.\n\nالشخص ليس هذا النوع من payload. الجسد الذي يتنفس يحتاج حرارة وضغطا وطبابة ومعالجة تلوث وroute authority وcustody قانونية وreceiver يقبل امتلاك التوقف. يمكن للطريق قبول دليلك ورفض كتلتك. في HECTON-8 هذا ليس تناقضا. إنها قسوة نظام يعرف بالضبط قيمة الإنسان كأجزاء.\n\nلذلك يجب ألا يبدو أول packet مجاب كإنقاذ. يمكن لـ Black Keel أن يعترف بالـ hash. يمكن لـ broker أن يرتب sample. يمكن لـ return desk طلب الإحداثيات وsubstrate وproof integrity بينما عداد الهواء يستمر. اللاعب لا يحاول إبلاغ الحضارة. الحضارة تعرف بالفعل. العمل هو جعل الجسد الحي أصعب تجاهلا من البيانات التي أنتجها.",
+     "external_site": "تفصل HECTON-8 بين proof route وrescue route. يتحرك الدليل بسرعة عبر relay custody، لكن operator يتنفس ما زال يحتاج كتلة وcustody وbraking rights.",
+     "external_site_article": "أقوى عزلة في HECTON-8 ليست صمت الراديو. إنها رسالة مجاب عنها لا تغير شيئا تقريبا. يمكن لـ distress hash أو sample certificate أو claim packet أن يتحرك لأنه مدمج ومكرر ومفيد قانونيا. لا يحتاج حجم مقصورة أو حجرا أو خطرا طبيا أو receiver heat margin.\n\nهذا الفرق يبقي العالم قاسيا. يمكن أن يسمع اللاعب ولا ينقذ. يمكن لبياناته أن تصبح ثمينة قبل أن يصبح جسده قابلا للاستعادة. Black Keel واقتصاد الطرق ليسا غائبين؛ إنهما حاضران كأنظمة بنيت أولوياتها للشحن والمسؤولية والملكية قبل الرحمة.\n\nللاستخدام في الويكي والموقع، Evidence Before Breath قاعدة واضحة: الدليل يمكن أن يسبق الإنقاذ. الدراما تبدأ حين يجب دفع شخص حي إلى طريق كان سعيدا بحمل دليله وحده.",
+     "field_note": "إذا قال الطرفية accepted فاقرأ الاسم التالي. Evidence accepted لا تعني person accepted."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Buku Bukti Sebelum Napas",
+     "scanner": "NOTARIS DISTRESS HASH // Cradle bopeng garam dengan witness seal utuh. Paket diterima: identity hash, sample hash, time window, pressure telemetry. Orang tidak diterima. Life support tetap tagihan terpisah.",
+     "terminal": "RETURN ACTION QUEUE // Rantai bukti terverifikasi. Bahasa penyelamatan ditahan sampai route ownership, breathing-mass custody, ranjang karantina, dan reservasi lift ditetapkan. Jangan samakan acknowledgement dengan extraction.",
+     "audio": "Bukti bisa pergi karena ia tidak batuk, panik, membeku, atau butuh kursi.",
+     "in_game_wiki": "distress hash dapat meninggalkan HECTON-8 sebelum pemain karena bukti dibuat kecil. Ia adalah checksum, custody, witness time, dan klaim sempit tentang apa yang pernah ada. Ia bisa melewati relay window dalam potongan. Ia bisa disimpan, diberi harga, digugat, dan disalin tanpa meminta siapa pun menjaganya tetap hangat.\n\nManusia bukan payload seperti itu. Tubuh bernapas membutuhkan suhu, tekanan, medis, penanganan kontaminasi, route authority, custody legal, dan receiver yang mau memiliki penghentian. Rute bisa menerima buktimu dan tetap menolak massamu. Di HECTON-8 itu bukan kontradiksi. Itu kekejaman sistem yang tahu persis berapa nilai manusia dalam bagian-bagian.\n\nKarena itu paket pertama yang dijawab tidak boleh terasa seperti penyelamatan. Black Keel bisa mengakui hash. Broker bisa memberi peringkat sample. Return desk bisa meminta koordinat, substrate, dan proof integrity sementara timer udara terus berjalan. Pemain tidak sedang membuat peradaban sadar. Peradaban sudah sadar. Tugasnya adalah membuat tubuh hidup lebih sulit diabaikan daripada data yang dibuatnya.",
+     "external_site": "HECTON-8 memisahkan proof route dari rescue route. Bukti bergerak cepat lewat relay custody, tetapi operator bernapas tetap butuh massa, custody, dan braking rights.",
+     "external_site_article": "Isolasi terkuat HECTON-8 bukan radio yang diam. Itu adalah pesan yang dijawab tetapi hampir tidak mengubah apa pun. distress hash, sample certificate, atau claim packet bisa bergerak karena ringkas, redundan, dan berguna secara hukum. Ia tidak meminta volume kabin, karantina, risiko medis, atau receiver heat margin.\n\nPerbedaan ini menjaga dunia tetap keras. Pemain bisa didengar tanpa diselamatkan. Datanya bisa bernilai sebelum tubuhnya bisa diambil. Black Keel dan ekonomi rute tidak absen; mereka hadir sebagai sistem yang prioritasnya dibangun untuk kargo, tanggung jawab, dan kepemilikan sebelum belas kasihan.\n\nUntuk wiki dan situs, Evidence Before Breath adalah aturan bersih: bukti dapat mendahului penyelamatan. Drama muncul saat manusia hidup harus dipaksa kembali ke rute yang rela membawa buktinya saja.",
+     "field_note": "Jika terminal berkata accepted, baca kata benda berikutnya. Evidence accepted bukan person accepted."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "호흡보다 앞선 증거 장부",
+     "scanner": "DISTRESS HASH 공증기 // 소금에 패인 cradle, witness seal 온전함. 수락됨: identity hash, sample hash, time window, pressure telemetry. 사람은 미수락. 생명유지는 별도 청구.",
+     "terminal": "RETURN ACTION QUEUE // 증거 체인 검증됨. 구조 언어는 route ownership, breathing-mass custody, 격리 침상, lift 예약이 배정될 때까지 보류. acknowledgement를 extraction과 혼동하지 말 것.",
+     "audio": "증거는 기침하지 않고, 패닉에 빠지지 않고, 얼지 않고, 좌석을 요구하지 않아서 이동한다.",
+     "in_game_wiki": "distress hash는 플레이어보다 먼저 HECTON-8을 떠날 수 있다. 증거는 작게 만들어졌기 때문이다. 그것은 checksum, custody, witness time, 그리고 무엇이 존재했는지에 대한 좁은 주장이다. relay window를 조각으로 통과할 수 있다. 따뜻하게 유지할 사람 없이 저장되고, 가격이 매겨지고, 이의가 제기되고, 복사될 수 있다.\n\n사람은 그런 payload가 아니다. 숨 쉬는 몸에는 온도, 압력, 의료, 오염 처리, route authority, 법적 custody, 그리고 정지를 소유할 receiver가 필요하다. 항로는 네 증거를 받아들이고도 네 질량을 거부할 수 있다. HECTON-8에서 이것은 모순이 아니다. 인간을 부품별로 얼마인지 아는 시스템의 잔혹함이다.\n\n그래서 첫 응답 packet이 구조처럼 느껴지면 안 된다. Black Keel은 hash를 인정할 수 있다. broker는 sample을 순위 매길 수 있다. return desk는 좌표, substrate, proof integrity를 요구할 수 있고 공기 타이머는 계속 간다. 플레이어는 문명에게 알리려는 것이 아니다. 문명은 이미 안다. 일은 살아 있는 몸을 그 몸이 만든 데이터보다 무시하기 어렵게 만드는 것이다.",
+     "external_site": "HECTON-8은 proof route와 rescue route를 분리한다. 증거는 relay custody를 빠르게 움직이지만, 숨 쉬는 operator는 여전히 질량, custody, braking rights가 필요하다.",
+     "external_site_article": "HECTON-8의 가장 강한 고립은 무전 침묵이 아니다. 답을 받았지만 거의 아무것도 바뀌지 않는 메시지다. distress hash, sample certificate, claim packet은 작고, 중복 가능하고, 법적으로 유용해서 움직인다. 선실 부피, 격리, 의료 위험, receiver heat margin을 요구하지 않는다.\n\n이 구분이 세계를 단단하게 만든다. 플레이어는 들릴 수 있지만 구조되지 않을 수 있다. 데이터는 몸보다 먼저 가치가 생길 수 있다. Black Keel과 항로 경제는 부재하지 않는다. 화물, 책임, 소유를 자비보다 먼저 위해 만든 우선순위로 존재한다.\n\nwiki와 사이트에서 Evidence Before Breath는 명확한 규칙이다. 증거는 구조를 앞지를 수 있다. 드라마는 증거만 싣는 데 만족하던 항로에 살아 있는 사람을 다시 밀어 넣는 데서 시작된다.",
+     "field_note": "터미널이 accepted라고 말하면 다음 명사를 읽어라. Evidence accepted는 person accepted가 아니다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן ראיה לפני נשימה",
+     "scanner": "נוטריון DISTRESS HASH // cradle מחורר במלח עם witness seal שלם. חבילה התקבלה: identity hash, sample hash, time window, pressure telemetry. אדם לא התקבל. תמיכת חיים היא חשבון נפרד.",
+     "terminal": "RETURN ACTION QUEUE // שרשרת ראיות אומתה. לשון חילוץ מושעית עד הקצאת route ownership, breathing-mass custody, מיטת הסגר והזמנת lift. אל תבלבל acknowledgement עם extraction.",
+     "audio": "ראיה נוסעת כי היא לא משתעלת, לא נבהלת, לא קופאת ולא צריכה מושב.",
+     "in_game_wiki": "distress hash יכול לעזוב את HECTON-8 לפני השחקן מפני שראיה בנויה להיות קטנה. היא checksum, custody, witness time וטענה צרה על מה שהיה קיים. היא יכולה לחצות relay window בחלקים. אפשר לאחסן, לתמחר, לערער ולהעתיק אותה בלי לשאול מי יחזיק אותה חמה.\n\nאדם אינו payload כזה. גוף נושם צריך טמפרטורה, לחץ, רפואה, טיפול בזיהום, route authority, custody משפטית ו-receiver שמוכן להיות בעל העצירה. הנתיב יכול לקבל את הראיה שלך ועדיין לסרב למסה שלך. ב-HECTON-8 זו לא סתירה. זו אכזריות של מערכת שיודעת בדיוק כמה אדם שווה בחלקים.\n\nלכן packet ראשון שקיבל תשובה לא צריך להרגיש כמו חילוץ. Black Keel יכול להכיר ב-hash. broker יכול לדרג sample. return desk יכול לבקש קואורדינטות, substrate ו-proof integrity בזמן שמד האוויר ממשיך. השחקן לא מנסה לגרום לציוויליזציה לדעת. היא כבר יודעת. העבודה היא להפוך את הגוף החי לקשה יותר להתעלמות מן הנתונים שהוא יצר.",
+     "external_site": "HECTON-8 מפרידה proof route מ-rescue route. ראיה יכולה לנוע מהר דרך relay custody, אבל operator נושם עדיין צריך מסה, custody ו-braking rights.",
+     "external_site_article": "הבידוד החזק ביותר ב-HECTON-8 אינו דממת רדיו. זו הודעה שנענתה וכמעט לא שינתה דבר. distress hash, sample certificate או claim packet יכולים לנוע כי הם קומפקטיים, יתירים ושימושיים משפטית. הם אינם דורשים נפח תא, הסגר, סיכון רפואי או receiver heat margin.\n\nההבחנה הזו שומרת על העולם קשה. השחקן יכול להישמע בלי להינצל. הנתונים שלו יכולים להיות בעלי ערך לפני שהגוף ניתן להשבה. Black Keel וכלכלת הנתיבים אינם נעדרים; הם נוכחים כמערכות שסדרי העדיפויות שלהן נבנו למטען, אחריות ובעלות לפני חמלה.\n\nלוויקי ולאתר, Evidence Before Breath הוא כלל נקי: ראיה יכולה לעקוף חילוץ. הדרמה מתחילה כשצריך לדחוף אדם חי חזרה אל נתיב ששמח לשאת רק את ראייתו.",
+     "field_note": "אם הטרמינל אומר accepted, קרא את שם העצם הבא. Evidence accepted אינו person accepted."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Prova Antes do Fôlego",
+     "scanner": "NOTÁRIO DISTRESS HASH // Cradle corroído por sal com witness seal intacto. Pacote aceito: identity hash, sample hash, time window, pressure telemetry. Pessoa não aceita. Suporte de vida segue como conta separada.",
+     "terminal": "RETURN ACTION QUEUE // Cadeia de prova verificada. Linguagem de resgate suspensa até atribuir route ownership, breathing-mass custody, leito de quarentena e reserva lift. Não confunda acknowledgement com extraction.",
+     "audio": "Prova viaja porque não tosse, não entra em pânico, não congela e não precisa de assento.",
+     "in_game_wiki": "Um distress hash pode sair de HECTON-8 antes do jogador porque prova é feita para ser pequena. É checksum, custody, witness time e uma afirmação estreita sobre o que existiu. Pode atravessar uma relay window em pedaços. Pode ser armazenada, precificada, contestada e copiada sem pedir que alguém a mantenha aquecida.\n\nUma pessoa não é esse tipo de payload. Um corpo respirando precisa de temperatura, pressão, medicina, tratamento de contaminação, route authority, custody legal e um receiver disposto a possuir a parada. A rota pode aceitar sua prova e ainda recusar sua massa. Em HECTON-8 isso não é contradição. É a crueldade de um sistema que sabe exatamente quanto um humano vale em partes.\n\nPor isso o primeiro pacote respondido não deve soar como resgate. Black Keel pode reconhecer o hash. Um broker pode ranquear o sample. Um return desk pode pedir coordenadas, substrate e proof integrity enquanto seu contador de ar continua. O jogador não está tentando avisar a civilização. A civilização já sabe. O trabalho é tornar o corpo vivo mais difícil de ignorar do que os dados que ele produziu.",
+     "external_site": "HECTON-8 separa proof route de rescue route. Evidência se move rápido por relay custody, mas um operator respirando ainda precisa de massa, custody e braking rights.",
+     "external_site_article": "O isolamento mais forte de HECTON-8 não é silêncio de rádio. É uma mensagem respondida que quase não muda nada. Um distress hash, sample certificate ou claim packet pode se mover porque é compacto, redundante e juridicamente útil. Não exige volume de cabine, quarentena, risco médico ou receiver heat margin.\n\nEssa distinção mantém o cenário duro. O jogador pode ser ouvido sem ser salvo. Seus dados podem ficar valiosos antes que seu corpo seja recuperável. Black Keel e a economia de rotas não estão ausentes; estão presentes como sistemas cujas prioridades foram feitas para carga, responsabilidade e posse antes de misericórdia.\n\nPara wiki e site, Evidence Before Breath é a regra limpa: prova pode ultrapassar resgate. O drama vem de forçar uma pessoa viva de volta para uma rota que aceitava levar só sua prova.",
+     "field_note": "Se o terminal diz accepted, leia o próximo substantivo. Evidence accepted não é person accepted."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Bewijs-voor-adem-log",
+     "scanner": "DISTRESS HASH-NOTARIS // Door zout aangevreten cradle met intact witness seal. Pakket geaccepteerd: identity hash, sample hash, time window, pressure telemetry. Persoon niet geaccepteerd. Levensondersteuning blijft een aparte rekening.",
+     "terminal": "RETURN ACTION QUEUE // Bewijsketen geverifieerd. Reddingstaal opgeschort tot route ownership, breathing-mass custody, quarantainebed en lift reservation zijn toegewezen. Verwar acknowledgement niet met extraction.",
+     "audio": "Bewijs reist omdat het niet hoest, niet panikeert, niet bevriest en geen stoel nodig heeft.",
+     "in_game_wiki": "Een distress hash kan HECTON-8 verlaten voor de speler, omdat bewijs klein is gebouwd. Het is checksum, custody, witness time en een smalle claim over wat bestond. Het kan in stukken door een relay window. Het kan worden opgeslagen, geprijsd, betwist en gekopieerd zonder iemand te vragen het warm te houden.\n\nEen persoon is niet dat soort payload. Een ademend lichaam heeft temperatuur, druk, medische zorg, besmettingsafhandeling, route authority, wettelijke custody en een receiver nodig die de stop wil bezitten. De route kan je bewijs accepteren en nog steeds je massa weigeren. In HECTON-8 is dat geen tegenspraak. Het is de wreedheid van een systeem dat exact weet wat een mens in onderdelen waard is.\n\nDaarom mag het eerste beantwoorde packet niet voelen als redding. Black Keel kan de hash erkennen. Een broker kan het sample rangschikken. Een return desk kan coördinaten, substrate en proof integrity vragen terwijl je luchttimer doorloopt. De speler probeert beschaving niet bewust te maken. Beschaving weet het al. Het werk is het levende lichaam moeilijker te negeren maken dan de data die het produceerde.",
+     "external_site": "HECTON-8 scheidt proof route van rescue route. Bewijs beweegt snel via relay custody, maar een ademende operator heeft nog steeds massa, custody en braking rights nodig.",
+     "external_site_article": "De sterkste isolatie in HECTON-8 is geen radiostilte. Het is een beantwoord bericht dat bijna niets verandert. Een distress hash, sample certificate of claim packet kan bewegen omdat het compact, redundant en juridisch nuttig is. Het vraagt geen cabinevolume, quarantaine, medisch risico of receiver heat margin.\n\nDat onderscheid houdt de setting hard. De speler kan gehoord worden zonder gered te zijn. Zijn data kan waardevol worden voordat zijn lichaam terughaalbaar is. Black Keel en de route-economie zijn niet afwezig; ze zijn aanwezig als systemen met prioriteiten die voor vracht, aansprakelijkheid en bezit werden gebouwd vóór genade.\n\nVoor wiki en site is Evidence Before Breath de heldere regel: bewijs kan redding inhalen. Het drama begint wanneer een levend mens terug in een route moet worden geduwd die blij was alleen zijn bewijs te dragen.",
+     "field_note": "Als de terminal accepted zegt, lees het volgende zelfstandig naamwoord. Evidence accepted is niet person accepted."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

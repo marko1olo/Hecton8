@@ -1,283 +1,284 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1339_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE",
+   "release_set_id": "RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE",
+   "article_id": "applied_lore.missing_return_mark_claim_conversion_field_article",
+   "title_key": "LORE_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/AppliedContent/packets/RS273_ROUTE_PERMISSION_STAMP_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS288_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS289_PACKET_NOTARY_MASK_EDGE_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1339_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE",
-      "release_set_id": "RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE",
-      "article_id": "applied_lore.missing_return_mark_claim_conversion_field_article",
-      "title_key": "LORE_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/AppliedContent/packets/RS273_ROUTE_PERMISSION_STAMP_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS288_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS289_PACKET_NOTARY_MASK_EDGE_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.missing_return_mark_claim_conversion_field_article",
-        "secondary": [
-          "unlock.first_missing_return_mark_claim_conversion",
-          "unlock.first_route_permission_stamp_overlap",
-          "unlock.first_packet_notary_mask_edge"
-        ],
-        "poi_tags": [
-          "poi.route_permission_stamp",
-          "poi.missing_return_mark",
-          "poi.claim_desk_exception",
-          "poi.oxygen_ledger_cutoff",
-          "poi.suit_tag_board",
-          "poi.triage_ledger",
-          "poi.packet_notary_footer",
-          "poi.transcript_damage_band"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.claim_admin",
-          "biome.evidence_custody",
-          "biome.route_desk"
-        ],
-        "depth_band_m": "0-4200"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Route Desk QA Handling Note",
-          "audio": "Recovered Claim Desk Clip",
-          "in_game_wiki": "PDA Forensic Object Article",
-          "external_site": "Public Lore Atlas Evidence Note",
-          "field_note": "Marauder Field Note"
-        },
-        "source_brief": {
-          "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
-          "spoiler_level": "1",
-          "speaker_source": "PDA scanner, route desk QA note, claim desk clip, Marauder annotation, public lore atlas",
-          "audience": "after route permission stamp and notary-mask sequence evidence; public site reader under early-evidence spoiler boundary",
-          "date_era": "2190 recovery reading of 2147 route desk and claim desk artifacts",
-          "location_depth_route": "route desk cache, triage ledger shelf, pressure-room recorder carrier, drowned colony claim path",
-          "unlock_context": "after route permission stamp overlap / packet notary mask edge / transcript damage band offset",
-          "evidence_object": "route stamp with missing return mark, oxygen ledger cutoff and later claim desk exception",
-          "source_knows": "return field blank, oxygen cutoff, suit tag presence, later claim desk conversion, route left open after body evidence closed",
-          "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
-          "truth_pressure": "Open route lets Deep Reach classify worker evidence as recoverable mass instead of closed loss.",
-          "design_use": "connect route permissions to claim conversion without revealing final culprit"
-        },
-        "spoiler_boundary": {
-          "tier": 1,
-          "allowed_reveals": [
-            "open route can outlive oxygen cutoff",
-            "missing return mark can support claim conversion",
-            "route closure and body evidence can disagree"
-          ],
-          "blocked_reveals": [
-            "final culprit",
-            "hidden transcript sentence",
-            "ending payload identity"
-          ]
-        }
-      },
-      "localized": {
-        "en_US": {
-          "title": "Missing Return Mark Claim Conversion",
-          "scanner": "MISSING RETURN MARK // Route stamp has worker, hatch and task, but no return closure. Later claim desk exception uses the open route as recoverable mass.",
-          "terminal": "RETURN MARK QA // Check return tick, cancellation slash, recovery exception, claim desk handoff and oxygen ledger cutoff. Open route is not proof of survival.",
-          "audio": "No return mark. They left the route open and billed the body as mass.",
-          "in_game_wiki": "A return mark closed a route. It did not prove a worker was safe; it proved the route desk had stopped counting the worker as moving. The mark could be a return tick, a cancellation slash, a medical transfer, a recovery exception or a loss code. Without one of those marks, a route stayed administratively open.\n\nAn open route is dangerous evidence. Deep Reach could point to it and say the worker was still assigned, still reachable, still part of an active operation. The room can prove otherwise. A cold suit tag, a cut tether, a triage ledger with oxygen stopped, or a hatch scrape after the time window can turn the missing mark into a custody failure.\n\nThe claim conversion happens when a later desk uses the open route to reclassify the carrier. A transcript stops being a distress record and becomes recoverable mass, contaminated equipment, billable delay or salvage property. The missing return mark does not solve the death. It shows where the paperwork refused to close it.\n\nField handling is simple. Preserve the stamp before cleaning salt. Compare the open route to oxygen cutoff, suit tag, triage line and packet notary mask. If the route stays open after the body evidence closes, the desk was protecting a claim, not a worker.",
-          "external_site": "A missing return mark lets Deep Reach keep a route legally open after the room has already closed it. That gap can convert distress evidence into claim property.",
-          "external_site_article": "Return marks are small, but they decide what a route is allowed to mean. A closed route can be audited. An open route can be delayed, transferred, billed, reattached to equipment or treated as unresolved mass. That ambiguity matters on HECTON-8 because the colony left many workers recorded as moving after their rooms stopped moving air.\n\nThe useful evidence sits between the route stamp and the later claim desk exception. If oxygen stopped, the suit tag stayed in the bay and the return field stayed blank, the missing mark is not a clerical blank. It is a retained opening. Someone could keep the worker inside a contract state while the body evidence moved somewhere else.\n\nDeep Reach does not need a villain speech for that to hurt. A desk can follow rules and still choose the cheaper field. Open route. Pending recovery. Equipment mass unresolved. Salvage authority retained. Each field looks narrow. Together they keep a dead route from becoming a closed loss.\n\nThe mark should be read with route-stamp overlap, packet notary mask edge and transcript damage band. Those objects do not accuse by mood. They stack sequence: room exposure, route handling, missing closure, claim desk conversion.",
-          "field_note": "Open route after oxygen cutoff means the desk kept billing what the room had already ended.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Отсутствующая отметка возврата и перевод в претензию",
-          "scanner": "НЕТ ОТМЕТКИ ВОЗВРАТА // В штампе есть работник, люк и задача, но нет закрытия маршрута. Позднее исключение claim desk использует открытый маршрут как массу к извлечению.",
-          "terminal": "QA ОТМЕТКИ ВОЗВРАТА // Проверить возвратную галку, косую отмену, исключение извлечения, handoff claim desk и отсечку кислорода. Открытый маршрут не доказывает выживание.",
-          "audio": "Отметки возврата нет. Они оставили маршрут открытым и списали тело как массу.",
-          "in_game_wiki": "Отметка возврата закрывала маршрут. Она не доказывала, что работник в безопасности; она доказывала, что маршрутный стол перестал вести его как находящегося на маршруте. Это могла быть галка возврата, косая отмена, медицинский перевод, исключение извлечения или код потери. Без такой отметки маршрут оставался административно открытым.\n\nОткрытый маршрут опасен как улика. Deep Reach могла показать на него и сказать: работник все еще назначен, до него еще можно добраться, все еще часть активной операции. Комната может доказать обратное. Холодная метка костюма, перерезанный трос, строка триажа с остановкой кислорода или соскоб люка после окна маршрута превращают пустое поле возврата в отказ цепочки хранения.\n\nПеревод в претензию начинается, когда более поздний стол использует открытый маршрут для новой классификации носителя. Расшифровка перестает быть сигналом бедствия и становится извлекаемой массой, загрязненным оборудованием, оплачиваемой задержкой или salvage property. Отсутствующая отметка не решает смерть. Она показывает место, где бумага отказалась ее закрыть.\n\nВ поле все просто. Сохрани штамп до чистки соли. Сравни открытый маршрут с отсечкой кислорода, меткой костюма, строкой триажа и маской packet notary. Если маршрут остается открытым после того, как улики по телу его закрыли, стол защищал претензию, а не работника.",
-          "external_site": "Отсутствующая отметка возврата позволяет Deep Reach держать маршрут юридически открытым после того, как комната уже закрыла его физически. В этом зазоре сигнал бедствия становится claim property.",
-          "external_site_article": "Отметки возврата маленькие, но они решают, что маршрут имеет право означать. Закрытый маршрут можно проверить. Открытый можно задержать, перевести, выставить к оплате, привязать к оборудованию или считать неразрешенной массой. На HECTON-8 эта двусмысленность важна: многие работники оставались в таблицах как движущиеся уже после того, как их комнаты перестали двигать воздух.\n\nУлика лежит между маршрутным штампом и поздним исключением claim desk. Если кислород остановился, метка костюма осталась в отсеке, а поле возврата пустое, это не канцелярская дырка. Это сохраненное открытие. Человека можно держать внутри контрактного состояния, пока улики тела уходят в другой стол.\n\nDeep Reach не нужен злодейский монолог. Стол может следовать правилам и все равно выбрать дешевое поле: маршрут открыт, извлечение ожидается, масса оборудования не решена, право сальважа сохранено. Каждое поле узкое. Вместе они не дают мертвому маршруту стать закрытой потерей.\n\nОтметку нужно читать вместе с перекрытием маршрутного штампа, краем маски packet notary и полосой повреждения расшифровки. Эти предметы не обвиняют настроением. Они складывают последовательность: воздействие в комнате, обработка маршрута, отсутствующее закрытие, перевод claim desk.",
-          "field_note": "Открытый маршрут после отсечки кислорода значит: стол продолжал выставлять к оплате то, что комната уже закончила.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "欠落した帰還印と請求変換",
-          "scanner": "帰還印なし // スタンプには作業者、ハッチ、任務があるが閉鎖印がない。後のclaim desk例外が開いた経路を回収可能質量として使う。",
-          "terminal": "帰還印QA // 帰還チェック、取消線、回収例外、claim desk引渡し、酸素台帳停止を確認。開いた経路は生存証明ではない。",
-          "audio": "帰還印がない。経路を開いたまま、身体を質量として請求した。",
-          "in_game_wiki": "帰還印は経路を閉じた。作業者の安全を証明する印ではなく、経路デスクがその作業者を移動中として数えるのをやめた印だった。帰還チェック、取消線、医療移送、回収例外、損失コードのいずれかが必要だった。それがなければ、経路は事務上開いたまま残る。\n\n開いた経路は危険な証拠になる。Deep Reachはそこを指して、作業者はまだ割当中、まだ到達可能、まだ作戦中だと言える。部屋は別のことを示せる。冷えたスーツタグ、切れたテザー、酸素停止を持つトリアージ行、時間窓後のハッチ擦過が、空欄の帰還欄を保管経路の失敗に変える。\n\n請求変換は、後のデスクが開いた経路で媒体を再分類した時に起きる。転写は遭難記録ではなく、回収可能質量、汚染装備、請求可能遅延、サルベージ財産になる。欠落した帰還印は死を解くものではない。紙がその死を閉じなかった場所を示す。\n\n現場では塩を落とす前にスタンプを保全する。開いた経路を酸素停止、スーツタグ、トリアージ行、packet notaryマスクと照合する。身体の証拠が閉じているのに経路だけが開いたままなら、デスクが守ったのは作業者ではなく請求だ。",
-          "external_site": "帰還印がないと、部屋が物理的に閉じた後もDeep Reachは経路を法的に開いたままにできる。その隙間で遭難証拠は請求財産へ変わる。",
-          "external_site_article": "帰還印は小さいが、経路が何を意味できるかを決める。閉じた経路は監査できる。開いた経路は遅延、移送、請求、装備への再接続、未解決質量として扱える。HECTON-8ではその曖昧さが効く。空気が止まった後も、多くの作業者が移動中として表に残った。\n\n証拠は経路スタンプと後のclaim desk例外の間にある。酸素が止まり、スーツタグがベイに残り、帰還欄が空なら、それはただの記入漏れではない。開口を保持した状態だ。身体の証拠が別の場所へ動く間、作業者を契約状態に閉じ込められる。\n\nDeep Reachに悪役の演説は不要だ。デスクは規則通りに動きながら、安い欄を選べる。経路未閉鎖。回収保留。装備質量未解決。サルベージ権保持。欄はどれも狭い。積むと、死んだ経路が閉じた損失にならない。\n\nこの印は経路スタンプ重なり、packet notaryマスク縁、転写損傷帯と並べて読む。物は気分で責めない。室内曝露、経路処理、欠落した閉鎖、claim desk変換という順序を積む。",
-          "field_note": "酸素停止後も経路が開いているなら、部屋が終えたものをデスクがまだ請求していた。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "缺失返程标记与索赔转换",
-          "scanner": "返程标记缺失 // 路线戳有工人、舱门和任务，却没有关闭标记。后来的claim desk例外把开放路线当作可回收质量。",
-          "terminal": "返程标记QA // 检查返程勾、取消斜线、回收例外、claim desk交接和氧气账本截断。开放路线不是生存证明。",
-          "audio": "没有返程标记。他们让路线保持开放，把身体按质量计费。",
-          "in_game_wiki": "返程标记用来关闭路线。它不证明工人安全，只证明路线台不再把那名工人计为移动中。标记可以是返程勾、取消斜线、医疗转移、回收例外或损失代码。没有这些，路线在行政上保持开放。\n\n开放路线是危险证据。Deep Reach可以指着它说：工人仍在分配中，仍可联系，仍属于活动作业。房间可以证明相反。冷掉的潜服标签、割断的系缆、氧气停止的分诊行、路线窗口后的舱门刮痕，都能把空返程栏变成保管链失败。\n\n后来的台面利用开放路线重新分类载体时，索赔转换就发生了。转录不再是求救记录，而变成可回收质量、污染设备、可计费延迟或打捞财产。缺失返程标记不解决死亡。它显示文书拒绝关闭死亡的位置。\n\n现场处理很直接。清盐前保留戳记。把开放路线同氧气截断、潜服标签、分诊行和packet notary遮盖对照。如果身体证据已经关闭，路线仍保持开放，台面保护的是索赔，不是工人。",
-          "external_site": "返程标记缺失后，Deep Reach可以在房间物理上已经结束之后，让路线在法律上保持开放。这个缝隙能把求救证据转成索赔财产。",
-          "external_site_article": "返程标记很小，却决定一条路线允许表达什么。关闭路线可以审计。开放路线可以被延迟、转移、计费、重新接到设备上，或作为未解决质量处理。在HECTON-8，这种模糊很重要：许多房间停止换气之后，工人仍在表里显示为移动中。\n\n证据位于路线戳和后来的claim desk例外之间。如果氧气停止、潜服标签仍在舱内、返程栏仍为空，那不是普通漏填。这是保留的开口。身体证据移向别处时，工人仍可被留在合同状态里。\n\nDeep Reach不需要戏剧性供述。一个台面可以按规则做事，同时选择最便宜的字段：路线开放、回收待定、设备质量未决、打捞权保留。每个字段都很窄，叠在一起就让死亡路线无法成为已关闭损失。\n\n返程栏要同路线戳重叠、packet notary遮盖边缘、转录损伤带一起读。这些物件不靠情绪指控。它们叠出顺序：房间暴露、路线处理、关闭缺失、claim desk转换。",
-          "field_note": "氧气截断后路线还开放，说明台面继续给房间已经结束的东西计费。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Marque de Retour Manquante et Conversion de Réclamation",
-          "scanner": "MARQUE RETOUR ABSENTE // Tampon avec travailleur, sas et tâche, mais sans clôture. Exception claim desk tardive utilise la route ouverte comme masse récupérable.",
-          "terminal": "QA MARQUE RETOUR // Vérifier retour, annulation, exception récupération, transfert claim desk et coupure oxygène. Route ouverte ne prouve pas survie.",
-          "audio": "Pas de marque de retour. Ils ont laissé la route ouverte et facturé le corps comme masse.",
-          "in_game_wiki": "Une marque de retour fermait une route. Elle ne prouvait pas la sécurité d'un travailleur; elle prouvait que le bureau de route cessait de le compter comme mobile. Retour, annulation, transfert médical, exception de récupération ou code de perte: il fallait une clôture. Sans elle, la route restait ouverte.\n\nUne route ouverte est une preuve dangereuse. Deep Reach peut dire que le travailleur reste assigné, joignable, inclus dans une opération active. La pièce peut dire l'inverse. Tag de combinaison froid, câble coupé, ligne de triage avec oxygène arrêté, éraflure de sas après la fenêtre: ces signes changent le blanc de retour en faute de custody.\n\nLa conversion de réclamation commence quand un bureau tardif reclasse le support grâce à cette route ouverte. La transcription cesse d'être un signal de détresse et devient masse récupérable, équipement contaminé, retard facturable ou propriété de salvage. La marque absente ne résout pas la mort. Elle montre où le papier a refusé de la fermer.\n\nSur le terrain, préserver le tampon avant de retirer le sel. Comparer route ouverte, coupure d'oxygène, tag de combinaison, ligne de triage et masque packet notary. Si la route reste ouverte après fermeture par les preuves du corps, le bureau protégeait une réclamation, pas un travailleur.",
-          "external_site": "Une marque de retour absente laisse Deep Reach garder une route légalement ouverte après sa fermeture physique par la pièce. Dans cet écart, la détresse devient propriété de réclamation.",
-          "external_site_article": "Les marques de retour sont petites, mais elles décident ce qu'une route peut signifier. Une route fermée peut être auditée. Une route ouverte peut être retardée, transférée, facturée, rattachée à un équipement ou traitée comme masse non résolue. Sur HECTON-8, cette ambiguïté compte: des travailleurs restaient listés comme mobiles après l'arrêt d'air de leurs pièces.\n\nLa preuve se trouve entre tampon de route et exception claim desk tardive. Oxygène arrêté, tag de combinaison resté en baie, champ de retour vide: ce n'est pas un oubli. C'est une ouverture retenue. Le travailleur peut rester dans un état contractuel pendant que les preuves du corps partent ailleurs.\n\nDeep Reach n'a pas besoin de discours. Un bureau peut suivre les règles et choisir le champ le moins cher. Route ouverte. Récupération en attente. Masse d'équipement non résolue. Autorité de salvage conservée. Chaque champ paraît étroit. Ensemble, ils empêchent une route morte de devenir une perte close.\n\nLa marque se lit avec chevauchement du tampon de route, bord du masque packet notary et bande de dommage de transcription. Les objets empilent une séquence: exposition de la pièce, traitement de route, clôture manquante, conversion claim desk.",
-          "field_note": "Route ouverte après coupure d'oxygène: le bureau facturait encore ce que la pièce avait fini.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Marca de Retorno Ausente y Conversión de Reclamación",
-          "scanner": "MARCA RETORNO AUSENTE // Sello con trabajador, escotilla y tarea, sin cierre. Excepción posterior de claim desk usa ruta abierta como masa recuperable.",
-          "terminal": "QA RETORNO // Revisa retorno, cancelación, excepción de recuperación, entrega a claim desk y corte de oxígeno. Ruta abierta no prueba supervivencia.",
-          "audio": "No hay marca de retorno. Dejaron la ruta abierta y facturaron el cuerpo como masa.",
-          "in_game_wiki": "Una marca de retorno cerraba una ruta. No demostraba que el trabajador estuviera a salvo; demostraba que la mesa de ruta dejaba de contarlo como móvil. Podía ser retorno, cancelación, traslado médico, excepción de recuperación o código de pérdida. Sin cierre, la ruta seguía abierta en administración.\n\nUna ruta abierta es prueba peligrosa. Deep Reach podía decir que el trabajador seguía asignado, alcanzable, dentro de una operación activa. La sala podía demostrar lo contrario. Tag de traje frío, cable cortado, línea de triaje con oxígeno parado o raspado de escotilla fuera de ventana convierten el blanco de retorno en fallo de custodia.\n\nLa conversión de reclamación empieza cuando una mesa posterior usa la ruta abierta para reclasificar el soporte. La transcripción deja de ser socorro y pasa a masa recuperable, equipo contaminado, demora facturable o propiedad de salvage. La marca ausente no resuelve la muerte. Muestra dónde el papel se negó a cerrarla.\n\nEn campo, conserva el sello antes de limpiar sal. Compara ruta abierta con corte de oxígeno, tag de traje, línea de triaje y máscara packet notary. Si la ruta sigue abierta después de que la evidencia corporal la cerró, la mesa protegía una reclamación, no a un trabajador.",
-          "external_site": "Una marca de retorno ausente permite a Deep Reach mantener una ruta legalmente abierta después de que la sala la cerró físicamente. En esa brecha, el socorro se vuelve propiedad de reclamación.",
-          "external_site_article": "Las marcas de retorno son pequeñas, pero deciden qué puede significar una ruta. Una ruta cerrada se audita. Una abierta puede retrasarse, transferirse, facturarse, atarse a equipo o tratarse como masa sin resolver. En HECTON-8 importa: muchos trabajadores siguieron listados como móviles cuando sus salas ya no movían aire.\n\nLa prueba vive entre el sello de ruta y la excepción posterior de claim desk. Oxígeno parado, tag de traje en la bahía, campo de retorno vacío: no es un olvido. Es una apertura retenida. El trabajador queda dentro de un estado contractual mientras la evidencia del cuerpo va a otra mesa.\n\nDeep Reach no necesita confesión teatral. Una mesa puede seguir reglas y escoger el campo barato: ruta abierta, recuperación pendiente, masa de equipo sin resolver, autoridad de salvage retenida. Cada campo parece estrecho. Juntos impiden que una ruta muerta sea pérdida cerrada.\n\nLa marca se lee con el solape del sello de ruta, borde de máscara packet notary y banda de daño de transcripción. Los objetos apilan secuencia: exposición de sala, manejo de ruta, cierre ausente, conversión claim desk.",
-          "field_note": "Ruta abierta tras corte de oxígeno: la mesa seguía facturando lo que la sala ya había terminado.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Fehlende Rückkehrmarke und Anspruchsumwandlung",
-          "scanner": "RÜCKKEHRMARKE FEHLT // Stempel hat Arbeiter, Schott und Aufgabe, aber keinen Abschluss. Späte Claim-Desk-Ausnahme nutzt offene Route als bergbare Masse.",
-          "terminal": "RÜCKKEHR-QA // Rückkehrhaken, Storno, Bergungsausnahme, Claim-Desk-Handoff und Sauerstoffschnitt prüfen. Offene Route beweist kein Überleben.",
-          "audio": "Keine Rückkehrmarke. Sie ließen die Route offen und berechneten den Körper als Masse.",
-          "in_game_wiki": "Eine Rückkehrmarke schloss eine Route. Sie bewies nicht, dass ein Arbeiter sicher war; sie bewies, dass das Routenpult ihn nicht mehr als unterwegs zählte. Rückkehrhaken, Storno, medizinische Übergabe, Bergungsausnahme oder Verlustcode: ein Abschluss musste da sein. Ohne ihn blieb die Route administrativ offen.\n\nEine offene Route ist gefährliche Evidenz. Deep Reach konnte sagen, der Arbeiter sei weiter zugewiesen, erreichbar, Teil eines aktiven Vorgangs. Der Raum kann widersprechen. Kalter Anzugtag, geschnittenes Tether, Triagezeile mit Sauerstoffstopp oder Schottkratzer nach dem Zeitfenster machen das leere Rückkehrfeld zum Custody-Fehler.\n\nDie Anspruchsumwandlung beginnt, wenn ein späteres Pult den Träger über die offene Route neu klassifiziert. Das Transkript ist dann kein Notruf mehr, sondern bergbare Masse, kontaminierte Ausrüstung, abrechenbare Verzögerung oder Salvage-Eigentum. Die fehlende Marke löst den Tod nicht. Sie zeigt, wo Papier ihn nicht schließen wollte.\n\nIm Feld den Stempel vor dem Entsalzen sichern. Offene Route mit Sauerstoffschnitt, Anzugtag, Triagezeile und packet-notary-Maske vergleichen. Bleibt die Route offen, nachdem Körperbeweis sie schließt, schützte das Pult einen Anspruch, keinen Arbeiter.",
-          "external_site": "Eine fehlende Rückkehrmarke erlaubt Deep Reach, eine Route rechtlich offen zu halten, nachdem der Raum sie physisch geschlossen hat. In dieser Lücke wird Notrufbeweis zu Claim-Eigentum.",
-          "external_site_article": "Rückkehrmarken sind klein, aber sie entscheiden, was eine Route bedeuten darf. Eine geschlossene Route kann auditiert werden. Eine offene Route kann verzögert, übertragen, berechnet, wieder an Ausrüstung gebunden oder als ungeklärte Masse behandelt werden. Auf HECTON-8 zählt diese Mehrdeutigkeit: Arbeiter blieben als unterwegs gelistet, nachdem ihre Räume keine Luft mehr bewegten.\n\nDie Evidenz liegt zwischen Routenstempel und später Claim-Desk-Ausnahme. Sauerstoff gestoppt, Anzugtag in der Bucht, Rückkehrfeld leer: Das ist keine Lücke der Schreibkraft. Das ist eine gehaltene Öffnung. Der Arbeiter bleibt im Vertragszustand, während Körperbeweis woanders hingeht.\n\nDeep Reach braucht keine theatralische Beichte. Ein Pult kann Regeln folgen und das billigere Feld wählen: Route offen, Bergung ausstehend, Ausrüstungsmasse ungeklärt, Salvage-Recht gehalten. Jedes Feld wirkt eng. Zusammen verhindern sie, dass eine tote Route ein geschlossener Verlust wird.\n\nDie Marke gehört neben Routenstempel-Überlagerung, packet-notary-Maskenkante und Transkriptschadensband. Die Objekte stapeln Sequenz: Raumexposition, Routenhandling, fehlender Abschluss, Claim-Desk-Umwandlung.",
-          "field_note": "Offene Route nach Sauerstoffschnitt heißt: Das Pult berechnete weiter, was der Raum schon beendet hatte.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Brak Znaku Powrotu i Konwersja Roszczenia",
-          "scanner": "BRAK POWROTU // Stempel ma pracownika, właz i zadanie, ale bez zamknięcia. Późny wyjątek claim desk używa otwartej trasy jako masy do odzysku.",
-          "terminal": "QA POWROTU // Sprawdź znak powrotu, anulowanie, wyjątek odzysku, handoff claim desk i odcięcie tlenu. Otwarta trasa nie dowodzi przeżycia.",
-          "audio": "Brak znaku powrotu. Zostawili trasę otwartą i policzyli ciało jako masę.",
-          "in_game_wiki": "Znak powrotu zamykał trasę. Nie dowodził, że pracownik był bezpieczny; dowodził, że biurko tras przestało liczyć go jako będącego w ruchu. Powrót, anulowanie, transfer medyczny, wyjątek odzysku albo kod straty: potrzebne było zamknięcie. Bez niego trasa zostawała administracyjnie otwarta.\n\nOtwarta trasa jest niebezpiecznym dowodem. Deep Reach mogło mówić, że pracownik nadal jest przypisany, osiągalny, w aktywnej operacji. Pomieszczenie może temu zaprzeczyć. Zimny tag skafandra, przecięta lina, wpis triażu z zatrzymanym tlenem albo rysa włazu po oknie czasu zmieniają puste pole powrotu w błąd custody.\n\nKonwersja roszczenia zaczyna się, gdy późniejsze biurko używa otwartej trasy do zmiany klasy nośnika. Transkrypcja przestaje być wezwaniem pomocy, a staje się masą do odzysku, skażonym sprzętem, płatnym opóźnieniem albo własnością salvage. Brak znaku nie rozwiązuje śmierci. Pokazuje, gdzie papier odmówił jej zamknięcia.\n\nW terenie zachowaj stempel przed czyszczeniem soli. Porównaj otwartą trasę z odcięciem tlenu, tagiem skafandra, linią triażu i maską packet notary. Jeśli trasa zostaje otwarta po tym, jak dowody ciała ją zamykają, biurko chroniło roszczenie, nie pracownika.",
-          "external_site": "Brak znaku powrotu pozwala Deep Reach trzymać trasę prawnie otwartą po fizycznym zamknięciu jej przez pomieszczenie. W tej szczelinie dowód pomocy staje się własnością roszczenia.",
-          "external_site_article": "Znaki powrotu są małe, ale decydują, co trasa może znaczyć. Zamkniętą trasę można audytować. Otwartą można opóźnić, przenieść, naliczyć, podpiąć do sprzętu albo traktować jako nierozwiązaną masę. Na HECTON-8 ta dwuznaczność ma wagę: pracownicy zostawali w tabelach jako ruchomi po tym, jak ich pomieszczenia przestały ruszać powietrze.\n\nDowód leży między stemplem trasy a późnym wyjątkiem claim desk. Tlen zatrzymany, tag skafandra w zatoce, pole powrotu puste: to nie jest luka urzędnicza. To zachowane otwarcie. Pracownik zostaje w stanie kontraktu, gdy dowody ciała idą do innego biurka.\n\nDeep Reach nie potrzebuje teatralnego przyznania się. Biurko może trzymać się reguł i wybrać tańsze pole: trasa otwarta, odzysk oczekuje, masa sprzętu nierozwiązana, prawo salvage zachowane. Każde pole jest wąskie. Razem nie pozwalają martwej trasie stać się zamkniętą stratą.\n\nZnak należy czytać obok nakładki stempla trasy, krawędzi maski packet notary i pasa uszkodzeń transkrypcji. Przedmioty układają sekwencję: ekspozycja pomieszczenia, obsługa trasy, brak zamknięcia, konwersja claim desk.",
-          "field_note": "Otwarta trasa po odcięciu tlenu znaczy, że biurko nadal naliczało to, co pomieszczenie skończyło.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Відсутня позначка повернення і переведення в претензію",
-          "scanner": "НЕМАЄ ПОВЕРНЕННЯ // Штамп має працівника, люк і завдання, але без закриття. Пізній виняток claim desk використовує відкритий маршрут як відновлювану масу.",
-          "terminal": "QA ПОВЕРНЕННЯ // Перевір позначку повернення, скасування, виняток вилучення, handoff claim desk і відсіч кисню. Відкритий маршрут не доводить виживання.",
-          "audio": "Позначки повернення немає. Вони лишили маршрут відкритим і виставили тіло як масу.",
-          "in_game_wiki": "Позначка повернення закривала маршрут. Вона не доводила, що працівник у безпеці; вона доводила, що маршрутний стіл перестав рахувати його як того, хто рухається. Повернення, скасування, медичний transfer, виняток вилучення або код втрати мали закрити шлях. Без цього маршрут лишався адміністративно відкритим.\n\nВідкритий маршрут небезпечний як доказ. Deep Reach міг казати, що працівник досі призначений, досяжний, у межах активної операції. Кімната може довести протилежне. Холодна мітка костюма, перерізаний трос, рядок тріажу із зупиненим киснем або подряпина люка після вікна маршруту роблять порожнє поле повернення провалом custody.\n\nПереведення в претензію починається тоді, коли пізніший стіл використовує відкритий маршрут для нової класифікації носія. Розшифрування перестає бути сигналом біди і стає відновлюваною масою, забрудненим обладнанням, оплачуваною затримкою або salvage property. Відсутня позначка не розв'язує смерть. Вона показує, де папір відмовився її закрити.\n\nУ полі збережи штамп до очищення солі. Звір відкритий маршрут із відсіччю кисню, міткою костюма, рядком тріажу і маскою packet notary. Якщо маршрут відкритий після того, як докази тіла його закрили, стіл захищав претензію, а не працівника.",
-          "external_site": "Відсутня позначка повернення дозволяє Deep Reach тримати маршрут юридично відкритим після фізичного закриття кімнатою. У цьому зазорі доказ біди стає майном претензії.",
-          "external_site_article": "Позначки повернення малі, але вони вирішують, що маршрут має право означати. Закритий маршрут можна перевірити. Відкритий можна затримати, перевести, виставити до оплати, прив'язати до обладнання або визнати нерозв'язаною масою. На HECTON-8 ця двозначність важить: працівники лишалися в таблицях як рухомі після того, як їхні кімнати перестали рухати повітря.\n\nДоказ лежить між маршрутним штампом і пізнім винятком claim desk. Кисень зупинено, мітка костюма в затоці, поле повернення порожнє: це не канцелярська прогалина. Це збережений отвір. Працівника можна втримати в контрактному стані, поки докази тіла йдуть до іншого столу.\n\nDeep Reach не потребує театрального зізнання. Стіл може виконувати правила і вибрати дешевше поле: маршрут відкритий, вилучення очікується, маса обладнання не вирішена, право salvage збережене. Кожне поле вузьке. Разом вони не дають мертвому маршруту стати закритою втратою.\n\nПозначку треба читати поруч із перекриттям маршрутного штампа, краєм маски packet notary і смугою пошкодження розшифрування. Предмети складають послідовність: вплив у кімнаті, обробка маршруту, відсутнє закриття, переведення claim desk.",
-          "field_note": "Відкритий маршрут після відсічі кисню означає: стіл далі рахував те, що кімната вже завершила.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "علامة عودة مفقودة وتحويل مطالبة",
-          "scanner": "علامة العودة مفقودة // الختم يحتوي عاملا وفتحة ومهمة، لكن بلا إغلاق. استثناء claim desk لاحق يستخدم المسار المفتوح ككتلة قابلة للاسترداد.",
-          "terminal": "فحص العودة // تحقق من علامة العودة، إلغاء المسار، استثناء الاسترداد، تسليم claim desk وقطع الأكسجين. المسار المفتوح لا يثبت النجاة.",
-          "audio": "لا علامة عودة. تركوا المسار مفتوحا وحاسبوا الجسد ككتلة.",
-          "in_game_wiki": "كانت علامة العودة تغلق المسار. لم تكن تثبت أن العامل آمن؛ كانت تثبت أن مكتب المسار توقف عن عده في الحركة. قد تكون علامة عودة أو إلغاء أو نقل طبي أو استثناء استرداد أو رمز خسارة. من دون ذلك يبقى المسار مفتوحا إداريا.\n\nالمسار المفتوح دليل خطر. تستطيع Deep Reach الإشارة إليه والقول إن العامل ما زال مكلفا، ما زال قابلا للوصول، ما زال ضمن عملية نشطة. تستطيع الغرفة إثبات العكس. وسم بدلة بارد، حبل مقطوع، سطر فرز توقف فيه الأكسجين، أو خدش فتحة بعد نافذة المسار، كلها تحول خانة العودة الفارغة إلى فشل حيازة.\n\nيبدأ تحويل المطالبة عندما يستخدم مكتب لاحق المسار المفتوح لإعادة تصنيف الحامل. لا يعود التفريغ سجل استغاثة، بل كتلة قابلة للاسترداد، أو معدات ملوثة، أو تأخير قابل للفوترة، أو ملكية salvage. العلامة المفقودة لا تحل الموت. إنها تبين أين رفض الورق إغلاقه.\n\nفي الميدان، احفظ الختم قبل تنظيف الملح. قارن المسار المفتوح بقطع الأكسجين، ووسم البدلة، وسطر الفرز، وقناع packet notary. إذا بقي المسار مفتوحا بعد أن أغلقت أدلة الجسد القصة، فالمكتب حمى مطالبة لا عاملا.",
-          "external_site": "تسمح علامة العودة المفقودة لـ Deep Reach بإبقاء المسار مفتوحا قانونيا بعد أن أغلقته الغرفة ماديا. في هذه الفجوة يتحول دليل الاستغاثة إلى ملكية مطالبة.",
-          "external_site_article": "علامات العودة صغيرة، لكنها تحدد ما يسمح للمسار أن يعنيه. المسار المغلق قابل للتدقيق. المسار المفتوح يمكن تأخيره أو نقله أو فوترته أو ربطه بالمعدات أو اعتباره كتلة غير محسومة. على HECTON-8 هذه الضبابية مهمة: بقي عمال كثيرون في الجداول كأنهم يتحركون بعدما توقفت غرفهم عن تحريك الهواء.\n\nيقع الدليل بين ختم المسار واستثناء claim desk اللاحق. إذا توقف الأكسجين، وبقي وسم البدلة في الخليج، وبقيت خانة العودة فارغة، فهذه ليست فجوة كاتب. إنها فتحة محفوظة. يمكن إبقاء العامل داخل حالة عقدية بينما تتحرك أدلة الجسد إلى مكتب آخر.\n\nلا تحتاج Deep Reach إلى اعتراف مسرحي. يستطيع مكتب أن يتبع القواعد ويختار الخانة الأرخص: مسار مفتوح، استرداد معلق، كتلة معدات غير محسومة، صلاحية salvage محفوظة. كل خانة ضيقة. معا تمنع مسارا ميتا من أن يصبح خسارة مغلقة.\n\nتقرأ العلامة مع تداخل ختم المسار، وحافة قناع packet notary، وحزام تلف التفريغ. الأشياء تكدس التسلسل: تعرض الغرفة، معالجة المسار، إغلاق مفقود، تحويل claim desk.",
-          "field_note": "مسار مفتوح بعد قطع الأكسجين يعني أن المكتب ظل يفوتر ما أنهته الغرفة.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Tanda Kembali Hilang dan Konversi Klaim",
-          "scanner": "TANDA KEMBALI HILANG // Cap punya pekerja, palka, dan tugas, tanpa penutupan. Pengecualian claim desk belakangan memakai rute terbuka sebagai massa pulih.",
-          "terminal": "QA KEMBALI // Periksa tanda kembali, batal, pengecualian pemulihan, handoff claim desk, dan potong oksigen. Rute terbuka bukan bukti selamat.",
-          "audio": "Tidak ada tanda kembali. Mereka membiarkan rute terbuka dan menagih tubuh sebagai massa.",
-          "in_game_wiki": "Tanda kembali menutup rute. Ia tidak membuktikan pekerja aman; ia membuktikan meja rute berhenti menghitung pekerja itu sebagai bergerak. Tanda itu bisa berupa kembali, batal, transfer medis, pengecualian pemulihan, atau kode hilang. Tanpa itu, rute tetap terbuka secara administratif.\n\nRute terbuka adalah bukti berbahaya. Deep Reach bisa menunjuknya dan berkata pekerja masih ditugaskan, masih dapat dicapai, masih bagian operasi aktif. Ruangan bisa membuktikan sebaliknya. Tag setelan dingin, tether terpotong, baris triase dengan oksigen berhenti, atau gores palka setelah jendela rute mengubah kolom kembali kosong menjadi kegagalan custody.\n\nKonversi klaim terjadi saat meja belakangan memakai rute terbuka untuk mengklasifikasi ulang media. Transkrip berhenti menjadi catatan darurat dan menjadi massa pulih, peralatan tercemar, keterlambatan tertagih, atau properti salvage. Tanda hilang tidak menyelesaikan kematian. Ia menunjukkan tempat dokumen menolak menutupnya.\n\nDi lapangan, simpan cap sebelum membersihkan garam. Bandingkan rute terbuka dengan potong oksigen, tag setelan, baris triase, dan masker packet notary. Jika rute tetap terbuka setelah bukti tubuh menutupnya, meja itu melindungi klaim, bukan pekerja.",
-          "external_site": "Tanda kembali hilang memungkinkan Deep Reach menjaga rute tetap terbuka secara hukum setelah ruangan menutupnya secara fisik. Di celah itu, bukti darurat menjadi properti klaim.",
-          "external_site_article": "Tanda kembali kecil, tetapi menentukan arti rute. Rute tertutup dapat diaudit. Rute terbuka dapat ditunda, dipindah, ditagih, ditempelkan lagi ke peralatan, atau diperlakukan sebagai massa belum selesai. Di HECTON-8 ambiguitas itu penting: banyak pekerja tetap tercatat bergerak setelah ruangan mereka berhenti menggerakkan udara.\n\nBukti ada di antara cap rute dan pengecualian claim desk belakangan. Oksigen berhenti, tag setelan tetap di bay, kolom kembali kosong: itu bukan lubang juru tulis. Itu pembukaan yang dipertahankan. Pekerja bisa tetap dalam status kontrak sementara bukti tubuh bergerak ke meja lain.\n\nDeep Reach tidak perlu pengakuan dramatis. Sebuah meja bisa mengikuti aturan dan memilih kolom lebih murah: rute terbuka, pemulihan tertunda, massa peralatan belum selesai, otoritas salvage ditahan. Tiap kolom sempit. Bersama-sama, semuanya mencegah rute mati menjadi kerugian tertutup.\n\nTanda itu dibaca bersama tumpang cap rute, tepi masker packet notary, dan pita kerusakan transkrip. Objek menyusun urutan: paparan ruangan, penanganan rute, penutupan hilang, konversi claim desk.",
-          "field_note": "Rute terbuka setelah potong oksigen berarti meja masih menagih hal yang sudah dihentikan ruangan.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "누락된 귀환 표식과 클레임 전환",
-          "scanner": "귀환 표식 없음 // 스탬프에는 작업자, 해치, 임무가 있으나 폐쇄가 없다. 뒤의 claim desk 예외가 열린 경로를 회수 가능 질량으로 쓴다.",
-          "terminal": "귀환 QA // 귀환 표식, 취소선, 회수 예외, claim desk 인계, 산소 장부 절단을 확인. 열린 경로는 생존 증거가 아니다.",
-          "audio": "귀환 표식이 없다. 경로를 열어 두고 몸을 질량으로 청구했다.",
-          "in_game_wiki": "귀환 표식은 경로를 닫았다. 작업자가 안전하다는 증명이 아니라, 경로 데스크가 그를 이동 중으로 세지 않게 됐다는 증명이었다. 귀환, 취소, 의료 이송, 회수 예외, 손실 코드 중 하나가 필요했다. 없으면 경로는 행정상 열린 채 남는다.\n\n열린 경로는 위험한 증거다. Deep Reach는 작업자가 아직 배정 중이고, 도달 가능하며, 활성 작업 안에 있다고 말할 수 있다. 방은 반대를 증명할 수 있다. 차가운 슈트 태그, 잘린 테더, 산소가 멈춘 트리아지 줄, 경로 창 뒤의 해치 긁힘이 빈 귀환 칸을 custody 실패로 바꾼다.\n\n클레임 전환은 뒤의 데스크가 열린 경로로 매체를 재분류할 때 시작된다. 전사는 조난 기록이 아니라 회수 가능 질량, 오염 장비, 청구 가능한 지연, salvage 재산이 된다. 누락된 표식은 죽음을 풀지 않는다. 서류가 그 죽음을 닫지 않은 자리를 보여준다.\n\n현장에서는 소금을 닦기 전에 스탬프를 보존한다. 열린 경로를 산소 절단, 슈트 태그, 트리아지 줄, packet notary 마스크와 대조한다. 몸의 증거가 닫은 뒤에도 경로가 열려 있으면, 데스크가 보호한 것은 작업자가 아니라 클레임이다.",
-          "external_site": "누락된 귀환 표식은 방이 물리적으로 닫은 뒤에도 Deep Reach가 경로를 법적으로 열어 둘 수 있게 한다. 그 틈에서 조난 증거는 클레임 재산이 된다.",
-          "external_site_article": "귀환 표식은 작지만 경로가 무엇을 뜻할 수 있는지 결정한다. 닫힌 경로는 감사할 수 있다. 열린 경로는 지연, 이전, 청구, 장비 재부착, 미해결 질량으로 처리될 수 있다. HECTON-8에서는 그 모호함이 중요하다. 방이 공기를 멈춘 뒤에도 많은 작업자가 이동 중으로 남았다.\n\n증거는 경로 스탬프와 뒤의 claim desk 예외 사이에 있다. 산소가 멈췄고, 슈트 태그가 베이에 남았고, 귀환 칸이 비어 있다면 서기 실수가 아니다. 유지된 개구다. 몸의 증거가 다른 데스크로 가는 동안 작업자를 계약 상태 안에 남길 수 있다.\n\nDeep Reach에 극적인 고백은 필요 없다. 데스크는 규칙을 따르면서 더 싼 칸을 고를 수 있다. 경로 열림. 회수 대기. 장비 질량 미해결. salvage 권한 보유. 각 칸은 좁다. 함께 쌓이면 죽은 경로가 닫힌 손실이 되지 않는다.\n\n표식은 경로 스탬프 겹침, packet notary 마스크 가장자리, 전사 손상 띠와 함께 읽힌다. 물체들은 순서를 쌓는다. 방 노출, 경로 처리, 빠진 폐쇄, claim desk 전환.",
-          "field_note": "산소 절단 뒤 열린 경로는, 방이 끝낸 것을 데스크가 계속 청구했다는 뜻이다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "סימון חזרה חסר והמרת תביעה",
-          "scanner": "סימון חזרה חסר // החותמת כוללת עובד, פתח ומשימה, אבל אין סגירה. חריג claim desk מאוחר משתמש במסלול הפתוח כמסה ניתנת לחילוץ.",
-          "terminal": "בדיקת חזרה // לבדוק סימון חזרה, ביטול, חריג חילוץ, העברת claim desk וחיתוך יומן חמצן. מסלול פתוח אינו הוכחת הישרדות.",
-          "audio": "אין סימון חזרה. הם השאירו את המסלול פתוח וחייבו את הגוף כמסה.",
-          "in_game_wiki": "סימון חזרה סגר מסלול. הוא לא הוכיח שעובד היה בטוח; הוא הוכיח ששולחן המסלול הפסיק לספור אותו כנע. הסימון יכול להיות חזרה, ביטול, העברה רפואית, חריג חילוץ או קוד אובדן. בלי אחד מהם, המסלול נשאר פתוח מנהלית.\n\nמסלול פתוח הוא ראיה מסוכנת. Deep Reach יכולה להצביע עליו ולטעון שהעובד עדיין משויך, עדיין ניתן להשגה, עדיין חלק מפעולה פעילה. החדר יכול להוכיח אחרת. תג חליפה קר, כבל חתוך, שורת טריאז' עם חמצן שנעצר, או שריטת פתח אחרי חלון הזמן הופכים את שדה החזרה הריק לכשל custody.\n\nהמרת תביעה מתחילה כששולחן מאוחר משתמש במסלול הפתוח כדי לסווג מחדש את הנשא. התמלול מפסיק להיות רשומת מצוקה והופך למסה ניתנת לחילוץ, ציוד מזוהם, עיכוב לחיוב או רכוש salvage. הסימון החסר לא פותר את המוות. הוא מראה איפה הנייר סירב לסגור אותו.\n\nבשטח משמרים את החותמת לפני ניקוי מלח. משווים את המסלול הפתוח לחיתוך חמצן, תג חליפה, שורת טריאז' ומסכת packet notary. אם המסלול פתוח אחרי שראיות הגוף סגרו אותו, השולחן הגן על תביעה, לא על עובד.",
-          "external_site": "סימון חזרה חסר מאפשר ל-Deep Reach להשאיר מסלול פתוח משפטית אחרי שהחדר סגר אותו פיזית. בפער הזה ראיית מצוקה הופכת לרכוש תביעה.",
-          "external_site_article": "סימוני חזרה קטנים, אבל הם קובעים מה מותר למסלול לומר. מסלול סגור ניתן לביקורת. מסלול פתוח אפשר לעכב, להעביר, לחייב, לקשור מחדש לציוד או לטפל בו כמסה לא פתורה. ב-HECTON-8 העמימות הזאת חשובה: עובדים רבים נשארו רשומים כנעים אחרי שהחדרים שלהם הפסיקו להזיז אוויר.\n\nהראיה נמצאת בין חותמת המסלול לחריג claim desk מאוחר. חמצן נעצר, תג חליפה נשאר במפרץ, שדה החזרה ריק: זו לא טעות פקיד. זו פתיחה שנשמרה. אפשר להשאיר עובד בתוך מצב חוזי בזמן שראיות הגוף עוברות לשולחן אחר.\n\nDeep Reach לא צריכה וידוי תיאטרלי. שולחן יכול לפעול לפי כללים ולבחור את השדה הזול: מסלול פתוח, חילוץ ממתין, מסת ציוד לא פתורה, סמכות salvage נשמרת. כל שדה צר. יחד הם מונעים ממסלול מת להפוך להפסד סגור.\n\nהסימון נקרא לצד חפיפת חותמת מסלול, שפת מסכת packet notary ורצועת נזק תמלול. החפצים עורמים רצף: חשיפת חדר, טיפול מסלול, סגירה חסרה, המרת claim desk.",
-          "field_note": "מסלול פתוח אחרי חיתוך חמצן אומר שהשולחן המשיך לחייב את מה שהחדר כבר סיים.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Marca de Retorno Ausente e Conversão de Reclamação",
-          "scanner": "MARCA DE RETORNO AUSENTE // Carimbo tem trabalhador, escotilha e tarefa, mas sem fechamento. Exceção posterior de claim desk usa rota aberta como massa recuperável.",
-          "terminal": "QA RETORNO // Verifique retorno, cancelamento, exceção de recuperação, handoff claim desk e corte de oxigênio. Rota aberta não prova sobrevivência.",
-          "audio": "Sem marca de retorno. Deixaram a rota aberta e cobraram o corpo como massa.",
-          "in_game_wiki": "Uma marca de retorno fechava uma rota. Não provava que o trabalhador estava seguro; provava que a mesa de rota parou de contá-lo como em movimento. Podia ser retorno, cancelamento, transferência médica, exceção de recuperação ou código de perda. Sem isso, a rota ficava administrativamente aberta.\n\nUma rota aberta é prova perigosa. A Deep Reach podia apontar para ela e dizer que o trabalhador ainda estava designado, alcançável, dentro de operação ativa. A sala pode provar o contrário. Tag de traje frio, cabo cortado, linha de triagem com oxigênio parado ou raspão de escotilha depois da janela transformam o campo vazio em falha de custódia.\n\nA conversão de reclamação começa quando uma mesa posterior usa a rota aberta para reclassificar o suporte. A transcrição deixa de ser registro de socorro e vira massa recuperável, equipamento contaminado, atraso faturável ou propriedade de salvage. A marca ausente não resolve a morte. Mostra onde o papel se recusou a fechá-la.\n\nEm campo, preserve o carimbo antes de limpar sal. Compare rota aberta com corte de oxigênio, tag de traje, linha de triagem e máscara packet notary. Se a rota fica aberta depois que a prova do corpo a fecha, a mesa protegia uma reclamação, não um trabalhador.",
-          "external_site": "Uma marca de retorno ausente permite à Deep Reach manter uma rota juridicamente aberta depois que a sala já a fechou fisicamente. Nessa lacuna, prova de socorro vira propriedade de reclamação.",
-          "external_site_article": "Marcas de retorno são pequenas, mas decidem o que uma rota pode significar. Uma rota fechada pode ser auditada. Uma rota aberta pode ser adiada, transferida, faturada, religada a equipamento ou tratada como massa sem resolução. Em HECTON-8, essa ambiguidade pesa: trabalhadores ficaram listados como em movimento depois que suas salas pararam de mover ar.\n\nA prova fica entre o carimbo de rota e a exceção posterior de claim desk. Oxigênio parado, tag de traje na baía, campo de retorno vazio: não é falha de escrivão. É abertura mantida. O trabalhador fica dentro de um estado contratual enquanto a prova do corpo vai para outra mesa.\n\nA Deep Reach não precisa de confissão teatral. Uma mesa pode seguir regras e escolher o campo mais barato: rota aberta, recuperação pendente, massa de equipamento sem resolução, autoridade de salvage retida. Cada campo parece estreito. Juntos, impedem uma rota morta de virar perda fechada.\n\nA marca se lê com sobreposição do carimbo de rota, borda da máscara packet notary e faixa de dano da transcrição. Os objetos empilham sequência: exposição da sala, tratamento de rota, fechamento ausente, conversão claim desk.",
-          "field_note": "Rota aberta após corte de oxigênio: a mesa ainda cobrava o que a sala já tinha encerrado.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Ontbrekende Terugkeermarkering en Claimconversie",
-          "scanner": "TERUGKEER ONTBREEKT // Stempel heeft werker, luik en taak, maar geen sluiting. Latere claim desk-uitzondering gebruikt open route als bergbare massa.",
-          "terminal": "QA TERUGKEER // Controleer terugkeer, annulering, bergingsuitzondering, claim desk-handoff en zuurstofafsnede. Open route bewijst geen overleving.",
-          "audio": "Geen terugkeermarkering. Ze lieten de route open en rekenden het lichaam als massa.",
-          "in_game_wiki": "Een terugkeermarkering sloot een route. Ze bewees niet dat een werker veilig was; ze bewees dat de routebalie stopte met hem als bewegend te tellen. Terugkeer, annulering, medische overdracht, bergingsuitzondering of verliescode: één sluiting moest er staan. Zonder die markering bleef de route administratief open.\n\nEen open route is gevaarlijk bewijs. Deep Reach kon zeggen dat de werker nog toegewezen, bereikbaar en onderdeel van een actieve operatie was. De kamer kan iets anders bewijzen. Koude paktag, gesneden tether, triageregel met gestopte zuurstof of luikschraap na het tijdvenster maken het lege terugkeerveld een custody-fout.\n\nClaimconversie begint wanneer een latere balie de open route gebruikt om de drager opnieuw te classificeren. Het transcript is dan geen noodrecord meer, maar bergbare massa, vervuilde uitrusting, factureerbare vertraging of salvage-eigendom. De ontbrekende markering lost de dood niet op. Ze toont waar het papier weigerde hem te sluiten.\n\nIn het veld de stempel bewaren vóór zoutreiniging. Vergelijk open route met zuurstofafsnede, paktag, triageregel en packet notary-masker. Blijft de route open nadat lichaamsbewijs haar sluit, dan beschermde de balie een claim, geen werker.",
-          "external_site": "Een ontbrekende terugkeermarkering laat Deep Reach een route juridisch open houden nadat de kamer haar fysiek sloot. In die opening wordt noodbewijs claim-eigendom.",
-          "external_site_article": "Terugkeermarkeringen zijn klein, maar ze beslissen wat een route mag betekenen. Een gesloten route kan worden geaudit. Een open route kan worden vertraagd, overgedragen, gefactureerd, opnieuw aan apparatuur gekoppeld of als onopgeloste massa behandeld. Op HECTON-8 telt die dubbelzinnigheid: werkers bleven als bewegend vermeld nadat hun kamers geen lucht meer verplaatsten.\n\nHet bewijs ligt tussen routestempel en latere claim desk-uitzondering. Zuurstof gestopt, paktag in de baai, terugkeerveld leeg: dat is geen schrijffout. Dat is een bewaarde opening. De werker blijft in contractstatus terwijl lichaamsbewijs naar een andere balie gaat.\n\nDeep Reach heeft geen theatrale bekentenis nodig. Een balie kan regels volgen en het goedkopere veld kiezen: route open, berging in afwachting, uitrustingsmassa onopgelost, salvage-recht behouden. Elk veld lijkt smal. Samen voorkomen ze dat een dode route een gesloten verlies wordt.\n\nDe markering hoort naast routestempel-overlap, packet notary-maskerrand en transcript-schadeband. De objecten stapelen volgorde: kamerblootstelling, routebehandeling, ontbrekende sluiting, claim desk-conversie.",
-          "field_note": "Open route na zuurstofafsnede betekent: de balie rekende door wat de kamer al had beëindigd.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.missing_return_mark_claim_conversion_field_article",
+    "secondary": [
+     "unlock.first_missing_return_mark_claim_conversion",
+     "unlock.first_route_permission_stamp_overlap",
+     "unlock.first_packet_notary_mask_edge"
+    ],
+    "poi_tags": [
+     "poi.route_permission_stamp",
+     "poi.missing_return_mark",
+     "poi.claim_desk_exception",
+     "poi.oxygen_ledger_cutoff",
+     "poi.suit_tag_board",
+     "poi.triage_ledger",
+     "poi.packet_notary_footer",
+     "poi.transcript_damage_band"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.claim_admin",
+     "biome.evidence_custody",
+     "biome.route_desk"
+    ],
+    "depth_band_m": "0-4200"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Route Desk QA Handling Note",
+     "audio": "Recovered Claim Desk Clip",
+     "in_game_wiki": "PDA Forensic Object Article",
+     "external_site": "Public Lore Atlas Evidence Note",
+     "field_note": "Marauder Field Note"
+    },
+    "source_brief": {
+     "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
+     "spoiler_level": "1",
+     "speaker_source": "PDA scanner, route desk QA note, claim desk clip, Marauder annotation, public lore atlas",
+     "audience": "after route permission stamp and notary-mask sequence evidence; public site reader under early-evidence spoiler boundary",
+     "date_era": "2190 recovery reading of 2147 route desk and claim desk artifacts",
+     "location_depth_route": "route desk cache, triage ledger shelf, pressure-room recorder carrier, drowned colony claim path",
+     "unlock_context": "after route permission stamp overlap / packet notary mask edge / transcript damage band offset",
+     "evidence_object": "route stamp with missing return mark, oxygen ledger cutoff and later claim desk exception",
+     "source_knows": "return field blank, oxygen cutoff, suit tag presence, later claim desk conversion, route left open after body evidence closed",
+     "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
+     "truth_pressure": "Open route lets Deep Reach classify worker evidence as recoverable mass instead of closed loss.",
+     "design_use": "connect route permissions to claim conversion without revealing final culprit"
+    },
+    "spoiler_boundary": {
+     "tier": 1,
+     "allowed_reveals": [
+      "open route can outlive oxygen cutoff",
+      "missing return mark can support claim conversion",
+      "route closure and body evidence can disagree"
+     ],
+     "blocked_reveals": [
+      "final culprit",
+      "hidden transcript sentence",
+      "ending payload identity"
+     ]
     }
-  ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Missing Return Mark Claim Conversion",
+     "scanner": "MISSING RETURN MARK // Route stamp has worker, hatch and task, but no return closure. Later claim desk exception uses the open route as recoverable mass.",
+     "terminal": "RETURN MARK QA // Check return tick, cancellation slash, recovery exception, claim desk handoff and oxygen ledger cutoff. Open route is not proof of survival.",
+     "audio": "No return mark. They left the route open and billed the body as mass.",
+     "in_game_wiki": "A return mark closed a route. It did not prove a worker was safe; it proved the route desk had stopped counting the worker as moving. The mark could be a return tick, a cancellation slash, a medical transfer, a recovery exception or a loss code. Without one of those marks, a route stayed administratively open.\n\nAn open route is dangerous evidence. Deep Reach could point to it and say the worker was still assigned, still reachable, still part of an active operation. The room can prove otherwise. A cold suit tag, a cut tether, a triage ledger with oxygen stopped, or a hatch scrape after the time window can turn the missing mark into a custody failure.\n\nThe claim conversion happens when a later desk uses the open route to reclassify the carrier. A transcript stops being a distress record and becomes recoverable mass, contaminated equipment, billable delay or salvage property. The missing return mark does not solve the death. It shows where the paperwork refused to close it.\n\nField handling is simple. Preserve the stamp before cleaning salt. Compare the open route to oxygen cutoff, suit tag, triage line and packet notary mask. If the route stays open after the body evidence closes, the desk was protecting a claim, not a worker.",
+     "external_site": "A missing return mark lets Deep Reach keep a route legally open after the room has already closed it. That gap can convert distress evidence into claim property.",
+     "external_site_article": "Return marks are small, but they decide what a route is allowed to mean. A closed route can be audited. An open route can be delayed, transferred, billed, reattached to equipment or treated as unresolved mass. That ambiguity matters on HECTON-8 because the colony left many workers recorded as moving after their rooms stopped moving air.\n\nThe useful evidence sits between the route stamp and the later claim desk exception. If oxygen stopped, the suit tag stayed in the bay and the return field stayed blank, the missing mark is not a clerical blank. It is a retained opening. Someone could keep the worker inside a contract state while the body evidence moved somewhere else.\n\nDeep Reach does not need a villain speech for that to hurt. A desk can follow rules and still choose the cheaper field. Open route. Pending recovery. Equipment mass unresolved. Salvage authority retained. Each field looks narrow. Together they keep a dead route from becoming a closed loss.\n\nThe mark should be read with route-stamp overlap, packet notary mask edge and transcript damage band. Those objects do not accuse by mood. They stack sequence: room exposure, route handling, missing closure, claim desk conversion.",
+     "field_note": "Open route after oxygen cutoff means the desk kept billing what the room had already ended.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Отсутствующая отметка возврата и перевод в претензию",
+     "scanner": "НЕТ ОТМЕТКИ ВОЗВРАТА // В штампе есть работник, люк и задача, но нет закрытия маршрута. Позднее исключение claim desk использует открытый маршрут как массу к извлечению.",
+     "terminal": "QA ОТМЕТКИ ВОЗВРАТА // Проверить возвратную галку, косую отмену, исключение извлечения, handoff claim desk и отсечку кислорода. Открытый маршрут не доказывает выживание.",
+     "audio": "Отметки возврата нет. Они оставили маршрут открытым и списали тело как массу.",
+     "in_game_wiki": "Отметка возврата закрывала маршрут. Она не доказывала, что работник в безопасности; она доказывала, что маршрутный стол перестал вести его как находящегося на маршруте. Это могла быть галка возврата, косая отмена, медицинский перевод, исключение извлечения или код потери. Без такой отметки маршрут оставался административно открытым.\n\nОткрытый маршрут опасен как улика. Deep Reach могла показать на него и сказать: работник все еще назначен, до него еще можно добраться, все еще часть активной операции. Комната может доказать обратное. Холодная метка костюма, перерезанный трос, строка триажа с остановкой кислорода или соскоб люка после окна маршрута превращают пустое поле возврата в отказ цепочки хранения.\n\nПеревод в претензию начинается, когда более поздний стол использует открытый маршрут для новой классификации носителя. Расшифровка перестает быть сигналом бедствия и становится извлекаемой массой, загрязненным оборудованием, оплачиваемой задержкой или salvage property. Отсутствующая отметка не решает смерть. Она показывает место, где бумага отказалась ее закрыть.\n\nВ поле все просто. Сохрани штамп до чистки соли. Сравни открытый маршрут с отсечкой кислорода, меткой костюма, строкой триажа и маской packet notary. Если маршрут остается открытым после того, как улики по телу его закрыли, стол защищал претензию, а не работника.",
+     "external_site": "Отсутствующая отметка возврата позволяет Deep Reach держать маршрут юридически открытым после того, как комната уже закрыла его физически. В этом зазоре сигнал бедствия становится claim property.",
+     "external_site_article": "Отметки возврата маленькие, но они решают, что маршрут имеет право означать. Закрытый маршрут можно проверить. Открытый можно задержать, перевести, выставить к оплате, привязать к оборудованию или считать неразрешенной массой. На HECTON-8 эта двусмысленность важна: многие работники оставались в таблицах как движущиеся уже после того, как их комнаты перестали двигать воздух.\n\nУлика лежит между маршрутным штампом и поздним исключением claim desk. Если кислород остановился, метка костюма осталась в отсеке, а поле возврата пустое, это не канцелярская дырка. Это сохраненное открытие. Человека можно держать внутри контрактного состояния, пока улики тела уходят в другой стол.\n\nDeep Reach не нужен злодейский монолог. Стол может следовать правилам и все равно выбрать дешевое поле: маршрут открыт, извлечение ожидается, масса оборудования не решена, право сальважа сохранено. Каждое поле узкое. Вместе они не дают мертвому маршруту стать закрытой потерей.\n\nОтметку нужно читать вместе с перекрытием маршрутного штампа, краем маски packet notary и полосой повреждения расшифровки. Эти предметы не обвиняют настроением. Они складывают последовательность: воздействие в комнате, обработка маршрута, отсутствующее закрытие, перевод claim desk.",
+     "field_note": "Открытый маршрут после отсечки кислорода значит: стол продолжал выставлять к оплате то, что комната уже закончила.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "欠落した帰還印と請求変換",
+     "scanner": "帰還印なし // スタンプには作業者、ハッチ、任務があるが閉鎖印がない。後のclaim desk例外が開いた経路を回収可能質量として使う。",
+     "terminal": "帰還印QA // 帰還チェック、取消線、回収例外、claim desk引渡し、酸素台帳停止を確認。開いた経路は生存証明ではない。",
+     "audio": "帰還印がない。経路を開いたまま、身体を質量として請求した。",
+     "in_game_wiki": "帰還印は経路を閉じた。作業者の安全を証明する印ではなく、経路デスクがその作業者を移動中として数えるのをやめた印だった。帰還チェック、取消線、医療移送、回収例外、損失コードのいずれかが必要だった。それがなければ、経路は事務上開いたまま残る。\n\n開いた経路は危険な証拠になる。Deep Reachはそこを指して、作業者はまだ割当中、まだ到達可能、まだ作戦中だと言える。部屋は別のことを示せる。冷えたスーツタグ、切れたテザー、酸素停止を持つトリアージ行、時間窓後のハッチ擦過が、空欄の帰還欄を保管経路の失敗に変える。\n\n請求変換は、後のデスクが開いた経路で媒体を再分類した時に起きる。転写は遭難記録ではなく、回収可能質量、汚染装備、請求可能遅延、サルベージ財産になる。欠落した帰還印は死を解くものではない。紙がその死を閉じなかった場所を示す。\n\n現場では塩を落とす前にスタンプを保全する。開いた経路を酸素停止、スーツタグ、トリアージ行、packet notaryマスクと照合する。身体の証拠が閉じているのに経路だけが開いたままなら、デスクが守ったのは作業者ではなく請求だ。",
+     "external_site": "帰還印がないと、部屋が物理的に閉じた後もDeep Reachは経路を法的に開いたままにできる。その隙間で遭難証拠は請求財産へ変わる。",
+     "external_site_article": "帰還印は小さいが、経路が何を意味できるかを決める。閉じた経路は監査できる。開いた経路は遅延、移送、請求、装備への再接続、未解決質量として扱える。HECTON-8ではその曖昧さが効く。空気が止まった後も、多くの作業者が移動中として表に残った。\n\n証拠は経路スタンプと後のclaim desk例外の間にある。酸素が止まり、スーツタグがベイに残り、帰還欄が空なら、それはただの記入漏れではない。開口を保持した状態だ。身体の証拠が別の場所へ動く間、作業者を契約状態に閉じ込められる。\n\nDeep Reachに悪役の演説は不要だ。デスクは規則通りに動きながら、安い欄を選べる。経路未閉鎖。回収保留。装備質量未解決。サルベージ権保持。欄はどれも狭い。積むと、死んだ経路が閉じた損失にならない。\n\nこの印は経路スタンプ重なり、packet notaryマスク縁、転写損傷帯と並べて読む。物は気分で責めない。室内曝露、経路処理、欠落した閉鎖、claim desk変換という順序を積む。",
+     "field_note": "酸素停止後も経路が開いているなら、部屋が終えたものをデスクがまだ請求していた。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "缺失返程标记与索赔转换",
+     "scanner": "返程标记缺失 // 路线戳有工人、舱门和任务，却没有关闭标记。后来的claim desk例外把开放路线当作可回收质量。",
+     "terminal": "返程标记QA // 检查返程勾、取消斜线、回收例外、claim desk交接和氧气账本截断。开放路线不是生存证明。",
+     "audio": "没有返程标记。他们让路线保持开放，把身体按质量计费。",
+     "in_game_wiki": "返程标记用来关闭路线。它不证明工人安全，只证明路线台不再把那名工人计为移动中。标记可以是返程勾、取消斜线、医疗转移、回收例外或损失代码。没有这些，路线在行政上保持开放。\n\n开放路线是危险证据。Deep Reach可以指着它说：工人仍在分配中，仍可联系，仍属于活动作业。房间可以证明相反。冷掉的潜服标签、割断的系缆、氧气停止的分诊行、路线窗口后的舱门刮痕，都能把空返程栏变成保管链失败。\n\n后来的台面利用开放路线重新分类载体时，索赔转换就发生了。转录不再是求救记录，而变成可回收质量、污染设备、可计费延迟或打捞财产。缺失返程标记不解决死亡。它显示文书拒绝关闭死亡的位置。\n\n现场处理很直接。清盐前保留戳记。把开放路线同氧气截断、潜服标签、分诊行和packet notary遮盖对照。如果身体证据已经关闭，路线仍保持开放，台面保护的是索赔，不是工人。",
+     "external_site": "返程标记缺失后，Deep Reach可以在房间物理上已经结束之后，让路线在法律上保持开放。这个缝隙能把求救证据转成索赔财产。",
+     "external_site_article": "返程标记很小，却决定一条路线允许表达什么。关闭路线可以审计。开放路线可以被延迟、转移、计费、重新接到设备上，或作为未解决质量处理。在HECTON-8，这种模糊很重要：许多房间停止换气之后，工人仍在表里显示为移动中。\n\n证据位于路线戳和后来的claim desk例外之间。如果氧气停止、潜服标签仍在舱内、返程栏仍为空，那不是普通漏填。这是保留的开口。身体证据移向别处时，工人仍可被留在合同状态里。\n\nDeep Reach不需要戏剧性供述。一个台面可以按规则做事，同时选择最便宜的字段：路线开放、回收待定、设备质量未决、打捞权保留。每个字段都很窄，叠在一起就让死亡路线无法成为已关闭损失。\n\n返程栏要同路线戳重叠、packet notary遮盖边缘、转录损伤带一起读。这些物件不靠情绪指控。它们叠出顺序：房间暴露、路线处理、关闭缺失、claim desk转换。",
+     "field_note": "氧气截断后路线还开放，说明台面继续给房间已经结束的东西计费。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Marque de Retour Manquante et Conversion de Réclamation",
+     "scanner": "MARQUE RETOUR ABSENTE // Tampon avec travailleur, sas et tâche, mais sans clôture. Exception claim desk tardive utilise la route ouverte comme masse récupérable.",
+     "terminal": "QA MARQUE RETOUR // Vérifier retour, annulation, exception récupération, transfert claim desk et coupure oxygène. Route ouverte ne prouve pas survie.",
+     "audio": "Pas de marque de retour. Ils ont laissé la route ouverte et facturé le corps comme masse.",
+     "in_game_wiki": "Une marque de retour fermait une route. Elle ne prouvait pas la sécurité d'un travailleur; elle prouvait que le bureau de route cessait de le compter comme mobile. Retour, annulation, transfert médical, exception de récupération ou code de perte: il fallait une clôture. Sans elle, la route restait ouverte.\n\nUne route ouverte est une preuve dangereuse. Deep Reach peut dire que le travailleur reste assigné, joignable, inclus dans une opération active. La pièce peut dire l'inverse. Tag de combinaison froid, câble coupé, ligne de triage avec oxygène arrêté, éraflure de sas après la fenêtre: ces signes changent le blanc de retour en faute de custody.\n\nLa conversion de réclamation commence quand un bureau tardif reclasse le support grâce à cette route ouverte. La transcription cesse d'être un signal de détresse et devient masse récupérable, équipement contaminé, retard facturable ou propriété de salvage. La marque absente ne résout pas la mort. Elle montre où le papier a refusé de la fermer.\n\nSur le terrain, préserver le tampon avant de retirer le sel. Comparer route ouverte, coupure d'oxygène, tag de combinaison, ligne de triage et masque packet notary. Si la route reste ouverte après fermeture par les preuves du corps, le bureau protégeait une réclamation, pas un travailleur.",
+     "external_site": "Une marque de retour absente laisse Deep Reach garder une route légalement ouverte après sa fermeture physique par la pièce. Dans cet écart, la détresse devient propriété de réclamation.",
+     "external_site_article": "Les marques de retour sont petites, mais elles décident ce qu'une route peut signifier. Une route fermée peut être auditée. Une route ouverte peut être retardée, transférée, facturée, rattachée à un équipement ou traitée comme masse non résolue. Sur HECTON-8, cette ambiguïté compte: des travailleurs restaient listés comme mobiles après l'arrêt d'air de leurs pièces.\n\nLa preuve se trouve entre tampon de route et exception claim desk tardive. Oxygène arrêté, tag de combinaison resté en baie, champ de retour vide: ce n'est pas un oubli. C'est une ouverture retenue. Le travailleur peut rester dans un état contractuel pendant que les preuves du corps partent ailleurs.\n\nDeep Reach n'a pas besoin de discours. Un bureau peut suivre les règles et choisir le champ le moins cher. Route ouverte. Récupération en attente. Masse d'équipement non résolue. Autorité de salvage conservée. Chaque champ paraît étroit. Ensemble, ils empêchent une route morte de devenir une perte close.\n\nLa marque se lit avec chevauchement du tampon de route, bord du masque packet notary et bande de dommage de transcription. Les objets empilent une séquence: exposition de la pièce, traitement de route, clôture manquante, conversion claim desk.",
+     "field_note": "Route ouverte après coupure d'oxygène: le bureau facturait encore ce que la pièce avait fini.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Marca de Retorno Ausente y Conversión de Reclamación",
+     "scanner": "MARCA RETORNO AUSENTE // Sello con trabajador, escotilla y tarea, sin cierre. Excepción posterior de claim desk usa ruta abierta como masa recuperable.",
+     "terminal": "QA RETORNO // Revisa retorno, cancelación, excepción de recuperación, entrega a claim desk y corte de oxígeno. Ruta abierta no prueba supervivencia.",
+     "audio": "No hay marca de retorno. Dejaron la ruta abierta y facturaron el cuerpo como masa.",
+     "in_game_wiki": "Una marca de retorno cerraba una ruta. No demostraba que el trabajador estuviera a salvo; demostraba que la mesa de ruta dejaba de contarlo como móvil. Podía ser retorno, cancelación, traslado médico, excepción de recuperación o código de pérdida. Sin cierre, la ruta seguía abierta en administración.\n\nUna ruta abierta es prueba peligrosa. Deep Reach podía decir que el trabajador seguía asignado, alcanzable, dentro de una operación activa. La sala podía demostrar lo contrario. Tag de traje frío, cable cortado, línea de triaje con oxígeno parado o raspado de escotilla fuera de ventana convierten el blanco de retorno en fallo de custodia.\n\nLa conversión de reclamación empieza cuando una mesa posterior usa la ruta abierta para reclasificar el soporte. La transcripción deja de ser socorro y pasa a masa recuperable, equipo contaminado, demora facturable o propiedad de salvage. La marca ausente no resuelve la muerte. Muestra dónde el papel se negó a cerrarla.\n\nEn campo, conserva el sello antes de limpiar sal. Compara ruta abierta con corte de oxígeno, tag de traje, línea de triaje y máscara packet notary. Si la ruta sigue abierta después de que la evidencia corporal la cerró, la mesa protegía una reclamación, no a un trabajador.",
+     "external_site": "Una marca de retorno ausente permite a Deep Reach mantener una ruta legalmente abierta después de que la sala la cerró físicamente. En esa brecha, el socorro se vuelve propiedad de reclamación.",
+     "external_site_article": "Las marcas de retorno son pequeñas, pero deciden qué puede significar una ruta. Una ruta cerrada se audita. Una abierta puede retrasarse, transferirse, facturarse, atarse a equipo o tratarse como masa sin resolver. En HECTON-8 importa: muchos trabajadores siguieron listados como móviles cuando sus salas ya no movían aire.\n\nLa prueba vive entre el sello de ruta y la excepción posterior de claim desk. Oxígeno parado, tag de traje en la bahía, campo de retorno vacío: no es un olvido. Es una apertura retenida. El trabajador queda dentro de un estado contractual mientras la evidencia del cuerpo va a otra mesa.\n\nDeep Reach no necesita confesión teatral. Una mesa puede seguir reglas y escoger el campo barato: ruta abierta, recuperación pendiente, masa de equipo sin resolver, autoridad de salvage retenida. Cada campo parece estrecho. Juntos impiden que una ruta muerta sea pérdida cerrada.\n\nLa marca se lee con el solape del sello de ruta, borde de máscara packet notary y banda de daño de transcripción. Los objetos apilan secuencia: exposición de sala, manejo de ruta, cierre ausente, conversión claim desk.",
+     "field_note": "Ruta abierta tras corte de oxígeno: la mesa seguía facturando lo que la sala ya había terminado.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Fehlende Rückkehrmarke und Anspruchsumwandlung",
+     "scanner": "RÜCKKEHRMARKE FEHLT // Stempel hat Arbeiter, Schott und Aufgabe, aber keinen Abschluss. Späte Claim-Desk-Ausnahme nutzt offene Route als bergbare Masse.",
+     "terminal": "RÜCKKEHR-QA // Rückkehrhaken, Storno, Bergungsausnahme, Claim-Desk-Handoff und Sauerstoffschnitt prüfen. Offene Route beweist kein Überleben.",
+     "audio": "Keine Rückkehrmarke. Sie ließen die Route offen und berechneten den Körper als Masse.",
+     "in_game_wiki": "Eine Rückkehrmarke schloss eine Route. Sie bewies nicht, dass ein Arbeiter sicher war; sie bewies, dass das Routenpult ihn nicht mehr als unterwegs zählte. Rückkehrhaken, Storno, medizinische Übergabe, Bergungsausnahme oder Verlustcode: ein Abschluss musste da sein. Ohne ihn blieb die Route administrativ offen.\n\nEine offene Route ist gefährliche Evidenz. Deep Reach konnte sagen, der Arbeiter sei weiter zugewiesen, erreichbar, Teil eines aktiven Vorgangs. Der Raum kann widersprechen. Kalter Anzugtag, geschnittenes Tether, Triagezeile mit Sauerstoffstopp oder Schottkratzer nach dem Zeitfenster machen das leere Rückkehrfeld zum Custody-Fehler.\n\nDie Anspruchsumwandlung beginnt, wenn ein späteres Pult den Träger über die offene Route neu klassifiziert. Das Transkript ist dann kein Notruf mehr, sondern bergbare Masse, kontaminierte Ausrüstung, abrechenbare Verzögerung oder Salvage-Eigentum. Die fehlende Marke löst den Tod nicht. Sie zeigt, wo Papier ihn nicht schließen wollte.\n\nIm Feld den Stempel vor dem Entsalzen sichern. Offene Route mit Sauerstoffschnitt, Anzugtag, Triagezeile und packet-notary-Maske vergleichen. Bleibt die Route offen, nachdem Körperbeweis sie schließt, schützte das Pult einen Anspruch, keinen Arbeiter.",
+     "external_site": "Eine fehlende Rückkehrmarke erlaubt Deep Reach, eine Route rechtlich offen zu halten, nachdem der Raum sie physisch geschlossen hat. In dieser Lücke wird Notrufbeweis zu Claim-Eigentum.",
+     "external_site_article": "Rückkehrmarken sind klein, aber sie entscheiden, was eine Route bedeuten darf. Eine geschlossene Route kann auditiert werden. Eine offene Route kann verzögert, übertragen, berechnet, wieder an Ausrüstung gebunden oder als ungeklärte Masse behandelt werden. Auf HECTON-8 zählt diese Mehrdeutigkeit: Arbeiter blieben als unterwegs gelistet, nachdem ihre Räume keine Luft mehr bewegten.\n\nDie Evidenz liegt zwischen Routenstempel und später Claim-Desk-Ausnahme. Sauerstoff gestoppt, Anzugtag in der Bucht, Rückkehrfeld leer: Das ist keine Lücke der Schreibkraft. Das ist eine gehaltene Öffnung. Der Arbeiter bleibt im Vertragszustand, während Körperbeweis woanders hingeht.\n\nDeep Reach braucht keine theatralische Beichte. Ein Pult kann Regeln folgen und das billigere Feld wählen: Route offen, Bergung ausstehend, Ausrüstungsmasse ungeklärt, Salvage-Recht gehalten. Jedes Feld wirkt eng. Zusammen verhindern sie, dass eine tote Route ein geschlossener Verlust wird.\n\nDie Marke gehört neben Routenstempel-Überlagerung, packet-notary-Maskenkante und Transkriptschadensband. Die Objekte stapeln Sequenz: Raumexposition, Routenhandling, fehlender Abschluss, Claim-Desk-Umwandlung.",
+     "field_note": "Offene Route nach Sauerstoffschnitt heißt: Das Pult berechnete weiter, was der Raum schon beendet hatte.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Brak Znaku Powrotu i Konwersja Roszczenia",
+     "scanner": "BRAK POWROTU // Stempel ma pracownika, właz i zadanie, ale bez zamknięcia. Późny wyjątek claim desk używa otwartej trasy jako masy do odzysku.",
+     "terminal": "QA POWROTU // Sprawdź znak powrotu, anulowanie, wyjątek odzysku, handoff claim desk i odcięcie tlenu. Otwarta trasa nie dowodzi przeżycia.",
+     "audio": "Brak znaku powrotu. Zostawili trasę otwartą i policzyli ciało jako masę.",
+     "in_game_wiki": "Znak powrotu zamykał trasę. Nie dowodził, że pracownik był bezpieczny; dowodził, że biurko tras przestało liczyć go jako będącego w ruchu. Powrót, anulowanie, transfer medyczny, wyjątek odzysku albo kod straty: potrzebne było zamknięcie. Bez niego trasa zostawała administracyjnie otwarta.\n\nOtwarta trasa jest niebezpiecznym dowodem. Deep Reach mogło mówić, że pracownik nadal jest przypisany, osiągalny, w aktywnej operacji. Pomieszczenie może temu zaprzeczyć. Zimny tag skafandra, przecięta lina, wpis triażu z zatrzymanym tlenem albo rysa włazu po oknie czasu zmieniają puste pole powrotu w błąd custody.\n\nKonwersja roszczenia zaczyna się, gdy późniejsze biurko używa otwartej trasy do zmiany klasy nośnika. Transkrypcja przestaje być wezwaniem pomocy, a staje się masą do odzysku, skażonym sprzętem, płatnym opóźnieniem albo własnością salvage. Brak znaku nie rozwiązuje śmierci. Pokazuje, gdzie papier odmówił jej zamknięcia.\n\nW terenie zachowaj stempel przed czyszczeniem soli. Porównaj otwartą trasę z odcięciem tlenu, tagiem skafandra, linią triażu i maską packet notary. Jeśli trasa zostaje otwarta po tym, jak dowody ciała ją zamykają, biurko chroniło roszczenie, nie pracownika.",
+     "external_site": "Brak znaku powrotu pozwala Deep Reach trzymać trasę prawnie otwartą po fizycznym zamknięciu jej przez pomieszczenie. W tej szczelinie dowód pomocy staje się własnością roszczenia.",
+     "external_site_article": "Znaki powrotu są małe, ale decydują, co trasa może znaczyć. Zamkniętą trasę można audytować. Otwartą można opóźnić, przenieść, naliczyć, podpiąć do sprzętu albo traktować jako nierozwiązaną masę. Na HECTON-8 ta dwuznaczność ma wagę: pracownicy zostawali w tabelach jako ruchomi po tym, jak ich pomieszczenia przestały ruszać powietrze.\n\nDowód leży między stemplem trasy a późnym wyjątkiem claim desk. Tlen zatrzymany, tag skafandra w zatoce, pole powrotu puste: to nie jest luka urzędnicza. To zachowane otwarcie. Pracownik zostaje w stanie kontraktu, gdy dowody ciała idą do innego biurka.\n\nDeep Reach nie potrzebuje teatralnego przyznania się. Biurko może trzymać się reguł i wybrać tańsze pole: trasa otwarta, odzysk oczekuje, masa sprzętu nierozwiązana, prawo salvage zachowane. Każde pole jest wąskie. Razem nie pozwalają martwej trasie stać się zamkniętą stratą.\n\nZnak należy czytać obok nakładki stempla trasy, krawędzi maski packet notary i pasa uszkodzeń transkrypcji. Przedmioty układają sekwencję: ekspozycja pomieszczenia, obsługa trasy, brak zamknięcia, konwersja claim desk.",
+     "field_note": "Otwarta trasa po odcięciu tlenu znaczy, że biurko nadal naliczało to, co pomieszczenie skończyło.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Відсутня позначка повернення і переведення в претензію",
+     "scanner": "НЕМАЄ ПОВЕРНЕННЯ // Штамп має працівника, люк і завдання, але без закриття. Пізній виняток claim desk використовує відкритий маршрут як відновлювану масу.",
+     "terminal": "QA ПОВЕРНЕННЯ // Перевір позначку повернення, скасування, виняток вилучення, handoff claim desk і відсіч кисню. Відкритий маршрут не доводить виживання.",
+     "audio": "Позначки повернення немає. Вони лишили маршрут відкритим і виставили тіло як масу.",
+     "in_game_wiki": "Позначка повернення закривала маршрут. Вона не доводила, що працівник у безпеці; вона доводила, що маршрутний стіл перестав рахувати його як того, хто рухається. Повернення, скасування, медичний transfer, виняток вилучення або код втрати мали закрити шлях. Без цього маршрут лишався адміністративно відкритим.\n\nВідкритий маршрут небезпечний як доказ. Deep Reach міг казати, що працівник досі призначений, досяжний, у межах активної операції. Кімната може довести протилежне. Холодна мітка костюма, перерізаний трос, рядок тріажу із зупиненим киснем або подряпина люка після вікна маршруту роблять порожнє поле повернення провалом custody.\n\nПереведення в претензію починається тоді, коли пізніший стіл використовує відкритий маршрут для нової класифікації носія. Розшифрування перестає бути сигналом біди і стає відновлюваною масою, забрудненим обладнанням, оплачуваною затримкою або salvage property. Відсутня позначка не розв'язує смерть. Вона показує, де папір відмовився її закрити.\n\nУ полі збережи штамп до очищення солі. Звір відкритий маршрут із відсіччю кисню, міткою костюма, рядком тріажу і маскою packet notary. Якщо маршрут відкритий після того, як докази тіла його закрили, стіл захищав претензію, а не працівника.",
+     "external_site": "Відсутня позначка повернення дозволяє Deep Reach тримати маршрут юридично відкритим після фізичного закриття кімнатою. У цьому зазорі доказ біди стає майном претензії.",
+     "external_site_article": "Позначки повернення малі, але вони вирішують, що маршрут має право означати. Закритий маршрут можна перевірити. Відкритий можна затримати, перевести, виставити до оплати, прив'язати до обладнання або визнати нерозв'язаною масою. На HECTON-8 ця двозначність важить: працівники лишалися в таблицях як рухомі після того, як їхні кімнати перестали рухати повітря.\n\nДоказ лежить між маршрутним штампом і пізнім винятком claim desk. Кисень зупинено, мітка костюма в затоці, поле повернення порожнє: це не канцелярська прогалина. Це збережений отвір. Працівника можна втримати в контрактному стані, поки докази тіла йдуть до іншого столу.\n\nDeep Reach не потребує театрального зізнання. Стіл може виконувати правила і вибрати дешевше поле: маршрут відкритий, вилучення очікується, маса обладнання не вирішена, право salvage збережене. Кожне поле вузьке. Разом вони не дають мертвому маршруту стати закритою втратою.\n\nПозначку треба читати поруч із перекриттям маршрутного штампа, краєм маски packet notary і смугою пошкодження розшифрування. Предмети складають послідовність: вплив у кімнаті, обробка маршруту, відсутнє закриття, переведення claim desk.",
+     "field_note": "Відкритий маршрут після відсічі кисню означає: стіл далі рахував те, що кімната вже завершила.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "علامة عودة مفقودة وتحويل مطالبة",
+     "scanner": "علامة العودة مفقودة // الختم يحتوي عاملا وفتحة ومهمة، لكن بلا إغلاق. استثناء claim desk لاحق يستخدم المسار المفتوح ككتلة قابلة للاسترداد.",
+     "terminal": "فحص العودة // تحقق من علامة العودة، إلغاء المسار، استثناء الاسترداد، تسليم claim desk وقطع الأكسجين. المسار المفتوح لا يثبت النجاة.",
+     "audio": "لا علامة عودة. تركوا المسار مفتوحا وحاسبوا الجسد ككتلة.",
+     "in_game_wiki": "كانت علامة العودة تغلق المسار. لم تكن تثبت أن العامل آمن؛ كانت تثبت أن مكتب المسار توقف عن عده في الحركة. قد تكون علامة عودة أو إلغاء أو نقل طبي أو استثناء استرداد أو رمز خسارة. من دون ذلك يبقى المسار مفتوحا إداريا.\n\nالمسار المفتوح دليل خطر. تستطيع Deep Reach الإشارة إليه والقول إن العامل ما زال مكلفا، ما زال قابلا للوصول، ما زال ضمن عملية نشطة. تستطيع الغرفة إثبات العكس. وسم بدلة بارد، حبل مقطوع، سطر فرز توقف فيه الأكسجين، أو خدش فتحة بعد نافذة المسار، كلها تحول خانة العودة الفارغة إلى فشل حيازة.\n\nيبدأ تحويل المطالبة عندما يستخدم مكتب لاحق المسار المفتوح لإعادة تصنيف الحامل. لا يعود التفريغ سجل استغاثة، بل كتلة قابلة للاسترداد، أو معدات ملوثة، أو تأخير قابل للفوترة، أو ملكية salvage. العلامة المفقودة لا تحل الموت. إنها تبين أين رفض الورق إغلاقه.\n\nفي الميدان، احفظ الختم قبل تنظيف الملح. قارن المسار المفتوح بقطع الأكسجين، ووسم البدلة، وسطر الفرز، وقناع packet notary. إذا بقي المسار مفتوحا بعد أن أغلقت أدلة الجسد القصة، فالمكتب حمى مطالبة لا عاملا.",
+     "external_site": "تسمح علامة العودة المفقودة لـ Deep Reach بإبقاء المسار مفتوحا قانونيا بعد أن أغلقته الغرفة ماديا. في هذه الفجوة يتحول دليل الاستغاثة إلى ملكية مطالبة.",
+     "external_site_article": "علامات العودة صغيرة، لكنها تحدد ما يسمح للمسار أن يعنيه. المسار المغلق قابل للتدقيق. المسار المفتوح يمكن تأخيره أو نقله أو فوترته أو ربطه بالمعدات أو اعتباره كتلة غير محسومة. على HECTON-8 هذه الضبابية مهمة: بقي عمال كثيرون في الجداول كأنهم يتحركون بعدما توقفت غرفهم عن تحريك الهواء.\n\nيقع الدليل بين ختم المسار واستثناء claim desk اللاحق. إذا توقف الأكسجين، وبقي وسم البدلة في الخليج، وبقيت خانة العودة فارغة، فهذه ليست فجوة كاتب. إنها فتحة محفوظة. يمكن إبقاء العامل داخل حالة عقدية بينما تتحرك أدلة الجسد إلى مكتب آخر.\n\nلا تحتاج Deep Reach إلى اعتراف مسرحي. يستطيع مكتب أن يتبع القواعد ويختار الخانة الأرخص: مسار مفتوح، استرداد معلق، كتلة معدات غير محسومة، صلاحية salvage محفوظة. كل خانة ضيقة. معا تمنع مسارا ميتا من أن يصبح خسارة مغلقة.\n\nتقرأ العلامة مع تداخل ختم المسار، وحافة قناع packet notary، وحزام تلف التفريغ. الأشياء تكدس التسلسل: تعرض الغرفة، معالجة المسار، إغلاق مفقود، تحويل claim desk.",
+     "field_note": "مسار مفتوح بعد قطع الأكسجين يعني أن المكتب ظل يفوتر ما أنهته الغرفة.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Tanda Kembali Hilang dan Konversi Klaim",
+     "scanner": "TANDA KEMBALI HILANG // Cap punya pekerja, palka, dan tugas, tanpa penutupan. Pengecualian claim desk belakangan memakai rute terbuka sebagai massa pulih.",
+     "terminal": "QA KEMBALI // Periksa tanda kembali, batal, pengecualian pemulihan, handoff claim desk, dan potong oksigen. Rute terbuka bukan bukti selamat.",
+     "audio": "Tidak ada tanda kembali. Mereka membiarkan rute terbuka dan menagih tubuh sebagai massa.",
+     "in_game_wiki": "Tanda kembali menutup rute. Ia tidak membuktikan pekerja aman; ia membuktikan meja rute berhenti menghitung pekerja itu sebagai bergerak. Tanda itu bisa berupa kembali, batal, transfer medis, pengecualian pemulihan, atau kode hilang. Tanpa itu, rute tetap terbuka secara administratif.\n\nRute terbuka adalah bukti berbahaya. Deep Reach bisa menunjuknya dan berkata pekerja masih ditugaskan, masih dapat dicapai, masih bagian operasi aktif. Ruangan bisa membuktikan sebaliknya. Tag setelan dingin, tether terpotong, baris triase dengan oksigen berhenti, atau gores palka setelah jendela rute mengubah kolom kembali kosong menjadi kegagalan custody.\n\nKonversi klaim terjadi saat meja belakangan memakai rute terbuka untuk mengklasifikasi ulang media. Transkrip berhenti menjadi catatan darurat dan menjadi massa pulih, peralatan tercemar, keterlambatan tertagih, atau properti salvage. Tanda hilang tidak menyelesaikan kematian. Ia menunjukkan tempat dokumen menolak menutupnya.\n\nDi lapangan, simpan cap sebelum membersihkan garam. Bandingkan rute terbuka dengan potong oksigen, tag setelan, baris triase, dan masker packet notary. Jika rute tetap terbuka setelah bukti tubuh menutupnya, meja itu melindungi klaim, bukan pekerja.",
+     "external_site": "Tanda kembali hilang memungkinkan Deep Reach menjaga rute tetap terbuka secara hukum setelah ruangan menutupnya secara fisik. Di celah itu, bukti darurat menjadi properti klaim.",
+     "external_site_article": "Tanda kembali kecil, tetapi menentukan arti rute. Rute tertutup dapat diaudit. Rute terbuka dapat ditunda, dipindah, ditagih, ditempelkan lagi ke peralatan, atau diperlakukan sebagai massa belum selesai. Di HECTON-8 ambiguitas itu penting: banyak pekerja tetap tercatat bergerak setelah ruangan mereka berhenti menggerakkan udara.\n\nBukti ada di antara cap rute dan pengecualian claim desk belakangan. Oksigen berhenti, tag setelan tetap di bay, kolom kembali kosong: itu bukan lubang juru tulis. Itu pembukaan yang dipertahankan. Pekerja bisa tetap dalam status kontrak sementara bukti tubuh bergerak ke meja lain.\n\nDeep Reach tidak perlu pengakuan dramatis. Sebuah meja bisa mengikuti aturan dan memilih kolom lebih murah: rute terbuka, pemulihan tertunda, massa peralatan belum selesai, otoritas salvage ditahan. Tiap kolom sempit. Bersama-sama, semuanya mencegah rute mati menjadi kerugian tertutup.\n\nTanda itu dibaca bersama tumpang cap rute, tepi masker packet notary, dan pita kerusakan transkrip. Objek menyusun urutan: paparan ruangan, penanganan rute, penutupan hilang, konversi claim desk.",
+     "field_note": "Rute terbuka setelah potong oksigen berarti meja masih menagih hal yang sudah dihentikan ruangan.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "누락된 귀환 표식과 클레임 전환",
+     "scanner": "귀환 표식 없음 // 스탬프에는 작업자, 해치, 임무가 있으나 폐쇄가 없다. 뒤의 claim desk 예외가 열린 경로를 회수 가능 질량으로 쓴다.",
+     "terminal": "귀환 QA // 귀환 표식, 취소선, 회수 예외, claim desk 인계, 산소 장부 절단을 확인. 열린 경로는 생존 증거가 아니다.",
+     "audio": "귀환 표식이 없다. 경로를 열어 두고 몸을 질량으로 청구했다.",
+     "in_game_wiki": "귀환 표식은 경로를 닫았다. 작업자가 안전하다는 증명이 아니라, 경로 데스크가 그를 이동 중으로 세지 않게 됐다는 증명이었다. 귀환, 취소, 의료 이송, 회수 예외, 손실 코드 중 하나가 필요했다. 없으면 경로는 행정상 열린 채 남는다.\n\n열린 경로는 위험한 증거다. Deep Reach는 작업자가 아직 배정 중이고, 도달 가능하며, 활성 작업 안에 있다고 말할 수 있다. 방은 반대를 증명할 수 있다. 차가운 슈트 태그, 잘린 테더, 산소가 멈춘 트리아지 줄, 경로 창 뒤의 해치 긁힘이 빈 귀환 칸을 custody 실패로 바꾼다.\n\n클레임 전환은 뒤의 데스크가 열린 경로로 매체를 재분류할 때 시작된다. 전사는 조난 기록이 아니라 회수 가능 질량, 오염 장비, 청구 가능한 지연, salvage 재산이 된다. 누락된 표식은 죽음을 풀지 않는다. 서류가 그 죽음을 닫지 않은 자리를 보여준다.\n\n현장에서는 소금을 닦기 전에 스탬프를 보존한다. 열린 경로를 산소 절단, 슈트 태그, 트리아지 줄, packet notary 마스크와 대조한다. 몸의 증거가 닫은 뒤에도 경로가 열려 있으면, 데스크가 보호한 것은 작업자가 아니라 클레임이다.",
+     "external_site": "누락된 귀환 표식은 방이 물리적으로 닫은 뒤에도 Deep Reach가 경로를 법적으로 열어 둘 수 있게 한다. 그 틈에서 조난 증거는 클레임 재산이 된다.",
+     "external_site_article": "귀환 표식은 작지만 경로가 무엇을 뜻할 수 있는지 결정한다. 닫힌 경로는 감사할 수 있다. 열린 경로는 지연, 이전, 청구, 장비 재부착, 미해결 질량으로 처리될 수 있다. HECTON-8에서는 그 모호함이 중요하다. 방이 공기를 멈춘 뒤에도 많은 작업자가 이동 중으로 남았다.\n\n증거는 경로 스탬프와 뒤의 claim desk 예외 사이에 있다. 산소가 멈췄고, 슈트 태그가 베이에 남았고, 귀환 칸이 비어 있다면 서기 실수가 아니다. 유지된 개구다. 몸의 증거가 다른 데스크로 가는 동안 작업자를 계약 상태 안에 남길 수 있다.\n\nDeep Reach에 극적인 고백은 필요 없다. 데스크는 규칙을 따르면서 더 싼 칸을 고를 수 있다. 경로 열림. 회수 대기. 장비 질량 미해결. salvage 권한 보유. 각 칸은 좁다. 함께 쌓이면 죽은 경로가 닫힌 손실이 되지 않는다.\n\n표식은 경로 스탬프 겹침, packet notary 마스크 가장자리, 전사 손상 띠와 함께 읽힌다. 물체들은 순서를 쌓는다. 방 노출, 경로 처리, 빠진 폐쇄, claim desk 전환.",
+     "field_note": "산소 절단 뒤 열린 경로는, 방이 끝낸 것을 데스크가 계속 청구했다는 뜻이다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "סימון חזרה חסר והמרת תביעה",
+     "scanner": "סימון חזרה חסר // החותמת כוללת עובד, פתח ומשימה, אבל אין סגירה. חריג claim desk מאוחר משתמש במסלול הפתוח כמסה ניתנת לחילוץ.",
+     "terminal": "בדיקת חזרה // לבדוק סימון חזרה, ביטול, חריג חילוץ, העברת claim desk וחיתוך יומן חמצן. מסלול פתוח אינו הוכחת הישרדות.",
+     "audio": "אין סימון חזרה. הם השאירו את המסלול פתוח וחייבו את הגוף כמסה.",
+     "in_game_wiki": "סימון חזרה סגר מסלול. הוא לא הוכיח שעובד היה בטוח; הוא הוכיח ששולחן המסלול הפסיק לספור אותו כנע. הסימון יכול להיות חזרה, ביטול, העברה רפואית, חריג חילוץ או קוד אובדן. בלי אחד מהם, המסלול נשאר פתוח מנהלית.\n\nמסלול פתוח הוא ראיה מסוכנת. Deep Reach יכולה להצביע עליו ולטעון שהעובד עדיין משויך, עדיין ניתן להשגה, עדיין חלק מפעולה פעילה. החדר יכול להוכיח אחרת. תג חליפה קר, כבל חתוך, שורת טריאז' עם חמצן שנעצר, או שריטת פתח אחרי חלון הזמן הופכים את שדה החזרה הריק לכשל custody.\n\nהמרת תביעה מתחילה כששולחן מאוחר משתמש במסלול הפתוח כדי לסווג מחדש את הנשא. התמלול מפסיק להיות רשומת מצוקה והופך למסה ניתנת לחילוץ, ציוד מזוהם, עיכוב לחיוב או רכוש salvage. הסימון החסר לא פותר את המוות. הוא מראה איפה הנייר סירב לסגור אותו.\n\nבשטח משמרים את החותמת לפני ניקוי מלח. משווים את המסלול הפתוח לחיתוך חמצן, תג חליפה, שורת טריאז' ומסכת packet notary. אם המסלול פתוח אחרי שראיות הגוף סגרו אותו, השולחן הגן על תביעה, לא על עובד.",
+     "external_site": "סימון חזרה חסר מאפשר ל-Deep Reach להשאיר מסלול פתוח משפטית אחרי שהחדר סגר אותו פיזית. בפער הזה ראיית מצוקה הופכת לרכוש תביעה.",
+     "external_site_article": "סימוני חזרה קטנים, אבל הם קובעים מה מותר למסלול לומר. מסלול סגור ניתן לביקורת. מסלול פתוח אפשר לעכב, להעביר, לחייב, לקשור מחדש לציוד או לטפל בו כמסה לא פתורה. ב-HECTON-8 העמימות הזאת חשובה: עובדים רבים נשארו רשומים כנעים אחרי שהחדרים שלהם הפסיקו להזיז אוויר.\n\nהראיה נמצאת בין חותמת המסלול לחריג claim desk מאוחר. חמצן נעצר, תג חליפה נשאר במפרץ, שדה החזרה ריק: זו לא טעות פקיד. זו פתיחה שנשמרה. אפשר להשאיר עובד בתוך מצב חוזי בזמן שראיות הגוף עוברות לשולחן אחר.\n\nDeep Reach לא צריכה וידוי תיאטרלי. שולחן יכול לפעול לפי כללים ולבחור את השדה הזול: מסלול פתוח, חילוץ ממתין, מסת ציוד לא פתורה, סמכות salvage נשמרת. כל שדה צר. יחד הם מונעים ממסלול מת להפוך להפסד סגור.\n\nהסימון נקרא לצד חפיפת חותמת מסלול, שפת מסכת packet notary ורצועת נזק תמלול. החפצים עורמים רצף: חשיפת חדר, טיפול מסלול, סגירה חסרה, המרת claim desk.",
+     "field_note": "מסלול פתוח אחרי חיתוך חמצן אומר שהשולחן המשיך לחייב את מה שהחדר כבר סיים.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Marca de Retorno Ausente e Conversão de Reclamação",
+     "scanner": "MARCA DE RETORNO AUSENTE // Carimbo tem trabalhador, escotilha e tarefa, mas sem fechamento. Exceção posterior de claim desk usa rota aberta como massa recuperável.",
+     "terminal": "QA RETORNO // Verifique retorno, cancelamento, exceção de recuperação, handoff claim desk e corte de oxigênio. Rota aberta não prova sobrevivência.",
+     "audio": "Sem marca de retorno. Deixaram a rota aberta e cobraram o corpo como massa.",
+     "in_game_wiki": "Uma marca de retorno fechava uma rota. Não provava que o trabalhador estava seguro; provava que a mesa de rota parou de contá-lo como em movimento. Podia ser retorno, cancelamento, transferência médica, exceção de recuperação ou código de perda. Sem isso, a rota ficava administrativamente aberta.\n\nUma rota aberta é prova perigosa. A Deep Reach podia apontar para ela e dizer que o trabalhador ainda estava designado, alcançável, dentro de operação ativa. A sala pode provar o contrário. Tag de traje frio, cabo cortado, linha de triagem com oxigênio parado ou raspão de escotilha depois da janela transformam o campo vazio em falha de custódia.\n\nA conversão de reclamação começa quando uma mesa posterior usa a rota aberta para reclassificar o suporte. A transcrição deixa de ser registro de socorro e vira massa recuperável, equipamento contaminado, atraso faturável ou propriedade de salvage. A marca ausente não resolve a morte. Mostra onde o papel se recusou a fechá-la.\n\nEm campo, preserve o carimbo antes de limpar sal. Compare rota aberta com corte de oxigênio, tag de traje, linha de triagem e máscara packet notary. Se a rota fica aberta depois que a prova do corpo a fecha, a mesa protegia uma reclamação, não um trabalhador.",
+     "external_site": "Uma marca de retorno ausente permite à Deep Reach manter uma rota juridicamente aberta depois que a sala já a fechou fisicamente. Nessa lacuna, prova de socorro vira propriedade de reclamação.",
+     "external_site_article": "Marcas de retorno são pequenas, mas decidem o que uma rota pode significar. Uma rota fechada pode ser auditada. Uma rota aberta pode ser adiada, transferida, faturada, religada a equipamento ou tratada como massa sem resolução. Em HECTON-8, essa ambiguidade pesa: trabalhadores ficaram listados como em movimento depois que suas salas pararam de mover ar.\n\nA prova fica entre o carimbo de rota e a exceção posterior de claim desk. Oxigênio parado, tag de traje na baía, campo de retorno vazio: não é falha de escrivão. É abertura mantida. O trabalhador fica dentro de um estado contratual enquanto a prova do corpo vai para outra mesa.\n\nA Deep Reach não precisa de confissão teatral. Uma mesa pode seguir regras e escolher o campo mais barato: rota aberta, recuperação pendente, massa de equipamento sem resolução, autoridade de salvage retida. Cada campo parece estreito. Juntos, impedem uma rota morta de virar perda fechada.\n\nA marca se lê com sobreposição do carimbo de rota, borda da máscara packet notary e faixa de dano da transcrição. Os objetos empilham sequência: exposição da sala, tratamento de rota, fechamento ausente, conversão claim desk.",
+     "field_note": "Rota aberta após corte de oxigênio: a mesa ainda cobrava o que a sala já tinha encerrado.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Ontbrekende Terugkeermarkering en Claimconversie",
+     "scanner": "TERUGKEER ONTBREEKT // Stempel heeft werker, luik en taak, maar geen sluiting. Latere claim desk-uitzondering gebruikt open route als bergbare massa.",
+     "terminal": "QA TERUGKEER // Controleer terugkeer, annulering, bergingsuitzondering, claim desk-handoff en zuurstofafsnede. Open route bewijst geen overleving.",
+     "audio": "Geen terugkeermarkering. Ze lieten de route open en rekenden het lichaam als massa.",
+     "in_game_wiki": "Een terugkeermarkering sloot een route. Ze bewees niet dat een werker veilig was; ze bewees dat de routebalie stopte met hem als bewegend te tellen. Terugkeer, annulering, medische overdracht, bergingsuitzondering of verliescode: één sluiting moest er staan. Zonder die markering bleef de route administratief open.\n\nEen open route is gevaarlijk bewijs. Deep Reach kon zeggen dat de werker nog toegewezen, bereikbaar en onderdeel van een actieve operatie was. De kamer kan iets anders bewijzen. Koude paktag, gesneden tether, triageregel met gestopte zuurstof of luikschraap na het tijdvenster maken het lege terugkeerveld een custody-fout.\n\nClaimconversie begint wanneer een latere balie de open route gebruikt om de drager opnieuw te classificeren. Het transcript is dan geen noodrecord meer, maar bergbare massa, vervuilde uitrusting, factureerbare vertraging of salvage-eigendom. De ontbrekende markering lost de dood niet op. Ze toont waar het papier weigerde hem te sluiten.\n\nIn het veld de stempel bewaren vóór zoutreiniging. Vergelijk open route met zuurstofafsnede, paktag, triageregel en packet notary-masker. Blijft de route open nadat lichaamsbewijs haar sluit, dan beschermde de balie een claim, geen werker.",
+     "external_site": "Een ontbrekende terugkeermarkering laat Deep Reach een route juridisch open houden nadat de kamer haar fysiek sloot. In die opening wordt noodbewijs claim-eigendom.",
+     "external_site_article": "Terugkeermarkeringen zijn klein, maar ze beslissen wat een route mag betekenen. Een gesloten route kan worden geaudit. Een open route kan worden vertraagd, overgedragen, gefactureerd, opnieuw aan apparatuur gekoppeld of als onopgeloste massa behandeld. Op HECTON-8 telt die dubbelzinnigheid: werkers bleven als bewegend vermeld nadat hun kamers geen lucht meer verplaatsten.\n\nHet bewijs ligt tussen routestempel en latere claim desk-uitzondering. Zuurstof gestopt, paktag in de baai, terugkeerveld leeg: dat is geen schrijffout. Dat is een bewaarde opening. De werker blijft in contractstatus terwijl lichaamsbewijs naar een andere balie gaat.\n\nDeep Reach heeft geen theatrale bekentenis nodig. Een balie kan regels volgen en het goedkopere veld kiezen: route open, berging in afwachting, uitrustingsmassa onopgelost, salvage-recht behouden. Elk veld lijkt smal. Samen voorkomen ze dat een dode route een gesloten verlies wordt.\n\nDe markering hoort naast routestempel-overlap, packet notary-maskerrand en transcript-schadeband. De objecten stapelen volgorde: kamerblootstelling, routebehandeling, ontbrekende sluiting, claim desk-conversie.",
+     "field_note": "Open route na zuurstofafsnede betekent: de balie rekende door wat de kamer al had beëindigd.",
+     "localization_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

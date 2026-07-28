@@ -1,258 +1,259 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS237_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS237_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1316_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE",
+   "release_set_id": "RS237_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE",
+   "article_id": "applied_lore.damped_insulation_blanket_field_article",
+   "title_key": "LORE_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
+    "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1316_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE",
-      "release_set_id": "RS237_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE",
-      "article_id": "applied_lore.damped_insulation_blanket_field_article",
-      "title_key": "LORE_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
-        "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.damped_insulation_blanket_field_article",
-        "secondary": [
-          "unlock.first_wet_module_insulation",
-          "unlock.first_dark_stitch_moisture_line",
-          "unlock.first_torn_insulation_inner_layer"
-        ],
-        "poi_tags": [
-          "poi.damped_insulation_blanket",
-          "poi.quilted_module_backing",
-          "poi.dark_stitch_moisture_line",
-          "poi.salt_dust_stitch_line",
-          "poi.torn_insulation_inner_layer",
-          "poi.warm_equipment_backing"
-        ],
-        "biome_tags": [
-          "biome.old_colony_interior",
-          "biome.pressure_base_corridor",
-          "biome.flooded_equipment_bay",
-          "biome.safe_room_shell"
-        ],
-        "first_20_boundary": "Makes interior insulation readable as pressure-vessel evidence: stitch darkening, quilt sag, salt dust, warm equipment backing and tears reveal leak history before broad exposition."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Interior Material Scanner",
-          "terminal": "Deep Reach Habitat Maintenance Note",
-          "audio": "Old Equipment Bay Recorder",
-          "in_game_wiki": "PDA Interior Insulation Primer",
-          "external_site": "Public Site Module Insulation Article",
-          "field_note": "Marauder Wall-Layer Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_wet_quilted_module_insulation_or_equipment_backing",
-        "truth_payload": "Damped insulation records repeated condensation, flood recovery, hidden heat and repair pressure through stitch darkening, sag, salt dust and torn inner layers.",
-        "player_question": "Is this room dry because it is safe, or dry because the insulation has been quietly holding the leak?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Damped Insulation Blanket Field Article",
-          "scanner": "DAMPED MODULE INSULATION // Quilted gray-beige technical fabric, compressed seams, dark stitch moisture lines, salt dust and small tears exposing darker inner layer. Not pressure-suit fabric.",
-          "terminal": "HABITAT MAINTENANCE // Replace blanket sections after the third wet-dry cycle. Do not reseal over dark stitch lines without checking backing plate heat and cable tray condensation.",
-          "audio": "The wall sounds soft there. That means it has been drinking, not resting.",
-          "in_game_wiki": "Damped insulation blanket is the soft-looking layer behind hard pressure interiors. It is not decoration, bedding, or suit fabric. Deep Reach used quilted technical blankets behind panels, pump housings, equipment racks and safe-room shells because metal alone made rooms loud, cold and impossible to service. The blanket trapped heat, muted vibration, protected ceramic backing and gave maintenance crews a visible record of what the wall had suffered.\n\nA dry blanket should look boring: gray-beige fabric, shallow quilting, compressed seams, a little salt dust near lower edges. A useful blanket is rarely dry for long. Moisture darkens stitch lines first because thread holes pull water inward. A sagging square means the inner batting has held weight. Salt dust along one seam means condensation dried there repeatedly. A tear showing darker inner layer tells the player that the room has been opened, scraped, cut or leaned on by equipment after the last official service.\n\nThe player reads insulation differently from metal. Metal shows impact and pressure. Insulation shows time. It remembers small leaks before they become visible streams. It remembers which pump housing ran warm for weeks. It remembers where a panel was resealed without drying the backing. When the scanner finds damp stitching behind an apparently calm corridor, the right question is not whether the fabric is wet. The right question is what the wall has been hiding.\n\nFor gameplay, damp insulation can mark several useful decisions. Warm damp backing near a rack can point to a powered relay or overworked charger. Cold damp backing under a vent can point to a failing seal or hidden water path. Salted quilt seams near a cable tray warn that cutting nearby may expose a live or corroded line. Torn blanket around a hatch lip can show that someone made a fast access cut and put the panel back badly. In a safe room, clean insulation is comfort; stained insulation is the ocean practicing patience.\n\nThe material also keeps HECTON-8 from becoming clean corridor fiction. A room that survived flooding should not look freshly painted unless someone spent labor hiding the flood. Damped blankets make that labor visible. The cloth edge at a screw washer, the darker seam under a warm junction box, the line where salt stopped under a shelf: these are the small facts that make a base feel maintained instead of merely modeled.\n\nMarauder note: never trust a soft wall. Press near the seam with a tool, not a glove. If salt falls, the leak is old. If the fabric warms, a machine is alive behind it. If the tear smells metallic, the backing plate is exposed. If somebody patched over damp quilting, they were buying another shift, not solving the room.",
-          "external_site": "Damped insulation blankets make HECTON-8 interiors readable: stitch darkening, salt dust, quilt sag, warm backing and torn fabric reveal condensation cycles, hidden leaks and late repair work.",
-          "external_site_article": "Damped insulation blanket sits behind the visible metal of HECTON-8 pressure interiors. The quilted gray-beige fabric is an engineered layer, not domestic comfort. It reduces vibration, protects backing plates and records moisture before the wall admits a visible leak.\n\nIn play, the blanket can guide the reader toward powered equipment, hidden water paths, corroded cable trays or bad post-flood repairs. Dark stitch lines show repeated wet-dry cycles. Sagging quilt squares show retained water. Salt dust at seams shows condensation routes. Tears exposing a dark inner layer often mean the wall was opened fast and closed badly.\n\nThe material gives old colony interiors a human maintenance history. It lets the player read rooms by touch, sound and stain rather than by terminal exposition. A clean panel may lie; damp quilting usually tells the cheaper truth.",
-          "field_note": "Soft wall, hard lesson: if the seam is dark, the room has been leaking longer than the report."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "مقالة ميدانية عن بطانية العزل الرطبة",
-          "scanner": "عزل وحدة رطب // قماش تقني مبطن رمادي مائل للبيج، دروز مضغوطة، خطوط رطوبة داكنة في الخياطة، غبار ملح وتمزقات صغيرة تكشف طبقة داخلية داكنة. ليس قماش بدلة ضغط.",
-          "terminal": "صيانة موئل // استبدل أقسام البطانية بعد ثالث دورة بلل وجفاف. لا تغلق فوق خطوط خياطة داكنة قبل فحص حرارة اللوح الخلفي وتكاثف مسار الكابلات.",
-          "audio": "الجدار يبدو لينا هناك. هذا يعني أنه كان يشرب، لا أنه يرتاح.",
-          "in_game_wiki": "بطانية العزل الرطبة هي الطبقة التي تبدو ناعمة خلف داخلية الضغط الصلبة. ليست زينة ولا فراشا ولا قماش بدلة. استخدمتها Deep Reach خلف الألواح والمضخات ورفوف المعدات وقشور الغرف الآمنة لأن المعدن وحده يجعل المكان باردا وصاخبا وصعب الخدمة. العزل يمسك الحرارة، يهدئ الاهتزاز، يحمي الظهر الخزفي ويترك لسكان الصيانة سجلا مرئيا لما عاناه الجدار.\n\nالبطانية الجافة يجب أن تبدو مملة: قماش رمادي بيج، تبطين ضحل، دروز مضغوطة وقليل من غبار الملح عند الحافة السفلية. الرطوبة تغمق خطوط الخياطة أولا لأن ثقوب الخيط تسحب الماء إلى الداخل. مربع مترهل يعني أن الحشو حمل وزنا. ملح على درز واحد يعني أن التكاثف جف هناك مرات كثيرة. تمزق يكشف طبقة داكنة يعني أن الغرفة فتحت أو كشطت أو ضغطت عليها معدات بعد آخر خدمة رسمية.\n\nالمعدن يظهر الضربة والضغط. العزل يظهر الوقت. يتذكر التسربات الصغيرة قبل أن تصير جداول. يتذكر أي غلاف مضخة ظل دافئا أسابيع. يتذكر أين أغلق أحدهم اللوح من دون تجفيف الظهر. عندما يرى الماسح خياطة رطبة في ممر هادئ، فالسؤال ليس هل القماش مبلل. السؤال هو ماذا كان الجدار يخفي.\n\nفي اللعب قد تشير البطانية الدافئة الرطبة إلى مرحل عامل أو شاحن منهك. وقد يشير البرد تحت فتحة إلى ختم فاشل أو مسار ماء مخفي. دروز ملحية قرب قناة كابلات تحذر من قطع خط حي أو متآكل. التمزق حول حافة فتحة قد يثبت أن شخصا فتح وصولا سريعا ثم أعاد اللوح بشكل سيئ.",
-          "external_site": "بطانيات العزل الرطبة تجعل داخل HECTON-8 قابلا للقراءة: غمقان الخياطة، غبار الملح، ترهل التبطين، الظهر الدافئ والتمزقات تكشف دورات التكاثف والتسربات والإصلاحات المتأخرة.",
-          "external_site_article": "تقع بطانية العزل الرطبة خلف معدن داخلية الضغط في HECTON-8. القماش المبطن الرمادي البيج طبقة هندسية لا راحة منزلية. يقلل الاهتزاز ويحمي اللوح الخلفي ويسجل الرطوبة قبل أن يعترف الجدار بتسرب ظاهر.\n\nفي اللعب يمكن أن تقود هذه الطبقة إلى معدات تعمل، مسارات ماء مخفية، قنوات كابلات متآكلة أو إصلاحات سيئة بعد الغمر. خطوط الخياطة الداكنة تعني دورات بلل وجفاف. المربعات المترهلة تعني ماء محتجزا. غبار الملح عند الدرز يعني طريق تكاثف.\n\nتعطي المادة للداخل تاريخ صيانة بشريا، وتجعل اللاعب يقرأ الغرفة باللمس والصوت والبقعة لا بالنص وحده.",
-          "field_note": "جدار ناعم ودرس قاس: إذا كان الدرز داكنا فالتسرب أقدم من التقرير."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Feldartikel: feuchte Isolierdecke",
-          "scanner": "FEUCHTE MODULISOLIERUNG // Gesteppter grau-beiger Technikstoff, zusammengedrueckte Naehte, dunkle Feuchtigkeitslinien, Salzstaub und kleine Risse mit dunkler Innenschicht. Kein Druckanzugstoff.",
-          "terminal": "HABITATWARTUNG // Deckenabschnitte nach dem dritten Nass-Trocken-Zyklus ersetzen. Nicht ueber dunkle Nahtlinien versiegeln, bevor Rueckplattenwaerme und Kondensat an Kabeltrassen geprueft sind.",
-          "audio": "Die Wand klingt dort weich. Das heisst, sie hat getrunken, nicht geruht.",
-          "in_game_wiki": "Die feuchte Isolierdecke ist die weich wirkende Schicht hinter harten Druckinnenraeumen. Sie ist keine Dekoration, kein Bettzeug und kein Anzugstoff. Deep Reach nutzte gesteppte technische Decken hinter Paneelen, Pumpengehaeusen, Geraeteracks und Schutzraumhuellen, weil Metall allein Raeume laut, kalt und schwer wartbar machte.\n\nEine trockene Decke sollte langweilig aussehen: grau-beiger Stoff, flache Steppung, gepresste Naehte, etwas Salzstaub unten. Nuetzlich wird sie, wenn sie nicht trocken bleibt. Feuchtigkeit dunkelt zuerst die Nahtlinien, weil Fadenloecher Wasser hineinziehen. Ein haengendes Quadrat hat Gewicht gehalten. Salz an einer Naht bedeutet wiederholtes Trocknen von Kondensat. Ein Riss mit dunkler Innenschicht sagt, dass jemand die Wand nach der letzten offiziellen Wartung geoeffnet, geschabt oder belastet hat.\n\nMetall zeigt Schlag und Druck. Isolierung zeigt Zeit. Sie merkt sich kleine Lecks vor sichtbaren Rinnsalen, warme Pumpengehaeuse und Paneele, die wieder verschlossen wurden, ohne die Rueckseite zu trocknen. Wenn der Scanner feuchte Naehte hinter einem ruhigen Korridor findet, lautet die Frage nicht, ob Stoff nass ist. Die Frage lautet, was die Wand verschweigt.\n\nIm Spiel markiert feuchte Isolierung Entscheidungen: warme feuchte Rueckseite kann ein aktives Relais zeigen; kalte Feuchte unter einer Lueftung kann auf Dichtungsschaden deuten; salzige Naehte an einer Kabeltrasse warnen vor einer korrodierten Leitung. In einem Schutzraum ist saubere Isolierung Komfort. Fleckige Isolierung ist Geduld des Ozeans.",
-          "external_site": "Feuchte Isolierdecken machen HECTON-8-Innenraeume lesbar: dunkle Naehte, Salzstaub, Steppungsdurchhang, warme Rueckseite und Risse zeigen Kondensatzyklen, Lecks und spaete Reparaturen.",
-          "external_site_article": "Feuchte Isolierdecke liegt hinter dem sichtbaren Metall von HECTON-8-Druckinnenraeumen. Der gesteppte grau-beige Stoff ist eine technische Schicht, kein Komfortobjekt. Er daempft Schwingung, schuetzt Rueckplatten und zeichnet Feuchtigkeit auf, bevor die Wand ein offenes Leck zeigt.\n\nIm Spiel kann diese Schicht zu aktiver Ausruestung, verborgenen Wasserwegen, korrodierten Kabeltrassen oder schlechten Nachflut-Reparaturen fuehren. Dunkle Naehte zeigen Nass-Trocken-Zyklen. Haengende Felder zeigen gespeichertes Wasser. Salzstaub an Naehten zeigt Kondensationswege.\n\nSo bekommt ein alter Innenraum Wartungsgeschichte statt nur Wandtextur.",
-          "field_note": "Weiche Wand, harte Lektion: dunkle Naht bedeutet, dass der Raum laenger leckt als der Bericht sagt."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Articulo de campo sobre manta aislante humeda",
-          "scanner": "AISLAMIENTO HUMEDO // Tela tecnica acolchada gris beige, costuras comprimidas, lineas oscuras de humedad, polvo de sal y pequeños desgarros con capa interior oscura. No es tejido de traje de presion.",
-          "terminal": "MANTENIMIENTO DE HABITAT // Sustituir secciones tras el tercer ciclo mojado-seco. No sellar sobre costuras oscuras sin revisar calor de placa trasera y condensacion en bandeja de cables.",
-          "audio": "La pared suena blanda ahi. Eso significa que ha estado bebiendo, no descansando.",
-          "in_game_wiki": "La manta aislante humeda es la capa blanda detras de interiores duros de presion. No es decoracion, cama ni traje. Deep Reach la uso detras de paneles, bombas, racks y salas seguras porque el metal solo hacia las habitaciones frias, ruidosas y dificiles de mantener.\n\nUna manta seca debe parecer aburrida: tela gris beige, acolchado poco profundo, costuras comprimidas y algo de sal en bordes bajos. La humedad oscurece primero las costuras porque los agujeros del hilo tiran del agua hacia dentro. Un cuadro hundido ha sostenido peso. Sal en una costura significa condensacion repetida. Un desgarro con capa oscura dice que la pared fue abierta, raspada o apoyada por equipo despues del ultimo servicio.\n\nEl metal muestra impacto y presion. El aislamiento muestra tiempo. Recuerda fugas pequeñas antes de que sean visibles, carcasas de bomba calientes durante semanas y paneles sellados sin secar la trasera. Cuando el escaner encuentra costura humeda en un corredor tranquilo, la pregunta no es si la tela esta mojada. La pregunta es que ocultaba la pared.\n\nEn juego, el respaldo humedo y caliente puede señalar un rele alimentado o un cargador forzado. El frio bajo una ventilacion puede señalar sello fallido. Costuras saladas cerca de cables avisan de linea viva o corroída. En una sala segura, aislamiento limpio es confort; aislamiento manchado es paciencia del oceano.",
-          "external_site": "Las mantas aislantes humedas hacen legibles los interiores de HECTON-8: costuras oscuras, sal, hundimiento, respaldo caliente y desgarros revelan condensacion, fugas y reparaciones tardias.",
-          "external_site_article": "La manta aislante humeda esta detras del metal visible de los interiores de presion. Es una capa tecnica acolchada, no confort domestico. Reduce vibracion, protege placas traseras y registra humedad antes de que la pared muestre una fuga.\n\nEn juego puede guiar hacia equipo activo, rutas ocultas de agua, bandejas de cables corroídas o malas reparaciones. Costuras oscuras muestran ciclos mojado-seco. Cuadros hundidos muestran agua retenida. Sal en costuras muestra condensacion.\n\nEl material da historia de mantenimiento a los interiores de la colonia.",
-          "field_note": "Pared blanda, leccion dura: si la costura esta oscura, la sala lleva fugando mas que el informe."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Article de terrain sur couverture isolante humide",
-          "scanner": "ISOLANT HUMIDE // Tissu technique matelasse gris-beige, coutures comprimees, lignes sombres d'humidite, poussiere de sel et petites dechirures montrant une couche interne sombre. Pas un tissu de combinaison.",
-          "terminal": "MAINTENANCE HABITAT // Remplacer les sections apres le troisieme cycle humide-sec. Ne pas resceller sur coutures sombres sans verifier chaleur de plaque arriere et condensation de chemin de cable.",
-          "audio": "Le mur sonne mou ici. Cela veut dire qu'il a bu, pas qu'il repose.",
-          "in_game_wiki": "La couverture isolante humide est la couche douce derriere les interieurs sous pression. Ce n'est ni decoration, ni literie, ni tissu de combinaison. Deep Reach l'a placee derriere panneaux, pompes, baies d'equipement et salles sures parce que le metal seul rendait les pieces froides, bruyantes et difficiles a maintenir.\n\nUne couverture seche devrait etre banale: tissu gris-beige, matelassage peu profond, coutures comprimees, un peu de sel pres du bas. L'humidite noircit d'abord les coutures car les trous du fil attirent l'eau. Un carre affaisse a porte du poids. Du sel sur une couture signale des condensations repetees. Une dechirure montrant une couche sombre indique que la paroi a ete ouverte, raclee ou chargee apres le dernier service officiel.\n\nLe metal montre choc et pression. L'isolant montre le temps. Il garde les petites fuites avant les filets visibles, les carters de pompe restes chauds et les panneaux refermes sans sechage. Si le scanner trouve une couture humide derriere un couloir calme, la bonne question n'est pas si le tissu est mouille. C'est ce que le mur cachait.\n\nEn jeu, un dos chaud et humide peut indiquer relais alimente ou chargeur fatigue. Une zone froide sous une ventilation peut indiquer joint defaillant. Des coutures salees pres des cables avertissent d'une ligne active ou corrodee. Dans une salle sure, l'isolant propre est du confort; l'isolant tache est la patience de l'ocean.",
-          "external_site": "Les couvertures isolantes humides rendent lisibles les interieurs HECTON-8: coutures sombres, sel, affaissement, dos chaud et dechirures revelent condensation, fuites et reparations tardives.",
-          "external_site_article": "La couverture isolante humide se trouve derriere le metal visible des interieurs sous pression. Le tissu matelasse gris-beige est une couche technique, pas un confort domestique. Il amortit les vibrations, protege les plaques arriere et enregistre l'humidite avant la fuite visible.\n\nEn jeu, elle peut guider vers un equipement actif, un chemin d'eau cache, des chemins de cable corrodes ou une mauvaise reparation. Les coutures sombres montrent les cycles humide-sec. Les carres affaisses montrent l'eau retenue. Le sel aux coutures montre les routes de condensation.\n\nCette matiere donne aux pieces une histoire de maintenance humaine.",
-          "field_note": "Mur mou, lecon dure: si la couture est sombre, la fuite est plus vieille que le rapport."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "מאמר שדה על שמיכת בידוד לחה",
-          "scanner": "בידוד מודול לח // בד טכני מרופד אפור-בז', תפרים דחוסים, קווי לחות כהים בתפר, אבק מלח וקרעים קטנים שחושפים שכבה פנימית כהה. לא בד חליפת לחץ.",
-          "terminal": "תחזוקת בית גידול // להחליף מקטעים אחרי מחזור רטוב-יבש שלישי. אין לאטום מעל קווי תפר כהים בלי לבדוק חום לוח אחורי והתעבות בתעלת כבלים.",
-          "audio": "הקיר נשמע רך שם. זה אומר שהוא שתה, לא נח.",
-          "in_game_wiki": "שמיכת בידוד לחה היא השכבה הרכה למראה מאחורי פנים קשיח של כלי לחץ. היא אינה קישוט, מצע או בד חליפה. Deep Reach השתמשה בשמיכות טכניות מרופדות מאחורי לוחות, בתי משאבות, מדפי ציוד ומעטפות חדרים בטוחים, כי מתכת לבדה הפכה חדרים לקרים, רועשים וקשים לטיפול.\n\nשמיכה יבשה אמורה להיות משעממת: בד אפור-בז', ריפוד שטוח, תפרים דחוסים ומעט אבק מלח בקצה התחתון. לחות מחשיכה קודם את קווי התפר, כי חורי החוט מושכים מים פנימה. ריבוע שקוע נשא משקל. מלח לאורך תפר אומר שהתעבות התייבשה שם שוב ושוב. קרע שחושף שכבה כהה אומר שהקיר נפתח, נשרט או נלחץ על ידי ציוד אחרי השירות הרשמי האחרון.\n\nמתכת מראה פגיעה ולחץ. בידוד מראה זמן. הוא זוכר דליפות קטנות לפני זרמים גלויים, בית משאבה שחם שבועות, ולוח שנאטם בלי לייבש את הגב. כשהסורק מוצא תפר לח במסדרון שקט, השאלה אינה אם הבד רטוב. השאלה היא מה הקיר הסתיר.\n\nבמשחק, גב חם ולח יכול להצביע על ממסר פעיל. קור מתחת לפתח יכול להצביע על אטם כושל. תפרים מלוחים ליד תעלת כבלים מזהירים מקו חי או חלוד. בחדר בטוח, בידוד נקי הוא נחמה; בידוד מוכתם הוא סבלנותו של האוקיינוס.",
-          "external_site": "שמיכות בידוד לחות הופכות פנים של HECTON-8 לקריאים: תפרים כהים, אבק מלח, שקיעה, גב חם וקרעים חושפים מחזורי התעבות, דליפות ותיקון מאוחר.",
-          "external_site_article": "שמיכת בידוד לחה יושבת מאחורי המתכת הגלויה של פנים לחץ. הבד המרופד האפור-בז' הוא שכבה הנדסית, לא נוחות ביתית. הוא מפחית רעידות, מגן על לוחות אחוריים ורושם לחות לפני שהקיר מראה דליפה.\n\nבמשחק היא יכולה להוביל לציוד פעיל, נתיבי מים חבויים, תעלות כבלים חלודות או תיקונים רעים אחרי הצפה. תפרים כהים מראים מחזורי רטוב-יבש. ריבועים שקועים מראים מים שנשמרו. מלח בתפרים מראה נתיבי התעבות.\n\nהחומר נותן לחדרים היסטוריית תחזוקה שאפשר לקרוא.",
-          "field_note": "קיר רך, שיעור קשה: אם התפר כהה, החדר דולף יותר זמן מהדוח."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artikel Lapangan Selimut Insulasi Lembap",
-          "scanner": "INSULASI MODUL LEMBAP // Kain teknis quilt abu krem, jahitan tertekan, garis lembap gelap, debu garam, dan sobekan kecil yang membuka lapisan dalam gelap. Bukan kain pakaian tekanan.",
-          "terminal": "PERAWATAN HABITAT // Ganti bagian selimut setelah siklus basah-kering ketiga. Jangan menyegel di atas garis jahit gelap sebelum memeriksa panas pelat belakang dan kondensasi baki kabel.",
-          "audio": "Dinding di sana terdengar lunak. Artinya ia sudah minum, bukan beristirahat.",
-          "in_game_wiki": "Selimut insulasi lembap adalah lapisan yang tampak lunak di balik interior tekanan yang keras. Ini bukan dekorasi, bukan tempat tidur, dan bukan bahan pakaian tekanan. Deep Reach memasangnya di balik panel, rumah pompa, rak peralatan, dan cangkang ruang aman karena logam saja membuat ruangan dingin, bising, dan sulit diservis.\n\nSelimut kering seharusnya membosankan: kain abu krem, quilt dangkal, jahitan tertekan, sedikit debu garam di bawah. Kelembapan lebih dulu menggelapkan jahitan karena lubang benang menarik air ke dalam. Kotak yang melorot pernah menahan berat. Garam di satu jahitan berarti kondensasi berulang. Sobekan yang memperlihatkan lapisan gelap berarti dinding pernah dibuka, digesek, atau ditekan peralatan setelah servis resmi terakhir.\n\nLogam menunjukkan benturan dan tekanan. Insulasi menunjukkan waktu. Ia mengingat kebocoran kecil sebelum aliran terlihat, rumah pompa yang hangat berminggu-minggu, dan panel yang disegel tanpa mengeringkan belakangnya. Saat pemindai menemukan jahitan lembap di koridor tenang, pertanyaannya bukan apakah kain basah, melainkan apa yang disembunyikan dinding.\n\nDalam gameplay, backing hangat lembap bisa menunjuk relai aktif. Dingin di bawah ventilasi bisa menunjuk segel gagal. Jahitan asin dekat baki kabel memperingatkan garis hidup atau berkarat. Di ruang aman, insulasi bersih berarti nyaman; insulasi bernoda berarti laut sedang menunggu.",
-          "external_site": "Selimut insulasi lembap membuat interior HECTON-8 bisa dibaca: jahitan gelap, debu garam, quilt melorot, backing hangat, dan sobekan mengungkap kondensasi, kebocoran, dan perbaikan terlambat.",
-          "external_site_article": "Selimut insulasi lembap berada di balik logam interior tekanan HECTON-8. Kain quilt abu krem ini lapisan teknik, bukan kenyamanan rumah. Ia meredam getaran, melindungi pelat belakang, dan merekam kelembapan sebelum dinding mengaku bocor.\n\nDi gameplay, lapisan ini bisa menunjuk peralatan hidup, jalur air tersembunyi, baki kabel korosi, atau perbaikan pascabanjir yang buruk. Jahitan gelap menunjukkan siklus basah-kering. Kotak melorot menunjukkan air tertahan. Debu garam menunjukkan jalur kondensasi.\n\nMateri ini memberi interior koloni sejarah perawatan manusia.",
-          "field_note": "Dinding lunak, pelajaran keras: jika jahitannya gelap, bocornya lebih tua dari laporan."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "湿った断熱ブランケット・フィールド記事",
-          "scanner": "湿潤モジュール断熱 // 灰ベージュのキルト状技術布、圧縮された縫い目、暗い湿気線、塩粉、小さな裂け目から見える暗い内層。耐圧スーツ布ではない。",
-          "terminal": "居住区保守 // 三回目の湿乾サイクル後にブランケット区画を交換。暗い縫い目を再密封する前に、背面板の熱とケーブルトレイ結露を確認すること。",
-          "audio": "その壁、音が柔らかい。休んでいたんじゃない。水を飲んでいた。",
-          "in_game_wiki": "湿った断熱ブランケットは、硬い耐圧内装の裏にある柔らかく見える層だ。装飾でも寝具でもスーツ素材でもない。Deep Reach はパネル、ポンプハウジング、機器ラック、安全室の殻の裏にキルト状の技術ブランケットを使った。金属だけでは部屋が寒く、うるさく、整備しにくかったからだ。\n\n乾いたブランケットは退屈に見えるはずだ。灰ベージュの布、浅いキルト、圧縮された縫い目、下端の少量の塩粉。湿気はまず縫い目を暗くする。糸穴が水を内側へ引くからだ。垂れた四角は水の重さを持っていた。縫い目の塩は結露が何度も乾いた痕跡だ。暗い内層を見せる裂け目は、最後の公式整備後に壁が開けられたか擦られたことを示す。\n\n金属は衝撃と圧力を見せる。断熱材は時間を見せる。小さな漏れ、長く温かかったポンプ、乾かさず閉じられたパネルを覚えている。静かな廊下の裏でスキャナーが湿った縫い目を見つけたなら、布が濡れているかではなく、壁が何を隠していたかを問うべきだ。\n\nゲーム内では、温かく湿った背面は通電リレーや過負荷充電器を示す。通気口下の冷たい湿りはシール不良を示す。ケーブルトレイ近くの塩付き縫い目は、生きた線や腐食線への警告になる。安全室で清潔な断熱は安心だが、染みた断熱は海の忍耐である。",
-          "external_site": "湿った断熱ブランケットは HECTON-8 内装を読める表面にする。暗い縫い目、塩粉、キルトの垂れ、温かい背面、裂け目が結露、隠れた漏れ、遅い修理を示す。",
-          "external_site_article": "湿った断熱ブランケットは、HECTON-8 の耐圧内装の金属裏にある。灰ベージュのキルト状布は家庭的な快適さではなく、振動を抑え、背面板を守り、壁が漏れを見せる前に湿気を記録する技術層だ。\n\nゲーム内では、これが通電機器、隠れた水路、腐食したケーブルトレイ、悪い水没後修理を示す。暗い縫い目は湿乾サイクル、垂れた区画は保持水、塩粉は結露路を示す。\n\nこの素材は古い内装に人間の保守履歴を与える。",
-          "field_note": "柔らかい壁ほど硬い教訓を残す。縫い目が暗いなら、漏れは報告より古い。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "젖은 단열 블랭킷 현장 문서",
-          "scanner": "젖은 모듈 단열재 // 회색-베이지 퀼트 기술 직물, 눌린 봉합선, 어두운 습기선, 소금 먼지, 어두운 내부층이 드러난 작은 찢김. 압력복 직물이 아님.",
-          "terminal": "거주구 정비 // 세 번째 습윤-건조 주기 뒤 블랭킷 구역 교체. 어두운 봉합선 위를 재밀봉하기 전에 후판 열과 케이블 트레이 결로를 확인.",
-          "audio": "저 벽은 소리가 부드럽다. 쉬고 있었던 게 아니라 물을 마신 거다.",
-          "in_game_wiki": "젖은 단열 블랭킷은 단단한 압력 내부 뒤의 부드러워 보이는 층이다. 장식도 침구도 압력복 직물도 아니다. Deep Reach는 패널, 펌프 하우징, 장비 랙, 안전실 외피 뒤에 퀼트 기술 블랭킷을 썼다. 금속만으로는 방이 차갑고 시끄럽고 정비하기 어려웠기 때문이다.\n\n마른 블랭킷은 지루해야 한다. 회색-베이지 천, 얕은 퀼트, 눌린 봉합, 아래쪽의 약간의 소금 먼지. 습기는 봉합선부터 어둡게 만든다. 실구멍이 물을 안으로 끌어들이기 때문이다. 처진 사각형은 무게를 담았던 자리다. 한 봉합선의 소금은 결로가 반복해서 말랐다는 뜻이다. 어두운 내부층이 보이는 찢김은 마지막 공식 정비 뒤 벽이 열리거나 긁히거나 장비에 눌렸음을 말한다.\n\n금속은 충격과 압력을 보여 준다. 단열재는 시간을 보여 준다. 보이는 물줄기 전의 작은 누수, 몇 주간 따뜻했던 펌프 하우징, 뒤를 말리지 않고 다시 닫은 패널을 기억한다. 조용한 복도 뒤에서 스캐너가 젖은 봉합선을 찾으면, 질문은 천이 젖었느냐가 아니다. 벽이 무엇을 숨겼는가다.\n\n게임에서 따뜻하고 젖은 후면은 통전 릴레이나 과로한 충전기를 가리킬 수 있다. 환기구 아래 차가운 습기는 실패한 씰을 가리킨다. 케이블 트레이 근처의 짠 봉합선은 살아 있거나 부식된 선을 경고한다. 안전실에서 깨끗한 단열은 안락함이지만, 얼룩진 단열은 바다의 기다림이다.",
-          "external_site": "젖은 단열 블랭킷은 HECTON-8 내부를 읽게 한다. 어두운 봉합선, 소금 먼지, 처진 퀼트, 따뜻한 후면, 찢김이 결로, 숨은 누수, 늦은 수리를 드러낸다.",
-          "external_site_article": "젖은 단열 블랭킷은 HECTON-8 압력 내부의 보이는 금속 뒤에 있다. 회색-베이지 퀼트 직물은 가정적 편안함이 아니라 진동을 줄이고 후판을 보호하며 벽이 누수를 드러내기 전 습기를 기록하는 기술층이다.\n\n게임에서 이 층은 살아 있는 장비, 숨은 물길, 부식된 케이블 트레이, 나쁜 침수 후 수리를 보여 줄 수 있다. 어두운 봉합선은 습윤-건조 주기, 처진 사각형은 고인 물, 소금 먼지는 결로 경로를 뜻한다.\n\n이 소재는 오래된 내부에 인간 정비의 기록을 남긴다.",
-          "field_note": "부드러운 벽일수록 단단한 교훈을 준다. 봉합선이 어두우면 누수는 보고서보다 오래됐다."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Veldartikel: vochtige isolatiedeken",
-          "scanner": "VOCHTIGE MODULE-ISOLATIE // Gewatteerde grijs-beige technische stof, samengedrukte naden, donkere vochtlijnen, zoutstof en kleine scheuren met donkere binnenlaag. Geen drukpakstof.",
-          "terminal": "HABITATONDERHOUD // Vervang dekenstukken na de derde nat-droogcyclus. Niet opnieuw afdichten over donkere naden zonder warmte van achterplaat en condens bij kabelgoot te controleren.",
-          "audio": "De wand klinkt daar zacht. Dat betekent dat hij heeft gedronken, niet gerust.",
-          "in_game_wiki": "De vochtige isolatiedeken is de zacht ogende laag achter harde drukinterieurs. Het is geen decoratie, beddengoed of pakstof. Deep Reach gebruikte gewatteerde technische dekens achter panelen, pomphuizen, rekken en veilige kameromhulsels omdat metaal alleen kamers koud, luid en moeilijk onderhoudbaar maakte.\n\nEen droge deken hoort saai te zijn: grijs-beige stof, ondiepe quilting, samengedrukte naden en wat zoutstof onderaan. Vocht maakt eerst de naden donker, omdat draadgaten water naar binnen trekken. Een doorgezakt vierkant heeft gewicht gehouden. Zout op een naad betekent herhaalde condensatie. Een scheur met donkere binnenlaag zegt dat de wand na de laatste officiele service is geopend, geschraapt of belast.\n\nMetaal toont slag en druk. Isolatie toont tijd. Het onthoudt kleine lekken voor zichtbare stromen, pomphuizen die weken warm liepen en panelen die zonder drogen werden gesloten. Als de scanner vochtige naden achter een kalme gang vindt, is de vraag niet of de stof nat is. De vraag is wat de wand verborg.\n\nIn gameplay kan warme vochtige backing wijzen op een gevoed relais. Koude vochtigheid onder ventilatie kan een falende afdichting tonen. Zoute naden bij kabelgoten waarschuwen voor levende of gecorrodeerde lijnen. In een veilige kamer is schone isolatie comfort; bevlekte isolatie is de oceaan die geduld oefent.",
-          "external_site": "Vochtige isolatiedekens maken HECTON-8-interieurs leesbaar: donkere naden, zoutstof, doorgezakte quilting, warme backing en scheuren tonen condens, verborgen lekken en laat herstel.",
-          "external_site_article": "Vochtige isolatiedeken zit achter het zichtbare metaal van drukinterieurs. De gewatteerde grijs-beige stof is een technische laag, geen huiselijk comfort. Hij dempt trilling, beschermt achterplaten en registreert vocht voordat de wand openlijk lekt.\n\nIn gameplay kan de laag naar actieve apparatuur, verborgen waterpaden, gecorrodeerde kabelgoten of slechte reparaties leiden. Donkere naden tonen nat-droogcycli. Doorzakkende vakken tonen vastgehouden water. Zoutstof toont condensroutes.\n\nHet materiaal geeft oude kamers onderhoudsgeschiedenis in plaats van alleen textuur.",
-          "field_note": "Zachte wand, harde les: donkere naad betekent dat de kamer langer lekt dan het rapport."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artykul terenowy: wilgotny koc izolacyjny",
-          "scanner": "WILGOTNA IZOLACJA MODULU // Pikowana szaro-bezowa tkanina techniczna, scisniete szwy, ciemne linie wilgoci, pyl solny i male rozdarcia z ciemna warstwa wewnetrzna. To nie tkanina kombinezonu cisnieniowego.",
-          "terminal": "KONSERWACJA HABITATU // Wymieniac sekcje po trzecim cyklu mokro-sucho. Nie uszczelniac ciemnych szwow bez sprawdzenia ciepla plyty tylnej i kondensacji przy korycie kablowym.",
-          "audio": "Sciana brzmi tam miekko. To znaczy, ze pila wode, a nie odpoczywala.",
-          "in_game_wiki": "Wilgotny koc izolacyjny to miekko wygladajaca warstwa za twardymi wnetrzami cisnieniowymi. To nie dekoracja, posciel ani material kombinezonu. Deep Reach stosowal pikowane techniczne koce za panelami, pompami, szafami sprzetu i powlokami bezpiecznych pokoi, bo sam metal czynil pomieszczenia zimnymi, glosnymi i trudnymi w obsludze.\n\nSuchy koc powinien wygladac nudno: szaro-bezowa tkanina, plytkie pikowanie, scisniete szwy i troche pylu solnego u dolu. Wilgoc najpierw przyciemnia szwy, bo dziury po niciach wciagaja wode do srodka. Zapadniety kwadrat nosil ciezar. Sol na jednym szwie oznacza powtarzana kondensacje. Rozdarcie z ciemna warstwa mowi, ze sciane otwierano, skrobano albo dociskano sprzetem po ostatnim oficjalnym serwisie.\n\nMetal pokazuje uderzenie i cisnienie. Izolacja pokazuje czas. Pamieta male przecieki przed widoczna struga, pompy cieple przez tygodnie i panele zamkniete bez suszenia tylu. Gdy skaner znajduje wilgotny szew za spokojnym korytarzem, pytanie nie brzmi, czy tkanina jest mokra. Pytanie brzmi, co sciana ukrywala.\n\nW grze cieple wilgotne podbicie moze wskazac zasilany przekaznik. Zimna wilgoc pod wentylacja moze wskazac uszczelke. Slone szwy przy kablach ostrzegaja przed zywa albo skorodowana linia. W bezpiecznym pokoju czysta izolacja to komfort; poplamiona to cierpliwosc oceanu.",
-          "external_site": "Wilgotne koce izolacyjne czynia wnetrza HECTON-8 czytelnymi: ciemne szwy, sol, zapadniete pikowanie, cieple podbicie i rozdarcia ujawniaja kondensacje, przecieki i pozne naprawy.",
-          "external_site_article": "Wilgotny koc izolacyjny lezy za widocznym metalem wnetrz cisnieniowych. Pikowana szaro-bezowa tkanina to warstwa techniczna, nie domowy komfort. Tlumii wibracje, chroni plyty tylne i zapisuje wilgoc, zanim sciana pokaze przeciek.\n\nW grze moze prowadzic do aktywnego sprzetu, ukrytych drog wody, skorodowanych koryt kablowych albo zlych napraw po zalaniu. Ciemne szwy pokazuja cykle mokro-sucho. Zapadniete pola pokazuja zatrzymana wode. Pyl solny pokazuje drogi kondensacji.\n\nMaterial daje starym wnetrzom historie konserwacji.",
-          "field_note": "Miekka sciana, twarda lekcja: ciemny szew znaczy, ze pokoj cieknie dluzej niz raport."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artigo de campo sobre manta de isolamento úmida",
-          "scanner": "ISOLAMENTO ÚMIDO // Tecido técnico acolchoado cinza-bege, costuras comprimidas, linhas escuras de umidade, poeira de sal e pequenos rasgos expondo camada interna escura. Não é tecido de traje de pressão.",
-          "terminal": "MANUTENÇÃO DE HABITAT // Substituir seções após o terceiro ciclo molhado-seco. Não vedar sobre costuras escuras sem checar calor da placa traseira e condensação na bandeja de cabos.",
-          "audio": "A parede soa macia ali. Isso quer dizer que ela bebeu, não que descansou.",
-          "in_game_wiki": "A manta de isolamento úmida é a camada de aparência macia atrás dos interiores rígidos de pressão. Não é decoração, cama nem tecido de traje. A Deep Reach usava mantas técnicas acolchoadas atrás de painéis, carcaças de bombas, racks de equipamento e salas seguras porque o metal sozinho tornava os quartos frios, barulhentos e difíceis de manter.\n\nUma manta seca deveria parecer banal: tecido cinza-bege, costuras comprimidas, acolchoado raso e um pouco de poeira de sal nas bordas inferiores. A umidade escurece primeiro as linhas de costura, porque os furos da linha puxam água para dentro. Um quadrado caído segurou peso. Sal numa costura significa condensação repetida. Um rasgo mostrando camada escura diz que a parede foi aberta, raspada ou pressionada por equipamento depois do último serviço oficial.\n\nO metal mostra impacto e pressão. O isolamento mostra tempo. Ele lembra vazamentos pequenos antes de virarem filetes, carcaças de bomba quentes por semanas e painéis fechados sem secar a parte de trás. Quando o scanner encontra costura úmida atrás de um corredor calmo, a pergunta não é se o tecido está molhado. A pergunta é o que a parede escondia.\n\nNo jogo, o fundo quente e úmido pode apontar para um relé ativo. Umidade fria sob uma ventilação pode apontar para vedação falhando. Costuras salgadas perto de cabos avisam sobre linha viva ou corroída. Numa sala segura, isolamento limpo é conforto; isolamento manchado é o oceano praticando paciência.",
-          "external_site": "Mantas de isolamento úmidas tornam interiores de HECTON-8 legíveis: costuras escuras, sal, acolchoado caído, fundo quente e rasgos revelam condensação, vazamentos e reparos tardios.",
-          "external_site_article": "A manta de isolamento úmida fica atrás do metal visível dos interiores de pressão. O tecido acolchoado cinza-bege é uma camada técnica, não conforto doméstico. Ela reduz vibração, protege placas traseiras e registra umidade antes da parede mostrar vazamento.\n\nNo jogo, a camada pode guiar até equipamento ativo, caminhos ocultos de água, bandejas de cabos corroídas ou maus reparos pós-inundação. Costuras escuras mostram ciclos molhado-seco. Quadrados caídos mostram água retida. Poeira de sal mostra rotas de condensação.\n\nO material dá história de manutenção humana aos interiores antigos.",
-          "field_note": "Parede macia, lição dura: se a costura está escura, a sala vaza há mais tempo que o relatório."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Полевая статья о мокрой изоляционной стеганке",
-          "scanner": "МОКРАЯ МОДУЛЬНАЯ ИЗОЛЯЦИЯ // Серо-бежевая техническая стеганка, сжатые швы, темные линии влаги по стежкам, соляная пыль и мелкие разрывы с темным внутренним слоем. Это не ткань скафандра.",
-          "terminal": "ОБСЛУЖИВАНИЕ ЖИЛОГО МОДУЛЯ // Менять секции после третьего цикла намокания и высыхания. Не герметизировать поверх темных швов без проверки нагрева задней пластины и конденсата у кабельного лотка.",
-          "audio": "Стена там звучит мягко. Значит, она пила воду, а не отдыхала.",
-          "in_game_wiki": "Мокрая изоляционная стеганка - мягкий на вид слой за жесткими напорными интерьерами. Это не украшение, не постель и не материал скафандра. Deep Reach ставила технические стеганые одеяла за панелями, насосными кожухами, стойками оборудования и оболочками безопасных комнат, потому что один металл делал помещения холодными, шумными и неудобными для обслуживания.\n\nСухая стеганка должна быть скучной: серо-бежевая ткань, неглубокая простежка, сжатые швы и немного соляной пыли у нижнего края. Влага темнит сначала стежки, потому что отверстия нитей тянут воду внутрь. Провисший квадрат держал вес. Соль вдоль одного шва значит, что конденсат высыхал там много раз. Разрыв с темным внутренним слоем говорит, что стену открывали, царапали или прижимали оборудованием после последнего официального сервиса.\n\nМеталл показывает удар и давление. Изоляция показывает время. Она помнит маленькие течи до видимых ручьев, насосный кожух, который неделями шел теплым, и панель, закрытую без просушки спинки. Когда сканер находит мокрый шов за спокойным коридором, правильный вопрос не в том, мокрая ли ткань. Вопрос в том, что стена прятала.\n\nВ игре теплая мокрая подложка может указывать на запитанное реле или перегруженный зарядник. Холодная сырость под вентиляцией может указывать на умирающее уплотнение. Соленые швы возле кабельного лотка предупреждают о живой или сгнившей линии. В безопасной комнате чистая изоляция означает комфорт; испачканная изоляция означает, что океан просто терпел.",
-          "external_site": "Мокрые изоляционные стеганки делают интерьеры HECTON-8 читаемыми: темные швы, соляная пыль, провисание, теплая подложка и разрывы показывают конденсат, скрытые течи и поздний ремонт.",
-          "external_site_article": "Мокрая изоляционная стеганка находится за видимым металлом напорных интерьеров HECTON-8. Серо-бежевая простеганная ткань - инженерный слой, а не домашний уют. Она гасит вибрацию, защищает задние пластины и записывает влагу раньше, чем стена признается ручьем.\n\nВ игре этот слой может привести к работающему оборудованию, скрытым путям воды, корродированным кабельным лоткам или плохому ремонту после затопления. Темные швы показывают циклы намокания и высыхания. Провисшие квадраты показывают удержанную воду. Соль на швах показывает маршруты конденсата.\n\nМатериал дает старым интерьерам историю человеческого обслуживания, а не просто текстуру стены.",
-          "field_note": "Мягкая стена, жесткий урок: если шов темный, комната течет дольше, чем написано в отчете."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Польова стаття про мокру ізоляційну стьобанку",
-          "scanner": "МОКРА МОДУЛЬНА ІЗОЛЯЦІЯ // Сіро-бежева технічна стьобанка, стиснуті шви, темні лінії вологи по стібках, соляний пил і дрібні розриви з темним внутрішнім шаром. Це не тканина скафандра.",
-          "terminal": "ОБСЛУГОВУВАННЯ ЖИТЛОВОГО МОДУЛЯ // Міняти секції після третього циклу намокання і висихання. Не герметизувати поверх темних швів без перевірки нагріву задньої пластини і конденсату біля кабельного лотка.",
-          "audio": "Стіна там звучить м'яко. Отже, вона пила воду, а не відпочивала.",
-          "in_game_wiki": "Мокра ізоляційна стьобанка - м'який на вигляд шар за жорсткими напірними інтер'єрами. Це не прикраса, не постіль і не матеріал скафандра. Deep Reach ставила технічні стьобані ковдри за панелями, насосними кожухами, стійками обладнання і оболонками безпечних кімнат, бо сам метал робив приміщення холодними, гучними і незручними для обслуговування.\n\nСуха стьобанка має бути нудною: сіро-бежева тканина, неглибока простібка, стиснуті шви і трохи соляного пилу внизу. Волога темнить спершу стібки, бо отвори ниток тягнуть воду всередину. Провислий квадрат тримав вагу. Сіль уздовж одного шва означає повторний конденсат. Розрив із темним внутрішнім шаром каже, що стіну відкривали, шкребли або притискали обладнанням після останнього офіційного сервісу.\n\nМетал показує удар і тиск. Ізоляція показує час. Вона пам'ятає маленькі течі до видимих струмків, насосний кожух, що тижнями йшов теплим, і панель, закриту без просушування спинки. Коли сканер знаходить мокрий шов за спокійним коридором, питання не в тому, чи тканина мокра. Питання в тому, що стіна ховала.\n\nУ грі тепла мокра підкладка може вказувати на живе реле або перевантажений зарядник. Холодна сирість під вентиляцією може вказувати на ущільнення, що вмирає. Солоні шви біля кабельного лотка попереджають про живу або зогнилу лінію. У безпечній кімнаті чиста ізоляція означає комфорт; заплямована означає терпіння океану.",
-          "external_site": "Мокрі ізоляційні стьобанки роблять інтер'єри HECTON-8 читаними: темні шви, соляний пил, провисання, тепла підкладка і розриви показують конденсат, приховані течі і пізній ремонт.",
-          "external_site_article": "Мокра ізоляційна стьобанка лежить за видимим металом напірних інтер'єрів HECTON-8. Сіро-бежева простьобана тканина - інженерний шар, не домашній затишок. Вона гасить вібрацію, захищає задні пластини і записує вологу раніше, ніж стіна визнає течу.\n\nУ грі цей шар може вести до робочого обладнання, прихованих шляхів води, кородованих кабельних лотків або поганого ремонту після затоплення. Темні шви показують цикли намокання й висихання. Провислі квадрати показують утриману воду. Сіль на швах показує маршрути конденсату.\n\nМатеріал дає старим інтер'єрам історію людського обслуговування.",
-          "field_note": "М'яка стіна, жорсткий урок: якщо шов темний, кімната тече довше, ніж написано у звіті."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "潮湿隔热毯现场条目",
-          "scanner": "潮湿模块隔热 // 灰米色绗缝技术织物、压缩缝线、深色潮气线、盐尘、小裂口暴露深色内层。不是压力服面料。",
-          "terminal": "居住舱维护 // 第三次湿干循环后更换隔热毯区段。未检查背板热量和线缆槽冷凝前，不得在深色缝线外重新密封。",
-          "audio": "那里的墙听起来很软。说明它一直在喝水，不是在休息。",
-          "in_game_wiki": "潮湿隔热毯是硬质承压内饰背后看似柔软的层。它不是装饰、床铺，也不是压力服布料。Deep Reach 把绗缝技术毯放在面板、泵壳、设备架和安全室外壳后面，因为单靠金属会让房间寒冷、吵闹，并且难以维护。\n\n干燥隔热毯应当很普通：灰米色织物、浅绗缝、压紧的缝线、下缘少量盐尘。潮气最先让缝线变暗，因为针孔会把水拉进内部。下垂的方格曾经承重。某条缝上的盐说明冷凝反复在那里干掉。露出深色内层的裂口说明最后一次正式维护后，墙曾被打开、刮擦或被设备顶压。\n\n金属显示撞击和压力。隔热层显示时间。它记住了小泄漏变成水流之前的阶段，记住了连续数周发热的泵壳，也记住了没有干燥背面就重新封上的面板。当扫描器在安静走廊背后发现潮湿缝线，问题不是布湿不湿。问题是墙一直藏着什么。\n\n玩法上，温热潮湿的背衬可能指向仍在供电的继电器或过载充电器。通风口下的冷湿可能指向失效密封。线缆槽附近的盐化缝线警告活线或腐蚀线。在安全室里，干净隔热层是舒适；染色隔热层是海洋的耐心。",
-          "external_site": "潮湿隔热毯让 HECTON-8 内饰可读：深色缝线、盐尘、绗缝下垂、温热背衬和裂口暴露冷凝循环、隐藏泄漏和后期维修。",
-          "external_site_article": "潮湿隔热毯位于 HECTON-8 承压内饰可见金属背后。灰米色绗缝织物是工程层，不是居家舒适层。它降低振动，保护背板，并在墙体出现可见泄漏前记录湿气。\n\n在玩法中，这一层可以引向仍工作的设备、隐藏水路、腐蚀线缆槽或糟糕的进水后维修。深色缝线显示湿干循环。下垂方格显示滞留水。缝线处盐尘显示冷凝路径。\n\n这种材料让旧殖民内饰拥有人工维护史，而不是单纯墙面贴图。",
-          "field_note": "软墙，硬教训：缝线发黑，说明房间漏水比报告更久。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.damped_insulation_blanket_field_article",
+    "secondary": [
+     "unlock.first_wet_module_insulation",
+     "unlock.first_dark_stitch_moisture_line",
+     "unlock.first_torn_insulation_inner_layer"
+    ],
+    "poi_tags": [
+     "poi.damped_insulation_blanket",
+     "poi.quilted_module_backing",
+     "poi.dark_stitch_moisture_line",
+     "poi.salt_dust_stitch_line",
+     "poi.torn_insulation_inner_layer",
+     "poi.warm_equipment_backing"
+    ],
+    "biome_tags": [
+     "biome.old_colony_interior",
+     "biome.pressure_base_corridor",
+     "biome.flooded_equipment_bay",
+     "biome.safe_room_shell"
+    ],
+    "first_20_boundary": "Makes interior insulation readable as pressure-vessel evidence: stitch darkening, quilt sag, salt dust, warm equipment backing and tears reveal leak history before broad exposition."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Interior Material Scanner",
+     "terminal": "Deep Reach Habitat Maintenance Note",
+     "audio": "Old Equipment Bay Recorder",
+     "in_game_wiki": "PDA Interior Insulation Primer",
+     "external_site": "Public Site Module Insulation Article",
+     "field_note": "Marauder Wall-Layer Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_wet_quilted_module_insulation_or_equipment_backing",
+    "truth_payload": "Damped insulation records repeated condensation, flood recovery, hidden heat and repair pressure through stitch darkening, sag, salt dust and torn inner layers.",
+    "player_question": "Is this room dry because it is safe, or dry because the insulation has been quietly holding the leak?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Damped Insulation Blanket Field Article",
+     "scanner": "DAMPED MODULE INSULATION // Quilted gray-beige technical fabric, compressed seams, dark stitch moisture lines, salt dust and small tears exposing darker inner layer. Not pressure-suit fabric.",
+     "terminal": "HABITAT MAINTENANCE // Replace blanket sections after the third wet-dry cycle. Do not reseal over dark stitch lines without checking backing plate heat and cable tray condensation.",
+     "audio": "The wall sounds soft there. That means it has been drinking, not resting.",
+     "in_game_wiki": "Damped insulation blanket is the soft-looking layer behind hard pressure interiors. It is not decoration, bedding, or suit fabric. Deep Reach used quilted technical blankets behind panels, pump housings, equipment racks and safe-room shells because metal alone made rooms loud, cold and impossible to service. The blanket trapped heat, muted vibration, protected ceramic backing and gave maintenance crews a visible record of what the wall had suffered.\n\nA dry blanket should look boring: gray-beige fabric, shallow quilting, compressed seams, a little salt dust near lower edges. A useful blanket is rarely dry for long. Moisture darkens stitch lines first because thread holes pull water inward. A sagging square means the inner batting has held weight. Salt dust along one seam means condensation dried there repeatedly. A tear showing darker inner layer tells the player that the room has been opened, scraped, cut or leaned on by equipment after the last official service.\n\nThe player reads insulation differently from metal. Metal shows impact and pressure. Insulation shows time. It remembers small leaks before they become visible streams. It remembers which pump housing ran warm for weeks. It remembers where a panel was resealed without drying the backing. When the scanner finds damp stitching behind an apparently calm corridor, the right question is not whether the fabric is wet. The right question is what the wall has been hiding.\n\nFor gameplay, damp insulation can mark several useful decisions. Warm damp backing near a rack can point to a powered relay or overworked charger. Cold damp backing under a vent can point to a failing seal or hidden water path. Salted quilt seams near a cable tray warn that cutting nearby may expose a live or corroded line. Torn blanket around a hatch lip can show that someone made a fast access cut and put the panel back badly. In a safe room, clean insulation is comfort; stained insulation is the ocean practicing patience.\n\nThe material also keeps HECTON-8 from becoming clean corridor fiction. A room that survived flooding should not look freshly painted unless someone spent labor hiding the flood. Damped blankets make that labor visible. The cloth edge at a screw washer, the darker seam under a warm junction box, the line where salt stopped under a shelf: these are the small facts that make a base feel maintained instead of merely modeled.\n\nMarauder note: never trust a soft wall. Press near the seam with a tool, not a glove. If salt falls, the leak is old. If the fabric warms, a machine is alive behind it. If the tear smells metallic, the backing plate is exposed. If somebody patched over damp quilting, they were buying another shift, not solving the room.",
+     "external_site": "Damped insulation blankets make HECTON-8 interiors readable: stitch darkening, salt dust, quilt sag, warm backing and torn fabric reveal condensation cycles, hidden leaks and late repair work.",
+     "external_site_article": "Damped insulation blanket sits behind the visible metal of HECTON-8 pressure interiors. The quilted gray-beige fabric is an engineered layer, not domestic comfort. It reduces vibration, protects backing plates and records moisture before the wall admits a visible leak.\n\nIn play, the blanket can guide the reader toward powered equipment, hidden water paths, corroded cable trays or bad post-flood repairs. Dark stitch lines show repeated wet-dry cycles. Sagging quilt squares show retained water. Salt dust at seams shows condensation routes. Tears exposing a dark inner layer often mean the wall was opened fast and closed badly.\n\nThe material gives old colony interiors a human maintenance history. It lets the player read rooms by touch, sound and stain rather than by terminal exposition. A clean panel may lie; damp quilting usually tells the cheaper truth.",
+     "field_note": "Soft wall, hard lesson: if the seam is dark, the room has been leaking longer than the report."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "مقالة ميدانية عن بطانية العزل الرطبة",
+     "scanner": "عزل وحدة رطب // قماش تقني مبطن رمادي مائل للبيج، دروز مضغوطة، خطوط رطوبة داكنة في الخياطة، غبار ملح وتمزقات صغيرة تكشف طبقة داخلية داكنة. ليس قماش بدلة ضغط.",
+     "terminal": "صيانة موئل // استبدل أقسام البطانية بعد ثالث دورة بلل وجفاف. لا تغلق فوق خطوط خياطة داكنة قبل فحص حرارة اللوح الخلفي وتكاثف مسار الكابلات.",
+     "audio": "الجدار يبدو لينا هناك. هذا يعني أنه كان يشرب، لا أنه يرتاح.",
+     "in_game_wiki": "بطانية العزل الرطبة هي الطبقة التي تبدو ناعمة خلف داخلية الضغط الصلبة. ليست زينة ولا فراشا ولا قماش بدلة. استخدمتها Deep Reach خلف الألواح والمضخات ورفوف المعدات وقشور الغرف الآمنة لأن المعدن وحده يجعل المكان باردا وصاخبا وصعب الخدمة. العزل يمسك الحرارة، يهدئ الاهتزاز، يحمي الظهر الخزفي ويترك لسكان الصيانة سجلا مرئيا لما عاناه الجدار.\n\nالبطانية الجافة يجب أن تبدو مملة: قماش رمادي بيج، تبطين ضحل، دروز مضغوطة وقليل من غبار الملح عند الحافة السفلية. الرطوبة تغمق خطوط الخياطة أولا لأن ثقوب الخيط تسحب الماء إلى الداخل. مربع مترهل يعني أن الحشو حمل وزنا. ملح على درز واحد يعني أن التكاثف جف هناك مرات كثيرة. تمزق يكشف طبقة داكنة يعني أن الغرفة فتحت أو كشطت أو ضغطت عليها معدات بعد آخر خدمة رسمية.\n\nالمعدن يظهر الضربة والضغط. العزل يظهر الوقت. يتذكر التسربات الصغيرة قبل أن تصير جداول. يتذكر أي غلاف مضخة ظل دافئا أسابيع. يتذكر أين أغلق أحدهم اللوح من دون تجفيف الظهر. عندما يرى الماسح خياطة رطبة في ممر هادئ، فالسؤال ليس هل القماش مبلل. السؤال هو ماذا كان الجدار يخفي.\n\nفي اللعب قد تشير البطانية الدافئة الرطبة إلى مرحل عامل أو شاحن منهك. وقد يشير البرد تحت فتحة إلى ختم فاشل أو مسار ماء مخفي. دروز ملحية قرب قناة كابلات تحذر من قطع خط حي أو متآكل. التمزق حول حافة فتحة قد يثبت أن شخصا فتح وصولا سريعا ثم أعاد اللوح بشكل سيئ.",
+     "external_site": "بطانيات العزل الرطبة تجعل داخل HECTON-8 قابلا للقراءة: غمقان الخياطة، غبار الملح، ترهل التبطين، الظهر الدافئ والتمزقات تكشف دورات التكاثف والتسربات والإصلاحات المتأخرة.",
+     "external_site_article": "تقع بطانية العزل الرطبة خلف معدن داخلية الضغط في HECTON-8. القماش المبطن الرمادي البيج طبقة هندسية لا راحة منزلية. يقلل الاهتزاز ويحمي اللوح الخلفي ويسجل الرطوبة قبل أن يعترف الجدار بتسرب ظاهر.\n\nفي اللعب يمكن أن تقود هذه الطبقة إلى معدات تعمل، مسارات ماء مخفية، قنوات كابلات متآكلة أو إصلاحات سيئة بعد الغمر. خطوط الخياطة الداكنة تعني دورات بلل وجفاف. المربعات المترهلة تعني ماء محتجزا. غبار الملح عند الدرز يعني طريق تكاثف.\n\nتعطي المادة للداخل تاريخ صيانة بشريا، وتجعل اللاعب يقرأ الغرفة باللمس والصوت والبقعة لا بالنص وحده.",
+     "field_note": "جدار ناعم ودرس قاس: إذا كان الدرز داكنا فالتسرب أقدم من التقرير."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Feldartikel: feuchte Isolierdecke",
+     "scanner": "FEUCHTE MODULISOLIERUNG // Gesteppter grau-beiger Technikstoff, zusammengedrueckte Naehte, dunkle Feuchtigkeitslinien, Salzstaub und kleine Risse mit dunkler Innenschicht. Kein Druckanzugstoff.",
+     "terminal": "HABITATWARTUNG // Deckenabschnitte nach dem dritten Nass-Trocken-Zyklus ersetzen. Nicht ueber dunkle Nahtlinien versiegeln, bevor Rueckplattenwaerme und Kondensat an Kabeltrassen geprueft sind.",
+     "audio": "Die Wand klingt dort weich. Das heisst, sie hat getrunken, nicht geruht.",
+     "in_game_wiki": "Die feuchte Isolierdecke ist die weich wirkende Schicht hinter harten Druckinnenraeumen. Sie ist keine Dekoration, kein Bettzeug und kein Anzugstoff. Deep Reach nutzte gesteppte technische Decken hinter Paneelen, Pumpengehaeusen, Geraeteracks und Schutzraumhuellen, weil Metall allein Raeume laut, kalt und schwer wartbar machte.\n\nEine trockene Decke sollte langweilig aussehen: grau-beiger Stoff, flache Steppung, gepresste Naehte, etwas Salzstaub unten. Nuetzlich wird sie, wenn sie nicht trocken bleibt. Feuchtigkeit dunkelt zuerst die Nahtlinien, weil Fadenloecher Wasser hineinziehen. Ein haengendes Quadrat hat Gewicht gehalten. Salz an einer Naht bedeutet wiederholtes Trocknen von Kondensat. Ein Riss mit dunkler Innenschicht sagt, dass jemand die Wand nach der letzten offiziellen Wartung geoeffnet, geschabt oder belastet hat.\n\nMetall zeigt Schlag und Druck. Isolierung zeigt Zeit. Sie merkt sich kleine Lecks vor sichtbaren Rinnsalen, warme Pumpengehaeuse und Paneele, die wieder verschlossen wurden, ohne die Rueckseite zu trocknen. Wenn der Scanner feuchte Naehte hinter einem ruhigen Korridor findet, lautet die Frage nicht, ob Stoff nass ist. Die Frage lautet, was die Wand verschweigt.\n\nIm Spiel markiert feuchte Isolierung Entscheidungen: warme feuchte Rueckseite kann ein aktives Relais zeigen; kalte Feuchte unter einer Lueftung kann auf Dichtungsschaden deuten; salzige Naehte an einer Kabeltrasse warnen vor einer korrodierten Leitung. In einem Schutzraum ist saubere Isolierung Komfort. Fleckige Isolierung ist Geduld des Ozeans.",
+     "external_site": "Feuchte Isolierdecken machen HECTON-8-Innenraeume lesbar: dunkle Naehte, Salzstaub, Steppungsdurchhang, warme Rueckseite und Risse zeigen Kondensatzyklen, Lecks und spaete Reparaturen.",
+     "external_site_article": "Feuchte Isolierdecke liegt hinter dem sichtbaren Metall von HECTON-8-Druckinnenraeumen. Der gesteppte grau-beige Stoff ist eine technische Schicht, kein Komfortobjekt. Er daempft Schwingung, schuetzt Rueckplatten und zeichnet Feuchtigkeit auf, bevor die Wand ein offenes Leck zeigt.\n\nIm Spiel kann diese Schicht zu aktiver Ausruestung, verborgenen Wasserwegen, korrodierten Kabeltrassen oder schlechten Nachflut-Reparaturen fuehren. Dunkle Naehte zeigen Nass-Trocken-Zyklen. Haengende Felder zeigen gespeichertes Wasser. Salzstaub an Naehten zeigt Kondensationswege.\n\nSo bekommt ein alter Innenraum Wartungsgeschichte statt nur Wandtextur.",
+     "field_note": "Weiche Wand, harte Lektion: dunkle Naht bedeutet, dass der Raum laenger leckt als der Bericht sagt."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Articulo de campo sobre manta aislante humeda",
+     "scanner": "AISLAMIENTO HUMEDO // Tela tecnica acolchada gris beige, costuras comprimidas, lineas oscuras de humedad, polvo de sal y pequeños desgarros con capa interior oscura. No es tejido de traje de presion.",
+     "terminal": "MANTENIMIENTO DE HABITAT // Sustituir secciones tras el tercer ciclo mojado-seco. No sellar sobre costuras oscuras sin revisar calor de placa trasera y condensacion en bandeja de cables.",
+     "audio": "La pared suena blanda ahi. Eso significa que ha estado bebiendo, no descansando.",
+     "in_game_wiki": "La manta aislante humeda es la capa blanda detras de interiores duros de presion. No es decoracion, cama ni traje. Deep Reach la uso detras de paneles, bombas, racks y salas seguras porque el metal solo hacia las habitaciones frias, ruidosas y dificiles de mantener.\n\nUna manta seca debe parecer aburrida: tela gris beige, acolchado poco profundo, costuras comprimidas y algo de sal en bordes bajos. La humedad oscurece primero las costuras porque los agujeros del hilo tiran del agua hacia dentro. Un cuadro hundido ha sostenido peso. Sal en una costura significa condensacion repetida. Un desgarro con capa oscura dice que la pared fue abierta, raspada o apoyada por equipo despues del ultimo servicio.\n\nEl metal muestra impacto y presion. El aislamiento muestra tiempo. Recuerda fugas pequeñas antes de que sean visibles, carcasas de bomba calientes durante semanas y paneles sellados sin secar la trasera. Cuando el escaner encuentra costura humeda en un corredor tranquilo, la pregunta no es si la tela esta mojada. La pregunta es que ocultaba la pared.\n\nEn juego, el respaldo humedo y caliente puede señalar un rele alimentado o un cargador forzado. El frio bajo una ventilacion puede señalar sello fallido. Costuras saladas cerca de cables avisan de linea viva o corroída. En una sala segura, aislamiento limpio es confort; aislamiento manchado es paciencia del oceano.",
+     "external_site": "Las mantas aislantes humedas hacen legibles los interiores de HECTON-8: costuras oscuras, sal, hundimiento, respaldo caliente y desgarros revelan condensacion, fugas y reparaciones tardias.",
+     "external_site_article": "La manta aislante humeda esta detras del metal visible de los interiores de presion. Es una capa tecnica acolchada, no confort domestico. Reduce vibracion, protege placas traseras y registra humedad antes de que la pared muestre una fuga.\n\nEn juego puede guiar hacia equipo activo, rutas ocultas de agua, bandejas de cables corroídas o malas reparaciones. Costuras oscuras muestran ciclos mojado-seco. Cuadros hundidos muestran agua retenida. Sal en costuras muestra condensacion.\n\nEl material da historia de mantenimiento a los interiores de la colonia.",
+     "field_note": "Pared blanda, leccion dura: si la costura esta oscura, la sala lleva fugando mas que el informe."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Article de terrain sur couverture isolante humide",
+     "scanner": "ISOLANT HUMIDE // Tissu technique matelasse gris-beige, coutures comprimees, lignes sombres d'humidite, poussiere de sel et petites dechirures montrant une couche interne sombre. Pas un tissu de combinaison.",
+     "terminal": "MAINTENANCE HABITAT // Remplacer les sections apres le troisieme cycle humide-sec. Ne pas resceller sur coutures sombres sans verifier chaleur de plaque arriere et condensation de chemin de cable.",
+     "audio": "Le mur sonne mou ici. Cela veut dire qu'il a bu, pas qu'il repose.",
+     "in_game_wiki": "La couverture isolante humide est la couche douce derriere les interieurs sous pression. Ce n'est ni decoration, ni literie, ni tissu de combinaison. Deep Reach l'a placee derriere panneaux, pompes, baies d'equipement et salles sures parce que le metal seul rendait les pieces froides, bruyantes et difficiles a maintenir.\n\nUne couverture seche devrait etre banale: tissu gris-beige, matelassage peu profond, coutures comprimees, un peu de sel pres du bas. L'humidite noircit d'abord les coutures car les trous du fil attirent l'eau. Un carre affaisse a porte du poids. Du sel sur une couture signale des condensations repetees. Une dechirure montrant une couche sombre indique que la paroi a ete ouverte, raclee ou chargee apres le dernier service officiel.\n\nLe metal montre choc et pression. L'isolant montre le temps. Il garde les petites fuites avant les filets visibles, les carters de pompe restes chauds et les panneaux refermes sans sechage. Si le scanner trouve une couture humide derriere un couloir calme, la bonne question n'est pas si le tissu est mouille. C'est ce que le mur cachait.\n\nEn jeu, un dos chaud et humide peut indiquer relais alimente ou chargeur fatigue. Une zone froide sous une ventilation peut indiquer joint defaillant. Des coutures salees pres des cables avertissent d'une ligne active ou corrodee. Dans une salle sure, l'isolant propre est du confort; l'isolant tache est la patience de l'ocean.",
+     "external_site": "Les couvertures isolantes humides rendent lisibles les interieurs HECTON-8: coutures sombres, sel, affaissement, dos chaud et dechirures revelent condensation, fuites et reparations tardives.",
+     "external_site_article": "La couverture isolante humide se trouve derriere le metal visible des interieurs sous pression. Le tissu matelasse gris-beige est une couche technique, pas un confort domestique. Il amortit les vibrations, protege les plaques arriere et enregistre l'humidite avant la fuite visible.\n\nEn jeu, elle peut guider vers un equipement actif, un chemin d'eau cache, des chemins de cable corrodes ou une mauvaise reparation. Les coutures sombres montrent les cycles humide-sec. Les carres affaisses montrent l'eau retenue. Le sel aux coutures montre les routes de condensation.\n\nCette matiere donne aux pieces une histoire de maintenance humaine.",
+     "field_note": "Mur mou, lecon dure: si la couture est sombre, la fuite est plus vieille que le rapport."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "מאמר שדה על שמיכת בידוד לחה",
+     "scanner": "בידוד מודול לח // בד טכני מרופד אפור-בז', תפרים דחוסים, קווי לחות כהים בתפר, אבק מלח וקרעים קטנים שחושפים שכבה פנימית כהה. לא בד חליפת לחץ.",
+     "terminal": "תחזוקת בית גידול // להחליף מקטעים אחרי מחזור רטוב-יבש שלישי. אין לאטום מעל קווי תפר כהים בלי לבדוק חום לוח אחורי והתעבות בתעלת כבלים.",
+     "audio": "הקיר נשמע רך שם. זה אומר שהוא שתה, לא נח.",
+     "in_game_wiki": "שמיכת בידוד לחה היא השכבה הרכה למראה מאחורי פנים קשיח של כלי לחץ. היא אינה קישוט, מצע או בד חליפה. Deep Reach השתמשה בשמיכות טכניות מרופדות מאחורי לוחות, בתי משאבות, מדפי ציוד ומעטפות חדרים בטוחים, כי מתכת לבדה הפכה חדרים לקרים, רועשים וקשים לטיפול.\n\nשמיכה יבשה אמורה להיות משעממת: בד אפור-בז', ריפוד שטוח, תפרים דחוסים ומעט אבק מלח בקצה התחתון. לחות מחשיכה קודם את קווי התפר, כי חורי החוט מושכים מים פנימה. ריבוע שקוע נשא משקל. מלח לאורך תפר אומר שהתעבות התייבשה שם שוב ושוב. קרע שחושף שכבה כהה אומר שהקיר נפתח, נשרט או נלחץ על ידי ציוד אחרי השירות הרשמי האחרון.\n\nמתכת מראה פגיעה ולחץ. בידוד מראה זמן. הוא זוכר דליפות קטנות לפני זרמים גלויים, בית משאבה שחם שבועות, ולוח שנאטם בלי לייבש את הגב. כשהסורק מוצא תפר לח במסדרון שקט, השאלה אינה אם הבד רטוב. השאלה היא מה הקיר הסתיר.\n\nבמשחק, גב חם ולח יכול להצביע על ממסר פעיל. קור מתחת לפתח יכול להצביע על אטם כושל. תפרים מלוחים ליד תעלת כבלים מזהירים מקו חי או חלוד. בחדר בטוח, בידוד נקי הוא נחמה; בידוד מוכתם הוא סבלנותו של האוקיינוס.",
+     "external_site": "שמיכות בידוד לחות הופכות פנים של HECTON-8 לקריאים: תפרים כהים, אבק מלח, שקיעה, גב חם וקרעים חושפים מחזורי התעבות, דליפות ותיקון מאוחר.",
+     "external_site_article": "שמיכת בידוד לחה יושבת מאחורי המתכת הגלויה של פנים לחץ. הבד המרופד האפור-בז' הוא שכבה הנדסית, לא נוחות ביתית. הוא מפחית רעידות, מגן על לוחות אחוריים ורושם לחות לפני שהקיר מראה דליפה.\n\nבמשחק היא יכולה להוביל לציוד פעיל, נתיבי מים חבויים, תעלות כבלים חלודות או תיקונים רעים אחרי הצפה. תפרים כהים מראים מחזורי רטוב-יבש. ריבועים שקועים מראים מים שנשמרו. מלח בתפרים מראה נתיבי התעבות.\n\nהחומר נותן לחדרים היסטוריית תחזוקה שאפשר לקרוא.",
+     "field_note": "קיר רך, שיעור קשה: אם התפר כהה, החדר דולף יותר זמן מהדוח."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artikel Lapangan Selimut Insulasi Lembap",
+     "scanner": "INSULASI MODUL LEMBAP // Kain teknis quilt abu krem, jahitan tertekan, garis lembap gelap, debu garam, dan sobekan kecil yang membuka lapisan dalam gelap. Bukan kain pakaian tekanan.",
+     "terminal": "PERAWATAN HABITAT // Ganti bagian selimut setelah siklus basah-kering ketiga. Jangan menyegel di atas garis jahit gelap sebelum memeriksa panas pelat belakang dan kondensasi baki kabel.",
+     "audio": "Dinding di sana terdengar lunak. Artinya ia sudah minum, bukan beristirahat.",
+     "in_game_wiki": "Selimut insulasi lembap adalah lapisan yang tampak lunak di balik interior tekanan yang keras. Ini bukan dekorasi, bukan tempat tidur, dan bukan bahan pakaian tekanan. Deep Reach memasangnya di balik panel, rumah pompa, rak peralatan, dan cangkang ruang aman karena logam saja membuat ruangan dingin, bising, dan sulit diservis.\n\nSelimut kering seharusnya membosankan: kain abu krem, quilt dangkal, jahitan tertekan, sedikit debu garam di bawah. Kelembapan lebih dulu menggelapkan jahitan karena lubang benang menarik air ke dalam. Kotak yang melorot pernah menahan berat. Garam di satu jahitan berarti kondensasi berulang. Sobekan yang memperlihatkan lapisan gelap berarti dinding pernah dibuka, digesek, atau ditekan peralatan setelah servis resmi terakhir.\n\nLogam menunjukkan benturan dan tekanan. Insulasi menunjukkan waktu. Ia mengingat kebocoran kecil sebelum aliran terlihat, rumah pompa yang hangat berminggu-minggu, dan panel yang disegel tanpa mengeringkan belakangnya. Saat pemindai menemukan jahitan lembap di koridor tenang, pertanyaannya bukan apakah kain basah, melainkan apa yang disembunyikan dinding.\n\nDalam gameplay, backing hangat lembap bisa menunjuk relai aktif. Dingin di bawah ventilasi bisa menunjuk segel gagal. Jahitan asin dekat baki kabel memperingatkan garis hidup atau berkarat. Di ruang aman, insulasi bersih berarti nyaman; insulasi bernoda berarti laut sedang menunggu.",
+     "external_site": "Selimut insulasi lembap membuat interior HECTON-8 bisa dibaca: jahitan gelap, debu garam, quilt melorot, backing hangat, dan sobekan mengungkap kondensasi, kebocoran, dan perbaikan terlambat.",
+     "external_site_article": "Selimut insulasi lembap berada di balik logam interior tekanan HECTON-8. Kain quilt abu krem ini lapisan teknik, bukan kenyamanan rumah. Ia meredam getaran, melindungi pelat belakang, dan merekam kelembapan sebelum dinding mengaku bocor.\n\nDi gameplay, lapisan ini bisa menunjuk peralatan hidup, jalur air tersembunyi, baki kabel korosi, atau perbaikan pascabanjir yang buruk. Jahitan gelap menunjukkan siklus basah-kering. Kotak melorot menunjukkan air tertahan. Debu garam menunjukkan jalur kondensasi.\n\nMateri ini memberi interior koloni sejarah perawatan manusia.",
+     "field_note": "Dinding lunak, pelajaran keras: jika jahitannya gelap, bocornya lebih tua dari laporan."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "湿った断熱ブランケット・フィールド記事",
+     "scanner": "湿潤モジュール断熱 // 灰ベージュのキルト状技術布、圧縮された縫い目、暗い湿気線、塩粉、小さな裂け目から見える暗い内層。耐圧スーツ布ではない。",
+     "terminal": "居住区保守 // 三回目の湿乾サイクル後にブランケット区画を交換。暗い縫い目を再密封する前に、背面板の熱とケーブルトレイ結露を確認すること。",
+     "audio": "その壁、音が柔らかい。休んでいたんじゃない。水を飲んでいた。",
+     "in_game_wiki": "湿った断熱ブランケットは、硬い耐圧内装の裏にある柔らかく見える層だ。装飾でも寝具でもスーツ素材でもない。Deep Reach はパネル、ポンプハウジング、機器ラック、安全室の殻の裏にキルト状の技術ブランケットを使った。金属だけでは部屋が寒く、うるさく、整備しにくかったからだ。\n\n乾いたブランケットは退屈に見えるはずだ。灰ベージュの布、浅いキルト、圧縮された縫い目、下端の少量の塩粉。湿気はまず縫い目を暗くする。糸穴が水を内側へ引くからだ。垂れた四角は水の重さを持っていた。縫い目の塩は結露が何度も乾いた痕跡だ。暗い内層を見せる裂け目は、最後の公式整備後に壁が開けられたか擦られたことを示す。\n\n金属は衝撃と圧力を見せる。断熱材は時間を見せる。小さな漏れ、長く温かかったポンプ、乾かさず閉じられたパネルを覚えている。静かな廊下の裏でスキャナーが湿った縫い目を見つけたなら、布が濡れているかではなく、壁が何を隠していたかを問うべきだ。\n\nゲーム内では、温かく湿った背面は通電リレーや過負荷充電器を示す。通気口下の冷たい湿りはシール不良を示す。ケーブルトレイ近くの塩付き縫い目は、生きた線や腐食線への警告になる。安全室で清潔な断熱は安心だが、染みた断熱は海の忍耐である。",
+     "external_site": "湿った断熱ブランケットは HECTON-8 内装を読める表面にする。暗い縫い目、塩粉、キルトの垂れ、温かい背面、裂け目が結露、隠れた漏れ、遅い修理を示す。",
+     "external_site_article": "湿った断熱ブランケットは、HECTON-8 の耐圧内装の金属裏にある。灰ベージュのキルト状布は家庭的な快適さではなく、振動を抑え、背面板を守り、壁が漏れを見せる前に湿気を記録する技術層だ。\n\nゲーム内では、これが通電機器、隠れた水路、腐食したケーブルトレイ、悪い水没後修理を示す。暗い縫い目は湿乾サイクル、垂れた区画は保持水、塩粉は結露路を示す。\n\nこの素材は古い内装に人間の保守履歴を与える。",
+     "field_note": "柔らかい壁ほど硬い教訓を残す。縫い目が暗いなら、漏れは報告より古い。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "젖은 단열 블랭킷 현장 문서",
+     "scanner": "젖은 모듈 단열재 // 회색-베이지 퀼트 기술 직물, 눌린 봉합선, 어두운 습기선, 소금 먼지, 어두운 내부층이 드러난 작은 찢김. 압력복 직물이 아님.",
+     "terminal": "거주구 정비 // 세 번째 습윤-건조 주기 뒤 블랭킷 구역 교체. 어두운 봉합선 위를 재밀봉하기 전에 후판 열과 케이블 트레이 결로를 확인.",
+     "audio": "저 벽은 소리가 부드럽다. 쉬고 있었던 게 아니라 물을 마신 거다.",
+     "in_game_wiki": "젖은 단열 블랭킷은 단단한 압력 내부 뒤의 부드러워 보이는 층이다. 장식도 침구도 압력복 직물도 아니다. Deep Reach는 패널, 펌프 하우징, 장비 랙, 안전실 외피 뒤에 퀼트 기술 블랭킷을 썼다. 금속만으로는 방이 차갑고 시끄럽고 정비하기 어려웠기 때문이다.\n\n마른 블랭킷은 지루해야 한다. 회색-베이지 천, 얕은 퀼트, 눌린 봉합, 아래쪽의 약간의 소금 먼지. 습기는 봉합선부터 어둡게 만든다. 실구멍이 물을 안으로 끌어들이기 때문이다. 처진 사각형은 무게를 담았던 자리다. 한 봉합선의 소금은 결로가 반복해서 말랐다는 뜻이다. 어두운 내부층이 보이는 찢김은 마지막 공식 정비 뒤 벽이 열리거나 긁히거나 장비에 눌렸음을 말한다.\n\n금속은 충격과 압력을 보여 준다. 단열재는 시간을 보여 준다. 보이는 물줄기 전의 작은 누수, 몇 주간 따뜻했던 펌프 하우징, 뒤를 말리지 않고 다시 닫은 패널을 기억한다. 조용한 복도 뒤에서 스캐너가 젖은 봉합선을 찾으면, 질문은 천이 젖었느냐가 아니다. 벽이 무엇을 숨겼는가다.\n\n게임에서 따뜻하고 젖은 후면은 통전 릴레이나 과로한 충전기를 가리킬 수 있다. 환기구 아래 차가운 습기는 실패한 씰을 가리킨다. 케이블 트레이 근처의 짠 봉합선은 살아 있거나 부식된 선을 경고한다. 안전실에서 깨끗한 단열은 안락함이지만, 얼룩진 단열은 바다의 기다림이다.",
+     "external_site": "젖은 단열 블랭킷은 HECTON-8 내부를 읽게 한다. 어두운 봉합선, 소금 먼지, 처진 퀼트, 따뜻한 후면, 찢김이 결로, 숨은 누수, 늦은 수리를 드러낸다.",
+     "external_site_article": "젖은 단열 블랭킷은 HECTON-8 압력 내부의 보이는 금속 뒤에 있다. 회색-베이지 퀼트 직물은 가정적 편안함이 아니라 진동을 줄이고 후판을 보호하며 벽이 누수를 드러내기 전 습기를 기록하는 기술층이다.\n\n게임에서 이 층은 살아 있는 장비, 숨은 물길, 부식된 케이블 트레이, 나쁜 침수 후 수리를 보여 줄 수 있다. 어두운 봉합선은 습윤-건조 주기, 처진 사각형은 고인 물, 소금 먼지는 결로 경로를 뜻한다.\n\n이 소재는 오래된 내부에 인간 정비의 기록을 남긴다.",
+     "field_note": "부드러운 벽일수록 단단한 교훈을 준다. 봉합선이 어두우면 누수는 보고서보다 오래됐다."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Veldartikel: vochtige isolatiedeken",
+     "scanner": "VOCHTIGE MODULE-ISOLATIE // Gewatteerde grijs-beige technische stof, samengedrukte naden, donkere vochtlijnen, zoutstof en kleine scheuren met donkere binnenlaag. Geen drukpakstof.",
+     "terminal": "HABITATONDERHOUD // Vervang dekenstukken na de derde nat-droogcyclus. Niet opnieuw afdichten over donkere naden zonder warmte van achterplaat en condens bij kabelgoot te controleren.",
+     "audio": "De wand klinkt daar zacht. Dat betekent dat hij heeft gedronken, niet gerust.",
+     "in_game_wiki": "De vochtige isolatiedeken is de zacht ogende laag achter harde drukinterieurs. Het is geen decoratie, beddengoed of pakstof. Deep Reach gebruikte gewatteerde technische dekens achter panelen, pomphuizen, rekken en veilige kameromhulsels omdat metaal alleen kamers koud, luid en moeilijk onderhoudbaar maakte.\n\nEen droge deken hoort saai te zijn: grijs-beige stof, ondiepe quilting, samengedrukte naden en wat zoutstof onderaan. Vocht maakt eerst de naden donker, omdat draadgaten water naar binnen trekken. Een doorgezakt vierkant heeft gewicht gehouden. Zout op een naad betekent herhaalde condensatie. Een scheur met donkere binnenlaag zegt dat de wand na de laatste officiele service is geopend, geschraapt of belast.\n\nMetaal toont slag en druk. Isolatie toont tijd. Het onthoudt kleine lekken voor zichtbare stromen, pomphuizen die weken warm liepen en panelen die zonder drogen werden gesloten. Als de scanner vochtige naden achter een kalme gang vindt, is de vraag niet of de stof nat is. De vraag is wat de wand verborg.\n\nIn gameplay kan warme vochtige backing wijzen op een gevoed relais. Koude vochtigheid onder ventilatie kan een falende afdichting tonen. Zoute naden bij kabelgoten waarschuwen voor levende of gecorrodeerde lijnen. In een veilige kamer is schone isolatie comfort; bevlekte isolatie is de oceaan die geduld oefent.",
+     "external_site": "Vochtige isolatiedekens maken HECTON-8-interieurs leesbaar: donkere naden, zoutstof, doorgezakte quilting, warme backing en scheuren tonen condens, verborgen lekken en laat herstel.",
+     "external_site_article": "Vochtige isolatiedeken zit achter het zichtbare metaal van drukinterieurs. De gewatteerde grijs-beige stof is een technische laag, geen huiselijk comfort. Hij dempt trilling, beschermt achterplaten en registreert vocht voordat de wand openlijk lekt.\n\nIn gameplay kan de laag naar actieve apparatuur, verborgen waterpaden, gecorrodeerde kabelgoten of slechte reparaties leiden. Donkere naden tonen nat-droogcycli. Doorzakkende vakken tonen vastgehouden water. Zoutstof toont condensroutes.\n\nHet materiaal geeft oude kamers onderhoudsgeschiedenis in plaats van alleen textuur.",
+     "field_note": "Zachte wand, harde les: donkere naad betekent dat de kamer langer lekt dan het rapport."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artykul terenowy: wilgotny koc izolacyjny",
+     "scanner": "WILGOTNA IZOLACJA MODULU // Pikowana szaro-bezowa tkanina techniczna, scisniete szwy, ciemne linie wilgoci, pyl solny i male rozdarcia z ciemna warstwa wewnetrzna. To nie tkanina kombinezonu cisnieniowego.",
+     "terminal": "KONSERWACJA HABITATU // Wymieniac sekcje po trzecim cyklu mokro-sucho. Nie uszczelniac ciemnych szwow bez sprawdzenia ciepla plyty tylnej i kondensacji przy korycie kablowym.",
+     "audio": "Sciana brzmi tam miekko. To znaczy, ze pila wode, a nie odpoczywala.",
+     "in_game_wiki": "Wilgotny koc izolacyjny to miekko wygladajaca warstwa za twardymi wnetrzami cisnieniowymi. To nie dekoracja, posciel ani material kombinezonu. Deep Reach stosowal pikowane techniczne koce za panelami, pompami, szafami sprzetu i powlokami bezpiecznych pokoi, bo sam metal czynil pomieszczenia zimnymi, glosnymi i trudnymi w obsludze.\n\nSuchy koc powinien wygladac nudno: szaro-bezowa tkanina, plytkie pikowanie, scisniete szwy i troche pylu solnego u dolu. Wilgoc najpierw przyciemnia szwy, bo dziury po niciach wciagaja wode do srodka. Zapadniety kwadrat nosil ciezar. Sol na jednym szwie oznacza powtarzana kondensacje. Rozdarcie z ciemna warstwa mowi, ze sciane otwierano, skrobano albo dociskano sprzetem po ostatnim oficjalnym serwisie.\n\nMetal pokazuje uderzenie i cisnienie. Izolacja pokazuje czas. Pamieta male przecieki przed widoczna struga, pompy cieple przez tygodnie i panele zamkniete bez suszenia tylu. Gdy skaner znajduje wilgotny szew za spokojnym korytarzem, pytanie nie brzmi, czy tkanina jest mokra. Pytanie brzmi, co sciana ukrywala.\n\nW grze cieple wilgotne podbicie moze wskazac zasilany przekaznik. Zimna wilgoc pod wentylacja moze wskazac uszczelke. Slone szwy przy kablach ostrzegaja przed zywa albo skorodowana linia. W bezpiecznym pokoju czysta izolacja to komfort; poplamiona to cierpliwosc oceanu.",
+     "external_site": "Wilgotne koce izolacyjne czynia wnetrza HECTON-8 czytelnymi: ciemne szwy, sol, zapadniete pikowanie, cieple podbicie i rozdarcia ujawniaja kondensacje, przecieki i pozne naprawy.",
+     "external_site_article": "Wilgotny koc izolacyjny lezy za widocznym metalem wnetrz cisnieniowych. Pikowana szaro-bezowa tkanina to warstwa techniczna, nie domowy komfort. Tlumii wibracje, chroni plyty tylne i zapisuje wilgoc, zanim sciana pokaze przeciek.\n\nW grze moze prowadzic do aktywnego sprzetu, ukrytych drog wody, skorodowanych koryt kablowych albo zlych napraw po zalaniu. Ciemne szwy pokazuja cykle mokro-sucho. Zapadniete pola pokazuja zatrzymana wode. Pyl solny pokazuje drogi kondensacji.\n\nMaterial daje starym wnetrzom historie konserwacji.",
+     "field_note": "Miekka sciana, twarda lekcja: ciemny szew znaczy, ze pokoj cieknie dluzej niz raport."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artigo de campo sobre manta de isolamento úmida",
+     "scanner": "ISOLAMENTO ÚMIDO // Tecido técnico acolchoado cinza-bege, costuras comprimidas, linhas escuras de umidade, poeira de sal e pequenos rasgos expondo camada interna escura. Não é tecido de traje de pressão.",
+     "terminal": "MANUTENÇÃO DE HABITAT // Substituir seções após o terceiro ciclo molhado-seco. Não vedar sobre costuras escuras sem checar calor da placa traseira e condensação na bandeja de cabos.",
+     "audio": "A parede soa macia ali. Isso quer dizer que ela bebeu, não que descansou.",
+     "in_game_wiki": "A manta de isolamento úmida é a camada de aparência macia atrás dos interiores rígidos de pressão. Não é decoração, cama nem tecido de traje. A Deep Reach usava mantas técnicas acolchoadas atrás de painéis, carcaças de bombas, racks de equipamento e salas seguras porque o metal sozinho tornava os quartos frios, barulhentos e difíceis de manter.\n\nUma manta seca deveria parecer banal: tecido cinza-bege, costuras comprimidas, acolchoado raso e um pouco de poeira de sal nas bordas inferiores. A umidade escurece primeiro as linhas de costura, porque os furos da linha puxam água para dentro. Um quadrado caído segurou peso. Sal numa costura significa condensação repetida. Um rasgo mostrando camada escura diz que a parede foi aberta, raspada ou pressionada por equipamento depois do último serviço oficial.\n\nO metal mostra impacto e pressão. O isolamento mostra tempo. Ele lembra vazamentos pequenos antes de virarem filetes, carcaças de bomba quentes por semanas e painéis fechados sem secar a parte de trás. Quando o scanner encontra costura úmida atrás de um corredor calmo, a pergunta não é se o tecido está molhado. A pergunta é o que a parede escondia.\n\nNo jogo, o fundo quente e úmido pode apontar para um relé ativo. Umidade fria sob uma ventilação pode apontar para vedação falhando. Costuras salgadas perto de cabos avisam sobre linha viva ou corroída. Numa sala segura, isolamento limpo é conforto; isolamento manchado é o oceano praticando paciência.",
+     "external_site": "Mantas de isolamento úmidas tornam interiores de HECTON-8 legíveis: costuras escuras, sal, acolchoado caído, fundo quente e rasgos revelam condensação, vazamentos e reparos tardios.",
+     "external_site_article": "A manta de isolamento úmida fica atrás do metal visível dos interiores de pressão. O tecido acolchoado cinza-bege é uma camada técnica, não conforto doméstico. Ela reduz vibração, protege placas traseiras e registra umidade antes da parede mostrar vazamento.\n\nNo jogo, a camada pode guiar até equipamento ativo, caminhos ocultos de água, bandejas de cabos corroídas ou maus reparos pós-inundação. Costuras escuras mostram ciclos molhado-seco. Quadrados caídos mostram água retida. Poeira de sal mostra rotas de condensação.\n\nO material dá história de manutenção humana aos interiores antigos.",
+     "field_note": "Parede macia, lição dura: se a costura está escura, a sala vaza há mais tempo que o relatório."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Полевая статья о мокрой изоляционной стеганке",
+     "scanner": "МОКРАЯ МОДУЛЬНАЯ ИЗОЛЯЦИЯ // Серо-бежевая техническая стеганка, сжатые швы, темные линии влаги по стежкам, соляная пыль и мелкие разрывы с темным внутренним слоем. Это не ткань скафандра.",
+     "terminal": "ОБСЛУЖИВАНИЕ ЖИЛОГО МОДУЛЯ // Менять секции после третьего цикла намокания и высыхания. Не герметизировать поверх темных швов без проверки нагрева задней пластины и конденсата у кабельного лотка.",
+     "audio": "Стена там звучит мягко. Значит, она пила воду, а не отдыхала.",
+     "in_game_wiki": "Мокрая изоляционная стеганка - мягкий на вид слой за жесткими напорными интерьерами. Это не украшение, не постель и не материал скафандра. Deep Reach ставила технические стеганые одеяла за панелями, насосными кожухами, стойками оборудования и оболочками безопасных комнат, потому что один металл делал помещения холодными, шумными и неудобными для обслуживания.\n\nСухая стеганка должна быть скучной: серо-бежевая ткань, неглубокая простежка, сжатые швы и немного соляной пыли у нижнего края. Влага темнит сначала стежки, потому что отверстия нитей тянут воду внутрь. Провисший квадрат держал вес. Соль вдоль одного шва значит, что конденсат высыхал там много раз. Разрыв с темным внутренним слоем говорит, что стену открывали, царапали или прижимали оборудованием после последнего официального сервиса.\n\nМеталл показывает удар и давление. Изоляция показывает время. Она помнит маленькие течи до видимых ручьев, насосный кожух, который неделями шел теплым, и панель, закрытую без просушки спинки. Когда сканер находит мокрый шов за спокойным коридором, правильный вопрос не в том, мокрая ли ткань. Вопрос в том, что стена прятала.\n\nВ игре теплая мокрая подложка может указывать на запитанное реле или перегруженный зарядник. Холодная сырость под вентиляцией может указывать на умирающее уплотнение. Соленые швы возле кабельного лотка предупреждают о живой или сгнившей линии. В безопасной комнате чистая изоляция означает комфорт; испачканная изоляция означает, что океан просто терпел.",
+     "external_site": "Мокрые изоляционные стеганки делают интерьеры HECTON-8 читаемыми: темные швы, соляная пыль, провисание, теплая подложка и разрывы показывают конденсат, скрытые течи и поздний ремонт.",
+     "external_site_article": "Мокрая изоляционная стеганка находится за видимым металлом напорных интерьеров HECTON-8. Серо-бежевая простеганная ткань - инженерный слой, а не домашний уют. Она гасит вибрацию, защищает задние пластины и записывает влагу раньше, чем стена признается ручьем.\n\nВ игре этот слой может привести к работающему оборудованию, скрытым путям воды, корродированным кабельным лоткам или плохому ремонту после затопления. Темные швы показывают циклы намокания и высыхания. Провисшие квадраты показывают удержанную воду. Соль на швах показывает маршруты конденсата.\n\nМатериал дает старым интерьерам историю человеческого обслуживания, а не просто текстуру стены.",
+     "field_note": "Мягкая стена, жесткий урок: если шов темный, комната течет дольше, чем написано в отчете."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Польова стаття про мокру ізоляційну стьобанку",
+     "scanner": "МОКРА МОДУЛЬНА ІЗОЛЯЦІЯ // Сіро-бежева технічна стьобанка, стиснуті шви, темні лінії вологи по стібках, соляний пил і дрібні розриви з темним внутрішнім шаром. Це не тканина скафандра.",
+     "terminal": "ОБСЛУГОВУВАННЯ ЖИТЛОВОГО МОДУЛЯ // Міняти секції після третього циклу намокання і висихання. Не герметизувати поверх темних швів без перевірки нагріву задньої пластини і конденсату біля кабельного лотка.",
+     "audio": "Стіна там звучить м'яко. Отже, вона пила воду, а не відпочивала.",
+     "in_game_wiki": "Мокра ізоляційна стьобанка - м'який на вигляд шар за жорсткими напірними інтер'єрами. Це не прикраса, не постіль і не матеріал скафандра. Deep Reach ставила технічні стьобані ковдри за панелями, насосними кожухами, стійками обладнання і оболонками безпечних кімнат, бо сам метал робив приміщення холодними, гучними і незручними для обслуговування.\n\nСуха стьобанка має бути нудною: сіро-бежева тканина, неглибока простібка, стиснуті шви і трохи соляного пилу внизу. Волога темнить спершу стібки, бо отвори ниток тягнуть воду всередину. Провислий квадрат тримав вагу. Сіль уздовж одного шва означає повторний конденсат. Розрив із темним внутрішнім шаром каже, що стіну відкривали, шкребли або притискали обладнанням після останнього офіційного сервісу.\n\nМетал показує удар і тиск. Ізоляція показує час. Вона пам'ятає маленькі течі до видимих струмків, насосний кожух, що тижнями йшов теплим, і панель, закриту без просушування спинки. Коли сканер знаходить мокрий шов за спокійним коридором, питання не в тому, чи тканина мокра. Питання в тому, що стіна ховала.\n\nУ грі тепла мокра підкладка може вказувати на живе реле або перевантажений зарядник. Холодна сирість під вентиляцією може вказувати на ущільнення, що вмирає. Солоні шви біля кабельного лотка попереджають про живу або зогнилу лінію. У безпечній кімнаті чиста ізоляція означає комфорт; заплямована означає терпіння океану.",
+     "external_site": "Мокрі ізоляційні стьобанки роблять інтер'єри HECTON-8 читаними: темні шви, соляний пил, провисання, тепла підкладка і розриви показують конденсат, приховані течі і пізній ремонт.",
+     "external_site_article": "Мокра ізоляційна стьобанка лежить за видимим металом напірних інтер'єрів HECTON-8. Сіро-бежева простьобана тканина - інженерний шар, не домашній затишок. Вона гасить вібрацію, захищає задні пластини і записує вологу раніше, ніж стіна визнає течу.\n\nУ грі цей шар може вести до робочого обладнання, прихованих шляхів води, кородованих кабельних лотків або поганого ремонту після затоплення. Темні шви показують цикли намокання й висихання. Провислі квадрати показують утриману воду. Сіль на швах показує маршрути конденсату.\n\nМатеріал дає старим інтер'єрам історію людського обслуговування.",
+     "field_note": "М'яка стіна, жорсткий урок: якщо шов темний, кімната тече довше, ніж написано у звіті."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "潮湿隔热毯现场条目",
+     "scanner": "潮湿模块隔热 // 灰米色绗缝技术织物、压缩缝线、深色潮气线、盐尘、小裂口暴露深色内层。不是压力服面料。",
+     "terminal": "居住舱维护 // 第三次湿干循环后更换隔热毯区段。未检查背板热量和线缆槽冷凝前，不得在深色缝线外重新密封。",
+     "audio": "那里的墙听起来很软。说明它一直在喝水，不是在休息。",
+     "in_game_wiki": "潮湿隔热毯是硬质承压内饰背后看似柔软的层。它不是装饰、床铺，也不是压力服布料。Deep Reach 把绗缝技术毯放在面板、泵壳、设备架和安全室外壳后面，因为单靠金属会让房间寒冷、吵闹，并且难以维护。\n\n干燥隔热毯应当很普通：灰米色织物、浅绗缝、压紧的缝线、下缘少量盐尘。潮气最先让缝线变暗，因为针孔会把水拉进内部。下垂的方格曾经承重。某条缝上的盐说明冷凝反复在那里干掉。露出深色内层的裂口说明最后一次正式维护后，墙曾被打开、刮擦或被设备顶压。\n\n金属显示撞击和压力。隔热层显示时间。它记住了小泄漏变成水流之前的阶段，记住了连续数周发热的泵壳，也记住了没有干燥背面就重新封上的面板。当扫描器在安静走廊背后发现潮湿缝线，问题不是布湿不湿。问题是墙一直藏着什么。\n\n玩法上，温热潮湿的背衬可能指向仍在供电的继电器或过载充电器。通风口下的冷湿可能指向失效密封。线缆槽附近的盐化缝线警告活线或腐蚀线。在安全室里，干净隔热层是舒适；染色隔热层是海洋的耐心。",
+     "external_site": "潮湿隔热毯让 HECTON-8 内饰可读：深色缝线、盐尘、绗缝下垂、温热背衬和裂口暴露冷凝循环、隐藏泄漏和后期维修。",
+     "external_site_article": "潮湿隔热毯位于 HECTON-8 承压内饰可见金属背后。灰米色绗缝织物是工程层，不是居家舒适层。它降低振动，保护背板，并在墙体出现可见泄漏前记录湿气。\n\n在玩法中，这一层可以引向仍工作的设备、隐藏水路、腐蚀线缆槽或糟糕的进水后维修。深色缝线显示湿干循环。下垂方格显示滞留水。缝线处盐尘显示冷凝路径。\n\n这种材料让旧殖民内饰拥有人工维护史，而不是单纯墙面贴图。",
+     "field_note": "软墙，硬教训：缝线发黑，说明房间漏水比报告更久。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

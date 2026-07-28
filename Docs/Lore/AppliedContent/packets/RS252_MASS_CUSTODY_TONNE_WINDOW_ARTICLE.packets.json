@@ -1,11 +1,56 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS252_MASS_CUSTODY_TONNE_WINDOW_ARTICLE",
-  "title": "Mass Custody Tonne-Window Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS252_MASS_CUSTODY_TONNE_WINDOW_ARTICLE",
+ "title": "Mass Custody Tonne-Window Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1422_MASS_CUSTODY_TONNE_WINDOW_LEDGER",
+   "release_set_id": "RS252_MASS_CUSTODY_TONNE_WINDOW_ARTICLE",
+   "article_id": "applied_lore.mass_custody_tonne_window_ledger",
+   "title_key": "LORE_MASS_CUSTODY_TONNE_WINDOW_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/28_DEAD_CLAIMS_AND_SALVAGE_LAW_en_US.md",
+    "Docs/Lore/Grand_Library/29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,264 +58,220 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1422_MASS_CUSTODY_TONNE_WINDOW_LEDGER",
-      "release_set_id": "RS252_MASS_CUSTODY_TONNE_WINDOW_ARTICLE",
-      "article_id": "applied_lore.mass_custody_tonne_window_ledger",
-      "title_key": "LORE_MASS_CUSTODY_TONNE_WINDOW_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/28_DEAD_CLAIMS_AND_SALVAGE_LAW_en_US.md",
-        "Docs/Lore/Grand_Library/29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.mass_custody_tonne_window_ledger",
-        "secondary": [
-          "unlock.first_tonne_window_conflict",
-          "unlock.first_recovery_mass_custody_strip",
-          "unlock.first_payload_body_tradeoff"
-        ],
-        "poi_tags": [
-          "poi.mass_custody_strip",
-          "poi.tonne_window_scale",
-          "poi.keelmark_lift_allocation_board",
-          "poi.black_keel_payload_body_ledger"
-        ],
-        "biome_tags": [
-          "biome.carrier_link",
-          "biome.claim_admin",
-          "biome.ascent_stack",
-          "biome.safe_module"
-        ],
-        "first_20_boundary": "Connects first-hour lien pressure, claim windows and ascent certification to concrete salvage choices where body, payload, oxygen and evidence compete for one recoverable mass window."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Keelmark Mass Custody Scanner",
-          "terminal": "Black Keel Recovery Mass Desk",
-          "audio": "Carrier Accounting Channel",
-          "in_game_wiki": "PDA Mass Custody Primer",
-          "external_site": "Public Site Tonne-Window Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_payload_body_mass_conflict_or_ascent_reservation",
-        "truth_payload": "A tonne-window is recoverable lift opportunity, not simple money: body, oxygen, samples, evidence, quarantine volume and receiver liability compete before Black Keel reserves ascent mass.",
-        "player_question": "When the carrier can lift only one priced window, what is allowed to ride up?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Mass Custody Tonne-Window Ledger",
-          "scanner": "MASS CUSTODY STRIP // Keelmark laminate, oil behind the clearcoat. Columns read: body mass, welfare oxygen, sealed sample, evidence packet, quarantine hold, receiver liability. The human row is not first.",
-          "terminal": "KEELMARK MASS CUSTODY DESK // Base lien 4.8 tonne-window remains active. Ascent certificate accepted as hardware proof only. Recovery mass not reserved until oxygen welfare, sample custody, evidence payload, quarantine receiver and carrier lift allocation reconcile.",
-          "audio": "Black Keel does not ask whether you want to live. It asks what else is trying to ride up with you.",
-          "in_game_wiki": "A tonne-window is not currency dressed in metric clothing. It is the unit Black Keel uses when a body, a sample, a battery, a pressure sleeve and a packet of evidence all want the same upward burn. Money can be argued later. Mass has to be carried now.\n\nThis is why the carrier feels cruel even when its math is honest. The ocean gives you things that matter: sealed substrate, a worker badge, a black-box spool, a spare oxygen flask, a cracked pressure-glass plate. Keelmark turns each into a custody class. Black Keel turns those classes into mass, volume, quarantine risk, heat, ballast and receiver liability. The ledger then asks the dirty question: which of these is allowed to occupy the next lift window?\n\nThe player can change the answer, but not by shouting at the radio. A certified ascent stack removes one objection. A quarantine handshake removes another. A public evidence hash can make a packet harder to bury. Dumping a contaminated sample may buy body margin. Keeping it may buy truth and debt relief while making rescue harder. Tonne-window pressure is not a menu tax. It is the story rule that makes salvage choices physical.",
-          "external_site": "A tonne-window is Black Keel's recoverable mass opportunity: body, oxygen, samples, evidence and quarantine volume all compete before the carrier treats rescue as allocatable.",
-          "external_site_article": "HECTON-8 turns mercy into a load calculation because the world is built without magic rescue. Black Keel can hear a claim, accept a packet and still refuse body recovery until the next lift window can carry the right mass under the right custody.\n\nThe cruel part is not that the math is fake. It is that the math is allowed to be the first language. A survivor becomes body mass. Oxygen becomes welfare debt. A sample becomes sealed custody. A black-box packet becomes evidence payload. Quarantine becomes volume. Receiver rights become liability. The carrier does not decide whether these things matter. It decides which of them can be moved together.\n\nThis keeps the lore playable. Every salvage decision can push against the ledger: preserve proof, throw away contamination, certify hardware, spend oxygen, keep a sample, expose a public hash or protect enough body margin to get out. The player is not looting abstractions. They are fighting over what gets counted as recoverable.",
-          "field_note": "If the ledger says mass, ask whose body stopped being a person first."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал массовой опеки тонна-окна",
-          "scanner": "ПОЛОСА МАССОВОЙ ОПЕКИ // Ламинат Keelmark, масло под прозрачным слоем. Колонки: масса тела, welfare-кислород, запечатанный образец, пакет доказательств, карантинное удержание, ответственность приемника. Человеческая строка не первая.",
-          "terminal": "СТОЛ МАССОВОЙ ОПЕКИ KEELMARK // Базовый залог 4.8 tonne-window активен. Сертификат подъема принят только как железное доказательство. Масса возврата не резервируется, пока кислород, custody образца, доказательный payload, карантинный приемник и подъемная квота carrier не сойдутся.",
-          "audio": "Black Keel не спрашивает, хочешь ли ты жить. Он спрашивает, что еще пытается подняться вместе с тобой.",
-          "in_game_wiki": "Tonne-window это не деньги, переодетые в метрическую систему. Это единица, которой Black Keel считает момент, когда тело, образец, батарея, напорная втулка и пакет доказательств хотят один и тот же подъемный burn. Деньги можно спорить потом. Массу надо нести сейчас.\n\nПоэтому carrier кажется жестоким даже тогда, когда математика честная. Океан дает вещи, которые имеют значение: запечатанный субстрат, жетон рабочего, катушку черного ящика, запасной кислородный баллон, треснувшую плиту pressure glass. Keelmark превращает каждую вещь в класс опеки. Black Keel превращает эти классы в массу, объем, карантинный риск, тепло, балласт и ответственность приемника. Потом журнал задает грязный вопрос: чему разрешено занять следующее окно подъема?\n\nИгрок может изменить ответ, но не криком в радио. Сертифицированный подъемный стек снимает одно возражение. Карантинное рукопожатие снимает другое. Публичный hash доказательства делает пакет труднее похоронить. Сброс зараженного образца может купить запас для тела. Сохранение образца может купить правду и списание долга, но усложнить спасение. Давление tonne-window это не налог меню. Это сюжетное правило, которое делает salvage-выбор физическим.",
-          "external_site": "Tonne-window у Black Keel это возможность поднять восстановимую массу: тело, кислород, образцы, доказательства и карантинный объем конкурируют до того, как carrier назовет спасение выделяемым.",
-          "external_site_article": "HECTON-8 превращает милость в расчет нагрузки, потому что мир построен без магического спасения. Black Keel может услышать претензию, принять packet и все равно отказать в возврате тела, пока следующее окно подъема не сможет унести нужную массу под нужной опекой.\n\nЖестокость не в том, что математика фальшивая. Жестокость в том, что математике позволили быть первым языком. Выживший становится массой тела. Кислород становится welfare-долгом. Образец становится sealed custody. Черный ящик становится evidence payload. Карантин становится объемом. Receiver rights становятся liability. Carrier не решает, важны ли эти вещи. Он решает, какие из них можно двигать вместе.\n\nТак лор остается игровым. Каждый salvage-выбор давит на журнал: сохранить доказательство, выбросить загрязнение, сертифицировать железо, потратить кислород, оставить образец, открыть публичный hash или сохранить enough body margin, чтобы уйти. Игрок не собирает абстракции. Он борется за то, что будет посчитано восстановимым.",
-          "field_note": "Если журнал пишет масса, спроси, чье тело первым перестало быть человеком."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "質量保管トン窓台帳",
-          "scanner": "質量保管ストリップ // Keelmarkのラミネート。透明層の下に油。列は身体質量、福祉酸素、封印試料、証拠パケット、隔離保留、受信者責任。人間の行は先頭ではない。",
-          "terminal": "KEELMARK質量保管デスク // 基本リエン4.8 tonne-windowは有効。上昇証明はハードウェア証拠としてのみ受理。酸素福祉、試料custody、証拠payload、隔離受信者、carrier揚収割当が一致するまで回収質量は予約されない。",
-          "audio": "Black Keelは生きたいかを聞かない。君と一緒に何が上がろうとしているかを聞く。",
-          "in_game_wiki": "tonne-windowはメートル法の服を着た通貨ではない。身体、試料、電池、圧力スリーブ、証拠パケットが同じ上昇burnを求める時、Black Keelが使う単位だ。金の議論は後でできる。質量は今運ばなければならない。\n\nだからcarrierは、計算が正直でも残酷に感じる。海は重要な物を渡す。封印substrate、作業員バッジ、ブラックボックスのスプール、予備酸素、割れたpressure glass。Keelmarkはそれぞれを保管クラスに変える。Black Keelはそのクラスを質量、体積、隔離リスク、熱、バラスト、受信者責任に変える。そして台帳は汚い問いを出す。次の揚収窓を占めてよいのはどれか。\n\nプレイヤーは答えを変えられる。ただし無線に叫んでも変わらない。認証済みの上昇スタックは一つの異議を消す。隔離handshakeは別の異議を消す。公開証拠hashはパケットを埋めにくくする。汚染試料を捨てれば身体の余白を買える。残せば真実と債務軽減を買えるが、救助は難しくなる。tonne-window圧力はメニュー税ではない。salvageの選択を物理にする物語ルールだ。",
-          "external_site": "tonne-windowはBlack Keelの回収可能な質量機会であり、身体、酸素、試料、証拠、隔離体積がcarrierの救助割当より先に競合する。",
-          "external_site_article": "HECTON-8は慈悲を荷重計算に変える。魔法の救助がない世界だからだ。Black Keelはclaimを聞き、packetを受け取り、それでも次の揚収窓が正しいcustodyで正しい質量を運べるまで身体回収を拒む。\n\n残酷なのは計算が偽物だからではない。計算が第一言語として許されていることだ。生存者は身体質量になる。酸素は福祉債務になる。試料は封印custodyになる。ブラックボックスは証拠payloadになる。隔離は体積になる。receiver rightsはliabilityになる。carrierはそれらが大事かどうかを決めない。一緒に動かせるかを決める。\n\nこれでloreは遊べるまま残る。証拠を守る、汚染を捨てる、ハードウェアを認証する、酸素を使う、試料を残す、公開hashを出す、脱出できる身体余白を守る。どれも台帳を押す。プレイヤーは抽象物を拾っていない。何が回収可能として数えられるかを争っている。",
-          "field_note": "台帳が質量と書くなら、誰の身体が最初に人間でなくなったかを聞け。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "质量监管吨窗账",
-          "scanner": "质量监管条 // Keelmark覆膜，透明层下有油。栏目：身体质量、福利氧气、封存样本、证据包、隔离扣留、接收方责任。人的那一行并不在最前。",
-          "terminal": "KEELMARK质量监管台 // 基础留置债4.8 tonne-window仍有效。上升认证只作为硬件证明接受。氧气福利、样本custody、证据payload、隔离接收方和carrier升力配额未对齐前，不预留回收质量。",
-          "audio": "Black Keel不问你想不想活。它问还有什么想和你一起上去。",
-          "in_game_wiki": "tonne-window不是披着公制外衣的货币。它是Black Keel在身体、样本、电池、耐压套筒和证据包都想占用同一次上升burn时使用的单位。钱可以之后争。质量必须现在运。\n\n这就是carrier即使算得诚实也显得残酷的原因。海会给你真正重要的东西：封存substrate、工人牌、黑匣子线轴、备用氧瓶、开裂的pressure glass。Keelmark把每件东西变成监管类别。Black Keel再把类别变成质量、体积、隔离风险、热、压载和接收方责任。然后账本问一个脏问题：下一个升力窗口允许谁占用？\n\n玩家能改变答案，但不能靠对着无线电喊。认证过的上升堆消除一个拒绝点。隔离handshake消除另一个。公开证据hash让packet更难被埋掉。丢掉污染样本可能换来身体余量。保留它可能换来真相和减债，却让救援更难。tonne-window压力不是菜单税，而是让salvage选择变成物理事实的叙事规则。",
-          "external_site": "tonne-window是Black Keel的可回收质量机会：身体、氧气、样本、证据和隔离体积在carrier把救援列为可分配项之前就互相竞争。",
-          "external_site_article": "HECTON-8把怜悯变成载荷计算，因为这个世界没有魔法救援。Black Keel可以听见claim，接收packet，但只要下一次升力窗口还不能在正确custody下运走正确质量，它就会拒绝身体回收。\n\n残酷处不在于数学是假的。残酷处在于数学被允许成为第一语言。幸存者变成身体质量。氧气变成福利债。样本变成封存custody。黑匣子packet变成证据payload。隔离变成体积。receiver rights变成liability。carrier不判断这些东西是否重要，只判断它们能否一起移动。\n\n这让lore保持可玩。保存证据、丢弃污染、认证硬件、消耗氧气、留下样本、公开hash或保护足够的身体余量，都会推着账本改变。玩家不是在捡抽象代币，而是在争夺什么能被算作可回收。",
-          "field_note": "如果账本写的是质量，就问谁的身体最先不再被当成人。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre de custody de masse en tonne-window",
-          "scanner": "BANDE DE CUSTODY MASSE // Stratifié Keelmark, huile sous le vernis clair. Colonnes: masse du corps, oxygène welfare, échantillon scellé, paquet de preuve, retenue quarantaine, responsabilité du récepteur. La ligne humaine n'est pas la première.",
-          "terminal": "BUREAU KEELMARK CUSTODY MASSE // Gage de base 4.8 tonne-window actif. Certificat d'ascension accepté comme preuve matérielle seulement. Masse de récupération non réservée avant rapprochement oxygène, custody d'échantillon, payload preuve, récepteur quarantaine et allocation de levage carrier.",
-          "audio": "Black Keel ne demande pas si tu veux vivre. Il demande quoi tente de monter avec toi.",
-          "in_game_wiki": "Une tonne-window n'est pas une monnaie déguisée en unité métrique. C'est l'unité que Black Keel utilise quand un corps, un échantillon, une batterie, une manche de pression et un paquet de preuve veulent le même burn vers le haut. L'argent peut se discuter plus tard. La masse doit être portée maintenant.\n\nVoilà pourquoi le carrier paraît cruel même quand son calcul est honnête. L'océan donne des choses qui comptent: substrat scellé, badge d'ouvrier, bobine de boîte noire, flasque d'oxygène, plaque de pressure glass fendue. Keelmark transforme chacune en classe de custody. Black Keel transforme ces classes en masse, volume, risque de quarantaine, chaleur, ballast et responsabilité du récepteur. Le registre pose ensuite la question sale: qu'est-ce qui a le droit d'occuper la prochaine fenêtre de levage?\n\nLe joueur peut changer la réponse, mais pas en criant dans la radio. Un stack d'ascension certifié retire une objection. Un handshake de quarantaine en retire une autre. Un hash public de preuve rend un paquet plus difficile à enterrer. Jeter un échantillon contaminé peut acheter de la marge pour le corps. Le garder peut acheter vérité et allègement de dette tout en rendant le secours plus difficile. La pression tonne-window n'est pas une taxe de menu. C'est la règle narrative qui rend les choix de salvage physiques.",
-          "external_site": "La tonne-window est l'occasion de masse récupérable de Black Keel: corps, oxygène, échantillons, preuve et volume de quarantaine se disputent avant que le carrier alloue un sauvetage.",
-          "external_site_article": "HECTON-8 transforme la pitié en calcul de charge parce que le monde n'a pas de sauvetage magique. Black Keel peut entendre une claim, accepter un packet et refuser le corps tant que la fenêtre de levage suivante ne porte pas la bonne masse sous la bonne custody.\n\nLa cruauté ne vient pas d'un faux calcul. Elle vient du fait que le calcul a le droit de parler en premier. Un survivant devient masse corporelle. L'oxygène devient dette welfare. Un échantillon devient custody scellée. Une boîte noire devient payload de preuve. La quarantaine devient volume. Les receiver rights deviennent liability. Le carrier ne décide pas si ces choses comptent. Il décide lesquelles peuvent bouger ensemble.\n\nCela garde le lore jouable. Préserver une preuve, jeter une contamination, certifier le matériel, dépenser de l'oxygène, garder un échantillon, publier un hash ou protéger assez de marge corporelle: chaque choix pousse le registre. Le joueur ne ramasse pas des abstractions. Il se bat pour ce qui sera compté comme récupérable.",
-          "field_note": "Si le registre écrit masse, demande quel corps a cessé d'être une personne en premier."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de custodia de masa tonne-window",
-          "scanner": "TIRA DE CUSTODIA DE MASA // Laminado Keelmark, aceite bajo la capa clara. Columnas: masa corporal, oxígeno de welfare, muestra sellada, paquete de prueba, retención de cuarentena, responsabilidad del receptor. La fila humana no va primero.",
-          "terminal": "MESA DE CUSTODIA DE MASA KEELMARK // Gravamen base 4.8 tonne-window activo. Certificado de ascenso aceptado sólo como prueba de hardware. Masa de recuperación no reservada hasta conciliar oxígeno, custodia de muestra, payload de prueba, receptor de cuarentena y asignación de elevación carrier.",
-          "audio": "Black Keel no pregunta si quieres vivir. Pregunta qué más intenta subir contigo.",
-          "in_game_wiki": "Una tonne-window no es moneda disfrazada de métrica. Es la unidad que usa Black Keel cuando un cuerpo, una muestra, una batería, una manga de presión y un paquete de prueba quieren el mismo burn hacia arriba. El dinero puede discutirse luego. La masa debe cargarse ahora.\n\nPor eso el carrier se siente cruel incluso cuando su matemática es honesta. El océano te da cosas que importan: sustrato sellado, placa de trabajador, bobina de caja negra, botella de oxígeno, placa de pressure glass agrietada. Keelmark convierte cada cosa en clase de custodia. Black Keel convierte esas clases en masa, volumen, riesgo de cuarentena, calor, lastre y responsabilidad del receptor. Luego el registro pregunta algo sucio: ¿qué tiene permiso para ocupar la próxima ventana de elevación?\n\nEl jugador puede cambiar la respuesta, pero no gritando a la radio. Un stack de ascenso certificado quita una objeción. Un handshake de cuarentena quita otra. Un hash público de prueba hace que un packet sea más difícil de enterrar. Tirar una muestra contaminada puede comprar margen para el cuerpo. Conservarla puede comprar verdad y alivio de deuda mientras complica el rescate. La presión tonne-window no es impuesto de menú. Es la regla de historia que vuelve físicas las decisiones de salvage.",
-          "external_site": "La tonne-window es la oportunidad de masa recuperable de Black Keel: cuerpo, oxígeno, muestras, pruebas y volumen de cuarentena compiten antes de que el carrier asigne rescate.",
-          "external_site_article": "HECTON-8 convierte la misericordia en cálculo de carga porque el mundo no tiene rescate mágico. Black Keel puede oír una claim, aceptar un packet y aun así rechazar la recuperación del cuerpo hasta que la siguiente ventana pueda llevar la masa correcta bajo la custodia correcta.\n\nLo cruel no es que el cálculo sea falso. Es que el cálculo tiene permiso para hablar primero. Un superviviente se vuelve masa corporal. El oxígeno se vuelve deuda welfare. Una muestra se vuelve custodia sellada. La caja negra se vuelve payload de prueba. La cuarentena se vuelve volumen. Los receiver rights se vuelven liability. El carrier no decide si esas cosas importan. Decide cuáles pueden moverse juntas.\n\nAsí el lore sigue siendo jugable. Preservar prueba, tirar contaminación, certificar hardware, gastar oxígeno, conservar muestra, exponer un hash público o proteger margen corporal empuja el registro. El jugador no saquea abstracciones. Pelea por qué será contado como recuperable.",
-          "field_note": "Si el registro dice masa, pregunta qué cuerpo dejó de ser persona primero."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Massen-Custody-Tonnenfenster-Protokoll",
-          "scanner": "MASSEN-CUSTODY-STREIFEN // Keelmark-Laminat, Öl unter Klarlack. Spalten: Körpermasse, Welfare-Sauerstoff, versiegelte Probe, Beweispaket, Quarantäne-Hold, Empfängerhaftung. Die Menschenzeile steht nicht zuerst.",
-          "terminal": "KEELMARK MASSEN-CUSTODY-DESK // Basispfand 4.8 tonne-window aktiv. Aufstiegszertifikat nur als Hardwarebeweis akzeptiert. Bergungsmasse nicht reserviert, bis Sauerstoff, Proben-Custody, Beweis-Payload, Quarantäneempfänger und Carrier-Hubzuteilung abgeglichen sind.",
-          "audio": "Black Keel fragt nicht, ob du leben willst. Es fragt, was sonst mit dir nach oben will.",
-          "in_game_wiki": "Ein tonne-window ist keine Währung in metrischer Kleidung. Es ist die Einheit, die Black Keel benutzt, wenn Körper, Probe, Batterie, Druckhülse und Beweispaket denselben Aufwärts-burn wollen. Über Geld kann man später streiten. Masse muss jetzt getragen werden.\n\nDarum wirkt der carrier grausam, selbst wenn seine Mathematik ehrlich ist. Der Ozean gibt dir Dinge, die zählen: versiegeltes Substrat, Arbeiterabzeichen, Blackbox-Spule, Sauerstoffflasche, gerissene pressure-glass-Platte. Keelmark macht daraus Custody-Klassen. Black Keel macht daraus Masse, Volumen, Quarantänerisiko, Hitze, Ballast und Empfängerhaftung. Dann stellt das Protokoll die schmutzige Frage: Was darf das nächste Hubfenster besetzen?\n\nDer Spieler kann die Antwort ändern, aber nicht durch Schreien ins Funkgerät. Ein zertifizierter Aufstiegsstack entfernt einen Einwand. Ein Quarantäne-handshake entfernt einen anderen. Ein öffentlicher Beweis-hash macht ein packet schwerer zu begraben. Eine kontaminierte Probe wegzuwerfen kann Körpermarge kaufen. Sie zu behalten kann Wahrheit und Schuldentlastung kaufen, aber Rettung erschweren. Tonne-window-Druck ist keine Menüsteuer. Es ist die Story-Regel, die Salvage-Entscheidungen physisch macht.",
-          "external_site": "Das tonne-window ist Black Keels bergbare Massenchance: Körper, Sauerstoff, Proben, Beweise und Quarantänevolumen konkurrieren, bevor der carrier Rettung zuteilt.",
-          "external_site_article": "HECTON-8 verwandelt Gnade in Lastberechnung, weil diese Welt keine magische Rettung hat. Black Keel kann eine claim hören, ein packet akzeptieren und trotzdem Körperbergung verweigern, bis das nächste Hubfenster die richtige Masse unter richtiger custody tragen kann.\n\nGrausam ist nicht, dass die Rechnung falsch wäre. Grausam ist, dass die Rechnung zuerst sprechen darf. Ein Überlebender wird Körpermasse. Sauerstoff wird Welfare-Schuld. Eine Probe wird versiegelte custody. Eine Blackbox wird Beweis-payload. Quarantäne wird Volumen. Receiver rights werden liability. Der carrier entscheidet nicht, ob diese Dinge wichtig sind. Er entscheidet, welche zusammen bewegt werden können.\n\nSo bleibt der Lore spielbar. Beweis erhalten, Kontamination abwerfen, Hardware zertifizieren, Sauerstoff ausgeben, Probe behalten, öffentlichen hash zeigen oder genug Körpermarge schützen: Jede Wahl drückt auf das Protokoll. Der Spieler sammelt keine Abstraktionen. Er kämpft darum, was als bergbar gezählt wird.",
-          "field_note": "Wenn das Protokoll Masse sagt, frag, wessen Körper zuerst keine Person mehr war."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr pieczy masy okna tonowego",
-          "scanner": "PASEK PIECZY MASY // Laminat Keelmark, olej pod klarowną warstwą. Kolumny: masa ciała, tlen welfare, zapieczętowana próbka, pakiet dowodowy, blokada kwarantanny, odpowiedzialność odbiorcy. Wiersz człowieka nie jest pierwszy.",
-          "terminal": "BIURKO PIECZY MASY KEELMARK // Bazowy zastaw 4.8 tonne-window aktywny. Certyfikat wznoszenia przyjęty tylko jako dowód sprzętowy. Masa odzysku nie jest zarezerwowana, dopóki tlen, custody próbki, payload dowodowy, odbiorca kwarantanny i przydział podnoszenia carrier nie zostaną pogodzone.",
-          "audio": "Black Keel nie pyta, czy chcesz żyć. Pyta, co jeszcze próbuje jechać z tobą w górę.",
-          "in_game_wiki": "Tonne-window nie jest walutą przebraną za metrykę. To jednostka, której Black Keel używa, gdy ciało, próbka, bateria, rękaw ciśnieniowy i pakiet dowodowy chcą tego samego burnu w górę. O pieniądze można spierać się później. Masę trzeba nieść teraz.\n\nDlatego carrier wydaje się okrutny, nawet gdy liczy uczciwie. Ocean daje rzeczy ważne: zapieczętowany substrat, identyfikator pracownika, szpulę czarnej skrzynki, butlę tlenu, pękniętą płytę pressure glass. Keelmark zmienia każdą w klasę custody. Black Keel zmienia klasy w masę, objętość, ryzyko kwarantanny, ciepło, balast i odpowiedzialność odbiorcy. Rejestr zadaje potem brudne pytanie: co może zająć następne okno podnoszenia?\n\nGracz może zmienić odpowiedź, ale nie krzykiem do radia. Certyfikowany stack wznoszenia usuwa jeden sprzeciw. Kwarantannowy handshake usuwa drugi. Publiczny hash dowodu utrudnia pogrzebanie packetu. Wyrzucenie skażonej próbki może kupić margines dla ciała. Zatrzymanie jej może kupić prawdę i ulgę długu, ale utrudnić ratunek. Presja tonne-window nie jest podatkiem menu. To reguła opowieści, która czyni wybory salvage fizycznymi.",
-          "external_site": "Tonne-window to odzyskiwalna szansa masy Black Keel: ciało, tlen, próbki, dowody i objętość kwarantanny konkurują, zanim carrier przydzieli ratunek.",
-          "external_site_article": "HECTON-8 zmienia miłosierdzie w obliczenie ładunku, bo świat nie ma magicznego ratunku. Black Keel może usłyszeć claim, przyjąć packet i nadal odmówić ciała, dopóki kolejne okno nie uniesie właściwej masy pod właściwą custody.\n\nOkrucieństwo nie polega na fałszywej matematyce. Polega na tym, że matematyka może mówić pierwsza. Ocalały staje się masą ciała. Tlen staje się długiem welfare. Próbka staje się zapieczętowaną custody. Czarna skrzynka staje się payloadem dowodu. Kwarantanna staje się objętością. Receiver rights stają się liability. Carrier nie decyduje, czy te rzeczy mają znaczenie. Decyduje, które mogą poruszać się razem.\n\nTak lore zostaje grywalny. Zachować dowód, wyrzucić skażenie, certyfikować sprzęt, zużyć tlen, zachować próbkę, ujawnić publiczny hash albo chronić margines ciała: każda decyzja naciska rejestr. Gracz nie zbiera abstrakcji. Walczy o to, co zostanie policzone jako odzyskiwalne.",
-          "field_note": "Jeśli rejestr mówi masa, zapytaj, czyje ciało pierwsze przestało być osobą."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал масової опіки тонна-вікна",
-          "scanner": "СМУГА МАСОВОЇ ОПІКИ // Ламінат Keelmark, олива під прозорим шаром. Колонки: маса тіла, welfare-кисень, запечатаний зразок, пакет доказів, карантинне утримання, відповідальність приймача. Людський рядок не перший.",
-          "terminal": "СТІЛ МАСОВОЇ ОПІКИ KEELMARK // Базова застава 4.8 tonne-window активна. Сертифікат підйому прийнято лише як апаратний доказ. Маса повернення не резервується, доки кисень, custody зразка, доказовий payload, карантинний приймач і квота підйому carrier не зійдуться.",
-          "audio": "Black Keel не питає, чи хочеш ти жити. Він питає, що ще намагається піднятися разом із тобою.",
-          "in_game_wiki": "Tonne-window це не гроші, перевдягнені в метрику. Це одиниця, якою Black Keel рахує момент, коли тіло, зразок, батарея, напірна втулка й пакет доказів хочуть один і той самий підйомний burn. Про гроші можна сперечатися потім. Масу треба нести зараз.\n\nТому carrier здається жорстоким навіть тоді, коли математика чесна. Океан дає важливі речі: запечатаний субстрат, жетон працівника, котушку чорної скриньки, запасний кисневий балон, тріснуту плиту pressure glass. Keelmark перетворює кожну річ на клас опіки. Black Keel перетворює ці класи на масу, об'єм, карантинний ризик, тепло, баласт і відповідальність приймача. Потім журнал ставить брудне питання: чому дозволено зайняти наступне вікно підйому?\n\nГравець може змінити відповідь, але не криком у радіо. Сертифікований підйомний стек знімає одне заперечення. Карантинний handshake знімає інше. Публічний hash доказу робить packet важче поховати. Скидання зараженого зразка може купити запас для тіла. Збереження зразка може купити правду й списання боргу, але ускладнити порятунок. Тиск tonne-window це не податок меню. Це сюжетне правило, яке робить salvage-вибір фізичним.",
-          "external_site": "Tonne-window у Black Keel це можливість підняти відновлювану масу: тіло, кисень, зразки, докази й карантинний об'єм конкурують до виділення порятунку carrier.",
-          "external_site_article": "HECTON-8 перетворює милість на розрахунок навантаження, бо світ не має магічного порятунку. Black Keel може почути claim, прийняти packet і все одно відмовити у поверненні тіла, доки наступне вікно підйому не зможе нести правильну масу під правильною custody.\n\nЖорстокість не в тому, що математика фальшива. Жорстокість у тому, що математиці дозволено говорити першою. Виживший стає масою тіла. Кисень стає welfare-боргом. Зразок стає sealed custody. Чорна скринька стає evidence payload. Карантин стає об'ємом. Receiver rights стають liability. Carrier не вирішує, чи ці речі важливі. Він вирішує, які з них можна рухати разом.\n\nТак лор лишається ігровим. Зберегти доказ, викинути забруднення, сертифікувати залізо, витратити кисень, залишити зразок, відкрити публічний hash або захистити запас для тіла: кожне рішення тисне на журнал. Гравець не збирає абстракції. Він бореться за те, що буде пораховано відновлюваним.",
-          "field_note": "Якщо журнал пише маса, спитай, чиє тіло першим перестало бути людиною."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل حيازة الكتلة لنافذة الطن",
-          "scanner": "شريط حيازة الكتلة // تغليف Keelmark وزيت خلف الطبقة الشفافة. الأعمدة: كتلة الجسد، أكسجين welfare، عينة مختومة، packet دليل، حجز حجر، مسؤولية المستقبل. صف الإنسان ليس الأول.",
-          "terminal": "مكتب حيازة الكتلة KEELMARK // الرهن الأساسي 4.8 tonne-window ما زال نشطا. شهادة الصعود مقبولة كدليل عتاد فقط. لا تحجز كتلة الاسترداد حتى تتوافق الأكسجين وcustody العينة وpayload الدليل ومستقبل الحجر وتخصيص رفع carrier.",
-          "audio": "Black Keel لا يسأل هل تريد أن تعيش. يسأل ماذا يحاول أن يصعد معك.",
-          "in_game_wiki": "tonne-window ليست نقودا ترتدي لباس القياس. إنها الوحدة التي يستخدمها Black Keel عندما يريد جسد وعينة وبطارية وكم ضغط وpacket دليل burn الصعود نفسه. يمكن الجدال حول المال لاحقا. أما الكتلة فيجب حملها الآن.\n\nلذلك يبدو carrier قاسيا حتى عندما تكون حساباته صادقة. يمنحك المحيط أشياء مهمة: substrate مختوما، شارة عامل، بكرة صندوق أسود، قارورة أكسجين احتياطية، صفيحة pressure glass مشقوقة. تحول Keelmark كل شيء إلى فئة custody. ثم يحول Black Keel هذه الفئات إلى كتلة وحجم وخطر حجر وحرارة وثقل ومسؤولية مستقبل. بعدها يسأل السجل السؤال القذر: أي شيء يسمح له باحتلال نافذة الرفع التالية؟\n\nيمكن للاعب تغيير الجواب، لكن ليس بالصراخ في الراديو. ascent stack موثق يزيل اعتراضا. handshake حجر يزيل آخر. hash دليل عام يجعل packet أصعب في الدفن. رمي عينة ملوثة قد يشتري هامشا للجسد. الاحتفاظ بها قد يشتري الحقيقة وتخفيف الدين ويجعل الإنقاذ أصعب. ضغط tonne-window ليس ضريبة قائمة. إنه قاعدة القصة التي تجعل اختيارات salvage فيزيائية.",
-          "external_site": "tonne-window هي فرصة الكتلة القابلة للاسترداد لدى Black Keel: الجسد والأكسجين والعينات والدليل وحجم الحجر تتنافس قبل أن يخصص carrier الإنقاذ.",
-          "external_site_article": "تحول HECTON-8 الرحمة إلى حساب حمولة لأن العالم بلا إنقاذ سحري. يمكن أن يسمع Black Keel claim ويقبل packet ثم يرفض استرداد الجسد حتى تستطيع نافذة الرفع التالية حمل الكتلة الصحيحة تحت custody الصحيحة.\n\nالقسوة ليست أن الحساب مزيف. القسوة أن الحساب مسموح له أن يكون اللغة الأولى. الناجي يصبح كتلة جسد. الأكسجين يصبح دين welfare. العينة تصبح custody مختومة. الصندوق الأسود يصبح payload دليل. الحجر يصبح حجما. receiver rights تصبح liability. لا يقرر carrier هل هذه الأشياء مهمة. يقرر أيها يمكن أن يتحرك معا.\n\nهكذا يبقى lore قابلا للعب. حفظ دليل، رمي تلوث، توثيق عتاد، إنفاق أكسجين، إبقاء عينة، كشف hash عام أو حماية هامش جسد كاف للخروج: كل قرار يضغط على السجل. اللاعب لا يجمع رموزا مجردة. إنه يقاتل حول ما سيحسب قابلا للاسترداد.",
-          "field_note": "إذا قال السجل كتلة، فاسأل أي جسد توقف عن كونه شخصا أولا."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ledger Custody Massa Tonne-Window",
-          "scanner": "STRIP CUSTODY MASSA // Laminat Keelmark, minyak di balik lapisan bening. Kolom: massa tubuh, oksigen welfare, sampel tersegel, packet bukti, tahanan karantina, tanggung jawab penerima. Baris manusia bukan yang pertama.",
-          "terminal": "MEJA CUSTODY MASSA KEELMARK // Lien dasar 4.8 tonne-window tetap aktif. Sertifikat ascent diterima hanya sebagai bukti hardware. Massa recovery belum dipesan sampai oksigen, custody sampel, evidence payload, penerima karantina, dan alokasi lift carrier cocok.",
-          "audio": "Black Keel tidak bertanya apakah kamu ingin hidup. Ia bertanya apa lagi yang mencoba naik bersamamu.",
-          "in_game_wiki": "Tonne-window bukan uang yang memakai pakaian metrik. Itu unit Black Keel saat tubuh, sampel, baterai, sleeve tekanan, dan packet bukti menginginkan burn naik yang sama. Uang bisa diperdebatkan nanti. Massa harus dibawa sekarang.\n\nItulah sebabnya carrier terasa kejam meski hitungannya jujur. Laut memberi benda penting: substrate tersegel, lencana pekerja, spool black-box, botol oksigen cadangan, pelat pressure glass retak. Keelmark mengubah semuanya menjadi kelas custody. Black Keel mengubah kelas itu menjadi massa, volume, risiko karantina, panas, ballast, dan tanggung jawab penerima. Lalu ledger bertanya kotor: yang mana boleh mengisi jendela lift berikutnya?\n\nPemain bisa mengubah jawaban, tetapi bukan dengan berteriak ke radio. Ascent stack bersertifikat menghapus satu keberatan. Handshake karantina menghapus yang lain. Hash bukti publik membuat packet lebih sulit dikubur. Membuang sampel terkontaminasi bisa membeli margin tubuh. Menyimpannya bisa membeli kebenaran dan keringanan utang sambil membuat rescue lebih sulit. Tekanan tonne-window bukan pajak menu. Itu aturan cerita yang membuat pilihan salvage menjadi fisik.",
-          "external_site": "Tonne-window adalah peluang massa recovery Black Keel: tubuh, oksigen, sampel, bukti, dan volume karantina saling bersaing sebelum carrier mengalokasikan penyelamatan.",
-          "external_site_article": "HECTON-8 mengubah belas kasihan menjadi perhitungan muatan karena dunianya tanpa penyelamatan ajaib. Black Keel dapat mendengar claim, menerima packet, dan tetap menolak recovery tubuh sampai jendela lift berikutnya mampu membawa massa yang benar di bawah custody yang benar.\n\nKejamnya bukan karena matematika itu palsu. Kejamnya karena matematika diizinkan menjadi bahasa pertama. Penyintas menjadi massa tubuh. Oksigen menjadi utang welfare. Sampel menjadi custody tersegel. Black-box menjadi payload bukti. Karantina menjadi volume. Receiver rights menjadi liability. Carrier tidak memutuskan apakah benda itu penting. Ia memutuskan mana yang bisa bergerak bersama.\n\nIni membuat lore tetap bisa dimainkan. Menjaga bukti, membuang kontaminasi, menyertifikasi hardware, memakai oksigen, menyimpan sampel, membuka hash publik, atau menjaga margin tubuh cukup untuk keluar: semua menekan ledger. Pemain tidak mengambil abstraksi. Mereka bertarung atas apa yang akan dihitung recoverable.",
-          "field_note": "Jika ledger menulis massa, tanyakan tubuh siapa yang paling dulu berhenti dianggap orang."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "질량 custody 톤-윈도 장부",
-          "scanner": "질량 CUSTODY 스트립 // Keelmark 라미네이트, 투명층 아래 기름. 열: 몸 질량, welfare 산소, 봉인 샘플, 증거 packet, 격리 보류, 수신자 책임. 인간 행은 첫 줄이 아니다.",
-          "terminal": "KEELMARK 질량 CUSTODY 데스크 // 기본 lien 4.8 tonne-window 활성. 상승 인증서는 하드웨어 증거로만 수락. 산소, 샘플 custody, 증거 payload, 격리 수신자, carrier 리프트 배정이 맞기 전까지 회수 질량은 예약되지 않는다.",
-          "audio": "Black Keel은 네가 살고 싶은지 묻지 않는다. 너와 함께 무엇이 올라가려는지 묻는다.",
-          "in_game_wiki": "tonne-window는 미터법 옷을 입은 돈이 아니다. 몸, 샘플, 배터리, 압력 슬리브, 증거 packet이 같은 상승 burn을 원할 때 Black Keel이 쓰는 단위다. 돈은 나중에 다툴 수 있다. 질량은 지금 실어야 한다.\n\n그래서 carrier는 계산이 정직해도 잔혹하게 느껴진다. 바다는 중요한 것을 준다. 봉인 substrate, 작업자 배지, 블랙박스 스풀, 예비 산소 플라스크, 금 간 pressure glass 판. Keelmark는 각각을 custody 등급으로 바꾼다. Black Keel은 그 등급을 질량, 부피, 격리 위험, 열, 밸러스트, 수신자 책임으로 바꾼다. 그다음 장부는 더러운 질문을 한다. 다음 리프트 창을 차지할 수 있는 것은 무엇인가?\n\n플레이어는 답을 바꿀 수 있지만 라디오에 소리쳐서는 안 된다. 인증된 ascent stack은 한 가지 거절 사유를 지운다. 격리 handshake는 다른 것을 지운다. 공개 증거 hash는 packet을 묻기 어렵게 만든다. 오염 샘플을 버리면 몸의 여유를 살 수 있다. 보관하면 진실과 빚 경감을 살 수 있지만 구조를 어렵게 만든다. tonne-window 압박은 메뉴 세금이 아니다. salvage 선택을 물리적으로 만드는 이야기 규칙이다.",
-          "external_site": "tonne-window는 Black Keel의 회수 가능한 질량 기회다. 몸, 산소, 샘플, 증거, 격리 부피가 carrier의 구조 배정 전에 경쟁한다.",
-          "external_site_article": "HECTON-8은 자비를 하중 계산으로 바꾼다. 마법 같은 구조가 없는 세계이기 때문이다. Black Keel은 claim을 듣고 packet을 받아도, 다음 리프트 창이 올바른 custody 아래 올바른 질량을 들 수 있을 때까지 몸 회수를 거부할 수 있다.\n\n잔혹함은 수학이 가짜라서가 아니다. 수학이 첫 언어가 되도록 허락받았기 때문이다. 생존자는 몸 질량이 된다. 산소는 welfare 부채가 된다. 샘플은 봉인 custody가 된다. 블랙박스는 증거 payload가 된다. 격리는 부피가 된다. receiver rights는 liability가 된다. carrier는 그것들이 중요한지 결정하지 않는다. 무엇이 함께 움직일 수 있는지 결정한다.\n\n그래서 lore는 플레이 가능하다. 증거 보존, 오염 폐기, 하드웨어 인증, 산소 소비, 샘플 보관, 공개 hash 노출, 탈출할 몸 여유 보호가 모두 장부를 민다. 플레이어는 추상물을 줍지 않는다. 무엇이 recoverable로 계산될지 싸운다.",
-          "field_note": "장부가 질량이라고 쓰면, 누구의 몸이 먼저 사람이 아니게 되었는지 물어라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן משמורת מסה של חלון-טון",
-          "scanner": "רצועת משמורת מסה // למינציה של Keelmark, שמן מאחורי שכבה שקופה. עמודות: מסת גוף, חמצן welfare, דגימה חתומה, packet ראיות, עיכוב הסגר, אחריות מקבל. שורת האדם אינה הראשונה.",
-          "terminal": "דלפק משמורת מסה KEELMARK // שעבוד בסיס 4.8 tonne-window פעיל. אישור עלייה התקבל כהוכחת חומרה בלבד. מסת התאוששות אינה שמורה עד שחמצן, custody דגימה, evidence payload, מקבל הסגר והקצאת הרמה של carrier מתיישבים.",
-          "audio": "Black Keel לא שואל אם אתה רוצה לחיות. הוא שואל מה עוד מנסה לעלות איתך.",
-          "in_game_wiki": "tonne-window אינה מטבע בתחפושת מטרית. זו היחידה ש-Black Keel משתמש בה כאשר גוף, דגימה, סוללה, שרוול לחץ ו-packet ראיות רוצים את אותו burn כלפי מעלה. על כסף אפשר להתווכח אחר כך. מסה צריך לשאת עכשיו.\n\nלכן carrier מרגיש אכזרי גם כשהמתמטיקה שלו כנה. האוקיינוס נותן דברים חשובים: substrate חתום, תג עובד, סליל קופסה שחורה, בקבוק חמצן נוסף, לוח pressure glass סדוק. Keelmark הופכת כל דבר למחלקת custody. Black Keel הופך את המחלקות למסה, נפח, סיכון הסגר, חום, זבורית ואחריות מקבל. אחר כך היומן שואל את השאלה המלוכלכת: מה רשאי לתפוס את חלון ההרמה הבא?\n\nהשחקן יכול לשנות את התשובה, אבל לא בצעקות לרדיו. ascent stack מאושר מסיר התנגדות אחת. handshake הסגר מסיר אחרת. hash ראיות ציבורי מקשה לקבור packet. זריקת דגימה מזוהמת יכולה לקנות מרווח לגוף. שמירתה יכולה לקנות אמת והקלת חוב, אך להקשות על חילוץ. לחץ tonne-window אינו מס תפריט. הוא כלל הסיפור שהופך בחירות salvage לפיזיות.",
-          "external_site": "tonne-window היא הזדמנות המסה הניתנת להשבה של Black Keel: גוף, חמצן, דגימות, ראיות ונפח הסגר מתחרים לפני שה-carrier מקצה חילוץ.",
-          "external_site_article": "HECTON-8 הופך חמלה לחישוב עומס מפני שהעולם נבנה בלי חילוץ קסום. Black Keel יכול לשמוע claim, לקבל packet, ועדיין לסרב להשבת גוף עד שחלון ההרמה הבא יוכל לשאת מסה נכונה תחת custody נכונה.\n\nהאכזריות אינה שהחישוב מזויף. האכזריות היא שהחישוב מקבל רשות לדבר ראשון. שורד הופך למסת גוף. חמצן הופך לחוב welfare. דגימה הופכת ל-custody חתומה. קופסה שחורה הופכת ל-evidence payload. הסגר הופך לנפח. receiver rights הופכים ל-liability. ה-carrier לא מחליט אם הדברים חשובים. הוא מחליט אילו מהם יכולים לזוז יחד.\n\nכך ה-lore נשאר משחקי. לשמור ראיות, לזרוק זיהום, לאשר חומרה, להוציא חמצן, לשמור דגימה, לחשוף hash ציבורי או להגן על מרווח גוף מספיק: כל בחירה דוחפת את היומן. השחקן לא בוזז הפשטות. הוא נלחם על מה ייספר כבר-השבה.",
-          "field_note": "אם היומן כותב מסה, שאל של מי הגוף הפסיק להיות אדם ראשון."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Custódia de Massa Tonne-Window",
-          "scanner": "FAIXA DE CUSTÓDIA DE MASSA // Laminado Keelmark, óleo sob a camada clara. Colunas: massa corporal, oxigênio welfare, amostra selada, pacote de prova, retenção de quarentena, responsabilidade do receptor. A linha humana não vem primeiro.",
-          "terminal": "MESA DE CUSTÓDIA DE MASSA KEELMARK // Gravame base 4.8 tonne-window ativo. Certificado de ascensão aceito apenas como prova de hardware. Massa de recuperação não reservada até oxigênio, custody da amostra, payload de prova, receptor de quarentena e alocação de lift do carrier fecharem.",
-          "audio": "Black Keel não pergunta se você quer viver. Pergunta o que mais tenta subir com você.",
-          "in_game_wiki": "Tonne-window não é moeda vestida de métrica. É a unidade que Black Keel usa quando um corpo, uma amostra, uma bateria, uma manga de pressão e um packet de prova querem o mesmo burn para cima. Dinheiro pode ser discutido depois. Massa precisa ser carregada agora.\n\nPor isso o carrier parece cruel mesmo quando a conta é honesta. O oceano entrega coisas que importam: substrate selado, crachá de trabalhador, carretel de caixa-preta, frasco de oxigênio reserva, placa de pressure glass rachada. Keelmark transforma cada item em classe de custody. Black Keel transforma essas classes em massa, volume, risco de quarentena, calor, lastro e responsabilidade do receptor. Então o registro pergunta a coisa suja: qual deles pode ocupar a próxima janela de lift?\n\nO jogador pode mudar a resposta, mas não gritando no rádio. Um ascent stack certificado remove uma objeção. Um handshake de quarentena remove outra. Um hash público de prova torna um packet mais difícil de enterrar. Jogar fora uma amostra contaminada pode comprar margem para o corpo. Mantê-la pode comprar verdade e alívio de dívida enquanto dificulta o resgate. A pressão tonne-window não é imposto de menu. É a regra de história que torna físicas as escolhas de salvage.",
-          "external_site": "Tonne-window é a oportunidade de massa recuperável de Black Keel: corpo, oxigênio, amostras, prova e volume de quarentena competem antes de o carrier alocar resgate.",
-          "external_site_article": "HECTON-8 transforma misericórdia em cálculo de carga porque o mundo não tem resgate mágico. Black Keel pode ouvir uma claim, aceitar um packet e ainda recusar recuperação do corpo até a próxima janela levantar a massa certa sob a custody certa.\n\nA crueldade não está na conta falsa. Está na permissão dada à conta para falar primeiro. Um sobrevivente vira massa corporal. Oxigênio vira dívida welfare. Uma amostra vira custody selada. Uma caixa-preta vira evidence payload. Quarentena vira volume. Receiver rights viram liability. O carrier não decide se essas coisas importam. Decide quais podem se mover juntas.\n\nIsso mantém o lore jogável. Preservar prova, descartar contaminação, certificar hardware, gastar oxigênio, manter amostra, expor hash público ou proteger margem corporal: cada escolha empurra o registro. O jogador não coleta abstrações. Ele disputa o que será contado como recuperável.",
-          "field_note": "Se o registro diz massa, pergunte de quem o corpo deixou de ser pessoa primeiro."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Massacustody Tonne-Window Logboek",
-          "scanner": "MASSACUSTODYSTRIP // Keelmark-laminaat, olie achter de heldere laag. Kolommen: lichaamsmassa, welfare-zuurstof, verzegelde sample, bewijspakket, quarantainehold, ontvangeraansprakelijkheid. De menselijke rij staat niet eerst.",
-          "terminal": "KEELMARK MASSACUSTODYDESK // Basispand 4.8 tonne-window blijft actief. Ascent-certificaat alleen als hardwarebewijs geaccepteerd. Recovery-massa niet gereserveerd tot zuurstof, sample-custody, evidence payload, quarantainereceiver en carrier-liftallocatie kloppen.",
-          "audio": "Black Keel vraagt niet of je wilt leven. Het vraagt wat nog meer met je mee omhoog wil.",
-          "in_game_wiki": "Een tonne-window is geen munt in metrische kleding. Het is de eenheid die Black Keel gebruikt wanneer een lichaam, sample, batterij, drukmof en bewijspakket dezelfde opwaartse burn willen. Over geld kan later worden geruzied. Massa moet nu gedragen worden.\n\nDaarom voelt de carrier wreed, zelfs wanneer de berekening eerlijk is. De oceaan geeft dingen die tellen: verzegeld substraat, werkersbadge, black-box-spoel, zuurstoffles, gescheurde pressure-glass-plaat. Keelmark maakt van elk een custodyklasse. Black Keel maakt van die klassen massa, volume, quarantainerisico, warmte, ballast en ontvangeraansprakelijkheid. Daarna stelt het logboek de vuile vraag: wat mag het volgende liftvenster bezetten?\n\nDe speler kan het antwoord veranderen, maar niet door naar de radio te schreeuwen. Een gecertificeerde ascent stack verwijdert één bezwaar. Een quarantaine-handshake verwijdert een ander. Een publieke bewijshash maakt een packet moeilijker te begraven. Een besmette sample dumpen kan lichaamsmarge kopen. Die houden kan waarheid en schuldverlichting kopen terwijl redding moeilijker wordt. Tonne-window-druk is geen menubelasting. Het is de verhaalregel die salvage-keuzes fysiek maakt.",
-          "external_site": "Een tonne-window is Black Keels herstelbare massakans: lichaam, zuurstof, samples, bewijs en quarantainevolume concurreren voordat de carrier redding toewijst.",
-          "external_site_article": "HECTON-8 verandert genade in een laadberekening omdat deze wereld geen magische redding heeft. Black Keel kan een claim horen, een packet accepteren en toch lichaamsrecovery weigeren tot het volgende liftvenster de juiste massa onder juiste custody kan dragen.\n\nHet wrede is niet dat de wiskunde nep is. Het wrede is dat de wiskunde als eerste taal mag spreken. Een overlevende wordt lichaamsmassa. Zuurstof wordt welfare-schuld. Een sample wordt verzegelde custody. Een black box wordt evidence payload. Quarantaine wordt volume. Receiver rights worden liability. De carrier beslist niet of deze dingen belangrijk zijn. Hij beslist welke samen kunnen bewegen.\n\nZo blijft de lore speelbaar. Bewijs bewaren, besmetting weggooien, hardware certificeren, zuurstof uitgeven, sample houden, publieke hash tonen of genoeg lichaamsmarge beschermen: elke keuze duwt tegen het logboek. De speler plundert geen abstracties. Hij vecht over wat als herstelbaar wordt geteld.",
-          "field_note": "Als het logboek massa zegt, vraag wiens lichaam eerst ophield persoon te zijn."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.mass_custody_tonne_window_ledger",
+    "secondary": [
+     "unlock.first_tonne_window_conflict",
+     "unlock.first_recovery_mass_custody_strip",
+     "unlock.first_payload_body_tradeoff"
+    ],
+    "poi_tags": [
+     "poi.mass_custody_strip",
+     "poi.tonne_window_scale",
+     "poi.keelmark_lift_allocation_board",
+     "poi.black_keel_payload_body_ledger"
+    ],
+    "biome_tags": [
+     "biome.carrier_link",
+     "biome.claim_admin",
+     "biome.ascent_stack",
+     "biome.safe_module"
+    ],
+    "first_20_boundary": "Connects first-hour lien pressure, claim windows and ascent certification to concrete salvage choices where body, payload, oxygen and evidence compete for one recoverable mass window."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Keelmark Mass Custody Scanner",
+     "terminal": "Black Keel Recovery Mass Desk",
+     "audio": "Carrier Accounting Channel",
+     "in_game_wiki": "PDA Mass Custody Primer",
+     "external_site": "Public Site Tonne-Window Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_payload_body_mass_conflict_or_ascent_reservation",
+    "truth_payload": "A tonne-window is recoverable lift opportunity, not simple money: body, oxygen, samples, evidence, quarantine volume and receiver liability compete before Black Keel reserves ascent mass.",
+    "player_question": "When the carrier can lift only one priced window, what is allowed to ride up?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Mass Custody Tonne-Window Ledger",
+     "scanner": "MASS CUSTODY STRIP // Keelmark laminate, oil behind the clearcoat. Columns read: body mass, welfare oxygen, sealed sample, evidence packet, quarantine hold, receiver liability. The human row is not first.",
+     "terminal": "KEELMARK MASS CUSTODY DESK // Base lien 4.8 tonne-window remains active. Ascent certificate accepted as hardware proof only. Recovery mass not reserved until oxygen welfare, sample custody, evidence payload, quarantine receiver and carrier lift allocation reconcile.",
+     "audio": "Black Keel does not ask whether you want to live. It asks what else is trying to ride up with you.",
+     "in_game_wiki": "A tonne-window is not currency dressed in metric clothing. It is the unit Black Keel uses when a body, a sample, a battery, a pressure sleeve and a packet of evidence all want the same upward burn. Money can be argued later. Mass has to be carried now.\n\nThis is why the carrier feels cruel even when its math is honest. The ocean gives you things that matter: sealed substrate, a worker badge, a black-box spool, a spare oxygen flask, a cracked pressure-glass plate. Keelmark turns each into a custody class. Black Keel turns those classes into mass, volume, quarantine risk, heat, ballast and receiver liability. The ledger then asks the dirty question: which of these is allowed to occupy the next lift window?\n\nThe player can change the answer, but not by shouting at the radio. A certified ascent stack removes one objection. A quarantine handshake removes another. A public evidence hash can make a packet harder to bury. Dumping a contaminated sample may buy body margin. Keeping it may buy truth and debt relief while making rescue harder. Tonne-window pressure is not a menu tax. It is the story rule that makes salvage choices physical.",
+     "external_site": "A tonne-window is Black Keel's recoverable mass opportunity: body, oxygen, samples, evidence and quarantine volume all compete before the carrier treats rescue as allocatable.",
+     "external_site_article": "HECTON-8 turns mercy into a load calculation because the world is built without magic rescue. Black Keel can hear a claim, accept a packet and still refuse body recovery until the next lift window can carry the right mass under the right custody.\n\nThe cruel part is not that the math is fake. It is that the math is allowed to be the first language. A survivor becomes body mass. Oxygen becomes welfare debt. A sample becomes sealed custody. A black-box packet becomes evidence payload. Quarantine becomes volume. Receiver rights become liability. The carrier does not decide whether these things matter. It decides which of them can be moved together.\n\nThis keeps the lore playable. Every salvage decision can push against the ledger: preserve proof, throw away contamination, certify hardware, spend oxygen, keep a sample, expose a public hash or protect enough body margin to get out. The player is not looting abstractions. They are fighting over what gets counted as recoverable.",
+     "field_note": "If the ledger says mass, ask whose body stopped being a person first."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал массовой опеки тонна-окна",
+     "scanner": "ПОЛОСА МАССОВОЙ ОПЕКИ // Ламинат Keelmark, масло под прозрачным слоем. Колонки: масса тела, welfare-кислород, запечатанный образец, пакет доказательств, карантинное удержание, ответственность приемника. Человеческая строка не первая.",
+     "terminal": "СТОЛ МАССОВОЙ ОПЕКИ KEELMARK // Базовый залог 4.8 tonne-window активен. Сертификат подъема принят только как железное доказательство. Масса возврата не резервируется, пока кислород, custody образца, доказательный payload, карантинный приемник и подъемная квота carrier не сойдутся.",
+     "audio": "Black Keel не спрашивает, хочешь ли ты жить. Он спрашивает, что еще пытается подняться вместе с тобой.",
+     "in_game_wiki": "Tonne-window это не деньги, переодетые в метрическую систему. Это единица, которой Black Keel считает момент, когда тело, образец, батарея, напорная втулка и пакет доказательств хотят один и тот же подъемный burn. Деньги можно спорить потом. Массу надо нести сейчас.\n\nПоэтому carrier кажется жестоким даже тогда, когда математика честная. Океан дает вещи, которые имеют значение: запечатанный субстрат, жетон рабочего, катушку черного ящика, запасной кислородный баллон, треснувшую плиту pressure glass. Keelmark превращает каждую вещь в класс опеки. Black Keel превращает эти классы в массу, объем, карантинный риск, тепло, балласт и ответственность приемника. Потом журнал задает грязный вопрос: чему разрешено занять следующее окно подъема?\n\nИгрок может изменить ответ, но не криком в радио. Сертифицированный подъемный стек снимает одно возражение. Карантинное рукопожатие снимает другое. Публичный hash доказательства делает пакет труднее похоронить. Сброс зараженного образца может купить запас для тела. Сохранение образца может купить правду и списание долга, но усложнить спасение. Давление tonne-window это не налог меню. Это сюжетное правило, которое делает salvage-выбор физическим.",
+     "external_site": "Tonne-window у Black Keel это возможность поднять восстановимую массу: тело, кислород, образцы, доказательства и карантинный объем конкурируют до того, как carrier назовет спасение выделяемым.",
+     "external_site_article": "HECTON-8 превращает милость в расчет нагрузки, потому что мир построен без магического спасения. Black Keel может услышать претензию, принять packet и все равно отказать в возврате тела, пока следующее окно подъема не сможет унести нужную массу под нужной опекой.\n\nЖестокость не в том, что математика фальшивая. Жестокость в том, что математике позволили быть первым языком. Выживший становится массой тела. Кислород становится welfare-долгом. Образец становится sealed custody. Черный ящик становится evidence payload. Карантин становится объемом. Receiver rights становятся liability. Carrier не решает, важны ли эти вещи. Он решает, какие из них можно двигать вместе.\n\nТак лор остается игровым. Каждый salvage-выбор давит на журнал: сохранить доказательство, выбросить загрязнение, сертифицировать железо, потратить кислород, оставить образец, открыть публичный hash или сохранить enough body margin, чтобы уйти. Игрок не собирает абстракции. Он борется за то, что будет посчитано восстановимым.",
+     "field_note": "Если журнал пишет масса, спроси, чье тело первым перестало быть человеком."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "質量保管トン窓台帳",
+     "scanner": "質量保管ストリップ // Keelmarkのラミネート。透明層の下に油。列は身体質量、福祉酸素、封印試料、証拠パケット、隔離保留、受信者責任。人間の行は先頭ではない。",
+     "terminal": "KEELMARK質量保管デスク // 基本リエン4.8 tonne-windowは有効。上昇証明はハードウェア証拠としてのみ受理。酸素福祉、試料custody、証拠payload、隔離受信者、carrier揚収割当が一致するまで回収質量は予約されない。",
+     "audio": "Black Keelは生きたいかを聞かない。君と一緒に何が上がろうとしているかを聞く。",
+     "in_game_wiki": "tonne-windowはメートル法の服を着た通貨ではない。身体、試料、電池、圧力スリーブ、証拠パケットが同じ上昇burnを求める時、Black Keelが使う単位だ。金の議論は後でできる。質量は今運ばなければならない。\n\nだからcarrierは、計算が正直でも残酷に感じる。海は重要な物を渡す。封印substrate、作業員バッジ、ブラックボックスのスプール、予備酸素、割れたpressure glass。Keelmarkはそれぞれを保管クラスに変える。Black Keelはそのクラスを質量、体積、隔離リスク、熱、バラスト、受信者責任に変える。そして台帳は汚い問いを出す。次の揚収窓を占めてよいのはどれか。\n\nプレイヤーは答えを変えられる。ただし無線に叫んでも変わらない。認証済みの上昇スタックは一つの異議を消す。隔離handshakeは別の異議を消す。公開証拠hashはパケットを埋めにくくする。汚染試料を捨てれば身体の余白を買える。残せば真実と債務軽減を買えるが、救助は難しくなる。tonne-window圧力はメニュー税ではない。salvageの選択を物理にする物語ルールだ。",
+     "external_site": "tonne-windowはBlack Keelの回収可能な質量機会であり、身体、酸素、試料、証拠、隔離体積がcarrierの救助割当より先に競合する。",
+     "external_site_article": "HECTON-8は慈悲を荷重計算に変える。魔法の救助がない世界だからだ。Black Keelはclaimを聞き、packetを受け取り、それでも次の揚収窓が正しいcustodyで正しい質量を運べるまで身体回収を拒む。\n\n残酷なのは計算が偽物だからではない。計算が第一言語として許されていることだ。生存者は身体質量になる。酸素は福祉債務になる。試料は封印custodyになる。ブラックボックスは証拠payloadになる。隔離は体積になる。receiver rightsはliabilityになる。carrierはそれらが大事かどうかを決めない。一緒に動かせるかを決める。\n\nこれでloreは遊べるまま残る。証拠を守る、汚染を捨てる、ハードウェアを認証する、酸素を使う、試料を残す、公開hashを出す、脱出できる身体余白を守る。どれも台帳を押す。プレイヤーは抽象物を拾っていない。何が回収可能として数えられるかを争っている。",
+     "field_note": "台帳が質量と書くなら、誰の身体が最初に人間でなくなったかを聞け。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "质量监管吨窗账",
+     "scanner": "质量监管条 // Keelmark覆膜，透明层下有油。栏目：身体质量、福利氧气、封存样本、证据包、隔离扣留、接收方责任。人的那一行并不在最前。",
+     "terminal": "KEELMARK质量监管台 // 基础留置债4.8 tonne-window仍有效。上升认证只作为硬件证明接受。氧气福利、样本custody、证据payload、隔离接收方和carrier升力配额未对齐前，不预留回收质量。",
+     "audio": "Black Keel不问你想不想活。它问还有什么想和你一起上去。",
+     "in_game_wiki": "tonne-window不是披着公制外衣的货币。它是Black Keel在身体、样本、电池、耐压套筒和证据包都想占用同一次上升burn时使用的单位。钱可以之后争。质量必须现在运。\n\n这就是carrier即使算得诚实也显得残酷的原因。海会给你真正重要的东西：封存substrate、工人牌、黑匣子线轴、备用氧瓶、开裂的pressure glass。Keelmark把每件东西变成监管类别。Black Keel再把类别变成质量、体积、隔离风险、热、压载和接收方责任。然后账本问一个脏问题：下一个升力窗口允许谁占用？\n\n玩家能改变答案，但不能靠对着无线电喊。认证过的上升堆消除一个拒绝点。隔离handshake消除另一个。公开证据hash让packet更难被埋掉。丢掉污染样本可能换来身体余量。保留它可能换来真相和减债，却让救援更难。tonne-window压力不是菜单税，而是让salvage选择变成物理事实的叙事规则。",
+     "external_site": "tonne-window是Black Keel的可回收质量机会：身体、氧气、样本、证据和隔离体积在carrier把救援列为可分配项之前就互相竞争。",
+     "external_site_article": "HECTON-8把怜悯变成载荷计算，因为这个世界没有魔法救援。Black Keel可以听见claim，接收packet，但只要下一次升力窗口还不能在正确custody下运走正确质量，它就会拒绝身体回收。\n\n残酷处不在于数学是假的。残酷处在于数学被允许成为第一语言。幸存者变成身体质量。氧气变成福利债。样本变成封存custody。黑匣子packet变成证据payload。隔离变成体积。receiver rights变成liability。carrier不判断这些东西是否重要，只判断它们能否一起移动。\n\n这让lore保持可玩。保存证据、丢弃污染、认证硬件、消耗氧气、留下样本、公开hash或保护足够的身体余量，都会推着账本改变。玩家不是在捡抽象代币，而是在争夺什么能被算作可回收。",
+     "field_note": "如果账本写的是质量，就问谁的身体最先不再被当成人。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre de custody de masse en tonne-window",
+     "scanner": "BANDE DE CUSTODY MASSE // Stratifié Keelmark, huile sous le vernis clair. Colonnes: masse du corps, oxygène welfare, échantillon scellé, paquet de preuve, retenue quarantaine, responsabilité du récepteur. La ligne humaine n'est pas la première.",
+     "terminal": "BUREAU KEELMARK CUSTODY MASSE // Gage de base 4.8 tonne-window actif. Certificat d'ascension accepté comme preuve matérielle seulement. Masse de récupération non réservée avant rapprochement oxygène, custody d'échantillon, payload preuve, récepteur quarantaine et allocation de levage carrier.",
+     "audio": "Black Keel ne demande pas si tu veux vivre. Il demande quoi tente de monter avec toi.",
+     "in_game_wiki": "Une tonne-window n'est pas une monnaie déguisée en unité métrique. C'est l'unité que Black Keel utilise quand un corps, un échantillon, une batterie, une manche de pression et un paquet de preuve veulent le même burn vers le haut. L'argent peut se discuter plus tard. La masse doit être portée maintenant.\n\nVoilà pourquoi le carrier paraît cruel même quand son calcul est honnête. L'océan donne des choses qui comptent: substrat scellé, badge d'ouvrier, bobine de boîte noire, flasque d'oxygène, plaque de pressure glass fendue. Keelmark transforme chacune en classe de custody. Black Keel transforme ces classes en masse, volume, risque de quarantaine, chaleur, ballast et responsabilité du récepteur. Le registre pose ensuite la question sale: qu'est-ce qui a le droit d'occuper la prochaine fenêtre de levage?\n\nLe joueur peut changer la réponse, mais pas en criant dans la radio. Un stack d'ascension certifié retire une objection. Un handshake de quarantaine en retire une autre. Un hash public de preuve rend un paquet plus difficile à enterrer. Jeter un échantillon contaminé peut acheter de la marge pour le corps. Le garder peut acheter vérité et allègement de dette tout en rendant le secours plus difficile. La pression tonne-window n'est pas une taxe de menu. C'est la règle narrative qui rend les choix de salvage physiques.",
+     "external_site": "La tonne-window est l'occasion de masse récupérable de Black Keel: corps, oxygène, échantillons, preuve et volume de quarantaine se disputent avant que le carrier alloue un sauvetage.",
+     "external_site_article": "HECTON-8 transforme la pitié en calcul de charge parce que le monde n'a pas de sauvetage magique. Black Keel peut entendre une claim, accepter un packet et refuser le corps tant que la fenêtre de levage suivante ne porte pas la bonne masse sous la bonne custody.\n\nLa cruauté ne vient pas d'un faux calcul. Elle vient du fait que le calcul a le droit de parler en premier. Un survivant devient masse corporelle. L'oxygène devient dette welfare. Un échantillon devient custody scellée. Une boîte noire devient payload de preuve. La quarantaine devient volume. Les receiver rights deviennent liability. Le carrier ne décide pas si ces choses comptent. Il décide lesquelles peuvent bouger ensemble.\n\nCela garde le lore jouable. Préserver une preuve, jeter une contamination, certifier le matériel, dépenser de l'oxygène, garder un échantillon, publier un hash ou protéger assez de marge corporelle: chaque choix pousse le registre. Le joueur ne ramasse pas des abstractions. Il se bat pour ce qui sera compté comme récupérable.",
+     "field_note": "Si le registre écrit masse, demande quel corps a cessé d'être une personne en premier."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de custodia de masa tonne-window",
+     "scanner": "TIRA DE CUSTODIA DE MASA // Laminado Keelmark, aceite bajo la capa clara. Columnas: masa corporal, oxígeno de welfare, muestra sellada, paquete de prueba, retención de cuarentena, responsabilidad del receptor. La fila humana no va primero.",
+     "terminal": "MESA DE CUSTODIA DE MASA KEELMARK // Gravamen base 4.8 tonne-window activo. Certificado de ascenso aceptado sólo como prueba de hardware. Masa de recuperación no reservada hasta conciliar oxígeno, custodia de muestra, payload de prueba, receptor de cuarentena y asignación de elevación carrier.",
+     "audio": "Black Keel no pregunta si quieres vivir. Pregunta qué más intenta subir contigo.",
+     "in_game_wiki": "Una tonne-window no es moneda disfrazada de métrica. Es la unidad que usa Black Keel cuando un cuerpo, una muestra, una batería, una manga de presión y un paquete de prueba quieren el mismo burn hacia arriba. El dinero puede discutirse luego. La masa debe cargarse ahora.\n\nPor eso el carrier se siente cruel incluso cuando su matemática es honesta. El océano te da cosas que importan: sustrato sellado, placa de trabajador, bobina de caja negra, botella de oxígeno, placa de pressure glass agrietada. Keelmark convierte cada cosa en clase de custodia. Black Keel convierte esas clases en masa, volumen, riesgo de cuarentena, calor, lastre y responsabilidad del receptor. Luego el registro pregunta algo sucio: ¿qué tiene permiso para ocupar la próxima ventana de elevación?\n\nEl jugador puede cambiar la respuesta, pero no gritando a la radio. Un stack de ascenso certificado quita una objeción. Un handshake de cuarentena quita otra. Un hash público de prueba hace que un packet sea más difícil de enterrar. Tirar una muestra contaminada puede comprar margen para el cuerpo. Conservarla puede comprar verdad y alivio de deuda mientras complica el rescate. La presión tonne-window no es impuesto de menú. Es la regla de historia que vuelve físicas las decisiones de salvage.",
+     "external_site": "La tonne-window es la oportunidad de masa recuperable de Black Keel: cuerpo, oxígeno, muestras, pruebas y volumen de cuarentena compiten antes de que el carrier asigne rescate.",
+     "external_site_article": "HECTON-8 convierte la misericordia en cálculo de carga porque el mundo no tiene rescate mágico. Black Keel puede oír una claim, aceptar un packet y aun así rechazar la recuperación del cuerpo hasta que la siguiente ventana pueda llevar la masa correcta bajo la custodia correcta.\n\nLo cruel no es que el cálculo sea falso. Es que el cálculo tiene permiso para hablar primero. Un superviviente se vuelve masa corporal. El oxígeno se vuelve deuda welfare. Una muestra se vuelve custodia sellada. La caja negra se vuelve payload de prueba. La cuarentena se vuelve volumen. Los receiver rights se vuelven liability. El carrier no decide si esas cosas importan. Decide cuáles pueden moverse juntas.\n\nAsí el lore sigue siendo jugable. Preservar prueba, tirar contaminación, certificar hardware, gastar oxígeno, conservar muestra, exponer un hash público o proteger margen corporal empuja el registro. El jugador no saquea abstracciones. Pelea por qué será contado como recuperable.",
+     "field_note": "Si el registro dice masa, pregunta qué cuerpo dejó de ser persona primero."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Massen-Custody-Tonnenfenster-Protokoll",
+     "scanner": "MASSEN-CUSTODY-STREIFEN // Keelmark-Laminat, Öl unter Klarlack. Spalten: Körpermasse, Welfare-Sauerstoff, versiegelte Probe, Beweispaket, Quarantäne-Hold, Empfängerhaftung. Die Menschenzeile steht nicht zuerst.",
+     "terminal": "KEELMARK MASSEN-CUSTODY-DESK // Basispfand 4.8 tonne-window aktiv. Aufstiegszertifikat nur als Hardwarebeweis akzeptiert. Bergungsmasse nicht reserviert, bis Sauerstoff, Proben-Custody, Beweis-Payload, Quarantäneempfänger und Carrier-Hubzuteilung abgeglichen sind.",
+     "audio": "Black Keel fragt nicht, ob du leben willst. Es fragt, was sonst mit dir nach oben will.",
+     "in_game_wiki": "Ein tonne-window ist keine Währung in metrischer Kleidung. Es ist die Einheit, die Black Keel benutzt, wenn Körper, Probe, Batterie, Druckhülse und Beweispaket denselben Aufwärts-burn wollen. Über Geld kann man später streiten. Masse muss jetzt getragen werden.\n\nDarum wirkt der carrier grausam, selbst wenn seine Mathematik ehrlich ist. Der Ozean gibt dir Dinge, die zählen: versiegeltes Substrat, Arbeiterabzeichen, Blackbox-Spule, Sauerstoffflasche, gerissene pressure-glass-Platte. Keelmark macht daraus Custody-Klassen. Black Keel macht daraus Masse, Volumen, Quarantänerisiko, Hitze, Ballast und Empfängerhaftung. Dann stellt das Protokoll die schmutzige Frage: Was darf das nächste Hubfenster besetzen?\n\nDer Spieler kann die Antwort ändern, aber nicht durch Schreien ins Funkgerät. Ein zertifizierter Aufstiegsstack entfernt einen Einwand. Ein Quarantäne-handshake entfernt einen anderen. Ein öffentlicher Beweis-hash macht ein packet schwerer zu begraben. Eine kontaminierte Probe wegzuwerfen kann Körpermarge kaufen. Sie zu behalten kann Wahrheit und Schuldentlastung kaufen, aber Rettung erschweren. Tonne-window-Druck ist keine Menüsteuer. Es ist die Story-Regel, die Salvage-Entscheidungen physisch macht.",
+     "external_site": "Das tonne-window ist Black Keels bergbare Massenchance: Körper, Sauerstoff, Proben, Beweise und Quarantänevolumen konkurrieren, bevor der carrier Rettung zuteilt.",
+     "external_site_article": "HECTON-8 verwandelt Gnade in Lastberechnung, weil diese Welt keine magische Rettung hat. Black Keel kann eine claim hören, ein packet akzeptieren und trotzdem Körperbergung verweigern, bis das nächste Hubfenster die richtige Masse unter richtiger custody tragen kann.\n\nGrausam ist nicht, dass die Rechnung falsch wäre. Grausam ist, dass die Rechnung zuerst sprechen darf. Ein Überlebender wird Körpermasse. Sauerstoff wird Welfare-Schuld. Eine Probe wird versiegelte custody. Eine Blackbox wird Beweis-payload. Quarantäne wird Volumen. Receiver rights werden liability. Der carrier entscheidet nicht, ob diese Dinge wichtig sind. Er entscheidet, welche zusammen bewegt werden können.\n\nSo bleibt der Lore spielbar. Beweis erhalten, Kontamination abwerfen, Hardware zertifizieren, Sauerstoff ausgeben, Probe behalten, öffentlichen hash zeigen oder genug Körpermarge schützen: Jede Wahl drückt auf das Protokoll. Der Spieler sammelt keine Abstraktionen. Er kämpft darum, was als bergbar gezählt wird.",
+     "field_note": "Wenn das Protokoll Masse sagt, frag, wessen Körper zuerst keine Person mehr war."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr pieczy masy okna tonowego",
+     "scanner": "PASEK PIECZY MASY // Laminat Keelmark, olej pod klarowną warstwą. Kolumny: masa ciała, tlen welfare, zapieczętowana próbka, pakiet dowodowy, blokada kwarantanny, odpowiedzialność odbiorcy. Wiersz człowieka nie jest pierwszy.",
+     "terminal": "BIURKO PIECZY MASY KEELMARK // Bazowy zastaw 4.8 tonne-window aktywny. Certyfikat wznoszenia przyjęty tylko jako dowód sprzętowy. Masa odzysku nie jest zarezerwowana, dopóki tlen, custody próbki, payload dowodowy, odbiorca kwarantanny i przydział podnoszenia carrier nie zostaną pogodzone.",
+     "audio": "Black Keel nie pyta, czy chcesz żyć. Pyta, co jeszcze próbuje jechać z tobą w górę.",
+     "in_game_wiki": "Tonne-window nie jest walutą przebraną za metrykę. To jednostka, której Black Keel używa, gdy ciało, próbka, bateria, rękaw ciśnieniowy i pakiet dowodowy chcą tego samego burnu w górę. O pieniądze można spierać się później. Masę trzeba nieść teraz.\n\nDlatego carrier wydaje się okrutny, nawet gdy liczy uczciwie. Ocean daje rzeczy ważne: zapieczętowany substrat, identyfikator pracownika, szpulę czarnej skrzynki, butlę tlenu, pękniętą płytę pressure glass. Keelmark zmienia każdą w klasę custody. Black Keel zmienia klasy w masę, objętość, ryzyko kwarantanny, ciepło, balast i odpowiedzialność odbiorcy. Rejestr zadaje potem brudne pytanie: co może zająć następne okno podnoszenia?\n\nGracz może zmienić odpowiedź, ale nie krzykiem do radia. Certyfikowany stack wznoszenia usuwa jeden sprzeciw. Kwarantannowy handshake usuwa drugi. Publiczny hash dowodu utrudnia pogrzebanie packetu. Wyrzucenie skażonej próbki może kupić margines dla ciała. Zatrzymanie jej może kupić prawdę i ulgę długu, ale utrudnić ratunek. Presja tonne-window nie jest podatkiem menu. To reguła opowieści, która czyni wybory salvage fizycznymi.",
+     "external_site": "Tonne-window to odzyskiwalna szansa masy Black Keel: ciało, tlen, próbki, dowody i objętość kwarantanny konkurują, zanim carrier przydzieli ratunek.",
+     "external_site_article": "HECTON-8 zmienia miłosierdzie w obliczenie ładunku, bo świat nie ma magicznego ratunku. Black Keel może usłyszeć claim, przyjąć packet i nadal odmówić ciała, dopóki kolejne okno nie uniesie właściwej masy pod właściwą custody.\n\nOkrucieństwo nie polega na fałszywej matematyce. Polega na tym, że matematyka może mówić pierwsza. Ocalały staje się masą ciała. Tlen staje się długiem welfare. Próbka staje się zapieczętowaną custody. Czarna skrzynka staje się payloadem dowodu. Kwarantanna staje się objętością. Receiver rights stają się liability. Carrier nie decyduje, czy te rzeczy mają znaczenie. Decyduje, które mogą poruszać się razem.\n\nTak lore zostaje grywalny. Zachować dowód, wyrzucić skażenie, certyfikować sprzęt, zużyć tlen, zachować próbkę, ujawnić publiczny hash albo chronić margines ciała: każda decyzja naciska rejestr. Gracz nie zbiera abstrakcji. Walczy o to, co zostanie policzone jako odzyskiwalne.",
+     "field_note": "Jeśli rejestr mówi masa, zapytaj, czyje ciało pierwsze przestało być osobą."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал масової опіки тонна-вікна",
+     "scanner": "СМУГА МАСОВОЇ ОПІКИ // Ламінат Keelmark, олива під прозорим шаром. Колонки: маса тіла, welfare-кисень, запечатаний зразок, пакет доказів, карантинне утримання, відповідальність приймача. Людський рядок не перший.",
+     "terminal": "СТІЛ МАСОВОЇ ОПІКИ KEELMARK // Базова застава 4.8 tonne-window активна. Сертифікат підйому прийнято лише як апаратний доказ. Маса повернення не резервується, доки кисень, custody зразка, доказовий payload, карантинний приймач і квота підйому carrier не зійдуться.",
+     "audio": "Black Keel не питає, чи хочеш ти жити. Він питає, що ще намагається піднятися разом із тобою.",
+     "in_game_wiki": "Tonne-window це не гроші, перевдягнені в метрику. Це одиниця, якою Black Keel рахує момент, коли тіло, зразок, батарея, напірна втулка й пакет доказів хочуть один і той самий підйомний burn. Про гроші можна сперечатися потім. Масу треба нести зараз.\n\nТому carrier здається жорстоким навіть тоді, коли математика чесна. Океан дає важливі речі: запечатаний субстрат, жетон працівника, котушку чорної скриньки, запасний кисневий балон, тріснуту плиту pressure glass. Keelmark перетворює кожну річ на клас опіки. Black Keel перетворює ці класи на масу, об'єм, карантинний ризик, тепло, баласт і відповідальність приймача. Потім журнал ставить брудне питання: чому дозволено зайняти наступне вікно підйому?\n\nГравець може змінити відповідь, але не криком у радіо. Сертифікований підйомний стек знімає одне заперечення. Карантинний handshake знімає інше. Публічний hash доказу робить packet важче поховати. Скидання зараженого зразка може купити запас для тіла. Збереження зразка може купити правду й списання боргу, але ускладнити порятунок. Тиск tonne-window це не податок меню. Це сюжетне правило, яке робить salvage-вибір фізичним.",
+     "external_site": "Tonne-window у Black Keel це можливість підняти відновлювану масу: тіло, кисень, зразки, докази й карантинний об'єм конкурують до виділення порятунку carrier.",
+     "external_site_article": "HECTON-8 перетворює милість на розрахунок навантаження, бо світ не має магічного порятунку. Black Keel може почути claim, прийняти packet і все одно відмовити у поверненні тіла, доки наступне вікно підйому не зможе нести правильну масу під правильною custody.\n\nЖорстокість не в тому, що математика фальшива. Жорстокість у тому, що математиці дозволено говорити першою. Виживший стає масою тіла. Кисень стає welfare-боргом. Зразок стає sealed custody. Чорна скринька стає evidence payload. Карантин стає об'ємом. Receiver rights стають liability. Carrier не вирішує, чи ці речі важливі. Він вирішує, які з них можна рухати разом.\n\nТак лор лишається ігровим. Зберегти доказ, викинути забруднення, сертифікувати залізо, витратити кисень, залишити зразок, відкрити публічний hash або захистити запас для тіла: кожне рішення тисне на журнал. Гравець не збирає абстракції. Він бореться за те, що буде пораховано відновлюваним.",
+     "field_note": "Якщо журнал пише маса, спитай, чиє тіло першим перестало бути людиною."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل حيازة الكتلة لنافذة الطن",
+     "scanner": "شريط حيازة الكتلة // تغليف Keelmark وزيت خلف الطبقة الشفافة. الأعمدة: كتلة الجسد، أكسجين welfare، عينة مختومة، packet دليل، حجز حجر، مسؤولية المستقبل. صف الإنسان ليس الأول.",
+     "terminal": "مكتب حيازة الكتلة KEELMARK // الرهن الأساسي 4.8 tonne-window ما زال نشطا. شهادة الصعود مقبولة كدليل عتاد فقط. لا تحجز كتلة الاسترداد حتى تتوافق الأكسجين وcustody العينة وpayload الدليل ومستقبل الحجر وتخصيص رفع carrier.",
+     "audio": "Black Keel لا يسأل هل تريد أن تعيش. يسأل ماذا يحاول أن يصعد معك.",
+     "in_game_wiki": "tonne-window ليست نقودا ترتدي لباس القياس. إنها الوحدة التي يستخدمها Black Keel عندما يريد جسد وعينة وبطارية وكم ضغط وpacket دليل burn الصعود نفسه. يمكن الجدال حول المال لاحقا. أما الكتلة فيجب حملها الآن.\n\nلذلك يبدو carrier قاسيا حتى عندما تكون حساباته صادقة. يمنحك المحيط أشياء مهمة: substrate مختوما، شارة عامل، بكرة صندوق أسود، قارورة أكسجين احتياطية، صفيحة pressure glass مشقوقة. تحول Keelmark كل شيء إلى فئة custody. ثم يحول Black Keel هذه الفئات إلى كتلة وحجم وخطر حجر وحرارة وثقل ومسؤولية مستقبل. بعدها يسأل السجل السؤال القذر: أي شيء يسمح له باحتلال نافذة الرفع التالية؟\n\nيمكن للاعب تغيير الجواب، لكن ليس بالصراخ في الراديو. ascent stack موثق يزيل اعتراضا. handshake حجر يزيل آخر. hash دليل عام يجعل packet أصعب في الدفن. رمي عينة ملوثة قد يشتري هامشا للجسد. الاحتفاظ بها قد يشتري الحقيقة وتخفيف الدين ويجعل الإنقاذ أصعب. ضغط tonne-window ليس ضريبة قائمة. إنه قاعدة القصة التي تجعل اختيارات salvage فيزيائية.",
+     "external_site": "tonne-window هي فرصة الكتلة القابلة للاسترداد لدى Black Keel: الجسد والأكسجين والعينات والدليل وحجم الحجر تتنافس قبل أن يخصص carrier الإنقاذ.",
+     "external_site_article": "تحول HECTON-8 الرحمة إلى حساب حمولة لأن العالم بلا إنقاذ سحري. يمكن أن يسمع Black Keel claim ويقبل packet ثم يرفض استرداد الجسد حتى تستطيع نافذة الرفع التالية حمل الكتلة الصحيحة تحت custody الصحيحة.\n\nالقسوة ليست أن الحساب مزيف. القسوة أن الحساب مسموح له أن يكون اللغة الأولى. الناجي يصبح كتلة جسد. الأكسجين يصبح دين welfare. العينة تصبح custody مختومة. الصندوق الأسود يصبح payload دليل. الحجر يصبح حجما. receiver rights تصبح liability. لا يقرر carrier هل هذه الأشياء مهمة. يقرر أيها يمكن أن يتحرك معا.\n\nهكذا يبقى lore قابلا للعب. حفظ دليل، رمي تلوث، توثيق عتاد، إنفاق أكسجين، إبقاء عينة، كشف hash عام أو حماية هامش جسد كاف للخروج: كل قرار يضغط على السجل. اللاعب لا يجمع رموزا مجردة. إنه يقاتل حول ما سيحسب قابلا للاسترداد.",
+     "field_note": "إذا قال السجل كتلة، فاسأل أي جسد توقف عن كونه شخصا أولا."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ledger Custody Massa Tonne-Window",
+     "scanner": "STRIP CUSTODY MASSA // Laminat Keelmark, minyak di balik lapisan bening. Kolom: massa tubuh, oksigen welfare, sampel tersegel, packet bukti, tahanan karantina, tanggung jawab penerima. Baris manusia bukan yang pertama.",
+     "terminal": "MEJA CUSTODY MASSA KEELMARK // Lien dasar 4.8 tonne-window tetap aktif. Sertifikat ascent diterima hanya sebagai bukti hardware. Massa recovery belum dipesan sampai oksigen, custody sampel, evidence payload, penerima karantina, dan alokasi lift carrier cocok.",
+     "audio": "Black Keel tidak bertanya apakah kamu ingin hidup. Ia bertanya apa lagi yang mencoba naik bersamamu.",
+     "in_game_wiki": "Tonne-window bukan uang yang memakai pakaian metrik. Itu unit Black Keel saat tubuh, sampel, baterai, sleeve tekanan, dan packet bukti menginginkan burn naik yang sama. Uang bisa diperdebatkan nanti. Massa harus dibawa sekarang.\n\nItulah sebabnya carrier terasa kejam meski hitungannya jujur. Laut memberi benda penting: substrate tersegel, lencana pekerja, spool black-box, botol oksigen cadangan, pelat pressure glass retak. Keelmark mengubah semuanya menjadi kelas custody. Black Keel mengubah kelas itu menjadi massa, volume, risiko karantina, panas, ballast, dan tanggung jawab penerima. Lalu ledger bertanya kotor: yang mana boleh mengisi jendela lift berikutnya?\n\nPemain bisa mengubah jawaban, tetapi bukan dengan berteriak ke radio. Ascent stack bersertifikat menghapus satu keberatan. Handshake karantina menghapus yang lain. Hash bukti publik membuat packet lebih sulit dikubur. Membuang sampel terkontaminasi bisa membeli margin tubuh. Menyimpannya bisa membeli kebenaran dan keringanan utang sambil membuat rescue lebih sulit. Tekanan tonne-window bukan pajak menu. Itu aturan cerita yang membuat pilihan salvage menjadi fisik.",
+     "external_site": "Tonne-window adalah peluang massa recovery Black Keel: tubuh, oksigen, sampel, bukti, dan volume karantina saling bersaing sebelum carrier mengalokasikan penyelamatan.",
+     "external_site_article": "HECTON-8 mengubah belas kasihan menjadi perhitungan muatan karena dunianya tanpa penyelamatan ajaib. Black Keel dapat mendengar claim, menerima packet, dan tetap menolak recovery tubuh sampai jendela lift berikutnya mampu membawa massa yang benar di bawah custody yang benar.\n\nKejamnya bukan karena matematika itu palsu. Kejamnya karena matematika diizinkan menjadi bahasa pertama. Penyintas menjadi massa tubuh. Oksigen menjadi utang welfare. Sampel menjadi custody tersegel. Black-box menjadi payload bukti. Karantina menjadi volume. Receiver rights menjadi liability. Carrier tidak memutuskan apakah benda itu penting. Ia memutuskan mana yang bisa bergerak bersama.\n\nIni membuat lore tetap bisa dimainkan. Menjaga bukti, membuang kontaminasi, menyertifikasi hardware, memakai oksigen, menyimpan sampel, membuka hash publik, atau menjaga margin tubuh cukup untuk keluar: semua menekan ledger. Pemain tidak mengambil abstraksi. Mereka bertarung atas apa yang akan dihitung recoverable.",
+     "field_note": "Jika ledger menulis massa, tanyakan tubuh siapa yang paling dulu berhenti dianggap orang."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "질량 custody 톤-윈도 장부",
+     "scanner": "질량 CUSTODY 스트립 // Keelmark 라미네이트, 투명층 아래 기름. 열: 몸 질량, welfare 산소, 봉인 샘플, 증거 packet, 격리 보류, 수신자 책임. 인간 행은 첫 줄이 아니다.",
+     "terminal": "KEELMARK 질량 CUSTODY 데스크 // 기본 lien 4.8 tonne-window 활성. 상승 인증서는 하드웨어 증거로만 수락. 산소, 샘플 custody, 증거 payload, 격리 수신자, carrier 리프트 배정이 맞기 전까지 회수 질량은 예약되지 않는다.",
+     "audio": "Black Keel은 네가 살고 싶은지 묻지 않는다. 너와 함께 무엇이 올라가려는지 묻는다.",
+     "in_game_wiki": "tonne-window는 미터법 옷을 입은 돈이 아니다. 몸, 샘플, 배터리, 압력 슬리브, 증거 packet이 같은 상승 burn을 원할 때 Black Keel이 쓰는 단위다. 돈은 나중에 다툴 수 있다. 질량은 지금 실어야 한다.\n\n그래서 carrier는 계산이 정직해도 잔혹하게 느껴진다. 바다는 중요한 것을 준다. 봉인 substrate, 작업자 배지, 블랙박스 스풀, 예비 산소 플라스크, 금 간 pressure glass 판. Keelmark는 각각을 custody 등급으로 바꾼다. Black Keel은 그 등급을 질량, 부피, 격리 위험, 열, 밸러스트, 수신자 책임으로 바꾼다. 그다음 장부는 더러운 질문을 한다. 다음 리프트 창을 차지할 수 있는 것은 무엇인가?\n\n플레이어는 답을 바꿀 수 있지만 라디오에 소리쳐서는 안 된다. 인증된 ascent stack은 한 가지 거절 사유를 지운다. 격리 handshake는 다른 것을 지운다. 공개 증거 hash는 packet을 묻기 어렵게 만든다. 오염 샘플을 버리면 몸의 여유를 살 수 있다. 보관하면 진실과 빚 경감을 살 수 있지만 구조를 어렵게 만든다. tonne-window 압박은 메뉴 세금이 아니다. salvage 선택을 물리적으로 만드는 이야기 규칙이다.",
+     "external_site": "tonne-window는 Black Keel의 회수 가능한 질량 기회다. 몸, 산소, 샘플, 증거, 격리 부피가 carrier의 구조 배정 전에 경쟁한다.",
+     "external_site_article": "HECTON-8은 자비를 하중 계산으로 바꾼다. 마법 같은 구조가 없는 세계이기 때문이다. Black Keel은 claim을 듣고 packet을 받아도, 다음 리프트 창이 올바른 custody 아래 올바른 질량을 들 수 있을 때까지 몸 회수를 거부할 수 있다.\n\n잔혹함은 수학이 가짜라서가 아니다. 수학이 첫 언어가 되도록 허락받았기 때문이다. 생존자는 몸 질량이 된다. 산소는 welfare 부채가 된다. 샘플은 봉인 custody가 된다. 블랙박스는 증거 payload가 된다. 격리는 부피가 된다. receiver rights는 liability가 된다. carrier는 그것들이 중요한지 결정하지 않는다. 무엇이 함께 움직일 수 있는지 결정한다.\n\n그래서 lore는 플레이 가능하다. 증거 보존, 오염 폐기, 하드웨어 인증, 산소 소비, 샘플 보관, 공개 hash 노출, 탈출할 몸 여유 보호가 모두 장부를 민다. 플레이어는 추상물을 줍지 않는다. 무엇이 recoverable로 계산될지 싸운다.",
+     "field_note": "장부가 질량이라고 쓰면, 누구의 몸이 먼저 사람이 아니게 되었는지 물어라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן משמורת מסה של חלון-טון",
+     "scanner": "רצועת משמורת מסה // למינציה של Keelmark, שמן מאחורי שכבה שקופה. עמודות: מסת גוף, חמצן welfare, דגימה חתומה, packet ראיות, עיכוב הסגר, אחריות מקבל. שורת האדם אינה הראשונה.",
+     "terminal": "דלפק משמורת מסה KEELMARK // שעבוד בסיס 4.8 tonne-window פעיל. אישור עלייה התקבל כהוכחת חומרה בלבד. מסת התאוששות אינה שמורה עד שחמצן, custody דגימה, evidence payload, מקבל הסגר והקצאת הרמה של carrier מתיישבים.",
+     "audio": "Black Keel לא שואל אם אתה רוצה לחיות. הוא שואל מה עוד מנסה לעלות איתך.",
+     "in_game_wiki": "tonne-window אינה מטבע בתחפושת מטרית. זו היחידה ש-Black Keel משתמש בה כאשר גוף, דגימה, סוללה, שרוול לחץ ו-packet ראיות רוצים את אותו burn כלפי מעלה. על כסף אפשר להתווכח אחר כך. מסה צריך לשאת עכשיו.\n\nלכן carrier מרגיש אכזרי גם כשהמתמטיקה שלו כנה. האוקיינוס נותן דברים חשובים: substrate חתום, תג עובד, סליל קופסה שחורה, בקבוק חמצן נוסף, לוח pressure glass סדוק. Keelmark הופכת כל דבר למחלקת custody. Black Keel הופך את המחלקות למסה, נפח, סיכון הסגר, חום, זבורית ואחריות מקבל. אחר כך היומן שואל את השאלה המלוכלכת: מה רשאי לתפוס את חלון ההרמה הבא?\n\nהשחקן יכול לשנות את התשובה, אבל לא בצעקות לרדיו. ascent stack מאושר מסיר התנגדות אחת. handshake הסגר מסיר אחרת. hash ראיות ציבורי מקשה לקבור packet. זריקת דגימה מזוהמת יכולה לקנות מרווח לגוף. שמירתה יכולה לקנות אמת והקלת חוב, אך להקשות על חילוץ. לחץ tonne-window אינו מס תפריט. הוא כלל הסיפור שהופך בחירות salvage לפיזיות.",
+     "external_site": "tonne-window היא הזדמנות המסה הניתנת להשבה של Black Keel: גוף, חמצן, דגימות, ראיות ונפח הסגר מתחרים לפני שה-carrier מקצה חילוץ.",
+     "external_site_article": "HECTON-8 הופך חמלה לחישוב עומס מפני שהעולם נבנה בלי חילוץ קסום. Black Keel יכול לשמוע claim, לקבל packet, ועדיין לסרב להשבת גוף עד שחלון ההרמה הבא יוכל לשאת מסה נכונה תחת custody נכונה.\n\nהאכזריות אינה שהחישוב מזויף. האכזריות היא שהחישוב מקבל רשות לדבר ראשון. שורד הופך למסת גוף. חמצן הופך לחוב welfare. דגימה הופכת ל-custody חתומה. קופסה שחורה הופכת ל-evidence payload. הסגר הופך לנפח. receiver rights הופכים ל-liability. ה-carrier לא מחליט אם הדברים חשובים. הוא מחליט אילו מהם יכולים לזוז יחד.\n\nכך ה-lore נשאר משחקי. לשמור ראיות, לזרוק זיהום, לאשר חומרה, להוציא חמצן, לשמור דגימה, לחשוף hash ציבורי או להגן על מרווח גוף מספיק: כל בחירה דוחפת את היומן. השחקן לא בוזז הפשטות. הוא נלחם על מה ייספר כבר-השבה.",
+     "field_note": "אם היומן כותב מסה, שאל של מי הגוף הפסיק להיות אדם ראשון."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Custódia de Massa Tonne-Window",
+     "scanner": "FAIXA DE CUSTÓDIA DE MASSA // Laminado Keelmark, óleo sob a camada clara. Colunas: massa corporal, oxigênio welfare, amostra selada, pacote de prova, retenção de quarentena, responsabilidade do receptor. A linha humana não vem primeiro.",
+     "terminal": "MESA DE CUSTÓDIA DE MASSA KEELMARK // Gravame base 4.8 tonne-window ativo. Certificado de ascensão aceito apenas como prova de hardware. Massa de recuperação não reservada até oxigênio, custody da amostra, payload de prova, receptor de quarentena e alocação de lift do carrier fecharem.",
+     "audio": "Black Keel não pergunta se você quer viver. Pergunta o que mais tenta subir com você.",
+     "in_game_wiki": "Tonne-window não é moeda vestida de métrica. É a unidade que Black Keel usa quando um corpo, uma amostra, uma bateria, uma manga de pressão e um packet de prova querem o mesmo burn para cima. Dinheiro pode ser discutido depois. Massa precisa ser carregada agora.\n\nPor isso o carrier parece cruel mesmo quando a conta é honesta. O oceano entrega coisas que importam: substrate selado, crachá de trabalhador, carretel de caixa-preta, frasco de oxigênio reserva, placa de pressure glass rachada. Keelmark transforma cada item em classe de custody. Black Keel transforma essas classes em massa, volume, risco de quarentena, calor, lastro e responsabilidade do receptor. Então o registro pergunta a coisa suja: qual deles pode ocupar a próxima janela de lift?\n\nO jogador pode mudar a resposta, mas não gritando no rádio. Um ascent stack certificado remove uma objeção. Um handshake de quarentena remove outra. Um hash público de prova torna um packet mais difícil de enterrar. Jogar fora uma amostra contaminada pode comprar margem para o corpo. Mantê-la pode comprar verdade e alívio de dívida enquanto dificulta o resgate. A pressão tonne-window não é imposto de menu. É a regra de história que torna físicas as escolhas de salvage.",
+     "external_site": "Tonne-window é a oportunidade de massa recuperável de Black Keel: corpo, oxigênio, amostras, prova e volume de quarentena competem antes de o carrier alocar resgate.",
+     "external_site_article": "HECTON-8 transforma misericórdia em cálculo de carga porque o mundo não tem resgate mágico. Black Keel pode ouvir uma claim, aceitar um packet e ainda recusar recuperação do corpo até a próxima janela levantar a massa certa sob a custody certa.\n\nA crueldade não está na conta falsa. Está na permissão dada à conta para falar primeiro. Um sobrevivente vira massa corporal. Oxigênio vira dívida welfare. Uma amostra vira custody selada. Uma caixa-preta vira evidence payload. Quarentena vira volume. Receiver rights viram liability. O carrier não decide se essas coisas importam. Decide quais podem se mover juntas.\n\nIsso mantém o lore jogável. Preservar prova, descartar contaminação, certificar hardware, gastar oxigênio, manter amostra, expor hash público ou proteger margem corporal: cada escolha empurra o registro. O jogador não coleta abstrações. Ele disputa o que será contado como recuperável.",
+     "field_note": "Se o registro diz massa, pergunte de quem o corpo deixou de ser pessoa primeiro."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Massacustody Tonne-Window Logboek",
+     "scanner": "MASSACUSTODYSTRIP // Keelmark-laminaat, olie achter de heldere laag. Kolommen: lichaamsmassa, welfare-zuurstof, verzegelde sample, bewijspakket, quarantainehold, ontvangeraansprakelijkheid. De menselijke rij staat niet eerst.",
+     "terminal": "KEELMARK MASSACUSTODYDESK // Basispand 4.8 tonne-window blijft actief. Ascent-certificaat alleen als hardwarebewijs geaccepteerd. Recovery-massa niet gereserveerd tot zuurstof, sample-custody, evidence payload, quarantainereceiver en carrier-liftallocatie kloppen.",
+     "audio": "Black Keel vraagt niet of je wilt leven. Het vraagt wat nog meer met je mee omhoog wil.",
+     "in_game_wiki": "Een tonne-window is geen munt in metrische kleding. Het is de eenheid die Black Keel gebruikt wanneer een lichaam, sample, batterij, drukmof en bewijspakket dezelfde opwaartse burn willen. Over geld kan later worden geruzied. Massa moet nu gedragen worden.\n\nDaarom voelt de carrier wreed, zelfs wanneer de berekening eerlijk is. De oceaan geeft dingen die tellen: verzegeld substraat, werkersbadge, black-box-spoel, zuurstoffles, gescheurde pressure-glass-plaat. Keelmark maakt van elk een custodyklasse. Black Keel maakt van die klassen massa, volume, quarantainerisico, warmte, ballast en ontvangeraansprakelijkheid. Daarna stelt het logboek de vuile vraag: wat mag het volgende liftvenster bezetten?\n\nDe speler kan het antwoord veranderen, maar niet door naar de radio te schreeuwen. Een gecertificeerde ascent stack verwijdert één bezwaar. Een quarantaine-handshake verwijdert een ander. Een publieke bewijshash maakt een packet moeilijker te begraven. Een besmette sample dumpen kan lichaamsmarge kopen. Die houden kan waarheid en schuldverlichting kopen terwijl redding moeilijker wordt. Tonne-window-druk is geen menubelasting. Het is de verhaalregel die salvage-keuzes fysiek maakt.",
+     "external_site": "Een tonne-window is Black Keels herstelbare massakans: lichaam, zuurstof, samples, bewijs en quarantainevolume concurreren voordat de carrier redding toewijst.",
+     "external_site_article": "HECTON-8 verandert genade in een laadberekening omdat deze wereld geen magische redding heeft. Black Keel kan een claim horen, een packet accepteren en toch lichaamsrecovery weigeren tot het volgende liftvenster de juiste massa onder juiste custody kan dragen.\n\nHet wrede is niet dat de wiskunde nep is. Het wrede is dat de wiskunde als eerste taal mag spreken. Een overlevende wordt lichaamsmassa. Zuurstof wordt welfare-schuld. Een sample wordt verzegelde custody. Een black box wordt evidence payload. Quarantaine wordt volume. Receiver rights worden liability. De carrier beslist niet of deze dingen belangrijk zijn. Hij beslist welke samen kunnen bewegen.\n\nZo blijft de lore speelbaar. Bewijs bewaren, besmetting weggooien, hardware certificeren, zuurstof uitgeven, sample houden, publieke hash tonen of genoeg lichaamsmarge beschermen: elke keuze duwt tegen het logboek. De speler plundert geen abstracties. Hij vecht over wat als herstelbaar wordt geteld.",
+     "field_note": "Als het logboek massa zegt, vraag wiens lichaam eerst ophield persoon te zijn."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

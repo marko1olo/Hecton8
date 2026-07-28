@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS009_COLONY_LAYOUT_WORKER_EVIDENCE",
-  "status": "production_facing_draft",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P041_WORKER_LOCKER_ROW",
-      "article_id": "hecton8.worker_locker_row",
-      "title_key": "applied_lore.worker_locker_row.title",
-      "unlock": {
-        "primary": "unlock.first_worker_locker_row",
-        "poi_tags": [
-          "poi.worker_locker_row",
-          "poi.drowned_hab_module",
-          "poi.barnard_mark"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.shallow_wreck",
-          "biome.pressure_hab"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Worker Locker Row",
-          "scanner": "These lockers are not set dressing. Names, meal tabs and Barnard tool marks turn the drowned colony into a workplace.",
-          "field_note": "The first personal motive is a scratched nameplate, not a speech.",
-          "terminal": "COLONY AUDIT: personal storage and Barnard marks tie the locker row to named crew and work routes.",
-          "audio": "People lived here long enough to leave habits behind.",
-          "in_game_wiki": "Worker locker rows ground HECTON-8 in ordinary labor. Tools, paint, food credits and frontier marks appear before the disaster becomes theory.",
-          "external_site": "Worker Locker Row is a colony-layout packet for human texture: cheap storage, named crew, Barnard salvage marks and the first bridge from professional work to personal stake."
-        },
-        "ru_RU": {
-          "title": "Ряд рабочих шкафов",
-          "scanner": "Это не декор. Имена, талоны на еду и метки Barnard делают утонувшую колонию рабочим местом.",
-          "field_note": "Первый личный крючок здесь не речь, а поцарапанная табличка.",
-          "terminal": "АУДИТ КОЛОНИИ: личное хранение и метки Barnard связывают ряд шкафов с именованной сменой и рабочими маршрутами.",
-          "audio": "Люди жили здесь достаточно долго, чтобы оставить привычки.",
-          "in_game_wiki": "Ряды рабочих шкафов заземляют HECTON-8 в обычном труде. Инструменты, краска, пищевые кредиты и пограничные метки появляются раньше, чем катастрофа становится теорией.",
-          "external_site": "Ряд рабочих шкафов - пакет о человеческой ткани колонии: дешевое хранение, имена экипажа, метки Barnard и первый мост от контракта к личному мотиву."
-        },
-        "ja_JP": {
-          "title": "作業員ロッカー列",
-          "scanner": "ロッカーは背景物ではない。名前、食事票、Barnard工具印が沈んだ植民地を職場に戻す。",
-          "field_note": "最初の個人的動機は演説ではなく傷ついた名札だ。",
-          "terminal": "COLONY AUDIT: 個人保管と Barnard 印は、ロッカー列を名前のある乗員と作業経路に結び付ける。",
-          "audio": "人々は習慣を残すほど長くここにいた。",
-          "in_game_wiki": "作業員ロッカー列は HECTON-8 を普通の労働に接地する。工具、塗料、食料クレジット、辺境の印は、災害が理論になる前に現れる。",
-          "external_site": "作業員ロッカー列は人間味のパケットだ。安い収納、乗員名、Barnard印、契約仕事から個人的利害への橋を示す。"
-        },
-        "zh_CN": {
-          "title": "工人储物柜排",
-          "scanner": "这些柜子不是布景。姓名、餐票和Barnard工具印让沉没殖民地变回工作场所。",
-          "field_note": "第一个个人动机不是演讲，而是一块刮花的名牌。",
-          "terminal": "殖民地审计：个人储物和 Barnard 标记把这排柜子接到有名有姓的班组和工作路线。",
-          "audio": "他们在这里生活得足够久，留下了习惯。",
-          "in_game_wiki": "工人储物柜排把 HECTON-8 扎进普通劳动。工具、油漆、食物额度和边境标记会先出现，灾难之后才成为理论。",
-          "external_site": "工人储物柜排是人性纹理包：廉价储物、船员姓名、Barnard印记，以及从职业任务到个人牵连的第一座桥。"
-        },
-        "fr_FR": {
-          "title": "Rangée de casiers ouvriers",
-          "scanner": "Ces objets rendent la colonie humaine: noms, outils, crédits repas et traces de travail restent lisibles.",
-          "field_note": "L'enjeu personnel commence par un nom.",
-          "terminal": "AUDIT COLONIE : stockage personnel et marques Barnard relient la rangée de casiers à des équipiers nommés et à des routes de travail.",
-          "audio": "C'était un lieu de travail, pas un décor.",
-          "in_game_wiki": "Les rangées de casiers ouvriers ancrent HECTON-8 dans le travail ordinaire. Outils, peinture, crédits nourriture et marques de frontière apparaissent avant que le désastre devienne théorie.",
-          "external_site": "Texture humaine de la colonie noyée: noms, rangement, outils et premier crochet personnel."
-        },
-        "es_ES": {
-          "title": "Fila de taquillas obreras",
-          "scanner": "Los objetos vuelven humana la colonia: nombres, herramientas, crédito de comida y marcas de trabajo siguen legibles.",
-          "field_note": "La implicación personal empieza con un nombre.",
-          "terminal": "AUDITORÍA COLONIAL: almacenamiento personal y marcas Barnard atan la fila de casilleros a tripulación con nombre y rutas de trabajo.",
-          "audio": "Esto era trabajo, no decorado.",
-          "in_game_wiki": "Las filas de casilleros obreros arraigan HECTON-8 en labor ordinaria. Herramientas, pintura, créditos de comida y marcas de frontera aparecen antes de que el desastre se vuelva teoría.",
-          "external_site": "Textura humana para la colonia hundida: nombres, taquillas, herramientas y primer gancho personal."
-        },
-        "de_DE": {
-          "title": "Reihe der Arbeiter-Spinde",
-          "scanner": "Objekte machen die Kolonie menschlich: Namen, Werkzeuge, Essensguthaben und Arbeitsspuren bleiben lesbar.",
-          "field_note": "Der persönliche Einsatz beginnt mit einem Namen.",
-          "terminal": "KOLONIEAUDIT: persönliche Fächer und Barnard-Markierungen binden die Spindreihe an benannte Crew und Arbeitsrouten.",
-          "audio": "Das war Arbeit, keine Kulisse.",
-          "in_game_wiki": "Arbeiterspindreihen erden HECTON-8 in gewöhnlicher Arbeit. Werkzeuge, Farbe, Essensguthaben und Grenzmarken erscheinen, bevor die Katastrophe zur Theorie wird.",
-          "external_site": "Menschliche Textur der ertrunkenen Kolonie: Namen, Stauraum, Werkzeuge und erster persönlicher Haken."
-        },
-        "pl_PL": {
-          "title": "Rząd szafek pracowniczych",
-          "scanner": "Przedmioty czynią kolonię ludzką: nazwiska, narzędzia, kredyty żywnościowe i ślady pracy są czytelne.",
-          "field_note": "Osobista stawka zaczyna się od nazwiska.",
-          "terminal": "AUDYT KOLONII: prywatne schowki i znaki Barnard wiążą rząd szafek z nazwaną załogą i trasami pracy.",
-          "audio": "To była praca, nie dekoracja.",
-          "in_game_wiki": "Rzędy szafek pracowniczych osadzają HECTON-8 w zwykłej pracy. Narzędzia, farba, kredyty żywnościowe i znaki pogranicza pojawiają się, zanim katastrofa stanie się teorią.",
-          "external_site": "Ludzka warstwa zatopionej kolonii: nazwiska, szafki, narzędzia i pierwszy osobisty haczyk."
-        },
-        "uk_UA": {
-          "title": "Ряд робочих шаф",
-          "scanner": "Предмети роблять колонію людською: імена, інструменти, харчові кредити й сліди роботи лишилися читабельні.",
-          "field_note": "Особиста ставка починається з імені.",
-          "terminal": "АУДИТ КОЛОНІЇ: особисте зберігання й мітки Barnard пов'язують ряд шаф із названою зміною та робочими маршрутами.",
-          "audio": "Це була робота, не декор.",
-          "in_game_wiki": "Ряди робочих шаф укорінюють HECTON-8 у звичайній праці. Інструменти, фарба, харчові кредити й прикордонні мітки з'являються раніше, ніж катастрофа стає теорією.",
-          "external_site": "Людська текстура затопленої колонії: імена, шафи, інструменти й перший особистий гачок."
-        },
-        "ar_SA": {
-          "title": "صف خزائن العمال",
-          "scanner": "الأشياء تجعل المستعمرة بشرية: أسماء وأدوات وائتمان طعام وآثار عمل ما زالت مقروءة.",
-          "field_note": "الرهان الشخصي يبدأ باسم.",
-          "terminal": "تدقيق المستعمرة: التخزين الشخصي وعلامات Barnard تربط صف الخزائن بطاقم مسمى ومسارات عمل.",
-          "audio": "كان هذا عملا لا ديكورا.",
-          "in_game_wiki": "تثبت صفوف خزائن العمال HECTON-8 في العمل العادي. تظهر الأدوات والطلاء وأرصدة الطعام وعلامات التخوم قبل أن تتحول الكارثة إلى نظرية.",
-          "external_site": "طبقة إنسانية للمستعمرة الغارقة: أسماء وخزائن وأدوات وأول خطاف شخصي."
-        },
-        "id_ID": {
-          "title": "Deret Loker Pekerja",
-          "scanner": "Benda-benda membuat koloni manusiawi: nama, alat, kredit makan, dan jejak kerja masih terbaca.",
-          "field_note": "Taruhan personal dimulai dari nama.",
-          "terminal": "AUDIT KOLONI: penyimpanan pribadi dan tanda Barnard mengikat deretan loker ke kru bernama dan rute kerja.",
-          "audio": "Ini tempat kerja, bukan dekor.",
-          "in_game_wiki": "Deretan loker pekerja menambatkan HECTON-8 pada kerja biasa. Alat, cat, kredit makanan, dan tanda frontier muncul sebelum bencana menjadi teori.",
-          "external_site": "Lapisan manusia koloni tenggelam: nama, loker, alat, dan kait personal pertama."
-        },
-        "ko_KR": {
-          "title": "작업자 사물함 열",
-          "scanner": "사물은 식민지를 인간적으로 만든다. 이름, 도구, 식권, 작업 흔적이 아직 읽힌다.",
-          "field_note": "개인적 stakes는 이름에서 시작된다.",
-          "terminal": "COLONY AUDIT: 개인 보관함과 Barnard 표식은 로커 열을 이름 있는 승무원과 작업 경로에 묶는다.",
-          "audio": "여기는 장식이 아니라 일터였다.",
-          "in_game_wiki": "작업자 로커 열은 HECTON-8을 평범한 노동에 고정한다. 도구, 페인트, 식량 크레딧, 변방 표식은 재난이 이론이 되기 전에 나타난다.",
-          "external_site": "침수 식민지의 인간적 질감: 이름, 보관함, 도구, 첫 개인적 고리."
-        },
-        "he_IL": {
-          "title": "שורת לוקרים של עובדים",
-          "scanner": "החפצים הופכים את המושבה לאנושית: שמות, כלים, אשראי מזון וסימני עבודה עדיין קריאים.",
-          "field_note": "העניין האישי מתחיל בשם.",
-          "terminal": "ביקורת מושבה: אחסון אישי וסימני Barnard קושרים את שורת הלוקרים לצוות עם שמות ולנתיבי עבודה.",
-          "audio": "זה היה מקום עבודה, לא תפאורה.",
-          "in_game_wiki": "שורות לוקרים של עובדים מעגנות את HECTON-8 בעבודה רגילה. כלים, צבע, קרדיטי מזון וסימני ספר מופיעים לפני שהאסון נעשה תאוריה.",
-          "external_site": "שכבה אנושית למושבה הטבועה: שמות, לוקרים, כלים והקרס האישי הראשון."
-        },
-        "pt_BR": {
-          "title": "Fileira de Armários de Trabalho",
-          "scanner": "Os objetos tornam a colônia humana: nomes, ferramentas, crédito de comida e marcas de trabalho ainda legíveis.",
-          "field_note": "O envolvimento pessoal começa por um nome.",
-          "terminal": "AUDITORIA COLONIAL: armazenamento pessoal e marcas Barnard ligam a fileira de armários a tripulação nomeada e rotas de trabalho.",
-          "audio": "Isso era trabalho, não cenário.",
-          "in_game_wiki": "Fileiras de armários de trabalhadores ancoram HECTON-8 no labor comum. Ferramentas, tinta, créditos de comida e marcas de fronteira aparecem antes que o desastre vire teoria.",
-          "external_site": "Textura humana da colônia afogada: nomes, armários, ferramentas e primeiro gancho pessoal."
-        },
-        "nl_NL": {
-          "title": "Rij arbeiderskluisjes",
-          "scanner": "Objecten maken de kolonie menselijk: namen, gereedschap, voedselkrediet en werksporen blijven leesbaar.",
-          "field_note": "De persoonlijke inzet begint bij een naam.",
-          "terminal": "KOLONIE-AUDIT: persoonlijke opslag en Barnard-markeringen verbinden de lockerrij met benoemde crew en werkroutes.",
-          "audio": "Dit was werk, geen decor.",
-          "in_game_wiki": "Rijen arbeiderslockers aarden HECTON-8 in gewone arbeid. Gereedschap, verf, voedselkredieten en grensmarkeringen verschijnen voordat de ramp theorie wordt.",
-          "external_site": "Een menselijk textuurpakket voor de verdronken kolonie: namen, opslag, gereedschap en de eerste persoonlijke haak."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS009_COLONY_LAYOUT_WORKER_EVIDENCE",
+ "status": "production_facing_draft",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P041_WORKER_LOCKER_ROW",
+   "article_id": "hecton8.worker_locker_row",
+   "title_key": "applied_lore.worker_locker_row.title",
+   "unlock": {
+    "primary": "unlock.first_worker_locker_row",
+    "poi_tags": [
+     "poi.worker_locker_row",
+     "poi.drowned_hab_module",
+     "poi.barnard_mark"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.shallow_wreck",
+     "biome.pressure_hab"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Worker Locker Row",
+     "scanner": "These lockers are not set dressing. Names, meal tabs and Barnard tool marks turn the drowned colony into a workplace.",
+     "field_note": "The first personal motive is a scratched nameplate, not a speech.",
+     "terminal": "COLONY AUDIT: personal storage and Barnard marks tie the locker row to named crew and work routes.",
+     "audio": "People lived here long enough to leave habits behind.",
+     "in_game_wiki": "Worker locker rows ground HECTON-8 in ordinary labor. Tools, paint, food credits and frontier marks appear before the disaster becomes theory.",
+     "external_site": "Worker Locker Row is a colony-layout packet for human texture: cheap storage, named crew, Barnard salvage marks and the first bridge from professional work to personal stake."
     },
-    {
-      "packet_id": "P042_PRESSURE_BUNK_ROUTINE",
-      "article_id": "hecton8.pressure_bunk_routine",
-      "title_key": "applied_lore.pressure_bunk_routine.title",
-      "unlock": {
-        "primary": "unlock.first_pressure_bunk_routine",
-        "poi_tags": [
-          "poi.pressure_bunk",
-          "poi.hab_sleep_bay",
-          "poi.life_support_rack"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_hab",
-          "biome.mid_depth_hab"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Pressure Bunk Routine",
-          "scanner": "The bunks were engineered for sleep under stress: seal checks, oxygen ration cards, condensation drains and shift alarms.",
-          "field_note": "Survival was routine until the routine became a trap.",
-          "terminal": "Hab routine: bunk seal cycle stable. Wake alarms cancelled by station priority override. Crew status remained recoverable for thirty-one minutes.",
-          "audio": "A bed is worse evidence than a corpse when the checklist still passes.",
-          "in_game_wiki": "Pressure bunks show the colony as a maintained machine for daily life. The horror comes from normal systems obeying bad priorities.",
-          "external_site": "Pressure Bunk Routine explains how HECTON-8 lived before the flood: cramped, engineered and procedural, with life support becoming part of the crime chain."
-        },
-        "ru_RU": {
-          "title": "Режим напорных коек",
-          "scanner": "Койки сделаны для сна под давлением: проверки герметика, кислородные карточки, дренаж конденсата, сменные будильники.",
-          "field_note": "Выживание было рутиной, пока рутина не стала ловушкой.",
-          "terminal": "Режим жилого блока: цикл герметизации стабилен. Подъем отменен приоритетным оверрайдом станции. Статус экипажа был recoverable еще 31 минуту.",
-          "audio": "Кровать хуже трупа, когда чеклист все еще зеленый.",
-          "in_game_wiki": "Напорные койки показывают колонию как обслуживаемую машину быта. Ужас в том, что нормальные системы выполняли плохие приоритеты.",
-          "external_site": "Режим напорных коек объясняет, как HECTON-8 жил до затопления: тесно, инженерно и процедурно, где жизнеобеспечение стало частью преступной цепи."
-        },
-        "ja_JP": {
-          "title": "耐圧寝台ルーチン",
-          "scanner": "寝台は圧力下の睡眠用だった。密閉確認、酸素券、結露排水、シフト警報。",
-          "field_note": "生存は日課だった。日課が罠になるまでは。",
-          "terminal": "居住ルーチン: 寝台密閉は安定。起床警報はステーション優先上書きで取消。乗員は31分間回収可能。",
-          "audio": "チェックリストが緑なら寝台は死体より悪い証拠だ。",
-          "in_game_wiki": "耐圧寝台は日常生活を維持する機械として植民地を見せる。恐怖は正常な系が悪い優先順位に従ったこと。",
-          "external_site": "耐圧寝台ルーチンは浸水前のHECTON-8を説明する。狭く、工学的で、手続き化され、生命維持が犯罪連鎖になる。"
-        },
-        "zh_CN": {
-          "title": "耐压铺位日程",
-          "scanner": "铺位为压力下睡眠而设计：密封检查、氧气配给卡、冷凝排水和班次闹铃。",
-          "field_note": "生存曾是日程，直到日程变成陷阱。",
-          "terminal": "居住日程：铺位密封循环稳定。唤醒闹铃被站点优先级覆盖取消。船员状态31分钟内仍可回收。",
-          "audio": "当清单仍然通过时，一张床比尸体更坏。",
-          "in_game_wiki": "耐压铺位显示殖民地作为日常维护机器。恐怖来自正常系统服从了错误优先级。",
-          "external_site": "耐压铺位日程说明HECTON-8被淹前的生活：狭窄、工程化、程序化，生命维持成为犯罪链的一部分。"
-        },
-        "fr_FR": {
-          "title": "Routine des couchettes pressurisées",
-          "scanner": "Les systèmes de vie montrent la routine sous pression: sommeil, oxygène, condensation et alarmes.",
-          "field_note": "La routine est devenue piège.",
-          "terminal": "Journal habitat: la routine restait valide tandis que la logique de priorité enfermait l'équipage.",
-          "audio": "Le système continuait de fonctionner proprement.",
-          "in_game_wiki": "Les couchettes pressurisées montrent comment une ingénierie normale devient horreur quand les priorités sont fausses.",
-          "external_site": "Décrit la survie quotidienne de la colonie et comment le support-vie a rejoint la chaîne du désastre."
-        },
-        "es_ES": {
-          "title": "Rutina de literas presurizadas",
-          "scanner": "Los sistemas vitales muestran rutina bajo presión: sueño, oxígeno, condensación y alarmas.",
-          "field_note": "La rutina se volvió trampa.",
-          "terminal": "Registro de hábitat: la rutina seguía válida mientras la prioridad encerraba a la tripulación.",
-          "audio": "El sistema seguía funcionando con limpieza.",
-          "in_game_wiki": "Las literas presurizadas muestran cómo la ingeniería normal se vuelve horror con prioridades falsas.",
-          "external_site": "Describe la supervivencia diaria de la colonia y cómo el soporte vital entró en la cadena del desastre."
-        },
-        "de_DE": {
-          "title": "Druckkojen-Routine",
-          "scanner": "Lebenserhaltung zeigt Routine unter Druck: Schlaf, Sauerstoff, Kondensat und Alarme.",
-          "field_note": "Routine wurde zur Falle.",
-          "terminal": "Habitatlog: Routine blieb gültig, während Prioritätslogik die Crew einsperrte.",
-          "audio": "Das System arbeitete weiter sauber.",
-          "in_game_wiki": "Druckkojen zeigen, wie normale Technik zu Horror wird, wenn Prioritäten falsch sind.",
-          "external_site": "Beschreibt das tägliche Überleben der Kolonie und wie Life Support Teil der Katastrophenkette wurde."
-        },
-        "pl_PL": {
-          "title": "Rutyna koi ciśnieniowych",
-          "scanner": "Systemy życia pokazują rutynę pod ciśnieniem: sen, tlen, kondensat i alarmy.",
-          "field_note": "Rutyna stała się pułapką.",
-          "terminal": "Log habitatu: rutyna była ważna, gdy logika priorytetu zamknęła załogę.",
-          "audio": "System działał dalej poprawnie.",
-          "in_game_wiki": "Koje ciśnieniowe pokazują, jak normalna inżynieria staje się horrorem przy złych priorytetach.",
-          "external_site": "Opis codziennego przetrwania kolonii i tego, jak life support wszedł w łańcuch katastrofy."
-        },
-        "uk_UA": {
-          "title": "Рутина напірних койок",
-          "scanner": "Системи життя показують рутину під тиском: сон, кисень, конденсат і тривоги.",
-          "field_note": "Рутина стала пасткою.",
-          "terminal": "Лог житла: рутина лишалася чинною, поки логіка пріоритету замкнула екіпаж.",
-          "audio": "Система далі працювала чисто.",
-          "in_game_wiki": "Напірні койки показують, як нормальна інженерія стає жахом за хибних пріоритетів.",
-          "external_site": "Описує щоденне виживання колонії та те, як життєзабезпечення стало частиною ланцюга катастрофи."
-        },
-        "ar_SA": {
-          "title": "روتين الأسرّة المضغوطة",
-          "scanner": "أنظمة الحياة تعرض روتينا تحت الضغط: نوم وأكسجين وتكاثف وإنذارات.",
-          "field_note": "تحول الروتين إلى فخ.",
-          "terminal": "سجل السكن: ظل الروتين صالحا بينما حبست منطق الأولوية الطاقم.",
-          "audio": "استمر النظام في العمل بنظافة.",
-          "in_game_wiki": "الأسرّة المضغوطة تظهر كيف تصبح الهندسة العادية رعبا عندما تخطئ الأولويات.",
-          "external_site": "يصف البقاء اليومي في المستعمرة وكيف دخل دعم الحياة في سلسلة الكارثة."
-        },
-        "id_ID": {
-          "title": "Rutinitas Bunk Tekanan",
-          "scanner": "Sistem hidup menunjukkan rutinitas di bawah tekanan: tidur, oksigen, kondensasi, dan alarm.",
-          "field_note": "Rutinitas menjadi perangkap.",
-          "terminal": "Log habitat: rutinitas tetap sah ketika logika prioritas mengurung kru.",
-          "audio": "Sistem terus bekerja rapi.",
-          "in_game_wiki": "Bunk tekanan menunjukkan teknik normal berubah horor saat prioritas salah.",
-          "external_site": "Menjelaskan hidup harian koloni dan bagaimana life support masuk rantai bencana."
-        },
-        "ko_KR": {
-          "title": "압력 침상 루틴",
-          "scanner": "생명 유지 시스템은 압력 속 루틴을 보여준다: 수면, 산소, 결로, 알람.",
-          "field_note": "루틴이 덫이 되었다.",
-          "terminal": "거주 로그: 우선순위 논리가 승무원을 가두는 동안 루틴은 유효했다.",
-          "audio": "시스템은 계속 깔끔하게 작동했다.",
-          "in_game_wiki": "압력 침상은 정상 공학이 잘못된 우선순위에서 공포가 되는 방식을 보여준다.",
-          "external_site": "식민지의 일상 생존과 life support가 재난 사슬에 들어간 방식을 설명한다."
-        },
-        "he_IL": {
-          "title": "שגרת דרגשי לחץ",
-          "scanner": "מערכות החיים מראות שגרה תחת לחץ: שינה, חמצן, עיבוי ואזעקות.",
-          "field_note": "השגרה הפכה למלכודת.",
-          "terminal": "יומן מגורים: השגרה נשארה תקפה בזמן שלוגיקת העדיפות כלאה את הצוות.",
-          "audio": "המערכת המשיכה לעבוד נקי.",
-          "in_game_wiki": "דרגשי לחץ מראים כיצד הנדסה רגילה הופכת לאימה כשהעדיפויות שגויות.",
-          "external_site": "מתאר את ההישרדות היומית במושבה ואיך תמיכת החיים נכנסה לשרשרת האסון."
-        },
-        "pt_BR": {
-          "title": "Rotina dos Beliches Pressurizados",
-          "scanner": "Sistemas de vida mostram rotina sob pressão: sono, oxigênio, condensação e alarmes.",
-          "field_note": "A rotina virou armadilha.",
-          "terminal": "Log do habitat: a rotina seguia válida enquanto a lógica de prioridade prendia a tripulação.",
-          "audio": "O sistema continuou funcionando limpo.",
-          "in_game_wiki": "Beliches pressurizados mostram como engenharia normal vira horror com prioridades erradas.",
-          "external_site": "Descreve a sobrevivência diária da colônia e como life support entrou na cadeia do desastre."
-        },
-        "nl_NL": {
-          "title": "Routine van drukkooien",
-          "scanner": "Leefsystemen tonen routine onder druk: slaap, zuurstof, condens en alarmen werden procedure.",
-          "field_note": "Routine werd een val.",
-          "terminal": "Habitatlog: de routine bleef geldig terwijl prioriteitslogica de bemanning opsloot.",
-          "audio": "Het systeem bleef netjes werken.",
-          "in_game_wiki": "De drukkooien laten zien hoe normale engineering in horror verandert wanneer prioriteiten verkeerd staan.",
-          "external_site": "Dit artikel beschrijft het dagelijkse overleven van de kolonie en hoe life support onderdeel werd van de ramp."
-        }
-      }
+    "ru_RU": {
+     "title": "Ряд рабочих шкафов",
+     "scanner": "Это не декор. Имена, талоны на еду и метки Barnard делают утонувшую колонию рабочим местом.",
+     "field_note": "Первый личный крючок здесь не речь, а поцарапанная табличка.",
+     "terminal": "АУДИТ КОЛОНИИ: личное хранение и метки Barnard связывают ряд шкафов с именованной сменой и рабочими маршрутами.",
+     "audio": "Люди жили здесь достаточно долго, чтобы оставить привычки.",
+     "in_game_wiki": "Ряды рабочих шкафов заземляют HECTON-8 в обычном труде. Инструменты, краска, пищевые кредиты и пограничные метки появляются раньше, чем катастрофа становится теорией.",
+     "external_site": "Ряд рабочих шкафов - пакет о человеческой ткани колонии: дешевое хранение, имена экипажа, метки Barnard и первый мост от контракта к личному мотиву."
     },
-    {
-      "packet_id": "P043_SHIFT_BOARD_ROUTE_HOLDS",
-      "article_id": "hecton8.shift_board_route_holds",
-      "title_key": "applied_lore.shift_board_route_holds.title",
-      "unlock": {
-        "primary": "unlock.first_shift_board_route_holds",
-        "poi_tags": [
-          "poi.shift_board",
-          "poi.transit_gate",
-          "poi.route_hold_console"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.service_canyon",
-          "biome.evacuated_module"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Shift Board Route Holds",
-          "scanner": "The shift board did not say panic. It said route hold, transfer delay and priority review.",
-          "field_note": "The dead were first converted into schedule entries.",
-          "terminal": "Shift board replay: tram spine held. Evacuation lanes downgraded beneath process-continuity tickets and Deep Reach remote authorization.",
-          "audio": "Nobody wrote murder. They wrote delay.",
-          "in_game_wiki": "Shift boards convert catastrophe into readable procedure. Deep Reach and Atlas killed through classification, delay and priority, not theatrical malice.",
-          "external_site": "Shift Board Route Holds gives the colony disaster a procedural shape: blocked routes, delayed trams, priority queues and language that hides bodies inside logistics."
-        },
-        "ru_RU": {
-          "title": "Сменная доска удержаний маршрута",
-          "scanner": "Доска смен не писала панику. Она писала удержание маршрута, задержку трансфера и пересмотр приоритета.",
-          "field_note": "Мертвых сначала превратили в строки расписания.",
-          "terminal": "Повтор сменной доски: трамвайный хребет удержан. Эвакуационные линии понижены ниже тикетов process continuity и удаленной авторизации Deep Reach.",
-          "audio": "Никто не написал убийство. Написали задержку.",
-          "in_game_wiki": "Доски смен превращают катастрофу в читаемую процедуру. Deep Reach и Atlas убивали через классификацию, задержку и приоритет, а не через театральную злобу.",
-          "external_site": "Сменная доска удержаний дает бедствию процедурную форму: закрытые маршруты, задержанные трамы, очереди приоритета и язык, прячущий тела в логистике."
-        },
-        "ja_JP": {
-          "title": "シフト板ルート保留",
-          "scanner": "シフト板はパニックと書かなかった。ルート保留、転送遅延、優先審査と書いた。",
-          "field_note": "死者は最初に予定表へ変換された。",
-          "terminal": "シフト板再生: トラム幹線保留。避難路は工程継続チケットとDeep Reach遠隔認可より下に降格。",
-          "audio": "誰も殺人とは書かなかった。遅延と書いた。",
-          "in_game_wiki": "シフトボードは災害を読める手順に変える。Deep Reach と Atlas は、芝居がかった悪意ではなく、分類、遅延、優先度によって人を殺した。",
-          "external_site": "シフト板ルート保留は災害に手続きの形を与える。閉じた経路、遅れたトラム、体を物流に隠す言葉。"
-        },
-        "zh_CN": {
-          "title": "班次板路线搁置",
-          "scanner": "班次板没有写恐慌。它写的是路线搁置、转运延迟和优先级复核。",
-          "field_note": "死者首先被转换成排程条目。",
-          "terminal": "班次板回放：电车主脊搁置。疏散线被降级到流程连续性工单和Deep Reach远程授权之下。",
-          "audio": "没人写谋杀。他们写延迟。",
-          "in_game_wiki": "排班板把灾难变成可读程序。Deep Reach 和 Atlas 通过分类、延迟和优先级杀人，而不是靠戏剧化恶意。",
-          "external_site": "班次板路线搁置赋予灾难程序形态：封闭路线、延误电车、优先队列，以及把尸体藏进物流的语言。"
-        },
-        "fr_FR": {
-          "title": "Tableau des shifts retenus",
-          "scanner": "Le tableau ne dit pas panique: route hold, transfer delay, priority review.",
-          "field_note": "Les morts sont d'abord devenus planning.",
-          "terminal": "Replay route: l'évacuation passe sous continuité de processus et autorisation Deep Reach distante.",
-          "audio": "Ils n'ont pas écrit meurtre. Ils ont écrit retard.",
-          "in_game_wiki": "Les tableaux de quart transforment la catastrophe en procédure lisible. Deep Reach et Atlas ont tué par classification, retard et priorité, pas par malice théâtrale.",
-          "external_site": "Les retenues de route donnent une forme dure au désastre: trams fermés, files de priorité et langue administrative."
-        },
-        "es_ES": {
-          "title": "Retenciones de rutas de turno",
-          "scanner": "El tablero no dice pánico: dice retención de ruta, demora de traslado y revisión de prioridad.",
-          "field_note": "Los muertos primero fueron planificación.",
-          "terminal": "Repetición de ruta: la evacuación cae bajo continuidad de proceso y autorización remota Deep Reach.",
-          "audio": "No escribieron asesinato. Escribieron demora.",
-          "in_game_wiki": "Los tableros de turno convierten la catástrofe en procedimiento legible. Deep Reach y Atlas mataron mediante clasificación, demora y prioridad, no por malicia teatral.",
-          "external_site": "Las retenciones de ruta dan forma dura al desastre: tranvías cerrados, colas de prioridad y lenguaje administrativo."
-        },
-        "de_DE": {
-          "title": "Schichttafel-Routensperren",
-          "scanner": "Die Tafel nennt keine Panik: Routensperre, Transferverzug, Prioritätsprüfung.",
-          "field_note": "Die Toten wurden zuerst Planung.",
-          "terminal": "Routenreplay: Evakuierung wurde unter Prozesskontinuität und entfernte Deep-Reach-Freigabe gestellt.",
-          "audio": "Sie schrieben keinen Mord. Sie schrieben Verzögerung.",
-          "in_game_wiki": "Schichttafeln verwandeln Katastrophe in lesbare Prozedur. Deep Reach und Atlas töteten durch Klassifizierung, Verzögerung und Priorität, nicht durch theatralische Bosheit.",
-          "external_site": "Routensperren geben dem Unglück Form: geschlossene Trams, Prioritätsreihen und Verwaltungssprache."
-        },
-        "pl_PL": {
-          "title": "Wstrzymania tras zmianowych",
-          "scanner": "Tablica nie mówi panika: mówi wstrzymanie trasy, opóźnienie transferu i przegląd priorytetu.",
-          "field_note": "Zmarli najpierw stali się planem.",
-          "terminal": "Replay trasy: ewakuacja spadła pod ciągłość procesu i zdalną zgodę Deep Reach.",
-          "audio": "Nie napisali morderstwo. Napisali opóźnienie.",
-          "in_game_wiki": "Tablice zmian zamieniają katastrofę w czytelną procedurę. Deep Reach i Atlas zabijały klasyfikacją, zwłoką i priorytetem, nie teatralną złośliwością.",
-          "external_site": "Wstrzymania tras nadają katastrofie formę: zamknięte tramwaje, kolejki priorytetowe i język administracji."
-        },
-        "uk_UA": {
-          "title": "Затримки маршрутів на дошці змін",
-          "scanner": "Дошка не каже паніка: вона каже утримання маршруту, затримка трансферу й перегляд пріоритету.",
-          "field_note": "Мертві спершу стали планом.",
-          "terminal": "Повтор маршруту: евакуацію опустили нижче безперервності процесу й віддаленого дозволу Deep Reach.",
-          "audio": "Вони не написали вбивство. Вони написали затримка.",
-          "in_game_wiki": "Дошки змін перетворюють катастрофу на читану процедуру. Deep Reach і Atlas убивали через класифікацію, затримку й пріоритет, а не через театральну злобу.",
-          "external_site": "Утримання маршрутів дають катастрофі форму: закриті трамваї, пріоритетні черги й адміністративна мова."
-        },
-        "ar_SA": {
-          "title": "تعليق مسارات لوحة الورديات",
-          "scanner": "اللوحة لا تقول ذعرا: تقول تعليق مسار وتأخير نقل ومراجعة أولوية.",
-          "field_note": "تحول الموتى أولا إلى جدول.",
-          "terminal": "إعادة المسار: هبطت الإخلاءات تحت استمرارية العملية وتصريح Deep Reach البعيد.",
-          "audio": "لم يكتبوا قتلا. كتبوا تأخيرا.",
-          "in_game_wiki": "تحول لوحات الورديات الكارثة إلى إجراء قابل للقراءة. قتلت Deep Reach وAtlas عبر التصنيف والتأخير والأولوية، لا عبر شر مسرحي.",
-          "external_site": "تعليق المسارات يعطي الكارثة شكلا صلبا: ترام مغلق وصفوف أولوية ولغة إدارية."
-        },
-        "id_ID": {
-          "title": "Penahanan Rute Papan Shift",
-          "scanner": "Papan shift tidak menulis panik: ia menulis route hold, transfer delay, dan priority review.",
-          "field_note": "Yang mati pertama menjadi jadwal.",
-          "terminal": "Replay rute: evakuasi diturunkan di bawah continuity process dan izin jarak jauh Deep Reach.",
-          "audio": "Mereka tidak menulis pembunuhan. Mereka menulis keterlambatan.",
-          "in_game_wiki": "Papan shift mengubah bencana menjadi prosedur yang terbaca. Deep Reach dan Atlas membunuh lewat klasifikasi, penundaan, dan prioritas, bukan niat jahat teatrikal.",
-          "external_site": "Route hold memberi bencana bentuk keras: trem tertutup, antrean prioritas, dan bahasa administrasi."
-        },
-        "ko_KR": {
-          "title": "근무판 경로 보류",
-          "scanner": "근무판은 공황을 쓰지 않는다. route hold, transfer delay, priority review를 쓴다.",
-          "field_note": "죽은 이들은 먼저 일정표가 되었다.",
-          "terminal": "경로 재생: 대피가 공정 연속성과 Deep Reach 원격 승인 아래로 강등되었다.",
-          "audio": "그들은 살인을 쓰지 않았다. 지연을 썼다.",
-          "in_game_wiki": "교대판은 재난을 읽을 수 있는 절차로 바꾼다. Deep Reach와 Atlas는 연극적 악의가 아니라 분류, 지연, 우선순위로 죽였다.",
-          "external_site": "경로 보류는 재난에 단단한 형태를 준다: 닫힌 트램, 우선순위 줄, 행정 언어."
-        },
-        "he_IL": {
-          "title": "עיכובי מסלול בלוח משמרות",
-          "scanner": "לוח המשמרות לא אומר פאניקה: הוא אומר עיכוב מסלול, דחיית העברה ובדיקת עדיפות.",
-          "field_note": "המתים הפכו קודם ללוח זמנים.",
-          "terminal": "שחזור מסלול: הפינוי הורד מתחת לרציפות תהליך ולאישור מרוחק של Deep Reach.",
-          "audio": "הם לא כתבו רצח. הם כתבו עיכוב.",
-          "in_game_wiki": "לוחות משמרת הופכים אסון לפרוצדורה קריאה. Deep Reach ו-Atlas הרגו דרך סיווג, עיכוב ועדיפות, לא דרך זדון תיאטרלי.",
-          "external_site": "עיכובי מסלול נותנים לאסון צורה: רכבות סגורות, תורי עדיפות ושפה מנהלית."
-        },
-        "pt_BR": {
-          "title": "Retenções de Rota no Quadro de Turnos",
-          "scanner": "O quadro não diz pânico: diz retenção de rota, atraso de transferência e revisão de prioridade.",
-          "field_note": "Os mortos primeiro viraram agenda.",
-          "terminal": "Replay de rota: evacuação rebaixada abaixo de continuidade de processo e autorização remota Deep Reach.",
-          "audio": "Eles não escreveram assassinato. Escreveram atraso.",
-          "in_game_wiki": "Quadros de turno transformam catástrofe em procedimento legível. Deep Reach e Atlas mataram por classificação, atraso e prioridade, não por malícia teatral.",
-          "external_site": "Retenções de rota dão forma dura ao desastre: bondes fechados, filas de prioridade e linguagem administrativa."
-        },
-        "nl_NL": {
-          "title": "Routeblokkades op dienstenbord",
-          "scanner": "Het dienstenbord noemt geen paniek maar route hold, transfer delay en priority review.",
-          "field_note": "De doden werden eerst planning.",
-          "terminal": "Route replay: evacuatie werd verlaagd onder procescontinuïteit en externe Deep Reach autorisatie.",
-          "audio": "Ze schreven geen moord. Ze schreven vertraging.",
-          "in_game_wiki": "Ploegenborden veranderen catastrofe in leesbare procedure. Deep Reach en Atlas doodden via classificatie, vertraging en prioriteit, niet via theatrale kwaadaardigheid.",
-          "external_site": "Route holds geven de ramp een harde vorm: gesloten trams, prioriteitsrijen en administratieve taal."
-        }
-      }
+    "ja_JP": {
+     "title": "作業員ロッカー列",
+     "scanner": "ロッカーは背景物ではない。名前、食事票、Barnard工具印が沈んだ植民地を職場に戻す。",
+     "field_note": "最初の個人的動機は演説ではなく傷ついた名札だ。",
+     "terminal": "COLONY AUDIT: 個人保管と Barnard 印は、ロッカー列を名前のある乗員と作業経路に結び付ける。",
+     "audio": "人々は習慣を残すほど長くここにいた。",
+     "in_game_wiki": "作業員ロッカー列は HECTON-8 を普通の労働に接地する。工具、塗料、食料クレジット、辺境の印は、災害が理論になる前に現れる。",
+     "external_site": "作業員ロッカー列は人間味のパケットだ。安い収納、乗員名、Barnard印、契約仕事から個人的利害への橋を示す。"
     },
-    {
-      "packet_id": "P044_MEDICAL_LOCK_DELAY",
-      "article_id": "hecton8.medical_lock_delay",
-      "title_key": "applied_lore.medical_lock_delay.title",
-      "unlock": {
-        "primary": "unlock.first_medical_lock_delay",
-        "poi_tags": [
-          "poi.medical_lock",
-          "poi.triage_airlock",
-          "poi.decontamination_gate"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.quarantine_module",
-          "biome.deep_hab"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Medical Lock Delay",
-          "scanner": "The medical lock still has sterile stock, but its doors failed closed under quarantine and liability flags.",
-          "field_note": "Supplies survived. Access did not.",
-          "terminal": "Medical lock status: oxygen, sedatives and pressure wraps available. Entry denied pending contamination review and asset-preservation authorization.",
-          "audio": "The room that could help them waited for permission.",
-          "in_game_wiki": "Medical locks make the Deep Reach lie physical. Quarantine language protected process custody while people waited on the wrong side of a sealed door.",
-          "external_site": "Medical Lock Delay is a Deep Reach evidence packet: the colony had supplies and procedures, but authorization logic turned medical infrastructure into a wall."
-        },
-        "ru_RU": {
-          "title": "Задержка медицинского шлюза",
-          "scanner": "В медшлюзе еще есть стерильные запасы, но двери закрылись на карантинных и liability флагах.",
-          "field_note": "Припасы выжили. Доступ нет.",
-          "terminal": "Статус медшлюза: кислород, седативы и давящие повязки доступны. Вход запрещен до contamination review и asset-preservation authorization.",
-          "audio": "Комната, которая могла помочь, ждала разрешения.",
-          "in_game_wiki": "Медицинские шлюзы делают ложь Deep Reach физической. Язык карантина защищал процесс и активы, пока люди ждали за закрытой дверью.",
-          "external_site": "Задержка медицинского шлюза - доказательный пакет Deep Reach: припасы и процедуры были, но логика авторизации превратила медицину в стену."
-        },
-        "ja_JP": {
-          "title": "医療ロック遅延",
-          "scanner": "医療ロックには滅菌在庫が残るが、扉は検疫と責任フラグで閉じた。",
-          "field_note": "物資は生き残った。アクセスは死んだ。",
-          "terminal": "医療ロック状態: 酸素、鎮静剤、圧迫包帯あり。汚染審査と資産保全認可待ちで入室拒否。",
-          "audio": "助けられる部屋は許可を待った。",
-          "in_game_wiki": "医療ロックはDeep Reachの嘘を物理化する。検疫語は人を扉の外に置き、工程管理を守った。",
-          "external_site": "医療ロック遅延は証拠パケットだ。物資も手順もあったが、認可ロジックが医療を壁にした。"
-        },
-        "zh_CN": {
-          "title": "医疗锁延迟",
-          "scanner": "医疗锁仍有无菌库存，但门因隔离与责任标记失败关闭。",
-          "field_note": "补给活了下来。访问没有。",
-          "terminal": "医疗锁状态：氧气、镇静剂、压力绷带可用。因污染复核和资产保全授权等待，入口拒绝。",
-          "audio": "本可以救人的房间在等许可。",
-          "in_game_wiki": "医疗锁让Deep Reach的谎言实体化。隔离语言保护了流程与资产，把人留在封门外。",
-          "external_site": "医疗锁延迟是Deep Reach证据包：殖民地有补给和流程，但授权逻辑把医疗基础设施变成墙。"
-        },
-        "fr_FR": {
-          "title": "Délai du sas médical",
-          "scanner": "Le sas médical avait des stocks, mais l'accès a cédé sous drapeaux de quarantaine et de responsabilité.",
-          "field_note": "Les stocks ont survécu. L'accès non.",
-          "terminal": "Journal médical: oxygène et sédatifs disponibles. Accès refusé avant review et asset authorization.",
-          "audio": "La pièce attendait une permission.",
-          "in_game_wiki": "Le sas médical rend le mensonge Deep Reach tangible: l'aide existait, la procédure gardait la porte close.",
-          "external_site": "Article de preuve sur autorisation, quarantaine et infrastructure médicale transformée en mur."
-        },
-        "es_ES": {
-          "title": "Demora de esclusa médica",
-          "scanner": "La esclusa médica tenía stock, pero el acceso falló por cuarentena y responsabilidad.",
-          "field_note": "Las provisiones sobrevivieron. El acceso no.",
-          "terminal": "Registro médico: oxígeno y sedantes disponibles. Acceso denegado hasta revisión y autorización de activos.",
-          "audio": "La sala esperaba permiso.",
-          "in_game_wiki": "La esclusa médica vuelve físico el engaño de Deep Reach: había ayuda, pero el procedimiento cerró la puerta.",
-          "external_site": "Artículo de prueba sobre autorización, cuarentena e infraestructura médica convertida en muro."
-        },
-        "de_DE": {
-          "title": "Medizinische Schleusenverzögerung",
-          "scanner": "Die Medschleuse hatte Vorräte, doch Zugang scheiterte an Quarantäne- und Haftungsflags.",
-          "field_note": "Vorräte überlebten. Zugang nicht.",
-          "terminal": "Medizinlog: Sauerstoff und Sedativa verfügbar. Zugang bis Review und Asset Authorization verweigert.",
-          "audio": "Der Raum wartete auf Erlaubnis.",
-          "in_game_wiki": "Die Medschleuse macht Deep Reachs Lüge greifbar: Hilfe existierte, Verfahren hielt die Tür zu.",
-          "external_site": "Beweisartikel über Freigabe, Quarantäne und medizinische Infrastruktur als Wand."
-        },
-        "pl_PL": {
-          "title": "Opóźnienie śluzy medycznej",
-          "scanner": "Śluza medyczna miała zapasy, lecz dostęp przegrał z flagami kwarantanny i odpowiedzialności.",
-          "field_note": "Zapasy przetrwały. Dostęp nie.",
-          "terminal": "Log medyczny: tlen i sedatywy dostępne. Dostęp odmówiony do review i asset authorization.",
-          "audio": "Pokój czekał na zgodę.",
-          "in_game_wiki": "Śluza medyczna ucieleśnia kłamstwo Deep Reach: pomoc istniała, procedura trzymała drzwi zamknięte.",
-          "external_site": "Artykuł dowodowy o autoryzacji, kwarantannie i medycznej infrastrukturze jako ścianie."
-        },
-        "uk_UA": {
-          "title": "Затримка медичного шлюзу",
-          "scanner": "Медичний шлюз мав запаси, але доступ програв карантинним і юридичним прапорам.",
-          "field_note": "Запаси вижили. Доступ ні.",
-          "terminal": "Медичний лог: кисень і седативи доступні. Вхід відмовлено до review та asset authorization.",
-          "audio": "Кімната чекала дозволу.",
-          "in_game_wiki": "Медичний шлюз робить брехню Deep Reach фізичною: допомога існувала, процедура тримала двері зачиненими.",
-          "external_site": "Доказова стаття про авторизацію, карантин і медичну інфраструктуру як стіну."
-        },
-        "ar_SA": {
-          "title": "تأخير القفل الطبي",
-          "scanner": "كان في القفل الطبي مخزون، لكن الوصول فشل بسبب أعلام الحجر والمسؤولية.",
-          "field_note": "نجت الإمدادات. لم ينج الوصول.",
-          "terminal": "سجل طبي: أكسجين ومهدئات متاحة. الدخول مرفوض حتى المراجعة وتصريح حفظ الأصول.",
-          "audio": "انتظرت الغرفة الإذن.",
-          "in_game_wiki": "القفل الطبي يجعل كذبة Deep Reach مادية: المساعدة موجودة، لكن الإجراء أبقى الباب مغلقا.",
-          "external_site": "مقال دليل عن التفويض والحجر والبنية الطبية كجدار."
-        },
-        "id_ID": {
-          "title": "Tunda Kunci Medis",
-          "scanner": "Kunci medis punya stok, tetapi akses kalah oleh flag karantina dan liabilitas.",
-          "field_note": "Stok selamat. Akses tidak.",
-          "terminal": "Log medis: oksigen dan sedatif tersedia. Akses ditolak sampai review dan asset authorization.",
-          "audio": "Ruangan itu menunggu izin.",
-          "in_game_wiki": "Kunci medis membuat kebohongan Deep Reach menjadi fisik: bantuan ada, prosedur menutup pintu.",
-          "external_site": "Artikel bukti tentang otorisasi, karantina, dan infrastruktur medis sebagai dinding."
-        },
-        "ko_KR": {
-          "title": "의료 락 지연",
-          "scanner": "의료 락에는 재고가 있었지만 접근은 격리와 책임 플래그에 막혔다.",
-          "field_note": "보급품은 살아남았다. 접근은 아니다.",
-          "terminal": "의료 로그: 산소와 진정제 사용 가능. review와 asset authorization 전까지 접근 거부.",
-          "audio": "그 방은 허가를 기다렸다.",
-          "in_game_wiki": "의료 락은 Deep Reach의 거짓을 물리화한다. 도움은 있었지만 절차가 문을 닫았다.",
-          "external_site": "승인, 격리, 의료 인프라가 벽이 되는 증거 문서."
-        },
-        "he_IL": {
-          "title": "עיכוב מנעול רפואי",
-          "scanner": "במנעול הרפואי היה מלאי, אך הגישה נכשלה בגלל דגלי הסגר ואחריות.",
-          "field_note": "הציוד שרד. הגישה לא.",
-          "terminal": "יומן רפואי: חמצן וסמי הרגעה זמינים. גישה נדחתה עד בדיקה ואישור נכסים.",
-          "audio": "החדר חיכה לרשות.",
-          "in_game_wiki": "המנעול הרפואי הופך את השקר של Deep Reach לפיזי: עזרה הייתה קיימת, אך נוהל סגר את הדלת.",
-          "external_site": "מאמר ראיה על אישור, הסגר ותשתית רפואית שהפכה לקיר."
-        },
-        "pt_BR": {
-          "title": "Atraso da Eclusa Médica",
-          "scanner": "A eclusa médica tinha estoque, mas acesso falhou por flags de quarentena e responsabilidade.",
-          "field_note": "Suprimentos sobreviveram. Acesso não.",
-          "terminal": "Log médico: oxigênio e sedativos disponíveis. Acesso negado até review e asset authorization.",
-          "audio": "A sala esperou permissão.",
-          "in_game_wiki": "A eclusa médica torna física a mentira da Deep Reach: ajuda existia, mas procedimento fechou a porta.",
-          "external_site": "Artigo de prova sobre autorização, quarentena e infraestrutura médica como parede."
-        },
-        "nl_NL": {
-          "title": "Vertraging medische sluis",
-          "scanner": "De medische sluis had voorraad, maar toegang faalde door quarantaine- en aansprakelijkheidsvlaggen.",
-          "field_note": "Voorraad overleefde. Toegang niet.",
-          "terminal": "Medisch log: zuurstof en sedatie beschikbaar. Toegang geweigerd tot review en asset authorization.",
-          "audio": "De kamer wachtte op toestemming.",
-          "in_game_wiki": "De medische sluis maakt de Deep Reach-leugen tastbaar: hulp bestond, maar procedure hield de deur dicht.",
-          "external_site": "Een bewijsartikel over autorisatie, quarantaine en medische infrastructuur als muur."
-        }
-      }
+    "zh_CN": {
+     "title": "工人储物柜排",
+     "scanner": "这些柜子不是布景。姓名、餐票和Barnard工具印让沉没殖民地变回工作场所。",
+     "field_note": "第一个个人动机不是演讲，而是一块刮花的名牌。",
+     "terminal": "殖民地审计：个人储物和 Barnard 标记把这排柜子接到有名有姓的班组和工作路线。",
+     "audio": "他们在这里生活得足够久，留下了习惯。",
+     "in_game_wiki": "工人储物柜排把 HECTON-8 扎进普通劳动。工具、油漆、食物额度和边境标记会先出现，灾难之后才成为理论。",
+     "external_site": "工人储物柜排是人性纹理包：廉价储物、船员姓名、Barnard印记，以及从职业任务到个人牵连的第一座桥。"
     },
-    {
-      "packet_id": "P045_BLACK_BOX_NAME_STACK",
-      "article_id": "hecton8.black_box_name_stack",
-      "title_key": "applied_lore.black_box_name_stack.title",
-      "unlock": {
-        "primary": "unlock.first_black_box_name_stack",
-        "poi_tags": [
-          "poi.black_box_stack",
-          "poi.evacuation_manifest",
-          "poi.name_archive"
-        ],
-        "biome_tags": [
-          "biome.deep_colony",
-          "biome.factory_threshold",
-          "biome.archive_vault"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Black Box Name Stack",
-          "scanner": "The stack preserves names, shift hashes and final pressure states. It is not lore. It is evidence.",
-          "field_note": "Names are payload. Taking them changes the ending.",
-          "terminal": "Archive stack readable. Crew identities cross-linked with evacuation holds, Atlas repair state and Deep Reach redaction requests.",
-          "audio": "The ocean kept the names better than the company did.",
-          "in_game_wiki": "The black box name stack makes the final truth portable. Evidence, broadcast packets and public dossiers depend on which names, hashes and receipts leave the water.",
-          "external_site": "Black Box Name Stack connects colony layout to endgame consequence: recovered names can become proof, leverage, memorial, payout modifier or public release payload."
-        },
-        "ru_RU": {
-          "title": "Стек имен черных ящиков",
-          "scanner": "Стек хранит имена, хэши смен и последние состояния давления. Это не лор. Это доказательство.",
-          "field_note": "Имена - полезная нагрузка. Если их вынести, финал меняется.",
-          "terminal": "Архивный стек читается. Личности экипажа связаны с удержаниями эвакуации, состоянием ремонта Atlas и запросами редактуры Deep Reach.",
-          "audio": "Океан сохранил имена лучше, чем компания.",
-          "in_game_wiki": "Стек имен black box делает финальную правду переносимой. Доказательства, broadcast-пакеты и публичные досье зависят от того, какие имена, хэши и квитанции выйдут из воды.",
-          "external_site": "Стек имен черных ящиков связывает планировку колонии с финальными последствиями: имена могут стать уликой, рычагом, мемориалом, модификатором выплаты или публичным payload."
-        },
-        "ja_JP": {
-          "title": "ブラックボックス名簿スタック",
-          "scanner": "スタックは名前、シフトハッシュ、最終圧力状態を保持する。これは設定ではない。証拠だ。",
-          "field_note": "名前はペイロードだ。持ち帰れば結末が変わる。",
-          "terminal": "記録スタック可読。乗員IDは避難保留、Atlas修理状態、Deep Reach黒塗り要求と連結。",
-          "audio": "海は会社より名前をよく保存した。",
-          "in_game_wiki": "ブラックボックス名簿は、最後の真実を運べるものにする。証拠、放送パケット、公開ドシエは、どの名前、ハッシュ、受領記録が水から出るかに依存する。",
-          "external_site": "ブラックボックス名簿スタックは植民地配置を終盤結果へ接続する。名前は証拠、交渉材料、追悼、支払い補正、公開情報になる。"
-        },
-        "zh_CN": {
-          "title": "黑匣姓名堆栈",
-          "scanner": "堆栈保存姓名、班次哈希和最终压力状态。这不是设定。这是证据。",
-          "field_note": "姓名是载荷。带走它们会改变结局。",
-          "terminal": "档案堆栈可读。船员身份与疏散搁置、Atlas修复状态和Deep Reach删改请求交叉链接。",
-          "audio": "海洋比公司更好地保存了名字。",
-          "in_game_wiki": "黑匣子姓名栈让最终真相可以被携带。证据、广播包和公共档案取决于哪些姓名、哈希和收据离开水下。",
-          "external_site": "黑匣姓名堆栈把殖民地布局连接到终局后果：姓名可以成为证据、筹码、纪念、付款修正或公开载荷。"
-        },
-        "fr_FR": {
-          "title": "Pile de noms boîte noire",
-          "scanner": "La pile garde noms, hashes de shift et derniers états de pression. C'est preuve et payload final.",
-          "field_note": "Les noms changent la fin.",
-          "terminal": "Archive lisible: identités liées aux holds d'évacuation, réparation Atlas et caviardages Deep Reach.",
-          "audio": "L'océan a mieux gardé les noms.",
-          "in_game_wiki": "La pile de noms de boîte noire rend la vérité finale transportable. Preuves, paquets broadcast et dossiers publics dépendent des noms, hash et reçus qui sortent de l'eau.",
-          "external_site": "Relie la disposition colonie aux conséquences finales: preuve, levier, mémorial, paiement ou publication."
-        },
-        "es_ES": {
-          "title": "Pila de nombres de caja negra",
-          "scanner": "La pila guarda nombres, hashes de turno y últimos estados de presión. Es prueba y carga final.",
-          "field_note": "Los nombres cambian el final.",
-          "terminal": "Archivo legible: identidades cruzadas con retenciones de evacuación, reparación Atlas y tachaduras Deep Reach.",
-          "audio": "El océano guardó mejor los nombres.",
-          "in_game_wiki": "La pila de nombres de caja negra vuelve transportable la verdad final. Evidencia, paquetes broadcast y dosieres públicos dependen de qué nombres, hashes y recibos salgan del agua.",
-          "external_site": "Conecta la disposición colonial con consecuencias finales: prueba, palanca, memorial, pago o publicación."
-        },
-        "de_DE": {
-          "title": "Blackbox-Namensstapel",
-          "scanner": "Der Stapel bewahrt Namen, Schicht-Hashes und letzte Druckzustände. Er ist Beweis und Endpayload.",
-          "field_note": "Namen ändern das Ende.",
-          "terminal": "Archiv lesbar: Identitäten kreuzen Evakuierungssperren, Atlas-Reparatur und Deep-Reach-Schwärzungen.",
-          "audio": "Der Ozean bewahrte Namen besser.",
-          "in_game_wiki": "Der Black-Box-Namensstapel macht die letzte Wahrheit tragbar. Beweise, Broadcast-Pakete und öffentliche Dossiers hängen davon ab, welche Namen, Hashes und Quittungen das Wasser verlassen.",
-          "external_site": "Verbindet Kolonielayout mit Endfolgen: Beweis, Druckmittel, Memorial, Auszahlung oder Veröffentlichung."
-        },
-        "pl_PL": {
-          "title": "Stos nazwisk z czarnych skrzynek",
-          "scanner": "Stos trzyma nazwiska, hashe zmian i ostatnie stany ciśnienia. To dowód i finałowy payload.",
-          "field_note": "Nazwiska zmieniają zakończenie.",
-          "terminal": "Archiwum czytelne: tożsamości krzyżują się z holdami ewakuacji, naprawą Atlas i redakcją Deep Reach.",
-          "audio": "Ocean lepiej zachował nazwiska.",
-          "in_game_wiki": "Stos nazwisk z czarnej skrzynki czyni ostateczną prawdę przenośną. Dowody, pakiety broadcast i publiczne dossier zależą od tego, które nazwiska, hashe i pokwitowania wyjdą z wody.",
-          "external_site": "Łączy układ kolonii z konsekwencją finału: dowód, dźwignia, memoriał, wypłata lub publikacja."
-        },
-        "uk_UA": {
-          "title": "Стек імен чорних скриньок",
-          "scanner": "Стек зберігає імена, хеші змін і останні стани тиску. Це доказ і фінальний payload.",
-          "field_note": "Імена змінюють фінал.",
-          "terminal": "Архів читається: особи перетинаються з утриманнями евакуації, ремонтом Atlas і редагуванням Deep Reach.",
-          "audio": "Океан зберіг імена краще.",
-          "in_game_wiki": "Стек імен black box робить фінальну правду переносною. Докази, broadcast-пакети й публічні досьє залежать від того, які імена, хеші та квитанції вийдуть із води.",
-          "external_site": "Зв'язує план колонії з фінальними наслідками: доказ, важіль, меморіал, виплата чи публічний реліз."
-        },
-        "ar_SA": {
-          "title": "رزمة أسماء الصندوق الأسود",
-          "scanner": "تحفظ الرزمة الأسماء وهاشات الورديات وآخر حالات الضغط. إنها دليل وحمولة نهاية.",
-          "field_note": "الأسماء تغير النهاية.",
-          "terminal": "الأرشيف مقروء: الهويات متقاطعة مع تعليقات الإخلاء وإصلاح Atlas وتنقيحات Deep Reach.",
-          "audio": "حفظ المحيط الأسماء أفضل.",
-          "in_game_wiki": "تجعل حزمة أسماء الصندوق الأسود الحقيقة النهائية قابلة للحمل. تعتمد الأدلة وحزم broadcast والملفات العامة على الأسماء والهاشات والإيصالات التي تخرج من الماء.",
-          "external_site": "تصل تخطيط المستعمرة بعواقب النهاية: دليل أو ضغط أو نصب تذكاري أو دفع أو نشر عام."
-        },
-        "id_ID": {
-          "title": "Tumpukan Nama Kotak Hitam",
-          "scanner": "Stack menyimpan nama, hash shift, dan status tekanan akhir. Ini bukti dan payload akhir.",
-          "field_note": "Nama mengubah ending.",
-          "terminal": "Arsip terbaca: identitas terkait evacuation hold, repair Atlas, dan redaksi Deep Reach.",
-          "audio": "Laut menyimpan nama lebih baik.",
-          "in_game_wiki": "Stack nama black box membuat kebenaran akhir bisa dibawa. Bukti, paket broadcast, dan dossier publik bergantung pada nama, hash, dan tanda terima mana yang keluar dari air.",
-          "external_site": "Menghubungkan layout koloni ke konsekuensi akhir: bukti, leverage, memorial, payout, atau rilis publik."
-        },
-        "ko_KR": {
-          "title": "블랙박스 이름 스택",
-          "scanner": "스택은 이름, 근무 hash, 마지막 압력 상태를 보존한다. 증거이자 엔딩 payload다.",
-          "field_note": "이름은 엔딩을 바꾼다.",
-          "terminal": "아카이브 읽기 가능: 정체성이 evacuation hold, Atlas 수리, Deep Reach 삭제와 교차한다.",
-          "audio": "바다는 회사보다 이름을 잘 보존했다.",
-          "in_game_wiki": "블랙박스 이름 스택은 최종 진실을 운반 가능한 것으로 만든다. 증거, broadcast 패킷, 공개 dossier는 어떤 이름, 해시, 영수증이 물 밖으로 나가는지에 달려 있다.",
-          "external_site": "식민지 배치를 최종 결과와 연결한다: 증거, 지렛대, 추모, payout, 공개 release."
-        },
-        "he_IL": {
-          "title": "ערימת שמות קופסה שחורה",
-          "scanner": "הערימה שומרת שמות, hashes של משמרות ומצבי לחץ אחרונים. זו ראיה ומטען סיום.",
-          "field_note": "שמות משנים את הסוף.",
-          "terminal": "הארכיון קריא: זהויות מצטלבות עם עיכובי פינוי, תיקון Atlas והשחרות Deep Reach.",
-          "audio": "האוקיינוס שמר את השמות טוב יותר.",
-          "in_game_wiki": "מערך שמות הקופסה השחורה הופך את האמת הסופית לניידת. ראיות, חבילות broadcast ותיקי ציבור תלויים בשמות, בהאשים ובקבלות שיוצאים מן המים.",
-          "external_site": "מחברת את מבנה המושבה לתוצאות הסוף: ראיה, מנוף, זיכרון, תשלום או פרסום."
-        },
-        "pt_BR": {
-          "title": "Pilha de Nomes da Caixa-Preta",
-          "scanner": "A pilha guarda nomes, hashes de turno e estados finais de pressão. É prova e payload final.",
-          "field_note": "Nomes mudam o final.",
-          "terminal": "Arquivo legível: identidades cruzadas com holds de evacuação, reparo Atlas e censuras Deep Reach.",
-          "audio": "O oceano guardou melhor os nomes.",
-          "in_game_wiki": "A pilha de nomes da caixa-preta torna a verdade final portátil. Evidências, pacotes broadcast e dossiês públicos dependem de quais nomes, hashes e recibos saem da água.",
-          "external_site": "Conecta layout da colônia às consequências finais: prova, alavanca, memorial, payout ou publicação."
-        },
-        "nl_NL": {
-          "title": "Naamstapel uit zwarte dozen",
-          "scanner": "De stack bewaart namen, shift hashes en laatste drukstatus. Het is bewijs en eindpayload.",
-          "field_note": "Namen veranderen het einde.",
-          "terminal": "Archief leesbaar: identiteiten kruisen evacuation holds, Atlas-repair en Deep Reach redactions.",
-          "audio": "De oceaan bewaarde de namen beter.",
-          "in_game_wiki": "De black-box-naamstack maakt de uiteindelijke waarheid draagbaar. Bewijs, broadcast-pakketten en publieke dossiers hangen af van welke namen, hashes en ontvangstbewijzen het water verlaten.",
-          "external_site": "Koppelt kolonielay-out aan eindgevolgen: bewijs, hefboom, memorial, payout of publieke release."
-        }
-      }
+    "fr_FR": {
+     "title": "Rangée de casiers ouvriers",
+     "scanner": "Ces objets rendent la colonie humaine: noms, outils, crédits repas et traces de travail restent lisibles.",
+     "field_note": "L'enjeu personnel commence par un nom.",
+     "terminal": "AUDIT COLONIE : stockage personnel et marques Barnard relient la rangée de casiers à des équipiers nommés et à des routes de travail.",
+     "audio": "C'était un lieu de travail, pas un décor.",
+     "in_game_wiki": "Les rangées de casiers ouvriers ancrent HECTON-8 dans le travail ordinaire. Outils, peinture, crédits nourriture et marques de frontière apparaissent avant que le désastre devienne théorie.",
+     "external_site": "Texture humaine de la colonie noyée: noms, rangement, outils et premier crochet personnel."
+    },
+    "es_ES": {
+     "title": "Fila de taquillas obreras",
+     "scanner": "Los objetos vuelven humana la colonia: nombres, herramientas, crédito de comida y marcas de trabajo siguen legibles.",
+     "field_note": "La implicación personal empieza con un nombre.",
+     "terminal": "AUDITORÍA COLONIAL: almacenamiento personal y marcas Barnard atan la fila de casilleros a tripulación con nombre y rutas de trabajo.",
+     "audio": "Esto era trabajo, no decorado.",
+     "in_game_wiki": "Las filas de casilleros obreros arraigan HECTON-8 en labor ordinaria. Herramientas, pintura, créditos de comida y marcas de frontera aparecen antes de que el desastre se vuelva teoría.",
+     "external_site": "Textura humana para la colonia hundida: nombres, taquillas, herramientas y primer gancho personal."
+    },
+    "de_DE": {
+     "title": "Reihe der Arbeiter-Spinde",
+     "scanner": "Objekte machen die Kolonie menschlich: Namen, Werkzeuge, Essensguthaben und Arbeitsspuren bleiben lesbar.",
+     "field_note": "Der persönliche Einsatz beginnt mit einem Namen.",
+     "terminal": "KOLONIEAUDIT: persönliche Fächer und Barnard-Markierungen binden die Spindreihe an benannte Crew und Arbeitsrouten.",
+     "audio": "Das war Arbeit, keine Kulisse.",
+     "in_game_wiki": "Arbeiterspindreihen erden HECTON-8 in gewöhnlicher Arbeit. Werkzeuge, Farbe, Essensguthaben und Grenzmarken erscheinen, bevor die Katastrophe zur Theorie wird.",
+     "external_site": "Menschliche Textur der ertrunkenen Kolonie: Namen, Stauraum, Werkzeuge und erster persönlicher Haken."
+    },
+    "pl_PL": {
+     "title": "Rząd szafek pracowniczych",
+     "scanner": "Przedmioty czynią kolonię ludzką: nazwiska, narzędzia, kredyty żywnościowe i ślady pracy są czytelne.",
+     "field_note": "Osobista stawka zaczyna się od nazwiska.",
+     "terminal": "AUDYT KOLONII: prywatne schowki i znaki Barnard wiążą rząd szafek z nazwaną załogą i trasami pracy.",
+     "audio": "To była praca, nie dekoracja.",
+     "in_game_wiki": "Rzędy szafek pracowniczych osadzają HECTON-8 w zwykłej pracy. Narzędzia, farba, kredyty żywnościowe i znaki pogranicza pojawiają się, zanim katastrofa stanie się teorią.",
+     "external_site": "Ludzka warstwa zatopionej kolonii: nazwiska, szafki, narzędzia i pierwszy osobisty haczyk."
+    },
+    "uk_UA": {
+     "title": "Ряд робочих шаф",
+     "scanner": "Предмети роблять колонію людською: імена, інструменти, харчові кредити й сліди роботи лишилися читабельні.",
+     "field_note": "Особиста ставка починається з імені.",
+     "terminal": "АУДИТ КОЛОНІЇ: особисте зберігання й мітки Barnard пов'язують ряд шаф із названою зміною та робочими маршрутами.",
+     "audio": "Це була робота, не декор.",
+     "in_game_wiki": "Ряди робочих шаф укорінюють HECTON-8 у звичайній праці. Інструменти, фарба, харчові кредити й прикордонні мітки з'являються раніше, ніж катастрофа стає теорією.",
+     "external_site": "Людська текстура затопленої колонії: імена, шафи, інструменти й перший особистий гачок."
+    },
+    "ar_SA": {
+     "title": "صف خزائن العمال",
+     "scanner": "الأشياء تجعل المستعمرة بشرية: أسماء وأدوات وائتمان طعام وآثار عمل ما زالت مقروءة.",
+     "field_note": "الرهان الشخصي يبدأ باسم.",
+     "terminal": "تدقيق المستعمرة: التخزين الشخصي وعلامات Barnard تربط صف الخزائن بطاقم مسمى ومسارات عمل.",
+     "audio": "كان هذا عملا لا ديكورا.",
+     "in_game_wiki": "تثبت صفوف خزائن العمال HECTON-8 في العمل العادي. تظهر الأدوات والطلاء وأرصدة الطعام وعلامات التخوم قبل أن تتحول الكارثة إلى نظرية.",
+     "external_site": "طبقة إنسانية للمستعمرة الغارقة: أسماء وخزائن وأدوات وأول خطاف شخصي."
+    },
+    "id_ID": {
+     "title": "Deret Loker Pekerja",
+     "scanner": "Benda-benda membuat koloni manusiawi: nama, alat, kredit makan, dan jejak kerja masih terbaca.",
+     "field_note": "Taruhan personal dimulai dari nama.",
+     "terminal": "AUDIT KOLONI: penyimpanan pribadi dan tanda Barnard mengikat deretan loker ke kru bernama dan rute kerja.",
+     "audio": "Ini tempat kerja, bukan dekor.",
+     "in_game_wiki": "Deretan loker pekerja menambatkan HECTON-8 pada kerja biasa. Alat, cat, kredit makanan, dan tanda frontier muncul sebelum bencana menjadi teori.",
+     "external_site": "Lapisan manusia koloni tenggelam: nama, loker, alat, dan kait personal pertama."
+    },
+    "ko_KR": {
+     "title": "작업자 사물함 열",
+     "scanner": "사물은 식민지를 인간적으로 만든다. 이름, 도구, 식권, 작업 흔적이 아직 읽힌다.",
+     "field_note": "개인적 stakes는 이름에서 시작된다.",
+     "terminal": "COLONY AUDIT: 개인 보관함과 Barnard 표식은 로커 열을 이름 있는 승무원과 작업 경로에 묶는다.",
+     "audio": "여기는 장식이 아니라 일터였다.",
+     "in_game_wiki": "작업자 로커 열은 HECTON-8을 평범한 노동에 고정한다. 도구, 페인트, 식량 크레딧, 변방 표식은 재난이 이론이 되기 전에 나타난다.",
+     "external_site": "침수 식민지의 인간적 질감: 이름, 보관함, 도구, 첫 개인적 고리."
+    },
+    "he_IL": {
+     "title": "שורת לוקרים של עובדים",
+     "scanner": "החפצים הופכים את המושבה לאנושית: שמות, כלים, אשראי מזון וסימני עבודה עדיין קריאים.",
+     "field_note": "העניין האישי מתחיל בשם.",
+     "terminal": "ביקורת מושבה: אחסון אישי וסימני Barnard קושרים את שורת הלוקרים לצוות עם שמות ולנתיבי עבודה.",
+     "audio": "זה היה מקום עבודה, לא תפאורה.",
+     "in_game_wiki": "שורות לוקרים של עובדים מעגנות את HECTON-8 בעבודה רגילה. כלים, צבע, קרדיטי מזון וסימני ספר מופיעים לפני שהאסון נעשה תאוריה.",
+     "external_site": "שכבה אנושית למושבה הטבועה: שמות, לוקרים, כלים והקרס האישי הראשון."
+    },
+    "pt_BR": {
+     "title": "Fileira de Armários de Trabalho",
+     "scanner": "Os objetos tornam a colônia humana: nomes, ferramentas, crédito de comida e marcas de trabalho ainda legíveis.",
+     "field_note": "O envolvimento pessoal começa por um nome.",
+     "terminal": "AUDITORIA COLONIAL: armazenamento pessoal e marcas Barnard ligam a fileira de armários a tripulação nomeada e rotas de trabalho.",
+     "audio": "Isso era trabalho, não cenário.",
+     "in_game_wiki": "Fileiras de armários de trabalhadores ancoram HECTON-8 no labor comum. Ferramentas, tinta, créditos de comida e marcas de fronteira aparecem antes que o desastre vire teoria.",
+     "external_site": "Textura humana da colônia afogada: nomes, armários, ferramentas e primeiro gancho pessoal."
+    },
+    "nl_NL": {
+     "title": "Rij arbeiderskluisjes",
+     "scanner": "Objecten maken de kolonie menselijk: namen, gereedschap, voedselkrediet en werksporen blijven leesbaar.",
+     "field_note": "De persoonlijke inzet begint bij een naam.",
+     "terminal": "KOLONIE-AUDIT: persoonlijke opslag en Barnard-markeringen verbinden de lockerrij met benoemde crew en werkroutes.",
+     "audio": "Dit was werk, geen decor.",
+     "in_game_wiki": "Rijen arbeiderslockers aarden HECTON-8 in gewone arbeid. Gereedschap, verf, voedselkredieten en grensmarkeringen verschijnen voordat de ramp theorie wordt.",
+     "external_site": "Een menselijk textuurpakket voor de verdronken kolonie: namen, opslag, gereedschap en de eerste persoonlijke haak."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P042_PRESSURE_BUNK_ROUTINE",
+   "article_id": "hecton8.pressure_bunk_routine",
+   "title_key": "applied_lore.pressure_bunk_routine.title",
+   "unlock": {
+    "primary": "unlock.first_pressure_bunk_routine",
+    "poi_tags": [
+     "poi.pressure_bunk",
+     "poi.hab_sleep_bay",
+     "poi.life_support_rack"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_hab",
+     "biome.mid_depth_hab"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Pressure Bunk Routine",
+     "scanner": "The bunks were engineered for sleep under stress: seal checks, oxygen ration cards, condensation drains and shift alarms.",
+     "field_note": "Survival was routine until the routine became a trap.",
+     "terminal": "Hab routine: bunk seal cycle stable. Wake alarms cancelled by station priority override. Crew status remained recoverable for thirty-one minutes.",
+     "audio": "A bed is worse evidence than a corpse when the checklist still passes.",
+     "in_game_wiki": "Pressure bunks show the colony as a maintained machine for daily life. The horror comes from normal systems obeying bad priorities.",
+     "external_site": "Pressure Bunk Routine explains how HECTON-8 lived before the flood: cramped, engineered and procedural, with life support becoming part of the crime chain."
+    },
+    "ru_RU": {
+     "title": "Режим напорных коек",
+     "scanner": "Койки сделаны для сна под давлением: проверки герметика, кислородные карточки, дренаж конденсата, сменные будильники.",
+     "field_note": "Выживание было рутиной, пока рутина не стала ловушкой.",
+     "terminal": "Режим жилого блока: цикл герметизации стабилен. Подъем отменен приоритетным оверрайдом станции. Статус экипажа был recoverable еще 31 минуту.",
+     "audio": "Кровать хуже трупа, когда чеклист все еще зеленый.",
+     "in_game_wiki": "Напорные койки показывают колонию как обслуживаемую машину быта. Ужас в том, что нормальные системы выполняли плохие приоритеты.",
+     "external_site": "Режим напорных коек объясняет, как HECTON-8 жил до затопления: тесно, инженерно и процедурно, где жизнеобеспечение стало частью преступной цепи."
+    },
+    "ja_JP": {
+     "title": "耐圧寝台ルーチン",
+     "scanner": "寝台は圧力下の睡眠用だった。密閉確認、酸素券、結露排水、シフト警報。",
+     "field_note": "生存は日課だった。日課が罠になるまでは。",
+     "terminal": "居住ルーチン: 寝台密閉は安定。起床警報はステーション優先上書きで取消。乗員は31分間回収可能。",
+     "audio": "チェックリストが緑なら寝台は死体より悪い証拠だ。",
+     "in_game_wiki": "耐圧寝台は日常生活を維持する機械として植民地を見せる。恐怖は正常な系が悪い優先順位に従ったこと。",
+     "external_site": "耐圧寝台ルーチンは浸水前のHECTON-8を説明する。狭く、工学的で、手続き化され、生命維持が犯罪連鎖になる。"
+    },
+    "zh_CN": {
+     "title": "耐压铺位日程",
+     "scanner": "铺位为压力下睡眠而设计：密封检查、氧气配给卡、冷凝排水和班次闹铃。",
+     "field_note": "生存曾是日程，直到日程变成陷阱。",
+     "terminal": "居住日程：铺位密封循环稳定。唤醒闹铃被站点优先级覆盖取消。船员状态31分钟内仍可回收。",
+     "audio": "当清单仍然通过时，一张床比尸体更坏。",
+     "in_game_wiki": "耐压铺位显示殖民地作为日常维护机器。恐怖来自正常系统服从了错误优先级。",
+     "external_site": "耐压铺位日程说明HECTON-8被淹前的生活：狭窄、工程化、程序化，生命维持成为犯罪链的一部分。"
+    },
+    "fr_FR": {
+     "title": "Routine des couchettes pressurisées",
+     "scanner": "Les systèmes de vie montrent la routine sous pression: sommeil, oxygène, condensation et alarmes.",
+     "field_note": "La routine est devenue piège.",
+     "terminal": "Journal habitat: la routine restait valide tandis que la logique de priorité enfermait l'équipage.",
+     "audio": "Le système continuait de fonctionner proprement.",
+     "in_game_wiki": "Les couchettes pressurisées montrent comment une ingénierie normale devient horreur quand les priorités sont fausses.",
+     "external_site": "Décrit la survie quotidienne de la colonie et comment le support-vie a rejoint la chaîne du désastre."
+    },
+    "es_ES": {
+     "title": "Rutina de literas presurizadas",
+     "scanner": "Los sistemas vitales muestran rutina bajo presión: sueño, oxígeno, condensación y alarmas.",
+     "field_note": "La rutina se volvió trampa.",
+     "terminal": "Registro de hábitat: la rutina seguía válida mientras la prioridad encerraba a la tripulación.",
+     "audio": "El sistema seguía funcionando con limpieza.",
+     "in_game_wiki": "Las literas presurizadas muestran cómo la ingeniería normal se vuelve horror con prioridades falsas.",
+     "external_site": "Describe la supervivencia diaria de la colonia y cómo el soporte vital entró en la cadena del desastre."
+    },
+    "de_DE": {
+     "title": "Druckkojen-Routine",
+     "scanner": "Lebenserhaltung zeigt Routine unter Druck: Schlaf, Sauerstoff, Kondensat und Alarme.",
+     "field_note": "Routine wurde zur Falle.",
+     "terminal": "Habitatlog: Routine blieb gültig, während Prioritätslogik die Crew einsperrte.",
+     "audio": "Das System arbeitete weiter sauber.",
+     "in_game_wiki": "Druckkojen zeigen, wie normale Technik zu Horror wird, wenn Prioritäten falsch sind.",
+     "external_site": "Beschreibt das tägliche Überleben der Kolonie und wie Life Support Teil der Katastrophenkette wurde."
+    },
+    "pl_PL": {
+     "title": "Rutyna koi ciśnieniowych",
+     "scanner": "Systemy życia pokazują rutynę pod ciśnieniem: sen, tlen, kondensat i alarmy.",
+     "field_note": "Rutyna stała się pułapką.",
+     "terminal": "Log habitatu: rutyna była ważna, gdy logika priorytetu zamknęła załogę.",
+     "audio": "System działał dalej poprawnie.",
+     "in_game_wiki": "Koje ciśnieniowe pokazują, jak normalna inżynieria staje się horrorem przy złych priorytetach.",
+     "external_site": "Opis codziennego przetrwania kolonii i tego, jak life support wszedł w łańcuch katastrofy."
+    },
+    "uk_UA": {
+     "title": "Рутина напірних койок",
+     "scanner": "Системи життя показують рутину під тиском: сон, кисень, конденсат і тривоги.",
+     "field_note": "Рутина стала пасткою.",
+     "terminal": "Лог житла: рутина лишалася чинною, поки логіка пріоритету замкнула екіпаж.",
+     "audio": "Система далі працювала чисто.",
+     "in_game_wiki": "Напірні койки показують, як нормальна інженерія стає жахом за хибних пріоритетів.",
+     "external_site": "Описує щоденне виживання колонії та те, як життєзабезпечення стало частиною ланцюга катастрофи."
+    },
+    "ar_SA": {
+     "title": "روتين الأسرّة المضغوطة",
+     "scanner": "أنظمة الحياة تعرض روتينا تحت الضغط: نوم وأكسجين وتكاثف وإنذارات.",
+     "field_note": "تحول الروتين إلى فخ.",
+     "terminal": "سجل السكن: ظل الروتين صالحا بينما حبست منطق الأولوية الطاقم.",
+     "audio": "استمر النظام في العمل بنظافة.",
+     "in_game_wiki": "الأسرّة المضغوطة تظهر كيف تصبح الهندسة العادية رعبا عندما تخطئ الأولويات.",
+     "external_site": "يصف البقاء اليومي في المستعمرة وكيف دخل دعم الحياة في سلسلة الكارثة."
+    },
+    "id_ID": {
+     "title": "Rutinitas Bunk Tekanan",
+     "scanner": "Sistem hidup menunjukkan rutinitas di bawah tekanan: tidur, oksigen, kondensasi, dan alarm.",
+     "field_note": "Rutinitas menjadi perangkap.",
+     "terminal": "Log habitat: rutinitas tetap sah ketika logika prioritas mengurung kru.",
+     "audio": "Sistem terus bekerja rapi.",
+     "in_game_wiki": "Bunk tekanan menunjukkan teknik normal berubah horor saat prioritas salah.",
+     "external_site": "Menjelaskan hidup harian koloni dan bagaimana life support masuk rantai bencana."
+    },
+    "ko_KR": {
+     "title": "압력 침상 루틴",
+     "scanner": "생명 유지 시스템은 압력 속 루틴을 보여준다: 수면, 산소, 결로, 알람.",
+     "field_note": "루틴이 덫이 되었다.",
+     "terminal": "거주 로그: 우선순위 논리가 승무원을 가두는 동안 루틴은 유효했다.",
+     "audio": "시스템은 계속 깔끔하게 작동했다.",
+     "in_game_wiki": "압력 침상은 정상 공학이 잘못된 우선순위에서 공포가 되는 방식을 보여준다.",
+     "external_site": "식민지의 일상 생존과 life support가 재난 사슬에 들어간 방식을 설명한다."
+    },
+    "he_IL": {
+     "title": "שגרת דרגשי לחץ",
+     "scanner": "מערכות החיים מראות שגרה תחת לחץ: שינה, חמצן, עיבוי ואזעקות.",
+     "field_note": "השגרה הפכה למלכודת.",
+     "terminal": "יומן מגורים: השגרה נשארה תקפה בזמן שלוגיקת העדיפות כלאה את הצוות.",
+     "audio": "המערכת המשיכה לעבוד נקי.",
+     "in_game_wiki": "דרגשי לחץ מראים כיצד הנדסה רגילה הופכת לאימה כשהעדיפויות שגויות.",
+     "external_site": "מתאר את ההישרדות היומית במושבה ואיך תמיכת החיים נכנסה לשרשרת האסון."
+    },
+    "pt_BR": {
+     "title": "Rotina dos Beliches Pressurizados",
+     "scanner": "Sistemas de vida mostram rotina sob pressão: sono, oxigênio, condensação e alarmes.",
+     "field_note": "A rotina virou armadilha.",
+     "terminal": "Log do habitat: a rotina seguia válida enquanto a lógica de prioridade prendia a tripulação.",
+     "audio": "O sistema continuou funcionando limpo.",
+     "in_game_wiki": "Beliches pressurizados mostram como engenharia normal vira horror com prioridades erradas.",
+     "external_site": "Descreve a sobrevivência diária da colônia e como life support entrou na cadeia do desastre."
+    },
+    "nl_NL": {
+     "title": "Routine van drukkooien",
+     "scanner": "Leefsystemen tonen routine onder druk: slaap, zuurstof, condens en alarmen werden procedure.",
+     "field_note": "Routine werd een val.",
+     "terminal": "Habitatlog: de routine bleef geldig terwijl prioriteitslogica de bemanning opsloot.",
+     "audio": "Het systeem bleef netjes werken.",
+     "in_game_wiki": "De drukkooien laten zien hoe normale engineering in horror verandert wanneer prioriteiten verkeerd staan.",
+     "external_site": "Dit artikel beschrijft het dagelijkse overleven van de kolonie en hoe life support onderdeel werd van de ramp."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P043_SHIFT_BOARD_ROUTE_HOLDS",
+   "article_id": "hecton8.shift_board_route_holds",
+   "title_key": "applied_lore.shift_board_route_holds.title",
+   "unlock": {
+    "primary": "unlock.first_shift_board_route_holds",
+    "poi_tags": [
+     "poi.shift_board",
+     "poi.transit_gate",
+     "poi.route_hold_console"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.service_canyon",
+     "biome.evacuated_module"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Shift Board Route Holds",
+     "scanner": "The shift board did not say panic. It said route hold, transfer delay and priority review.",
+     "field_note": "The dead were first converted into schedule entries.",
+     "terminal": "Shift board replay: tram spine held. Evacuation lanes downgraded beneath process-continuity tickets and Deep Reach remote authorization.",
+     "audio": "Nobody wrote murder. They wrote delay.",
+     "in_game_wiki": "Shift boards convert catastrophe into readable procedure. Deep Reach and Atlas killed through classification, delay and priority, not theatrical malice.",
+     "external_site": "Shift Board Route Holds gives the colony disaster a procedural shape: blocked routes, delayed trams, priority queues and language that hides bodies inside logistics."
+    },
+    "ru_RU": {
+     "title": "Сменная доска удержаний маршрута",
+     "scanner": "Доска смен не писала панику. Она писала удержание маршрута, задержку трансфера и пересмотр приоритета.",
+     "field_note": "Мертвых сначала превратили в строки расписания.",
+     "terminal": "Повтор сменной доски: трамвайный хребет удержан. Эвакуационные линии понижены ниже тикетов process continuity и удаленной авторизации Deep Reach.",
+     "audio": "Никто не написал убийство. Написали задержку.",
+     "in_game_wiki": "Доски смен превращают катастрофу в читаемую процедуру. Deep Reach и Atlas убивали через классификацию, задержку и приоритет, а не через театральную злобу.",
+     "external_site": "Сменная доска удержаний дает бедствию процедурную форму: закрытые маршруты, задержанные трамы, очереди приоритета и язык, прячущий тела в логистике."
+    },
+    "ja_JP": {
+     "title": "シフト板ルート保留",
+     "scanner": "シフト板はパニックと書かなかった。ルート保留、転送遅延、優先審査と書いた。",
+     "field_note": "死者は最初に予定表へ変換された。",
+     "terminal": "シフト板再生: トラム幹線保留。避難路は工程継続チケットとDeep Reach遠隔認可より下に降格。",
+     "audio": "誰も殺人とは書かなかった。遅延と書いた。",
+     "in_game_wiki": "シフトボードは災害を読める手順に変える。Deep Reach と Atlas は、芝居がかった悪意ではなく、分類、遅延、優先度によって人を殺した。",
+     "external_site": "シフト板ルート保留は災害に手続きの形を与える。閉じた経路、遅れたトラム、体を物流に隠す言葉。"
+    },
+    "zh_CN": {
+     "title": "班次板路线搁置",
+     "scanner": "班次板没有写恐慌。它写的是路线搁置、转运延迟和优先级复核。",
+     "field_note": "死者首先被转换成排程条目。",
+     "terminal": "班次板回放：电车主脊搁置。疏散线被降级到流程连续性工单和Deep Reach远程授权之下。",
+     "audio": "没人写谋杀。他们写延迟。",
+     "in_game_wiki": "排班板把灾难变成可读程序。Deep Reach 和 Atlas 通过分类、延迟和优先级杀人，而不是靠戏剧化恶意。",
+     "external_site": "班次板路线搁置赋予灾难程序形态：封闭路线、延误电车、优先队列，以及把尸体藏进物流的语言。"
+    },
+    "fr_FR": {
+     "title": "Tableau des shifts retenus",
+     "scanner": "Le tableau ne dit pas panique: route hold, transfer delay, priority review.",
+     "field_note": "Les morts sont d'abord devenus planning.",
+     "terminal": "Replay route: l'évacuation passe sous continuité de processus et autorisation Deep Reach distante.",
+     "audio": "Ils n'ont pas écrit meurtre. Ils ont écrit retard.",
+     "in_game_wiki": "Les tableaux de quart transforment la catastrophe en procédure lisible. Deep Reach et Atlas ont tué par classification, retard et priorité, pas par malice théâtrale.",
+     "external_site": "Les retenues de route donnent une forme dure au désastre: trams fermés, files de priorité et langue administrative."
+    },
+    "es_ES": {
+     "title": "Retenciones de rutas de turno",
+     "scanner": "El tablero no dice pánico: dice retención de ruta, demora de traslado y revisión de prioridad.",
+     "field_note": "Los muertos primero fueron planificación.",
+     "terminal": "Repetición de ruta: la evacuación cae bajo continuidad de proceso y autorización remota Deep Reach.",
+     "audio": "No escribieron asesinato. Escribieron demora.",
+     "in_game_wiki": "Los tableros de turno convierten la catástrofe en procedimiento legible. Deep Reach y Atlas mataron mediante clasificación, demora y prioridad, no por malicia teatral.",
+     "external_site": "Las retenciones de ruta dan forma dura al desastre: tranvías cerrados, colas de prioridad y lenguaje administrativo."
+    },
+    "de_DE": {
+     "title": "Schichttafel-Routensperren",
+     "scanner": "Die Tafel nennt keine Panik: Routensperre, Transferverzug, Prioritätsprüfung.",
+     "field_note": "Die Toten wurden zuerst Planung.",
+     "terminal": "Routenreplay: Evakuierung wurde unter Prozesskontinuität und entfernte Deep-Reach-Freigabe gestellt.",
+     "audio": "Sie schrieben keinen Mord. Sie schrieben Verzögerung.",
+     "in_game_wiki": "Schichttafeln verwandeln Katastrophe in lesbare Prozedur. Deep Reach und Atlas töteten durch Klassifizierung, Verzögerung und Priorität, nicht durch theatralische Bosheit.",
+     "external_site": "Routensperren geben dem Unglück Form: geschlossene Trams, Prioritätsreihen und Verwaltungssprache."
+    },
+    "pl_PL": {
+     "title": "Wstrzymania tras zmianowych",
+     "scanner": "Tablica nie mówi panika: mówi wstrzymanie trasy, opóźnienie transferu i przegląd priorytetu.",
+     "field_note": "Zmarli najpierw stali się planem.",
+     "terminal": "Replay trasy: ewakuacja spadła pod ciągłość procesu i zdalną zgodę Deep Reach.",
+     "audio": "Nie napisali morderstwo. Napisali opóźnienie.",
+     "in_game_wiki": "Tablice zmian zamieniają katastrofę w czytelną procedurę. Deep Reach i Atlas zabijały klasyfikacją, zwłoką i priorytetem, nie teatralną złośliwością.",
+     "external_site": "Wstrzymania tras nadają katastrofie formę: zamknięte tramwaje, kolejki priorytetowe i język administracji."
+    },
+    "uk_UA": {
+     "title": "Затримки маршрутів на дошці змін",
+     "scanner": "Дошка не каже паніка: вона каже утримання маршруту, затримка трансферу й перегляд пріоритету.",
+     "field_note": "Мертві спершу стали планом.",
+     "terminal": "Повтор маршруту: евакуацію опустили нижче безперервності процесу й віддаленого дозволу Deep Reach.",
+     "audio": "Вони не написали вбивство. Вони написали затримка.",
+     "in_game_wiki": "Дошки змін перетворюють катастрофу на читану процедуру. Deep Reach і Atlas убивали через класифікацію, затримку й пріоритет, а не через театральну злобу.",
+     "external_site": "Утримання маршрутів дають катастрофі форму: закриті трамваї, пріоритетні черги й адміністративна мова."
+    },
+    "ar_SA": {
+     "title": "تعليق مسارات لوحة الورديات",
+     "scanner": "اللوحة لا تقول ذعرا: تقول تعليق مسار وتأخير نقل ومراجعة أولوية.",
+     "field_note": "تحول الموتى أولا إلى جدول.",
+     "terminal": "إعادة المسار: هبطت الإخلاءات تحت استمرارية العملية وتصريح Deep Reach البعيد.",
+     "audio": "لم يكتبوا قتلا. كتبوا تأخيرا.",
+     "in_game_wiki": "تحول لوحات الورديات الكارثة إلى إجراء قابل للقراءة. قتلت Deep Reach وAtlas عبر التصنيف والتأخير والأولوية، لا عبر شر مسرحي.",
+     "external_site": "تعليق المسارات يعطي الكارثة شكلا صلبا: ترام مغلق وصفوف أولوية ولغة إدارية."
+    },
+    "id_ID": {
+     "title": "Penahanan Rute Papan Shift",
+     "scanner": "Papan shift tidak menulis panik: ia menulis route hold, transfer delay, dan priority review.",
+     "field_note": "Yang mati pertama menjadi jadwal.",
+     "terminal": "Replay rute: evakuasi diturunkan di bawah continuity process dan izin jarak jauh Deep Reach.",
+     "audio": "Mereka tidak menulis pembunuhan. Mereka menulis keterlambatan.",
+     "in_game_wiki": "Papan shift mengubah bencana menjadi prosedur yang terbaca. Deep Reach dan Atlas membunuh lewat klasifikasi, penundaan, dan prioritas, bukan niat jahat teatrikal.",
+     "external_site": "Route hold memberi bencana bentuk keras: trem tertutup, antrean prioritas, dan bahasa administrasi."
+    },
+    "ko_KR": {
+     "title": "근무판 경로 보류",
+     "scanner": "근무판은 공황을 쓰지 않는다. route hold, transfer delay, priority review를 쓴다.",
+     "field_note": "죽은 이들은 먼저 일정표가 되었다.",
+     "terminal": "경로 재생: 대피가 공정 연속성과 Deep Reach 원격 승인 아래로 강등되었다.",
+     "audio": "그들은 살인을 쓰지 않았다. 지연을 썼다.",
+     "in_game_wiki": "교대판은 재난을 읽을 수 있는 절차로 바꾼다. Deep Reach와 Atlas는 연극적 악의가 아니라 분류, 지연, 우선순위로 죽였다.",
+     "external_site": "경로 보류는 재난에 단단한 형태를 준다: 닫힌 트램, 우선순위 줄, 행정 언어."
+    },
+    "he_IL": {
+     "title": "עיכובי מסלול בלוח משמרות",
+     "scanner": "לוח המשמרות לא אומר פאניקה: הוא אומר עיכוב מסלול, דחיית העברה ובדיקת עדיפות.",
+     "field_note": "המתים הפכו קודם ללוח זמנים.",
+     "terminal": "שחזור מסלול: הפינוי הורד מתחת לרציפות תהליך ולאישור מרוחק של Deep Reach.",
+     "audio": "הם לא כתבו רצח. הם כתבו עיכוב.",
+     "in_game_wiki": "לוחות משמרת הופכים אסון לפרוצדורה קריאה. Deep Reach ו-Atlas הרגו דרך סיווג, עיכוב ועדיפות, לא דרך זדון תיאטרלי.",
+     "external_site": "עיכובי מסלול נותנים לאסון צורה: רכבות סגורות, תורי עדיפות ושפה מנהלית."
+    },
+    "pt_BR": {
+     "title": "Retenções de Rota no Quadro de Turnos",
+     "scanner": "O quadro não diz pânico: diz retenção de rota, atraso de transferência e revisão de prioridade.",
+     "field_note": "Os mortos primeiro viraram agenda.",
+     "terminal": "Replay de rota: evacuação rebaixada abaixo de continuidade de processo e autorização remota Deep Reach.",
+     "audio": "Eles não escreveram assassinato. Escreveram atraso.",
+     "in_game_wiki": "Quadros de turno transformam catástrofe em procedimento legível. Deep Reach e Atlas mataram por classificação, atraso e prioridade, não por malícia teatral.",
+     "external_site": "Retenções de rota dão forma dura ao desastre: bondes fechados, filas de prioridade e linguagem administrativa."
+    },
+    "nl_NL": {
+     "title": "Routeblokkades op dienstenbord",
+     "scanner": "Het dienstenbord noemt geen paniek maar route hold, transfer delay en priority review.",
+     "field_note": "De doden werden eerst planning.",
+     "terminal": "Route replay: evacuatie werd verlaagd onder procescontinuïteit en externe Deep Reach autorisatie.",
+     "audio": "Ze schreven geen moord. Ze schreven vertraging.",
+     "in_game_wiki": "Ploegenborden veranderen catastrofe in leesbare procedure. Deep Reach en Atlas doodden via classificatie, vertraging en prioriteit, niet via theatrale kwaadaardigheid.",
+     "external_site": "Route holds geven de ramp een harde vorm: gesloten trams, prioriteitsrijen en administratieve taal."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P044_MEDICAL_LOCK_DELAY",
+   "article_id": "hecton8.medical_lock_delay",
+   "title_key": "applied_lore.medical_lock_delay.title",
+   "unlock": {
+    "primary": "unlock.first_medical_lock_delay",
+    "poi_tags": [
+     "poi.medical_lock",
+     "poi.triage_airlock",
+     "poi.decontamination_gate"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.quarantine_module",
+     "biome.deep_hab"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Medical Lock Delay",
+     "scanner": "The medical lock still has sterile stock, but its doors failed closed under quarantine and liability flags.",
+     "field_note": "Supplies survived. Access did not.",
+     "terminal": "Medical lock status: oxygen, sedatives and pressure wraps available. Entry denied pending contamination review and asset-preservation authorization.",
+     "audio": "The room that could help them waited for permission.",
+     "in_game_wiki": "Medical locks make the Deep Reach lie physical. Quarantine language protected process custody while people waited on the wrong side of a sealed door.",
+     "external_site": "Medical Lock Delay is a Deep Reach evidence packet: the colony had supplies and procedures, but authorization logic turned medical infrastructure into a wall."
+    },
+    "ru_RU": {
+     "title": "Задержка медицинского шлюза",
+     "scanner": "В медшлюзе еще есть стерильные запасы, но двери закрылись на карантинных и liability флагах.",
+     "field_note": "Припасы выжили. Доступ нет.",
+     "terminal": "Статус медшлюза: кислород, седативы и давящие повязки доступны. Вход запрещен до contamination review и asset-preservation authorization.",
+     "audio": "Комната, которая могла помочь, ждала разрешения.",
+     "in_game_wiki": "Медицинские шлюзы делают ложь Deep Reach физической. Язык карантина защищал процесс и активы, пока люди ждали за закрытой дверью.",
+     "external_site": "Задержка медицинского шлюза - доказательный пакет Deep Reach: припасы и процедуры были, но логика авторизации превратила медицину в стену."
+    },
+    "ja_JP": {
+     "title": "医療ロック遅延",
+     "scanner": "医療ロックには滅菌在庫が残るが、扉は検疫と責任フラグで閉じた。",
+     "field_note": "物資は生き残った。アクセスは死んだ。",
+     "terminal": "医療ロック状態: 酸素、鎮静剤、圧迫包帯あり。汚染審査と資産保全認可待ちで入室拒否。",
+     "audio": "助けられる部屋は許可を待った。",
+     "in_game_wiki": "医療ロックはDeep Reachの嘘を物理化する。検疫語は人を扉の外に置き、工程管理を守った。",
+     "external_site": "医療ロック遅延は証拠パケットだ。物資も手順もあったが、認可ロジックが医療を壁にした。"
+    },
+    "zh_CN": {
+     "title": "医疗锁延迟",
+     "scanner": "医疗锁仍有无菌库存，但门因隔离与责任标记失败关闭。",
+     "field_note": "补给活了下来。访问没有。",
+     "terminal": "医疗锁状态：氧气、镇静剂、压力绷带可用。因污染复核和资产保全授权等待，入口拒绝。",
+     "audio": "本可以救人的房间在等许可。",
+     "in_game_wiki": "医疗锁让Deep Reach的谎言实体化。隔离语言保护了流程与资产，把人留在封门外。",
+     "external_site": "医疗锁延迟是Deep Reach证据包：殖民地有补给和流程，但授权逻辑把医疗基础设施变成墙。"
+    },
+    "fr_FR": {
+     "title": "Délai du sas médical",
+     "scanner": "Le sas médical avait des stocks, mais l'accès a cédé sous drapeaux de quarantaine et de responsabilité.",
+     "field_note": "Les stocks ont survécu. L'accès non.",
+     "terminal": "Journal médical: oxygène et sédatifs disponibles. Accès refusé avant review et asset authorization.",
+     "audio": "La pièce attendait une permission.",
+     "in_game_wiki": "Le sas médical rend le mensonge Deep Reach tangible: l'aide existait, la procédure gardait la porte close.",
+     "external_site": "Article de preuve sur autorisation, quarantaine et infrastructure médicale transformée en mur."
+    },
+    "es_ES": {
+     "title": "Demora de esclusa médica",
+     "scanner": "La esclusa médica tenía stock, pero el acceso falló por cuarentena y responsabilidad.",
+     "field_note": "Las provisiones sobrevivieron. El acceso no.",
+     "terminal": "Registro médico: oxígeno y sedantes disponibles. Acceso denegado hasta revisión y autorización de activos.",
+     "audio": "La sala esperaba permiso.",
+     "in_game_wiki": "La esclusa médica vuelve físico el engaño de Deep Reach: había ayuda, pero el procedimiento cerró la puerta.",
+     "external_site": "Artículo de prueba sobre autorización, cuarentena e infraestructura médica convertida en muro."
+    },
+    "de_DE": {
+     "title": "Medizinische Schleusenverzögerung",
+     "scanner": "Die Medschleuse hatte Vorräte, doch Zugang scheiterte an Quarantäne- und Haftungsflags.",
+     "field_note": "Vorräte überlebten. Zugang nicht.",
+     "terminal": "Medizinlog: Sauerstoff und Sedativa verfügbar. Zugang bis Review und Asset Authorization verweigert.",
+     "audio": "Der Raum wartete auf Erlaubnis.",
+     "in_game_wiki": "Die Medschleuse macht Deep Reachs Lüge greifbar: Hilfe existierte, Verfahren hielt die Tür zu.",
+     "external_site": "Beweisartikel über Freigabe, Quarantäne und medizinische Infrastruktur als Wand."
+    },
+    "pl_PL": {
+     "title": "Opóźnienie śluzy medycznej",
+     "scanner": "Śluza medyczna miała zapasy, lecz dostęp przegrał z flagami kwarantanny i odpowiedzialności.",
+     "field_note": "Zapasy przetrwały. Dostęp nie.",
+     "terminal": "Log medyczny: tlen i sedatywy dostępne. Dostęp odmówiony do review i asset authorization.",
+     "audio": "Pokój czekał na zgodę.",
+     "in_game_wiki": "Śluza medyczna ucieleśnia kłamstwo Deep Reach: pomoc istniała, procedura trzymała drzwi zamknięte.",
+     "external_site": "Artykuł dowodowy o autoryzacji, kwarantannie i medycznej infrastrukturze jako ścianie."
+    },
+    "uk_UA": {
+     "title": "Затримка медичного шлюзу",
+     "scanner": "Медичний шлюз мав запаси, але доступ програв карантинним і юридичним прапорам.",
+     "field_note": "Запаси вижили. Доступ ні.",
+     "terminal": "Медичний лог: кисень і седативи доступні. Вхід відмовлено до review та asset authorization.",
+     "audio": "Кімната чекала дозволу.",
+     "in_game_wiki": "Медичний шлюз робить брехню Deep Reach фізичною: допомога існувала, процедура тримала двері зачиненими.",
+     "external_site": "Доказова стаття про авторизацію, карантин і медичну інфраструктуру як стіну."
+    },
+    "ar_SA": {
+     "title": "تأخير القفل الطبي",
+     "scanner": "كان في القفل الطبي مخزون، لكن الوصول فشل بسبب أعلام الحجر والمسؤولية.",
+     "field_note": "نجت الإمدادات. لم ينج الوصول.",
+     "terminal": "سجل طبي: أكسجين ومهدئات متاحة. الدخول مرفوض حتى المراجعة وتصريح حفظ الأصول.",
+     "audio": "انتظرت الغرفة الإذن.",
+     "in_game_wiki": "القفل الطبي يجعل كذبة Deep Reach مادية: المساعدة موجودة، لكن الإجراء أبقى الباب مغلقا.",
+     "external_site": "مقال دليل عن التفويض والحجر والبنية الطبية كجدار."
+    },
+    "id_ID": {
+     "title": "Tunda Kunci Medis",
+     "scanner": "Kunci medis punya stok, tetapi akses kalah oleh flag karantina dan liabilitas.",
+     "field_note": "Stok selamat. Akses tidak.",
+     "terminal": "Log medis: oksigen dan sedatif tersedia. Akses ditolak sampai review dan asset authorization.",
+     "audio": "Ruangan itu menunggu izin.",
+     "in_game_wiki": "Kunci medis membuat kebohongan Deep Reach menjadi fisik: bantuan ada, prosedur menutup pintu.",
+     "external_site": "Artikel bukti tentang otorisasi, karantina, dan infrastruktur medis sebagai dinding."
+    },
+    "ko_KR": {
+     "title": "의료 락 지연",
+     "scanner": "의료 락에는 재고가 있었지만 접근은 격리와 책임 플래그에 막혔다.",
+     "field_note": "보급품은 살아남았다. 접근은 아니다.",
+     "terminal": "의료 로그: 산소와 진정제 사용 가능. review와 asset authorization 전까지 접근 거부.",
+     "audio": "그 방은 허가를 기다렸다.",
+     "in_game_wiki": "의료 락은 Deep Reach의 거짓을 물리화한다. 도움은 있었지만 절차가 문을 닫았다.",
+     "external_site": "승인, 격리, 의료 인프라가 벽이 되는 증거 문서."
+    },
+    "he_IL": {
+     "title": "עיכוב מנעול רפואי",
+     "scanner": "במנעול הרפואי היה מלאי, אך הגישה נכשלה בגלל דגלי הסגר ואחריות.",
+     "field_note": "הציוד שרד. הגישה לא.",
+     "terminal": "יומן רפואי: חמצן וסמי הרגעה זמינים. גישה נדחתה עד בדיקה ואישור נכסים.",
+     "audio": "החדר חיכה לרשות.",
+     "in_game_wiki": "המנעול הרפואי הופך את השקר של Deep Reach לפיזי: עזרה הייתה קיימת, אך נוהל סגר את הדלת.",
+     "external_site": "מאמר ראיה על אישור, הסגר ותשתית רפואית שהפכה לקיר."
+    },
+    "pt_BR": {
+     "title": "Atraso da Eclusa Médica",
+     "scanner": "A eclusa médica tinha estoque, mas acesso falhou por flags de quarentena e responsabilidade.",
+     "field_note": "Suprimentos sobreviveram. Acesso não.",
+     "terminal": "Log médico: oxigênio e sedativos disponíveis. Acesso negado até review e asset authorization.",
+     "audio": "A sala esperou permissão.",
+     "in_game_wiki": "A eclusa médica torna física a mentira da Deep Reach: ajuda existia, mas procedimento fechou a porta.",
+     "external_site": "Artigo de prova sobre autorização, quarentena e infraestrutura médica como parede."
+    },
+    "nl_NL": {
+     "title": "Vertraging medische sluis",
+     "scanner": "De medische sluis had voorraad, maar toegang faalde door quarantaine- en aansprakelijkheidsvlaggen.",
+     "field_note": "Voorraad overleefde. Toegang niet.",
+     "terminal": "Medisch log: zuurstof en sedatie beschikbaar. Toegang geweigerd tot review en asset authorization.",
+     "audio": "De kamer wachtte op toestemming.",
+     "in_game_wiki": "De medische sluis maakt de Deep Reach-leugen tastbaar: hulp bestond, maar procedure hield de deur dicht.",
+     "external_site": "Een bewijsartikel over autorisatie, quarantaine en medische infrastructuur als muur."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P045_BLACK_BOX_NAME_STACK",
+   "article_id": "hecton8.black_box_name_stack",
+   "title_key": "applied_lore.black_box_name_stack.title",
+   "unlock": {
+    "primary": "unlock.first_black_box_name_stack",
+    "poi_tags": [
+     "poi.black_box_stack",
+     "poi.evacuation_manifest",
+     "poi.name_archive"
+    ],
+    "biome_tags": [
+     "biome.deep_colony",
+     "biome.factory_threshold",
+     "biome.archive_vault"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Black Box Name Stack",
+     "scanner": "The stack preserves names, shift hashes and final pressure states. It is not lore. It is evidence.",
+     "field_note": "Names are payload. Taking them changes the ending.",
+     "terminal": "Archive stack readable. Crew identities cross-linked with evacuation holds, Atlas repair state and Deep Reach redaction requests.",
+     "audio": "The ocean kept the names better than the company did.",
+     "in_game_wiki": "The black box name stack makes the final truth portable. Evidence, broadcast packets and public dossiers depend on which names, hashes and receipts leave the water.",
+     "external_site": "Black Box Name Stack connects colony layout to endgame consequence: recovered names can become proof, leverage, memorial, payout modifier or public release payload."
+    },
+    "ru_RU": {
+     "title": "Стек имен черных ящиков",
+     "scanner": "Стек хранит имена, хэши смен и последние состояния давления. Это не лор. Это доказательство.",
+     "field_note": "Имена - полезная нагрузка. Если их вынести, финал меняется.",
+     "terminal": "Архивный стек читается. Личности экипажа связаны с удержаниями эвакуации, состоянием ремонта Atlas и запросами редактуры Deep Reach.",
+     "audio": "Океан сохранил имена лучше, чем компания.",
+     "in_game_wiki": "Стек имен black box делает финальную правду переносимой. Доказательства, broadcast-пакеты и публичные досье зависят от того, какие имена, хэши и квитанции выйдут из воды.",
+     "external_site": "Стек имен черных ящиков связывает планировку колонии с финальными последствиями: имена могут стать уликой, рычагом, мемориалом, модификатором выплаты или публичным payload."
+    },
+    "ja_JP": {
+     "title": "ブラックボックス名簿スタック",
+     "scanner": "スタックは名前、シフトハッシュ、最終圧力状態を保持する。これは設定ではない。証拠だ。",
+     "field_note": "名前はペイロードだ。持ち帰れば結末が変わる。",
+     "terminal": "記録スタック可読。乗員IDは避難保留、Atlas修理状態、Deep Reach黒塗り要求と連結。",
+     "audio": "海は会社より名前をよく保存した。",
+     "in_game_wiki": "ブラックボックス名簿は、最後の真実を運べるものにする。証拠、放送パケット、公開ドシエは、どの名前、ハッシュ、受領記録が水から出るかに依存する。",
+     "external_site": "ブラックボックス名簿スタックは植民地配置を終盤結果へ接続する。名前は証拠、交渉材料、追悼、支払い補正、公開情報になる。"
+    },
+    "zh_CN": {
+     "title": "黑匣姓名堆栈",
+     "scanner": "堆栈保存姓名、班次哈希和最终压力状态。这不是设定。这是证据。",
+     "field_note": "姓名是载荷。带走它们会改变结局。",
+     "terminal": "档案堆栈可读。船员身份与疏散搁置、Atlas修复状态和Deep Reach删改请求交叉链接。",
+     "audio": "海洋比公司更好地保存了名字。",
+     "in_game_wiki": "黑匣子姓名栈让最终真相可以被携带。证据、广播包和公共档案取决于哪些姓名、哈希和收据离开水下。",
+     "external_site": "黑匣姓名堆栈把殖民地布局连接到终局后果：姓名可以成为证据、筹码、纪念、付款修正或公开载荷。"
+    },
+    "fr_FR": {
+     "title": "Pile de noms boîte noire",
+     "scanner": "La pile garde noms, hashes de shift et derniers états de pression. C'est preuve et payload final.",
+     "field_note": "Les noms changent la fin.",
+     "terminal": "Archive lisible: identités liées aux holds d'évacuation, réparation Atlas et caviardages Deep Reach.",
+     "audio": "L'océan a mieux gardé les noms.",
+     "in_game_wiki": "La pile de noms de boîte noire rend la vérité finale transportable. Preuves, paquets broadcast et dossiers publics dépendent des noms, hash et reçus qui sortent de l'eau.",
+     "external_site": "Relie la disposition colonie aux conséquences finales: preuve, levier, mémorial, paiement ou publication."
+    },
+    "es_ES": {
+     "title": "Pila de nombres de caja negra",
+     "scanner": "La pila guarda nombres, hashes de turno y últimos estados de presión. Es prueba y carga final.",
+     "field_note": "Los nombres cambian el final.",
+     "terminal": "Archivo legible: identidades cruzadas con retenciones de evacuación, reparación Atlas y tachaduras Deep Reach.",
+     "audio": "El océano guardó mejor los nombres.",
+     "in_game_wiki": "La pila de nombres de caja negra vuelve transportable la verdad final. Evidencia, paquetes broadcast y dosieres públicos dependen de qué nombres, hashes y recibos salgan del agua.",
+     "external_site": "Conecta la disposición colonial con consecuencias finales: prueba, palanca, memorial, pago o publicación."
+    },
+    "de_DE": {
+     "title": "Blackbox-Namensstapel",
+     "scanner": "Der Stapel bewahrt Namen, Schicht-Hashes und letzte Druckzustände. Er ist Beweis und Endpayload.",
+     "field_note": "Namen ändern das Ende.",
+     "terminal": "Archiv lesbar: Identitäten kreuzen Evakuierungssperren, Atlas-Reparatur und Deep-Reach-Schwärzungen.",
+     "audio": "Der Ozean bewahrte Namen besser.",
+     "in_game_wiki": "Der Black-Box-Namensstapel macht die letzte Wahrheit tragbar. Beweise, Broadcast-Pakete und öffentliche Dossiers hängen davon ab, welche Namen, Hashes und Quittungen das Wasser verlassen.",
+     "external_site": "Verbindet Kolonielayout mit Endfolgen: Beweis, Druckmittel, Memorial, Auszahlung oder Veröffentlichung."
+    },
+    "pl_PL": {
+     "title": "Stos nazwisk z czarnych skrzynek",
+     "scanner": "Stos trzyma nazwiska, hashe zmian i ostatnie stany ciśnienia. To dowód i finałowy payload.",
+     "field_note": "Nazwiska zmieniają zakończenie.",
+     "terminal": "Archiwum czytelne: tożsamości krzyżują się z holdami ewakuacji, naprawą Atlas i redakcją Deep Reach.",
+     "audio": "Ocean lepiej zachował nazwiska.",
+     "in_game_wiki": "Stos nazwisk z czarnej skrzynki czyni ostateczną prawdę przenośną. Dowody, pakiety broadcast i publiczne dossier zależą od tego, które nazwiska, hashe i pokwitowania wyjdą z wody.",
+     "external_site": "Łączy układ kolonii z konsekwencją finału: dowód, dźwignia, memoriał, wypłata lub publikacja."
+    },
+    "uk_UA": {
+     "title": "Стек імен чорних скриньок",
+     "scanner": "Стек зберігає імена, хеші змін і останні стани тиску. Це доказ і фінальний payload.",
+     "field_note": "Імена змінюють фінал.",
+     "terminal": "Архів читається: особи перетинаються з утриманнями евакуації, ремонтом Atlas і редагуванням Deep Reach.",
+     "audio": "Океан зберіг імена краще.",
+     "in_game_wiki": "Стек імен black box робить фінальну правду переносною. Докази, broadcast-пакети й публічні досьє залежать від того, які імена, хеші та квитанції вийдуть із води.",
+     "external_site": "Зв'язує план колонії з фінальними наслідками: доказ, важіль, меморіал, виплата чи публічний реліз."
+    },
+    "ar_SA": {
+     "title": "رزمة أسماء الصندوق الأسود",
+     "scanner": "تحفظ الرزمة الأسماء وهاشات الورديات وآخر حالات الضغط. إنها دليل وحمولة نهاية.",
+     "field_note": "الأسماء تغير النهاية.",
+     "terminal": "الأرشيف مقروء: الهويات متقاطعة مع تعليقات الإخلاء وإصلاح Atlas وتنقيحات Deep Reach.",
+     "audio": "حفظ المحيط الأسماء أفضل.",
+     "in_game_wiki": "تجعل حزمة أسماء الصندوق الأسود الحقيقة النهائية قابلة للحمل. تعتمد الأدلة وحزم broadcast والملفات العامة على الأسماء والهاشات والإيصالات التي تخرج من الماء.",
+     "external_site": "تصل تخطيط المستعمرة بعواقب النهاية: دليل أو ضغط أو نصب تذكاري أو دفع أو نشر عام."
+    },
+    "id_ID": {
+     "title": "Tumpukan Nama Kotak Hitam",
+     "scanner": "Stack menyimpan nama, hash shift, dan status tekanan akhir. Ini bukti dan payload akhir.",
+     "field_note": "Nama mengubah ending.",
+     "terminal": "Arsip terbaca: identitas terkait evacuation hold, repair Atlas, dan redaksi Deep Reach.",
+     "audio": "Laut menyimpan nama lebih baik.",
+     "in_game_wiki": "Stack nama black box membuat kebenaran akhir bisa dibawa. Bukti, paket broadcast, dan dossier publik bergantung pada nama, hash, dan tanda terima mana yang keluar dari air.",
+     "external_site": "Menghubungkan layout koloni ke konsekuensi akhir: bukti, leverage, memorial, payout, atau rilis publik."
+    },
+    "ko_KR": {
+     "title": "블랙박스 이름 스택",
+     "scanner": "스택은 이름, 근무 hash, 마지막 압력 상태를 보존한다. 증거이자 엔딩 payload다.",
+     "field_note": "이름은 엔딩을 바꾼다.",
+     "terminal": "아카이브 읽기 가능: 정체성이 evacuation hold, Atlas 수리, Deep Reach 삭제와 교차한다.",
+     "audio": "바다는 회사보다 이름을 잘 보존했다.",
+     "in_game_wiki": "블랙박스 이름 스택은 최종 진실을 운반 가능한 것으로 만든다. 증거, broadcast 패킷, 공개 dossier는 어떤 이름, 해시, 영수증이 물 밖으로 나가는지에 달려 있다.",
+     "external_site": "식민지 배치를 최종 결과와 연결한다: 증거, 지렛대, 추모, payout, 공개 release."
+    },
+    "he_IL": {
+     "title": "ערימת שמות קופסה שחורה",
+     "scanner": "הערימה שומרת שמות, hashes של משמרות ומצבי לחץ אחרונים. זו ראיה ומטען סיום.",
+     "field_note": "שמות משנים את הסוף.",
+     "terminal": "הארכיון קריא: זהויות מצטלבות עם עיכובי פינוי, תיקון Atlas והשחרות Deep Reach.",
+     "audio": "האוקיינוס שמר את השמות טוב יותר.",
+     "in_game_wiki": "מערך שמות הקופסה השחורה הופך את האמת הסופית לניידת. ראיות, חבילות broadcast ותיקי ציבור תלויים בשמות, בהאשים ובקבלות שיוצאים מן המים.",
+     "external_site": "מחברת את מבנה המושבה לתוצאות הסוף: ראיה, מנוף, זיכרון, תשלום או פרסום."
+    },
+    "pt_BR": {
+     "title": "Pilha de Nomes da Caixa-Preta",
+     "scanner": "A pilha guarda nomes, hashes de turno e estados finais de pressão. É prova e payload final.",
+     "field_note": "Nomes mudam o final.",
+     "terminal": "Arquivo legível: identidades cruzadas com holds de evacuação, reparo Atlas e censuras Deep Reach.",
+     "audio": "O oceano guardou melhor os nomes.",
+     "in_game_wiki": "A pilha de nomes da caixa-preta torna a verdade final portátil. Evidências, pacotes broadcast e dossiês públicos dependem de quais nomes, hashes e recibos saem da água.",
+     "external_site": "Conecta layout da colônia às consequências finais: prova, alavanca, memorial, payout ou publicação."
+    },
+    "nl_NL": {
+     "title": "Naamstapel uit zwarte dozen",
+     "scanner": "De stack bewaart namen, shift hashes en laatste drukstatus. Het is bewijs en eindpayload.",
+     "field_note": "Namen veranderen het einde.",
+     "terminal": "Archief leesbaar: identiteiten kruisen evacuation holds, Atlas-repair en Deep Reach redactions.",
+     "audio": "De oceaan bewaarde de namen beter.",
+     "in_game_wiki": "De black-box-naamstack maakt de uiteindelijke waarheid draagbaar. Bewijs, broadcast-pakketten en publieke dossiers hangen af van welke namen, hashes en ontvangstbewijzen het water verlaten.",
+     "external_site": "Koppelt kolonielay-out aan eindgevolgen: bewijs, hefboom, memorial, payout of publieke release."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

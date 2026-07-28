@@ -1,11 +1,46 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS263_WELDED_SEAM_RIVET_ROW_ARTICLE",
-  "title": "Welded Seam And Rivet Row Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS263_WELDED_SEAM_RIVET_ROW_ARTICLE",
+ "title": "Welded Seam And Rivet Row Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1430_WELDED_SEAM_RIVET_ROW_LEDGER",
+   "release_set_id": "RS263_WELDED_SEAM_RIVET_ROW_ARTICLE",
+   "article_id": "applied_lore.welded_seam_rivet_row_ledger",
+   "title_key": "LORE_WELDED_SEAM_RIVET_ROW_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": "Narrative",
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -14,251 +49,217 @@
     "data_monolith_ready": false,
     "h8bin_ready": false,
     "unity_placement_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1430_WELDED_SEAM_RIVET_ROW_LEDGER",
-      "release_set_id": "RS263_WELDED_SEAM_RIVET_ROW_ARTICLE",
-      "article_id": "applied_lore.welded_seam_rivet_row_ledger",
-      "title_key": "LORE_WELDED_SEAM_RIVET_ROW_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": "Narrative",
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.welded_seam_rivet_row_ledger",
-        "secondary": [
-          "unlock.first_welded_seam_scan",
-          "unlock.first_oxidized_rivet_row",
-          "unlock.first_buried_gasket_joint"
-        ],
-        "poi_tags": [
-          "poi.welded_seam_rivet_row",
-          "poi.oxidized_rivet_line",
-          "poi.torn_repair_plate_edge",
-          "poi.gasket_buried_under_weld"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.pressure_base_exterior",
-          "biome.opened_wreck"
-        ]
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Hull Joint Scanner",
-          "terminal": "Old Colony Pressure Repair Readout",
-          "audio": "Marauder Hull Trace Instructor",
-          "in_game_wiki": "PDA Welded Joint Field Guide",
-          "external_site": "Public Site Hull Repair Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_welded_seam_or_rivet_row_trace",
-        "truth_payload": "Repaired hull joints reveal pressure cycles, field triage, buried gasket lines and later salvage reopening.",
-        "player_question": "Which seam was meant to hold, and which one was meant to hide the failure?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Welded Seam and Rivet Row Ledger",
-          "scanner": "HULL JOINT // Lumpy underwater weld bead, oxidized rivet row, torn repair plate edge, salt run beneath seam. Gasket line is partly buried under later metalwork. This was not a factory joint.",
-          "terminal": "JOINT READ // Weld over gasket means repair after seal compression. Rust below rivets means repeated wet breathing, not one flood. Bright scrape on bead crest means a tool tested the seam after pressure cycling.",
-          "audio": "A weld is a signature made by heat. A rivet row is the part that cannot lie about rhythm.",
-          "in_game_wiki": "Welded seams and rivet rows are where the colony's clean geometry starts confessing. Factory hull lines repeat with patience: spacing, bevel, gasket, inspection strip. Field repairs do not. They stutter, swell, overlap old paint and leave heat scars where no launch diagram expected heat.\n\nThe order tells the story. A rivet row under a later weld means the original fastening was no longer trusted. Salt hanging below the bead means the joint breathed water more than once. A gasket channel half-buried by metal means someone chose strength over serviceability. Torn plate edges beside a clean bead usually mark a hurry: enough time to seal, not enough time to make the hull honest.\n\nFor a Marauder, a repaired seam can be better than a map. It points toward a room that leaked, a bulkhead that flexed, a crew who had tools but no replacement part, or a salvage crew that reopened the wound after everyone else stopped calling it a repair.",
-          "external_site": "Welded seams and rivet rows preserve the pressure history of repaired hulls, base modules and opened wrecks.",
-          "external_site_article": "A pressure hull is designed to hide panic. Its panels are smooth, its fasteners evenly spaced, its inspection marks bureaucratic and small. The welded seam breaks that language. It is local, ugly, hot and specific. It names the place where a system stopped being maintained and started being begged to hold.\n\nRead the seam from old to new. Factory rivets sit in rows because load was planned before the ocean touched the wall. Field welds swell because hands made them under bad access, bad visibility and bad time. Rust below a rivet head shows wet air moving through a joint. Salt below a weld bead shows a leak that dried and returned. A bolted flange beside a torn repair plate means the crew tried to make future access possible, then abandoned the courtesy when pressure got loud.\n\nThe most valuable seams are not the largest. They are the ones that interrupt a clean pattern. A single ugly bead across a maintenance panel can reveal a sealed compartment, a hidden casualty pocket, a quarantined machine, or a route where later salvagers cut through the same fear with better tools and less mercy.",
-          "field_note": "If a seam looks too new, ask what old failure it is trying to cover."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал сварного шва и ряда заклепок",
-          "scanner": "СТЫК КОРПУСА // Бугристый подводный сварной валик, окисленный ряд заклепок, рваный край ремонтной пластины, солевой потек под швом. Линия прокладки частично похоронена поздним металлом. Это не заводской стык.",
-          "terminal": "ЧТЕНИЕ СТЫКА // Сварка поверх прокладки значит ремонт после сжатия уплотнения. Ржавчина под заклепками - повторное влажное дыхание, не один потоп. Светлая царапина на гребне валика: шов проверяли инструментом после циклов давления.",
-          "audio": "Сварка - подпись, оставленная жаром. Ряд заклепок - часть, которая не умеет врать про ритм.",
-          "in_game_wiki": "Сварные швы и ряды заклепок - места, где чистая геометрия колонии начинает признаваться. Заводские линии корпуса повторяются терпеливо: шаг, фаска, прокладка, полоса осмотра. Полевой ремонт так не говорит. Он сбивается, распухает, наезжает на старую краску и оставляет следы жара там, где в стартовой схеме жара быть не должно.\n\nПорядок важнее формы. Ряд заклепок под поздней сваркой означает, что исходному креплению больше не доверяли. Соль под валиком говорит, что стык дышал водой не один раз. Канал прокладки, наполовину похороненный металлом, означает выбор прочности вместо обслуживания. Рваные края пластины рядом с чистым валиком обычно говорят о спешке: хватило времени закрыть течь, но не хватило времени сделать корпус честным.\n\nДля мародера ремонтный шов иногда лучше карты. Он ведет к комнате, которая текла, к переборке, которая играла под давлением, к экипажу с инструментом, но без запасной детали, или к поздним сборщикам, которые открыли ту же рану уже не ремонтом, а добычей.",
-          "external_site": "Сварные швы и ряды заклепок хранят историю давления на ремонтированных корпусах, модулях базы и вскрытых обломках.",
-          "external_site_article": "Напорный корпус спроектирован так, чтобы прятать панику. Панели гладкие, крепеж равномерный, отметки инспекции мелкие и чиновные. Сварной шов ломает этот язык. Он местный, уродливый, горячий и конкретный. Он называет место, где систему перестали обслуживать и начали просить держаться.\n\nЧитать шов нужно от старого к новому. Заводские заклепки стоят рядами, потому что нагрузку посчитали до того, как океан коснулся стены. Полевые валики пухнут, потому что их клали руками при плохом доступе, мутной воде и плохом времени. Ржавчина под головкой заклепки показывает влажный воздух в стыке. Соль под валиком показывает течь, которая высохла и вернулась. Болтовой фланец рядом с рваной пластиной значит, что экипаж еще пытался оставить будущий доступ, а потом отказался от этой вежливости, когда давление стало громче.\n\nСамые ценные швы редко бывают самыми большими. Важнее те, что перебивают чистый узор. Один некрасивый валик поперек сервисной панели может указать на запечатанный отсек, карман с погибшими, карантинную машину или маршрут, где поздние сборщики резали тот же страх уже лучшим инструментом и меньшей жалостью.",
-          "field_note": "Если шов выглядит слишком новым, спроси, какую старую поломку он пытается закрыть."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "溶接シームとリベット列台帳",
-          "scanner": "船殻接合部 // 水中で盛り上がった溶接ビード、酸化したリベット列、裂けた補修板の縁、シーム下の塩筋。ガスケット線は後の金属で半分埋まっている。工場接合ではない。",
-          "terminal": "接合読取 // ガスケット上の溶接は、シール圧縮後の修理。リベット下の錆は一度の浸水ではなく、湿った呼吸の反復。ビード頂部の明るい擦り傷は、圧力周期後に工具で試された跡。",
-          "audio": "溶接は熱で書いた署名だ。リベット列はリズムについて嘘をつけない部分だ。",
-          "in_game_wiki": "溶接シームとリベット列は、植民地の清潔な幾何が告白を始める場所だ。工場の船殻線は辛抱強く反復する。間隔、面取り、ガスケット、検査帯。現場修理はそう話さない。つまずき、膨れ、古い塗装に重なり、発射図面が熱を想定しなかった場所に熱痕を残す。\n\n順番が物語を決める。後の溶接の下にリベット列があるなら、元の固定はもう信じられていなかった。ビード下の塩は、接合部が何度も水を呼吸した印だ。半分金属で埋まったガスケット溝は、整備性より強度を選んだ証拠だ。きれいなビード横の裂けた板縁は、多くの場合、封じる時間はあったが正直な修理にする時間はなかったことを示す。\n\nマローダーにとって、補修シームは地図より役に立つことがある。漏れた部屋、圧力で撓んだ隔壁、工具はあったが部品はなかった乗員、あるいは後の回収者が同じ傷を修理ではなく採取として開いた場所へ導く。",
-          "external_site": "溶接シームとリベット列は、修理された船殻、基地モジュール、開かれた残骸の圧力履歴を保存する。",
-          "external_site_article": "圧力殻は恐慌を隠すよう設計されている。パネルは滑らかで、固定具は等間隔、検査印は小さく官僚的だ。溶接シームはその言語を壊す。局所的で、醜く、熱く、具体的だ。そこは保守が終わり、持ちこたえてくれと頼み始めた場所だ。\n\n古いものから新しいものへ読め。工場リベットは、海が壁に触れる前に荷重が計算されていたから列をなす。現場ビードは、悪い足場、悪い視界、悪い時間の中で人の手が置いたから膨れる。リベット頭下の錆は湿った空気の移動を示す。溶接下の塩は乾いて戻った漏れを示す。裂けた補修板の横のボルトフランジは、未来のアクセスを残そうとした後、圧力が大きくなってその礼儀を捨てたことを示す。\n\n最も価値あるシームは最大のものではない。清潔なパターンを遮るものだ。整備パネルを横切る一本の醜いビードが、封じた区画、犠牲者の空間、隔離された機械、あるいは後の回収者が同じ恐怖をよりよい工具と少ない慈悲で切った経路を示す。",
-          "field_note": "シームが新しすぎるなら、それが隠そうとしている古い失敗を探せ。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "焊缝与铆钉列账本",
-          "scanner": "船体接缝 // 水下鼓起的焊道、氧化铆钉列、撕裂维修板边、缝下盐痕。密封垫线被后加金属半埋。这不是工厂接缝。",
-          "terminal": "读接缝 // 焊在密封垫上，说明密封受压后才维修。铆钉下锈蚀说明反复潮湿呼吸，不是一次进水。焊道顶端亮擦痕说明压力循环后有人用工具试过。",
-          "audio": "焊缝是热写下的签名。铆钉列是不懂伪造节奏的部分。",
-          "in_game_wiki": "焊缝和铆钉列，是殖民地干净几何开始招供的地方。工厂船体线耐心重复：间距、倒角、密封垫、检查条。现场维修不是这种语气。它结巴、膨胀、压过旧漆，在发射图里不该有热的地方留下热痕。\n\n顺序讲故事。后期焊道下面压着铆钉列，说明原来的固定已经不被信任。焊道下悬盐说明接缝不止一次呼吸过水。密封垫槽被金属半埋，说明有人选择强度而不是可维护性。干净焊道旁的撕裂板边通常说明很急：有时间封住泄漏，没有时间让船体诚实。\n\n对打捞者来说，修补接缝有时比地图更有用。它指向漏过水的房间、被压力扭弯的隔壁、有工具却没有替换件的船员，或后来的回收队把同一处伤口重新打开，只是那时已经不叫维修。",
-          "external_site": "焊缝和铆钉列保存着修复船体、基地模块和被打开残骸的压力史。",
-          "external_site_article": "压力壳被设计来隐藏恐慌。面板平滑，紧固件等距，检查标记小而官僚。焊缝打破了这种语言。它局部、丑陋、灼热、具体。它指出系统停止维护、开始被人恳求撑住的位置。\n\n从旧到新读。工厂铆钉成列，是因为海水碰到墙之前载荷已经算好。现场焊道鼓起，是因为人在糟糕通道、糟糕能见度、糟糕时间里下手。铆钉头下的锈说明湿空气穿过接缝。焊道下的盐说明泄漏曾干过又回来。撕裂维修板旁边的螺栓法兰说明船员试图留下未来入口，后来压力变大，他们放弃了这种体面。\n\n最有价值的接缝通常不是最大的，而是打断干净图案的那一道。服务面板上一道难看的焊疤，可能指向封死舱室、遇难者空气袋、隔离机器，或者后来的回收队用更好工具和更少怜悯切开的路线。",
-          "field_note": "如果一道缝看起来太新，问它在替哪一次旧失败遮羞。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre des soudures et rangées de rivets",
-          "scanner": "JOINT DE COQUE // Cordon de soudure sous-marin bosselé, rangée de rivets oxydés, bord de plaque déchiré, trace de sel sous le joint. La ligne de joint est à demi enterrée sous du métal tardif. Ce n'est pas un joint d'usine.",
-          "terminal": "LECTURE DE JOINT // Soudure sur joint : réparation après compression. Rouille sous rivets : respiration humide répétée, pas une seule inondation. Éraflure claire sur cordon : test d'outil après cycles de pression.",
-          "audio": "Une soudure est une signature faite par la chaleur. Une rangée de rivets ne ment pas sur le rythme.",
-          "in_game_wiki": "Les soudures et rangées de rivets sont l'endroit où la géométrie propre de la colonie commence à avouer. Les lignes d'usine répètent avec patience : pas, biseau, joint, bande d'inspection. Les réparations de terrain parlent autrement. Elles hésitent, gonflent, recouvrent la vieille peinture et laissent de la chaleur là où aucun plan de lancement n'en attendait.\n\nL'ordre raconte. Une rangée de rivets sous une soudure tardive signifie que la fixation d'origine n'était plus fiable. Le sel sous le cordon indique que le joint a respiré de l'eau plusieurs fois. Un canal de joint à demi enterré dit qu'on a choisi la force contre l'entretien. Un bord déchiré près d'un cordon propre parle souvent d'urgence : assez de temps pour fermer, pas assez pour rendre la coque honnête.\n\nPour un maraudeur, un joint réparé vaut parfois mieux qu'une carte. Il mène vers une pièce qui fuyait, une cloison qui pliait, un équipage avec des outils mais sans pièce de rechange, ou une équipe de récupération qui a rouvert la blessure quand ce n'était plus une réparation.",
-          "external_site": "Soudures et rangées de rivets conservent l'histoire de pression des coques réparées, modules de base et épaves ouvertes.",
-          "external_site_article": "Une coque pressurisée est conçue pour cacher la panique. Les panneaux sont lisses, les fixations régulières, les marques d'inspection petites et administratives. La soudure casse cette langue. Elle est locale, laide, chaude et précise. Elle nomme l'endroit où l'on a cessé d'entretenir un système pour lui demander de tenir.\n\nLis du vieux vers le neuf. Les rivets d'usine forment des rangées parce que la charge était prévue avant que l'océan touche la paroi. Les cordons de terrain gonflent parce que des mains les ont posés avec mauvais accès, mauvaise visibilité et mauvais délai. La rouille sous une tête de rivet montre l'air humide dans le joint. Le sel sous une soudure montre une fuite qui a séché puis repris. Une bride boulonnée près d'une plaque déchirée signifie qu'on a tenté de garder un accès futur, puis qu'on a abandonné cette politesse quand la pression est devenue plus forte.\n\nLes joints les plus précieux ne sont pas les plus grands. Ce sont ceux qui interrompent un motif propre. Un seul cordon laid à travers un panneau de service peut révéler un compartiment scellé, une poche de victimes, une machine en quarantaine ou la route où des récupérateurs ont découpé la même peur avec de meilleurs outils et moins de pitié.",
-          "field_note": "Si un joint paraît trop neuf, demande quelle vieille panne il tente de couvrir."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de soldaduras y filas de remaches",
-          "scanner": "JUNTA DE CASCO // Cordón submarino abultado, fila de remaches oxidados, borde de placa rasgado, sal bajo la costura. La línea de junta quedó medio enterrada bajo metal posterior. No es junta de fábrica.",
-          "terminal": "LECTURA DE JUNTA // Soldadura sobre junta: reparación tras compresión. Óxido bajo remaches: respiración húmeda repetida, no una sola inundación. Roce brillante en el cordón: prueba con herramienta tras ciclos de presión.",
-          "audio": "Una soldadura es una firma hecha con calor. Una fila de remaches no puede mentir sobre el ritmo.",
-          "in_game_wiki": "Las soldaduras y filas de remaches son donde la geometría limpia de la colonia empieza a confesar. Las líneas de fábrica repiten con paciencia: paso, bisel, junta, banda de inspección. Las reparaciones de campo no hablan así. Tartamudean, se hinchan, pisan pintura vieja y dejan cicatrices de calor donde ningún plano de lanzamiento esperaba calor.\n\nEl orden cuenta la historia. Remaches bajo una soldadura posterior significan que la fijación original dejó de inspirar confianza. Sal bajo el cordón significa que la junta respiró agua más de una vez. Un canal de junta medio enterrado significa que alguien eligió fuerza sobre mantenimiento. Bordes rasgados junto a un cordón limpio suelen marcar prisa: tiempo para cerrar, no para hacer honesto el casco.\n\nPara un merodeador, una costura reparada puede valer más que un mapa. Señala una sala que goteó, un mamparo que flexó, una tripulación con herramientas pero sin repuesto, o un equipo de saqueo que reabrió la herida cuando ya nadie lo llamaba reparación.",
-          "external_site": "Soldaduras y filas de remaches conservan la historia de presión de cascos reparados, módulos de base y restos abiertos.",
-          "external_site_article": "Un casco de presión está diseñado para esconder el pánico. Paneles lisos, fijaciones regulares, marcas de inspección pequeñas. La soldadura rompe ese idioma. Es local, fea, caliente y concreta. Nombra el lugar donde un sistema dejó de mantenerse y empezó a suplicar resistencia.\n\nLee de viejo a nuevo. Los remaches de fábrica forman filas porque la carga fue prevista antes de que el océano tocara la pared. Los cordones de campo se hinchan porque manos los pusieron con mal acceso, mala visibilidad y mal tiempo. Óxido bajo una cabeza de remache muestra aire húmedo en la junta. Sal bajo una soldadura muestra una fuga que se secó y volvió. Una brida atornillada junto a una placa rota significa que intentaron dejar acceso futuro y luego abandonaron esa cortesía cuando la presión habló más alto.\n\nLas costuras más valiosas no son las mayores. Son las que interrumpen un patrón limpio. Un solo cordón feo sobre un panel de servicio puede revelar un compartimento sellado, una bolsa de víctimas, una máquina en cuarentena o la ruta donde otros cortaron el mismo miedo con mejores herramientas y menos misericordia.",
-          "field_note": "Si una costura parece demasiado nueva, pregunta qué vieja falla intenta tapar."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Protokoll für Schweißnähte und Nietreihen",
-          "scanner": "RUMPFSTOSS // Klumpige Unterwasser-Schweißraupe, oxidierte Nietreihe, gerissene Reparaturkante, Salzlauf unter der Naht. Dichtungslinie teils unter späterem Metall begraben. Kein Werksstoß.",
-          "terminal": "NAHTLESUNG // Schweißung über Dichtung: Reparatur nach Kompression. Rost unter Nieten: wiederholtes feuchtes Atmen, keine Einzelflut. Heller Kratzer auf Raupe: Werkzeugtest nach Druckzyklen.",
-          "audio": "Eine Schweißnaht ist eine Signatur aus Hitze. Eine Nietreihe kann über Rhythmus nicht lügen.",
-          "in_game_wiki": "Schweißnähte und Nietreihen sind die Stellen, an denen die saubere Geometrie der Kolonie gesteht. Werkslinien wiederholen geduldig: Abstand, Fase, Dichtung, Prüfstreifen. Feldreparaturen sprechen anders. Sie stolpern, schwellen, überdecken alte Farbe und hinterlassen Hitze dort, wo kein Startplan Hitze erwartete.\n\nDie Reihenfolge erzählt. Eine Nietreihe unter späterer Schweißung bedeutet, dass der ursprünglichen Befestigung nicht mehr vertraut wurde. Salz unter der Raupe zeigt, dass die Fuge mehrmals Wasser atmete. Ein halb begrabener Dichtungskanal bedeutet Stärke statt Wartbarkeit. Gerissene Plattenkanten neben sauberer Raupe sprechen meist von Eile: genug Zeit zum Schließen, nicht genug für Ehrlichkeit.\n\nFür einen Marodeur kann eine reparierte Naht besser sein als eine Karte. Sie führt zu einem Raum, der leckte, einem Schott, das bog, einer Crew mit Werkzeug aber ohne Ersatzteil, oder Bergungstrupps, die dieselbe Wunde später nicht als Reparatur, sondern als Beute öffneten.",
-          "external_site": "Schweißnähte und Nietreihen bewahren Druckgeschichte an reparierten Rümpfen, Basismodulen und geöffneten Wracks.",
-          "external_site_article": "Ein Druckrumpf ist gebaut, um Panik zu verstecken. Paneele glatt, Befestigungen gleichmäßig, Prüfmarken klein und bürokratisch. Die Schweißnaht bricht diese Sprache. Sie ist lokal, hässlich, heiß und konkret. Sie nennt den Ort, an dem ein System nicht mehr gewartet, sondern zum Halten überredet wurde.\n\nLies von alt nach neu. Werksnieten stehen in Reihen, weil Last berechnet war, bevor der Ozean die Wand berührte. Feldraupen schwellen, weil Hände sie bei schlechtem Zugang, schlechter Sicht und schlechter Zeit legten. Rost unter einem Nietkopf zeigt feuchte Luft in der Fuge. Salz unter einer Schweißung zeigt ein Leck, das trocknete und zurückkam. Ein verschraubter Flansch neben gerissener Platte bedeutet, dass die Crew künftigen Zugang lassen wollte und diese Höflichkeit aufgab, als der Druck lauter wurde.\n\nDie wertvollsten Nähte sind selten die größten. Es sind die, die ein sauberes Muster unterbrechen. Eine hässliche Raupe über ein Servicepaneel kann ein versiegeltes Abteil, eine Opferkammer, eine Quarantänemaschine oder eine Route zeigen, wo spätere Bergung den gleichen Schrecken mit besseren Werkzeugen und weniger Gnade schnitt.",
-          "field_note": "Wenn eine Naht zu neu wirkt, frag welchen alten Fehler sie verdecken soll."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr spawów i rzędów nitów",
-          "scanner": "ŁĄCZENIE KADŁUBA // Grudkowaty podwodny spaw, utleniony rząd nitów, rozdarta krawędź płyty, sól pod szwem. Linia uszczelki częściowo pogrzebana pod późniejszym metalem. To nie fabryka.",
-          "terminal": "CZYTANIE ŁĄCZENIA // Spaw na uszczelce: naprawa po kompresji. Rdza pod nitami: powtarzany wilgotny oddech. Jasne starcie na grzbiecie spawu: test narzędziem po cyklach ciśnienia.",
-          "audio": "Spaw to podpis złożony ciepłem. Rząd nitów nie kłamie o rytmie.",
-          "in_game_wiki": "Spawy i rzędy nitów to miejsca, gdzie czysta geometria kolonii zaczyna się przyznawać. Linie fabryczne powtarzają się cierpliwie: odstęp, faza, uszczelka, pas inspekcyjny. Naprawa polowa mówi inaczej. Zacina się, puchnie, wchodzi na starą farbę i zostawia ciepło tam, gdzie żaden plan go nie przewidywał.\n\nKolejność opowiada historię. Rząd nitów pod późniejszym spawem znaczy, że pierwotnemu mocowaniu już nie ufano. Sól pod spawem znaczy, że łączenie oddychało wodą więcej niż raz. Kanał uszczelki pogrzebany w metalu oznacza wybór siły zamiast obsługi. Rozdarte krawędzie obok czystego spawu mówią o pośpiechu: starczyło czasu zamknąć, nie starczyło uczynić kadłuba uczciwym.\n\nDla marudera naprawiony szew bywa lepszy niż mapa. Prowadzi do pokoju, który ciekł, grodzi, która pracowała, załogi z narzędziami bez części, albo do późniejszych zbieraczy, którzy otworzyli tę samą ranę już jako zdobycz.",
-          "external_site": "Spawy i rzędy nitów przechowują historię ciśnienia na naprawianych kadłubach, modułach i otwartych wrakach.",
-          "external_site_article": "Kadłub ciśnieniowy projektuje się, by ukryć panikę. Panele są gładkie, mocowania równe, znaki kontroli małe. Spaw łamie ten język. Jest lokalny, brzydki, gorący i konkretny. Wskazuje miejsce, gdzie system przestał być utrzymywany, a zaczął być proszony, by wytrzymał.\n\nCzytaj od starego do nowego. Fabryczne nity stoją w rzędach, bo obciążenie policzono przed dotknięciem oceanu. Spawy polowe puchną, bo kładziono je przy złym dostępie, słabej widoczności i złym czasie. Rdza pod łbem nitu pokazuje wilgotne powietrze w złączu. Sól pod spawem pokazuje przeciek, który wyschł i wrócił. Kołnierz śrubowy obok rozdartej płyty znaczy, że próbowano zostawić dostęp, potem porzucono uprzejmość.\n\nNajcenniejsze szwy rzadko są największe. Najważniejsze są te, które przerywają czysty wzór. Jeden brzydki spaw przez panel serwisowy może ujawnić zamknięty przedział, kieszeń ofiar, maszynę w kwarantannie albo trasę, gdzie później cięto ten sam strach lepszym narzędziem.",
-          "field_note": "Jeśli szew wygląda zbyt nowo, pytaj jaką starą awarię zasłania."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал зварного шва й ряду заклепок",
-          "scanner": "СТИК КОРПУСА // Горбистий підводний зварний валик, окиснений ряд заклепок, рваний край ремонтної пластини, сіль під швом. Лінія прокладки частково похована пізнім металом. Це не заводський стик.",
-          "terminal": "ЧИТАННЯ СТИКУ // Зварка поверх прокладки: ремонт після стискання ущільнення. Іржа під заклепками: повторне вологе дихання. Світла подряпина на валику: шов пробували інструментом після циклів тиску.",
-          "audio": "Зварка - підпис, зроблений жаром. Ряд заклепок не бреше про ритм.",
-          "in_game_wiki": "Зварні шви й ряди заклепок - місця, де чиста геометрія колонії починає зізнаватися. Заводські лінії корпусу повторюються терпляче: крок, фаска, прокладка, смуга огляду. Польовий ремонт говорить інакше. Він збивається, пухне, налазить на стару фарбу й лишає тепло там, де стартова схема його не чекала.\n\nПорядок розповідає історію. Ряд заклепок під пізнім швом означає, що первинному кріпленню вже не вірили. Сіль під валиком каже, що стик дихав водою не раз. Канал прокладки, наполовину похований металом, означає вибір міцності замість обслуговування. Рваний край пластини біля чистого валика часто говорить про поспіх: часу вистачило закрити, але не зробити корпус чесним.\n\nДля мародера ремонтний шов іноді кращий за карту. Він веде до кімнати, що текла, перебірки, що грала під тиском, екіпажу з інструментом без запасної деталі або до пізніх збирачів, які відкрили ту саму рану вже не ремонтом.",
-          "external_site": "Зварні шви й ряди заклепок зберігають історію тиску на ремонтованих корпусах, модулях бази й відкритих уламках.",
-          "external_site_article": "Напірний корпус проектують так, щоб ховати паніку. Панелі гладкі, кріплення рівне, інспекційні позначки малі й чиновні. Зварний шов ламає цю мову. Він місцевий, потворний, гарячий і конкретний. Він називає місце, де систему перестали обслуговувати й почали просити триматися.\n\nЧитай від старого до нового. Заводські заклепки стоять рядами, бо навантаження рахували до океану. Польові валики пухнуть, бо їх клали руками при поганому доступі, мутній воді й поганому часі. Іржа під головкою заклепки показує вологе повітря в стику. Сіль під швом показує течу, що висохла й повернулась. Болтовий фланець біля рваної пластини означає спробу лишити майбутній доступ, поки тиск не став голоснішим.\n\nНайцінніші шви не найбільші. Важливі ті, що переривають чистий узор. Один негарний валик через сервісну панель може показати запечатаний відсік, кишеню загиблих, карантинну машину або маршрут, де пізніше різали той самий страх кращим інструментом і меншою жалістю.",
-          "field_note": "Якщо шов надто новий, спитай яку стару відмову він прикриває."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل اللحام وصفوف البرشام",
-          "scanner": "وصلة بدن // خرزة لحام متكتلة تحت الماء، صف برشام مؤكسد، حافة صفيحة ممزقة، أثر ملح تحت الوصلة. خط الحشية مدفون جزئيا تحت معدن لاحق. ليست وصلة مصنع.",
-          "terminal": "قراءة الوصلة // لحام فوق الحشية يعني إصلاحا بعد انضغاط الختم. صدأ تحت البرشام يعني تنفسا رطبا متكررا لا فيضانا واحدا. كشط لامع على الخرزة يعني اختبار أداة بعد دورات ضغط.",
-          "audio": "اللحام توقيع تكتبه الحرارة. صف البرشام لا يكذب في الإيقاع.",
-          "in_game_wiki": "اللحامات وصفوف البرشام هي المواضع التي تبدأ فيها هندسة المستعمرة النظيفة بالاعتراف. خطوط المصنع تتكرر بصبر: مسافة، شطفة، حشية، شريط فحص. إصلاح الحقل لا يتكلم هكذا. يتلعثم، ينتفخ، يركب فوق الطلاء القديم، ويترك آثار حرارة حيث لم يتوقع المخطط حرارة.\n\nالترتيب يحكي القصة. صف برشام تحت لحام لاحق يعني أن التثبيت الأصلي لم يعد موثوقا. الملح تحت خرزة اللحام يعني أن الوصلة تنفست الماء أكثر من مرة. قناة حشية نصف مدفونة تعني اختيار القوة على الصيانة. حواف الصفيحة الممزقة قرب خرزة نظيفة تعني غالبا عجلة: وقت يكفي للإغلاق، لا يكفي لجعل البدن صادقا.\n\nبالنسبة إلى المغير، قد تكون الوصلة المرممة أفضل من خريطة. تشير إلى غرفة سربت، حاجز انثنى تحت الضغط، طاقم لديه أدوات بلا قطعة بديلة، أو فريق استرداد فتح الجرح نفسه لاحقا بوصفه غنيمة لا إصلاحا.",
-          "external_site": "اللحامات وصفوف البرشام تحفظ تاريخ الضغط في الأبدان المرممة ووحدات القاعدة والحطام المفتوح.",
-          "external_site_article": "بدن الضغط مصمم لإخفاء الذعر. الألواح ناعمة، المثبتات منتظمة، وعلامات الفحص صغيرة. اللحام يكسر هذه اللغة. هو محلي، قبيح، ساخن، ومحدد. يسمي المكان الذي توقف فيه النظام عن الصيانة وبدأ يطلب منه أن يصمد.\n\nاقرأ من القديم إلى الجديد. برشام المصنع في صفوف لأن الحمل حسب قبل أن يلمس المحيط الجدار. لحام الحقل ينتفخ لأن الأيدي وضعته في وصول سيئ ورؤية سيئة ووقت سيئ. الصدأ تحت رأس البرشام يدل على هواء رطب داخل الوصلة. الملح تحت اللحام يدل على تسرب جف ثم عاد. شفة مسامير قرب صفيحة ممزقة تعني أن الطاقم حاول ترك وصول للمستقبل ثم ترك هذا الأدب حين صار الضغط أعلى.\n\nأثمن اللحامات ليست الأكبر. إنها التي تقطع النمط النظيف. خرزة قبيحة واحدة عبر لوحة خدمة قد تكشف حجرة مغلقة، جيب موتى، آلة معزولة، أو طريقا قطع فيه اللاحقون الخوف نفسه بأدوات أفضل ورحمة أقل.",
-          "field_note": "إذا بدت الوصلة جديدة جدا، فاسأل أي فشل قديم تحاول إخفاءه."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Catatan Las dan Baris Paku Keling",
-          "scanner": "SAMBUNGAN LAMBUNG // Manik las bawah air menggumpal, baris paku keling teroksidasi, tepi pelat robek, alur garam di bawah sambungan. Garis gasket sebagian terkubur logam belakangan. Ini bukan sambungan pabrik.",
-          "terminal": "BACA SAMBUNGAN // Las di atas gasket berarti perbaikan setelah seal tertekan. Karat bawah paku keling berarti napas basah berulang, bukan satu banjir. Gores terang di puncak las berarti diuji alat setelah siklus tekanan.",
-          "audio": "Las adalah tanda tangan yang dibuat panas. Baris paku keling tidak bisa berbohong tentang ritme.",
-          "in_game_wiki": "Las dan baris paku keling adalah tempat geometri bersih koloni mulai mengaku. Garis pabrik berulang sabar: jarak, bevel, gasket, pita inspeksi. Perbaikan lapangan tidak bicara begitu. Ia tersendat, membengkak, menimpa cat lama, dan meninggalkan bekas panas di tempat yang tidak diharapkan gambar peluncuran.\n\nUrutan menceritakan kisah. Baris paku keling di bawah las belakangan berarti pengikat asli tidak lagi dipercaya. Garam di bawah manik las berarti sambungan bernapas air lebih dari sekali. Kanal gasket setengah terkubur logam berarti kekuatan dipilih di atas kemudahan servis. Tepi pelat robek dekat manik bersih biasanya berarti tergesa: cukup waktu menutup, tidak cukup waktu membuat lambung jujur.\n\nBagi penjarah, sambungan yang diperbaiki bisa lebih berguna daripada peta. Ia menunjuk ruang yang bocor, sekat yang melentur, kru dengan alat tanpa suku cadang, atau tim pemulihan yang membuka luka yang sama ketika nama perbaikannya sudah hilang.",
-          "external_site": "Las dan baris paku keling menyimpan sejarah tekanan pada lambung, modul, dan rongsokan yang pernah diperbaiki.",
-          "external_site_article": "Lambung tekanan dirancang untuk menyembunyikan panik. Panel halus, pengikat berjarak rata, tanda inspeksi kecil. Las mematahkan bahasa itu. Ia lokal, jelek, panas, dan spesifik. Ia menamai tempat sistem berhenti dirawat dan mulai dimohon agar bertahan.\n\nBaca dari lama ke baru. Paku keling pabrik berbaris karena beban dihitung sebelum laut menyentuh dinding. Manik lapangan membengkak karena tangan membuatnya dengan akses buruk, pandangan buruk, dan waktu buruk. Karat di bawah kepala paku keling menunjukkan udara basah di sambungan. Garam di bawah las menunjukkan kebocoran yang mengering lalu kembali. Flens baut di samping pelat robek berarti kru mencoba menyisakan akses, lalu meninggalkan sopan santun itu saat tekanan makin keras.\n\nSambungan paling berharga jarang yang terbesar. Yang penting adalah yang memotong pola bersih. Satu manik buruk melintasi panel servis bisa membuka kompartemen tersegel, kantong korban, mesin karantina, atau rute tempat orang belakangan memotong ketakutan yang sama dengan alat lebih baik dan belas kasihan lebih sedikit.",
-          "field_note": "Jika sambungan terlihat terlalu baru, tanyakan kegagalan lama apa yang sedang ditutupinya."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "용접 이음과 리벳 열 장부",
-          "scanner": "선체 이음 // 물속에서 뭉친 용접 비드, 산화된 리벳 열, 찢긴 보수판 가장자리, 이음 아래 소금 자국. 가스켓 선이 나중 금속에 반쯤 묻혔다. 공장 이음이 아니다.",
-          "terminal": "이음 읽기 // 가스켓 위 용접은 밀봉 압축 후 보수다. 리벳 아래 녹은 한 번의 침수가 아니라 반복된 젖은 호흡이다. 비드 꼭대기 밝은 긁힘은 압력 주기 뒤 도구로 시험한 흔적이다.",
-          "audio": "용접은 열로 남긴 서명이다. 리벳 열은 리듬을 속이지 못한다.",
-          "in_game_wiki": "용접 이음과 리벳 열은 식민지의 깨끗한 기하가 자백하기 시작하는 자리다. 공장 선체선은 간격, 베벨, 가스켓, 검사 띠를 참을성 있게 반복한다. 현장 보수는 그렇게 말하지 않는다. 더듬고, 부풀고, 낡은 페인트를 덮으며, 발사 도면이 열을 예상하지 않은 곳에 열 흉터를 남긴다.\n\n순서가 이야기다. 나중 용접 아래 리벳 열이 있으면 원래 고정은 더는 믿지 않았다는 뜻이다. 비드 아래 소금은 이음이 물을 여러 번 들이쉬었다는 뜻이다. 금속에 반쯤 묻힌 가스켓 홈은 정비성보다 강도를 골랐다는 증거다. 깨끗한 비드 옆 찢긴 판 가장자리는 대개 서두름을 말한다. 막을 시간은 있었지만 선체를 정직하게 만들 시간은 없었다.\n\n마라우더에게 보수된 이음은 지도보다 나을 때가 있다. 새던 방, 압력에 휜 격벽, 도구는 있었지만 부품은 없던 승무원, 또는 나중 회수팀이 같은 상처를 보수가 아니라 채취로 다시 연 곳을 가리킨다.",
-          "external_site": "용접 이음과 리벳 열은 보수된 선체, 기지 모듈, 열린 잔해의 압력 이력을 보존한다.",
-          "external_site_article": "압력 선체는 공포를 숨기도록 설계된다. 패널은 매끈하고, 고정물은 일정하며, 검사 표식은 작고 관료적이다. 용접은 그 언어를 깨뜨린다. 국소적이고, 못생겼고, 뜨겁고, 구체적이다. 시스템이 유지보수를 멈추고 버텨 달라고 요구받기 시작한 지점을 부른다.\n\n오래된 것에서 새것으로 읽어라. 공장 리벳은 바다가 벽에 닿기 전 하중이 계산되었기 때문에 줄을 이룬다. 현장 비드는 나쁜 접근, 나쁜 시야, 나쁜 시간 속에서 손으로 놓였기 때문에 부푼다. 리벳 머리 아래 녹은 젖은 공기가 이음 안을 지난 흔적이다. 용접 아래 소금은 말랐다가 돌아온 누수다. 찢긴 판 옆 볼트 플랜지는 승무원이 미래 접근을 남기려 했지만 압력이 더 커지자 그 예의를 버렸다는 뜻이다.\n\n가장 값진 이음은 대개 가장 큰 것이 아니다. 깨끗한 패턴을 끊는 것이다. 서비스 패널을 가로지르는 못생긴 비드 하나가 봉인 구획, 사망자 주머니, 격리된 기계, 또는 나중 사람들이 같은 공포를 더 좋은 도구와 적은 자비로 자른 길을 드러낼 수 있다.",
-          "field_note": "이음이 너무 새것 같다면, 어떤 오래된 실패를 덮고 있는지 물어라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן תפרי ריתוך ושורות מסמרות",
-          "scanner": "חיבור גוף // חרוז ריתוך גבשושי מתחת למים, שורת מסמרות מחומצנת, קצה לוח קרוע, מלח מתחת לתפר. קו אטם קבור חלקית תחת מתכת מאוחרת. זה אינו חיבור מפעל.",
-          "terminal": "קריאת חיבור // ריתוך מעל אטם אומר תיקון אחרי דחיסה. חלודה תחת מסמרות אומרת נשימה לחה חוזרת. שריטה בהירה על הריתוך אומרת בדיקת כלי אחרי מחזורי לחץ.",
-          "audio": "ריתוך הוא חתימה שנכתבת בחום. שורת מסמרות אינה יכולה לשקר בקצב.",
-          "in_game_wiki": "תפרי ריתוך ושורות מסמרות הם המקומות שבהם הגאומטריה הנקייה של המושבה מתחילה להתוודות. קווי מפעל חוזרים בסבלנות: מרווח, שיפוע, אטם, פס בדיקה. תיקון שטח אינו מדבר כך. הוא מגמגם, מתנפח, עולה על צבע ישן ומשאיר חום במקום ששום תרשים שיגור לא ציפה לו.\n\nהסדר מספר. שורת מסמרות תחת ריתוך מאוחר פירושה שהחיבור המקורי כבר לא היה אמין. מלח תחת החרוז אומר שהחיבור נשם מים יותר מפעם אחת. תעלת אטם קבורה למחצה אומרת שמישהו בחר חוזק על פני שירות. קצה לוח קרוע ליד חרוז נקי מדבר לרוב על בהילות: היה זמן לסגור, לא היה זמן להפוך את הגוף כן.\n\nלמבזז, תפר מתוקן יכול להיות טוב ממפה. הוא מצביע אל חדר שדלף, מחיצה שהתכופפה, צוות עם כלים בלי חלק חלופי, או צוות חילוץ מאוחר שפתח את אותו פצע כשכבר לא קראו לזה תיקון.",
-          "external_site": "תפרי ריתוך ושורות מסמרות שומרים את היסטוריית הלחץ של גופים מתוקנים, מודולי בסיס ושברים פתוחים.",
-          "external_site_article": "גוף לחץ מתוכנן להסתיר פאניקה. הלוחות חלקים, המחברים שווים, סימני הבדיקה קטנים. הריתוך שובר את השפה הזו. הוא מקומי, מכוער, חם ומדויק. הוא קורא בשם המקום שבו מערכת הפסיקה לקבל תחזוקה והתחילה להתחנן להחזיק.\n\nקרא מהישן לחדש. מסמרות מפעל עומדות בשורות כי העומס חושב לפני שהים נגע בקיר. חרוזי שטח מתנפחים כי ידיים הניחו אותם בגישה גרועה, ראות גרועה וזמן גרוע. חלודה תחת ראש מסמרת מראה אוויר לח במפרק. מלח תחת ריתוך מראה דליפה שהתייבשה וחזרה. אוגן ברגים ליד לוח קרוע אומר שהצוות ניסה להשאיר גישה עתידית ואז ויתר על הנימוס כשהלחץ נעשה חזק יותר.\n\nהתפרים היקרים ביותר אינם הגדולים ביותר. אלה שקוטעים דפוס נקי. חרוז מכוער אחד על פני לוח שירות יכול לחשוף תא אטום, כיס מתים, מכונה בהסגר או נתיב שבו מאוחרים יותר חתכו את אותו פחד בכלים טובים יותר ופחות רחמים.",
-          "field_note": "אם תפר נראה חדש מדי, שאל איזה כשל ישן הוא מנסה לכסות."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Soldas e Fileiras de Rebites",
-          "scanner": "JUNTA DE CASCO // Cordão de solda submarino irregular, fileira de rebites oxidada, borda de placa rasgada, sal sob a emenda. Linha de junta parcialmente enterrada por metal posterior. Não é junta de fábrica.",
-          "terminal": "LEITURA DA JUNTA // Solda sobre junta: reparo após compressão. Ferrugem sob rebites: respiração úmida repetida. Risco claro no topo do cordão: teste com ferramenta após ciclos de pressão.",
-          "audio": "Uma solda é uma assinatura feita por calor. Uma fileira de rebites não mente sobre ritmo.",
-          "in_game_wiki": "Soldas e fileiras de rebites são onde a geometria limpa da colônia começa a confessar. Linhas de fábrica repetem com paciência: passo, chanfro, junta, faixa de inspeção. Reparos de campo não falam assim. Eles tropeçam, incham, passam por cima da tinta velha e deixam calor onde nenhum diagrama esperava calor.\n\nA ordem conta a história. Rebites sob uma solda posterior significam que a fixação original já não era confiável. Sal sob o cordão significa que a junta respirou água mais de uma vez. Canal de junta meio enterrado por metal significa força escolhida contra manutenção. Borda rasgada perto de cordão limpo costuma marcar pressa: tempo para fechar, não para deixar o casco honesto.\n\nPara um saqueador, uma emenda reparada pode ser melhor que mapa. Ela aponta para sala que vazou, antepara que flexionou, tripulação com ferramentas sem peça reserva, ou equipe posterior que reabriu a mesma ferida quando já não chamavam aquilo de reparo.",
-          "external_site": "Soldas e fileiras de rebites preservam a história de pressão em cascos reparados, módulos de base e destroços abertos.",
-          "external_site_article": "Um casco de pressão é desenhado para esconder pânico. Painéis lisos, fixadores regulares, marcas de inspeção pequenas. A solda quebra essa língua. É local, feia, quente e específica. Nomeia o lugar onde um sistema deixou de ser mantido e começou a ser implorado para aguentar.\n\nLeia do velho para o novo. Rebites de fábrica ficam em fileiras porque a carga foi calculada antes do oceano tocar a parede. Cordões de campo incham porque mãos os fizeram com acesso ruim, visibilidade ruim e tempo ruim. Ferrugem sob cabeça de rebite mostra ar úmido na junta. Sal sob solda mostra vazamento que secou e voltou. Flange parafusado ao lado de placa rasgada significa que a equipe tentou deixar acesso futuro, depois abandonou essa cortesia quando a pressão ficou mais alta.\n\nAs emendas mais valiosas raramente são as maiores. São as que interrompem um padrão limpo. Um cordão feio atravessando painel de serviço pode revelar compartimento selado, bolsa de mortos, máquina em quarentena ou rota onde posteriores cortaram o mesmo medo com ferramenta melhor e menos piedade.",
-          "field_note": "Se uma emenda parece nova demais, pergunte que falha velha ela tenta cobrir."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Log van lasnaden en klinknagelrijen",
-          "scanner": "ROMPNAAD // Klonterige onderwaterlas, geoxideerde klinknagelrij, gescheurde reparatieplaat, zoutspoor onder de naad. Pakkinglijn deels begraven onder later metaal. Geen fabrieksnaad.",
-          "terminal": "NAAD LEZEN // Las over pakking: reparatie na sealcompressie. Roest onder klinknagels: herhaald nat ademen, geen enkele overstroming. Heldere kras op lasrug: gereedschapstest na drukcycli.",
-          "audio": "Een las is een handtekening van hitte. Een klinknagelrij liegt niet over ritme.",
-          "in_game_wiki": "Lasnaden en klinknagelrijen zijn waar de schone geometrie van de kolonie begint te bekennen. Fabriekslijnen herhalen geduldig: afstand, afschuining, pakking, inspectiestrook. Veldreparaties praten anders. Ze haperen, zwellen, overlappen oude verf en laten hitte achter waar geen lanceertekening hitte verwachtte.\n\nDe volgorde vertelt. Een klinknagelrij onder een latere las betekent dat de oorspronkelijke bevestiging niet meer werd vertrouwd. Zout onder de las betekent dat de naad meer dan eens water ademde. Een half begraven pakkingkanaal betekent sterkte boven onderhoud. Gescheurde plaatranden naast een schone las spreken meestal van haast: genoeg tijd om te sluiten, niet genoeg om de romp eerlijk te maken.\n\nVoor een plunderaar kan een gerepareerde naad beter zijn dan een kaart. Hij wijst naar een lekkende kamer, een schot dat boog, een bemanning met gereedschap maar zonder vervangdeel, of latere bergers die dezelfde wond openden toen niemand het nog reparatie noemde.",
-          "external_site": "Lasnaden en klinknagelrijen bewaren drukgeschiedenis op gerepareerde rompen, basismodules en geopende wrakken.",
-          "external_site_article": "Een drukromp is ontworpen om paniek te verbergen. Panelen glad, bevestigingen gelijkmatig, inspectiemerken klein. De las breekt die taal. Hij is plaatselijk, lelijk, heet en specifiek. Hij noemt de plek waar een systeem niet meer werd onderhouden maar werd gesmeekt om stand te houden.\n\nLees van oud naar nieuw. Fabrieksklinknagels staan in rijen omdat belasting was berekend voordat de oceaan de wand raakte. Veldlassen zwellen omdat handen ze legden met slechte toegang, slecht zicht en slechte tijd. Roest onder een klinknagelkop toont natte lucht in de naad. Zout onder een las toont een lek dat droogde en terugkwam. Een boutflens naast een gescheurde plaat betekent dat men toegang voor later wilde laten, tot de druk luider werd.\n\nDe waardevolste naden zijn zelden de grootste. Het zijn de naden die een schoon patroon onderbreken. Een enkele lelijke las over een servicepaneel kan een verzegeld compartiment, een dodenruimte, een quarantainemachine of een route onthullen waar latere bergers dezelfde angst met beter gereedschap en minder mededogen doorsneden.",
-          "field_note": "Als een naad te nieuw lijkt, vraag welke oude fout hij probeert te bedekken."
-        }
-      }
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.welded_seam_rivet_row_ledger",
+    "secondary": [
+     "unlock.first_welded_seam_scan",
+     "unlock.first_oxidized_rivet_row",
+     "unlock.first_buried_gasket_joint"
+    ],
+    "poi_tags": [
+     "poi.welded_seam_rivet_row",
+     "poi.oxidized_rivet_line",
+     "poi.torn_repair_plate_edge",
+     "poi.gasket_buried_under_weld"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.pressure_base_exterior",
+     "biome.opened_wreck"
+    ]
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Hull Joint Scanner",
+     "terminal": "Old Colony Pressure Repair Readout",
+     "audio": "Marauder Hull Trace Instructor",
+     "in_game_wiki": "PDA Welded Joint Field Guide",
+     "external_site": "Public Site Hull Repair Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_welded_seam_or_rivet_row_trace",
+    "truth_payload": "Repaired hull joints reveal pressure cycles, field triage, buried gasket lines and later salvage reopening.",
+    "player_question": "Which seam was meant to hold, and which one was meant to hide the failure?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Welded Seam and Rivet Row Ledger",
+     "scanner": "HULL JOINT // Lumpy underwater weld bead, oxidized rivet row, torn repair plate edge, salt run beneath seam. Gasket line is partly buried under later metalwork. This was not a factory joint.",
+     "terminal": "JOINT READ // Weld over gasket means repair after seal compression. Rust below rivets means repeated wet breathing, not one flood. Bright scrape on bead crest means a tool tested the seam after pressure cycling.",
+     "audio": "A weld is a signature made by heat. A rivet row is the part that cannot lie about rhythm.",
+     "in_game_wiki": "Welded seams and rivet rows are where the colony's clean geometry starts confessing. Factory hull lines repeat with patience: spacing, bevel, gasket, inspection strip. Field repairs do not. They stutter, swell, overlap old paint and leave heat scars where no launch diagram expected heat.\n\nThe order tells the story. A rivet row under a later weld means the original fastening was no longer trusted. Salt hanging below the bead means the joint breathed water more than once. A gasket channel half-buried by metal means someone chose strength over serviceability. Torn plate edges beside a clean bead usually mark a hurry: enough time to seal, not enough time to make the hull honest.\n\nFor a Marauder, a repaired seam can be better than a map. It points toward a room that leaked, a bulkhead that flexed, a crew who had tools but no replacement part, or a salvage crew that reopened the wound after everyone else stopped calling it a repair.",
+     "external_site": "Welded seams and rivet rows preserve the pressure history of repaired hulls, base modules and opened wrecks.",
+     "external_site_article": "A pressure hull is designed to hide panic. Its panels are smooth, its fasteners evenly spaced, its inspection marks bureaucratic and small. The welded seam breaks that language. It is local, ugly, hot and specific. It names the place where a system stopped being maintained and started being begged to hold.\n\nRead the seam from old to new. Factory rivets sit in rows because load was planned before the ocean touched the wall. Field welds swell because hands made them under bad access, bad visibility and bad time. Rust below a rivet head shows wet air moving through a joint. Salt below a weld bead shows a leak that dried and returned. A bolted flange beside a torn repair plate means the crew tried to make future access possible, then abandoned the courtesy when pressure got loud.\n\nThe most valuable seams are not the largest. They are the ones that interrupt a clean pattern. A single ugly bead across a maintenance panel can reveal a sealed compartment, a hidden casualty pocket, a quarantined machine, or a route where later salvagers cut through the same fear with better tools and less mercy.",
+     "field_note": "If a seam looks too new, ask what old failure it is trying to cover."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал сварного шва и ряда заклепок",
+     "scanner": "СТЫК КОРПУСА // Бугристый подводный сварной валик, окисленный ряд заклепок, рваный край ремонтной пластины, солевой потек под швом. Линия прокладки частично похоронена поздним металлом. Это не заводской стык.",
+     "terminal": "ЧТЕНИЕ СТЫКА // Сварка поверх прокладки значит ремонт после сжатия уплотнения. Ржавчина под заклепками - повторное влажное дыхание, не один потоп. Светлая царапина на гребне валика: шов проверяли инструментом после циклов давления.",
+     "audio": "Сварка - подпись, оставленная жаром. Ряд заклепок - часть, которая не умеет врать про ритм.",
+     "in_game_wiki": "Сварные швы и ряды заклепок - места, где чистая геометрия колонии начинает признаваться. Заводские линии корпуса повторяются терпеливо: шаг, фаска, прокладка, полоса осмотра. Полевой ремонт так не говорит. Он сбивается, распухает, наезжает на старую краску и оставляет следы жара там, где в стартовой схеме жара быть не должно.\n\nПорядок важнее формы. Ряд заклепок под поздней сваркой означает, что исходному креплению больше не доверяли. Соль под валиком говорит, что стык дышал водой не один раз. Канал прокладки, наполовину похороненный металлом, означает выбор прочности вместо обслуживания. Рваные края пластины рядом с чистым валиком обычно говорят о спешке: хватило времени закрыть течь, но не хватило времени сделать корпус честным.\n\nДля мародера ремонтный шов иногда лучше карты. Он ведет к комнате, которая текла, к переборке, которая играла под давлением, к экипажу с инструментом, но без запасной детали, или к поздним сборщикам, которые открыли ту же рану уже не ремонтом, а добычей.",
+     "external_site": "Сварные швы и ряды заклепок хранят историю давления на ремонтированных корпусах, модулях базы и вскрытых обломках.",
+     "external_site_article": "Напорный корпус спроектирован так, чтобы прятать панику. Панели гладкие, крепеж равномерный, отметки инспекции мелкие и чиновные. Сварной шов ломает этот язык. Он местный, уродливый, горячий и конкретный. Он называет место, где систему перестали обслуживать и начали просить держаться.\n\nЧитать шов нужно от старого к новому. Заводские заклепки стоят рядами, потому что нагрузку посчитали до того, как океан коснулся стены. Полевые валики пухнут, потому что их клали руками при плохом доступе, мутной воде и плохом времени. Ржавчина под головкой заклепки показывает влажный воздух в стыке. Соль под валиком показывает течь, которая высохла и вернулась. Болтовой фланец рядом с рваной пластиной значит, что экипаж еще пытался оставить будущий доступ, а потом отказался от этой вежливости, когда давление стало громче.\n\nСамые ценные швы редко бывают самыми большими. Важнее те, что перебивают чистый узор. Один некрасивый валик поперек сервисной панели может указать на запечатанный отсек, карман с погибшими, карантинную машину или маршрут, где поздние сборщики резали тот же страх уже лучшим инструментом и меньшей жалостью.",
+     "field_note": "Если шов выглядит слишком новым, спроси, какую старую поломку он пытается закрыть."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "溶接シームとリベット列台帳",
+     "scanner": "船殻接合部 // 水中で盛り上がった溶接ビード、酸化したリベット列、裂けた補修板の縁、シーム下の塩筋。ガスケット線は後の金属で半分埋まっている。工場接合ではない。",
+     "terminal": "接合読取 // ガスケット上の溶接は、シール圧縮後の修理。リベット下の錆は一度の浸水ではなく、湿った呼吸の反復。ビード頂部の明るい擦り傷は、圧力周期後に工具で試された跡。",
+     "audio": "溶接は熱で書いた署名だ。リベット列はリズムについて嘘をつけない部分だ。",
+     "in_game_wiki": "溶接シームとリベット列は、植民地の清潔な幾何が告白を始める場所だ。工場の船殻線は辛抱強く反復する。間隔、面取り、ガスケット、検査帯。現場修理はそう話さない。つまずき、膨れ、古い塗装に重なり、発射図面が熱を想定しなかった場所に熱痕を残す。\n\n順番が物語を決める。後の溶接の下にリベット列があるなら、元の固定はもう信じられていなかった。ビード下の塩は、接合部が何度も水を呼吸した印だ。半分金属で埋まったガスケット溝は、整備性より強度を選んだ証拠だ。きれいなビード横の裂けた板縁は、多くの場合、封じる時間はあったが正直な修理にする時間はなかったことを示す。\n\nマローダーにとって、補修シームは地図より役に立つことがある。漏れた部屋、圧力で撓んだ隔壁、工具はあったが部品はなかった乗員、あるいは後の回収者が同じ傷を修理ではなく採取として開いた場所へ導く。",
+     "external_site": "溶接シームとリベット列は、修理された船殻、基地モジュール、開かれた残骸の圧力履歴を保存する。",
+     "external_site_article": "圧力殻は恐慌を隠すよう設計されている。パネルは滑らかで、固定具は等間隔、検査印は小さく官僚的だ。溶接シームはその言語を壊す。局所的で、醜く、熱く、具体的だ。そこは保守が終わり、持ちこたえてくれと頼み始めた場所だ。\n\n古いものから新しいものへ読め。工場リベットは、海が壁に触れる前に荷重が計算されていたから列をなす。現場ビードは、悪い足場、悪い視界、悪い時間の中で人の手が置いたから膨れる。リベット頭下の錆は湿った空気の移動を示す。溶接下の塩は乾いて戻った漏れを示す。裂けた補修板の横のボルトフランジは、未来のアクセスを残そうとした後、圧力が大きくなってその礼儀を捨てたことを示す。\n\n最も価値あるシームは最大のものではない。清潔なパターンを遮るものだ。整備パネルを横切る一本の醜いビードが、封じた区画、犠牲者の空間、隔離された機械、あるいは後の回収者が同じ恐怖をよりよい工具と少ない慈悲で切った経路を示す。",
+     "field_note": "シームが新しすぎるなら、それが隠そうとしている古い失敗を探せ。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "焊缝与铆钉列账本",
+     "scanner": "船体接缝 // 水下鼓起的焊道、氧化铆钉列、撕裂维修板边、缝下盐痕。密封垫线被后加金属半埋。这不是工厂接缝。",
+     "terminal": "读接缝 // 焊在密封垫上，说明密封受压后才维修。铆钉下锈蚀说明反复潮湿呼吸，不是一次进水。焊道顶端亮擦痕说明压力循环后有人用工具试过。",
+     "audio": "焊缝是热写下的签名。铆钉列是不懂伪造节奏的部分。",
+     "in_game_wiki": "焊缝和铆钉列，是殖民地干净几何开始招供的地方。工厂船体线耐心重复：间距、倒角、密封垫、检查条。现场维修不是这种语气。它结巴、膨胀、压过旧漆，在发射图里不该有热的地方留下热痕。\n\n顺序讲故事。后期焊道下面压着铆钉列，说明原来的固定已经不被信任。焊道下悬盐说明接缝不止一次呼吸过水。密封垫槽被金属半埋，说明有人选择强度而不是可维护性。干净焊道旁的撕裂板边通常说明很急：有时间封住泄漏，没有时间让船体诚实。\n\n对打捞者来说，修补接缝有时比地图更有用。它指向漏过水的房间、被压力扭弯的隔壁、有工具却没有替换件的船员，或后来的回收队把同一处伤口重新打开，只是那时已经不叫维修。",
+     "external_site": "焊缝和铆钉列保存着修复船体、基地模块和被打开残骸的压力史。",
+     "external_site_article": "压力壳被设计来隐藏恐慌。面板平滑，紧固件等距，检查标记小而官僚。焊缝打破了这种语言。它局部、丑陋、灼热、具体。它指出系统停止维护、开始被人恳求撑住的位置。\n\n从旧到新读。工厂铆钉成列，是因为海水碰到墙之前载荷已经算好。现场焊道鼓起，是因为人在糟糕通道、糟糕能见度、糟糕时间里下手。铆钉头下的锈说明湿空气穿过接缝。焊道下的盐说明泄漏曾干过又回来。撕裂维修板旁边的螺栓法兰说明船员试图留下未来入口，后来压力变大，他们放弃了这种体面。\n\n最有价值的接缝通常不是最大的，而是打断干净图案的那一道。服务面板上一道难看的焊疤，可能指向封死舱室、遇难者空气袋、隔离机器，或者后来的回收队用更好工具和更少怜悯切开的路线。",
+     "field_note": "如果一道缝看起来太新，问它在替哪一次旧失败遮羞。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre des soudures et rangées de rivets",
+     "scanner": "JOINT DE COQUE // Cordon de soudure sous-marin bosselé, rangée de rivets oxydés, bord de plaque déchiré, trace de sel sous le joint. La ligne de joint est à demi enterrée sous du métal tardif. Ce n'est pas un joint d'usine.",
+     "terminal": "LECTURE DE JOINT // Soudure sur joint : réparation après compression. Rouille sous rivets : respiration humide répétée, pas une seule inondation. Éraflure claire sur cordon : test d'outil après cycles de pression.",
+     "audio": "Une soudure est une signature faite par la chaleur. Une rangée de rivets ne ment pas sur le rythme.",
+     "in_game_wiki": "Les soudures et rangées de rivets sont l'endroit où la géométrie propre de la colonie commence à avouer. Les lignes d'usine répètent avec patience : pas, biseau, joint, bande d'inspection. Les réparations de terrain parlent autrement. Elles hésitent, gonflent, recouvrent la vieille peinture et laissent de la chaleur là où aucun plan de lancement n'en attendait.\n\nL'ordre raconte. Une rangée de rivets sous une soudure tardive signifie que la fixation d'origine n'était plus fiable. Le sel sous le cordon indique que le joint a respiré de l'eau plusieurs fois. Un canal de joint à demi enterré dit qu'on a choisi la force contre l'entretien. Un bord déchiré près d'un cordon propre parle souvent d'urgence : assez de temps pour fermer, pas assez pour rendre la coque honnête.\n\nPour un maraudeur, un joint réparé vaut parfois mieux qu'une carte. Il mène vers une pièce qui fuyait, une cloison qui pliait, un équipage avec des outils mais sans pièce de rechange, ou une équipe de récupération qui a rouvert la blessure quand ce n'était plus une réparation.",
+     "external_site": "Soudures et rangées de rivets conservent l'histoire de pression des coques réparées, modules de base et épaves ouvertes.",
+     "external_site_article": "Une coque pressurisée est conçue pour cacher la panique. Les panneaux sont lisses, les fixations régulières, les marques d'inspection petites et administratives. La soudure casse cette langue. Elle est locale, laide, chaude et précise. Elle nomme l'endroit où l'on a cessé d'entretenir un système pour lui demander de tenir.\n\nLis du vieux vers le neuf. Les rivets d'usine forment des rangées parce que la charge était prévue avant que l'océan touche la paroi. Les cordons de terrain gonflent parce que des mains les ont posés avec mauvais accès, mauvaise visibilité et mauvais délai. La rouille sous une tête de rivet montre l'air humide dans le joint. Le sel sous une soudure montre une fuite qui a séché puis repris. Une bride boulonnée près d'une plaque déchirée signifie qu'on a tenté de garder un accès futur, puis qu'on a abandonné cette politesse quand la pression est devenue plus forte.\n\nLes joints les plus précieux ne sont pas les plus grands. Ce sont ceux qui interrompent un motif propre. Un seul cordon laid à travers un panneau de service peut révéler un compartiment scellé, une poche de victimes, une machine en quarantaine ou la route où des récupérateurs ont découpé la même peur avec de meilleurs outils et moins de pitié.",
+     "field_note": "Si un joint paraît trop neuf, demande quelle vieille panne il tente de couvrir."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de soldaduras y filas de remaches",
+     "scanner": "JUNTA DE CASCO // Cordón submarino abultado, fila de remaches oxidados, borde de placa rasgado, sal bajo la costura. La línea de junta quedó medio enterrada bajo metal posterior. No es junta de fábrica.",
+     "terminal": "LECTURA DE JUNTA // Soldadura sobre junta: reparación tras compresión. Óxido bajo remaches: respiración húmeda repetida, no una sola inundación. Roce brillante en el cordón: prueba con herramienta tras ciclos de presión.",
+     "audio": "Una soldadura es una firma hecha con calor. Una fila de remaches no puede mentir sobre el ritmo.",
+     "in_game_wiki": "Las soldaduras y filas de remaches son donde la geometría limpia de la colonia empieza a confesar. Las líneas de fábrica repiten con paciencia: paso, bisel, junta, banda de inspección. Las reparaciones de campo no hablan así. Tartamudean, se hinchan, pisan pintura vieja y dejan cicatrices de calor donde ningún plano de lanzamiento esperaba calor.\n\nEl orden cuenta la historia. Remaches bajo una soldadura posterior significan que la fijación original dejó de inspirar confianza. Sal bajo el cordón significa que la junta respiró agua más de una vez. Un canal de junta medio enterrado significa que alguien eligió fuerza sobre mantenimiento. Bordes rasgados junto a un cordón limpio suelen marcar prisa: tiempo para cerrar, no para hacer honesto el casco.\n\nPara un merodeador, una costura reparada puede valer más que un mapa. Señala una sala que goteó, un mamparo que flexó, una tripulación con herramientas pero sin repuesto, o un equipo de saqueo que reabrió la herida cuando ya nadie lo llamaba reparación.",
+     "external_site": "Soldaduras y filas de remaches conservan la historia de presión de cascos reparados, módulos de base y restos abiertos.",
+     "external_site_article": "Un casco de presión está diseñado para esconder el pánico. Paneles lisos, fijaciones regulares, marcas de inspección pequeñas. La soldadura rompe ese idioma. Es local, fea, caliente y concreta. Nombra el lugar donde un sistema dejó de mantenerse y empezó a suplicar resistencia.\n\nLee de viejo a nuevo. Los remaches de fábrica forman filas porque la carga fue prevista antes de que el océano tocara la pared. Los cordones de campo se hinchan porque manos los pusieron con mal acceso, mala visibilidad y mal tiempo. Óxido bajo una cabeza de remache muestra aire húmedo en la junta. Sal bajo una soldadura muestra una fuga que se secó y volvió. Una brida atornillada junto a una placa rota significa que intentaron dejar acceso futuro y luego abandonaron esa cortesía cuando la presión habló más alto.\n\nLas costuras más valiosas no son las mayores. Son las que interrumpen un patrón limpio. Un solo cordón feo sobre un panel de servicio puede revelar un compartimento sellado, una bolsa de víctimas, una máquina en cuarentena o la ruta donde otros cortaron el mismo miedo con mejores herramientas y menos misericordia.",
+     "field_note": "Si una costura parece demasiado nueva, pregunta qué vieja falla intenta tapar."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Protokoll für Schweißnähte und Nietreihen",
+     "scanner": "RUMPFSTOSS // Klumpige Unterwasser-Schweißraupe, oxidierte Nietreihe, gerissene Reparaturkante, Salzlauf unter der Naht. Dichtungslinie teils unter späterem Metall begraben. Kein Werksstoß.",
+     "terminal": "NAHTLESUNG // Schweißung über Dichtung: Reparatur nach Kompression. Rost unter Nieten: wiederholtes feuchtes Atmen, keine Einzelflut. Heller Kratzer auf Raupe: Werkzeugtest nach Druckzyklen.",
+     "audio": "Eine Schweißnaht ist eine Signatur aus Hitze. Eine Nietreihe kann über Rhythmus nicht lügen.",
+     "in_game_wiki": "Schweißnähte und Nietreihen sind die Stellen, an denen die saubere Geometrie der Kolonie gesteht. Werkslinien wiederholen geduldig: Abstand, Fase, Dichtung, Prüfstreifen. Feldreparaturen sprechen anders. Sie stolpern, schwellen, überdecken alte Farbe und hinterlassen Hitze dort, wo kein Startplan Hitze erwartete.\n\nDie Reihenfolge erzählt. Eine Nietreihe unter späterer Schweißung bedeutet, dass der ursprünglichen Befestigung nicht mehr vertraut wurde. Salz unter der Raupe zeigt, dass die Fuge mehrmals Wasser atmete. Ein halb begrabener Dichtungskanal bedeutet Stärke statt Wartbarkeit. Gerissene Plattenkanten neben sauberer Raupe sprechen meist von Eile: genug Zeit zum Schließen, nicht genug für Ehrlichkeit.\n\nFür einen Marodeur kann eine reparierte Naht besser sein als eine Karte. Sie führt zu einem Raum, der leckte, einem Schott, das bog, einer Crew mit Werkzeug aber ohne Ersatzteil, oder Bergungstrupps, die dieselbe Wunde später nicht als Reparatur, sondern als Beute öffneten.",
+     "external_site": "Schweißnähte und Nietreihen bewahren Druckgeschichte an reparierten Rümpfen, Basismodulen und geöffneten Wracks.",
+     "external_site_article": "Ein Druckrumpf ist gebaut, um Panik zu verstecken. Paneele glatt, Befestigungen gleichmäßig, Prüfmarken klein und bürokratisch. Die Schweißnaht bricht diese Sprache. Sie ist lokal, hässlich, heiß und konkret. Sie nennt den Ort, an dem ein System nicht mehr gewartet, sondern zum Halten überredet wurde.\n\nLies von alt nach neu. Werksnieten stehen in Reihen, weil Last berechnet war, bevor der Ozean die Wand berührte. Feldraupen schwellen, weil Hände sie bei schlechtem Zugang, schlechter Sicht und schlechter Zeit legten. Rost unter einem Nietkopf zeigt feuchte Luft in der Fuge. Salz unter einer Schweißung zeigt ein Leck, das trocknete und zurückkam. Ein verschraubter Flansch neben gerissener Platte bedeutet, dass die Crew künftigen Zugang lassen wollte und diese Höflichkeit aufgab, als der Druck lauter wurde.\n\nDie wertvollsten Nähte sind selten die größten. Es sind die, die ein sauberes Muster unterbrechen. Eine hässliche Raupe über ein Servicepaneel kann ein versiegeltes Abteil, eine Opferkammer, eine Quarantänemaschine oder eine Route zeigen, wo spätere Bergung den gleichen Schrecken mit besseren Werkzeugen und weniger Gnade schnitt.",
+     "field_note": "Wenn eine Naht zu neu wirkt, frag welchen alten Fehler sie verdecken soll."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr spawów i rzędów nitów",
+     "scanner": "ŁĄCZENIE KADŁUBA // Grudkowaty podwodny spaw, utleniony rząd nitów, rozdarta krawędź płyty, sól pod szwem. Linia uszczelki częściowo pogrzebana pod późniejszym metalem. To nie fabryka.",
+     "terminal": "CZYTANIE ŁĄCZENIA // Spaw na uszczelce: naprawa po kompresji. Rdza pod nitami: powtarzany wilgotny oddech. Jasne starcie na grzbiecie spawu: test narzędziem po cyklach ciśnienia.",
+     "audio": "Spaw to podpis złożony ciepłem. Rząd nitów nie kłamie o rytmie.",
+     "in_game_wiki": "Spawy i rzędy nitów to miejsca, gdzie czysta geometria kolonii zaczyna się przyznawać. Linie fabryczne powtarzają się cierpliwie: odstęp, faza, uszczelka, pas inspekcyjny. Naprawa polowa mówi inaczej. Zacina się, puchnie, wchodzi na starą farbę i zostawia ciepło tam, gdzie żaden plan go nie przewidywał.\n\nKolejność opowiada historię. Rząd nitów pod późniejszym spawem znaczy, że pierwotnemu mocowaniu już nie ufano. Sól pod spawem znaczy, że łączenie oddychało wodą więcej niż raz. Kanał uszczelki pogrzebany w metalu oznacza wybór siły zamiast obsługi. Rozdarte krawędzie obok czystego spawu mówią o pośpiechu: starczyło czasu zamknąć, nie starczyło uczynić kadłuba uczciwym.\n\nDla marudera naprawiony szew bywa lepszy niż mapa. Prowadzi do pokoju, który ciekł, grodzi, która pracowała, załogi z narzędziami bez części, albo do późniejszych zbieraczy, którzy otworzyli tę samą ranę już jako zdobycz.",
+     "external_site": "Spawy i rzędy nitów przechowują historię ciśnienia na naprawianych kadłubach, modułach i otwartych wrakach.",
+     "external_site_article": "Kadłub ciśnieniowy projektuje się, by ukryć panikę. Panele są gładkie, mocowania równe, znaki kontroli małe. Spaw łamie ten język. Jest lokalny, brzydki, gorący i konkretny. Wskazuje miejsce, gdzie system przestał być utrzymywany, a zaczął być proszony, by wytrzymał.\n\nCzytaj od starego do nowego. Fabryczne nity stoją w rzędach, bo obciążenie policzono przed dotknięciem oceanu. Spawy polowe puchną, bo kładziono je przy złym dostępie, słabej widoczności i złym czasie. Rdza pod łbem nitu pokazuje wilgotne powietrze w złączu. Sól pod spawem pokazuje przeciek, który wyschł i wrócił. Kołnierz śrubowy obok rozdartej płyty znaczy, że próbowano zostawić dostęp, potem porzucono uprzejmość.\n\nNajcenniejsze szwy rzadko są największe. Najważniejsze są te, które przerywają czysty wzór. Jeden brzydki spaw przez panel serwisowy może ujawnić zamknięty przedział, kieszeń ofiar, maszynę w kwarantannie albo trasę, gdzie później cięto ten sam strach lepszym narzędziem.",
+     "field_note": "Jeśli szew wygląda zbyt nowo, pytaj jaką starą awarię zasłania."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал зварного шва й ряду заклепок",
+     "scanner": "СТИК КОРПУСА // Горбистий підводний зварний валик, окиснений ряд заклепок, рваний край ремонтної пластини, сіль під швом. Лінія прокладки частково похована пізнім металом. Це не заводський стик.",
+     "terminal": "ЧИТАННЯ СТИКУ // Зварка поверх прокладки: ремонт після стискання ущільнення. Іржа під заклепками: повторне вологе дихання. Світла подряпина на валику: шов пробували інструментом після циклів тиску.",
+     "audio": "Зварка - підпис, зроблений жаром. Ряд заклепок не бреше про ритм.",
+     "in_game_wiki": "Зварні шви й ряди заклепок - місця, де чиста геометрія колонії починає зізнаватися. Заводські лінії корпусу повторюються терпляче: крок, фаска, прокладка, смуга огляду. Польовий ремонт говорить інакше. Він збивається, пухне, налазить на стару фарбу й лишає тепло там, де стартова схема його не чекала.\n\nПорядок розповідає історію. Ряд заклепок під пізнім швом означає, що первинному кріпленню вже не вірили. Сіль під валиком каже, що стик дихав водою не раз. Канал прокладки, наполовину похований металом, означає вибір міцності замість обслуговування. Рваний край пластини біля чистого валика часто говорить про поспіх: часу вистачило закрити, але не зробити корпус чесним.\n\nДля мародера ремонтний шов іноді кращий за карту. Він веде до кімнати, що текла, перебірки, що грала під тиском, екіпажу з інструментом без запасної деталі або до пізніх збирачів, які відкрили ту саму рану вже не ремонтом.",
+     "external_site": "Зварні шви й ряди заклепок зберігають історію тиску на ремонтованих корпусах, модулях бази й відкритих уламках.",
+     "external_site_article": "Напірний корпус проектують так, щоб ховати паніку. Панелі гладкі, кріплення рівне, інспекційні позначки малі й чиновні. Зварний шов ламає цю мову. Він місцевий, потворний, гарячий і конкретний. Він називає місце, де систему перестали обслуговувати й почали просити триматися.\n\nЧитай від старого до нового. Заводські заклепки стоять рядами, бо навантаження рахували до океану. Польові валики пухнуть, бо їх клали руками при поганому доступі, мутній воді й поганому часі. Іржа під головкою заклепки показує вологе повітря в стику. Сіль під швом показує течу, що висохла й повернулась. Болтовий фланець біля рваної пластини означає спробу лишити майбутній доступ, поки тиск не став голоснішим.\n\nНайцінніші шви не найбільші. Важливі ті, що переривають чистий узор. Один негарний валик через сервісну панель може показати запечатаний відсік, кишеню загиблих, карантинну машину або маршрут, де пізніше різали той самий страх кращим інструментом і меншою жалістю.",
+     "field_note": "Якщо шов надто новий, спитай яку стару відмову він прикриває."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل اللحام وصفوف البرشام",
+     "scanner": "وصلة بدن // خرزة لحام متكتلة تحت الماء، صف برشام مؤكسد، حافة صفيحة ممزقة، أثر ملح تحت الوصلة. خط الحشية مدفون جزئيا تحت معدن لاحق. ليست وصلة مصنع.",
+     "terminal": "قراءة الوصلة // لحام فوق الحشية يعني إصلاحا بعد انضغاط الختم. صدأ تحت البرشام يعني تنفسا رطبا متكررا لا فيضانا واحدا. كشط لامع على الخرزة يعني اختبار أداة بعد دورات ضغط.",
+     "audio": "اللحام توقيع تكتبه الحرارة. صف البرشام لا يكذب في الإيقاع.",
+     "in_game_wiki": "اللحامات وصفوف البرشام هي المواضع التي تبدأ فيها هندسة المستعمرة النظيفة بالاعتراف. خطوط المصنع تتكرر بصبر: مسافة، شطفة، حشية، شريط فحص. إصلاح الحقل لا يتكلم هكذا. يتلعثم، ينتفخ، يركب فوق الطلاء القديم، ويترك آثار حرارة حيث لم يتوقع المخطط حرارة.\n\nالترتيب يحكي القصة. صف برشام تحت لحام لاحق يعني أن التثبيت الأصلي لم يعد موثوقا. الملح تحت خرزة اللحام يعني أن الوصلة تنفست الماء أكثر من مرة. قناة حشية نصف مدفونة تعني اختيار القوة على الصيانة. حواف الصفيحة الممزقة قرب خرزة نظيفة تعني غالبا عجلة: وقت يكفي للإغلاق، لا يكفي لجعل البدن صادقا.\n\nبالنسبة إلى المغير، قد تكون الوصلة المرممة أفضل من خريطة. تشير إلى غرفة سربت، حاجز انثنى تحت الضغط، طاقم لديه أدوات بلا قطعة بديلة، أو فريق استرداد فتح الجرح نفسه لاحقا بوصفه غنيمة لا إصلاحا.",
+     "external_site": "اللحامات وصفوف البرشام تحفظ تاريخ الضغط في الأبدان المرممة ووحدات القاعدة والحطام المفتوح.",
+     "external_site_article": "بدن الضغط مصمم لإخفاء الذعر. الألواح ناعمة، المثبتات منتظمة، وعلامات الفحص صغيرة. اللحام يكسر هذه اللغة. هو محلي، قبيح، ساخن، ومحدد. يسمي المكان الذي توقف فيه النظام عن الصيانة وبدأ يطلب منه أن يصمد.\n\nاقرأ من القديم إلى الجديد. برشام المصنع في صفوف لأن الحمل حسب قبل أن يلمس المحيط الجدار. لحام الحقل ينتفخ لأن الأيدي وضعته في وصول سيئ ورؤية سيئة ووقت سيئ. الصدأ تحت رأس البرشام يدل على هواء رطب داخل الوصلة. الملح تحت اللحام يدل على تسرب جف ثم عاد. شفة مسامير قرب صفيحة ممزقة تعني أن الطاقم حاول ترك وصول للمستقبل ثم ترك هذا الأدب حين صار الضغط أعلى.\n\nأثمن اللحامات ليست الأكبر. إنها التي تقطع النمط النظيف. خرزة قبيحة واحدة عبر لوحة خدمة قد تكشف حجرة مغلقة، جيب موتى، آلة معزولة، أو طريقا قطع فيه اللاحقون الخوف نفسه بأدوات أفضل ورحمة أقل.",
+     "field_note": "إذا بدت الوصلة جديدة جدا، فاسأل أي فشل قديم تحاول إخفاءه."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Catatan Las dan Baris Paku Keling",
+     "scanner": "SAMBUNGAN LAMBUNG // Manik las bawah air menggumpal, baris paku keling teroksidasi, tepi pelat robek, alur garam di bawah sambungan. Garis gasket sebagian terkubur logam belakangan. Ini bukan sambungan pabrik.",
+     "terminal": "BACA SAMBUNGAN // Las di atas gasket berarti perbaikan setelah seal tertekan. Karat bawah paku keling berarti napas basah berulang, bukan satu banjir. Gores terang di puncak las berarti diuji alat setelah siklus tekanan.",
+     "audio": "Las adalah tanda tangan yang dibuat panas. Baris paku keling tidak bisa berbohong tentang ritme.",
+     "in_game_wiki": "Las dan baris paku keling adalah tempat geometri bersih koloni mulai mengaku. Garis pabrik berulang sabar: jarak, bevel, gasket, pita inspeksi. Perbaikan lapangan tidak bicara begitu. Ia tersendat, membengkak, menimpa cat lama, dan meninggalkan bekas panas di tempat yang tidak diharapkan gambar peluncuran.\n\nUrutan menceritakan kisah. Baris paku keling di bawah las belakangan berarti pengikat asli tidak lagi dipercaya. Garam di bawah manik las berarti sambungan bernapas air lebih dari sekali. Kanal gasket setengah terkubur logam berarti kekuatan dipilih di atas kemudahan servis. Tepi pelat robek dekat manik bersih biasanya berarti tergesa: cukup waktu menutup, tidak cukup waktu membuat lambung jujur.\n\nBagi penjarah, sambungan yang diperbaiki bisa lebih berguna daripada peta. Ia menunjuk ruang yang bocor, sekat yang melentur, kru dengan alat tanpa suku cadang, atau tim pemulihan yang membuka luka yang sama ketika nama perbaikannya sudah hilang.",
+     "external_site": "Las dan baris paku keling menyimpan sejarah tekanan pada lambung, modul, dan rongsokan yang pernah diperbaiki.",
+     "external_site_article": "Lambung tekanan dirancang untuk menyembunyikan panik. Panel halus, pengikat berjarak rata, tanda inspeksi kecil. Las mematahkan bahasa itu. Ia lokal, jelek, panas, dan spesifik. Ia menamai tempat sistem berhenti dirawat dan mulai dimohon agar bertahan.\n\nBaca dari lama ke baru. Paku keling pabrik berbaris karena beban dihitung sebelum laut menyentuh dinding. Manik lapangan membengkak karena tangan membuatnya dengan akses buruk, pandangan buruk, dan waktu buruk. Karat di bawah kepala paku keling menunjukkan udara basah di sambungan. Garam di bawah las menunjukkan kebocoran yang mengering lalu kembali. Flens baut di samping pelat robek berarti kru mencoba menyisakan akses, lalu meninggalkan sopan santun itu saat tekanan makin keras.\n\nSambungan paling berharga jarang yang terbesar. Yang penting adalah yang memotong pola bersih. Satu manik buruk melintasi panel servis bisa membuka kompartemen tersegel, kantong korban, mesin karantina, atau rute tempat orang belakangan memotong ketakutan yang sama dengan alat lebih baik dan belas kasihan lebih sedikit.",
+     "field_note": "Jika sambungan terlihat terlalu baru, tanyakan kegagalan lama apa yang sedang ditutupinya."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "용접 이음과 리벳 열 장부",
+     "scanner": "선체 이음 // 물속에서 뭉친 용접 비드, 산화된 리벳 열, 찢긴 보수판 가장자리, 이음 아래 소금 자국. 가스켓 선이 나중 금속에 반쯤 묻혔다. 공장 이음이 아니다.",
+     "terminal": "이음 읽기 // 가스켓 위 용접은 밀봉 압축 후 보수다. 리벳 아래 녹은 한 번의 침수가 아니라 반복된 젖은 호흡이다. 비드 꼭대기 밝은 긁힘은 압력 주기 뒤 도구로 시험한 흔적이다.",
+     "audio": "용접은 열로 남긴 서명이다. 리벳 열은 리듬을 속이지 못한다.",
+     "in_game_wiki": "용접 이음과 리벳 열은 식민지의 깨끗한 기하가 자백하기 시작하는 자리다. 공장 선체선은 간격, 베벨, 가스켓, 검사 띠를 참을성 있게 반복한다. 현장 보수는 그렇게 말하지 않는다. 더듬고, 부풀고, 낡은 페인트를 덮으며, 발사 도면이 열을 예상하지 않은 곳에 열 흉터를 남긴다.\n\n순서가 이야기다. 나중 용접 아래 리벳 열이 있으면 원래 고정은 더는 믿지 않았다는 뜻이다. 비드 아래 소금은 이음이 물을 여러 번 들이쉬었다는 뜻이다. 금속에 반쯤 묻힌 가스켓 홈은 정비성보다 강도를 골랐다는 증거다. 깨끗한 비드 옆 찢긴 판 가장자리는 대개 서두름을 말한다. 막을 시간은 있었지만 선체를 정직하게 만들 시간은 없었다.\n\n마라우더에게 보수된 이음은 지도보다 나을 때가 있다. 새던 방, 압력에 휜 격벽, 도구는 있었지만 부품은 없던 승무원, 또는 나중 회수팀이 같은 상처를 보수가 아니라 채취로 다시 연 곳을 가리킨다.",
+     "external_site": "용접 이음과 리벳 열은 보수된 선체, 기지 모듈, 열린 잔해의 압력 이력을 보존한다.",
+     "external_site_article": "압력 선체는 공포를 숨기도록 설계된다. 패널은 매끈하고, 고정물은 일정하며, 검사 표식은 작고 관료적이다. 용접은 그 언어를 깨뜨린다. 국소적이고, 못생겼고, 뜨겁고, 구체적이다. 시스템이 유지보수를 멈추고 버텨 달라고 요구받기 시작한 지점을 부른다.\n\n오래된 것에서 새것으로 읽어라. 공장 리벳은 바다가 벽에 닿기 전 하중이 계산되었기 때문에 줄을 이룬다. 현장 비드는 나쁜 접근, 나쁜 시야, 나쁜 시간 속에서 손으로 놓였기 때문에 부푼다. 리벳 머리 아래 녹은 젖은 공기가 이음 안을 지난 흔적이다. 용접 아래 소금은 말랐다가 돌아온 누수다. 찢긴 판 옆 볼트 플랜지는 승무원이 미래 접근을 남기려 했지만 압력이 더 커지자 그 예의를 버렸다는 뜻이다.\n\n가장 값진 이음은 대개 가장 큰 것이 아니다. 깨끗한 패턴을 끊는 것이다. 서비스 패널을 가로지르는 못생긴 비드 하나가 봉인 구획, 사망자 주머니, 격리된 기계, 또는 나중 사람들이 같은 공포를 더 좋은 도구와 적은 자비로 자른 길을 드러낼 수 있다.",
+     "field_note": "이음이 너무 새것 같다면, 어떤 오래된 실패를 덮고 있는지 물어라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן תפרי ריתוך ושורות מסמרות",
+     "scanner": "חיבור גוף // חרוז ריתוך גבשושי מתחת למים, שורת מסמרות מחומצנת, קצה לוח קרוע, מלח מתחת לתפר. קו אטם קבור חלקית תחת מתכת מאוחרת. זה אינו חיבור מפעל.",
+     "terminal": "קריאת חיבור // ריתוך מעל אטם אומר תיקון אחרי דחיסה. חלודה תחת מסמרות אומרת נשימה לחה חוזרת. שריטה בהירה על הריתוך אומרת בדיקת כלי אחרי מחזורי לחץ.",
+     "audio": "ריתוך הוא חתימה שנכתבת בחום. שורת מסמרות אינה יכולה לשקר בקצב.",
+     "in_game_wiki": "תפרי ריתוך ושורות מסמרות הם המקומות שבהם הגאומטריה הנקייה של המושבה מתחילה להתוודות. קווי מפעל חוזרים בסבלנות: מרווח, שיפוע, אטם, פס בדיקה. תיקון שטח אינו מדבר כך. הוא מגמגם, מתנפח, עולה על צבע ישן ומשאיר חום במקום ששום תרשים שיגור לא ציפה לו.\n\nהסדר מספר. שורת מסמרות תחת ריתוך מאוחר פירושה שהחיבור המקורי כבר לא היה אמין. מלח תחת החרוז אומר שהחיבור נשם מים יותר מפעם אחת. תעלת אטם קבורה למחצה אומרת שמישהו בחר חוזק על פני שירות. קצה לוח קרוע ליד חרוז נקי מדבר לרוב על בהילות: היה זמן לסגור, לא היה זמן להפוך את הגוף כן.\n\nלמבזז, תפר מתוקן יכול להיות טוב ממפה. הוא מצביע אל חדר שדלף, מחיצה שהתכופפה, צוות עם כלים בלי חלק חלופי, או צוות חילוץ מאוחר שפתח את אותו פצע כשכבר לא קראו לזה תיקון.",
+     "external_site": "תפרי ריתוך ושורות מסמרות שומרים את היסטוריית הלחץ של גופים מתוקנים, מודולי בסיס ושברים פתוחים.",
+     "external_site_article": "גוף לחץ מתוכנן להסתיר פאניקה. הלוחות חלקים, המחברים שווים, סימני הבדיקה קטנים. הריתוך שובר את השפה הזו. הוא מקומי, מכוער, חם ומדויק. הוא קורא בשם המקום שבו מערכת הפסיקה לקבל תחזוקה והתחילה להתחנן להחזיק.\n\nקרא מהישן לחדש. מסמרות מפעל עומדות בשורות כי העומס חושב לפני שהים נגע בקיר. חרוזי שטח מתנפחים כי ידיים הניחו אותם בגישה גרועה, ראות גרועה וזמן גרוע. חלודה תחת ראש מסמרת מראה אוויר לח במפרק. מלח תחת ריתוך מראה דליפה שהתייבשה וחזרה. אוגן ברגים ליד לוח קרוע אומר שהצוות ניסה להשאיר גישה עתידית ואז ויתר על הנימוס כשהלחץ נעשה חזק יותר.\n\nהתפרים היקרים ביותר אינם הגדולים ביותר. אלה שקוטעים דפוס נקי. חרוז מכוער אחד על פני לוח שירות יכול לחשוף תא אטום, כיס מתים, מכונה בהסגר או נתיב שבו מאוחרים יותר חתכו את אותו פחד בכלים טובים יותר ופחות רחמים.",
+     "field_note": "אם תפר נראה חדש מדי, שאל איזה כשל ישן הוא מנסה לכסות."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Soldas e Fileiras de Rebites",
+     "scanner": "JUNTA DE CASCO // Cordão de solda submarino irregular, fileira de rebites oxidada, borda de placa rasgada, sal sob a emenda. Linha de junta parcialmente enterrada por metal posterior. Não é junta de fábrica.",
+     "terminal": "LEITURA DA JUNTA // Solda sobre junta: reparo após compressão. Ferrugem sob rebites: respiração úmida repetida. Risco claro no topo do cordão: teste com ferramenta após ciclos de pressão.",
+     "audio": "Uma solda é uma assinatura feita por calor. Uma fileira de rebites não mente sobre ritmo.",
+     "in_game_wiki": "Soldas e fileiras de rebites são onde a geometria limpa da colônia começa a confessar. Linhas de fábrica repetem com paciência: passo, chanfro, junta, faixa de inspeção. Reparos de campo não falam assim. Eles tropeçam, incham, passam por cima da tinta velha e deixam calor onde nenhum diagrama esperava calor.\n\nA ordem conta a história. Rebites sob uma solda posterior significam que a fixação original já não era confiável. Sal sob o cordão significa que a junta respirou água mais de uma vez. Canal de junta meio enterrado por metal significa força escolhida contra manutenção. Borda rasgada perto de cordão limpo costuma marcar pressa: tempo para fechar, não para deixar o casco honesto.\n\nPara um saqueador, uma emenda reparada pode ser melhor que mapa. Ela aponta para sala que vazou, antepara que flexionou, tripulação com ferramentas sem peça reserva, ou equipe posterior que reabriu a mesma ferida quando já não chamavam aquilo de reparo.",
+     "external_site": "Soldas e fileiras de rebites preservam a história de pressão em cascos reparados, módulos de base e destroços abertos.",
+     "external_site_article": "Um casco de pressão é desenhado para esconder pânico. Painéis lisos, fixadores regulares, marcas de inspeção pequenas. A solda quebra essa língua. É local, feia, quente e específica. Nomeia o lugar onde um sistema deixou de ser mantido e começou a ser implorado para aguentar.\n\nLeia do velho para o novo. Rebites de fábrica ficam em fileiras porque a carga foi calculada antes do oceano tocar a parede. Cordões de campo incham porque mãos os fizeram com acesso ruim, visibilidade ruim e tempo ruim. Ferrugem sob cabeça de rebite mostra ar úmido na junta. Sal sob solda mostra vazamento que secou e voltou. Flange parafusado ao lado de placa rasgada significa que a equipe tentou deixar acesso futuro, depois abandonou essa cortesia quando a pressão ficou mais alta.\n\nAs emendas mais valiosas raramente são as maiores. São as que interrompem um padrão limpo. Um cordão feio atravessando painel de serviço pode revelar compartimento selado, bolsa de mortos, máquina em quarentena ou rota onde posteriores cortaram o mesmo medo com ferramenta melhor e menos piedade.",
+     "field_note": "Se uma emenda parece nova demais, pergunte que falha velha ela tenta cobrir."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Log van lasnaden en klinknagelrijen",
+     "scanner": "ROMPNAAD // Klonterige onderwaterlas, geoxideerde klinknagelrij, gescheurde reparatieplaat, zoutspoor onder de naad. Pakkinglijn deels begraven onder later metaal. Geen fabrieksnaad.",
+     "terminal": "NAAD LEZEN // Las over pakking: reparatie na sealcompressie. Roest onder klinknagels: herhaald nat ademen, geen enkele overstroming. Heldere kras op lasrug: gereedschapstest na drukcycli.",
+     "audio": "Een las is een handtekening van hitte. Een klinknagelrij liegt niet over ritme.",
+     "in_game_wiki": "Lasnaden en klinknagelrijen zijn waar de schone geometrie van de kolonie begint te bekennen. Fabriekslijnen herhalen geduldig: afstand, afschuining, pakking, inspectiestrook. Veldreparaties praten anders. Ze haperen, zwellen, overlappen oude verf en laten hitte achter waar geen lanceertekening hitte verwachtte.\n\nDe volgorde vertelt. Een klinknagelrij onder een latere las betekent dat de oorspronkelijke bevestiging niet meer werd vertrouwd. Zout onder de las betekent dat de naad meer dan eens water ademde. Een half begraven pakkingkanaal betekent sterkte boven onderhoud. Gescheurde plaatranden naast een schone las spreken meestal van haast: genoeg tijd om te sluiten, niet genoeg om de romp eerlijk te maken.\n\nVoor een plunderaar kan een gerepareerde naad beter zijn dan een kaart. Hij wijst naar een lekkende kamer, een schot dat boog, een bemanning met gereedschap maar zonder vervangdeel, of latere bergers die dezelfde wond openden toen niemand het nog reparatie noemde.",
+     "external_site": "Lasnaden en klinknagelrijen bewaren drukgeschiedenis op gerepareerde rompen, basismodules en geopende wrakken.",
+     "external_site_article": "Een drukromp is ontworpen om paniek te verbergen. Panelen glad, bevestigingen gelijkmatig, inspectiemerken klein. De las breekt die taal. Hij is plaatselijk, lelijk, heet en specifiek. Hij noemt de plek waar een systeem niet meer werd onderhouden maar werd gesmeekt om stand te houden.\n\nLees van oud naar nieuw. Fabrieksklinknagels staan in rijen omdat belasting was berekend voordat de oceaan de wand raakte. Veldlassen zwellen omdat handen ze legden met slechte toegang, slecht zicht en slechte tijd. Roest onder een klinknagelkop toont natte lucht in de naad. Zout onder een las toont een lek dat droogde en terugkwam. Een boutflens naast een gescheurde plaat betekent dat men toegang voor later wilde laten, tot de druk luider werd.\n\nDe waardevolste naden zijn zelden de grootste. Het zijn de naden die een schoon patroon onderbreken. Een enkele lelijke las over een servicepaneel kan een verzegeld compartiment, een dodenruimte, een quarantainemachine of een route onthullen waar latere bergers dezelfde angst met beter gereedschap en minder mededogen doorsneden.",
+     "field_note": "Als een naad te nieuw lijkt, vraag welke oude fout hij probeert te bedekken."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

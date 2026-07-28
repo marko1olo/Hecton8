@@ -1,226 +1,227 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS164_SILENT_ORBIT_RECEIPT_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS164_SILENT_ORBIT_RECEIPT_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1090_SILENT_ORBIT_RECEIPT_LEDGER",
+   "release_set_id": "RS164_SILENT_ORBIT_RECEIPT_ARTICLE",
+   "article_id": "applied_lore.silent_orbit_receipt_ledger",
+   "title_key": "LORE_SILENT_ORBIT_RECEIPT_LEDGER_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/Grand_Library/09_COMMUNICATIONS_AND_ISOLATION_en_US.md",
+    "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1090_SILENT_ORBIT_RECEIPT_LEDGER",
-      "release_set_id": "RS164_SILENT_ORBIT_RECEIPT_ARTICLE",
-      "article_id": "applied_lore.silent_orbit_receipt_ledger",
-      "title_key": "LORE_SILENT_ORBIT_RECEIPT_LEDGER_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/Grand_Library/09_COMMUNICATIONS_AND_ISOLATION_en_US.md",
-        "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.silent_orbit_receipt_ledger",
-        "secondary": [
-          "unlock.first_black_keel_receipt",
-          "unlock.first_acoustic_link_delay",
-          "unlock.first_kestrel_shadow_window"
-        ],
-        "poi_tags": [
-          "poi.black_keel_receipt_console",
-          "poi.acoustic_relay_spine",
-          "poi.silent_orbit_log"
-        ],
-        "biome_tags": [
-          "biome.deep_archive",
-          "biome.comms_route",
-          "biome.black_keel_window"
-        ],
-        "first_20_boundary": "Turns the first Black Keel contact from generic comms flavor into the core lesson: a receipt is not rescue."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Acoustic Link Diagnostic",
-          "terminal": "Black Keel Orbital Receipt",
-          "audio": "Carrier Receipt Bark",
-          "in_game_wiki": "PDA Comms Archive",
-          "external_site": "Public Site Hard-Sci-Fi Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "depth_band": "200m_radio_cutoff_to_8500m_sector_44_archive",
-        "route_moment": "first_receipt_without_rescue",
-        "truth_payload": "HECTON-8 isolation comes from physics, orbital geometry, contract custody and Black Keel claim logic. The carrier can acknowledge a manifest without issuing extraction.",
-        "player_question": "Why did the carrier answer the packet but still leave me alone?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Silent Orbit Receipt Ledger",
-          "scanner": "ACOUSTIC RECEIPT // Packet accepted at 312 bps. Hull mass, oxygen lease, claim hash and salvage checksum received. No extraction vector attached.",
-          "terminal": "BLACK KEEL ORBITAL RECEIPT BKH8-RC-2190-0041 // Uplink class: acoustic. Sender: debt-bound contractor. Payload: manifest preview, pressure telemetry, suit-life estimate. Status: received, escrowed, not recovered. Kestrel shadow window closes in 11 h 40 m. Recovery requires certified ascent mass, quarantine handshake and payable claim material.",
-          "audio": "Receipt logged. Manifest heard. Extraction vector withheld. Send mass, seal proof and a cleaner checksum.",
-          "in_game_wiki": "The first Black Keel receipt gives a Marauder acknowledgement without help. Radio dies below the upper ocean. Laser and microwave links scatter or vanish. At depth, a contractor talks through slow acoustic pulses that carry text, hashes, pressure warnings and payable mass records. Black Keel answers for contract custody, not for rescue.\n\nKestrel, storm windows and HECTON-8's mineral ocean can age a message into stale evidence before orbit clears. A receipt proves the carrier heard enough to price the run. It proves no extraction, mercy or live command. The first real reply can feel colder than silence: the system can count you before it can save you.",
-          "external_site": "Black Keel is not a home ship waiting above HECTON-8. It is an Aegir-system claim tender built to hold orbit, price recovery, verify manifests and protect the Aegir Reclamation Pool from loss. Below the upper ocean, ordinary radio stops being useful. The water is dense with salts, metals and industrial dust; the player has to push data through low-frequency acoustic pulses that move slowly and carry little.\n\nThat constraint is central to HECTON-8. No FTL reply is coming from Sol. No ansible voice can talk the player out of a flooded module. Even local orbit is broken into windows by storms, moon geometry and Kestrel's relay shadow. Black Keel may confirm a packet because its ledgers require custody. It may still withhold extraction until ascent mass, quarantine status and payload value fit the contract.\n\nThe receipt is paper trail, not comfort. The carrier says received. The room stays dark. The contractor still has to breathe long enough to make the ledger worth opening again.",
-          "field_note": "A receipt is not rescue. It means the Keel can bill the packet. Keep breathing until the packet can bill you back."
-        },
-        "ar_SA": {
-          "title": "سجل إيصالات المدار الصامت",
-          "scanner": "إيصال صوتي // قُبلت الحزمة بسرعة 312 بت/ث. تم استلام كتلة الهيكل، إيجار الأكسجين، بصمة المطالبة، ومجموع فحص الخردة. لا يوجد متجه استخراج.",
-          "terminal": "إيصال BLACK KEEL المداري BKH8-RC-2190-0041 // فئة الرفع: صوتية. المرسل: مقاول مديون. الحمولة: معاينة بيان، قياس ضغط، تقدير عمر البدلة. الحالة: مستلم، في الضمان، غير مستعاد. نافذة ظل Kestrel تغلق خلال 11 س 40 د. الاستعادة تتطلب كتلة صعود موثقة، مصافحة حجر، ومادة مطالبة قابلة للدفع.",
-          "audio": "تم تسجيل الإيصال. سُمع البيان. متجه الاستخراج محجوب. أرسل كتلة، إثبات ختم، ومجموع فحص أنظف.",
-          "in_game_wiki": "سجل إيصالات المدار الصامت هو أول شيء صادق يقدمه Black Keel لماراودر: اعتراف بلا عون. الراديو يموت تحت الطبقة العليا من المحيط. الليزر والميكروويف يتبعثران أو يختفيان. في العمق يتكلم المقاول عبر نبضات صوتية بطيئة تحمل نصوصا وبصمات وتحذيرات ضغط وسجلات كتلة قابلة للدفع. يرد Black Keel لأن الحفظ التعاقدي يحتاج إلى إيصال، لا لأن شخصا ينتظر بلوحة إنقاذ.\n\nيمكن لـ Kestrel والطقس ومحيط HECTON-8 المعدني أن يحولوا الرسالة إلى دليل قديم قبل أن يصفو المدار. الإيصال يثبت أن الحاملة سمعت ما يكفي لتسعير المهمة. لا يثبت استخراجا أو رحمة أو أمرا حيا. لذلك يبدو أول رد حقيقي أبرد من الصمت: النظام يستطيع عدك قبل أن يستطيع إنقاذك.",
-          "external_site": "Black Keel ليست سفينة بيت تنتظر فوق HECTON-8. إنها عربة مطالبات في نظام Aegir: تثبت المدار، تسعر الاسترداد، تتحقق من البيانات، وتحمي Aegir Reclamation Pool من الخسارة. تحت المحيط العلوي، لا يعود الراديو العادي مفيدا. الماء محمل بالأملاح والمعادن وغبار الصناعة، وعلى اللاعب دفع البيانات عبر نبضات صوتية منخفضة التردد، بطيئة وفقيرة السعة.\n\nهذا القيد هو قلب HECTON-8. لن يأتي رد FTL من Sol. لا توجد ansible تخرج اللاعب من وحدة تغرق. حتى المدار المحلي مقطع بنوافذ العواصف وهندسة الأقمار وظل Kestrel. قد يؤكد Black Keel الحزمة لأن سجلاته تحتاج إلى حفظ. وقد يحجب الاستخراج حتى تناسب كتلة الصعود وحالة الحجر وقيمة الحمولة العقد.",
-          "field_note": "الإيصال ليس إنقاذا. يعني أن Keel يستطيع فوترة الحزمة. ابق تتنفس حتى تصبح الحزمة قادرة على فوترة طريق عودتك."
-        },
-        "de_DE": {
-          "title": "Empfangsbuch der stillen Umlaufbahn",
-          "scanner": "AKUSTIKEMPFANG // Paket mit 312 bps angenommen. Rumpfmasse, Sauerstoffpacht, Claim-Hash und Bergungsprüfsumme empfangen. Kein Extraktionsvektor angehängt.",
-          "terminal": "BLACK-KEEL-ORBITALEMPFANG BKH8-RC-2190-0041 // Uplinkklasse: akustisch. Absender: schuldengebundener Auftragnehmer. Nutzlast: Manifestvorschau, Drucktelemetrie, Anzuglebensdauer. Status: empfangen, treuhändisch gebucht, nicht geborgen. Kestrel-Schattenfenster schließt in 11 h 40 m. Bergung erfordert zertifizierte Aufstiegsmasse, Quarantäne-Handshake und zahlungsfähiges Claim-Material.",
-          "audio": "Empfang gebucht. Manifest gehört. Extraktionsvektor zurückgehalten. Sende Masse, Dichtungsnachweis und sauberere Prüfsumme.",
-          "in_game_wiki": "Das Empfangsbuch der stillen Umlaufbahn ist Black Keels erste ehrliche Gabe an einen Marauder: Bestätigung ohne Hilfe. Unter der oberen Ozeanschicht stirbt Funk. Laser und Mikrowellen streuen oder verschwinden. In der Tiefe spricht ein Auftragnehmer mit langsamen Akustikpulsen, die Text, Hashes, Druckwarnungen und abrechenbare Massedaten tragen. Black Keel beantwortet diese Pakete, weil Vertragsgewahrsam einen Empfang braucht, nicht weil ein Mensch mit Rettungsplan zuhört.\n\nKestrel, Sturmfenster und HECTON-8s mineralischer Ozean können eine Nachricht zu altem Beweis machen, bevor die Umlaufbahn frei wird. Ein Empfang beweist nur, dass der Tender genug gehört hat, um den Lauf zu bepreisen. Er beweist keine Bergung, keine Gnade und keinen Live-Befehl. Darum ist die erste echte Antwort kälter als Stille: Das System kann dich zählen, bevor es dich retten kann.",
-          "external_site": "Black Keel ist kein Heimatschiff über HECTON-8. Es ist ein Claim-Tender im Aegir-System: Umlaufbahn halten, Bergung bepreisen, Manifeste prüfen, den Aegir Reclamation Pool vor Verlust schützen. Unter dem oberen Ozean wird normaler Funk nutzlos. Das Wasser trägt Salze, Metalle und Industriestaub; Daten gehen nur als niederfrequente Akustikpulse hinaus, langsam und knapp.\n\nDiese Grenze prägt HECTON-8. Keine FTL-Antwort kommt aus Sol. Keine Ansible-Stimme redet den Spieler aus einem gefluteten Modul. Selbst der lokale Orbit zerfällt in Sturmfenster, Mondgeometrie und Kestrels Relaisschatten. Black Keel kann ein Paket bestätigen, weil seine Ledgers Gewahrsam brauchen, und die Extraktion trotzdem blockieren, bis Aufstiegsmasse, Quarantänestatus und Nutzlastwert zum Vertrag passen.",
-          "field_note": "Ein Empfang ist keine Rettung. Er heißt: Die Keel kann das Paket berechnen. Atme weiter, bis das Paket dich zurückberechnen kann."
-        },
-        "es_ES": {
-          "title": "Libro de recibos de la órbita silenciosa",
-          "scanner": "RECIBO ACÚSTICO // Paquete aceptado a 312 bps. Masa del casco, arriendo de oxígeno, hash de reclamación y suma de salvamento recibidos. Sin vector de extracción.",
-          "terminal": "RECIBO ORBITAL BLACK KEEL BKH8-RC-2190-0041 // Clase de enlace: acústica. Emisor: contratista endeudado. Carga: vista de manifiesto, telemetría de presión, estimación de vida del traje. Estado: recibido, en custodia, no recuperado. La ventana de sombra de Kestrel cierra en 11 h 40 m. La recuperación exige masa de ascenso certificada, acuerdo de cuarentena y material de reclamación pagable.",
-          "audio": "Recibo registrado. Manifiesto oído. Vector de extracción retenido. Envía masa, prueba de sello y una suma más limpia.",
-          "in_game_wiki": "El Libro de recibos de la órbita silenciosa es lo primero honesto que Black Keel da a un Marauder: confirmación sin ayuda. La radio muere bajo el océano superior. Láseres y microondas se dispersan o desaparecen. En profundidad, un contratista habla con pulsos acústicos lentos que llevan texto, hashes, avisos de presión y registros de masa pagable. Black Keel responde porque la custodia contractual exige recibo, no porque haya alguien con un tablero de rescate.\n\nKestrel, las ventanas de tormenta y el océano mineral de HECTON-8 pueden volver una señal prueba caducada antes de que despeje la órbita. Un recibo demuestra que la portadora oyó lo bastante para poner precio a la salida. No demuestra extracción, piedad ni mando vivo. Por eso la primera respuesta real se siente más fría que el silencio: el sistema puede contarte antes de poder salvarte.",
-          "external_site": "Black Keel no es una nave hogar esperando sobre HECTON-8. Es una portadora de reclamaciones del sistema Aegir: mantiene órbita, valora recuperaciones, verifica manifiestos y protege al Aegir Reclamation Pool de pérdidas. Bajo el océano superior, la radio normal deja de servir. El agua está cargada de sales, metales y polvo industrial; el jugador debe empujar datos por pulsos acústicos de baja frecuencia, lentos y estrechos.\n\nEsa restricción define HECTON-8. No llega respuesta FTL desde Sol. No hay ansible que hable al jugador fuera de un módulo inundado. Incluso la órbita local queda partida por tormentas, geometría lunar y la sombra de Kestrel. Black Keel puede confirmar un paquete porque sus libros exigen custodia, y aun así retener extracción hasta que masa, cuarentena y valor de carga cuadren con el contrato.",
-          "field_note": "Un recibo no es rescate. Significa que la Keel puede facturar el paquete. Sigue respirando hasta que el paquete pueda facturarte de vuelta."
-        },
-        "fr_FR": {
-          "title": "Registre des reçus de l'orbite silencieuse",
-          "scanner": "REÇU ACOUSTIQUE // Paquet accepté à 312 bps. Masse coque, bail d'oxygène, hash de claim et somme de sauvetage reçus. Aucun vecteur d'extraction joint.",
-          "terminal": "REÇU ORBITAL BLACK KEEL BKH8-RC-2190-0041 // Classe uplink: acoustique. Émetteur: contractant sous dette. Charge: aperçu manifeste, télémétrie pression, durée de combinaison. Statut: reçu, mis sous séquestre, non récupéré. Fenêtre d'ombre Kestrel fermée dans 11 h 40 m. Récupération exige masse d'ascension certifiée, handshake quarantaine et matériau de claim payable.",
-          "audio": "Reçu inscrit. Manifeste entendu. Vecteur d'extraction retenu. Envoyez masse, preuve de joint et somme plus propre.",
-          "in_game_wiki": "Le Registre des reçus de l'orbite silencieuse est la première chose honnête que Black Keel donne à un Marauder: un accusé sans aide. La radio meurt sous l'océan supérieur. Lasers et micro-ondes se dispersent ou disparaissent. En profondeur, un contractant parle par impulsions acoustiques lentes: texte, hashes, alertes de pression et masse facturable. Black Keel répond parce que la garde contractuelle exige un reçu, pas parce qu'un humain attend avec un plan de sauvetage.\n\nKestrel, les fenêtres de tempête et l'océan minéral de HECTON-8 peuvent transformer un message en preuve périmée avant que l'orbite se dégage. Un reçu prouve que le tender a entendu assez pour chiffrer la course. Il ne prouve ni extraction, ni pitié, ni commande en direct. La première vraie réponse paraît donc plus froide que le silence: le système peut vous compter avant de pouvoir vous sauver.",
-          "external_site": "Black Keel n'est pas un vaisseau-refuge au-dessus de HECTON-8. C'est un tender de claims du système Aegir: tenir l'orbite, chiffrer la récupération, vérifier les manifestes, protéger l'Aegir Reclamation Pool contre les pertes. Sous l'océan supérieur, la radio ordinaire ne sert presque plus. L'eau porte sels, métaux et poussière industrielle; les données sortent par impulsions acoustiques basse fréquence, lentes et limitées.\n\nCette contrainte est centrale. Aucune réponse FTL ne vient de Sol. Aucune ansible ne guide le joueur hors d'un module noyé. Même l'orbite locale est découpée par les tempêtes, la géométrie des lunes et l'ombre relais de Kestrel. Black Keel peut confirmer un paquet parce que ses registres exigent une garde, puis retenir l'extraction jusqu'à accord entre masse d'ascension, quarantaine et valeur de charge.",
-          "field_note": "Un reçu n'est pas un sauvetage. Il dit que la Keel peut facturer le paquet. Respirez jusqu'à ce que le paquet puisse vous facturer le retour."
-        },
-        "he_IL": {
-          "title": "פנקס קבלות המסלול הדומם",
-          "scanner": "קבלה אקוסטית // החבילה התקבלה ב-312 bps. מסת גוף, חכירת חמצן, hash תביעה וסכום בדיקת חילוץ התקבלו. אין וקטור חילוץ.",
-          "terminal": "קבלת מסלול BLACK KEEL BKH8-RC-2190-0041 // סוג קישור: אקוסטי. שולח: קבלן כבול חוב. מטען: תצוגת מניפסט, טלמטריית לחץ, אומדן חיי חליפה. מצב: התקבל, בנאמנות, לא חולץ. חלון הצל של Kestrel נסגר בעוד 11 ש 40 ד. חילוץ דורש מסת עלייה מאושרת, לחיצת יד הסגר וחומר תביעה בר תשלום.",
-          "audio": "הקבלה נרשמה. המניפסט נשמע. וקטור החילוץ עוכב. שלח מסה, הוכחת אטימה וסכום בדיקה נקי יותר.",
-          "in_game_wiki": "פנקס קבלות המסלול הדומם הוא הדבר הישר הראשון ש-Black Keel נותנת ל-Marauder: אישור בלי עזרה. רדיו מת מתחת לאוקיינוס העליון. לייזר ומיקרוגל מתפזרים או נעלמים. בעומק, קבלן מדבר דרך פולסים אקוסטיים איטיים שנושאים טקסט, hashes, אזהרות לחץ ורשומות מסה לתשלום. Black Keel עונה כי משמורת חוזית דורשת קבלה, לא כי אדם ממתין עם לוח חילוץ.\n\nKestrel, חלונות סערה והאוקיינוס המינרלי של HECTON-8 יכולים להפוך הודעה לראיה ישנה לפני שהמסלול מתפנה. קבלה מוכיחה שהנושאת שמעה מספיק כדי לתמחר את הריצה. היא לא מוכיחה חילוץ, רחמים או פקודה חיה. לכן התשובה האמיתית הראשונה קרה יותר משתיקה: המערכת מסוגלת לספור אותך לפני שהיא מסוגלת להציל אותך.",
-          "external_site": "Black Keel אינה ספינת בית שמחכה מעל HECTON-8. היא נושאת תביעות במערכת Aegir: מחזיקה מסלול, מתמחרת חילוץ, מאמתת מניפסטים ומגינה על Aegir Reclamation Pool מהפסד. מתחת לאוקיינוס העליון, רדיו רגיל כמעט חסר ערך. המים מלאים מלחים, מתכות ואבק תעשייתי; נתונים יוצאים רק כפולסים אקוסטיים נמוכי תדר, איטיים וצרים.\n\nזה אחד מחוקי הבדידות של HECTON-8. אין תשובת FTL מ-Sol. אין ansible שמדברת את השחקן החוצה ממודול מוצף. גם המסלול המקומי נחתך בידי סערות, גאומטריית ירחים וצל הממסר של Kestrel. Black Keel עשויה לאשר חבילה כי הפנקס דורש משמורת, ועדיין לעכב חילוץ עד שמסה, הסגר וערך מטען יתאימו לחוזה.",
-          "field_note": "קבלה אינה חילוץ. היא אומרת שה-Keel יכולה לחייב את החבילה. המשך לנשום עד שהחבילה תוכל לחייב אותך בחזרה."
-        },
-        "id_ID": {
-          "title": "Ledger Tanda Terima Orbit Senyap",
-          "scanner": "TANDA TERIMA AKUSTIK // Paket diterima pada 312 bps. Massa lambung, sewa oksigen, hash klaim, dan checksum salvage diterima. Tidak ada vektor ekstraksi.",
-          "terminal": "TANDA TERIMA ORBIT BLACK KEEL BKH8-RC-2190-0041 // Kelas uplink: akustik. Pengirim: kontraktor berutang. Muatan: pratinjau manifes, telemetri tekanan, estimasi hidup suit. Status: diterima, di-escrow, belum dipulihkan. Jendela bayangan Kestrel tutup dalam 11 j 40 m. Pemulihan perlu massa naik tersertifikasi, handshake karantina, dan material klaim yang dapat dibayar.",
-          "audio": "Tanda terima tercatat. Manifes terdengar. Vektor ekstraksi ditahan. Kirim massa, bukti seal, dan checksum lebih bersih.",
-          "in_game_wiki": "Ledger Tanda Terima Orbit Senyap adalah kejujuran pertama Black Keel kepada Marauder: pengakuan tanpa bantuan. Radio mati di bawah lapisan atas samudra. Laser dan gelombang mikro pecah atau lenyap. Di kedalaman, kontraktor berbicara lewat pulsa akustik lambat berisi teks, hash, peringatan tekanan, dan catatan massa yang bisa ditagih. Black Keel menjawab karena kustodi kontrak membutuhkan tanda terima, bukan karena ada manusia memegang papan penyelamatan.\n\nKestrel, jendela badai, dan samudra mineral HECTON-8 dapat membuat pesan menjadi bukti basi sebelum orbit bersih. Tanda terima membuktikan tender mendengar cukup untuk memberi harga pada perjalanan. Itu tidak membuktikan ekstraksi, belas kasihan, atau perintah langsung. Jawaban pertama terasa lebih dingin dari sunyi karena sistem bisa menghitungmu sebelum bisa menyelamatkanmu.",
-          "external_site": "Black Keel bukan kapal rumah yang menunggu di atas HECTON-8. Ia tender klaim dalam sistem Aegir: menahan orbit, memberi harga pemulihan, memverifikasi manifes, dan melindungi Aegir Reclamation Pool dari rugi. Di bawah samudra atas, radio biasa tidak lagi berguna. Air penuh garam, logam, dan debu industri; data harus didorong lewat pulsa akustik frekuensi rendah yang lambat dan sempit.\n\nBatas ini membentuk HECTON-8. Tidak ada balasan FTL dari Sol. Tidak ada ansible yang membimbing pemain keluar dari modul banjir. Orbit lokal pun terpecah oleh badai, geometri bulan, dan bayangan relay Kestrel. Black Keel dapat mengonfirmasi paket karena ledger butuh kustodi, lalu tetap menahan ekstraksi sampai massa naik, status karantina, dan nilai muatan cocok dengan kontrak.",
-          "field_note": "Tanda terima bukan penyelamatan. Artinya Keel bisa menagih paket. Tetap bernapas sampai paket bisa menagih jalan pulang."
-        },
-        "ja_JP": {
-          "title": "静かな軌道の受領台帳",
-          "scanner": "音響受領 // パケットを312 bpsで受理。船殻質量、酸素リース、請求ハッシュ、サルベージ検査値を受信。抽出ベクトルなし。",
-          "terminal": "BLACK KEEL軌道受領 BKH8-RC-2190-0041 // アップリンク種別: 音響。送信者: 債務拘束契約者。内容: マニフェスト予告、圧力テレメトリ、スーツ残存推定。状態: 受領、エスクロー済み、未回収。Kestrel影窓は11時間40分後に閉鎖。回収には認証済み上昇質量、隔離ハンドシェイク、支払い対象請求物が必要。",
-          "audio": "受領記録。マニフェスト確認。抽出ベクトル保留。質量、シール証明、より清浄な検査値を送れ。",
-          "in_game_wiki": "静かな軌道の受領台帳は、Black KeelがMarauderに渡す最初の正直なものだ。助けではなく、受領だけ。上層海を過ぎると無線は死ぬ。レーザーもマイクロ波も散るか消える。深度では、契約者は低速の音響パルスで話す。運べるのは文字、ハッシュ、圧力警告、支払い対象の質量記録だけだ。Black Keelが応答するのは契約上の保管に受領が必要だからで、救助盤を見ている人間がいるからではない。\n\nKestrel、嵐の窓、HECTON-8の鉱物を含む海は、軌道が空く前にメッセージを古い証拠へ変える。受領は、テンダーが作業に値段を付けるだけの情報を聞いた証明でしかない。抽出、慈悲、ライブ指令の証明ではない。だから最初の本物の返答は沈黙より冷たい。システムは救う前に、まずあなたを数えられる。",
-          "external_site": "Black KeelはHECTON-8上空で待つ母船ではない。Aegir系の請求テンダーであり、軌道を保ち、回収を値付けし、マニフェストを検証し、Aegir Reclamation Poolの損失を抑える装置だ。上層海の下では通常の無線は役に立たない。水は塩、金属、産業粉塵を含み、データは低周波の音響パルスとして少しずつ押し出される。\n\nこの制約がHECTON-8の孤立を作る。SolからFTL返答は来ない。浸水モジュールからプレイヤーを導くansibleの声もない。局地軌道でさえ嵐、月の幾何、Kestrelの中継影に切られる。Black Keelは台帳上の保管義務でパケットを確認し、上昇質量、隔離状態、ペイロード価値が契約に合うまで抽出を止めることがある。",
-          "field_note": "受領は救助ではない。Keelがパケットに請求できるという意味だ。帰り道を請求できるまで息を残せ。"
-        },
-        "ko_KR": {
-          "title": "침묵 궤도 수신 장부",
-          "scanner": "음향 수신 // 패킷 312 bps 수락. 선체 질량, 산소 임대, 클레임 해시, 회수 체크섬 수신. 추출 벡터 없음.",
-          "terminal": "BLACK KEEL 궤도 수신 BKH8-RC-2190-0041 // 업링크 등급: 음향. 발신자: 채무 구속 계약자. payload: 매니페스트 미리보기, 압력 원격측정, 슈트 생존 추정. 상태: 수신, 에스크로, 미회수. Kestrel 그림자 창 11 h 40 m 후 종료. 회수에는 인증된 상승 질량, 격리 핸드셰이크, 지불 가능한 클레임 물질 필요.",
-          "audio": "수신 기록. 매니페스트 청취. 추출 벡터 보류. 질량, 밀봉 증거, 더 깨끗한 체크섬 전송.",
-          "in_game_wiki": "침묵 궤도 수신 장부는 Black Keel이 Marauder에게 주는 첫 정직한 물건이다. 도움 없는 확인. 상층 해양 아래에서 무전은 죽는다. 레이저와 마이크로파는 흩어지거나 사라진다. 깊이에서는 계약자가 느린 음향 펄스로 말한다. 운반되는 것은 텍스트, 해시, 압력 경고, 청구 가능한 질량 기록뿐이다. Black Keel이 답하는 이유는 계약 보관에 수신증이 필요해서지, 구조판을 든 사람이 듣고 있어서가 아니다.\n\nKestrel, 폭풍 창, HECTON-8의 광물성 바다는 궤도가 열리기 전에 메시지를 낡은 증거로 만든다. 수신증은 텐더가 작업에 가격을 붙일 만큼 들었다는 증거다. 추출, 자비, 실시간 명령의 증거가 아니다. 그래서 첫 실제 응답은 침묵보다 차갑다. 시스템은 당신을 구하기 전에 먼저 셀 수 있다.",
-          "external_site": "Black Keel은 HECTON-8 위에서 기다리는 집선이 아니다. Aegir 시스템의 클레임 텐더다. 궤도를 유지하고, 회수 가격을 매기고, 매니페스트를 검증하고, Aegir Reclamation Pool의 손실을 막는다. 상층 해양 아래에서는 일반 무전이 쓸모없다. 물에는 염분, 금속, 산업 먼지가 많고 데이터는 낮은 주파수의 음향 펄스로 천천히 나간다.\n\n이 제약이 HECTON-8의 고립을 만든다. Sol에서 FTL 답장은 오지 않는다. 침수된 모듈에서 플레이어를 꺼내 줄 ansible 음성도 없다. 지역 궤도마저 폭풍, 달의 기하, Kestrel 중계 그림자로 끊긴다. Black Keel은 장부상 보관이 필요해 패킷을 확인할 수 있지만, 상승 질량과 격리 상태와 payload 가치가 계약에 맞을 때까지 추출을 보류할 수 있다.",
-          "field_note": "수신증은 구조가 아니다. Keel이 패킷에 청구할 수 있다는 뜻이다. 패킷이 돌아갈 값을 만들 때까지 숨을 아껴라."
-        },
-        "nl_NL": {
-          "title": "Ontvangstboek van de stille omloop",
-          "scanner": "AKOESTISCHE ONTVANGST // Pakket aanvaard op 312 bps. Rompmassa, zuurstoflease, claimhash en bergingschecksum ontvangen. Geen extractievector toegevoegd.",
-          "terminal": "BLACK KEEL ORBITAAL ONTVANGSTBEWIJS BKH8-RC-2190-0041 // Uplinkklasse: akoestisch. Afzender: schuldengebonden contractant. Lading: manifestpreview, druktelemetrie, paklevensduur. Status: ontvangen, in escrow, niet geborgen. Kestrel-schaduwvenster sluit over 11 u 40 m. Berging vereist gecertificeerde stijgmassa, quarantaine-handshake en betaalbaar claimmateriaal.",
-          "audio": "Ontvangst geboekt. Manifest gehoord. Extractievector vastgehouden. Stuur massa, sealbewijs en schonere checksum.",
-          "in_game_wiki": "Het Ontvangstboek van de stille omloop is het eerste eerlijke dat Black Keel een Marauder geeft: erkenning zonder hulp. Radio sterft onder de bovenste oceaan. Laser en microgolf verstrooien of verdwijnen. Op diepte spreekt een contractant via trage akoestische pulsen met tekst, hashes, drukwaarschuwingen en betaalbare massaregels. Black Keel antwoordt omdat contractbewaring een ontvangstbewijs eist, niet omdat een mens met reddingsbord luistert.\n\nKestrel, stormvensters en HECTON-8s minerale oceaan kunnen een bericht oud bewijs maken voor de baan vrijkomt. Een ontvangstbewijs bewijst dat de tender genoeg hoorde om de run te prijzen. Het bewijst geen extractie, genade of live commando. Daarom voelt het eerste echte antwoord kouder dan stilte: het systeem kan je tellen voordat het je kan redden.",
-          "external_site": "Black Keel is geen thuisschip boven HECTON-8. Het is een claimtender in het Aegir-systeem: baan houden, berging prijzen, manifesten controleren, de Aegir Reclamation Pool tegen verlies beschermen. Onder de bovenste oceaan werkt gewone radio niet meer. Het water zit vol zouten, metalen en industrieel stof; data moet naar buiten via laagfrequente akoestische pulsen, traag en smal.\n\nDie beperking draagt HECTON-8. Geen FTL-antwoord komt uit Sol. Geen ansible-stem praat de speler uit een ondergelopen module. Zelfs lokale omloop valt uiteen door stormen, maangeometrie en Kestrels relaisschaduw. Black Keel kan een pakket bevestigen omdat ledgers bewaring eisen, en extractie toch tegenhouden tot stijgmassa, quarantainestatus en ladingwaarde bij het contract passen.",
-          "field_note": "Een ontvangstbewijs is geen redding. Het betekent dat de Keel het pakket kan factureren. Blijf ademen tot het pakket je terug kan factureren."
-        },
-        "pl_PL": {
-          "title": "Rejestr odbioru cichej orbity",
-          "scanner": "ODBIÓR AKUSTYCZNY // Pakiet przyjęty przy 312 bps. Masa kadłuba, dzierżawa tlenu, hash roszczenia i suma salvage odebrane. Brak wektora ekstrakcji.",
-          "terminal": "ORBITALNY ODBIÓR BLACK KEEL BKH8-RC-2190-0041 // Klasa uplinku: akustyczna. Nadawca: kontraktor związany długiem. Ładunek: podgląd manifestu, telemetria ciśnienia, szacunek życia skafandra. Status: odebrane, escrow, nie odzyskane. Okno cienia Kestrel zamyka się za 11 h 40 m. Odzysk wymaga certyfikowanej masy wznoszenia, handshake kwarantanny i płatnego materiału claim.",
-          "audio": "Odbiór zapisany. Manifest usłyszany. Wektor ekstrakcji wstrzymany. Wyślij masę, dowód uszczelnienia i czystszą sumę.",
-          "in_game_wiki": "Rejestr odbioru cichej orbity to pierwsza szczera rzecz od Black Keel dla Maraudera: potwierdzenie bez pomocy. Radio umiera pod górnym oceanem. Lasery i mikrofale rozpraszają się albo znikają. Na głębokości kontraktor mówi powolnymi impulsami akustycznymi niosącymi tekst, hashe, ostrzeżenia ciśnienia i zapisy masy do rozliczenia. Black Keel odpowiada, bo piecza kontraktowa wymaga odbioru, nie dlatego, że człowiek czeka z planem ratunku.\n\nKestrel, okna burzowe i mineralny ocean HECTON-8 mogą zmienić wiadomość w stare dowody, zanim orbita się oczyści. Odbiór dowodzi, że tender usłyszał dość, by wycenić kurs. Nie dowodzi ekstrakcji, litości ani żywego rozkazu. Pierwsza prawdziwa odpowiedź jest więc zimniejsza niż cisza: system potrafi cię policzyć, zanim potrafi cię uratować.",
-          "external_site": "Black Keel nie jest statkiem-domem nad HECTON-8. To tender claim w systemie Aegir: trzyma orbitę, wycenia odzysk, sprawdza manifesty i chroni Aegir Reclamation Pool przed stratą. Pod górnym oceanem zwykłe radio traci sens. Woda niesie sole, metale i pył przemysłowy; dane wychodzą tylko przez niskoczęstotliwościowe impulsy akustyczne, wolne i wąskie.\n\nTa granica buduje samotność HECTON-8. Z Sol nie przyjdzie odpowiedź FTL. Nie ma ansible, które wyprowadzi gracza z zalanego modułu. Nawet lokalna orbita pęka na okna burz, geometrię księżyców i cień przekaźnika Kestrel. Black Keel może potwierdzić pakiet, bo księgi potrzebują pieczy, a mimo to wstrzymać ekstrakcję, dopóki masa, kwarantanna i wartość ładunku nie pasują do kontraktu.",
-          "field_note": "Odbiór to nie ratunek. Znaczy, że Keel może rozliczyć pakiet. Oddychaj, aż pakiet będzie umiał rozliczyć drogę powrotną."
-        },
-        "pt_BR": {
-          "title": "Livro de recibos da órbita silenciosa",
-          "scanner": "RECIBO ACÚSTICO // Pacote aceito a 312 bps. Massa do casco, arrendamento de oxigênio, hash de reivindicação e checksum de salvamento recebidos. Sem vetor de extração.",
-          "terminal": "RECIBO ORBITAL BLACK KEEL BKH8-RC-2190-0041 // Classe de uplink: acústica. Remetente: contratante endividado. Carga: prévia de manifesto, telemetria de pressão, estimativa de vida do traje. Status: recebido, em custódia, não recuperado. Janela de sombra Kestrel fecha em 11 h 40 m. Recuperação exige massa de ascensão certificada, handshake de quarentena e material de claim pagável.",
-          "audio": "Recibo registrado. Manifesto ouvido. Vetor de extração retido. Envie massa, prova de vedação e checksum mais limpo.",
-          "in_game_wiki": "O Livro de recibos da órbita silenciosa é a primeira coisa honesta que Black Keel dá a um Marauder: confirmação sem ajuda. O rádio morre abaixo do oceano superior. Laser e micro-ondas se dispersam ou somem. Em profundidade, um contratante fala por pulsos acústicos lentos que carregam texto, hashes, alertas de pressão e registros de massa cobrável. Black Keel responde porque a custódia contratual exige recibo, não porque exista alguém com um quadro de resgate.\n\nKestrel, janelas de tempestade e o oceano mineral de HECTON-8 podem tornar uma mensagem prova velha antes de a órbita limpar. Um recibo prova que o tender ouviu o bastante para precificar a corrida. Não prova extração, piedade nem comando vivo. Por isso a primeira resposta real parece mais fria que silêncio: o sistema consegue contar você antes de conseguir salvar você.",
-          "external_site": "Black Keel não é uma nave-lar esperando acima de HECTON-8. É um tender de claims do sistema Aegir: mantém órbita, precifica recuperação, verifica manifestos e protege o Aegir Reclamation Pool contra perda. Abaixo do oceano superior, rádio comum deixa de servir. A água carrega sais, metais e poeira industrial; dados saem por pulsos acústicos de baixa frequência, lentos e estreitos.\n\nEssa restrição sustenta HECTON-8. Nenhuma resposta FTL vem de Sol. Nenhuma ansible guia o jogador para fora de um módulo alagado. Até a órbita local é cortada por tempestades, geometria lunar e a sombra de relay de Kestrel. Black Keel pode confirmar um pacote porque seus livros exigem custódia, e ainda reter extração até massa de ascensão, quarentena e valor de carga caberem no contrato.",
-          "field_note": "Recibo não é resgate. Quer dizer que a Keel pode cobrar o pacote. Continue respirando até o pacote conseguir cobrar sua volta."
-        },
-        "ru_RU": {
-          "title": "Журнал квитанций Тихой орбиты",
-          "scanner": "АКУСТИЧЕСКАЯ КВИТАНЦИЯ // Пакет принят на 312 бит/с. Масса корпуса, кислородная аренда, claim-хэш и salvage-контроль получены. Вектор подъема не приложен.",
-          "terminal": "ОРБИТАЛЬНАЯ КВИТАНЦИЯ BLACK KEEL BKH8-RC-2190-0041 // Класс связи: акустический. Отправитель: долговой подрядчик. Полезная нагрузка: черновик манифеста, телеметрия давления, остаток ресурса костюма. Статус: получено, помещено в escrow, не извлечено. Теневое окно Kestrel закрывается через 11 ч 40 м. Подъем требует сертифицированной массы, карантинного рукопожатия и оплачиваемого claim-материала.",
-          "audio": "Квитанция внесена. Манифест услышан. Вектор подъема удержан. Пришлите массу, доказательство герметизации и чище контрольную сумму.",
-          "in_game_wiki": "Журнал квитанций Тихой орбиты — первая честная вещь, которую Black Keel дает Marauder: подтверждение без помощи. Радио умирает ниже верхнего океана. Лазер и микроволна рассеиваются или пропадают. На глубине подрядчик говорит медленными акустическими импульсами: текст, хэши, предупреждения давления, оплачиваемые записи массы. Black Keel отвечает, потому что договорному хранению нужна квитанция, а не потому что за линией сидит человек с планом спасения.\n\nKestrel, штормовые окна и минеральный океан HECTON-8 могут превратить сообщение в устаревшее доказательство раньше, чем орбита очистится. Квитанция доказывает, что тендер услышал достаточно, чтобы выставить цену рейсу. Она не доказывает подъем, милость или живую команду. Поэтому первый настоящий ответ холоднее тишины: система умеет посчитать тебя раньше, чем умеет спасти.",
-          "external_site": "Black Keel — не домашний корабль, ждущий над HECTON-8. Это claim-тендер системы Aegir: держать орбиту, оценивать возврат, сверять манифесты и защищать Aegir Reclamation Pool от убытка. Ниже верхнего океана обычная радиосвязь почти бесполезна. Вода набита солями, металлами и промышленной пылью; данные приходится проталкивать низкочастотными акустическими импульсами, медленными и узкими.\n\nЭтот предел — ядро одиночества HECTON-8. Из Sol не придет FTL-ответ. Нет ansible-голоса, который выведет игрока из затопленного модуля. Даже местная орбита режется штормами, геометрией лун и релейной тенью Kestrel. Black Keel может подтвердить пакет, потому что журналам нужна custody, и все равно удержать подъем, пока масса, карантин и ценность груза не совпадут с контрактом.",
-          "field_note": "Квитанция — не спасение. Она значит, что Keel может выставить счет пакету. Дыши, пока пакет не сможет выставить счет обратно."
-        },
-        "uk_UA": {
-          "title": "Журнал квитанцій Тихої орбіти",
-          "scanner": "АКУСТИЧНА КВИТАНЦІЯ // Пакет прийнято на 312 біт/с. Маса корпусу, оренда кисню, claim-хеш і salvage-сума отримані. Вектор підйому не додано.",
-          "terminal": "ОРБІТАЛЬНА КВИТАНЦІЯ BLACK KEEL BKH8-RC-2190-0041 // Клас зв'язку: акустичний. Відправник: борговий підрядник. Вантаж: попередній маніфест, телеметрія тиску, оцінка ресурсу костюма. Статус: отримано, в escrow, не повернуто. Тіньове вікно Kestrel закривається за 11 год 40 хв. Повернення потребує сертифікованої маси підйому, карантинного рукостискання і оплачуваного claim-матеріалу.",
-          "audio": "Квитанцію внесено. Маніфест почуто. Вектор підйому затримано. Надішліть масу, доказ герметизації і чистішу суму.",
-          "in_game_wiki": "Журнал квитанцій Тихої орбіти — перша чесна річ, яку Black Keel дає Marauder: підтвердження без допомоги. Радіо вмирає нижче верхнього океану. Лазер і мікрохвилі розсіюються або зникають. На глибині підрядник говорить повільними акустичними імпульсами: текст, хеші, попередження тиску, записи оплачуваної маси. Black Keel відповідає, бо договірній custody потрібна квитанція, а не тому, що людина чекає з планом рятування.\n\nKestrel, штормові вікна і мінеральний океан HECTON-8 можуть зробити повідомлення старим доказом до очищення орбіти. Квитанція доводить, що тендер почув досить, щоб оцінити рейс. Вона не доводить підйом, милість чи живу команду. Тому перша справжня відповідь холодніша за тишу: система може порахувати тебе раніше, ніж може врятувати.",
-          "external_site": "Black Keel — не домашній корабель над HECTON-8. Це claim-тендер системи Aegir: тримає орбіту, оцінює повернення, перевіряє маніфести і захищає Aegir Reclamation Pool від втрат. Нижче верхнього океану звичайне радіо майже не працює. Вода несе солі, метали і промисловий пил; дані виходять низькочастотними акустичними імпульсами, повільними і вузькими.\n\nЦе обмеження тримає HECTON-8 в ізоляції. Із Sol не прийде FTL-відповідь. Немає ansible-голосу, що виведе гравця із затопленого модуля. Навіть місцева орбіта ріжеться бурями, геометрією місяців і релейною тінню Kestrel. Black Keel може підтвердити пакет, бо журналам потрібна custody, і все одно затримати підйом, доки маса, карантин і цінність вантажу не збігнуться з контрактом.",
-          "field_note": "Квитанція — не рятунок. Вона значить, що Keel може виставити рахунок пакету. Дихай, доки пакет не зможе оплатити шлях назад."
-        },
-        "zh_CN": {
-          "title": "静默轨道收据账本",
-          "scanner": "声学收据 // 数据包以312 bps接受。船体质量、氧气租约、索赔哈希和打捞校验和已接收。未附带撤离向量。",
-          "terminal": "BLACK KEEL轨道收据 BKH8-RC-2190-0041 // 上行类别：声学。发送者：负债承包人。载荷：清单预览、压力遥测、潜服寿命估算。状态：已接收、已托管、未回收。Kestrel阴影窗口将在11小时40分后关闭。回收需要认证上升质量、检疫握手和可付款索赔物料。",
-          "audio": "收据已记录。清单已听见。撤离向量保留。发送质量、密封证明和更干净的校验和。",
-          "in_game_wiki": "静默轨道收据账本是Black Keel给Marauder的第一件诚实物：确认收到，但不提供帮助。上层海洋以下，无线电死亡。激光和微波会散射或消失。在深处，承包人只能用缓慢的声学脉冲说话，携带文本、哈希、压力警告和可计费质量记录。Black Keel回复这些数据包，是因为合同托管需要收据，不是因为有人拿着救援板在听。\n\nKestrel、风暴窗口和HECTON-8的矿物海洋，会在轨道放晴前把信息变成过期证据。收据只能证明运载平台听见了足够内容，可以给这趟活定价。它不能证明撤离、怜悯或实时指令。因此第一次真正回复比沉默更冷：系统能先数清你，然后才可能救你。",
-          "external_site": "Black Keel不是停在HECTON-8上空的家船。它是Aegir系统的索赔运载平台：保持轨道、给回收定价、核验清单、保护Aegir Reclamation Pool免于损失。上层海洋以下，普通无线电几乎无用。海水充满盐、金属和工业尘埃；玩家必须用低频声学脉冲把数据一点点推出去，速度慢，容量窄。\n\n这条限制构成HECTON-8的孤立。没有来自Sol的FTL回复。没有ansible声音能把玩家从进水舱段里说出来。即使是本地轨道，也会被风暴、月球几何和Kestrel中继阴影切碎。Black Keel可以因为账本需要托管而确认数据包，同时继续扣住撤离，直到上升质量、检疫状态和载荷价值符合合同。",
-          "field_note": "收据不是救援。它表示Keel可以给数据包记账。继续呼吸，直到数据包能替你把回程也记上。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.silent_orbit_receipt_ledger",
+    "secondary": [
+     "unlock.first_black_keel_receipt",
+     "unlock.first_acoustic_link_delay",
+     "unlock.first_kestrel_shadow_window"
+    ],
+    "poi_tags": [
+     "poi.black_keel_receipt_console",
+     "poi.acoustic_relay_spine",
+     "poi.silent_orbit_log"
+    ],
+    "biome_tags": [
+     "biome.deep_archive",
+     "biome.comms_route",
+     "biome.black_keel_window"
+    ],
+    "first_20_boundary": "Turns the first Black Keel contact from generic comms flavor into the core lesson: a receipt is not rescue."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Acoustic Link Diagnostic",
+     "terminal": "Black Keel Orbital Receipt",
+     "audio": "Carrier Receipt Bark",
+     "in_game_wiki": "PDA Comms Archive",
+     "external_site": "Public Site Hard-Sci-Fi Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "depth_band": "200m_radio_cutoff_to_8500m_sector_44_archive",
+    "route_moment": "first_receipt_without_rescue",
+    "truth_payload": "HECTON-8 isolation comes from physics, orbital geometry, contract custody and Black Keel claim logic. The carrier can acknowledge a manifest without issuing extraction.",
+    "player_question": "Why did the carrier answer the packet but still leave me alone?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Silent Orbit Receipt Ledger",
+     "scanner": "ACOUSTIC RECEIPT // Packet accepted at 312 bps. Hull mass, oxygen lease, claim hash and salvage checksum received. No extraction vector attached.",
+     "terminal": "BLACK KEEL ORBITAL RECEIPT BKH8-RC-2190-0041 // Uplink class: acoustic. Sender: debt-bound contractor. Payload: manifest preview, pressure telemetry, suit-life estimate. Status: received, escrowed, not recovered. Kestrel shadow window closes in 11 h 40 m. Recovery requires certified ascent mass, quarantine handshake and payable claim material.",
+     "audio": "Receipt logged. Manifest heard. Extraction vector withheld. Send mass, seal proof and a cleaner checksum.",
+     "in_game_wiki": "The first Black Keel receipt gives a Marauder acknowledgement without help. Radio dies below the upper ocean. Laser and microwave links scatter or vanish. At depth, a contractor talks through slow acoustic pulses that carry text, hashes, pressure warnings and payable mass records. Black Keel answers for contract custody, not for rescue.\n\nKestrel, storm windows and HECTON-8's mineral ocean can age a message into stale evidence before orbit clears. A receipt proves the carrier heard enough to price the run. It proves no extraction, mercy or live command. The first real reply can feel colder than silence: the system can count you before it can save you.",
+     "external_site": "Black Keel is not a home ship waiting above HECTON-8. It is an Aegir-system claim tender built to hold orbit, price recovery, verify manifests and protect the Aegir Reclamation Pool from loss. Below the upper ocean, ordinary radio stops being useful. The water is dense with salts, metals and industrial dust; the player has to push data through low-frequency acoustic pulses that move slowly and carry little.\n\nThat constraint is central to HECTON-8. No FTL reply is coming from Sol. No ansible voice can talk the player out of a flooded module. Even local orbit is broken into windows by storms, moon geometry and Kestrel's relay shadow. Black Keel may confirm a packet because its ledgers require custody. It may still withhold extraction until ascent mass, quarantine status and payload value fit the contract.\n\nThe receipt is paper trail, not comfort. The carrier says received. The room stays dark. The contractor still has to breathe long enough to make the ledger worth opening again.",
+     "field_note": "A receipt is not rescue. It means the Keel can bill the packet. Keep breathing until the packet can bill you back."
+    },
+    "ar_SA": {
+     "title": "سجل إيصالات المدار الصامت",
+     "scanner": "إيصال صوتي // قُبلت الحزمة بسرعة 312 بت/ث. تم استلام كتلة الهيكل، إيجار الأكسجين، بصمة المطالبة، ومجموع فحص الخردة. لا يوجد متجه استخراج.",
+     "terminal": "إيصال BLACK KEEL المداري BKH8-RC-2190-0041 // فئة الرفع: صوتية. المرسل: مقاول مديون. الحمولة: معاينة بيان، قياس ضغط، تقدير عمر البدلة. الحالة: مستلم، في الضمان، غير مستعاد. نافذة ظل Kestrel تغلق خلال 11 س 40 د. الاستعادة تتطلب كتلة صعود موثقة، مصافحة حجر، ومادة مطالبة قابلة للدفع.",
+     "audio": "تم تسجيل الإيصال. سُمع البيان. متجه الاستخراج محجوب. أرسل كتلة، إثبات ختم، ومجموع فحص أنظف.",
+     "in_game_wiki": "سجل إيصالات المدار الصامت هو أول شيء صادق يقدمه Black Keel لماراودر: اعتراف بلا عون. الراديو يموت تحت الطبقة العليا من المحيط. الليزر والميكروويف يتبعثران أو يختفيان. في العمق يتكلم المقاول عبر نبضات صوتية بطيئة تحمل نصوصا وبصمات وتحذيرات ضغط وسجلات كتلة قابلة للدفع. يرد Black Keel لأن الحفظ التعاقدي يحتاج إلى إيصال، لا لأن شخصا ينتظر بلوحة إنقاذ.\n\nيمكن لـ Kestrel والطقس ومحيط HECTON-8 المعدني أن يحولوا الرسالة إلى دليل قديم قبل أن يصفو المدار. الإيصال يثبت أن الحاملة سمعت ما يكفي لتسعير المهمة. لا يثبت استخراجا أو رحمة أو أمرا حيا. لذلك يبدو أول رد حقيقي أبرد من الصمت: النظام يستطيع عدك قبل أن يستطيع إنقاذك.",
+     "external_site": "Black Keel ليست سفينة بيت تنتظر فوق HECTON-8. إنها عربة مطالبات في نظام Aegir: تثبت المدار، تسعر الاسترداد، تتحقق من البيانات، وتحمي Aegir Reclamation Pool من الخسارة. تحت المحيط العلوي، لا يعود الراديو العادي مفيدا. الماء محمل بالأملاح والمعادن وغبار الصناعة، وعلى اللاعب دفع البيانات عبر نبضات صوتية منخفضة التردد، بطيئة وفقيرة السعة.\n\nهذا القيد هو قلب HECTON-8. لن يأتي رد FTL من Sol. لا توجد ansible تخرج اللاعب من وحدة تغرق. حتى المدار المحلي مقطع بنوافذ العواصف وهندسة الأقمار وظل Kestrel. قد يؤكد Black Keel الحزمة لأن سجلاته تحتاج إلى حفظ. وقد يحجب الاستخراج حتى تناسب كتلة الصعود وحالة الحجر وقيمة الحمولة العقد.",
+     "field_note": "الإيصال ليس إنقاذا. يعني أن Keel يستطيع فوترة الحزمة. ابق تتنفس حتى تصبح الحزمة قادرة على فوترة طريق عودتك."
+    },
+    "de_DE": {
+     "title": "Empfangsbuch der stillen Umlaufbahn",
+     "scanner": "AKUSTIKEMPFANG // Paket mit 312 bps angenommen. Rumpfmasse, Sauerstoffpacht, Claim-Hash und Bergungsprüfsumme empfangen. Kein Extraktionsvektor angehängt.",
+     "terminal": "BLACK-KEEL-ORBITALEMPFANG BKH8-RC-2190-0041 // Uplinkklasse: akustisch. Absender: schuldengebundener Auftragnehmer. Nutzlast: Manifestvorschau, Drucktelemetrie, Anzuglebensdauer. Status: empfangen, treuhändisch gebucht, nicht geborgen. Kestrel-Schattenfenster schließt in 11 h 40 m. Bergung erfordert zertifizierte Aufstiegsmasse, Quarantäne-Handshake und zahlungsfähiges Claim-Material.",
+     "audio": "Empfang gebucht. Manifest gehört. Extraktionsvektor zurückgehalten. Sende Masse, Dichtungsnachweis und sauberere Prüfsumme.",
+     "in_game_wiki": "Das Empfangsbuch der stillen Umlaufbahn ist Black Keels erste ehrliche Gabe an einen Marauder: Bestätigung ohne Hilfe. Unter der oberen Ozeanschicht stirbt Funk. Laser und Mikrowellen streuen oder verschwinden. In der Tiefe spricht ein Auftragnehmer mit langsamen Akustikpulsen, die Text, Hashes, Druckwarnungen und abrechenbare Massedaten tragen. Black Keel beantwortet diese Pakete, weil Vertragsgewahrsam einen Empfang braucht, nicht weil ein Mensch mit Rettungsplan zuhört.\n\nKestrel, Sturmfenster und HECTON-8s mineralischer Ozean können eine Nachricht zu altem Beweis machen, bevor die Umlaufbahn frei wird. Ein Empfang beweist nur, dass der Tender genug gehört hat, um den Lauf zu bepreisen. Er beweist keine Bergung, keine Gnade und keinen Live-Befehl. Darum ist die erste echte Antwort kälter als Stille: Das System kann dich zählen, bevor es dich retten kann.",
+     "external_site": "Black Keel ist kein Heimatschiff über HECTON-8. Es ist ein Claim-Tender im Aegir-System: Umlaufbahn halten, Bergung bepreisen, Manifeste prüfen, den Aegir Reclamation Pool vor Verlust schützen. Unter dem oberen Ozean wird normaler Funk nutzlos. Das Wasser trägt Salze, Metalle und Industriestaub; Daten gehen nur als niederfrequente Akustikpulse hinaus, langsam und knapp.\n\nDiese Grenze prägt HECTON-8. Keine FTL-Antwort kommt aus Sol. Keine Ansible-Stimme redet den Spieler aus einem gefluteten Modul. Selbst der lokale Orbit zerfällt in Sturmfenster, Mondgeometrie und Kestrels Relaisschatten. Black Keel kann ein Paket bestätigen, weil seine Ledgers Gewahrsam brauchen, und die Extraktion trotzdem blockieren, bis Aufstiegsmasse, Quarantänestatus und Nutzlastwert zum Vertrag passen.",
+     "field_note": "Ein Empfang ist keine Rettung. Er heißt: Die Keel kann das Paket berechnen. Atme weiter, bis das Paket dich zurückberechnen kann."
+    },
+    "es_ES": {
+     "title": "Libro de recibos de la órbita silenciosa",
+     "scanner": "RECIBO ACÚSTICO // Paquete aceptado a 312 bps. Masa del casco, arriendo de oxígeno, hash de reclamación y suma de salvamento recibidos. Sin vector de extracción.",
+     "terminal": "RECIBO ORBITAL BLACK KEEL BKH8-RC-2190-0041 // Clase de enlace: acústica. Emisor: contratista endeudado. Carga: vista de manifiesto, telemetría de presión, estimación de vida del traje. Estado: recibido, en custodia, no recuperado. La ventana de sombra de Kestrel cierra en 11 h 40 m. La recuperación exige masa de ascenso certificada, acuerdo de cuarentena y material de reclamación pagable.",
+     "audio": "Recibo registrado. Manifiesto oído. Vector de extracción retenido. Envía masa, prueba de sello y una suma más limpia.",
+     "in_game_wiki": "El Libro de recibos de la órbita silenciosa es lo primero honesto que Black Keel da a un Marauder: confirmación sin ayuda. La radio muere bajo el océano superior. Láseres y microondas se dispersan o desaparecen. En profundidad, un contratista habla con pulsos acústicos lentos que llevan texto, hashes, avisos de presión y registros de masa pagable. Black Keel responde porque la custodia contractual exige recibo, no porque haya alguien con un tablero de rescate.\n\nKestrel, las ventanas de tormenta y el océano mineral de HECTON-8 pueden volver una señal prueba caducada antes de que despeje la órbita. Un recibo demuestra que la portadora oyó lo bastante para poner precio a la salida. No demuestra extracción, piedad ni mando vivo. Por eso la primera respuesta real se siente más fría que el silencio: el sistema puede contarte antes de poder salvarte.",
+     "external_site": "Black Keel no es una nave hogar esperando sobre HECTON-8. Es una portadora de reclamaciones del sistema Aegir: mantiene órbita, valora recuperaciones, verifica manifiestos y protege al Aegir Reclamation Pool de pérdidas. Bajo el océano superior, la radio normal deja de servir. El agua está cargada de sales, metales y polvo industrial; el jugador debe empujar datos por pulsos acústicos de baja frecuencia, lentos y estrechos.\n\nEsa restricción define HECTON-8. No llega respuesta FTL desde Sol. No hay ansible que hable al jugador fuera de un módulo inundado. Incluso la órbita local queda partida por tormentas, geometría lunar y la sombra de Kestrel. Black Keel puede confirmar un paquete porque sus libros exigen custodia, y aun así retener extracción hasta que masa, cuarentena y valor de carga cuadren con el contrato.",
+     "field_note": "Un recibo no es rescate. Significa que la Keel puede facturar el paquete. Sigue respirando hasta que el paquete pueda facturarte de vuelta."
+    },
+    "fr_FR": {
+     "title": "Registre des reçus de l'orbite silencieuse",
+     "scanner": "REÇU ACOUSTIQUE // Paquet accepté à 312 bps. Masse coque, bail d'oxygène, hash de claim et somme de sauvetage reçus. Aucun vecteur d'extraction joint.",
+     "terminal": "REÇU ORBITAL BLACK KEEL BKH8-RC-2190-0041 // Classe uplink: acoustique. Émetteur: contractant sous dette. Charge: aperçu manifeste, télémétrie pression, durée de combinaison. Statut: reçu, mis sous séquestre, non récupéré. Fenêtre d'ombre Kestrel fermée dans 11 h 40 m. Récupération exige masse d'ascension certifiée, handshake quarantaine et matériau de claim payable.",
+     "audio": "Reçu inscrit. Manifeste entendu. Vecteur d'extraction retenu. Envoyez masse, preuve de joint et somme plus propre.",
+     "in_game_wiki": "Le Registre des reçus de l'orbite silencieuse est la première chose honnête que Black Keel donne à un Marauder: un accusé sans aide. La radio meurt sous l'océan supérieur. Lasers et micro-ondes se dispersent ou disparaissent. En profondeur, un contractant parle par impulsions acoustiques lentes: texte, hashes, alertes de pression et masse facturable. Black Keel répond parce que la garde contractuelle exige un reçu, pas parce qu'un humain attend avec un plan de sauvetage.\n\nKestrel, les fenêtres de tempête et l'océan minéral de HECTON-8 peuvent transformer un message en preuve périmée avant que l'orbite se dégage. Un reçu prouve que le tender a entendu assez pour chiffrer la course. Il ne prouve ni extraction, ni pitié, ni commande en direct. La première vraie réponse paraît donc plus froide que le silence: le système peut vous compter avant de pouvoir vous sauver.",
+     "external_site": "Black Keel n'est pas un vaisseau-refuge au-dessus de HECTON-8. C'est un tender de claims du système Aegir: tenir l'orbite, chiffrer la récupération, vérifier les manifestes, protéger l'Aegir Reclamation Pool contre les pertes. Sous l'océan supérieur, la radio ordinaire ne sert presque plus. L'eau porte sels, métaux et poussière industrielle; les données sortent par impulsions acoustiques basse fréquence, lentes et limitées.\n\nCette contrainte est centrale. Aucune réponse FTL ne vient de Sol. Aucune ansible ne guide le joueur hors d'un module noyé. Même l'orbite locale est découpée par les tempêtes, la géométrie des lunes et l'ombre relais de Kestrel. Black Keel peut confirmer un paquet parce que ses registres exigent une garde, puis retenir l'extraction jusqu'à accord entre masse d'ascension, quarantaine et valeur de charge.",
+     "field_note": "Un reçu n'est pas un sauvetage. Il dit que la Keel peut facturer le paquet. Respirez jusqu'à ce que le paquet puisse vous facturer le retour."
+    },
+    "he_IL": {
+     "title": "פנקס קבלות המסלול הדומם",
+     "scanner": "קבלה אקוסטית // החבילה התקבלה ב-312 bps. מסת גוף, חכירת חמצן, hash תביעה וסכום בדיקת חילוץ התקבלו. אין וקטור חילוץ.",
+     "terminal": "קבלת מסלול BLACK KEEL BKH8-RC-2190-0041 // סוג קישור: אקוסטי. שולח: קבלן כבול חוב. מטען: תצוגת מניפסט, טלמטריית לחץ, אומדן חיי חליפה. מצב: התקבל, בנאמנות, לא חולץ. חלון הצל של Kestrel נסגר בעוד 11 ש 40 ד. חילוץ דורש מסת עלייה מאושרת, לחיצת יד הסגר וחומר תביעה בר תשלום.",
+     "audio": "הקבלה נרשמה. המניפסט נשמע. וקטור החילוץ עוכב. שלח מסה, הוכחת אטימה וסכום בדיקה נקי יותר.",
+     "in_game_wiki": "פנקס קבלות המסלול הדומם הוא הדבר הישר הראשון ש-Black Keel נותנת ל-Marauder: אישור בלי עזרה. רדיו מת מתחת לאוקיינוס העליון. לייזר ומיקרוגל מתפזרים או נעלמים. בעומק, קבלן מדבר דרך פולסים אקוסטיים איטיים שנושאים טקסט, hashes, אזהרות לחץ ורשומות מסה לתשלום. Black Keel עונה כי משמורת חוזית דורשת קבלה, לא כי אדם ממתין עם לוח חילוץ.\n\nKestrel, חלונות סערה והאוקיינוס המינרלי של HECTON-8 יכולים להפוך הודעה לראיה ישנה לפני שהמסלול מתפנה. קבלה מוכיחה שהנושאת שמעה מספיק כדי לתמחר את הריצה. היא לא מוכיחה חילוץ, רחמים או פקודה חיה. לכן התשובה האמיתית הראשונה קרה יותר משתיקה: המערכת מסוגלת לספור אותך לפני שהיא מסוגלת להציל אותך.",
+     "external_site": "Black Keel אינה ספינת בית שמחכה מעל HECTON-8. היא נושאת תביעות במערכת Aegir: מחזיקה מסלול, מתמחרת חילוץ, מאמתת מניפסטים ומגינה על Aegir Reclamation Pool מהפסד. מתחת לאוקיינוס העליון, רדיו רגיל כמעט חסר ערך. המים מלאים מלחים, מתכות ואבק תעשייתי; נתונים יוצאים רק כפולסים אקוסטיים נמוכי תדר, איטיים וצרים.\n\nזה אחד מחוקי הבדידות של HECTON-8. אין תשובת FTL מ-Sol. אין ansible שמדברת את השחקן החוצה ממודול מוצף. גם המסלול המקומי נחתך בידי סערות, גאומטריית ירחים וצל הממסר של Kestrel. Black Keel עשויה לאשר חבילה כי הפנקס דורש משמורת, ועדיין לעכב חילוץ עד שמסה, הסגר וערך מטען יתאימו לחוזה.",
+     "field_note": "קבלה אינה חילוץ. היא אומרת שה-Keel יכולה לחייב את החבילה. המשך לנשום עד שהחבילה תוכל לחייב אותך בחזרה."
+    },
+    "id_ID": {
+     "title": "Ledger Tanda Terima Orbit Senyap",
+     "scanner": "TANDA TERIMA AKUSTIK // Paket diterima pada 312 bps. Massa lambung, sewa oksigen, hash klaim, dan checksum salvage diterima. Tidak ada vektor ekstraksi.",
+     "terminal": "TANDA TERIMA ORBIT BLACK KEEL BKH8-RC-2190-0041 // Kelas uplink: akustik. Pengirim: kontraktor berutang. Muatan: pratinjau manifes, telemetri tekanan, estimasi hidup suit. Status: diterima, di-escrow, belum dipulihkan. Jendela bayangan Kestrel tutup dalam 11 j 40 m. Pemulihan perlu massa naik tersertifikasi, handshake karantina, dan material klaim yang dapat dibayar.",
+     "audio": "Tanda terima tercatat. Manifes terdengar. Vektor ekstraksi ditahan. Kirim massa, bukti seal, dan checksum lebih bersih.",
+     "in_game_wiki": "Ledger Tanda Terima Orbit Senyap adalah kejujuran pertama Black Keel kepada Marauder: pengakuan tanpa bantuan. Radio mati di bawah lapisan atas samudra. Laser dan gelombang mikro pecah atau lenyap. Di kedalaman, kontraktor berbicara lewat pulsa akustik lambat berisi teks, hash, peringatan tekanan, dan catatan massa yang bisa ditagih. Black Keel menjawab karena kustodi kontrak membutuhkan tanda terima, bukan karena ada manusia memegang papan penyelamatan.\n\nKestrel, jendela badai, dan samudra mineral HECTON-8 dapat membuat pesan menjadi bukti basi sebelum orbit bersih. Tanda terima membuktikan tender mendengar cukup untuk memberi harga pada perjalanan. Itu tidak membuktikan ekstraksi, belas kasihan, atau perintah langsung. Jawaban pertama terasa lebih dingin dari sunyi karena sistem bisa menghitungmu sebelum bisa menyelamatkanmu.",
+     "external_site": "Black Keel bukan kapal rumah yang menunggu di atas HECTON-8. Ia tender klaim dalam sistem Aegir: menahan orbit, memberi harga pemulihan, memverifikasi manifes, dan melindungi Aegir Reclamation Pool dari rugi. Di bawah samudra atas, radio biasa tidak lagi berguna. Air penuh garam, logam, dan debu industri; data harus didorong lewat pulsa akustik frekuensi rendah yang lambat dan sempit.\n\nBatas ini membentuk HECTON-8. Tidak ada balasan FTL dari Sol. Tidak ada ansible yang membimbing pemain keluar dari modul banjir. Orbit lokal pun terpecah oleh badai, geometri bulan, dan bayangan relay Kestrel. Black Keel dapat mengonfirmasi paket karena ledger butuh kustodi, lalu tetap menahan ekstraksi sampai massa naik, status karantina, dan nilai muatan cocok dengan kontrak.",
+     "field_note": "Tanda terima bukan penyelamatan. Artinya Keel bisa menagih paket. Tetap bernapas sampai paket bisa menagih jalan pulang."
+    },
+    "ja_JP": {
+     "title": "静かな軌道の受領台帳",
+     "scanner": "音響受領 // パケットを312 bpsで受理。船殻質量、酸素リース、請求ハッシュ、サルベージ検査値を受信。抽出ベクトルなし。",
+     "terminal": "BLACK KEEL軌道受領 BKH8-RC-2190-0041 // アップリンク種別: 音響。送信者: 債務拘束契約者。内容: マニフェスト予告、圧力テレメトリ、スーツ残存推定。状態: 受領、エスクロー済み、未回収。Kestrel影窓は11時間40分後に閉鎖。回収には認証済み上昇質量、隔離ハンドシェイク、支払い対象請求物が必要。",
+     "audio": "受領記録。マニフェスト確認。抽出ベクトル保留。質量、シール証明、より清浄な検査値を送れ。",
+     "in_game_wiki": "静かな軌道の受領台帳は、Black KeelがMarauderに渡す最初の正直なものだ。助けではなく、受領だけ。上層海を過ぎると無線は死ぬ。レーザーもマイクロ波も散るか消える。深度では、契約者は低速の音響パルスで話す。運べるのは文字、ハッシュ、圧力警告、支払い対象の質量記録だけだ。Black Keelが応答するのは契約上の保管に受領が必要だからで、救助盤を見ている人間がいるからではない。\n\nKestrel、嵐の窓、HECTON-8の鉱物を含む海は、軌道が空く前にメッセージを古い証拠へ変える。受領は、テンダーが作業に値段を付けるだけの情報を聞いた証明でしかない。抽出、慈悲、ライブ指令の証明ではない。だから最初の本物の返答は沈黙より冷たい。システムは救う前に、まずあなたを数えられる。",
+     "external_site": "Black KeelはHECTON-8上空で待つ母船ではない。Aegir系の請求テンダーであり、軌道を保ち、回収を値付けし、マニフェストを検証し、Aegir Reclamation Poolの損失を抑える装置だ。上層海の下では通常の無線は役に立たない。水は塩、金属、産業粉塵を含み、データは低周波の音響パルスとして少しずつ押し出される。\n\nこの制約がHECTON-8の孤立を作る。SolからFTL返答は来ない。浸水モジュールからプレイヤーを導くansibleの声もない。局地軌道でさえ嵐、月の幾何、Kestrelの中継影に切られる。Black Keelは台帳上の保管義務でパケットを確認し、上昇質量、隔離状態、ペイロード価値が契約に合うまで抽出を止めることがある。",
+     "field_note": "受領は救助ではない。Keelがパケットに請求できるという意味だ。帰り道を請求できるまで息を残せ。"
+    },
+    "ko_KR": {
+     "title": "침묵 궤도 수신 장부",
+     "scanner": "음향 수신 // 패킷 312 bps 수락. 선체 질량, 산소 임대, 클레임 해시, 회수 체크섬 수신. 추출 벡터 없음.",
+     "terminal": "BLACK KEEL 궤도 수신 BKH8-RC-2190-0041 // 업링크 등급: 음향. 발신자: 채무 구속 계약자. payload: 매니페스트 미리보기, 압력 원격측정, 슈트 생존 추정. 상태: 수신, 에스크로, 미회수. Kestrel 그림자 창 11 h 40 m 후 종료. 회수에는 인증된 상승 질량, 격리 핸드셰이크, 지불 가능한 클레임 물질 필요.",
+     "audio": "수신 기록. 매니페스트 청취. 추출 벡터 보류. 질량, 밀봉 증거, 더 깨끗한 체크섬 전송.",
+     "in_game_wiki": "침묵 궤도 수신 장부는 Black Keel이 Marauder에게 주는 첫 정직한 물건이다. 도움 없는 확인. 상층 해양 아래에서 무전은 죽는다. 레이저와 마이크로파는 흩어지거나 사라진다. 깊이에서는 계약자가 느린 음향 펄스로 말한다. 운반되는 것은 텍스트, 해시, 압력 경고, 청구 가능한 질량 기록뿐이다. Black Keel이 답하는 이유는 계약 보관에 수신증이 필요해서지, 구조판을 든 사람이 듣고 있어서가 아니다.\n\nKestrel, 폭풍 창, HECTON-8의 광물성 바다는 궤도가 열리기 전에 메시지를 낡은 증거로 만든다. 수신증은 텐더가 작업에 가격을 붙일 만큼 들었다는 증거다. 추출, 자비, 실시간 명령의 증거가 아니다. 그래서 첫 실제 응답은 침묵보다 차갑다. 시스템은 당신을 구하기 전에 먼저 셀 수 있다.",
+     "external_site": "Black Keel은 HECTON-8 위에서 기다리는 집선이 아니다. Aegir 시스템의 클레임 텐더다. 궤도를 유지하고, 회수 가격을 매기고, 매니페스트를 검증하고, Aegir Reclamation Pool의 손실을 막는다. 상층 해양 아래에서는 일반 무전이 쓸모없다. 물에는 염분, 금속, 산업 먼지가 많고 데이터는 낮은 주파수의 음향 펄스로 천천히 나간다.\n\n이 제약이 HECTON-8의 고립을 만든다. Sol에서 FTL 답장은 오지 않는다. 침수된 모듈에서 플레이어를 꺼내 줄 ansible 음성도 없다. 지역 궤도마저 폭풍, 달의 기하, Kestrel 중계 그림자로 끊긴다. Black Keel은 장부상 보관이 필요해 패킷을 확인할 수 있지만, 상승 질량과 격리 상태와 payload 가치가 계약에 맞을 때까지 추출을 보류할 수 있다.",
+     "field_note": "수신증은 구조가 아니다. Keel이 패킷에 청구할 수 있다는 뜻이다. 패킷이 돌아갈 값을 만들 때까지 숨을 아껴라."
+    },
+    "nl_NL": {
+     "title": "Ontvangstboek van de stille omloop",
+     "scanner": "AKOESTISCHE ONTVANGST // Pakket aanvaard op 312 bps. Rompmassa, zuurstoflease, claimhash en bergingschecksum ontvangen. Geen extractievector toegevoegd.",
+     "terminal": "BLACK KEEL ORBITAAL ONTVANGSTBEWIJS BKH8-RC-2190-0041 // Uplinkklasse: akoestisch. Afzender: schuldengebonden contractant. Lading: manifestpreview, druktelemetrie, paklevensduur. Status: ontvangen, in escrow, niet geborgen. Kestrel-schaduwvenster sluit over 11 u 40 m. Berging vereist gecertificeerde stijgmassa, quarantaine-handshake en betaalbaar claimmateriaal.",
+     "audio": "Ontvangst geboekt. Manifest gehoord. Extractievector vastgehouden. Stuur massa, sealbewijs en schonere checksum.",
+     "in_game_wiki": "Het Ontvangstboek van de stille omloop is het eerste eerlijke dat Black Keel een Marauder geeft: erkenning zonder hulp. Radio sterft onder de bovenste oceaan. Laser en microgolf verstrooien of verdwijnen. Op diepte spreekt een contractant via trage akoestische pulsen met tekst, hashes, drukwaarschuwingen en betaalbare massaregels. Black Keel antwoordt omdat contractbewaring een ontvangstbewijs eist, niet omdat een mens met reddingsbord luistert.\n\nKestrel, stormvensters en HECTON-8s minerale oceaan kunnen een bericht oud bewijs maken voor de baan vrijkomt. Een ontvangstbewijs bewijst dat de tender genoeg hoorde om de run te prijzen. Het bewijst geen extractie, genade of live commando. Daarom voelt het eerste echte antwoord kouder dan stilte: het systeem kan je tellen voordat het je kan redden.",
+     "external_site": "Black Keel is geen thuisschip boven HECTON-8. Het is een claimtender in het Aegir-systeem: baan houden, berging prijzen, manifesten controleren, de Aegir Reclamation Pool tegen verlies beschermen. Onder de bovenste oceaan werkt gewone radio niet meer. Het water zit vol zouten, metalen en industrieel stof; data moet naar buiten via laagfrequente akoestische pulsen, traag en smal.\n\nDie beperking draagt HECTON-8. Geen FTL-antwoord komt uit Sol. Geen ansible-stem praat de speler uit een ondergelopen module. Zelfs lokale omloop valt uiteen door stormen, maangeometrie en Kestrels relaisschaduw. Black Keel kan een pakket bevestigen omdat ledgers bewaring eisen, en extractie toch tegenhouden tot stijgmassa, quarantainestatus en ladingwaarde bij het contract passen.",
+     "field_note": "Een ontvangstbewijs is geen redding. Het betekent dat de Keel het pakket kan factureren. Blijf ademen tot het pakket je terug kan factureren."
+    },
+    "pl_PL": {
+     "title": "Rejestr odbioru cichej orbity",
+     "scanner": "ODBIÓR AKUSTYCZNY // Pakiet przyjęty przy 312 bps. Masa kadłuba, dzierżawa tlenu, hash roszczenia i suma salvage odebrane. Brak wektora ekstrakcji.",
+     "terminal": "ORBITALNY ODBIÓR BLACK KEEL BKH8-RC-2190-0041 // Klasa uplinku: akustyczna. Nadawca: kontraktor związany długiem. Ładunek: podgląd manifestu, telemetria ciśnienia, szacunek życia skafandra. Status: odebrane, escrow, nie odzyskane. Okno cienia Kestrel zamyka się za 11 h 40 m. Odzysk wymaga certyfikowanej masy wznoszenia, handshake kwarantanny i płatnego materiału claim.",
+     "audio": "Odbiór zapisany. Manifest usłyszany. Wektor ekstrakcji wstrzymany. Wyślij masę, dowód uszczelnienia i czystszą sumę.",
+     "in_game_wiki": "Rejestr odbioru cichej orbity to pierwsza szczera rzecz od Black Keel dla Maraudera: potwierdzenie bez pomocy. Radio umiera pod górnym oceanem. Lasery i mikrofale rozpraszają się albo znikają. Na głębokości kontraktor mówi powolnymi impulsami akustycznymi niosącymi tekst, hashe, ostrzeżenia ciśnienia i zapisy masy do rozliczenia. Black Keel odpowiada, bo piecza kontraktowa wymaga odbioru, nie dlatego, że człowiek czeka z planem ratunku.\n\nKestrel, okna burzowe i mineralny ocean HECTON-8 mogą zmienić wiadomość w stare dowody, zanim orbita się oczyści. Odbiór dowodzi, że tender usłyszał dość, by wycenić kurs. Nie dowodzi ekstrakcji, litości ani żywego rozkazu. Pierwsza prawdziwa odpowiedź jest więc zimniejsza niż cisza: system potrafi cię policzyć, zanim potrafi cię uratować.",
+     "external_site": "Black Keel nie jest statkiem-domem nad HECTON-8. To tender claim w systemie Aegir: trzyma orbitę, wycenia odzysk, sprawdza manifesty i chroni Aegir Reclamation Pool przed stratą. Pod górnym oceanem zwykłe radio traci sens. Woda niesie sole, metale i pył przemysłowy; dane wychodzą tylko przez niskoczęstotliwościowe impulsy akustyczne, wolne i wąskie.\n\nTa granica buduje samotność HECTON-8. Z Sol nie przyjdzie odpowiedź FTL. Nie ma ansible, które wyprowadzi gracza z zalanego modułu. Nawet lokalna orbita pęka na okna burz, geometrię księżyców i cień przekaźnika Kestrel. Black Keel może potwierdzić pakiet, bo księgi potrzebują pieczy, a mimo to wstrzymać ekstrakcję, dopóki masa, kwarantanna i wartość ładunku nie pasują do kontraktu.",
+     "field_note": "Odbiór to nie ratunek. Znaczy, że Keel może rozliczyć pakiet. Oddychaj, aż pakiet będzie umiał rozliczyć drogę powrotną."
+    },
+    "pt_BR": {
+     "title": "Livro de recibos da órbita silenciosa",
+     "scanner": "RECIBO ACÚSTICO // Pacote aceito a 312 bps. Massa do casco, arrendamento de oxigênio, hash de reivindicação e checksum de salvamento recebidos. Sem vetor de extração.",
+     "terminal": "RECIBO ORBITAL BLACK KEEL BKH8-RC-2190-0041 // Classe de uplink: acústica. Remetente: contratante endividado. Carga: prévia de manifesto, telemetria de pressão, estimativa de vida do traje. Status: recebido, em custódia, não recuperado. Janela de sombra Kestrel fecha em 11 h 40 m. Recuperação exige massa de ascensão certificada, handshake de quarentena e material de claim pagável.",
+     "audio": "Recibo registrado. Manifesto ouvido. Vetor de extração retido. Envie massa, prova de vedação e checksum mais limpo.",
+     "in_game_wiki": "O Livro de recibos da órbita silenciosa é a primeira coisa honesta que Black Keel dá a um Marauder: confirmação sem ajuda. O rádio morre abaixo do oceano superior. Laser e micro-ondas se dispersam ou somem. Em profundidade, um contratante fala por pulsos acústicos lentos que carregam texto, hashes, alertas de pressão e registros de massa cobrável. Black Keel responde porque a custódia contratual exige recibo, não porque exista alguém com um quadro de resgate.\n\nKestrel, janelas de tempestade e o oceano mineral de HECTON-8 podem tornar uma mensagem prova velha antes de a órbita limpar. Um recibo prova que o tender ouviu o bastante para precificar a corrida. Não prova extração, piedade nem comando vivo. Por isso a primeira resposta real parece mais fria que silêncio: o sistema consegue contar você antes de conseguir salvar você.",
+     "external_site": "Black Keel não é uma nave-lar esperando acima de HECTON-8. É um tender de claims do sistema Aegir: mantém órbita, precifica recuperação, verifica manifestos e protege o Aegir Reclamation Pool contra perda. Abaixo do oceano superior, rádio comum deixa de servir. A água carrega sais, metais e poeira industrial; dados saem por pulsos acústicos de baixa frequência, lentos e estreitos.\n\nEssa restrição sustenta HECTON-8. Nenhuma resposta FTL vem de Sol. Nenhuma ansible guia o jogador para fora de um módulo alagado. Até a órbita local é cortada por tempestades, geometria lunar e a sombra de relay de Kestrel. Black Keel pode confirmar um pacote porque seus livros exigem custódia, e ainda reter extração até massa de ascensão, quarentena e valor de carga caberem no contrato.",
+     "field_note": "Recibo não é resgate. Quer dizer que a Keel pode cobrar o pacote. Continue respirando até o pacote conseguir cobrar sua volta."
+    },
+    "ru_RU": {
+     "title": "Журнал квитанций Тихой орбиты",
+     "scanner": "АКУСТИЧЕСКАЯ КВИТАНЦИЯ // Пакет принят на 312 бит/с. Масса корпуса, кислородная аренда, claim-хэш и salvage-контроль получены. Вектор подъема не приложен.",
+     "terminal": "ОРБИТАЛЬНАЯ КВИТАНЦИЯ BLACK KEEL BKH8-RC-2190-0041 // Класс связи: акустический. Отправитель: долговой подрядчик. Полезная нагрузка: черновик манифеста, телеметрия давления, остаток ресурса костюма. Статус: получено, помещено в escrow, не извлечено. Теневое окно Kestrel закрывается через 11 ч 40 м. Подъем требует сертифицированной массы, карантинного рукопожатия и оплачиваемого claim-материала.",
+     "audio": "Квитанция внесена. Манифест услышан. Вектор подъема удержан. Пришлите массу, доказательство герметизации и чище контрольную сумму.",
+     "in_game_wiki": "Журнал квитанций Тихой орбиты — первая честная вещь, которую Black Keel дает Marauder: подтверждение без помощи. Радио умирает ниже верхнего океана. Лазер и микроволна рассеиваются или пропадают. На глубине подрядчик говорит медленными акустическими импульсами: текст, хэши, предупреждения давления, оплачиваемые записи массы. Black Keel отвечает, потому что договорному хранению нужна квитанция, а не потому что за линией сидит человек с планом спасения.\n\nKestrel, штормовые окна и минеральный океан HECTON-8 могут превратить сообщение в устаревшее доказательство раньше, чем орбита очистится. Квитанция доказывает, что тендер услышал достаточно, чтобы выставить цену рейсу. Она не доказывает подъем, милость или живую команду. Поэтому первый настоящий ответ холоднее тишины: система умеет посчитать тебя раньше, чем умеет спасти.",
+     "external_site": "Black Keel — не домашний корабль, ждущий над HECTON-8. Это claim-тендер системы Aegir: держать орбиту, оценивать возврат, сверять манифесты и защищать Aegir Reclamation Pool от убытка. Ниже верхнего океана обычная радиосвязь почти бесполезна. Вода набита солями, металлами и промышленной пылью; данные приходится проталкивать низкочастотными акустическими импульсами, медленными и узкими.\n\nЭтот предел — ядро одиночества HECTON-8. Из Sol не придет FTL-ответ. Нет ansible-голоса, который выведет игрока из затопленного модуля. Даже местная орбита режется штормами, геометрией лун и релейной тенью Kestrel. Black Keel может подтвердить пакет, потому что журналам нужна custody, и все равно удержать подъем, пока масса, карантин и ценность груза не совпадут с контрактом.",
+     "field_note": "Квитанция — не спасение. Она значит, что Keel может выставить счет пакету. Дыши, пока пакет не сможет выставить счет обратно."
+    },
+    "uk_UA": {
+     "title": "Журнал квитанцій Тихої орбіти",
+     "scanner": "АКУСТИЧНА КВИТАНЦІЯ // Пакет прийнято на 312 біт/с. Маса корпусу, оренда кисню, claim-хеш і salvage-сума отримані. Вектор підйому не додано.",
+     "terminal": "ОРБІТАЛЬНА КВИТАНЦІЯ BLACK KEEL BKH8-RC-2190-0041 // Клас зв'язку: акустичний. Відправник: борговий підрядник. Вантаж: попередній маніфест, телеметрія тиску, оцінка ресурсу костюма. Статус: отримано, в escrow, не повернуто. Тіньове вікно Kestrel закривається за 11 год 40 хв. Повернення потребує сертифікованої маси підйому, карантинного рукостискання і оплачуваного claim-матеріалу.",
+     "audio": "Квитанцію внесено. Маніфест почуто. Вектор підйому затримано. Надішліть масу, доказ герметизації і чистішу суму.",
+     "in_game_wiki": "Журнал квитанцій Тихої орбіти — перша чесна річ, яку Black Keel дає Marauder: підтвердження без допомоги. Радіо вмирає нижче верхнього океану. Лазер і мікрохвилі розсіюються або зникають. На глибині підрядник говорить повільними акустичними імпульсами: текст, хеші, попередження тиску, записи оплачуваної маси. Black Keel відповідає, бо договірній custody потрібна квитанція, а не тому, що людина чекає з планом рятування.\n\nKestrel, штормові вікна і мінеральний океан HECTON-8 можуть зробити повідомлення старим доказом до очищення орбіти. Квитанція доводить, що тендер почув досить, щоб оцінити рейс. Вона не доводить підйом, милість чи живу команду. Тому перша справжня відповідь холодніша за тишу: система може порахувати тебе раніше, ніж може врятувати.",
+     "external_site": "Black Keel — не домашній корабель над HECTON-8. Це claim-тендер системи Aegir: тримає орбіту, оцінює повернення, перевіряє маніфести і захищає Aegir Reclamation Pool від втрат. Нижче верхнього океану звичайне радіо майже не працює. Вода несе солі, метали і промисловий пил; дані виходять низькочастотними акустичними імпульсами, повільними і вузькими.\n\nЦе обмеження тримає HECTON-8 в ізоляції. Із Sol не прийде FTL-відповідь. Немає ansible-голосу, що виведе гравця із затопленого модуля. Навіть місцева орбіта ріжеться бурями, геометрією місяців і релейною тінню Kestrel. Black Keel може підтвердити пакет, бо журналам потрібна custody, і все одно затримати підйом, доки маса, карантин і цінність вантажу не збігнуться з контрактом.",
+     "field_note": "Квитанція — не рятунок. Вона значить, що Keel може виставити рахунок пакету. Дихай, доки пакет не зможе оплатити шлях назад."
+    },
+    "zh_CN": {
+     "title": "静默轨道收据账本",
+     "scanner": "声学收据 // 数据包以312 bps接受。船体质量、氧气租约、索赔哈希和打捞校验和已接收。未附带撤离向量。",
+     "terminal": "BLACK KEEL轨道收据 BKH8-RC-2190-0041 // 上行类别：声学。发送者：负债承包人。载荷：清单预览、压力遥测、潜服寿命估算。状态：已接收、已托管、未回收。Kestrel阴影窗口将在11小时40分后关闭。回收需要认证上升质量、检疫握手和可付款索赔物料。",
+     "audio": "收据已记录。清单已听见。撤离向量保留。发送质量、密封证明和更干净的校验和。",
+     "in_game_wiki": "静默轨道收据账本是Black Keel给Marauder的第一件诚实物：确认收到，但不提供帮助。上层海洋以下，无线电死亡。激光和微波会散射或消失。在深处，承包人只能用缓慢的声学脉冲说话，携带文本、哈希、压力警告和可计费质量记录。Black Keel回复这些数据包，是因为合同托管需要收据，不是因为有人拿着救援板在听。\n\nKestrel、风暴窗口和HECTON-8的矿物海洋，会在轨道放晴前把信息变成过期证据。收据只能证明运载平台听见了足够内容，可以给这趟活定价。它不能证明撤离、怜悯或实时指令。因此第一次真正回复比沉默更冷：系统能先数清你，然后才可能救你。",
+     "external_site": "Black Keel不是停在HECTON-8上空的家船。它是Aegir系统的索赔运载平台：保持轨道、给回收定价、核验清单、保护Aegir Reclamation Pool免于损失。上层海洋以下，普通无线电几乎无用。海水充满盐、金属和工业尘埃；玩家必须用低频声学脉冲把数据一点点推出去，速度慢，容量窄。\n\n这条限制构成HECTON-8的孤立。没有来自Sol的FTL回复。没有ansible声音能把玩家从进水舱段里说出来。即使是本地轨道，也会被风暴、月球几何和Kestrel中继阴影切碎。Black Keel可以因为账本需要托管而确认数据包，同时继续扣住撤离，直到上升质量、检疫状态和载荷价值符合合同。",
+     "field_note": "收据不是救援。它表示Keel可以给数据包记账。继续呼吸，直到数据包能替你把回程也记上。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

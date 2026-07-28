@@ -1,264 +1,265 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS186_BLACK_KEEL_TONNE_WINDOW_CUSTODY",
-  "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS186_BLACK_KEEL_TONNE_WINDOW_CUSTODY",
+ "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY",
+   "release_set_id": "RS186_BLACK_KEEL_TONNE_WINDOW_CUSTODY",
+   "article_id": "applied_lore.black_keel_tonne_window_custody",
+   "title_key": "LORE_BLACK_KEEL_TONNE_WINDOW_CUSTODY_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Humanity_2190_Game_Texture.md",
+    "Docs/Lore/Ships_Transit_Game_Texture.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "PROJECT_BIBLES.md",
+    "VISION_LOCKS.md",
+    "TASTE.md",
+    ".agents-skills/writing.md",
+    ".agents-skills/narrative.md",
+    ".agents-skills/localization.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY",
-      "release_set_id": "RS186_BLACK_KEEL_TONNE_WINDOW_CUSTODY",
-      "article_id": "applied_lore.black_keel_tonne_window_custody",
-      "title_key": "LORE_BLACK_KEEL_TONNE_WINDOW_CUSTODY_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Humanity_2190_Game_Texture.md",
-        "Docs/Lore/Ships_Transit_Game_Texture.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "PROJECT_BIBLES.md",
-        "VISION_LOCKS.md",
-        "TASTE.md",
-        ".agents-skills/writing.md",
-        ".agents-skills/narrative.md",
-        ".agents-skills/localization.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.black_keel_tonne_window_custody",
-        "secondary": [
-          "unlock.first_tonne_window_mass_line",
-          "unlock.first_keelmark_lien_notice",
-          "unlock.first_salvage_custody_receipt"
-        ],
-        "poi_tags": [
-          "poi.keelmark_lien_terminal",
-          "poi.black_keel_window_clock",
-          "poi.salvage_mass_scale",
-          "poi.custody_stamp_printer"
-        ],
-        "biome_tags": [
-          "biome.drowned_admin",
-          "biome.surface_relay",
-          "biome.carrier_link",
-          "biome.salvage_contract"
-        ],
-        "first_20_boundary": "This packet can unlock when the player finds the first Keelmark mass receipt or tonne-window line. It makes Black Keel's accounting pressure legible without claiming Black Keel is a personal ship, a villain, or a rescue deus ex machina."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Mass Receipt Scan",
-          "terminal": "Keelmark Custody Notice",
-          "audio": "Black Keel Debt Audio",
-          "in_game_wiki": "Recovered Custody Primer",
-          "external_site": "Field Archive Longform",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "surface_to_drowned_admin",
-        "route_moment": "first_tonne_window_or_salvage_lien",
-        "truth_payload": "A tonne-window is a legal and physical mass slot: Black Keel can accept proof, salvage, evidence, or body only when the window, liability, and payload agree.",
-        "player_question": "Why does the carrier ask what I weigh before it asks whether I am alive?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Black Keel Tonne-Window Custody",
-          "scanner": "Keelmark receipt. One tonne-window maps payload mass, route phase, insurance exposure, quarantine class and recovery priority into a single carrier slot.",
-          "field_note": "A tonne-window is not money. It is permission for mass to leave.",
-          "terminal": "TONNE-WINDOW CUSTODY // 4.8 tonne-window lien active. Living contractor, sealed evidence core, Xenon-Omega process cut and recoverable hull crate share recovery class unless reprioritized by custody proof. Human status alone insufficient for full-window override.",
-          "audio": "Black Keel speaks in tonnes because tonnes are what the window can carry.",
-          "in_game_wiki": "A Keelmark receipt explains why Black Keel speaks in mass before it speaks in rescue. The carrier runs on tonne-window custody: a legal slot matched to a physical payload, an insurance exposure and a phase of the route clock. A living body, a sealed evidence core, a cut of Xenon-Omega process material and a crate of recoverable hull all compete for the same window if the contract places them on the same line. The system is cold, but it is not random. It tells the player what the frontier values and which choices will travel home first.\n\nThe ugly part is that Black Keel can be honest while still being cruel. If the player increases proof value, a packet may climb the queue before the body. If the player carries contaminated material, quarantine can eat the window. If the player proves Deep Reach liability, hidden priority hooks may try to seize custody before public evidence escapes. A tonne-window is not a wallet number. It is a physical promise with legal teeth.",
-          "external_site": "Black Keel's tonne-window custody turns rescue into a physical and legal slot where body, evidence, debt and salvage compete under one carrier clock.",
-          "external_site_article": "The tonne-window is one of HECTON-8's cleanest expressions of frontier cruelty. It sounds like accounting because it is accounting, but the thing being counted is physical: mass through a narrow recovery window. Black Keel cannot lift everything from the ocean. It can lift what the route, insurance, quarantine and custody record allow it to lift.\n\nThat makes every payload choice sharper. A living contractor has value, but so does a sealed evidence core that can damage Deep Reach. A Xenon-Omega process cut may be worth more than a crate of ordinary salvage, but it can also poison the quarantine class. Recoverable hull may satisfy an insurer faster than a worker dossier satisfies justice. The carrier does not need to lie to be frightening. It only needs to apply the table.\n\nFor the player, tonne-window custody is the moment the ending pressure becomes concrete. What goes home first: the body, the proof, the sample, the tool, the coordinates, or the story? Black Keel will help calculate the lift. It will not decide that mercy outranks the contract unless the player forces a better custody case into the machine."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "عهدة tonne-window لـ Black Keel",
-          "scanner": "إيصال Keelmark. كل tonne-window يربط كتلة payload، طور الطريق، تعرض التأمين، فئة الحجر وأولوية الاسترداد في slot carrier واحد.",
-          "field_note": "Tonne-window ليست مالا. إنها إذن للكتلة بالمغادرة.",
-          "terminal": "عهدة TONNE-WINDOW // رهن 4.8 tonne-window فعال. المتعاقد الحي، نواة الدليل، سبيكة Xenon-Omega وصندوق الهيكل القابل للاسترداد يشتركون في فئة الاسترداد ما لم يغير proof custody الأولوية. حالة الإنسان وحدها لا تكفي.",
-          "audio": "تتحدث Black Keel بالطن لأن الأطنان هي ما تستطيع النافذة حمله.",
-          "in_game_wiki": "Tonne-window هو أوضح تعبير عن قسوة frontier في HECTON-8. يبدو كحساب لأنه حساب، لكن المعدود شيء فيزيائي: كتلة عبر نافذة استرداد ضيقة. Black Keel لا ترفع كل شيء من المحيط، بل ما تسمح به الطريق والتأمين والحجر وسجل العهدة.\n\nلذلك يصبح كل payload اختيارا قاسيا. المتعاقد الحي له قيمة، لكن نواة دليل ضد Deep Reach لها قيمة أيضا. مادة Xenon-Omega قد تساوي أكثر من salvage عادي وتسمم الحجر. الهيكل قد يرضي شركة تأمين قبل أن يرضي dossier عامل العدالة.",
-          "external_site": "عهدة tonne-window في Black Keel تحول الإنقاذ إلى slot مادي وقانوني يتنافس فيه الجسد والدليل والدين وsalvage تحت ساعة carrier واحدة.",
-          "external_site_article": "Tonne-window هو أوضح تعبير عن قسوة frontier في HECTON-8. يبدو كحساب لأنه حساب، لكن المعدود شيء فيزيائي: كتلة عبر نافذة استرداد ضيقة. Black Keel لا ترفع كل شيء من المحيط، بل ما تسمح به الطريق والتأمين والحجر وسجل العهدة.\n\nلذلك يصبح كل payload اختيارا قاسيا. المتعاقد الحي له قيمة، لكن نواة دليل ضد Deep Reach لها قيمة أيضا. مادة Xenon-Omega قد تساوي أكثر من salvage عادي وتسمم الحجر. الهيكل قد يرضي شركة تأمين قبل أن يرضي dossier عامل العدالة.\n\nبالنسبة للاعب، هذه هي لحظة ضغط النهاية: ما الذي يعود أولا؟ الجسد، الدليل، العينة، الأداة، الإحداثيات أم القصة؟ Black Keel يحسب الرفع، ولا يرفع الرحمة فوق العقد إلا إذا أجبره اللاعب بدليل أقوى."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Black Keel Tonne-Window-Gewahrsam",
-          "scanner": "Keelmark-Beleg. Ein Tonne-Window bildet Payloadmasse, Routenphase, Versicherungsrisiko, Quarantäneklasse und Recoverypriorität auf einen Carrier-Slot ab.",
-          "field_note": "Ein Tonne-Window ist kein Geld. Es ist Erlaubnis für Masse, zu gehen.",
-          "terminal": "TONNE-WINDOW GEWAHRSAM // 4.8-Tonne-Window-Pfand aktiv. Lebender Contractor, versiegelter Beweiskern, Xenon-Omega-Prozessschnitt und bergbare Rumpfkiste teilen Recoveryklasse, bis Custody Proof neu priorisiert. Humanstatus allein reicht nicht für Full-Window-Override.",
-          "audio": "Black Keel spricht in Tonnen, weil Tonnen das sind, was das Fenster tragen kann.",
-          "in_game_wiki": "Das Tonne-Window ist eine klare Form von Frontier-Grausamkeit. Es klingt wie Buchhaltung, weil es Buchhaltung ist, aber gezählt wird Physik: Masse durch ein enges Recoveryfenster. Black Keel hebt nicht alles aus dem Ozean, sondern was Route, Versicherung, Quarantäne und Gewahrsam erlauben.\n\nDarum wird jede Payloadwahl scharf. Ein lebender Contractor hat Wert, aber ein Beweiskern gegen Deep Reach auch. Xenon-Omega-Material kann mehr wert sein als Salvage und zugleich Quarantäne vergiften. Rumpf kann einen Versicherer schneller befriedigen als ein Worker Dossier die Gerechtigkeit.",
-          "external_site": "Black Keels Tonne-Window-Gewahrsam macht Rettung zu einem physischen und juristischen Slot, in dem Körper, Beweis, Schuld und Salvage unter einer Carrieruhr konkurrieren.",
-          "external_site_article": "Das Tonne-Window ist eine klare Form von Frontier-Grausamkeit. Es klingt wie Buchhaltung, weil es Buchhaltung ist, aber gezählt wird Physik: Masse durch ein enges Recoveryfenster. Black Keel hebt nicht alles aus dem Ozean, sondern was Route, Versicherung, Quarantäne und Gewahrsam erlauben.\n\nDarum wird jede Payloadwahl scharf. Ein lebender Contractor hat Wert, aber ein Beweiskern gegen Deep Reach auch. Xenon-Omega-Material kann mehr wert sein als Salvage und zugleich Quarantäne vergiften. Rumpf kann einen Versicherer schneller befriedigen als ein Worker Dossier die Gerechtigkeit.\n\nFür den Spieler wird Endingdruck konkret: Was geht zuerst heim, Körper, Beweis, Probe, Werkzeug, Koordinaten oder Geschichte? Black Keel rechnet den Lift. Gnade schlägt Vertrag erst, wenn der Spieler einen besseren Custody Case erzwingt."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Custodia tonne-window Black Keel",
-          "scanner": "Recibo Keelmark. Una tonne-window asigna masa de payload, fase de ruta, exposición de seguro, clase de cuarentena y prioridad de recuperación a un slot carrier.",
-          "field_note": "Una tonne-window no es dinero. Es permiso para que la masa salga.",
-          "terminal": "CUSTODIA TONNE-WINDOW // Gravamen 4.8 tonne-window activo. Contratista vivo, núcleo de evidencia sellado, corte Xenon-Omega y caja de casco recuperable comparten clase de recuperación salvo repriorización por prueba de custodia. Estado humano solo insuficiente.",
-          "audio": "Black Keel habla en toneladas porque toneladas es lo que la ventana puede cargar.",
-          "in_game_wiki": "La tonne-window es una de las formas más limpias de crueldad fronteriza. Suena a contabilidad porque lo es, pero se cuenta algo físico: masa por una ventana estrecha de recuperación. Black Keel no levanta todo del océano; levanta lo que ruta, seguro, cuarentena y custodia permiten.\n\nPor eso cada payload pesa. Un contratista vivo tiene valor, pero también un núcleo de evidencia contra Deep Reach. Xenon-Omega puede valer más que salvage común y envenenar la cuarentena. Un casco recuperable puede satisfacer a una aseguradora antes que un dossier obrero satisfaga la justicia.",
-          "external_site": "La custodia tonne-window de Black Keel convierte rescate en un slot físico y legal donde cuerpo, evidencia, deuda y salvage compiten bajo un reloj carrier.",
-          "external_site_article": "La tonne-window es una de las formas más limpias de crueldad fronteriza. Suena a contabilidad porque lo es, pero se cuenta algo físico: masa por una ventana estrecha de recuperación. Black Keel no levanta todo del océano; levanta lo que ruta, seguro, cuarentena y custodia permiten.\n\nPor eso cada payload pesa. Un contratista vivo tiene valor, pero también un núcleo de evidencia contra Deep Reach. Xenon-Omega puede valer más que salvage común y envenenar la cuarentena. Un casco recuperable puede satisfacer a una aseguradora antes que un dossier obrero satisfaga la justicia.\n\nPara el jugador, la presión final se vuelve concreta: ¿qué vuelve primero, cuerpo, prueba, muestra, herramienta, coordenadas o historia? Black Keel calcula. La misericordia no supera el contrato salvo que el jugador fuerce un caso de custodia mejor."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Garde tonne-window Black Keel",
-          "scanner": "Reçu Keelmark. Une tonne-window associe masse payload, phase de route, exposition assurance, classe quarantaine et priorité recovery dans un slot carrier.",
-          "field_note": "Une tonne-window n'est pas de l'argent. C'est la permission donnée à une masse de partir.",
-          "terminal": "GARDE TONNE-WINDOW // Créance 4.8 tonne-window active. Contracteur vivant, noyau de preuve scellé, coupe Xenon-Omega et caisse de coque récupérable partagent la classe recovery sauf repriorisation par preuve de garde. Statut humain seul insuffisant.",
-          "audio": "Black Keel parle en tonnes parce que les tonnes sont ce que la fenêtre peut porter.",
-          "in_game_wiki": "La tonne-window est une expression nette de la cruauté frontier. Elle sonne comme de la comptabilité parce que c'en est, mais l'objet compté est physique : masse dans une fenêtre de récupération étroite. Black Keel ne lève pas tout l'océan, seulement ce que route, assurance, quarantaine et garde autorisent.\n\nChaque payload devient donc aigu. Un contracteur vivant a de la valeur, mais un noyau de preuve contre Deep Reach aussi. Xenon-Omega peut valoir plus que du salvage ordinaire et empoisonner la quarantaine. Une coque récupérable peut satisfaire un assureur plus vite qu'un dossier ouvrier satisfait la justice.",
-          "external_site": "La garde tonne-window de Black Keel transforme le secours en slot physique et légal où corps, preuve, dette et salvage rivalisent sous une horloge carrier.",
-          "external_site_article": "La tonne-window est une expression nette de la cruauté frontier. Elle sonne comme de la comptabilité parce que c'en est, mais l'objet compté est physique : masse dans une fenêtre de récupération étroite. Black Keel ne lève pas tout l'océan, seulement ce que route, assurance, quarantaine et garde autorisent.\n\nChaque payload devient donc aigu. Un contracteur vivant a de la valeur, mais un noyau de preuve contre Deep Reach aussi. Xenon-Omega peut valoir plus que du salvage ordinaire et empoisonner la quarantaine. Une coque récupérable peut satisfaire un assureur plus vite qu'un dossier ouvrier satisfait la justice.\n\nPour le joueur, la pression de fin devient concrète : qu'est-ce qui rentre d'abord, corps, preuve, échantillon, outil, coordonnées ou histoire ? Black Keel calcule. La pitié ne dépasse le contrat que si le joueur force un meilleur dossier de garde."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "משמורת tonne-window של Black Keel",
-          "scanner": "קבלת Keelmark. tonne-window אחד ממפה מסת payload, שלב נתיב, חשיפת ביטוח, מחלקת הסגר ועדיפות התאוששות ל-slot carrier יחיד.",
-          "field_note": "Tonne-window אינה כסף. היא רשות למסה לעזוב.",
-          "terminal": "משמורת TONNE-WINDOW // שעבוד 4.8 tonne-window פעיל. קבלן חי, ליבת ראיה חתומה, חתך Xenon-Omega וארגז גוף ניתן לשחזור חולקים מחלקת התאוששות אלא אם proof custody משנה עדיפות. סטטוס אנושי לבדו אינו מספיק.",
-          "audio": "Black Keel מדברת בטונות כי טונות הן מה שהחלון יכול לשאת.",
-          "in_game_wiki": "Tonne-window הוא ביטוי נקי לאכזריות frontier. זה נשמע כמו חשבונאות כי זה חשבונאות, אך נספרת פיזיקה: מסה דרך חלון התאוששות צר. Black Keel אינה מעלה הכל מהאוקיינוס, אלא מה שהנתיב, הביטוח, ההסגר והמשמורת מרשים.\n\nלכן כל payload חד יותר. לקבלן חי יש ערך, אבל גם לליבת ראיה נגד Deep Reach. חומר Xenon-Omega יכול להיות יקר מ-salvage רגיל ולזהם הסגר. גוף ניתן לשחזור עשוי לרצות מבטח לפני ש-dossier עובד מרצה צדק.",
-          "external_site": "משמורת tonne-window של Black Keel הופכת חילוץ ל-slot פיזי ומשפטי שבו גוף, ראיה, חוב ו-salvage מתחרים תחת שעון carrier אחד.",
-          "external_site_article": "Tonne-window הוא ביטוי נקי לאכזריות frontier. זה נשמע כמו חשבונאות כי זה חשבונאות, אך נספרת פיזיקה: מסה דרך חלון התאוששות צר. Black Keel אינה מעלה הכל מהאוקיינוס, אלא מה שהנתיב, הביטוח, ההסגר והמשמורת מרשים.\n\nלכן כל payload חד יותר. לקבלן חי יש ערך, אבל גם לליבת ראיה נגד Deep Reach. חומר Xenon-Omega יכול להיות יקר מ-salvage רגיל ולזהם הסגר. גוף ניתן לשחזור עשוי לרצות מבטח לפני ש-dossier עובד מרצה צדק.\n\nלשחקן, לחץ הסיום נעשה ממשי: מה חוזר ראשון, גוף, ראיה, דגימה, כלי, קואורדינטות או סיפור? Black Keel מחשבת. רחמים לא גוברים על חוזה אלא אם השחקן כופה תיק משמורת חזק יותר."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Kustodi tonne-window Black Keel",
-          "scanner": "Tanda terima Keelmark. Satu tonne-window memetakan massa payload, fase rute, exposure asuransi, kelas karantina, dan prioritas recovery ke satu slot carrier.",
-          "field_note": "Tonne-window bukan uang. Itu izin bagi massa untuk pergi.",
-          "terminal": "KUSTODI TONNE-WINDOW // Lien 4.8 tonne-window aktif. Kontraktor hidup, inti bukti tersegel, potongan Xenon-Omega, dan crate hull recoverable berbagi kelas recovery kecuali proof custody memprioritaskan ulang. Status manusia saja tidak cukup.",
-          "audio": "Black Keel berbicara dalam ton karena ton itulah yang dapat dibawa jendela.",
-          "in_game_wiki": "Tonne-window adalah bentuk kejam frontier yang bersih. Terdengar seperti akuntansi karena memang akuntansi, tetapi yang dihitung fisik: massa melalui jendela recovery sempit. Black Keel tidak mengangkat semua dari laut, hanya yang diizinkan rute, asuransi, karantina, dan kustodi.\n\nMaka tiap payload tajam. Kontraktor hidup bernilai, tetapi inti bukti melawan Deep Reach juga. Xenon-Omega bisa lebih berharga dari salvage biasa dan meracuni karantina. Hull recoverable bisa memuaskan asuransi lebih cepat daripada dossier pekerja memuaskan keadilan.",
-          "external_site": "Kustodi tonne-window Black Keel mengubah penyelamatan menjadi slot fisik dan legal tempat tubuh, bukti, utang, dan salvage bersaing di bawah satu jam carrier.",
-          "external_site_article": "Tonne-window adalah bentuk kejam frontier yang bersih. Terdengar seperti akuntansi karena memang akuntansi, tetapi yang dihitung fisik: massa melalui jendela recovery sempit. Black Keel tidak mengangkat semua dari laut, hanya yang diizinkan rute, asuransi, karantina, dan kustodi.\n\nMaka tiap payload tajam. Kontraktor hidup bernilai, tetapi inti bukti melawan Deep Reach juga. Xenon-Omega bisa lebih berharga dari salvage biasa dan meracuni karantina. Hull recoverable bisa memuaskan asuransi lebih cepat daripada dossier pekerja memuaskan keadilan.\n\nBagi pemain, tekanan akhir jadi konkret: mana yang pulang dulu, tubuh, bukti, sampel, alat, koordinat, atau cerita? Black Keel menghitung lift. Belas kasih mengalahkan kontrak hanya jika pemain memaksa kasus kustodi yang lebih kuat."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Black Keel tonne-window保管",
-          "scanner": "Keelmark受領。1つのtonne-windowがpayload質量、航路位相、保険露出、検疫級、回収優先を単一carrier slotへ対応付ける。",
-          "field_note": "Tonne-windowは金ではない。質量が去る許可だ。",
-          "terminal": "TONNE-WINDOW保管 // 4.8 tonne-window留置権有効。生存契約者、封印証拠コア、Xenon-Omega工程片、回収可能船体箱はcustody proofで再優先されるまで回収級を共有。人間状態だけではfull-window override不足。",
-          "audio": "Black Keelがトンで話すのは、窓が運べるものがトンだからだ。",
-          "in_game_wiki": "tonne-windowはフロンティアの残酷さを最もきれいに表す。会計のように聞こえるのは、会計だからだ。ただし数えられるのは物理、狭い回収窓を通る質量だ。Black Keelは海の全てを上げない。航路、保険、検疫、保管記録が許すものだけを上げる。\n\nだからpayload選択は鋭くなる。生きた契約者には価値があるが、Deep Reachを傷つける証拠コアにも価値がある。Xenon-Omega片は普通のsalvageより高く、検疫を汚すこともある。船体片はworker dossierが正義を満たすより早く保険者を満たすかもしれない。",
-          "external_site": "Black Keelのtonne-window保管は救助を、身体、証拠、債務、salvageが同じcarrier時計で争う物理的・法的slotに変える。",
-          "external_site_article": "tonne-windowはフロンティアの残酷さを最もきれいに表す。会計のように聞こえるのは、会計だからだ。ただし数えられるのは物理、狭い回収窓を通る質量だ。Black Keelは海の全てを上げない。航路、保険、検疫、保管記録が許すものだけを上げる。\n\nだからpayload選択は鋭くなる。生きた契約者には価値があるが、Deep Reachを傷つける証拠コアにも価値がある。Xenon-Omega片は普通のsalvageより高く、検疫を汚すこともある。船体片はworker dossierが正義を満たすより早く保険者を満たすかもしれない。\n\nプレイヤーにとって、終盤圧力は具体化する。最初に帰るのは身体、証拠、試料、道具、座標、物語のどれか。Black Keelはliftを計算する。慈悲が契約を超えるのは、プレイヤーがより強い保管案件を機械に押し込んだ時だけだ。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Black Keel tonne-window 보관",
-          "scanner": "Keelmark 영수증. 하나의 tonne-window는 payload 질량, 항로 위상, 보험 노출, 검역 등급, 회수 우선순위를 단일 carrier slot에 매핑한다.",
-          "field_note": "Tonne-window는 돈이 아니다. 질량이 떠날 허가다.",
-          "terminal": "TONNE-WINDOW 보관 // 4.8 tonne-window 유치권 활성. 살아 있는 계약자, 봉인 증거 코어, Xenon-Omega 공정 절단물, 회수 가능한 선체 상자는 custody proof가 재우선화할 때까지 회수 등급 공유. 인간 상태만으로 full-window override 불충분.",
-          "audio": "Black Keel은 톤으로 말한다. 창이 실을 수 있는 것이 톤이기 때문이다.",
-          "in_game_wiki": "tonne-window는 frontier 잔혹함의 깨끗한 표현이다. 회계처럼 들리는 이유는 회계이기 때문이다. 하지만 세는 것은 물리다. 좁은 회수 창을 지나는 질량. Black Keel은 바다의 모든 것을 올리지 않는다. 항로, 보험, 검역, 보관 기록이 허용한 것만 올린다.\n\n그래서 payload 선택은 날카롭다. 살아 있는 계약자도 가치가 있지만 Deep Reach를 해칠 증거 코어도 가치가 있다. Xenon-Omega 조각은 일반 salvage보다 값지면서 검역을 오염시킬 수 있다. 회수 가능한 선체는 worker dossier가 정의를 만족시키기 전에 보험사를 만족시킬 수 있다.",
-          "external_site": "Black Keel tonne-window 보관은 구조를 몸, 증거, 부채, salvage가 하나의 carrier 시계 아래 경쟁하는 물리적/법적 slot으로 바꾼다.",
-          "external_site_article": "tonne-window는 frontier 잔혹함의 깨끗한 표현이다. 회계처럼 들리는 이유는 회계이기 때문이다. 하지만 세는 것은 물리다. 좁은 회수 창을 지나는 질량. Black Keel은 바다의 모든 것을 올리지 않는다. 항로, 보험, 검역, 보관 기록이 허용한 것만 올린다.\n\n그래서 payload 선택은 날카롭다. 살아 있는 계약자도 가치가 있지만 Deep Reach를 해칠 증거 코어도 가치가 있다. Xenon-Omega 조각은 일반 salvage보다 값지면서 검역을 오염시킬 수 있다. 회수 가능한 선체는 worker dossier가 정의를 만족시키기 전에 보험사를 만족시킬 수 있다.\n\n플레이어에게 ending 압박은 구체화된다. 몸, 증거, 샘플, 도구, 좌표, 이야기 중 무엇이 먼저 집에 가는가? Black Keel은 lift를 계산한다. 자비가 계약을 넘는 것은 플레이어가 더 강한 보관 사건을 기계에 강제할 때뿐이다."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Black Keel tonne-window custody",
-          "scanner": "Keelmark-receipt. Eén tonne-window koppelt payloadmassa, routefase, verzekeringsexposure, quarantaineklasse en recoveryprioriteit aan één carrierslot.",
-          "field_note": "Een tonne-window is geen geld. Het is toestemming voor massa om te vertrekken.",
-          "terminal": "TONNE-WINDOW CUSTODY // 4.8 tonne-window lien actief. Levende contractor, verzegelde bewijskern, Xenon-Omega-procescut en recoverable hull crate delen recoveryklasse tenzij custody proof herprioriteert. Human status alleen onvoldoende voor full-window override.",
-          "audio": "Black Keel spreekt in tonnen omdat tonnen zijn wat het venster kan dragen.",
-          "in_game_wiki": "De tonne-window is frontierwreedheid in zuivere vorm. Het klinkt als boekhouding omdat het boekhouding is, maar wat geteld wordt is fysiek: massa door een smal recoveryvenster. Black Keel lift niet alles uit de oceaan, alleen wat route, verzekering, quarantaine en custody toestaan.\n\nElke payloadkeuze wordt scherper. Een levende contractor heeft waarde, maar een bewijskern tegen Deep Reach ook. Xenon-Omega kan meer waard zijn dan gewone salvage en tegelijk quarantaine vergiftigen. Recoverable hull kan een verzekeraar sneller tevredenstellen dan een worker dossier gerechtigheid brengt.",
-          "external_site": "Black Keels tonne-window custody maakt redding tot een fysieke en juridische slot waar lichaam, bewijs, schuld en salvage onder één carrierklok concurreren.",
-          "external_site_article": "De tonne-window is frontierwreedheid in zuivere vorm. Het klinkt als boekhouding omdat het boekhouding is, maar wat geteld wordt is fysiek: massa door een smal recoveryvenster. Black Keel lift niet alles uit de oceaan, alleen wat route, verzekering, quarantaine en custody toestaan.\n\nElke payloadkeuze wordt scherper. Een levende contractor heeft waarde, maar een bewijskern tegen Deep Reach ook. Xenon-Omega kan meer waard zijn dan gewone salvage en tegelijk quarantaine vergiftigen. Recoverable hull kan een verzekeraar sneller tevredenstellen dan een worker dossier gerechtigheid brengt.\n\nVoor de speler wordt einddruk concreet: wat gaat eerst naar huis, lichaam, bewijs, sample, tool, coördinaten of verhaal? Black Keel rekent de lift. Genade verslaat contract pas wanneer de speler een betere custody case afdwingt."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Opieka tonne-window Black Keel",
-          "scanner": "Potwierdzenie Keelmark. Jedno tonne-window mapuje masę payload, fazę trasy, ryzyko ubezpieczenia, klasę kwarantanny i priorytet recovery do jednego slotu carriera.",
-          "field_note": "Tonne-window to nie pieniądze. To zgoda, by masa odeszła.",
-          "terminal": "OPIEKA TONNE-WINDOW // Zastaw 4.8 tonne-window aktywny. Żywy kontraktor, zapieczętowany rdzeń dowodu, wycinek procesu Xenon-Omega i skrzynia odzyskiwalnego kadłuba dzielą klasę recovery, chyba że proof custody zmieni priorytet. Sam status człowieka niewystarczający.",
-          "audio": "Black Keel mówi w tonach, bo tony są tym, co okno może nieść.",
-          "in_game_wiki": "Tonne-window to czysta forma okrucieństwa pogranicza. Brzmi jak księgowość, bo nią jest, ale liczy się fizyka: masa przez wąskie okno odzysku. Black Keel nie podnosi wszystkiego z oceanu, tylko to, co pozwalają trasa, ubezpieczenie, kwarantanna i opieka.\n\nKażdy payload staje się ostrzejszy. Żywy kontraktor ma wartość, ale rdzeń dowodu przeciw Deep Reach też. Xenon-Omega może być droższy niż zwykły salvage i zatruć kwarantannę. Kadłub może szybciej zadowolić ubezpieczyciela niż dossier pracownika zadowoli sprawiedliwość.",
-          "external_site": "Opieka tonne-window Black Keel zmienia ratunek w fizyczny i prawny slot, gdzie ciało, dowód, dług i salvage konkurują pod jednym zegarem carriera.",
-          "external_site_article": "Tonne-window to czysta forma okrucieństwa pogranicza. Brzmi jak księgowość, bo nią jest, ale liczy się fizyka: masa przez wąskie okno odzysku. Black Keel nie podnosi wszystkiego z oceanu, tylko to, co pozwalają trasa, ubezpieczenie, kwarantanna i opieka.\n\nKażdy payload staje się ostrzejszy. Żywy kontraktor ma wartość, ale rdzeń dowodu przeciw Deep Reach też. Xenon-Omega może być droższy niż zwykły salvage i zatruć kwarantannę. Kadłub może szybciej zadowolić ubezpieczyciela niż dossier pracownika zadowoli sprawiedliwość.\n\nDla gracza presja końca staje się konkretna: co wraca pierwsze, ciało, dowód, próbka, narzędzie, współrzędne czy historia? Black Keel liczy lift. Litość wygra z kontraktem dopiero, gdy gracz wymusi mocniejszą sprawę opieki."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Custódia tonne-window da Black Keel",
-          "scanner": "Recibo Keelmark. Uma tonne-window mapeia massa de payload, fase de rota, exposição de seguro, classe de quarentena e prioridade de recovery para um slot carrier.",
-          "field_note": "Tonne-window não é dinheiro. É permissão para massa sair.",
-          "terminal": "CUSTÓDIA TONNE-WINDOW // Lien 4.8 tonne-window ativo. Contratado vivo, núcleo de evidência selado, corte Xenon-Omega e caixa de casco recuperável compartilham classe recovery salvo repriorização por proof custody. Status humano sozinho insuficiente.",
-          "audio": "Black Keel fala em toneladas porque toneladas são o que a janela pode carregar.",
-          "in_game_wiki": "A tonne-window é uma forma limpa de crueldade frontier. Parece contabilidade porque é contabilidade, mas o que se conta é físico: massa passando por uma janela estreita de recovery. Black Keel não levanta tudo do oceano, só o que rota, seguro, quarentena e custódia permitem.\n\nCada payload fica mais afiado. Um contratado vivo tem valor, mas um núcleo de evidência contra a Deep Reach também. Xenon-Omega pode valer mais que salvage comum e envenenar a quarentena. Casco recuperável pode satisfazer seguradora antes que um dossier de trabalhador satisfaça justiça.",
-          "external_site": "A custódia tonne-window da Black Keel transforma resgate em slot físico e legal onde corpo, evidência, dívida e salvage competem sob um relógio carrier.",
-          "external_site_article": "A tonne-window é uma forma limpa de crueldade frontier. Parece contabilidade porque é contabilidade, mas o que se conta é físico: massa passando por uma janela estreita de recovery. Black Keel não levanta tudo do oceano, só o que rota, seguro, quarentena e custódia permitem.\n\nCada payload fica mais afiado. Um contratado vivo tem valor, mas um núcleo de evidência contra a Deep Reach também. Xenon-Omega pode valer mais que salvage comum e envenenar a quarentena. Casco recuperável pode satisfazer seguradora antes que um dossier de trabalhador satisfaça justiça.\n\nPara o jogador, a pressão final fica concreta: o que volta primeiro, corpo, prova, amostra, ferramenta, coordenadas ou história? Black Keel calcula o lift. Misericórdia só supera contrato se o jogador forçar uma custódia mais forte dentro da máquina."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Хранение tonne-window Black Keel",
-          "scanner": "Квитанция Keelmark. Одно tonne-window сопоставляет массу payload, фазу маршрута, страховой риск, класс карантина и приоритет возврата в один слот carrier.",
-          "field_note": "Tonne-window — не деньги. Это разрешение массе уйти.",
-          "terminal": "ХРАНЕНИЕ TONNE-WINDOW // Залог 4.8 tonne-window активен. Живой контрактник, запечатанное ядро доказательства, срез процесса Xenon-Omega и ящик возвращаемой обшивки делят класс возврата, пока proof custody не изменит приоритет. Статуса человека недостаточно для полного override окна.",
-          "audio": "Black Keel говорит тоннами, потому что окно может нести именно тонны.",
-          "in_game_wiki": "Квитанция Keelmark объясняет, почему Black Keel говорит о массе раньше, чем о спасении. Carrier работает через tonne-window custody: юридический слот, связанный с физическим payload, страховым риском и фазой маршрутных часов. Живое тело, запечатанное ядро доказательства, срез материала процесса Xenon-Omega и ящик возвращаемой обшивки конкурируют за одно окно, если контракт пишет их в одну строку. Система холодная, но не случайная. Она показывает, что фронтир ценит и какие решения поедут домой первыми.\n\nСамая неприятная часть в том, что Black Keel может быть честным и все равно жестоким. Если игрок повышает ценность доказательства, пакет может подняться в очереди раньше тела. Если игрок несет загрязненный материал, карантин съедает окно. Если игрок доказывает ответственность Deep Reach, скрытые приоритетные крючья могут попытаться захватить хранение до публичного выхода доказательства. Tonne-window — не число в кошельке. Это физическое обещание с юридическими зубами.",
-          "external_site": "Хранение tonne-window Black Keel превращает спасение в физический и юридический слот, где тело, доказательство, долг и salvage спорят под одними часами carrier.",
-          "external_site_article": "Tonne-window — одно из самых чистых выражений жестокости фронтира в HECTON-8. Это звучит как бухгалтерия, потому что это бухгалтерия, но считается физическая вещь: масса через узкое окно возврата. Black Keel не может поднять из океана все. Он может поднять то, что маршрут, страховка, карантин и запись хранения разрешают поднять.\n\nПоэтому каждый выбор payload становится острее. Живой контрактник имеет ценность, но запечатанное ядро доказательства, способное ударить по Deep Reach, тоже имеет ценность. Срез процесса Xenon-Omega может стоить больше обычного salvage, но может отравить карантинный класс. Возвращаемая обшивка может удовлетворить страховщика быстрее, чем worker dossier удовлетворит справедливость. Carrier не обязан лгать, чтобы пугать. Ему достаточно применить таблицу.\n\nДля игрока tonne-window custody — момент, когда давление концовки становится конкретным. Что уходит домой первым: тело, доказательство, образец, инструмент, координаты или история? Black Keel поможет рассчитать подъем. Он не решит, что милосердие важнее контракта, пока игрок не заставит машину принять более сильное дело хранения."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Зберігання tonne-window Black Keel",
-          "scanner": "Квитанція Keelmark. Одне tonne-window зіставляє масу payload, фазу маршруту, страховий ризик, клас карантину й пріоритет повернення в один слот carrier.",
-          "field_note": "Tonne-window — не гроші. Це дозвіл масі піти.",
-          "terminal": "ЗБЕРІГАННЯ TONNE-WINDOW // Застава 4.8 tonne-window активна. Живий контрактник, запечатане ядро доказу, зріз процесу Xenon-Omega і ящик поверненої обшивки ділять клас повернення, доки proof custody не змінить пріоритет. Статусу людини недостатньо.",
-          "audio": "Black Keel говорить тоннами, бо вікно може нести саме тонни.",
-          "in_game_wiki": "Tonne-window — чистий вираз жорстокості фронтиру. Це звучить як бухгалтерія, бо це бухгалтерія, але рахується фізика: маса через вузьке вікно recovery. Black Keel не піднімає все з океану, лише те, що дозволяють маршрут, страхування, карантин і зберігання.\n\nКожен payload стає гострішим. Живий контрактник має цінність, але ядро доказу проти Deep Reach теж. Xenon-Omega може бути дорожчим за звичайний salvage і отруїти карантин. Корпус може швидше задовольнити страховика, ніж dossier працівника задовольнить справедливість.",
-          "external_site": "Зберігання tonne-window Black Keel перетворює порятунок на фізичний і юридичний слот, де тіло, доказ, борг і salvage змагаються під одним годинником carrier.",
-          "external_site_article": "Tonne-window — чистий вираз жорстокості фронтиру. Це звучить як бухгалтерія, бо це бухгалтерія, але рахується фізика: маса через вузьке вікно recovery. Black Keel не піднімає все з океану, лише те, що дозволяють маршрут, страхування, карантин і зберігання.\n\nКожен payload стає гострішим. Живий контрактник має цінність, але ядро доказу проти Deep Reach теж. Xenon-Omega може бути дорожчим за звичайний salvage і отруїти карантин. Корпус може швидше задовольнити страховика, ніж dossier працівника задовольнить справедливість.\n\nДля гравця тиск фіналу стає конкретним: що повертається першим — тіло, доказ, зразок, інструмент, координати чи історія? Black Keel рахує lift. Милосердя перемагає контракт лише тоді, коли гравець змушує машину прийняти сильнішу справу зберігання."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Black Keel tonne-window 托管",
-          "scanner": "Keelmark 回执。一个 tonne-window 把 payload 质量、航路相位、保险风险、检疫等级和回收优先级映射到单一 carrier 槽位。",
-          "field_note": "Tonne-window 不是钱。它是质量离开的许可。",
-          "terminal": "TONNE-WINDOW 托管 // 4.8 tonne-window 留置权有效。活体承包者、封存证据核心、Xenon-Omega 工艺切片和可回收船壳箱共享回收等级，除非 custody proof 重新排序。仅有人类状态不足以 full-window override。",
-          "audio": "Black Keel 用吨说话，因为窗口能承载的就是吨。",
-          "in_game_wiki": "tonne-window 是边疆残酷最清晰的表达。它听起来像会计，因为它就是会计，但被计算的是物理：穿过狭窄回收窗口的质量。Black Keel 不能把海里的一切都吊走，只能吊走航路、保险、检疫和托管记录允许的东西。\n\n因此每个 payload 选择都更尖锐。活着的承包者有价值，但能伤害 Deep Reach 的证据核心也有价值。Xenon-Omega 切片可能比普通 salvage 更值钱，也可能污染检疫等级。可回收船壳可能比 worker dossier 满足正义更快满足保险方。",
-          "external_site": "Black Keel 的 tonne-window 托管把救援变成一个物理和法律槽位，身体、证据、债务和 salvage 在同一 carrier 时钟下竞争。",
-          "external_site_article": "tonne-window 是边疆残酷最清晰的表达。它听起来像会计，因为它就是会计，但被计算的是物理：穿过狭窄回收窗口的质量。Black Keel 不能把海里的一切都吊走，只能吊走航路、保险、检疫和托管记录允许的东西。\n\n因此每个 payload 选择都更尖锐。活着的承包者有价值，但能伤害 Deep Reach 的证据核心也有价值。Xenon-Omega 切片可能比普通 salvage 更值钱，也可能污染检疫等级。可回收船壳可能比 worker dossier 满足正义更快满足保险方。\n\n对玩家而言，结局压力变得具体：先回家的是什么，身体、证据、样本、工具、坐标，还是故事？Black Keel 会计算 lift。除非玩家把更强的托管案件塞进机器，否则仁慈不会高于合同。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.black_keel_tonne_window_custody",
+    "secondary": [
+     "unlock.first_tonne_window_mass_line",
+     "unlock.first_keelmark_lien_notice",
+     "unlock.first_salvage_custody_receipt"
+    ],
+    "poi_tags": [
+     "poi.keelmark_lien_terminal",
+     "poi.black_keel_window_clock",
+     "poi.salvage_mass_scale",
+     "poi.custody_stamp_printer"
+    ],
+    "biome_tags": [
+     "biome.drowned_admin",
+     "biome.surface_relay",
+     "biome.carrier_link",
+     "biome.salvage_contract"
+    ],
+    "first_20_boundary": "This packet can unlock when the player finds the first Keelmark mass receipt or tonne-window line. It makes Black Keel's accounting pressure legible without claiming Black Keel is a personal ship, a villain, or a rescue deus ex machina."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Mass Receipt Scan",
+     "terminal": "Keelmark Custody Notice",
+     "audio": "Black Keel Debt Audio",
+     "in_game_wiki": "Recovered Custody Primer",
+     "external_site": "Field Archive Longform",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "surface_to_drowned_admin",
+    "route_moment": "first_tonne_window_or_salvage_lien",
+    "truth_payload": "A tonne-window is a legal and physical mass slot: Black Keel can accept proof, salvage, evidence, or body only when the window, liability, and payload agree.",
+    "player_question": "Why does the carrier ask what I weigh before it asks whether I am alive?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Black Keel Tonne-Window Custody",
+     "scanner": "Keelmark receipt. One tonne-window maps payload mass, route phase, insurance exposure, quarantine class and recovery priority into a single carrier slot.",
+     "field_note": "A tonne-window is not money. It is permission for mass to leave.",
+     "terminal": "TONNE-WINDOW CUSTODY // 4.8 tonne-window lien active. Living contractor, sealed evidence core, Xenon-Omega process cut and recoverable hull crate share recovery class unless reprioritized by custody proof. Human status alone insufficient for full-window override.",
+     "audio": "Black Keel speaks in tonnes because tonnes are what the window can carry.",
+     "in_game_wiki": "A Keelmark receipt explains why Black Keel speaks in mass before it speaks in rescue. The carrier runs on tonne-window custody: a legal slot matched to a physical payload, an insurance exposure and a phase of the route clock. A living body, a sealed evidence core, a cut of Xenon-Omega process material and a crate of recoverable hull all compete for the same window if the contract places them on the same line. The system is cold, but it is not random. It tells the player what the frontier values and which choices will travel home first.\n\nThe ugly part is that Black Keel can be honest while still being cruel. If the player increases proof value, a packet may climb the queue before the body. If the player carries contaminated material, quarantine can eat the window. If the player proves Deep Reach liability, hidden priority hooks may try to seize custody before public evidence escapes. A tonne-window is not a wallet number. It is a physical promise with legal teeth.",
+     "external_site": "Black Keel's tonne-window custody turns rescue into a physical and legal slot where body, evidence, debt and salvage compete under one carrier clock.",
+     "external_site_article": "The tonne-window is one of HECTON-8's cleanest expressions of frontier cruelty. It sounds like accounting because it is accounting, but the thing being counted is physical: mass through a narrow recovery window. Black Keel cannot lift everything from the ocean. It can lift what the route, insurance, quarantine and custody record allow it to lift.\n\nThat makes every payload choice sharper. A living contractor has value, but so does a sealed evidence core that can damage Deep Reach. A Xenon-Omega process cut may be worth more than a crate of ordinary salvage, but it can also poison the quarantine class. Recoverable hull may satisfy an insurer faster than a worker dossier satisfies justice. The carrier does not need to lie to be frightening. It only needs to apply the table.\n\nFor the player, tonne-window custody is the moment the ending pressure becomes concrete. What goes home first: the body, the proof, the sample, the tool, the coordinates, or the story? Black Keel will help calculate the lift. It will not decide that mercy outranks the contract unless the player forces a better custody case into the machine."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "عهدة tonne-window لـ Black Keel",
+     "scanner": "إيصال Keelmark. كل tonne-window يربط كتلة payload، طور الطريق، تعرض التأمين، فئة الحجر وأولوية الاسترداد في slot carrier واحد.",
+     "field_note": "Tonne-window ليست مالا. إنها إذن للكتلة بالمغادرة.",
+     "terminal": "عهدة TONNE-WINDOW // رهن 4.8 tonne-window فعال. المتعاقد الحي، نواة الدليل، سبيكة Xenon-Omega وصندوق الهيكل القابل للاسترداد يشتركون في فئة الاسترداد ما لم يغير proof custody الأولوية. حالة الإنسان وحدها لا تكفي.",
+     "audio": "تتحدث Black Keel بالطن لأن الأطنان هي ما تستطيع النافذة حمله.",
+     "in_game_wiki": "Tonne-window هو أوضح تعبير عن قسوة frontier في HECTON-8. يبدو كحساب لأنه حساب، لكن المعدود شيء فيزيائي: كتلة عبر نافذة استرداد ضيقة. Black Keel لا ترفع كل شيء من المحيط، بل ما تسمح به الطريق والتأمين والحجر وسجل العهدة.\n\nلذلك يصبح كل payload اختيارا قاسيا. المتعاقد الحي له قيمة، لكن نواة دليل ضد Deep Reach لها قيمة أيضا. مادة Xenon-Omega قد تساوي أكثر من salvage عادي وتسمم الحجر. الهيكل قد يرضي شركة تأمين قبل أن يرضي dossier عامل العدالة.",
+     "external_site": "عهدة tonne-window في Black Keel تحول الإنقاذ إلى slot مادي وقانوني يتنافس فيه الجسد والدليل والدين وsalvage تحت ساعة carrier واحدة.",
+     "external_site_article": "Tonne-window هو أوضح تعبير عن قسوة frontier في HECTON-8. يبدو كحساب لأنه حساب، لكن المعدود شيء فيزيائي: كتلة عبر نافذة استرداد ضيقة. Black Keel لا ترفع كل شيء من المحيط، بل ما تسمح به الطريق والتأمين والحجر وسجل العهدة.\n\nلذلك يصبح كل payload اختيارا قاسيا. المتعاقد الحي له قيمة، لكن نواة دليل ضد Deep Reach لها قيمة أيضا. مادة Xenon-Omega قد تساوي أكثر من salvage عادي وتسمم الحجر. الهيكل قد يرضي شركة تأمين قبل أن يرضي dossier عامل العدالة.\n\nبالنسبة للاعب، هذه هي لحظة ضغط النهاية: ما الذي يعود أولا؟ الجسد، الدليل، العينة، الأداة، الإحداثيات أم القصة؟ Black Keel يحسب الرفع، ولا يرفع الرحمة فوق العقد إلا إذا أجبره اللاعب بدليل أقوى."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Black Keel Tonne-Window-Gewahrsam",
+     "scanner": "Keelmark-Beleg. Ein Tonne-Window bildet Payloadmasse, Routenphase, Versicherungsrisiko, Quarantäneklasse und Recoverypriorität auf einen Carrier-Slot ab.",
+     "field_note": "Ein Tonne-Window ist kein Geld. Es ist Erlaubnis für Masse, zu gehen.",
+     "terminal": "TONNE-WINDOW GEWAHRSAM // 4.8-Tonne-Window-Pfand aktiv. Lebender Contractor, versiegelter Beweiskern, Xenon-Omega-Prozessschnitt und bergbare Rumpfkiste teilen Recoveryklasse, bis Custody Proof neu priorisiert. Humanstatus allein reicht nicht für Full-Window-Override.",
+     "audio": "Black Keel spricht in Tonnen, weil Tonnen das sind, was das Fenster tragen kann.",
+     "in_game_wiki": "Das Tonne-Window ist eine klare Form von Frontier-Grausamkeit. Es klingt wie Buchhaltung, weil es Buchhaltung ist, aber gezählt wird Physik: Masse durch ein enges Recoveryfenster. Black Keel hebt nicht alles aus dem Ozean, sondern was Route, Versicherung, Quarantäne und Gewahrsam erlauben.\n\nDarum wird jede Payloadwahl scharf. Ein lebender Contractor hat Wert, aber ein Beweiskern gegen Deep Reach auch. Xenon-Omega-Material kann mehr wert sein als Salvage und zugleich Quarantäne vergiften. Rumpf kann einen Versicherer schneller befriedigen als ein Worker Dossier die Gerechtigkeit.",
+     "external_site": "Black Keels Tonne-Window-Gewahrsam macht Rettung zu einem physischen und juristischen Slot, in dem Körper, Beweis, Schuld und Salvage unter einer Carrieruhr konkurrieren.",
+     "external_site_article": "Das Tonne-Window ist eine klare Form von Frontier-Grausamkeit. Es klingt wie Buchhaltung, weil es Buchhaltung ist, aber gezählt wird Physik: Masse durch ein enges Recoveryfenster. Black Keel hebt nicht alles aus dem Ozean, sondern was Route, Versicherung, Quarantäne und Gewahrsam erlauben.\n\nDarum wird jede Payloadwahl scharf. Ein lebender Contractor hat Wert, aber ein Beweiskern gegen Deep Reach auch. Xenon-Omega-Material kann mehr wert sein als Salvage und zugleich Quarantäne vergiften. Rumpf kann einen Versicherer schneller befriedigen als ein Worker Dossier die Gerechtigkeit.\n\nFür den Spieler wird Endingdruck konkret: Was geht zuerst heim, Körper, Beweis, Probe, Werkzeug, Koordinaten oder Geschichte? Black Keel rechnet den Lift. Gnade schlägt Vertrag erst, wenn der Spieler einen besseren Custody Case erzwingt."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Custodia tonne-window Black Keel",
+     "scanner": "Recibo Keelmark. Una tonne-window asigna masa de payload, fase de ruta, exposición de seguro, clase de cuarentena y prioridad de recuperación a un slot carrier.",
+     "field_note": "Una tonne-window no es dinero. Es permiso para que la masa salga.",
+     "terminal": "CUSTODIA TONNE-WINDOW // Gravamen 4.8 tonne-window activo. Contratista vivo, núcleo de evidencia sellado, corte Xenon-Omega y caja de casco recuperable comparten clase de recuperación salvo repriorización por prueba de custodia. Estado humano solo insuficiente.",
+     "audio": "Black Keel habla en toneladas porque toneladas es lo que la ventana puede cargar.",
+     "in_game_wiki": "La tonne-window es una de las formas más limpias de crueldad fronteriza. Suena a contabilidad porque lo es, pero se cuenta algo físico: masa por una ventana estrecha de recuperación. Black Keel no levanta todo del océano; levanta lo que ruta, seguro, cuarentena y custodia permiten.\n\nPor eso cada payload pesa. Un contratista vivo tiene valor, pero también un núcleo de evidencia contra Deep Reach. Xenon-Omega puede valer más que salvage común y envenenar la cuarentena. Un casco recuperable puede satisfacer a una aseguradora antes que un dossier obrero satisfaga la justicia.",
+     "external_site": "La custodia tonne-window de Black Keel convierte rescate en un slot físico y legal donde cuerpo, evidencia, deuda y salvage compiten bajo un reloj carrier.",
+     "external_site_article": "La tonne-window es una de las formas más limpias de crueldad fronteriza. Suena a contabilidad porque lo es, pero se cuenta algo físico: masa por una ventana estrecha de recuperación. Black Keel no levanta todo del océano; levanta lo que ruta, seguro, cuarentena y custodia permiten.\n\nPor eso cada payload pesa. Un contratista vivo tiene valor, pero también un núcleo de evidencia contra Deep Reach. Xenon-Omega puede valer más que salvage común y envenenar la cuarentena. Un casco recuperable puede satisfacer a una aseguradora antes que un dossier obrero satisfaga la justicia.\n\nPara el jugador, la presión final se vuelve concreta: ¿qué vuelve primero, cuerpo, prueba, muestra, herramienta, coordenadas o historia? Black Keel calcula. La misericordia no supera el contrato salvo que el jugador fuerce un caso de custodia mejor."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Garde tonne-window Black Keel",
+     "scanner": "Reçu Keelmark. Une tonne-window associe masse payload, phase de route, exposition assurance, classe quarantaine et priorité recovery dans un slot carrier.",
+     "field_note": "Une tonne-window n'est pas de l'argent. C'est la permission donnée à une masse de partir.",
+     "terminal": "GARDE TONNE-WINDOW // Créance 4.8 tonne-window active. Contracteur vivant, noyau de preuve scellé, coupe Xenon-Omega et caisse de coque récupérable partagent la classe recovery sauf repriorisation par preuve de garde. Statut humain seul insuffisant.",
+     "audio": "Black Keel parle en tonnes parce que les tonnes sont ce que la fenêtre peut porter.",
+     "in_game_wiki": "La tonne-window est une expression nette de la cruauté frontier. Elle sonne comme de la comptabilité parce que c'en est, mais l'objet compté est physique : masse dans une fenêtre de récupération étroite. Black Keel ne lève pas tout l'océan, seulement ce que route, assurance, quarantaine et garde autorisent.\n\nChaque payload devient donc aigu. Un contracteur vivant a de la valeur, mais un noyau de preuve contre Deep Reach aussi. Xenon-Omega peut valoir plus que du salvage ordinaire et empoisonner la quarantaine. Une coque récupérable peut satisfaire un assureur plus vite qu'un dossier ouvrier satisfait la justice.",
+     "external_site": "La garde tonne-window de Black Keel transforme le secours en slot physique et légal où corps, preuve, dette et salvage rivalisent sous une horloge carrier.",
+     "external_site_article": "La tonne-window est une expression nette de la cruauté frontier. Elle sonne comme de la comptabilité parce que c'en est, mais l'objet compté est physique : masse dans une fenêtre de récupération étroite. Black Keel ne lève pas tout l'océan, seulement ce que route, assurance, quarantaine et garde autorisent.\n\nChaque payload devient donc aigu. Un contracteur vivant a de la valeur, mais un noyau de preuve contre Deep Reach aussi. Xenon-Omega peut valoir plus que du salvage ordinaire et empoisonner la quarantaine. Une coque récupérable peut satisfaire un assureur plus vite qu'un dossier ouvrier satisfait la justice.\n\nPour le joueur, la pression de fin devient concrète : qu'est-ce qui rentre d'abord, corps, preuve, échantillon, outil, coordonnées ou histoire ? Black Keel calcule. La pitié ne dépasse le contrat que si le joueur force un meilleur dossier de garde."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "משמורת tonne-window של Black Keel",
+     "scanner": "קבלת Keelmark. tonne-window אחד ממפה מסת payload, שלב נתיב, חשיפת ביטוח, מחלקת הסגר ועדיפות התאוששות ל-slot carrier יחיד.",
+     "field_note": "Tonne-window אינה כסף. היא רשות למסה לעזוב.",
+     "terminal": "משמורת TONNE-WINDOW // שעבוד 4.8 tonne-window פעיל. קבלן חי, ליבת ראיה חתומה, חתך Xenon-Omega וארגז גוף ניתן לשחזור חולקים מחלקת התאוששות אלא אם proof custody משנה עדיפות. סטטוס אנושי לבדו אינו מספיק.",
+     "audio": "Black Keel מדברת בטונות כי טונות הן מה שהחלון יכול לשאת.",
+     "in_game_wiki": "Tonne-window הוא ביטוי נקי לאכזריות frontier. זה נשמע כמו חשבונאות כי זה חשבונאות, אך נספרת פיזיקה: מסה דרך חלון התאוששות צר. Black Keel אינה מעלה הכל מהאוקיינוס, אלא מה שהנתיב, הביטוח, ההסגר והמשמורת מרשים.\n\nלכן כל payload חד יותר. לקבלן חי יש ערך, אבל גם לליבת ראיה נגד Deep Reach. חומר Xenon-Omega יכול להיות יקר מ-salvage רגיל ולזהם הסגר. גוף ניתן לשחזור עשוי לרצות מבטח לפני ש-dossier עובד מרצה צדק.",
+     "external_site": "משמורת tonne-window של Black Keel הופכת חילוץ ל-slot פיזי ומשפטי שבו גוף, ראיה, חוב ו-salvage מתחרים תחת שעון carrier אחד.",
+     "external_site_article": "Tonne-window הוא ביטוי נקי לאכזריות frontier. זה נשמע כמו חשבונאות כי זה חשבונאות, אך נספרת פיזיקה: מסה דרך חלון התאוששות צר. Black Keel אינה מעלה הכל מהאוקיינוס, אלא מה שהנתיב, הביטוח, ההסגר והמשמורת מרשים.\n\nלכן כל payload חד יותר. לקבלן חי יש ערך, אבל גם לליבת ראיה נגד Deep Reach. חומר Xenon-Omega יכול להיות יקר מ-salvage רגיל ולזהם הסגר. גוף ניתן לשחזור עשוי לרצות מבטח לפני ש-dossier עובד מרצה צדק.\n\nלשחקן, לחץ הסיום נעשה ממשי: מה חוזר ראשון, גוף, ראיה, דגימה, כלי, קואורדינטות או סיפור? Black Keel מחשבת. רחמים לא גוברים על חוזה אלא אם השחקן כופה תיק משמורת חזק יותר."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Kustodi tonne-window Black Keel",
+     "scanner": "Tanda terima Keelmark. Satu tonne-window memetakan massa payload, fase rute, exposure asuransi, kelas karantina, dan prioritas recovery ke satu slot carrier.",
+     "field_note": "Tonne-window bukan uang. Itu izin bagi massa untuk pergi.",
+     "terminal": "KUSTODI TONNE-WINDOW // Lien 4.8 tonne-window aktif. Kontraktor hidup, inti bukti tersegel, potongan Xenon-Omega, dan crate hull recoverable berbagi kelas recovery kecuali proof custody memprioritaskan ulang. Status manusia saja tidak cukup.",
+     "audio": "Black Keel berbicara dalam ton karena ton itulah yang dapat dibawa jendela.",
+     "in_game_wiki": "Tonne-window adalah bentuk kejam frontier yang bersih. Terdengar seperti akuntansi karena memang akuntansi, tetapi yang dihitung fisik: massa melalui jendela recovery sempit. Black Keel tidak mengangkat semua dari laut, hanya yang diizinkan rute, asuransi, karantina, dan kustodi.\n\nMaka tiap payload tajam. Kontraktor hidup bernilai, tetapi inti bukti melawan Deep Reach juga. Xenon-Omega bisa lebih berharga dari salvage biasa dan meracuni karantina. Hull recoverable bisa memuaskan asuransi lebih cepat daripada dossier pekerja memuaskan keadilan.",
+     "external_site": "Kustodi tonne-window Black Keel mengubah penyelamatan menjadi slot fisik dan legal tempat tubuh, bukti, utang, dan salvage bersaing di bawah satu jam carrier.",
+     "external_site_article": "Tonne-window adalah bentuk kejam frontier yang bersih. Terdengar seperti akuntansi karena memang akuntansi, tetapi yang dihitung fisik: massa melalui jendela recovery sempit. Black Keel tidak mengangkat semua dari laut, hanya yang diizinkan rute, asuransi, karantina, dan kustodi.\n\nMaka tiap payload tajam. Kontraktor hidup bernilai, tetapi inti bukti melawan Deep Reach juga. Xenon-Omega bisa lebih berharga dari salvage biasa dan meracuni karantina. Hull recoverable bisa memuaskan asuransi lebih cepat daripada dossier pekerja memuaskan keadilan.\n\nBagi pemain, tekanan akhir jadi konkret: mana yang pulang dulu, tubuh, bukti, sampel, alat, koordinat, atau cerita? Black Keel menghitung lift. Belas kasih mengalahkan kontrak hanya jika pemain memaksa kasus kustodi yang lebih kuat."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Black Keel tonne-window保管",
+     "scanner": "Keelmark受領。1つのtonne-windowがpayload質量、航路位相、保険露出、検疫級、回収優先を単一carrier slotへ対応付ける。",
+     "field_note": "Tonne-windowは金ではない。質量が去る許可だ。",
+     "terminal": "TONNE-WINDOW保管 // 4.8 tonne-window留置権有効。生存契約者、封印証拠コア、Xenon-Omega工程片、回収可能船体箱はcustody proofで再優先されるまで回収級を共有。人間状態だけではfull-window override不足。",
+     "audio": "Black Keelがトンで話すのは、窓が運べるものがトンだからだ。",
+     "in_game_wiki": "tonne-windowはフロンティアの残酷さを最もきれいに表す。会計のように聞こえるのは、会計だからだ。ただし数えられるのは物理、狭い回収窓を通る質量だ。Black Keelは海の全てを上げない。航路、保険、検疫、保管記録が許すものだけを上げる。\n\nだからpayload選択は鋭くなる。生きた契約者には価値があるが、Deep Reachを傷つける証拠コアにも価値がある。Xenon-Omega片は普通のsalvageより高く、検疫を汚すこともある。船体片はworker dossierが正義を満たすより早く保険者を満たすかもしれない。",
+     "external_site": "Black Keelのtonne-window保管は救助を、身体、証拠、債務、salvageが同じcarrier時計で争う物理的・法的slotに変える。",
+     "external_site_article": "tonne-windowはフロンティアの残酷さを最もきれいに表す。会計のように聞こえるのは、会計だからだ。ただし数えられるのは物理、狭い回収窓を通る質量だ。Black Keelは海の全てを上げない。航路、保険、検疫、保管記録が許すものだけを上げる。\n\nだからpayload選択は鋭くなる。生きた契約者には価値があるが、Deep Reachを傷つける証拠コアにも価値がある。Xenon-Omega片は普通のsalvageより高く、検疫を汚すこともある。船体片はworker dossierが正義を満たすより早く保険者を満たすかもしれない。\n\nプレイヤーにとって、終盤圧力は具体化する。最初に帰るのは身体、証拠、試料、道具、座標、物語のどれか。Black Keelはliftを計算する。慈悲が契約を超えるのは、プレイヤーがより強い保管案件を機械に押し込んだ時だけだ。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Black Keel tonne-window 보관",
+     "scanner": "Keelmark 영수증. 하나의 tonne-window는 payload 질량, 항로 위상, 보험 노출, 검역 등급, 회수 우선순위를 단일 carrier slot에 매핑한다.",
+     "field_note": "Tonne-window는 돈이 아니다. 질량이 떠날 허가다.",
+     "terminal": "TONNE-WINDOW 보관 // 4.8 tonne-window 유치권 활성. 살아 있는 계약자, 봉인 증거 코어, Xenon-Omega 공정 절단물, 회수 가능한 선체 상자는 custody proof가 재우선화할 때까지 회수 등급 공유. 인간 상태만으로 full-window override 불충분.",
+     "audio": "Black Keel은 톤으로 말한다. 창이 실을 수 있는 것이 톤이기 때문이다.",
+     "in_game_wiki": "tonne-window는 frontier 잔혹함의 깨끗한 표현이다. 회계처럼 들리는 이유는 회계이기 때문이다. 하지만 세는 것은 물리다. 좁은 회수 창을 지나는 질량. Black Keel은 바다의 모든 것을 올리지 않는다. 항로, 보험, 검역, 보관 기록이 허용한 것만 올린다.\n\n그래서 payload 선택은 날카롭다. 살아 있는 계약자도 가치가 있지만 Deep Reach를 해칠 증거 코어도 가치가 있다. Xenon-Omega 조각은 일반 salvage보다 값지면서 검역을 오염시킬 수 있다. 회수 가능한 선체는 worker dossier가 정의를 만족시키기 전에 보험사를 만족시킬 수 있다.",
+     "external_site": "Black Keel tonne-window 보관은 구조를 몸, 증거, 부채, salvage가 하나의 carrier 시계 아래 경쟁하는 물리적/법적 slot으로 바꾼다.",
+     "external_site_article": "tonne-window는 frontier 잔혹함의 깨끗한 표현이다. 회계처럼 들리는 이유는 회계이기 때문이다. 하지만 세는 것은 물리다. 좁은 회수 창을 지나는 질량. Black Keel은 바다의 모든 것을 올리지 않는다. 항로, 보험, 검역, 보관 기록이 허용한 것만 올린다.\n\n그래서 payload 선택은 날카롭다. 살아 있는 계약자도 가치가 있지만 Deep Reach를 해칠 증거 코어도 가치가 있다. Xenon-Omega 조각은 일반 salvage보다 값지면서 검역을 오염시킬 수 있다. 회수 가능한 선체는 worker dossier가 정의를 만족시키기 전에 보험사를 만족시킬 수 있다.\n\n플레이어에게 ending 압박은 구체화된다. 몸, 증거, 샘플, 도구, 좌표, 이야기 중 무엇이 먼저 집에 가는가? Black Keel은 lift를 계산한다. 자비가 계약을 넘는 것은 플레이어가 더 강한 보관 사건을 기계에 강제할 때뿐이다."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Black Keel tonne-window custody",
+     "scanner": "Keelmark-receipt. Eén tonne-window koppelt payloadmassa, routefase, verzekeringsexposure, quarantaineklasse en recoveryprioriteit aan één carrierslot.",
+     "field_note": "Een tonne-window is geen geld. Het is toestemming voor massa om te vertrekken.",
+     "terminal": "TONNE-WINDOW CUSTODY // 4.8 tonne-window lien actief. Levende contractor, verzegelde bewijskern, Xenon-Omega-procescut en recoverable hull crate delen recoveryklasse tenzij custody proof herprioriteert. Human status alleen onvoldoende voor full-window override.",
+     "audio": "Black Keel spreekt in tonnen omdat tonnen zijn wat het venster kan dragen.",
+     "in_game_wiki": "De tonne-window is frontierwreedheid in zuivere vorm. Het klinkt als boekhouding omdat het boekhouding is, maar wat geteld wordt is fysiek: massa door een smal recoveryvenster. Black Keel lift niet alles uit de oceaan, alleen wat route, verzekering, quarantaine en custody toestaan.\n\nElke payloadkeuze wordt scherper. Een levende contractor heeft waarde, maar een bewijskern tegen Deep Reach ook. Xenon-Omega kan meer waard zijn dan gewone salvage en tegelijk quarantaine vergiftigen. Recoverable hull kan een verzekeraar sneller tevredenstellen dan een worker dossier gerechtigheid brengt.",
+     "external_site": "Black Keels tonne-window custody maakt redding tot een fysieke en juridische slot waar lichaam, bewijs, schuld en salvage onder één carrierklok concurreren.",
+     "external_site_article": "De tonne-window is frontierwreedheid in zuivere vorm. Het klinkt als boekhouding omdat het boekhouding is, maar wat geteld wordt is fysiek: massa door een smal recoveryvenster. Black Keel lift niet alles uit de oceaan, alleen wat route, verzekering, quarantaine en custody toestaan.\n\nElke payloadkeuze wordt scherper. Een levende contractor heeft waarde, maar een bewijskern tegen Deep Reach ook. Xenon-Omega kan meer waard zijn dan gewone salvage en tegelijk quarantaine vergiftigen. Recoverable hull kan een verzekeraar sneller tevredenstellen dan een worker dossier gerechtigheid brengt.\n\nVoor de speler wordt einddruk concreet: wat gaat eerst naar huis, lichaam, bewijs, sample, tool, coördinaten of verhaal? Black Keel rekent de lift. Genade verslaat contract pas wanneer de speler een betere custody case afdwingt."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Opieka tonne-window Black Keel",
+     "scanner": "Potwierdzenie Keelmark. Jedno tonne-window mapuje masę payload, fazę trasy, ryzyko ubezpieczenia, klasę kwarantanny i priorytet recovery do jednego slotu carriera.",
+     "field_note": "Tonne-window to nie pieniądze. To zgoda, by masa odeszła.",
+     "terminal": "OPIEKA TONNE-WINDOW // Zastaw 4.8 tonne-window aktywny. Żywy kontraktor, zapieczętowany rdzeń dowodu, wycinek procesu Xenon-Omega i skrzynia odzyskiwalnego kadłuba dzielą klasę recovery, chyba że proof custody zmieni priorytet. Sam status człowieka niewystarczający.",
+     "audio": "Black Keel mówi w tonach, bo tony są tym, co okno może nieść.",
+     "in_game_wiki": "Tonne-window to czysta forma okrucieństwa pogranicza. Brzmi jak księgowość, bo nią jest, ale liczy się fizyka: masa przez wąskie okno odzysku. Black Keel nie podnosi wszystkiego z oceanu, tylko to, co pozwalają trasa, ubezpieczenie, kwarantanna i opieka.\n\nKażdy payload staje się ostrzejszy. Żywy kontraktor ma wartość, ale rdzeń dowodu przeciw Deep Reach też. Xenon-Omega może być droższy niż zwykły salvage i zatruć kwarantannę. Kadłub może szybciej zadowolić ubezpieczyciela niż dossier pracownika zadowoli sprawiedliwość.",
+     "external_site": "Opieka tonne-window Black Keel zmienia ratunek w fizyczny i prawny slot, gdzie ciało, dowód, dług i salvage konkurują pod jednym zegarem carriera.",
+     "external_site_article": "Tonne-window to czysta forma okrucieństwa pogranicza. Brzmi jak księgowość, bo nią jest, ale liczy się fizyka: masa przez wąskie okno odzysku. Black Keel nie podnosi wszystkiego z oceanu, tylko to, co pozwalają trasa, ubezpieczenie, kwarantanna i opieka.\n\nKażdy payload staje się ostrzejszy. Żywy kontraktor ma wartość, ale rdzeń dowodu przeciw Deep Reach też. Xenon-Omega może być droższy niż zwykły salvage i zatruć kwarantannę. Kadłub może szybciej zadowolić ubezpieczyciela niż dossier pracownika zadowoli sprawiedliwość.\n\nDla gracza presja końca staje się konkretna: co wraca pierwsze, ciało, dowód, próbka, narzędzie, współrzędne czy historia? Black Keel liczy lift. Litość wygra z kontraktem dopiero, gdy gracz wymusi mocniejszą sprawę opieki."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Custódia tonne-window da Black Keel",
+     "scanner": "Recibo Keelmark. Uma tonne-window mapeia massa de payload, fase de rota, exposição de seguro, classe de quarentena e prioridade de recovery para um slot carrier.",
+     "field_note": "Tonne-window não é dinheiro. É permissão para massa sair.",
+     "terminal": "CUSTÓDIA TONNE-WINDOW // Lien 4.8 tonne-window ativo. Contratado vivo, núcleo de evidência selado, corte Xenon-Omega e caixa de casco recuperável compartilham classe recovery salvo repriorização por proof custody. Status humano sozinho insuficiente.",
+     "audio": "Black Keel fala em toneladas porque toneladas são o que a janela pode carregar.",
+     "in_game_wiki": "A tonne-window é uma forma limpa de crueldade frontier. Parece contabilidade porque é contabilidade, mas o que se conta é físico: massa passando por uma janela estreita de recovery. Black Keel não levanta tudo do oceano, só o que rota, seguro, quarentena e custódia permitem.\n\nCada payload fica mais afiado. Um contratado vivo tem valor, mas um núcleo de evidência contra a Deep Reach também. Xenon-Omega pode valer mais que salvage comum e envenenar a quarentena. Casco recuperável pode satisfazer seguradora antes que um dossier de trabalhador satisfaça justiça.",
+     "external_site": "A custódia tonne-window da Black Keel transforma resgate em slot físico e legal onde corpo, evidência, dívida e salvage competem sob um relógio carrier.",
+     "external_site_article": "A tonne-window é uma forma limpa de crueldade frontier. Parece contabilidade porque é contabilidade, mas o que se conta é físico: massa passando por uma janela estreita de recovery. Black Keel não levanta tudo do oceano, só o que rota, seguro, quarentena e custódia permitem.\n\nCada payload fica mais afiado. Um contratado vivo tem valor, mas um núcleo de evidência contra a Deep Reach também. Xenon-Omega pode valer mais que salvage comum e envenenar a quarentena. Casco recuperável pode satisfazer seguradora antes que um dossier de trabalhador satisfaça justiça.\n\nPara o jogador, a pressão final fica concreta: o que volta primeiro, corpo, prova, amostra, ferramenta, coordenadas ou história? Black Keel calcula o lift. Misericórdia só supera contrato se o jogador forçar uma custódia mais forte dentro da máquina."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Хранение tonne-window Black Keel",
+     "scanner": "Квитанция Keelmark. Одно tonne-window сопоставляет массу payload, фазу маршрута, страховой риск, класс карантина и приоритет возврата в один слот carrier.",
+     "field_note": "Tonne-window — не деньги. Это разрешение массе уйти.",
+     "terminal": "ХРАНЕНИЕ TONNE-WINDOW // Залог 4.8 tonne-window активен. Живой контрактник, запечатанное ядро доказательства, срез процесса Xenon-Omega и ящик возвращаемой обшивки делят класс возврата, пока proof custody не изменит приоритет. Статуса человека недостаточно для полного override окна.",
+     "audio": "Black Keel говорит тоннами, потому что окно может нести именно тонны.",
+     "in_game_wiki": "Квитанция Keelmark объясняет, почему Black Keel говорит о массе раньше, чем о спасении. Carrier работает через tonne-window custody: юридический слот, связанный с физическим payload, страховым риском и фазой маршрутных часов. Живое тело, запечатанное ядро доказательства, срез материала процесса Xenon-Omega и ящик возвращаемой обшивки конкурируют за одно окно, если контракт пишет их в одну строку. Система холодная, но не случайная. Она показывает, что фронтир ценит и какие решения поедут домой первыми.\n\nСамая неприятная часть в том, что Black Keel может быть честным и все равно жестоким. Если игрок повышает ценность доказательства, пакет может подняться в очереди раньше тела. Если игрок несет загрязненный материал, карантин съедает окно. Если игрок доказывает ответственность Deep Reach, скрытые приоритетные крючья могут попытаться захватить хранение до публичного выхода доказательства. Tonne-window — не число в кошельке. Это физическое обещание с юридическими зубами.",
+     "external_site": "Хранение tonne-window Black Keel превращает спасение в физический и юридический слот, где тело, доказательство, долг и salvage спорят под одними часами carrier.",
+     "external_site_article": "Tonne-window — одно из самых чистых выражений жестокости фронтира в HECTON-8. Это звучит как бухгалтерия, потому что это бухгалтерия, но считается физическая вещь: масса через узкое окно возврата. Black Keel не может поднять из океана все. Он может поднять то, что маршрут, страховка, карантин и запись хранения разрешают поднять.\n\nПоэтому каждый выбор payload становится острее. Живой контрактник имеет ценность, но запечатанное ядро доказательства, способное ударить по Deep Reach, тоже имеет ценность. Срез процесса Xenon-Omega может стоить больше обычного salvage, но может отравить карантинный класс. Возвращаемая обшивка может удовлетворить страховщика быстрее, чем worker dossier удовлетворит справедливость. Carrier не обязан лгать, чтобы пугать. Ему достаточно применить таблицу.\n\nДля игрока tonne-window custody — момент, когда давление концовки становится конкретным. Что уходит домой первым: тело, доказательство, образец, инструмент, координаты или история? Black Keel поможет рассчитать подъем. Он не решит, что милосердие важнее контракта, пока игрок не заставит машину принять более сильное дело хранения."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Зберігання tonne-window Black Keel",
+     "scanner": "Квитанція Keelmark. Одне tonne-window зіставляє масу payload, фазу маршруту, страховий ризик, клас карантину й пріоритет повернення в один слот carrier.",
+     "field_note": "Tonne-window — не гроші. Це дозвіл масі піти.",
+     "terminal": "ЗБЕРІГАННЯ TONNE-WINDOW // Застава 4.8 tonne-window активна. Живий контрактник, запечатане ядро доказу, зріз процесу Xenon-Omega і ящик поверненої обшивки ділять клас повернення, доки proof custody не змінить пріоритет. Статусу людини недостатньо.",
+     "audio": "Black Keel говорить тоннами, бо вікно може нести саме тонни.",
+     "in_game_wiki": "Tonne-window — чистий вираз жорстокості фронтиру. Це звучить як бухгалтерія, бо це бухгалтерія, але рахується фізика: маса через вузьке вікно recovery. Black Keel не піднімає все з океану, лише те, що дозволяють маршрут, страхування, карантин і зберігання.\n\nКожен payload стає гострішим. Живий контрактник має цінність, але ядро доказу проти Deep Reach теж. Xenon-Omega може бути дорожчим за звичайний salvage і отруїти карантин. Корпус може швидше задовольнити страховика, ніж dossier працівника задовольнить справедливість.",
+     "external_site": "Зберігання tonne-window Black Keel перетворює порятунок на фізичний і юридичний слот, де тіло, доказ, борг і salvage змагаються під одним годинником carrier.",
+     "external_site_article": "Tonne-window — чистий вираз жорстокості фронтиру. Це звучить як бухгалтерія, бо це бухгалтерія, але рахується фізика: маса через вузьке вікно recovery. Black Keel не піднімає все з океану, лише те, що дозволяють маршрут, страхування, карантин і зберігання.\n\nКожен payload стає гострішим. Живий контрактник має цінність, але ядро доказу проти Deep Reach теж. Xenon-Omega може бути дорожчим за звичайний salvage і отруїти карантин. Корпус може швидше задовольнити страховика, ніж dossier працівника задовольнить справедливість.\n\nДля гравця тиск фіналу стає конкретним: що повертається першим — тіло, доказ, зразок, інструмент, координати чи історія? Black Keel рахує lift. Милосердя перемагає контракт лише тоді, коли гравець змушує машину прийняти сильнішу справу зберігання."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Black Keel tonne-window 托管",
+     "scanner": "Keelmark 回执。一个 tonne-window 把 payload 质量、航路相位、保险风险、检疫等级和回收优先级映射到单一 carrier 槽位。",
+     "field_note": "Tonne-window 不是钱。它是质量离开的许可。",
+     "terminal": "TONNE-WINDOW 托管 // 4.8 tonne-window 留置权有效。活体承包者、封存证据核心、Xenon-Omega 工艺切片和可回收船壳箱共享回收等级，除非 custody proof 重新排序。仅有人类状态不足以 full-window override。",
+     "audio": "Black Keel 用吨说话，因为窗口能承载的就是吨。",
+     "in_game_wiki": "tonne-window 是边疆残酷最清晰的表达。它听起来像会计，因为它就是会计，但被计算的是物理：穿过狭窄回收窗口的质量。Black Keel 不能把海里的一切都吊走，只能吊走航路、保险、检疫和托管记录允许的东西。\n\n因此每个 payload 选择都更尖锐。活着的承包者有价值，但能伤害 Deep Reach 的证据核心也有价值。Xenon-Omega 切片可能比普通 salvage 更值钱，也可能污染检疫等级。可回收船壳可能比 worker dossier 满足正义更快满足保险方。",
+     "external_site": "Black Keel 的 tonne-window 托管把救援变成一个物理和法律槽位，身体、证据、债务和 salvage 在同一 carrier 时钟下竞争。",
+     "external_site_article": "tonne-window 是边疆残酷最清晰的表达。它听起来像会计，因为它就是会计，但被计算的是物理：穿过狭窄回收窗口的质量。Black Keel 不能把海里的一切都吊走，只能吊走航路、保险、检疫和托管记录允许的东西。\n\n因此每个 payload 选择都更尖锐。活着的承包者有价值，但能伤害 Deep Reach 的证据核心也有价值。Xenon-Omega 切片可能比普通 salvage 更值钱，也可能污染检疫等级。可回收船壳可能比 worker dossier 满足正义更快满足保险方。\n\n对玩家而言，结局压力变得具体：先回家的是什么，身体、证据、样本、工具、坐标，还是故事？Black Keel 会计算 lift。除非玩家把更强的托管案件塞进机器，否则仁慈不会高于合同。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P311_SITE_HOME_PAGE_COMPOSITION_LOCK",
-      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
-      "article_id": "applied_lore.site_home_page_composition_lock",
-      "title_key": "applied_lore.site_home_page_composition_lock.title",
-      "unlock": {
-        "primary": "unlock.site_home_page_composition_lock",
-        "poi_tags": [
-          "poi.site_home_composition_card",
-          "poi.pressure_hero_image_brief",
-          "poi.bad_return_caption"
-        ],
-        "biome_tags": [
-          "biome.publication",
-          "biome.site"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Public Opening Composition Rule",
-          "scanner": "Public opening: one real machine or route image before lore explanation.",
-          "terminal": "PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "Show the route before the myth.",
-          "in_game_wiki": "Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Public Opening Composition Rule",
-          "scanner": "RU LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "RU LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "Сначала маршрут, потом миф.",
-          "in_game_wiki": "RU LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "Публичное открытие HECTON-8 должно показывать pressure problem: hatch, gauge, bad signal, costly return route.",
-          "field_note": "RU LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Public Opening Composition Rule",
-          "scanner": "JP LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "JP LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "JA LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "JP LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "JA LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "JP LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Public Opening Composition Rule",
-          "scanner": "CN LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "CN LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "ZH LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "CN LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "ZH LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "CN LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Public Opening Composition Rule",
-          "scanner": "FR LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "FR LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "FR LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "FR LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "FR LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "FR LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Public Opening Composition Rule",
-          "scanner": "ES LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "ES LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "ES LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "ES LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "ES LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "ES LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Public Opening Composition Rule",
-          "scanner": "DE LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "DE LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "DE LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "DE LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "DE LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "DE LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Public Opening Composition Rule",
-          "scanner": "PL LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "PL LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "PL LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "PL LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "PL LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "PL LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Public Opening Composition Rule",
-          "scanner": "UA LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "UA LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "UK LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "UA LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "UK LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "UA LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Public Opening Composition Rule",
-          "scanner": "AR LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "AR LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "AR LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "AR LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "AR LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "AR LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Public Opening Composition Rule",
-          "scanner": "ID LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "ID LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "ID LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "ID LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "ID LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "ID LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Public Opening Composition Rule",
-          "scanner": "KO LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "KO LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "KO LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "KO LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "KO LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "KO LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Public Opening Composition Rule",
-          "scanner": "HE LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "HE LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "HE LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "HE LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "HE LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "HE LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Public Opening Composition Rule",
-          "scanner": "PT LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "PT LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "PT LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "PT LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "PT LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "PT LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Public Opening Composition Rule",
-          "scanner": "NL LOC HOLD: Public opening: one real machine or route image before lore explanation.",
-          "terminal": "NL LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
-          "audio": "NL LOC HOLD: Show the route before the myth.",
-          "in_game_wiki": "NL LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
-          "external_site": "NL LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
-          "field_note": "NL LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P311_SITE_HOME_PAGE_COMPOSITION_LOCK",
+   "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+   "article_id": "applied_lore.site_home_page_composition_lock",
+   "title_key": "applied_lore.site_home_page_composition_lock.title",
+   "unlock": {
+    "primary": "unlock.site_home_page_composition_lock",
+    "poi_tags": [
+     "poi.site_home_composition_card",
+     "poi.pressure_hero_image_brief",
+     "poi.bad_return_caption"
+    ],
+    "biome_tags": [
+     "biome.publication",
+     "biome.site"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Public Opening Composition Rule",
+     "scanner": "Public opening: one real machine or route image before lore explanation.",
+     "terminal": "PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "Show the route before the myth.",
+     "in_game_wiki": "Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "No hype calendar, wishlist, release, or demo claim appears without proof."
     },
-    {
-      "packet_id": "P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK",
-      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
-      "article_id": "applied_lore.site_aegir_system_art_composition_lock",
-      "title_key": "applied_lore.site_aegir_system_art_composition_lock.title",
-      "unlock": {
-        "primary": "unlock.site_aegir_system_art_composition_lock",
-        "poi_tags": [
-          "poi.site_aegir_art_brief",
-          "poi.orbital_window_caption",
-          "poi.relay_shadow_label"
-        ],
-        "biome_tags": [
-          "biome.publication",
-          "biome.aegir"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Aegir System Art Rule",
-          "scanner": "Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "The sky is a timetable.",
-          "in_game_wiki": "Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Aegir System Art Rule",
-          "scanner": "RU LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "Небо - расписание.",
-          "in_game_wiki": "RU LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "Aegir должен читаться как route system: moons, relay shadows, charged windows, transfer debt, salvage timing.",
-          "field_note": "No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Aegir System Art Rule",
-          "scanner": "JP LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "JA LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "JA LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "JP LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "JA LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "JA LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Aegir System Art Rule",
-          "scanner": "CN LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "ZH LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "ZH LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "CN LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "ZH LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "ZH LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Aegir System Art Rule",
-          "scanner": "FR LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "FR LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "FR LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "FR LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "FR LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "FR LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Aegir System Art Rule",
-          "scanner": "ES LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "ES LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "ES LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "ES LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "ES LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "ES LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Aegir System Art Rule",
-          "scanner": "DE LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "DE LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "DE LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "DE LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "DE LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "DE LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Aegir System Art Rule",
-          "scanner": "PL LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "PL LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "PL LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "PL LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "PL LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "PL LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Aegir System Art Rule",
-          "scanner": "UA LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "UK LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "UK LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "UA LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "UK LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "UK LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Aegir System Art Rule",
-          "scanner": "AR LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "AR LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "AR LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "AR LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "AR LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "AR LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Aegir System Art Rule",
-          "scanner": "ID LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "ID LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "ID LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "ID LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "ID LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "ID LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Aegir System Art Rule",
-          "scanner": "KO LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "KO LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "KO LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "KO LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "KO LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "KO LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Aegir System Art Rule",
-          "scanner": "HE LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "HE LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "HE LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "HE LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "HE LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "HE LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Aegir System Art Rule",
-          "scanner": "PT LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "PT LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "PT LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "PT LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "PT LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "PT LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Aegir System Art Rule",
-          "scanner": "NL LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
-          "terminal": "NL LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
-          "audio": "NL LOC HOLD: The sky is a timetable.",
-          "in_game_wiki": "NL LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
-          "external_site": "NL LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
-          "field_note": "NL LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: Public Opening Composition Rule",
+     "scanner": "RU LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "RU LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "Сначала маршрут, потом миф.",
+     "in_game_wiki": "RU LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "Публичное открытие HECTON-8 должно показывать pressure problem: hatch, gauge, bad signal, costly return route.",
+     "field_note": "RU LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
     },
-    {
-      "packet_id": "P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK",
-      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
-      "article_id": "applied_lore.site_deep_reach_evidence_composition_lock",
-      "title_key": "applied_lore.site_deep_reach_evidence_composition_lock.title",
-      "unlock": {
-        "primary": "unlock.site_deep_reach_evidence_composition_lock",
-        "poi_tags": [
-          "poi.site_deep_reach_evidence_pair",
-          "poi.sanitized_memo_image",
-          "poi.waterline_contradiction_caption"
-        ],
-        "biome_tags": [
-          "biome.publication",
-          "biome.deep_reach"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Deep Reach Evidence Composition Rule",
-          "scanner": "Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "The memo is clean because the room is not.",
-          "in_game_wiki": "Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "Public page can state accountability without spoiling final payload receivers."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "RU LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "PUBLIC EVIDENCE: Deep Reach pages show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "Мемо чистое, потому что комната грязная.",
-          "in_game_wiki": "RU LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "Deep Reach не нужна злодейская речь. Нужны risk memo, delayed rescue и waterline, который ломает memo.",
-          "field_note": "Public page can state accountability without final payload spoilers."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "JP LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "JA LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "JA LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "JP LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "JA LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "JA LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "CN LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "ZH LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "ZH LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "CN LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "ZH LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "ZH LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "FR LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "FR LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "FR LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "FR LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "FR LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "FR LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "ES LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "ES LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "ES LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "ES LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "ES LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "ES LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "DE LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "DE LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "DE LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "DE LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "DE LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "DE LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "PL LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "PL LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "PL LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "PL LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "PL LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "PL LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "UA LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "UK LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "UK LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "UA LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "UK LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "UK LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "AR LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "AR LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "AR LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "AR LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "AR LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "AR LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "ID LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "ID LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "ID LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "ID LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "ID LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "ID LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "KO LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "KO LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "KO LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "KO LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "KO LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "KO LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "HE LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "HE LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "HE LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "HE LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "HE LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "HE LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "PT LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "PT LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "PT LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "PT LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "PT LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "PT LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Deep Reach Evidence Composition Rule",
-          "scanner": "NL LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
-          "terminal": "NL LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
-          "audio": "NL LOC HOLD: The memo is clean because the room is not.",
-          "in_game_wiki": "NL LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
-          "external_site": "NL LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
-          "field_note": "NL LOC HOLD: Public page can state accountability without spoiling final payload receivers."
-        }
-      }
+    "ja_JP": {
+     "title": "JP LOC HOLD: Public Opening Composition Rule",
+     "scanner": "JP LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "JP LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "JA LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "JP LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "JA LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "JP LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
     },
-    {
-      "packet_id": "P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK",
-      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
-      "article_id": "applied_lore.site_atlas_spoiler_composition_lock",
-      "title_key": "applied_lore.site_atlas_spoiler_composition_lock.title",
-      "unlock": {
-        "primary": "unlock.site_atlas_spoiler_composition_lock",
-        "poi_tags": [
-          "poi.site_atlas_spoiler_gate_layout",
-          "poi.redacted_factory_temple_image",
-          "poi.payload_warning_toggle"
-        ],
-        "biome_tags": [
-          "biome.publication",
-          "biome.atlas"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Atlas Spoiler Composition Rule",
-          "scanner": "Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "RU LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "Не называй дно до заработанной глубины.",
-          "in_game_wiki": "RU LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "Atlas-6 можно publicly назвать failed industrial governor; ocean-machine ecology and payloads stay gated.",
-          "field_note": "RU LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "JA LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "JP LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "JA LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "JP LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "JA LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "JP LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "ZH LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "CN LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "ZH LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "CN LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "ZH LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "CN LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "FR LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "FR LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "FR LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "FR LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "FR LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "FR LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "ES LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "ES LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "ES LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "ES LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "ES LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "ES LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "DE LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "DE LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "DE LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "DE LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "DE LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "DE LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "PL LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "PL LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "PL LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "PL LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "PL LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "PL LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "UK LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "UA LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "UK LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "UA LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "UK LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "UA LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "AR LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "AR LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "AR LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "AR LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "AR LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "AR LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "ID LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "ID LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "ID LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "ID LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "ID LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "ID LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "KO LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "KO LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "KO LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "KO LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "KO LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "KO LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "HE LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "HE LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "HE LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "HE LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "HE LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "HE LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "PT LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "PT LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "PT LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "PT LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "PT LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "PT LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Atlas Spoiler Composition Rule",
-          "scanner": "NL LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
-          "terminal": "NL LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
-          "audio": "NL LOC HOLD: Do not name the bottom before the player earns depth.",
-          "in_game_wiki": "NL LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
-          "external_site": "NL LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
-          "field_note": "NL LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
-        }
-      }
+    "zh_CN": {
+     "title": "CN LOC HOLD: Public Opening Composition Rule",
+     "scanner": "CN LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "CN LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "ZH LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "CN LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "ZH LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "CN LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
     },
-    {
-      "packet_id": "P315_SOCIAL_DEV_NOTE_COPY_LOCK",
-      "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
-      "article_id": "applied_lore.social_dev_note_copy_lock",
-      "title_key": "applied_lore.social_dev_note_copy_lock.title",
-      "unlock": {
-        "primary": "unlock.social_dev_note_copy_lock",
-        "poi_tags": [
-          "poi.social_dev_note_card",
-          "poi.caption_asset_match_label",
-          "poi.no_claim_warning_stamp"
-        ],
-        "biome_tags": [
-          "biome.publication",
-          "biome.copy"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Public Note Copy Rule",
-          "scanner": "Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "One real thing. No chorus.",
-          "in_game_wiki": "Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Public Note Copy Rule",
-          "scanner": "Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "RU LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "Одна реальная вещь. Без хора.",
-          "in_game_wiki": "RU LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "RU LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "RU LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Public Note Copy Rule",
-          "scanner": "JA LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "JP LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "JA LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "JP LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "JP LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "JP LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Public Note Copy Rule",
-          "scanner": "ZH LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "CN LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "ZH LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "CN LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "CN LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "CN LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Public Note Copy Rule",
-          "scanner": "FR LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "FR LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "FR LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "FR LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "FR LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "FR LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Public Note Copy Rule",
-          "scanner": "ES LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "ES LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "ES LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "ES LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "ES LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "ES LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Public Note Copy Rule",
-          "scanner": "DE LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "DE LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "DE LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "DE LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "DE LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "DE LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Public Note Copy Rule",
-          "scanner": "PL LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "PL LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "PL LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "PL LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "PL LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "PL LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Public Note Copy Rule",
-          "scanner": "UK LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "UA LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "UK LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "UA LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "UA LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "UA LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Public Note Copy Rule",
-          "scanner": "AR LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "AR LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "AR LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "AR LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "AR LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "AR LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Public Note Copy Rule",
-          "scanner": "ID LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "ID LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "ID LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "ID LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "ID LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "ID LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Public Note Copy Rule",
-          "scanner": "KO LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "KO LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "KO LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "KO LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "KO LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "KO LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Public Note Copy Rule",
-          "scanner": "HE LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "HE LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "HE LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "HE LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "HE LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "HE LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Public Note Copy Rule",
-          "scanner": "PT LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "PT LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "PT LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "PT LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "PT LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "PT LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Public Note Copy Rule",
-          "scanner": "NL LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
-          "terminal": "NL LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
-          "audio": "NL LOC HOLD: One real thing. No chorus.",
-          "in_game_wiki": "NL LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
-          "external_site": "NL LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
-          "field_note": "NL LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Public Opening Composition Rule",
+     "scanner": "FR LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "FR LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "FR LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "FR LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "FR LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "FR LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Public Opening Composition Rule",
+     "scanner": "ES LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "ES LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "ES LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "ES LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "ES LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "ES LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Public Opening Composition Rule",
+     "scanner": "DE LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "DE LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "DE LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "DE LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "DE LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "DE LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Public Opening Composition Rule",
+     "scanner": "PL LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "PL LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "PL LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "PL LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "PL LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "PL LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Public Opening Composition Rule",
+     "scanner": "UA LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "UA LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "UK LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "UA LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "UK LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "UA LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Public Opening Composition Rule",
+     "scanner": "AR LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "AR LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "AR LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "AR LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "AR LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "AR LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Public Opening Composition Rule",
+     "scanner": "ID LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "ID LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "ID LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "ID LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "ID LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "ID LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Public Opening Composition Rule",
+     "scanner": "KO LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "KO LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "KO LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "KO LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "KO LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "KO LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Public Opening Composition Rule",
+     "scanner": "HE LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "HE LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "HE LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "HE LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "HE LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "HE LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Public Opening Composition Rule",
+     "scanner": "PT LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "PT LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "PT LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "PT LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "PT LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "PT LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Public Opening Composition Rule",
+     "scanner": "NL LOC HOLD: Public opening: one real machine or route image before lore explanation.",
+     "terminal": "NL LOC HOLD: PUBLIC COMPOSITION: opening pages lead with pressure, machinery, salvage, and a bad return path. Platform and release claims require proof.",
+     "audio": "NL LOC HOLD: Show the route before the myth.",
+     "in_game_wiki": "NL LOC HOLD: Public Opening Composition Rule keeps public copy concrete and spoiler-safe.",
+     "external_site": "NL LOC HOLD: HECTON-8 public opening should show a pressure problem first: a hatch, a gauge, a bad signal, a route that will cost more on the way back.",
+     "field_note": "NL LOC HOLD: No hype calendar, wishlist, release, or demo claim appears without proof."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK",
+   "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+   "article_id": "applied_lore.site_aegir_system_art_composition_lock",
+   "title_key": "applied_lore.site_aegir_system_art_composition_lock.title",
+   "unlock": {
+    "primary": "unlock.site_aegir_system_art_composition_lock",
+    "poi_tags": [
+     "poi.site_aegir_art_brief",
+     "poi.orbital_window_caption",
+     "poi.relay_shadow_label"
+    ],
+    "biome_tags": [
+     "biome.publication",
+     "biome.aegir"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Aegir System Art Rule",
+     "scanner": "Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "The sky is a timetable.",
+     "in_game_wiki": "Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Aegir System Art Rule",
+     "scanner": "RU LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "Небо - расписание.",
+     "in_game_wiki": "RU LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "Aegir должен читаться как route system: moons, relay shadows, charged windows, transfer debt, salvage timing.",
+     "field_note": "No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Aegir System Art Rule",
+     "scanner": "JP LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "JA LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "JA LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "JP LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "JA LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "JA LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Aegir System Art Rule",
+     "scanner": "CN LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "ZH LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "ZH LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "CN LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "ZH LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "ZH LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Aegir System Art Rule",
+     "scanner": "FR LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "FR LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "FR LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "FR LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "FR LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "FR LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Aegir System Art Rule",
+     "scanner": "ES LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "ES LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "ES LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "ES LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "ES LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "ES LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Aegir System Art Rule",
+     "scanner": "DE LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "DE LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "DE LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "DE LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "DE LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "DE LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Aegir System Art Rule",
+     "scanner": "PL LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "PL LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "PL LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "PL LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "PL LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "PL LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Aegir System Art Rule",
+     "scanner": "UA LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "UK LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "UK LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "UA LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "UK LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "UK LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Aegir System Art Rule",
+     "scanner": "AR LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "AR LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "AR LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "AR LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "AR LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "AR LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Aegir System Art Rule",
+     "scanner": "ID LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "ID LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "ID LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "ID LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "ID LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "ID LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Aegir System Art Rule",
+     "scanner": "KO LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "KO LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "KO LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "KO LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "KO LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "KO LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Aegir System Art Rule",
+     "scanner": "HE LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "HE LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "HE LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "HE LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "HE LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "HE LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Aegir System Art Rule",
+     "scanner": "PT LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "PT LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "PT LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "PT LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "PT LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "PT LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Aegir System Art Rule",
+     "scanner": "NL LOC HOLD: Aegir art: orbital window, moon ladder, relay shadow, not fantasy skybox.",
+     "terminal": "NL LOC HOLD: PUBLIC ART: Aegir system images need orbit labels, moon-route context, relay shadow and transfer-window cost.",
+     "audio": "NL LOC HOLD: The sky is a timetable.",
+     "in_game_wiki": "NL LOC HOLD: Aegir System Art Rule makes orbital mechanics visible in public material.",
+     "external_site": "NL LOC HOLD: Aegir should read as a working route system: moons, relay shadows, charged windows, transfer debt and salvage timing.",
+     "field_note": "NL LOC HOLD: No brown dwarf, no Solar System framing, no FTL implication."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK",
+   "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+   "article_id": "applied_lore.site_deep_reach_evidence_composition_lock",
+   "title_key": "applied_lore.site_deep_reach_evidence_composition_lock.title",
+   "unlock": {
+    "primary": "unlock.site_deep_reach_evidence_composition_lock",
+    "poi_tags": [
+     "poi.site_deep_reach_evidence_pair",
+     "poi.sanitized_memo_image",
+     "poi.waterline_contradiction_caption"
+    ],
+    "biome_tags": [
+     "biome.publication",
+     "biome.deep_reach"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Deep Reach Evidence Composition Rule",
+     "scanner": "Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "The memo is clean because the room is not.",
+     "in_game_wiki": "Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "Public page can state accountability without spoiling final payload receivers."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "RU LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "PUBLIC EVIDENCE: Deep Reach pages show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "Мемо чистое, потому что комната грязная.",
+     "in_game_wiki": "RU LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "Deep Reach не нужна злодейская речь. Нужны risk memo, delayed rescue и waterline, который ломает memo.",
+     "field_note": "Public page can state accountability without final payload spoilers."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "JP LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "JA LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "JA LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "JP LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "JA LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "JA LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "CN LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "ZH LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "ZH LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "CN LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "ZH LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "ZH LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "FR LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "FR LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "FR LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "FR LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "FR LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "FR LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "ES LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "ES LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "ES LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "ES LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "ES LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "ES LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "DE LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "DE LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "DE LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "DE LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "DE LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "DE LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "PL LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "PL LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "PL LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "PL LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "PL LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "PL LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "UA LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "UK LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "UK LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "UA LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "UK LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "UK LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "AR LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "AR LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "AR LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "AR LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "AR LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "AR LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "ID LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "ID LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "ID LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "ID LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "ID LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "ID LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "KO LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "KO LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "KO LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "KO LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "KO LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "KO LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "HE LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "HE LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "HE LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "HE LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "HE LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "HE LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "PT LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "PT LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "PT LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "PT LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "PT LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "PT LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Deep Reach Evidence Composition Rule",
+     "scanner": "NL LOC HOLD: Deep Reach public evidence: procedure, memo, damage, not cartoon villainy.",
+     "terminal": "NL LOC HOLD: PUBLIC EVIDENCE: Deep Reach pages should show sanitized wording beside physical contradiction and liability chain fragments.",
+     "audio": "NL LOC HOLD: The memo is clean because the room is not.",
+     "in_game_wiki": "NL LOC HOLD: Deep Reach Evidence Composition Rule keeps corporate guilt procedural and evidence-led.",
+     "external_site": "NL LOC HOLD: Deep Reach did not need a villain speech. It needed a risk memo, a delayed rescue, and a room where the waterline proved the memo wrong.",
+     "field_note": "NL LOC HOLD: Public page can state accountability without spoiling final payload receivers."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK",
+   "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+   "article_id": "applied_lore.site_atlas_spoiler_composition_lock",
+   "title_key": "applied_lore.site_atlas_spoiler_composition_lock.title",
+   "unlock": {
+    "primary": "unlock.site_atlas_spoiler_composition_lock",
+    "poi_tags": [
+     "poi.site_atlas_spoiler_gate_layout",
+     "poi.redacted_factory_temple_image",
+     "poi.payload_warning_toggle"
+    ],
+    "biome_tags": [
+     "biome.publication",
+     "biome.atlas"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Atlas Spoiler Composition Rule",
+     "scanner": "Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "RU LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "Не называй дно до заработанной глубины.",
+     "in_game_wiki": "RU LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "Atlas-6 можно publicly назвать failed industrial governor; ocean-machine ecology and payloads stay gated.",
+     "field_note": "RU LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "JA LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "JP LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "JA LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "JP LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "JA LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "JP LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "ZH LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "CN LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "ZH LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "CN LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "ZH LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "CN LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "FR LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "FR LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "FR LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "FR LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "FR LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "FR LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "ES LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "ES LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "ES LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "ES LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "ES LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "ES LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "DE LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "DE LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "DE LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "DE LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "DE LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "DE LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "PL LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "PL LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "PL LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "PL LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "PL LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "PL LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "UK LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "UA LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "UK LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "UA LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "UK LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "UA LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "AR LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "AR LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "AR LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "AR LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "AR LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "AR LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "ID LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "ID LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "ID LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "ID LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "ID LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "ID LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "KO LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "KO LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "KO LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "KO LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "KO LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "KO LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "HE LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "HE LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "HE LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "HE LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "HE LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "HE LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "PT LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "PT LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "PT LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "PT LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "PT LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "PT LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Atlas Spoiler Composition Rule",
+     "scanner": "NL LOC HOLD: Atlas spoiler lock: failed governor first, ocean-machine consequences gated.",
+     "terminal": "NL LOC HOLD: SPOILER COMPOSITION: public Atlas records split failed industrial AI, repair ecology, factory-temple, and ending payload into separate gated tiers.",
+     "audio": "NL LOC HOLD: Do not name the bottom before the player earns depth.",
+     "in_game_wiki": "NL LOC HOLD: Atlas Spoiler Composition Rule protects final-basin meaning while still allowing public explanation.",
+     "external_site": "NL LOC HOLD: Atlas-6 can be introduced publicly as a failed industrial governor. The ocean-machine ecology and ending payloads stay behind earned spoiler gates.",
+     "field_note": "NL LOC HOLD: Atlas coverage stays compartmentalized: early pages show failed governance, later records hold factory-temple and payload consequences."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P315_SOCIAL_DEV_NOTE_COPY_LOCK",
+   "release_set_id": "RS063_PUBLICATION_COMPOSITION_PROOF_PACK",
+   "article_id": "applied_lore.social_dev_note_copy_lock",
+   "title_key": "applied_lore.social_dev_note_copy_lock.title",
+   "unlock": {
+    "primary": "unlock.social_dev_note_copy_lock",
+    "poi_tags": [
+     "poi.social_dev_note_card",
+     "poi.caption_asset_match_label",
+     "poi.no_claim_warning_stamp"
+    ],
+    "biome_tags": [
+     "biome.publication",
+     "biome.copy"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Public Note Copy Rule",
+     "scanner": "Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "One real thing. No chorus.",
+     "in_game_wiki": "Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Public Note Copy Rule",
+     "scanner": "Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "RU LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "Одна реальная вещь. Без хора.",
+     "in_game_wiki": "RU LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "RU LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "RU LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Public Note Copy Rule",
+     "scanner": "JA LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "JP LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "JA LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "JP LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "JP LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "JP LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Public Note Copy Rule",
+     "scanner": "ZH LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "CN LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "ZH LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "CN LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "CN LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "CN LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Public Note Copy Rule",
+     "scanner": "FR LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "FR LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "FR LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "FR LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "FR LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "FR LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Public Note Copy Rule",
+     "scanner": "ES LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "ES LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "ES LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "ES LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "ES LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "ES LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Public Note Copy Rule",
+     "scanner": "DE LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "DE LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "DE LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "DE LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "DE LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "DE LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Public Note Copy Rule",
+     "scanner": "PL LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "PL LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "PL LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "PL LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "PL LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "PL LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Public Note Copy Rule",
+     "scanner": "UK LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "UA LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "UK LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "UA LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "UA LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "UA LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Public Note Copy Rule",
+     "scanner": "AR LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "AR LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "AR LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "AR LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "AR LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "AR LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Public Note Copy Rule",
+     "scanner": "ID LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "ID LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "ID LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "ID LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "ID LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "ID LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Public Note Copy Rule",
+     "scanner": "KO LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "KO LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "KO LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "KO LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "KO LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "KO LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Public Note Copy Rule",
+     "scanner": "HE LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "HE LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "HE LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "HE LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "HE LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "HE LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Public Note Copy Rule",
+     "scanner": "PT LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "PT LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "PT LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "PT LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "PT LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "PT LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Public Note Copy Rule",
+     "scanner": "NL LOC HOLD: Public note lock: one concrete build fact, no fake hype.",
+     "terminal": "NL LOC HOLD: PUBLIC NOTE: name one physical problem, one visible detail, and no unsupported demo, platform, or release claim.",
+     "audio": "NL LOC HOLD: One real thing. No chorus.",
+     "in_game_wiki": "NL LOC HOLD: Public Note Copy Rule keeps public fragments grounded in current build evidence and visible physical detail.",
+     "external_site": "NL LOC HOLD: A good public note can be one sentence: the pump works, the gauge lies, the return route got worse.",
+     "field_note": "NL LOC HOLD: Caption copy waits for a matching build image; unsupported demo, platform, or release claims stay out."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,11 +1,46 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS254_DAMP_INSULATION_BLANKET_ARTICLE",
-  "title": "Damp Insulation Blanket Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS254_DAMP_INSULATION_BLANKET_ARTICLE",
+ "title": "Damp Insulation Blanket Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1424_DAMP_INSULATION_BLANKET_LEDGER",
+   "release_set_id": "RS254_DAMP_INSULATION_BLANKET_ARTICLE",
+   "article_id": "applied_lore.damp_insulation_blanket_ledger",
+   "title_key": "LORE_DAMP_INSULATION_BLANKET_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": "Narrative",
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -14,251 +49,217 @@
     "data_monolith_ready": false,
     "h8bin_ready": false,
     "unity_placement_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1424_DAMP_INSULATION_BLANKET_LEDGER",
-      "release_set_id": "RS254_DAMP_INSULATION_BLANKET_ARTICLE",
-      "article_id": "applied_lore.damp_insulation_blanket_ledger",
-      "title_key": "LORE_DAMP_INSULATION_BLANKET_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": "Narrative",
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.damp_insulation_blanket_ledger",
-        "secondary": [
-          "unlock.first_damp_insulation_scan",
-          "unlock.first_air_pocket_heat_trace",
-          "unlock.first_reversed_warm_side_panel"
-        ],
-        "poi_tags": [
-          "poi.damp_insulation_blanket",
-          "poi.dark_moisture_seam",
-          "poi.salt_stitch_channel",
-          "poi.reversed_warm_side_panel"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.pressure_module",
-          "biome.service_corridor"
-        ]
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Insulation Moisture Scanner",
-          "terminal": "Old Colony Thermal Backing Readout",
-          "audio": "Marauder Shelter Trace Instructor",
-          "in_game_wiki": "PDA Damp Insulation Field Guide",
-          "external_site": "Public Site Heat Memory Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_damp_insulation_or_air_pocket_trace",
-        "truth_payload": "Damp insulation blankets reveal heat memory, air pockets, condensation order and late room survival repairs.",
-        "player_question": "Which wall stayed warm after the room was officially dead?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Damp Insulation Blanket Heat Memory Ledger",
-          "scanner": "INSULATION BLANKET // Quilted gray-beige technical fabric, compressed seam, dark moisture line, salt dust in stitch channel, small tear exposing darker inner layer. This wall once held heat or air longer than the room around it.",
-          "terminal": "INSULATION READ // Dark seam first, salt second: slow condensation before dry pressure cycling. Salt under torn fabric: breach opened after the blanket dried. Warm-side staining on the wrong face means a panel was reversed during late repair.",
-          "audio": "Insulation remembers where people tried to keep a room alive.",
-          "in_game_wiki": "A damp insulation blanket is not soft background. In HECTON-8 it is a wall that kept a secret badly. Heat, breath, condensation and pressure do not cross fabric evenly. They darken seams, salt stitch lines, flatten quilt pockets and expose which side of a module stayed alive longest.\n\nThe sequence matters. Moisture darkening inside a seam means slow condensation while the compartment still had warm air. Salt dust on top of that line means the space later dried or pressure-breathed. A tear with dry salt inside means the breach opened after the blanket was already old. A clean patch over rotten quilting means somebody repaired the room after admitting it would never be clean again.\n\nFor a Marauder, insulation is shelter evidence. It can show a surviving air pocket, a hidden service void, a room kept warm by a dying machine, or a corridor where workers slept because official bunks were already unreachable. The blanket is humble material, but it remembers comfort as a technical emergency.",
-          "external_site": "Damp insulation blankets preserve heat, air, condensation and late repair evidence in pressure modules.",
-          "external_site_article": "The old colony did not only fail at doors and hulls. It failed in the places meant to make pressure survivable: backing panels, quilted thermal wraps, service alcoves and the beige fabric nobody photographed before launch.\n\nGood insulation tells human-scale truth. Dark lower seams mark breath and condensation. Salt in stitch channels marks drying cycles. Flattened quilting marks pressure and bodies leaning against the wall. A small tear with a darker inner layer can show a tool snag, emergency access, or a worker cutting through padding to find a hidden cable. Clean repair tape over damp fabric means the crew was no longer fixing the colony. They were buying another shift.\n\nThat makes insulation a bridge between machine evidence and worker memory. It belongs near air pockets, emergency shelters, crawlspaces and dead panels that still hum. If the fabric is wet on the wrong side, the room's story has already turned around.",
-          "field_note": "If the blanket is damp above shoulder height, ask what was still warm enough to breathe there."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал тепловой памяти мокрой изоляции",
-          "scanner": "ИЗОЛЯЦИОННОЕ ПОЛОТНО // Стеганая серо-бежевая техткань, сжатый шов, темная линия влаги, соль в канале строчки, маленький разрыв с темным внутренним слоем. Эта стена держала тепло или воздух дольше, чем комната вокруг.",
-          "terminal": "ЧТЕНИЕ ИЗОЛЯЦИИ // Темный шов первым, соль второй: медленный конденсат до сухих циклов давления. Соль под рваной тканью: прорыв открылся после высыхания. Теплая сторона не там - панель перевернули при позднем ремонте.",
-          "audio": "Изоляция помнит, где люди пытались удержать комнату живой.",
-          "in_game_wiki": "Мокрое изоляционное полотно - не мягкий фон. В HECTON-8 это стена, которая плохо хранит тайну. Тепло, дыхание, конденсат и давление проходят через ткань неравномерно. Они темнят швы, солят строчки, сплющивают стеганые карманы и показывают, какая сторона модуля дольше оставалась живой.\n\nПоследовательность важна. Темная влага внутри шва говорит о медленном конденсате, пока в отсеке еще был теплый воздух. Соль поверх этой линии значит, что пространство позже высохло или дышало давлением. Разрыв с сухой солью внутри говорит, что пробой открылся уже после старения полотна. Чистая заплата поверх гнилой стежки значит, что комнату уже не спасали по-настоящему, а покупали еще одну смену.\n\nДля мародера изоляция - доказательство укрытия. Она показывает воздушный карман, скрытую сервисную пустоту, комнату, которую грела умирающая машина, или коридор, где рабочие спали, потому что койки стали недоступны. Это скромный материал, но он помнит комфорт как техническую аварию.",
-          "external_site": "Мокрая изоляция хранит следы тепла, воздуха, конденсата и позднего ремонта в напорных модулях.",
-          "external_site_article": "Старая колония ломалась не только в люках и корпусах. Она ломалась в местах, которые должны были делать давление терпимым: за панелями, в стеганых тепловых обмотках, в сервисных нишах и бежевой ткани, которую никто не фотографировал перед запуском.\n\nХорошая изоляция говорит человеческую правду. Темные нижние швы отмечают дыхание и конденсат. Соль в каналах строчки отмечает циклы высыхания. Сплющенные карманы показывают давление и тела, прижимавшиеся к стене. Малый разрыв с темным внутренним слоем может быть следом инструмента, аварийного доступа или попытки найти спрятанный кабель. Чистая ремонтная лента поверх мокрой ткани значит, что экипаж уже не чинил колонию. Он покупал еще одну смену.\n\nПоэтому изоляция соединяет машинные следы и память рабочих. Ее место рядом с воздушными карманами, аварийными убежищами, лазами и мертвыми панелями, которые все еще гудят. Если ткань мокрая не с той стороны, история комнаты уже перевернулась.",
-          "field_note": "Если полотно влажное выше плеча, спроси, что там еще было достаточно теплым, чтобы дышать."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "湿った断熱ブランケット熱記憶台帳",
-          "scanner": "断熱ブランケット // キルト状の灰ベージュ技術布、圧縮された縫い目、暗い湿り線、縫製溝の塩、小さな裂け目から暗い内層。この壁は周囲の部屋より長く熱か空気を抱えていた。",
-          "terminal": "断熱読み // 暗い縫い目が先、塩が後なら、乾いた圧力呼吸の前に遅い結露があった。裂けた布の下の塩は、ブランケットが乾いた後に破口が開いた印。暖側染みが逆なら、遅い修理でパネルが反転した。",
-          "audio": "断熱材は、人が部屋を生かそうとした場所を覚えている。",
-          "in_game_wiki": "湿った断熱ブランケットは柔らかい背景ではない。HECTON-8では、秘密を下手に隠した壁だ。熱、息、結露、圧力は布を均一に通らない。縫い目を暗くし、縫製線に塩を残し、キルトの袋を潰し、どちら側が長く生きていたかを示す。\n\n順序が重要だ。縫い目の内側の暗い湿りは、暖かい空気がまだあった時の遅い結露を示す。その上の塩は、後で乾燥または圧力呼吸があった証拠だ。乾いた塩を含む裂け目は、布が古くなった後に開いた。腐ったキルトの上のきれいな補修テープは、修理ではなく次のシフトを買う行為だ。\n\nマローダーにとって断熱材は避難の証拠だ。空気ポケット、隠れたサービス空洞、死にかけた機械で暖められた部屋、正規寝台に戻れず作業者が眠った廊下を示す。地味な素材だが、快適さを技術的緊急事態として覚えている。",
-          "external_site": "湿った断熱材は、圧力モジュール内の熱、空気、結露、遅い修理を保存する。",
-          "external_site_article": "古い植民地は扉と船体だけで壊れたのではない。圧力を耐えられる生活に変えるはずの場所で壊れた。裏板、キルト状の熱ラップ、サービスくぼみ、出発前に誰も写真を撮らなかったベージュの布だ。\n\n良い断熱材は人間サイズの真実を話す。下側の暗い縫い目は息と結露を示す。縫製溝の塩は乾燥周期を示す。潰れたキルトは圧力と、壁にもたれた体を示す。暗い内層を見せる小さな裂け目は、工具、緊急アクセス、隠れたケーブル探しの跡かもしれない。\n\nだから断熱材は機械の物語と作業者の物語をつなぐ。空気ポケット、緊急避難所、 crawlspace、まだ唸る死んだパネルのそばに置くべき素材だ。布が逆側で濡れているなら、部屋の話はもう反転している。",
-          "field_note": "肩より上が湿っているなら、そこで何がまだ呼吸できるほど暖かかったかを考えろ。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "潮湿隔热毯热记忆账",
-          "scanner": "隔热毯 // 灰米色绗缝技术织物、被压扁的缝、深色潮线、针脚槽里的盐、小裂口露出更暗内层。这面墙曾比周围房间更久地保存热或空气。",
-          "terminal": "读隔热 // 先有深色缝线，后有盐：干燥压力循环前发生过缓慢结露。撕裂布下有盐：破口在毯子干老后才打开。热侧污迹在错误一面，说明后期维修时面板被反装。",
-          "audio": "隔热层记得人们在哪些地方试图让房间继续活着。",
-          "in_game_wiki": "潮湿隔热毯不是柔软背景。在HECTON-8，它是一面不善保密的墙。热、呼吸、冷凝和压力不会均匀穿过织物。它们会让缝线变暗，在针脚里留下盐，压平绗缝口袋，并暴露模块哪一侧活得更久。\n\n顺序很重要。缝里的深色潮痕说明舱室仍有暖空气时发生过缓慢结露。盐压在这条线上，说明后来空间干燥或随压力呼吸。裂口里有干盐，说明破口在毯子变旧后才打开。腐败绗缝上的干净补丁说明他们已经不是在真正修房间，而是在买下一班。\n\n对拾荒者来说，隔热层是避难证据。它能指出残存空气袋、隐藏服务空腔、被垂死机器加热的房间，或工人因官方床位无法到达而睡过的走廊。它不起眼，但把舒适记成了一场技术紧急事件。",
-          "external_site": "潮湿隔热毯保存压力舱中的热、空气、冷凝和后期维修证据。",
-          "external_site_article": "旧殖民地不只在舱门和船壳上失败。它也在那些本该让压力变得可忍受的地方失败：背板、绗缝隔热层、维修壁龛，以及发射前没人拍照的米色织物。\n\n好的隔热层讲的是人的尺度。深色下缝记录呼吸和冷凝。针脚槽里的盐记录干燥周期。被压扁的绗缝口袋记录压力，也记录靠在墙上的身体。露出暗色内层的小裂口可能是工具勾伤、紧急进入，或有人切开垫层找隐藏线缆。\n\n所以隔热层连接机器史和工人史。它属于空气袋、紧急避难处、爬行空隙、仍在嗡鸣的死面板。若织物湿在错误一侧，房间的故事已经翻面。",
-          "field_note": "如果肩膀以上的隔热毯仍潮，先问那里有什么还暖到足以呼吸。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre thermique des couvertures isolantes humides",
-          "scanner": "COUVERTURE ISOLANTE // Tissu technique gris beige matelassé, couture comprimée, ligne d'humidité sombre, sel dans le canal de couture, petite déchirure montrant une couche interne sombre. Ce mur a gardé chaleur ou air plus longtemps que la pièce.",
-          "terminal": "LECTURE ISOLANT // Couture sombre d'abord, sel ensuite : condensation lente avant respiration sèche. Sel sous tissu déchiré : brèche ouverte après séchage. Tache chaude sur mauvaise face : panneau retourné lors d'une réparation tardive.",
-          "audio": "L'isolant se souvient des pièces que l'on a tenté de garder vivantes.",
-          "in_game_wiki": "Une couverture isolante humide n'est pas un fond doux. Dans HECTON-8, c'est un mur qui garde mal son secret. Chaleur, souffle, condensation et pression ne traversent pas le tissu pareillement. Ils noircissent les coutures, salent les points, écrasent les poches et montrent quel côté a survécu le plus longtemps.\n\nL'ordre compte. Humidité sombre dans une couture : condensation lente avec air encore chaud. Sel au-dessus : séchage ou respiration de pression plus tardive. Déchirure avec sel sec : brèche ouverte après vieillissement. Ruban propre sur matelassage pourri : on n'a plus réparé la colonie, on a acheté un quart de plus.\n\nPour un maraudeur, l'isolant est preuve d'abri : poche d'air, vide de service, pièce chauffée par une machine mourante, couloir où l'on dormait quand les couchettes étaient inaccessibles.",
-          "external_site": "Les couvertures isolantes humides gardent traces de chaleur, d'air, de condensation et de réparation tardive.",
-          "external_site_article": "La colonie n'a pas seulement échoué aux portes et aux coques. Elle a échoué dans les endroits qui rendaient la pression habitable : panneaux arrière, enveloppes thermiques matelassées, alcôves de service, tissu beige que personne ne photographiait.\n\nLe bon isolant dit une vérité humaine. Coutures basses sombres : souffle et condensation. Sel dans les coutures : cycles de séchage. Matelassage aplati : pression et corps appuyés au mur. Petite déchirure sombre : outil, accès d'urgence ou recherche d'un câble caché.\n\nL'isolant relie donc machine et travailleurs. Il appartient près des poches d'air, refuges, passages étroits et panneaux morts qui bourdonnent encore.",
-          "field_note": "Si la couverture est humide au-dessus de l'épaule, demande ce qui respirait encore là."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro térmico de manta aislante húmeda",
-          "scanner": "MANTA AISLANTE // Tejido técnico gris beige acolchado, costura comprimida, línea oscura de humedad, sal en canal de puntada, pequeño desgarro con capa interna oscura. Esa pared guardó calor o aire más tiempo que la sala.",
-          "terminal": "LECTURA DE AISLANTE // Costura oscura primero, sal después: condensación lenta antes de ciclos secos. Sal bajo tela rota: brecha posterior al secado. Mancha caliente en cara equivocada: panel invertido en reparación tardía.",
-          "audio": "El aislante recuerda dónde intentaron mantener viva una habitación.",
-          "in_game_wiki": "Una manta aislante húmeda no es fondo blando. En HECTON-8 es una pared que guarda mal el secreto. Calor, aliento, condensación y presión no cruzan el tejido por igual. Oscurecen costuras, salan puntadas, aplastan bolsillos y revelan qué lado vivió más.\n\nLa secuencia importa. Humedad oscura dentro de una costura: condensación lenta con aire caliente. Sal encima: secado o respiración de presión posterior. Desgarro con sal seca: la brecha se abrió después de envejecer la manta. Cinta limpia sobre acolchado podrido: no reparaban la colonia, compraban otro turno.\n\nPara un saqueador, el aislante es prueba de refugio: bolsillo de aire, vacío de servicio, sala calentada por máquina moribunda o pasillo donde durmieron trabajadores cuando las literas quedaron fuera de alcance.",
-          "external_site": "Las mantas aislantes húmedas guardan calor, aire, condensación y pruebas de reparación tardía.",
-          "external_site_article": "La colonia no falló sólo en puertas y cascos. Falló en los lugares que hacían tolerable la presión: paneles traseros, envolturas térmicas, nichos de servicio y tela beige que nadie fotografió.\n\nUn buen aislante cuenta verdad humana. Costuras bajas oscuras: aliento y condensación. Sal en puntadas: ciclos de secado. Acolchado plano: presión y cuerpos apoyados. Pequeño desgarro oscuro: herramienta, acceso de emergencia o búsqueda de cable oculto.\n\nAsí el aislante une máquinas y trabajadores. Pertenece junto a bolsillos de aire, refugios, conductos estrechos y paneles muertos que aún zumban.",
-          "field_note": "Si la manta está húmeda sobre el hombro, pregunta qué seguía caliente para respirar allí."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Wärmegedächtnisprotokoll feuchter Isolierdecken",
-          "scanner": "ISOLIERDECKE // Gesteppter graubeiger Technikstoff, zusammengedrückte Naht, dunkle Feuchtelinie, Salz im Stichkanal, kleiner Riss mit dunkler Innenlage. Diese Wand hielt Wärme oder Luft länger als der Raum.",
-          "terminal": "ISOLIERUNG LESEN // Dunkle Naht zuerst, Salz danach: langsame Kondensation vor trockenen Druckzyklen. Salz unter gerissenem Stoff: Bruch nach Trocknung. Warmseitenfleck falsch herum: spätes Paneel verdreht.",
-          "audio": "Isolierung erinnert, wo man einen Raum am Leben halten wollte.",
-          "in_game_wiki": "Eine feuchte Isolierdecke ist kein weicher Hintergrund. In HECTON-8 ist sie eine Wand, die ein Geheimnis schlecht hält. Wärme, Atem, Kondensat und Druck gehen nicht gleichmäßig durch Stoff. Sie dunkeln Nähte, salzen Stichlinien, drücken Taschen flach und zeigen, welche Seite länger lebte.\n\nDie Reihenfolge zählt. Dunkle Feuchte in der Naht heißt langsame Kondensation mit warmer Luft. Salz darüber heißt spätere Trocknung oder Druckatmung. Riss mit trockenem Salz heißt: Öffnung nach Alterung. Sauberes Band über fauler Steppung heißt: keine Reparatur, nur ein weiterer Schichtkauf.\n\nFür einen Marauder ist Isolierung Schutzbeweis: Lufttasche, Servicespalt, von sterbender Maschine gewärmter Raum oder Gang, in dem Arbeiter schliefen, weil Kojen unerreichbar waren.",
-          "external_site": "Feuchte Isolierdecken bewahren Wärme, Luft, Kondensat und späte Reparaturspuren.",
-          "external_site_article": "Die Kolonie versagte nicht nur an Luken und Hüllen. Sie versagte dort, wo Druck erträglich werden sollte: Rückpaneele, gesteppte Wärmelagen, Servicebuchten und beiger Stoff, den niemand fotografierte.\n\nGute Isolierung erzählt menschliche Wahrheit. Dunkle untere Nähte: Atem und Kondensat. Salz im Stichkanal: Trocknungszyklen. Flache Steppung: Druck und Körper an der Wand. Kleiner dunkler Riss: Werkzeug, Notzugang oder Suche nach verstecktem Kabel.\n\nSo verbindet Isolierung Maschine und Arbeiter. Sie gehört zu Lufttaschen, Notunterkünften, Kriechgängen und toten Paneelen, die noch summen.",
-          "field_note": "Ist die Decke über Schulterhöhe feucht, frag, was dort noch warm genug zum Atmen war."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr pamięci cieplnej mokrej izolacji",
-          "scanner": "MATA IZOLACYJNA // Pikowana szarobeżowa tkanina techniczna, ściśnięty szew, ciemna linia wilgoci, sól w kanale ściegu, małe rozdarcie z ciemną warstwą. Ta ściana trzymała ciepło lub powietrze dłużej niż pokój.",
-          "terminal": "CZYTANIE IZOLACJI // Najpierw ciemny szew, potem sól: powolna kondensacja przed suchym oddychaniem ciśnienia. Sól pod rozdarciem: brześć po wyschnięciu. Ciepła plama po złej stronie: panel odwrócony późno.",
-          "audio": "Izolacja pamięta, gdzie próbowano utrzymać pokój przy życiu.",
-          "in_game_wiki": "Mokra mata izolacyjna nie jest miękkim tłem. W HECTON-8 to ściana, która źle trzyma sekret. Ciepło, oddech, kondensat i ciśnienie nie przechodzą przez tkaninę równo. Ciemnią szwy, solą ściegi, spłaszczają pikowanie i pokazują, która strona żyła dłużej.\n\nKolejność ma znaczenie. Ciemna wilgoć w szwie to powolna kondensacja przy ciepłym powietrzu. Sól na niej to późniejsze schnięcie lub oddychanie ciśnienia. Rozdarcie z suchą solą mówi, że otwarcie przyszło po starzeniu. Czysta taśma na zgniłym pikowaniu to nie naprawa, tylko zakup kolejnej zmiany.\n\nDla maraudera izolacja jest dowodem schronienia: kieszeń powietrza, pustka serwisowa, pokój grzany przez umierającą maszynę albo korytarz, gdzie spali robotnicy.",
-          "external_site": "Mokra izolacja zachowuje ślady ciepła, powietrza, kondensacji i późnej naprawy.",
-          "external_site_article": "Kolonia nie zawiodła tylko na włazach i kadłubach. Zawiodła w miejscach, które miały uczynić ciśnienie znośnym: tylnych panelach, matach cieplnych, niszach serwisowych i beżowej tkaninie.\n\nDobra izolacja mówi ludzką prawdę. Ciemne dolne szwy: oddech i kondensat. Sól w ściegach: cykle schnięcia. Spłaszczone pikowanie: nacisk i ciała oparte o ścianę. Małe ciemne rozdarcie: narzędzie, awaryjny dostęp albo szukanie ukrytego kabla.\n\nIzolacja łączy więc maszyny i ludzi. Należy do kieszeni powietrza, schronów, przejść technicznych i martwych paneli, które jeszcze buczą.",
-          "field_note": "Jeśli mata jest mokra powyżej barku, zapytaj, co tam jeszcze oddychało ciepłem."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал теплової пам'яті мокрої ізоляції",
-          "scanner": "ІЗОЛЯЦІЙНЕ ПОЛОТНО // Стьобана сіро-бежева техтканина, стиснений шов, темна лінія вологи, сіль у каналі строчки, малий розрив із темним внутрішнім шаром. Ця стіна тримала тепло або повітря довше за кімнату.",
-          "terminal": "ЧИТАННЯ ІЗОЛЯЦІЇ // Темний шов спершу, сіль потім: повільний конденсат перед сухим диханням тиску. Сіль під тканиною: прорив після висихання. Тепла пляма не з того боку: панель перевернули пізно.",
-          "audio": "Ізоляція пам'ятає, де люди намагалися втримати кімнату живою.",
-          "in_game_wiki": "Мокре ізоляційне полотно - не м'який фон. У HECTON-8 це стіна, що погано тримає таємницю. Тепло, дихання, конденсат і тиск проходять крізь тканину нерівно. Вони темнять шви, солять строчки, сплющують кишені й показують, який бік модуля жив довше.\n\nПослідовність важлива. Темна волога в шві - повільний конденсат, поки в повітрі ще було тепло. Сіль зверху - пізніше висихання або дихання тиску. Розрив із сухою сіллю означає, що отвір відкрився після старіння. Чиста стрічка на гнилій стьобці - куплена ще одна зміна.\n\nДля мародера ізоляція - доказ укриття: кишеня повітря, сервісна порожнина, кімната, яку гріла помираюча машина, або коридор, де спали робітники.",
-          "external_site": "Мокра ізоляція зберігає тепло, повітря, конденсат і сліди пізнього ремонту.",
-          "external_site_article": "Колонія ламалася не тільки в люках і корпусах. Вона ламалася там, де тиск мав стати терпимим: за панелями, у теплових обгортках, сервісних нішах і бежевій тканині.\n\nДобра ізоляція говорить людську правду. Темні нижні шви - дихання й конденсат. Сіль у строчках - цикли висихання. Сплющені кишені - тиск і тіла біля стіни. Малий темний розрив - інструмент, аварійний доступ або пошук прихованого кабелю.\n\nТому ізоляція з'єднує машини й робітників. Її місце біля повітряних кишень, сховищ, лазів і мертвих панелей, що ще гудуть.",
-          "field_note": "Якщо полотно мокре вище плеча, спитай, що там ще було досить теплим, щоб дихати."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل ذاكرة الحرارة لعازل رطب",
-          "scanner": "بطانية عزل // قماش تقني مبطن رمادي بيج، درز مضغوط، خط رطوبة داكن، ملح في قناة الخياطة، تمزق صغير يكشف طبقة داخلية أغمق. هذا الجدار حفظ حرارة أو هواء أطول من الغرفة حوله.",
-          "terminal": "قراءة العزل // درز داكن أولا وملح ثانيا: تكاثف بطيء قبل دورات ضغط جافة. ملح تحت قماش ممزق: الفتحة جاءت بعد الجفاف. بقعة دافئة على الوجه الخطأ: لوحة قلبت في إصلاح متأخر.",
-          "audio": "العزل يتذكر أين حاول الناس إبقاء غرفة حية.",
-          "in_game_wiki": "بطانية العزل الرطبة ليست خلفية ناعمة. في HECTON-8 هي جدار لا يحفظ سره جيدا. الحرارة والنفس والتكاثف والضغط لا تمر في القماش بالتساوي. تظلم الدروز، تملح الخياطة، تسطح الجيوب، وتكشف أي وجه بقي حيا أكثر.\n\nالترتيب مهم. الرطوبة الداكنة داخل درز تعني تكاثفا بطيئا مع هواء دافئ. الملح فوقها يعني جفافا أو تنفس ضغط لاحقا. تمزق فيه ملح جاف يعني أن الفتحة جاءت بعد شيخوخة البطانية. شريط نظيف فوق حشو فاسد يعني شراء وردية أخرى.\n\nبالنسبة إلى المغير، العزل دليل مأوى: جيب هواء، فراغ خدمة، غرفة دفأتها آلة تحتضر، أو ممر نام فيه العمال عندما صارت الأسرّة بعيدة.",
-          "external_site": "بطانيات العزل الرطبة تحفظ آثار الحرارة والهواء والتكاثف والإصلاح المتأخر.",
-          "external_site_article": "لم تفشل المستعمرة عند الأبواب والهياكل فقط. فشلت في الأماكن التي كان يفترض أن تجعل الضغط قابلا للحياة: خلف الألواح، الأغطية الحرارية، تجاويف الخدمة، والقماش البيج الذي لم يصوره أحد.\n\nالعزل الجيد يقول حقيقة بشرية. الدروز السفلية الداكنة: نفس وتكاثف. الملح في الخياطة: دورات جفاف. التبطين المسطح: ضغط وأجساد على الجدار. تمزق صغير داكن: أداة، وصول طارئ، أو بحث عن كابل مخفي.\n\nهكذا يصل العزل بين الآلة والعامل. مكانه قرب جيوب الهواء والملاجئ والممرات الضيقة والألواح الميتة التي ما زالت تطن.",
-          "field_note": "إذا كان العزل رطبا فوق الكتف، اسأل ما الذي بقي دافئا كفاية ليتنفس هناك."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Log Memori Panas Selimut Insulasi Basah",
-          "scanner": "SELIMUT INSULASI // Kain teknis abu-beige berjahit quilt, sambungan tertekan, garis lembap gelap, garam di kanal jahitan, robekan kecil membuka lapisan dalam lebih gelap. Dinding ini menahan panas atau udara lebih lama dari ruangan.",
-          "terminal": "BACA INSULASI // Jahitan gelap dulu, garam kemudian: kondensasi lambat sebelum siklus tekanan kering. Garam di bawah kain robek: bukaan datang setelah selimut kering. Noda sisi hangat terbalik: panel dibalik saat perbaikan terlambat.",
-          "audio": "Insulasi mengingat tempat orang mencoba menjaga ruangan tetap hidup.",
-          "in_game_wiki": "Selimut insulasi basah bukan latar lembut. Di HECTON-8, ia dinding yang buruk menyimpan rahasia. Panas, napas, kondensasi, dan tekanan tidak menembus kain merata. Mereka menggelapkan jahitan, menggarami kanal, meratakan kantong quilt, dan menunjukkan sisi modul yang hidup paling lama.\n\nUrutan penting. Lembap gelap dalam jahitan berarti kondensasi lambat saat udara masih hangat. Garam di atasnya berarti pengeringan atau napas tekanan belakangan. Robekan dengan garam kering berarti bukaan muncul setelah kain tua. Pita bersih di atas quilt busuk berarti kru membeli satu shift lagi.\n\nBagi perompak laut-dalam, insulasi adalah bukti perlindungan: kantong udara, rongga servis, ruangan yang dihangatkan mesin sekarat, atau koridor tempat pekerja tidur.",
-          "external_site": "Selimut insulasi basah menyimpan jejak panas, udara, kondensasi, dan perbaikan terlambat.",
-          "external_site_article": "Koloni lama tidak hanya gagal di palka dan lambung. Ia gagal di tempat yang seharusnya membuat tekanan dapat ditahan: panel belakang, bungkus termal, ceruk servis, dan kain beige yang tak pernah difoto.\n\nInsulasi bagus bicara kebenaran manusia. Jahitan bawah gelap: napas dan kondensasi. Garam di jahitan: siklus kering. Quilt rata: tekanan dan tubuh bersandar. Robekan kecil gelap: alat, akses darurat, atau pencarian kabel tersembunyi.\n\nInsulasi menghubungkan jejak mesin dan ingatan pekerja. Tempatnya dekat kantong udara, shelter darurat, jalur merangkak, dan panel mati yang masih berdengung.",
-          "field_note": "Jika selimut lembap di atas bahu, tanya apa yang masih cukup hangat untuk bernapas di sana."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "젖은 단열 담요 열 기억 장부",
-          "scanner": "단열 담요 // 퀼트 처리된 회베이지 기술 섬유, 눌린 이음, 어두운 습기선, 바느질 홈의 소금, 더 어두운 내부층을 드러낸 작은 찢김. 이 벽은 주변 방보다 오래 열이나 공기를 붙잡았다.",
-          "terminal": "단열 읽기 // 어두운 이음이 먼저, 소금이 다음이면 건조 압력 주기 전 느린 결로가 있었다. 찢긴 천 아래 소금은 담요가 마른 뒤 열린 파손이다. 따뜻한 면 얼룩이 반대쪽이면 늦은 수리 때 패널이 뒤집혔다.",
-          "audio": "단열재는 사람들이 방을 살려 두려 한 장소를 기억한다.",
-          "in_game_wiki": "젖은 단열 담요는 부드러운 배경이 아니다. HECTON-8에서는 비밀을 서툴게 숨긴 벽이다. 열, 숨, 결로, 압력은 천을 고르게 통과하지 않는다. 이음을 어둡게 하고, 바느질에 소금을 남기고, 퀼트 주머니를 납작하게 하며, 모듈 어느 쪽이 더 오래 살아 있었는지 보여 준다.\n\n순서가 중요하다. 이음 안의 어두운 습기는 따뜻한 공기가 있을 때의 느린 결로다. 그 위의 소금은 이후 건조나 압력 호흡이다. 마른 소금이 든 찢김은 천이 오래된 뒤 열린 구멍이다. 썩은 퀼트 위의 깨끗한 테이프는 수리가 아니라 다음 근무를 산 흔적이다.\n\n마라우더에게 단열재는 대피 증거다. 공기 주머니, 숨은 서비스 공간, 죽어 가는 기계가 데운 방, 침상이 닿지 않아 노동자들이 잔 복도를 보여 준다.",
-          "external_site": "젖은 단열 담요는 압력 모듈의 열, 공기, 결로, 늦은 수리 증거를 보존한다.",
-          "external_site_article": "오래된 식민지는 문과 선체에서만 실패하지 않았다. 압력을 견딜 수 있게 만들어야 했던 곳에서 실패했다. 뒤판, 열 랩, 서비스 홈, 출항 전 아무도 찍지 않은 베이지색 천이다.\n\n좋은 단열재는 인간 크기의 진실을 말한다. 어두운 아래 이음은 숨과 결로다. 바느질 홈의 소금은 건조 주기다. 납작한 퀼트는 압력과 벽에 기대어 있던 몸이다. 작은 어두운 찢김은 도구, 비상 접근, 숨은 케이블 찾기일 수 있다.\n\n그래서 단열재는 기계의 이야기와 노동자의 이야기를 잇는다. 공기 주머니, 비상 쉼터, 기어가는 통로, 아직 윙윙거리는 죽은 패널 옆에 속한다.",
-          "field_note": "어깨보다 높은 곳이 젖었다면, 거기서 무엇이 숨 쉴 만큼 따뜻했는지 물어라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן זיכרון חום של שמיכת בידוד לחה",
-          "scanner": "שמיכת בידוד // בד טכני מרופד אפור-בז', תפר דחוס, קו לחות כהה, מלח בערוץ תפר, קרע קטן החושף שכבה פנימית כהה. הקיר הזה החזיק חום או אוויר יותר מהחדר.",
-          "terminal": "קריאת בידוד // תפר כהה קודם ומלח אחריו: עיבוי איטי לפני מחזורי לחץ יבשים. מלח תחת בד קרוע: פתיחה אחרי ייבוש. כתם צד חם בצד הלא נכון: פאנל הפוך בתיקון מאוחר.",
-          "audio": "בידוד זוכר איפה אנשים ניסו להשאיר חדר חי.",
-          "in_game_wiki": "שמיכת בידוד לחה אינה רקע רך. ב-HECTON-8 היא קיר ששומר סוד רע. חום, נשימה, עיבוי ולחץ אינם עוברים בבד באופן שווה. הם מחשיכים תפרים, ממליחים תעלות, משטחים כיסים ומראים איזה צד של המודול חי זמן רב יותר.\n\nהסדר חשוב. לחות כהה בתוך תפר אומרת עיבוי איטי כשעוד היה אוויר חם. מלח מעליה אומר ייבוש או נשימת לחץ מאוחרת. קרע עם מלח יבש אומר שהפתח בא אחרי הזדקנות הבד. סרט נקי על ריפוד רקוב אומר שקנו עוד משמרת.\n\nלמראודר, בידוד הוא ראיית מחסה: כיס אוויר, חלל שירות, חדר שחומם בידי מכונה גוססת או מסדרון שבו ישנו עובדים.",
-          "external_site": "שמיכות בידוד לחות שומרות חום, אוויר, עיבוי ותיקון מאוחר.",
-          "external_site_article": "המושבה הישנה לא נכשלה רק בדלתות ובגופים. היא נכשלה במקומות שאמורים היו להפוך לחץ לנסבל: לוחות אחוריים, עטיפות חום, גומחות שירות ובד בז' שאיש לא צילם.\n\nבידוד טוב אומר אמת אנושית. תפרים תחתונים כהים: נשימה ועיבוי. מלח בתפרים: מחזורי ייבוש. ריפוד שטוח: לחץ וגופים נשענים על קיר. קרע כהה קטן: כלי, גישה חירום או חיפוש כבל נסתר.\n\nכך בידוד מחבר מכונות ועובדים. מקומו ליד כיסי אוויר, מקלטים, מעברים צרים ולוחות מתים שעוד מזמזמים.",
-          "field_note": "אם השמיכה לחה מעל הכתף, שאל מה עוד היה שם חם מספיק לנשימה."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Memória Térmica da Manta Isolante Úmida",
-          "scanner": "MANTA ISOLANTE // Tecido técnico cinza-bege acolchoado, costura comprimida, linha escura de umidade, sal no canal de ponto, rasgo pequeno expondo camada interna escura. Essa parede segurou calor ou ar mais tempo que a sala.",
-          "terminal": "LEITURA DA ISOLAÇÃO // Costura escura primeiro, sal depois: condensação lenta antes de ciclos secos de pressão. Sal sob tecido rasgado: abertura após secagem. Mancha quente na face errada: painel invertido em reparo tardio.",
-          "audio": "Isolamento lembra onde tentaram manter uma sala viva.",
-          "in_game_wiki": "Uma manta isolante úmida não é fundo macio. Em HECTON-8, é uma parede que guarda mal um segredo. Calor, respiração, condensação e pressão não atravessam tecido por igual. Escurecem costuras, salgam pontos, achatam bolsas e mostram qual lado do módulo viveu mais.\n\nA sequência importa. Umidade escura numa costura indica condensação lenta com ar ainda quente. Sal por cima indica secagem ou respiração de pressão posterior. Rasgo com sal seco indica abertura depois do envelhecimento. Fita limpa sobre acolchoado podre significa comprar mais um turno.\n\nPara um saqueador, isolamento é prova de abrigo: bolsa de ar, vazio de serviço, sala aquecida por máquina morrendo ou corredor onde trabalhadores dormiram.",
-          "external_site": "Mantas isolantes úmidas preservam calor, ar, condensação e reparo tardio.",
-          "external_site_article": "A colônia antiga não falhou só em portas e cascos. Falhou nos lugares que deveriam tornar a pressão suportável: painéis traseiros, mantas térmicas, nichos de serviço e tecido bege que ninguém fotografou.\n\nBom isolamento diz verdade humana. Costuras baixas escuras: respiração e condensação. Sal nos pontos: ciclos de secagem. Acolchoado achatado: pressão e corpos contra a parede. Rasgo pequeno e escuro: ferramenta, acesso de emergência ou busca de cabo oculto.\n\nAssim, isolamento liga máquinas e trabalhadores. Pertence a bolsas de ar, abrigos, passagens estreitas e painéis mortos que ainda zumbem.",
-          "field_note": "Se a manta está úmida acima do ombro, pergunte o que ainda era quente o bastante para respirar ali."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Warmtegeheugenlog van vochtige isolatiedeken",
-          "scanner": "ISOLATIEDEKEN // Gewatteerde grijsbeige technische stof, gecomprimeerde naad, donkere vochtlijn, zout in stikselkanaal, kleine scheur met donkere binnenlaag. Deze wand hield warmte of lucht langer vast dan de kamer.",
-          "terminal": "ISOLATIE LEZEN // Donkere naad eerst, zout daarna: trage condens voor droge drukcycli. Zout onder gescheurde stof: opening na droging. Warmtevlek aan verkeerde zijde: paneel laat omgedraaid.",
-          "audio": "Isolatie herinnert waar mensen een kamer levend wilden houden.",
-          "in_game_wiki": "Een vochtige isolatiedeken is geen zachte achtergrond. In HECTON-8 is het een wand die een geheim slecht bewaart. Warmte, adem, condens en druk gaan niet gelijkmatig door stof. Ze verdonkeren naden, zouten stiksels, drukken vakken plat en tonen welke kant langer leefde.\n\nDe volgorde telt. Donker vocht in een naad is trage condens met nog warme lucht. Zout erboven is latere droging of drukademhaling. Een scheur met droog zout betekent dat de opening na veroudering kwam. Schone tape op rot stiksel koopt nog een dienst.\n\nVoor een marauder is isolatie bewijs van beschutting: luchtzak, serviceruimte, kamer verwarmd door stervende machine of gang waar arbeiders sliepen.",
-          "external_site": "Vochtige isolatiedekens bewaren warmte, lucht, condens en late reparatie.",
-          "external_site_article": "De oude kolonie faalde niet alleen bij luiken en rompen. Ze faalde op plekken die druk draaglijk moesten maken: achterpanelen, thermische wraps, service-nissen en beige stof die niemand fotografeerde.\n\nGoede isolatie vertelt menselijke waarheid. Donkere lage naden: adem en condens. Zout in stiksels: droogcycli. Plat gewatteerde vakken: druk en lichamen tegen de wand. Kleine donkere scheur: gereedschap, noodtoegang of zoeken naar verborgen kabel.\n\nZo verbindt isolatie machines en arbeiders. Ze hoort bij luchtzakken, noodschuilplaatsen, kruipruimtes en dode panelen die nog brommen.",
-          "field_note": "Als de deken boven schouderhoogte vochtig is, vraag wat daar nog warm genoeg ademde."
-        }
-      }
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.damp_insulation_blanket_ledger",
+    "secondary": [
+     "unlock.first_damp_insulation_scan",
+     "unlock.first_air_pocket_heat_trace",
+     "unlock.first_reversed_warm_side_panel"
+    ],
+    "poi_tags": [
+     "poi.damp_insulation_blanket",
+     "poi.dark_moisture_seam",
+     "poi.salt_stitch_channel",
+     "poi.reversed_warm_side_panel"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.pressure_module",
+     "biome.service_corridor"
+    ]
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Insulation Moisture Scanner",
+     "terminal": "Old Colony Thermal Backing Readout",
+     "audio": "Marauder Shelter Trace Instructor",
+     "in_game_wiki": "PDA Damp Insulation Field Guide",
+     "external_site": "Public Site Heat Memory Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_damp_insulation_or_air_pocket_trace",
+    "truth_payload": "Damp insulation blankets reveal heat memory, air pockets, condensation order and late room survival repairs.",
+    "player_question": "Which wall stayed warm after the room was officially dead?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Damp Insulation Blanket Heat Memory Ledger",
+     "scanner": "INSULATION BLANKET // Quilted gray-beige technical fabric, compressed seam, dark moisture line, salt dust in stitch channel, small tear exposing darker inner layer. This wall once held heat or air longer than the room around it.",
+     "terminal": "INSULATION READ // Dark seam first, salt second: slow condensation before dry pressure cycling. Salt under torn fabric: breach opened after the blanket dried. Warm-side staining on the wrong face means a panel was reversed during late repair.",
+     "audio": "Insulation remembers where people tried to keep a room alive.",
+     "in_game_wiki": "A damp insulation blanket is not soft background. In HECTON-8 it is a wall that kept a secret badly. Heat, breath, condensation and pressure do not cross fabric evenly. They darken seams, salt stitch lines, flatten quilt pockets and expose which side of a module stayed alive longest.\n\nThe sequence matters. Moisture darkening inside a seam means slow condensation while the compartment still had warm air. Salt dust on top of that line means the space later dried or pressure-breathed. A tear with dry salt inside means the breach opened after the blanket was already old. A clean patch over rotten quilting means somebody repaired the room after admitting it would never be clean again.\n\nFor a Marauder, insulation is shelter evidence. It can show a surviving air pocket, a hidden service void, a room kept warm by a dying machine, or a corridor where workers slept because official bunks were already unreachable. The blanket is humble material, but it remembers comfort as a technical emergency.",
+     "external_site": "Damp insulation blankets preserve heat, air, condensation and late repair evidence in pressure modules.",
+     "external_site_article": "The old colony did not only fail at doors and hulls. It failed in the places meant to make pressure survivable: backing panels, quilted thermal wraps, service alcoves and the beige fabric nobody photographed before launch.\n\nGood insulation tells human-scale truth. Dark lower seams mark breath and condensation. Salt in stitch channels marks drying cycles. Flattened quilting marks pressure and bodies leaning against the wall. A small tear with a darker inner layer can show a tool snag, emergency access, or a worker cutting through padding to find a hidden cable. Clean repair tape over damp fabric means the crew was no longer fixing the colony. They were buying another shift.\n\nThat makes insulation a bridge between machine evidence and worker memory. It belongs near air pockets, emergency shelters, crawlspaces and dead panels that still hum. If the fabric is wet on the wrong side, the room's story has already turned around.",
+     "field_note": "If the blanket is damp above shoulder height, ask what was still warm enough to breathe there."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал тепловой памяти мокрой изоляции",
+     "scanner": "ИЗОЛЯЦИОННОЕ ПОЛОТНО // Стеганая серо-бежевая техткань, сжатый шов, темная линия влаги, соль в канале строчки, маленький разрыв с темным внутренним слоем. Эта стена держала тепло или воздух дольше, чем комната вокруг.",
+     "terminal": "ЧТЕНИЕ ИЗОЛЯЦИИ // Темный шов первым, соль второй: медленный конденсат до сухих циклов давления. Соль под рваной тканью: прорыв открылся после высыхания. Теплая сторона не там - панель перевернули при позднем ремонте.",
+     "audio": "Изоляция помнит, где люди пытались удержать комнату живой.",
+     "in_game_wiki": "Мокрое изоляционное полотно - не мягкий фон. В HECTON-8 это стена, которая плохо хранит тайну. Тепло, дыхание, конденсат и давление проходят через ткань неравномерно. Они темнят швы, солят строчки, сплющивают стеганые карманы и показывают, какая сторона модуля дольше оставалась живой.\n\nПоследовательность важна. Темная влага внутри шва говорит о медленном конденсате, пока в отсеке еще был теплый воздух. Соль поверх этой линии значит, что пространство позже высохло или дышало давлением. Разрыв с сухой солью внутри говорит, что пробой открылся уже после старения полотна. Чистая заплата поверх гнилой стежки значит, что комнату уже не спасали по-настоящему, а покупали еще одну смену.\n\nДля мародера изоляция - доказательство укрытия. Она показывает воздушный карман, скрытую сервисную пустоту, комнату, которую грела умирающая машина, или коридор, где рабочие спали, потому что койки стали недоступны. Это скромный материал, но он помнит комфорт как техническую аварию.",
+     "external_site": "Мокрая изоляция хранит следы тепла, воздуха, конденсата и позднего ремонта в напорных модулях.",
+     "external_site_article": "Старая колония ломалась не только в люках и корпусах. Она ломалась в местах, которые должны были делать давление терпимым: за панелями, в стеганых тепловых обмотках, в сервисных нишах и бежевой ткани, которую никто не фотографировал перед запуском.\n\nХорошая изоляция говорит человеческую правду. Темные нижние швы отмечают дыхание и конденсат. Соль в каналах строчки отмечает циклы высыхания. Сплющенные карманы показывают давление и тела, прижимавшиеся к стене. Малый разрыв с темным внутренним слоем может быть следом инструмента, аварийного доступа или попытки найти спрятанный кабель. Чистая ремонтная лента поверх мокрой ткани значит, что экипаж уже не чинил колонию. Он покупал еще одну смену.\n\nПоэтому изоляция соединяет машинные следы и память рабочих. Ее место рядом с воздушными карманами, аварийными убежищами, лазами и мертвыми панелями, которые все еще гудят. Если ткань мокрая не с той стороны, история комнаты уже перевернулась.",
+     "field_note": "Если полотно влажное выше плеча, спроси, что там еще было достаточно теплым, чтобы дышать."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "湿った断熱ブランケット熱記憶台帳",
+     "scanner": "断熱ブランケット // キルト状の灰ベージュ技術布、圧縮された縫い目、暗い湿り線、縫製溝の塩、小さな裂け目から暗い内層。この壁は周囲の部屋より長く熱か空気を抱えていた。",
+     "terminal": "断熱読み // 暗い縫い目が先、塩が後なら、乾いた圧力呼吸の前に遅い結露があった。裂けた布の下の塩は、ブランケットが乾いた後に破口が開いた印。暖側染みが逆なら、遅い修理でパネルが反転した。",
+     "audio": "断熱材は、人が部屋を生かそうとした場所を覚えている。",
+     "in_game_wiki": "湿った断熱ブランケットは柔らかい背景ではない。HECTON-8では、秘密を下手に隠した壁だ。熱、息、結露、圧力は布を均一に通らない。縫い目を暗くし、縫製線に塩を残し、キルトの袋を潰し、どちら側が長く生きていたかを示す。\n\n順序が重要だ。縫い目の内側の暗い湿りは、暖かい空気がまだあった時の遅い結露を示す。その上の塩は、後で乾燥または圧力呼吸があった証拠だ。乾いた塩を含む裂け目は、布が古くなった後に開いた。腐ったキルトの上のきれいな補修テープは、修理ではなく次のシフトを買う行為だ。\n\nマローダーにとって断熱材は避難の証拠だ。空気ポケット、隠れたサービス空洞、死にかけた機械で暖められた部屋、正規寝台に戻れず作業者が眠った廊下を示す。地味な素材だが、快適さを技術的緊急事態として覚えている。",
+     "external_site": "湿った断熱材は、圧力モジュール内の熱、空気、結露、遅い修理を保存する。",
+     "external_site_article": "古い植民地は扉と船体だけで壊れたのではない。圧力を耐えられる生活に変えるはずの場所で壊れた。裏板、キルト状の熱ラップ、サービスくぼみ、出発前に誰も写真を撮らなかったベージュの布だ。\n\n良い断熱材は人間サイズの真実を話す。下側の暗い縫い目は息と結露を示す。縫製溝の塩は乾燥周期を示す。潰れたキルトは圧力と、壁にもたれた体を示す。暗い内層を見せる小さな裂け目は、工具、緊急アクセス、隠れたケーブル探しの跡かもしれない。\n\nだから断熱材は機械の物語と作業者の物語をつなぐ。空気ポケット、緊急避難所、 crawlspace、まだ唸る死んだパネルのそばに置くべき素材だ。布が逆側で濡れているなら、部屋の話はもう反転している。",
+     "field_note": "肩より上が湿っているなら、そこで何がまだ呼吸できるほど暖かかったかを考えろ。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "潮湿隔热毯热记忆账",
+     "scanner": "隔热毯 // 灰米色绗缝技术织物、被压扁的缝、深色潮线、针脚槽里的盐、小裂口露出更暗内层。这面墙曾比周围房间更久地保存热或空气。",
+     "terminal": "读隔热 // 先有深色缝线，后有盐：干燥压力循环前发生过缓慢结露。撕裂布下有盐：破口在毯子干老后才打开。热侧污迹在错误一面，说明后期维修时面板被反装。",
+     "audio": "隔热层记得人们在哪些地方试图让房间继续活着。",
+     "in_game_wiki": "潮湿隔热毯不是柔软背景。在HECTON-8，它是一面不善保密的墙。热、呼吸、冷凝和压力不会均匀穿过织物。它们会让缝线变暗，在针脚里留下盐，压平绗缝口袋，并暴露模块哪一侧活得更久。\n\n顺序很重要。缝里的深色潮痕说明舱室仍有暖空气时发生过缓慢结露。盐压在这条线上，说明后来空间干燥或随压力呼吸。裂口里有干盐，说明破口在毯子变旧后才打开。腐败绗缝上的干净补丁说明他们已经不是在真正修房间，而是在买下一班。\n\n对拾荒者来说，隔热层是避难证据。它能指出残存空气袋、隐藏服务空腔、被垂死机器加热的房间，或工人因官方床位无法到达而睡过的走廊。它不起眼，但把舒适记成了一场技术紧急事件。",
+     "external_site": "潮湿隔热毯保存压力舱中的热、空气、冷凝和后期维修证据。",
+     "external_site_article": "旧殖民地不只在舱门和船壳上失败。它也在那些本该让压力变得可忍受的地方失败：背板、绗缝隔热层、维修壁龛，以及发射前没人拍照的米色织物。\n\n好的隔热层讲的是人的尺度。深色下缝记录呼吸和冷凝。针脚槽里的盐记录干燥周期。被压扁的绗缝口袋记录压力，也记录靠在墙上的身体。露出暗色内层的小裂口可能是工具勾伤、紧急进入，或有人切开垫层找隐藏线缆。\n\n所以隔热层连接机器史和工人史。它属于空气袋、紧急避难处、爬行空隙、仍在嗡鸣的死面板。若织物湿在错误一侧，房间的故事已经翻面。",
+     "field_note": "如果肩膀以上的隔热毯仍潮，先问那里有什么还暖到足以呼吸。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre thermique des couvertures isolantes humides",
+     "scanner": "COUVERTURE ISOLANTE // Tissu technique gris beige matelassé, couture comprimée, ligne d'humidité sombre, sel dans le canal de couture, petite déchirure montrant une couche interne sombre. Ce mur a gardé chaleur ou air plus longtemps que la pièce.",
+     "terminal": "LECTURE ISOLANT // Couture sombre d'abord, sel ensuite : condensation lente avant respiration sèche. Sel sous tissu déchiré : brèche ouverte après séchage. Tache chaude sur mauvaise face : panneau retourné lors d'une réparation tardive.",
+     "audio": "L'isolant se souvient des pièces que l'on a tenté de garder vivantes.",
+     "in_game_wiki": "Une couverture isolante humide n'est pas un fond doux. Dans HECTON-8, c'est un mur qui garde mal son secret. Chaleur, souffle, condensation et pression ne traversent pas le tissu pareillement. Ils noircissent les coutures, salent les points, écrasent les poches et montrent quel côté a survécu le plus longtemps.\n\nL'ordre compte. Humidité sombre dans une couture : condensation lente avec air encore chaud. Sel au-dessus : séchage ou respiration de pression plus tardive. Déchirure avec sel sec : brèche ouverte après vieillissement. Ruban propre sur matelassage pourri : on n'a plus réparé la colonie, on a acheté un quart de plus.\n\nPour un maraudeur, l'isolant est preuve d'abri : poche d'air, vide de service, pièce chauffée par une machine mourante, couloir où l'on dormait quand les couchettes étaient inaccessibles.",
+     "external_site": "Les couvertures isolantes humides gardent traces de chaleur, d'air, de condensation et de réparation tardive.",
+     "external_site_article": "La colonie n'a pas seulement échoué aux portes et aux coques. Elle a échoué dans les endroits qui rendaient la pression habitable : panneaux arrière, enveloppes thermiques matelassées, alcôves de service, tissu beige que personne ne photographiait.\n\nLe bon isolant dit une vérité humaine. Coutures basses sombres : souffle et condensation. Sel dans les coutures : cycles de séchage. Matelassage aplati : pression et corps appuyés au mur. Petite déchirure sombre : outil, accès d'urgence ou recherche d'un câble caché.\n\nL'isolant relie donc machine et travailleurs. Il appartient près des poches d'air, refuges, passages étroits et panneaux morts qui bourdonnent encore.",
+     "field_note": "Si la couverture est humide au-dessus de l'épaule, demande ce qui respirait encore là."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro térmico de manta aislante húmeda",
+     "scanner": "MANTA AISLANTE // Tejido técnico gris beige acolchado, costura comprimida, línea oscura de humedad, sal en canal de puntada, pequeño desgarro con capa interna oscura. Esa pared guardó calor o aire más tiempo que la sala.",
+     "terminal": "LECTURA DE AISLANTE // Costura oscura primero, sal después: condensación lenta antes de ciclos secos. Sal bajo tela rota: brecha posterior al secado. Mancha caliente en cara equivocada: panel invertido en reparación tardía.",
+     "audio": "El aislante recuerda dónde intentaron mantener viva una habitación.",
+     "in_game_wiki": "Una manta aislante húmeda no es fondo blando. En HECTON-8 es una pared que guarda mal el secreto. Calor, aliento, condensación y presión no cruzan el tejido por igual. Oscurecen costuras, salan puntadas, aplastan bolsillos y revelan qué lado vivió más.\n\nLa secuencia importa. Humedad oscura dentro de una costura: condensación lenta con aire caliente. Sal encima: secado o respiración de presión posterior. Desgarro con sal seca: la brecha se abrió después de envejecer la manta. Cinta limpia sobre acolchado podrido: no reparaban la colonia, compraban otro turno.\n\nPara un saqueador, el aislante es prueba de refugio: bolsillo de aire, vacío de servicio, sala calentada por máquina moribunda o pasillo donde durmieron trabajadores cuando las literas quedaron fuera de alcance.",
+     "external_site": "Las mantas aislantes húmedas guardan calor, aire, condensación y pruebas de reparación tardía.",
+     "external_site_article": "La colonia no falló sólo en puertas y cascos. Falló en los lugares que hacían tolerable la presión: paneles traseros, envolturas térmicas, nichos de servicio y tela beige que nadie fotografió.\n\nUn buen aislante cuenta verdad humana. Costuras bajas oscuras: aliento y condensación. Sal en puntadas: ciclos de secado. Acolchado plano: presión y cuerpos apoyados. Pequeño desgarro oscuro: herramienta, acceso de emergencia o búsqueda de cable oculto.\n\nAsí el aislante une máquinas y trabajadores. Pertenece junto a bolsillos de aire, refugios, conductos estrechos y paneles muertos que aún zumban.",
+     "field_note": "Si la manta está húmeda sobre el hombro, pregunta qué seguía caliente para respirar allí."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Wärmegedächtnisprotokoll feuchter Isolierdecken",
+     "scanner": "ISOLIERDECKE // Gesteppter graubeiger Technikstoff, zusammengedrückte Naht, dunkle Feuchtelinie, Salz im Stichkanal, kleiner Riss mit dunkler Innenlage. Diese Wand hielt Wärme oder Luft länger als der Raum.",
+     "terminal": "ISOLIERUNG LESEN // Dunkle Naht zuerst, Salz danach: langsame Kondensation vor trockenen Druckzyklen. Salz unter gerissenem Stoff: Bruch nach Trocknung. Warmseitenfleck falsch herum: spätes Paneel verdreht.",
+     "audio": "Isolierung erinnert, wo man einen Raum am Leben halten wollte.",
+     "in_game_wiki": "Eine feuchte Isolierdecke ist kein weicher Hintergrund. In HECTON-8 ist sie eine Wand, die ein Geheimnis schlecht hält. Wärme, Atem, Kondensat und Druck gehen nicht gleichmäßig durch Stoff. Sie dunkeln Nähte, salzen Stichlinien, drücken Taschen flach und zeigen, welche Seite länger lebte.\n\nDie Reihenfolge zählt. Dunkle Feuchte in der Naht heißt langsame Kondensation mit warmer Luft. Salz darüber heißt spätere Trocknung oder Druckatmung. Riss mit trockenem Salz heißt: Öffnung nach Alterung. Sauberes Band über fauler Steppung heißt: keine Reparatur, nur ein weiterer Schichtkauf.\n\nFür einen Marauder ist Isolierung Schutzbeweis: Lufttasche, Servicespalt, von sterbender Maschine gewärmter Raum oder Gang, in dem Arbeiter schliefen, weil Kojen unerreichbar waren.",
+     "external_site": "Feuchte Isolierdecken bewahren Wärme, Luft, Kondensat und späte Reparaturspuren.",
+     "external_site_article": "Die Kolonie versagte nicht nur an Luken und Hüllen. Sie versagte dort, wo Druck erträglich werden sollte: Rückpaneele, gesteppte Wärmelagen, Servicebuchten und beiger Stoff, den niemand fotografierte.\n\nGute Isolierung erzählt menschliche Wahrheit. Dunkle untere Nähte: Atem und Kondensat. Salz im Stichkanal: Trocknungszyklen. Flache Steppung: Druck und Körper an der Wand. Kleiner dunkler Riss: Werkzeug, Notzugang oder Suche nach verstecktem Kabel.\n\nSo verbindet Isolierung Maschine und Arbeiter. Sie gehört zu Lufttaschen, Notunterkünften, Kriechgängen und toten Paneelen, die noch summen.",
+     "field_note": "Ist die Decke über Schulterhöhe feucht, frag, was dort noch warm genug zum Atmen war."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr pamięci cieplnej mokrej izolacji",
+     "scanner": "MATA IZOLACYJNA // Pikowana szarobeżowa tkanina techniczna, ściśnięty szew, ciemna linia wilgoci, sól w kanale ściegu, małe rozdarcie z ciemną warstwą. Ta ściana trzymała ciepło lub powietrze dłużej niż pokój.",
+     "terminal": "CZYTANIE IZOLACJI // Najpierw ciemny szew, potem sól: powolna kondensacja przed suchym oddychaniem ciśnienia. Sól pod rozdarciem: brześć po wyschnięciu. Ciepła plama po złej stronie: panel odwrócony późno.",
+     "audio": "Izolacja pamięta, gdzie próbowano utrzymać pokój przy życiu.",
+     "in_game_wiki": "Mokra mata izolacyjna nie jest miękkim tłem. W HECTON-8 to ściana, która źle trzyma sekret. Ciepło, oddech, kondensat i ciśnienie nie przechodzą przez tkaninę równo. Ciemnią szwy, solą ściegi, spłaszczają pikowanie i pokazują, która strona żyła dłużej.\n\nKolejność ma znaczenie. Ciemna wilgoć w szwie to powolna kondensacja przy ciepłym powietrzu. Sól na niej to późniejsze schnięcie lub oddychanie ciśnienia. Rozdarcie z suchą solą mówi, że otwarcie przyszło po starzeniu. Czysta taśma na zgniłym pikowaniu to nie naprawa, tylko zakup kolejnej zmiany.\n\nDla maraudera izolacja jest dowodem schronienia: kieszeń powietrza, pustka serwisowa, pokój grzany przez umierającą maszynę albo korytarz, gdzie spali robotnicy.",
+     "external_site": "Mokra izolacja zachowuje ślady ciepła, powietrza, kondensacji i późnej naprawy.",
+     "external_site_article": "Kolonia nie zawiodła tylko na włazach i kadłubach. Zawiodła w miejscach, które miały uczynić ciśnienie znośnym: tylnych panelach, matach cieplnych, niszach serwisowych i beżowej tkaninie.\n\nDobra izolacja mówi ludzką prawdę. Ciemne dolne szwy: oddech i kondensat. Sól w ściegach: cykle schnięcia. Spłaszczone pikowanie: nacisk i ciała oparte o ścianę. Małe ciemne rozdarcie: narzędzie, awaryjny dostęp albo szukanie ukrytego kabla.\n\nIzolacja łączy więc maszyny i ludzi. Należy do kieszeni powietrza, schronów, przejść technicznych i martwych paneli, które jeszcze buczą.",
+     "field_note": "Jeśli mata jest mokra powyżej barku, zapytaj, co tam jeszcze oddychało ciepłem."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал теплової пам'яті мокрої ізоляції",
+     "scanner": "ІЗОЛЯЦІЙНЕ ПОЛОТНО // Стьобана сіро-бежева техтканина, стиснений шов, темна лінія вологи, сіль у каналі строчки, малий розрив із темним внутрішнім шаром. Ця стіна тримала тепло або повітря довше за кімнату.",
+     "terminal": "ЧИТАННЯ ІЗОЛЯЦІЇ // Темний шов спершу, сіль потім: повільний конденсат перед сухим диханням тиску. Сіль під тканиною: прорив після висихання. Тепла пляма не з того боку: панель перевернули пізно.",
+     "audio": "Ізоляція пам'ятає, де люди намагалися втримати кімнату живою.",
+     "in_game_wiki": "Мокре ізоляційне полотно - не м'який фон. У HECTON-8 це стіна, що погано тримає таємницю. Тепло, дихання, конденсат і тиск проходять крізь тканину нерівно. Вони темнять шви, солять строчки, сплющують кишені й показують, який бік модуля жив довше.\n\nПослідовність важлива. Темна волога в шві - повільний конденсат, поки в повітрі ще було тепло. Сіль зверху - пізніше висихання або дихання тиску. Розрив із сухою сіллю означає, що отвір відкрився після старіння. Чиста стрічка на гнилій стьобці - куплена ще одна зміна.\n\nДля мародера ізоляція - доказ укриття: кишеня повітря, сервісна порожнина, кімната, яку гріла помираюча машина, або коридор, де спали робітники.",
+     "external_site": "Мокра ізоляція зберігає тепло, повітря, конденсат і сліди пізнього ремонту.",
+     "external_site_article": "Колонія ламалася не тільки в люках і корпусах. Вона ламалася там, де тиск мав стати терпимим: за панелями, у теплових обгортках, сервісних нішах і бежевій тканині.\n\nДобра ізоляція говорить людську правду. Темні нижні шви - дихання й конденсат. Сіль у строчках - цикли висихання. Сплющені кишені - тиск і тіла біля стіни. Малий темний розрив - інструмент, аварійний доступ або пошук прихованого кабелю.\n\nТому ізоляція з'єднує машини й робітників. Її місце біля повітряних кишень, сховищ, лазів і мертвих панелей, що ще гудуть.",
+     "field_note": "Якщо полотно мокре вище плеча, спитай, що там ще було досить теплим, щоб дихати."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل ذاكرة الحرارة لعازل رطب",
+     "scanner": "بطانية عزل // قماش تقني مبطن رمادي بيج، درز مضغوط، خط رطوبة داكن، ملح في قناة الخياطة، تمزق صغير يكشف طبقة داخلية أغمق. هذا الجدار حفظ حرارة أو هواء أطول من الغرفة حوله.",
+     "terminal": "قراءة العزل // درز داكن أولا وملح ثانيا: تكاثف بطيء قبل دورات ضغط جافة. ملح تحت قماش ممزق: الفتحة جاءت بعد الجفاف. بقعة دافئة على الوجه الخطأ: لوحة قلبت في إصلاح متأخر.",
+     "audio": "العزل يتذكر أين حاول الناس إبقاء غرفة حية.",
+     "in_game_wiki": "بطانية العزل الرطبة ليست خلفية ناعمة. في HECTON-8 هي جدار لا يحفظ سره جيدا. الحرارة والنفس والتكاثف والضغط لا تمر في القماش بالتساوي. تظلم الدروز، تملح الخياطة، تسطح الجيوب، وتكشف أي وجه بقي حيا أكثر.\n\nالترتيب مهم. الرطوبة الداكنة داخل درز تعني تكاثفا بطيئا مع هواء دافئ. الملح فوقها يعني جفافا أو تنفس ضغط لاحقا. تمزق فيه ملح جاف يعني أن الفتحة جاءت بعد شيخوخة البطانية. شريط نظيف فوق حشو فاسد يعني شراء وردية أخرى.\n\nبالنسبة إلى المغير، العزل دليل مأوى: جيب هواء، فراغ خدمة، غرفة دفأتها آلة تحتضر، أو ممر نام فيه العمال عندما صارت الأسرّة بعيدة.",
+     "external_site": "بطانيات العزل الرطبة تحفظ آثار الحرارة والهواء والتكاثف والإصلاح المتأخر.",
+     "external_site_article": "لم تفشل المستعمرة عند الأبواب والهياكل فقط. فشلت في الأماكن التي كان يفترض أن تجعل الضغط قابلا للحياة: خلف الألواح، الأغطية الحرارية، تجاويف الخدمة، والقماش البيج الذي لم يصوره أحد.\n\nالعزل الجيد يقول حقيقة بشرية. الدروز السفلية الداكنة: نفس وتكاثف. الملح في الخياطة: دورات جفاف. التبطين المسطح: ضغط وأجساد على الجدار. تمزق صغير داكن: أداة، وصول طارئ، أو بحث عن كابل مخفي.\n\nهكذا يصل العزل بين الآلة والعامل. مكانه قرب جيوب الهواء والملاجئ والممرات الضيقة والألواح الميتة التي ما زالت تطن.",
+     "field_note": "إذا كان العزل رطبا فوق الكتف، اسأل ما الذي بقي دافئا كفاية ليتنفس هناك."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Log Memori Panas Selimut Insulasi Basah",
+     "scanner": "SELIMUT INSULASI // Kain teknis abu-beige berjahit quilt, sambungan tertekan, garis lembap gelap, garam di kanal jahitan, robekan kecil membuka lapisan dalam lebih gelap. Dinding ini menahan panas atau udara lebih lama dari ruangan.",
+     "terminal": "BACA INSULASI // Jahitan gelap dulu, garam kemudian: kondensasi lambat sebelum siklus tekanan kering. Garam di bawah kain robek: bukaan datang setelah selimut kering. Noda sisi hangat terbalik: panel dibalik saat perbaikan terlambat.",
+     "audio": "Insulasi mengingat tempat orang mencoba menjaga ruangan tetap hidup.",
+     "in_game_wiki": "Selimut insulasi basah bukan latar lembut. Di HECTON-8, ia dinding yang buruk menyimpan rahasia. Panas, napas, kondensasi, dan tekanan tidak menembus kain merata. Mereka menggelapkan jahitan, menggarami kanal, meratakan kantong quilt, dan menunjukkan sisi modul yang hidup paling lama.\n\nUrutan penting. Lembap gelap dalam jahitan berarti kondensasi lambat saat udara masih hangat. Garam di atasnya berarti pengeringan atau napas tekanan belakangan. Robekan dengan garam kering berarti bukaan muncul setelah kain tua. Pita bersih di atas quilt busuk berarti kru membeli satu shift lagi.\n\nBagi perompak laut-dalam, insulasi adalah bukti perlindungan: kantong udara, rongga servis, ruangan yang dihangatkan mesin sekarat, atau koridor tempat pekerja tidur.",
+     "external_site": "Selimut insulasi basah menyimpan jejak panas, udara, kondensasi, dan perbaikan terlambat.",
+     "external_site_article": "Koloni lama tidak hanya gagal di palka dan lambung. Ia gagal di tempat yang seharusnya membuat tekanan dapat ditahan: panel belakang, bungkus termal, ceruk servis, dan kain beige yang tak pernah difoto.\n\nInsulasi bagus bicara kebenaran manusia. Jahitan bawah gelap: napas dan kondensasi. Garam di jahitan: siklus kering. Quilt rata: tekanan dan tubuh bersandar. Robekan kecil gelap: alat, akses darurat, atau pencarian kabel tersembunyi.\n\nInsulasi menghubungkan jejak mesin dan ingatan pekerja. Tempatnya dekat kantong udara, shelter darurat, jalur merangkak, dan panel mati yang masih berdengung.",
+     "field_note": "Jika selimut lembap di atas bahu, tanya apa yang masih cukup hangat untuk bernapas di sana."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "젖은 단열 담요 열 기억 장부",
+     "scanner": "단열 담요 // 퀼트 처리된 회베이지 기술 섬유, 눌린 이음, 어두운 습기선, 바느질 홈의 소금, 더 어두운 내부층을 드러낸 작은 찢김. 이 벽은 주변 방보다 오래 열이나 공기를 붙잡았다.",
+     "terminal": "단열 읽기 // 어두운 이음이 먼저, 소금이 다음이면 건조 압력 주기 전 느린 결로가 있었다. 찢긴 천 아래 소금은 담요가 마른 뒤 열린 파손이다. 따뜻한 면 얼룩이 반대쪽이면 늦은 수리 때 패널이 뒤집혔다.",
+     "audio": "단열재는 사람들이 방을 살려 두려 한 장소를 기억한다.",
+     "in_game_wiki": "젖은 단열 담요는 부드러운 배경이 아니다. HECTON-8에서는 비밀을 서툴게 숨긴 벽이다. 열, 숨, 결로, 압력은 천을 고르게 통과하지 않는다. 이음을 어둡게 하고, 바느질에 소금을 남기고, 퀼트 주머니를 납작하게 하며, 모듈 어느 쪽이 더 오래 살아 있었는지 보여 준다.\n\n순서가 중요하다. 이음 안의 어두운 습기는 따뜻한 공기가 있을 때의 느린 결로다. 그 위의 소금은 이후 건조나 압력 호흡이다. 마른 소금이 든 찢김은 천이 오래된 뒤 열린 구멍이다. 썩은 퀼트 위의 깨끗한 테이프는 수리가 아니라 다음 근무를 산 흔적이다.\n\n마라우더에게 단열재는 대피 증거다. 공기 주머니, 숨은 서비스 공간, 죽어 가는 기계가 데운 방, 침상이 닿지 않아 노동자들이 잔 복도를 보여 준다.",
+     "external_site": "젖은 단열 담요는 압력 모듈의 열, 공기, 결로, 늦은 수리 증거를 보존한다.",
+     "external_site_article": "오래된 식민지는 문과 선체에서만 실패하지 않았다. 압력을 견딜 수 있게 만들어야 했던 곳에서 실패했다. 뒤판, 열 랩, 서비스 홈, 출항 전 아무도 찍지 않은 베이지색 천이다.\n\n좋은 단열재는 인간 크기의 진실을 말한다. 어두운 아래 이음은 숨과 결로다. 바느질 홈의 소금은 건조 주기다. 납작한 퀼트는 압력과 벽에 기대어 있던 몸이다. 작은 어두운 찢김은 도구, 비상 접근, 숨은 케이블 찾기일 수 있다.\n\n그래서 단열재는 기계의 이야기와 노동자의 이야기를 잇는다. 공기 주머니, 비상 쉼터, 기어가는 통로, 아직 윙윙거리는 죽은 패널 옆에 속한다.",
+     "field_note": "어깨보다 높은 곳이 젖었다면, 거기서 무엇이 숨 쉴 만큼 따뜻했는지 물어라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן זיכרון חום של שמיכת בידוד לחה",
+     "scanner": "שמיכת בידוד // בד טכני מרופד אפור-בז', תפר דחוס, קו לחות כהה, מלח בערוץ תפר, קרע קטן החושף שכבה פנימית כהה. הקיר הזה החזיק חום או אוויר יותר מהחדר.",
+     "terminal": "קריאת בידוד // תפר כהה קודם ומלח אחריו: עיבוי איטי לפני מחזורי לחץ יבשים. מלח תחת בד קרוע: פתיחה אחרי ייבוש. כתם צד חם בצד הלא נכון: פאנל הפוך בתיקון מאוחר.",
+     "audio": "בידוד זוכר איפה אנשים ניסו להשאיר חדר חי.",
+     "in_game_wiki": "שמיכת בידוד לחה אינה רקע רך. ב-HECTON-8 היא קיר ששומר סוד רע. חום, נשימה, עיבוי ולחץ אינם עוברים בבד באופן שווה. הם מחשיכים תפרים, ממליחים תעלות, משטחים כיסים ומראים איזה צד של המודול חי זמן רב יותר.\n\nהסדר חשוב. לחות כהה בתוך תפר אומרת עיבוי איטי כשעוד היה אוויר חם. מלח מעליה אומר ייבוש או נשימת לחץ מאוחרת. קרע עם מלח יבש אומר שהפתח בא אחרי הזדקנות הבד. סרט נקי על ריפוד רקוב אומר שקנו עוד משמרת.\n\nלמראודר, בידוד הוא ראיית מחסה: כיס אוויר, חלל שירות, חדר שחומם בידי מכונה גוססת או מסדרון שבו ישנו עובדים.",
+     "external_site": "שמיכות בידוד לחות שומרות חום, אוויר, עיבוי ותיקון מאוחר.",
+     "external_site_article": "המושבה הישנה לא נכשלה רק בדלתות ובגופים. היא נכשלה במקומות שאמורים היו להפוך לחץ לנסבל: לוחות אחוריים, עטיפות חום, גומחות שירות ובד בז' שאיש לא צילם.\n\nבידוד טוב אומר אמת אנושית. תפרים תחתונים כהים: נשימה ועיבוי. מלח בתפרים: מחזורי ייבוש. ריפוד שטוח: לחץ וגופים נשענים על קיר. קרע כהה קטן: כלי, גישה חירום או חיפוש כבל נסתר.\n\nכך בידוד מחבר מכונות ועובדים. מקומו ליד כיסי אוויר, מקלטים, מעברים צרים ולוחות מתים שעוד מזמזמים.",
+     "field_note": "אם השמיכה לחה מעל הכתף, שאל מה עוד היה שם חם מספיק לנשימה."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Memória Térmica da Manta Isolante Úmida",
+     "scanner": "MANTA ISOLANTE // Tecido técnico cinza-bege acolchoado, costura comprimida, linha escura de umidade, sal no canal de ponto, rasgo pequeno expondo camada interna escura. Essa parede segurou calor ou ar mais tempo que a sala.",
+     "terminal": "LEITURA DA ISOLAÇÃO // Costura escura primeiro, sal depois: condensação lenta antes de ciclos secos de pressão. Sal sob tecido rasgado: abertura após secagem. Mancha quente na face errada: painel invertido em reparo tardio.",
+     "audio": "Isolamento lembra onde tentaram manter uma sala viva.",
+     "in_game_wiki": "Uma manta isolante úmida não é fundo macio. Em HECTON-8, é uma parede que guarda mal um segredo. Calor, respiração, condensação e pressão não atravessam tecido por igual. Escurecem costuras, salgam pontos, achatam bolsas e mostram qual lado do módulo viveu mais.\n\nA sequência importa. Umidade escura numa costura indica condensação lenta com ar ainda quente. Sal por cima indica secagem ou respiração de pressão posterior. Rasgo com sal seco indica abertura depois do envelhecimento. Fita limpa sobre acolchoado podre significa comprar mais um turno.\n\nPara um saqueador, isolamento é prova de abrigo: bolsa de ar, vazio de serviço, sala aquecida por máquina morrendo ou corredor onde trabalhadores dormiram.",
+     "external_site": "Mantas isolantes úmidas preservam calor, ar, condensação e reparo tardio.",
+     "external_site_article": "A colônia antiga não falhou só em portas e cascos. Falhou nos lugares que deveriam tornar a pressão suportável: painéis traseiros, mantas térmicas, nichos de serviço e tecido bege que ninguém fotografou.\n\nBom isolamento diz verdade humana. Costuras baixas escuras: respiração e condensação. Sal nos pontos: ciclos de secagem. Acolchoado achatado: pressão e corpos contra a parede. Rasgo pequeno e escuro: ferramenta, acesso de emergência ou busca de cabo oculto.\n\nAssim, isolamento liga máquinas e trabalhadores. Pertence a bolsas de ar, abrigos, passagens estreitas e painéis mortos que ainda zumbem.",
+     "field_note": "Se a manta está úmida acima do ombro, pergunte o que ainda era quente o bastante para respirar ali."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Warmtegeheugenlog van vochtige isolatiedeken",
+     "scanner": "ISOLATIEDEKEN // Gewatteerde grijsbeige technische stof, gecomprimeerde naad, donkere vochtlijn, zout in stikselkanaal, kleine scheur met donkere binnenlaag. Deze wand hield warmte of lucht langer vast dan de kamer.",
+     "terminal": "ISOLATIE LEZEN // Donkere naad eerst, zout daarna: trage condens voor droge drukcycli. Zout onder gescheurde stof: opening na droging. Warmtevlek aan verkeerde zijde: paneel laat omgedraaid.",
+     "audio": "Isolatie herinnert waar mensen een kamer levend wilden houden.",
+     "in_game_wiki": "Een vochtige isolatiedeken is geen zachte achtergrond. In HECTON-8 is het een wand die een geheim slecht bewaart. Warmte, adem, condens en druk gaan niet gelijkmatig door stof. Ze verdonkeren naden, zouten stiksels, drukken vakken plat en tonen welke kant langer leefde.\n\nDe volgorde telt. Donker vocht in een naad is trage condens met nog warme lucht. Zout erboven is latere droging of drukademhaling. Een scheur met droog zout betekent dat de opening na veroudering kwam. Schone tape op rot stiksel koopt nog een dienst.\n\nVoor een marauder is isolatie bewijs van beschutting: luchtzak, serviceruimte, kamer verwarmd door stervende machine of gang waar arbeiders sliepen.",
+     "external_site": "Vochtige isolatiedekens bewaren warmte, lucht, condens en late reparatie.",
+     "external_site_article": "De oude kolonie faalde niet alleen bij luiken en rompen. Ze faalde op plekken die druk draaglijk moesten maken: achterpanelen, thermische wraps, service-nissen en beige stof die niemand fotografeerde.\n\nGoede isolatie vertelt menselijke waarheid. Donkere lage naden: adem en condens. Zout in stiksels: droogcycli. Plat gewatteerde vakken: druk en lichamen tegen de wand. Kleine donkere scheur: gereedschap, noodtoegang of zoeken naar verborgen kabel.\n\nZo verbindt isolatie machines en arbeiders. Ze hoort bij luchtzakken, noodschuilplaatsen, kruipruimtes en dode panelen die nog brommen.",
+     "field_note": "Als de deken boven schouderhoogte vochtig is, vraag wat daar nog warm genoeg ademde."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

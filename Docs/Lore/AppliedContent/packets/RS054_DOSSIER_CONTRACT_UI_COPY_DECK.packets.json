@@ -1,787 +1,795 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P266_DOSSIER_START_SCREEN_COPY",
-      "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
-      "article_id": "applied_lore.dossier_start_screen_copy",
-      "title_key": "applied_lore.dossier_start_screen_copy.title",
-      "unlock": {
-        "primary": "unlock.dossier_start_screen_copy",
-        "poi_tags": [
-          "poi.dossier_start_copy_card",
-          "poi.marauder_profile_slate",
-          "poi.claim_seed_panel"
-        ],
-        "biome_tags": [
-          "biome.ui",
-          "biome.dossier"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Dossier Start Screen Copy",
-          "scanner": "Known context is not immunity.",
-          "field_note": "Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "ru_RU": {
-          "title": "Копия стартового экрана досье",
-          "scanner": "Известный контекст не является иммунитетом.",
-          "field_note": "UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "Ты помнишь процедуру. Океан не должен тебе короткий путь.",
-          "in_game_wiki": "Копия стартового экрана досье задает язык replay setup.",
-          "external_site": "Эта статья объясняет, как HECTON-8 превращает память в давление, а не в roguelite power."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "JP LOC HOLD: Known context is not immunity.",
-          "field_note": "JP LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "JP LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "JP LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "JP LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "JP LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "CN LOC HOLD: Known context is not immunity.",
-          "field_note": "CN LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "CN LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "CN LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "CN LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "CN LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "FR LOC HOLD: Known context is not immunity.",
-          "field_note": "FR LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "FR LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "FR LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "FR LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "FR LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "ES LOC HOLD: Known context is not immunity.",
-          "field_note": "ES LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "ES LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "ES LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "ES LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "ES LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "DE LOC HOLD: Known context is not immunity.",
-          "field_note": "DE LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "DE LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "DE LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "DE LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "DE LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "PL LOC HOLD: Known context is not immunity.",
-          "field_note": "PL LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "PL LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "PL LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "PL LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "PL LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "UA LOC HOLD: Known context is not immunity.",
-          "field_note": "UA LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "UA LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "UA LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "UA LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "UA LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "AR LOC HOLD: Known context is not immunity.",
-          "field_note": "AR LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "AR LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "AR LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "AR LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "AR LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "ID LOC HOLD: Known context is not immunity.",
-          "field_note": "ID LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "ID LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "ID LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "ID LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "ID LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "KR LOC HOLD: Known context is not immunity.",
-          "field_note": "KR LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "KR LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "KR LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "KR LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "KR LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "HE LOC HOLD: Known context is not immunity.",
-          "field_note": "HE LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "HE LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "HE LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "HE LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "HE LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "PT-BR LOC HOLD: Known context is not immunity.",
-          "field_note": "PT-BR LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "PT-BR LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "PT-BR LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "PT-BR LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "PT-BR LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Dossier Start Screen Copy",
-          "scanner": "NL LOC HOLD: Known context is not immunity.",
-          "field_note": "NL LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
-          "terminal": "NL LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
-          "audio": "NL LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
-          "in_game_wiki": "NL LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
-          "external_site": "NL LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P266_DOSSIER_START_SCREEN_COPY",
+   "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
+   "article_id": "applied_lore.dossier_start_screen_copy",
+   "title_key": "applied_lore.dossier_start_screen_copy.title",
+   "unlock": {
+    "primary": "unlock.dossier_start_screen_copy",
+    "poi_tags": [
+     "poi.dossier_start_copy_card",
+     "poi.marauder_profile_slate",
+     "poi.claim_seed_panel"
+    ],
+    "biome_tags": [
+     "biome.ui",
+     "biome.dossier"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Dossier Start Screen Copy",
+     "scanner": "Known context is not immunity.",
+     "field_note": "Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
     },
-    {
-      "packet_id": "P267_CONTRACT_CARD_FIELD_LABELS",
-      "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
-      "article_id": "applied_lore.contract_card_field_labels",
-      "title_key": "applied_lore.contract_card_field_labels.title",
-      "unlock": {
-        "primary": "unlock.contract_card_field_labels",
-        "poi_tags": [
-          "poi.contract_field_label_card",
-          "poi.lien_severity_plate",
-          "poi.sample_custody_line"
-        ],
-        "biome_tags": [
-          "biome.ui",
-          "biome.contract"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Contract Card Field Labels",
-          "scanner": "Hide a clause and the UI becomes the lie.",
-          "field_note": "Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "ru_RU": {
-          "title": "Поля карточки контракта",
-          "scanner": "Спрячь clause - и UI станет ложью.",
-          "field_note": "Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "CONTRACT LABELS: коротко, физически, сравнимо, без flavor paragraph.",
-          "audio": "Чистый контракт опасен, если он неполный.",
-          "in_game_wiki": "Поля карточки контракта фиксируют минимально читаемое давление при выборе salvage claim.",
-          "external_site": "Эта статья описывает contract UI HECTON-8 как инструмент планирования."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Contract Card Field Labels",
-          "scanner": "JP LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "JP LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "JP LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "JP LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "JP LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "JP LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Contract Card Field Labels",
-          "scanner": "CN LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "CN LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "CN LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "CN LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "CN LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "CN LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Contract Card Field Labels",
-          "scanner": "FR LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "FR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "FR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "FR LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "FR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "FR LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Contract Card Field Labels",
-          "scanner": "ES LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "ES LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "ES LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "ES LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "ES LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "ES LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Contract Card Field Labels",
-          "scanner": "DE LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "DE LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "DE LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "DE LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "DE LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "DE LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Contract Card Field Labels",
-          "scanner": "PL LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "PL LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "PL LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "PL LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "PL LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "PL LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Contract Card Field Labels",
-          "scanner": "UA LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "UA LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "UA LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "UA LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "UA LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "UA LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Contract Card Field Labels",
-          "scanner": "AR LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "AR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "AR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "AR LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "AR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "AR LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Contract Card Field Labels",
-          "scanner": "ID LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "ID LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "ID LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "ID LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "ID LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "ID LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Contract Card Field Labels",
-          "scanner": "KR LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "KR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "KR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "KR LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "KR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "KR LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Contract Card Field Labels",
-          "scanner": "HE LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "HE LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "HE LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "HE LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "HE LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "HE LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Contract Card Field Labels",
-          "scanner": "PT-BR LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "PT-BR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "PT-BR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "PT-BR LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "PT-BR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "PT-BR LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Contract Card Field Labels",
-          "scanner": "NL LOC HOLD: Hide a clause and the UI becomes the lie.",
-          "field_note": "NL LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
-          "terminal": "NL LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
-          "audio": "NL LOC HOLD: A clean contract is dangerous if it is incomplete.",
-          "in_game_wiki": "NL LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
-          "external_site": "NL LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
-        }
-      }
+    "ru_RU": {
+     "title": "Копия стартового экрана досье",
+     "scanner": "Известный контекст не является иммунитетом.",
+     "field_note": "UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "Ты помнишь процедуру. Океан не должен тебе короткий путь.",
+     "in_game_wiki": "Копия стартового экрана досье задает язык replay setup.",
+     "external_site": "Эта статья объясняет, как HECTON-8 превращает память в давление, а не в roguelite power."
     },
-    {
-      "packet_id": "P268_RUMOR_FAMILY_UI_COPY",
-      "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
-      "article_id": "applied_lore.rumor_family_ui_copy",
-      "title_key": "applied_lore.rumor_family_ui_copy.title",
-      "unlock": {
-        "primary": "unlock.rumor_family_ui_copy",
-        "poi_tags": [
-          "poi.rumor_family_card",
-          "poi.dead_claim_note",
-          "poi.black_keel_hint_strip"
-        ],
-        "biome_tags": [
-          "biome.ui",
-          "biome.replay"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Rumor Family Ui Copy",
-          "scanner": "A rumor is a warning, not a map.",
-          "field_note": "Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "ru_RU": {
-          "title": "UI-копия семейств слухов",
-          "scanner": "Слух - предупреждение, а не карта.",
-          "field_note": "Labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "RUMOR COPY: одно имя, одно давление, без spoiler coordinate.",
-          "audio": "Слушай тип беды, а не адрес.",
-          "in_game_wiki": "UI-копия семейств слухов сохраняет пользу подсказок без убийства исследования.",
-          "external_site": "Эта статья объясняет, как replay hints HECTON-8 сохраняют неопределенность."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "JP LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "JP LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "JP LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "JP LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "JP LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "JP LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "CN LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "CN LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "CN LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "CN LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "CN LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "CN LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "FR LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "FR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "FR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "FR LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "FR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "FR LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "ES LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "ES LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "ES LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "ES LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "ES LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "ES LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "DE LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "DE LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "DE LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "DE LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "DE LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "DE LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "PL LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "PL LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "PL LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "PL LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "PL LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "PL LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "UA LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "UA LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "UA LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "UA LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "UA LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "UA LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "AR LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "AR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "AR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "AR LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "AR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "AR LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "ID LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "ID LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "ID LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "ID LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "ID LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "ID LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "KR LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "KR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "KR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "KR LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "KR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "KR LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "HE LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "HE LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "HE LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "HE LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "HE LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "HE LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "PT-BR LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "PT-BR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "PT-BR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "PT-BR LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "PT-BR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "PT-BR LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Rumor Family Ui Copy",
-          "scanner": "NL LOC HOLD: A rumor is a warning, not a map.",
-          "field_note": "NL LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
-          "terminal": "NL LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
-          "audio": "NL LOC HOLD: Listen for the kind of trouble, not the address.",
-          "in_game_wiki": "NL LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
-          "external_site": "NL LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
-        }
-      }
+    "ja_JP": {
+     "title": "JP LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "JP LOC HOLD: Known context is not immunity.",
+     "field_note": "JP LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "JP LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "JP LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "JP LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "JP LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
     },
-    {
-      "packet_id": "P269_ROUTE_WARNING_UI_COPY",
-      "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
-      "article_id": "applied_lore.route_warning_ui_copy",
-      "title_key": "applied_lore.route_warning_ui_copy.title",
-      "unlock": {
-        "primary": "unlock.route_warning_ui_copy",
-        "poi_tags": [
-          "poi.route_warning_card",
-          "poi.pinger_warning_strip",
-          "poi.pressure_gate_label"
-        ],
-        "biome_tags": [
-          "biome.ui",
-          "biome.route"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Route Warning Ui Copy",
-          "scanner": "A warning that does not change behavior is decoration.",
-          "field_note": "Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "ru_RU": {
-          "title": "UI-копия маршрутных предупреждений",
-          "scanner": "Предупреждение, которое не меняет поведение, является декором.",
-          "field_note": "Pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "ROUTE WARNING: назови что сломалось, что ухудшится и что игрок еще может сделать.",
-          "audio": "Плохая новость полезна только если пришла до поворота.",
-          "in_game_wiki": "UI-копия маршрутных предупреждений задает короткую грамматику PDA, scanner и terminal surfaces.",
-          "external_site": "Эта статья описывает предупреждения HECTON-8 как текст физического решения."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Route Warning Ui Copy",
-          "scanner": "JP LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "JP LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "JP LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "JP LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "JP LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "JP LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Route Warning Ui Copy",
-          "scanner": "CN LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "CN LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "CN LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "CN LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "CN LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "CN LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Route Warning Ui Copy",
-          "scanner": "FR LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "FR LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "FR LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "FR LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "FR LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "FR LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Route Warning Ui Copy",
-          "scanner": "ES LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "ES LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "ES LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "ES LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "ES LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "ES LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Route Warning Ui Copy",
-          "scanner": "DE LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "DE LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "DE LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "DE LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "DE LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "DE LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Route Warning Ui Copy",
-          "scanner": "PL LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "PL LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "PL LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "PL LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "PL LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "PL LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Route Warning Ui Copy",
-          "scanner": "UA LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "UA LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "UA LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "UA LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "UA LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "UA LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Route Warning Ui Copy",
-          "scanner": "AR LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "AR LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "AR LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "AR LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "AR LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "AR LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Route Warning Ui Copy",
-          "scanner": "ID LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "ID LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "ID LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "ID LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "ID LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "ID LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Route Warning Ui Copy",
-          "scanner": "KR LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "KR LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "KR LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "KR LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "KR LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "KR LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Route Warning Ui Copy",
-          "scanner": "HE LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "HE LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "HE LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "HE LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "HE LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "HE LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Route Warning Ui Copy",
-          "scanner": "PT-BR LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "PT-BR LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "PT-BR LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "PT-BR LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "PT-BR LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "PT-BR LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Route Warning Ui Copy",
-          "scanner": "NL LOC HOLD: A warning that does not change behavior is decoration.",
-          "field_note": "NL LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
-          "terminal": "NL LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
-          "audio": "NL LOC HOLD: Bad news is useful only if it arrives before the turn.",
-          "in_game_wiki": "NL LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
-          "external_site": "NL LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
-        }
-      }
+    "zh_CN": {
+     "title": "CN LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "CN LOC HOLD: Known context is not immunity.",
+     "field_note": "CN LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "CN LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "CN LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "CN LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "CN LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
     },
-    {
-      "packet_id": "P270_ENDING_RECORD_UI_COPY",
-      "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
-      "article_id": "applied_lore.ending_record_ui_copy",
-      "title_key": "applied_lore.ending_record_ui_copy.title",
-      "unlock": {
-        "primary": "unlock.ending_record_ui_copy",
-        "poi_tags": [
-          "poi.ending_record_copy_card",
-          "poi.payload_receipt_panel",
-          "poi.dossier_end_state_strip"
-        ],
-        "biome_tags": [
-          "biome.ui",
-          "biome.ending"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ending Record Ui Copy",
-          "scanner": "The record should hurt in one line.",
-          "field_note": "Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "You got out. That is not the same as settling it.",
-          "in_game_wiki": "Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "ru_RU": {
-          "title": "UI-копия записи концовки",
-          "scanner": "Запись должна болеть одной строкой.",
-          "field_note": "Labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "ENDING RECORD: без celebration copy; записать сделку.",
-          "audio": "Ты выбрался. Это не значит, что все закрыто.",
-          "in_game_wiki": "UI-копия записи концовки задает, как outcome появляется в Marauder dossier.",
-          "external_site": "Эта статья объясняет, почему концовки HECTON-8 являются записями сделок, а не экранами победы."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Ending Record Ui Copy",
-          "scanner": "JP LOC HOLD: The record should hurt in one line.",
-          "field_note": "JP LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "JP LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "JP LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "JP LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "JP LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Ending Record Ui Copy",
-          "scanner": "CN LOC HOLD: The record should hurt in one line.",
-          "field_note": "CN LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "CN LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "CN LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "CN LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "CN LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Ending Record Ui Copy",
-          "scanner": "FR LOC HOLD: The record should hurt in one line.",
-          "field_note": "FR LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "FR LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "FR LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "FR LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "FR LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Ending Record Ui Copy",
-          "scanner": "ES LOC HOLD: The record should hurt in one line.",
-          "field_note": "ES LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "ES LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "ES LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "ES LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "ES LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Ending Record Ui Copy",
-          "scanner": "DE LOC HOLD: The record should hurt in one line.",
-          "field_note": "DE LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "DE LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "DE LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "DE LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "DE LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Ending Record Ui Copy",
-          "scanner": "PL LOC HOLD: The record should hurt in one line.",
-          "field_note": "PL LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "PL LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "PL LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "PL LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "PL LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Ending Record Ui Copy",
-          "scanner": "UA LOC HOLD: The record should hurt in one line.",
-          "field_note": "UA LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "UA LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "UA LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "UA LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "UA LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Ending Record Ui Copy",
-          "scanner": "AR LOC HOLD: The record should hurt in one line.",
-          "field_note": "AR LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "AR LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "AR LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "AR LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "AR LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Ending Record Ui Copy",
-          "scanner": "ID LOC HOLD: The record should hurt in one line.",
-          "field_note": "ID LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "ID LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "ID LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "ID LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "ID LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Ending Record Ui Copy",
-          "scanner": "KR LOC HOLD: The record should hurt in one line.",
-          "field_note": "KR LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "KR LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "KR LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "KR LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "KR LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Ending Record Ui Copy",
-          "scanner": "HE LOC HOLD: The record should hurt in one line.",
-          "field_note": "HE LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "HE LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "HE LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "HE LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "HE LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Ending Record Ui Copy",
-          "scanner": "PT-BR LOC HOLD: The record should hurt in one line.",
-          "field_note": "PT-BR LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "PT-BR LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "PT-BR LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "PT-BR LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "PT-BR LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Ending Record Ui Copy",
-          "scanner": "NL LOC HOLD: The record should hurt in one line.",
-          "field_note": "NL LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
-          "terminal": "NL LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
-          "audio": "NL LOC HOLD: You got out. That is not the same as settling it.",
-          "in_game_wiki": "NL LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
-          "external_site": "NL LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "FR LOC HOLD: Known context is not immunity.",
+     "field_note": "FR LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "FR LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "FR LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "FR LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "FR LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "ES LOC HOLD: Known context is not immunity.",
+     "field_note": "ES LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "ES LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "ES LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "ES LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "ES LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "DE LOC HOLD: Known context is not immunity.",
+     "field_note": "DE LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "DE LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "DE LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "DE LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "DE LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "PL LOC HOLD: Known context is not immunity.",
+     "field_note": "PL LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "PL LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "PL LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "PL LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "PL LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "UA LOC HOLD: Known context is not immunity.",
+     "field_note": "UA LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "UA LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "UA LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "UA LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "UA LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "AR LOC HOLD: Known context is not immunity.",
+     "field_note": "AR LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "AR LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "AR LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "AR LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "AR LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "ID LOC HOLD: Known context is not immunity.",
+     "field_note": "ID LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "ID LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "ID LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "ID LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "ID LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "KR LOC HOLD: Known context is not immunity.",
+     "field_note": "KR LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "KR LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "KR LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "KR LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "KR LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "HE LOC HOLD: Known context is not immunity.",
+     "field_note": "HE LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "HE LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "HE LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "HE LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "HE LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "PT-BR LOC HOLD: Known context is not immunity.",
+     "field_note": "PT-BR LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "PT-BR LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "PT-BR LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "PT-BR LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "PT-BR LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Dossier Start Screen Copy",
+     "scanner": "NL LOC HOLD: Known context is not immunity.",
+     "field_note": "NL LOC HOLD: Suggested UI line: Former Deep Reach field-systems. Current claim status: debt-bound Marauder. Prior records advise; they do not equip.",
+     "terminal": "NL LOC HOLD: DOSSIER START: select claim, review warnings, accept lien. No inherited hardware.",
+     "audio": "NL LOC HOLD: You remember procedure. The ocean does not owe you a shortcut.",
+     "in_game_wiki": "NL LOC HOLD: Dossier Start Screen Copy defines the main profile language for replay setup.",
+     "external_site": "NL LOC HOLD: Dossier Start Screen Copy explains how HECTON-8 uses memory as pressure instead of roguelite power."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P267_CONTRACT_CARD_FIELD_LABELS",
+   "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
+   "article_id": "applied_lore.contract_card_field_labels",
+   "title_key": "applied_lore.contract_card_field_labels.title",
+   "unlock": {
+    "primary": "unlock.contract_card_field_labels",
+    "poi_tags": [
+     "poi.contract_field_label_card",
+     "poi.lien_severity_plate",
+     "poi.sample_custody_line"
+    ],
+    "biome_tags": [
+     "biome.ui",
+     "biome.contract"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Contract Card Field Labels",
+     "scanner": "Hide a clause and the UI becomes the lie.",
+     "field_note": "Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "ru_RU": {
+     "title": "Поля карточки контракта",
+     "scanner": "Спрячь clause - и UI станет ложью.",
+     "field_note": "Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "CONTRACT LABELS: коротко, физически, сравнимо, без flavor paragraph.",
+     "audio": "Чистый контракт опасен, если он неполный.",
+     "in_game_wiki": "Поля карточки контракта фиксируют минимально читаемое давление при выборе salvage claim.",
+     "external_site": "Эта статья описывает contract UI HECTON-8 как инструмент планирования."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Contract Card Field Labels",
+     "scanner": "JP LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "JP LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "JP LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "JP LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "JP LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "JP LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Contract Card Field Labels",
+     "scanner": "CN LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "CN LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "CN LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "CN LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "CN LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "CN LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Contract Card Field Labels",
+     "scanner": "FR LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "FR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "FR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "FR LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "FR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "FR LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Contract Card Field Labels",
+     "scanner": "ES LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "ES LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "ES LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "ES LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "ES LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "ES LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Contract Card Field Labels",
+     "scanner": "DE LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "DE LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "DE LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "DE LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "DE LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "DE LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Contract Card Field Labels",
+     "scanner": "PL LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "PL LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "PL LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "PL LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "PL LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "PL LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Contract Card Field Labels",
+     "scanner": "UA LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "UA LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "UA LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "UA LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "UA LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "UA LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Contract Card Field Labels",
+     "scanner": "AR LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "AR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "AR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "AR LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "AR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "AR LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Contract Card Field Labels",
+     "scanner": "ID LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "ID LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "ID LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "ID LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "ID LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "ID LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Contract Card Field Labels",
+     "scanner": "KR LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "KR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "KR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "KR LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "KR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "KR LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Contract Card Field Labels",
+     "scanner": "HE LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "HE LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "HE LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "HE LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "HE LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "HE LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Contract Card Field Labels",
+     "scanner": "PT-BR LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "PT-BR LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "PT-BR LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "PT-BR LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "PT-BR LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "PT-BR LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Contract Card Field Labels",
+     "scanner": "NL LOC HOLD: Hide a clause and the UI becomes the lie.",
+     "field_note": "NL LOC HOLD: Labels: Lien Mass, Storm Window, Custody Grade, Evidence Depth, Clause Weight, Payout Ceiling, Return Penalty.",
+     "terminal": "NL LOC HOLD: CONTRACT LABELS: short, physical, comparable, no flavor paragraph.",
+     "audio": "NL LOC HOLD: A clean contract is dangerous if it is incomplete.",
+     "in_game_wiki": "NL LOC HOLD: Contract Card Field Labels define the minimum readable pressure fields for salvage claim selection.",
+     "external_site": "NL LOC HOLD: Contract Card Field Labels describe HECTON-8 contract UI as a planning instrument."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P268_RUMOR_FAMILY_UI_COPY",
+   "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
+   "article_id": "applied_lore.rumor_family_ui_copy",
+   "title_key": "applied_lore.rumor_family_ui_copy.title",
+   "unlock": {
+    "primary": "unlock.rumor_family_ui_copy",
+    "poi_tags": [
+     "poi.rumor_family_card",
+     "poi.dead_claim_note",
+     "poi.black_keel_hint_strip"
+    ],
+    "biome_tags": [
+     "biome.ui",
+     "biome.replay"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Rumor Family Ui Copy",
+     "scanner": "A rumor is a warning, not a map.",
+     "field_note": "Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "ru_RU": {
+     "title": "UI-копия семейств слухов",
+     "scanner": "Слух - предупреждение, а не карта.",
+     "field_note": "Labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "RUMOR COPY: одно имя, одно давление, без spoiler coordinate.",
+     "audio": "Слушай тип беды, а не адрес.",
+     "in_game_wiki": "UI-копия семейств слухов сохраняет пользу подсказок без убийства исследования.",
+     "external_site": "Эта статья объясняет, как replay hints HECTON-8 сохраняют неопределенность."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "JP LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "JP LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "JP LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "JP LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "JP LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "JP LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "CN LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "CN LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "CN LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "CN LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "CN LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "CN LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "FR LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "FR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "FR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "FR LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "FR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "FR LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "ES LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "ES LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "ES LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "ES LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "ES LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "ES LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "DE LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "DE LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "DE LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "DE LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "DE LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "DE LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "PL LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "PL LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "PL LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "PL LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "PL LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "PL LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "UA LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "UA LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "UA LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "UA LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "UA LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "UA LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "AR LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "AR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "AR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "AR LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "AR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "AR LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "ID LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "ID LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "ID LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "ID LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "ID LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "ID LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "KR LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "KR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "KR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "KR LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "KR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "KR LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "HE LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "HE LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "HE LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "HE LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "HE LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "HE LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "PT-BR LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "PT-BR LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "PT-BR LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "PT-BR LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "PT-BR LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "PT-BR LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Rumor Family Ui Copy",
+     "scanner": "NL LOC HOLD: A rumor is a warning, not a map.",
+     "field_note": "NL LOC HOLD: Suggested labels: Cold Claim, Bad Relay, Clean Money, Missing Shift, Dirty Window, Atlas Residue.",
+     "terminal": "NL LOC HOLD: RUMOR COPY: one noun, one pressure, no spoiler coordinate.",
+     "audio": "NL LOC HOLD: Listen for the kind of trouble, not the address.",
+     "in_game_wiki": "NL LOC HOLD: Rumor Family UI Copy keeps dossier hints useful without flattening exploration.",
+     "external_site": "NL LOC HOLD: Rumor Family UI Copy explains how HECTON-8 replay hints preserve uncertainty."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P269_ROUTE_WARNING_UI_COPY",
+   "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
+   "article_id": "applied_lore.route_warning_ui_copy",
+   "title_key": "applied_lore.route_warning_ui_copy.title",
+   "unlock": {
+    "primary": "unlock.route_warning_ui_copy",
+    "poi_tags": [
+     "poi.route_warning_card",
+     "poi.pinger_warning_strip",
+     "poi.pressure_gate_label"
+    ],
+    "biome_tags": [
+     "biome.ui",
+     "biome.route"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Route Warning Ui Copy",
+     "scanner": "A warning that does not change behavior is decoration.",
+     "field_note": "Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "ru_RU": {
+     "title": "UI-копия маршрутных предупреждений",
+     "scanner": "Предупреждение, которое не меняет поведение, является декором.",
+     "field_note": "Pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "ROUTE WARNING: назови что сломалось, что ухудшится и что игрок еще может сделать.",
+     "audio": "Плохая новость полезна только если пришла до поворота.",
+     "in_game_wiki": "UI-копия маршрутных предупреждений задает короткую грамматику PDA, scanner и terminal surfaces.",
+     "external_site": "Эта статья описывает предупреждения HECTON-8 как текст физического решения."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Route Warning Ui Copy",
+     "scanner": "JP LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "JP LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "JP LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "JP LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "JP LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "JP LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Route Warning Ui Copy",
+     "scanner": "CN LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "CN LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "CN LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "CN LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "CN LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "CN LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Route Warning Ui Copy",
+     "scanner": "FR LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "FR LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "FR LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "FR LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "FR LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "FR LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Route Warning Ui Copy",
+     "scanner": "ES LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "ES LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "ES LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "ES LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "ES LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "ES LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Route Warning Ui Copy",
+     "scanner": "DE LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "DE LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "DE LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "DE LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "DE LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "DE LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Route Warning Ui Copy",
+     "scanner": "PL LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "PL LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "PL LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "PL LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "PL LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "PL LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Route Warning Ui Copy",
+     "scanner": "UA LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "UA LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "UA LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "UA LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "UA LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "UA LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Route Warning Ui Copy",
+     "scanner": "AR LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "AR LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "AR LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "AR LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "AR LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "AR LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Route Warning Ui Copy",
+     "scanner": "ID LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "ID LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "ID LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "ID LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "ID LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "ID LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Route Warning Ui Copy",
+     "scanner": "KR LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "KR LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "KR LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "KR LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "KR LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "KR LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Route Warning Ui Copy",
+     "scanner": "HE LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "HE LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "HE LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "HE LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "HE LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "HE LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Route Warning Ui Copy",
+     "scanner": "PT-BR LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "PT-BR LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "PT-BR LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "PT-BR LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "PT-BR LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "PT-BR LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Route Warning Ui Copy",
+     "scanner": "NL LOC HOLD: A warning that does not change behavior is decoration.",
+     "field_note": "NL LOC HOLD: Suggested warning pattern: [failure] + [route cost]. Example: Relay shutter: return call may miss carrier window.",
+     "terminal": "NL LOC HOLD: ROUTE WARNING: state what failed, what worsens, and what the player can still do.",
+     "audio": "NL LOC HOLD: Bad news is useful only if it arrives before the turn.",
+     "in_game_wiki": "NL LOC HOLD: Route Warning UI Copy defines the short warning grammar for PDA, scanner and terminal surfaces.",
+     "external_site": "NL LOC HOLD: Route Warning UI Copy describes HECTON-8 warnings as physical decision text."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P270_ENDING_RECORD_UI_COPY",
+   "release_set_id": "RS054_DOSSIER_CONTRACT_UI_COPY_DECK",
+   "article_id": "applied_lore.ending_record_ui_copy",
+   "title_key": "applied_lore.ending_record_ui_copy.title",
+   "unlock": {
+    "primary": "unlock.ending_record_ui_copy",
+    "poi_tags": [
+     "poi.ending_record_copy_card",
+     "poi.payload_receipt_panel",
+     "poi.dossier_end_state_strip"
+    ],
+    "biome_tags": [
+     "biome.ui",
+     "biome.ending"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ending Record Ui Copy",
+     "scanner": "The record should hurt in one line.",
+     "field_note": "Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "You got out. That is not the same as settling it.",
+     "in_game_wiki": "Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "ru_RU": {
+     "title": "UI-копия записи концовки",
+     "scanner": "Запись должна болеть одной строкой.",
+     "field_note": "Labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "ENDING RECORD: без celebration copy; записать сделку.",
+     "audio": "Ты выбрался. Это не значит, что все закрыто.",
+     "in_game_wiki": "UI-копия записи концовки задает, как outcome появляется в Marauder dossier.",
+     "external_site": "Эта статья объясняет, почему концовки HECTON-8 являются записями сделок, а не экранами победы."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Ending Record Ui Copy",
+     "scanner": "JP LOC HOLD: The record should hurt in one line.",
+     "field_note": "JP LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "JP LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "JP LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "JP LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "JP LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Ending Record Ui Copy",
+     "scanner": "CN LOC HOLD: The record should hurt in one line.",
+     "field_note": "CN LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "CN LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "CN LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "CN LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "CN LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Ending Record Ui Copy",
+     "scanner": "FR LOC HOLD: The record should hurt in one line.",
+     "field_note": "FR LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "FR LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "FR LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "FR LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "FR LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Ending Record Ui Copy",
+     "scanner": "ES LOC HOLD: The record should hurt in one line.",
+     "field_note": "ES LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "ES LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "ES LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "ES LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "ES LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Ending Record Ui Copy",
+     "scanner": "DE LOC HOLD: The record should hurt in one line.",
+     "field_note": "DE LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "DE LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "DE LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "DE LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "DE LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Ending Record Ui Copy",
+     "scanner": "PL LOC HOLD: The record should hurt in one line.",
+     "field_note": "PL LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "PL LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "PL LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "PL LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "PL LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Ending Record Ui Copy",
+     "scanner": "UA LOC HOLD: The record should hurt in one line.",
+     "field_note": "UA LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "UA LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "UA LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "UA LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "UA LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Ending Record Ui Copy",
+     "scanner": "AR LOC HOLD: The record should hurt in one line.",
+     "field_note": "AR LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "AR LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "AR LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "AR LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "AR LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Ending Record Ui Copy",
+     "scanner": "ID LOC HOLD: The record should hurt in one line.",
+     "field_note": "ID LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "ID LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "ID LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "ID LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "ID LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Ending Record Ui Copy",
+     "scanner": "KR LOC HOLD: The record should hurt in one line.",
+     "field_note": "KR LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "KR LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "KR LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "KR LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "KR LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Ending Record Ui Copy",
+     "scanner": "HE LOC HOLD: The record should hurt in one line.",
+     "field_note": "HE LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "HE LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "HE LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "HE LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "HE LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Ending Record Ui Copy",
+     "scanner": "PT-BR LOC HOLD: The record should hurt in one line.",
+     "field_note": "PT-BR LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "PT-BR LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "PT-BR LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "PT-BR LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "PT-BR LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Ending Record Ui Copy",
+     "scanner": "NL LOC HOLD: The record should hurt in one line.",
+     "field_note": "NL LOC HOLD: Suggested labels: Payload Route, Receiver, Evidence State, Payout, Consequence, Unresolved Cost.",
+     "terminal": "NL LOC HOLD: ENDING RECORD: no celebration copy; record the trade.",
+     "audio": "NL LOC HOLD: You got out. That is not the same as settling it.",
+     "in_game_wiki": "NL LOC HOLD: Ending Record UI Copy defines how ending outcomes appear in the Marauder dossier.",
+     "external_site": "NL LOC HOLD: Ending Record UI Copy explains why HECTON-8 endings are records of tradeoffs rather than victory screens."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  }
+ ]
 }

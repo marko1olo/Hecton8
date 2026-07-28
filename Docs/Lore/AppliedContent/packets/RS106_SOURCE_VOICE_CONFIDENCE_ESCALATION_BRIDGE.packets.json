@@ -1,661 +1,664 @@
 {
-  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
-  "release_set_id": "RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_BRIDGE",
-  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
-    "authoring_only": true,
-    "runtime_reads_markdown": false,
-    "runtime_ready": false,
-    "native_localization_ready": false,
-    "data_monolith_ready": false,
-    "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P518_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-      "article_id": "applied_lore.public_archive_source_voice_label_bridge",
-      "release_set_id": "RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_BRIDGE",
-      "title_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future source-voice, evidence-confidence, and proof-escalation bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "source_voice",
-          "evidence_confidence",
-          "proof_escalation",
-          "public_archive"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets the opening route show whose statement a line belongs to without making every contradiction feel like canon confusion."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "A source voice label is the small line that keeps an archive sentence honest. It names whether the sentence came from a Deep Reach office filing, a terminal receipt body, an object mark, a scanner read, a public-safe summary, or a Marauder field note. The label does not decide truth. It tells the reader whose truth-claim is being tested.\n\nWithout the label, a contradiction turns into fog. With the label, the archive can say that an office line claims one route while the object mark preserves another. The player can then follow proof order instead of treating the cleanest public sentence as final canon.",
-          "wiki_article": "Source voice label: a provenance field that names the speaker lane behind an evidence sentence. Valid lanes include office filing, terminal receipt body, object mark, scanner read, public-safe summary, claimant-safe line, and Marauder annotation. The label is not a verdict and must not reveal final receiver, protected claimant, Atlas consequence, or legal result.",
-          "pda_codex": "PDA voice label: read who is speaking before you trust the line. Office filing, object mark, scanner read, receipt body, public summary, and Marauder note carry different proof weight. If two voices disagree, keep both and follow the next-proof target.",
-          "scanner_entry": "Scanner tag: source voice unresolved. Compare voice lane, affected field, confidence state, and proof order before accepting the cleaner line.",
-          "terminal_note": "Terminal provenance note: this sentence is not anonymous archive truth. It carries a source voice. Preserve the voice label until the next proof target confirms or downgrades it.",
-          "evidence_caption": "Source voice label preserved: office, object, scanner, public summary, and Marauder note must not collapse into one neutral sentence.",
-          "spoiler_policy": "Safe to expose source voice type and affected field. Hold final receiver, protected claimant, final route branch, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
-          "wiki_article": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
-          "pda_codex": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
-          "scanner_entry": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
-          "terminal_note": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
-          "evidence_caption": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
-          "spoiler_policy": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
-          "wiki_article": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
-          "pda_codex": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
-          "scanner_entry": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
-          "terminal_note": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
-          "evidence_caption": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
-          "spoiler_policy": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
-          "wiki_article": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
-          "pda_codex": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
-          "scanner_entry": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
-          "terminal_note": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
-          "evidence_caption": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
-          "spoiler_policy": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
-          "wiki_article": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
-          "pda_codex": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
-          "scanner_entry": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
-          "terminal_note": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
-          "evidence_caption": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
-          "spoiler_policy": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
-          "wiki_article": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
-          "pda_codex": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
-          "scanner_entry": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
-          "terminal_note": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
-          "evidence_caption": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
-          "spoiler_policy": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
-          "wiki_article": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
-          "pda_codex": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
-          "scanner_entry": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
-          "terminal_note": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
-          "evidence_caption": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
-          "spoiler_policy": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
-          "wiki_article": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
-          "pda_codex": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
-          "scanner_entry": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
-          "terminal_note": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
-          "evidence_caption": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
-          "spoiler_policy": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
-          "wiki_article": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
-          "pda_codex": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
-          "scanner_entry": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
-          "terminal_note": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
-          "evidence_caption": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
-          "spoiler_policy": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
-          "wiki_article": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
-          "pda_codex": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
-          "scanner_entry": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
-          "terminal_note": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
-          "evidence_caption": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
-          "spoiler_policy": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
-          "wiki_article": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
-          "pda_codex": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
-          "scanner_entry": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
-          "terminal_note": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
-          "evidence_caption": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
-          "spoiler_policy": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
-          "wiki_article": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
-          "pda_codex": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
-          "scanner_entry": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
-          "terminal_note": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
-          "evidence_caption": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
-          "spoiler_policy": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
-          "wiki_article": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
-          "pda_codex": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
-          "scanner_entry": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
-          "terminal_note": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
-          "evidence_caption": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
-          "spoiler_policy": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
-          "wiki_article": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
-          "pda_codex": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
-          "scanner_entry": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
-          "terminal_note": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
-          "evidence_caption": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
-          "spoiler_policy": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Public Archive Source Voice Label",
-          "website_article": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
-          "wiki_article": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
-          "pda_codex": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
-          "scanner_entry": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
-          "terminal_note": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
-          "evidence_caption": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
-          "spoiler_policy": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      }
+ "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+ "release_set_id": "RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_BRIDGE",
+ "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P518_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+   "article_id": "applied_lore.public_archive_source_voice_label_bridge",
+   "release_set_id": "RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_BRIDGE",
+   "title_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future source-voice, evidence-confidence, and proof-escalation bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "source_voice",
+     "evidence_confidence",
+     "proof_escalation",
+     "public_archive"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets the opening route show whose statement a line belongs to without making every contradiction feel like canon confusion."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "A source voice label is the small line that keeps an archive sentence honest. It names whether the sentence came from a Deep Reach office filing, a terminal receipt body, an object mark, a scanner read, a public-safe summary, or a Marauder field note. The label does not decide truth. It tells the reader whose truth-claim is being tested.\n\nWithout the label, a contradiction turns into fog. With the label, the archive can say that an office line claims one route while the object mark preserves another. The player can then follow proof order instead of treating the cleanest public sentence as final canon.",
+     "wiki_article": "Source voice label: a provenance field that names the speaker lane behind an evidence sentence. Valid lanes include office filing, terminal receipt body, object mark, scanner read, public-safe summary, claimant-safe line, and Marauder annotation. The label is not a verdict and must not reveal final receiver, protected claimant, Atlas consequence, or legal result.",
+     "pda_codex": "PDA voice label: read who is speaking before you trust the line. Office filing, object mark, scanner read, receipt body, public summary, and Marauder note carry different proof weight. If two voices disagree, keep both and follow the next-proof target.",
+     "scanner_entry": "Scanner tag: source voice unresolved. Compare voice lane, affected field, confidence state, and proof order before accepting the cleaner line.",
+     "terminal_note": "Terminal provenance note: this sentence is not anonymous archive truth. It carries a source voice. Preserve the voice label until the next proof target confirms or downgrades it.",
+     "evidence_caption": "Source voice label preserved: office, object, scanner, public summary, and Marauder note must not collapse into one neutral sentence.",
+     "spoiler_policy": "Safe to expose source voice type and affected field. Hold final receiver, protected claimant, final route branch, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "source_authority"
     },
-    {
-      "packet_id": "P519_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-      "article_id": "applied_lore.wiki_evidence_confidence_ladder_bridge",
-      "release_set_id": "RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_BRIDGE",
-      "title_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future source-voice, evidence-confidence, and proof-escalation bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "source_voice",
-          "evidence_confidence",
-          "proof_escalation",
-          "public_archive"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets the opening route show that evidence confidence has levels without revealing the final route branch or protected claimant."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "The confidence ladder exists because HECTON-8 evidence fails in different ways. A scanner can be confident about material and weak about route. A terminal receipt can preserve the useful body while lying in the header. A public-safe summary can protect a person while cleaning an office. One flat trust score would hide the problem the player needs to solve.\n\nThe ladder names useful states instead: provisional, object-supported, receipt-body-supported, downgraded, held, contradicted, and resolved by later proof. These states are safe to show early because they explain how to read evidence without revealing who finally received the packet or what the final consequence becomes.",
-          "wiki_article": "Evidence confidence ladder: a spoiler-safe set of confidence states for public and PDA evidence. The ladder can show provisional, object-supported, receipt-body-supported, scanner-downgraded, claimant-held, contradiction-open, and later-proof-resolved states. It must not replace proof order or expose final outcomes.",
-          "pda_codex": "PDA confidence panel: do not treat confidence as one meter. Read the source voice, then the confidence state. Object support, receipt-body support, scanner downgrade, claimant hold, and contradiction-open states point to different next-proof targets.",
-          "scanner_entry": "Scanner confidence tag: confidence applies to a field, not the whole story. Material, route, receiver, custody, and claimant fields can disagree.",
-          "terminal_note": "Terminal confidence note: receipt body support can outrank a clean header. Keep confidence tied to the field that was actually observed.",
-          "evidence_caption": "Confidence ladder active: trust the field state, not the cleanest public sentence.",
-          "spoiler_policy": "Safe to show confidence state names and next-proof class. Hold final receiver, protected claimant, final route branch, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
-          "wiki_article": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
-          "pda_codex": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
-          "scanner_entry": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
-          "terminal_note": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
-          "evidence_caption": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
-          "spoiler_policy": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
-          "wiki_article": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
-          "pda_codex": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
-          "scanner_entry": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
-          "terminal_note": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
-          "evidence_caption": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
-          "spoiler_policy": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
-          "wiki_article": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
-          "pda_codex": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
-          "scanner_entry": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
-          "terminal_note": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
-          "evidence_caption": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
-          "spoiler_policy": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
-          "wiki_article": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
-          "pda_codex": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
-          "scanner_entry": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
-          "terminal_note": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
-          "evidence_caption": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
-          "spoiler_policy": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
-          "wiki_article": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
-          "pda_codex": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
-          "scanner_entry": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
-          "terminal_note": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
-          "evidence_caption": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
-          "spoiler_policy": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
-          "wiki_article": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
-          "pda_codex": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
-          "scanner_entry": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
-          "terminal_note": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
-          "evidence_caption": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
-          "spoiler_policy": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
-          "wiki_article": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
-          "pda_codex": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
-          "scanner_entry": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
-          "terminal_note": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
-          "evidence_caption": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
-          "spoiler_policy": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
-          "wiki_article": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
-          "pda_codex": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
-          "scanner_entry": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
-          "terminal_note": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
-          "evidence_caption": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
-          "spoiler_policy": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
-          "wiki_article": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
-          "pda_codex": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
-          "scanner_entry": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
-          "terminal_note": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
-          "evidence_caption": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
-          "spoiler_policy": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
-          "wiki_article": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
-          "pda_codex": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
-          "scanner_entry": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
-          "terminal_note": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
-          "evidence_caption": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
-          "spoiler_policy": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
-          "wiki_article": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
-          "pda_codex": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
-          "scanner_entry": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
-          "terminal_note": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
-          "evidence_caption": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
-          "spoiler_policy": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
-          "wiki_article": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
-          "pda_codex": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
-          "scanner_entry": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
-          "terminal_note": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
-          "evidence_caption": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
-          "spoiler_policy": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
-          "wiki_article": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
-          "pda_codex": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
-          "scanner_entry": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
-          "terminal_note": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
-          "evidence_caption": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
-          "spoiler_policy": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Wiki Evidence Confidence Ladder",
-          "website_article": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
-          "wiki_article": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
-          "pda_codex": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
-          "scanner_entry": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
-          "terminal_note": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
-          "evidence_caption": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
-          "spoiler_policy": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      }
+    "ar_SA": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
+     "wiki_article": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
+     "pda_codex": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
+     "scanner_entry": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
+     "terminal_note": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
+     "evidence_caption": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
+     "spoiler_policy": "تسمية صوت المصدر تذكر من يتكلم قبل اختبار سطر الدليل. ملفات المكتب، علامات الجسم، قراءات الماسح، الملخصات العامة، وملاحظات Marauder لا تحمل الوزن نفسه. التسمية تجعل التناقض مقروءا بلا حكم نهائي.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
     },
-    {
-      "packet_id": "P520_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-      "article_id": "applied_lore.pda_proof_escalation_warning_bridge",
-      "release_set_id": "RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_BRIDGE",
-      "title_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future source-voice, evidence-confidence, and proof-escalation bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "source_voice",
-          "evidence_confidence",
-          "proof_escalation",
-          "public_archive"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets the opening route warn that the next proof target may cross a spoiler or protected-identity boundary without revealing the protected fact."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "A proof escalation warning appears when the next correct question would answer too much. It can happen when a contradiction card points toward a protected claimant, when a route alias starts revealing the final route branch, when a receipt chain approaches the final receiver, or when an Atlas-linked consequence would turn an early clue into an ending dossier.\n\nThe warning is not a dead end. It tells the reader which safe comparison remains available: source voice, affected field, scanner confidence, object mark, receipt body, or custody route. The archive keeps the player moving without printing the answer before the route has earned it.",
-          "wiki_article": "Proof escalation warning: a PDA or archive caution state used when a valid next-proof target would cross a protected-identity, final-route, final-receiver, Atlas-consequence, or ending boundary. The warning should name the held proof class and one safe comparison still available.",
-          "pda_codex": "PDA warning: the next proof target is valid but too revealing for this route moment. Check the safe comparison instead: source voice, affected field, scanner confidence, object mark, receipt body, or custody route. Do not force the protected fact open.",
-          "scanner_entry": "Scanner escalation tag: proof target held. Compare safe fields before requesting protected claimant, final receiver, or final route branch.",
-          "terminal_note": "Terminal hold note: this proof chain reaches a protected boundary. Continue with source voice, object mark, receipt body, scanner confidence, or custody route until later proof gate opens.",
-          "evidence_caption": "Proof escalation warning: valid question, protected answer. Use the safe comparison lane.",
-          "spoiler_policy": "Safe to show escalation state, held proof class, and safe comparison lane. Hold final receiver, protected claimant, final route branch, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
-          "wiki_article": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
-          "pda_codex": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
-          "scanner_entry": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
-          "terminal_note": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
-          "evidence_caption": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
-          "spoiler_policy": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
-          "wiki_article": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
-          "pda_codex": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
-          "scanner_entry": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
-          "terminal_note": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
-          "evidence_caption": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
-          "spoiler_policy": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
-          "wiki_article": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
-          "pda_codex": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
-          "scanner_entry": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
-          "terminal_note": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
-          "evidence_caption": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
-          "spoiler_policy": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
-          "wiki_article": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
-          "pda_codex": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
-          "scanner_entry": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
-          "terminal_note": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
-          "evidence_caption": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
-          "spoiler_policy": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
-          "wiki_article": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
-          "pda_codex": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
-          "scanner_entry": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
-          "terminal_note": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
-          "evidence_caption": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
-          "spoiler_policy": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
-          "wiki_article": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
-          "pda_codex": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
-          "scanner_entry": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
-          "terminal_note": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
-          "evidence_caption": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
-          "spoiler_policy": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
-          "wiki_article": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
-          "pda_codex": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
-          "scanner_entry": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
-          "terminal_note": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
-          "evidence_caption": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
-          "spoiler_policy": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
-          "wiki_article": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
-          "pda_codex": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
-          "scanner_entry": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
-          "terminal_note": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
-          "evidence_caption": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
-          "spoiler_policy": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
-          "wiki_article": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
-          "pda_codex": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
-          "scanner_entry": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
-          "terminal_note": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
-          "evidence_caption": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
-          "spoiler_policy": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
-          "wiki_article": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
-          "pda_codex": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
-          "scanner_entry": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
-          "terminal_note": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
-          "evidence_caption": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
-          "spoiler_policy": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
-          "wiki_article": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
-          "pda_codex": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
-          "scanner_entry": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
-          "terminal_note": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
-          "evidence_caption": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
-          "spoiler_policy": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
-          "wiki_article": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
-          "pda_codex": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
-          "scanner_entry": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
-          "terminal_note": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
-          "evidence_caption": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
-          "spoiler_policy": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
-          "wiki_article": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
-          "pda_codex": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
-          "scanner_entry": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
-          "terminal_note": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
-          "evidence_caption": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
-          "spoiler_policy": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "PDA Proof Escalation Warning",
-          "website_article": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
-          "wiki_article": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
-          "pda_codex": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
-          "scanner_entry": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
-          "terminal_note": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
-          "evidence_caption": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
-          "spoiler_policy": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
-          "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      }
+    "de_DE": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
+     "wiki_article": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
+     "pda_codex": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
+     "scanner_entry": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
+     "terminal_note": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
+     "evidence_caption": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
+     "spoiler_policy": "Ein Quellenstimmen-Label sagt, wer spricht, bevor eine Beweiszeile geprueft wird. Buerodatei, Objektmarke, Scannerlesung, oeffentliche Zusammenfassung und Marauder-Notiz tragen nicht dasselbe Gewicht. Das Label macht Widerspruch lesbar, ohne finale Wahrheit zu setzen.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
+     "wiki_article": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
+     "pda_codex": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
+     "scanner_entry": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
+     "terminal_note": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
+     "evidence_caption": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
+     "spoiler_policy": "Una etiqueta de voz de fuente nombra quien habla antes de probar una linea de evidencia. Archivo de oficina, marca de objeto, lectura de escaner, resumen publico y nota Marauder no pesan igual. La etiqueta vuelve legible la contradiccion sin decidir verdad final.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
+     "wiki_article": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
+     "pda_codex": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
+     "scanner_entry": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
+     "terminal_note": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
+     "evidence_caption": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
+     "spoiler_policy": "Une etiquette de voix source dit qui parle avant de tester une ligne de preuve. Dossier de bureau, marque d objet, lecture scanner, resume public et note Marauder n ont pas le meme poids. Elle rend la contradiction lisible sans fixer la verite finale.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
+     "wiki_article": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
+     "pda_codex": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
+     "scanner_entry": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
+     "terminal_note": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
+     "evidence_caption": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
+     "spoiler_policy": "תווית קול מקור אומרת מי מדבר לפני שבודקים שורת ראיה. תיק משרד, סימן חפץ, קריאת סורק, סיכום ציבורי והערת Marauder אינם בעלי אותו משקל. התווית משאירה את הסתירה קריאה בלי לקבוע אמת סופית.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
+     "wiki_article": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
+     "pda_codex": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
+     "scanner_entry": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
+     "terminal_note": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
+     "evidence_caption": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
+     "spoiler_policy": "Label suara sumber menyebut siapa yang bicara sebelum baris bukti diuji. Berkas kantor, tanda objek, bacaan scanner, ringkasan publik, dan catatan Marauder tidak punya bobot sama. Label membuat kontradiksi terbaca tanpa memutus kebenaran akhir.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
+     "wiki_article": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
+     "pda_codex": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
+     "scanner_entry": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
+     "terminal_note": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
+     "evidence_caption": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
+     "spoiler_policy": "ソース音声ラベルは、証拠行を試す前に誰の発言かを示す。事務記録、物体印、スキャナ読み、公開要約、Marauder注記は同じ重みではない。ラベルは最終真実を決めずに矛盾を読める形に保つ。",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
+     "wiki_article": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
+     "pda_codex": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
+     "scanner_entry": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
+     "terminal_note": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
+     "evidence_caption": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
+     "spoiler_policy": "출처 음성 라벨은 증거 줄을 시험하기 전에 누가 말하는지 밝힌다. 사무 기록, 물체 표식, 스캐너 판독, 공개 요약, Marauder 주석은 같은 무게가 아니다. 라벨은 최종 진실을 정하지 않고 모순을 읽게 한다.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
+     "wiki_article": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
+     "pda_codex": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
+     "scanner_entry": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
+     "terminal_note": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
+     "evidence_caption": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
+     "spoiler_policy": "Een bronstemlabel noemt wie spreekt voordat een bewijsregel wordt getest. Kantoordossier, objectmarkering, scannerlezing, publieke samenvatting en Marauder-notitie wegen niet hetzelfde. Het label maakt tegenspraak leesbaar zonder finale waarheid te kiezen.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
+     "wiki_article": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
+     "pda_codex": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
+     "scanner_entry": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
+     "terminal_note": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
+     "evidence_caption": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
+     "spoiler_policy": "Etykieta glosu zrodla mowi, kto przemawia przed testem linii dowodu. Akta biura, znak obiektu, odczyt skanera, publiczne streszczenie i notatka Marauder nie maja tej samej wagi. Etykieta czyta sprzecznosc bez wyroku.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
+     "wiki_article": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
+     "pda_codex": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
+     "scanner_entry": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
+     "terminal_note": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
+     "evidence_caption": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
+     "spoiler_policy": "Um rotulo de voz da fonte diz quem fala antes de testar uma linha de evidencia. Arquivo de escritorio, marca de objeto, leitura de scanner, resumo publico e nota Marauder nao pesam igual. O rotulo torna a contradicao legivel sem decidir a verdade final.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
+     "wiki_article": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
+     "pda_codex": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
+     "scanner_entry": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
+     "terminal_note": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
+     "evidence_caption": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
+     "spoiler_policy": "Метка голоса источника показывает, кто говорит, до проверки строки доказательства. Офисная запись, метка объекта, сканер, публичная сводка и заметка Marauder имеют разный вес. Метка делает противоречие читаемым без финального вывода.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
+     "wiki_article": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
+     "pda_codex": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
+     "scanner_entry": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
+     "terminal_note": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
+     "evidence_caption": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
+     "spoiler_policy": "Мітка голосу джерела показує, хто говорить, до перевірки рядка доказу. Офісний запис, мітка об'єкта, сканер, публічний підсумок і нотатка Marauder мають різну вагу. Мітка лишає суперечність читабельною без фінального висновку.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Public Archive Source Voice Label",
+     "website_article": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
+     "wiki_article": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
+     "pda_codex": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
+     "scanner_entry": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
+     "terminal_note": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
+     "evidence_caption": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
+     "spoiler_policy": "来源声音标签会在证据行被测试前说明是谁在说话。办公室记录、物体标记、扫描读数、公开摘要和Marauder注记的证明重量不同。标签让矛盾可读，但不决定最终真相。",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_SOURCE_VOICE_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P519_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+   "article_id": "applied_lore.wiki_evidence_confidence_ladder_bridge",
+   "release_set_id": "RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_BRIDGE",
+   "title_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future source-voice, evidence-confidence, and proof-escalation bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "source_voice",
+     "evidence_confidence",
+     "proof_escalation",
+     "public_archive"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets the opening route show that evidence confidence has levels without revealing the final route branch or protected claimant."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "The confidence ladder exists because HECTON-8 evidence fails in different ways. A scanner can be confident about material and weak about route. A terminal receipt can preserve the useful body while lying in the header. A public-safe summary can protect a person while cleaning an office. One flat trust score would hide the problem the player needs to solve.\n\nThe ladder names useful states instead: provisional, object-supported, receipt-body-supported, downgraded, held, contradicted, and resolved by later proof. These states are safe to show early because they explain how to read evidence without revealing who finally received the packet or what the final consequence becomes.",
+     "wiki_article": "Evidence confidence ladder: a spoiler-safe set of confidence states for public and PDA evidence. The ladder can show provisional, object-supported, receipt-body-supported, scanner-downgraded, claimant-held, contradiction-open, and later-proof-resolved states. It must not replace proof order or expose final outcomes.",
+     "pda_codex": "PDA confidence panel: do not treat confidence as one meter. Read the source voice, then the confidence state. Object support, receipt-body support, scanner downgrade, claimant hold, and contradiction-open states point to different next-proof targets.",
+     "scanner_entry": "Scanner confidence tag: confidence applies to a field, not the whole story. Material, route, receiver, custody, and claimant fields can disagree.",
+     "terminal_note": "Terminal confidence note: receipt body support can outrank a clean header. Keep confidence tied to the field that was actually observed.",
+     "evidence_caption": "Confidence ladder active: trust the field state, not the cleanest public sentence.",
+     "spoiler_policy": "Safe to show confidence state names and next-proof class. Hold final receiver, protected claimant, final route branch, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
+     "wiki_article": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
+     "pda_codex": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
+     "scanner_entry": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
+     "terminal_note": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
+     "evidence_caption": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
+     "spoiler_policy": "سلم ثقة الدليل يربط الثقة بالحقول لا بالقصص الكاملة. ثقة مادة الماسح، دعم متن الايصال، علامات الجسم، حجز المطالب، وحالة التناقض المفتوح تشير الى اهداف اثبات مختلفة. يشرح القراءة بلا كشف النهايات.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
+     "wiki_article": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
+     "pda_codex": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
+     "scanner_entry": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
+     "terminal_note": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
+     "evidence_caption": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
+     "spoiler_policy": "Die Beweis-Vertrauensleiter bindet Vertrauen an Felder, nicht an ganze Geschichten. Scanner-Materialvertrauen, Belegkoerper, Objektmarken, claimant holds und offene Widersprueche zeigen auf verschiedene Beweisziele. Sie erklaert Lesen ohne Enden zu zeigen.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
+     "wiki_article": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
+     "pda_codex": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
+     "scanner_entry": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
+     "terminal_note": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
+     "evidence_caption": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
+     "spoiler_policy": "La escalera de confianza de evidencia une la confianza a campos, no a historias completas. Material de escaner, cuerpo de recibo, marcas de objeto, retenciones de reclamante y contradiccion abierta apuntan a pruebas distintas. Explica sin mostrar finales.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
+     "wiki_article": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
+     "pda_codex": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
+     "scanner_entry": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
+     "terminal_note": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
+     "evidence_caption": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
+     "spoiler_policy": "L echelle de confiance lie la confiance aux champs, pas aux recits entiers. Matiere scanner, corps de recu, marques d objet, retenues claimant et contradiction ouverte pointent vers des preuves differentes. Elle explique sans reveler les fins.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
+     "wiki_article": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
+     "pda_codex": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
+     "scanner_entry": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
+     "terminal_note": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
+     "evidence_caption": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
+     "spoiler_policy": "סולם אמון הראיות קושר אמון לשדות ולא לסיפורים שלמים. אמון חומר סורק, גוף קבלה, סימני חפץ, החזקות תובע וסתירה פתוחה מצביעים ליעדי הוכחה שונים. הוא מסביר קריאה בלי לחשוף תוצאות.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
+     "wiki_article": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
+     "pda_codex": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
+     "scanner_entry": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
+     "terminal_note": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
+     "evidence_caption": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
+     "spoiler_policy": "Tangga kepercayaan bukti menempelkan trust pada bidang, bukan seluruh cerita. Keyakinan material scanner, isi tanda terima, tanda objek, tahanan klaiman, dan kontradiksi terbuka menunjuk target bukti berbeda. Ia menjelaskan tanpa membuka akhir.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
+     "wiki_article": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
+     "pda_codex": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
+     "scanner_entry": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
+     "terminal_note": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
+     "evidence_caption": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
+     "spoiler_policy": "証拠信頼ラダーは、信頼を物語全体ではなくフィールドに結び付ける。スキャナ素材信頼、受領票本文、物体印、請求者保留、未解決矛盾は別々の証拠目標を指す。結末を明かさず読み方を示す。",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
+     "wiki_article": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
+     "pda_codex": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
+     "scanner_entry": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
+     "terminal_note": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
+     "evidence_caption": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
+     "spoiler_policy": "증거 신뢰 사다리는 신뢰를 전체 이야기가 아니라 필드에 붙인다. 스캐너 물질 신뢰, 영수증 본문, 물체 표식, 청구인 보류, 열린 모순은 서로 다른 증거 목표를 가리킨다. 결말 없이 읽는 법을 말한다.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
+     "wiki_article": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
+     "pda_codex": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
+     "scanner_entry": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
+     "terminal_note": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
+     "evidence_caption": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
+     "spoiler_policy": "De bewijsvertrouwensladder koppelt vertrouwen aan velden, niet aan hele verhalen. Scanner-materiaal, ontvangsttekst, objectmarkeringen, claimant holds en open tegenspraak wijzen naar andere bewijsdoelen. Ze legt lezen uit zonder eindes.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
+     "wiki_article": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
+     "pda_codex": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
+     "scanner_entry": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
+     "terminal_note": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
+     "evidence_caption": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
+     "spoiler_policy": "Drabina zaufania dowodu laczy zaufanie z polami, nie z cala historia. Material skanera, tresc pokwitowania, znaki obiektu, blokady claimant i otwarta sprzecznosc wskazuja rozne cele dowodu. Wyjasnia bez ujawniania koncow.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
+     "wiki_article": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
+     "pda_codex": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
+     "scanner_entry": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
+     "terminal_note": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
+     "evidence_caption": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
+     "spoiler_policy": "A escada de confianca da evidencia prende confianca a campos, nao a historias inteiras. Material do scanner, corpo do recibo, marcas de objeto, holds de claimant e contradicao aberta apontam provas diferentes. Explica sem abrir finais.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
+     "wiki_article": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
+     "pda_codex": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
+     "scanner_entry": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
+     "terminal_note": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
+     "evidence_caption": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
+     "spoiler_policy": "Лестница доверия доказательств привязывает доверие к полям, а не ко всей истории. Материал сканера, тело квитанции, метки объекта, удержания claimant и открытое противоречие ведут к разным целям проверки. Она объясняет без раскрытия финала.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
+     "wiki_article": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
+     "pda_codex": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
+     "scanner_entry": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
+     "terminal_note": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
+     "evidence_caption": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
+     "spoiler_policy": "Сходи довіри доказів прив'язують довіру до полів, а не до всієї історії. Матеріал сканера, тіло квитанції, мітки об'єкта, утримання claimant і відкрита суперечність ведуть до різних цілей доказу. Вони пояснюють без фіналу.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Wiki Evidence Confidence Ladder",
+     "website_article": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
+     "wiki_article": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
+     "pda_codex": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
+     "scanner_entry": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
+     "terminal_note": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
+     "evidence_caption": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
+     "spoiler_policy": "证据信任阶梯把信任绑定到字段，而不是整个故事。扫描材料信任、收据正文、物体标记、claimant保留和开放矛盾会指向不同证明目标。它说明如何阅读证据，但不公开结局。",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_EVIDENCE_CONFIDENCE_LADDER_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P520_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+   "article_id": "applied_lore.pda_proof_escalation_warning_bridge",
+   "release_set_id": "RS106_SOURCE_VOICE_CONFIDENCE_ESCALATION_BRIDGE",
+   "title_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future source-voice, evidence-confidence, and proof-escalation bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "source_voice",
+     "evidence_confidence",
+     "proof_escalation",
+     "public_archive"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets the opening route warn that the next proof target may cross a spoiler or protected-identity boundary without revealing the protected fact."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "A proof escalation warning appears when the next correct question would answer too much. It can happen when a contradiction card points toward a protected claimant, when a route alias starts revealing the final route branch, when a receipt chain approaches the final receiver, or when an Atlas-linked consequence would turn an early clue into an ending dossier.\n\nThe warning is not a dead end. It tells the reader which safe comparison remains available: source voice, affected field, scanner confidence, object mark, receipt body, or custody route. The archive keeps the player moving without printing the answer before the route has earned it.",
+     "wiki_article": "Proof escalation warning: a PDA or archive caution state used when a valid next-proof target would cross a protected-identity, final-route, final-receiver, Atlas-consequence, or ending boundary. The warning should name the held proof class and one safe comparison still available.",
+     "pda_codex": "PDA warning: the next proof target is valid but too revealing for this route moment. Check the safe comparison instead: source voice, affected field, scanner confidence, object mark, receipt body, or custody route. Do not force the protected fact open.",
+     "scanner_entry": "Scanner escalation tag: proof target held. Compare safe fields before requesting protected claimant, final receiver, or final route branch.",
+     "terminal_note": "Terminal hold note: this proof chain reaches a protected boundary. Continue with source voice, object mark, receipt body, scanner confidence, or custody route until later proof gate opens.",
+     "evidence_caption": "Proof escalation warning: valid question, protected answer. Use the safe comparison lane.",
+     "spoiler_policy": "Safe to show escalation state, held proof class, and safe comparison lane. Hold final receiver, protected claimant, final route branch, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
+     "wiki_article": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
+     "pda_codex": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
+     "scanner_entry": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
+     "terminal_note": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
+     "evidence_caption": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
+     "spoiler_policy": "يظهر تحذير تصعيد الدليل عندما يكشف هدف الاثبات الصحيح اكثر مما يسمح به موضع المسار الحالي. يسمي فئة الدليل المحتجزة ويشير الى مقارنة امنة مثل صوت المصدر، الحقل المتاثر، ثقة الماسح، علامة الجسم، متن الايصال، او مسار الحيازة.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
+     "wiki_article": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
+     "pda_codex": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
+     "scanner_entry": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
+     "terminal_note": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
+     "evidence_caption": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
+     "spoiler_policy": "Eine Beweis-Eskalationswarnung erscheint, wenn das naechste richtige Beweisziel fuer diesen Routenmoment zu viel zeigt. Sie nennt die gehaltene Beweisklasse und zeigt eine sichere Vergleichsbahn wie Quellenstimme, betroffenes Feld, Scannervertrauen, Objektmarke, Belegkoerper oder custody route.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
+     "wiki_article": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
+     "pda_codex": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
+     "scanner_entry": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
+     "terminal_note": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
+     "evidence_caption": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
+     "spoiler_policy": "Una advertencia de escalada de prueba aparece cuando el siguiente objetivo valido revelaria demasiado para este momento de ruta. Nombra la clase retenida y apunta a una comparacion segura: voz fuente, campo afectado, confianza de escaner, marca de objeto, cuerpo de recibo o ruta de custodia.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
+     "wiki_article": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
+     "pda_codex": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
+     "scanner_entry": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
+     "terminal_note": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
+     "evidence_caption": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
+     "spoiler_policy": "Un avertissement d escalade de preuve apparait quand la prochaine preuve valide revelerait trop pour ce moment de route. Il nomme la classe retenue et pointe une comparaison sure: voix source, champ affecte, confiance scanner, marque d objet, corps de recu ou route de garde.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
+     "wiki_article": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
+     "pda_codex": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
+     "scanner_entry": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
+     "terminal_note": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
+     "evidence_caption": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
+     "spoiler_policy": "אזהרת הסלמת הוכחה מופיעה כאשר יעד ההוכחה התקף הבא יחשוף יותר מדי לרגע המסלול הנוכחי. היא קוראת למחלקת ההוכחה המוחזקת ומפנה להשוואה בטוחה: קול מקור, שדה מושפע, אמון סורק, סימן חפץ, גוף קבלה או מסלול משמורת.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
+     "wiki_article": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
+     "pda_codex": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
+     "scanner_entry": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
+     "terminal_note": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
+     "evidence_caption": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
+     "spoiler_policy": "Peringatan eskalasi bukti muncul ketika target bukti valid berikutnya membuka terlalu banyak untuk momen rute saat ini. Ia menyebut kelas bukti yang ditahan dan menunjuk jalur banding aman: suara sumber, bidang terdampak, kepercayaan scanner, tanda objek, isi tanda terima, atau rute kustodi.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
+     "wiki_article": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
+     "pda_codex": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
+     "scanner_entry": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
+     "terminal_note": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
+     "evidence_caption": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
+     "spoiler_policy": "証拠エスカレーション警告は、次の有効な証拠目標が現在のルート時点では明かしすぎる時に出る。保留された証拠クラスを示し、ソース音声、影響フィールド、スキャナ信頼、物体印、受領票本文、保管ルートなど安全な比較先を示す。",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
+     "wiki_article": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
+     "pda_codex": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
+     "scanner_entry": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
+     "terminal_note": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
+     "evidence_caption": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
+     "spoiler_policy": "증거 상승 경고는 다음 유효한 증거 목표가 현재 경로 순간에 너무 많이 드러낼 때 나타난다. 보류된 증거 분류를 이름 붙이고 출처 음성, 영향 필드, 스캐너 신뢰, 물체 표식, 영수증 본문, 보관 경로 같은 안전 비교선을 가리킨다.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
+     "wiki_article": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
+     "pda_codex": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
+     "scanner_entry": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
+     "terminal_note": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
+     "evidence_caption": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
+     "spoiler_policy": "Een bewijsescalatiewaarschuwing verschijnt wanneer het volgende geldige bewijsdoel te veel zou tonen voor dit routemoment. Ze noemt de vastgehouden bewijsklasse en wijst naar een veilige vergelijking: bronstem, geraakt veld, scannervertrouwen, objectmarkering, ontvangsttekst of custody route.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
+     "wiki_article": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
+     "pda_codex": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
+     "scanner_entry": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
+     "terminal_note": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
+     "evidence_caption": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
+     "spoiler_policy": "Ostrzezenie eskalacji dowodu pojawia sie, gdy nastepny poprawny cel dowodu ujawnilby za duzo dla tego momentu trasy. Nazywa zatrzymana klase dowodu i wskazuje bezpieczne porownanie: glos zrodla, pole, zaufanie skanera, znak obiektu, tresc pokwitowania albo trase custody.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
+     "wiki_article": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
+     "pda_codex": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
+     "scanner_entry": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
+     "terminal_note": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
+     "evidence_caption": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
+     "spoiler_policy": "Um aviso de escalada de prova aparece quando o proximo alvo valido revelaria demais para este momento de rota. Ele nomeia a classe retida e aponta uma comparacao segura: voz da fonte, campo afetado, confianca do scanner, marca de objeto, corpo do recibo ou rota de custodia.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
+     "wiki_article": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
+     "pda_codex": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
+     "scanner_entry": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
+     "terminal_note": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
+     "evidence_caption": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
+     "spoiler_policy": "Предупреждение эскалации доказательства появляется, когда следующая верная цель проверки раскрыла бы слишком много для текущего момента маршрута. Оно называет удержанный класс доказательства и дает безопасное сравнение: голос источника, поле, доверие сканера, метку объекта, тело квитанции или маршрут хранения.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
+     "wiki_article": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
+     "pda_codex": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
+     "scanner_entry": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
+     "terminal_note": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
+     "evidence_caption": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
+     "spoiler_policy": "Попередження ескалації доказу з'являється, коли наступна правильна ціль доказу відкрила б забагато для поточного моменту маршруту. Воно називає утриманий клас і дає безпечне порівняння: голос джерела, поле, довіру сканера, мітку об'єкта, тіло квитанції або маршрут зберігання.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "PDA Proof Escalation Warning",
+     "website_article": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
+     "wiki_article": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
+     "pda_codex": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
+     "scanner_entry": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
+     "terminal_note": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
+     "evidence_caption": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
+     "spoiler_policy": "证明升级警告会在下一个有效证明目标对当前路线时刻透露过多时出现。它说明被保留的证明类别，并指向安全比较路径，例如来源声音、受影响字段、扫描信任、物体标记、收据正文或保管路线。",
+     "string_pool_key": "LORE_EVIDENCE_PDA_PROOF_ESCALATION_WARNING_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

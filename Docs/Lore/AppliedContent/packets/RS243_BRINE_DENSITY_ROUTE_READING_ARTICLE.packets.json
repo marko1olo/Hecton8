@@ -1,11 +1,56 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS243_BRINE_DENSITY_ROUTE_READING_ARTICLE",
-  "title": "Brine Density Route Reading Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS243_BRINE_DENSITY_ROUTE_READING_ARTICLE",
+ "title": "Brine Density Route Reading Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1413_BRINE_DENSITY_ROUTE_LEDGER",
+   "release_set_id": "RS243_BRINE_DENSITY_ROUTE_READING_ARTICLE",
+   "article_id": "applied_lore.brine_density_route_ledger",
+   "title_key": "LORE_BRINE_DENSITY_ROUTE_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/WriterScenarioAgentPrompt.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,263 +58,219 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1413_BRINE_DENSITY_ROUTE_LEDGER",
-      "release_set_id": "RS243_BRINE_DENSITY_ROUTE_READING_ARTICLE",
-      "article_id": "applied_lore.brine_density_route_ledger",
-      "title_key": "LORE_BRINE_DENSITY_ROUTE_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/WriterScenarioAgentPrompt.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.brine_density_route_ledger",
-        "secondary": [
-          "unlock.first_brine_stair_descent",
-          "unlock.first_density_curtain_side_ping",
-          "unlock.first_emergency_ballast_station"
-        ],
-        "poi_tags": [
-          "poi.brine_density_route_board",
-          "poi.emergency_ballast_station",
-          "poi.cable_scrape_depth_marker",
-          "poi.missing_evac_pod_ping_shelf"
-        ],
-        "biome_tags": [
-          "biome.brine_stairs",
-          "biome.brine_canyon",
-          "biome.density_layer"
-        ],
-        "first_20_boundary": "Deep-route article; not part of first 20 minutes. It teaches brine traversal after the player can reach the 2800-3600 m Brine Stairs."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Density Boundary Scanner",
-          "terminal": "Deep Reach Brine Route Board",
-          "audio": "Marauder Descent Instructor",
-          "in_game_wiki": "PDA Brine Traverse Field Guide",
-          "external_site": "Public Site Brine Density Route Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_density_ledger_or_brine_stair_descent",
-        "truth_payload": "Brine density layers are traversable route features only when read as layered fluids; direct sonar can report false floors, so safe descent requires side-ping, ballast trim, drift wait and physical scrape evidence.",
-        "player_question": "What makes the shining floor in the Brine Stairs a route instead of a trap?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Brine Density Route Ledger",
-          "scanner": "BRINE LEDGER // Density boundary ahead. Sonar return bends below the visible shelf; ballast response lag is expected. Side-ping the curtain before descent. Treat the shining floor as a moving fluid until two trims agree.",
-          "terminal": "DEEP REACH ROUTE BOARD B3-17 // Do not land on the white return. It is a salt-crust skin over heavier brine. Mark trim correction, temperature falloff and cable scrape depth before crossing. Missing evac pods last pinged under the third curtain, not on the charted floor.",
-          "audio": "If the floor looks polished, distrust it. Ping from the side, bleed ballast by touch, and do not let the brine write your depth for you.",
-          "in_game_wiki": "The Brine Stairs are not a cave staircase. They are layers of water heavy enough to behave like false ground: clear on top, thick below, sharp at the boundary. A sonar ping sent straight down can come back like a floor plate. A diver who believes it may drop into a heavier layer, lose trim, scrape a cable or sink under a white crust that was never solid.\n\nThe old colony learned to read the stairs by abusing small instruments. A side-ping shows whether a return is a wall, a ledge or a density curtain. A ballast trim tells whether the suit is floating in ordinary seawater or being held by brine. Temperature falloff marks where vent-warmed water slides across cold salt. Cable scars on the rock matter more than clean map lines, because cable does not flatter itself when it hits a layer.\n\nFor a Marauder, the ledger turns fear into procedure. A brine curtain can hide a route from predators and drones. It can cool overheated cutters. It can preserve an evac tag or a corpse record for years. It can also eat seals, bend sound and make a safe floor out of a lie. Read the ledger when entering the 2800-3600 m Brine Stairs: side-ping, trim, wait for drift, cross at the scar, and never spend the last ballast correction on a pretty reflection.",
-          "external_site": "A practical guide to HECTON-8 brine density layers: why the Brine Stairs lie to sonar, how old route boards marked safe crossings, and why a Marauder reads salt before trusting a map.",
-          "external_site_article": "The Brine Stairs sit between route and trap. They look architectural from a distance: shelves, pale lips, white ledges stacked into the dark. Up close they are moving chemistry. Dense brine lies under normal seawater like a second ocean poured into the cracks. Its boundary can shine. Its crust can wrinkle. Its surface can answer sonar with the confidence of stone while moving under the suit like oil.\n\nThat is why the old route boards do not say 'descend here'. They list habits. Ping from the side. Trim twice. Watch temperature falloff. Check for cable scars. Wait for the silt that rises from the boundary, then watch where it refuses to mix. A good crossing is not a line on a chart; it is a behavior that repeats after the ocean has had a chance to lie.\n\nThe ledger has human teeth in it. Several evacuation pods were reported missing from floor positions that never existed. Their final pings came from beneath the third density curtain, where a pilot saw a pale shelf, corrected downward and spent the last ballast margin trying to climb out of water heavier than the capsule. Deep Reach filed the losses as navigation error. The route board kept the cable scrapes.\n\nIn play, the same rule turns lore into action. The player can ride a brine layer to mask noise, dip a cutter into cold density water, recover preserved tags, or cross a canyon without exposing a light cone. The cost is attention: bad ping angle, stale ballast, damaged seals or panic descent can turn a route into a pit. HECTON-8 does not need a monster to punish arrogance. Sometimes the ocean only has to look flat.",
-          "field_note": "Salt writes better maps than management. Follow the scratches, not the clean line."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал чтения рассольной плотности",
-          "scanner": "ЖУРНАЛ РАССОЛА // Впереди граница плотности. Ответ сонара уходит ниже видимой полки; задержка балласта ожидаема. Прозвони завесу сбоку перед спуском. Блестящий пол считать движущейся жидкостью, пока две коррекции трима не совпадут.",
-          "terminal": "МАРШРУТНЫЙ ЩИТ DEEP REACH B3-17 // Не садиться на белый отклик. Это соляная кожа над тяжелым рассолом. Перед переходом отметить поправку трима, спад температуры и глубину царапин кабеля. Пропавшие эвакуационные капсулы в последний раз пинговали под третьей завесой, а не на нанесенном на карту дне.",
-          "audio": "Если дно выглядит отполированным, не верь ему. Пингуй сбоку, стравливай балласт руками и не позволяй рассолу писать за тебя глубину.",
-          "in_game_wiki": "Brine Stairs - не пещерная лестница. Это слои воды, достаточно тяжелые, чтобы вести себя как ложная земля: сверху прозрачные, снизу густые, на границе резкие. Сонарный пинг вниз может вернуться как от плиты. Тот, кто поверит, провалится в тяжелый слой, потеряет трим, сорвет кабель или уйдет под белую корку, которая никогда не была твердой.\n\nСтарая колония училась читать эти ступени мелкими приборами и плохой памятью. Боковой пинг показывает, что перед тобой: стенка, уступ или завеса плотности. Балластный трим говорит, держит ли костюм обычная вода или рассол. Температурный спад выдает, где теплый поток от вент-полей скользит поверх холодной соли. Царапины кабеля на породе важнее чистых линий карты, потому что кабель не умеет льстить себе, когда бьется о слой.\n\nДля мародера журнал превращает страх в процедуру. Рассольная завеса может спрятать маршрут от хищников и дронов. Она может охладить перегретый резак. Она может годами хранить эвакуационную метку или запись о теле. И она же ест уплотнения, гнет звук и делает безопасный пол из лжи. Входя в Brine Stairs на 2800-3600 м, читай журнал: боковой пинг, трим, ожидание дрейфа, переход по царапине - и никогда не трать последнюю поправку балласта на красивое отражение.",
-          "external_site": "Практическая статья о плотностных слоях рассола на HECTON-8: почему Brine Stairs лгут сонару, как старые маршрутные щиты отмечали переходы и почему мародер читает соль раньше карты.",
-          "external_site_article": "Brine Stairs стоят между маршрутом и ловушкой. Издалека они выглядят почти архитектурно: полки, бледные губы, белые уступы, уходящие в темноту. Вблизи это движущаяся химия. Тяжелый рассол лежит под обычной водой как второй океан, налитый в трещины. Его граница может блестеть. Корка может морщиться. Поверхность может отвечать сонару с уверенностью камня и при этом двигаться под костюмом как масло.\n\nПоэтому старые маршрутные щиты не пишут: 'спускаться здесь'. Они перечисляют привычки. Пинг сбоку. Два трима. Смотри спад температуры. Ищи царапины кабеля. Дождись ила, поднятого с границы, и смотри, где он отказывается смешиваться. Хороший переход - не линия на карте, а поведение, которое повторяется после того, как океан успел соврать.\n\nВ журнале есть человеческие зубы. Несколько эвакуационных капсул числились пропавшими с позиций дна, которого не существовало. Последний пинг пришел из-под третьей завесы плотности: пилот увидел бледную полку, исправился вниз и потратил последний запас балласта, пытаясь выбраться из воды тяжелее капсулы. Deep Reach списал потери на навигационную ошибку. Маршрутный щит оставил кабельные царапины.\n\nВ игре это правило становится действием. Игрок может ехать по рассольному слою, чтобы скрыть шум, окунуть резак в холодную плотную воду, достать сохраненные метки или пересечь каньон без светового конуса. Цена - внимание: плохой угол пинга, старый балласт, поврежденные уплотнения или панический спуск превращают маршрут в яму. HECTON-8 не всегда нужен хищник, чтобы наказать самоуверенность. Иногда океану достаточно выглядеть ровным.",
-          "field_note": "Соль честнее менеджмента. Иди по царапинам, а не по чистой линии."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "塩水密度ルート台帳",
-          "scanner": "塩水台帳 // 前方に密度境界。ソナー反射は見えている棚より低く曲がる。バラスト応答の遅れを想定。降下前に横からカーテンを打診し、二つのトリムが一致するまで光る床を流体として扱え。",
-          "terminal": "DEEP REACH ルート板 B3-17 // 白い反射に着底するな。重い塩水の上に張った塩皮だ。横断前にトリム補正、温度低下、ケーブル擦過深度を記録。消えた避難ポッドの最後の ping は第三カーテンの下で、地図上の床ではない。",
-          "audio": "床が磨かれて見えるなら疑え。横から ping を撃ち、手でバラストを抜き、塩水に深度を書かせるな。",
-          "in_game_wiki": "Brine Stairs は洞窟の階段ではない。普通の海水の下に重い塩水が重なり、境界だけが床のように光る。真下へ撃った sonar は石の床のような返事を返すことがある。信じた潜水者は重い層へ落ち、トリムを失い、ケーブルを削り、固体ではない白い皮の下へ沈む。\n\n古い植民地は小さな計器でこの階段を読んだ。横 ping は壁、棚、密度カーテンを分ける。バラストの反応は、スーツが普通の水にいるのか塩水に支えられているのかを示す。温度低下は、熱い水が冷たい塩の上を滑る場所を教える。きれいな地図線より岩のケーブル傷が信用された。\n\nMarauder にとって台帳は恐怖を手順に変える。塩水カーテンは捕食者やドローンから航路を隠し、過熱した cutter を冷やし、何年も避難タグを保存する。だが seal を食い、音を曲げ、嘘の床を作る。2800-3600 m の Brine Stairs では横 ping、トリム、漂流待ち、傷跡での横断が生存手順になる。",
-          "external_site": "HECTON-8 の塩水密度層の実用記事。Brine Stairs が sonar に嘘をつく理由、古いルート板の読み方、そして Marauder が地図より先に塩を読む理由。",
-          "external_site_article": "Brine Stairs はルートであり罠でもある。遠くから見ると棚と白い縁が建築物のように積まれている。近づくとそれは化学の動きだ。重い塩水が割れ目の中に第二の海として溜まり、境界は光り、皮はしわを寄せ、sonar には石のように自信満々の返事をする。\n\nだから古いルート板は「ここで降りろ」とは書かない。横から ping。二度トリム。温度低下を見る。ケーブル傷を見る。境界から上がるシルトが混ざらない場所を待つ。よい横断点は地図の線ではなく、海が一度嘘をついた後でも繰り返す挙動だ。\n\n行方不明の避難ポッドのいくつかは、存在しない床の座標から報告された。最後の ping は第三密度カーテンの下だった。Deep Reach は navigation error と処理したが、ルート板は cable scar を残した。\n\nゲーム内では同じ規則が行動になる。層を利用して音を隠す、cutter を冷やす、保存されたタグを回収する、光を晒さず峡谷を渡る。悪い ping 角、古いバラスト、傷んだ seal、焦った降下はルートを穴に変える。",
-          "field_note": "塩は管理者より正確な地図を書く。きれいな線ではなく傷を追え。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "盐水密度航路账本",
-          "scanner": "盐水账本 // 前方存在密度边界。声呐回波会弯到可见台地之下；压载响应延迟属正常。下降前从侧面 ping 穿帘幕。直到两次配平一致前，把发亮的地面当作流动液体。",
-          "terminal": "DEEP REACH 航路板 B3-17 // 不要落在白色回波上。那只是重盐水上的盐壳皮。穿越前记录配平修正、温降和缆线刮痕深度。失踪撤离舱最后一次 ping 在第三道密度帘下，不在地图标出的海床上。",
-          "audio": "地面越像被抛光，越要怀疑。侧向 ping，手动放压载，不要让盐水替你写深度。",
-          "in_game_wiki": "Brine Stairs 不是洞穴楼梯。它是重到会伪装成地面的水层：上方清，下面厚，边界锋利。向正下方发出的 sonar 可能像撞到地板一样返回。相信它的人会落入更重的层，失去配平，刮断缆线，或者沉到从来不是固体的白色盐壳下。\n\n旧殖民地靠小仪器和坏记忆学会读这些台阶。侧向 ping 区分墙、台地和密度帘。压载配平说明潜服是在普通海水里，还是被盐水托着。温降标出热水从冷盐上滑过的位置。岩壁上的缆线刮痕比干净地图线更可靠，因为缆线撞到水层时不会自我安慰。\n\n对 Marauder 来说，账本把恐惧变成流程。盐水帘能遮蔽路线、冷却过热切割器、保存撤离标签和尸体记录；也会腐蚀密封、弯曲声音，把谎言做成安全地板。进入 2800-3600 m 的 Brine Stairs 时，规则是侧向 ping、配平、等待漂移、沿刮痕穿越。",
-          "external_site": "HECTON-8 盐水密度层实用指南：Brine Stairs 为什么欺骗声呐，旧航路板如何标记安全穿越点，以及 Marauder 为什么先读盐再信地图。",
-          "external_site_article": "Brine Stairs 介于航路和陷阱之间。远看像建筑：台地、浅色边缘、白色层阶叠入黑暗。近看却是流动的化学。重盐水像第二片海灌在裂缝里，边界会发亮，盐皮会起皱，表面能用石头般自信的回声欺骗 sonar。\n\n所以旧航路板不写“从这里下降”。它写习惯：侧向 ping，两次配平，看温降，看缆线刮痕，等边界扬起的泥尘拒绝混合。好的穿越点不是图上的线，而是在海水撒谎之后仍会重复的行为。\n\n几艘撤离舱被报失于并不存在的海床坐标。最后 ping 来自第三道密度帘下方：驾驶员看见白色台地，向下修正，然后把最后压载余量花在比舱体更重的水里。Deep Reach 写成导航错误，航路板留下了缆线伤痕。\n\n在玩法上，同一规则变成选择。玩家能借盐水层遮音、冷却切割器、回收保存的标签，或不暴露灯光穿过峡谷。坏角度 ping、陈旧压载、破损密封和恐慌下降会把航路变成坑。HECTON-8 有时不需要怪物，只需要海看起来很平。",
-          "field_note": "盐比管理层更会画地图。跟刮痕走，不跟漂亮线走。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre de lecture des densités de saumure",
-          "scanner": "REGISTRE SAUMURE // Frontière de densité devant vous. Le retour sonar plonge sous la corniche visible; le retard de ballast est attendu. Sondez le rideau par le côté avant de descendre. Traitez le sol brillant comme un fluide mobile tant que deux trims ne concordent pas.",
-          "terminal": "PANNEAU DE ROUTE DEEP REACH B3-17 // Ne posez pas sur le retour blanc. C'est une peau de sel au-dessus d'une saumure plus lourde. Notez correction de trim, chute thermique et profondeur des rayures de câble avant traversée. Les pods d'évacuation disparus ont pingé sous le troisième rideau, pas sur le fond cartographié.",
-          "audio": "Si le fond a l'air poli, méfie-toi. Ping par le côté, purge le ballast à la main, et ne laisse pas la saumure écrire ta profondeur.",
-          "in_game_wiki": "Les Brine Stairs ne sont pas un escalier de grotte. Ce sont des couches d'eau assez lourdes pour jouer le rôle d'un faux sol. Un sonar envoyé droit vers le bas peut revenir comme s'il avait frappé une dalle. Celui qui le croit tombe dans une couche plus dense, perd son trim ou passe sous une croûte blanche qui n'a jamais été solide.\n\nLa colonie lisait ces marches avec de petits instruments. Un ping latéral sépare mur, rebord et rideau de densité. Le ballast dit si la combinaison flotte en eau normale ou dans une saumure qui la tient. La chute de température révèle où l'eau chaude glisse sur le sel froid. Les griffures de câble comptent plus que les cartes propres.\n\nPour un Marauder, le registre transforme la peur en procédure. Un rideau de saumure cache une route, refroidit un outil, conserve un tag d'évacuation. Il ronge aussi les joints, plie le son et fabrique des sols mensongers. A 2800-3600 m, on lit: ping latéral, trim, attente de dérive, passage sur la cicatrice.",
-          "external_site": "Guide pratique des couches de saumure de HECTON-8: pourquoi les Brine Stairs mentent au sonar, comment lire les anciens panneaux de route et pourquoi un Marauder lit le sel avant la carte.",
-          "external_site_article": "Les Brine Stairs tiennent entre route et piège. De loin, elles ressemblent à une architecture: lèvres pâles, tablettes, marches blanches dans le noir. De près, c'est une chimie en mouvement. La saumure lourde repose sous l'eau comme un second océan versé dans les fissures. Sa frontière brille, se ride et répond parfois au sonar avec l'assurance de la pierre.\n\nLes vieux panneaux ne disent donc pas 'descendre ici'. Ils listent des gestes: ping latéral, deux trims, température, rayures de câble, silt qui refuse de se mélanger. Un bon passage n'est pas une ligne; c'est un comportement répété après que l'océan a eu le temps de mentir.\n\nPlusieurs pods d'évacuation ont disparu depuis des positions de fond qui n'existaient pas. Leur dernier ping venait de sous le troisième rideau de densité. Deep Reach a classé l'affaire en erreur de navigation. Le panneau a gardé les marques de câble.\n\nEn jeu, la règle devient action: masquer le bruit dans une couche, refroidir un cutter, récupérer des tags conservés, traverser sans cône lumineux. Mauvais angle de ping, ballast rance, joint abîmé ou descente paniquée changent la route en fosse.",
-          "field_note": "Le sel trace de meilleures cartes que l'administration. Suis les rayures, pas la ligne propre."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de lectura de densidad de salmuera",
-          "scanner": "REGISTRO DE SALMUERA // Límite de densidad delante. El retorno de sonar se curva bajo la repisa visible; se espera retraso de lastre. Lanza ping lateral antes de bajar. Trata el suelo brillante como fluido móvil hasta que dos trims coincidan.",
-          "terminal": "TABLERO DE RUTA DEEP REACH B3-17 // No aterrizar sobre el retorno blanco. Es piel de sal sobre salmuera pesada. Registrar corrección de trim, caída térmica y profundidad de raspado de cable antes de cruzar. Las cápsulas de evacuación perdidas dieron su último ping bajo la tercera cortina, no en el fondo cartografiado.",
-          "audio": "Si el suelo parece pulido, no le creas. Ping lateral, purga manual de lastre y no dejes que la salmuera escriba tu profundidad.",
-          "in_game_wiki": "Brine Stairs no es una escalera de cueva. Son capas de agua tan densas que se comportan como suelo falso. Un sonar vertical puede volver como si tocara una placa. Quien lo crea cae en una capa más pesada, pierde trim o se mete bajo una costra blanca que nunca fue sólida.\n\nLa colonia aprendió a leerlas con instrumentos pequeños. El ping lateral distingue pared, repisa y cortina de densidad. El lastre dice si el traje flota en agua normal o en salmuera. La caída de temperatura marca el agua caliente que resbala sobre sal fría. Las marcas de cable pesan más que las líneas limpias del mapa.\n\nPara un Marauder, el registro vuelve procedimiento el miedo. Una cortina oculta la ruta, enfría herramientas y conserva etiquetas de evacuación. También come juntas, dobla sonido y fabrica suelos falsos. En 2800-3600 m: ping lateral, trim, deriva, cruzar por la cicatriz.",
-          "external_site": "Guía práctica de capas de salmuera en HECTON-8: por qué Brine Stairs engaña al sonar, cómo se leen los viejos tableros de ruta y por qué un Marauder lee la sal antes que el mapa.",
-          "external_site_article": "Brine Stairs está entre ruta y trampa. De lejos parece arquitectura: repisas, labios claros, escalones blancos hacia la oscuridad. De cerca es química en movimiento. La salmuera pesada yace bajo el agua normal como un segundo océano en las grietas. Su borde brilla y puede contestar al sonar con seguridad de piedra.\n\nPor eso los tableros viejos no dicen 'baja aquí'. Dicen ping lateral, dos trims, caída térmica, marcas de cable, esperar el limo que no se mezcla. Un cruce bueno no es una línea de mapa; es una conducta que se repite después de que el océano miente.\n\nVarias cápsulas desaparecieron desde fondos que no existían. El último ping llegó desde bajo la tercera cortina. Deep Reach lo llamó error de navegación. El tablero conservó los raspados de cable.\n\nEn juego, la misma regla es acción: ocultar ruido, enfriar un cutter, recuperar tags conservados o cruzar sin exponer luz. Mal ángulo de ping, lastre viejo, sellos dañados o pánico convierten la ruta en pozo.",
-          "field_note": "La sal dibuja mapas mejores que la gerencia. Sigue las rayas, no la línea limpia."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Dichterouten-Ledger der Sole",
-          "scanner": "SOLE-LEDGER // Dichtegrenze voraus. Sonarrücklauf biegt unter die sichtbare Kante; Ballastverzug ist zu erwarten. Vor dem Abstieg seitlich in den Vorhang pingen. Glänzenden Boden als bewegte Flüssigkeit behandeln, bis zwei Trims übereinstimmen.",
-          "terminal": "DEEP REACH ROUTENTAFEL B3-17 // Nicht auf dem weißen Echo aufsetzen. Das ist Salzhaut über schwerer Sole. Vor Querung Trimkorrektur, Temperaturabfall und Kabelschrammentiefe notieren. Vermisste Evak-Pods pingten zuletzt unter dem dritten Vorhang, nicht auf dem kartierten Boden.",
-          "audio": "Wenn der Boden poliert wirkt, misstraue ihm. Seitlich pingen, Ballast von Hand ablassen, und der Sole nicht die Tiefe überlassen.",
-          "in_game_wiki": "Die Brine Stairs sind keine Höhlentreppe. Sie sind Wasserschichten, schwer genug, falschen Boden zu spielen. Ein Sonarstoß nach unten kann wie von einer Platte zurückkommen. Wer ihm glaubt, fällt in dichtere Sole, verliert Trim oder sinkt unter eine weiße Kruste, die nie fest war.\n\nDie alte Kolonie las diese Stufen mit kleinen Instrumenten. Seitliches Pingen trennt Wand, Absatz und Dichtevorhang. Ballastreaktion zeigt, ob der Anzug in normalem Wasser oder in Sole hängt. Temperaturabfall verrät warmes Wasser über kaltem Salz. Kabelnarben im Fels zählen mehr als saubere Kartenlinien.\n\nFür Marauder wird aus Angst Verfahren. Ein Solevorhang verbirgt Routen, kühlt Cutter und konserviert Evak-Tags. Er frisst auch Dichtungen, beugt Klang und baut Lügenböden. Bei 2800-3600 m gilt: seitlich pingen, trimmen, Drift abwarten, an der Narbe kreuzen.",
-          "external_site": "Praxisartikel zu HECTON-8-Soleschichten: warum die Brine Stairs Sonar belügen, wie alte Routentafeln sichere Übergänge markierten und warum Marauder Salz vor Karten lesen.",
-          "external_site_article": "Die Brine Stairs liegen zwischen Route und Falle. Aus der Entfernung wirken sie gebaut: helle Lippen, Borde, weiße Stufen im Dunkel. Aus der Nähe sind sie bewegte Chemie. Schwere Sole liegt unter Meerwasser wie ein zweiter Ozean in den Rissen. Die Grenze glänzt und antwortet dem Sonar manchmal mit der Sicherheit von Stein.\n\nDarum schreiben alte Tafeln nicht 'hier absteigen'. Sie schreiben Gewohnheiten: seitlich pingen, zweimal trimmen, Temperatur lesen, Kabelnarben suchen, Silt beobachten, der sich nicht mischt. Ein guter Übergang ist keine Linie, sondern wiederholbares Verhalten nach der Lüge des Ozeans.\n\nMehrere Evak-Pods verschwanden von Bodenpositionen, die es nie gab. Ihr letzter Ping kam unter dem dritten Dichtevorhang. Deep Reach nannte es Navigationsfehler. Die Routentafel behielt die Kabelschrammen.\n\nIm Spiel wird daraus Handlung: Schall maskieren, Cutter kühlen, konservierte Tags bergen, ohne Lichtkegel queren. Schlechter Pingwinkel, alter Ballast, beschädigte Dichtungen oder Panik machen aus der Route eine Grube.",
-          "field_note": "Salz schreibt ehrlichere Karten als Verwaltung. Folge den Kratzern, nicht der sauberen Linie."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr czytania gęstości solanki",
-          "scanner": "REJESTR SOLANKI // Przed tobą granica gęstości. Echo sonaru wygina się pod widoczną półkę; opóźnienie balastu jest normalne. Pinguj zasłonę z boku przed zejściem. Lśniącą podłogę traktuj jak ruchomy płyn, dopóki dwa trymy się nie zgodzą.",
-          "terminal": "TABLICA TRASY DEEP REACH B3-17 // Nie siadać na białym echu. To skóra soli nad ciężką solanką. Przed przejściem zapisać korektę trymu, spadek temperatury i głębokość rys kabla. Zaginione kapsuły ewakuacyjne pingowały ostatnio pod trzecią zasłoną, nie na dnie z mapy.",
-          "audio": "Jeśli dno wygląda na wypolerowane, nie ufaj mu. Ping z boku, ręczny upust balastu, i nie pozwól solance pisać twojej głębokości.",
-          "in_game_wiki": "Brine Stairs nie są schodami w jaskini. To warstwy wody tak ciężkie, że udają fałszywy grunt. Sonar w dół może wrócić jak od płyty. Kto uwierzy, wpada w gęstszą warstwę, traci trym albo schodzi pod białą skorupę, która nigdy nie była stała.\n\nStara kolonia czytała je małymi przyrządami. Ping boczny odróżnia ścianę, półkę i zasłonę gęstości. Balast mówi, czy skafander jest w zwykłej wodzie, czy trzyma go solanka. Spadek temperatury pokazuje ciepłą wodę ślizgającą się po zimnej soli. Rysy kabla na skale są ważniejsze niż czyste linie mapy.\n\nDla Maraudera rejestr zmienia strach w procedurę. Zasłona solanki ukrywa trasę, chłodzi narzędzia i przechowuje tagi ewakuacyjne. Zjada też uszczelki, zgina dźwięk i buduje kłamliwe podłogi. Na 2800-3600 m: ping boczny, trym, czekanie na dryf, przejście po bliźnie.",
-          "external_site": "Praktyczny tekst o warstwach solanki HECTON-8: czemu Brine Stairs kłamią sonarowi, jak czytać stare tablice i dlaczego Marauder czyta sól przed mapą.",
-          "external_site_article": "Brine Stairs są trasą i pułapką naraz. Z daleka wyglądają jak architektura: jasne krawędzie, półki, białe stopnie w ciemność. Z bliska to ruchoma chemia. Ciężka solanka leży pod wodą jak drugi ocean wlany w szczeliny. Granica świeci i potrafi odpowiedzieć sonarowi jak kamień.\n\nStare tablice nie mówią więc 'schodź tutaj'. Mówią: ping z boku, dwa trymy, temperatura, rysy kabla, muł, który nie chce się mieszać. Dobre przejście to nie linia, tylko zachowanie powtarzające się po kłamstwie oceanu.\n\nKilka kapsuł zniknęło z pozycji dna, którego nie było. Ostatni ping szedł spod trzeciej zasłony. Deep Reach wpisał błąd nawigacji. Tablica zachowała rysy kabla.\n\nW grze ta zasada daje działanie: maskowanie hałasu, chłodzenie cutterów, odzysk tagów, przejście bez światła. Zły kąt ping, stary balast, uszkodzone uszczelki albo panika zmieniają trasę w dół.",
-          "field_note": "Sól rysuje lepsze mapy niż zarząd. Idź za rysami, nie za czystą linią."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал читання густини розсолу",
-          "scanner": "ЖУРНАЛ РОЗСОЛУ // Попереду межа густини. Відлуння сонара згинається нижче видимої полиці; затримка баласту очікувана. Перед спуском пінгуй завісу збоку. Блискучу підлогу вважай рухомою рідиною, доки два трими не зійдуться.",
-          "terminal": "МАРШРУТНА ДОШКА DEEP REACH B3-17 // Не сідати на білий відгук. Це соляна шкіра над важким розсолом. Перед переходом записати поправку триму, спад температури й глибину подряпин кабелю. Зниклі евакуаційні капсули востаннє пінгували під третьою завісою, не на картованому дні.",
-          "audio": "Якщо дно виглядає відполірованим, не вір йому. Пінгуй збоку, стравлюй баласт руками і не дозволяй розсолу писати твою глибину.",
-          "in_game_wiki": "Brine Stairs - не печерні сходи. Це шари води, досить важкі, щоб удавати фальшиву землю. Sonar униз може повернутися наче від плити. Той, хто повірить, упаде в густіший шар, втратить трим або піде під білу кірку, що ніколи не була твердою.\n\nСтара колонія читала ці сходи дрібними приладами. Боковий ping відрізняє стіну, полицю та завісу густини. Баласт показує, чи костюм у звичайній воді, чи його тримає розсіл. Спад температури видає теплу воду над холодною сіллю. Подряпини кабелю на породі важливіші за чисті лінії мапи.\n\nДля Marauder журнал перетворює страх на процедуру. Розсільна завіса ховає маршрут, охолоджує інструмент і зберігає евакуаційні теги. Вона також їсть ущільнення, гне звук і робить брехливі підлоги. На 2800-3600 м: боковий ping, трим, чекати дрейф, переходити по шраму.",
-          "external_site": "Практична стаття про шари розсолу HECTON-8: чому Brine Stairs брешуть сонару, як читати старі маршрутні дошки і чому Marauder читає сіль раніше за мапу.",
-          "external_site_article": "Brine Stairs стоять між маршрутом і пасткою. Здалеку це майже архітектура: полиці, бліді краї, білі сходи в темряву. Зблизька це рухома хімія. Важкий розсіл лежить під водою як другий океан у тріщинах. Межа блищить і часом відповідає сонару з упевненістю каменю.\n\nТому старі дошки не пишуть 'спускайся тут'. Вони пишуть звички: ping збоку, два трими, температура, подряпини кабелю, мул, що не змішується. Добрий перехід - це не лінія, а поведінка, що повторюється після брехні океану.\n\nКілька капсул зникли з позицій дна, якого не існувало. Останній ping прийшов з-під третьої завіси. Deep Reach назвав це навігаційною помилкою. Дошка лишила кабельні подряпини.\n\nУ грі правило стає дією: сховати шум, охолодити cutter, дістати збережені теги, перейти без світла. Поганий кут ping, старий баласт, пошкоджені ущільнення чи паніка роблять маршрут ямою.",
-          "field_note": "Сіль креслить чесніші мапи, ніж адміністрація. Іди за подряпинами, не за чистою лінією."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل قراءة كثافة المحلول الملحي",
-          "scanner": "سجل المحلول // أمامك حد كثافة. عودة السونار تنحني تحت الرف المرئي؛ تأخر الصابورة متوقع. أرسل ping من الجانب قبل النزول. عامل الأرض اللامعة كسائل متحرك حتى يتطابق تصحيحان للاتزان.",
-          "terminal": "لوحة مسار DEEP REACH B3-17 // لا تهبط على الرد الأبيض. هذه قشرة ملح فوق محلول أثقل. سجل تصحيح الاتزان وانخفاض الحرارة وعمق خدوش الكابل قبل العبور. كبسولات الإخلاء المفقودة أرسلت آخر ping تحت الستار الثالث، لا على القاع المرسوم.",
-          "audio": "إذا بدا القاع مصقولا، فلا تثق به. أرسل ping من الجانب، أفرغ الصابورة بيدك، ولا تدع المحلول يكتب عمقك.",
-          "in_game_wiki": "Brine Stairs ليست سلما في كهف. إنها طبقات ماء ثقيلة بما يكفي لتتصرف كأرض كاذبة. يمكن أن يعود sonar المرسل إلى الأسفل كأنه ضرب صفيحة. من يصدقه يسقط في طبقة أثقل، يفقد الاتزان، أو يغوص تحت قشرة بيضاء لم تكن صلبة قط.\n\nتعلمت المستعمرة القديمة قراءة هذه الدرجات بأدوات صغيرة. ping الجانبي يفرق بين جدار ورف وستار كثافة. رد الصابورة يقول هل البدلة في ماء عادي أم يمسكها محلول ملحي. هبوط الحرارة يكشف الماء الدافئ فوق الملح البارد. خدوش الكابل أهم من خطوط الخريطة النظيفة.\n\nبالنسبة إلى Marauder، يحول السجل الخوف إلى إجراء. ستار المحلول يخفي طريقا، يبرد أداة، ويحفظ وسوم إخلاء. لكنه يأكل الأختام، يثني الصوت، ويصنع أرضا كاذبة. عند 2800-3600 م: ping جانبي، اتزان، انتظار انجراف، عبور عند الندبة.",
-          "external_site": "دليل عملي لطبقات المحلول الملحي في HECTON-8: لماذا تخدع Brine Stairs السونار، وكيف تقرأ لوحات الطريق القديمة، ولماذا يقرأ Marauder الملح قبل الخريطة.",
-          "external_site_article": "تقف Brine Stairs بين الطريق والفخ. من بعيد تبدو كأنها بناء: رفوف وحواف باهتة ودرجات بيضاء في الظلام. من قرب هي كيمياء متحركة. المحلول الثقيل يرقد تحت ماء البحر كمحيط ثان داخل الشقوق. حدوده تلمع وقد ترد على السونار بثقة الحجر.\n\nلذلك لا تقول اللوحات القديمة 'انزل هنا'. إنها تسجل عادات: ping من الجانب، تصحيحان، قراءة حرارة، خدوش كابل، طمي يرفض الاختلاط. المعبر الجيد ليس خطا، بل سلوك يتكرر بعد أن يكذب البحر.\n\nاختفت عدة كبسولات من مواضع قاع لم تكن موجودة. جاء آخر ping من تحت الستار الثالث. سجلت Deep Reach ذلك كخطأ ملاحة. أما اللوحة فاحتفظت بخدوش الكابل.\n\nفي اللعب تصبح القاعدة فعلا: إخفاء الضجيج، تبريد cutter، استرجاع وسوم محفوظة، أو عبور دون كشف ضوء. زاوية ping خاطئة، صابورة قديمة، ختم تالف أو نزول مذعور يحول الطريق إلى حفرة.",
-          "field_note": "الملح يرسم خرائط أصدق من الإدارة. اتبع الخدوش، لا الخط النظيف."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ledger Pembacaan Kepadatan Brine",
-          "scanner": "LEDGER BRINE // Batas kepadatan di depan. Pantulan sonar membelok di bawah shelf terlihat; jeda ballast wajar. Ping tirai dari samping sebelum turun. Perlakukan lantai mengilap sebagai cairan bergerak sampai dua trim cocok.",
-          "terminal": "PAPAN RUTE DEEP REACH B3-17 // Jangan mendarat di pantulan putih. Itu kulit garam di atas brine berat. Catat koreksi trim, penurunan suhu, dan kedalaman gores kabel sebelum menyeberang. Pod evakuasi hilang terakhir ping di bawah tirai ketiga, bukan di dasar peta.",
-          "audio": "Kalau lantai tampak dipoles, curigai. Ping dari samping, buang ballast dengan tangan, dan jangan biarkan brine menulis kedalamanmu.",
-          "in_game_wiki": "Brine Stairs bukan tangga gua. Ia adalah lapisan air cukup berat untuk menjadi lantai palsu. Sonar ke bawah bisa kembali seperti dari pelat. Yang percaya akan jatuh ke lapisan lebih berat, kehilangan trim, atau masuk di bawah kerak putih yang tidak pernah padat.\n\nKoloni lama membaca tangga ini dengan instrumen kecil. Ping samping memisahkan dinding, shelf, dan tirai kepadatan. Ballast memberi tahu apakah suit berada di air biasa atau ditahan brine. Penurunan suhu menandai air hangat di atas garam dingin. Bekas kabel di batu lebih jujur dari garis peta.\n\nBagi Marauder, ledger mengubah takut menjadi prosedur. Tirai brine menyembunyikan rute, mendinginkan alat, dan menyimpan tag evakuasi. Ia juga memakan seal, membengkokkan suara, dan membuat lantai bohong. Pada 2800-3600 m: ping samping, trim, tunggu drift, silang di bekas luka.",
-          "external_site": "Panduan praktis lapisan brine HECTON-8: kenapa Brine Stairs membohongi sonar, cara membaca papan rute lama, dan kenapa Marauder membaca garam sebelum peta.",
-          "external_site_article": "Brine Stairs berada di antara rute dan perangkap. Dari jauh ia tampak seperti arsitektur: bibir pucat, shelf, anak tangga putih menuju gelap. Dari dekat ia kimia bergerak. Brine berat berada di bawah air sebagai laut kedua dalam retakan. Batasnya berkilau dan bisa menjawab sonar seperti batu.\n\nKarena itu papan lama tidak menulis 'turun di sini'. Ia menulis kebiasaan: ping samping, dua trim, baca suhu, cari gores kabel, tunggu lumpur yang tidak bercampur. Penyeberangan baik bukan garis, tapi perilaku yang terulang setelah laut sempat berbohong.\n\nBeberapa pod hilang dari posisi dasar yang tidak ada. Ping terakhir datang dari bawah tirai ketiga. Deep Reach menyebutnya kesalahan navigasi. Papan rute menyimpan gores kabel.\n\nDalam permainan, aturan ini menjadi tindakan: sembunyikan suara, dinginkan cutter, ambil tag tersimpan, atau menyeberang tanpa lampu. Sudut ping buruk, ballast basi, seal rusak, atau panik mengubah rute jadi lubang.",
-          "field_note": "Garam membuat peta lebih jujur dari manajemen. Ikuti goresan, bukan garis bersih."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "염수 밀도 경로 장부",
-          "scanner": "염수 장부 // 전방에 밀도 경계. 소나 반사는 보이는 선반 아래로 휘며, 밸러스트 반응 지연은 정상이다. 하강 전 측면에서 커튼을 ping 하라. 두 번의 트림이 맞을 때까지 빛나는 바닥을 움직이는 액체로 취급하라.",
-          "terminal": "DEEP REACH 경로판 B3-17 // 흰 반사 위에 착지하지 말 것. 그것은 무거운 염수 위의 소금 껍질이다. 횡단 전 트림 보정, 온도 하강, 케이블 긁힘 깊이를 기록하라. 실종 대피 포드는 지도 바닥이 아니라 세 번째 커튼 아래에서 마지막 ping 을 보냈다.",
-          "audio": "바닥이 닦인 것처럼 보이면 믿지 마라. 옆에서 ping 하고, 손으로 밸러스트를 빼고, 염수가 네 깊이를 쓰게 두지 마라.",
-          "in_game_wiki": "Brine Stairs 는 동굴 계단이 아니다. 가짜 바닥처럼 행동할 만큼 무거운 물의 층이다. 아래로 쏜 sonar 는 판에 맞은 것처럼 돌아올 수 있다. 믿는 사람은 더 무거운 층으로 떨어지고, 트림을 잃고, 고체가 아니었던 흰 껍질 아래로 가라앉는다.\n\n옛 식민지는 작은 장비로 이 계단을 읽었다. 측면 ping 은 벽, 선반, 밀도 커튼을 가른다. 밸러스트 반응은 슈트가 보통 물에 있는지 염수에 붙잡혔는지 말한다. 온도 하강은 뜨거운 물이 찬 소금 위를 미끄러지는 곳을 보여준다. 바위의 케이블 상처가 깨끗한 지도선보다 믿을 만하다.\n\nMarauder 에게 장부는 공포를 절차로 바꾼다. 염수 커튼은 경로를 숨기고, 도구를 식히고, 대피 태그를 보존한다. 하지만 씰을 먹고, 소리를 휘게 하고, 거짓 바닥을 만든다. 2800-3600 m 에서는 측면 ping, 트림, 표류 대기, 상처를 따라 횡단한다.",
-          "external_site": "HECTON-8 염수 밀도층 실전 안내: Brine Stairs 가 소나를 속이는 이유, 오래된 경로판을 읽는 법, Marauder 가 지도보다 소금을 먼저 읽는 이유.",
-          "external_site_article": "Brine Stairs 는 경로와 함정 사이에 있다. 멀리서는 밝은 턱과 흰 단이 어둠 속으로 쌓인 구조물처럼 보인다. 가까이서는 움직이는 화학이다. 무거운 염수가 균열 속 두 번째 바다처럼 보통 물 아래에 놓인다. 경계는 빛나고, 때로 돌처럼 자신 있게 sonar 에 답한다.\n\n그래서 옛 경로판은 '여기서 내려가라'고 쓰지 않는다. 측면 ping, 두 번의 트림, 온도, 케이블 상처, 섞이지 않는 실트. 좋은 횡단점은 선이 아니라, 바다가 거짓말한 뒤에도 반복되는 행동이다.\n\n몇몇 대피 포드는 존재하지 않는 바닥 좌표에서 사라졌다. 마지막 ping 은 세 번째 밀도 커튼 아래에서 왔다. Deep Reach 는 항법 오류로 처리했다. 경로판은 케이블 상처를 남겼다.\n\n게임에서는 같은 규칙이 행동이 된다. 소음을 숨기고, cutter 를 식히고, 보존된 태그를 회수하고, 빛 없이 협곡을 건넌다. 나쁜 ping 각도, 오래된 밸러스트, 손상된 씰, 공황 하강은 경로를 구덩이로 바꾼다.",
-          "field_note": "소금은 관리보다 정직한 지도를 쓴다. 깨끗한 선이 아니라 긁힌 자국을 따라가라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן קריאת צפיפות מי מלח",
-          "scanner": "יומן מי מלח // גבול צפיפות לפנים. החזר הסונאר מתעקם מתחת למדף הנראה; עיכוב בבלסט צפוי. שלח ping מהצד לפני ירידה. התייחס לרצפה מבריקה כנוזל נע עד ששני trims מסכימים.",
-          "terminal": "לוח מסלול DEEP REACH B3-17 // לא לנחות על ההחזר הלבן. זו עור מלח מעל מי מלח כבדים. רשום תיקון trim, נפילת טמפרטורה ועומק שריטת כבל לפני חציה. קפסולות הפינוי החסרות שלחו ping אחרון מתחת למסך השלישי, לא על הקרקעית המסומנת.",
-          "audio": "אם הקרקע נראית מלוטשת, חשוד בה. ping מהצד, שחרר בלסט ביד, ואל תיתן למי המלח לכתוב את העומק שלך.",
-          "in_game_wiki": "Brine Stairs אינן מדרגות מערה. אלו שכבות מים כבדות מספיק כדי להתנהג כמו קרקע שקרית. sonar שנשלח למטה יכול לחזור כאילו פגע בלוח. מי שמאמין נופל לשכבה כבדה יותר, מאבד trim או שוקע מתחת לקרום לבן שמעולם לא היה מוצק.\n\nהמושבה הישנה קראה את המדרגות בעזרת מכשירים קטנים. ping צדדי מפריד בין קיר, מדף ומסך צפיפות. תגובת הבלסט אומרת אם החליפה במים רגילים או מוחזקת במי מלח. ירידת טמפרטורה מסמנת מים חמים מעל מלח קר. שריטות כבל בסלע אמינות יותר מקווי מפה נקיים.\n\nל-Marauder היומן הופך פחד לנוהל. מסך מי מלח מסתיר דרך, מקרר כלי ושומר תגי פינוי. הוא גם אוכל אטמים, מכופף קול ובונה רצפות שקריות. ב-2800-3600 מ': ping צדדי, trim, המתנה לסחיפה, חציה לפי הצלקת.",
-          "external_site": "מדריך מעשי לשכבות מי מלח ב-HECTON-8: למה Brine Stairs משקרות לסונאר, איך קוראים לוחות מסלול ישנים ולמה Marauder קורא מלח לפני מפה.",
-          "external_site_article": "Brine Stairs נמצאות בין דרך למלכודת. מרחוק הן נראות כמו בנייה: מדפים, שפתיים חיוורות ומדרגות לבנות אל החושך. מקרוב זו כימיה נעה. מי מלח כבדים שוכבים מתחת למים כמו אוקיינוס שני בתוך סדקים. הגבול מבריק ולעיתים עונה לסונאר בביטחון של אבן.\n\nלכן הלוחות הישנים לא אומרים 'רדו כאן'. הם מציינים הרגלים: ping מהצד, שני trims, טמפרטורה, שריטות כבל, סחף שלא מתערבב. מעבר טוב אינו קו, אלא התנהגות שחוזרת אחרי שהים הספיק לשקר.\n\nכמה קפסולות נעלמו מקואורדינטות קרקעית שלא היו קיימות. ה-ping האחרון הגיע מתחת למסך השלישי. Deep Reach קראה לזה שגיאת ניווט. לוח המסלול שמר את שריטות הכבל.\n\nבמשחק הכלל הופך לפעולה: להסתיר רעש, לקרר cutter, לאסוף תג שמור או לחצות בלי אור. זווית ping רעה, בלסט ישן, אטם פגום או ירידה בפאניקה הופכים דרך לבור.",
-          "field_note": "מלח מצייר מפות אמינות יותר מהנהלה. עקוב אחרי השריטות, לא אחרי הקו הנקי."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de leitura de densidade da salmoura",
-          "scanner": "REGISTRO DE SALMOURA // Limite de densidade à frente. O retorno do sonar curva abaixo da prateleira visível; atraso de lastro é esperado. Faça ping lateral na cortina antes de descer. Trate o piso brilhante como fluido móvel até dois trims concordarem.",
-          "terminal": "QUADRO DE ROTA DEEP REACH B3-17 // Não pouse no retorno branco. É pele de sal sobre salmoura pesada. Registre correção de trim, queda térmica e profundidade de raspão de cabo antes de cruzar. Pods de evacuação perdidos deram último ping sob a terceira cortina, não no fundo mapeado.",
-          "audio": "Se o fundo parece polido, desconfie. Ping de lado, sangre o lastro na mão e não deixe a salmoura escrever sua profundidade.",
-          "in_game_wiki": "Brine Stairs não são escada de caverna. São camadas de água pesadas o suficiente para agir como chão falso. Um sonar para baixo pode voltar como se batesse numa placa. Quem acredita cai em camada mais densa, perde trim ou entra sob uma crosta branca que nunca foi sólida.\n\nA colônia antiga lia essas escadas com instrumentos pequenos. Ping lateral separa parede, prateleira e cortina de densidade. O lastro diz se o traje está em água comum ou preso pela salmoura. A queda de temperatura mostra água quente sobre sal frio. Arranhões de cabo na rocha valem mais que linhas limpas de mapa.\n\nPara um Marauder, o registro transforma medo em procedimento. Uma cortina de salmoura esconde rota, resfria ferramenta e preserva tags de evacuação. Ela também corrói selos, dobra som e fabrica pisos falsos. A 2800-3600 m: ping lateral, trim, esperar deriva, cruzar pela cicatriz.",
-          "external_site": "Guia prático das camadas de salmoura de HECTON-8: por que Brine Stairs mente ao sonar, como ler quadros de rota antigos e por que Marauder lê sal antes do mapa.",
-          "external_site_article": "Brine Stairs ficam entre rota e armadilha. De longe parecem arquitetura: prateleiras, bordas claras, degraus brancos no escuro. De perto são química em movimento. Salmoura pesada repousa sob a água como um segundo oceano nas rachaduras. A fronteira brilha e pode responder ao sonar com confiança de pedra.\n\nPor isso os quadros antigos não dizem 'desça aqui'. Dizem hábitos: ping lateral, dois trims, temperatura, arranhões de cabo, lama que não mistura. Uma boa travessia não é linha; é comportamento que se repete depois que o oceano mente.\n\nVários pods sumiram de posições de fundo inexistentes. O último ping veio sob a terceira cortina. Deep Reach chamou de erro de navegação. O quadro guardou os arranhões de cabo.\n\nNo jogo, a regra vira ação: mascarar ruído, resfriar cutter, recuperar tags preservadas ou cruzar sem luz. Ângulo ruim de ping, lastro velho, selo danificado ou pânico transformam rota em poço.",
-          "field_note": "O sal desenha mapas mais honestos que a gerência. Siga os arranhões, não a linha limpa."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Logboek voor dichtheidslezing van pekel",
-          "scanner": "PEKELLOGBOEK // Dichtheidsgrens vooruit. Sonarterugslag buigt onder de zichtbare richel; ballastvertraging is verwacht. Ping het gordijn van opzij voor afdaling. Behandel de glanzende vloer als bewegende vloeistof tot twee trims overeenkomen.",
-          "terminal": "DEEP REACH ROUTEBORD B3-17 // Niet landen op de witte echo. Dat is zoutvel boven zware pekel. Noteer trimcorrectie, temperatuurdaling en kabelschraapdiepte voor de oversteek. Vermiste evac-pods pingden laatst onder het derde gordijn, niet op de gekarteerde bodem.",
-          "audio": "Als de bodem gepolijst lijkt, wantrouw hem. Ping van opzij, laat ballast met de hand af, en laat de pekel je diepte niet schrijven.",
-          "in_game_wiki": "Brine Stairs zijn geen grottrap. Het zijn waterlagen zwaar genoeg om valse grond te spelen. Sonar recht omlaag kan terugkomen als van een plaat. Wie het gelooft, valt in een zwaardere laag, verliest trim of zinkt onder een witte korst die nooit vast was.\n\nDe oude kolonie las de trappen met kleine instrumenten. Zijping scheidt wand, richel en dichtheidsgordijn. Ballastreactie zegt of het pak in gewoon water hangt of door pekel wordt gedragen. Temperatuurdaling verraadt warm water over koud zout. Kabelkrassen in steen zijn betrouwbaarder dan nette kaartlijnen.\n\nVoor een Marauder maakt het logboek van angst procedure. Een pekelgordijn verbergt route, koelt gereedschap en bewaart evac-tags. Het vreet ook afdichtingen, buigt geluid en maakt leugenachtige vloeren. Op 2800-3600 m: zijping, trim, drift afwachten, oversteken bij het litteken.",
-          "external_site": "Praktische gids voor HECTON-8 pekellagen: waarom Brine Stairs tegen sonar liegen, hoe oude routeborden werken en waarom een Marauder zout leest voor de kaart.",
-          "external_site_article": "Brine Stairs staan tussen route en val. Van ver lijken ze gebouwd: bleke randen, richels, witte treden het donker in. Van dichtbij is het bewegende chemie. Zware pekel ligt onder zeewater als een tweede oceaan in scheuren. De grens glanst en antwoordt soms op sonar met de zekerheid van steen.\n\nDaarom schrijven oude borden niet 'daal hier af'. Ze schrijven gewoontes: ping van opzij, twee trims, temperatuur, kabelkrassen, slib dat niet mengt. Een goede oversteek is geen lijn, maar gedrag dat zich herhaalt nadat de oceaan heeft gelogen.\n\nEnkele pods verdwenen vanaf bodems die niet bestonden. Hun laatste ping kwam onder het derde gordijn vandaan. Deep Reach noemde het navigatiefout. Het routebord hield de kabelkrassen vast.\n\nIn spel wordt dezelfde regel actie: geluid maskeren, cutter koelen, bewaarde tags bergen of zonder licht oversteken. Slechte pinghoek, oude ballast, kapotte seal of paniek maakt van route een kuil.",
-          "field_note": "Zout tekent eerlijkere kaarten dan management. Volg de krassen, niet de nette lijn."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.brine_density_route_ledger",
+    "secondary": [
+     "unlock.first_brine_stair_descent",
+     "unlock.first_density_curtain_side_ping",
+     "unlock.first_emergency_ballast_station"
+    ],
+    "poi_tags": [
+     "poi.brine_density_route_board",
+     "poi.emergency_ballast_station",
+     "poi.cable_scrape_depth_marker",
+     "poi.missing_evac_pod_ping_shelf"
+    ],
+    "biome_tags": [
+     "biome.brine_stairs",
+     "biome.brine_canyon",
+     "biome.density_layer"
+    ],
+    "first_20_boundary": "Deep-route article; not part of first 20 minutes. It teaches brine traversal after the player can reach the 2800-3600 m Brine Stairs."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Density Boundary Scanner",
+     "terminal": "Deep Reach Brine Route Board",
+     "audio": "Marauder Descent Instructor",
+     "in_game_wiki": "PDA Brine Traverse Field Guide",
+     "external_site": "Public Site Brine Density Route Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_density_ledger_or_brine_stair_descent",
+    "truth_payload": "Brine density layers are traversable route features only when read as layered fluids; direct sonar can report false floors, so safe descent requires side-ping, ballast trim, drift wait and physical scrape evidence.",
+    "player_question": "What makes the shining floor in the Brine Stairs a route instead of a trap?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Brine Density Route Ledger",
+     "scanner": "BRINE LEDGER // Density boundary ahead. Sonar return bends below the visible shelf; ballast response lag is expected. Side-ping the curtain before descent. Treat the shining floor as a moving fluid until two trims agree.",
+     "terminal": "DEEP REACH ROUTE BOARD B3-17 // Do not land on the white return. It is a salt-crust skin over heavier brine. Mark trim correction, temperature falloff and cable scrape depth before crossing. Missing evac pods last pinged under the third curtain, not on the charted floor.",
+     "audio": "If the floor looks polished, distrust it. Ping from the side, bleed ballast by touch, and do not let the brine write your depth for you.",
+     "in_game_wiki": "The Brine Stairs are not a cave staircase. They are layers of water heavy enough to behave like false ground: clear on top, thick below, sharp at the boundary. A sonar ping sent straight down can come back like a floor plate. A diver who believes it may drop into a heavier layer, lose trim, scrape a cable or sink under a white crust that was never solid.\n\nThe old colony learned to read the stairs by abusing small instruments. A side-ping shows whether a return is a wall, a ledge or a density curtain. A ballast trim tells whether the suit is floating in ordinary seawater or being held by brine. Temperature falloff marks where vent-warmed water slides across cold salt. Cable scars on the rock matter more than clean map lines, because cable does not flatter itself when it hits a layer.\n\nFor a Marauder, the ledger turns fear into procedure. A brine curtain can hide a route from predators and drones. It can cool overheated cutters. It can preserve an evac tag or a corpse record for years. It can also eat seals, bend sound and make a safe floor out of a lie. Read the ledger when entering the 2800-3600 m Brine Stairs: side-ping, trim, wait for drift, cross at the scar, and never spend the last ballast correction on a pretty reflection.",
+     "external_site": "A practical guide to HECTON-8 brine density layers: why the Brine Stairs lie to sonar, how old route boards marked safe crossings, and why a Marauder reads salt before trusting a map.",
+     "external_site_article": "The Brine Stairs sit between route and trap. They look architectural from a distance: shelves, pale lips, white ledges stacked into the dark. Up close they are moving chemistry. Dense brine lies under normal seawater like a second ocean poured into the cracks. Its boundary can shine. Its crust can wrinkle. Its surface can answer sonar with the confidence of stone while moving under the suit like oil.\n\nThat is why the old route boards do not say 'descend here'. They list habits. Ping from the side. Trim twice. Watch temperature falloff. Check for cable scars. Wait for the silt that rises from the boundary, then watch where it refuses to mix. A good crossing is not a line on a chart; it is a behavior that repeats after the ocean has had a chance to lie.\n\nThe ledger has human teeth in it. Several evacuation pods were reported missing from floor positions that never existed. Their final pings came from beneath the third density curtain, where a pilot saw a pale shelf, corrected downward and spent the last ballast margin trying to climb out of water heavier than the capsule. Deep Reach filed the losses as navigation error. The route board kept the cable scrapes.\n\nIn play, the same rule turns lore into action. The player can ride a brine layer to mask noise, dip a cutter into cold density water, recover preserved tags, or cross a canyon without exposing a light cone. The cost is attention: bad ping angle, stale ballast, damaged seals or panic descent can turn a route into a pit. HECTON-8 does not need a monster to punish arrogance. Sometimes the ocean only has to look flat.",
+     "field_note": "Salt writes better maps than management. Follow the scratches, not the clean line."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал чтения рассольной плотности",
+     "scanner": "ЖУРНАЛ РАССОЛА // Впереди граница плотности. Ответ сонара уходит ниже видимой полки; задержка балласта ожидаема. Прозвони завесу сбоку перед спуском. Блестящий пол считать движущейся жидкостью, пока две коррекции трима не совпадут.",
+     "terminal": "МАРШРУТНЫЙ ЩИТ DEEP REACH B3-17 // Не садиться на белый отклик. Это соляная кожа над тяжелым рассолом. Перед переходом отметить поправку трима, спад температуры и глубину царапин кабеля. Пропавшие эвакуационные капсулы в последний раз пинговали под третьей завесой, а не на нанесенном на карту дне.",
+     "audio": "Если дно выглядит отполированным, не верь ему. Пингуй сбоку, стравливай балласт руками и не позволяй рассолу писать за тебя глубину.",
+     "in_game_wiki": "Brine Stairs - не пещерная лестница. Это слои воды, достаточно тяжелые, чтобы вести себя как ложная земля: сверху прозрачные, снизу густые, на границе резкие. Сонарный пинг вниз может вернуться как от плиты. Тот, кто поверит, провалится в тяжелый слой, потеряет трим, сорвет кабель или уйдет под белую корку, которая никогда не была твердой.\n\nСтарая колония училась читать эти ступени мелкими приборами и плохой памятью. Боковой пинг показывает, что перед тобой: стенка, уступ или завеса плотности. Балластный трим говорит, держит ли костюм обычная вода или рассол. Температурный спад выдает, где теплый поток от вент-полей скользит поверх холодной соли. Царапины кабеля на породе важнее чистых линий карты, потому что кабель не умеет льстить себе, когда бьется о слой.\n\nДля мародера журнал превращает страх в процедуру. Рассольная завеса может спрятать маршрут от хищников и дронов. Она может охладить перегретый резак. Она может годами хранить эвакуационную метку или запись о теле. И она же ест уплотнения, гнет звук и делает безопасный пол из лжи. Входя в Brine Stairs на 2800-3600 м, читай журнал: боковой пинг, трим, ожидание дрейфа, переход по царапине - и никогда не трать последнюю поправку балласта на красивое отражение.",
+     "external_site": "Практическая статья о плотностных слоях рассола на HECTON-8: почему Brine Stairs лгут сонару, как старые маршрутные щиты отмечали переходы и почему мародер читает соль раньше карты.",
+     "external_site_article": "Brine Stairs стоят между маршрутом и ловушкой. Издалека они выглядят почти архитектурно: полки, бледные губы, белые уступы, уходящие в темноту. Вблизи это движущаяся химия. Тяжелый рассол лежит под обычной водой как второй океан, налитый в трещины. Его граница может блестеть. Корка может морщиться. Поверхность может отвечать сонару с уверенностью камня и при этом двигаться под костюмом как масло.\n\nПоэтому старые маршрутные щиты не пишут: 'спускаться здесь'. Они перечисляют привычки. Пинг сбоку. Два трима. Смотри спад температуры. Ищи царапины кабеля. Дождись ила, поднятого с границы, и смотри, где он отказывается смешиваться. Хороший переход - не линия на карте, а поведение, которое повторяется после того, как океан успел соврать.\n\nВ журнале есть человеческие зубы. Несколько эвакуационных капсул числились пропавшими с позиций дна, которого не существовало. Последний пинг пришел из-под третьей завесы плотности: пилот увидел бледную полку, исправился вниз и потратил последний запас балласта, пытаясь выбраться из воды тяжелее капсулы. Deep Reach списал потери на навигационную ошибку. Маршрутный щит оставил кабельные царапины.\n\nВ игре это правило становится действием. Игрок может ехать по рассольному слою, чтобы скрыть шум, окунуть резак в холодную плотную воду, достать сохраненные метки или пересечь каньон без светового конуса. Цена - внимание: плохой угол пинга, старый балласт, поврежденные уплотнения или панический спуск превращают маршрут в яму. HECTON-8 не всегда нужен хищник, чтобы наказать самоуверенность. Иногда океану достаточно выглядеть ровным.",
+     "field_note": "Соль честнее менеджмента. Иди по царапинам, а не по чистой линии."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "塩水密度ルート台帳",
+     "scanner": "塩水台帳 // 前方に密度境界。ソナー反射は見えている棚より低く曲がる。バラスト応答の遅れを想定。降下前に横からカーテンを打診し、二つのトリムが一致するまで光る床を流体として扱え。",
+     "terminal": "DEEP REACH ルート板 B3-17 // 白い反射に着底するな。重い塩水の上に張った塩皮だ。横断前にトリム補正、温度低下、ケーブル擦過深度を記録。消えた避難ポッドの最後の ping は第三カーテンの下で、地図上の床ではない。",
+     "audio": "床が磨かれて見えるなら疑え。横から ping を撃ち、手でバラストを抜き、塩水に深度を書かせるな。",
+     "in_game_wiki": "Brine Stairs は洞窟の階段ではない。普通の海水の下に重い塩水が重なり、境界だけが床のように光る。真下へ撃った sonar は石の床のような返事を返すことがある。信じた潜水者は重い層へ落ち、トリムを失い、ケーブルを削り、固体ではない白い皮の下へ沈む。\n\n古い植民地は小さな計器でこの階段を読んだ。横 ping は壁、棚、密度カーテンを分ける。バラストの反応は、スーツが普通の水にいるのか塩水に支えられているのかを示す。温度低下は、熱い水が冷たい塩の上を滑る場所を教える。きれいな地図線より岩のケーブル傷が信用された。\n\nMarauder にとって台帳は恐怖を手順に変える。塩水カーテンは捕食者やドローンから航路を隠し、過熱した cutter を冷やし、何年も避難タグを保存する。だが seal を食い、音を曲げ、嘘の床を作る。2800-3600 m の Brine Stairs では横 ping、トリム、漂流待ち、傷跡での横断が生存手順になる。",
+     "external_site": "HECTON-8 の塩水密度層の実用記事。Brine Stairs が sonar に嘘をつく理由、古いルート板の読み方、そして Marauder が地図より先に塩を読む理由。",
+     "external_site_article": "Brine Stairs はルートであり罠でもある。遠くから見ると棚と白い縁が建築物のように積まれている。近づくとそれは化学の動きだ。重い塩水が割れ目の中に第二の海として溜まり、境界は光り、皮はしわを寄せ、sonar には石のように自信満々の返事をする。\n\nだから古いルート板は「ここで降りろ」とは書かない。横から ping。二度トリム。温度低下を見る。ケーブル傷を見る。境界から上がるシルトが混ざらない場所を待つ。よい横断点は地図の線ではなく、海が一度嘘をついた後でも繰り返す挙動だ。\n\n行方不明の避難ポッドのいくつかは、存在しない床の座標から報告された。最後の ping は第三密度カーテンの下だった。Deep Reach は navigation error と処理したが、ルート板は cable scar を残した。\n\nゲーム内では同じ規則が行動になる。層を利用して音を隠す、cutter を冷やす、保存されたタグを回収する、光を晒さず峡谷を渡る。悪い ping 角、古いバラスト、傷んだ seal、焦った降下はルートを穴に変える。",
+     "field_note": "塩は管理者より正確な地図を書く。きれいな線ではなく傷を追え。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "盐水密度航路账本",
+     "scanner": "盐水账本 // 前方存在密度边界。声呐回波会弯到可见台地之下；压载响应延迟属正常。下降前从侧面 ping 穿帘幕。直到两次配平一致前，把发亮的地面当作流动液体。",
+     "terminal": "DEEP REACH 航路板 B3-17 // 不要落在白色回波上。那只是重盐水上的盐壳皮。穿越前记录配平修正、温降和缆线刮痕深度。失踪撤离舱最后一次 ping 在第三道密度帘下，不在地图标出的海床上。",
+     "audio": "地面越像被抛光，越要怀疑。侧向 ping，手动放压载，不要让盐水替你写深度。",
+     "in_game_wiki": "Brine Stairs 不是洞穴楼梯。它是重到会伪装成地面的水层：上方清，下面厚，边界锋利。向正下方发出的 sonar 可能像撞到地板一样返回。相信它的人会落入更重的层，失去配平，刮断缆线，或者沉到从来不是固体的白色盐壳下。\n\n旧殖民地靠小仪器和坏记忆学会读这些台阶。侧向 ping 区分墙、台地和密度帘。压载配平说明潜服是在普通海水里，还是被盐水托着。温降标出热水从冷盐上滑过的位置。岩壁上的缆线刮痕比干净地图线更可靠，因为缆线撞到水层时不会自我安慰。\n\n对 Marauder 来说，账本把恐惧变成流程。盐水帘能遮蔽路线、冷却过热切割器、保存撤离标签和尸体记录；也会腐蚀密封、弯曲声音，把谎言做成安全地板。进入 2800-3600 m 的 Brine Stairs 时，规则是侧向 ping、配平、等待漂移、沿刮痕穿越。",
+     "external_site": "HECTON-8 盐水密度层实用指南：Brine Stairs 为什么欺骗声呐，旧航路板如何标记安全穿越点，以及 Marauder 为什么先读盐再信地图。",
+     "external_site_article": "Brine Stairs 介于航路和陷阱之间。远看像建筑：台地、浅色边缘、白色层阶叠入黑暗。近看却是流动的化学。重盐水像第二片海灌在裂缝里，边界会发亮，盐皮会起皱，表面能用石头般自信的回声欺骗 sonar。\n\n所以旧航路板不写“从这里下降”。它写习惯：侧向 ping，两次配平，看温降，看缆线刮痕，等边界扬起的泥尘拒绝混合。好的穿越点不是图上的线，而是在海水撒谎之后仍会重复的行为。\n\n几艘撤离舱被报失于并不存在的海床坐标。最后 ping 来自第三道密度帘下方：驾驶员看见白色台地，向下修正，然后把最后压载余量花在比舱体更重的水里。Deep Reach 写成导航错误，航路板留下了缆线伤痕。\n\n在玩法上，同一规则变成选择。玩家能借盐水层遮音、冷却切割器、回收保存的标签，或不暴露灯光穿过峡谷。坏角度 ping、陈旧压载、破损密封和恐慌下降会把航路变成坑。HECTON-8 有时不需要怪物，只需要海看起来很平。",
+     "field_note": "盐比管理层更会画地图。跟刮痕走，不跟漂亮线走。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre de lecture des densités de saumure",
+     "scanner": "REGISTRE SAUMURE // Frontière de densité devant vous. Le retour sonar plonge sous la corniche visible; le retard de ballast est attendu. Sondez le rideau par le côté avant de descendre. Traitez le sol brillant comme un fluide mobile tant que deux trims ne concordent pas.",
+     "terminal": "PANNEAU DE ROUTE DEEP REACH B3-17 // Ne posez pas sur le retour blanc. C'est une peau de sel au-dessus d'une saumure plus lourde. Notez correction de trim, chute thermique et profondeur des rayures de câble avant traversée. Les pods d'évacuation disparus ont pingé sous le troisième rideau, pas sur le fond cartographié.",
+     "audio": "Si le fond a l'air poli, méfie-toi. Ping par le côté, purge le ballast à la main, et ne laisse pas la saumure écrire ta profondeur.",
+     "in_game_wiki": "Les Brine Stairs ne sont pas un escalier de grotte. Ce sont des couches d'eau assez lourdes pour jouer le rôle d'un faux sol. Un sonar envoyé droit vers le bas peut revenir comme s'il avait frappé une dalle. Celui qui le croit tombe dans une couche plus dense, perd son trim ou passe sous une croûte blanche qui n'a jamais été solide.\n\nLa colonie lisait ces marches avec de petits instruments. Un ping latéral sépare mur, rebord et rideau de densité. Le ballast dit si la combinaison flotte en eau normale ou dans une saumure qui la tient. La chute de température révèle où l'eau chaude glisse sur le sel froid. Les griffures de câble comptent plus que les cartes propres.\n\nPour un Marauder, le registre transforme la peur en procédure. Un rideau de saumure cache une route, refroidit un outil, conserve un tag d'évacuation. Il ronge aussi les joints, plie le son et fabrique des sols mensongers. A 2800-3600 m, on lit: ping latéral, trim, attente de dérive, passage sur la cicatrice.",
+     "external_site": "Guide pratique des couches de saumure de HECTON-8: pourquoi les Brine Stairs mentent au sonar, comment lire les anciens panneaux de route et pourquoi un Marauder lit le sel avant la carte.",
+     "external_site_article": "Les Brine Stairs tiennent entre route et piège. De loin, elles ressemblent à une architecture: lèvres pâles, tablettes, marches blanches dans le noir. De près, c'est une chimie en mouvement. La saumure lourde repose sous l'eau comme un second océan versé dans les fissures. Sa frontière brille, se ride et répond parfois au sonar avec l'assurance de la pierre.\n\nLes vieux panneaux ne disent donc pas 'descendre ici'. Ils listent des gestes: ping latéral, deux trims, température, rayures de câble, silt qui refuse de se mélanger. Un bon passage n'est pas une ligne; c'est un comportement répété après que l'océan a eu le temps de mentir.\n\nPlusieurs pods d'évacuation ont disparu depuis des positions de fond qui n'existaient pas. Leur dernier ping venait de sous le troisième rideau de densité. Deep Reach a classé l'affaire en erreur de navigation. Le panneau a gardé les marques de câble.\n\nEn jeu, la règle devient action: masquer le bruit dans une couche, refroidir un cutter, récupérer des tags conservés, traverser sans cône lumineux. Mauvais angle de ping, ballast rance, joint abîmé ou descente paniquée changent la route en fosse.",
+     "field_note": "Le sel trace de meilleures cartes que l'administration. Suis les rayures, pas la ligne propre."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de lectura de densidad de salmuera",
+     "scanner": "REGISTRO DE SALMUERA // Límite de densidad delante. El retorno de sonar se curva bajo la repisa visible; se espera retraso de lastre. Lanza ping lateral antes de bajar. Trata el suelo brillante como fluido móvil hasta que dos trims coincidan.",
+     "terminal": "TABLERO DE RUTA DEEP REACH B3-17 // No aterrizar sobre el retorno blanco. Es piel de sal sobre salmuera pesada. Registrar corrección de trim, caída térmica y profundidad de raspado de cable antes de cruzar. Las cápsulas de evacuación perdidas dieron su último ping bajo la tercera cortina, no en el fondo cartografiado.",
+     "audio": "Si el suelo parece pulido, no le creas. Ping lateral, purga manual de lastre y no dejes que la salmuera escriba tu profundidad.",
+     "in_game_wiki": "Brine Stairs no es una escalera de cueva. Son capas de agua tan densas que se comportan como suelo falso. Un sonar vertical puede volver como si tocara una placa. Quien lo crea cae en una capa más pesada, pierde trim o se mete bajo una costra blanca que nunca fue sólida.\n\nLa colonia aprendió a leerlas con instrumentos pequeños. El ping lateral distingue pared, repisa y cortina de densidad. El lastre dice si el traje flota en agua normal o en salmuera. La caída de temperatura marca el agua caliente que resbala sobre sal fría. Las marcas de cable pesan más que las líneas limpias del mapa.\n\nPara un Marauder, el registro vuelve procedimiento el miedo. Una cortina oculta la ruta, enfría herramientas y conserva etiquetas de evacuación. También come juntas, dobla sonido y fabrica suelos falsos. En 2800-3600 m: ping lateral, trim, deriva, cruzar por la cicatriz.",
+     "external_site": "Guía práctica de capas de salmuera en HECTON-8: por qué Brine Stairs engaña al sonar, cómo se leen los viejos tableros de ruta y por qué un Marauder lee la sal antes que el mapa.",
+     "external_site_article": "Brine Stairs está entre ruta y trampa. De lejos parece arquitectura: repisas, labios claros, escalones blancos hacia la oscuridad. De cerca es química en movimiento. La salmuera pesada yace bajo el agua normal como un segundo océano en las grietas. Su borde brilla y puede contestar al sonar con seguridad de piedra.\n\nPor eso los tableros viejos no dicen 'baja aquí'. Dicen ping lateral, dos trims, caída térmica, marcas de cable, esperar el limo que no se mezcla. Un cruce bueno no es una línea de mapa; es una conducta que se repite después de que el océano miente.\n\nVarias cápsulas desaparecieron desde fondos que no existían. El último ping llegó desde bajo la tercera cortina. Deep Reach lo llamó error de navegación. El tablero conservó los raspados de cable.\n\nEn juego, la misma regla es acción: ocultar ruido, enfriar un cutter, recuperar tags conservados o cruzar sin exponer luz. Mal ángulo de ping, lastre viejo, sellos dañados o pánico convierten la ruta en pozo.",
+     "field_note": "La sal dibuja mapas mejores que la gerencia. Sigue las rayas, no la línea limpia."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Dichterouten-Ledger der Sole",
+     "scanner": "SOLE-LEDGER // Dichtegrenze voraus. Sonarrücklauf biegt unter die sichtbare Kante; Ballastverzug ist zu erwarten. Vor dem Abstieg seitlich in den Vorhang pingen. Glänzenden Boden als bewegte Flüssigkeit behandeln, bis zwei Trims übereinstimmen.",
+     "terminal": "DEEP REACH ROUTENTAFEL B3-17 // Nicht auf dem weißen Echo aufsetzen. Das ist Salzhaut über schwerer Sole. Vor Querung Trimkorrektur, Temperaturabfall und Kabelschrammentiefe notieren. Vermisste Evak-Pods pingten zuletzt unter dem dritten Vorhang, nicht auf dem kartierten Boden.",
+     "audio": "Wenn der Boden poliert wirkt, misstraue ihm. Seitlich pingen, Ballast von Hand ablassen, und der Sole nicht die Tiefe überlassen.",
+     "in_game_wiki": "Die Brine Stairs sind keine Höhlentreppe. Sie sind Wasserschichten, schwer genug, falschen Boden zu spielen. Ein Sonarstoß nach unten kann wie von einer Platte zurückkommen. Wer ihm glaubt, fällt in dichtere Sole, verliert Trim oder sinkt unter eine weiße Kruste, die nie fest war.\n\nDie alte Kolonie las diese Stufen mit kleinen Instrumenten. Seitliches Pingen trennt Wand, Absatz und Dichtevorhang. Ballastreaktion zeigt, ob der Anzug in normalem Wasser oder in Sole hängt. Temperaturabfall verrät warmes Wasser über kaltem Salz. Kabelnarben im Fels zählen mehr als saubere Kartenlinien.\n\nFür Marauder wird aus Angst Verfahren. Ein Solevorhang verbirgt Routen, kühlt Cutter und konserviert Evak-Tags. Er frisst auch Dichtungen, beugt Klang und baut Lügenböden. Bei 2800-3600 m gilt: seitlich pingen, trimmen, Drift abwarten, an der Narbe kreuzen.",
+     "external_site": "Praxisartikel zu HECTON-8-Soleschichten: warum die Brine Stairs Sonar belügen, wie alte Routentafeln sichere Übergänge markierten und warum Marauder Salz vor Karten lesen.",
+     "external_site_article": "Die Brine Stairs liegen zwischen Route und Falle. Aus der Entfernung wirken sie gebaut: helle Lippen, Borde, weiße Stufen im Dunkel. Aus der Nähe sind sie bewegte Chemie. Schwere Sole liegt unter Meerwasser wie ein zweiter Ozean in den Rissen. Die Grenze glänzt und antwortet dem Sonar manchmal mit der Sicherheit von Stein.\n\nDarum schreiben alte Tafeln nicht 'hier absteigen'. Sie schreiben Gewohnheiten: seitlich pingen, zweimal trimmen, Temperatur lesen, Kabelnarben suchen, Silt beobachten, der sich nicht mischt. Ein guter Übergang ist keine Linie, sondern wiederholbares Verhalten nach der Lüge des Ozeans.\n\nMehrere Evak-Pods verschwanden von Bodenpositionen, die es nie gab. Ihr letzter Ping kam unter dem dritten Dichtevorhang. Deep Reach nannte es Navigationsfehler. Die Routentafel behielt die Kabelschrammen.\n\nIm Spiel wird daraus Handlung: Schall maskieren, Cutter kühlen, konservierte Tags bergen, ohne Lichtkegel queren. Schlechter Pingwinkel, alter Ballast, beschädigte Dichtungen oder Panik machen aus der Route eine Grube.",
+     "field_note": "Salz schreibt ehrlichere Karten als Verwaltung. Folge den Kratzern, nicht der sauberen Linie."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr czytania gęstości solanki",
+     "scanner": "REJESTR SOLANKI // Przed tobą granica gęstości. Echo sonaru wygina się pod widoczną półkę; opóźnienie balastu jest normalne. Pinguj zasłonę z boku przed zejściem. Lśniącą podłogę traktuj jak ruchomy płyn, dopóki dwa trymy się nie zgodzą.",
+     "terminal": "TABLICA TRASY DEEP REACH B3-17 // Nie siadać na białym echu. To skóra soli nad ciężką solanką. Przed przejściem zapisać korektę trymu, spadek temperatury i głębokość rys kabla. Zaginione kapsuły ewakuacyjne pingowały ostatnio pod trzecią zasłoną, nie na dnie z mapy.",
+     "audio": "Jeśli dno wygląda na wypolerowane, nie ufaj mu. Ping z boku, ręczny upust balastu, i nie pozwól solance pisać twojej głębokości.",
+     "in_game_wiki": "Brine Stairs nie są schodami w jaskini. To warstwy wody tak ciężkie, że udają fałszywy grunt. Sonar w dół może wrócić jak od płyty. Kto uwierzy, wpada w gęstszą warstwę, traci trym albo schodzi pod białą skorupę, która nigdy nie była stała.\n\nStara kolonia czytała je małymi przyrządami. Ping boczny odróżnia ścianę, półkę i zasłonę gęstości. Balast mówi, czy skafander jest w zwykłej wodzie, czy trzyma go solanka. Spadek temperatury pokazuje ciepłą wodę ślizgającą się po zimnej soli. Rysy kabla na skale są ważniejsze niż czyste linie mapy.\n\nDla Maraudera rejestr zmienia strach w procedurę. Zasłona solanki ukrywa trasę, chłodzi narzędzia i przechowuje tagi ewakuacyjne. Zjada też uszczelki, zgina dźwięk i buduje kłamliwe podłogi. Na 2800-3600 m: ping boczny, trym, czekanie na dryf, przejście po bliźnie.",
+     "external_site": "Praktyczny tekst o warstwach solanki HECTON-8: czemu Brine Stairs kłamią sonarowi, jak czytać stare tablice i dlaczego Marauder czyta sól przed mapą.",
+     "external_site_article": "Brine Stairs są trasą i pułapką naraz. Z daleka wyglądają jak architektura: jasne krawędzie, półki, białe stopnie w ciemność. Z bliska to ruchoma chemia. Ciężka solanka leży pod wodą jak drugi ocean wlany w szczeliny. Granica świeci i potrafi odpowiedzieć sonarowi jak kamień.\n\nStare tablice nie mówią więc 'schodź tutaj'. Mówią: ping z boku, dwa trymy, temperatura, rysy kabla, muł, który nie chce się mieszać. Dobre przejście to nie linia, tylko zachowanie powtarzające się po kłamstwie oceanu.\n\nKilka kapsuł zniknęło z pozycji dna, którego nie było. Ostatni ping szedł spod trzeciej zasłony. Deep Reach wpisał błąd nawigacji. Tablica zachowała rysy kabla.\n\nW grze ta zasada daje działanie: maskowanie hałasu, chłodzenie cutterów, odzysk tagów, przejście bez światła. Zły kąt ping, stary balast, uszkodzone uszczelki albo panika zmieniają trasę w dół.",
+     "field_note": "Sól rysuje lepsze mapy niż zarząd. Idź za rysami, nie za czystą linią."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал читання густини розсолу",
+     "scanner": "ЖУРНАЛ РОЗСОЛУ // Попереду межа густини. Відлуння сонара згинається нижче видимої полиці; затримка баласту очікувана. Перед спуском пінгуй завісу збоку. Блискучу підлогу вважай рухомою рідиною, доки два трими не зійдуться.",
+     "terminal": "МАРШРУТНА ДОШКА DEEP REACH B3-17 // Не сідати на білий відгук. Це соляна шкіра над важким розсолом. Перед переходом записати поправку триму, спад температури й глибину подряпин кабелю. Зниклі евакуаційні капсули востаннє пінгували під третьою завісою, не на картованому дні.",
+     "audio": "Якщо дно виглядає відполірованим, не вір йому. Пінгуй збоку, стравлюй баласт руками і не дозволяй розсолу писати твою глибину.",
+     "in_game_wiki": "Brine Stairs - не печерні сходи. Це шари води, досить важкі, щоб удавати фальшиву землю. Sonar униз може повернутися наче від плити. Той, хто повірить, упаде в густіший шар, втратить трим або піде під білу кірку, що ніколи не була твердою.\n\nСтара колонія читала ці сходи дрібними приладами. Боковий ping відрізняє стіну, полицю та завісу густини. Баласт показує, чи костюм у звичайній воді, чи його тримає розсіл. Спад температури видає теплу воду над холодною сіллю. Подряпини кабелю на породі важливіші за чисті лінії мапи.\n\nДля Marauder журнал перетворює страх на процедуру. Розсільна завіса ховає маршрут, охолоджує інструмент і зберігає евакуаційні теги. Вона також їсть ущільнення, гне звук і робить брехливі підлоги. На 2800-3600 м: боковий ping, трим, чекати дрейф, переходити по шраму.",
+     "external_site": "Практична стаття про шари розсолу HECTON-8: чому Brine Stairs брешуть сонару, як читати старі маршрутні дошки і чому Marauder читає сіль раніше за мапу.",
+     "external_site_article": "Brine Stairs стоять між маршрутом і пасткою. Здалеку це майже архітектура: полиці, бліді краї, білі сходи в темряву. Зблизька це рухома хімія. Важкий розсіл лежить під водою як другий океан у тріщинах. Межа блищить і часом відповідає сонару з упевненістю каменю.\n\nТому старі дошки не пишуть 'спускайся тут'. Вони пишуть звички: ping збоку, два трими, температура, подряпини кабелю, мул, що не змішується. Добрий перехід - це не лінія, а поведінка, що повторюється після брехні океану.\n\nКілька капсул зникли з позицій дна, якого не існувало. Останній ping прийшов з-під третьої завіси. Deep Reach назвав це навігаційною помилкою. Дошка лишила кабельні подряпини.\n\nУ грі правило стає дією: сховати шум, охолодити cutter, дістати збережені теги, перейти без світла. Поганий кут ping, старий баласт, пошкоджені ущільнення чи паніка роблять маршрут ямою.",
+     "field_note": "Сіль креслить чесніші мапи, ніж адміністрація. Іди за подряпинами, не за чистою лінією."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل قراءة كثافة المحلول الملحي",
+     "scanner": "سجل المحلول // أمامك حد كثافة. عودة السونار تنحني تحت الرف المرئي؛ تأخر الصابورة متوقع. أرسل ping من الجانب قبل النزول. عامل الأرض اللامعة كسائل متحرك حتى يتطابق تصحيحان للاتزان.",
+     "terminal": "لوحة مسار DEEP REACH B3-17 // لا تهبط على الرد الأبيض. هذه قشرة ملح فوق محلول أثقل. سجل تصحيح الاتزان وانخفاض الحرارة وعمق خدوش الكابل قبل العبور. كبسولات الإخلاء المفقودة أرسلت آخر ping تحت الستار الثالث، لا على القاع المرسوم.",
+     "audio": "إذا بدا القاع مصقولا، فلا تثق به. أرسل ping من الجانب، أفرغ الصابورة بيدك، ولا تدع المحلول يكتب عمقك.",
+     "in_game_wiki": "Brine Stairs ليست سلما في كهف. إنها طبقات ماء ثقيلة بما يكفي لتتصرف كأرض كاذبة. يمكن أن يعود sonar المرسل إلى الأسفل كأنه ضرب صفيحة. من يصدقه يسقط في طبقة أثقل، يفقد الاتزان، أو يغوص تحت قشرة بيضاء لم تكن صلبة قط.\n\nتعلمت المستعمرة القديمة قراءة هذه الدرجات بأدوات صغيرة. ping الجانبي يفرق بين جدار ورف وستار كثافة. رد الصابورة يقول هل البدلة في ماء عادي أم يمسكها محلول ملحي. هبوط الحرارة يكشف الماء الدافئ فوق الملح البارد. خدوش الكابل أهم من خطوط الخريطة النظيفة.\n\nبالنسبة إلى Marauder، يحول السجل الخوف إلى إجراء. ستار المحلول يخفي طريقا، يبرد أداة، ويحفظ وسوم إخلاء. لكنه يأكل الأختام، يثني الصوت، ويصنع أرضا كاذبة. عند 2800-3600 م: ping جانبي، اتزان، انتظار انجراف، عبور عند الندبة.",
+     "external_site": "دليل عملي لطبقات المحلول الملحي في HECTON-8: لماذا تخدع Brine Stairs السونار، وكيف تقرأ لوحات الطريق القديمة، ولماذا يقرأ Marauder الملح قبل الخريطة.",
+     "external_site_article": "تقف Brine Stairs بين الطريق والفخ. من بعيد تبدو كأنها بناء: رفوف وحواف باهتة ودرجات بيضاء في الظلام. من قرب هي كيمياء متحركة. المحلول الثقيل يرقد تحت ماء البحر كمحيط ثان داخل الشقوق. حدوده تلمع وقد ترد على السونار بثقة الحجر.\n\nلذلك لا تقول اللوحات القديمة 'انزل هنا'. إنها تسجل عادات: ping من الجانب، تصحيحان، قراءة حرارة، خدوش كابل، طمي يرفض الاختلاط. المعبر الجيد ليس خطا، بل سلوك يتكرر بعد أن يكذب البحر.\n\nاختفت عدة كبسولات من مواضع قاع لم تكن موجودة. جاء آخر ping من تحت الستار الثالث. سجلت Deep Reach ذلك كخطأ ملاحة. أما اللوحة فاحتفظت بخدوش الكابل.\n\nفي اللعب تصبح القاعدة فعلا: إخفاء الضجيج، تبريد cutter، استرجاع وسوم محفوظة، أو عبور دون كشف ضوء. زاوية ping خاطئة، صابورة قديمة، ختم تالف أو نزول مذعور يحول الطريق إلى حفرة.",
+     "field_note": "الملح يرسم خرائط أصدق من الإدارة. اتبع الخدوش، لا الخط النظيف."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ledger Pembacaan Kepadatan Brine",
+     "scanner": "LEDGER BRINE // Batas kepadatan di depan. Pantulan sonar membelok di bawah shelf terlihat; jeda ballast wajar. Ping tirai dari samping sebelum turun. Perlakukan lantai mengilap sebagai cairan bergerak sampai dua trim cocok.",
+     "terminal": "PAPAN RUTE DEEP REACH B3-17 // Jangan mendarat di pantulan putih. Itu kulit garam di atas brine berat. Catat koreksi trim, penurunan suhu, dan kedalaman gores kabel sebelum menyeberang. Pod evakuasi hilang terakhir ping di bawah tirai ketiga, bukan di dasar peta.",
+     "audio": "Kalau lantai tampak dipoles, curigai. Ping dari samping, buang ballast dengan tangan, dan jangan biarkan brine menulis kedalamanmu.",
+     "in_game_wiki": "Brine Stairs bukan tangga gua. Ia adalah lapisan air cukup berat untuk menjadi lantai palsu. Sonar ke bawah bisa kembali seperti dari pelat. Yang percaya akan jatuh ke lapisan lebih berat, kehilangan trim, atau masuk di bawah kerak putih yang tidak pernah padat.\n\nKoloni lama membaca tangga ini dengan instrumen kecil. Ping samping memisahkan dinding, shelf, dan tirai kepadatan. Ballast memberi tahu apakah suit berada di air biasa atau ditahan brine. Penurunan suhu menandai air hangat di atas garam dingin. Bekas kabel di batu lebih jujur dari garis peta.\n\nBagi Marauder, ledger mengubah takut menjadi prosedur. Tirai brine menyembunyikan rute, mendinginkan alat, dan menyimpan tag evakuasi. Ia juga memakan seal, membengkokkan suara, dan membuat lantai bohong. Pada 2800-3600 m: ping samping, trim, tunggu drift, silang di bekas luka.",
+     "external_site": "Panduan praktis lapisan brine HECTON-8: kenapa Brine Stairs membohongi sonar, cara membaca papan rute lama, dan kenapa Marauder membaca garam sebelum peta.",
+     "external_site_article": "Brine Stairs berada di antara rute dan perangkap. Dari jauh ia tampak seperti arsitektur: bibir pucat, shelf, anak tangga putih menuju gelap. Dari dekat ia kimia bergerak. Brine berat berada di bawah air sebagai laut kedua dalam retakan. Batasnya berkilau dan bisa menjawab sonar seperti batu.\n\nKarena itu papan lama tidak menulis 'turun di sini'. Ia menulis kebiasaan: ping samping, dua trim, baca suhu, cari gores kabel, tunggu lumpur yang tidak bercampur. Penyeberangan baik bukan garis, tapi perilaku yang terulang setelah laut sempat berbohong.\n\nBeberapa pod hilang dari posisi dasar yang tidak ada. Ping terakhir datang dari bawah tirai ketiga. Deep Reach menyebutnya kesalahan navigasi. Papan rute menyimpan gores kabel.\n\nDalam permainan, aturan ini menjadi tindakan: sembunyikan suara, dinginkan cutter, ambil tag tersimpan, atau menyeberang tanpa lampu. Sudut ping buruk, ballast basi, seal rusak, atau panik mengubah rute jadi lubang.",
+     "field_note": "Garam membuat peta lebih jujur dari manajemen. Ikuti goresan, bukan garis bersih."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "염수 밀도 경로 장부",
+     "scanner": "염수 장부 // 전방에 밀도 경계. 소나 반사는 보이는 선반 아래로 휘며, 밸러스트 반응 지연은 정상이다. 하강 전 측면에서 커튼을 ping 하라. 두 번의 트림이 맞을 때까지 빛나는 바닥을 움직이는 액체로 취급하라.",
+     "terminal": "DEEP REACH 경로판 B3-17 // 흰 반사 위에 착지하지 말 것. 그것은 무거운 염수 위의 소금 껍질이다. 횡단 전 트림 보정, 온도 하강, 케이블 긁힘 깊이를 기록하라. 실종 대피 포드는 지도 바닥이 아니라 세 번째 커튼 아래에서 마지막 ping 을 보냈다.",
+     "audio": "바닥이 닦인 것처럼 보이면 믿지 마라. 옆에서 ping 하고, 손으로 밸러스트를 빼고, 염수가 네 깊이를 쓰게 두지 마라.",
+     "in_game_wiki": "Brine Stairs 는 동굴 계단이 아니다. 가짜 바닥처럼 행동할 만큼 무거운 물의 층이다. 아래로 쏜 sonar 는 판에 맞은 것처럼 돌아올 수 있다. 믿는 사람은 더 무거운 층으로 떨어지고, 트림을 잃고, 고체가 아니었던 흰 껍질 아래로 가라앉는다.\n\n옛 식민지는 작은 장비로 이 계단을 읽었다. 측면 ping 은 벽, 선반, 밀도 커튼을 가른다. 밸러스트 반응은 슈트가 보통 물에 있는지 염수에 붙잡혔는지 말한다. 온도 하강은 뜨거운 물이 찬 소금 위를 미끄러지는 곳을 보여준다. 바위의 케이블 상처가 깨끗한 지도선보다 믿을 만하다.\n\nMarauder 에게 장부는 공포를 절차로 바꾼다. 염수 커튼은 경로를 숨기고, 도구를 식히고, 대피 태그를 보존한다. 하지만 씰을 먹고, 소리를 휘게 하고, 거짓 바닥을 만든다. 2800-3600 m 에서는 측면 ping, 트림, 표류 대기, 상처를 따라 횡단한다.",
+     "external_site": "HECTON-8 염수 밀도층 실전 안내: Brine Stairs 가 소나를 속이는 이유, 오래된 경로판을 읽는 법, Marauder 가 지도보다 소금을 먼저 읽는 이유.",
+     "external_site_article": "Brine Stairs 는 경로와 함정 사이에 있다. 멀리서는 밝은 턱과 흰 단이 어둠 속으로 쌓인 구조물처럼 보인다. 가까이서는 움직이는 화학이다. 무거운 염수가 균열 속 두 번째 바다처럼 보통 물 아래에 놓인다. 경계는 빛나고, 때로 돌처럼 자신 있게 sonar 에 답한다.\n\n그래서 옛 경로판은 '여기서 내려가라'고 쓰지 않는다. 측면 ping, 두 번의 트림, 온도, 케이블 상처, 섞이지 않는 실트. 좋은 횡단점은 선이 아니라, 바다가 거짓말한 뒤에도 반복되는 행동이다.\n\n몇몇 대피 포드는 존재하지 않는 바닥 좌표에서 사라졌다. 마지막 ping 은 세 번째 밀도 커튼 아래에서 왔다. Deep Reach 는 항법 오류로 처리했다. 경로판은 케이블 상처를 남겼다.\n\n게임에서는 같은 규칙이 행동이 된다. 소음을 숨기고, cutter 를 식히고, 보존된 태그를 회수하고, 빛 없이 협곡을 건넌다. 나쁜 ping 각도, 오래된 밸러스트, 손상된 씰, 공황 하강은 경로를 구덩이로 바꾼다.",
+     "field_note": "소금은 관리보다 정직한 지도를 쓴다. 깨끗한 선이 아니라 긁힌 자국을 따라가라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן קריאת צפיפות מי מלח",
+     "scanner": "יומן מי מלח // גבול צפיפות לפנים. החזר הסונאר מתעקם מתחת למדף הנראה; עיכוב בבלסט צפוי. שלח ping מהצד לפני ירידה. התייחס לרצפה מבריקה כנוזל נע עד ששני trims מסכימים.",
+     "terminal": "לוח מסלול DEEP REACH B3-17 // לא לנחות על ההחזר הלבן. זו עור מלח מעל מי מלח כבדים. רשום תיקון trim, נפילת טמפרטורה ועומק שריטת כבל לפני חציה. קפסולות הפינוי החסרות שלחו ping אחרון מתחת למסך השלישי, לא על הקרקעית המסומנת.",
+     "audio": "אם הקרקע נראית מלוטשת, חשוד בה. ping מהצד, שחרר בלסט ביד, ואל תיתן למי המלח לכתוב את העומק שלך.",
+     "in_game_wiki": "Brine Stairs אינן מדרגות מערה. אלו שכבות מים כבדות מספיק כדי להתנהג כמו קרקע שקרית. sonar שנשלח למטה יכול לחזור כאילו פגע בלוח. מי שמאמין נופל לשכבה כבדה יותר, מאבד trim או שוקע מתחת לקרום לבן שמעולם לא היה מוצק.\n\nהמושבה הישנה קראה את המדרגות בעזרת מכשירים קטנים. ping צדדי מפריד בין קיר, מדף ומסך צפיפות. תגובת הבלסט אומרת אם החליפה במים רגילים או מוחזקת במי מלח. ירידת טמפרטורה מסמנת מים חמים מעל מלח קר. שריטות כבל בסלע אמינות יותר מקווי מפה נקיים.\n\nל-Marauder היומן הופך פחד לנוהל. מסך מי מלח מסתיר דרך, מקרר כלי ושומר תגי פינוי. הוא גם אוכל אטמים, מכופף קול ובונה רצפות שקריות. ב-2800-3600 מ': ping צדדי, trim, המתנה לסחיפה, חציה לפי הצלקת.",
+     "external_site": "מדריך מעשי לשכבות מי מלח ב-HECTON-8: למה Brine Stairs משקרות לסונאר, איך קוראים לוחות מסלול ישנים ולמה Marauder קורא מלח לפני מפה.",
+     "external_site_article": "Brine Stairs נמצאות בין דרך למלכודת. מרחוק הן נראות כמו בנייה: מדפים, שפתיים חיוורות ומדרגות לבנות אל החושך. מקרוב זו כימיה נעה. מי מלח כבדים שוכבים מתחת למים כמו אוקיינוס שני בתוך סדקים. הגבול מבריק ולעיתים עונה לסונאר בביטחון של אבן.\n\nלכן הלוחות הישנים לא אומרים 'רדו כאן'. הם מציינים הרגלים: ping מהצד, שני trims, טמפרטורה, שריטות כבל, סחף שלא מתערבב. מעבר טוב אינו קו, אלא התנהגות שחוזרת אחרי שהים הספיק לשקר.\n\nכמה קפסולות נעלמו מקואורדינטות קרקעית שלא היו קיימות. ה-ping האחרון הגיע מתחת למסך השלישי. Deep Reach קראה לזה שגיאת ניווט. לוח המסלול שמר את שריטות הכבל.\n\nבמשחק הכלל הופך לפעולה: להסתיר רעש, לקרר cutter, לאסוף תג שמור או לחצות בלי אור. זווית ping רעה, בלסט ישן, אטם פגום או ירידה בפאניקה הופכים דרך לבור.",
+     "field_note": "מלח מצייר מפות אמינות יותר מהנהלה. עקוב אחרי השריטות, לא אחרי הקו הנקי."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de leitura de densidade da salmoura",
+     "scanner": "REGISTRO DE SALMOURA // Limite de densidade à frente. O retorno do sonar curva abaixo da prateleira visível; atraso de lastro é esperado. Faça ping lateral na cortina antes de descer. Trate o piso brilhante como fluido móvel até dois trims concordarem.",
+     "terminal": "QUADRO DE ROTA DEEP REACH B3-17 // Não pouse no retorno branco. É pele de sal sobre salmoura pesada. Registre correção de trim, queda térmica e profundidade de raspão de cabo antes de cruzar. Pods de evacuação perdidos deram último ping sob a terceira cortina, não no fundo mapeado.",
+     "audio": "Se o fundo parece polido, desconfie. Ping de lado, sangre o lastro na mão e não deixe a salmoura escrever sua profundidade.",
+     "in_game_wiki": "Brine Stairs não são escada de caverna. São camadas de água pesadas o suficiente para agir como chão falso. Um sonar para baixo pode voltar como se batesse numa placa. Quem acredita cai em camada mais densa, perde trim ou entra sob uma crosta branca que nunca foi sólida.\n\nA colônia antiga lia essas escadas com instrumentos pequenos. Ping lateral separa parede, prateleira e cortina de densidade. O lastro diz se o traje está em água comum ou preso pela salmoura. A queda de temperatura mostra água quente sobre sal frio. Arranhões de cabo na rocha valem mais que linhas limpas de mapa.\n\nPara um Marauder, o registro transforma medo em procedimento. Uma cortina de salmoura esconde rota, resfria ferramenta e preserva tags de evacuação. Ela também corrói selos, dobra som e fabrica pisos falsos. A 2800-3600 m: ping lateral, trim, esperar deriva, cruzar pela cicatriz.",
+     "external_site": "Guia prático das camadas de salmoura de HECTON-8: por que Brine Stairs mente ao sonar, como ler quadros de rota antigos e por que Marauder lê sal antes do mapa.",
+     "external_site_article": "Brine Stairs ficam entre rota e armadilha. De longe parecem arquitetura: prateleiras, bordas claras, degraus brancos no escuro. De perto são química em movimento. Salmoura pesada repousa sob a água como um segundo oceano nas rachaduras. A fronteira brilha e pode responder ao sonar com confiança de pedra.\n\nPor isso os quadros antigos não dizem 'desça aqui'. Dizem hábitos: ping lateral, dois trims, temperatura, arranhões de cabo, lama que não mistura. Uma boa travessia não é linha; é comportamento que se repete depois que o oceano mente.\n\nVários pods sumiram de posições de fundo inexistentes. O último ping veio sob a terceira cortina. Deep Reach chamou de erro de navegação. O quadro guardou os arranhões de cabo.\n\nNo jogo, a regra vira ação: mascarar ruído, resfriar cutter, recuperar tags preservadas ou cruzar sem luz. Ângulo ruim de ping, lastro velho, selo danificado ou pânico transformam rota em poço.",
+     "field_note": "O sal desenha mapas mais honestos que a gerência. Siga os arranhões, não a linha limpa."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Logboek voor dichtheidslezing van pekel",
+     "scanner": "PEKELLOGBOEK // Dichtheidsgrens vooruit. Sonarterugslag buigt onder de zichtbare richel; ballastvertraging is verwacht. Ping het gordijn van opzij voor afdaling. Behandel de glanzende vloer als bewegende vloeistof tot twee trims overeenkomen.",
+     "terminal": "DEEP REACH ROUTEBORD B3-17 // Niet landen op de witte echo. Dat is zoutvel boven zware pekel. Noteer trimcorrectie, temperatuurdaling en kabelschraapdiepte voor de oversteek. Vermiste evac-pods pingden laatst onder het derde gordijn, niet op de gekarteerde bodem.",
+     "audio": "Als de bodem gepolijst lijkt, wantrouw hem. Ping van opzij, laat ballast met de hand af, en laat de pekel je diepte niet schrijven.",
+     "in_game_wiki": "Brine Stairs zijn geen grottrap. Het zijn waterlagen zwaar genoeg om valse grond te spelen. Sonar recht omlaag kan terugkomen als van een plaat. Wie het gelooft, valt in een zwaardere laag, verliest trim of zinkt onder een witte korst die nooit vast was.\n\nDe oude kolonie las de trappen met kleine instrumenten. Zijping scheidt wand, richel en dichtheidsgordijn. Ballastreactie zegt of het pak in gewoon water hangt of door pekel wordt gedragen. Temperatuurdaling verraadt warm water over koud zout. Kabelkrassen in steen zijn betrouwbaarder dan nette kaartlijnen.\n\nVoor een Marauder maakt het logboek van angst procedure. Een pekelgordijn verbergt route, koelt gereedschap en bewaart evac-tags. Het vreet ook afdichtingen, buigt geluid en maakt leugenachtige vloeren. Op 2800-3600 m: zijping, trim, drift afwachten, oversteken bij het litteken.",
+     "external_site": "Praktische gids voor HECTON-8 pekellagen: waarom Brine Stairs tegen sonar liegen, hoe oude routeborden werken en waarom een Marauder zout leest voor de kaart.",
+     "external_site_article": "Brine Stairs staan tussen route en val. Van ver lijken ze gebouwd: bleke randen, richels, witte treden het donker in. Van dichtbij is het bewegende chemie. Zware pekel ligt onder zeewater als een tweede oceaan in scheuren. De grens glanst en antwoordt soms op sonar met de zekerheid van steen.\n\nDaarom schrijven oude borden niet 'daal hier af'. Ze schrijven gewoontes: ping van opzij, twee trims, temperatuur, kabelkrassen, slib dat niet mengt. Een goede oversteek is geen lijn, maar gedrag dat zich herhaalt nadat de oceaan heeft gelogen.\n\nEnkele pods verdwenen vanaf bodems die niet bestonden. Hun laatste ping kwam onder het derde gordijn vandaan. Deep Reach noemde het navigatiefout. Het routebord hield de kabelkrassen vast.\n\nIn spel wordt dezelfde regel actie: geluid maskeren, cutter koelen, bewaarde tags bergen of zonder licht oversteken. Slechte pinghoek, oude ballast, kapotte seal of paniek maakt van route een kuil.",
+     "field_note": "Zout tekent eerlijkere kaarten dan management. Volg de krassen, niet de nette lijn."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

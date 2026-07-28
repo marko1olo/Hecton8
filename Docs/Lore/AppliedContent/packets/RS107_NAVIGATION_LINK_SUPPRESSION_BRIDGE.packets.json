@@ -1,9 +1,234 @@
 {
-  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
-  "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
-  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+ "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
+ "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P521_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+   "article_id": "applied_lore.public_wiki_spoiler_safe_crosslink_label_bridge",
+   "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
+   "title_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future spoiler-safe crosslink, related-article unlock, and relation-edge suppression bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "spoiler_safe_crosslink",
+     "public_wiki",
+     "relation_edge",
+     "proof_order"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets the opening route show related evidence without revealing why the relation matters later."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "A spoiler-safe crosslink label is a controlled name for a related article. It can say that two entries share an object mark, a source voice, a scanner downgrade, a custody route, or a proof-order dependency. It must not say that the link proves the final receiver, the protected claimant, the Atlas consequence, or the ending branch.\n\nThe label keeps navigation useful without turning the sidebar into a confession. The reader can follow evidence families, but the relation edge stays procedural until the route earns the answer.",
+     "wiki_article": "Spoiler-safe crosslink label: a public/wiki relation label that names a safe relation class and hides the exact spoiler relation. It should include visible relation class, held relation class, confidence state, and safe click target. It must not expose final route, claimant, receiver, Atlas consequence, or ending result.",
+     "pda_codex": "PDA related-entry label: this link is safe to open because it shares a visible evidence feature. The exact relation is held. Read source voice and confidence before treating the link as proof.",
+     "scanner_entry": "Scanner relation tag: safe relation visible. Exact relation held behind proof gate.",
+     "terminal_note": "Terminal link note: related entry is visible by safe feature match. Do not infer final relation from the link alone.",
+     "evidence_caption": "Crosslink label: safe relation shown, spoiler relation held.",
+     "spoiler_policy": "Safe to show visible relation class and safe click target. Hold exact spoiler relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Public Wiki Spoiler-Safe Crosslink Label",
+     "website_article": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "wiki_article": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "pda_codex": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "scanner_entry": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "terminal_note": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "evidence_caption": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "spoiler_policy": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    }
+   },
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
@@ -13,682 +238,460 @@
     "unity_placement_ready": false,
     "generated_page_ready": false,
     "publication_ready": false
+   },
+   "content_class": "in_world_artifact"
   },
-  "packets": [
-    {
-      "packet_id": "P521_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-      "article_id": "applied_lore.public_wiki_spoiler_safe_crosslink_label_bridge",
-      "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
-      "title_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future spoiler-safe crosslink, related-article unlock, and relation-edge suppression bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "spoiler_safe_crosslink",
-          "public_wiki",
-          "relation_edge",
-          "proof_order"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets the opening route show related evidence without revealing why the relation matters later."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "A spoiler-safe crosslink label is a controlled name for a related article. It can say that two entries share an object mark, a source voice, a scanner downgrade, a custody route, or a proof-order dependency. It must not say that the link proves the final receiver, the protected claimant, the Atlas consequence, or the ending branch.\n\nThe label keeps navigation useful without turning the sidebar into a confession. The reader can follow evidence families, but the relation edge stays procedural until the route earns the answer.",
-          "wiki_article": "Spoiler-safe crosslink label: a public/wiki relation label that names a safe relation class and hides the exact spoiler relation. It should include visible relation class, held relation class, confidence state, and safe click target. It must not expose final route, claimant, receiver, Atlas consequence, or ending result.",
-          "pda_codex": "PDA related-entry label: this link is safe to open because it shares a visible evidence feature. The exact relation is held. Read source voice and confidence before treating the link as proof.",
-          "scanner_entry": "Scanner relation tag: safe relation visible. Exact relation held behind proof gate.",
-          "terminal_note": "Terminal link note: related entry is visible by safe feature match. Do not infer final relation from the link alone.",
-          "evidence_caption": "Crosslink label: safe relation shown, spoiler relation held.",
-          "spoiler_policy": "Safe to show visible relation class and safe click target. Hold exact spoiler relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Draft ar_SA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Entwurf de_DE: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Borrador es_ES: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Brouillon fr_FR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Draft he_IL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Draf id_ID: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Draft ja_JP: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Draft ko_KR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Concept nl_NL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Szkic pl_PL: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Rascunho pt_BR: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Draft ru_RU: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Draft uk_UA: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Public Wiki Spoiler-Safe Crosslink Label",
-          "website_article": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "wiki_article": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "pda_codex": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "scanner_entry": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "terminal_note": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "evidence_caption": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "spoiler_policy": "Draft zh_CN: A spoiler-safe crosslink label links related evidence by a safe visible feature and holds the exact spoiler relation until proof order allows it.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_WIKI_SPOILER_SAFE_CROSSLINK_LABEL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      },
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false,
-        "generated_page_ready": false,
-        "publication_ready": false
-      }
+  {
+   "packet_id": "P522_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+   "article_id": "applied_lore.pda_related_article_unlock_hint_bridge",
+   "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
+   "title_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future spoiler-safe crosslink, related-article unlock, and relation-edge suppression bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "related_article_unlock",
+     "pda",
+     "held_relation",
+     "next_proof"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets the opening route explain why a related article is locked or partially visible without revealing the locked proof."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "A related article unlock hint explains a lock without printing the locked answer. The PDA can say that the entry needs a source voice check, a confidence ladder state, a receipt-body comparison, a claimant-safe audit, or a route alias comparison. It must not say the final receiver or route branch that waits behind the lock.\n\nGood hints keep the player moving. They name the safe action, not the spoiler. They also stop the public archive from pretending a missing link is a broken page.",
+     "wiki_article": "Related article unlock hint: a label for locked or partially visible evidence links. It should name visible requirement, held proof class, safe preview label, and next-proof target. It must not expose the hidden relation or final outcome.",
+     "pda_codex": "PDA unlock hint: related entry held. Check the visible requirement first: source voice, confidence state, receipt body, claimant-safe audit, route alias, or custody route. The locked answer remains protected.",
+     "scanner_entry": "Scanner unlock tag: related entry held until safe proof requirement is met.",
+     "terminal_note": "Terminal hint note: link is not broken. It is held by proof class. Complete the safe comparison before opening the relation.",
+     "evidence_caption": "Related article held: safe requirement visible, protected answer hidden.",
+     "spoiler_policy": "Safe to show visible requirement, held proof class, and next-proof target. Hold exact hidden relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "source_authority"
     },
-    {
-      "packet_id": "P522_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-      "article_id": "applied_lore.pda_related_article_unlock_hint_bridge",
-      "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
-      "title_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future spoiler-safe crosslink, related-article unlock, and relation-edge suppression bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "related_article_unlock",
-          "pda",
-          "held_relation",
-          "next_proof"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets the opening route explain why a related article is locked or partially visible without revealing the locked proof."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "A related article unlock hint explains a lock without printing the locked answer. The PDA can say that the entry needs a source voice check, a confidence ladder state, a receipt-body comparison, a claimant-safe audit, or a route alias comparison. It must not say the final receiver or route branch that waits behind the lock.\n\nGood hints keep the player moving. They name the safe action, not the spoiler. They also stop the public archive from pretending a missing link is a broken page.",
-          "wiki_article": "Related article unlock hint: a label for locked or partially visible evidence links. It should name visible requirement, held proof class, safe preview label, and next-proof target. It must not expose the hidden relation or final outcome.",
-          "pda_codex": "PDA unlock hint: related entry held. Check the visible requirement first: source voice, confidence state, receipt body, claimant-safe audit, route alias, or custody route. The locked answer remains protected.",
-          "scanner_entry": "Scanner unlock tag: related entry held until safe proof requirement is met.",
-          "terminal_note": "Terminal hint note: link is not broken. It is held by proof class. Complete the safe comparison before opening the relation.",
-          "evidence_caption": "Related article held: safe requirement visible, protected answer hidden.",
-          "spoiler_policy": "Safe to show visible requirement, held proof class, and next-proof target. Hold exact hidden relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "PDA Related Article Unlock Hint",
-          "website_article": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "wiki_article": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "pda_codex": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "scanner_entry": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "terminal_note": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "evidence_caption": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "spoiler_policy": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      },
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false,
-        "generated_page_ready": false,
-        "publication_ready": false
-      }
+    "ar_SA": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Draft ar_SA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
     },
-    {
-      "packet_id": "P523_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-      "article_id": "applied_lore.scanner_relation_edge_suppression_reason_bridge",
-      "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
-      "title_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future spoiler-safe crosslink, related-article unlock, and relation-edge suppression bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "relation_edge_suppression",
-          "scanner",
-          "confidence_state",
-          "safe_next_action"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets the opening route explain why a scanner relation edge is hidden without implying the scanner is broken."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "A relation edge suppression reason is the scanner admitting that it saw a possible connection and refused to draw it. The reason may be low field confidence, source voice mismatch, claimant-safe hold, proof escalation, or a route alias conflict. That is different from no relation.\n\nThe scanner should name the visible cause and the safe next action. It should not draw a line that turns a cautious hint into a final relation. It should not silently erase the edge either.",
-          "wiki_article": "Relation edge suppression reason: a scanner/PDA graph state used when a possible relation is hidden. It should name visible cause, hidden relation class, confidence state, and safe next action. It must not reveal exact hidden relation or final outcome.",
-          "pda_codex": "PDA graph note: relation edge suppressed. The scanner has a possible connection, but the field confidence, source voice, claimant hold, route alias, or proof escalation state blocks display. Follow the safe next action.",
-          "scanner_entry": "Scanner graph tag: relation edge suppressed. Visible cause available; exact relation held.",
-          "terminal_note": "Terminal suppression note: edge not drawn because showing it would outrun proof order. Compare the safe field before accepting relation.",
-          "evidence_caption": "Relation edge suppressed: possible connection held by proof boundary.",
-          "spoiler_policy": "Safe to show visible cause and safe next action. Hold exact hidden relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Scanner Relation Edge Suppression Reason",
-          "website_article": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "wiki_article": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "pda_codex": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "scanner_entry": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "terminal_note": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "evidence_caption": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "spoiler_policy": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
-          "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      },
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false,
-        "generated_page_ready": false,
-        "publication_ready": false
-      }
+    "de_DE": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Entwurf de_DE: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Borrador es_ES: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Brouillon fr_FR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Draft he_IL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Draf id_ID: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Draft ja_JP: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Draft ko_KR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Concept nl_NL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Szkic pl_PL: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Rascunho pt_BR: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Draft ru_RU: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Draft uk_UA: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "PDA Related Article Unlock Hint",
+     "website_article": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "wiki_article": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "pda_codex": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "scanner_entry": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "terminal_note": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "evidence_caption": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "spoiler_policy": "Draft zh_CN: A related article unlock hint names the safe requirement for a locked evidence link while keeping the protected relation hidden.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_RELATED_ARTICLE_UNLOCK_HINT_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P523_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+   "article_id": "applied_lore.scanner_relation_edge_suppression_reason_bridge",
+   "release_set_id": "RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE",
+   "title_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future spoiler-safe crosslink, related-article unlock, and relation-edge suppression bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "relation_edge_suppression",
+     "scanner",
+     "confidence_state",
+     "safe_next_action"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets the opening route explain why a scanner relation edge is hidden without implying the scanner is broken."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "A relation edge suppression reason is the scanner admitting that it saw a possible connection and refused to draw it. The reason may be low field confidence, source voice mismatch, claimant-safe hold, proof escalation, or a route alias conflict. That is different from no relation.\n\nThe scanner should name the visible cause and the safe next action. It should not draw a line that turns a cautious hint into a final relation. It should not silently erase the edge either.",
+     "wiki_article": "Relation edge suppression reason: a scanner/PDA graph state used when a possible relation is hidden. It should name visible cause, hidden relation class, confidence state, and safe next action. It must not reveal exact hidden relation or final outcome.",
+     "pda_codex": "PDA graph note: relation edge suppressed. The scanner has a possible connection, but the field confidence, source voice, claimant hold, route alias, or proof escalation state blocks display. Follow the safe next action.",
+     "scanner_entry": "Scanner graph tag: relation edge suppressed. Visible cause available; exact relation held.",
+     "terminal_note": "Terminal suppression note: edge not drawn because showing it would outrun proof order. Compare the safe field before accepting relation.",
+     "evidence_caption": "Relation edge suppressed: possible connection held by proof boundary.",
+     "spoiler_policy": "Safe to show visible cause and safe next action. Hold exact hidden relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Draft ar_SA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Entwurf de_DE: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Borrador es_ES: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Brouillon fr_FR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Draft he_IL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Draf id_ID: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Draft ja_JP: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Draft ko_KR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Concept nl_NL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Szkic pl_PL: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Rascunho pt_BR: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Draft ru_RU: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Draft uk_UA: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Scanner Relation Edge Suppression Reason",
+     "website_article": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "wiki_article": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "pda_codex": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "scanner_entry": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "terminal_note": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "evidence_caption": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "spoiler_policy": "Draft zh_CN: A scanner relation edge suppression reason tells the player why a possible evidence link is hidden and which safe proof action comes next.",
+     "string_pool_key": "LORE_EVIDENCE_SCANNER_RELATION_EDGE_SUPPRESSION_REASON_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    }
+   },
+   "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

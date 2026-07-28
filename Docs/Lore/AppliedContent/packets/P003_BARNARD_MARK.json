@@ -1,177 +1,178 @@
 {
-  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
-  "packet_id": "P003_BARNARD_MARK",
-  "article_id": "player.barnard_mark",
-  "title_key": "LORE_P003_BARNARD_MARK_TITLE",
-  "status": "production_facing_draft_pending_native_localization",
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "packet_id": "P003_BARNARD_MARK",
+ "article_id": "player.barnard_mark",
+ "title_key": "LORE_P003_BARNARD_MARK_TITLE",
+ "status": "production_facing_draft_pending_native_localization",
+ "surfaces": [
+  "scanner",
+  "in_game_wiki",
+  "terminal",
+  "audio_subtitle",
+  "external_site",
+  "image_brief"
+ ],
+ "unlock": {
+  "primary": "unlock.first_barnard_mark",
+  "poi_tags": [
+   "poi.worker_locker",
+   "poi.shift_board"
   ],
-  "unlock": {
-    "primary": "unlock.first_barnard_mark",
-    "poi_tags": [
-      "poi.worker_locker",
-      "poi.shift_board"
-    ],
-    "biome_tags": [
-      "biome.drowned_infrastructure"
-    ]
+  "biome_tags": [
+   "biome.drowned_infrastructure"
+  ]
+ },
+ "localized": {
+  "en_US": {
+   "title": "Barnard Mark",
+   "scanner": "Barnard Yards stamp. Not Deep Reach issue. Somebody carried yard hardware to the bottom of this moon.",
+   "field_note": "Barnard left-hand stamp. Third-owner wrench. Bad heat treat. Do not clean the mud from the mark until the scan locks it.",
+   "terminal": "PERSONNEL ROUTE: HOLD. RESOURCE ROUTE: ACTIVE. SUBSTRATE ROUTE: PROTECTED. TOOL ORIGIN: BARNARD YARDS / THIRD-OWNER REPAIR STOCK.",
+   "audio": "That cut is Barnard. Cheap alloy, left-hand stamp, bad heat treat. Whoever brought it down here knew the same shops you did.",
+   "in_game_wiki": "The first Barnard mark is small: a left-hand tool stamp, a locker hinge with the wrong alloy, a cheap yard cut on a pressure clamp. It is not Deep Reach issue. Somebody brought Barnard hardware down before the current operator.\n\nThat matters because Barnard work has habits Deep Reach does not specify: reused clamps, third-owner cutters, left-hand stamps, bad heat treat hidden under clean paint. When those marks appear beside evacuation holds and failed route permits, HECTON-8 stops being a distant contract and becomes a workplace tied to the operator's own salvage culture.",
+   "external_site": "A Barnard mark is labor evidence: a tool stamp, alloy habit or repair cut from the same yard culture that trained the operator, found inside Deep Reach infrastructure.",
+   "external_site_article": "Barnard Yards is shipbreaking, rented cutters, pressure clamps, third-owner tools and workers who know the price of a bad contract. The first Barnard stamp on HECTON-8 is not a speech. It is a small mark on a wrench, the wrong alloy on a locker hinge, or a repair cut no Deep Reach procedure would request.\n\nFor a Marauder, that detail changes the room. Someone from the same yard culture reached this moon first, worked under the same pressure rules, and ended up inside the same ledgers. The proof is easy to lose. Clean the mud too early, replace the hinge, or sell the tool as scrap, and the connection disappears before the case file starts."
   },
-  "localized": {
-    "en_US": {
-      "title": "Barnard Mark",
-      "scanner": "Barnard Yards stamp. Not Deep Reach issue. Somebody carried yard hardware to the bottom of this moon.",
-      "field_note": "Barnard left-hand stamp. Third-owner wrench. Bad heat treat. Do not clean the mud from the mark until the scan locks it.",
-      "terminal": "PERSONNEL ROUTE: HOLD. RESOURCE ROUTE: ACTIVE. SUBSTRATE ROUTE: PROTECTED. TOOL ORIGIN: BARNARD YARDS / THIRD-OWNER REPAIR STOCK.",
-      "audio": "That cut is Barnard. Cheap alloy, left-hand stamp, bad heat treat. Whoever brought it down here knew the same shops you did.",
-      "in_game_wiki": "The first Barnard mark is small: a left-hand tool stamp, a locker hinge with the wrong alloy, a cheap yard cut on a pressure clamp. It is not Deep Reach issue. Somebody brought Barnard hardware down before the current operator.\n\nThat matters because Barnard work has habits Deep Reach does not specify: reused clamps, third-owner cutters, left-hand stamps, bad heat treat hidden under clean paint. When those marks appear beside evacuation holds and failed route permits, HECTON-8 stops being a distant contract and becomes a workplace tied to the operator's own salvage culture.",
-      "external_site": "A Barnard mark is labor evidence: a tool stamp, alloy habit or repair cut from the same yard culture that trained the operator, found inside Deep Reach infrastructure.",
-      "external_site_article": "Barnard Yards is shipbreaking, rented cutters, pressure clamps, third-owner tools and workers who know the price of a bad contract. The first Barnard stamp on HECTON-8 is not a speech. It is a small mark on a wrench, the wrong alloy on a locker hinge, or a repair cut no Deep Reach procedure would request.\n\nFor a Marauder, that detail changes the room. Someone from the same yard culture reached this moon first, worked under the same pressure rules, and ended up inside the same ledgers. The proof is easy to lose. Clean the mud too early, replace the hinge, or sell the tool as scrap, and the connection disappears before the case file starts."
-    },
-    "ar_SA": {
-      "title": "علامة Barnard",
-      "scanner": "ختم Barnard Yards. ليس من إصدار Deep Reach. شخص ما حمل عتاد الورش إلى قاع هذا القمر.",
-      "field_note": "يمكنك أن تتجاهل شركة ميتة. مفتاح من ورشتك أصعب أن تتركه في الطين.",
-      "terminal": "مسار الأفراد: HOLD. مسار المورد: ACTIVE. مسار الركيزة: PROTECTED. أصل الأداة: BARNARD YARDS / مخزون إصلاح بملكية ثالثة.",
-      "audio": "هذه قَطعة Barnard. سبيكة رخيصة، ختم يساري، معالجة حرارية رديئة. من أحضرها إلى هنا عرف الورش نفسها التي عرفتها.",
-      "in_game_wiki": "أول علامة Barnard على HECTON-8 صغيرة بما يكفي لتفوت: ختم أداة، بطاقة خزانة، عادة توريد، ندبة تركها فولاذ رخيص من الورش. لهذا تهم. يتوقف القمر عن كونه عقداً بعيداً عندما تبدأ علامات العمل المألوفة بالظهور قرب أوامر إخلاء معلقة وأسماء عمال وتصاريح مسار فاشلة.",
-      "external_site": "تربط علامة Barnard اللاعب بـ HECTON-8 عبر دليل العمل: أدوات وأختام وأسماء وعادات مهنية من ثقافة السلب نفسها التي دربته.",
-      "external_site_article": "Barnard Yards ليست مسقط رأس نبيل. إنها ندبة عمل: تفكيك سفن، قواطع مستأجرة، مشابك ضغط، أدوات بملكية ثالثة، وأناس يعرفون تماماً كم يمكن أن يكلف العقد الرديء. أول ختم Barnard على HECTON-8 يجب أن يبدو أصغر من أن يكون مادة لور. ليس خطاباً. إنه علامة على مفتاح، سبيكة خاطئة في مفصلة خزانة، عادة إصلاح لا يمكن أن تطلبها Deep Reach. بالنسبة إلى اللاعب، يغير هذا التفصيل العقد. HECTON-8 لم يعد مجرد مطالبة شركة ميتة تحت ماء غريب. شخص من ثقافة الورش نفسها وصل إلى هنا قبله، عمل هنا، دُفع إلى الدفاتر نفسها، وترك دليلاً صغيراً بما يكفي ليمحى إن لم يلاحظه Marauder."
-    },
-    "de_DE": {
-      "title": "Barnard-Marke",
-      "scanner": "Stempel der Barnard Yards. Keine Deep-Reach-Ausgabe. Jemand trug Werfthardware bis auf den Grund dieses Mondes.",
-      "field_note": "Eine tote Firma kann man abtun. Einen Schraubenschlüssel aus der eigenen Werft lässt man schwerer im Schlamm.",
-      "terminal": "PERSONALROUTE: HOLD. RESSOURCENROUTE: ACTIVE. SUBSTRATROUTE: PROTECTED. WERKZEUGURSPRUNG: BARNARD YARDS / REPARATURBESTAND DRITTER HAND.",
-      "audio": "Dieser Schnitt ist Barnard. Billige Legierung, Linkshandstempel, schlechte Wärmebehandlung. Wer das hierher brachte, kannte dieselben Werkstätten wie du.",
-      "in_game_wiki": "Die erste Barnard-Marke auf HECTON-8 ist klein genug, um sie zu übersehen: Werkzeugstempel, Spindmarke, Versorgungsgewohnheit, Narbe von billigem Werftstahl. Genau deshalb zählt sie. Der Mond ist kein ferner Vertrag mehr, sobald vertraute Arbeitsmarken neben Evakuierungssperren, Arbeiternamen und gescheiterten Routenfreigaben auftauchen.",
-      "external_site": "Die Barnard-Marke bindet den Spieler über Arbeitsbeweise an HECTON-8: Werkzeuge, Stempel, Namen und Routinen derselben Bergungskultur, die ihn geprägt hat.",
-      "external_site_article": "Barnard Yards ist kein edler Herkunftsort. Es ist eine Arbeitsnarbe: Schiffbruch, gemietete Cutter, Druckklemmen, Werkzeuge aus dritter Hand und Menschen, die genau wissen, was ein schlechter Vertrag kosten kann. Der erste Barnard-Stempel auf HECTON-8 sollte fast zu klein für Lore wirken. Kein Vortrag. Eine Marke auf einem Schlüssel, die falsche Legierung an einem Spindscharnier, eine Reparaturgewohnheit, die Deep Reach nie spezifizieren würde. Für den Spieler verändert dieses Detail den Vertrag. HECTON-8 ist nicht mehr nur ein toter Konzernclaim unter fremdem Wasser. Jemand aus derselben Werftkultur war vorher hier, arbeitete hier, wurde in dieselben Register gedrückt und ließ Beweis zurück, klein genug, um gelöscht zu werden, wenn kein Marauder hinsieht."
-    },
-    "es_ES": {
-      "title": "Marca Barnard",
-      "scanner": "Sello de Barnard Yards. No es equipo de Deep Reach. Alguien llevó hardware de astillero al fondo de esta luna.",
-      "field_note": "Puedes encogerte ante una corporación muerta. Una llave de tu propio astillero cuesta más dejarla en el barro.",
-      "terminal": "RUTA PERSONAL: HOLD. RUTA RECURSO: ACTIVE. RUTA SUSTRATO: PROTECTED. ORIGEN DE HERRAMIENTA: BARNARD YARDS / STOCK DE REPARACIÓN DE TERCER DUEÑO.",
-      "audio": "Ese corte es Barnard. Aleación barata, sello de mano izquierda, mal temple. Quien lo bajó aquí conocía los mismos talleres que tú.",
-      "in_game_wiki": "La primera marca Barnard en HECTON-8 es lo bastante pequeña para perderse: sello de herramienta, placa de taquilla, hábito de suministro, cicatriz de acero barato de astillero. Por eso importa. La luna deja de ser un contrato remoto cuando las marcas de trabajo conocidas aparecen junto a retenciones de evacuación, nombres de trabajadores y permisos de ruta fallidos.",
-      "external_site": "La Marca Barnard une al jugador con HECTON-8 mediante pruebas de trabajo: herramientas, sellos, nombres y hábitos de la misma cultura de salvamento que lo formó.",
-      "external_site_article": "Barnard Yards no es un origen noble. Es una cicatriz de trabajo: desguace de naves, cortadores alquilados, abrazaderas de presión, herramientas de tercer dueño y gente que sabe exactamente cuánto puede costar un mal contrato. El primer sello Barnard en HECTON-8 debe parecer casi demasiado pequeño para ser lore. No es un discurso. Es una marca en una llave, la aleación equivocada en una bisagra de taquilla, un hábito de reparación que Deep Reach nunca pediría. Para el jugador, ese detalle cambia el contrato. HECTON-8 ya no es solo una reclamación corporativa muerta bajo agua alienígena. Alguien de la misma cultura de astillero llegó antes, trabajó aquí, acabó en los mismos libros y dejó una prueba tan pequeña que podría borrarse si un Marauder no la ve."
-    },
-    "fr_FR": {
-      "title": "Marque Barnard",
-      "scanner": "Estampille Barnard Yards. Pas une dotation Deep Reach. Quelqu’un a porté du matériel de chantier jusqu’au fond de cette lune.",
-      "field_note": "On peut hausser les épaules devant une corporation morte. Une clé de son propre chantier se laisse moins facilement dans la boue.",
-      "terminal": "ROUTE PERSONNEL : HOLD. ROUTE RESSOURCE : ACTIVE. ROUTE SUBSTRAT : PROTECTED. ORIGINE OUTIL : BARNARD YARDS / STOCK DE RÉPARATION TROISIÈME PROPRIÉTAIRE.",
-      "audio": "Cette coupe, c’est Barnard. Alliage bon marché, frappe main gauche, mauvais traitement thermique. Celui qui a descendu ça connaissait les mêmes ateliers que toi.",
-      "in_game_wiki": "La première marque Barnard sur HECTON-8 est assez petite pour passer inaperçue : estampille d’outil, plaque de casier, habitude d’approvisionnement, cicatrice d’acier de chantier bon marché. C’est pour cela qu’elle compte. La lune cesse d’être un contrat lointain quand ces marques de travail familières apparaissent près des blocages d’évacuation, des noms d’ouvriers et des permissions de route ratées.",
-      "external_site": "La marque Barnard relie le joueur à HECTON-8 par des preuves de travail : outils, estampilles, noms et habitudes de la même culture de récupération qui l’a formé.",
-      "external_site_article": "Barnard Yards n’est pas une origine noble. C’est une cicatrice de travail : démolition de coques, cutters loués, colliers de pression, outils de troisième propriétaire et gens qui savent exactement ce que coûte un mauvais contrat. Le premier tampon Barnard sur HECTON-8 doit presque sembler trop petit pour du lore. Ce n’est pas un discours. C’est une marque sur une clé, le mauvais alliage sur une charnière de casier, une habitude de réparation que Deep Reach ne prescrirait jamais. Pour le joueur, ce détail change le contrat. HECTON-8 n’est plus seulement une revendication morte sous une eau étrangère. Quelqu’un de la même culture de chantier est arrivé avant lui, a travaillé ici, a été rangé dans les mêmes registres et a laissé une preuve assez petite pour être effacée si un Marauder ne la remarque pas."
-    },
-    "he_IL": {
-      "title": "סימן Barnard",
-      "scanner": "חותמת Barnard Yards. לא ציוד של Deep Reach. מישהו נשא חומרת מספנות אל תחתית הירח הזה.",
-      "field_note": "אפשר לנפנף תאגיד מת. מפתח מהמספנה שלך קשה יותר להשאיר בבוץ.",
-      "terminal": "נתיב כוח אדם: HOLD. נתיב משאב: ACTIVE. נתיב מצע: PROTECTED. מקור כלי: BARNARD YARDS / מלאי תיקון בעלות שלישית.",
-      "audio": "החיתוך הזה הוא Barnard. סגסוגת זולה, חותמת שמאלית, טיפול חום רע. מי שהוריד את זה לכאן הכיר את אותן סדנאות כמוך.",
-      "in_game_wiki": "סימן Barnard הראשון על HECTON-8 קטן מספיק כדי להחמיץ אותו: חותמת כלי, תג לוקר, הרגל אספקה, צלקת מפלדת מספנה זולה. לכן הוא חשוב. הירח מפסיק להיות חוזה רחוק כאשר סימני עבודה מוכרים מתחילים להופיע ליד עיכובי פינוי, שמות עובדים והרשאות נתיב שנכשלו.",
-      "external_site": "סימן Barnard קושר את השחקן ל-HECTON-8 דרך ראיות עבודה: כלים, חותמות, שמות והרגלי עבודה מאותה תרבות חילוץ שהכשירה אותו.",
-      "external_site_article": "Barnard Yards אינו מקום מוצא אצילי. זו צלקת עבודה: פירוק ספינות, חותכים שכורים, מהדקי לחץ, כלי יד של בעלים שלישי ואנשים שיודעים בדיוק כמה חוזה רע יכול לעלות. החותמת הראשונה של Barnard על HECTON-8 צריכה להרגיש כמעט קטנה מדי בשביל lore. זה לא נאום. זו חריטה על מפתח, הסגסוגת הלא נכונה בציר לוקר, הרגל תיקון שאף אחד ב-Deep Reach לא היה מגדיר. עבור השחקן, הפרט הזה משנה את החוזה. HECTON-8 כבר אינו רק claim תאגידי מת תחת מים זרים. מישהו מאותה תרבות מספנות הגיע לכאן לפניו, עבד כאן, נכנס לאותם ספרים והשאיר ראיה קטנה מספיק להימחק אם Marauder לא מבחין בה."
-    },
-    "id_ID": {
-      "title": "Tanda Barnard",
-      "scanner": "Cap Barnard Yards. Bukan keluaran Deep Reach. Seseorang membawa perangkat galangan ke dasar bulan ini.",
-      "field_note": "Kau bisa mengabaikan korporasi mati. Kunci dari galanganmu sendiri lebih sulit ditinggalkan di lumpur.",
-      "terminal": "RUTE PERSONEL: HOLD. RUTE SUMBER DAYA: ACTIVE. RUTE SUBSTRAT: PROTECTED. ASAL ALAT: BARNARD YARDS / STOK REPARASI PEMILIK KETIGA.",
-      "audio": "Potongan itu Barnard. Paduan murah, cap tangan kiri, perlakuan panas buruk. Siapa pun yang membawanya ke bawah sini tahu bengkel yang sama denganmu.",
-      "in_game_wiki": "Tanda Barnard pertama di HECTON-8 cukup kecil untuk terlewat: cap alat, tag loker, kebiasaan suplai, bekas baja galangan murah. Karena itu ia penting. Bulan ini berhenti menjadi kontrak jauh saat tanda kerja yang akrab mulai muncul di samping penahanan evakuasi, nama pekerja, dan izin rute yang gagal.",
-      "external_site": "Tanda Barnard mengikat pemain ke HECTON-8 lewat bukti kerja: alat, cap, nama, dan kebiasaan kerja dari budaya salvage yang sama yang melatihnya.",
-      "external_site_article": "Barnard Yards bukan tempat asal yang mulia. Itu bekas luka kerja: pembongkaran kapal, pemotong sewaan, klem tekanan, alat pemilik ketiga, dan orang-orang yang tahu persis berapa biaya kontrak buruk. Cap Barnard pertama di HECTON-8 harus terasa hampir terlalu kecil untuk lore. Itu bukan pidato. Itu tanda pada kunci, paduan yang salah di engsel loker, kebiasaan reparasi yang tidak akan ditentukan Deep Reach. Bagi pemain, detail itu mengubah kontrak. HECTON-8 bukan lagi sekadar klaim korporat mati di bawah air asing. Seseorang dari budaya galangan yang sama pernah mencapai tempat ini, bekerja di sini, masuk ke buku besar yang sama, dan meninggalkan bukti yang cukup kecil untuk dihapus kecuali seorang Marauder memperhatikannya."
-    },
-    "ja_JP": {
-      "title": "Barnardの印",
-      "scanner": "Barnard Yardsの刻印。Deep Reach支給品ではない。誰かがヤードの工具をこの月の底まで運んだ。",
-      "field_note": "死んだ企業なら肩をすくめられる。自分のヤードのレンチは、泥の中に置き去りにしにくい。",
-      "terminal": "人員ルート: HOLD。資源ルート: ACTIVE。基質ルート: PROTECTED。工具出所: BARNARD YARDS / 第三所有者修理在庫。",
-      "audio": "その切り口はBarnardだ。安い合金、左手打刻、悪い熱処理。ここまで持ち込んだ者は、お前と同じ工房を知っていた。",
-      "in_game_wiki": "HECTON-8で最初に見つかるBarnardの印は、見逃せるほど小さい。工具刻印、ロッカー札、補給の癖、安いヤード鋼の傷跡。だから重要だ。見慣れた作業痕が、避難保留、作業員名、失敗したルート許可の横に現れ始めると、この月は遠い契約ではなくなる。",
-      "external_site": "Barnardの印は、工具、刻印、名前、作業の癖という労働証拠で、プレイヤーをHECTON-8へ結びつける。同じサルベージ文化が彼を鍛えた。",
-      "external_site_article": "Barnard Yardsは高貴な故郷ではない。船の解体、借り物のカッター、圧力クランプ、三番目の所有者を渡った工具、悪い契約の値段を知る人間たちの作業傷だ。HECTON-8で最初のBarnard刻印は、ほとんど lore には小さすぎるものに見えるべきだ。演説ではない。レンチの印、ロッカー蝶番の間違った合金、Deep Reachなら指定しない修理癖。プレイヤーにとって、その細部が契約を変える。HECTON-8はもう異星の水底に沈む死んだ企業 claim だけではない。同じヤード文化の誰かが先にここへ来て、働き、同じ台帳に押し込まれ、Marauderが気づかなければ消されるほど小さな証拠を残した。"
-    },
-    "ko_KR": {
-      "title": "Barnard 표식",
-      "scanner": "Barnard Yards 각인. Deep Reach 지급품이 아니다. 누군가 야드 장비를 이 달의 바닥까지 가져왔다.",
-      "field_note": "죽은 기업은 넘길 수 있다. 자기 야드의 렌치는 진흙 속에 남기기 어렵다.",
-      "terminal": "인원 경로: HOLD. 자원 경로: ACTIVE. 기질 경로: PROTECTED. 도구 출처: BARNARD YARDS / 제3소유 수리 재고.",
-      "audio": "저 절단은 Barnard다. 싼 합금, 왼손 각인, 나쁜 열처리. 이걸 여기까지 가져온 자는 너와 같은 작업장을 알았다.",
-      "in_game_wiki": "HECTON-8의 첫 Barnard 표식은 놓칠 만큼 작다. 도구 각인, 사물함 태그, 보급 습관, 싼 야드 강철이 남긴 흉터. 그래서 중요하다. 익숙한 작업 표식이 대피 보류, 작업자 이름, 실패한 경로 허가 옆에 나타나기 시작하면, 이 달은 더 이상 먼 계약이 아니다.",
-      "external_site": "Barnard 표식은 도구, 각인, 이름, 작업 습관이라는 노동 증거로 플레이어를 HECTON-8에 묶는다. 그를 훈련시킨 것과 같은 인양 문화다.",
-      "external_site_article": "Barnard Yards는 고귀한 출신지가 아니다. 선박 해체, 빌린 절단기, 압력 클램프, 세 번째 주인을 거친 도구, 나쁜 계약의 비용을 정확히 아는 사람들의 작업 흉터다. HECTON-8에서 처음 보는 Barnard 각인은 거의 lore라고 부르기엔 너무 작아야 한다. 연설이 아니다. 렌치의 표시, 사물함 경첩의 틀린 합금, Deep Reach가 절대 지정하지 않을 수리 습관이다. 플레이어에게 그 세부가 계약을 바꾼다. HECTON-8은 더 이상 외계 바다 아래의 죽은 기업 claim만이 아니다. 같은 야드 문화의 누군가가 먼저 이곳에 도착했고, 일했고, 같은 장부로 밀려 들어갔으며, Marauder가 보지 않으면 지워질 만큼 작은 증거를 남겼다."
-    },
-    "nl_NL": {
-      "title": "Barnard-merk",
-      "scanner": "Stempel van Barnard Yards. Geen Deep Reach-uitrusting. Iemand droeg werfhardware naar de bodem van deze maan.",
-      "field_note": "Een dood bedrijf kun je wegwuiven. Een sleutel uit je eigen werf laat je minder makkelijk in de modder liggen.",
-      "terminal": "PERSONEELSROUTE: HOLD. GRONDSTOFROUTE: ACTIVE. SUBSTRAATROUTE: PROTECTED. GEREEDSCHAPSHERKOMST: BARNARD YARDS / DERDE-EIGENAAR REPARATIEVOORRAAD.",
-      "audio": "Die snede is Barnard. Goedkope legering, linkshandige stempel, slechte warmtebehandeling. Wie dit naar beneden bracht, kende dezelfde werkplaatsen als jij.",
-      "in_game_wiki": "Het eerste Barnard-merk op HECTON-8 is klein genoeg om te missen: gereedschapsstempel, lockerlabel, bevoorradingsgewoonte, litteken van goedkoop werfstaal. Daarom telt het. De maan is geen verre opdracht meer zodra bekende werksporen verschijnen naast evacuatieblokkades, namen van arbeiders en mislukte routevergunningen.",
-      "external_site": "Het Barnard-merk bindt de speler aan HECTON-8 via arbeidsbewijs: gereedschap, stempels, namen en werkgewoonten uit dezelfde bergingscultuur die hem opleidde.",
-      "external_site_article": "Barnard Yards is geen nobele geboorteplaats. Het is een werklitteken: scheepssloop, gehuurde cutters, drukklemmen, gereedschap uit derde hand en mensen die precies weten wat een slecht contract kan kosten. De eerste Barnard-stempel op HECTON-8 moet bijna te klein voelen voor lore. Geen toespraak. Een merk op een sleutel, de verkeerde legering op een lockerschanier, een reparatiegewoonte die Deep Reach nooit zou voorschrijven. Voor de speler verandert dat detail het contract. HECTON-8 is niet langer alleen een dode bedrijfsclaim onder vreemd water. Iemand uit dezelfde werfcultuur bereikte deze plek eerder, werkte hier, belandde in dezelfde registers en liet bewijs achter dat klein genoeg is om gewist te worden tenzij een Marauder het opmerkt."
-    },
-    "pl_PL": {
-      "title": "Znak Barnard",
-      "scanner": "Stempel Barnard Yards. To nie sprzęt Deep Reach. Ktoś zaniósł hardware stoczniowy na dno tego księżyca.",
-      "field_note": "Martwą korporację można zbyć wzruszeniem ramion. Klucz z własnej stoczni trudniej zostawić w błocie.",
-      "terminal": "TRASA PERSONELU: HOLD. TRASA ZASOBU: ACTIVE. TRASA SUBSTRATU: PROTECTED. POCHODZENIE NARZĘDZIA: BARNARD YARDS / ZAPAS NAPRAWCZY TRZECIEGO WŁAŚCICIELA.",
-      "audio": "To cięcie jest z Barnard. Tani stop, lewy stempel, złe wygrzewanie. Kto to tu zniósł, znał te same warsztaty co ty.",
-      "in_game_wiki": "Pierwszy znak Barnard na HECTON-8 jest dość mały, by go przegapić: stempel narzędzia, zawieszka szafki, nawyk dostaw, blizna po taniej stali stoczniowej. Dlatego ma znaczenie. Księżyc przestaje być odległym kontraktem, kiedy znane ślady pracy pojawiają się obok wstrzymań ewakuacji, nazwisk pracowników i nieudanych zezwoleń tras.",
-      "external_site": "Znak Barnard łączy gracza z HECTON-8 przez dowody pracy: narzędzia, stemple, nazwiska i nawyki tej samej kultury złomowania, która go wyszkoliła.",
-      "external_site_article": "Barnard Yards nie jest szlachetnym miejscem pochodzenia. To robocza blizna: rozbiórka statków, wynajęte cuttery, zaciski ciśnieniowe, narzędzia po trzecim właścicielu i ludzie, którzy dokładnie wiedzą, ile może kosztować zły kontrakt. Pierwszy stempel Barnard na HECTON-8 powinien wydawać się prawie zbyt mały na lore. To nie przemowa. To znak na kluczu, niewłaściwy stop w zawiasie szafki, nawyk naprawczy, którego Deep Reach nigdy by nie określił. Dla gracza ten szczegół zmienia kontrakt. HECTON-8 nie jest już tylko martwym claimem korporacji pod obcą wodą. Ktoś z tej samej kultury stoczni dotarł tu wcześniej, pracował, trafił do tych samych ksiąg i zostawił dowód tak mały, że zniknie, jeśli Marauder go nie zauważy."
-    },
-    "pt_BR": {
-      "title": "Marca Barnard",
-      "scanner": "Selo da Barnard Yards. Não é equipamento Deep Reach. Alguém levou hardware de estaleiro ao fundo desta lua.",
-      "field_note": "Você pode dar de ombros para uma corporação morta. Uma chave do seu próprio estaleiro é mais difícil de largar na lama.",
-      "terminal": "ROTA DE PESSOAL: HOLD. ROTA DE RECURSO: ACTIVE. ROTA DE SUBSTRATO: PROTECTED. ORIGEM DA FERRAMENTA: BARNARD YARDS / ESTOQUE DE REPARO DE TERCEIRO DONO.",
-      "audio": "Esse corte é Barnard. Liga barata, selo de mão esquerda, tratamento térmico ruim. Quem trouxe isso para cá conhecia as mesmas oficinas que você.",
-      "in_game_wiki": "A primeira marca Barnard em HECTON-8 é pequena o bastante para passar despercebida: selo de ferramenta, etiqueta de armário, hábito de suprimento, cicatriz de aço barato de estaleiro. Por isso importa. A lua deixa de ser um contrato distante quando marcas de trabalho conhecidas começam a aparecer ao lado de bloqueios de evacuação, nomes de trabalhadores e permissões de rota que falharam.",
-      "external_site": "A Marca Barnard liga o jogador a HECTON-8 por prova de trabalho: ferramentas, selos, nomes e hábitos da mesma cultura de salvage que o treinou.",
-      "external_site_article": "Barnard Yards não é berço nobre. É uma cicatriz de trabalho: desmonte de naves, cortadores alugados, grampos de pressão, ferramentas de terceiro dono e gente que sabe exatamente quanto um contrato ruim pode custar. O primeiro selo Barnard em HECTON-8 deve parecer quase pequeno demais para lore. Não é discurso. É uma marca numa chave, a liga errada numa dobradiça de armário, um hábito de reparo que a Deep Reach nunca especificaria. Para o jogador, esse detalhe muda o contrato. HECTON-8 deixa de ser só uma reivindicação corporativa morta sob água alienígena. Alguém da mesma cultura de estaleiro chegou antes, trabalhou aqui, foi empurrado para os mesmos livros e deixou uma prova pequena o bastante para ser apagada se um Marauder não notar."
-    },
-    "ru_RU": {
-      "title": "Метка Barnard",
-      "scanner": "Штамп Barnard Yards. Не имущество Deep Reach. Кто-то дотащил верфевое железо до дна этой луны.",
-      "field_note": "От мёртвой корпорации можно отмахнуться. Гаечный ключ со своей верфи тяжелее оставить в грязи.",
-      "terminal": "МАРШРУТ ПЕРСОНАЛА: HOLD. МАРШРУТ РЕСУРСА: ACTIVE. МАРШРУТ СУБСТРАТА: PROTECTED. ПРОИСХОЖДЕНИЕ ИНСТРУМЕНТА: BARNARD YARDS / РЕМОНТНЫЙ СКЛАД ТРЕТЬЕГО ВЛАДЕЛЬЦА.",
-      "audio": "Этот рез — Barnard. Дешёвый сплав, левый штамп, плохой отпуск. Кто принёс это вниз, знал те же мастерские, что и ты.",
-      "in_game_wiki": "Первая метка Barnard на HECTON-8 достаточно мала, чтобы её пропустить: штамп инструмента, бирка шкафчика, привычка снабжения, шрам от дешёвой верфевой стали. Поэтому она важна. Луна перестаёт быть дальним контрактом, когда знакомые рабочие следы появляются рядом с удержанными эвакуациями, именами работников и проваленными разрешениями маршрута.",
-      "external_site": "Метка Barnard связывает игрока с HECTON-8 через рабочие доказательства: инструменты, штампы, имена и привычки той же salvage-культуры, которая его обучила.",
-      "external_site_article": "Barnard Yards — не благородная родина. Это рабочий шрам: разборка кораблей, арендованные резаки, нажимные хомуты, инструмент третьего владельца и люди, которые точно знают цену плохому контракту. Первый штамп Barnard на HECTON-8 должен казаться почти слишком маленьким для лора. Это не речь. Это метка на ключе, неправильный сплав на петле шкафчика, ремонтная привычка, которую Deep Reach никогда бы не прописала. Для игрока эта деталь меняет контракт. HECTON-8 уже не просто мёртвый корпоративный claim под чужой водой. Кто-то из той же верфевой культуры добрался сюда раньше, работал здесь, попал в те же книги и оставил доказательство достаточно малое, чтобы его стёрли, если Marauder не заметит."
-    },
-    "uk_UA": {
-      "title": "Мітка Barnard",
-      "scanner": "Штамп Barnard Yards. Не спорядження Deep Reach. Хтось доніс верфове залізо до дна цього місяця.",
-      "field_note": "Від мертвої корпорації можна відмахнутися. Гайковий ключ зі своєї верфі важче лишити в багнюці.",
-      "terminal": "МАРШРУТ ПЕРСОНАЛУ: HOLD. МАРШРУТ РЕСУРСУ: ACTIVE. МАРШРУТ СУБСТРАТУ: PROTECTED. ПОХОДЖЕННЯ ІНСТРУМЕНТА: BARNARD YARDS / РЕМОНТНИЙ СКЛАД ТРЕТЬОГО ВЛАСНИКА.",
-      "audio": "Цей різ — Barnard. Дешевий сплав, лівий штамп, поганий відпуск. Хто приніс це вниз, знав ті самі майстерні, що й ти.",
-      "in_game_wiki": "Перша мітка Barnard на HECTON-8 досить мала, щоб її пропустити: штамп інструмента, бірка шафки, звичка постачання, шрам від дешевої верфової сталі. Тому вона важлива. Місяць перестає бути далеким контрактом, коли знайомі робочі сліди з’являються поряд із затриманими евакуаціями, іменами працівників і проваленими дозволами маршруту.",
-      "external_site": "Мітка Barnard пов’язує гравця з HECTON-8 через робочі докази: інструменти, штампи, імена й звички тієї самої salvage-культури, яка його навчила.",
-      "external_site_article": "Barnard Yards — не шляхетна батьківщина. Це робочий шрам: розбір кораблів, орендовані різаки, притискні хомути, інструмент третього власника й люди, які точно знають ціну поганого контракту. Перший штамп Barnard на HECTON-8 має здаватися майже замалим для лору. Це не промова. Це мітка на ключі, неправильний сплав на петлі шафки, ремонтна звичка, яку Deep Reach ніколи б не прописала. Для гравця ця деталь змінює контракт. HECTON-8 вже не просто мертвий корпоративний claim під чужою водою. Хтось із тієї самої верфової культури дістався сюди раніше, працював тут, потрапив до тих самих книг і лишив доказ досить малий, щоб його стерли, якщо Marauder не помітить."
-    },
-    "zh_CN": {
-      "title": "Barnard标记",
-      "scanner": "Barnard Yards印记。不是Deep Reach配发。有人把船坞硬件带到了这颗卫星底部。",
-      "field_note": "你可以对一家死公司耸肩。来自自己船坞的扳手更难被留在泥里。",
-      "terminal": "人员路线：HOLD。资源路线：ACTIVE。基质路线：PROTECTED。工具来源：BARNARD YARDS / 第三手维修库存。",
-      "audio": "那道切口是Barnard。廉价合金，左手冲印，糟糕热处理。把它带到这里的人，认识你认识的那些工坊。",
-      "in_game_wiki": "HECTON-8上的第一处Barnard标记小到足以被错过：工具印、储物柜牌、补给习惯、廉价船坞钢留下的伤痕。正因为如此它才重要。当熟悉的工作痕迹开始出现在撤离扣留、工人姓名和失败路线许可旁边时，这颗卫星就不再只是远方合同。",
-      "external_site": "Barnard标记通过劳动证据把玩家与HECTON-8相连：工具、印记、姓名，以及训练过他的同一种打捞文化里的工作习惯。",
-      "external_site_article": "Barnard Yards不是高贵出身。它是一道工作伤痕：拆船、租来的切割器、压力夹具、第三手工具，以及那些清楚坏合同到底多贵的人。HECTON-8上的第一枚Barnard印记应该小到几乎不像 lore。它不是演说。它是扳手上的印，储物柜铰链上的错误合金，是Deep Reach永远不会规定的维修习惯。对玩家来说，这个细节改变了合同。HECTON-8不再只是异星海水下的一项死亡企业claim。某个来自同一船坞文化的人先到了这里，在这里工作，被塞进同一批账簿，并留下了一点小到可以被抹掉的证据，除非一个Marauder注意到它。"
-    }
+  "ar_SA": {
+   "title": "علامة Barnard",
+   "scanner": "ختم Barnard Yards. ليس من إصدار Deep Reach. شخص ما حمل عتاد الورش إلى قاع هذا القمر.",
+   "field_note": "يمكنك أن تتجاهل شركة ميتة. مفتاح من ورشتك أصعب أن تتركه في الطين.",
+   "terminal": "مسار الأفراد: HOLD. مسار المورد: ACTIVE. مسار الركيزة: PROTECTED. أصل الأداة: BARNARD YARDS / مخزون إصلاح بملكية ثالثة.",
+   "audio": "هذه قَطعة Barnard. سبيكة رخيصة، ختم يساري، معالجة حرارية رديئة. من أحضرها إلى هنا عرف الورش نفسها التي عرفتها.",
+   "in_game_wiki": "أول علامة Barnard على HECTON-8 صغيرة بما يكفي لتفوت: ختم أداة، بطاقة خزانة، عادة توريد، ندبة تركها فولاذ رخيص من الورش. لهذا تهم. يتوقف القمر عن كونه عقداً بعيداً عندما تبدأ علامات العمل المألوفة بالظهور قرب أوامر إخلاء معلقة وأسماء عمال وتصاريح مسار فاشلة.",
+   "external_site": "تربط علامة Barnard اللاعب بـ HECTON-8 عبر دليل العمل: أدوات وأختام وأسماء وعادات مهنية من ثقافة السلب نفسها التي دربته.",
+   "external_site_article": "Barnard Yards ليست مسقط رأس نبيل. إنها ندبة عمل: تفكيك سفن، قواطع مستأجرة، مشابك ضغط، أدوات بملكية ثالثة، وأناس يعرفون تماماً كم يمكن أن يكلف العقد الرديء. أول ختم Barnard على HECTON-8 يجب أن يبدو أصغر من أن يكون مادة لور. ليس خطاباً. إنه علامة على مفتاح، سبيكة خاطئة في مفصلة خزانة، عادة إصلاح لا يمكن أن تطلبها Deep Reach. بالنسبة إلى اللاعب، يغير هذا التفصيل العقد. HECTON-8 لم يعد مجرد مطالبة شركة ميتة تحت ماء غريب. شخص من ثقافة الورش نفسها وصل إلى هنا قبله، عمل هنا، دُفع إلى الدفاتر نفسها، وترك دليلاً صغيراً بما يكفي ليمحى إن لم يلاحظه Marauder."
+  },
+  "de_DE": {
+   "title": "Barnard-Marke",
+   "scanner": "Stempel der Barnard Yards. Keine Deep-Reach-Ausgabe. Jemand trug Werfthardware bis auf den Grund dieses Mondes.",
+   "field_note": "Eine tote Firma kann man abtun. Einen Schraubenschlüssel aus der eigenen Werft lässt man schwerer im Schlamm.",
+   "terminal": "PERSONALROUTE: HOLD. RESSOURCENROUTE: ACTIVE. SUBSTRATROUTE: PROTECTED. WERKZEUGURSPRUNG: BARNARD YARDS / REPARATURBESTAND DRITTER HAND.",
+   "audio": "Dieser Schnitt ist Barnard. Billige Legierung, Linkshandstempel, schlechte Wärmebehandlung. Wer das hierher brachte, kannte dieselben Werkstätten wie du.",
+   "in_game_wiki": "Die erste Barnard-Marke auf HECTON-8 ist klein genug, um sie zu übersehen: Werkzeugstempel, Spindmarke, Versorgungsgewohnheit, Narbe von billigem Werftstahl. Genau deshalb zählt sie. Der Mond ist kein ferner Vertrag mehr, sobald vertraute Arbeitsmarken neben Evakuierungssperren, Arbeiternamen und gescheiterten Routenfreigaben auftauchen.",
+   "external_site": "Die Barnard-Marke bindet den Spieler über Arbeitsbeweise an HECTON-8: Werkzeuge, Stempel, Namen und Routinen derselben Bergungskultur, die ihn geprägt hat.",
+   "external_site_article": "Barnard Yards ist kein edler Herkunftsort. Es ist eine Arbeitsnarbe: Schiffbruch, gemietete Cutter, Druckklemmen, Werkzeuge aus dritter Hand und Menschen, die genau wissen, was ein schlechter Vertrag kosten kann. Der erste Barnard-Stempel auf HECTON-8 sollte fast zu klein für Lore wirken. Kein Vortrag. Eine Marke auf einem Schlüssel, die falsche Legierung an einem Spindscharnier, eine Reparaturgewohnheit, die Deep Reach nie spezifizieren würde. Für den Spieler verändert dieses Detail den Vertrag. HECTON-8 ist nicht mehr nur ein toter Konzernclaim unter fremdem Wasser. Jemand aus derselben Werftkultur war vorher hier, arbeitete hier, wurde in dieselben Register gedrückt und ließ Beweis zurück, klein genug, um gelöscht zu werden, wenn kein Marauder hinsieht."
+  },
+  "es_ES": {
+   "title": "Marca Barnard",
+   "scanner": "Sello de Barnard Yards. No es equipo de Deep Reach. Alguien llevó hardware de astillero al fondo de esta luna.",
+   "field_note": "Puedes encogerte ante una corporación muerta. Una llave de tu propio astillero cuesta más dejarla en el barro.",
+   "terminal": "RUTA PERSONAL: HOLD. RUTA RECURSO: ACTIVE. RUTA SUSTRATO: PROTECTED. ORIGEN DE HERRAMIENTA: BARNARD YARDS / STOCK DE REPARACIÓN DE TERCER DUEÑO.",
+   "audio": "Ese corte es Barnard. Aleación barata, sello de mano izquierda, mal temple. Quien lo bajó aquí conocía los mismos talleres que tú.",
+   "in_game_wiki": "La primera marca Barnard en HECTON-8 es lo bastante pequeña para perderse: sello de herramienta, placa de taquilla, hábito de suministro, cicatriz de acero barato de astillero. Por eso importa. La luna deja de ser un contrato remoto cuando las marcas de trabajo conocidas aparecen junto a retenciones de evacuación, nombres de trabajadores y permisos de ruta fallidos.",
+   "external_site": "La Marca Barnard une al jugador con HECTON-8 mediante pruebas de trabajo: herramientas, sellos, nombres y hábitos de la misma cultura de salvamento que lo formó.",
+   "external_site_article": "Barnard Yards no es un origen noble. Es una cicatriz de trabajo: desguace de naves, cortadores alquilados, abrazaderas de presión, herramientas de tercer dueño y gente que sabe exactamente cuánto puede costar un mal contrato. El primer sello Barnard en HECTON-8 debe parecer casi demasiado pequeño para ser lore. No es un discurso. Es una marca en una llave, la aleación equivocada en una bisagra de taquilla, un hábito de reparación que Deep Reach nunca pediría. Para el jugador, ese detalle cambia el contrato. HECTON-8 ya no es solo una reclamación corporativa muerta bajo agua alienígena. Alguien de la misma cultura de astillero llegó antes, trabajó aquí, acabó en los mismos libros y dejó una prueba tan pequeña que podría borrarse si un Marauder no la ve."
+  },
+  "fr_FR": {
+   "title": "Marque Barnard",
+   "scanner": "Estampille Barnard Yards. Pas une dotation Deep Reach. Quelqu’un a porté du matériel de chantier jusqu’au fond de cette lune.",
+   "field_note": "On peut hausser les épaules devant une corporation morte. Une clé de son propre chantier se laisse moins facilement dans la boue.",
+   "terminal": "ROUTE PERSONNEL : HOLD. ROUTE RESSOURCE : ACTIVE. ROUTE SUBSTRAT : PROTECTED. ORIGINE OUTIL : BARNARD YARDS / STOCK DE RÉPARATION TROISIÈME PROPRIÉTAIRE.",
+   "audio": "Cette coupe, c’est Barnard. Alliage bon marché, frappe main gauche, mauvais traitement thermique. Celui qui a descendu ça connaissait les mêmes ateliers que toi.",
+   "in_game_wiki": "La première marque Barnard sur HECTON-8 est assez petite pour passer inaperçue : estampille d’outil, plaque de casier, habitude d’approvisionnement, cicatrice d’acier de chantier bon marché. C’est pour cela qu’elle compte. La lune cesse d’être un contrat lointain quand ces marques de travail familières apparaissent près des blocages d’évacuation, des noms d’ouvriers et des permissions de route ratées.",
+   "external_site": "La marque Barnard relie le joueur à HECTON-8 par des preuves de travail : outils, estampilles, noms et habitudes de la même culture de récupération qui l’a formé.",
+   "external_site_article": "Barnard Yards n’est pas une origine noble. C’est une cicatrice de travail : démolition de coques, cutters loués, colliers de pression, outils de troisième propriétaire et gens qui savent exactement ce que coûte un mauvais contrat. Le premier tampon Barnard sur HECTON-8 doit presque sembler trop petit pour du lore. Ce n’est pas un discours. C’est une marque sur une clé, le mauvais alliage sur une charnière de casier, une habitude de réparation que Deep Reach ne prescrirait jamais. Pour le joueur, ce détail change le contrat. HECTON-8 n’est plus seulement une revendication morte sous une eau étrangère. Quelqu’un de la même culture de chantier est arrivé avant lui, a travaillé ici, a été rangé dans les mêmes registres et a laissé une preuve assez petite pour être effacée si un Marauder ne la remarque pas."
+  },
+  "he_IL": {
+   "title": "סימן Barnard",
+   "scanner": "חותמת Barnard Yards. לא ציוד של Deep Reach. מישהו נשא חומרת מספנות אל תחתית הירח הזה.",
+   "field_note": "אפשר לנפנף תאגיד מת. מפתח מהמספנה שלך קשה יותר להשאיר בבוץ.",
+   "terminal": "נתיב כוח אדם: HOLD. נתיב משאב: ACTIVE. נתיב מצע: PROTECTED. מקור כלי: BARNARD YARDS / מלאי תיקון בעלות שלישית.",
+   "audio": "החיתוך הזה הוא Barnard. סגסוגת זולה, חותמת שמאלית, טיפול חום רע. מי שהוריד את זה לכאן הכיר את אותן סדנאות כמוך.",
+   "in_game_wiki": "סימן Barnard הראשון על HECTON-8 קטן מספיק כדי להחמיץ אותו: חותמת כלי, תג לוקר, הרגל אספקה, צלקת מפלדת מספנה זולה. לכן הוא חשוב. הירח מפסיק להיות חוזה רחוק כאשר סימני עבודה מוכרים מתחילים להופיע ליד עיכובי פינוי, שמות עובדים והרשאות נתיב שנכשלו.",
+   "external_site": "סימן Barnard קושר את השחקן ל-HECTON-8 דרך ראיות עבודה: כלים, חותמות, שמות והרגלי עבודה מאותה תרבות חילוץ שהכשירה אותו.",
+   "external_site_article": "Barnard Yards אינו מקום מוצא אצילי. זו צלקת עבודה: פירוק ספינות, חותכים שכורים, מהדקי לחץ, כלי יד של בעלים שלישי ואנשים שיודעים בדיוק כמה חוזה רע יכול לעלות. החותמת הראשונה של Barnard על HECTON-8 צריכה להרגיש כמעט קטנה מדי בשביל lore. זה לא נאום. זו חריטה על מפתח, הסגסוגת הלא נכונה בציר לוקר, הרגל תיקון שאף אחד ב-Deep Reach לא היה מגדיר. עבור השחקן, הפרט הזה משנה את החוזה. HECTON-8 כבר אינו רק claim תאגידי מת תחת מים זרים. מישהו מאותה תרבות מספנות הגיע לכאן לפניו, עבד כאן, נכנס לאותם ספרים והשאיר ראיה קטנה מספיק להימחק אם Marauder לא מבחין בה."
+  },
+  "id_ID": {
+   "title": "Tanda Barnard",
+   "scanner": "Cap Barnard Yards. Bukan keluaran Deep Reach. Seseorang membawa perangkat galangan ke dasar bulan ini.",
+   "field_note": "Kau bisa mengabaikan korporasi mati. Kunci dari galanganmu sendiri lebih sulit ditinggalkan di lumpur.",
+   "terminal": "RUTE PERSONEL: HOLD. RUTE SUMBER DAYA: ACTIVE. RUTE SUBSTRAT: PROTECTED. ASAL ALAT: BARNARD YARDS / STOK REPARASI PEMILIK KETIGA.",
+   "audio": "Potongan itu Barnard. Paduan murah, cap tangan kiri, perlakuan panas buruk. Siapa pun yang membawanya ke bawah sini tahu bengkel yang sama denganmu.",
+   "in_game_wiki": "Tanda Barnard pertama di HECTON-8 cukup kecil untuk terlewat: cap alat, tag loker, kebiasaan suplai, bekas baja galangan murah. Karena itu ia penting. Bulan ini berhenti menjadi kontrak jauh saat tanda kerja yang akrab mulai muncul di samping penahanan evakuasi, nama pekerja, dan izin rute yang gagal.",
+   "external_site": "Tanda Barnard mengikat pemain ke HECTON-8 lewat bukti kerja: alat, cap, nama, dan kebiasaan kerja dari budaya salvage yang sama yang melatihnya.",
+   "external_site_article": "Barnard Yards bukan tempat asal yang mulia. Itu bekas luka kerja: pembongkaran kapal, pemotong sewaan, klem tekanan, alat pemilik ketiga, dan orang-orang yang tahu persis berapa biaya kontrak buruk. Cap Barnard pertama di HECTON-8 harus terasa hampir terlalu kecil untuk lore. Itu bukan pidato. Itu tanda pada kunci, paduan yang salah di engsel loker, kebiasaan reparasi yang tidak akan ditentukan Deep Reach. Bagi pemain, detail itu mengubah kontrak. HECTON-8 bukan lagi sekadar klaim korporat mati di bawah air asing. Seseorang dari budaya galangan yang sama pernah mencapai tempat ini, bekerja di sini, masuk ke buku besar yang sama, dan meninggalkan bukti yang cukup kecil untuk dihapus kecuali seorang Marauder memperhatikannya."
+  },
+  "ja_JP": {
+   "title": "Barnardの印",
+   "scanner": "Barnard Yardsの刻印。Deep Reach支給品ではない。誰かがヤードの工具をこの月の底まで運んだ。",
+   "field_note": "死んだ企業なら肩をすくめられる。自分のヤードのレンチは、泥の中に置き去りにしにくい。",
+   "terminal": "人員ルート: HOLD。資源ルート: ACTIVE。基質ルート: PROTECTED。工具出所: BARNARD YARDS / 第三所有者修理在庫。",
+   "audio": "その切り口はBarnardだ。安い合金、左手打刻、悪い熱処理。ここまで持ち込んだ者は、お前と同じ工房を知っていた。",
+   "in_game_wiki": "HECTON-8で最初に見つかるBarnardの印は、見逃せるほど小さい。工具刻印、ロッカー札、補給の癖、安いヤード鋼の傷跡。だから重要だ。見慣れた作業痕が、避難保留、作業員名、失敗したルート許可の横に現れ始めると、この月は遠い契約ではなくなる。",
+   "external_site": "Barnardの印は、工具、刻印、名前、作業の癖という労働証拠で、プレイヤーをHECTON-8へ結びつける。同じサルベージ文化が彼を鍛えた。",
+   "external_site_article": "Barnard Yardsは高貴な故郷ではない。船の解体、借り物のカッター、圧力クランプ、三番目の所有者を渡った工具、悪い契約の値段を知る人間たちの作業傷だ。HECTON-8で最初のBarnard刻印は、ほとんど lore には小さすぎるものに見えるべきだ。演説ではない。レンチの印、ロッカー蝶番の間違った合金、Deep Reachなら指定しない修理癖。プレイヤーにとって、その細部が契約を変える。HECTON-8はもう異星の水底に沈む死んだ企業 claim だけではない。同じヤード文化の誰かが先にここへ来て、働き、同じ台帳に押し込まれ、Marauderが気づかなければ消されるほど小さな証拠を残した。"
+  },
+  "ko_KR": {
+   "title": "Barnard 표식",
+   "scanner": "Barnard Yards 각인. Deep Reach 지급품이 아니다. 누군가 야드 장비를 이 달의 바닥까지 가져왔다.",
+   "field_note": "죽은 기업은 넘길 수 있다. 자기 야드의 렌치는 진흙 속에 남기기 어렵다.",
+   "terminal": "인원 경로: HOLD. 자원 경로: ACTIVE. 기질 경로: PROTECTED. 도구 출처: BARNARD YARDS / 제3소유 수리 재고.",
+   "audio": "저 절단은 Barnard다. 싼 합금, 왼손 각인, 나쁜 열처리. 이걸 여기까지 가져온 자는 너와 같은 작업장을 알았다.",
+   "in_game_wiki": "HECTON-8의 첫 Barnard 표식은 놓칠 만큼 작다. 도구 각인, 사물함 태그, 보급 습관, 싼 야드 강철이 남긴 흉터. 그래서 중요하다. 익숙한 작업 표식이 대피 보류, 작업자 이름, 실패한 경로 허가 옆에 나타나기 시작하면, 이 달은 더 이상 먼 계약이 아니다.",
+   "external_site": "Barnard 표식은 도구, 각인, 이름, 작업 습관이라는 노동 증거로 플레이어를 HECTON-8에 묶는다. 그를 훈련시킨 것과 같은 인양 문화다.",
+   "external_site_article": "Barnard Yards는 고귀한 출신지가 아니다. 선박 해체, 빌린 절단기, 압력 클램프, 세 번째 주인을 거친 도구, 나쁜 계약의 비용을 정확히 아는 사람들의 작업 흉터다. HECTON-8에서 처음 보는 Barnard 각인은 거의 lore라고 부르기엔 너무 작아야 한다. 연설이 아니다. 렌치의 표시, 사물함 경첩의 틀린 합금, Deep Reach가 절대 지정하지 않을 수리 습관이다. 플레이어에게 그 세부가 계약을 바꾼다. HECTON-8은 더 이상 외계 바다 아래의 죽은 기업 claim만이 아니다. 같은 야드 문화의 누군가가 먼저 이곳에 도착했고, 일했고, 같은 장부로 밀려 들어갔으며, Marauder가 보지 않으면 지워질 만큼 작은 증거를 남겼다."
+  },
+  "nl_NL": {
+   "title": "Barnard-merk",
+   "scanner": "Stempel van Barnard Yards. Geen Deep Reach-uitrusting. Iemand droeg werfhardware naar de bodem van deze maan.",
+   "field_note": "Een dood bedrijf kun je wegwuiven. Een sleutel uit je eigen werf laat je minder makkelijk in de modder liggen.",
+   "terminal": "PERSONEELSROUTE: HOLD. GRONDSTOFROUTE: ACTIVE. SUBSTRAATROUTE: PROTECTED. GEREEDSCHAPSHERKOMST: BARNARD YARDS / DERDE-EIGENAAR REPARATIEVOORRAAD.",
+   "audio": "Die snede is Barnard. Goedkope legering, linkshandige stempel, slechte warmtebehandeling. Wie dit naar beneden bracht, kende dezelfde werkplaatsen als jij.",
+   "in_game_wiki": "Het eerste Barnard-merk op HECTON-8 is klein genoeg om te missen: gereedschapsstempel, lockerlabel, bevoorradingsgewoonte, litteken van goedkoop werfstaal. Daarom telt het. De maan is geen verre opdracht meer zodra bekende werksporen verschijnen naast evacuatieblokkades, namen van arbeiders en mislukte routevergunningen.",
+   "external_site": "Het Barnard-merk bindt de speler aan HECTON-8 via arbeidsbewijs: gereedschap, stempels, namen en werkgewoonten uit dezelfde bergingscultuur die hem opleidde.",
+   "external_site_article": "Barnard Yards is geen nobele geboorteplaats. Het is een werklitteken: scheepssloop, gehuurde cutters, drukklemmen, gereedschap uit derde hand en mensen die precies weten wat een slecht contract kan kosten. De eerste Barnard-stempel op HECTON-8 moet bijna te klein voelen voor lore. Geen toespraak. Een merk op een sleutel, de verkeerde legering op een lockerschanier, een reparatiegewoonte die Deep Reach nooit zou voorschrijven. Voor de speler verandert dat detail het contract. HECTON-8 is niet langer alleen een dode bedrijfsclaim onder vreemd water. Iemand uit dezelfde werfcultuur bereikte deze plek eerder, werkte hier, belandde in dezelfde registers en liet bewijs achter dat klein genoeg is om gewist te worden tenzij een Marauder het opmerkt."
+  },
+  "pl_PL": {
+   "title": "Znak Barnard",
+   "scanner": "Stempel Barnard Yards. To nie sprzęt Deep Reach. Ktoś zaniósł hardware stoczniowy na dno tego księżyca.",
+   "field_note": "Martwą korporację można zbyć wzruszeniem ramion. Klucz z własnej stoczni trudniej zostawić w błocie.",
+   "terminal": "TRASA PERSONELU: HOLD. TRASA ZASOBU: ACTIVE. TRASA SUBSTRATU: PROTECTED. POCHODZENIE NARZĘDZIA: BARNARD YARDS / ZAPAS NAPRAWCZY TRZECIEGO WŁAŚCICIELA.",
+   "audio": "To cięcie jest z Barnard. Tani stop, lewy stempel, złe wygrzewanie. Kto to tu zniósł, znał te same warsztaty co ty.",
+   "in_game_wiki": "Pierwszy znak Barnard na HECTON-8 jest dość mały, by go przegapić: stempel narzędzia, zawieszka szafki, nawyk dostaw, blizna po taniej stali stoczniowej. Dlatego ma znaczenie. Księżyc przestaje być odległym kontraktem, kiedy znane ślady pracy pojawiają się obok wstrzymań ewakuacji, nazwisk pracowników i nieudanych zezwoleń tras.",
+   "external_site": "Znak Barnard łączy gracza z HECTON-8 przez dowody pracy: narzędzia, stemple, nazwiska i nawyki tej samej kultury złomowania, która go wyszkoliła.",
+   "external_site_article": "Barnard Yards nie jest szlachetnym miejscem pochodzenia. To robocza blizna: rozbiórka statków, wynajęte cuttery, zaciski ciśnieniowe, narzędzia po trzecim właścicielu i ludzie, którzy dokładnie wiedzą, ile może kosztować zły kontrakt. Pierwszy stempel Barnard na HECTON-8 powinien wydawać się prawie zbyt mały na lore. To nie przemowa. To znak na kluczu, niewłaściwy stop w zawiasie szafki, nawyk naprawczy, którego Deep Reach nigdy by nie określił. Dla gracza ten szczegół zmienia kontrakt. HECTON-8 nie jest już tylko martwym claimem korporacji pod obcą wodą. Ktoś z tej samej kultury stoczni dotarł tu wcześniej, pracował, trafił do tych samych ksiąg i zostawił dowód tak mały, że zniknie, jeśli Marauder go nie zauważy."
+  },
+  "pt_BR": {
+   "title": "Marca Barnard",
+   "scanner": "Selo da Barnard Yards. Não é equipamento Deep Reach. Alguém levou hardware de estaleiro ao fundo desta lua.",
+   "field_note": "Você pode dar de ombros para uma corporação morta. Uma chave do seu próprio estaleiro é mais difícil de largar na lama.",
+   "terminal": "ROTA DE PESSOAL: HOLD. ROTA DE RECURSO: ACTIVE. ROTA DE SUBSTRATO: PROTECTED. ORIGEM DA FERRAMENTA: BARNARD YARDS / ESTOQUE DE REPARO DE TERCEIRO DONO.",
+   "audio": "Esse corte é Barnard. Liga barata, selo de mão esquerda, tratamento térmico ruim. Quem trouxe isso para cá conhecia as mesmas oficinas que você.",
+   "in_game_wiki": "A primeira marca Barnard em HECTON-8 é pequena o bastante para passar despercebida: selo de ferramenta, etiqueta de armário, hábito de suprimento, cicatriz de aço barato de estaleiro. Por isso importa. A lua deixa de ser um contrato distante quando marcas de trabalho conhecidas começam a aparecer ao lado de bloqueios de evacuação, nomes de trabalhadores e permissões de rota que falharam.",
+   "external_site": "A Marca Barnard liga o jogador a HECTON-8 por prova de trabalho: ferramentas, selos, nomes e hábitos da mesma cultura de salvage que o treinou.",
+   "external_site_article": "Barnard Yards não é berço nobre. É uma cicatriz de trabalho: desmonte de naves, cortadores alugados, grampos de pressão, ferramentas de terceiro dono e gente que sabe exatamente quanto um contrato ruim pode custar. O primeiro selo Barnard em HECTON-8 deve parecer quase pequeno demais para lore. Não é discurso. É uma marca numa chave, a liga errada numa dobradiça de armário, um hábito de reparo que a Deep Reach nunca especificaria. Para o jogador, esse detalhe muda o contrato. HECTON-8 deixa de ser só uma reivindicação corporativa morta sob água alienígena. Alguém da mesma cultura de estaleiro chegou antes, trabalhou aqui, foi empurrado para os mesmos livros e deixou uma prova pequena o bastante para ser apagada se um Marauder não notar."
+  },
+  "ru_RU": {
+   "title": "Метка Barnard",
+   "scanner": "Штамп Barnard Yards. Не имущество Deep Reach. Кто-то дотащил верфевое железо до дна этой луны.",
+   "field_note": "От мёртвой корпорации можно отмахнуться. Гаечный ключ со своей верфи тяжелее оставить в грязи.",
+   "terminal": "МАРШРУТ ПЕРСОНАЛА: HOLD. МАРШРУТ РЕСУРСА: ACTIVE. МАРШРУТ СУБСТРАТА: PROTECTED. ПРОИСХОЖДЕНИЕ ИНСТРУМЕНТА: BARNARD YARDS / РЕМОНТНЫЙ СКЛАД ТРЕТЬЕГО ВЛАДЕЛЬЦА.",
+   "audio": "Этот рез — Barnard. Дешёвый сплав, левый штамп, плохой отпуск. Кто принёс это вниз, знал те же мастерские, что и ты.",
+   "in_game_wiki": "Первая метка Barnard на HECTON-8 достаточно мала, чтобы её пропустить: штамп инструмента, бирка шкафчика, привычка снабжения, шрам от дешёвой верфевой стали. Поэтому она важна. Луна перестаёт быть дальним контрактом, когда знакомые рабочие следы появляются рядом с удержанными эвакуациями, именами работников и проваленными разрешениями маршрута.",
+   "external_site": "Метка Barnard связывает игрока с HECTON-8 через рабочие доказательства: инструменты, штампы, имена и привычки той же salvage-культуры, которая его обучила.",
+   "external_site_article": "Barnard Yards — не благородная родина. Это рабочий шрам: разборка кораблей, арендованные резаки, нажимные хомуты, инструмент третьего владельца и люди, которые точно знают цену плохому контракту. Первый штамп Barnard на HECTON-8 должен казаться почти слишком маленьким для лора. Это не речь. Это метка на ключе, неправильный сплав на петле шкафчика, ремонтная привычка, которую Deep Reach никогда бы не прописала. Для игрока эта деталь меняет контракт. HECTON-8 уже не просто мёртвый корпоративный claim под чужой водой. Кто-то из той же верфевой культуры добрался сюда раньше, работал здесь, попал в те же книги и оставил доказательство достаточно малое, чтобы его стёрли, если Marauder не заметит."
+  },
+  "uk_UA": {
+   "title": "Мітка Barnard",
+   "scanner": "Штамп Barnard Yards. Не спорядження Deep Reach. Хтось доніс верфове залізо до дна цього місяця.",
+   "field_note": "Від мертвої корпорації можна відмахнутися. Гайковий ключ зі своєї верфі важче лишити в багнюці.",
+   "terminal": "МАРШРУТ ПЕРСОНАЛУ: HOLD. МАРШРУТ РЕСУРСУ: ACTIVE. МАРШРУТ СУБСТРАТУ: PROTECTED. ПОХОДЖЕННЯ ІНСТРУМЕНТА: BARNARD YARDS / РЕМОНТНИЙ СКЛАД ТРЕТЬОГО ВЛАСНИКА.",
+   "audio": "Цей різ — Barnard. Дешевий сплав, лівий штамп, поганий відпуск. Хто приніс це вниз, знав ті самі майстерні, що й ти.",
+   "in_game_wiki": "Перша мітка Barnard на HECTON-8 досить мала, щоб її пропустити: штамп інструмента, бірка шафки, звичка постачання, шрам від дешевої верфової сталі. Тому вона важлива. Місяць перестає бути далеким контрактом, коли знайомі робочі сліди з’являються поряд із затриманими евакуаціями, іменами працівників і проваленими дозволами маршруту.",
+   "external_site": "Мітка Barnard пов’язує гравця з HECTON-8 через робочі докази: інструменти, штампи, імена й звички тієї самої salvage-культури, яка його навчила.",
+   "external_site_article": "Barnard Yards — не шляхетна батьківщина. Це робочий шрам: розбір кораблів, орендовані різаки, притискні хомути, інструмент третього власника й люди, які точно знають ціну поганого контракту. Перший штамп Barnard на HECTON-8 має здаватися майже замалим для лору. Це не промова. Це мітка на ключі, неправильний сплав на петлі шафки, ремонтна звичка, яку Deep Reach ніколи б не прописала. Для гравця ця деталь змінює контракт. HECTON-8 вже не просто мертвий корпоративний claim під чужою водою. Хтось із тієї самої верфової культури дістався сюди раніше, працював тут, потрапив до тих самих книг і лишив доказ досить малий, щоб його стерли, якщо Marauder не помітить."
+  },
+  "zh_CN": {
+   "title": "Barnard标记",
+   "scanner": "Barnard Yards印记。不是Deep Reach配发。有人把船坞硬件带到了这颗卫星底部。",
+   "field_note": "你可以对一家死公司耸肩。来自自己船坞的扳手更难被留在泥里。",
+   "terminal": "人员路线：HOLD。资源路线：ACTIVE。基质路线：PROTECTED。工具来源：BARNARD YARDS / 第三手维修库存。",
+   "audio": "那道切口是Barnard。廉价合金，左手冲印，糟糕热处理。把它带到这里的人，认识你认识的那些工坊。",
+   "in_game_wiki": "HECTON-8上的第一处Barnard标记小到足以被错过：工具印、储物柜牌、补给习惯、廉价船坞钢留下的伤痕。正因为如此它才重要。当熟悉的工作痕迹开始出现在撤离扣留、工人姓名和失败路线许可旁边时，这颗卫星就不再只是远方合同。",
+   "external_site": "Barnard标记通过劳动证据把玩家与HECTON-8相连：工具、印记、姓名，以及训练过他的同一种打捞文化里的工作习惯。",
+   "external_site_article": "Barnard Yards不是高贵出身。它是一道工作伤痕：拆船、租来的切割器、压力夹具、第三手工具，以及那些清楚坏合同到底多贵的人。HECTON-8上的第一枚Barnard印记应该小到几乎不像 lore。它不是演说。它是扳手上的印，储物柜铰链上的错误合金，是Deep Reach永远不会规定的维修习惯。对玩家来说，这个细节改变了合同。HECTON-8不再只是异星海水下的一项死亡企业claim。某个来自同一船坞文化的人先到了这里，在这里工作，被塞进同一批账簿，并留下了一点小到可以被抹掉的证据，除非一个Marauder注意到它。"
   }
+ },
+ "content_class": "in_world_artifact"
 }

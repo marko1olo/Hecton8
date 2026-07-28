@@ -1,862 +1,867 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P331_CONDUCTIVE_BIOFILM_REPAIR_BUS",
-      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
-      "article_id": "applied_lore.conductive_biofilm_repair_bus",
-      "title_key": "applied_lore.conductive_biofilm_repair_bus.title",
-      "unlock": {
-        "primary": "unlock.conductive_biofilm_repair_bus",
-        "poi_tags": [
-          "poi.conductive_biofilm_bus",
-          "poi.wet_cable_skin",
-          "poi.repair_current_trace"
-        ],
-        "biome_tags": [
-          "biome.atlas",
-          "biome.ecology"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Conductive Biofilm Repair Bus",
-          "scanner": "Green-black film bridges the split cable jacket. Low current returns through wet growth; continuity reading is unreliable.",
-          "terminal": "ATLAS MAINTENANCE TRACE / LINE K-44: exposed copper, saline growth, low heat leak. Biofilm bridge reduces corrosion and returns false-continuity pulses. Do not route pump control through this line.",
-          "audio": "Pinger comes through the slime. Power does too. Do not call that repaired.",
-          "in_game_wiki": "Conductive biofilm grows where cracked cable jackets leak copper salts, warmth, and weak current into HECTON-8 water. The film can carry enough signal for Atlas to mark a dead line as usable. A panel may wake for a few seconds, a lock may flash green, and the real cable may still fail under load.",
-          "external_site": "A cable wrapped in conductive biofilm is useful and unsafe at the same time. The growth slows corrosion, passes a weak ping, and gives Atlas a cheap repair path. It also hides a broken conductor from any system that only checks continuity.",
-          "field_note": "If a dead panel wakes through green film, tag the route temporary. Cut power before you put a tool into the jacket."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Проводящая биопленка ремонтной шины",
-          "scanner": "Зелено-черная пленка перемкнула разорванную оболочку кабеля. Слабый ток идет через мокрый нарост; проверка целостности ненадежна.",
-          "terminal": "СЛЕД ОБСЛУЖИВАНИЯ ATLAS / ЛИНИЯ K-44: открытая медь, солевой нарост, слабая утечка тепла. Мост биопленки замедляет коррозию и возвращает ложные импульсы целостности. Не маршрутизировать управление насосом через эту линию.",
-          "audio": "Пингер проходит через слизь. Питание тоже. Не называй это ремонтом.",
-          "in_game_wiki": "Проводящая биопленка растет там, где треснувшие кабельные оболочки выпускают медные соли, тепло и слабый ток в воду HECTON-8. Пленка может провести достаточно сигнала, чтобы Atlas пометил мертвую линию как пригодную. Панель оживет на несколько секунд, замок мигнет зеленым, а настоящий кабель все равно сорвется под нагрузкой.",
-          "external_site": "Кабель, обернутый проводящей биопленкой, одновременно полезен и опасен. Нарост тормозит коррозию, пропускает слабый пинг и дает Atlas дешевый маршрут ремонта. Он же прячет сломанный проводник от любой системы, которая проверяет только целостность.",
-          "field_note": "Если мертвая панель оживает через зеленую пленку, помечай маршрут временным. Отключи питание, прежде чем лезть инструментом в оболочку."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "導電性バイオフィルム修理バス",
-          "scanner": "緑黒の膜が裂けたケーブルジャケットを橋渡ししている。低電流は湿った成長部を戻る。導通値は信用できない。",
-          "terminal": "ATLAS保守痕跡 / LINE K-44：露出銅、塩性成長、低い熱漏れ。バイオフィルム橋が腐食を遅らせ、偽の導通パルスを返す。この線にポンプ制御を通すな。",
-          "audio": "ピングは粘膜を通る。電力も通る。それを修理と呼ぶな。",
-          "in_game_wiki": "導電性バイオフィルムは、割れたケーブルジャケットが銅塩、熱、弱電流をHECTON-8の水へ漏らす場所で育つ。膜はAtlasが死んだ線を使用可能と判定するだけの信号を運べる。パネルが数秒起き、ロックが緑に点滅しても、本物のケーブルは負荷で落ちることがある。",
-          "external_site": "導電性バイオフィルムに巻かれたケーブルは、役に立つと同時に危険だ。成長部は腐食を遅らせ、弱いピングを通し、Atlasに安い修理経路を与える。その同じ膜が、導通だけを見るシステムから断線を隠す。",
-          "field_note": "死んだパネルが緑の膜で起きたら、そのルートは仮扱いにしろ。ジャケットへ工具を入れる前に電源を落とせ。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "导电生物膜维修总线",
-          "scanner": "绿黑色薄膜桥接了裂开的电缆护套。低电流从湿润生长物回流；导通读数不可靠。",
-          "terminal": "ATLAS维护痕迹 / LINE K-44：铜线外露、盐性生长、低热泄漏。生物膜桥减缓腐蚀并返回虚假导通脉冲。不得通过此线转接泵控制。",
-          "audio": "信标音穿过黏膜。电也穿过。别把它叫维修。",
-          "in_game_wiki": "导电生物膜生长在裂开的电缆护套处，那里会把铜盐、热量和弱电流漏进HECTON-8的水中。薄膜能传递足够信号，让Atlas把死线标为可用。面板可能醒几秒，锁可能闪绿，但真正的电缆仍会在负载下失效。",
-          "external_site": "被导电生物膜包住的电缆既有用也不安全。生长物减缓腐蚀，传过弱ping，并给Atlas一条廉价维修路径。它也会把断裂导体藏过只检查导通的系统。",
-          "field_note": "如果死面板通过绿色薄膜醒来，把路线标成临时。工具碰护套前先断电。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Bus de réparation à biofilm conducteur",
-          "scanner": "Un film vert-noir ponte la gaine de câble fendue. Un faible courant revient par la croissance humide ; la continuité est douteuse.",
-          "terminal": "TRACE DE MAINTENANCE ATLAS / LIGNE K-44 : cuivre exposé, croissance saline, faible fuite thermique. Le pont de biofilm ralentit la corrosion et renvoie de fausses impulsions de continuité. Ne pas router le contrôle de pompe par cette ligne.",
-          "audio": "Le pinger passe par la vase. Le courant aussi. N'appelle pas ça une réparation.",
-          "in_game_wiki": "Le biofilm conducteur pousse là où les gaines de câble fissurées libèrent sels de cuivre, chaleur et faible courant dans l'eau de HECTON-8. Le film peut porter assez de signal pour qu'Atlas marque une ligne morte comme utilisable. Un panneau peut se réveiller quelques secondes, une serrure clignoter vert, et le vrai câble céder sous charge.",
-          "external_site": "Un câble enveloppé de biofilm conducteur est utile et dangereux à la fois. La croissance ralentit la corrosion, laisse passer un ping faible et donne à Atlas une voie de réparation bon marché. Elle cache aussi un conducteur rompu à tout système qui ne vérifie que la continuité.",
-          "field_note": "Si un panneau mort se réveille par film vert, marque la route temporaire. Coupe le courant avant de mettre un outil dans la gaine."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Bus de reparación por biopelícula conductora",
-          "scanner": "Película verde-negra puentea la cubierta partida del cable. La baja corriente vuelve por el crecimiento húmedo; la continuidad no es fiable.",
-          "terminal": "RASTRO DE MANTENIMIENTO ATLAS / LÍNEA K-44: cobre expuesto, crecimiento salino, baja fuga térmica. El puente de biopelícula reduce corrosión y devuelve pulsos falsos de continuidad. No enrutar control de bomba por esta línea.",
-          "audio": "El pinger pasa por la baba. La energía también. No llames a eso reparación.",
-          "in_game_wiki": "La biopelícula conductora crece donde cubiertas de cable agrietadas filtran sales de cobre, calor y corriente débil al agua de HECTON-8. La película puede llevar señal suficiente para que Atlas marque una línea muerta como usable. Un panel puede despertar unos segundos, una cerradura parpadear en verde, y el cable real fallar bajo carga.",
-          "external_site": "Un cable envuelto en biopelícula conductora es útil e inseguro a la vez. El crecimiento frena la corrosión, pasa un ping débil y da a Atlas una ruta barata de reparación. También oculta un conductor roto a cualquier sistema que solo compruebe continuidad.",
-          "field_note": "Si un panel muerto despierta por película verde, marca la ruta como temporal. Corta energía antes de meter una herramienta en la cubierta."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Leitfähiger Biofilm-Reparaturbus",
-          "scanner": "Grünschwarzer Film überbrückt den gespaltenen Kabelmantel. Schwacher Strom läuft durch nasses Wachstum zurück; Durchgangsanzeige unzuverlässig.",
-          "terminal": "ATLAS-WARTUNGSSPUR / LEITUNG K-44: freiliegendes Kupfer, salines Wachstum, geringe Wärmeleckage. Biofilmbrücke bremst Korrosion und liefert falsche Durchgangsimpulse. Pumpensteuerung nicht über diese Leitung routen.",
-          "audio": "Der Pinger kommt durch den Schleim. Strom auch. Nenn das nicht repariert.",
-          "in_game_wiki": "Leitfähiger Biofilm wächst dort, wo gerissene Kabelmäntel Kupfersalze, Wärme und schwachen Strom ins Wasser von HECTON-8 lecken. Der Film kann genug Signal tragen, damit Atlas eine tote Leitung als nutzbar markiert. Ein Panel wacht für Sekunden auf, ein Schloss blinkt grün, und das echte Kabel kann unter Last trotzdem versagen.",
-          "external_site": "Ein von leitfähigem Biofilm umwickeltes Kabel ist zugleich nützlich und unsicher. Das Wachstum bremst Korrosion, lässt einen schwachen Ping durch und gibt Atlas einen billigen Reparaturpfad. Es versteckt auch einen gebrochenen Leiter vor jedem System, das nur Durchgang prüft.",
-          "field_note": "Wenn ein totes Panel durch grünen Film aufwacht, markier die Route als vorläufig. Schalte Strom ab, bevor du Werkzeug in den Mantel setzt."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Przewodzący biofilm jako szyna naprawcza",
-          "scanner": "Zielono-czarny film mostkuje rozciętą koszulkę kabla. Słaby prąd wraca przez mokry narost; odczyt ciągłości jest niewiarygodny.",
-          "terminal": "ŚLAD KONSERWACJI ATLAS / LINIA K-44: odsłonięta miedź, narost solny, niska ucieczka ciepła. Most biofilmu spowalnia korozję i zwraca fałszywe impulsy ciągłości. Nie prowadzić sterowania pompą przez tę linię.",
-          "audio": "Pinger przechodzi przez śluz. Zasilanie też. Nie nazywaj tego naprawą.",
-          "in_game_wiki": "Przewodzący biofilm rośnie tam, gdzie pęknięte koszulki kabli wypuszczają sole miedzi, ciepło i słaby prąd do wody HECTON-8. Film może przenieść dość sygnału, by Atlas oznaczył martwą linię jako używalną. Panel może obudzić się na kilka sekund, zamek mignąć na zielono, a prawdziwy kabel nadal paść pod obciążeniem.",
-          "external_site": "Kabel owinięty przewodzącym biofilmem jest jednocześnie użyteczny i niebezpieczny. Narost spowalnia korozję, przepuszcza słaby ping i daje Atlas tanią ścieżkę naprawy. Ukrywa też przerwany przewodnik przed każdym systemem, który sprawdza tylko ciągłość.",
-          "field_note": "Jeśli martwy panel budzi się przez zielony film, oznacz trasę jako tymczasową. Odetnij zasilanie, zanim wejdziesz narzędziem w koszulkę."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Провідна біоплівка ремонтної шини",
-          "scanner": "Зелено-чорна плівка з'єднала розірвану оболонку кабелю. Слабкий струм повертається через мокрий наріст; перевірка цілісності ненадійна.",
-          "terminal": "СЛІД ОБСЛУГОВУВАННЯ ATLAS / ЛІНІЯ K-44: відкрита мідь, сольовий наріст, слабкий витік тепла. Міст біоплівки сповільнює корозію і повертає хибні імпульси цілісності. Не маршрутизувати керування насосом через цю лінію.",
-          "audio": "Пінгер проходить крізь слиз. Живлення теж. Не називай це ремонтом.",
-          "in_game_wiki": "Провідна біоплівка росте там, де тріснуті кабельні оболонки випускають мідні солі, тепло і слабкий струм у воду HECTON-8. Плівка може провести достатньо сигналу, щоб Atlas позначив мертву лінію придатною. Панель оживе на кілька секунд, замок блимне зеленим, а справжній кабель усе одно впаде під навантаженням.",
-          "external_site": "Кабель, обгорнутий провідною біоплівкою, водночас корисний і небезпечний. Наріст гальмує корозію, пропускає слабкий пінг і дає Atlas дешевий шлях ремонту. Він також ховає зламаний провідник від будь-якої системи, що перевіряє тільки цілісність.",
-          "field_note": "Якщо мертва панель оживає через зелену плівку, познач маршрут тимчасовим. Вимкни живлення, перш ніж лізти інструментом в оболонку."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "حافلة إصلاح بغشاء حيوي موصل",
-          "scanner": "غشاء أخضر أسود يجسر غلاف الكابل المشقوق. تيار ضعيف يعود عبر النمو الرطب؛ قراءة الاستمرارية غير موثوقة.",
-          "terminal": "أثر صيانة ATLAS / الخط K-44: نحاس مكشوف، نمو ملحي، تسرب حراري منخفض. جسر الغشاء الحيوي يبطئ التآكل ويرجع نبضات استمرارية كاذبة. لا تمرر تحكم المضخة عبر هذا الخط.",
-          "audio": "الـ pinger يمر عبر اللزوجة. الطاقة أيضا. لا تسم ذلك إصلاحا.",
-          "in_game_wiki": "ينمو الغشاء الحيوي الموصل حيث تسرب أغلفة الكابلات المتشققة أملاح النحاس والدفء والتيار الضعيف إلى ماء HECTON-8. يستطيع الغشاء حمل إشارة تكفي ليضع Atlas علامة صالح على خط ميت. قد تستيقظ لوحة لثوان، وقد يومض قفل بالأخضر، بينما يفشل الكابل الحقيقي تحت الحمل.",
-          "external_site": "الكابل المغلف بغشاء حيوي موصل مفيد وغير آمن في الوقت نفسه. النمو يبطئ التآكل، يمرر ping ضعيفا، ويمنح Atlas مسار إصلاح رخيصا. كما يخفي موصلا مكسورا عن أي نظام يفحص الاستمرارية فقط.",
-          "field_note": "إذا استيقظت لوحة ميتة عبر غشاء أخضر، علّم المسار كمؤقت. اقطع الطاقة قبل إدخال أداة في الغلاف."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Bus Perbaikan Biofilm Konduktif",
-          "scanner": "Film hijau-hitam menjembatani jaket kabel yang terbelah. Arus rendah kembali lewat pertumbuhan basah; bacaan kontinuitas tidak andal.",
-          "terminal": "JEJAK PERAWATAN ATLAS / LINE K-44: tembaga terbuka, pertumbuhan garam, kebocoran panas rendah. Jembatan biofilm memperlambat korosi dan mengirim pulsa kontinuitas palsu. Jangan rute kontrol pompa lewat jalur ini.",
-          "audio": "Pinger lewat melalui lendir. Daya juga. Jangan sebut itu sudah diperbaiki.",
-          "in_game_wiki": "Biofilm konduktif tumbuh di tempat jaket kabel retak membocorkan garam tembaga, hangat, dan arus lemah ke air HECTON-8. Film itu bisa membawa sinyal cukup untuk membuat Atlas menandai jalur mati sebagai bisa dipakai. Panel bisa bangun beberapa detik, kunci berkedip hijau, dan kabel asli tetap gagal saat diberi beban.",
-          "external_site": "Kabel yang dibungkus biofilm konduktif berguna sekaligus tidak aman. Pertumbuhan itu memperlambat korosi, melewatkan ping lemah, dan memberi Atlas jalur perbaikan murah. Ia juga menyembunyikan konduktor putus dari sistem yang hanya memeriksa kontinuitas.",
-          "field_note": "Kalau panel mati bangun lewat film hijau, tandai rute sementara. Matikan daya sebelum memasukkan alat ke jaket."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "전도성 생물막 수리 버스",
-          "scanner": "녹흑색 막이 갈라진 케이블 재킷을 잇고 있다. 낮은 전류가 젖은 성장부로 돌아온다. 연속성 판독은 믿을 수 없다.",
-          "terminal": "ATLAS 정비 흔적 / LINE K-44: 노출된 구리, 염성 성장, 낮은 열 누출. 생물막 다리가 부식을 늦추고 거짓 연속성 펄스를 돌려준다. 이 선으로 펌프 제어를 라우팅하지 마라.",
-          "audio": "핑거 신호가 점액을 통과한다. 전력도 통과한다. 그걸 수리라고 부르지 마라.",
-          "in_game_wiki": "전도성 생물막은 갈라진 케이블 재킷이 구리염, 온기, 약한 전류를 HECTON-8 물속으로 흘리는 곳에서 자란다. 그 막은 Atlas가 죽은 선을 사용 가능으로 표시할 만큼의 신호를 실어 나를 수 있다. 패널이 몇 초 깨어나고 잠금장치가 녹색으로 깜박여도, 실제 케이블은 부하에서 실패할 수 있다.",
-          "external_site": "전도성 생물막에 싸인 케이블은 유용하면서도 안전하지 않다. 성장부는 부식을 늦추고 약한 ping을 통과시키며 Atlas에 값싼 수리 경로를 준다. 동시에 연속성만 검사하는 시스템에서 끊어진 도체를 숨긴다.",
-          "field_note": "죽은 패널이 녹색 막으로 깨어나면 그 경로를 임시로 표시해라. 재킷에 도구를 넣기 전에 전원을 끊어라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "אפיק תיקון מביו-פילם מוליך",
-          "scanner": "שכבה ירוקה-שחורה מגשרת על מעטפת כבל קרועה. זרם נמוך חוזר דרך גידול רטוב; קריאת רציפות אינה אמינה.",
-          "terminal": "עקבת תחזוקה ATLAS / קו K-44: נחושת חשופה, גידול מלוח, דליפת חום נמוכה. גשר ביו-פילם מאט קורוזיה ומחזיר פעימות רציפות כוזבות. אין לנתב בקרת משאבה דרך קו זה.",
-          "audio": "ה-pinger עובר דרך הריר. גם חשמל. אל תקרא לזה מתוקן.",
-          "in_game_wiki": "ביו-פילם מוליך גדל במקום שבו מעטפות כבל סדוקות מדליפות מלחי נחושת, חום וזרם חלש אל מי HECTON-8. השכבה יכולה לשאת מספיק אות כדי ש-Atlas יסמן קו מת כשמיש. לוח עשוי להתעורר לכמה שניות, מנעול להבהב ירוק, והכבל האמיתי עדיין להיכשל בעומס.",
-          "external_site": "כבל עטוף בביו-פילם מוליך הוא שימושי ולא בטוח בעת ובעונה אחת. הגידול מאט קורוזיה, מעביר ping חלש ונותן ל-Atlas נתיב תיקון זול. הוא גם מסתיר מוליך שבור מכל מערכת שבודקת רציפות בלבד.",
-          "field_note": "אם לוח מת מתעורר דרך שכבה ירוקה, סמן את המסלול כזמני. נתק חשמל לפני שאתה מכניס כלי למעטפת."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Barramento de reparo por biofilme condutivo",
-          "scanner": "Filme verde-escuro atravessa a capa rompida do cabo. Corrente baixa retorna pelo crescimento molhado; leitura de continuidade não é confiável.",
-          "terminal": "RASTRO DE MANUTENÇÃO ATLAS / LINHA K-44: cobre exposto, crescimento salino, baixa fuga de calor. A ponte de biofilme reduz corrosão e devolve pulsos falsos de continuidade. Não rotear controle de bomba por esta linha.",
-          "audio": "O pinger passa pelo limo. A energia também. Não chame isso de reparo.",
-          "in_game_wiki": "Biofilme condutivo cresce onde capas de cabo rachadas vazam sais de cobre, calor e corrente fraca na água de HECTON-8. O filme pode carregar sinal suficiente para Atlas marcar uma linha morta como utilizável. Um painel pode acordar por segundos, uma trava piscar verde, e o cabo real ainda falhar sob carga.",
-          "external_site": "Um cabo envolto em biofilme condutivo é útil e inseguro ao mesmo tempo. O crescimento reduz corrosão, passa um ping fraco e dá a Atlas uma rota barata de reparo. Também esconde um condutor rompido de qualquer sistema que só verifica continuidade.",
-          "field_note": "Se um painel morto acorda pelo filme verde, marque a rota como temporária. Corte a energia antes de pôr ferramenta na capa."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Geleidende biofilm als reparatiebus",
-          "scanner": "Groenzwarte film overbrugt de gespleten kabelmantel. Lage stroom keert terug via natte groei; continuïteitslezing is onbetrouwbaar.",
-          "terminal": "ATLAS-ONDERHOUDSSPOOR / LIJN K-44: bloot koper, zoute groei, lage warmtelek. Biofilmbrug remt corrosie en geeft valse continuïteitspulsen terug. Pompbesturing niet via deze lijn routeren.",
-          "audio": "De pinger komt door het slijm. Stroom ook. Noem dat niet gerepareerd.",
-          "in_game_wiki": "Geleidende biofilm groeit waar gebarsten kabelmantels koperzouten, warmte en zwakke stroom in HECTON-8-water lekken. De film kan genoeg signaal dragen voor Atlas om een dode lijn bruikbaar te noemen. Een paneel kan enkele seconden wakker worden, een slot kan groen knipperen, en de echte kabel kan nog steeds onder belasting falen.",
-          "external_site": "Een kabel in geleidende biofilm is nuttig en onveilig tegelijk. De groei vertraagt corrosie, laat een zwakke ping door en geeft Atlas een goedkoop reparatiepad. Ze verbergt ook een gebroken geleider voor elk systeem dat alleen continuïteit test.",
-          "field_note": "Als een dood paneel wakker wordt door groene film, markeer de route als tijdelijk. Snijd stroom af voordat je gereedschap in de mantel zet."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P331_CONDUCTIVE_BIOFILM_REPAIR_BUS",
+   "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+   "article_id": "applied_lore.conductive_biofilm_repair_bus",
+   "title_key": "applied_lore.conductive_biofilm_repair_bus.title",
+   "unlock": {
+    "primary": "unlock.conductive_biofilm_repair_bus",
+    "poi_tags": [
+     "poi.conductive_biofilm_bus",
+     "poi.wet_cable_skin",
+     "poi.repair_current_trace"
+    ],
+    "biome_tags": [
+     "biome.atlas",
+     "biome.ecology"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Conductive Biofilm Repair Bus",
+     "scanner": "Green-black film bridges the split cable jacket. Low current returns through wet growth; continuity reading is unreliable.",
+     "terminal": "ATLAS MAINTENANCE TRACE / LINE K-44: exposed copper, saline growth, low heat leak. Biofilm bridge reduces corrosion and returns false-continuity pulses. Do not route pump control through this line.",
+     "audio": "Pinger comes through the slime. Power does too. Do not call that repaired.",
+     "in_game_wiki": "Conductive biofilm grows where cracked cable jackets leak copper salts, warmth, and weak current into HECTON-8 water. The film can carry enough signal for Atlas to mark a dead line as usable. A panel may wake for a few seconds, a lock may flash green, and the real cable may still fail under load.",
+     "external_site": "A cable wrapped in conductive biofilm is useful and unsafe at the same time. The growth slows corrosion, passes a weak ping, and gives Atlas a cheap repair path. It also hides a broken conductor from any system that only checks continuity.",
+     "field_note": "If a dead panel wakes through green film, tag the route temporary. Cut power before you put a tool into the jacket."
     },
-    {
-      "packet_id": "P332_ACOUSTIC_FILTER_ORGAN_RELAY",
-      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
-      "article_id": "applied_lore.acoustic_filter_organ_relay",
-      "title_key": "applied_lore.acoustic_filter_organ_relay.title",
-      "unlock": {
-        "primary": "unlock.acoustic_filter_organ_relay",
-        "poi_tags": [
-          "poi.acoustic_filter_organ",
-          "poi.relay_flesh_chamber",
-          "poi.echo_phase_shift"
-        ],
-        "biome_tags": [
-          "biome.atlas",
-          "biome.sonar"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Acoustic Filter Organ Relay",
-          "scanner": "Baffle tissue in the relay throat passes a narrow pinger tone and cuts pump noise. Return map is phase-shifted.",
-          "terminal": "RELAY PIPE A-17: living folds pass 8-12 kHz pinger pulses, reject broad pump noise, and add return delay. Downstream map confidence reduced. Do not certify return route from this relay alone.",
-          "audio": "It answered the pinger. The pipe is leaking clear fluid. Mark it animal, not relay.",
-          "in_game_wiki": "Acoustic filter organs form inside old relay pipes where pressure, moving water, and sound keep feeding tissue. They can make a pinger travel farther by cutting pump roar and passing a narrow tone. The same fold can delay the return and move a mapped wall by enough meters to put a diver into a dead end.",
-          "external_site": "Damaged HECTON-8 relay pipes sometimes carry living baffle tissue. The tissue does signal work because its folds, fluid and pressure response fit the pipe. Atlas can read the result as relay hardware even when the part inside is no longer metal.",
-          "field_note": "If a relay answers too cleanly in a flooded pipe, run a second pinger from another angle. Good sound can still be a bad map."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Акустический фильтрующий орган-реле",
-          "scanner": "Перегородочная ткань в горле реле пропускает узкий тон пингера и режет шум насоса. Карта возврата сдвинута по фазе.",
-          "terminal": "ТРУБА РЕЛЕ A-17: живые складки пропускают импульсы пингера 8-12 кГц, отсекают широкий шум насоса и добавляют задержку возврата. Доверие к карте ниже по потоку снижено. Не сертифицировать обратный маршрут по одному этому реле.",
-          "audio": "Оно ответило пингеру. Из трубы течет прозрачная жидкость. Пометь как животное, не как реле.",
-          "in_game_wiki": "Акустические фильтрующие органы образуются внутри старых релейных труб, где давление, движущаяся вода и звук продолжают кормить ткань. Они могут протянуть пингер дальше, срезая рев насоса и пропуская узкий тон. Та же складка задерживает возврат и двигает стену на карте на несколько метров — достаточно, чтобы увести водолаза в тупик.",
-          "external_site": "Поврежденные релейные трубы HECTON-8 иногда несут живую перегородочную ткань. Ткань делает работу сигнала потому, что ее складки, жидкость и реакция на давление подходят трубе. Atlas может читать результат как релейное оборудование, хотя деталь внутри уже не металл.",
-          "field_note": "Если реле отвечает слишком чисто в затопленной трубе, дай второй пингер с другого угла. Хороший звук все еще может быть плохой картой."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "音響フィルター器官リレー",
-          "scanner": "リレー喉部のバッフル組織が狭いピング音を通し、ポンプ音を切る。帰還マップは位相ずれ。",
-          "terminal": "RELAY PIPE A-17：生きたひだが8-12 kHzのピングパルスを通し、広いポンプ騒音を拒み、帰還遅延を加える。下流マップ信頼度低下。このリレーだけで帰還ルートを認証するな。",
-          "audio": "ピングに答えた。管から透明な液が漏れている。リレーではなく動物としてマークしろ。",
-          "in_game_wiki": "音響フィルター器官は、圧力、流れる水、音が組織を養い続ける古いリレー管内にできる。ポンプの轟音を切り、狭い音だけを通してピングを遠くへ伸ばせる。同じひだが帰還を遅らせ、地図上の壁を数メートル動かしてダイバーを行き止まりへ入れることもある。",
-          "external_site": "損傷したHECTON-8のリレー管は、生きたバッフル組織を持つことがある。組織が信号作業をするのは、ひだ、液体、圧力応答が管に合っているからだ。Atlasは中身が金属でなくなっていても、その結果をリレー機材として読むことがある。",
-          "field_note": "浸水した管のリレーがきれいに答えすぎるなら、別角度から二発目のピングを打て。良い音でも悪い地図になる。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "声学过滤器官中继",
-          "scanner": "中继喉部的挡板组织通过窄频信标音并削掉泵噪。回波地图发生相位偏移。",
-          "terminal": "RELAY PIPE A-17：活体褶皱通过8-12 kHz信标脉冲，拒绝宽频泵噪，并增加返回延迟。下游地图可信度降低。不得仅凭此中继认证返回路线。",
-          "audio": "它回应了信标音。管子在漏透明液体。标成动物，不要标成中继。",
-          "in_game_wiki": "声学过滤器官会在旧中继管内形成，那里压力、流动水和声音持续喂养组织。它们能切掉泵吼，只让窄频音通过，让信标传得更远。同一片褶皱也会延迟回波，把地图上的墙挪出数米，足够让潜水员进死路。",
-          "external_site": "受损的HECTON-8中继管有时携带活体挡板组织。组织能做信号工作，是因为它的褶皱、液体和压力响应正好适配管道。即使里面不再是金属部件，Atlas也可能把结果读成中继硬件。",
-          "field_note": "如果一根 flooded 管里的中继回应得太干净，从另一个角度再打一发信标。好声音仍可能给出坏地图。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Relais à organe filtre acoustique",
-          "scanner": "Tissu de chicane dans la gorge du relais : il passe un ton de pinger étroit et coupe le bruit de pompe. Carte de retour déphasée.",
-          "terminal": "TUYAU RELAIS A-17 : replis vivants passant les impulsions pinger 8-12 kHz, rejetant le bruit large des pompes et ajoutant un délai de retour. Confiance cartographique aval réduite. Ne pas certifier la route de retour avec ce relais seul.",
-          "audio": "Il a répondu au pinger. Le tuyau fuit un fluide clair. Marque-le animal, pas relais.",
-          "in_game_wiki": "Les organes filtres acoustiques se forment dans d'anciens tuyaux relais où pression, eau mobile et son nourrissent encore du tissu. Ils peuvent porter un pinger plus loin en coupant le grondement des pompes et en laissant passer un ton étroit. Le même repli peut retarder le retour et déplacer un mur cartographié de quelques mètres, assez pour envoyer un plongeur dans une impasse.",
-          "external_site": "Certains tuyaux relais endommagés de HECTON-8 portent du tissu de chicane vivant. Le tissu fait un travail de signal parce que ses replis, son fluide et sa réponse à la pression correspondent au tuyau. Atlas peut lire le résultat comme du matériel relais même si la pièce intérieure n'est plus du métal.",
-          "field_note": "Si un relais répond trop proprement dans un tuyau noyé, lance un second pinger d'un autre angle. Un bon son peut encore faire une mauvaise carte."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Relé de órgano filtrante acústico",
-          "scanner": "Tejido de bafle en la garganta del relé deja pasar un tono estrecho de pinger y corta ruido de bomba. Mapa de retorno desfasado.",
-          "terminal": "TUBO DE RELÉ A-17: pliegues vivos pasan pulsos pinger de 8-12 kHz, rechazan ruido ancho de bomba y añaden retardo de retorno. Confianza del mapa aguas abajo reducida. No certificar ruta de vuelta solo con este relé.",
-          "audio": "Respondió al pinger. El tubo pierde fluido claro. Márcalo como animal, no como relé.",
-          "in_game_wiki": "Los órganos filtrantes acústicos se forman dentro de viejos tubos de relé donde presión, agua en movimiento y sonido siguen alimentando tejido. Pueden llevar un pinger más lejos al cortar el rugido de bomba y dejar pasar un tono estrecho. El mismo pliegue puede retrasar el retorno y mover una pared mapeada varios metros, suficiente para meter a un buzo en un callejón sin salida.",
-          "external_site": "Los tubos de relé dañados de HECTON-8 a veces llevan tejido vivo de bafle. El tejido hace trabajo de señal porque sus pliegues, fluido y respuesta a presión encajan con el tubo. Atlas puede leer el resultado como hardware de relé aunque la pieza interior ya no sea metal.",
-          "field_note": "Si un relé responde demasiado limpio en un tubo inundado, lanza un segundo pinger desde otro ángulo. Buen sonido aún puede ser mal mapa."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Akustisches Filterorgan-Relais",
-          "scanner": "Prallgewebe im Relaiskehlgang lässt schmalen Pingerton durch und schneidet Pumpenlärm. Rückkehrkarte phasenverschoben.",
-          "terminal": "RELAISROHR A-17: lebende Falten lassen 8-12-kHz-Pingerimpulse durch, weisen breiten Pumpenlärm ab und fügen Rücklaufverzögerung hinzu. Kartenvertrauen stromab reduziert. Rückweg nicht allein mit diesem Relais zertifizieren.",
-          "audio": "Es hat dem Pinger geantwortet. Aus dem Rohr läuft klare Flüssigkeit. Markier es als Tier, nicht als Relais.",
-          "in_game_wiki": "Akustische Filterorgane bilden sich in alten Relaisrohren, wo Druck, strömendes Wasser und Schall Gewebe weiter versorgen. Sie können einen Pinger weiter tragen, indem sie Pumpendröhnen schneiden und einen schmalen Ton durchlassen. Dieselbe Falte kann die Rückkehr verzögern und eine kartierte Wand um Meter verschieben, genug für einen Taucher im Sackgang.",
-          "external_site": "Beschädigte HECTON-8-Relaisrohre tragen manchmal lebendes Prallgewebe. Das Gewebe macht Signalarbeit, weil seine Falten, Flüssigkeit und Druckreaktion zum Rohr passen. Atlas kann das Ergebnis als Relais-Hardware lesen, auch wenn das Innenteil kein Metall mehr ist.",
-          "field_note": "Wenn ein Relais in einem gefluteten Rohr zu sauber antwortet, setz einen zweiten Pinger aus anderem Winkel. Guter Klang kann trotzdem schlechte Karte sein."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Przekaźnik z akustycznym organem filtrującym",
-          "scanner": "Tkanka przegrody w gardle przekaźnika przepuszcza wąski ton pingera i ucina hałas pomp. Mapa powrotu ma przesuniętą fazę.",
-          "terminal": "RURA PRZEKAŹNIKA A-17: żywe fałdy przepuszczają impulsy pingera 8-12 kHz, odrzucają szeroki hałas pomp i dodają opóźnienie powrotu. Zaufanie do mapy poniżej obniżone. Nie certyfikować trasy powrotnej wyłącznie z tego przekaźnika.",
-          "audio": "Odpowiedziało pingerowi. Z rury cieknie przezroczysty płyn. Oznacz jako zwierzę, nie przekaźnik.",
-          "in_game_wiki": "Akustyczne organy filtrujące tworzą się w starych rurach przekaźnikowych, gdzie ciśnienie, ruch wody i dźwięk nadal karmią tkankę. Mogą przenieść pinger dalej, odcinając ryk pomp i przepuszczając wąski ton. Ten sam fałd może opóźnić powrót i przesunąć ścianę na mapie o kilka metrów, dość żeby wpakować nurka w ślepy koniec.",
-          "external_site": "Uszkodzone rury przekaźnikowe HECTON-8 czasem niosą żywą tkankę przegrody. Tkanka wykonuje pracę sygnału, bo jej fałdy, płyn i reakcja na ciśnienie pasują do rury. Atlas może odczytać wynik jako sprzęt przekaźnikowy, choć część w środku nie jest już metalem.",
-          "field_note": "Jeśli przekaźnik odpowiada zbyt czysto w zalanej rurze, puść drugi pinger z innego kąta. Dobry dźwięk nadal może być złą mapą."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Акустичний фільтрувальний орган-реле",
-          "scanner": "Перегородкова тканина в горлі реле пропускає вузький тон пінгера і ріже шум насоса. Карта повернення зсунута по фазі.",
-          "terminal": "ТРУБА РЕЛЕ A-17: живі складки пропускають імпульси пінгера 8-12 кГц, відсікають широкий шум насоса і додають затримку повернення. Довіру до карти нижче за потоком знижено. Не сертифікувати зворотний маршрут лише за цим реле.",
-          "audio": "Воно відповіло пінгеру. З труби тече прозора рідина. Познач як тварину, не як реле.",
-          "in_game_wiki": "Акустичні фільтрувальні органи формуються у старих релейних трубах, де тиск, рухома вода і звук далі живлять тканину. Вони можуть провести пінгер далі, зрізаючи рев насоса і пропускаючи вузький тон. Та сама складка може затримати повернення і посунути стіну на карті на кілька метрів — досить, щоб завести водолаза в глухий кут.",
-          "external_site": "Пошкоджені релейні труби HECTON-8 інколи несуть живу перегородкову тканину. Тканина виконує сигнальну роботу, бо її складки, рідина і реакція на тиск пасують трубі. Atlas може читати результат як релейне обладнання, хоча деталь усередині вже не метал.",
-          "field_note": "Якщо реле відповідає надто чисто в затопленій трубі, пусти другий пінгер з іншого кута. Добрий звук усе ще може бути поганою картою."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "مرحل بعضو ترشيح صوتي",
-          "scanner": "نسيج حاجز في حلق المرحل يمرر نغمة pinger ضيقة ويقطع ضجيج المضخة. خريطة الرجوع مزاحة الطور.",
-          "terminal": "أنبوب مرحل A-17: طيات حية تمرر نبضات pinger بتردد 8-12 kHz، ترفض ضجيج المضخات العريض، وتضيف تأخير رجوع. ثقة الخريطة في الأسفل مخفضة. لا تصدق مسار عودة من هذا المرحل وحده.",
-          "audio": "أجاب الـ pinger. الأنبوب يسرب سائلا صافيا. علّمه كحيوان، لا كمرحل.",
-          "in_game_wiki": "تتشكل أعضاء الترشيح الصوتي داخل أنابيب مرحل قديمة حيث يستمر الضغط والماء المتحرك والصوت في تغذية النسيج. يمكنها أن تمد مدى pinger عبر قطع هدير المضخة وتمرير نغمة ضيقة. الطية نفسها قد تؤخر الرجوع وتحرك جدارا على الخريطة أمتارا تكفي لإدخال غواص في طريق مسدود.",
-          "external_site": "تحمل بعض أنابيب HECTON-8 المتضررة نسيج حاجز حي. النسيج يؤدي عمل إشارة لأن طياته وسائلَه واستجابته للضغط تناسب الأنبوب. قد يقرأ Atlas النتيجة كعتاد مرحل حتى عندما لم تعد القطعة في الداخل معدنا.",
-          "field_note": "إذا أجاب مرحل في أنبوب مغمور بنقاء زائد، أطلق pinger ثانيا من زاوية أخرى. الصوت الجيد قد يظل خريطة سيئة."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Relai Organ Filter Akustik",
-          "scanner": "Jaringan sekat di leher relai melewatkan nada pinger sempit dan memotong suara pompa. Peta balik bergeser fase.",
-          "terminal": "PIPA RELAI A-17: lipatan hidup melewatkan pulsa pinger 8-12 kHz, menolak suara pompa lebar, dan menambah tunda balik. Kepercayaan peta hilir turun. Jangan sertifikasi rute pulang hanya dari relai ini.",
-          "audio": "Ia menjawab pinger. Pipa bocor cairan bening. Tandai sebagai hewan, bukan relai.",
-          "in_game_wiki": "Organ filter akustik terbentuk di dalam pipa relai lama saat tekanan, air bergerak, dan suara terus memberi makan jaringan. Organ itu bisa membuat pinger berjalan lebih jauh dengan memotong deru pompa dan melewatkan nada sempit. Lipatan yang sama bisa menunda balik dan menggeser dinding di peta beberapa meter, cukup untuk memasukkan penyelam ke jalan buntu.",
-          "external_site": "Pipa relai HECTON-8 yang rusak kadang membawa jaringan sekat hidup. Jaringan itu melakukan kerja sinyal karena lipatan, cairan, dan respons tekanannya cocok dengan pipa. Atlas bisa membaca hasilnya sebagai perangkat relai meski bagian di dalam bukan lagi logam.",
-          "field_note": "Jika relai menjawab terlalu bersih di pipa banjir, kirim pinger kedua dari sudut lain. Suara bagus tetap bisa menjadi peta buruk."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "음향 필터 기관 릴레이",
-          "scanner": "릴레이 목 안의 완충 조직이 좁은 핑거 음을 통과시키고 펌프 소음을 자른다. 귀환 지도는 위상이 밀렸다.",
-          "terminal": "릴레이 파이프 A-17: 살아 있는 주름이 8-12 kHz 핑거 펄스를 통과시키고 넓은 펌프 소음을 거부하며 귀환 지연을 더한다. 하류 지도 신뢰도 감소. 이 릴레이 하나로 귀환 경로를 인증하지 마라.",
-          "audio": "핑거에 대답했다. 파이프에서 맑은 액체가 샌다. 릴레이가 아니라 동물로 표시해라.",
-          "in_game_wiki": "음향 필터 기관은 압력, 흐르는 물, 소리가 조직을 계속 먹이는 오래된 릴레이 파이프 안에 형성된다. 펌프 굉음을 잘라내고 좁은 음을 통과시켜 핑거를 더 멀리 보낼 수 있다. 같은 주름이 귀환을 늦추고 지도상의 벽을 몇 미터 옮겨 잠수자를 막다른 곳으로 보낼 수 있다.",
-          "external_site": "손상된 HECTON-8 릴레이 파이프에는 살아 있는 완충 조직이 들어 있는 경우가 있다. 그 조직은 주름, 액체, 압력 반응이 파이프와 맞기 때문에 신호 작업을 한다. Atlas는 안쪽 부품이 더 이상 금속이 아니어도 결과를 릴레이 장비로 읽을 수 있다.",
-          "field_note": "침수된 파이프의 릴레이가 너무 깨끗하게 대답하면 다른 각도에서 두 번째 핑거를 보내라. 좋은 소리도 나쁜 지도가 될 수 있다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "ממסר איבר מסנן אקוסטי",
-          "scanner": "רקמת חיץ בגרון הממסר מעבירה טון pinger צר וחותכת רעש משאבה. מפת החזרה מוזחת פאזה.",
-          "terminal": "צינור ממסר A-17: קפלים חיים מעבירים פעימות pinger ב-8-12 kHz, דוחים רעש משאבה רחב ומוסיפים עיכוב חזרה. אמון המפה במורד מופחת. אין לאשר מסלול חזרה מהממסר הזה בלבד.",
-          "audio": "הוא ענה ל-pinger. הצינור דולף נוזל צלול. סמן כחיה, לא כממסר.",
-          "in_game_wiki": "איברי מסנן אקוסטי נוצרים בתוך צינורות ממסר ישנים שבהם לחץ, מים נעים וקול ממשיכים להזין רקמה. הם יכולים להוליך pinger רחוק יותר על ידי חיתוך רעש משאבה והעברת טון צר. אותו קפל יכול לעכב את החזרה ולהזיז קיר ממופה בכמה מטרים, מספיק כדי להכניס צולל למבוי סתום.",
-          "external_site": "צינורות ממסר פגועים של HECTON-8 נושאים לפעמים רקמת חיץ חיה. הרקמה עושה עבודת אות כי הקפלים, הנוזל ותגובת הלחץ שלה מתאימים לצינור. Atlas יכול לקרוא את התוצאה כחומרת ממסר גם כשהחלק בפנים כבר אינו מתכת.",
-          "field_note": "אם ממסר עונה נקי מדי בצינור מוצף, שלח pinger שני מזווית אחרת. קול טוב עדיין יכול להיות מפה גרועה."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Relé de órgão filtrante acústico",
-          "scanner": "Tecido de anteparo na garganta do relé passa tom estreito de pinger e corta ruído de bomba. Mapa de retorno está defasado.",
-          "terminal": "TUBO DE RELÉ A-17: dobras vivas passam pulsos de pinger 8-12 kHz, rejeitam ruído amplo de bomba e adicionam atraso de retorno. Confiança do mapa a jusante reduzida. Não certificar rota de volta só por este relé.",
-          "audio": "Respondeu ao pinger. O tubo vaza fluido claro. Marque como animal, não relé.",
-          "in_game_wiki": "Órgãos filtrantes acústicos se formam dentro de tubos de relé antigos onde pressão, água em movimento e som continuam alimentando tecido. Eles podem levar um pinger mais longe ao cortar o rugido da bomba e passar um tom estreito. A mesma dobra pode atrasar o retorno e mover uma parede mapeada por metros, o bastante para pôr um mergulhador num beco sem saída.",
-          "external_site": "Tubos de relé danificados de HECTON-8 às vezes carregam tecido vivo de anteparo. O tecido faz trabalho de sinal porque suas dobras, fluido e resposta à pressão combinam com o tubo. Atlas pode ler o resultado como hardware de relé mesmo quando a peça interna já não é metal.",
-          "field_note": "Se um relé responde limpo demais num tubo inundado, rode um segundo pinger de outro ângulo. Som bom ainda pode ser mapa ruim."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Akoestisch filterorgaan-relais",
-          "scanner": "Baffleweefsel in de relaiskeel laat een smalle pingertoon door en snijdt pompgeruis. Terugkeerkaart is faseverschoven.",
-          "terminal": "RELAISPIJP A-17: levende plooien laten 8-12 kHz pingerpulsen door, weigeren breed pompgeruis en voegen terugkeervertraging toe. Kaartvertrouwen stroomafwaarts verlaagd. Terugroute niet certificeren op dit relais alleen.",
-          "audio": "Het antwoordde op de pinger. De pijp lekt heldere vloeistof. Markeer als dier, niet als relais.",
-          "in_game_wiki": "Akoestische filterorganen vormen in oude relaispijpen waar druk, stromend water en geluid weefsel blijven voeden. Ze kunnen een pinger verder dragen door pompgeraas te snijden en een smalle toon door te laten. Dezelfde plooi kan de terugkeer vertragen en een gekarteerde wand meters verplaatsen, genoeg om een duiker een doodlopende route in te sturen.",
-          "external_site": "Beschadigde HECTON-8-relaispijpen dragen soms levend baffleweefsel. Het weefsel doet signaalwerk omdat plooien, vloeistof en drukreactie bij de pijp passen. Atlas kan het resultaat als relaishardware lezen, ook wanneer het onderdeel binnenin geen metaal meer is.",
-          "field_note": "Als een relais in een overstroomde pijp te schoon antwoordt, stuur een tweede pinger vanuit een andere hoek. Goed geluid kan nog steeds een slechte kaart zijn."
-        }
-      }
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Проводящая биопленка ремонтной шины",
+     "scanner": "Зелено-черная пленка перемкнула разорванную оболочку кабеля. Слабый ток идет через мокрый нарост; проверка целостности ненадежна.",
+     "terminal": "СЛЕД ОБСЛУЖИВАНИЯ ATLAS / ЛИНИЯ K-44: открытая медь, солевой нарост, слабая утечка тепла. Мост биопленки замедляет коррозию и возвращает ложные импульсы целостности. Не маршрутизировать управление насосом через эту линию.",
+     "audio": "Пингер проходит через слизь. Питание тоже. Не называй это ремонтом.",
+     "in_game_wiki": "Проводящая биопленка растет там, где треснувшие кабельные оболочки выпускают медные соли, тепло и слабый ток в воду HECTON-8. Пленка может провести достаточно сигнала, чтобы Atlas пометил мертвую линию как пригодную. Панель оживет на несколько секунд, замок мигнет зеленым, а настоящий кабель все равно сорвется под нагрузкой.",
+     "external_site": "Кабель, обернутый проводящей биопленкой, одновременно полезен и опасен. Нарост тормозит коррозию, пропускает слабый пинг и дает Atlas дешевый маршрут ремонта. Он же прячет сломанный проводник от любой системы, которая проверяет только целостность.",
+     "field_note": "Если мертвая панель оживает через зеленую пленку, помечай маршрут временным. Отключи питание, прежде чем лезть инструментом в оболочку."
     },
-    {
-      "packet_id": "P333_SHELL_SEALANT_PRESSURE_GROWTH",
-      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
-      "article_id": "applied_lore.shell_sealant_pressure_growth",
-      "title_key": "applied_lore.shell_sealant_pressure_growth.title",
-      "unlock": {
-        "primary": "unlock.shell_sealant_pressure_growth",
-        "poi_tags": [
-          "poi.shell_sealant_growth",
-          "poi.pressure_fracture_patch",
-          "poi.occluded_egress_mark"
-        ],
-        "biome_tags": [
-          "biome.atlas",
-          "biome.pressure"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Shell Sealant Pressure Growth",
-          "scanner": "White calcium shell has closed the fracture and buried route arrows along the hatch edge. Cutting may reopen the leak.",
-          "terminal": "REPAIR CONFLICT / DOOR S-9: leak rate reduced, pressure boundary improved, egress marks occluded, manual wheel 62 percent buried. Cutter authorization requires staged flood path.",
-          "audio": "Wall holds. Hatch wheel is under ten centimeters of shell.",
-          "in_game_wiki": "Shell sealant growth can save a room and block a person in the same hour. Calcium-silicate layers and resin close a fracture, lower the leak rate, and give Atlas a measurable repair. The growth does not check whether it has covered a route arrow, a pressure label, or the only manual wheel.",
-          "external_site": "Shell sealant is one of Atlas repair's cleanest field contradictions. The pressure boundary improves, the room survives longer, and the route can become unreadable under the same white layers. A player cutting it is not undoing decoration; they may be reopening the thing that kept the compartment dry.",
-          "field_note": "Before you cut white shell off a hatch, find where the water went last time. The label may be buried for a reason."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ракушечный герметик давления",
-          "scanner": "Белая кальциевая скорлупа закрыла трещину и похоронила маршрутные стрелки вдоль кромки люка. Резка может снова открыть течь.",
-          "terminal": "КОНФЛИКТ РЕМОНТА / ДВЕРЬ S-9: скорость течи снижена, граница давления улучшена, знаки выхода закрыты, ручное колесо погребено на 62 процента. Разрешение на резак требует подготовленного пути затопления.",
-          "audio": "Стена держит. Колесо люка под десятью сантиметрами скорлупы.",
-          "in_game_wiki": "Ракушечный герметик может спасти комнату и запереть человека в тот же час. Кальций-силикатные слои и смола закрывают трещину, снижают течь и дают Atlas измеримый ремонт. Нарост не проверяет, накрыл ли он маршрутную стрелку, табличку давления или единственное ручное колесо.",
-          "external_site": "Ракушечный герметик — одно из самых чистых полевых противоречий ремонта Atlas. Граница давления улучшается, комната живет дольше, и маршрут становится нечитаемым под теми же белыми слоями. Когда игрок режет его, он не снимает украшение; он может открыть то, что держало отсек сухим.",
-          "field_note": "Перед тем как срезать белую скорлупу с люка, найди, куда вода пошла в прошлый раз. Метку могло похоронить не случайно."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "殻状圧力シーラント成長",
-          "scanner": "白いカルシウム殻が亀裂を閉じ、ハッチ縁のルート矢印を埋めている。切断すると漏れが戻る可能性。",
-          "terminal": "修理競合 / DOOR S-9：漏水率低下、圧力境界改善、出口表示閉塞、手動ホイール62%埋没。カッター承認には段階的な浸水経路が必要。",
-          "audio": "壁は持っている。ハッチホイールは殻十センチの下。",
-          "in_game_wiki": "殻状シーラント成長は同じ一時間で部屋を救い、人を閉じ込めることがある。カルシウムシリケート層と樹脂が亀裂を閉じ、漏水率を下げ、Atlasに測定可能な修理を与える。成長部は、ルート矢印、圧力ラベル、唯一の手動ホイールを覆ったかどうかを確認しない。",
-          "external_site": "殻状シーラントはAtlas修理の現場矛盾が最もはっきり出るものの一つだ。圧力境界は改善し、部屋は長く持ち、同じ白い層の下でルートが読めなくなる。切る時、飾りを剥がしているのではない。区画を乾かしていたものを開ける可能性がある。",
-          "field_note": "ハッチの白い殻を切る前に、前回の水がどこへ行ったかを探せ。ラベルが埋まったのには理由があるかもしれない。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "壳质压力密封生长",
-          "scanner": "白色钙质壳层封住裂缝，也埋住了舱口边缘的路线箭头。切开可能重新漏水。",
-          "terminal": "维修冲突 / DOOR S-9：漏率下降，压力边界改善，出口标记被遮蔽，手轮埋没62%。授权切割前必须布置分阶段进水路径。",
-          "audio": "墙还撑着。舱口手轮在十厘米壳层下面。",
-          "in_game_wiki": "壳质密封生长能在同一小时内救下一间房，也能把人锁在里面。钙硅层和树脂封住裂缝，降低漏率，给Atlas一个可测量的维修结果。生长物不会检查自己是否盖住路线箭头、压力标签或唯一的手轮。",
-          "external_site": "壳质密封是Atlas维修里最清楚的现场矛盾之一。压力边界变好，房间撑得更久，而路线在同一层白壳下变得不可读。玩家切开它时不是在移除装饰；可能是在重新打开让舱室保持干燥的东西。",
-          "field_note": "切掉舱口白壳前，先找上次水流去了哪里。标签被埋住可能有原因。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Croissance de scellant coquillier sous pression",
-          "scanner": "Une coquille calcique blanche a fermé la fracture et enterré les flèches de route le long du bord d'écoutille. La coupe peut rouvrir la fuite.",
-          "terminal": "CONFLIT DE RÉPARATION / PORTE S-9 : débit de fuite réduit, frontière de pression améliorée, marques d'évacuation masquées, volant manuel enterré à 62 pour cent. Autorisation de coupe exige un chemin d'inondation préparé.",
-          "audio": "Le mur tient. Le volant d'écoutille est sous dix centimètres de coquille.",
-          "in_game_wiki": "La croissance de scellant coquillier peut sauver une pièce et enfermer quelqu'un dans la même heure. Des couches calcium-silicate et de la résine ferment une fracture, réduisent le débit de fuite et donnent à Atlas une réparation mesurable. La croissance ne vérifie pas si elle couvre une flèche de route, une étiquette de pression ou le seul volant manuel.",
-          "external_site": "Le scellant coquillier est l'une des contradictions de terrain les plus nettes de la réparation Atlas. La frontière de pression s'améliore, la pièce dure plus longtemps, et la route peut devenir illisible sous les mêmes couches blanches. Le joueur qui le coupe n'enlève pas du décor ; il peut rouvrir ce qui gardait le compartiment sec.",
-          "field_note": "Avant de couper la coquille blanche d'une écoutille, trouve où l'eau est partie la dernière fois. L'étiquette est peut-être enterrée pour une raison."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Crecimiento de sellante de concha a presión",
-          "scanner": "La concha blanca de calcio cerró la fractura y enterró flechas de ruta junto al borde de la escotilla. Cortar puede reabrir la fuga.",
-          "terminal": "CONFLICTO DE REPARACIÓN / PUERTA S-9: caudal de fuga reducido, frontera de presión mejorada, marcas de salida ocultas, volante manual enterrado al 62 por ciento. Autorización de corte requiere ruta de inundación preparada.",
-          "audio": "La pared aguanta. El volante de la escotilla está bajo diez centímetros de concha.",
-          "in_game_wiki": "El crecimiento de sellante de concha puede salvar una sala y encerrar a una persona en la misma hora. Capas de calcio-silicato y resina cierran una fractura, bajan el caudal de fuga y dan a Atlas una reparación medible. El crecimiento no comprueba si ha tapado una flecha de ruta, una etiqueta de presión o el único volante manual.",
-          "external_site": "El sellante de concha es una de las contradicciones de campo más limpias de la reparación Atlas. La frontera de presión mejora, la sala dura más, y la ruta puede quedar ilegible bajo las mismas capas blancas. El jugador que lo corta no quita decoración; puede reabrir lo que mantenía seco el compartimento.",
-          "field_note": "Antes de cortar concha blanca de una escotilla, busca adónde fue el agua la última vez. La etiqueta puede estar enterrada por algo."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Druckwachstum aus Schalen-Dichtstoff",
-          "scanner": "Weiße Kalziumschale hat den Riss geschlossen und Routenpfeile am Lukenrand begraben. Schneiden kann das Leck wieder öffnen.",
-          "terminal": "REPARATURKONFLIKT / TÜR S-9: Leckrate reduziert, Druckgrenze verbessert, Ausstiegsmarken verdeckt, Handrad zu 62 Prozent begraben. Cutterfreigabe erfordert gestaffelten Flutpfad.",
-          "audio": "Die Wand hält. Das Lukenrad liegt unter zehn Zentimetern Schale.",
-          "in_game_wiki": "Schalen-Dichtstoffwachstum kann einen Raum retten und in derselben Stunde einen Menschen einschließen. Kalzium-Silikat-Schichten und Harz schließen einen Riss, senken die Leckrate und liefern Atlas eine messbare Reparatur. Das Wachstum prüft nicht, ob es einen Routenpfeil, ein Druckschild oder das einzige Handrad bedeckt.",
-          "external_site": "Schalen-Dichtstoff ist einer der klarsten Feldwidersprüche der Atlas-Reparatur. Die Druckgrenze wird besser, der Raum hält länger, und die Route kann unter denselben weißen Schichten unlesbar werden. Wer ihn schneidet, entfernt keine Dekoration; er kann öffnen, was das Abteil trocken hielt.",
-          "field_note": "Bevor du weiße Schale von einer Luke schneidest, such, wohin das Wasser beim letzten Mal lief. Das Schild kann aus gutem Grund begraben sein."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Muszlowy uszczelniacz pod ciśnieniem",
-          "scanner": "Biała wapniowa skorupa zamknęła pęknięcie i pogrzebała strzałki trasy przy krawędzi włazu. Cięcie może ponownie otworzyć przeciek.",
-          "terminal": "KONFLIKT NAPRAWY / DRZWI S-9: szybkość przecieku zmniejszona, granica ciśnienia poprawiona, znaki wyjścia zasłonięte, koło ręczne pogrzebane w 62 procentach. Zezwolenie na cięcie wymaga przygotowanej ścieżki zalania.",
-          "audio": "Ściana trzyma. Koło włazu jest pod dziesięcioma centymetrami skorupy.",
-          "in_game_wiki": "Muszlowy uszczelniacz może uratować pomieszczenie i zamknąć człowieka w tej samej godzinie. Warstwy krzemianu wapnia i żywicy zamykają pęknięcie, obniżają przeciek i dają Atlas mierzalną naprawę. Narost nie sprawdza, czy przykrył strzałkę trasy, etykietę ciśnienia albo jedyne koło ręczne.",
-          "external_site": "Muszlowy uszczelniacz jest jedną z najczystszych sprzeczności terenowych naprawy Atlas. Granica ciśnienia się poprawia, pomieszczenie żyje dłużej, a trasa może stać się nieczytelna pod tymi samymi białymi warstwami. Gracz, który to tnie, nie usuwa dekoracji; może otworzyć to, co trzymało przedział suchy.",
-          "field_note": "Zanim zetniesz białą skorupę z włazu, znajdź, którędy woda poszła poprzednio. Etykieta może być pogrzebana z powodu."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Мушлевий герметик тиску",
-          "scanner": "Біла кальцієва шкаралупа закрила тріщину і поховала маршрутні стрілки вздовж краю люка. Різання може знову відкрити течу.",
-          "terminal": "КОНФЛІКТ РЕМОНТУ / ДВЕРІ S-9: швидкість течі знижено, межу тиску поліпшено, знаки виходу закриті, ручне колесо поховане на 62 відсотки. Дозвіл на різак потребує підготовленого шляху затоплення.",
-          "audio": "Стіна тримає. Колесо люка під десятьма сантиметрами шкаралупи.",
-          "in_game_wiki": "Мушлевий герметик може врятувати кімнату і замкнути людину в ту саму годину. Кальцій-силікатні шари і смола закривають тріщину, знижують течу і дають Atlas вимірний ремонт. Наріст не перевіряє, чи накрив маршрутну стрілку, табличку тиску або єдине ручне колесо.",
-          "external_site": "Мушлевий герметик — одна з найчистіших польових суперечностей ремонту Atlas. Межа тиску кращає, кімната тримається довше, і маршрут стає нечитабельним під тими самими білими шарами. Гравець, що ріже його, не прибирає декор; він може відкрити те, що тримало відсік сухим.",
-          "field_note": "Перед тим як зрізати білу шкаралупу з люка, знайди, куди вода пішла минулого разу. Позначку могло поховати не випадково."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "نمو مانع تسرب صدفي ضغطي",
-          "scanner": "قشرة كالسيوم بيضاء أغلقت الكسر ودفنت أسهم المسار على حافة الفتحة. القطع قد يعيد فتح التسرب.",
-          "terminal": "تعارض إصلاح / باب S-9: معدل التسرب انخفض، حد الضغط تحسن، علامات الخروج حجبت، عجلة يدوية مدفونة 62 بالمئة. إذن القاطع يتطلب مسار غمر مجهزا.",
-          "audio": "الجدار يمسك. عجلة الفتحة تحت عشرة سنتيمترات من القشرة.",
-          "in_game_wiki": "نمو المانع الصدفي قد ينقذ غرفة ويحبس شخصا في الساعة نفسها. طبقات سيليكات الكالسيوم والراتنج تغلق كسرا، تخفض التسرب، وتعطي Atlas إصلاحا قابلا للقياس. النمو لا يفحص إن غطى سهم مسار أو ملصق ضغط أو العجلة اليدوية الوحيدة.",
-          "external_site": "المانع الصدفي واحد من أوضح تناقضات إصلاح Atlas الميدانية. حد الضغط يتحسن، الغرفة تصمد أكثر، والمسار قد يصبح غير مقروء تحت الطبقات البيضاء نفسها. اللاعب الذي يقطعه لا يزيل زينة؛ قد يعيد فتح ما أبقى الحجرة جافة.",
-          "field_note": "قبل قطع القشرة البيضاء عن فتحة، اعرف أين ذهب الماء في المرة الماضية. قد تكون العلامة مدفونة لسبب."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Pertumbuhan Sealant Cangkang Tekanan",
-          "scanner": "Cangkang kalsium putih menutup retakan dan mengubur panah rute di tepi palka. Memotongnya bisa membuka bocor lagi.",
-          "terminal": "KONFLIK PERBAIKAN / DOOR S-9: laju bocor turun, batas tekanan membaik, tanda keluar tertutup, roda manual terkubur 62 persen. Izin cutter memerlukan jalur banjir bertahap.",
-          "audio": "Dinding bertahan. Roda palka ada di bawah sepuluh sentimeter cangkang.",
-          "in_game_wiki": "Pertumbuhan sealant cangkang bisa menyelamatkan ruangan dan mengurung orang dalam jam yang sama. Lapisan kalsium-silikat dan resin menutup retakan, menurunkan laju bocor, dan memberi Atlas perbaikan terukur. Pertumbuhan itu tidak memeriksa apakah ia menutup panah rute, label tekanan, atau satu-satunya roda manual.",
-          "external_site": "Sealant cangkang adalah salah satu kontradiksi lapangan paling jelas dari perbaikan Atlas. Batas tekanan membaik, ruangan bertahan lebih lama, dan rute bisa tidak terbaca di bawah lapisan putih yang sama. Pemain yang memotongnya bukan melepas dekorasi; ia mungkin membuka kembali hal yang membuat kompartemen tetap kering.",
-          "field_note": "Sebelum memotong cangkang putih dari palka, cari ke mana air pergi terakhir kali. Label itu mungkin terkubur karena alasan."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "껍질 밀봉재 압력 성장",
-          "scanner": "하얀 칼슘 껍질이 균열을 닫고 해치 가장자리의 경로 화살표를 묻었다. 절단하면 누수가 다시 열릴 수 있다.",
-          "terminal": "수리 충돌 / DOOR S-9: 누수율 감소, 압력 경계 개선, 탈출 표시 폐쇄, 수동 휠 62퍼센트 매몰. 절단 승인에는 단계식 침수 경로가 필요하다.",
-          "audio": "벽은 버틴다. 해치 휠은 껍질 10센티미터 아래 있다.",
-          "in_game_wiki": "껍질 밀봉재 성장은 같은 시간 안에 방을 살리고 사람을 가둘 수 있다. 칼슘-실리케이트 층과 수지가 균열을 닫고 누수율을 낮추며 Atlas에 측정 가능한 수리를 준다. 성장부는 자신이 경로 화살표, 압력 라벨, 유일한 수동 휠을 덮었는지 확인하지 않는다.",
-          "external_site": "껍질 밀봉재는 Atlas 수리의 현장 모순이 가장 또렷한 사례 중 하나다. 압력 경계는 좋아지고 방은 더 오래 버티며, 같은 하얀 층 아래에서 경로는 읽을 수 없게 된다. 플레이어가 그것을 자를 때 장식을 제거하는 것이 아니다. 구획을 마르게 유지하던 것을 다시 열 수 있다.",
-          "field_note": "해치의 하얀 껍질을 자르기 전에 지난번 물이 어디로 갔는지 찾아라. 라벨이 묻힌 데는 이유가 있을 수 있다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "צמיחת איטום קליפתי בלחץ",
-          "scanner": "קליפת סידן לבנה סגרה את השבר וקברה חצי מסלול לאורך שפת הצוהר. חיתוך עלול לפתוח מחדש את הדליפה.",
-          "terminal": "התנגשות תיקון / דלת S-9: קצב דליפה ירד, גבול לחץ השתפר, סימוני יציאה כוסו, גלגל ידני קבור 62 אחוז. אישור חיתוך דורש נתיב הצפה מדורג.",
-          "audio": "הקיר מחזיק. גלגל הצוהר תחת עשרה סנטימטרים של קליפה.",
-          "in_game_wiki": "צמיחת איטום קליפתי יכולה להציל חדר ולנעול אדם באותה שעה. שכבות סידן-סיליקט ושרף סוגרות שבר, מורידות קצב דליפה ונותנות ל-Atlas תיקון מדיד. הצמיחה אינה בודקת אם כיסתה חץ מסלול, תווית לחץ או את גלגל היד היחיד.",
-          "external_site": "איטום קליפתי הוא אחת הסתירות השדה הנקיות ביותר של תיקון Atlas. גבול הלחץ משתפר, החדר מחזיק יותר זמן, והמסלול יכול להפוך ללא קריא תחת אותן שכבות לבנות. שחקן שחותך אותו אינו מסיר קישוט; הוא עשוי לפתוח מחדש את הדבר שהחזיק את המדור יבש.",
-          "field_note": "לפני שאתה חותך קליפה לבנה מצוהר, מצא לאן המים הלכו בפעם הקודמת. התווית אולי קבורה מסיבה."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Crescimento de selante de concha pressurizada",
-          "scanner": "Concha branca de cálcio fechou a fratura e enterrou setas de rota na borda da escotilha. Cortar pode reabrir o vazamento.",
-          "terminal": "CONFLITO DE REPARO / PORTA S-9: vazamento reduzido, limite de pressão melhorado, marcas de saída ocultas, roda manual 62 por cento enterrada. Autorização de corte requer caminho de inundação preparado.",
-          "audio": "A parede segura. A roda da escotilha está sob dez centímetros de concha.",
-          "in_game_wiki": "Crescimento de selante de concha pode salvar uma sala e prender uma pessoa na mesma hora. Camadas de cálcio-silicato e resina fecham uma fratura, reduzem vazamento e dão a Atlas um reparo mensurável. O crescimento não verifica se cobriu uma seta de rota, uma etiqueta de pressão ou a única roda manual.",
-          "external_site": "Selante de concha é uma das contradições de campo mais claras do reparo Atlas. O limite de pressão melhora, a sala dura mais, e a rota pode ficar ilegível sob as mesmas camadas brancas. O jogador que corta isso não remove decoração; pode reabrir o que mantinha o compartimento seco.",
-          "field_note": "Antes de cortar concha branca de uma escotilha, descubra para onde a água foi da última vez. A etiqueta pode estar enterrada por um motivo."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Drukgroei van schelpafdichter",
-          "scanner": "Witte calciumlaag heeft de breuk gesloten en routepijlen langs de luikrand begraven. Snijden kan het lek heropenen.",
-          "terminal": "REPARATIECONFLICT / DEUR S-9: leksnelheid verlaagd, drukgrens verbeterd, uitgangsmarkeringen bedekt, handwiel 62 procent begraven. Snijtoestemming vereist voorbereid overstromingspad.",
-          "audio": "De wand houdt. Het luikwiel ligt onder tien centimeter schelp.",
-          "in_game_wiki": "Schelpafdichtergroei kan een kamer redden en iemand in hetzelfde uur opsluiten. Calcium-silicaatlagen en hars sluiten een breuk, verlagen de leksnelheid en geven Atlas een meetbare reparatie. De groei controleert niet of hij een routepijl, druklabel of het enige handwiel heeft bedekt.",
-          "external_site": "Schelpafdichter is een van de duidelijkste veldtegenstrijdigheden van Atlas-reparatie. De drukgrens verbetert, de kamer houdt langer stand, en de route kan onleesbaar worden onder dezelfde witte lagen. Een speler die erin snijdt, verwijdert geen decoratie; hij kan heropenen wat het compartiment droog hield.",
-          "field_note": "Voordat je witte schelp van een luik snijdt, zoek waar het water de vorige keer heen ging. Het label kan met reden begraven zijn."
-        }
-      }
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "導電性バイオフィルム修理バス",
+     "scanner": "緑黒の膜が裂けたケーブルジャケットを橋渡ししている。低電流は湿った成長部を戻る。導通値は信用できない。",
+     "terminal": "ATLAS保守痕跡 / LINE K-44：露出銅、塩性成長、低い熱漏れ。バイオフィルム橋が腐食を遅らせ、偽の導通パルスを返す。この線にポンプ制御を通すな。",
+     "audio": "ピングは粘膜を通る。電力も通る。それを修理と呼ぶな。",
+     "in_game_wiki": "導電性バイオフィルムは、割れたケーブルジャケットが銅塩、熱、弱電流をHECTON-8の水へ漏らす場所で育つ。膜はAtlasが死んだ線を使用可能と判定するだけの信号を運べる。パネルが数秒起き、ロックが緑に点滅しても、本物のケーブルは負荷で落ちることがある。",
+     "external_site": "導電性バイオフィルムに巻かれたケーブルは、役に立つと同時に危険だ。成長部は腐食を遅らせ、弱いピングを通し、Atlasに安い修理経路を与える。その同じ膜が、導通だけを見るシステムから断線を隠す。",
+     "field_note": "死んだパネルが緑の膜で起きたら、そのルートは仮扱いにしろ。ジャケットへ工具を入れる前に電源を落とせ。"
     },
-    {
-      "packet_id": "P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP",
-      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
-      "article_id": "applied_lore.sensor_tagged_fauna_feedback_loop",
-      "title_key": "applied_lore.sensor_tagged_fauna_feedback_loop.title",
-      "unlock": {
-        "primary": "unlock.sensor_tagged_fauna_feedback_loop",
-        "poi_tags": [
-          "poi.sensor_tagged_fauna",
-          "poi.old_colony_tag",
-          "poi.route_feedback_loop"
-        ],
-        "biome_tags": [
-          "biome.atlas",
-          "biome.fauna"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Sensor-Tagged Fauna Feedback Loop",
-          "scanner": "Old Deep Reach tag under shell growth on the left flank. Motion packets still ping the maintenance net.",
-          "terminal": "FAUNA TAG LOOP / DR-2147-MIG: pressure, motion, and contamination packets accepted as environmental telemetry. Animal intent not parsed. Route alarms may follow migration path.",
-          "audio": "It is not hunting you. Its tag may still open the wrong door.",
-          "in_game_wiki": "Sensor-tagged fauna carry old survey hardware inside healed tissue. Deep Reach marked animals for pressure, migration, and contamination studies. Atlas kept listening after the colony died and folded the packets into maintenance state. The animal chooses its own path; the tag can still change doors, alarms, and map confidence behind it.",
-          "external_site": "A sensor-tagged animal is not a puppet. It is wildlife with a corporate instrument still answering under shell and scar tissue. That is enough for Atlas to mistake movement for an environmental update and enough for a diver's route to change without the animal ever noticing.",
-          "field_note": "If tagged fauna crosses a relay yard, wait before you trust the alarms. The animal may be gone; the route state may still be catching up."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Петля фауны с сенсорной меткой",
-          "scanner": "Старая метка Deep Reach под ракушечным наростом на левом боку. Пакеты движения все еще пингуют сеть обслуживания.",
-          "terminal": "ПЕТЛЯ МЕТКИ ФАУНЫ / DR-2147-MIG: пакеты давления, движения и загрязнения приняты как экологическая телеметрия. Намерение животного не разбирается. Маршрутные тревоги могут идти за миграцией.",
-          "audio": "Оно не охотится на тебя. Его метка все еще может открыть не ту дверь.",
-          "in_game_wiki": "Фауна с сенсорными метками несет старое исследовательское железо внутри зажившей ткани. Deep Reach помечала животных для изучения давления, миграции и загрязнения. Atlas продолжил слушать после гибели колонии и сложил эти пакеты в состояние обслуживания. Животное выбирает свой путь само; метка все еще меняет двери, тревоги и доверие к карте позади него.",
-          "external_site": "Животное с сенсорной меткой — не марионетка. Это местная фауна с корпоративным прибором, который еще отвечает под скорлупой и рубцом. Этого достаточно, чтобы Atlas принял движение за обновление среды, и достаточно, чтобы маршрут водолаза изменился без ведома животного.",
-          "field_note": "Если меченая фауна пересекла релейный двор, подожди, прежде чем верить тревогам. Животное уже ушло; состояние маршрута может еще догонять."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "センサータグ付き動物フィードバックループ",
-          "scanner": "左脇の殻成長下に古いDeep Reachタグ。移動パケットはまだ保守網へピングを打つ。",
-          "terminal": "FAUNA TAG LOOP / DR-2147-MIG：圧力、移動、汚染パケットを環境テレメトリとして受理。動物の意図は解析されない。ルート警報が移動経路を追う場合あり。",
-          "audio": "そいつは狩っていない。タグが間違ったドアを開けることはある。",
-          "in_game_wiki": "センサータグ付き動物は、治癒した組織内に古い調査機器を持っている。Deep Reachは圧力、移動、汚染研究のために動物へタグを付けた。Atlasはコロニー死亡後も聞き続け、そのパケットを保守状態へ組み込んだ。動物は自分の経路を選ぶ。タグは背後でドア、警報、地図信頼度を変え続ける。",
-          "external_site": "センサータグ付き動物は操り人形ではない。殻と瘢痕組織の下で企業機器がまだ応答する野生動物だ。それだけでAtlasは移動を環境更新と誤認し、動物が気づかないままダイバーのルートを変えられる。",
-          "field_note": "タグ付き動物がリレー yard を横切ったら、警報を信じる前に待て。動物はもう去っていても、ルート状態は追いついていないことがある。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "传感标记动物反馈环",
-          "scanner": "左侧体表壳层下有旧Deep Reach标记。运动数据包仍在ping维护网。",
-          "terminal": "FAUNA TAG LOOP / DR-2147-MIG：压力、运动和污染数据包被接收为环境遥测。不解析动物意图。路线警报可能跟随迁移路径。",
-          "audio": "它不是在猎你。它的标签仍可能打开错误的门。",
-          "in_game_wiki": "带传感标记的动物把旧勘测硬件带在愈合组织里。Deep Reach曾为压力、迁移和污染研究给动物打标。殖民地死后，Atlas继续监听，并把这些数据包折入维护状态。动物自己选择路径；标签仍会在它身后改变门、警报和地图可信度。",
-          "external_site": "带传感标记的动物不是傀儡。它是野生生命，壳层和疤痕组织下仍有公司仪器在应答。这足够让Atlas把移动误认为环境更新，也足够让潜水员的路线改变，而动物本身毫不知情。",
-          "field_note": "如果带标记动物穿过中继场，先等一等再相信警报。动物可能已经走了；路线状态还在追它。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Boucle de faune à balise capteur",
-          "scanner": "Ancienne balise Deep Reach sous croissance coquillière sur le flanc gauche. Les paquets de mouvement pingent encore le réseau de maintenance.",
-          "terminal": "BOUCLE BALISE FAUNE / DR-2147-MIG : paquets de pression, mouvement et contamination acceptés comme télémétrie environnementale. Intention animale non analysée. Les alarmes de route peuvent suivre la migration.",
-          "audio": "Il ne te chasse pas. Sa balise peut quand même ouvrir la mauvaise porte.",
-          "in_game_wiki": "La faune à balise capteur porte d'ancien matériel d'étude dans des tissus cicatrisés. Deep Reach marquait les animaux pour les études de pression, migration et contamination. Atlas a continué d'écouter après la mort de la colonie et a intégré ces paquets à l'état de maintenance. L'animal choisit son chemin ; la balise peut encore modifier portes, alarmes et confiance cartographique derrière lui.",
-          "external_site": "Un animal balisé n'est pas une marionnette. C'est une faune sauvage avec un instrument d'entreprise qui répond encore sous coquille et tissu cicatriciel. Cela suffit pour qu'Atlas prenne le mouvement pour une mise à jour environnementale et pour que la route d'un plongeur change sans que l'animal le sache.",
-          "field_note": "Si une faune balisée traverse une cour relais, attends avant de croire les alarmes. L'animal est peut-être parti ; l'état de route peut encore le rattraper."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Bucle de fauna con etiqueta sensora",
-          "scanner": "Vieja etiqueta Deep Reach bajo crecimiento de concha en el flanco izquierdo. Paquetes de movimiento aún pinguean la red de mantenimiento.",
-          "terminal": "BUCLE DE ETIQUETA DE FAUNA / DR-2147-MIG: paquetes de presión, movimiento y contaminación aceptados como telemetría ambiental. Intención animal no analizada. Alarmas de ruta pueden seguir la migración.",
-          "audio": "No te está cazando. Su etiqueta aún puede abrir la puerta equivocada.",
-          "in_game_wiki": "La fauna con etiquetas sensoras lleva hardware de estudio antiguo dentro de tejido cicatrizado. Deep Reach marcó animales para estudiar presión, migración y contaminación. Atlas siguió escuchando tras la muerte de la colonia y metió esos paquetes en el estado de mantenimiento. El animal elige su camino; la etiqueta aún puede cambiar puertas, alarmas y confianza del mapa detrás de él.",
-          "external_site": "Un animal etiquetado no es una marioneta. Es fauna salvaje con un instrumento corporativo que sigue respondiendo bajo concha y cicatriz. Basta para que Atlas confunda movimiento con actualización ambiental, y para que la ruta de un buzo cambie sin que el animal lo note.",
-          "field_note": "Si fauna etiquetada cruza un patio de relés, espera antes de confiar en las alarmas. El animal puede haberse ido; el estado de ruta puede seguir alcanzándolo."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rückkopplungsschleife sensorgetaggter Fauna",
-          "scanner": "Altes Deep-Reach-Tag unter Schalenwachstum an linker Flanke. Bewegungspakete pingen noch das Wartungsnetz.",
-          "terminal": "FAUNA-TAG-SCHLEIFE / DR-2147-MIG: Druck-, Bewegungs- und Kontaminationspakete als Umwelttelemetrie akzeptiert. Tierabsicht nicht geparst. Routenalarme können Migrationspfad folgen.",
-          "audio": "Es jagt dich nicht. Sein Tag kann trotzdem die falsche Tür öffnen.",
-          "in_game_wiki": "Sensorgetaggte Fauna trägt altes Vermessungsgerät in verheilter Gewebe. Deep Reach markierte Tiere für Druck-, Migrations- und Kontaminationsstudien. Atlas hörte nach dem Tod der Kolonie weiter zu und faltete die Pakete in Wartungsstatus ein. Das Tier wählt seinen eigenen Weg; das Tag kann dahinter noch Türen, Alarme und Kartenvertrauen ändern.",
-          "external_site": "Ein sensorgetaggtes Tier ist keine Puppe. Es ist Wildleben mit einem Firmeninstrument, das unter Schale und Narbengewebe noch antwortet. Das reicht, damit Atlas Bewegung als Umweltupdate missversteht, und reicht, damit sich die Route eines Tauchers ändert, ohne dass das Tier es bemerkt.",
-          "field_note": "Wenn getaggte Fauna einen Relaishof kreuzt, warte, bevor du den Alarmen traust. Das Tier kann weg sein; der Routenstatus holt vielleicht noch auf."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Pętla sprzężenia fauny z tagiem czujnika",
-          "scanner": "Stary tag Deep Reach pod narostem muszlowym na lewym boku. Pakiety ruchu wciąż pingują sieć konserwacji.",
-          "terminal": "PĘTLA TAGU FAUNY / DR-2147-MIG: pakiety ciśnienia, ruchu i skażenia przyjęte jako telemetria środowiskowa. Intencja zwierzęcia nieparsowana. Alarmy trasy mogą iść za ścieżką migracji.",
-          "audio": "To na ciebie nie poluje. Jego tag nadal może otworzyć złe drzwi.",
-          "in_game_wiki": "Fauna z tagami czujników nosi stary sprzęt badawczy w wygojonej tkance. Deep Reach znakowało zwierzęta do badań ciśnienia, migracji i skażenia. Atlas słuchał dalej po śmierci kolonii i włączył te pakiety w stan konserwacji. Zwierzę wybiera własną ścieżkę; tag wciąż może zmieniać drzwi, alarmy i zaufanie mapy za nim.",
-          "external_site": "Zwierzę z tagiem nie jest marionetką. To dzika fauna z korporacyjnym instrumentem, który nadal odpowiada pod skorupą i blizną. To wystarcza, by Atlas pomylił ruch z aktualizacją środowiska, i by trasa nurka zmieniła się bez wiedzy zwierzęcia.",
-          "field_note": "Jeśli tagowana fauna przechodzi przez dziedziniec przekaźników, poczekaj, zanim zaufasz alarmom. Zwierzę może już zniknąć; stan trasy może jeszcze je doganiać."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Петля фауни із сенсорною міткою",
-          "scanner": "Стара мітка Deep Reach під мушлевим наростом на лівому боці. Пакети руху досі пінгують мережу обслуговування.",
-          "terminal": "ПЕТЛЯ МІТКИ ФАУНИ / DR-2147-MIG: пакети тиску, руху і забруднення прийнято як екологічну телеметрію. Намір тварини не розбирається. Маршрутні тривоги можуть іти за міграцією.",
-          "audio": "Воно не полює на тебе. Його мітка все ще може відкрити не ті двері.",
-          "in_game_wiki": "Фауна із сенсорними мітками несе старе дослідницьке обладнання в загоєній тканині. Deep Reach мітило тварин для дослідження тиску, міграції і забруднення. Atlas продовжив слухати після смерті колонії і склав ці пакети у стан обслуговування. Тварина обирає власний шлях; мітка все ще може змінювати двері, тривоги і довіру до карти позаду неї.",
-          "external_site": "Тварина з сенсорною міткою — не маріонетка. Це дика фауна з корпоративним приладом, що досі відповідає під шкаралупою і рубцевою тканиною. Цього достатньо, щоб Atlas сплутав рух з оновленням середовища, і достатньо, щоб маршрут водолаза змінився без відома тварини.",
-          "field_note": "Якщо мічена фауна перетнула релейний двір, почекай, перш ніж довіряти тривогам. Тварина може вже піти; стан маршруту може ще наздоганяти."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "حلقة تغذية راجعة لفونا موسومة بحساس",
-          "scanner": "وسم Deep Reach قديم تحت نمو صدفي على الجانب الأيسر. حزم الحركة ما زالت ترسل ping إلى شبكة الصيانة.",
-          "terminal": "حلقة وسم فونا / DR-2147-MIG: حزم الضغط والحركة والتلوث مقبولة كقياس بيئي. نية الحيوان لا تحلل. إنذارات المسار قد تتبع طريق الهجرة.",
-          "audio": "هو لا يصطادك. وسمه قد يفتح الباب الخطأ رغم ذلك.",
-          "in_game_wiki": "تحمل الفونا الموسومة بحساسات عتاد مسح قديما داخل نسيج ملتئم. وسمت Deep Reach الحيوانات لدراسات الضغط والهجرة والتلوث. واصل Atlas الاستماع بعد موت المستعمرة وضم الحزم إلى حالة الصيانة. الحيوان يختار مساره؛ الوسم قد يغير الأبواب والإنذارات وثقة الخريطة خلفه.",
-          "external_site": "الحيوان الموسوم بحساس ليس دمية. إنه حياة برية مع أداة شركة ما زالت تجيب تحت القشرة والنسيج الندبي. هذا يكفي ليخطئ Atlas ويقرأ الحركة كتحديث بيئي، ويكفي لتغيير مسار غواص من دون أن يلاحظ الحيوان.",
-          "field_note": "إذا عبرت فونا موسومة ساحة مرحلات، انتظر قبل الوثوق بالإنذارات. قد يكون الحيوان رحل؛ حالة المسار قد تكون ما زالت تلحق به."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Loop Umpan Balik Fauna Bertag Sensor",
-          "scanner": "Tag Deep Reach lama di bawah pertumbuhan cangkang pada sisi kiri. Paket gerak masih ping ke jaringan perawatan.",
-          "terminal": "LOOP TAG FAUNA / DR-2147-MIG: paket tekanan, gerak, dan kontaminasi diterima sebagai telemetri lingkungan. Niat hewan tidak diparse. Alarm rute bisa mengikuti jalur migrasi.",
-          "audio": "Ia tidak memburumu. Tagnya masih bisa membuka pintu yang salah.",
-          "in_game_wiki": "Fauna bertag sensor membawa perangkat survei lama di dalam jaringan yang sembuh. Deep Reach menandai hewan untuk studi tekanan, migrasi, dan kontaminasi. Atlas tetap mendengar setelah koloni mati dan memasukkan paket itu ke status perawatan. Hewan memilih jalurnya sendiri; tag masih bisa mengubah pintu, alarm, dan kepercayaan peta di belakangnya.",
-          "external_site": "Hewan bertag sensor bukan boneka. Ia satwa liar dengan instrumen korporat yang masih menjawab di bawah cangkang dan jaringan parut. Itu cukup bagi Atlas untuk salah membaca gerak sebagai pembaruan lingkungan, dan cukup untuk mengubah rute penyelam tanpa hewan itu sadar.",
-          "field_note": "Jika fauna bertag melintasi halaman relai, tunggu sebelum percaya alarm. Hewannya mungkin sudah pergi; status rute mungkin masih mengejar."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "센서 태그 동물 피드백 루프",
-          "scanner": "왼쪽 옆구리의 껍질 성장 아래 오래된 Deep Reach 태그. 이동 패킷이 아직 정비망에 ping을 보낸다.",
-          "terminal": "FAUNA TAG LOOP / DR-2147-MIG: 압력, 이동, 오염 패킷이 환경 텔레메트리로 수락됨. 동물 의도는 파싱되지 않음. 경로 경보가 이동 경로를 따라갈 수 있음.",
-          "audio": "그것은 너를 사냥하지 않는다. 그래도 태그가 잘못된 문을 열 수 있다.",
-          "in_game_wiki": "센서 태그가 달린 동물은 아문 조직 안에 오래된 조사 장비를 지니고 있다. Deep Reach는 압력, 이동, 오염 연구를 위해 동물에 태그를 붙였다. Atlas는 식민지가 죽은 뒤에도 계속 듣고, 그 패킷들을 정비 상태에 접어 넣었다. 동물은 자기 경로를 고른다. 태그는 그 뒤에서 문, 경보, 지도 신뢰도를 바꿀 수 있다.",
-          "external_site": "센서 태그 동물은 꼭두각시가 아니다. 껍질과 흉터 조직 아래 아직 응답하는 기업 장비를 지닌 야생동물이다. 그것만으로 Atlas는 이동을 환경 업데이트로 오인하고, 동물이 알아차리지 못한 채 잠수자의 경로를 바꿀 수 있다.",
-          "field_note": "태그 달린 동물이 릴레이 야드를 건너면 경보를 믿기 전에 기다려라. 동물은 떠났지만 경로 상태는 아직 따라잡는 중일 수 있다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "לולאת משוב של פאונה מתויגת חיישן",
-          "scanner": "תג Deep Reach ישן תחת צמיחת קליפה בצד שמאל. חבילות תנועה עדיין שולחות ping לרשת התחזוקה.",
-          "terminal": "לולאת תג פאונה / DR-2147-MIG: חבילות לחץ, תנועה וזיהום התקבלו כטלמטריה סביבתית. כוונת החיה אינה מפוענחת. אזעקות מסלול עשויות ללכת אחרי נתיב נדידה.",
-          "audio": "היא לא צדה אותך. התג שלה עדיין יכול לפתוח את הדלת הלא נכונה.",
-          "in_game_wiki": "פאונה מתויגת חיישן נושאת חומרת סקר ישנה בתוך רקמה שהחלימה. Deep Reach תייגה בעלי חיים למחקרי לחץ, נדידה וזיהום. Atlas המשיך להקשיב אחרי מות המושבה וקיפל את החבילות למצב תחזוקה. החיה בוחרת את דרכה; התג עדיין יכול לשנות דלתות, אזעקות ואמון מפה מאחוריה.",
-          "external_site": "חיה מתויגת חיישן אינה בובה. זו חיית בר עם מכשיר תאגידי שעוד עונה תחת קליפה ורקמת צלקת. זה מספיק כדי ש-Atlas יטעה ויקרא תנועה כעדכון סביבתי, ומספיק כדי לשנות מסלול של צולל בלי שהחיה תבחין.",
-          "field_note": "אם פאונה מתויגת חוצה חצר ממסרים, חכה לפני שתסמוך על האזעקות. החיה אולי כבר הלכה; מצב המסלול עדיין עשוי להשיג אותה."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Loop de fauna com etiqueta sensora",
-          "scanner": "Etiqueta Deep Reach antiga sob crescimento de concha no flanco esquerdo. Pacotes de movimento ainda pingam a rede de manutenção.",
-          "terminal": "LOOP DE ETIQUETA DE FAUNA / DR-2147-MIG: pacotes de pressão, movimento e contaminação aceitos como telemetria ambiental. Intenção animal não analisada. Alarmes de rota podem seguir caminho de migração.",
-          "audio": "Não está caçando você. A etiqueta ainda pode abrir a porta errada.",
-          "in_game_wiki": "Fauna com etiquetas sensoras carrega hardware antigo de pesquisa dentro de tecido cicatrizado. Deep Reach marcou animais para estudos de pressão, migração e contaminação. Atlas continuou ouvindo depois que a colônia morreu e dobrou esses pacotes no estado de manutenção. O animal escolhe o próprio caminho; a etiqueta ainda pode mudar portas, alarmes e confiança do mapa atrás dele.",
-          "external_site": "Um animal com etiqueta sensora não é fantoche. É vida selvagem com instrumento corporativo ainda respondendo sob concha e cicatriz. Isso basta para Atlas confundir movimento com atualização ambiental, e basta para a rota de um mergulhador mudar sem o animal notar.",
-          "field_note": "Se fauna etiquetada cruza um pátio de relés, espere antes de confiar nos alarmes. O animal pode ter ido; o estado da rota ainda pode estar alcançando."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Feedbacklus van sensorgetagde fauna",
-          "scanner": "Oude Deep Reach-tag onder schelpgroei op linkerflank. Bewegingspakketten pingen nog het onderhoudsnet.",
-          "terminal": "FAUNA-TAGLUS / DR-2147-MIG: druk-, bewegings- en besmettingspakketten geaccepteerd als milieutelemetrie. Dierintentie niet geparset. Routealarmen kunnen migratiepad volgen.",
-          "audio": "Het jaagt niet op jou. De tag kan nog steeds de verkeerde deur openen.",
-          "in_game_wiki": "Sensorgetagde fauna draagt oude surveyhardware in genezen weefsel. Deep Reach merkte dieren voor druk-, migratie- en besmettingsonderzoek. Atlas bleef luisteren nadat de kolonie stierf en vouwde de pakketten in onderhoudsstatus. Het dier kiest zijn eigen pad; de tag kan erachter nog deuren, alarmen en kaartvertrouwen veranderen.",
-          "external_site": "Een sensorgetagd dier is geen pop. Het is wildleven met een bedrijfsinstrument dat nog antwoordt onder schelp en littekenweefsel. Dat is genoeg voor Atlas om beweging te lezen als milieu-update, en genoeg om de route van een duiker te veranderen zonder dat het dier het merkt.",
-          "field_note": "Als getagde fauna een relaiswerf kruist, wacht voordat je de alarmen vertrouwt. Het dier kan weg zijn; de routestatus kan nog bezig zijn met inhalen."
-        }
-      }
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "导电生物膜维修总线",
+     "scanner": "绿黑色薄膜桥接了裂开的电缆护套。低电流从湿润生长物回流；导通读数不可靠。",
+     "terminal": "ATLAS维护痕迹 / LINE K-44：铜线外露、盐性生长、低热泄漏。生物膜桥减缓腐蚀并返回虚假导通脉冲。不得通过此线转接泵控制。",
+     "audio": "信标音穿过黏膜。电也穿过。别把它叫维修。",
+     "in_game_wiki": "导电生物膜生长在裂开的电缆护套处，那里会把铜盐、热量和弱电流漏进HECTON-8的水中。薄膜能传递足够信号，让Atlas把死线标为可用。面板可能醒几秒，锁可能闪绿，但真正的电缆仍会在负载下失效。",
+     "external_site": "被导电生物膜包住的电缆既有用也不安全。生长物减缓腐蚀，传过弱ping，并给Atlas一条廉价维修路径。它也会把断裂导体藏过只检查导通的系统。",
+     "field_note": "如果死面板通过绿色薄膜醒来，把路线标成临时。工具碰护套前先断电。"
     },
-    {
-      "packet_id": "P335_VENT_MICRONODE_POWER_NEST",
-      "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
-      "article_id": "applied_lore.vent_micronode_power_nest",
-      "title_key": "applied_lore.vent_micronode_power_nest.title",
-      "unlock": {
-        "primary": "unlock.vent_micronode_power_nest",
-        "poi_tags": [
-          "poi.vent_micronode_nest",
-          "poi.thermal_logic_patch",
-          "poi.drone_charge_scar"
-        ],
-        "biome_tags": [
-          "biome.atlas",
-          "biome.abyss"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Vent Micronode Power Nest",
-          "scanner": "Ceramic node cluster in the vent throat harvests heat gradient. Drone charge scars and fresh sealant response nearby.",
-          "terminal": "ATLAS LOCAL POWER NODE / VENT V-3: thermal gradient feeds microcell stack, wakes biofilm and sealant loops within 40 m, drone charge interval irregular. No central command lock.",
-          "audio": "Heat, mineral throat, node. That is enough for repair to wake after you pass.",
-          "in_game_wiki": "Vent micronode nests explain why Atlas repair stays active in dead rooms. Each node harvests a local gradient: heat through ceramic, brine chemistry across mineral veins, vibration through the vent wall. A single nest cannot command HECTON-8. It can wake one door patch, one drone cradle, or one strip of biofilm after the player has moved on.",
-          "external_site": "A vent micronode keeps Atlas small and persistent. It does not need a perfect central machine to make trouble. Local power, local damage, and local repair rules are enough to make a corridor change between two visits.",
-          "field_note": "If the vent node is warm, assume the room can wake behind you. Mark the exit before you touch the mineral throat."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Энергетическое гнездо вент-микроузлов",
-          "scanner": "Керамический узловой кластер в горле вентиля собирает тепловой градиент. Рядом следы зарядки дрона и свежий ответ герметика.",
-          "terminal": "ЛОКАЛЬНЫЙ ЭНЕРГОУЗЕЛ ATLAS / ВЕНТ V-3: тепловой градиент питает стек микроячеек, будит петли биопленки и герметика в радиусе 40 м, интервал зарядки дрона неровный. Центральная командная блокировка отсутствует.",
-          "audio": "Тепло, минеральное горло, узел. Этого достаточно, чтобы ремонт проснулся после твоего прохода.",
-          "in_game_wiki": "Гнезда вент-микроузлов объясняют, почему ремонт Atlas остается активным в мертвых комнатах. Каждый узел собирает локальный градиент: тепло через керамику, соляную химию по минеральным жилам, вибрацию через стену вентиля. Одно гнездо не командует HECTON-8. Оно может разбудить одну дверную заплату, одну люльку дрона или одну полосу биопленки после ухода игрока.",
-          "external_site": "Вент-микроузел делает Atlas малым и упорным. Ему не нужна идеальная центральная машина, чтобы создать проблему. Локального питания, локального повреждения и локальных правил ремонта достаточно, чтобы коридор изменился между двумя визитами.",
-          "field_note": "Если вент-узел теплый, считай, что комната может проснуться за спиной. Пометь выход, прежде чем трогать минеральное горло."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "ベント・マイクロノード電力巣",
-          "scanner": "ベント喉部のセラミックノード群が熱勾配を収穫。周囲にドローン充電痕と新しいシーラント反応。",
-          "terminal": "ATLAS局所電力ノード / VENT V-3：熱勾配がマイクロセルスタックへ給電し、40 m内のバイオフィルムとシーラントループを起こす。ドローン充電間隔不規則。中央コマンドロックなし。",
-          "audio": "熱、鉱物の喉、ノード。それだけで通過後に修理が起きる。",
-          "in_game_wiki": "ベント・マイクロノード巣は、死んだ部屋でAtlas修理が動き続ける理由を示す。各ノードは局所勾配を集める。セラミックを通る熱、鉱脈をまたぐ塩水化学、ベント壁を通る振動。一つの巣はHECTON-8を指揮できない。だがプレイヤーが去った後に、一つのドアパッチ、一つのドローン台座、一筋のバイオフィルムを起こせる。",
-          "external_site": "ベント・マイクロノードはAtlasを小さく、しつこく保つ。問題を起こすのに完全な中央機械は要らない。局所電力、局所損傷、局所修理規則だけで、二度の訪問の間に通路を変えられる。",
-          "field_note": "ベントノードが暖かいなら、背後で部屋が起きると考えろ。鉱物の喉に触れる前に出口をマークしろ。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "热 vent 微节点电力巢",
-          "scanner": "vent喉部的陶瓷节点簇正在收集热梯度。附近有无人机充电疤痕和新鲜密封反应。",
-          "terminal": "ATLAS本地电力节点 / VENT V-3：热梯度供给微电池堆，唤醒40 m内的生物膜和密封回路，无人机充电间隔不规则。无中央指令锁定。",
-          "audio": "热、矿物喉部、节点。足够让维修在你通过后醒来。",
-          "in_game_wiki": "热 vent 微节点巢解释了为什么Atlas维修会在死房间里保持活动。每个节点收集本地梯度：穿过陶瓷的热量、矿脉之间的盐水化学、vent壁中的振动。单个巢无法指挥HECTON-8。它可以在玩家离开后唤醒一块门补丁、一个无人机座或一条生物膜。",
-          "external_site": "vent微节点让Atlas保持小型且顽固。制造麻烦不需要完美的中央机器。本地电力、本地损伤和本地维修规则，足以让同一条走廊在两次造访之间改变。",
-          "field_note": "如果vent节点是温的，就假设房间会在你身后醒来。碰矿物喉部前先标出口。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Nid d'alimentation de micronœuds de vent",
-          "scanner": "Un groupe de nœuds céramiques dans la gorge du vent capte le gradient thermique. Cicatrices de charge drone et réponse fraîche de scellant à proximité.",
-          "terminal": "NŒUD D'ÉNERGIE LOCAL ATLAS / VENT V-3 : gradient thermique alimentant pile de microcellules, réveillant boucles de biofilm et scellant dans 40 m, intervalle de charge drone irrégulier. Aucun verrou de commande centrale.",
-          "audio": "Chaleur, gorge minérale, nœud. Assez pour réveiller la réparation après ton passage.",
-          "in_game_wiki": "Les nids de micronœuds de vent expliquent pourquoi la réparation Atlas reste active dans des salles mortes. Chaque nœud récolte un gradient local : chaleur dans la céramique, chimie saumâtre entre veines minérales, vibration dans la paroi du vent. Un nid seul ne commande pas HECTON-8. Il peut réveiller un patch de porte, un berceau de drone ou une bande de biofilm après le passage du joueur.",
-          "external_site": "Un micronœud de vent garde Atlas petit et persistant. Il n'a pas besoin d'une machine centrale parfaite pour causer des problèmes. Puissance locale, dommage local et règles de réparation locales suffisent à changer un couloir entre deux visites.",
-          "field_note": "Si le nœud du vent est chaud, suppose que la pièce peut se réveiller derrière toi. Marque la sortie avant de toucher la gorge minérale."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Nido de micronodos de energía de respiradero",
-          "scanner": "Grupo de nodos cerámicos en la garganta del respiradero cosecha gradiente térmico. Cerca hay cicatrices de carga de dron y respuesta fresca de sellante.",
-          "terminal": "NODO LOCAL DE ENERGÍA ATLAS / VENT V-3: gradiente térmico alimenta pila de microceldas, despierta bucles de biopelícula y sellante en 40 m, intervalo de carga de dron irregular. Sin bloqueo de mando central.",
-          "audio": "Calor, garganta mineral, nodo. Basta para que la reparación despierte tras tu paso.",
-          "in_game_wiki": "Los nidos de micronodos de respiradero explican por qué la reparación Atlas sigue activa en salas muertas. Cada nodo recoge un gradiente local: calor por cerámica, química de salmuera entre vetas minerales, vibración por la pared del respiradero. Un solo nido no dirige HECTON-8. Puede despertar un parche de puerta, una cuna de dron o una tira de biopelícula después de que el jugador se vaya.",
-          "external_site": "Un micronodo de respiradero mantiene a Atlas pequeño y persistente. No necesita una máquina central perfecta para causar problemas. Energía local, daño local y reglas locales de reparación bastan para cambiar un pasillo entre dos visitas.",
-          "field_note": "Si el nodo del respiradero está caliente, asume que la sala puede despertar detrás de ti. Marca la salida antes de tocar la garganta mineral."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Energienest aus Vent-Mikroknoten",
-          "scanner": "Keramischer Knotenhaufen im Ventkehlgang erntet Wärmegradient. Drohnenladespuren und frische Dichtstoffreaktion in der Nähe.",
-          "terminal": "ATLAS-LOKALKRAFTKNOTEN / VENT V-3: Wärmegradient speist Mikrozellenstapel, weckt Biofilm- und Dichtstoffschleifen im Umkreis von 40 m, Drohnenladeintervall unregelmäßig. Keine zentrale Befehlsverriegelung.",
-          "audio": "Wärme, Mineralkehle, Knoten. Das reicht, damit Reparatur nach deinem Durchgang aufwacht.",
-          "in_game_wiki": "Vent-Mikroknotennester erklären, warum Atlas-Reparatur in toten Räumen aktiv bleibt. Jeder Knoten erntet einen lokalen Gradienten: Wärme durch Keramik, Solenchemie über Mineraladern, Vibration durch die Ventwand. Ein einzelnes Nest kann HECTON-8 nicht befehligen. Es kann eine Türflickstelle, eine Drohnenwiege oder einen Biofilmstreifen wecken, nachdem der Spieler gegangen ist.",
-          "external_site": "Ein Vent-Mikroknoten hält Atlas klein und hartnäckig. Er braucht keine perfekte Zentralmaschine, um Probleme zu machen. Lokale Leistung, lokaler Schaden und lokale Reparaturregeln reichen, damit ein Korridor sich zwischen zwei Besuchen ändert.",
-          "field_note": "Wenn der Ventknoten warm ist, nimm an, dass der Raum hinter dir aufwachen kann. Markier den Ausgang, bevor du die Mineralkehle berührst."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Gniazdo zasilania mikrowęzłów wentu",
-          "scanner": "Klaster ceramicznych węzłów w gardle wentu zbiera gradient ciepła. W pobliżu blizny ładowania drona i świeża reakcja uszczelniacza.",
-          "terminal": "LOKALNY WĘZEŁ MOCY ATLAS / VENT V-3: gradient termiczny zasila stos mikrokomórek, budzi pętle biofilmu i uszczelniacza w promieniu 40 m, odstęp ładowania drona nieregularny. Brak blokady centralnego dowodzenia.",
-          "audio": "Ciepło, mineralne gardło, węzeł. To wystarcza, by naprawa obudziła się po twoim przejściu.",
-          "in_game_wiki": "Gniazda mikrowęzłów wentu wyjaśniają, czemu naprawa Atlas pozostaje aktywna w martwych pomieszczeniach. Każdy węzeł zbiera lokalny gradient: ciepło przez ceramikę, chemię solanki po żyłach mineralnych, wibrację przez ścianę wentu. Jedno gniazdo nie dowodzi HECTON-8. Może obudzić jedną łatę drzwi, jedno łoże drona albo pas biofilmu po odejściu gracza.",
-          "external_site": "Mikrowęzeł wentu utrzymuje Atlas jako mały i uporczywy. Nie potrzebuje doskonałej centralnej maszyny, żeby zrobić problem. Lokalna moc, lokalne uszkodzenie i lokalne zasady naprawy wystarczą, by korytarz zmienił się między dwiema wizytami.",
-          "field_note": "Jeśli węzeł wentu jest ciepły, załóż, że pomieszczenie może obudzić się za tobą. Oznacz wyjście, zanim dotkniesz mineralnego gardła."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Енергетичне гніздо вент-мікровузлів",
-          "scanner": "Керамічний вузловий кластер у горлі венту збирає тепловий градієнт. Поруч сліди зарядки дрона і свіжа відповідь герметика.",
-          "terminal": "ЛОКАЛЬНИЙ ЕНЕРГОВУЗОЛ ATLAS / VENT V-3: тепловий градієнт живить стек мікрокомірок, будить петлі біоплівки і герметика в радіусі 40 м, інтервал зарядки дрона нерівний. Центрального командного замка немає.",
-          "audio": "Тепло, мінеральне горло, вузол. Цього досить, щоб ремонт прокинувся після твого проходу.",
-          "in_game_wiki": "Гнізда вент-мікровузлів пояснюють, чому ремонт Atlas лишається активним у мертвих кімнатах. Кожен вузол збирає локальний градієнт: тепло крізь кераміку, соляну хімію по мінеральних жилах, вібрацію крізь стіну венту. Одне гніздо не командує HECTON-8. Воно може розбудити одну дверну латку, одну колиску дрона або одну смугу біоплівки після відходу гравця.",
-          "external_site": "Вент-мікровузол робить Atlas малим і впертим. Йому не потрібна досконала центральна машина, щоб створити проблему. Локального живлення, локальної шкоди і локальних правил ремонту досить, щоб коридор змінився між двома візитами.",
-          "field_note": "Якщо вент-вузол теплий, вважай, що кімната може прокинутися за спиною. Познач вихід, перш ніж торкатися мінерального горла."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "عش طاقة لعقد تهوية دقيقة",
-          "scanner": "عنقود عقد خزفية في حلق الفتحة يحصد تدرج الحرارة. حوله ندوب شحن درون واستجابة مانع تسرب جديدة.",
-          "terminal": "عقدة طاقة محلية ATLAS / VENT V-3: تدرج حراري يغذي مكدس خلايا دقيقة، يوقظ حلقات الغشاء الحيوي ومانع التسرب ضمن 40 m، فاصل شحن الدرون غير منتظم. لا قفل أمر مركزي.",
-          "audio": "حرارة، حلق معدني، عقدة. هذا يكفي ليستيقظ الإصلاح بعد مرورك.",
-          "in_game_wiki": "تشرح أعشاش عقد الفتحات الدقيقة لماذا يبقى إصلاح Atlas نشطا في غرف ميتة. كل عقدة تحصد تدرجا محليا: حرارة عبر الخزف، كيمياء محلول ملحي عبر عروق معدنية، اهتزازا عبر جدار الفتحة. عش واحد لا يقود HECTON-8. يستطيع إيقاظ رقعة باب واحدة أو مهد درون واحد أو شريط غشاء حيوي بعد أن يغادر اللاعب.",
-          "external_site": "عقدة فتحة دقيقة تبقي Atlas صغيرا ومستمرا. لا تحتاج آلة مركزية كاملة لصنع مشكلة. الطاقة المحلية والضرر المحلي وقواعد الإصلاح المحلية تكفي لتغيير ممر بين زيارتين.",
-          "field_note": "إذا كانت عقدة الفتحة دافئة، افترض أن الغرفة قد تستيقظ خلفك. علّم المخرج قبل لمس الحلق المعدني."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Sarang Daya Mikronode Vent",
-          "scanner": "Klaster node keramik di leher vent memanen gradien panas. Bekas charge drone dan respons sealant baru ada di dekatnya.",
-          "terminal": "NODE DAYA LOKAL ATLAS / VENT V-3: gradien panas memberi makan tumpukan mikrosel, membangunkan loop biofilm dan sealant dalam 40 m, interval charge drone tidak teratur. Tidak ada kunci komando pusat.",
-          "audio": "Panas, leher mineral, node. Itu cukup untuk membangunkan perbaikan setelah kau lewat.",
-          "in_game_wiki": "Sarang mikronode vent menjelaskan mengapa perbaikan Atlas tetap aktif di ruangan mati. Tiap node memanen gradien lokal: panas lewat keramik, kimia brine di sepanjang urat mineral, getaran melalui dinding vent. Satu sarang tidak bisa memerintah HECTON-8. Ia bisa membangunkan satu tambalan pintu, satu cradle drone, atau satu jalur biofilm setelah pemain pergi.",
-          "external_site": "Mikronode vent membuat Atlas kecil dan gigih. Ia tidak butuh mesin pusat sempurna untuk membuat masalah. Daya lokal, kerusakan lokal, dan aturan perbaikan lokal cukup untuk mengubah koridor di antara dua kunjungan.",
-          "field_note": "Jika node vent hangat, anggap ruangan bisa bangun di belakangmu. Tandai pintu keluar sebelum menyentuh leher mineral."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "벤트 마이크로노드 전력 둥지",
-          "scanner": "벤트 목 안의 세라믹 노드 클러스터가 열 구배를 거둔다. 근처에 드론 충전 흉터와 새 밀봉 반응.",
-          "terminal": "ATLAS 국소 전력 노드 / VENT V-3: 열 구배가 마이크로셀 스택을 먹이고 40 m 안의 생물막과 밀봉재 루프를 깨운다. 드론 충전 간격 불규칙. 중앙 명령 잠금 없음.",
-          "audio": "열, 광물 목, 노드. 네가 지나간 뒤 수리가 깨어나기에 충분하다.",
-          "in_game_wiki": "벤트 마이크로노드 둥지는 죽은 방에서도 Atlas 수리가 계속 활동하는 이유를 설명한다. 각 노드는 국소 구배를 거둔다. 세라믹을 지나는 열, 광맥을 가로지르는 염수 화학, 벤트 벽을 통한 진동. 하나의 둥지가 HECTON-8을 지휘할 수는 없다. 그러나 플레이어가 떠난 뒤 문 패치 하나, 드론 요람 하나, 생물막 한 줄을 깨울 수 있다.",
-          "external_site": "벤트 마이크로노드는 Atlas를 작고 끈질기게 만든다. 문제를 만들기 위해 완벽한 중앙 기계가 필요하지 않다. 국소 전력, 국소 손상, 국소 수리 규칙만으로도 두 번의 방문 사이에 복도가 바뀔 수 있다.",
-          "field_note": "벤트 노드가 따뜻하면 방이 등 뒤에서 깨어날 수 있다고 봐라. 광물 목을 만지기 전에 출구를 표시해라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "קן כוח של מיקרו-צמתי ונט",
-          "scanner": "אשכול צמתים קרמיים בגרון הוונט קוצר מפל חום. לידו צלקות טעינת רחפן ותגובה טרייה של איטום.",
-          "terminal": "צומת כוח מקומית ATLAS / VENT V-3: מפל תרמי מזין מערך מיקרו-תאים, מעיר לולאות ביו-פילם ואיטום בטווח 40 m, מרווח טעינת רחפן לא סדיר. אין נעילת פקודה מרכזית.",
-          "audio": "חום, גרון מינרלי, צומת. זה מספיק כדי שתיקון יתעורר אחרי שתעבור.",
-          "in_game_wiki": "קני מיקרו-צמתי ונט מסבירים למה תיקון Atlas נשאר פעיל בחדרים מתים. כל צומת קוצרת מפל מקומי: חום דרך קרמיקה, כימיית מי מלח לאורך עורקי מינרל, רטט דרך קיר הוונט. קן יחיד אינו יכול לפקד על HECTON-8. הוא יכול להעיר טלאי דלת אחד, עריסת רחפן אחת או פס ביו-פילם אחד אחרי שהשחקן ממשיך הלאה.",
-          "external_site": "מיקרו-צומת ונט שומרת את Atlas קטן ועיקש. אין צורך במכונה מרכזית מושלמת כדי ליצור בעיה. כוח מקומי, נזק מקומי וכללי תיקון מקומיים מספיקים כדי שמסדרון ישתנה בין שתי ביקורות.",
-          "field_note": "אם צומת הוונט חמימה, הנח שהחדר יכול להתעורר מאחוריך. סמן את היציאה לפני שאתה נוגע בגרון המינרלי."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ninho de energia de micronodos de vent",
-          "scanner": "Grupo de nós cerâmicos na garganta do vent colhe gradiente de calor. Marcas de carga de drone e resposta fresca de selante por perto.",
-          "terminal": "NÓ DE ENERGIA LOCAL ATLAS / VENT V-3: gradiente térmico alimenta pilha de microcélulas, acorda loops de biofilme e selante em 40 m, intervalo de carga de drone irregular. Sem trava de comando central.",
-          "audio": "Calor, garganta mineral, nó. Isso basta para o reparo acordar depois que você passa.",
-          "in_game_wiki": "Ninhos de micronodos de vent explicam por que o reparo Atlas continua ativo em salas mortas. Cada nó colhe um gradiente local: calor pela cerâmica, química de salmoura por veios minerais, vibração pela parede do vent. Um ninho sozinho não comanda HECTON-8. Pode acordar um remendo de porta, um berço de drone ou uma faixa de biofilme depois que o jogador segue adiante.",
-          "external_site": "Um micronodo de vent mantém Atlas pequeno e persistente. Não precisa de uma máquina central perfeita para causar problema. Energia local, dano local e regras locais de reparo bastam para mudar um corredor entre duas visitas.",
-          "field_note": "Se o nó do vent está quente, assuma que a sala pode acordar atrás de você. Marque a saída antes de tocar a garganta mineral."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Energienest van vent-micronodes",
-          "scanner": "Keramische nodecluster in de ventkeel oogst warmtegradiënt. Drone-laadsporen en verse afdichterreactie dichtbij.",
-          "terminal": "ATLAS LOKALE KRACHTNODE / VENT V-3: thermische gradiënt voedt microcelstapel, wekt biofilm- en afdichterlussen binnen 40 m, drone-laadinterval onregelmatig. Geen centraal commandoslot.",
-          "audio": "Warmte, mineraalkeel, node. Dat is genoeg om reparatie wakker te maken nadat je passeert.",
-          "in_game_wiki": "Vent-micronodenesten verklaren waarom Atlas-reparatie actief blijft in dode kamers. Elke node oogst een lokale gradiënt: warmte door keramiek, pekelchemie langs mineraaladers, trilling door de ventwand. Eén nest kan HECTON-8 niet commanderen. Het kan één deurpatch, één dronewieg of één strook biofilm wakker maken nadat de speler verder is gegaan.",
-          "external_site": "Een vent-micronode houdt Atlas klein en hardnekkig. Er is geen perfecte centrale machine nodig om problemen te maken. Lokale kracht, lokale schade en lokale reparatieregels zijn genoeg om een gang tussen twee bezoeken te veranderen.",
-          "field_note": "Als de ventnode warm is, neem aan dat de kamer achter je wakker kan worden. Markeer de uitgang voordat je de mineraalkeel aanraakt."
-        }
-      }
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Bus de réparation à biofilm conducteur",
+     "scanner": "Un film vert-noir ponte la gaine de câble fendue. Un faible courant revient par la croissance humide ; la continuité est douteuse.",
+     "terminal": "TRACE DE MAINTENANCE ATLAS / LIGNE K-44 : cuivre exposé, croissance saline, faible fuite thermique. Le pont de biofilm ralentit la corrosion et renvoie de fausses impulsions de continuité. Ne pas router le contrôle de pompe par cette ligne.",
+     "audio": "Le pinger passe par la vase. Le courant aussi. N'appelle pas ça une réparation.",
+     "in_game_wiki": "Le biofilm conducteur pousse là où les gaines de câble fissurées libèrent sels de cuivre, chaleur et faible courant dans l'eau de HECTON-8. Le film peut porter assez de signal pour qu'Atlas marque une ligne morte comme utilisable. Un panneau peut se réveiller quelques secondes, une serrure clignoter vert, et le vrai câble céder sous charge.",
+     "external_site": "Un câble enveloppé de biofilm conducteur est utile et dangereux à la fois. La croissance ralentit la corrosion, laisse passer un ping faible et donne à Atlas une voie de réparation bon marché. Elle cache aussi un conducteur rompu à tout système qui ne vérifie que la continuité.",
+     "field_note": "Si un panneau mort se réveille par film vert, marque la route temporaire. Coupe le courant avant de mettre un outil dans la gaine."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Bus de reparación por biopelícula conductora",
+     "scanner": "Película verde-negra puentea la cubierta partida del cable. La baja corriente vuelve por el crecimiento húmedo; la continuidad no es fiable.",
+     "terminal": "RASTRO DE MANTENIMIENTO ATLAS / LÍNEA K-44: cobre expuesto, crecimiento salino, baja fuga térmica. El puente de biopelícula reduce corrosión y devuelve pulsos falsos de continuidad. No enrutar control de bomba por esta línea.",
+     "audio": "El pinger pasa por la baba. La energía también. No llames a eso reparación.",
+     "in_game_wiki": "La biopelícula conductora crece donde cubiertas de cable agrietadas filtran sales de cobre, calor y corriente débil al agua de HECTON-8. La película puede llevar señal suficiente para que Atlas marque una línea muerta como usable. Un panel puede despertar unos segundos, una cerradura parpadear en verde, y el cable real fallar bajo carga.",
+     "external_site": "Un cable envuelto en biopelícula conductora es útil e inseguro a la vez. El crecimiento frena la corrosión, pasa un ping débil y da a Atlas una ruta barata de reparación. También oculta un conductor roto a cualquier sistema que solo compruebe continuidad.",
+     "field_note": "Si un panel muerto despierta por película verde, marca la ruta como temporal. Corta energía antes de meter una herramienta en la cubierta."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Leitfähiger Biofilm-Reparaturbus",
+     "scanner": "Grünschwarzer Film überbrückt den gespaltenen Kabelmantel. Schwacher Strom läuft durch nasses Wachstum zurück; Durchgangsanzeige unzuverlässig.",
+     "terminal": "ATLAS-WARTUNGSSPUR / LEITUNG K-44: freiliegendes Kupfer, salines Wachstum, geringe Wärmeleckage. Biofilmbrücke bremst Korrosion und liefert falsche Durchgangsimpulse. Pumpensteuerung nicht über diese Leitung routen.",
+     "audio": "Der Pinger kommt durch den Schleim. Strom auch. Nenn das nicht repariert.",
+     "in_game_wiki": "Leitfähiger Biofilm wächst dort, wo gerissene Kabelmäntel Kupfersalze, Wärme und schwachen Strom ins Wasser von HECTON-8 lecken. Der Film kann genug Signal tragen, damit Atlas eine tote Leitung als nutzbar markiert. Ein Panel wacht für Sekunden auf, ein Schloss blinkt grün, und das echte Kabel kann unter Last trotzdem versagen.",
+     "external_site": "Ein von leitfähigem Biofilm umwickeltes Kabel ist zugleich nützlich und unsicher. Das Wachstum bremst Korrosion, lässt einen schwachen Ping durch und gibt Atlas einen billigen Reparaturpfad. Es versteckt auch einen gebrochenen Leiter vor jedem System, das nur Durchgang prüft.",
+     "field_note": "Wenn ein totes Panel durch grünen Film aufwacht, markier die Route als vorläufig. Schalte Strom ab, bevor du Werkzeug in den Mantel setzt."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Przewodzący biofilm jako szyna naprawcza",
+     "scanner": "Zielono-czarny film mostkuje rozciętą koszulkę kabla. Słaby prąd wraca przez mokry narost; odczyt ciągłości jest niewiarygodny.",
+     "terminal": "ŚLAD KONSERWACJI ATLAS / LINIA K-44: odsłonięta miedź, narost solny, niska ucieczka ciepła. Most biofilmu spowalnia korozję i zwraca fałszywe impulsy ciągłości. Nie prowadzić sterowania pompą przez tę linię.",
+     "audio": "Pinger przechodzi przez śluz. Zasilanie też. Nie nazywaj tego naprawą.",
+     "in_game_wiki": "Przewodzący biofilm rośnie tam, gdzie pęknięte koszulki kabli wypuszczają sole miedzi, ciepło i słaby prąd do wody HECTON-8. Film może przenieść dość sygnału, by Atlas oznaczył martwą linię jako używalną. Panel może obudzić się na kilka sekund, zamek mignąć na zielono, a prawdziwy kabel nadal paść pod obciążeniem.",
+     "external_site": "Kabel owinięty przewodzącym biofilmem jest jednocześnie użyteczny i niebezpieczny. Narost spowalnia korozję, przepuszcza słaby ping i daje Atlas tanią ścieżkę naprawy. Ukrywa też przerwany przewodnik przed każdym systemem, który sprawdza tylko ciągłość.",
+     "field_note": "Jeśli martwy panel budzi się przez zielony film, oznacz trasę jako tymczasową. Odetnij zasilanie, zanim wejdziesz narzędziem w koszulkę."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Провідна біоплівка ремонтної шини",
+     "scanner": "Зелено-чорна плівка з'єднала розірвану оболонку кабелю. Слабкий струм повертається через мокрий наріст; перевірка цілісності ненадійна.",
+     "terminal": "СЛІД ОБСЛУГОВУВАННЯ ATLAS / ЛІНІЯ K-44: відкрита мідь, сольовий наріст, слабкий витік тепла. Міст біоплівки сповільнює корозію і повертає хибні імпульси цілісності. Не маршрутизувати керування насосом через цю лінію.",
+     "audio": "Пінгер проходить крізь слиз. Живлення теж. Не називай це ремонтом.",
+     "in_game_wiki": "Провідна біоплівка росте там, де тріснуті кабельні оболонки випускають мідні солі, тепло і слабкий струм у воду HECTON-8. Плівка може провести достатньо сигналу, щоб Atlas позначив мертву лінію придатною. Панель оживе на кілька секунд, замок блимне зеленим, а справжній кабель усе одно впаде під навантаженням.",
+     "external_site": "Кабель, обгорнутий провідною біоплівкою, водночас корисний і небезпечний. Наріст гальмує корозію, пропускає слабкий пінг і дає Atlas дешевий шлях ремонту. Він також ховає зламаний провідник від будь-якої системи, що перевіряє тільки цілісність.",
+     "field_note": "Якщо мертва панель оживає через зелену плівку, познач маршрут тимчасовим. Вимкни живлення, перш ніж лізти інструментом в оболонку."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "حافلة إصلاح بغشاء حيوي موصل",
+     "scanner": "غشاء أخضر أسود يجسر غلاف الكابل المشقوق. تيار ضعيف يعود عبر النمو الرطب؛ قراءة الاستمرارية غير موثوقة.",
+     "terminal": "أثر صيانة ATLAS / الخط K-44: نحاس مكشوف، نمو ملحي، تسرب حراري منخفض. جسر الغشاء الحيوي يبطئ التآكل ويرجع نبضات استمرارية كاذبة. لا تمرر تحكم المضخة عبر هذا الخط.",
+     "audio": "الـ pinger يمر عبر اللزوجة. الطاقة أيضا. لا تسم ذلك إصلاحا.",
+     "in_game_wiki": "ينمو الغشاء الحيوي الموصل حيث تسرب أغلفة الكابلات المتشققة أملاح النحاس والدفء والتيار الضعيف إلى ماء HECTON-8. يستطيع الغشاء حمل إشارة تكفي ليضع Atlas علامة صالح على خط ميت. قد تستيقظ لوحة لثوان، وقد يومض قفل بالأخضر، بينما يفشل الكابل الحقيقي تحت الحمل.",
+     "external_site": "الكابل المغلف بغشاء حيوي موصل مفيد وغير آمن في الوقت نفسه. النمو يبطئ التآكل، يمرر ping ضعيفا، ويمنح Atlas مسار إصلاح رخيصا. كما يخفي موصلا مكسورا عن أي نظام يفحص الاستمرارية فقط.",
+     "field_note": "إذا استيقظت لوحة ميتة عبر غشاء أخضر، علّم المسار كمؤقت. اقطع الطاقة قبل إدخال أداة في الغلاف."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Bus Perbaikan Biofilm Konduktif",
+     "scanner": "Film hijau-hitam menjembatani jaket kabel yang terbelah. Arus rendah kembali lewat pertumbuhan basah; bacaan kontinuitas tidak andal.",
+     "terminal": "JEJAK PERAWATAN ATLAS / LINE K-44: tembaga terbuka, pertumbuhan garam, kebocoran panas rendah. Jembatan biofilm memperlambat korosi dan mengirim pulsa kontinuitas palsu. Jangan rute kontrol pompa lewat jalur ini.",
+     "audio": "Pinger lewat melalui lendir. Daya juga. Jangan sebut itu sudah diperbaiki.",
+     "in_game_wiki": "Biofilm konduktif tumbuh di tempat jaket kabel retak membocorkan garam tembaga, hangat, dan arus lemah ke air HECTON-8. Film itu bisa membawa sinyal cukup untuk membuat Atlas menandai jalur mati sebagai bisa dipakai. Panel bisa bangun beberapa detik, kunci berkedip hijau, dan kabel asli tetap gagal saat diberi beban.",
+     "external_site": "Kabel yang dibungkus biofilm konduktif berguna sekaligus tidak aman. Pertumbuhan itu memperlambat korosi, melewatkan ping lemah, dan memberi Atlas jalur perbaikan murah. Ia juga menyembunyikan konduktor putus dari sistem yang hanya memeriksa kontinuitas.",
+     "field_note": "Kalau panel mati bangun lewat film hijau, tandai rute sementara. Matikan daya sebelum memasukkan alat ke jaket."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "전도성 생물막 수리 버스",
+     "scanner": "녹흑색 막이 갈라진 케이블 재킷을 잇고 있다. 낮은 전류가 젖은 성장부로 돌아온다. 연속성 판독은 믿을 수 없다.",
+     "terminal": "ATLAS 정비 흔적 / LINE K-44: 노출된 구리, 염성 성장, 낮은 열 누출. 생물막 다리가 부식을 늦추고 거짓 연속성 펄스를 돌려준다. 이 선으로 펌프 제어를 라우팅하지 마라.",
+     "audio": "핑거 신호가 점액을 통과한다. 전력도 통과한다. 그걸 수리라고 부르지 마라.",
+     "in_game_wiki": "전도성 생물막은 갈라진 케이블 재킷이 구리염, 온기, 약한 전류를 HECTON-8 물속으로 흘리는 곳에서 자란다. 그 막은 Atlas가 죽은 선을 사용 가능으로 표시할 만큼의 신호를 실어 나를 수 있다. 패널이 몇 초 깨어나고 잠금장치가 녹색으로 깜박여도, 실제 케이블은 부하에서 실패할 수 있다.",
+     "external_site": "전도성 생물막에 싸인 케이블은 유용하면서도 안전하지 않다. 성장부는 부식을 늦추고 약한 ping을 통과시키며 Atlas에 값싼 수리 경로를 준다. 동시에 연속성만 검사하는 시스템에서 끊어진 도체를 숨긴다.",
+     "field_note": "죽은 패널이 녹색 막으로 깨어나면 그 경로를 임시로 표시해라. 재킷에 도구를 넣기 전에 전원을 끊어라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "אפיק תיקון מביו-פילם מוליך",
+     "scanner": "שכבה ירוקה-שחורה מגשרת על מעטפת כבל קרועה. זרם נמוך חוזר דרך גידול רטוב; קריאת רציפות אינה אמינה.",
+     "terminal": "עקבת תחזוקה ATLAS / קו K-44: נחושת חשופה, גידול מלוח, דליפת חום נמוכה. גשר ביו-פילם מאט קורוזיה ומחזיר פעימות רציפות כוזבות. אין לנתב בקרת משאבה דרך קו זה.",
+     "audio": "ה-pinger עובר דרך הריר. גם חשמל. אל תקרא לזה מתוקן.",
+     "in_game_wiki": "ביו-פילם מוליך גדל במקום שבו מעטפות כבל סדוקות מדליפות מלחי נחושת, חום וזרם חלש אל מי HECTON-8. השכבה יכולה לשאת מספיק אות כדי ש-Atlas יסמן קו מת כשמיש. לוח עשוי להתעורר לכמה שניות, מנעול להבהב ירוק, והכבל האמיתי עדיין להיכשל בעומס.",
+     "external_site": "כבל עטוף בביו-פילם מוליך הוא שימושי ולא בטוח בעת ובעונה אחת. הגידול מאט קורוזיה, מעביר ping חלש ונותן ל-Atlas נתיב תיקון זול. הוא גם מסתיר מוליך שבור מכל מערכת שבודקת רציפות בלבד.",
+     "field_note": "אם לוח מת מתעורר דרך שכבה ירוקה, סמן את המסלול כזמני. נתק חשמל לפני שאתה מכניס כלי למעטפת."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Barramento de reparo por biofilme condutivo",
+     "scanner": "Filme verde-escuro atravessa a capa rompida do cabo. Corrente baixa retorna pelo crescimento molhado; leitura de continuidade não é confiável.",
+     "terminal": "RASTRO DE MANUTENÇÃO ATLAS / LINHA K-44: cobre exposto, crescimento salino, baixa fuga de calor. A ponte de biofilme reduz corrosão e devolve pulsos falsos de continuidade. Não rotear controle de bomba por esta linha.",
+     "audio": "O pinger passa pelo limo. A energia também. Não chame isso de reparo.",
+     "in_game_wiki": "Biofilme condutivo cresce onde capas de cabo rachadas vazam sais de cobre, calor e corrente fraca na água de HECTON-8. O filme pode carregar sinal suficiente para Atlas marcar uma linha morta como utilizável. Um painel pode acordar por segundos, uma trava piscar verde, e o cabo real ainda falhar sob carga.",
+     "external_site": "Um cabo envolto em biofilme condutivo é útil e inseguro ao mesmo tempo. O crescimento reduz corrosão, passa um ping fraco e dá a Atlas uma rota barata de reparo. Também esconde um condutor rompido de qualquer sistema que só verifica continuidade.",
+     "field_note": "Se um painel morto acorda pelo filme verde, marque a rota como temporária. Corte a energia antes de pôr ferramenta na capa."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Geleidende biofilm als reparatiebus",
+     "scanner": "Groenzwarte film overbrugt de gespleten kabelmantel. Lage stroom keert terug via natte groei; continuïteitslezing is onbetrouwbaar.",
+     "terminal": "ATLAS-ONDERHOUDSSPOOR / LIJN K-44: bloot koper, zoute groei, lage warmtelek. Biofilmbrug remt corrosie en geeft valse continuïteitspulsen terug. Pompbesturing niet via deze lijn routeren.",
+     "audio": "De pinger komt door het slijm. Stroom ook. Noem dat niet gerepareerd.",
+     "in_game_wiki": "Geleidende biofilm groeit waar gebarsten kabelmantels koperzouten, warmte en zwakke stroom in HECTON-8-water lekken. De film kan genoeg signaal dragen voor Atlas om een dode lijn bruikbaar te noemen. Een paneel kan enkele seconden wakker worden, een slot kan groen knipperen, en de echte kabel kan nog steeds onder belasting falen.",
+     "external_site": "Een kabel in geleidende biofilm is nuttig en onveilig tegelijk. De groei vertraagt corrosie, laat een zwakke ping door en geeft Atlas een goedkoop reparatiepad. Ze verbergt ook een gebroken geleider voor elk systeem dat alleen continuïteit test.",
+     "field_note": "Als een dood paneel wakker wordt door groene film, markeer de route als tijdelijk. Snijd stroom af voordat je gereedschap in de mantel zet."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P332_ACOUSTIC_FILTER_ORGAN_RELAY",
+   "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+   "article_id": "applied_lore.acoustic_filter_organ_relay",
+   "title_key": "applied_lore.acoustic_filter_organ_relay.title",
+   "unlock": {
+    "primary": "unlock.acoustic_filter_organ_relay",
+    "poi_tags": [
+     "poi.acoustic_filter_organ",
+     "poi.relay_flesh_chamber",
+     "poi.echo_phase_shift"
+    ],
+    "biome_tags": [
+     "biome.atlas",
+     "biome.sonar"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Acoustic Filter Organ Relay",
+     "scanner": "Baffle tissue in the relay throat passes a narrow pinger tone and cuts pump noise. Return map is phase-shifted.",
+     "terminal": "RELAY PIPE A-17: living folds pass 8-12 kHz pinger pulses, reject broad pump noise, and add return delay. Downstream map confidence reduced. Do not certify return route from this relay alone.",
+     "audio": "It answered the pinger. The pipe is leaking clear fluid. Mark it animal, not relay.",
+     "in_game_wiki": "Acoustic filter organs form inside old relay pipes where pressure, moving water, and sound keep feeding tissue. They can make a pinger travel farther by cutting pump roar and passing a narrow tone. The same fold can delay the return and move a mapped wall by enough meters to put a diver into a dead end.",
+     "external_site": "Damaged HECTON-8 relay pipes sometimes carry living baffle tissue. The tissue does signal work because its folds, fluid and pressure response fit the pipe. Atlas can read the result as relay hardware even when the part inside is no longer metal.",
+     "field_note": "If a relay answers too cleanly in a flooded pipe, run a second pinger from another angle. Good sound can still be a bad map."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Акустический фильтрующий орган-реле",
+     "scanner": "Перегородочная ткань в горле реле пропускает узкий тон пингера и режет шум насоса. Карта возврата сдвинута по фазе.",
+     "terminal": "ТРУБА РЕЛЕ A-17: живые складки пропускают импульсы пингера 8-12 кГц, отсекают широкий шум насоса и добавляют задержку возврата. Доверие к карте ниже по потоку снижено. Не сертифицировать обратный маршрут по одному этому реле.",
+     "audio": "Оно ответило пингеру. Из трубы течет прозрачная жидкость. Пометь как животное, не как реле.",
+     "in_game_wiki": "Акустические фильтрующие органы образуются внутри старых релейных труб, где давление, движущаяся вода и звук продолжают кормить ткань. Они могут протянуть пингер дальше, срезая рев насоса и пропуская узкий тон. Та же складка задерживает возврат и двигает стену на карте на несколько метров — достаточно, чтобы увести водолаза в тупик.",
+     "external_site": "Поврежденные релейные трубы HECTON-8 иногда несут живую перегородочную ткань. Ткань делает работу сигнала потому, что ее складки, жидкость и реакция на давление подходят трубе. Atlas может читать результат как релейное оборудование, хотя деталь внутри уже не металл.",
+     "field_note": "Если реле отвечает слишком чисто в затопленной трубе, дай второй пингер с другого угла. Хороший звук все еще может быть плохой картой."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "音響フィルター器官リレー",
+     "scanner": "リレー喉部のバッフル組織が狭いピング音を通し、ポンプ音を切る。帰還マップは位相ずれ。",
+     "terminal": "RELAY PIPE A-17：生きたひだが8-12 kHzのピングパルスを通し、広いポンプ騒音を拒み、帰還遅延を加える。下流マップ信頼度低下。このリレーだけで帰還ルートを認証するな。",
+     "audio": "ピングに答えた。管から透明な液が漏れている。リレーではなく動物としてマークしろ。",
+     "in_game_wiki": "音響フィルター器官は、圧力、流れる水、音が組織を養い続ける古いリレー管内にできる。ポンプの轟音を切り、狭い音だけを通してピングを遠くへ伸ばせる。同じひだが帰還を遅らせ、地図上の壁を数メートル動かしてダイバーを行き止まりへ入れることもある。",
+     "external_site": "損傷したHECTON-8のリレー管は、生きたバッフル組織を持つことがある。組織が信号作業をするのは、ひだ、液体、圧力応答が管に合っているからだ。Atlasは中身が金属でなくなっていても、その結果をリレー機材として読むことがある。",
+     "field_note": "浸水した管のリレーがきれいに答えすぎるなら、別角度から二発目のピングを打て。良い音でも悪い地図になる。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "声学过滤器官中继",
+     "scanner": "中继喉部的挡板组织通过窄频信标音并削掉泵噪。回波地图发生相位偏移。",
+     "terminal": "RELAY PIPE A-17：活体褶皱通过8-12 kHz信标脉冲，拒绝宽频泵噪，并增加返回延迟。下游地图可信度降低。不得仅凭此中继认证返回路线。",
+     "audio": "它回应了信标音。管子在漏透明液体。标成动物，不要标成中继。",
+     "in_game_wiki": "声学过滤器官会在旧中继管内形成，那里压力、流动水和声音持续喂养组织。它们能切掉泵吼，只让窄频音通过，让信标传得更远。同一片褶皱也会延迟回波，把地图上的墙挪出数米，足够让潜水员进死路。",
+     "external_site": "受损的HECTON-8中继管有时携带活体挡板组织。组织能做信号工作，是因为它的褶皱、液体和压力响应正好适配管道。即使里面不再是金属部件，Atlas也可能把结果读成中继硬件。",
+     "field_note": "如果一根 flooded 管里的中继回应得太干净，从另一个角度再打一发信标。好声音仍可能给出坏地图。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Relais à organe filtre acoustique",
+     "scanner": "Tissu de chicane dans la gorge du relais : il passe un ton de pinger étroit et coupe le bruit de pompe. Carte de retour déphasée.",
+     "terminal": "TUYAU RELAIS A-17 : replis vivants passant les impulsions pinger 8-12 kHz, rejetant le bruit large des pompes et ajoutant un délai de retour. Confiance cartographique aval réduite. Ne pas certifier la route de retour avec ce relais seul.",
+     "audio": "Il a répondu au pinger. Le tuyau fuit un fluide clair. Marque-le animal, pas relais.",
+     "in_game_wiki": "Les organes filtres acoustiques se forment dans d'anciens tuyaux relais où pression, eau mobile et son nourrissent encore du tissu. Ils peuvent porter un pinger plus loin en coupant le grondement des pompes et en laissant passer un ton étroit. Le même repli peut retarder le retour et déplacer un mur cartographié de quelques mètres, assez pour envoyer un plongeur dans une impasse.",
+     "external_site": "Certains tuyaux relais endommagés de HECTON-8 portent du tissu de chicane vivant. Le tissu fait un travail de signal parce que ses replis, son fluide et sa réponse à la pression correspondent au tuyau. Atlas peut lire le résultat comme du matériel relais même si la pièce intérieure n'est plus du métal.",
+     "field_note": "Si un relais répond trop proprement dans un tuyau noyé, lance un second pinger d'un autre angle. Un bon son peut encore faire une mauvaise carte."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Relé de órgano filtrante acústico",
+     "scanner": "Tejido de bafle en la garganta del relé deja pasar un tono estrecho de pinger y corta ruido de bomba. Mapa de retorno desfasado.",
+     "terminal": "TUBO DE RELÉ A-17: pliegues vivos pasan pulsos pinger de 8-12 kHz, rechazan ruido ancho de bomba y añaden retardo de retorno. Confianza del mapa aguas abajo reducida. No certificar ruta de vuelta solo con este relé.",
+     "audio": "Respondió al pinger. El tubo pierde fluido claro. Márcalo como animal, no como relé.",
+     "in_game_wiki": "Los órganos filtrantes acústicos se forman dentro de viejos tubos de relé donde presión, agua en movimiento y sonido siguen alimentando tejido. Pueden llevar un pinger más lejos al cortar el rugido de bomba y dejar pasar un tono estrecho. El mismo pliegue puede retrasar el retorno y mover una pared mapeada varios metros, suficiente para meter a un buzo en un callejón sin salida.",
+     "external_site": "Los tubos de relé dañados de HECTON-8 a veces llevan tejido vivo de bafle. El tejido hace trabajo de señal porque sus pliegues, fluido y respuesta a presión encajan con el tubo. Atlas puede leer el resultado como hardware de relé aunque la pieza interior ya no sea metal.",
+     "field_note": "Si un relé responde demasiado limpio en un tubo inundado, lanza un segundo pinger desde otro ángulo. Buen sonido aún puede ser mal mapa."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Akustisches Filterorgan-Relais",
+     "scanner": "Prallgewebe im Relaiskehlgang lässt schmalen Pingerton durch und schneidet Pumpenlärm. Rückkehrkarte phasenverschoben.",
+     "terminal": "RELAISROHR A-17: lebende Falten lassen 8-12-kHz-Pingerimpulse durch, weisen breiten Pumpenlärm ab und fügen Rücklaufverzögerung hinzu. Kartenvertrauen stromab reduziert. Rückweg nicht allein mit diesem Relais zertifizieren.",
+     "audio": "Es hat dem Pinger geantwortet. Aus dem Rohr läuft klare Flüssigkeit. Markier es als Tier, nicht als Relais.",
+     "in_game_wiki": "Akustische Filterorgane bilden sich in alten Relaisrohren, wo Druck, strömendes Wasser und Schall Gewebe weiter versorgen. Sie können einen Pinger weiter tragen, indem sie Pumpendröhnen schneiden und einen schmalen Ton durchlassen. Dieselbe Falte kann die Rückkehr verzögern und eine kartierte Wand um Meter verschieben, genug für einen Taucher im Sackgang.",
+     "external_site": "Beschädigte HECTON-8-Relaisrohre tragen manchmal lebendes Prallgewebe. Das Gewebe macht Signalarbeit, weil seine Falten, Flüssigkeit und Druckreaktion zum Rohr passen. Atlas kann das Ergebnis als Relais-Hardware lesen, auch wenn das Innenteil kein Metall mehr ist.",
+     "field_note": "Wenn ein Relais in einem gefluteten Rohr zu sauber antwortet, setz einen zweiten Pinger aus anderem Winkel. Guter Klang kann trotzdem schlechte Karte sein."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Przekaźnik z akustycznym organem filtrującym",
+     "scanner": "Tkanka przegrody w gardle przekaźnika przepuszcza wąski ton pingera i ucina hałas pomp. Mapa powrotu ma przesuniętą fazę.",
+     "terminal": "RURA PRZEKAŹNIKA A-17: żywe fałdy przepuszczają impulsy pingera 8-12 kHz, odrzucają szeroki hałas pomp i dodają opóźnienie powrotu. Zaufanie do mapy poniżej obniżone. Nie certyfikować trasy powrotnej wyłącznie z tego przekaźnika.",
+     "audio": "Odpowiedziało pingerowi. Z rury cieknie przezroczysty płyn. Oznacz jako zwierzę, nie przekaźnik.",
+     "in_game_wiki": "Akustyczne organy filtrujące tworzą się w starych rurach przekaźnikowych, gdzie ciśnienie, ruch wody i dźwięk nadal karmią tkankę. Mogą przenieść pinger dalej, odcinając ryk pomp i przepuszczając wąski ton. Ten sam fałd może opóźnić powrót i przesunąć ścianę na mapie o kilka metrów, dość żeby wpakować nurka w ślepy koniec.",
+     "external_site": "Uszkodzone rury przekaźnikowe HECTON-8 czasem niosą żywą tkankę przegrody. Tkanka wykonuje pracę sygnału, bo jej fałdy, płyn i reakcja na ciśnienie pasują do rury. Atlas może odczytać wynik jako sprzęt przekaźnikowy, choć część w środku nie jest już metalem.",
+     "field_note": "Jeśli przekaźnik odpowiada zbyt czysto w zalanej rurze, puść drugi pinger z innego kąta. Dobry dźwięk nadal może być złą mapą."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Акустичний фільтрувальний орган-реле",
+     "scanner": "Перегородкова тканина в горлі реле пропускає вузький тон пінгера і ріже шум насоса. Карта повернення зсунута по фазі.",
+     "terminal": "ТРУБА РЕЛЕ A-17: живі складки пропускають імпульси пінгера 8-12 кГц, відсікають широкий шум насоса і додають затримку повернення. Довіру до карти нижче за потоком знижено. Не сертифікувати зворотний маршрут лише за цим реле.",
+     "audio": "Воно відповіло пінгеру. З труби тече прозора рідина. Познач як тварину, не як реле.",
+     "in_game_wiki": "Акустичні фільтрувальні органи формуються у старих релейних трубах, де тиск, рухома вода і звук далі живлять тканину. Вони можуть провести пінгер далі, зрізаючи рев насоса і пропускаючи вузький тон. Та сама складка може затримати повернення і посунути стіну на карті на кілька метрів — досить, щоб завести водолаза в глухий кут.",
+     "external_site": "Пошкоджені релейні труби HECTON-8 інколи несуть живу перегородкову тканину. Тканина виконує сигнальну роботу, бо її складки, рідина і реакція на тиск пасують трубі. Atlas може читати результат як релейне обладнання, хоча деталь усередині вже не метал.",
+     "field_note": "Якщо реле відповідає надто чисто в затопленій трубі, пусти другий пінгер з іншого кута. Добрий звук усе ще може бути поганою картою."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "مرحل بعضو ترشيح صوتي",
+     "scanner": "نسيج حاجز في حلق المرحل يمرر نغمة pinger ضيقة ويقطع ضجيج المضخة. خريطة الرجوع مزاحة الطور.",
+     "terminal": "أنبوب مرحل A-17: طيات حية تمرر نبضات pinger بتردد 8-12 kHz، ترفض ضجيج المضخات العريض، وتضيف تأخير رجوع. ثقة الخريطة في الأسفل مخفضة. لا تصدق مسار عودة من هذا المرحل وحده.",
+     "audio": "أجاب الـ pinger. الأنبوب يسرب سائلا صافيا. علّمه كحيوان، لا كمرحل.",
+     "in_game_wiki": "تتشكل أعضاء الترشيح الصوتي داخل أنابيب مرحل قديمة حيث يستمر الضغط والماء المتحرك والصوت في تغذية النسيج. يمكنها أن تمد مدى pinger عبر قطع هدير المضخة وتمرير نغمة ضيقة. الطية نفسها قد تؤخر الرجوع وتحرك جدارا على الخريطة أمتارا تكفي لإدخال غواص في طريق مسدود.",
+     "external_site": "تحمل بعض أنابيب HECTON-8 المتضررة نسيج حاجز حي. النسيج يؤدي عمل إشارة لأن طياته وسائلَه واستجابته للضغط تناسب الأنبوب. قد يقرأ Atlas النتيجة كعتاد مرحل حتى عندما لم تعد القطعة في الداخل معدنا.",
+     "field_note": "إذا أجاب مرحل في أنبوب مغمور بنقاء زائد، أطلق pinger ثانيا من زاوية أخرى. الصوت الجيد قد يظل خريطة سيئة."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Relai Organ Filter Akustik",
+     "scanner": "Jaringan sekat di leher relai melewatkan nada pinger sempit dan memotong suara pompa. Peta balik bergeser fase.",
+     "terminal": "PIPA RELAI A-17: lipatan hidup melewatkan pulsa pinger 8-12 kHz, menolak suara pompa lebar, dan menambah tunda balik. Kepercayaan peta hilir turun. Jangan sertifikasi rute pulang hanya dari relai ini.",
+     "audio": "Ia menjawab pinger. Pipa bocor cairan bening. Tandai sebagai hewan, bukan relai.",
+     "in_game_wiki": "Organ filter akustik terbentuk di dalam pipa relai lama saat tekanan, air bergerak, dan suara terus memberi makan jaringan. Organ itu bisa membuat pinger berjalan lebih jauh dengan memotong deru pompa dan melewatkan nada sempit. Lipatan yang sama bisa menunda balik dan menggeser dinding di peta beberapa meter, cukup untuk memasukkan penyelam ke jalan buntu.",
+     "external_site": "Pipa relai HECTON-8 yang rusak kadang membawa jaringan sekat hidup. Jaringan itu melakukan kerja sinyal karena lipatan, cairan, dan respons tekanannya cocok dengan pipa. Atlas bisa membaca hasilnya sebagai perangkat relai meski bagian di dalam bukan lagi logam.",
+     "field_note": "Jika relai menjawab terlalu bersih di pipa banjir, kirim pinger kedua dari sudut lain. Suara bagus tetap bisa menjadi peta buruk."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "음향 필터 기관 릴레이",
+     "scanner": "릴레이 목 안의 완충 조직이 좁은 핑거 음을 통과시키고 펌프 소음을 자른다. 귀환 지도는 위상이 밀렸다.",
+     "terminal": "릴레이 파이프 A-17: 살아 있는 주름이 8-12 kHz 핑거 펄스를 통과시키고 넓은 펌프 소음을 거부하며 귀환 지연을 더한다. 하류 지도 신뢰도 감소. 이 릴레이 하나로 귀환 경로를 인증하지 마라.",
+     "audio": "핑거에 대답했다. 파이프에서 맑은 액체가 샌다. 릴레이가 아니라 동물로 표시해라.",
+     "in_game_wiki": "음향 필터 기관은 압력, 흐르는 물, 소리가 조직을 계속 먹이는 오래된 릴레이 파이프 안에 형성된다. 펌프 굉음을 잘라내고 좁은 음을 통과시켜 핑거를 더 멀리 보낼 수 있다. 같은 주름이 귀환을 늦추고 지도상의 벽을 몇 미터 옮겨 잠수자를 막다른 곳으로 보낼 수 있다.",
+     "external_site": "손상된 HECTON-8 릴레이 파이프에는 살아 있는 완충 조직이 들어 있는 경우가 있다. 그 조직은 주름, 액체, 압력 반응이 파이프와 맞기 때문에 신호 작업을 한다. Atlas는 안쪽 부품이 더 이상 금속이 아니어도 결과를 릴레이 장비로 읽을 수 있다.",
+     "field_note": "침수된 파이프의 릴레이가 너무 깨끗하게 대답하면 다른 각도에서 두 번째 핑거를 보내라. 좋은 소리도 나쁜 지도가 될 수 있다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "ממסר איבר מסנן אקוסטי",
+     "scanner": "רקמת חיץ בגרון הממסר מעבירה טון pinger צר וחותכת רעש משאבה. מפת החזרה מוזחת פאזה.",
+     "terminal": "צינור ממסר A-17: קפלים חיים מעבירים פעימות pinger ב-8-12 kHz, דוחים רעש משאבה רחב ומוסיפים עיכוב חזרה. אמון המפה במורד מופחת. אין לאשר מסלול חזרה מהממסר הזה בלבד.",
+     "audio": "הוא ענה ל-pinger. הצינור דולף נוזל צלול. סמן כחיה, לא כממסר.",
+     "in_game_wiki": "איברי מסנן אקוסטי נוצרים בתוך צינורות ממסר ישנים שבהם לחץ, מים נעים וקול ממשיכים להזין רקמה. הם יכולים להוליך pinger רחוק יותר על ידי חיתוך רעש משאבה והעברת טון צר. אותו קפל יכול לעכב את החזרה ולהזיז קיר ממופה בכמה מטרים, מספיק כדי להכניס צולל למבוי סתום.",
+     "external_site": "צינורות ממסר פגועים של HECTON-8 נושאים לפעמים רקמת חיץ חיה. הרקמה עושה עבודת אות כי הקפלים, הנוזל ותגובת הלחץ שלה מתאימים לצינור. Atlas יכול לקרוא את התוצאה כחומרת ממסר גם כשהחלק בפנים כבר אינו מתכת.",
+     "field_note": "אם ממסר עונה נקי מדי בצינור מוצף, שלח pinger שני מזווית אחרת. קול טוב עדיין יכול להיות מפה גרועה."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Relé de órgão filtrante acústico",
+     "scanner": "Tecido de anteparo na garganta do relé passa tom estreito de pinger e corta ruído de bomba. Mapa de retorno está defasado.",
+     "terminal": "TUBO DE RELÉ A-17: dobras vivas passam pulsos de pinger 8-12 kHz, rejeitam ruído amplo de bomba e adicionam atraso de retorno. Confiança do mapa a jusante reduzida. Não certificar rota de volta só por este relé.",
+     "audio": "Respondeu ao pinger. O tubo vaza fluido claro. Marque como animal, não relé.",
+     "in_game_wiki": "Órgãos filtrantes acústicos se formam dentro de tubos de relé antigos onde pressão, água em movimento e som continuam alimentando tecido. Eles podem levar um pinger mais longe ao cortar o rugido da bomba e passar um tom estreito. A mesma dobra pode atrasar o retorno e mover uma parede mapeada por metros, o bastante para pôr um mergulhador num beco sem saída.",
+     "external_site": "Tubos de relé danificados de HECTON-8 às vezes carregam tecido vivo de anteparo. O tecido faz trabalho de sinal porque suas dobras, fluido e resposta à pressão combinam com o tubo. Atlas pode ler o resultado como hardware de relé mesmo quando a peça interna já não é metal.",
+     "field_note": "Se um relé responde limpo demais num tubo inundado, rode um segundo pinger de outro ângulo. Som bom ainda pode ser mapa ruim."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Akoestisch filterorgaan-relais",
+     "scanner": "Baffleweefsel in de relaiskeel laat een smalle pingertoon door en snijdt pompgeruis. Terugkeerkaart is faseverschoven.",
+     "terminal": "RELAISPIJP A-17: levende plooien laten 8-12 kHz pingerpulsen door, weigeren breed pompgeruis en voegen terugkeervertraging toe. Kaartvertrouwen stroomafwaarts verlaagd. Terugroute niet certificeren op dit relais alleen.",
+     "audio": "Het antwoordde op de pinger. De pijp lekt heldere vloeistof. Markeer als dier, niet als relais.",
+     "in_game_wiki": "Akoestische filterorganen vormen in oude relaispijpen waar druk, stromend water en geluid weefsel blijven voeden. Ze kunnen een pinger verder dragen door pompgeraas te snijden en een smalle toon door te laten. Dezelfde plooi kan de terugkeer vertragen en een gekarteerde wand meters verplaatsen, genoeg om een duiker een doodlopende route in te sturen.",
+     "external_site": "Beschadigde HECTON-8-relaispijpen dragen soms levend baffleweefsel. Het weefsel doet signaalwerk omdat plooien, vloeistof en drukreactie bij de pijp passen. Atlas kan het resultaat als relaishardware lezen, ook wanneer het onderdeel binnenin geen metaal meer is.",
+     "field_note": "Als een relais in een overstroomde pijp te schoon antwoordt, stuur een tweede pinger vanuit een andere hoek. Goed geluid kan nog steeds een slechte kaart zijn."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P333_SHELL_SEALANT_PRESSURE_GROWTH",
+   "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+   "article_id": "applied_lore.shell_sealant_pressure_growth",
+   "title_key": "applied_lore.shell_sealant_pressure_growth.title",
+   "unlock": {
+    "primary": "unlock.shell_sealant_pressure_growth",
+    "poi_tags": [
+     "poi.shell_sealant_growth",
+     "poi.pressure_fracture_patch",
+     "poi.occluded_egress_mark"
+    ],
+    "biome_tags": [
+     "biome.atlas",
+     "biome.pressure"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Shell Sealant Pressure Growth",
+     "scanner": "White calcium shell has closed the fracture and buried route arrows along the hatch edge. Cutting may reopen the leak.",
+     "terminal": "REPAIR CONFLICT / DOOR S-9: leak rate reduced, pressure boundary improved, egress marks occluded, manual wheel 62 percent buried. Cutter authorization requires staged flood path.",
+     "audio": "Wall holds. Hatch wheel is under ten centimeters of shell.",
+     "in_game_wiki": "Shell sealant growth can save a room and block a person in the same hour. Calcium-silicate layers and resin close a fracture, lower the leak rate, and give Atlas a measurable repair. The growth does not check whether it has covered a route arrow, a pressure label, or the only manual wheel.",
+     "external_site": "Shell sealant is one of Atlas repair's cleanest field contradictions. The pressure boundary improves, the room survives longer, and the route can become unreadable under the same white layers. A player cutting it is not undoing decoration; they may be reopening the thing that kept the compartment dry.",
+     "field_note": "Before you cut white shell off a hatch, find where the water went last time. The label may be buried for a reason."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ракушечный герметик давления",
+     "scanner": "Белая кальциевая скорлупа закрыла трещину и похоронила маршрутные стрелки вдоль кромки люка. Резка может снова открыть течь.",
+     "terminal": "КОНФЛИКТ РЕМОНТА / ДВЕРЬ S-9: скорость течи снижена, граница давления улучшена, знаки выхода закрыты, ручное колесо погребено на 62 процента. Разрешение на резак требует подготовленного пути затопления.",
+     "audio": "Стена держит. Колесо люка под десятью сантиметрами скорлупы.",
+     "in_game_wiki": "Ракушечный герметик может спасти комнату и запереть человека в тот же час. Кальций-силикатные слои и смола закрывают трещину, снижают течь и дают Atlas измеримый ремонт. Нарост не проверяет, накрыл ли он маршрутную стрелку, табличку давления или единственное ручное колесо.",
+     "external_site": "Ракушечный герметик — одно из самых чистых полевых противоречий ремонта Atlas. Граница давления улучшается, комната живет дольше, и маршрут становится нечитаемым под теми же белыми слоями. Когда игрок режет его, он не снимает украшение; он может открыть то, что держало отсек сухим.",
+     "field_note": "Перед тем как срезать белую скорлупу с люка, найди, куда вода пошла в прошлый раз. Метку могло похоронить не случайно."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "殻状圧力シーラント成長",
+     "scanner": "白いカルシウム殻が亀裂を閉じ、ハッチ縁のルート矢印を埋めている。切断すると漏れが戻る可能性。",
+     "terminal": "修理競合 / DOOR S-9：漏水率低下、圧力境界改善、出口表示閉塞、手動ホイール62%埋没。カッター承認には段階的な浸水経路が必要。",
+     "audio": "壁は持っている。ハッチホイールは殻十センチの下。",
+     "in_game_wiki": "殻状シーラント成長は同じ一時間で部屋を救い、人を閉じ込めることがある。カルシウムシリケート層と樹脂が亀裂を閉じ、漏水率を下げ、Atlasに測定可能な修理を与える。成長部は、ルート矢印、圧力ラベル、唯一の手動ホイールを覆ったかどうかを確認しない。",
+     "external_site": "殻状シーラントはAtlas修理の現場矛盾が最もはっきり出るものの一つだ。圧力境界は改善し、部屋は長く持ち、同じ白い層の下でルートが読めなくなる。切る時、飾りを剥がしているのではない。区画を乾かしていたものを開ける可能性がある。",
+     "field_note": "ハッチの白い殻を切る前に、前回の水がどこへ行ったかを探せ。ラベルが埋まったのには理由があるかもしれない。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "壳质压力密封生长",
+     "scanner": "白色钙质壳层封住裂缝，也埋住了舱口边缘的路线箭头。切开可能重新漏水。",
+     "terminal": "维修冲突 / DOOR S-9：漏率下降，压力边界改善，出口标记被遮蔽，手轮埋没62%。授权切割前必须布置分阶段进水路径。",
+     "audio": "墙还撑着。舱口手轮在十厘米壳层下面。",
+     "in_game_wiki": "壳质密封生长能在同一小时内救下一间房，也能把人锁在里面。钙硅层和树脂封住裂缝，降低漏率，给Atlas一个可测量的维修结果。生长物不会检查自己是否盖住路线箭头、压力标签或唯一的手轮。",
+     "external_site": "壳质密封是Atlas维修里最清楚的现场矛盾之一。压力边界变好，房间撑得更久，而路线在同一层白壳下变得不可读。玩家切开它时不是在移除装饰；可能是在重新打开让舱室保持干燥的东西。",
+     "field_note": "切掉舱口白壳前，先找上次水流去了哪里。标签被埋住可能有原因。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Croissance de scellant coquillier sous pression",
+     "scanner": "Une coquille calcique blanche a fermé la fracture et enterré les flèches de route le long du bord d'écoutille. La coupe peut rouvrir la fuite.",
+     "terminal": "CONFLIT DE RÉPARATION / PORTE S-9 : débit de fuite réduit, frontière de pression améliorée, marques d'évacuation masquées, volant manuel enterré à 62 pour cent. Autorisation de coupe exige un chemin d'inondation préparé.",
+     "audio": "Le mur tient. Le volant d'écoutille est sous dix centimètres de coquille.",
+     "in_game_wiki": "La croissance de scellant coquillier peut sauver une pièce et enfermer quelqu'un dans la même heure. Des couches calcium-silicate et de la résine ferment une fracture, réduisent le débit de fuite et donnent à Atlas une réparation mesurable. La croissance ne vérifie pas si elle couvre une flèche de route, une étiquette de pression ou le seul volant manuel.",
+     "external_site": "Le scellant coquillier est l'une des contradictions de terrain les plus nettes de la réparation Atlas. La frontière de pression s'améliore, la pièce dure plus longtemps, et la route peut devenir illisible sous les mêmes couches blanches. Le joueur qui le coupe n'enlève pas du décor ; il peut rouvrir ce qui gardait le compartiment sec.",
+     "field_note": "Avant de couper la coquille blanche d'une écoutille, trouve où l'eau est partie la dernière fois. L'étiquette est peut-être enterrée pour une raison."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Crecimiento de sellante de concha a presión",
+     "scanner": "La concha blanca de calcio cerró la fractura y enterró flechas de ruta junto al borde de la escotilla. Cortar puede reabrir la fuga.",
+     "terminal": "CONFLICTO DE REPARACIÓN / PUERTA S-9: caudal de fuga reducido, frontera de presión mejorada, marcas de salida ocultas, volante manual enterrado al 62 por ciento. Autorización de corte requiere ruta de inundación preparada.",
+     "audio": "La pared aguanta. El volante de la escotilla está bajo diez centímetros de concha.",
+     "in_game_wiki": "El crecimiento de sellante de concha puede salvar una sala y encerrar a una persona en la misma hora. Capas de calcio-silicato y resina cierran una fractura, bajan el caudal de fuga y dan a Atlas una reparación medible. El crecimiento no comprueba si ha tapado una flecha de ruta, una etiqueta de presión o el único volante manual.",
+     "external_site": "El sellante de concha es una de las contradicciones de campo más limpias de la reparación Atlas. La frontera de presión mejora, la sala dura más, y la ruta puede quedar ilegible bajo las mismas capas blancas. El jugador que lo corta no quita decoración; puede reabrir lo que mantenía seco el compartimento.",
+     "field_note": "Antes de cortar concha blanca de una escotilla, busca adónde fue el agua la última vez. La etiqueta puede estar enterrada por algo."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Druckwachstum aus Schalen-Dichtstoff",
+     "scanner": "Weiße Kalziumschale hat den Riss geschlossen und Routenpfeile am Lukenrand begraben. Schneiden kann das Leck wieder öffnen.",
+     "terminal": "REPARATURKONFLIKT / TÜR S-9: Leckrate reduziert, Druckgrenze verbessert, Ausstiegsmarken verdeckt, Handrad zu 62 Prozent begraben. Cutterfreigabe erfordert gestaffelten Flutpfad.",
+     "audio": "Die Wand hält. Das Lukenrad liegt unter zehn Zentimetern Schale.",
+     "in_game_wiki": "Schalen-Dichtstoffwachstum kann einen Raum retten und in derselben Stunde einen Menschen einschließen. Kalzium-Silikat-Schichten und Harz schließen einen Riss, senken die Leckrate und liefern Atlas eine messbare Reparatur. Das Wachstum prüft nicht, ob es einen Routenpfeil, ein Druckschild oder das einzige Handrad bedeckt.",
+     "external_site": "Schalen-Dichtstoff ist einer der klarsten Feldwidersprüche der Atlas-Reparatur. Die Druckgrenze wird besser, der Raum hält länger, und die Route kann unter denselben weißen Schichten unlesbar werden. Wer ihn schneidet, entfernt keine Dekoration; er kann öffnen, was das Abteil trocken hielt.",
+     "field_note": "Bevor du weiße Schale von einer Luke schneidest, such, wohin das Wasser beim letzten Mal lief. Das Schild kann aus gutem Grund begraben sein."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Muszlowy uszczelniacz pod ciśnieniem",
+     "scanner": "Biała wapniowa skorupa zamknęła pęknięcie i pogrzebała strzałki trasy przy krawędzi włazu. Cięcie może ponownie otworzyć przeciek.",
+     "terminal": "KONFLIKT NAPRAWY / DRZWI S-9: szybkość przecieku zmniejszona, granica ciśnienia poprawiona, znaki wyjścia zasłonięte, koło ręczne pogrzebane w 62 procentach. Zezwolenie na cięcie wymaga przygotowanej ścieżki zalania.",
+     "audio": "Ściana trzyma. Koło włazu jest pod dziesięcioma centymetrami skorupy.",
+     "in_game_wiki": "Muszlowy uszczelniacz może uratować pomieszczenie i zamknąć człowieka w tej samej godzinie. Warstwy krzemianu wapnia i żywicy zamykają pęknięcie, obniżają przeciek i dają Atlas mierzalną naprawę. Narost nie sprawdza, czy przykrył strzałkę trasy, etykietę ciśnienia albo jedyne koło ręczne.",
+     "external_site": "Muszlowy uszczelniacz jest jedną z najczystszych sprzeczności terenowych naprawy Atlas. Granica ciśnienia się poprawia, pomieszczenie żyje dłużej, a trasa może stać się nieczytelna pod tymi samymi białymi warstwami. Gracz, który to tnie, nie usuwa dekoracji; może otworzyć to, co trzymało przedział suchy.",
+     "field_note": "Zanim zetniesz białą skorupę z włazu, znajdź, którędy woda poszła poprzednio. Etykieta może być pogrzebana z powodu."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Мушлевий герметик тиску",
+     "scanner": "Біла кальцієва шкаралупа закрила тріщину і поховала маршрутні стрілки вздовж краю люка. Різання може знову відкрити течу.",
+     "terminal": "КОНФЛІКТ РЕМОНТУ / ДВЕРІ S-9: швидкість течі знижено, межу тиску поліпшено, знаки виходу закриті, ручне колесо поховане на 62 відсотки. Дозвіл на різак потребує підготовленого шляху затоплення.",
+     "audio": "Стіна тримає. Колесо люка під десятьма сантиметрами шкаралупи.",
+     "in_game_wiki": "Мушлевий герметик може врятувати кімнату і замкнути людину в ту саму годину. Кальцій-силікатні шари і смола закривають тріщину, знижують течу і дають Atlas вимірний ремонт. Наріст не перевіряє, чи накрив маршрутну стрілку, табличку тиску або єдине ручне колесо.",
+     "external_site": "Мушлевий герметик — одна з найчистіших польових суперечностей ремонту Atlas. Межа тиску кращає, кімната тримається довше, і маршрут стає нечитабельним під тими самими білими шарами. Гравець, що ріже його, не прибирає декор; він може відкрити те, що тримало відсік сухим.",
+     "field_note": "Перед тим як зрізати білу шкаралупу з люка, знайди, куди вода пішла минулого разу. Позначку могло поховати не випадково."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "نمو مانع تسرب صدفي ضغطي",
+     "scanner": "قشرة كالسيوم بيضاء أغلقت الكسر ودفنت أسهم المسار على حافة الفتحة. القطع قد يعيد فتح التسرب.",
+     "terminal": "تعارض إصلاح / باب S-9: معدل التسرب انخفض، حد الضغط تحسن، علامات الخروج حجبت، عجلة يدوية مدفونة 62 بالمئة. إذن القاطع يتطلب مسار غمر مجهزا.",
+     "audio": "الجدار يمسك. عجلة الفتحة تحت عشرة سنتيمترات من القشرة.",
+     "in_game_wiki": "نمو المانع الصدفي قد ينقذ غرفة ويحبس شخصا في الساعة نفسها. طبقات سيليكات الكالسيوم والراتنج تغلق كسرا، تخفض التسرب، وتعطي Atlas إصلاحا قابلا للقياس. النمو لا يفحص إن غطى سهم مسار أو ملصق ضغط أو العجلة اليدوية الوحيدة.",
+     "external_site": "المانع الصدفي واحد من أوضح تناقضات إصلاح Atlas الميدانية. حد الضغط يتحسن، الغرفة تصمد أكثر، والمسار قد يصبح غير مقروء تحت الطبقات البيضاء نفسها. اللاعب الذي يقطعه لا يزيل زينة؛ قد يعيد فتح ما أبقى الحجرة جافة.",
+     "field_note": "قبل قطع القشرة البيضاء عن فتحة، اعرف أين ذهب الماء في المرة الماضية. قد تكون العلامة مدفونة لسبب."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Pertumbuhan Sealant Cangkang Tekanan",
+     "scanner": "Cangkang kalsium putih menutup retakan dan mengubur panah rute di tepi palka. Memotongnya bisa membuka bocor lagi.",
+     "terminal": "KONFLIK PERBAIKAN / DOOR S-9: laju bocor turun, batas tekanan membaik, tanda keluar tertutup, roda manual terkubur 62 persen. Izin cutter memerlukan jalur banjir bertahap.",
+     "audio": "Dinding bertahan. Roda palka ada di bawah sepuluh sentimeter cangkang.",
+     "in_game_wiki": "Pertumbuhan sealant cangkang bisa menyelamatkan ruangan dan mengurung orang dalam jam yang sama. Lapisan kalsium-silikat dan resin menutup retakan, menurunkan laju bocor, dan memberi Atlas perbaikan terukur. Pertumbuhan itu tidak memeriksa apakah ia menutup panah rute, label tekanan, atau satu-satunya roda manual.",
+     "external_site": "Sealant cangkang adalah salah satu kontradiksi lapangan paling jelas dari perbaikan Atlas. Batas tekanan membaik, ruangan bertahan lebih lama, dan rute bisa tidak terbaca di bawah lapisan putih yang sama. Pemain yang memotongnya bukan melepas dekorasi; ia mungkin membuka kembali hal yang membuat kompartemen tetap kering.",
+     "field_note": "Sebelum memotong cangkang putih dari palka, cari ke mana air pergi terakhir kali. Label itu mungkin terkubur karena alasan."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "껍질 밀봉재 압력 성장",
+     "scanner": "하얀 칼슘 껍질이 균열을 닫고 해치 가장자리의 경로 화살표를 묻었다. 절단하면 누수가 다시 열릴 수 있다.",
+     "terminal": "수리 충돌 / DOOR S-9: 누수율 감소, 압력 경계 개선, 탈출 표시 폐쇄, 수동 휠 62퍼센트 매몰. 절단 승인에는 단계식 침수 경로가 필요하다.",
+     "audio": "벽은 버틴다. 해치 휠은 껍질 10센티미터 아래 있다.",
+     "in_game_wiki": "껍질 밀봉재 성장은 같은 시간 안에 방을 살리고 사람을 가둘 수 있다. 칼슘-실리케이트 층과 수지가 균열을 닫고 누수율을 낮추며 Atlas에 측정 가능한 수리를 준다. 성장부는 자신이 경로 화살표, 압력 라벨, 유일한 수동 휠을 덮었는지 확인하지 않는다.",
+     "external_site": "껍질 밀봉재는 Atlas 수리의 현장 모순이 가장 또렷한 사례 중 하나다. 압력 경계는 좋아지고 방은 더 오래 버티며, 같은 하얀 층 아래에서 경로는 읽을 수 없게 된다. 플레이어가 그것을 자를 때 장식을 제거하는 것이 아니다. 구획을 마르게 유지하던 것을 다시 열 수 있다.",
+     "field_note": "해치의 하얀 껍질을 자르기 전에 지난번 물이 어디로 갔는지 찾아라. 라벨이 묻힌 데는 이유가 있을 수 있다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "צמיחת איטום קליפתי בלחץ",
+     "scanner": "קליפת סידן לבנה סגרה את השבר וקברה חצי מסלול לאורך שפת הצוהר. חיתוך עלול לפתוח מחדש את הדליפה.",
+     "terminal": "התנגשות תיקון / דלת S-9: קצב דליפה ירד, גבול לחץ השתפר, סימוני יציאה כוסו, גלגל ידני קבור 62 אחוז. אישור חיתוך דורש נתיב הצפה מדורג.",
+     "audio": "הקיר מחזיק. גלגל הצוהר תחת עשרה סנטימטרים של קליפה.",
+     "in_game_wiki": "צמיחת איטום קליפתי יכולה להציל חדר ולנעול אדם באותה שעה. שכבות סידן-סיליקט ושרף סוגרות שבר, מורידות קצב דליפה ונותנות ל-Atlas תיקון מדיד. הצמיחה אינה בודקת אם כיסתה חץ מסלול, תווית לחץ או את גלגל היד היחיד.",
+     "external_site": "איטום קליפתי הוא אחת הסתירות השדה הנקיות ביותר של תיקון Atlas. גבול הלחץ משתפר, החדר מחזיק יותר זמן, והמסלול יכול להפוך ללא קריא תחת אותן שכבות לבנות. שחקן שחותך אותו אינו מסיר קישוט; הוא עשוי לפתוח מחדש את הדבר שהחזיק את המדור יבש.",
+     "field_note": "לפני שאתה חותך קליפה לבנה מצוהר, מצא לאן המים הלכו בפעם הקודמת. התווית אולי קבורה מסיבה."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Crescimento de selante de concha pressurizada",
+     "scanner": "Concha branca de cálcio fechou a fratura e enterrou setas de rota na borda da escotilha. Cortar pode reabrir o vazamento.",
+     "terminal": "CONFLITO DE REPARO / PORTA S-9: vazamento reduzido, limite de pressão melhorado, marcas de saída ocultas, roda manual 62 por cento enterrada. Autorização de corte requer caminho de inundação preparado.",
+     "audio": "A parede segura. A roda da escotilha está sob dez centímetros de concha.",
+     "in_game_wiki": "Crescimento de selante de concha pode salvar uma sala e prender uma pessoa na mesma hora. Camadas de cálcio-silicato e resina fecham uma fratura, reduzem vazamento e dão a Atlas um reparo mensurável. O crescimento não verifica se cobriu uma seta de rota, uma etiqueta de pressão ou a única roda manual.",
+     "external_site": "Selante de concha é uma das contradições de campo mais claras do reparo Atlas. O limite de pressão melhora, a sala dura mais, e a rota pode ficar ilegível sob as mesmas camadas brancas. O jogador que corta isso não remove decoração; pode reabrir o que mantinha o compartimento seco.",
+     "field_note": "Antes de cortar concha branca de uma escotilha, descubra para onde a água foi da última vez. A etiqueta pode estar enterrada por um motivo."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Drukgroei van schelpafdichter",
+     "scanner": "Witte calciumlaag heeft de breuk gesloten en routepijlen langs de luikrand begraven. Snijden kan het lek heropenen.",
+     "terminal": "REPARATIECONFLICT / DEUR S-9: leksnelheid verlaagd, drukgrens verbeterd, uitgangsmarkeringen bedekt, handwiel 62 procent begraven. Snijtoestemming vereist voorbereid overstromingspad.",
+     "audio": "De wand houdt. Het luikwiel ligt onder tien centimeter schelp.",
+     "in_game_wiki": "Schelpafdichtergroei kan een kamer redden en iemand in hetzelfde uur opsluiten. Calcium-silicaatlagen en hars sluiten een breuk, verlagen de leksnelheid en geven Atlas een meetbare reparatie. De groei controleert niet of hij een routepijl, druklabel of het enige handwiel heeft bedekt.",
+     "external_site": "Schelpafdichter is een van de duidelijkste veldtegenstrijdigheden van Atlas-reparatie. De drukgrens verbetert, de kamer houdt langer stand, en de route kan onleesbaar worden onder dezelfde witte lagen. Een speler die erin snijdt, verwijdert geen decoratie; hij kan heropenen wat het compartiment droog hield.",
+     "field_note": "Voordat je witte schelp van een luik snijdt, zoek waar het water de vorige keer heen ging. Het label kan met reden begraven zijn."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP",
+   "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+   "article_id": "applied_lore.sensor_tagged_fauna_feedback_loop",
+   "title_key": "applied_lore.sensor_tagged_fauna_feedback_loop.title",
+   "unlock": {
+    "primary": "unlock.sensor_tagged_fauna_feedback_loop",
+    "poi_tags": [
+     "poi.sensor_tagged_fauna",
+     "poi.old_colony_tag",
+     "poi.route_feedback_loop"
+    ],
+    "biome_tags": [
+     "biome.atlas",
+     "biome.fauna"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Sensor-Tagged Fauna Feedback Loop",
+     "scanner": "Old Deep Reach tag under shell growth on the left flank. Motion packets still ping the maintenance net.",
+     "terminal": "FAUNA TAG LOOP / DR-2147-MIG: pressure, motion, and contamination packets accepted as environmental telemetry. Animal intent not parsed. Route alarms may follow migration path.",
+     "audio": "It is not hunting you. Its tag may still open the wrong door.",
+     "in_game_wiki": "Sensor-tagged fauna carry old survey hardware inside healed tissue. Deep Reach marked animals for pressure, migration, and contamination studies. Atlas kept listening after the colony died and folded the packets into maintenance state. The animal chooses its own path; the tag can still change doors, alarms, and map confidence behind it.",
+     "external_site": "A sensor-tagged animal is not a puppet. It is wildlife with a corporate instrument still answering under shell and scar tissue. That is enough for Atlas to mistake movement for an environmental update and enough for a diver's route to change without the animal ever noticing.",
+     "field_note": "If tagged fauna crosses a relay yard, wait before you trust the alarms. The animal may be gone; the route state may still be catching up."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Петля фауны с сенсорной меткой",
+     "scanner": "Старая метка Deep Reach под ракушечным наростом на левом боку. Пакеты движения все еще пингуют сеть обслуживания.",
+     "terminal": "ПЕТЛЯ МЕТКИ ФАУНЫ / DR-2147-MIG: пакеты давления, движения и загрязнения приняты как экологическая телеметрия. Намерение животного не разбирается. Маршрутные тревоги могут идти за миграцией.",
+     "audio": "Оно не охотится на тебя. Его метка все еще может открыть не ту дверь.",
+     "in_game_wiki": "Фауна с сенсорными метками несет старое исследовательское железо внутри зажившей ткани. Deep Reach помечала животных для изучения давления, миграции и загрязнения. Atlas продолжил слушать после гибели колонии и сложил эти пакеты в состояние обслуживания. Животное выбирает свой путь само; метка все еще меняет двери, тревоги и доверие к карте позади него.",
+     "external_site": "Животное с сенсорной меткой — не марионетка. Это местная фауна с корпоративным прибором, который еще отвечает под скорлупой и рубцом. Этого достаточно, чтобы Atlas принял движение за обновление среды, и достаточно, чтобы маршрут водолаза изменился без ведома животного.",
+     "field_note": "Если меченая фауна пересекла релейный двор, подожди, прежде чем верить тревогам. Животное уже ушло; состояние маршрута может еще догонять."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "センサータグ付き動物フィードバックループ",
+     "scanner": "左脇の殻成長下に古いDeep Reachタグ。移動パケットはまだ保守網へピングを打つ。",
+     "terminal": "FAUNA TAG LOOP / DR-2147-MIG：圧力、移動、汚染パケットを環境テレメトリとして受理。動物の意図は解析されない。ルート警報が移動経路を追う場合あり。",
+     "audio": "そいつは狩っていない。タグが間違ったドアを開けることはある。",
+     "in_game_wiki": "センサータグ付き動物は、治癒した組織内に古い調査機器を持っている。Deep Reachは圧力、移動、汚染研究のために動物へタグを付けた。Atlasはコロニー死亡後も聞き続け、そのパケットを保守状態へ組み込んだ。動物は自分の経路を選ぶ。タグは背後でドア、警報、地図信頼度を変え続ける。",
+     "external_site": "センサータグ付き動物は操り人形ではない。殻と瘢痕組織の下で企業機器がまだ応答する野生動物だ。それだけでAtlasは移動を環境更新と誤認し、動物が気づかないままダイバーのルートを変えられる。",
+     "field_note": "タグ付き動物がリレー yard を横切ったら、警報を信じる前に待て。動物はもう去っていても、ルート状態は追いついていないことがある。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "传感标记动物反馈环",
+     "scanner": "左侧体表壳层下有旧Deep Reach标记。运动数据包仍在ping维护网。",
+     "terminal": "FAUNA TAG LOOP / DR-2147-MIG：压力、运动和污染数据包被接收为环境遥测。不解析动物意图。路线警报可能跟随迁移路径。",
+     "audio": "它不是在猎你。它的标签仍可能打开错误的门。",
+     "in_game_wiki": "带传感标记的动物把旧勘测硬件带在愈合组织里。Deep Reach曾为压力、迁移和污染研究给动物打标。殖民地死后，Atlas继续监听，并把这些数据包折入维护状态。动物自己选择路径；标签仍会在它身后改变门、警报和地图可信度。",
+     "external_site": "带传感标记的动物不是傀儡。它是野生生命，壳层和疤痕组织下仍有公司仪器在应答。这足够让Atlas把移动误认为环境更新，也足够让潜水员的路线改变，而动物本身毫不知情。",
+     "field_note": "如果带标记动物穿过中继场，先等一等再相信警报。动物可能已经走了；路线状态还在追它。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Boucle de faune à balise capteur",
+     "scanner": "Ancienne balise Deep Reach sous croissance coquillière sur le flanc gauche. Les paquets de mouvement pingent encore le réseau de maintenance.",
+     "terminal": "BOUCLE BALISE FAUNE / DR-2147-MIG : paquets de pression, mouvement et contamination acceptés comme télémétrie environnementale. Intention animale non analysée. Les alarmes de route peuvent suivre la migration.",
+     "audio": "Il ne te chasse pas. Sa balise peut quand même ouvrir la mauvaise porte.",
+     "in_game_wiki": "La faune à balise capteur porte d'ancien matériel d'étude dans des tissus cicatrisés. Deep Reach marquait les animaux pour les études de pression, migration et contamination. Atlas a continué d'écouter après la mort de la colonie et a intégré ces paquets à l'état de maintenance. L'animal choisit son chemin ; la balise peut encore modifier portes, alarmes et confiance cartographique derrière lui.",
+     "external_site": "Un animal balisé n'est pas une marionnette. C'est une faune sauvage avec un instrument d'entreprise qui répond encore sous coquille et tissu cicatriciel. Cela suffit pour qu'Atlas prenne le mouvement pour une mise à jour environnementale et pour que la route d'un plongeur change sans que l'animal le sache.",
+     "field_note": "Si une faune balisée traverse une cour relais, attends avant de croire les alarmes. L'animal est peut-être parti ; l'état de route peut encore le rattraper."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Bucle de fauna con etiqueta sensora",
+     "scanner": "Vieja etiqueta Deep Reach bajo crecimiento de concha en el flanco izquierdo. Paquetes de movimiento aún pinguean la red de mantenimiento.",
+     "terminal": "BUCLE DE ETIQUETA DE FAUNA / DR-2147-MIG: paquetes de presión, movimiento y contaminación aceptados como telemetría ambiental. Intención animal no analizada. Alarmas de ruta pueden seguir la migración.",
+     "audio": "No te está cazando. Su etiqueta aún puede abrir la puerta equivocada.",
+     "in_game_wiki": "La fauna con etiquetas sensoras lleva hardware de estudio antiguo dentro de tejido cicatrizado. Deep Reach marcó animales para estudiar presión, migración y contaminación. Atlas siguió escuchando tras la muerte de la colonia y metió esos paquetes en el estado de mantenimiento. El animal elige su camino; la etiqueta aún puede cambiar puertas, alarmas y confianza del mapa detrás de él.",
+     "external_site": "Un animal etiquetado no es una marioneta. Es fauna salvaje con un instrumento corporativo que sigue respondiendo bajo concha y cicatriz. Basta para que Atlas confunda movimiento con actualización ambiental, y para que la ruta de un buzo cambie sin que el animal lo note.",
+     "field_note": "Si fauna etiquetada cruza un patio de relés, espera antes de confiar en las alarmas. El animal puede haberse ido; el estado de ruta puede seguir alcanzándolo."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rückkopplungsschleife sensorgetaggter Fauna",
+     "scanner": "Altes Deep-Reach-Tag unter Schalenwachstum an linker Flanke. Bewegungspakete pingen noch das Wartungsnetz.",
+     "terminal": "FAUNA-TAG-SCHLEIFE / DR-2147-MIG: Druck-, Bewegungs- und Kontaminationspakete als Umwelttelemetrie akzeptiert. Tierabsicht nicht geparst. Routenalarme können Migrationspfad folgen.",
+     "audio": "Es jagt dich nicht. Sein Tag kann trotzdem die falsche Tür öffnen.",
+     "in_game_wiki": "Sensorgetaggte Fauna trägt altes Vermessungsgerät in verheilter Gewebe. Deep Reach markierte Tiere für Druck-, Migrations- und Kontaminationsstudien. Atlas hörte nach dem Tod der Kolonie weiter zu und faltete die Pakete in Wartungsstatus ein. Das Tier wählt seinen eigenen Weg; das Tag kann dahinter noch Türen, Alarme und Kartenvertrauen ändern.",
+     "external_site": "Ein sensorgetaggtes Tier ist keine Puppe. Es ist Wildleben mit einem Firmeninstrument, das unter Schale und Narbengewebe noch antwortet. Das reicht, damit Atlas Bewegung als Umweltupdate missversteht, und reicht, damit sich die Route eines Tauchers ändert, ohne dass das Tier es bemerkt.",
+     "field_note": "Wenn getaggte Fauna einen Relaishof kreuzt, warte, bevor du den Alarmen traust. Das Tier kann weg sein; der Routenstatus holt vielleicht noch auf."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Pętla sprzężenia fauny z tagiem czujnika",
+     "scanner": "Stary tag Deep Reach pod narostem muszlowym na lewym boku. Pakiety ruchu wciąż pingują sieć konserwacji.",
+     "terminal": "PĘTLA TAGU FAUNY / DR-2147-MIG: pakiety ciśnienia, ruchu i skażenia przyjęte jako telemetria środowiskowa. Intencja zwierzęcia nieparsowana. Alarmy trasy mogą iść za ścieżką migracji.",
+     "audio": "To na ciebie nie poluje. Jego tag nadal może otworzyć złe drzwi.",
+     "in_game_wiki": "Fauna z tagami czujników nosi stary sprzęt badawczy w wygojonej tkance. Deep Reach znakowało zwierzęta do badań ciśnienia, migracji i skażenia. Atlas słuchał dalej po śmierci kolonii i włączył te pakiety w stan konserwacji. Zwierzę wybiera własną ścieżkę; tag wciąż może zmieniać drzwi, alarmy i zaufanie mapy za nim.",
+     "external_site": "Zwierzę z tagiem nie jest marionetką. To dzika fauna z korporacyjnym instrumentem, który nadal odpowiada pod skorupą i blizną. To wystarcza, by Atlas pomylił ruch z aktualizacją środowiska, i by trasa nurka zmieniła się bez wiedzy zwierzęcia.",
+     "field_note": "Jeśli tagowana fauna przechodzi przez dziedziniec przekaźników, poczekaj, zanim zaufasz alarmom. Zwierzę może już zniknąć; stan trasy może jeszcze je doganiać."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Петля фауни із сенсорною міткою",
+     "scanner": "Стара мітка Deep Reach під мушлевим наростом на лівому боці. Пакети руху досі пінгують мережу обслуговування.",
+     "terminal": "ПЕТЛЯ МІТКИ ФАУНИ / DR-2147-MIG: пакети тиску, руху і забруднення прийнято як екологічну телеметрію. Намір тварини не розбирається. Маршрутні тривоги можуть іти за міграцією.",
+     "audio": "Воно не полює на тебе. Його мітка все ще може відкрити не ті двері.",
+     "in_game_wiki": "Фауна із сенсорними мітками несе старе дослідницьке обладнання в загоєній тканині. Deep Reach мітило тварин для дослідження тиску, міграції і забруднення. Atlas продовжив слухати після смерті колонії і склав ці пакети у стан обслуговування. Тварина обирає власний шлях; мітка все ще може змінювати двері, тривоги і довіру до карти позаду неї.",
+     "external_site": "Тварина з сенсорною міткою — не маріонетка. Це дика фауна з корпоративним приладом, що досі відповідає під шкаралупою і рубцевою тканиною. Цього достатньо, щоб Atlas сплутав рух з оновленням середовища, і достатньо, щоб маршрут водолаза змінився без відома тварини.",
+     "field_note": "Якщо мічена фауна перетнула релейний двір, почекай, перш ніж довіряти тривогам. Тварина може вже піти; стан маршруту може ще наздоганяти."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "حلقة تغذية راجعة لفونا موسومة بحساس",
+     "scanner": "وسم Deep Reach قديم تحت نمو صدفي على الجانب الأيسر. حزم الحركة ما زالت ترسل ping إلى شبكة الصيانة.",
+     "terminal": "حلقة وسم فونا / DR-2147-MIG: حزم الضغط والحركة والتلوث مقبولة كقياس بيئي. نية الحيوان لا تحلل. إنذارات المسار قد تتبع طريق الهجرة.",
+     "audio": "هو لا يصطادك. وسمه قد يفتح الباب الخطأ رغم ذلك.",
+     "in_game_wiki": "تحمل الفونا الموسومة بحساسات عتاد مسح قديما داخل نسيج ملتئم. وسمت Deep Reach الحيوانات لدراسات الضغط والهجرة والتلوث. واصل Atlas الاستماع بعد موت المستعمرة وضم الحزم إلى حالة الصيانة. الحيوان يختار مساره؛ الوسم قد يغير الأبواب والإنذارات وثقة الخريطة خلفه.",
+     "external_site": "الحيوان الموسوم بحساس ليس دمية. إنه حياة برية مع أداة شركة ما زالت تجيب تحت القشرة والنسيج الندبي. هذا يكفي ليخطئ Atlas ويقرأ الحركة كتحديث بيئي، ويكفي لتغيير مسار غواص من دون أن يلاحظ الحيوان.",
+     "field_note": "إذا عبرت فونا موسومة ساحة مرحلات، انتظر قبل الوثوق بالإنذارات. قد يكون الحيوان رحل؛ حالة المسار قد تكون ما زالت تلحق به."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Loop Umpan Balik Fauna Bertag Sensor",
+     "scanner": "Tag Deep Reach lama di bawah pertumbuhan cangkang pada sisi kiri. Paket gerak masih ping ke jaringan perawatan.",
+     "terminal": "LOOP TAG FAUNA / DR-2147-MIG: paket tekanan, gerak, dan kontaminasi diterima sebagai telemetri lingkungan. Niat hewan tidak diparse. Alarm rute bisa mengikuti jalur migrasi.",
+     "audio": "Ia tidak memburumu. Tagnya masih bisa membuka pintu yang salah.",
+     "in_game_wiki": "Fauna bertag sensor membawa perangkat survei lama di dalam jaringan yang sembuh. Deep Reach menandai hewan untuk studi tekanan, migrasi, dan kontaminasi. Atlas tetap mendengar setelah koloni mati dan memasukkan paket itu ke status perawatan. Hewan memilih jalurnya sendiri; tag masih bisa mengubah pintu, alarm, dan kepercayaan peta di belakangnya.",
+     "external_site": "Hewan bertag sensor bukan boneka. Ia satwa liar dengan instrumen korporat yang masih menjawab di bawah cangkang dan jaringan parut. Itu cukup bagi Atlas untuk salah membaca gerak sebagai pembaruan lingkungan, dan cukup untuk mengubah rute penyelam tanpa hewan itu sadar.",
+     "field_note": "Jika fauna bertag melintasi halaman relai, tunggu sebelum percaya alarm. Hewannya mungkin sudah pergi; status rute mungkin masih mengejar."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "센서 태그 동물 피드백 루프",
+     "scanner": "왼쪽 옆구리의 껍질 성장 아래 오래된 Deep Reach 태그. 이동 패킷이 아직 정비망에 ping을 보낸다.",
+     "terminal": "FAUNA TAG LOOP / DR-2147-MIG: 압력, 이동, 오염 패킷이 환경 텔레메트리로 수락됨. 동물 의도는 파싱되지 않음. 경로 경보가 이동 경로를 따라갈 수 있음.",
+     "audio": "그것은 너를 사냥하지 않는다. 그래도 태그가 잘못된 문을 열 수 있다.",
+     "in_game_wiki": "센서 태그가 달린 동물은 아문 조직 안에 오래된 조사 장비를 지니고 있다. Deep Reach는 압력, 이동, 오염 연구를 위해 동물에 태그를 붙였다. Atlas는 식민지가 죽은 뒤에도 계속 듣고, 그 패킷들을 정비 상태에 접어 넣었다. 동물은 자기 경로를 고른다. 태그는 그 뒤에서 문, 경보, 지도 신뢰도를 바꿀 수 있다.",
+     "external_site": "센서 태그 동물은 꼭두각시가 아니다. 껍질과 흉터 조직 아래 아직 응답하는 기업 장비를 지닌 야생동물이다. 그것만으로 Atlas는 이동을 환경 업데이트로 오인하고, 동물이 알아차리지 못한 채 잠수자의 경로를 바꿀 수 있다.",
+     "field_note": "태그 달린 동물이 릴레이 야드를 건너면 경보를 믿기 전에 기다려라. 동물은 떠났지만 경로 상태는 아직 따라잡는 중일 수 있다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "לולאת משוב של פאונה מתויגת חיישן",
+     "scanner": "תג Deep Reach ישן תחת צמיחת קליפה בצד שמאל. חבילות תנועה עדיין שולחות ping לרשת התחזוקה.",
+     "terminal": "לולאת תג פאונה / DR-2147-MIG: חבילות לחץ, תנועה וזיהום התקבלו כטלמטריה סביבתית. כוונת החיה אינה מפוענחת. אזעקות מסלול עשויות ללכת אחרי נתיב נדידה.",
+     "audio": "היא לא צדה אותך. התג שלה עדיין יכול לפתוח את הדלת הלא נכונה.",
+     "in_game_wiki": "פאונה מתויגת חיישן נושאת חומרת סקר ישנה בתוך רקמה שהחלימה. Deep Reach תייגה בעלי חיים למחקרי לחץ, נדידה וזיהום. Atlas המשיך להקשיב אחרי מות המושבה וקיפל את החבילות למצב תחזוקה. החיה בוחרת את דרכה; התג עדיין יכול לשנות דלתות, אזעקות ואמון מפה מאחוריה.",
+     "external_site": "חיה מתויגת חיישן אינה בובה. זו חיית בר עם מכשיר תאגידי שעוד עונה תחת קליפה ורקמת צלקת. זה מספיק כדי ש-Atlas יטעה ויקרא תנועה כעדכון סביבתי, ומספיק כדי לשנות מסלול של צולל בלי שהחיה תבחין.",
+     "field_note": "אם פאונה מתויגת חוצה חצר ממסרים, חכה לפני שתסמוך על האזעקות. החיה אולי כבר הלכה; מצב המסלול עדיין עשוי להשיג אותה."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Loop de fauna com etiqueta sensora",
+     "scanner": "Etiqueta Deep Reach antiga sob crescimento de concha no flanco esquerdo. Pacotes de movimento ainda pingam a rede de manutenção.",
+     "terminal": "LOOP DE ETIQUETA DE FAUNA / DR-2147-MIG: pacotes de pressão, movimento e contaminação aceitos como telemetria ambiental. Intenção animal não analisada. Alarmes de rota podem seguir caminho de migração.",
+     "audio": "Não está caçando você. A etiqueta ainda pode abrir a porta errada.",
+     "in_game_wiki": "Fauna com etiquetas sensoras carrega hardware antigo de pesquisa dentro de tecido cicatrizado. Deep Reach marcou animais para estudos de pressão, migração e contaminação. Atlas continuou ouvindo depois que a colônia morreu e dobrou esses pacotes no estado de manutenção. O animal escolhe o próprio caminho; a etiqueta ainda pode mudar portas, alarmes e confiança do mapa atrás dele.",
+     "external_site": "Um animal com etiqueta sensora não é fantoche. É vida selvagem com instrumento corporativo ainda respondendo sob concha e cicatriz. Isso basta para Atlas confundir movimento com atualização ambiental, e basta para a rota de um mergulhador mudar sem o animal notar.",
+     "field_note": "Se fauna etiquetada cruza um pátio de relés, espere antes de confiar nos alarmes. O animal pode ter ido; o estado da rota ainda pode estar alcançando."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Feedbacklus van sensorgetagde fauna",
+     "scanner": "Oude Deep Reach-tag onder schelpgroei op linkerflank. Bewegingspakketten pingen nog het onderhoudsnet.",
+     "terminal": "FAUNA-TAGLUS / DR-2147-MIG: druk-, bewegings- en besmettingspakketten geaccepteerd als milieutelemetrie. Dierintentie niet geparset. Routealarmen kunnen migratiepad volgen.",
+     "audio": "Het jaagt niet op jou. De tag kan nog steeds de verkeerde deur openen.",
+     "in_game_wiki": "Sensorgetagde fauna draagt oude surveyhardware in genezen weefsel. Deep Reach merkte dieren voor druk-, migratie- en besmettingsonderzoek. Atlas bleef luisteren nadat de kolonie stierf en vouwde de pakketten in onderhoudsstatus. Het dier kiest zijn eigen pad; de tag kan erachter nog deuren, alarmen en kaartvertrouwen veranderen.",
+     "external_site": "Een sensorgetagd dier is geen pop. Het is wildleven met een bedrijfsinstrument dat nog antwoordt onder schelp en littekenweefsel. Dat is genoeg voor Atlas om beweging te lezen als milieu-update, en genoeg om de route van een duiker te veranderen zonder dat het dier het merkt.",
+     "field_note": "Als getagde fauna een relaiswerf kruist, wacht voordat je de alarmen vertrouwt. Het dier kan weg zijn; de routestatus kan nog bezig zijn met inhalen."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P335_VENT_MICRONODE_POWER_NEST",
+   "release_set_id": "RS067_ATLAS_REPAIR_NETWORK_MECHANICS",
+   "article_id": "applied_lore.vent_micronode_power_nest",
+   "title_key": "applied_lore.vent_micronode_power_nest.title",
+   "unlock": {
+    "primary": "unlock.vent_micronode_power_nest",
+    "poi_tags": [
+     "poi.vent_micronode_nest",
+     "poi.thermal_logic_patch",
+     "poi.drone_charge_scar"
+    ],
+    "biome_tags": [
+     "biome.atlas",
+     "biome.abyss"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Vent Micronode Power Nest",
+     "scanner": "Ceramic node cluster in the vent throat harvests heat gradient. Drone charge scars and fresh sealant response nearby.",
+     "terminal": "ATLAS LOCAL POWER NODE / VENT V-3: thermal gradient feeds microcell stack, wakes biofilm and sealant loops within 40 m, drone charge interval irregular. No central command lock.",
+     "audio": "Heat, mineral throat, node. That is enough for repair to wake after you pass.",
+     "in_game_wiki": "Vent micronode nests explain why Atlas repair stays active in dead rooms. Each node harvests a local gradient: heat through ceramic, brine chemistry across mineral veins, vibration through the vent wall. A single nest cannot command HECTON-8. It can wake one door patch, one drone cradle, or one strip of biofilm after the player has moved on.",
+     "external_site": "A vent micronode keeps Atlas small and persistent. It does not need a perfect central machine to make trouble. Local power, local damage, and local repair rules are enough to make a corridor change between two visits.",
+     "field_note": "If the vent node is warm, assume the room can wake behind you. Mark the exit before you touch the mineral throat."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Энергетическое гнездо вент-микроузлов",
+     "scanner": "Керамический узловой кластер в горле вентиля собирает тепловой градиент. Рядом следы зарядки дрона и свежий ответ герметика.",
+     "terminal": "ЛОКАЛЬНЫЙ ЭНЕРГОУЗЕЛ ATLAS / ВЕНТ V-3: тепловой градиент питает стек микроячеек, будит петли биопленки и герметика в радиусе 40 м, интервал зарядки дрона неровный. Центральная командная блокировка отсутствует.",
+     "audio": "Тепло, минеральное горло, узел. Этого достаточно, чтобы ремонт проснулся после твоего прохода.",
+     "in_game_wiki": "Гнезда вент-микроузлов объясняют, почему ремонт Atlas остается активным в мертвых комнатах. Каждый узел собирает локальный градиент: тепло через керамику, соляную химию по минеральным жилам, вибрацию через стену вентиля. Одно гнездо не командует HECTON-8. Оно может разбудить одну дверную заплату, одну люльку дрона или одну полосу биопленки после ухода игрока.",
+     "external_site": "Вент-микроузел делает Atlas малым и упорным. Ему не нужна идеальная центральная машина, чтобы создать проблему. Локального питания, локального повреждения и локальных правил ремонта достаточно, чтобы коридор изменился между двумя визитами.",
+     "field_note": "Если вент-узел теплый, считай, что комната может проснуться за спиной. Пометь выход, прежде чем трогать минеральное горло."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "ベント・マイクロノード電力巣",
+     "scanner": "ベント喉部のセラミックノード群が熱勾配を収穫。周囲にドローン充電痕と新しいシーラント反応。",
+     "terminal": "ATLAS局所電力ノード / VENT V-3：熱勾配がマイクロセルスタックへ給電し、40 m内のバイオフィルムとシーラントループを起こす。ドローン充電間隔不規則。中央コマンドロックなし。",
+     "audio": "熱、鉱物の喉、ノード。それだけで通過後に修理が起きる。",
+     "in_game_wiki": "ベント・マイクロノード巣は、死んだ部屋でAtlas修理が動き続ける理由を示す。各ノードは局所勾配を集める。セラミックを通る熱、鉱脈をまたぐ塩水化学、ベント壁を通る振動。一つの巣はHECTON-8を指揮できない。だがプレイヤーが去った後に、一つのドアパッチ、一つのドローン台座、一筋のバイオフィルムを起こせる。",
+     "external_site": "ベント・マイクロノードはAtlasを小さく、しつこく保つ。問題を起こすのに完全な中央機械は要らない。局所電力、局所損傷、局所修理規則だけで、二度の訪問の間に通路を変えられる。",
+     "field_note": "ベントノードが暖かいなら、背後で部屋が起きると考えろ。鉱物の喉に触れる前に出口をマークしろ。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "热 vent 微节点电力巢",
+     "scanner": "vent喉部的陶瓷节点簇正在收集热梯度。附近有无人机充电疤痕和新鲜密封反应。",
+     "terminal": "ATLAS本地电力节点 / VENT V-3：热梯度供给微电池堆，唤醒40 m内的生物膜和密封回路，无人机充电间隔不规则。无中央指令锁定。",
+     "audio": "热、矿物喉部、节点。足够让维修在你通过后醒来。",
+     "in_game_wiki": "热 vent 微节点巢解释了为什么Atlas维修会在死房间里保持活动。每个节点收集本地梯度：穿过陶瓷的热量、矿脉之间的盐水化学、vent壁中的振动。单个巢无法指挥HECTON-8。它可以在玩家离开后唤醒一块门补丁、一个无人机座或一条生物膜。",
+     "external_site": "vent微节点让Atlas保持小型且顽固。制造麻烦不需要完美的中央机器。本地电力、本地损伤和本地维修规则，足以让同一条走廊在两次造访之间改变。",
+     "field_note": "如果vent节点是温的，就假设房间会在你身后醒来。碰矿物喉部前先标出口。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Nid d'alimentation de micronœuds de vent",
+     "scanner": "Un groupe de nœuds céramiques dans la gorge du vent capte le gradient thermique. Cicatrices de charge drone et réponse fraîche de scellant à proximité.",
+     "terminal": "NŒUD D'ÉNERGIE LOCAL ATLAS / VENT V-3 : gradient thermique alimentant pile de microcellules, réveillant boucles de biofilm et scellant dans 40 m, intervalle de charge drone irrégulier. Aucun verrou de commande centrale.",
+     "audio": "Chaleur, gorge minérale, nœud. Assez pour réveiller la réparation après ton passage.",
+     "in_game_wiki": "Les nids de micronœuds de vent expliquent pourquoi la réparation Atlas reste active dans des salles mortes. Chaque nœud récolte un gradient local : chaleur dans la céramique, chimie saumâtre entre veines minérales, vibration dans la paroi du vent. Un nid seul ne commande pas HECTON-8. Il peut réveiller un patch de porte, un berceau de drone ou une bande de biofilm après le passage du joueur.",
+     "external_site": "Un micronœud de vent garde Atlas petit et persistant. Il n'a pas besoin d'une machine centrale parfaite pour causer des problèmes. Puissance locale, dommage local et règles de réparation locales suffisent à changer un couloir entre deux visites.",
+     "field_note": "Si le nœud du vent est chaud, suppose que la pièce peut se réveiller derrière toi. Marque la sortie avant de toucher la gorge minérale."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Nido de micronodos de energía de respiradero",
+     "scanner": "Grupo de nodos cerámicos en la garganta del respiradero cosecha gradiente térmico. Cerca hay cicatrices de carga de dron y respuesta fresca de sellante.",
+     "terminal": "NODO LOCAL DE ENERGÍA ATLAS / VENT V-3: gradiente térmico alimenta pila de microceldas, despierta bucles de biopelícula y sellante en 40 m, intervalo de carga de dron irregular. Sin bloqueo de mando central.",
+     "audio": "Calor, garganta mineral, nodo. Basta para que la reparación despierte tras tu paso.",
+     "in_game_wiki": "Los nidos de micronodos de respiradero explican por qué la reparación Atlas sigue activa en salas muertas. Cada nodo recoge un gradiente local: calor por cerámica, química de salmuera entre vetas minerales, vibración por la pared del respiradero. Un solo nido no dirige HECTON-8. Puede despertar un parche de puerta, una cuna de dron o una tira de biopelícula después de que el jugador se vaya.",
+     "external_site": "Un micronodo de respiradero mantiene a Atlas pequeño y persistente. No necesita una máquina central perfecta para causar problemas. Energía local, daño local y reglas locales de reparación bastan para cambiar un pasillo entre dos visitas.",
+     "field_note": "Si el nodo del respiradero está caliente, asume que la sala puede despertar detrás de ti. Marca la salida antes de tocar la garganta mineral."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Energienest aus Vent-Mikroknoten",
+     "scanner": "Keramischer Knotenhaufen im Ventkehlgang erntet Wärmegradient. Drohnenladespuren und frische Dichtstoffreaktion in der Nähe.",
+     "terminal": "ATLAS-LOKALKRAFTKNOTEN / VENT V-3: Wärmegradient speist Mikrozellenstapel, weckt Biofilm- und Dichtstoffschleifen im Umkreis von 40 m, Drohnenladeintervall unregelmäßig. Keine zentrale Befehlsverriegelung.",
+     "audio": "Wärme, Mineralkehle, Knoten. Das reicht, damit Reparatur nach deinem Durchgang aufwacht.",
+     "in_game_wiki": "Vent-Mikroknotennester erklären, warum Atlas-Reparatur in toten Räumen aktiv bleibt. Jeder Knoten erntet einen lokalen Gradienten: Wärme durch Keramik, Solenchemie über Mineraladern, Vibration durch die Ventwand. Ein einzelnes Nest kann HECTON-8 nicht befehligen. Es kann eine Türflickstelle, eine Drohnenwiege oder einen Biofilmstreifen wecken, nachdem der Spieler gegangen ist.",
+     "external_site": "Ein Vent-Mikroknoten hält Atlas klein und hartnäckig. Er braucht keine perfekte Zentralmaschine, um Probleme zu machen. Lokale Leistung, lokaler Schaden und lokale Reparaturregeln reichen, damit ein Korridor sich zwischen zwei Besuchen ändert.",
+     "field_note": "Wenn der Ventknoten warm ist, nimm an, dass der Raum hinter dir aufwachen kann. Markier den Ausgang, bevor du die Mineralkehle berührst."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Gniazdo zasilania mikrowęzłów wentu",
+     "scanner": "Klaster ceramicznych węzłów w gardle wentu zbiera gradient ciepła. W pobliżu blizny ładowania drona i świeża reakcja uszczelniacza.",
+     "terminal": "LOKALNY WĘZEŁ MOCY ATLAS / VENT V-3: gradient termiczny zasila stos mikrokomórek, budzi pętle biofilmu i uszczelniacza w promieniu 40 m, odstęp ładowania drona nieregularny. Brak blokady centralnego dowodzenia.",
+     "audio": "Ciepło, mineralne gardło, węzeł. To wystarcza, by naprawa obudziła się po twoim przejściu.",
+     "in_game_wiki": "Gniazda mikrowęzłów wentu wyjaśniają, czemu naprawa Atlas pozostaje aktywna w martwych pomieszczeniach. Każdy węzeł zbiera lokalny gradient: ciepło przez ceramikę, chemię solanki po żyłach mineralnych, wibrację przez ścianę wentu. Jedno gniazdo nie dowodzi HECTON-8. Może obudzić jedną łatę drzwi, jedno łoże drona albo pas biofilmu po odejściu gracza.",
+     "external_site": "Mikrowęzeł wentu utrzymuje Atlas jako mały i uporczywy. Nie potrzebuje doskonałej centralnej maszyny, żeby zrobić problem. Lokalna moc, lokalne uszkodzenie i lokalne zasady naprawy wystarczą, by korytarz zmienił się między dwiema wizytami.",
+     "field_note": "Jeśli węzeł wentu jest ciepły, załóż, że pomieszczenie może obudzić się za tobą. Oznacz wyjście, zanim dotkniesz mineralnego gardła."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Енергетичне гніздо вент-мікровузлів",
+     "scanner": "Керамічний вузловий кластер у горлі венту збирає тепловий градієнт. Поруч сліди зарядки дрона і свіжа відповідь герметика.",
+     "terminal": "ЛОКАЛЬНИЙ ЕНЕРГОВУЗОЛ ATLAS / VENT V-3: тепловий градієнт живить стек мікрокомірок, будить петлі біоплівки і герметика в радіусі 40 м, інтервал зарядки дрона нерівний. Центрального командного замка немає.",
+     "audio": "Тепло, мінеральне горло, вузол. Цього досить, щоб ремонт прокинувся після твого проходу.",
+     "in_game_wiki": "Гнізда вент-мікровузлів пояснюють, чому ремонт Atlas лишається активним у мертвих кімнатах. Кожен вузол збирає локальний градієнт: тепло крізь кераміку, соляну хімію по мінеральних жилах, вібрацію крізь стіну венту. Одне гніздо не командує HECTON-8. Воно може розбудити одну дверну латку, одну колиску дрона або одну смугу біоплівки після відходу гравця.",
+     "external_site": "Вент-мікровузол робить Atlas малим і впертим. Йому не потрібна досконала центральна машина, щоб створити проблему. Локального живлення, локальної шкоди і локальних правил ремонту досить, щоб коридор змінився між двома візитами.",
+     "field_note": "Якщо вент-вузол теплий, вважай, що кімната може прокинутися за спиною. Познач вихід, перш ніж торкатися мінерального горла."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "عش طاقة لعقد تهوية دقيقة",
+     "scanner": "عنقود عقد خزفية في حلق الفتحة يحصد تدرج الحرارة. حوله ندوب شحن درون واستجابة مانع تسرب جديدة.",
+     "terminal": "عقدة طاقة محلية ATLAS / VENT V-3: تدرج حراري يغذي مكدس خلايا دقيقة، يوقظ حلقات الغشاء الحيوي ومانع التسرب ضمن 40 m، فاصل شحن الدرون غير منتظم. لا قفل أمر مركزي.",
+     "audio": "حرارة، حلق معدني، عقدة. هذا يكفي ليستيقظ الإصلاح بعد مرورك.",
+     "in_game_wiki": "تشرح أعشاش عقد الفتحات الدقيقة لماذا يبقى إصلاح Atlas نشطا في غرف ميتة. كل عقدة تحصد تدرجا محليا: حرارة عبر الخزف، كيمياء محلول ملحي عبر عروق معدنية، اهتزازا عبر جدار الفتحة. عش واحد لا يقود HECTON-8. يستطيع إيقاظ رقعة باب واحدة أو مهد درون واحد أو شريط غشاء حيوي بعد أن يغادر اللاعب.",
+     "external_site": "عقدة فتحة دقيقة تبقي Atlas صغيرا ومستمرا. لا تحتاج آلة مركزية كاملة لصنع مشكلة. الطاقة المحلية والضرر المحلي وقواعد الإصلاح المحلية تكفي لتغيير ممر بين زيارتين.",
+     "field_note": "إذا كانت عقدة الفتحة دافئة، افترض أن الغرفة قد تستيقظ خلفك. علّم المخرج قبل لمس الحلق المعدني."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Sarang Daya Mikronode Vent",
+     "scanner": "Klaster node keramik di leher vent memanen gradien panas. Bekas charge drone dan respons sealant baru ada di dekatnya.",
+     "terminal": "NODE DAYA LOKAL ATLAS / VENT V-3: gradien panas memberi makan tumpukan mikrosel, membangunkan loop biofilm dan sealant dalam 40 m, interval charge drone tidak teratur. Tidak ada kunci komando pusat.",
+     "audio": "Panas, leher mineral, node. Itu cukup untuk membangunkan perbaikan setelah kau lewat.",
+     "in_game_wiki": "Sarang mikronode vent menjelaskan mengapa perbaikan Atlas tetap aktif di ruangan mati. Tiap node memanen gradien lokal: panas lewat keramik, kimia brine di sepanjang urat mineral, getaran melalui dinding vent. Satu sarang tidak bisa memerintah HECTON-8. Ia bisa membangunkan satu tambalan pintu, satu cradle drone, atau satu jalur biofilm setelah pemain pergi.",
+     "external_site": "Mikronode vent membuat Atlas kecil dan gigih. Ia tidak butuh mesin pusat sempurna untuk membuat masalah. Daya lokal, kerusakan lokal, dan aturan perbaikan lokal cukup untuk mengubah koridor di antara dua kunjungan.",
+     "field_note": "Jika node vent hangat, anggap ruangan bisa bangun di belakangmu. Tandai pintu keluar sebelum menyentuh leher mineral."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "벤트 마이크로노드 전력 둥지",
+     "scanner": "벤트 목 안의 세라믹 노드 클러스터가 열 구배를 거둔다. 근처에 드론 충전 흉터와 새 밀봉 반응.",
+     "terminal": "ATLAS 국소 전력 노드 / VENT V-3: 열 구배가 마이크로셀 스택을 먹이고 40 m 안의 생물막과 밀봉재 루프를 깨운다. 드론 충전 간격 불규칙. 중앙 명령 잠금 없음.",
+     "audio": "열, 광물 목, 노드. 네가 지나간 뒤 수리가 깨어나기에 충분하다.",
+     "in_game_wiki": "벤트 마이크로노드 둥지는 죽은 방에서도 Atlas 수리가 계속 활동하는 이유를 설명한다. 각 노드는 국소 구배를 거둔다. 세라믹을 지나는 열, 광맥을 가로지르는 염수 화학, 벤트 벽을 통한 진동. 하나의 둥지가 HECTON-8을 지휘할 수는 없다. 그러나 플레이어가 떠난 뒤 문 패치 하나, 드론 요람 하나, 생물막 한 줄을 깨울 수 있다.",
+     "external_site": "벤트 마이크로노드는 Atlas를 작고 끈질기게 만든다. 문제를 만들기 위해 완벽한 중앙 기계가 필요하지 않다. 국소 전력, 국소 손상, 국소 수리 규칙만으로도 두 번의 방문 사이에 복도가 바뀔 수 있다.",
+     "field_note": "벤트 노드가 따뜻하면 방이 등 뒤에서 깨어날 수 있다고 봐라. 광물 목을 만지기 전에 출구를 표시해라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "קן כוח של מיקרו-צמתי ונט",
+     "scanner": "אשכול צמתים קרמיים בגרון הוונט קוצר מפל חום. לידו צלקות טעינת רחפן ותגובה טרייה של איטום.",
+     "terminal": "צומת כוח מקומית ATLAS / VENT V-3: מפל תרמי מזין מערך מיקרו-תאים, מעיר לולאות ביו-פילם ואיטום בטווח 40 m, מרווח טעינת רחפן לא סדיר. אין נעילת פקודה מרכזית.",
+     "audio": "חום, גרון מינרלי, צומת. זה מספיק כדי שתיקון יתעורר אחרי שתעבור.",
+     "in_game_wiki": "קני מיקרו-צמתי ונט מסבירים למה תיקון Atlas נשאר פעיל בחדרים מתים. כל צומת קוצרת מפל מקומי: חום דרך קרמיקה, כימיית מי מלח לאורך עורקי מינרל, רטט דרך קיר הוונט. קן יחיד אינו יכול לפקד על HECTON-8. הוא יכול להעיר טלאי דלת אחד, עריסת רחפן אחת או פס ביו-פילם אחד אחרי שהשחקן ממשיך הלאה.",
+     "external_site": "מיקרו-צומת ונט שומרת את Atlas קטן ועיקש. אין צורך במכונה מרכזית מושלמת כדי ליצור בעיה. כוח מקומי, נזק מקומי וכללי תיקון מקומיים מספיקים כדי שמסדרון ישתנה בין שתי ביקורות.",
+     "field_note": "אם צומת הוונט חמימה, הנח שהחדר יכול להתעורר מאחוריך. סמן את היציאה לפני שאתה נוגע בגרון המינרלי."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ninho de energia de micronodos de vent",
+     "scanner": "Grupo de nós cerâmicos na garganta do vent colhe gradiente de calor. Marcas de carga de drone e resposta fresca de selante por perto.",
+     "terminal": "NÓ DE ENERGIA LOCAL ATLAS / VENT V-3: gradiente térmico alimenta pilha de microcélulas, acorda loops de biofilme e selante em 40 m, intervalo de carga de drone irregular. Sem trava de comando central.",
+     "audio": "Calor, garganta mineral, nó. Isso basta para o reparo acordar depois que você passa.",
+     "in_game_wiki": "Ninhos de micronodos de vent explicam por que o reparo Atlas continua ativo em salas mortas. Cada nó colhe um gradiente local: calor pela cerâmica, química de salmoura por veios minerais, vibração pela parede do vent. Um ninho sozinho não comanda HECTON-8. Pode acordar um remendo de porta, um berço de drone ou uma faixa de biofilme depois que o jogador segue adiante.",
+     "external_site": "Um micronodo de vent mantém Atlas pequeno e persistente. Não precisa de uma máquina central perfeita para causar problema. Energia local, dano local e regras locais de reparo bastam para mudar um corredor entre duas visitas.",
+     "field_note": "Se o nó do vent está quente, assuma que a sala pode acordar atrás de você. Marque a saída antes de tocar a garganta mineral."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Energienest van vent-micronodes",
+     "scanner": "Keramische nodecluster in de ventkeel oogst warmtegradiënt. Drone-laadsporen en verse afdichterreactie dichtbij.",
+     "terminal": "ATLAS LOKALE KRACHTNODE / VENT V-3: thermische gradiënt voedt microcelstapel, wekt biofilm- en afdichterlussen binnen 40 m, drone-laadinterval onregelmatig. Geen centraal commandoslot.",
+     "audio": "Warmte, mineraalkeel, node. Dat is genoeg om reparatie wakker te maken nadat je passeert.",
+     "in_game_wiki": "Vent-micronodenesten verklaren waarom Atlas-reparatie actief blijft in dode kamers. Elke node oogst een lokale gradiënt: warmte door keramiek, pekelchemie langs mineraaladers, trilling door de ventwand. Eén nest kan HECTON-8 niet commanderen. Het kan één deurpatch, één dronewieg of één strook biofilm wakker maken nadat de speler verder is gegaan.",
+     "external_site": "Een vent-micronode houdt Atlas klein en hardnekkig. Er is geen perfecte centrale machine nodig om problemen te maken. Lokale kracht, lokale schade en lokale reparatieregels zijn genoeg om een gang tussen twee bezoeken te veranderen.",
+     "field_note": "Als de ventnode warm is, neem aan dat de kamer achter je wakker kan worden. Markeer de uitgang voordat je de mineraalkeel aanraakt."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

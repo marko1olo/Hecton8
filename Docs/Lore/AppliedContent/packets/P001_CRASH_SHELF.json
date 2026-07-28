@@ -1,281 +1,282 @@
 {
-  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
-  "packet_id": "P001_CRASH_SHELF",
-  "article_id": "hecton8.crash_shelf",
-  "title_key": "LORE_P001_CRASH_SHELF_TITLE",
-  "status": "production_facing_draft_pending_native_localization",
-  "canon_owner": [
-    "Docs/Lore/Lore_Bible.md",
-    "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "packet_id": "P001_CRASH_SHELF",
+ "article_id": "hecton8.crash_shelf",
+ "title_key": "LORE_P001_CRASH_SHELF_TITLE",
+ "status": "production_facing_draft_pending_native_localization",
+ "canon_owner": [
+  "Docs/Lore/Lore_Bible.md",
+  "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
+ ],
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false,
+  "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+ },
+ "surfaces": [
+  "scanner",
+  "in_game_wiki",
+  "terminal",
+  "audio_subtitle",
+  "external_site",
+  "image_brief"
+ ],
+ "unlock": {
+  "primary": "unlock.first_shelter",
+  "secondary": [
+   "unlock.first_scan",
+   "unlock.black_keel_handshake"
   ],
-  "runtime_contract": {
-    "authoring_only": true,
-    "runtime_reads_markdown": false,
-    "runtime_generates_translation": false,
-    "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
-  },
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
+  "poi_tags": [
+   "poi.crash_shelf",
+   "poi.service_buoy"
   ],
-  "unlock": {
-    "primary": "unlock.first_shelter",
-    "secondary": [
-      "unlock.first_scan",
-      "unlock.black_keel_handshake"
-    ],
-    "poi_tags": [
-      "poi.crash_shelf",
-      "poi.service_buoy"
-    ],
-    "biome_tags": [
-      "biome.shallow_reef",
-      "biome.storm_shelf",
-      "biome.kelp_shallows"
-    ]
+  "biome_tags": [
+   "biome.shallow_reef",
+   "biome.storm_shelf",
+   "biome.kelp_shallows"
+  ]
+ },
+ "seed_variants": {
+  "impact_site": [
+   "reef shelf",
+   "kelp shallows",
+   "storm trench",
+   "broken aquaculture grid",
+   "service platform edge"
+  ],
+  "first_threat": [
+   "oxygen leak",
+   "storm surge",
+   "electrical short",
+   "small predator",
+   "battery failure"
+  ],
+  "first_beauty": [
+   "halo sargassum",
+   "bladderfish cloud",
+   "kelp raylet",
+   "glassworm bloom",
+   "shallow bioluminescent wake"
+  ]
+ },
+ "image_targets": {
+  "codex": "damaged bathy-drop shell on bright alien shallow shelf, Aegir glow behind storm haze, readable wreck parts, no fantasy magic glow",
+  "website_hero": "wide cinematic shallow ocean crash shelf, broken industrial capsule, colorful alien reef, hard sci-fi NASA-punk tone",
+  "scanner_thumbnail": "close technical view of cracked ascent package and intact crush frame"
+ },
+ "localized": {
+  "en_US": {
+   "title": "Crash Shelf",
+   "scanner_bathy_drop": "Bathy-drop wreckage. Crush frame intact; ascent package gone. The shell can hold pressure and heat. It cannot lift you.",
+   "scanner_heat_shield": "Ablative ceramic vitrified by entry burn. Still useful as insulation, still a record of how hard the capsule hit.",
+   "field_note": "Leave the crush frame bolted. Pull ceramic, battery ribs and dry boxes only after the first seal holds.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: IMPACT SURVIVED. ASCENT PACKAGE: LOST. UPLINK CORE: FRACTURED. BLACK KEEL: HANDSHAKE ONLY.",
+   "audio_line": "Black Keel handshake received. Operator alive. Recovery authority unresolved. Hold shelter and wait for a usable window.",
+   "in_game_wiki": "The bathy-drop was a descent package, not a return craft. It entered Aegir weather, dumped heat through ceramic, and kept one operator alive long enough to raise a shelter. Impact removed the ascent package. What remains is ugly and useful: pressure frame, vitrified ceramic, battery ribs, dry cavities, fractured uplink.\n\nThe shelf around the wreck is bright enough to look safe. It is not safe. Every useful piece has a second value as evidence: part number, impact angle, missing ascent bolts, Black Keel handshake log. The first job is shelter. The second is not destroying the record while staying alive.",
+   "external_site": "Crash Shelf starts with a broken bathy-drop, usable wreck parts, Black Keel on handshake only, and a hard limit: the descent shell can keep you alive, but it cannot take you back up.",
+   "external_site_article": "A bathy-drop shell lies half-buried in salt weed and warm ceramic on the storm shelf. The crush frame survived. The ascent package did not. Inside the wreck are the first salvage decisions: leave the pressure frame intact, pull insulation without opening the shelter seam, keep the fractured uplink dry, and wait for a carrier window that may not belong to the operator.\n\nBlack Keel answers in inventory language: impact survived, ascent lost, uplink fractured, operator alive, recovery authority unresolved. The shelf is beautiful in the useful way HECTON-8 should be beautiful: reef color, storm light, shallow bioluminescence, and a dead machine still warm enough to save you. The wreck is also a record. Strip it too fast and the first proof of what happened becomes scrap.",
+   "scanner": "Bathy-drop wreckage. Crush frame intact; ascent package gone. The shell can hold pressure and heat. It cannot lift you.",
+   "terminal": "BATHY-DROP BD-K8-113: IMPACT SURVIVED. ASCENT PACKAGE: LOST. UPLINK CORE: FRACTURED. BLACK KEEL: HANDSHAKE ONLY.",
+   "audio": "Black Keel handshake received. Operator alive. Recovery authority unresolved. Hold shelter and wait for a usable window."
   },
-  "seed_variants": {
-    "impact_site": [
-      "reef shelf",
-      "kelp shallows",
-      "storm trench",
-      "broken aquaculture grid",
-      "service platform edge"
-    ],
-    "first_threat": [
-      "oxygen leak",
-      "storm surge",
-      "electrical short",
-      "small predator",
-      "battery failure"
-    ],
-    "first_beauty": [
-      "halo sargassum",
-      "bladderfish cloud",
-      "kelp raylet",
-      "glassworm bloom",
-      "shallow bioluminescent wake"
-    ]
+  "ar_SA": {
+   "title": "رف الاصطدام",
+   "scanner_bathy_drop": "حطام كبسولة باثي دروب. إطار الضغط سليم؛ حزمة الصعود مفقودة. يستطيع الغلاف حفظ الضغط والحرارة. لا يستطيع رفعك.",
+   "scanner_heat_shield": "سيراميك عازل تزجج بفعل احتراق الدخول. ما زال نافعا للعزل، وما زال يسجل قسوة الارتطام.",
+   "field_note": "لا تجرد غلاف الهبوط حتى يبقى إطارا عاريا. أول قاعدة على HECTON-8 هي أي شيء يبقي المطر خارجا والضغط داخلا والأدوات جافة.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: نجا من الارتطام. حزمة الصعود: مفقودة. نواة الاتصال: متصدعة. BLACK KEEL: مصافحة فقط.",
+   "audio_line": "تم استلام مصافحة Black Keel. المشغل حي. صلاحية الاسترداد غير محسومة. حافظ على الملجأ وانتظر نافذة صالحة.",
+   "in_game_wiki": "كانت باثي دروب أداة هبوط، وليست مركبة إنقاذ. صممت لدخول طقس Aegir، والاندفاع إلى محيط HECTON-8، وطرح الحرارة، وإبقاء عامل واحد يتنفس حتى يعمل أول ملجأ. أخذ الارتطام حزمة الصعود معه. الغلاف الباقي خشن وصاخب وثمين: إطار ضغط، شظايا سيراميك، أضلاع بطارية، تجاويف جافة، ونواة اتصال شبه ميتة. الرف حوله مضيء بما يكفي ليبدو لطيفا، لكن كل جسم مفيد هو دليل أيضا. تعرف Black Keel أن مطالبة حية موجودة. ولم تقرر بعد قيمة تلك المطالبة.",
+   "external_site": "يبدأ HECTON-8 على رف عاصف ومضيء، مع باثي دروب محطمة، وحاملة بعيدة، وأول قاعدة قاسية للقمر: الحطام الذي ينقذك يثبت أيضا سبب إرسالك.",
+   "external_site_article": "رف الاصطدام هو أول غرفة للاعب وأول مسرح جريمة. كبسولة هبوط نصف مدفونة في عشب ملحي وسيراميك دافئ، متضررة جدا فلا تغادر، ومفيدة جدا فلا تترك. إطارها الباقي يمنح اللاعب ملجأ وخردة وأهداف مسح وخطا إلى Black Keel يبدو إجرائيا قبل أن يبدو إنسانيا. هذه النبرة مهمة. الحاملة لا ترد كصديق. إنها تجرد الفشل: حزمة الصعود ضائعة، نواة الاتصال متصدعة، المشغل حي، وصلاحية الاسترداد غير محسومة. موقع الافتتاح يعلم HECTON-8 بلا محاضرة. الجمال حقيقي: تلألؤ ضحل، لون الشعاب، وضوء العاصفة تحت Aegir. والعنف الصناعي حقيقي أيضا: أجزاء مختومة، ندوب اصطدام، لغة مطالبات، وسلسلة إنقاذ تحسب الكلفة منذ البداية. السؤال الأول عملي: ابق حيا. السؤال الثاني يصل داخل الحطام نفسه: من يستفيد إذا نجوت؟",
+   "scanner": "حطام كبسولة باثي دروب. إطار الضغط سليم؛ حزمة الصعود مفقودة. يستطيع الغلاف حفظ الضغط والحرارة. لا يستطيع رفعك.",
+   "terminal": "BATHY-DROP BD-K8-113: نجا من الارتطام. حزمة الصعود: مفقودة. نواة الاتصال: متصدعة. BLACK KEEL: مصافحة فقط.",
+   "audio": "تم استلام مصافحة Black Keel. المشغل حي. صلاحية الاسترداد غير محسومة. حافظ على الملجأ وانتظر نافذة صالحة."
   },
-  "image_targets": {
-    "codex": "damaged bathy-drop shell on bright alien shallow shelf, Aegir glow behind storm haze, readable wreck parts, no fantasy magic glow",
-    "website_hero": "wide cinematic shallow ocean crash shelf, broken industrial capsule, colorful alien reef, hard sci-fi NASA-punk tone",
-    "scanner_thumbnail": "close technical view of cracked ascent package and intact crush frame"
+  "de_DE": {
+   "title": "Absturzschelf",
+   "scanner_bathy_drop": "Wrack der Bathy-Drop-Kapsel. Druckrahmen intakt; Aufstiegspaket verloren. Die Hülle kann Druck und Wärme halten. Sie kann dich nicht heben.",
+   "scanner_heat_shield": "Ablative Keramik, beim Eintritt verglast. Noch als Isolierung brauchbar, noch ein Protokoll des harten Einschlags.",
+   "field_note": "Zerlege die Drop-Hülle nicht bis auf den Rahmen. Die erste Basis auf HECTON-8 ist alles, was Regen draußen, Druck drinnen und Werkzeuge trocken hält.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: EINSCHLAG ÜBERSTANDEN. AUFSTIEGSPAKET: VERLOREN. UPLINK-KERN: FRAKTURIERT. BLACK KEEL: NUR HANDSHAKE.",
+   "audio_line": "Black-Keel-Handshake empfangen. Operator lebt. Bergungsbefugnis ungeklärt. Unterkunft halten und auf nutzbares Fenster warten.",
+   "in_game_wiki": "Die Bathy-Drop war ein Abstiegswerkzeug, kein Rettungsfahrzeug. Sie wurde gebaut, um in Aegirs Wetter einzutreten, in HECTON-8s Ozean zu schlagen, Hitze abzuwerfen und einen Arbeiter lange genug atmen zu lassen, bis der erste Unterschlupf online war. Der Einschlag riss das Aufstiegspaket mit. Die übrige Hülle ist grob, laut und wertvoll: Druckrahmen, Keramikscherben, Batterierippen, trockene Hohlräume, halb toter Uplink. Das Schelf darum ist hell genug, um sanft zu wirken, doch jeder nützliche Gegenstand ist auch Beweisstück. Black Keel weiß, dass ein Anspruch lebt. Der Wert dieses Anspruchs ist noch offen.",
+   "external_site": "HECTON-8 beginnt auf einem hellen Sturmschelf mit einer gebrochenen Bathy-Drop, einem fernen Carrier und der ersten harten Mondregel: Das Wrack, das dich rettet, belegt auch, warum du geschickt wurdest.",
+   "external_site_article": "Das Absturzschelf ist der erste Raum des Spielers und der erste Tatort. Eine Abstiegskapsel liegt halb begraben in Salzkraut und warmer Keramik, zu beschädigt zum Verlassen und zu nützlich zum Aufgeben. Ihr überlebender Rahmen gibt dem Spieler Unterkunft, Bergungsgut, Scannerziele und eine Leitung zu Black Keel, die erst nach Prozedur klingt und erst später nach Mensch. Dieser Ton zählt. Der Carrier antwortet nicht wie ein Freund. Er inventarisiert den Fehler: Aufstiegspaket weg, Uplink gebrochen, Operator am Leben, Bergungsbefugnis ungeklärt. Der Startort lehrt HECTON-8 ohne Vortrag. Schönheit ist vorhanden: flache Biolumineszenz, Rifffarbe, Sturmlicht unter Aegir. Die industrielle Gewalt ist ebenso vorhanden: gestempelte Teile, Einschlagsnarben, Anspruchssprache, eine Rettungskette, die schon Kosten zählt. Die erste Frage ist praktisch: am Leben bleiben. Die zweite kommt im selben Wrack an: Wem nützt es, wenn du es schaffst?",
+   "scanner": "Wrack der Bathy-Drop-Kapsel. Druckrahmen intakt; Aufstiegspaket verloren. Die Hülle kann Druck und Wärme halten. Sie kann dich nicht heben.",
+   "terminal": "BATHY-DROP BD-K8-113: EINSCHLAG ÜBERSTANDEN. AUFSTIEGSPAKET: VERLOREN. UPLINK-KERN: FRAKTURIERT. BLACK KEEL: NUR HANDSHAKE.",
+   "audio": "Black-Keel-Handshake empfangen. Operator lebt. Bergungsbefugnis ungeklärt. Unterkunft halten und auf nutzbares Fenster warten."
   },
-  "localized": {
-    "en_US": {
-      "title": "Crash Shelf",
-      "scanner_bathy_drop": "Bathy-drop wreckage. Crush frame intact; ascent package gone. The shell can hold pressure and heat. It cannot lift you.",
-      "scanner_heat_shield": "Ablative ceramic vitrified by entry burn. Still useful as insulation, still a record of how hard the capsule hit.",
-      "field_note": "Leave the crush frame bolted. Pull ceramic, battery ribs and dry boxes only after the first seal holds.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: IMPACT SURVIVED. ASCENT PACKAGE: LOST. UPLINK CORE: FRACTURED. BLACK KEEL: HANDSHAKE ONLY.",
-      "audio_line": "Black Keel handshake received. Operator alive. Recovery authority unresolved. Hold shelter and wait for a usable window.",
-      "in_game_wiki": "The bathy-drop was a descent package, not a return craft. It entered Aegir weather, dumped heat through ceramic, and kept one operator alive long enough to raise a shelter. Impact removed the ascent package. What remains is ugly and useful: pressure frame, vitrified ceramic, battery ribs, dry cavities, fractured uplink.\n\nThe shelf around the wreck is bright enough to look safe. It is not safe. Every useful piece has a second value as evidence: part number, impact angle, missing ascent bolts, Black Keel handshake log. The first job is shelter. The second is not destroying the record while staying alive.",
-      "external_site": "Crash Shelf starts with a broken bathy-drop, usable wreck parts, Black Keel on handshake only, and a hard limit: the descent shell can keep you alive, but it cannot take you back up.",
-      "external_site_article": "A bathy-drop shell lies half-buried in salt weed and warm ceramic on the storm shelf. The crush frame survived. The ascent package did not. Inside the wreck are the first salvage decisions: leave the pressure frame intact, pull insulation without opening the shelter seam, keep the fractured uplink dry, and wait for a carrier window that may not belong to the operator.\n\nBlack Keel answers in inventory language: impact survived, ascent lost, uplink fractured, operator alive, recovery authority unresolved. The shelf is beautiful in the useful way HECTON-8 should be beautiful: reef color, storm light, shallow bioluminescence, and a dead machine still warm enough to save you. The wreck is also a record. Strip it too fast and the first proof of what happened becomes scrap.",
-      "scanner": "Bathy-drop wreckage. Crush frame intact; ascent package gone. The shell can hold pressure and heat. It cannot lift you.",
-      "terminal": "BATHY-DROP BD-K8-113: IMPACT SURVIVED. ASCENT PACKAGE: LOST. UPLINK CORE: FRACTURED. BLACK KEEL: HANDSHAKE ONLY.",
-      "audio": "Black Keel handshake received. Operator alive. Recovery authority unresolved. Hold shelter and wait for a usable window."
-    },
-    "ar_SA": {
-      "title": "رف الاصطدام",
-      "scanner_bathy_drop": "حطام كبسولة باثي دروب. إطار الضغط سليم؛ حزمة الصعود مفقودة. يستطيع الغلاف حفظ الضغط والحرارة. لا يستطيع رفعك.",
-      "scanner_heat_shield": "سيراميك عازل تزجج بفعل احتراق الدخول. ما زال نافعا للعزل، وما زال يسجل قسوة الارتطام.",
-      "field_note": "لا تجرد غلاف الهبوط حتى يبقى إطارا عاريا. أول قاعدة على HECTON-8 هي أي شيء يبقي المطر خارجا والضغط داخلا والأدوات جافة.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: نجا من الارتطام. حزمة الصعود: مفقودة. نواة الاتصال: متصدعة. BLACK KEEL: مصافحة فقط.",
-      "audio_line": "تم استلام مصافحة Black Keel. المشغل حي. صلاحية الاسترداد غير محسومة. حافظ على الملجأ وانتظر نافذة صالحة.",
-      "in_game_wiki": "كانت باثي دروب أداة هبوط، وليست مركبة إنقاذ. صممت لدخول طقس Aegir، والاندفاع إلى محيط HECTON-8، وطرح الحرارة، وإبقاء عامل واحد يتنفس حتى يعمل أول ملجأ. أخذ الارتطام حزمة الصعود معه. الغلاف الباقي خشن وصاخب وثمين: إطار ضغط، شظايا سيراميك، أضلاع بطارية، تجاويف جافة، ونواة اتصال شبه ميتة. الرف حوله مضيء بما يكفي ليبدو لطيفا، لكن كل جسم مفيد هو دليل أيضا. تعرف Black Keel أن مطالبة حية موجودة. ولم تقرر بعد قيمة تلك المطالبة.",
-      "external_site": "يبدأ HECTON-8 على رف عاصف ومضيء، مع باثي دروب محطمة، وحاملة بعيدة، وأول قاعدة قاسية للقمر: الحطام الذي ينقذك يثبت أيضا سبب إرسالك.",
-      "external_site_article": "رف الاصطدام هو أول غرفة للاعب وأول مسرح جريمة. كبسولة هبوط نصف مدفونة في عشب ملحي وسيراميك دافئ، متضررة جدا فلا تغادر، ومفيدة جدا فلا تترك. إطارها الباقي يمنح اللاعب ملجأ وخردة وأهداف مسح وخطا إلى Black Keel يبدو إجرائيا قبل أن يبدو إنسانيا. هذه النبرة مهمة. الحاملة لا ترد كصديق. إنها تجرد الفشل: حزمة الصعود ضائعة، نواة الاتصال متصدعة، المشغل حي، وصلاحية الاسترداد غير محسومة. موقع الافتتاح يعلم HECTON-8 بلا محاضرة. الجمال حقيقي: تلألؤ ضحل، لون الشعاب، وضوء العاصفة تحت Aegir. والعنف الصناعي حقيقي أيضا: أجزاء مختومة، ندوب اصطدام، لغة مطالبات، وسلسلة إنقاذ تحسب الكلفة منذ البداية. السؤال الأول عملي: ابق حيا. السؤال الثاني يصل داخل الحطام نفسه: من يستفيد إذا نجوت؟",
-      "scanner": "حطام كبسولة باثي دروب. إطار الضغط سليم؛ حزمة الصعود مفقودة. يستطيع الغلاف حفظ الضغط والحرارة. لا يستطيع رفعك.",
-      "terminal": "BATHY-DROP BD-K8-113: نجا من الارتطام. حزمة الصعود: مفقودة. نواة الاتصال: متصدعة. BLACK KEEL: مصافحة فقط.",
-      "audio": "تم استلام مصافحة Black Keel. المشغل حي. صلاحية الاسترداد غير محسومة. حافظ على الملجأ وانتظر نافذة صالحة."
-    },
-    "de_DE": {
-      "title": "Absturzschelf",
-      "scanner_bathy_drop": "Wrack der Bathy-Drop-Kapsel. Druckrahmen intakt; Aufstiegspaket verloren. Die Hülle kann Druck und Wärme halten. Sie kann dich nicht heben.",
-      "scanner_heat_shield": "Ablative Keramik, beim Eintritt verglast. Noch als Isolierung brauchbar, noch ein Protokoll des harten Einschlags.",
-      "field_note": "Zerlege die Drop-Hülle nicht bis auf den Rahmen. Die erste Basis auf HECTON-8 ist alles, was Regen draußen, Druck drinnen und Werkzeuge trocken hält.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: EINSCHLAG ÜBERSTANDEN. AUFSTIEGSPAKET: VERLOREN. UPLINK-KERN: FRAKTURIERT. BLACK KEEL: NUR HANDSHAKE.",
-      "audio_line": "Black-Keel-Handshake empfangen. Operator lebt. Bergungsbefugnis ungeklärt. Unterkunft halten und auf nutzbares Fenster warten.",
-      "in_game_wiki": "Die Bathy-Drop war ein Abstiegswerkzeug, kein Rettungsfahrzeug. Sie wurde gebaut, um in Aegirs Wetter einzutreten, in HECTON-8s Ozean zu schlagen, Hitze abzuwerfen und einen Arbeiter lange genug atmen zu lassen, bis der erste Unterschlupf online war. Der Einschlag riss das Aufstiegspaket mit. Die übrige Hülle ist grob, laut und wertvoll: Druckrahmen, Keramikscherben, Batterierippen, trockene Hohlräume, halb toter Uplink. Das Schelf darum ist hell genug, um sanft zu wirken, doch jeder nützliche Gegenstand ist auch Beweisstück. Black Keel weiß, dass ein Anspruch lebt. Der Wert dieses Anspruchs ist noch offen.",
-      "external_site": "HECTON-8 beginnt auf einem hellen Sturmschelf mit einer gebrochenen Bathy-Drop, einem fernen Carrier und der ersten harten Mondregel: Das Wrack, das dich rettet, belegt auch, warum du geschickt wurdest.",
-      "external_site_article": "Das Absturzschelf ist der erste Raum des Spielers und der erste Tatort. Eine Abstiegskapsel liegt halb begraben in Salzkraut und warmer Keramik, zu beschädigt zum Verlassen und zu nützlich zum Aufgeben. Ihr überlebender Rahmen gibt dem Spieler Unterkunft, Bergungsgut, Scannerziele und eine Leitung zu Black Keel, die erst nach Prozedur klingt und erst später nach Mensch. Dieser Ton zählt. Der Carrier antwortet nicht wie ein Freund. Er inventarisiert den Fehler: Aufstiegspaket weg, Uplink gebrochen, Operator am Leben, Bergungsbefugnis ungeklärt. Der Startort lehrt HECTON-8 ohne Vortrag. Schönheit ist vorhanden: flache Biolumineszenz, Rifffarbe, Sturmlicht unter Aegir. Die industrielle Gewalt ist ebenso vorhanden: gestempelte Teile, Einschlagsnarben, Anspruchssprache, eine Rettungskette, die schon Kosten zählt. Die erste Frage ist praktisch: am Leben bleiben. Die zweite kommt im selben Wrack an: Wem nützt es, wenn du es schaffst?",
-      "scanner": "Wrack der Bathy-Drop-Kapsel. Druckrahmen intakt; Aufstiegspaket verloren. Die Hülle kann Druck und Wärme halten. Sie kann dich nicht heben.",
-      "terminal": "BATHY-DROP BD-K8-113: EINSCHLAG ÜBERSTANDEN. AUFSTIEGSPAKET: VERLOREN. UPLINK-KERN: FRAKTURIERT. BLACK KEEL: NUR HANDSHAKE.",
-      "audio": "Black-Keel-Handshake empfangen. Operator lebt. Bergungsbefugnis ungeklärt. Unterkunft halten und auf nutzbares Fenster warten."
-    },
-    "es_ES": {
-      "title": "Plataforma del impacto",
-      "scanner_bathy_drop": "Restos de la bathy-drop. Bastidor de presión intacto; paquete de ascenso perdido. La carcasa puede retener presión y calor. No puede elevarte.",
-      "scanner_heat_shield": "Cerámica ablativa vitrificada por la quemadura de entrada. Aún sirve como aislante y aún conserva la huella del golpe.",
-      "field_note": "No desmontes la carcasa de descenso hasta dejar solo el bastidor. La primera base en HECTON-8 es cualquier cosa que deje la lluvia fuera, la presión dentro y las herramientas secas.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PAQUETE DE ASCENSO: PERDIDO. NÚCLEO UPLINK: FRACTURADO. BLACK KEEL: SOLO HANDSHAKE.",
-      "audio_line": "Handshake de Black Keel recibido. Operador vivo. Autoridad de recuperación sin resolver. Mantén refugio y espera una ventana usable.",
-      "in_game_wiki": "La bathy-drop era una herramienta de descenso, no una nave de rescate. Se construyó para entrar en el clima de Aegir, golpear el océano de HECTON-8, soltar calor y mantener respirando a un trabajador hasta que el primer refugio quedara activo. El impacto se llevó el paquete de ascenso. La carcasa restante es basta, ruidosa y valiosa: bastidor de presión, restos cerámicos, costillas de batería, cavidades secas, uplink medio muerto. La plataforma alrededor brilla lo bastante para parecer amable, pero todo objeto útil también es prueba. Black Keel sabe que una reclamación sigue viva. Aún no ha decidido cuánto vale.",
-      "external_site": "HECTON-8 empieza en una plataforma luminosa de tormenta con una bathy-drop rota, un carrier lejano y la primera regla dura de la luna: el pecio que te salva también prueba por qué te enviaron.",
-      "external_site_article": "La Plataforma del impacto es la primera habitación del jugador y su primera escena del crimen. Una cápsula de descenso yace medio enterrada en hierba salina y cerámica tibia, demasiado dañada para marcharse y demasiado útil para abandonarla. Su bastidor superviviente da refugio, chatarra, objetivos de escáner y una línea hacia Black Keel que suena a procedimiento antes de sonar humana. Ese tono importa. El carrier no responde como un amigo. Hace inventario del fallo: paquete de ascenso perdido, uplink fracturado, operador vivo, autoridad de recuperación sin resolver. El lugar inicial enseña HECTON-8 sin sermón. La belleza existe: bioluminiscencia somera, color de arrecife, luz de tormenta bajo Aegir. También existe la violencia industrial: piezas marcadas, cicatrices de impacto, lenguaje de reclamación, una cadena de rescate que ya cuenta costes. La primera pregunta es práctica: seguir con vida. La segunda llega dentro del mismo pecio: ¿a quién beneficia que sobrevivas?",
-      "scanner": "Restos de la bathy-drop. Bastidor de presión intacto; paquete de ascenso perdido. La carcasa puede retener presión y calor. No puede elevarte.",
-      "terminal": "BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PAQUETE DE ASCENSO: PERDIDO. NÚCLEO UPLINK: FRACTURADO. BLACK KEEL: SOLO HANDSHAKE.",
-      "audio": "Handshake de Black Keel recibido. Operador vivo. Autoridad de recuperación sin resolver. Mantén refugio y espera una ventana usable."
-    },
-    "fr_FR": {
-      "title": "Plateau du crash",
-      "scanner_bathy_drop": "Épave de bathy-drop. Cadre de pression intact ; paquet d'ascension perdu. La coque peut garder pression et chaleur. Elle ne peut pas te soulever.",
-      "scanner_heat_shield": "Céramique ablative vitrifiée par la brûlure d'entrée. Encore utile comme isolant, encore témoin de la violence de l'impact.",
-      "field_note": "Ne dépouille pas la coque de descente jusqu'au cadre. La première base sur HECTON-8, c'est tout ce qui garde la pluie dehors, la pression dedans et les outils au sec.",
-      "terminal_diag": "BATHY-DROP BD-K8-113 : IMPACT SURVÉCU. PAQUET D'ASCENSION : PERDU. NOYAU UPLINK : FRACTURÉ. BLACK KEEL : HANDSHAKE SEUL.",
-      "audio_line": "Handshake de Black Keel reçu. Opérateur vivant. Autorité de récupération non résolue. Tenir l'abri et attendre une fenêtre utilisable.",
-      "in_game_wiki": "La bathy-drop était un outil de descente, pas un appareil de sauvetage. Elle était faite pour entrer dans le temps d'Aegir, percuter l'océan de HECTON-8, rejeter la chaleur et garder un travailleur en respiration jusqu'à l'activation du premier abri. L'impact a emporté le paquet d'ascension. La coque restante est grossière, bruyante et précieuse : cadre de pression, éclats céramiques, nervures de batterie, cavités sèches, uplink à moitié mort. Le plateau autour brille assez pour paraître doux, mais chaque objet utile est aussi une preuve. Black Keel sait qu'une réclamation est vivante. Sa valeur reste à décider.",
-      "external_site": "HECTON-8 commence sur un plateau de tempête lumineux, avec une bathy-drop brisée, un carrier lointain et la première règle dure de la lune : l'épave qui te sauve prouve aussi pourquoi tu as été envoyé.",
-      "external_site_article": "Le Plateau du crash est la première pièce du joueur et sa première scène de crime. Une capsule de descente repose à moitié enfouie dans les herbes salines et la céramique tiède, trop endommagée pour partir et trop utile pour être abandonnée. Son cadre survivant donne un abri, du rebut, des cibles de scanner et une ligne vers Black Keel qui sonne procédurale avant de sonner humaine. Ce ton compte. Le carrier ne répond pas comme un ami. Il inventorie l'échec : paquet d'ascension perdu, uplink fracturé, opérateur vivant, autorité de récupération non résolue. Le lieu d'ouverture enseigne HECTON-8 sans conférence. La beauté est réelle : bioluminescence peu profonde, couleur du récif, lumière d'orage sous Aegir. La violence industrielle aussi : pièces estampillées, cicatrices d'impact, langage de réclamation, chaîne de sauvetage qui compte déjà les coûts. La première question est pratique : rester en vie. La seconde arrive dans la même épave : à qui profite ta survie ?",
-      "scanner": "Épave de bathy-drop. Cadre de pression intact ; paquet d'ascension perdu. La coque peut garder pression et chaleur. Elle ne peut pas te soulever.",
-      "terminal": "BATHY-DROP BD-K8-113 : IMPACT SURVÉCU. PAQUET D'ASCENSION : PERDU. NOYAU UPLINK : FRACTURÉ. BLACK KEEL : HANDSHAKE SEUL.",
-      "audio": "Handshake de Black Keel reçu. Opérateur vivant. Autorité de récupération non résolue. Tenir l'abri et attendre une fenêtre utilisable."
-    },
-    "he_IL": {
-      "title": "מדף ההתרסקות",
-      "scanner_bathy_drop": "שרידי קפסולת באתי-דרופ. מסגרת הלחץ שלמה; חבילת העלייה אבדה. המעטפת יכולה להחזיק לחץ וחום. היא לא יכולה להרים אותך.",
-      "scanner_heat_shield": "קרמיקה אבלטיבית שזוגגה בשרפת הכניסה. עדיין שימושית לבידוד, ועדיין רישום של עוצמת הפגיעה.",
-      "field_note": "אל תפשיט את מעטפת הירידה עד המסגרת. הבסיס הראשון על HECTON-8 הוא כל דבר שמשאיר גשם בחוץ, לחץ בפנים וכלים יבשים.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: שרד פגיעה. חבילת עלייה: אבדה. ליבת UPLINK: סדוקה. BLACK KEEL: לחיצת יד בלבד.",
-      "audio_line": "התקבלה לחיצת יד מ-Black Keel. מפעיל חי. סמכות חילוץ לא פתורה. החזק מחסה והמתן לחלון שמיש.",
-      "in_game_wiki": "הבאתי-דרופ הייתה כלי ירידה, לא רכב חילוץ. היא נבנתה כדי להיכנס למזג האוויר של Aegir, להכות באוקיינוס של HECTON-8, להשליך חום ולהשאיר עובד אחד נושם עד שהמחסה הראשון יעלה לפעולה. הפגיעה לקחה איתה את חבילת העלייה. המעטפת שנותרה גסה, רועשת ויקרה: מסגרת לחץ, שברי קרמיקה, צלעות סוללה, חללים יבשים, uplink חצי מת. המדף מסביב מואר מספיק כדי להיראות עדין, אבל כל חפץ שימושי הוא גם ראיה. Black Keel יודעת שתביעה חיה קיימת. היא עוד לא החליטה כמה התביעה שווה.",
-      "external_site": "HECTON-8 נפתח על מדף סערה בהיר עם באתי-דרופ שבורה, carrier רחוק, והכלל הקשה הראשון של הירח: ההריסות שמצילות אותך מוכיחות גם למה נשלחת.",
-      "external_site_article": "מדף ההתרסקות הוא החדר הראשון של השחקן וזירת הפשע הראשונה. קפסולת ירידה שוכבת חצי קבורה בעשב מלח ובקרמיקה חמימה, פגועה מכדי לעזוב ושימושית מכדי לנטוש. המסגרת ששרדה נותנת מחסה, גרוטאות, מטרות סריקה וקו אל Black Keel שנשמע מנהלי לפני שהוא נשמע אנושי. הטון הזה חשוב. ה-carrier לא עונה כמו חבר. הוא ממיין את הכשל: חבילת עלייה אבדה, uplink סדוק, מפעיל חי, סמכות חילוץ לא פתורה. אתר הפתיחה מלמד את HECTON-8 בלי הרצאה. היופי אמיתי: ביולומינסנציה רדודה, צבע שונית, אור סערה מתחת ל-Aegir. גם האלימות התעשייתית אמיתית: חלקים מוטבעים, צלקות פגיעה, שפת תביעות, שרשרת חילוץ שכבר סופרת עלות. השאלה הראשונה מעשית: להישאר בחיים. השאלה השנייה מגיעה בתוך אותן הריסות: מי מרוויח אם תצליח?",
-      "scanner": "שרידי קפסולת באתי-דרופ. מסגרת הלחץ שלמה; חבילת העלייה אבדה. המעטפת יכולה להחזיק לחץ וחום. היא לא יכולה להרים אותך.",
-      "terminal": "BATHY-DROP BD-K8-113: שרד פגיעה. חבילת עלייה: אבדה. ליבת UPLINK: סדוקה. BLACK KEEL: לחיצת יד בלבד.",
-      "audio": "התקבלה לחיצת יד מ-Black Keel. מפעיל חי. סמכות חילוץ לא פתורה. החזק מחסה והמתן לחלון שמיש."
-    },
-    "id_ID": {
-      "title": "Paparan Jatuh",
-      "scanner_bathy_drop": "Reruntuhan bathy-drop. Rangka tekanan utuh; paket naik hilang. Cangkangnya bisa menahan tekanan dan panas. Ia tidak bisa mengangkatmu.",
-      "scanner_heat_shield": "Keramik ablasi mengaca oleh bakaran masuk atmosfer. Masih berguna sebagai isolasi, masih menjadi catatan betapa keras kapsul menghantam.",
-      "field_note": "Jangan lucuti cangkang drop sampai tinggal rangka. Basis pertama di HECTON-8 adalah apa pun yang menjaga hujan di luar, tekanan di dalam, dan alat tetap kering.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: BENTURAN SELAMAT. PAKET NAIK: HILANG. INTI UPLINK: RETAK. BLACK KEEL: HANDSHAKE SAJA.",
-      "audio_line": "Handshake Black Keel diterima. Operator hidup. Wewenang pemulihan belum selesai. Pertahankan perlindungan dan tunggu jendela yang bisa dipakai.",
-      "in_game_wiki": "Bathy-drop adalah alat turun, bukan kendaraan penyelamat. Ia dibuat untuk memasuki cuaca Aegir, menghantam samudra HECTON-8, membuang panas, dan menjaga satu pekerja tetap bernapas sampai perlindungan pertama aktif. Benturan membawa pergi paket naiknya. Cangkang yang tersisa kasar, berisik, dan berharga: rangka tekanan, serpihan keramik, rusuk baterai, rongga kering, uplink setengah mati. Paparan di sekitarnya cukup terang untuk tampak jinak, tetapi setiap benda berguna juga menjadi bukti. Black Keel tahu satu klaim masih hidup. Nilai klaim itu belum diputuskan.",
-      "external_site": "HECTON-8 dibuka di paparan badai yang terang dengan bathy-drop rusak, carrier jauh, dan aturan keras pertama bulan ini: rongsokan yang menyelamatkanmu juga membuktikan mengapa kamu dikirim.",
-      "external_site_article": "Paparan Jatuh adalah ruang pertama pemain dan tempat perkara pertama. Sebuah kapsul turun setengah terkubur di rumput garam dan keramik hangat, terlalu rusak untuk pergi dan terlalu berguna untuk ditinggalkan. Rangka yang selamat memberi pemain perlindungan, salvage, target pemindai, dan jalur ke Black Keel yang terdengar prosedural sebelum terdengar manusiawi. Nada itu penting. Carrier tidak menjawab seperti teman. Ia menginventarisasi kegagalan: paket naik hilang, uplink retak, operator hidup, wewenang pemulihan belum selesai. Lokasi pembuka mengajarkan HECTON-8 tanpa ceramah. Keindahan itu nyata: bioluminesensi dangkal, warna karang, cahaya badai di bawah Aegir. Kekerasan industrinya juga nyata: bagian bercap, bekas benturan, bahasa klaim, rantai penyelamatan yang sudah menghitung biaya. Pertanyaan pertama praktis: tetap hidup. Pertanyaan kedua tiba di reruntuhan yang sama: siapa yang mendapat untung jika kamu berhasil?",
-      "scanner": "Reruntuhan bathy-drop. Rangka tekanan utuh; paket naik hilang. Cangkangnya bisa menahan tekanan dan panas. Ia tidak bisa mengangkatmu.",
-      "terminal": "BATHY-DROP BD-K8-113: BENTURAN SELAMAT. PAKET NAIK: HILANG. INTI UPLINK: RETAK. BLACK KEEL: HANDSHAKE SAJA.",
-      "audio": "Handshake Black Keel diterima. Operator hidup. Wewenang pemulihan belum selesai. Pertahankan perlindungan dan tunggu jendela yang bisa dipakai."
-    },
-    "ja_JP": {
-      "title": "墜落棚",
-      "scanner_bathy_drop": "バシー・ドロップの残骸。耐圧フレームは無事。上昇パッケージは失われた。殻は圧力と熱を保てる。あなたを持ち上げることはできない。",
-      "scanner_heat_shield": "突入燃焼でガラス化したアブレーション・セラミック。断熱材としてまだ使え、衝突の激しさも記録している。",
-      "field_note": "ドロップ殻を骨組みだけにするな。HECTON-8で最初の基地とは、雨を外に、圧力を中に、工具を乾いたままにしてくれるものだ。",
-      "terminal_diag": "BATHY-DROP BD-K8-113: 衝突を生存。上昇パッケージ: 喪失。アップリンク・コア: 破断。BLACK KEEL: ハンドシェイクのみ。",
-      "audio_line": "Black Keelのハンドシェイクを受信。オペレーター生存。回収権限は未解決。シェルターを維持し、使用可能な窓を待て。",
-      "in_game_wiki": "バシー・ドロップは降下用の道具であって、救助艇ではない。Aegirの気象へ突入し、HECTON-8の海へ叩き込まれ、熱を捨て、最初のシェルターが動くまで作業員一人を呼吸させるために造られた。衝突は上昇パッケージを奪った。残った殻は粗く、うるさく、価値がある。耐圧フレーム、セラミック片、バッテリーのリブ、乾いた空洞、半死のアップリンク。周囲の棚は穏やかに見えるほど明るいが、役に立つ物はすべて証拠でもある。Black Keelは生きた請求対象がいることを知っている。その請求にどれだけの価値があるかは、まだ決めていない。",
-      "external_site": "HECTON-8は、壊れたバシー・ドロップ、遠いcarrier、そして月の最初の硬い規則とともに、明るい嵐の棚から始まる。あなたを救う残骸は、あなたが送られた理由も証明する。",
-      "external_site_article": "墜落棚はプレイヤーの最初の部屋であり、最初の犯罪現場でもある。降下カプセルは塩草と温かいセラミックに半ば埋まり、去るには壊れすぎ、捨てるには役に立ちすぎる。生き残ったフレームは、避難場所、サルベージ、スキャナー対象、そしてBlack Keelへの線を与える。その声は人間的に聞こえる前に、まず手続きの声として聞こえる。そこが重要だ。carrierは友人のようには答えない。失敗を棚卸しする。上昇パッケージ喪失、アップリンク破断、オペレーター生存、回収権限未解決。開始地点は講義なしでHECTON-8を教える。美しさは本物だ。浅瀬の生物発光、礁の色、Aegirの下の嵐光。産業の暴力も本物だ。刻印された部品、衝突痕、請求の言葉、すでに費用を数える救助連鎖。最初の問いは実務的だ。生き残れ。二つ目の問いは同じ残骸の中で届く。あなたが生き残ると、誰が得をするのか。",
-      "scanner": "バシー・ドロップの残骸。耐圧フレームは無事。上昇パッケージは失われた。殻は圧力と熱を保てる。あなたを持ち上げることはできない。",
-      "terminal": "BATHY-DROP BD-K8-113: 衝突を生存。上昇パッケージ: 喪失。アップリンク・コア: 破断。BLACK KEEL: ハンドシェイクのみ。",
-      "audio": "Black Keelのハンドシェイクを受信。オペレーター生存。回収権限は未解決。シェルターを維持し、使用可能な窓を待て。"
-    },
-    "ko_KR": {
-      "title": "추락 선반",
-      "scanner_bathy_drop": "배시 드롭 잔해. 압력 프레임은 온전함. 상승 패키지는 사라짐. 껍질은 압력과 열을 붙잡을 수 있다. 너를 들어 올릴 수는 없다.",
-      "scanner_heat_shield": "진입 연소로 유리화된 삭마 세라믹. 단열재로 아직 쓸 수 있고, 캡슐이 얼마나 세게 부딪혔는지도 기록한다.",
-      "field_note": "드롭 껍질을 프레임만 남기고 뜯지 마라. HECTON-8의 첫 기지는 비를 밖에 두고, 압력을 안에 두고, 공구를 마르게 하는 무엇이든 된다.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: 충돌 생존. 상승 패키지: 손실. 업링크 코어: 파열. BLACK KEEL: 핸드셰이크만.",
-      "audio_line": "Black Keel 핸드셰이크 수신. 오퍼레이터 생존. 회수 권한 미해결. 대피처를 유지하고 사용 가능한 창을 기다려라.",
-      "in_game_wiki": "배시 드롭은 하강 도구였지 구조선이 아니었다. Aegir의 날씨로 들어가고, HECTON-8의 바다에 박히고, 열을 버리고, 첫 대피처가 켜질 때까지 작업자 한 명을 숨 쉬게 하도록 만들어졌다. 충돌은 상승 패키지를 가져갔다. 남은 껍질은 투박하고 시끄럽고 귀중하다. 압력 프레임, 세라믹 조각, 배터리 리브, 마른 빈 공간, 반쯤 죽은 업링크. 주변 선반은 순하게 보일 만큼 밝지만, 쓸모 있는 모든 물건은 증거이기도 하다. Black Keel은 살아 있는 청구 대상이 있음을 안다. 그 청구의 값은 아직 정하지 않았다.",
-      "external_site": "HECTON-8은 부서진 배시 드롭, 먼 carrier, 그리고 달의 첫 냉혹한 규칙과 함께 밝은 폭풍 선반에서 열린다. 너를 살리는 잔해는 네가 왜 보내졌는지도 증명한다.",
-      "external_site_article": "추락 선반은 플레이어의 첫 방이자 첫 범죄 현장이다. 하강 캡슐은 소금풀과 따뜻한 세라믹에 반쯤 묻혀 있고, 떠나기엔 너무 망가졌으며 버리기엔 너무 쓸모 있다. 살아남은 프레임은 대피처, 회수품, 스캐너 표적, 그리고 Black Keel로 이어지는 선을 준다. 그 선은 인간적으로 들리기 전에 절차처럼 들린다. 그 어조가 중요하다. carrier는 친구처럼 답하지 않는다. 실패를 목록화한다. 상승 패키지 손실, 업링크 파열, 오퍼레이터 생존, 회수 권한 미해결. 시작 장소는 강의 없이 HECTON-8을 가르친다. 아름다움은 진짜다. 얕은 생물발광, 암초의 색, Aegir 아래의 폭풍빛. 산업적 폭력도 진짜다. 각인된 부품, 충돌 흉터, 청구 언어, 이미 비용을 세는 구조 사슬. 첫 질문은 실용적이다. 살아남아라. 두 번째 질문은 같은 잔해 안에서 도착한다. 네가 살아남으면 누가 이득을 보는가?",
-      "scanner": "배시 드롭 잔해. 압력 프레임은 온전함. 상승 패키지는 사라짐. 껍질은 압력과 열을 붙잡을 수 있다. 너를 들어 올릴 수는 없다.",
-      "terminal": "BATHY-DROP BD-K8-113: 충돌 생존. 상승 패키지: 손실. 업링크 코어: 파열. BLACK KEEL: 핸드셰이크만.",
-      "audio": "Black Keel 핸드셰이크 수신. 오퍼레이터 생존. 회수 권한 미해결. 대피처를 유지하고 사용 가능한 창을 기다려라."
-    },
-    "nl_NL": {
-      "title": "Crashplateau",
-      "scanner_bathy_drop": "Wrak van de bathy-drop. Drukframe intact; opstijgpakket weg. De schaal kan druk en warmte vasthouden. Ze kan je niet optillen.",
-      "scanner_heat_shield": "Ablatief keramiek, verglaasd door de intredebrand. Nog bruikbaar als isolatie, nog een verslag van hoe hard de capsule insloeg.",
-      "field_note": "Strip de dropschaal niet tot op het frame. De eerste basis op HECTON-8 is alles wat regen buiten, druk binnen en gereedschap droog houdt.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: INSLAG OVERLEEFD. OPSTIJGPAKKET: WEG. UPLINK-KERN: GEBROKEN. BLACK KEEL: ALLEEN HANDSHAKE.",
-      "audio_line": "Black Keel-handshake ontvangen. Operator leeft. Bergingsbevoegdheid onopgelost. Houd onderdak en wacht op een bruikbaar venster.",
-      "in_game_wiki": "De bathy-drop was een afdalingswerktuig, geen reddingsvaartuig. Ze werd gebouwd om Aegirs weer binnen te gaan, in HECTON-8s oceaan te slaan, hitte af te werpen en één arbeider te laten ademen tot het eerste onderkomen online kwam. De inslag nam het opstijgpakket mee. De overgebleven schaal is grof, luid en waardevol: drukframe, keramiekscherven, batterizribbels, droge holtes, halfdode uplink. Het plateau eromheen is helder genoeg om zachtaardig te lijken, maar elk nuttig object is ook bewijs. Black Keel weet dat er een levende claim is. Wat die claim waard is, staat nog open.",
-      "external_site": "HECTON-8 opent op een helder stormplateau met een gebroken bathy-drop, een verre carrier en de eerste harde maanregel: het wrak dat je redt bewijst ook waarom je gestuurd bent.",
-      "external_site_article": "Het Crashplateau is de eerste kamer van de speler en de eerste plaats delict. Een afdaalcapsule ligt half begraven in zoutwier en warm keramiek, te beschadigd om te vertrekken en te nuttig om achter te laten. Het overlevende frame geeft de speler onderdak, bergingsmateriaal, scandoelen en een lijn naar Black Keel die procedureel klinkt voordat ze menselijk klinkt. Die toon telt. De carrier antwoordt niet als een vriend. Hij inventariseert de mislukking: opstijgpakket weg, uplink gebroken, operator levend, bergingsbevoegdheid onopgelost. De openingslocatie leert HECTON-8 zonder lezing. Schoonheid is echt: ondiepe bioluminescentie, rifkleur, stormlicht onder Aegir. Industriële geweld is even echt: gestempelde onderdelen, inslaglittekens, claimtaal, een reddingsketen die al kosten telt. De eerste vraag is praktisch: blijf leven. De tweede komt in hetzelfde wrak binnen: wie heeft er baat bij als jij dat doet?",
-      "scanner": "Wrak van de bathy-drop. Drukframe intact; opstijgpakket weg. De schaal kan druk en warmte vasthouden. Ze kan je niet optillen.",
-      "terminal": "BATHY-DROP BD-K8-113: INSLAG OVERLEEFD. OPSTIJGPAKKET: WEG. UPLINK-KERN: GEBROKEN. BLACK KEEL: ALLEEN HANDSHAKE.",
-      "audio": "Black Keel-handshake ontvangen. Operator leeft. Bergingsbevoegdheid onopgelost. Houd onderdak en wacht op een bruikbaar venster."
-    },
-    "pl_PL": {
-      "title": "Półka katastrofy",
-      "scanner_bathy_drop": "Wrak bathy-drop. Rama ciśnieniowa cała; pakiet wznoszenia utracony. Skorupa może trzymać ciśnienie i ciepło. Nie może cię unieść.",
-      "scanner_heat_shield": "Ceramika ablacyjna zeszklona przy wejściu. Nadal dobra jako izolacja, nadal zapis siły uderzenia kapsuły.",
-      "field_note": "Nie rozbieraj skorupy dropu do samej ramy. Pierwsza baza na HECTON-8 to cokolwiek trzyma deszcz na zewnątrz, ciśnienie w środku i narzędzia suche.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: UDERZENIE PRZETRWANE. PAKIET WZNOSZENIA: UTRACONY. RDZEŃ UPLINK: PĘKNIĘTY. BLACK KEEL: TYLKO HANDSHAKE.",
-      "audio_line": "Handshake Black Keel odebrany. Operator żyje. Uprawnienie odzysku nierozstrzygnięte. Utrzymaj schronienie i czekaj na użyteczne okno.",
-      "in_game_wiki": "Bathy-drop był narzędziem zniżania, nie pojazdem ratunkowym. Zbudowano go, by wejść w pogodę Aegir, uderzyć w ocean HECTON-8, zrzucić ciepło i utrzymać jednego pracownika przy oddechu, aż pierwsze schronienie zacznie działać. Uderzenie zabrało pakiet wznoszenia. Pozostała skorupa jest toporna, głośna i cenna: rama ciśnieniowa, odłamki ceramiki, żebra baterii, suche wnęki, półmartwy uplink. Półka wokół niej świeci dość jasno, by wyglądać łagodnie, ale każdy użyteczny przedmiot jest też dowodem. Black Keel wie, że żyje jedno roszczenie. Jeszcze nie ustalono, ile to roszczenie jest warte.",
-      "external_site": "HECTON-8 otwiera się na jasnej burzowej półce z rozbitym bathy-dropem, odległym carrierem i pierwszą twardą zasadą księżyca: wrak, który cię ratuje, dowodzi też, po co cię wysłano.",
-      "external_site_article": "Półka katastrofy jest pierwszym pokojem gracza i pierwszym miejscem zbrodni. Kapsuła zniżania leży półzakopana w słonej trawie i ciepłej ceramice, zbyt uszkodzona, by odlecieć, i zbyt użyteczna, by ją porzucić. Ocalała rama daje graczowi schronienie, złom, cele skanera i linię do Black Keel, która brzmi proceduralnie, zanim zabrzmi ludzko. Ten ton ma znaczenie. Carrier nie odpowiada jak przyjaciel. Inwentaryzuje awarię: pakiet wznoszenia utracony, uplink pęknięty, operator żyje, uprawnienie odzysku nierozstrzygnięte. Miejsce otwarcia uczy HECTON-8 bez wykładu. Piękno jest realne: płytka bioluminescencja, kolor rafy, światło burzy pod Aegir. Przemysłowa przemoc też jest realna: stemplowane części, blizny uderzenia, język roszczeń, łańcuch ratunku już liczący koszty. Pierwsze pytanie jest praktyczne: przeżyć. Drugie przychodzi w tym samym wraku: komu służy twoje przeżycie?",
-      "scanner": "Wrak bathy-drop. Rama ciśnieniowa cała; pakiet wznoszenia utracony. Skorupa może trzymać ciśnienie i ciepło. Nie może cię unieść.",
-      "terminal": "BATHY-DROP BD-K8-113: UDERZENIE PRZETRWANE. PAKIET WZNOSZENIA: UTRACONY. RDZEŃ UPLINK: PĘKNIĘTY. BLACK KEEL: TYLKO HANDSHAKE.",
-      "audio": "Handshake Black Keel odebrany. Operator żyje. Uprawnienie odzysku nierozstrzygnięte. Utrzymaj schronienie i czekaj na użyteczne okno."
-    },
-    "pt_BR": {
-      "title": "Plataforma do impacto",
-      "scanner_bathy_drop": "Destroços da bathy-drop. Estrutura de pressão intacta; pacote de subida perdido. A carcaça consegue segurar pressão e calor. Não consegue levantar você.",
-      "scanner_heat_shield": "Cerâmica ablativa vitrificada pela queima de entrada. Ainda serve como isolamento, ainda registra a força do impacto da cápsula.",
-      "field_note": "Não desmonte a carcaça de descida até sobrar só a estrutura. A primeira base em HECTON-8 é qualquer coisa que mantenha a chuva fora, a pressão dentro e as ferramentas secas.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PACOTE DE SUBIDA: PERDIDO. NÚCLEO UPLINK: FRATURADO. BLACK KEEL: APENAS HANDSHAKE.",
-      "audio_line": "Handshake da Black Keel recebido. Operador vivo. Autoridade de recuperação sem resolução. Mantenha abrigo e aguarde uma janela usável.",
-      "in_game_wiki": "A bathy-drop era uma ferramenta de descida, não uma nave de resgate. Foi construída para entrar no clima de Aegir, bater no oceano de HECTON-8, descartar calor e manter um trabalhador respirando até o primeiro abrigo ficar online. O impacto levou o pacote de subida. A carcaça restante é bruta, barulhenta e valiosa: estrutura de pressão, cacos cerâmicos, nervuras de bateria, cavidades secas, uplink meio morto. A plataforma ao redor é clara o bastante para parecer gentil, mas todo objeto útil também é prova. A Black Keel sabe que existe uma reivindicação viva. Ela ainda não decidiu quanto essa reivindicação vale.",
-      "external_site": "HECTON-8 começa numa plataforma de tempestade luminosa com uma bathy-drop quebrada, um carrier distante e a primeira regra dura da lua: o destroço que salva você também prova por que você foi enviado.",
-      "external_site_article": "A Plataforma do impacto é o primeiro cômodo do jogador e a primeira cena de crime. Uma cápsula de descida fica meio enterrada em erva salgada e cerâmica quente, danificada demais para partir e útil demais para abandonar. Sua estrutura sobrevivente dá abrigo, sucata, alvos de scanner e uma linha até a Black Keel que soa procedural antes de soar humana. Esse tom importa. O carrier não responde como amigo. Ele inventaria a falha: pacote de subida perdido, uplink fraturado, operador vivo, autoridade de recuperação sem resolução. O local inicial ensina HECTON-8 sem palestra. A beleza é real: bioluminescência rasa, cor de recife, luz de tempestade sob Aegir. A violência industrial também é real: peças marcadas, cicatrizes de impacto, linguagem de reivindicação, uma cadeia de resgate que já conta custos. A primeira pergunta é prática: continue vivo. A segunda chega dentro do mesmo destroço: quem ganha se você conseguir?",
-      "scanner": "Destroços da bathy-drop. Estrutura de pressão intacta; pacote de subida perdido. A carcaça consegue segurar pressão e calor. Não consegue levantar você.",
-      "terminal": "BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PACOTE DE SUBIDA: PERDIDO. NÚCLEO UPLINK: FRATURADO. BLACK KEEL: APENAS HANDSHAKE.",
-      "audio": "Handshake da Black Keel recebido. Operador vivo. Autoridade de recuperação sem resolução. Mantenha abrigo e aguarde uma janela usável."
-    },
-    "ru_RU": {
-      "title": "Аварийная отмель",
-      "scanner_bathy_drop": "Обломки bathy-drop. Силовая рама цела; взлетный пакет утрачен. Оболочка держит давление и тепло. Поднять тебя она не сможет.",
-      "scanner_heat_shield": "Абляционная керамика остеклела при входном горении. Еще годится как изоляция и еще хранит запись о силе удара.",
-      "field_note": "Не разбирай спусковую оболочку до голой рамы. Первая база на HECTON-8 — все, что держит дождь снаружи, давление внутри, а инструменты сухими.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: УДАР ПЕРЕЖИТ. ВЗЛЕТНЫЙ ПАКЕТ: УТРАЧЕН. ЯДРО UPLINK: РАЗЛОМ. BLACK KEEL: ТОЛЬКО HANDSHAKE.",
-      "audio_line": "Handshake Black Keel принят. Оператор жив. Полномочие на эвакуацию не решено. Держи укрытие и жди пригодного окна.",
-      "in_game_wiki": "Bathy-drop был инструментом спуска, а не спасательным кораблем. Его строили, чтобы войти в погоду Aegir, пробить океан HECTON-8, сбросить тепло и сохранить дыхание одному рабочему, пока не заработает первое укрытие. Удар забрал взлетный пакет. Оставшаяся оболочка груба, шумна и ценна: силовая рама, керамические осколки, ребра батарей, сухие полости, полумертвый uplink. Отмель вокруг достаточно яркая, чтобы казаться мягкой, но каждый полезный предмет здесь еще и улика. Black Keel знает, что живая претензия существует. Сколько стоит эта претензия, она пока не решила.",
-      "external_site": "HECTON-8 начинается на светлой штормовой отмели: сломанный bathy-drop, далекий carrier и первое жесткое правило луны — обломок, который спасает тебя, одновременно доказывает, зачем тебя отправили.",
-      "external_site_article": "Аварийная отмель — первая комната игрока и первое место преступления. Спусковая капсула лежит наполовину в соляной траве и теплой керамике: слишком разбита, чтобы уйти, и слишком полезна, чтобы бросить. Уцелевшая рама дает игроку укрытие, лом, цели для сканера и линию к Black Keel, которая звучит процедурно раньше, чем по-человечески. Этот тон важен. Carrier не отвечает как друг. Он инвентаризирует провал: взлетный пакет утрачен, uplink разломан, оператор жив, полномочие на эвакуацию не решено. Стартовая локация учит HECTON-8 без лекции. Красота настоящая: мелкая биолюминесценция, цвет рифа, штормовой свет под Aegir. Индустриальное насилие тоже настоящее: клейменые детали, шрамы удара, язык претензий, спасательная цепочка, которая уже считает расходы. Первый вопрос практический: выжить. Второй приходит в тех же обломках: кому выгодно, если у тебя получится?",
-      "scanner": "Обломки bathy-drop. Силовая рама цела; взлетный пакет утрачен. Оболочка держит давление и тепло. Поднять тебя она не сможет.",
-      "terminal": "BATHY-DROP BD-K8-113: УДАР ПЕРЕЖИТ. ВЗЛЕТНЫЙ ПАКЕТ: УТРАЧЕН. ЯДРО UPLINK: РАЗЛОМ. BLACK KEEL: ТОЛЬКО HANDSHAKE.",
-      "audio": "Handshake Black Keel принят. Оператор жив. Полномочие на эвакуацию не решено. Держи укрытие и жди пригодного окна."
-    },
-    "uk_UA": {
-      "title": "Аварійна відмілина",
-      "scanner_bathy_drop": "Уламки bathy-drop. Силова рама ціла; підйомний пакет втрачено. Оболонка може тримати тиск і тепло. Підняти тебе вона не зможе.",
-      "scanner_heat_shield": "Абляційна кераміка засклилася під час входу. Ще придатна як ізоляція і ще зберігає запис сили удару.",
-      "field_note": "Не розбирай спускову оболонку до голої рами. Перша база на HECTON-8 — це будь-що, що тримає дощ зовні, тиск усередині, а інструменти сухими.",
-      "terminal_diag": "BATHY-DROP BD-K8-113: УДАР ПЕРЕЖИТО. ПІДЙОМНИЙ ПАКЕТ: ВТРАЧЕНО. ЯДРО UPLINK: РОЗЛАМ. BLACK KEEL: ЛИШЕ HANDSHAKE.",
-      "audio_line": "Handshake Black Keel прийнято. Оператор живий. Повноваження на евакуацію не вирішено. Тримай укриття й чекай придатного вікна.",
-      "in_game_wiki": "Bathy-drop був інструментом спуску, а не рятувальним кораблем. Його збудували, щоб увійти в погоду Aegir, вдарити в океан HECTON-8, скинути тепло й утримати одного працівника при диханні, доки перше укриття стане активним. Удар забрав підйомний пакет. Оболонка, що лишилася, груба, гучна й цінна: силова рама, керамічні уламки, ребра батарей, сухі порожнини, напівмертвий uplink. Відмілина навколо досить яскрава, щоб здаватися лагідною, але кожен корисний предмет тут ще й доказ. Black Keel знає, що жива претензія існує. Скільки ця претензія варта, ще не вирішено.",
-      "external_site": "HECTON-8 починається на світлій штормовій відмілині: зламаний bathy-drop, далекий carrier і перше суворе правило місяця — уламок, який тебе рятує, також доводить, навіщо тебе відправили.",
-      "external_site_article": "Аварійна відмілина — перша кімната гравця й перше місце злочину. Спускова капсула лежить наполовину в соляній траві й теплій кераміці: надто пошкоджена, щоб піти, і надто корисна, щоб її покинути. Уціліла рама дає гравцеві укриття, брухт, цілі для сканера й лінію до Black Keel, яка звучить процедурно раніше, ніж по-людськи. Цей тон важить. Carrier не відповідає як друг. Він інвентаризує провал: підйомний пакет втрачено, uplink розламано, оператор живий, повноваження на евакуацію не вирішено. Стартова локація навчає HECTON-8 без лекції. Краса справжня: мілка біолюмінесценція, колір рифу, штормове світло під Aegir. Індустріальне насильство теж справжнє: клеймовані деталі, шрами удару, мова претензій, рятувальний ланцюг, що вже рахує витрати. Перше питання практичне: вижити. Друге приходить у тих самих уламках: кому вигідно, якщо тобі вдасться?",
-      "scanner": "Уламки bathy-drop. Силова рама ціла; підйомний пакет втрачено. Оболонка може тримати тиск і тепло. Підняти тебе вона не зможе.",
-      "terminal": "BATHY-DROP BD-K8-113: УДАР ПЕРЕЖИТО. ПІДЙОМНИЙ ПАКЕТ: ВТРАЧЕНО. ЯДРО UPLINK: РОЗЛАМ. BLACK KEEL: ЛИШЕ HANDSHAKE.",
-      "audio": "Handshake Black Keel прийнято. Оператор живий. Повноваження на евакуацію не вирішено. Тримай укриття й чекай придатного вікна."
-    },
-    "zh_CN": {
-      "title": "坠落浅架",
-      "scanner_bathy_drop": "bathy-drop残骸。抗压框架完整；返升组件遗失。舱壳能保持压力和热量。它不能把你送上去。",
-      "scanner_heat_shield": "进入燃烧使烧蚀陶瓷玻化。它仍可作隔热材料，也仍记录着胶囊撞击得有多重。",
-      "field_note": "不要把下降舱壳拆到只剩框架。HECTON-8上的第一座基地，就是任何能把雨挡在外面、把压力留在里面、把工具保持干燥的东西。",
-      "terminal_diag": "BATHY-DROP BD-K8-113：撞击幸存。返升组件：遗失。UPLINK核心：断裂。BLACK KEEL：仅握手。",
-      "audio_line": "已接收Black Keel握手。操作员存活。回收授权未决。维持庇护，等待可用窗口。",
-      "in_game_wiki": "bathy-drop是下降工具，不是救援艇。它被制造出来，是为了进入Aegir的天气，砸进HECTON-8的海洋，抛掉热量，并让一名工人呼吸到第一处庇护设施上线。撞击带走了返升组件。剩下的舱壳粗糙、吵闹、珍贵：抗压框架、陶瓷碎片、电池肋、干燥空腔、半死的uplink。周围的浅架亮得足以显得温和，但每件有用的东西也是证据。Black Keel知道有一项活着的索赔。它还没有决定这项索赔值多少钱。",
-      "external_site": "HECTON-8从一片明亮的风暴浅架开始：破损的bathy-drop、遥远的carrier，以及这颗卫星的第一条硬规则：救你的残骸，也证明你为何被派来。",
-      "external_site_article": "坠落浅架是玩家的第一个房间，也是第一个犯罪现场。下降胶囊半埋在盐草和温热陶瓷中，损坏到无法离开，又有用到不能丢下。幸存的框架给玩家提供庇护、可回收物、扫描目标，以及一条通向Black Keel的线路；它先像程序，再像人。这个语气很重要。carrier不会像朋友那样回答。它清点失败：返升组件遗失，uplink断裂，操作员存活，回收授权未决。开场地点不用讲课就教会玩家HECTON-8。美是真实的：浅水生物发光、礁色、Aegir下方的风暴光。工业暴力也真实：带戳的零件、撞击伤痕、索赔语言、已经开始计算成本的救援链。第一个问题很实际：活下去。第二个问题在同一片残骸里到来：如果你成功，谁会受益？",
-      "scanner": "bathy-drop残骸。抗压框架完整；返升组件遗失。舱壳能保持压力和热量。它不能把你送上去。",
-      "terminal": "BATHY-DROP BD-K8-113：撞击幸存。返升组件：遗失。UPLINK核心：断裂。BLACK KEEL：仅握手。",
-      "audio": "已接收Black Keel握手。操作员存活。回收授权未决。维持庇护，等待可用窗口。"
-    }
+  "es_ES": {
+   "title": "Plataforma del impacto",
+   "scanner_bathy_drop": "Restos de la bathy-drop. Bastidor de presión intacto; paquete de ascenso perdido. La carcasa puede retener presión y calor. No puede elevarte.",
+   "scanner_heat_shield": "Cerámica ablativa vitrificada por la quemadura de entrada. Aún sirve como aislante y aún conserva la huella del golpe.",
+   "field_note": "No desmontes la carcasa de descenso hasta dejar solo el bastidor. La primera base en HECTON-8 es cualquier cosa que deje la lluvia fuera, la presión dentro y las herramientas secas.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PAQUETE DE ASCENSO: PERDIDO. NÚCLEO UPLINK: FRACTURADO. BLACK KEEL: SOLO HANDSHAKE.",
+   "audio_line": "Handshake de Black Keel recibido. Operador vivo. Autoridad de recuperación sin resolver. Mantén refugio y espera una ventana usable.",
+   "in_game_wiki": "La bathy-drop era una herramienta de descenso, no una nave de rescate. Se construyó para entrar en el clima de Aegir, golpear el océano de HECTON-8, soltar calor y mantener respirando a un trabajador hasta que el primer refugio quedara activo. El impacto se llevó el paquete de ascenso. La carcasa restante es basta, ruidosa y valiosa: bastidor de presión, restos cerámicos, costillas de batería, cavidades secas, uplink medio muerto. La plataforma alrededor brilla lo bastante para parecer amable, pero todo objeto útil también es prueba. Black Keel sabe que una reclamación sigue viva. Aún no ha decidido cuánto vale.",
+   "external_site": "HECTON-8 empieza en una plataforma luminosa de tormenta con una bathy-drop rota, un carrier lejano y la primera regla dura de la luna: el pecio que te salva también prueba por qué te enviaron.",
+   "external_site_article": "La Plataforma del impacto es la primera habitación del jugador y su primera escena del crimen. Una cápsula de descenso yace medio enterrada en hierba salina y cerámica tibia, demasiado dañada para marcharse y demasiado útil para abandonarla. Su bastidor superviviente da refugio, chatarra, objetivos de escáner y una línea hacia Black Keel que suena a procedimiento antes de sonar humana. Ese tono importa. El carrier no responde como un amigo. Hace inventario del fallo: paquete de ascenso perdido, uplink fracturado, operador vivo, autoridad de recuperación sin resolver. El lugar inicial enseña HECTON-8 sin sermón. La belleza existe: bioluminiscencia somera, color de arrecife, luz de tormenta bajo Aegir. También existe la violencia industrial: piezas marcadas, cicatrices de impacto, lenguaje de reclamación, una cadena de rescate que ya cuenta costes. La primera pregunta es práctica: seguir con vida. La segunda llega dentro del mismo pecio: ¿a quién beneficia que sobrevivas?",
+   "scanner": "Restos de la bathy-drop. Bastidor de presión intacto; paquete de ascenso perdido. La carcasa puede retener presión y calor. No puede elevarte.",
+   "terminal": "BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PAQUETE DE ASCENSO: PERDIDO. NÚCLEO UPLINK: FRACTURADO. BLACK KEEL: SOLO HANDSHAKE.",
+   "audio": "Handshake de Black Keel recibido. Operador vivo. Autoridad de recuperación sin resolver. Mantén refugio y espera una ventana usable."
+  },
+  "fr_FR": {
+   "title": "Plateau du crash",
+   "scanner_bathy_drop": "Épave de bathy-drop. Cadre de pression intact ; paquet d'ascension perdu. La coque peut garder pression et chaleur. Elle ne peut pas te soulever.",
+   "scanner_heat_shield": "Céramique ablative vitrifiée par la brûlure d'entrée. Encore utile comme isolant, encore témoin de la violence de l'impact.",
+   "field_note": "Ne dépouille pas la coque de descente jusqu'au cadre. La première base sur HECTON-8, c'est tout ce qui garde la pluie dehors, la pression dedans et les outils au sec.",
+   "terminal_diag": "BATHY-DROP BD-K8-113 : IMPACT SURVÉCU. PAQUET D'ASCENSION : PERDU. NOYAU UPLINK : FRACTURÉ. BLACK KEEL : HANDSHAKE SEUL.",
+   "audio_line": "Handshake de Black Keel reçu. Opérateur vivant. Autorité de récupération non résolue. Tenir l'abri et attendre une fenêtre utilisable.",
+   "in_game_wiki": "La bathy-drop était un outil de descente, pas un appareil de sauvetage. Elle était faite pour entrer dans le temps d'Aegir, percuter l'océan de HECTON-8, rejeter la chaleur et garder un travailleur en respiration jusqu'à l'activation du premier abri. L'impact a emporté le paquet d'ascension. La coque restante est grossière, bruyante et précieuse : cadre de pression, éclats céramiques, nervures de batterie, cavités sèches, uplink à moitié mort. Le plateau autour brille assez pour paraître doux, mais chaque objet utile est aussi une preuve. Black Keel sait qu'une réclamation est vivante. Sa valeur reste à décider.",
+   "external_site": "HECTON-8 commence sur un plateau de tempête lumineux, avec une bathy-drop brisée, un carrier lointain et la première règle dure de la lune : l'épave qui te sauve prouve aussi pourquoi tu as été envoyé.",
+   "external_site_article": "Le Plateau du crash est la première pièce du joueur et sa première scène de crime. Une capsule de descente repose à moitié enfouie dans les herbes salines et la céramique tiède, trop endommagée pour partir et trop utile pour être abandonnée. Son cadre survivant donne un abri, du rebut, des cibles de scanner et une ligne vers Black Keel qui sonne procédurale avant de sonner humaine. Ce ton compte. Le carrier ne répond pas comme un ami. Il inventorie l'échec : paquet d'ascension perdu, uplink fracturé, opérateur vivant, autorité de récupération non résolue. Le lieu d'ouverture enseigne HECTON-8 sans conférence. La beauté est réelle : bioluminescence peu profonde, couleur du récif, lumière d'orage sous Aegir. La violence industrielle aussi : pièces estampillées, cicatrices d'impact, langage de réclamation, chaîne de sauvetage qui compte déjà les coûts. La première question est pratique : rester en vie. La seconde arrive dans la même épave : à qui profite ta survie ?",
+   "scanner": "Épave de bathy-drop. Cadre de pression intact ; paquet d'ascension perdu. La coque peut garder pression et chaleur. Elle ne peut pas te soulever.",
+   "terminal": "BATHY-DROP BD-K8-113 : IMPACT SURVÉCU. PAQUET D'ASCENSION : PERDU. NOYAU UPLINK : FRACTURÉ. BLACK KEEL : HANDSHAKE SEUL.",
+   "audio": "Handshake de Black Keel reçu. Opérateur vivant. Autorité de récupération non résolue. Tenir l'abri et attendre une fenêtre utilisable."
+  },
+  "he_IL": {
+   "title": "מדף ההתרסקות",
+   "scanner_bathy_drop": "שרידי קפסולת באתי-דרופ. מסגרת הלחץ שלמה; חבילת העלייה אבדה. המעטפת יכולה להחזיק לחץ וחום. היא לא יכולה להרים אותך.",
+   "scanner_heat_shield": "קרמיקה אבלטיבית שזוגגה בשרפת הכניסה. עדיין שימושית לבידוד, ועדיין רישום של עוצמת הפגיעה.",
+   "field_note": "אל תפשיט את מעטפת הירידה עד המסגרת. הבסיס הראשון על HECTON-8 הוא כל דבר שמשאיר גשם בחוץ, לחץ בפנים וכלים יבשים.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: שרד פגיעה. חבילת עלייה: אבדה. ליבת UPLINK: סדוקה. BLACK KEEL: לחיצת יד בלבד.",
+   "audio_line": "התקבלה לחיצת יד מ-Black Keel. מפעיל חי. סמכות חילוץ לא פתורה. החזק מחסה והמתן לחלון שמיש.",
+   "in_game_wiki": "הבאתי-דרופ הייתה כלי ירידה, לא רכב חילוץ. היא נבנתה כדי להיכנס למזג האוויר של Aegir, להכות באוקיינוס של HECTON-8, להשליך חום ולהשאיר עובד אחד נושם עד שהמחסה הראשון יעלה לפעולה. הפגיעה לקחה איתה את חבילת העלייה. המעטפת שנותרה גסה, רועשת ויקרה: מסגרת לחץ, שברי קרמיקה, צלעות סוללה, חללים יבשים, uplink חצי מת. המדף מסביב מואר מספיק כדי להיראות עדין, אבל כל חפץ שימושי הוא גם ראיה. Black Keel יודעת שתביעה חיה קיימת. היא עוד לא החליטה כמה התביעה שווה.",
+   "external_site": "HECTON-8 נפתח על מדף סערה בהיר עם באתי-דרופ שבורה, carrier רחוק, והכלל הקשה הראשון של הירח: ההריסות שמצילות אותך מוכיחות גם למה נשלחת.",
+   "external_site_article": "מדף ההתרסקות הוא החדר הראשון של השחקן וזירת הפשע הראשונה. קפסולת ירידה שוכבת חצי קבורה בעשב מלח ובקרמיקה חמימה, פגועה מכדי לעזוב ושימושית מכדי לנטוש. המסגרת ששרדה נותנת מחסה, גרוטאות, מטרות סריקה וקו אל Black Keel שנשמע מנהלי לפני שהוא נשמע אנושי. הטון הזה חשוב. ה-carrier לא עונה כמו חבר. הוא ממיין את הכשל: חבילת עלייה אבדה, uplink סדוק, מפעיל חי, סמכות חילוץ לא פתורה. אתר הפתיחה מלמד את HECTON-8 בלי הרצאה. היופי אמיתי: ביולומינסנציה רדודה, צבע שונית, אור סערה מתחת ל-Aegir. גם האלימות התעשייתית אמיתית: חלקים מוטבעים, צלקות פגיעה, שפת תביעות, שרשרת חילוץ שכבר סופרת עלות. השאלה הראשונה מעשית: להישאר בחיים. השאלה השנייה מגיעה בתוך אותן הריסות: מי מרוויח אם תצליח?",
+   "scanner": "שרידי קפסולת באתי-דרופ. מסגרת הלחץ שלמה; חבילת העלייה אבדה. המעטפת יכולה להחזיק לחץ וחום. היא לא יכולה להרים אותך.",
+   "terminal": "BATHY-DROP BD-K8-113: שרד פגיעה. חבילת עלייה: אבדה. ליבת UPLINK: סדוקה. BLACK KEEL: לחיצת יד בלבד.",
+   "audio": "התקבלה לחיצת יד מ-Black Keel. מפעיל חי. סמכות חילוץ לא פתורה. החזק מחסה והמתן לחלון שמיש."
+  },
+  "id_ID": {
+   "title": "Paparan Jatuh",
+   "scanner_bathy_drop": "Reruntuhan bathy-drop. Rangka tekanan utuh; paket naik hilang. Cangkangnya bisa menahan tekanan dan panas. Ia tidak bisa mengangkatmu.",
+   "scanner_heat_shield": "Keramik ablasi mengaca oleh bakaran masuk atmosfer. Masih berguna sebagai isolasi, masih menjadi catatan betapa keras kapsul menghantam.",
+   "field_note": "Jangan lucuti cangkang drop sampai tinggal rangka. Basis pertama di HECTON-8 adalah apa pun yang menjaga hujan di luar, tekanan di dalam, dan alat tetap kering.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: BENTURAN SELAMAT. PAKET NAIK: HILANG. INTI UPLINK: RETAK. BLACK KEEL: HANDSHAKE SAJA.",
+   "audio_line": "Handshake Black Keel diterima. Operator hidup. Wewenang pemulihan belum selesai. Pertahankan perlindungan dan tunggu jendela yang bisa dipakai.",
+   "in_game_wiki": "Bathy-drop adalah alat turun, bukan kendaraan penyelamat. Ia dibuat untuk memasuki cuaca Aegir, menghantam samudra HECTON-8, membuang panas, dan menjaga satu pekerja tetap bernapas sampai perlindungan pertama aktif. Benturan membawa pergi paket naiknya. Cangkang yang tersisa kasar, berisik, dan berharga: rangka tekanan, serpihan keramik, rusuk baterai, rongga kering, uplink setengah mati. Paparan di sekitarnya cukup terang untuk tampak jinak, tetapi setiap benda berguna juga menjadi bukti. Black Keel tahu satu klaim masih hidup. Nilai klaim itu belum diputuskan.",
+   "external_site": "HECTON-8 dibuka di paparan badai yang terang dengan bathy-drop rusak, carrier jauh, dan aturan keras pertama bulan ini: rongsokan yang menyelamatkanmu juga membuktikan mengapa kamu dikirim.",
+   "external_site_article": "Paparan Jatuh adalah ruang pertama pemain dan tempat perkara pertama. Sebuah kapsul turun setengah terkubur di rumput garam dan keramik hangat, terlalu rusak untuk pergi dan terlalu berguna untuk ditinggalkan. Rangka yang selamat memberi pemain perlindungan, salvage, target pemindai, dan jalur ke Black Keel yang terdengar prosedural sebelum terdengar manusiawi. Nada itu penting. Carrier tidak menjawab seperti teman. Ia menginventarisasi kegagalan: paket naik hilang, uplink retak, operator hidup, wewenang pemulihan belum selesai. Lokasi pembuka mengajarkan HECTON-8 tanpa ceramah. Keindahan itu nyata: bioluminesensi dangkal, warna karang, cahaya badai di bawah Aegir. Kekerasan industrinya juga nyata: bagian bercap, bekas benturan, bahasa klaim, rantai penyelamatan yang sudah menghitung biaya. Pertanyaan pertama praktis: tetap hidup. Pertanyaan kedua tiba di reruntuhan yang sama: siapa yang mendapat untung jika kamu berhasil?",
+   "scanner": "Reruntuhan bathy-drop. Rangka tekanan utuh; paket naik hilang. Cangkangnya bisa menahan tekanan dan panas. Ia tidak bisa mengangkatmu.",
+   "terminal": "BATHY-DROP BD-K8-113: BENTURAN SELAMAT. PAKET NAIK: HILANG. INTI UPLINK: RETAK. BLACK KEEL: HANDSHAKE SAJA.",
+   "audio": "Handshake Black Keel diterima. Operator hidup. Wewenang pemulihan belum selesai. Pertahankan perlindungan dan tunggu jendela yang bisa dipakai."
+  },
+  "ja_JP": {
+   "title": "墜落棚",
+   "scanner_bathy_drop": "バシー・ドロップの残骸。耐圧フレームは無事。上昇パッケージは失われた。殻は圧力と熱を保てる。あなたを持ち上げることはできない。",
+   "scanner_heat_shield": "突入燃焼でガラス化したアブレーション・セラミック。断熱材としてまだ使え、衝突の激しさも記録している。",
+   "field_note": "ドロップ殻を骨組みだけにするな。HECTON-8で最初の基地とは、雨を外に、圧力を中に、工具を乾いたままにしてくれるものだ。",
+   "terminal_diag": "BATHY-DROP BD-K8-113: 衝突を生存。上昇パッケージ: 喪失。アップリンク・コア: 破断。BLACK KEEL: ハンドシェイクのみ。",
+   "audio_line": "Black Keelのハンドシェイクを受信。オペレーター生存。回収権限は未解決。シェルターを維持し、使用可能な窓を待て。",
+   "in_game_wiki": "バシー・ドロップは降下用の道具であって、救助艇ではない。Aegirの気象へ突入し、HECTON-8の海へ叩き込まれ、熱を捨て、最初のシェルターが動くまで作業員一人を呼吸させるために造られた。衝突は上昇パッケージを奪った。残った殻は粗く、うるさく、価値がある。耐圧フレーム、セラミック片、バッテリーのリブ、乾いた空洞、半死のアップリンク。周囲の棚は穏やかに見えるほど明るいが、役に立つ物はすべて証拠でもある。Black Keelは生きた請求対象がいることを知っている。その請求にどれだけの価値があるかは、まだ決めていない。",
+   "external_site": "HECTON-8は、壊れたバシー・ドロップ、遠いcarrier、そして月の最初の硬い規則とともに、明るい嵐の棚から始まる。あなたを救う残骸は、あなたが送られた理由も証明する。",
+   "external_site_article": "墜落棚はプレイヤーの最初の部屋であり、最初の犯罪現場でもある。降下カプセルは塩草と温かいセラミックに半ば埋まり、去るには壊れすぎ、捨てるには役に立ちすぎる。生き残ったフレームは、避難場所、サルベージ、スキャナー対象、そしてBlack Keelへの線を与える。その声は人間的に聞こえる前に、まず手続きの声として聞こえる。そこが重要だ。carrierは友人のようには答えない。失敗を棚卸しする。上昇パッケージ喪失、アップリンク破断、オペレーター生存、回収権限未解決。開始地点は講義なしでHECTON-8を教える。美しさは本物だ。浅瀬の生物発光、礁の色、Aegirの下の嵐光。産業の暴力も本物だ。刻印された部品、衝突痕、請求の言葉、すでに費用を数える救助連鎖。最初の問いは実務的だ。生き残れ。二つ目の問いは同じ残骸の中で届く。あなたが生き残ると、誰が得をするのか。",
+   "scanner": "バシー・ドロップの残骸。耐圧フレームは無事。上昇パッケージは失われた。殻は圧力と熱を保てる。あなたを持ち上げることはできない。",
+   "terminal": "BATHY-DROP BD-K8-113: 衝突を生存。上昇パッケージ: 喪失。アップリンク・コア: 破断。BLACK KEEL: ハンドシェイクのみ。",
+   "audio": "Black Keelのハンドシェイクを受信。オペレーター生存。回収権限は未解決。シェルターを維持し、使用可能な窓を待て。"
+  },
+  "ko_KR": {
+   "title": "추락 선반",
+   "scanner_bathy_drop": "배시 드롭 잔해. 압력 프레임은 온전함. 상승 패키지는 사라짐. 껍질은 압력과 열을 붙잡을 수 있다. 너를 들어 올릴 수는 없다.",
+   "scanner_heat_shield": "진입 연소로 유리화된 삭마 세라믹. 단열재로 아직 쓸 수 있고, 캡슐이 얼마나 세게 부딪혔는지도 기록한다.",
+   "field_note": "드롭 껍질을 프레임만 남기고 뜯지 마라. HECTON-8의 첫 기지는 비를 밖에 두고, 압력을 안에 두고, 공구를 마르게 하는 무엇이든 된다.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: 충돌 생존. 상승 패키지: 손실. 업링크 코어: 파열. BLACK KEEL: 핸드셰이크만.",
+   "audio_line": "Black Keel 핸드셰이크 수신. 오퍼레이터 생존. 회수 권한 미해결. 대피처를 유지하고 사용 가능한 창을 기다려라.",
+   "in_game_wiki": "배시 드롭은 하강 도구였지 구조선이 아니었다. Aegir의 날씨로 들어가고, HECTON-8의 바다에 박히고, 열을 버리고, 첫 대피처가 켜질 때까지 작업자 한 명을 숨 쉬게 하도록 만들어졌다. 충돌은 상승 패키지를 가져갔다. 남은 껍질은 투박하고 시끄럽고 귀중하다. 압력 프레임, 세라믹 조각, 배터리 리브, 마른 빈 공간, 반쯤 죽은 업링크. 주변 선반은 순하게 보일 만큼 밝지만, 쓸모 있는 모든 물건은 증거이기도 하다. Black Keel은 살아 있는 청구 대상이 있음을 안다. 그 청구의 값은 아직 정하지 않았다.",
+   "external_site": "HECTON-8은 부서진 배시 드롭, 먼 carrier, 그리고 달의 첫 냉혹한 규칙과 함께 밝은 폭풍 선반에서 열린다. 너를 살리는 잔해는 네가 왜 보내졌는지도 증명한다.",
+   "external_site_article": "추락 선반은 플레이어의 첫 방이자 첫 범죄 현장이다. 하강 캡슐은 소금풀과 따뜻한 세라믹에 반쯤 묻혀 있고, 떠나기엔 너무 망가졌으며 버리기엔 너무 쓸모 있다. 살아남은 프레임은 대피처, 회수품, 스캐너 표적, 그리고 Black Keel로 이어지는 선을 준다. 그 선은 인간적으로 들리기 전에 절차처럼 들린다. 그 어조가 중요하다. carrier는 친구처럼 답하지 않는다. 실패를 목록화한다. 상승 패키지 손실, 업링크 파열, 오퍼레이터 생존, 회수 권한 미해결. 시작 장소는 강의 없이 HECTON-8을 가르친다. 아름다움은 진짜다. 얕은 생물발광, 암초의 색, Aegir 아래의 폭풍빛. 산업적 폭력도 진짜다. 각인된 부품, 충돌 흉터, 청구 언어, 이미 비용을 세는 구조 사슬. 첫 질문은 실용적이다. 살아남아라. 두 번째 질문은 같은 잔해 안에서 도착한다. 네가 살아남으면 누가 이득을 보는가?",
+   "scanner": "배시 드롭 잔해. 압력 프레임은 온전함. 상승 패키지는 사라짐. 껍질은 압력과 열을 붙잡을 수 있다. 너를 들어 올릴 수는 없다.",
+   "terminal": "BATHY-DROP BD-K8-113: 충돌 생존. 상승 패키지: 손실. 업링크 코어: 파열. BLACK KEEL: 핸드셰이크만.",
+   "audio": "Black Keel 핸드셰이크 수신. 오퍼레이터 생존. 회수 권한 미해결. 대피처를 유지하고 사용 가능한 창을 기다려라."
+  },
+  "nl_NL": {
+   "title": "Crashplateau",
+   "scanner_bathy_drop": "Wrak van de bathy-drop. Drukframe intact; opstijgpakket weg. De schaal kan druk en warmte vasthouden. Ze kan je niet optillen.",
+   "scanner_heat_shield": "Ablatief keramiek, verglaasd door de intredebrand. Nog bruikbaar als isolatie, nog een verslag van hoe hard de capsule insloeg.",
+   "field_note": "Strip de dropschaal niet tot op het frame. De eerste basis op HECTON-8 is alles wat regen buiten, druk binnen en gereedschap droog houdt.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: INSLAG OVERLEEFD. OPSTIJGPAKKET: WEG. UPLINK-KERN: GEBROKEN. BLACK KEEL: ALLEEN HANDSHAKE.",
+   "audio_line": "Black Keel-handshake ontvangen. Operator leeft. Bergingsbevoegdheid onopgelost. Houd onderdak en wacht op een bruikbaar venster.",
+   "in_game_wiki": "De bathy-drop was een afdalingswerktuig, geen reddingsvaartuig. Ze werd gebouwd om Aegirs weer binnen te gaan, in HECTON-8s oceaan te slaan, hitte af te werpen en één arbeider te laten ademen tot het eerste onderkomen online kwam. De inslag nam het opstijgpakket mee. De overgebleven schaal is grof, luid en waardevol: drukframe, keramiekscherven, batterizribbels, droge holtes, halfdode uplink. Het plateau eromheen is helder genoeg om zachtaardig te lijken, maar elk nuttig object is ook bewijs. Black Keel weet dat er een levende claim is. Wat die claim waard is, staat nog open.",
+   "external_site": "HECTON-8 opent op een helder stormplateau met een gebroken bathy-drop, een verre carrier en de eerste harde maanregel: het wrak dat je redt bewijst ook waarom je gestuurd bent.",
+   "external_site_article": "Het Crashplateau is de eerste kamer van de speler en de eerste plaats delict. Een afdaalcapsule ligt half begraven in zoutwier en warm keramiek, te beschadigd om te vertrekken en te nuttig om achter te laten. Het overlevende frame geeft de speler onderdak, bergingsmateriaal, scandoelen en een lijn naar Black Keel die procedureel klinkt voordat ze menselijk klinkt. Die toon telt. De carrier antwoordt niet als een vriend. Hij inventariseert de mislukking: opstijgpakket weg, uplink gebroken, operator levend, bergingsbevoegdheid onopgelost. De openingslocatie leert HECTON-8 zonder lezing. Schoonheid is echt: ondiepe bioluminescentie, rifkleur, stormlicht onder Aegir. Industriële geweld is even echt: gestempelde onderdelen, inslaglittekens, claimtaal, een reddingsketen die al kosten telt. De eerste vraag is praktisch: blijf leven. De tweede komt in hetzelfde wrak binnen: wie heeft er baat bij als jij dat doet?",
+   "scanner": "Wrak van de bathy-drop. Drukframe intact; opstijgpakket weg. De schaal kan druk en warmte vasthouden. Ze kan je niet optillen.",
+   "terminal": "BATHY-DROP BD-K8-113: INSLAG OVERLEEFD. OPSTIJGPAKKET: WEG. UPLINK-KERN: GEBROKEN. BLACK KEEL: ALLEEN HANDSHAKE.",
+   "audio": "Black Keel-handshake ontvangen. Operator leeft. Bergingsbevoegdheid onopgelost. Houd onderdak en wacht op een bruikbaar venster."
+  },
+  "pl_PL": {
+   "title": "Półka katastrofy",
+   "scanner_bathy_drop": "Wrak bathy-drop. Rama ciśnieniowa cała; pakiet wznoszenia utracony. Skorupa może trzymać ciśnienie i ciepło. Nie może cię unieść.",
+   "scanner_heat_shield": "Ceramika ablacyjna zeszklona przy wejściu. Nadal dobra jako izolacja, nadal zapis siły uderzenia kapsuły.",
+   "field_note": "Nie rozbieraj skorupy dropu do samej ramy. Pierwsza baza na HECTON-8 to cokolwiek trzyma deszcz na zewnątrz, ciśnienie w środku i narzędzia suche.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: UDERZENIE PRZETRWANE. PAKIET WZNOSZENIA: UTRACONY. RDZEŃ UPLINK: PĘKNIĘTY. BLACK KEEL: TYLKO HANDSHAKE.",
+   "audio_line": "Handshake Black Keel odebrany. Operator żyje. Uprawnienie odzysku nierozstrzygnięte. Utrzymaj schronienie i czekaj na użyteczne okno.",
+   "in_game_wiki": "Bathy-drop był narzędziem zniżania, nie pojazdem ratunkowym. Zbudowano go, by wejść w pogodę Aegir, uderzyć w ocean HECTON-8, zrzucić ciepło i utrzymać jednego pracownika przy oddechu, aż pierwsze schronienie zacznie działać. Uderzenie zabrało pakiet wznoszenia. Pozostała skorupa jest toporna, głośna i cenna: rama ciśnieniowa, odłamki ceramiki, żebra baterii, suche wnęki, półmartwy uplink. Półka wokół niej świeci dość jasno, by wyglądać łagodnie, ale każdy użyteczny przedmiot jest też dowodem. Black Keel wie, że żyje jedno roszczenie. Jeszcze nie ustalono, ile to roszczenie jest warte.",
+   "external_site": "HECTON-8 otwiera się na jasnej burzowej półce z rozbitym bathy-dropem, odległym carrierem i pierwszą twardą zasadą księżyca: wrak, który cię ratuje, dowodzi też, po co cię wysłano.",
+   "external_site_article": "Półka katastrofy jest pierwszym pokojem gracza i pierwszym miejscem zbrodni. Kapsuła zniżania leży półzakopana w słonej trawie i ciepłej ceramice, zbyt uszkodzona, by odlecieć, i zbyt użyteczna, by ją porzucić. Ocalała rama daje graczowi schronienie, złom, cele skanera i linię do Black Keel, która brzmi proceduralnie, zanim zabrzmi ludzko. Ten ton ma znaczenie. Carrier nie odpowiada jak przyjaciel. Inwentaryzuje awarię: pakiet wznoszenia utracony, uplink pęknięty, operator żyje, uprawnienie odzysku nierozstrzygnięte. Miejsce otwarcia uczy HECTON-8 bez wykładu. Piękno jest realne: płytka bioluminescencja, kolor rafy, światło burzy pod Aegir. Przemysłowa przemoc też jest realna: stemplowane części, blizny uderzenia, język roszczeń, łańcuch ratunku już liczący koszty. Pierwsze pytanie jest praktyczne: przeżyć. Drugie przychodzi w tym samym wraku: komu służy twoje przeżycie?",
+   "scanner": "Wrak bathy-drop. Rama ciśnieniowa cała; pakiet wznoszenia utracony. Skorupa może trzymać ciśnienie i ciepło. Nie może cię unieść.",
+   "terminal": "BATHY-DROP BD-K8-113: UDERZENIE PRZETRWANE. PAKIET WZNOSZENIA: UTRACONY. RDZEŃ UPLINK: PĘKNIĘTY. BLACK KEEL: TYLKO HANDSHAKE.",
+   "audio": "Handshake Black Keel odebrany. Operator żyje. Uprawnienie odzysku nierozstrzygnięte. Utrzymaj schronienie i czekaj na użyteczne okno."
+  },
+  "pt_BR": {
+   "title": "Plataforma do impacto",
+   "scanner_bathy_drop": "Destroços da bathy-drop. Estrutura de pressão intacta; pacote de subida perdido. A carcaça consegue segurar pressão e calor. Não consegue levantar você.",
+   "scanner_heat_shield": "Cerâmica ablativa vitrificada pela queima de entrada. Ainda serve como isolamento, ainda registra a força do impacto da cápsula.",
+   "field_note": "Não desmonte a carcaça de descida até sobrar só a estrutura. A primeira base em HECTON-8 é qualquer coisa que mantenha a chuva fora, a pressão dentro e as ferramentas secas.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PACOTE DE SUBIDA: PERDIDO. NÚCLEO UPLINK: FRATURADO. BLACK KEEL: APENAS HANDSHAKE.",
+   "audio_line": "Handshake da Black Keel recebido. Operador vivo. Autoridade de recuperação sem resolução. Mantenha abrigo e aguarde uma janela usável.",
+   "in_game_wiki": "A bathy-drop era uma ferramenta de descida, não uma nave de resgate. Foi construída para entrar no clima de Aegir, bater no oceano de HECTON-8, descartar calor e manter um trabalhador respirando até o primeiro abrigo ficar online. O impacto levou o pacote de subida. A carcaça restante é bruta, barulhenta e valiosa: estrutura de pressão, cacos cerâmicos, nervuras de bateria, cavidades secas, uplink meio morto. A plataforma ao redor é clara o bastante para parecer gentil, mas todo objeto útil também é prova. A Black Keel sabe que existe uma reivindicação viva. Ela ainda não decidiu quanto essa reivindicação vale.",
+   "external_site": "HECTON-8 começa numa plataforma de tempestade luminosa com uma bathy-drop quebrada, um carrier distante e a primeira regra dura da lua: o destroço que salva você também prova por que você foi enviado.",
+   "external_site_article": "A Plataforma do impacto é o primeiro cômodo do jogador e a primeira cena de crime. Uma cápsula de descida fica meio enterrada em erva salgada e cerâmica quente, danificada demais para partir e útil demais para abandonar. Sua estrutura sobrevivente dá abrigo, sucata, alvos de scanner e uma linha até a Black Keel que soa procedural antes de soar humana. Esse tom importa. O carrier não responde como amigo. Ele inventaria a falha: pacote de subida perdido, uplink fraturado, operador vivo, autoridade de recuperação sem resolução. O local inicial ensina HECTON-8 sem palestra. A beleza é real: bioluminescência rasa, cor de recife, luz de tempestade sob Aegir. A violência industrial também é real: peças marcadas, cicatrizes de impacto, linguagem de reivindicação, uma cadeia de resgate que já conta custos. A primeira pergunta é prática: continue vivo. A segunda chega dentro do mesmo destroço: quem ganha se você conseguir?",
+   "scanner": "Destroços da bathy-drop. Estrutura de pressão intacta; pacote de subida perdido. A carcaça consegue segurar pressão e calor. Não consegue levantar você.",
+   "terminal": "BATHY-DROP BD-K8-113: IMPACTO SOBREVIVIDO. PACOTE DE SUBIDA: PERDIDO. NÚCLEO UPLINK: FRATURADO. BLACK KEEL: APENAS HANDSHAKE.",
+   "audio": "Handshake da Black Keel recebido. Operador vivo. Autoridade de recuperação sem resolução. Mantenha abrigo e aguarde uma janela usável."
+  },
+  "ru_RU": {
+   "title": "Аварийная отмель",
+   "scanner_bathy_drop": "Обломки bathy-drop. Силовая рама цела; взлетный пакет утрачен. Оболочка держит давление и тепло. Поднять тебя она не сможет.",
+   "scanner_heat_shield": "Абляционная керамика остеклела при входном горении. Еще годится как изоляция и еще хранит запись о силе удара.",
+   "field_note": "Не разбирай спусковую оболочку до голой рамы. Первая база на HECTON-8 — все, что держит дождь снаружи, давление внутри, а инструменты сухими.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: УДАР ПЕРЕЖИТ. ВЗЛЕТНЫЙ ПАКЕТ: УТРАЧЕН. ЯДРО UPLINK: РАЗЛОМ. BLACK KEEL: ТОЛЬКО HANDSHAKE.",
+   "audio_line": "Handshake Black Keel принят. Оператор жив. Полномочие на эвакуацию не решено. Держи укрытие и жди пригодного окна.",
+   "in_game_wiki": "Bathy-drop был инструментом спуска, а не спасательным кораблем. Его строили, чтобы войти в погоду Aegir, пробить океан HECTON-8, сбросить тепло и сохранить дыхание одному рабочему, пока не заработает первое укрытие. Удар забрал взлетный пакет. Оставшаяся оболочка груба, шумна и ценна: силовая рама, керамические осколки, ребра батарей, сухие полости, полумертвый uplink. Отмель вокруг достаточно яркая, чтобы казаться мягкой, но каждый полезный предмет здесь еще и улика. Black Keel знает, что живая претензия существует. Сколько стоит эта претензия, она пока не решила.",
+   "external_site": "HECTON-8 начинается на светлой штормовой отмели: сломанный bathy-drop, далекий carrier и первое жесткое правило луны — обломок, который спасает тебя, одновременно доказывает, зачем тебя отправили.",
+   "external_site_article": "Аварийная отмель — первая комната игрока и первое место преступления. Спусковая капсула лежит наполовину в соляной траве и теплой керамике: слишком разбита, чтобы уйти, и слишком полезна, чтобы бросить. Уцелевшая рама дает игроку укрытие, лом, цели для сканера и линию к Black Keel, которая звучит процедурно раньше, чем по-человечески. Этот тон важен. Carrier не отвечает как друг. Он инвентаризирует провал: взлетный пакет утрачен, uplink разломан, оператор жив, полномочие на эвакуацию не решено. Стартовая локация учит HECTON-8 без лекции. Красота настоящая: мелкая биолюминесценция, цвет рифа, штормовой свет под Aegir. Индустриальное насилие тоже настоящее: клейменые детали, шрамы удара, язык претензий, спасательная цепочка, которая уже считает расходы. Первый вопрос практический: выжить. Второй приходит в тех же обломках: кому выгодно, если у тебя получится?",
+   "scanner": "Обломки bathy-drop. Силовая рама цела; взлетный пакет утрачен. Оболочка держит давление и тепло. Поднять тебя она не сможет.",
+   "terminal": "BATHY-DROP BD-K8-113: УДАР ПЕРЕЖИТ. ВЗЛЕТНЫЙ ПАКЕТ: УТРАЧЕН. ЯДРО UPLINK: РАЗЛОМ. BLACK KEEL: ТОЛЬКО HANDSHAKE.",
+   "audio": "Handshake Black Keel принят. Оператор жив. Полномочие на эвакуацию не решено. Держи укрытие и жди пригодного окна."
+  },
+  "uk_UA": {
+   "title": "Аварійна відмілина",
+   "scanner_bathy_drop": "Уламки bathy-drop. Силова рама ціла; підйомний пакет втрачено. Оболонка може тримати тиск і тепло. Підняти тебе вона не зможе.",
+   "scanner_heat_shield": "Абляційна кераміка засклилася під час входу. Ще придатна як ізоляція і ще зберігає запис сили удару.",
+   "field_note": "Не розбирай спускову оболонку до голої рами. Перша база на HECTON-8 — це будь-що, що тримає дощ зовні, тиск усередині, а інструменти сухими.",
+   "terminal_diag": "BATHY-DROP BD-K8-113: УДАР ПЕРЕЖИТО. ПІДЙОМНИЙ ПАКЕТ: ВТРАЧЕНО. ЯДРО UPLINK: РОЗЛАМ. BLACK KEEL: ЛИШЕ HANDSHAKE.",
+   "audio_line": "Handshake Black Keel прийнято. Оператор живий. Повноваження на евакуацію не вирішено. Тримай укриття й чекай придатного вікна.",
+   "in_game_wiki": "Bathy-drop був інструментом спуску, а не рятувальним кораблем. Його збудували, щоб увійти в погоду Aegir, вдарити в океан HECTON-8, скинути тепло й утримати одного працівника при диханні, доки перше укриття стане активним. Удар забрав підйомний пакет. Оболонка, що лишилася, груба, гучна й цінна: силова рама, керамічні уламки, ребра батарей, сухі порожнини, напівмертвий uplink. Відмілина навколо досить яскрава, щоб здаватися лагідною, але кожен корисний предмет тут ще й доказ. Black Keel знає, що жива претензія існує. Скільки ця претензія варта, ще не вирішено.",
+   "external_site": "HECTON-8 починається на світлій штормовій відмілині: зламаний bathy-drop, далекий carrier і перше суворе правило місяця — уламок, який тебе рятує, також доводить, навіщо тебе відправили.",
+   "external_site_article": "Аварійна відмілина — перша кімната гравця й перше місце злочину. Спускова капсула лежить наполовину в соляній траві й теплій кераміці: надто пошкоджена, щоб піти, і надто корисна, щоб її покинути. Уціліла рама дає гравцеві укриття, брухт, цілі для сканера й лінію до Black Keel, яка звучить процедурно раніше, ніж по-людськи. Цей тон важить. Carrier не відповідає як друг. Він інвентаризує провал: підйомний пакет втрачено, uplink розламано, оператор живий, повноваження на евакуацію не вирішено. Стартова локація навчає HECTON-8 без лекції. Краса справжня: мілка біолюмінесценція, колір рифу, штормове світло під Aegir. Індустріальне насильство теж справжнє: клеймовані деталі, шрами удару, мова претензій, рятувальний ланцюг, що вже рахує витрати. Перше питання практичне: вижити. Друге приходить у тих самих уламках: кому вигідно, якщо тобі вдасться?",
+   "scanner": "Уламки bathy-drop. Силова рама ціла; підйомний пакет втрачено. Оболонка може тримати тиск і тепло. Підняти тебе вона не зможе.",
+   "terminal": "BATHY-DROP BD-K8-113: УДАР ПЕРЕЖИТО. ПІДЙОМНИЙ ПАКЕТ: ВТРАЧЕНО. ЯДРО UPLINK: РОЗЛАМ. BLACK KEEL: ЛИШЕ HANDSHAKE.",
+   "audio": "Handshake Black Keel прийнято. Оператор живий. Повноваження на евакуацію не вирішено. Тримай укриття й чекай придатного вікна."
+  },
+  "zh_CN": {
+   "title": "坠落浅架",
+   "scanner_bathy_drop": "bathy-drop残骸。抗压框架完整；返升组件遗失。舱壳能保持压力和热量。它不能把你送上去。",
+   "scanner_heat_shield": "进入燃烧使烧蚀陶瓷玻化。它仍可作隔热材料，也仍记录着胶囊撞击得有多重。",
+   "field_note": "不要把下降舱壳拆到只剩框架。HECTON-8上的第一座基地，就是任何能把雨挡在外面、把压力留在里面、把工具保持干燥的东西。",
+   "terminal_diag": "BATHY-DROP BD-K8-113：撞击幸存。返升组件：遗失。UPLINK核心：断裂。BLACK KEEL：仅握手。",
+   "audio_line": "已接收Black Keel握手。操作员存活。回收授权未决。维持庇护，等待可用窗口。",
+   "in_game_wiki": "bathy-drop是下降工具，不是救援艇。它被制造出来，是为了进入Aegir的天气，砸进HECTON-8的海洋，抛掉热量，并让一名工人呼吸到第一处庇护设施上线。撞击带走了返升组件。剩下的舱壳粗糙、吵闹、珍贵：抗压框架、陶瓷碎片、电池肋、干燥空腔、半死的uplink。周围的浅架亮得足以显得温和，但每件有用的东西也是证据。Black Keel知道有一项活着的索赔。它还没有决定这项索赔值多少钱。",
+   "external_site": "HECTON-8从一片明亮的风暴浅架开始：破损的bathy-drop、遥远的carrier，以及这颗卫星的第一条硬规则：救你的残骸，也证明你为何被派来。",
+   "external_site_article": "坠落浅架是玩家的第一个房间，也是第一个犯罪现场。下降胶囊半埋在盐草和温热陶瓷中，损坏到无法离开，又有用到不能丢下。幸存的框架给玩家提供庇护、可回收物、扫描目标，以及一条通向Black Keel的线路；它先像程序，再像人。这个语气很重要。carrier不会像朋友那样回答。它清点失败：返升组件遗失，uplink断裂，操作员存活，回收授权未决。开场地点不用讲课就教会玩家HECTON-8。美是真实的：浅水生物发光、礁色、Aegir下方的风暴光。工业暴力也真实：带戳的零件、撞击伤痕、索赔语言、已经开始计算成本的救援链。第一个问题很实际：活下去。第二个问题在同一片残骸里到来：如果你成功，谁会受益？",
+   "scanner": "bathy-drop残骸。抗压框架完整；返升组件遗失。舱壳能保持压力和热量。它不能把你送上去。",
+   "terminal": "BATHY-DROP BD-K8-113：撞击幸存。返升组件：遗失。UPLINK核心：断裂。BLACK KEEL：仅握手。",
+   "audio": "已接收Black Keel握手。操作员存活。回收授权未决。维持庇护，等待可用窗口。"
   }
+ },
+ "content_class": "in_world_artifact"
 }

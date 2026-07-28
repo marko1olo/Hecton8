@@ -1,256 +1,257 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS220_NEARLIGHT_DRIVE_STACK_CUTAWAY_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS220_NEARLIGHT_DRIVE_STACK_CUTAWAY_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY",
+   "release_set_id": "RS220_NEARLIGHT_DRIVE_STACK_CUTAWAY_ARTICLE",
+   "article_id": "applied_lore.nearlight_drive_stack_cutaway",
+   "title_key": "LORE_NEARLIGHT_DRIVE_STACK_CUTAWAY_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_en_US.md",
+    "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY",
-      "release_set_id": "RS220_NEARLIGHT_DRIVE_STACK_CUTAWAY_ARTICLE",
-      "article_id": "applied_lore.nearlight_drive_stack_cutaway",
-      "title_key": "LORE_NEARLIGHT_DRIVE_STACK_CUTAWAY_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_en_US.md",
-        "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.nearlight_drive_stack_cutaway",
-        "secondary": [
-          "unlock.first_pellet_lane_wake_ledger",
-          "unlock.first_barnard_yards_drive_plate",
-          "unlock.first_black_keel_route_receipt"
-        ],
-        "poi_tags": [
-          "poi.barnard_yards_drive_cutaway",
-          "poi.atlas_radiator_rib_fragment",
-          "poi.magsail_spool_account",
-          "poi.black_keel_mass_window_console"
-        ],
-        "biome_tags": [
-          "biome.orbit",
-          "biome.shallow_annex",
-          "biome.route_archive"
-        ],
-        "first_20_boundary": "Turns nearlight travel from background exposition into a readable machine: staged route infrastructure, heat rejection, shielding, braking and mass custody explain why ownership moves faster than rescue."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Barnard Yards Drive Plate Scanner",
-          "terminal": "Atlas Transit Training Cutaway",
-          "audio": "Retired Propulsion Technician",
-          "in_game_wiki": "PDA Propulsion Syllabus",
-          "external_site": "Public Site Ship Systems Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_nearlight_drive_stack_cutaway_or_mass_window_console",
-        "truth_payload": "A near-light ship is not one engine but a route contract: beam push, pellet feed, fusion pulse, shield loss, radiator discipline, magsail braking and receiver custody all decide whether mass can move.",
-        "player_question": "What actually powers an Atlas-class ship, and why does that machine not become instant rescue?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Nearlight Drive Stack Cutaway",
-          "scanner": "DRIVE STACK CUTAWAY // Barnard Yards service plate: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiator ribs, magsail spool, aerobrake skin, and custody meter share one route number.",
-          "field_note": "The plate puts heat before thrust. Good plate. Cheap crews die at the radiator margin before anyone gets to brag about speed.",
-          "terminal": "ATLAS TRANSIT STACK // Departure push: external beam array. Cruise feed: pellet lane capture. Conversion: fusion-electric throat. Loss control: shield ice, carbon, radiator ribs. Arrival authority: magsail spool, aerobrake skin, receiver slot, custody ledger.",
-          "audio": "Stop calling the cone the engine. The engine is the route, the waste heat, and whoever owns the braking slot.",
-          "in_game_wiki": "A near-light ship is not a magic torch bolted to a hull. The drive stack is a whole route made physical: beam arrays spend power before departure, pellet lanes put caught mass where the ship can drink it, fusion-electric throats turn fuel into electricity and heat, shields accept dust loss, radiators spend years throwing away waste, and braking hardware matters as much as acceleration.",
-          "external_site": "Near-light travel in HECTON-8 is infrastructure, not wish fulfillment: ships move because beam arrays, pellet lanes, radiators, magsails, aerobrake skins, receiver rights, and custody ledgers all line up.",
-          "external_site_article": "The Barnard Yards cutaway was made for contractors, which is why it tells the truth. It does not draw a heroic engine bell and call the problem solved. It starts with the route: who owns the beam array, who cleared the pellet lane, how much dust loss the shield can take, how many years the radiator margin can stay honest, and which receiver is allowed to brake human mass.\n\nThat is the important part. Near-light travel did not make distance small. It made distance scheduled, insured, metered, and punishable. A vessel can carry a fusion-electric throat and still be helpless without departure infrastructure. It can survive cruise and still die politically at the braking slot. In HECTON-8, this is why rescue is never just a ship turning around. The engine is the route, the heat, the custody chain, and the mass someone is willing to pay to stop.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Разрез near-light drive stack",
-          "scanner": "РАЗРЕЗ DRIVE STACK // сервисная табличка Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, ребра радиаторов, magsail spool, aerobrake skin и счетчик custody идут под одним номером маршрута.",
-          "field_note": "Табличка ставит тепло перед тягой. Хорошая табличка. Дешевые экипажи умирают на запасе радиаторов раньше, чем кто-то успевает хвастаться скоростью.",
-          "terminal": "ТРАНЗИТНЫЙ СТЕК ATLAS // Стартовый толчок: внешняя beam array. Питание крейсерского участка: захват pellet lane. Преобразование: fusion-electric throat. Контроль потерь: лед щита, углерод, ребра радиаторов. Право прибытия: magsail spool, aerobrake skin, приемный слот, реестр custody.",
-          "audio": "Хватит называть конус двигателем. Двигатель - это маршрут, сброс тепла и тот, кто владеет тормозным слотом.",
-          "in_game_wiki": "Околосветовой корабль - не магический факел, прикрученный к корпусу. Drive stack - это целый маршрут, ставший железом: beam arrays тратят энергию до старта, pellet lanes кладут пойманную массу туда, где корабль может ее пить, fusion-electric throats превращают топливо в электричество и тепло, щиты принимают пылевые потери, радиаторы годами выбрасывают отходное тепло, а тормозное оборудование важно не меньше ускорения.",
-          "external_site": "Околосветовой перелет в HECTON-8 - инфраструктура, а не исполнение желания: корабли движутся только когда beam arrays, pellet lanes, радиаторы, magsails, aerobrake skins, права приемника и реестры custody выстроены в одну цепь.",
-          "external_site_article": "Разрез Barnard Yards сделан для подрядчиков, поэтому говорит правду. Он не рисует героический сопловой колокол и не делает вид, что задача решена. Он начинает с маршрута: кто владеет beam array, кто очистил pellet lane, сколько пылевых потерь выдержит щит, сколько лет запас радиаторов останется честным, и какой приемник имеет право тормозить человеческую массу.\n\nЭто главное. Околосветовой перелет не сделал расстояние маленьким. Он сделал расстояние расписанным, застрахованным, измеренным и наказуемым. Судно может нести fusion-electric throat и все равно быть беспомощным без стартовой инфраструктуры. Оно может пережить крейсерский участок и погибнуть юридически у тормозного слота. В HECTON-8 поэтому спасение никогда не означает просто корабль, который развернулся. Двигатель - это маршрут, тепло, цепочка custody и масса, за остановку которой кто-то готов платить.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ja_JP": {
-          "title": "Nearlight駆動スタック断面",
-          "scanner": "DRIVE STACK断面 // Barnard Yards整備板: beam-sail yoke、pellet catcher、fusion-electric throat、shadow shield、放熱リブ、magsail spool、aerobrake skin、custody meterが同じ経路番号を共有。",
-          "field_note": "この板は推力より熱を先に置く。良い板だ。安い乗員は速度を誇る前に放熱余裕で死ぬ。",
-          "terminal": "ATLAS TRANSIT STACK // 出発推進: 外部beam array。巡航供給: pellet lane捕獲。変換: fusion-electric throat。損失制御: シールド氷、炭素、放熱リブ。到着権限: magsail spool、aerobrake skin、受信スロット、custody台帳。",
-          "audio": "円錐をエンジンと呼ぶのはやめろ。エンジンは経路、廃熱、そして制動スロットを所有する者だ。",
-          "in_game_wiki": "近光速船は船体に付けた魔法のトーチではない。駆動スタックとは物理化した経路全体だ。Beam arrayは出発前に電力を使い、pellet laneは捕獲質量を船が飲める場所へ置き、fusion-electric throatは燃料を電力と熱へ変え、シールドは塵の損失を受け、放熱器は何年も廃熱を捨て、制動装備は加速と同じ重さを持つ。",
-          "external_site": "HECTON-8の近光速航行は願望ではなくインフラだ。船が動くのは、beam array、pellet lane、放熱器、magsail、aerobrake skin、受信権、custody台帳がそろった時だけである。",
-          "external_site_article": "Barnard Yardsの断面図は請負業者向けなので正直だ。英雄的なエンジンベルを描いて問題解決とは言わない。まず経路から始める。誰がbeam arrayを所有するか、誰がpellet laneを開けたか、シールドがどれだけ塵の損失に耐えるか、放熱余裕が何年正直でいられるか、どの受信機が人間の質量を制動する権利を持つか。\n\n重要なのはそこだ。近光速航行は距離を小さくしなかった。距離を予定化し、保険化し、計量化し、罰則化した。船はfusion-electric throatを積んでいても、出発インフラなしでは無力だ。巡航を生き延びても、制動スロットで政治的に死ぬことがある。HECTON-8で救助が単に船の反転を意味しないのはそのためだ。エンジンとは経路、熱、custody連鎖、そして誰かが停止費用を払う質量である。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "zh_CN": {
-          "title": "近光速驱动栈剖面",
-          "scanner": "DRIVE STACK剖面 // Barnard Yards维护板：beam-sail yoke、pellet catcher、fusion-electric throat、shadow shield、散热肋、magsail spool、aerobrake skin和custody meter共用同一路线号。",
-          "field_note": "这块板把热量放在推力前面。好板。廉价船组会先死在散热余量上，还没机会吹嘘速度。",
-          "terminal": "ATLAS TRANSIT STACK // 出发推力：外部beam array。巡航供给：pellet lane捕获。转换：fusion-electric throat。损耗控制：护盾冰、碳层、散热肋。抵达权限：magsail spool、aerobrake skin、接收槽、custody账本。",
-          "audio": "别再把那个锥体叫发动机。发动机是路线、废热，以及拥有制动槽的人。",
-          "in_game_wiki": "近光速飞船不是螺在船壳上的魔法火炬。驱动栈是一整条被做成实物的路线：beam array在出发前消耗功率，pellet lane把可捕获质量放到飞船能吞入的位置，fusion-electric throat把燃料变成电和热，护盾承受尘埃损耗，散热器用多年时间丢弃废热，而制动硬件和加速同样重要。",
-          "external_site": "HECTON-8里的近光速旅行是基础设施，不是愿望实现：只有beam array、pellet lane、散热器、magsail、aerobrake skin、接收权和custody账本全部对齐，飞船才会移动。",
-          "external_site_article": "Barnard Yards的剖面图是给承包商看的，所以它说实话。它不会画一个英雄式发动机喷口就宣布问题解决。它从路线开始：谁拥有beam array，谁清理了pellet lane，护盾能承受多少尘埃损耗，散热余量能诚实维持多少年，哪个接收器被允许制动人类质量。\n\n关键就在这里。近光速旅行没有把距离变小。它把距离变成排程、保险、计量和惩罚。飞船可以携带fusion-electric throat，却仍在没有出发基础设施时无能为力。它可以活过巡航，却在制动槽前被政治性杀死。在HECTON-8，救援从来不只是某艘船掉头。发动机是路线、热量、custody链，以及有人愿意付钱让它停下来的质量。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "fr_FR": {
-          "title": "Coupe du drive stack quasi-luminique",
-          "scanner": "COUPE DRIVE STACK // plaque Barnard Yards : beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, nervures radiateur, magsail spool, aerobrake skin et compteur custody partagent un numéro de route.",
-          "field_note": "La plaque met la chaleur avant la poussée. Bonne plaque. Les équipages bon marché meurent sur la marge radiateur avant de se vanter de vitesse.",
-          "terminal": "ATLAS TRANSIT STACK // Poussée de départ : beam array externe. Alimentation de croisière : capture pellet lane. Conversion : fusion-electric throat. Contrôle pertes : glace de bouclier, carbone, nervures radiateur. Autorité d'arrivée : magsail spool, aerobrake skin, slot récepteur, registre custody.",
-          "audio": "Arrête d'appeler le cône moteur. Le moteur, c'est la route, la chaleur perdue et celui qui possède le slot de freinage.",
-          "in_game_wiki": "Un vaisseau quasi-luminique n'est pas une torche magique boulonnée à une coque. Le drive stack est une route entière rendue matérielle : les beam arrays dépensent l'énergie avant le départ, les pellet lanes placent de la masse capturable, les fusion-electric throats changent le carburant en électricité et chaleur, les boucliers acceptent la perte de poussière, les radiateurs jettent la chaleur pendant des années, et le freinage compte autant que l'accélération.",
-          "external_site": "Dans HECTON-8, le voyage quasi-luminique est infrastructure, pas fantasme : beam arrays, pellet lanes, radiateurs, magsails, aerobrake skins, droits de réception et registres custody doivent s'aligner.",
-          "external_site_article": "La coupe Barnard Yards fut faite pour des contractants, donc elle dit la vérité. Elle ne dessine pas une cloche héroïque pour prétendre que le problème est réglé. Elle commence par la route : qui possède le beam array, qui a nettoyé la pellet lane, combien de perte de poussière le bouclier supporte, combien d'années la marge radiateur reste honnête, et quel récepteur a le droit de freiner une masse humaine.\n\nC'est l'essentiel. Le quasi-luminique n'a pas rendu la distance petite. Il l'a rendue planifiée, assurée, mesurée et punissable. Un vaisseau peut porter un fusion-electric throat et rester impuissant sans infrastructure de départ. Il peut survivre à la croisière et mourir politiquement au slot de freinage. Dans HECTON-8, le secours n'est donc jamais seulement un vaisseau qui fait demi-tour. Le moteur, c'est la route, la chaleur, la chaîne custody et la masse que quelqu'un accepte de payer pour arrêter.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "es_ES": {
-          "title": "Corte del drive stack cercano a la luz",
-          "scanner": "CORTE DRIVE STACK // placa Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, costillas radiador, magsail spool, aerobrake skin y medidor custody comparten número de ruta.",
-          "field_note": "La placa pone el calor antes del empuje. Buena placa. Las tripulaciones baratas mueren en el margen radiador antes de presumir velocidad.",
-          "terminal": "ATLAS TRANSIT STACK // Empuje de salida: beam array externo. Alimentación de crucero: captura pellet lane. Conversión: fusion-electric throat. Control de pérdidas: hielo de escudo, carbono, costillas radiador. Autoridad de llegada: magsail spool, aerobrake skin, ranura receptora, libro custody.",
-          "audio": "Deja de llamar motor al cono. El motor es la ruta, el calor residual y quien posee la ranura de frenado.",
-          "in_game_wiki": "Una nave cercana a la luz no es una antorcha mágica atornillada al casco. El drive stack es una ruta entera hecha física: los beam arrays gastan energía antes de salir, las pellet lanes ponen masa capturable donde la nave puede beberla, los fusion-electric throats convierten combustible en electricidad y calor, los escudos aceptan pérdida por polvo, los radiadores tiran calor durante años y el frenado pesa tanto como acelerar.",
-          "external_site": "En HECTON-8, viajar cerca de la luz es infraestructura, no deseo cumplido: beam arrays, pellet lanes, radiadores, magsails, aerobrake skins, derechos receptores y libros custody deben alinearse.",
-          "external_site_article": "El corte de Barnard Yards se hizo para contratistas, por eso dice la verdad. No dibuja una campana heroica de motor ni finge que el problema está resuelto. Empieza por la ruta: quién posee el beam array, quién limpió la pellet lane, cuánta pérdida de polvo aguanta el escudo, cuántos años sigue honesto el margen radiador y qué receptor tiene derecho a frenar masa humana.\n\nEso es lo importante. El viaje cercano a la luz no hizo pequeña la distancia. La volvió programada, asegurada, medida y castigable. Una nave puede llevar un fusion-electric throat y seguir indefensa sin infraestructura de salida. Puede sobrevivir al crucero y morir políticamente en la ranura de frenado. En HECTON-8, el rescate nunca es solo una nave dando media vuelta. El motor es la ruta, el calor, la cadena custody y la masa que alguien pagará por detener.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "de_DE": {
-          "title": "Schnitt des Nearlight-Drive-Stacks",
-          "scanner": "DRIVE-STACK-SCHNITT // Barnard-Yards-Serviceplatte: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, Radiatorrippen, magsail spool, aerobrake skin und custody meter teilen eine Routennummer.",
-          "field_note": "Die Platte setzt Wärme vor Schub. Gute Platte. Billige Crews sterben an der Radiatormarge, bevor jemand mit Geschwindigkeit prahlt.",
-          "terminal": "ATLAS TRANSIT STACK // Abflugschub: externes beam array. Reisefütterung: pellet lane capture. Umwandlung: fusion-electric throat. Verlustkontrolle: Schildeis, Carbon, Radiatorrippen. Ankunftsrecht: magsail spool, aerobrake skin, Empfängerslot, custody ledger.",
-          "audio": "Hör auf, den Kegel Motor zu nennen. Der Motor ist die Route, die Abwärme und wer den Bremsslot besitzt.",
-          "in_game_wiki": "Ein Nearlight-Schiff ist keine magische Fackel am Rumpf. Der Drive Stack ist eine ganze Route als Hardware: beam arrays geben vor Abflug Leistung aus, pellet lanes legen fangbare Masse bereit, fusion-electric throats wandeln Treibstoff in Strom und Wärme, Schilde nehmen Staubverlust, Radiatoren werfen jahrelang Wärme ab, und Bremsausrüstung zählt so viel wie Beschleunigung.",
-          "external_site": "Nearlight-Reisen in HECTON-8 sind Infrastruktur, keine Wunscherfüllung: beam arrays, pellet lanes, Radiatoren, magsails, aerobrake skins, Empfängerrechte und custody ledger müssen zusammenpassen.",
-          "external_site_article": "Der Barnard-Yards-Schnitt wurde für Auftragnehmer gemacht, deshalb sagt er die Wahrheit. Er zeichnet keine heroische Triebwerksglocke und erklärt das Problem für gelöst. Er beginnt mit der Route: Wer besitzt das beam array, wer räumte die pellet lane, wie viel Staubverlust hält der Schild aus, wie viele Jahre bleibt die Radiatormarge ehrlich, und welcher Empfänger darf menschliche Masse bremsen?\n\nDas ist der Kern. Nearlight-Reisen machten Entfernung nicht klein. Sie machten Entfernung geplant, versichert, gemessen und strafbar. Ein Schiff kann einen fusion-electric throat tragen und ohne Abfluginfrastruktur hilflos bleiben. Es kann die Reise überleben und am Bremsslot politisch sterben. In HECTON-8 ist Rettung deshalb nie nur ein Schiff, das umkehrt. Der Motor ist die Route, die Wärme, die custody chain und die Masse, deren Anhalten jemand bezahlt.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pl_PL": {
-          "title": "Przekrój stosu napędu near-light",
-          "scanner": "PRZEKRÓJ DRIVE STACK // płyta serwisowa Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, żebra radiatorów, magsail spool, aerobrake skin i custody meter dzielą numer trasy.",
-          "field_note": "Płyta stawia ciepło przed ciągiem. Dobra płyta. Tanie załogi giną na marginesie radiatora, zanim ktokolwiek chwali się prędkością.",
-          "terminal": "ATLAS TRANSIT STACK // Pchnięcie startowe: zewnętrzne beam array. Zasilanie rejsu: przechwycenie pellet lane. Konwersja: fusion-electric throat. Kontrola strat: lód osłony, węgiel, żebra radiatorów. Prawo przybycia: magsail spool, aerobrake skin, slot odbiorczy, ledger custody.",
-          "audio": "Przestań nazywać stożek silnikiem. Silnik to trasa, ciepło odpadowe i ten, kto posiada slot hamowania.",
-          "in_game_wiki": "Statek near-light nie jest magiczną pochodnią przykręconą do kadłuba. Drive stack to cała trasa zamieniona w sprzęt: beam arrays wydają moc przed odlotem, pellet lanes układają masę do przechwycenia, fusion-electric throats zmieniają paliwo w prąd i ciepło, osłony przyjmują pył, radiatory latami wyrzucają ciepło, a hamowanie jest tak ważne jak przyspieszanie.",
-          "external_site": "Podróż near-light w HECTON-8 to infrastruktura, nie spełnienie życzeń: beam arrays, pellet lanes, radiatory, magsails, aerobrake skins, prawa odbiorników i ledgery custody muszą się zgodzić.",
-          "external_site_article": "Przekrój Barnard Yards zrobiono dla kontraktorów, dlatego mówi prawdę. Nie rysuje bohaterskiej dyszy i nie udaje, że problem rozwiązano. Zaczyna od trasy: kto posiada beam array, kto oczyścił pellet lane, ile strat pyłowych zniesie osłona, ile lat margines radiatorów pozostanie uczciwy i który odbiornik ma prawo hamować ludzką masę.\n\nTo jest sedno. Podróż near-light nie zmniejszyła dystansu. Uczyniła dystans planowanym, ubezpieczonym, odmierzanym i karalnym. Statek może mieć fusion-electric throat i nadal być bezradny bez infrastruktury startu. Może przetrwać rejs i umrzeć politycznie przy slocie hamowania. W HECTON-8 ratunek nigdy nie jest tylko statkiem, który zawraca. Silnik to trasa, ciepło, łańcuch custody i masa, za której zatrzymanie ktoś zapłaci.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "uk_UA": {
-          "title": "Розріз near-light drive stack",
-          "scanner": "РОЗРІЗ DRIVE STACK // сервісна табличка Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, ребра радіаторів, magsail spool, aerobrake skin і custody meter мають один номер маршруту.",
-          "field_note": "Табличка ставить тепло перед тягою. Добра табличка. Дешеві екіпажі гинуть на запасі радіаторів раніше, ніж хтось похвалиться швидкістю.",
-          "terminal": "ТРАНЗИТНИЙ СТЕК ATLAS // Стартовий поштовх: зовнішня beam array. Живлення рейсу: захоплення pellet lane. Перетворення: fusion-electric throat. Контроль втрат: лід щита, вуглець, ребра радіаторів. Право прибуття: magsail spool, aerobrake skin, приймальний слот, ledger custody.",
-          "audio": "Досить називати конус двигуном. Двигун - це маршрут, скид тепла й той, хто володіє гальмівним слотом.",
-          "in_game_wiki": "Околосвітловий корабель - не магічний факел, прикручений до корпусу. Drive stack - це цілий маршрут, зроблений залізом: beam arrays витрачають енергію до старту, pellet lanes кладуть захоплювану масу там, де корабель може її пити, fusion-electric throats перетворюють паливо на електрику й тепло, щити беруть пилові втрати, радіатори роками викидають зайве тепло, а гальмування важить не менше за прискорення.",
-          "external_site": "Околосвітлова подорож у HECTON-8 - інфраструктура, а не виконання бажання: beam arrays, pellet lanes, радіатори, magsails, aerobrake skins, права приймача й ledgers custody мають зійтися.",
-          "external_site_article": "Розріз Barnard Yards зробили для підрядників, тому він говорить правду. Він не малює героїчне сопло й не вдає, що проблему розв'язано. Він починає з маршруту: хто володіє beam array, хто очистив pellet lane, скільки пилових втрат витримає щит, скільки років запас радіаторів лишиться чесним, і який приймач має право гальмувати людську масу.\n\nЦе головне. Околосвітлова подорож не зробила відстань малою. Вона зробила відстань розписаною, застрахованою, виміряною й караною. Судно може мати fusion-electric throat і все одно бути безпорадним без стартової інфраструктури. Воно може пережити рейс і померти політично біля гальмівного слота. У HECTON-8 порятунок ніколи не означає просто корабель, що розвернувся. Двигун - це маршрут, тепло, ланцюг custody і маса, за зупинку якої хтось заплатить.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ar_SA": {
-          "title": "مقطع حزمة الدفع near-light",
-          "scanner": "مقطع DRIVE STACK // لوحة خدمة Barnard Yards: beam-sail yoke وpellet catcher وfusion-electric throat وshadow shield وأضلاع المشعات وmagsail spool وaerobrake skin وcustody meter تحمل رقم طريق واحد.",
-          "field_note": "تضع اللوحة الحرارة قبل الدفع. لوحة جيدة. الطواقم الرخيصة تموت عند هامش المشعات قبل أن تتفاخر بالسرعة.",
-          "terminal": "ATLAS TRANSIT STACK // دفعة المغادرة: beam array خارجي. تغذية الرحلة: التقاط pellet lane. التحويل: fusion-electric throat. ضبط الفقد: جليد درع، كربون، أضلاع مشعات. سلطة الوصول: magsail spool وaerobrake skin وslot مستقبل وledger custody.",
-          "audio": "توقف عن تسمية المخروط محركا. المحرك هو الطريق، والحرارة المهدرة، ومن يملك فتحة الكبح.",
-          "in_game_wiki": "سفينة near-light ليست شعلة سحرية مثبتة على بدن. drive stack هو طريق كامل صار مادة: beam arrays تنفق الطاقة قبل المغادرة، pellet lanes تضع الكتلة القابلة للالتقاط حيث تستطيع السفينة شربها، fusion-electric throats تحول الوقود إلى كهرباء وحرارة، الدروع تقبل خسارة الغبار، المشعات ترمي الحرارة سنوات، والكبح مهم مثل التسارع.",
-          "external_site": "السفر near-light في HECTON-8 بنية تحتية لا أمنية: beam arrays وpellet lanes والمشعات وmagsails وaerobrake skins وحقوق المستقبل وledgers custody يجب أن تصطف.",
-          "external_site_article": "صنع مقطع Barnard Yards للمقاولين، لذلك يقول الحقيقة. لا يرسم جرسا بطوليا للمحرك ثم يدعي أن المشكلة انتهت. يبدأ بالطريق: من يملك beam array، من نظف pellet lane، كم فقد غبار يتحمله الدرع، كم سنة يبقى هامش المشعات صادقا، وأي مستقبل يملك حق كبح كتلة بشرية.\n\nهذه هي النقطة. السفر near-light لم يجعل المسافة صغيرة. جعله مجدولا، ومؤمنا، ومقاسا، وقابلا للعقاب. قد تحمل السفينة fusion-electric throat وتبقى عاجزة بلا بنية مغادرة. قد تنجو من الرحلة وتموت سياسيا عند فتحة الكبح. في HECTON-8 لا يعني الإنقاذ أبدا سفينة تستدير فقط. المحرك هو الطريق، والحرارة، وسلسلة custody، والكتلة التي سيدفع أحدهم ثمن إيقافها.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "id_ID": {
-          "title": "Potongan Drive Stack Nearlight",
-          "scanner": "POTONGAN DRIVE STACK // pelat servis Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, rusuk radiator, magsail spool, aerobrake skin, dan custody meter berbagi satu nomor rute.",
-          "field_note": "Pelat menaruh panas sebelum dorong. Pelat bagus. Kru murah mati di margin radiator sebelum sempat menyombongkan kecepatan.",
-          "terminal": "ATLAS TRANSIT STACK // Dorong keberangkatan: beam array eksternal. Suplai cruise: tangkapan pellet lane. Konversi: fusion-electric throat. Kendali rugi: es perisai, karbon, rusuk radiator. Otoritas tiba: magsail spool, aerobrake skin, slot receiver, ledger custody.",
-          "audio": "Berhenti menyebut kerucut itu mesin. Mesin adalah rute, panas buangan, dan siapa yang memiliki slot pengereman.",
-          "in_game_wiki": "Kapal nearlight bukan obor ajaib yang dibaut ke hull. Drive stack adalah seluruh rute yang dijadikan fisik: beam arrays membelanjakan daya sebelum berangkat, pellet lanes menaruh massa tangkapan di tempat kapal bisa meminumnya, fusion-electric throats mengubah bahan bakar menjadi listrik dan panas, perisai menerima rugi debu, radiator membuang panas selama bertahun-tahun, dan hardware pengereman sama pentingnya dengan akselerasi.",
-          "external_site": "Perjalanan nearlight di HECTON-8 adalah infrastruktur, bukan pemenuhan harapan: beam arrays, pellet lanes, radiator, magsails, aerobrake skins, hak receiver, dan ledger custody harus sejajar.",
-          "external_site_article": "Potongan Barnard Yards dibuat untuk kontraktor, jadi ia berkata jujur. Ia tidak menggambar corong mesin heroik lalu menyebut masalah selesai. Ia mulai dari rute: siapa pemilik beam array, siapa membersihkan pellet lane, berapa rugi debu yang bisa diterima perisai, berapa tahun margin radiator tetap jujur, dan receiver mana yang boleh mengerem massa manusia.\n\nItulah bagian penting. Perjalanan nearlight tidak membuat jarak kecil. Ia membuat jarak terjadwal, diasuransikan, diukur, dan dapat dihukum. Kapal bisa membawa fusion-electric throat dan tetap tak berdaya tanpa infrastruktur berangkat. Ia bisa selamat dari cruise dan mati secara politik di slot pengereman. Di HECTON-8, penyelamatan tidak pernah hanya kapal yang berbalik. Mesin adalah rute, panas, rantai custody, dan massa yang seseorang mau bayar untuk dihentikan.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ko_KR": {
-          "title": "Nearlight 드라이브 스택 절개도",
-          "scanner": "DRIVE STACK 절개 // Barnard Yards 서비스 플레이트: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiator ribs, magsail spool, aerobrake skin, custody meter가 하나의 경로 번호를 공유.",
-          "field_note": "플레이트는 추력보다 열을 먼저 둔다. 좋은 플레이트다. 싼 승무원은 속도를 자랑하기도 전에 라디에이터 여유에서 죽는다.",
-          "terminal": "ATLAS TRANSIT STACK // 출발 추진: 외부 beam array. 순항 공급: pellet lane 포획. 변환: fusion-electric throat. 손실 제어: 차폐 얼음, 탄소, 라디에이터 리브. 도착 권한: magsail spool, aerobrake skin, 수신 슬롯, custody ledger.",
-          "audio": "그 원뿔을 엔진이라 부르지 마라. 엔진은 경로, 폐열, 그리고 제동 슬롯의 소유자다.",
-          "in_game_wiki": "근광속 선박은 선체에 붙인 마법 횃불이 아니다. 드라이브 스택은 물리화된 전체 경로다. beam array는 출발 전에 전력을 쓰고, pellet lane은 선박이 마실 수 있는 곳에 포획 질량을 놓고, fusion-electric throat는 연료를 전기와 열로 바꾸며, 차폐는 먼지 손실을 받고, 라디에이터는 수년 동안 폐열을 버리고, 제동 장비는 가속만큼 중요하다.",
-          "external_site": "HECTON-8의 근광속 여행은 소원 성취가 아니라 인프라다. beam array, pellet lane, 라디에이터, magsail, aerobrake skin, 수신 권리, custody ledger가 모두 맞아야 선박이 움직인다.",
-          "external_site_article": "Barnard Yards 절개도는 계약자용으로 만들어졌기 때문에 진실을 말한다. 영웅적인 엔진 벨을 그리고 문제가 해결됐다고 하지 않는다. 경로부터 시작한다. 누가 beam array를 소유하는지, 누가 pellet lane을 비웠는지, 차폐가 얼마나 많은 먼지 손실을 견디는지, 라디에이터 여유가 몇 년이나 정직하게 남는지, 어떤 수신기가 인간 질량을 제동할 권리를 갖는지.\n\n중요한 것은 이것이다. 근광속 여행은 거리를 작게 만들지 않았다. 거리를 일정화하고, 보험화하고, 계량화하고, 처벌 가능하게 만들었다. 선박은 fusion-electric throat를 싣고도 출발 인프라 없이는 무력할 수 있다. 순항을 살아남고도 제동 슬롯에서 정치적으로 죽을 수 있다. HECTON-8에서 구조가 단순히 선박이 돌아서는 일이 아닌 이유다. 엔진은 경로, 열, custody chain, 그리고 누군가 멈추는 데 돈을 낼 질량이다.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "he_IL": {
-          "title": "חתך מערום הנעה Nearlight",
-          "scanner": "חתך DRIVE STACK // לוח שירות Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, צלעות רדיאטור, magsail spool, aerobrake skin ו-custody meter חולקים מספר נתיב.",
-          "field_note": "הלוח שם חום לפני דחף. לוח טוב. צוותים זולים מתים בשולי הרדיאטור לפני שמישהו מתפאר במהירות.",
-          "terminal": "ATLAS TRANSIT STACK // דחיפת יציאה: beam array חיצוני. הזנת שיוט: לכידת pellet lane. המרה: fusion-electric throat. בקרת אובדן: קרח מגן, פחמן, צלעות רדיאטור. סמכות הגעה: magsail spool, aerobrake skin, חריץ קליטה, ledger custody.",
-          "audio": "תפסיק לקרוא לחרוט מנוע. המנוע הוא הנתיב, חום הפסולת ומי שמחזיק בחריץ הבלימה.",
-          "in_game_wiki": "ספינת nearlight אינה לפיד קסום שמוברג לגוף. מערום ההנעה הוא נתיב שלם שהפך לחומרה: beam arrays מוציאים כוח לפני יציאה, pellet lanes מניחים מסה ללכידה במקום שהספינה יכולה לשתות אותה, fusion-electric throats הופכים דלק לחשמל וחום, מגנים מקבלים אובדן אבק, רדיאטורים זורקים חום במשך שנים, וחומרת בלימה חשובה כמו האצה.",
-          "external_site": "מסע nearlight ב-HECTON-8 הוא תשתית, לא הגשמת משאלה: beam arrays, pellet lanes, רדיאטורים, magsails, aerobrake skins, זכויות קליטה ו-ledgers custody חייבים להסתדר.",
-          "external_site_article": "החתך של Barnard Yards נעשה לקבלנים, ולכן הוא אומר אמת. הוא לא מצייר פעמון מנוע הירואי ומעמיד פנים שהבעיה נפתרה. הוא מתחיל בנתיב: מי מחזיק ב-beam array, מי פינה את pellet lane, כמה אובדן אבק המגן סובל, כמה שנים שולי הרדיאטור נשארים כנים, ואיזה מקלט רשאי לבלום מסה אנושית.\n\nזה העיקר. מסע nearlight לא הקטין מרחק. הוא הפך מרחק למתוזמן, מבוטח, מדוד ובר ענישה. כלי יכול לשאת fusion-electric throat ועדיין להיות חסר אונים בלי תשתית יציאה. הוא יכול לשרוד שיוט ולמות פוליטית בחריץ הבלימה. ב-HECTON-8 חילוץ לעולם אינו רק ספינה שמסתובבת. המנוע הוא הנתיב, החום, שרשרת custody והמסה שמישהו מוכן לשלם כדי לעצור.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pt_BR": {
-          "title": "Corte do drive stack nearlight",
-          "scanner": "CORTE DRIVE STACK // placa Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, nervuras radiador, magsail spool, aerobrake skin e custody meter compartilham um número de rota.",
-          "field_note": "A placa coloca calor antes de empuxo. Boa placa. Tripulações baratas morrem na margem do radiador antes de se gabar de velocidade.",
-          "terminal": "ATLAS TRANSIT STACK // Empuxo de partida: beam array externo. Alimentação de cruzeiro: captura pellet lane. Conversão: fusion-electric throat. Controle de perdas: gelo de escudo, carbono, nervuras radiador. Autoridade de chegada: magsail spool, aerobrake skin, slot receptor, ledger custody.",
-          "audio": "Pare de chamar o cone de motor. O motor é a rota, o calor residual e quem possui o slot de frenagem.",
-          "in_game_wiki": "Uma nave nearlight não é uma tocha mágica parafusada no casco. O drive stack é uma rota inteira tornada física: beam arrays gastam potência antes da partida, pellet lanes colocam massa capturável onde a nave pode beber, fusion-electric throats transformam combustível em eletricidade e calor, escudos aceitam perda de poeira, radiadores passam anos jogando calor fora, e hardware de frenagem importa tanto quanto aceleração.",
-          "external_site": "Viagem nearlight em HECTON-8 é infraestrutura, não realização de desejo: beam arrays, pellet lanes, radiadores, magsails, aerobrake skins, direitos receptores e ledgers custody precisam se alinhar.",
-          "external_site_article": "O corte da Barnard Yards foi feito para contratados, por isso fala a verdade. Ele não desenha uma campânula heroica e finge que o problema acabou. Começa pela rota: quem possui o beam array, quem limpou a pellet lane, quanta perda de poeira o escudo aguenta, quantos anos a margem do radiador fica honesta, e qual receptor tem direito de frear massa humana.\n\nEssa é a parte importante. Viajar nearlight não tornou a distância pequena. Tornou a distância agendada, segurada, medida e punível. Uma nave pode levar fusion-electric throat e ainda ser inútil sem infraestrutura de partida. Pode sobreviver ao cruzeiro e morrer politicamente no slot de frenagem. Em HECTON-8, resgate nunca é só uma nave dando meia-volta. O motor é a rota, o calor, a cadeia custody e a massa que alguém aceita pagar para parar.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "nl_NL": {
-          "title": "Doorsnede van Nearlight Drive Stack",
-          "scanner": "DRIVE STACK-DOORSNEDE // Barnard Yards-serviceplaat: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiatorribben, magsail spool, aerobrake skin en custody meter delen één routenummer.",
-          "field_note": "De plaat zet warmte vóór stuwkracht. Goede plaat. Goedkope crews sterven aan de radiatormarge voordat iemand over snelheid opschept.",
-          "terminal": "ATLAS TRANSIT STACK // Vertrekduw: externe beam array. Kruisvoeding: pellet lane capture. Omzetting: fusion-electric throat. Verliescontrole: schildijs, koolstof, radiatorribben. Aankomstbevoegdheid: magsail spool, aerobrake skin, ontvangslot, custody ledger.",
-          "audio": "Noem de kegel niet langer de motor. De motor is de route, de afvalwarmte en wie het remslot bezit.",
-          "in_game_wiki": "Een nearlight-schip is geen magische fakkel op een romp. De drive stack is een hele route die fysiek werd: beam arrays besteden vermogen voor vertrek, pellet lanes leggen vangbare massa waar het schip kan drinken, fusion-electric throats maken brandstof tot elektriciteit en warmte, schilden accepteren stofverlies, radiatoren gooien jaren warmte weg, en remhardware telt evenveel als versnelling.",
-          "external_site": "Nearlight-reizen in HECTON-8 zijn infrastructuur, geen wensvervulling: beam arrays, pellet lanes, radiatoren, magsails, aerobrake skins, ontvangstrechten en custody ledgers moeten samenvallen.",
-          "external_site_article": "De Barnard Yards-doorsnede is voor aannemers gemaakt en zegt daarom de waarheid. Zij tekent geen heroïsche motorbel om te doen alsof het probleem opgelost is. Zij begint met de route: wie bezit de beam array, wie maakte de pellet lane vrij, hoeveel stofverlies kan het schild nemen, hoeveel jaar blijft de radiatormarge eerlijk, en welke ontvanger mag menselijke massa afremmen?\n\nDat is het punt. Nearlight-reizen maakten afstand niet klein. Ze maakten afstand gepland, verzekerd, gemeten en strafbaar. Een schip kan een fusion-electric throat dragen en zonder vertrekinfrastructuur hulpeloos blijven. Het kan de cruise overleven en politiek sterven bij het remslot. In HECTON-8 is redding daarom nooit alleen een schip dat omkeert. De motor is de route, de warmte, de custody chain en de massa waarvoor iemand wil betalen om die te stoppen.",
-          "localization_status": "source_draft_pending_native_review"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.nearlight_drive_stack_cutaway",
+    "secondary": [
+     "unlock.first_pellet_lane_wake_ledger",
+     "unlock.first_barnard_yards_drive_plate",
+     "unlock.first_black_keel_route_receipt"
+    ],
+    "poi_tags": [
+     "poi.barnard_yards_drive_cutaway",
+     "poi.atlas_radiator_rib_fragment",
+     "poi.magsail_spool_account",
+     "poi.black_keel_mass_window_console"
+    ],
+    "biome_tags": [
+     "biome.orbit",
+     "biome.shallow_annex",
+     "biome.route_archive"
+    ],
+    "first_20_boundary": "Turns nearlight travel from background exposition into a readable machine: staged route infrastructure, heat rejection, shielding, braking and mass custody explain why ownership moves faster than rescue."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Barnard Yards Drive Plate Scanner",
+     "terminal": "Atlas Transit Training Cutaway",
+     "audio": "Retired Propulsion Technician",
+     "in_game_wiki": "PDA Propulsion Syllabus",
+     "external_site": "Public Site Ship Systems Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_nearlight_drive_stack_cutaway_or_mass_window_console",
+    "truth_payload": "A near-light ship is not one engine but a route contract: beam push, pellet feed, fusion pulse, shield loss, radiator discipline, magsail braking and receiver custody all decide whether mass can move.",
+    "player_question": "What actually powers an Atlas-class ship, and why does that machine not become instant rescue?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Nearlight Drive Stack Cutaway",
+     "scanner": "DRIVE STACK CUTAWAY // Barnard Yards service plate: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiator ribs, magsail spool, aerobrake skin, and custody meter share one route number.",
+     "field_note": "The plate puts heat before thrust. Good plate. Cheap crews die at the radiator margin before anyone gets to brag about speed.",
+     "terminal": "ATLAS TRANSIT STACK // Departure push: external beam array. Cruise feed: pellet lane capture. Conversion: fusion-electric throat. Loss control: shield ice, carbon, radiator ribs. Arrival authority: magsail spool, aerobrake skin, receiver slot, custody ledger.",
+     "audio": "Stop calling the cone the engine. The engine is the route, the waste heat, and whoever owns the braking slot.",
+     "in_game_wiki": "A near-light ship is not a magic torch bolted to a hull. The drive stack is a whole route made physical: beam arrays spend power before departure, pellet lanes put caught mass where the ship can drink it, fusion-electric throats turn fuel into electricity and heat, shields accept dust loss, radiators spend years throwing away waste, and braking hardware matters as much as acceleration.",
+     "external_site": "Near-light travel in HECTON-8 is infrastructure, not wish fulfillment: ships move because beam arrays, pellet lanes, radiators, magsails, aerobrake skins, receiver rights, and custody ledgers all line up.",
+     "external_site_article": "The Barnard Yards cutaway was made for contractors, which is why it tells the truth. It does not draw a heroic engine bell and call the problem solved. It starts with the route: who owns the beam array, who cleared the pellet lane, how much dust loss the shield can take, how many years the radiator margin can stay honest, and which receiver is allowed to brake human mass.\n\nThat is the important part. Near-light travel did not make distance small. It made distance scheduled, insured, metered, and punishable. A vessel can carry a fusion-electric throat and still be helpless without departure infrastructure. It can survive cruise and still die politically at the braking slot. In HECTON-8, this is why rescue is never just a ship turning around. The engine is the route, the heat, the custody chain, and the mass someone is willing to pay to stop.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Разрез near-light drive stack",
+     "scanner": "РАЗРЕЗ DRIVE STACK // сервисная табличка Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, ребра радиаторов, magsail spool, aerobrake skin и счетчик custody идут под одним номером маршрута.",
+     "field_note": "Табличка ставит тепло перед тягой. Хорошая табличка. Дешевые экипажи умирают на запасе радиаторов раньше, чем кто-то успевает хвастаться скоростью.",
+     "terminal": "ТРАНЗИТНЫЙ СТЕК ATLAS // Стартовый толчок: внешняя beam array. Питание крейсерского участка: захват pellet lane. Преобразование: fusion-electric throat. Контроль потерь: лед щита, углерод, ребра радиаторов. Право прибытия: magsail spool, aerobrake skin, приемный слот, реестр custody.",
+     "audio": "Хватит называть конус двигателем. Двигатель - это маршрут, сброс тепла и тот, кто владеет тормозным слотом.",
+     "in_game_wiki": "Околосветовой корабль - не магический факел, прикрученный к корпусу. Drive stack - это целый маршрут, ставший железом: beam arrays тратят энергию до старта, pellet lanes кладут пойманную массу туда, где корабль может ее пить, fusion-electric throats превращают топливо в электричество и тепло, щиты принимают пылевые потери, радиаторы годами выбрасывают отходное тепло, а тормозное оборудование важно не меньше ускорения.",
+     "external_site": "Околосветовой перелет в HECTON-8 - инфраструктура, а не исполнение желания: корабли движутся только когда beam arrays, pellet lanes, радиаторы, magsails, aerobrake skins, права приемника и реестры custody выстроены в одну цепь.",
+     "external_site_article": "Разрез Barnard Yards сделан для подрядчиков, поэтому говорит правду. Он не рисует героический сопловой колокол и не делает вид, что задача решена. Он начинает с маршрута: кто владеет beam array, кто очистил pellet lane, сколько пылевых потерь выдержит щит, сколько лет запас радиаторов останется честным, и какой приемник имеет право тормозить человеческую массу.\n\nЭто главное. Околосветовой перелет не сделал расстояние маленьким. Он сделал расстояние расписанным, застрахованным, измеренным и наказуемым. Судно может нести fusion-electric throat и все равно быть беспомощным без стартовой инфраструктуры. Оно может пережить крейсерский участок и погибнуть юридически у тормозного слота. В HECTON-8 поэтому спасение никогда не означает просто корабль, который развернулся. Двигатель - это маршрут, тепло, цепочка custody и масса, за остановку которой кто-то готов платить.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ja_JP": {
+     "title": "Nearlight駆動スタック断面",
+     "scanner": "DRIVE STACK断面 // Barnard Yards整備板: beam-sail yoke、pellet catcher、fusion-electric throat、shadow shield、放熱リブ、magsail spool、aerobrake skin、custody meterが同じ経路番号を共有。",
+     "field_note": "この板は推力より熱を先に置く。良い板だ。安い乗員は速度を誇る前に放熱余裕で死ぬ。",
+     "terminal": "ATLAS TRANSIT STACK // 出発推進: 外部beam array。巡航供給: pellet lane捕獲。変換: fusion-electric throat。損失制御: シールド氷、炭素、放熱リブ。到着権限: magsail spool、aerobrake skin、受信スロット、custody台帳。",
+     "audio": "円錐をエンジンと呼ぶのはやめろ。エンジンは経路、廃熱、そして制動スロットを所有する者だ。",
+     "in_game_wiki": "近光速船は船体に付けた魔法のトーチではない。駆動スタックとは物理化した経路全体だ。Beam arrayは出発前に電力を使い、pellet laneは捕獲質量を船が飲める場所へ置き、fusion-electric throatは燃料を電力と熱へ変え、シールドは塵の損失を受け、放熱器は何年も廃熱を捨て、制動装備は加速と同じ重さを持つ。",
+     "external_site": "HECTON-8の近光速航行は願望ではなくインフラだ。船が動くのは、beam array、pellet lane、放熱器、magsail、aerobrake skin、受信権、custody台帳がそろった時だけである。",
+     "external_site_article": "Barnard Yardsの断面図は請負業者向けなので正直だ。英雄的なエンジンベルを描いて問題解決とは言わない。まず経路から始める。誰がbeam arrayを所有するか、誰がpellet laneを開けたか、シールドがどれだけ塵の損失に耐えるか、放熱余裕が何年正直でいられるか、どの受信機が人間の質量を制動する権利を持つか。\n\n重要なのはそこだ。近光速航行は距離を小さくしなかった。距離を予定化し、保険化し、計量化し、罰則化した。船はfusion-electric throatを積んでいても、出発インフラなしでは無力だ。巡航を生き延びても、制動スロットで政治的に死ぬことがある。HECTON-8で救助が単に船の反転を意味しないのはそのためだ。エンジンとは経路、熱、custody連鎖、そして誰かが停止費用を払う質量である。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "zh_CN": {
+     "title": "近光速驱动栈剖面",
+     "scanner": "DRIVE STACK剖面 // Barnard Yards维护板：beam-sail yoke、pellet catcher、fusion-electric throat、shadow shield、散热肋、magsail spool、aerobrake skin和custody meter共用同一路线号。",
+     "field_note": "这块板把热量放在推力前面。好板。廉价船组会先死在散热余量上，还没机会吹嘘速度。",
+     "terminal": "ATLAS TRANSIT STACK // 出发推力：外部beam array。巡航供给：pellet lane捕获。转换：fusion-electric throat。损耗控制：护盾冰、碳层、散热肋。抵达权限：magsail spool、aerobrake skin、接收槽、custody账本。",
+     "audio": "别再把那个锥体叫发动机。发动机是路线、废热，以及拥有制动槽的人。",
+     "in_game_wiki": "近光速飞船不是螺在船壳上的魔法火炬。驱动栈是一整条被做成实物的路线：beam array在出发前消耗功率，pellet lane把可捕获质量放到飞船能吞入的位置，fusion-electric throat把燃料变成电和热，护盾承受尘埃损耗，散热器用多年时间丢弃废热，而制动硬件和加速同样重要。",
+     "external_site": "HECTON-8里的近光速旅行是基础设施，不是愿望实现：只有beam array、pellet lane、散热器、magsail、aerobrake skin、接收权和custody账本全部对齐，飞船才会移动。",
+     "external_site_article": "Barnard Yards的剖面图是给承包商看的，所以它说实话。它不会画一个英雄式发动机喷口就宣布问题解决。它从路线开始：谁拥有beam array，谁清理了pellet lane，护盾能承受多少尘埃损耗，散热余量能诚实维持多少年，哪个接收器被允许制动人类质量。\n\n关键就在这里。近光速旅行没有把距离变小。它把距离变成排程、保险、计量和惩罚。飞船可以携带fusion-electric throat，却仍在没有出发基础设施时无能为力。它可以活过巡航，却在制动槽前被政治性杀死。在HECTON-8，救援从来不只是某艘船掉头。发动机是路线、热量、custody链，以及有人愿意付钱让它停下来的质量。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "fr_FR": {
+     "title": "Coupe du drive stack quasi-luminique",
+     "scanner": "COUPE DRIVE STACK // plaque Barnard Yards : beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, nervures radiateur, magsail spool, aerobrake skin et compteur custody partagent un numéro de route.",
+     "field_note": "La plaque met la chaleur avant la poussée. Bonne plaque. Les équipages bon marché meurent sur la marge radiateur avant de se vanter de vitesse.",
+     "terminal": "ATLAS TRANSIT STACK // Poussée de départ : beam array externe. Alimentation de croisière : capture pellet lane. Conversion : fusion-electric throat. Contrôle pertes : glace de bouclier, carbone, nervures radiateur. Autorité d'arrivée : magsail spool, aerobrake skin, slot récepteur, registre custody.",
+     "audio": "Arrête d'appeler le cône moteur. Le moteur, c'est la route, la chaleur perdue et celui qui possède le slot de freinage.",
+     "in_game_wiki": "Un vaisseau quasi-luminique n'est pas une torche magique boulonnée à une coque. Le drive stack est une route entière rendue matérielle : les beam arrays dépensent l'énergie avant le départ, les pellet lanes placent de la masse capturable, les fusion-electric throats changent le carburant en électricité et chaleur, les boucliers acceptent la perte de poussière, les radiateurs jettent la chaleur pendant des années, et le freinage compte autant que l'accélération.",
+     "external_site": "Dans HECTON-8, le voyage quasi-luminique est infrastructure, pas fantasme : beam arrays, pellet lanes, radiateurs, magsails, aerobrake skins, droits de réception et registres custody doivent s'aligner.",
+     "external_site_article": "La coupe Barnard Yards fut faite pour des contractants, donc elle dit la vérité. Elle ne dessine pas une cloche héroïque pour prétendre que le problème est réglé. Elle commence par la route : qui possède le beam array, qui a nettoyé la pellet lane, combien de perte de poussière le bouclier supporte, combien d'années la marge radiateur reste honnête, et quel récepteur a le droit de freiner une masse humaine.\n\nC'est l'essentiel. Le quasi-luminique n'a pas rendu la distance petite. Il l'a rendue planifiée, assurée, mesurée et punissable. Un vaisseau peut porter un fusion-electric throat et rester impuissant sans infrastructure de départ. Il peut survivre à la croisière et mourir politiquement au slot de freinage. Dans HECTON-8, le secours n'est donc jamais seulement un vaisseau qui fait demi-tour. Le moteur, c'est la route, la chaleur, la chaîne custody et la masse que quelqu'un accepte de payer pour arrêter.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "es_ES": {
+     "title": "Corte del drive stack cercano a la luz",
+     "scanner": "CORTE DRIVE STACK // placa Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, costillas radiador, magsail spool, aerobrake skin y medidor custody comparten número de ruta.",
+     "field_note": "La placa pone el calor antes del empuje. Buena placa. Las tripulaciones baratas mueren en el margen radiador antes de presumir velocidad.",
+     "terminal": "ATLAS TRANSIT STACK // Empuje de salida: beam array externo. Alimentación de crucero: captura pellet lane. Conversión: fusion-electric throat. Control de pérdidas: hielo de escudo, carbono, costillas radiador. Autoridad de llegada: magsail spool, aerobrake skin, ranura receptora, libro custody.",
+     "audio": "Deja de llamar motor al cono. El motor es la ruta, el calor residual y quien posee la ranura de frenado.",
+     "in_game_wiki": "Una nave cercana a la luz no es una antorcha mágica atornillada al casco. El drive stack es una ruta entera hecha física: los beam arrays gastan energía antes de salir, las pellet lanes ponen masa capturable donde la nave puede beberla, los fusion-electric throats convierten combustible en electricidad y calor, los escudos aceptan pérdida por polvo, los radiadores tiran calor durante años y el frenado pesa tanto como acelerar.",
+     "external_site": "En HECTON-8, viajar cerca de la luz es infraestructura, no deseo cumplido: beam arrays, pellet lanes, radiadores, magsails, aerobrake skins, derechos receptores y libros custody deben alinearse.",
+     "external_site_article": "El corte de Barnard Yards se hizo para contratistas, por eso dice la verdad. No dibuja una campana heroica de motor ni finge que el problema está resuelto. Empieza por la ruta: quién posee el beam array, quién limpió la pellet lane, cuánta pérdida de polvo aguanta el escudo, cuántos años sigue honesto el margen radiador y qué receptor tiene derecho a frenar masa humana.\n\nEso es lo importante. El viaje cercano a la luz no hizo pequeña la distancia. La volvió programada, asegurada, medida y castigable. Una nave puede llevar un fusion-electric throat y seguir indefensa sin infraestructura de salida. Puede sobrevivir al crucero y morir políticamente en la ranura de frenado. En HECTON-8, el rescate nunca es solo una nave dando media vuelta. El motor es la ruta, el calor, la cadena custody y la masa que alguien pagará por detener.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "de_DE": {
+     "title": "Schnitt des Nearlight-Drive-Stacks",
+     "scanner": "DRIVE-STACK-SCHNITT // Barnard-Yards-Serviceplatte: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, Radiatorrippen, magsail spool, aerobrake skin und custody meter teilen eine Routennummer.",
+     "field_note": "Die Platte setzt Wärme vor Schub. Gute Platte. Billige Crews sterben an der Radiatormarge, bevor jemand mit Geschwindigkeit prahlt.",
+     "terminal": "ATLAS TRANSIT STACK // Abflugschub: externes beam array. Reisefütterung: pellet lane capture. Umwandlung: fusion-electric throat. Verlustkontrolle: Schildeis, Carbon, Radiatorrippen. Ankunftsrecht: magsail spool, aerobrake skin, Empfängerslot, custody ledger.",
+     "audio": "Hör auf, den Kegel Motor zu nennen. Der Motor ist die Route, die Abwärme und wer den Bremsslot besitzt.",
+     "in_game_wiki": "Ein Nearlight-Schiff ist keine magische Fackel am Rumpf. Der Drive Stack ist eine ganze Route als Hardware: beam arrays geben vor Abflug Leistung aus, pellet lanes legen fangbare Masse bereit, fusion-electric throats wandeln Treibstoff in Strom und Wärme, Schilde nehmen Staubverlust, Radiatoren werfen jahrelang Wärme ab, und Bremsausrüstung zählt so viel wie Beschleunigung.",
+     "external_site": "Nearlight-Reisen in HECTON-8 sind Infrastruktur, keine Wunscherfüllung: beam arrays, pellet lanes, Radiatoren, magsails, aerobrake skins, Empfängerrechte und custody ledger müssen zusammenpassen.",
+     "external_site_article": "Der Barnard-Yards-Schnitt wurde für Auftragnehmer gemacht, deshalb sagt er die Wahrheit. Er zeichnet keine heroische Triebwerksglocke und erklärt das Problem für gelöst. Er beginnt mit der Route: Wer besitzt das beam array, wer räumte die pellet lane, wie viel Staubverlust hält der Schild aus, wie viele Jahre bleibt die Radiatormarge ehrlich, und welcher Empfänger darf menschliche Masse bremsen?\n\nDas ist der Kern. Nearlight-Reisen machten Entfernung nicht klein. Sie machten Entfernung geplant, versichert, gemessen und strafbar. Ein Schiff kann einen fusion-electric throat tragen und ohne Abfluginfrastruktur hilflos bleiben. Es kann die Reise überleben und am Bremsslot politisch sterben. In HECTON-8 ist Rettung deshalb nie nur ein Schiff, das umkehrt. Der Motor ist die Route, die Wärme, die custody chain und die Masse, deren Anhalten jemand bezahlt.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pl_PL": {
+     "title": "Przekrój stosu napędu near-light",
+     "scanner": "PRZEKRÓJ DRIVE STACK // płyta serwisowa Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, żebra radiatorów, magsail spool, aerobrake skin i custody meter dzielą numer trasy.",
+     "field_note": "Płyta stawia ciepło przed ciągiem. Dobra płyta. Tanie załogi giną na marginesie radiatora, zanim ktokolwiek chwali się prędkością.",
+     "terminal": "ATLAS TRANSIT STACK // Pchnięcie startowe: zewnętrzne beam array. Zasilanie rejsu: przechwycenie pellet lane. Konwersja: fusion-electric throat. Kontrola strat: lód osłony, węgiel, żebra radiatorów. Prawo przybycia: magsail spool, aerobrake skin, slot odbiorczy, ledger custody.",
+     "audio": "Przestań nazywać stożek silnikiem. Silnik to trasa, ciepło odpadowe i ten, kto posiada slot hamowania.",
+     "in_game_wiki": "Statek near-light nie jest magiczną pochodnią przykręconą do kadłuba. Drive stack to cała trasa zamieniona w sprzęt: beam arrays wydają moc przed odlotem, pellet lanes układają masę do przechwycenia, fusion-electric throats zmieniają paliwo w prąd i ciepło, osłony przyjmują pył, radiatory latami wyrzucają ciepło, a hamowanie jest tak ważne jak przyspieszanie.",
+     "external_site": "Podróż near-light w HECTON-8 to infrastruktura, nie spełnienie życzeń: beam arrays, pellet lanes, radiatory, magsails, aerobrake skins, prawa odbiorników i ledgery custody muszą się zgodzić.",
+     "external_site_article": "Przekrój Barnard Yards zrobiono dla kontraktorów, dlatego mówi prawdę. Nie rysuje bohaterskiej dyszy i nie udaje, że problem rozwiązano. Zaczyna od trasy: kto posiada beam array, kto oczyścił pellet lane, ile strat pyłowych zniesie osłona, ile lat margines radiatorów pozostanie uczciwy i który odbiornik ma prawo hamować ludzką masę.\n\nTo jest sedno. Podróż near-light nie zmniejszyła dystansu. Uczyniła dystans planowanym, ubezpieczonym, odmierzanym i karalnym. Statek może mieć fusion-electric throat i nadal być bezradny bez infrastruktury startu. Może przetrwać rejs i umrzeć politycznie przy slocie hamowania. W HECTON-8 ratunek nigdy nie jest tylko statkiem, który zawraca. Silnik to trasa, ciepło, łańcuch custody i masa, za której zatrzymanie ktoś zapłaci.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "uk_UA": {
+     "title": "Розріз near-light drive stack",
+     "scanner": "РОЗРІЗ DRIVE STACK // сервісна табличка Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, ребра радіаторів, magsail spool, aerobrake skin і custody meter мають один номер маршруту.",
+     "field_note": "Табличка ставить тепло перед тягою. Добра табличка. Дешеві екіпажі гинуть на запасі радіаторів раніше, ніж хтось похвалиться швидкістю.",
+     "terminal": "ТРАНЗИТНИЙ СТЕК ATLAS // Стартовий поштовх: зовнішня beam array. Живлення рейсу: захоплення pellet lane. Перетворення: fusion-electric throat. Контроль втрат: лід щита, вуглець, ребра радіаторів. Право прибуття: magsail spool, aerobrake skin, приймальний слот, ledger custody.",
+     "audio": "Досить називати конус двигуном. Двигун - це маршрут, скид тепла й той, хто володіє гальмівним слотом.",
+     "in_game_wiki": "Околосвітловий корабель - не магічний факел, прикручений до корпусу. Drive stack - це цілий маршрут, зроблений залізом: beam arrays витрачають енергію до старту, pellet lanes кладуть захоплювану масу там, де корабель може її пити, fusion-electric throats перетворюють паливо на електрику й тепло, щити беруть пилові втрати, радіатори роками викидають зайве тепло, а гальмування важить не менше за прискорення.",
+     "external_site": "Околосвітлова подорож у HECTON-8 - інфраструктура, а не виконання бажання: beam arrays, pellet lanes, радіатори, magsails, aerobrake skins, права приймача й ledgers custody мають зійтися.",
+     "external_site_article": "Розріз Barnard Yards зробили для підрядників, тому він говорить правду. Він не малює героїчне сопло й не вдає, що проблему розв'язано. Він починає з маршруту: хто володіє beam array, хто очистив pellet lane, скільки пилових втрат витримає щит, скільки років запас радіаторів лишиться чесним, і який приймач має право гальмувати людську масу.\n\nЦе головне. Околосвітлова подорож не зробила відстань малою. Вона зробила відстань розписаною, застрахованою, виміряною й караною. Судно може мати fusion-electric throat і все одно бути безпорадним без стартової інфраструктури. Воно може пережити рейс і померти політично біля гальмівного слота. У HECTON-8 порятунок ніколи не означає просто корабель, що розвернувся. Двигун - це маршрут, тепло, ланцюг custody і маса, за зупинку якої хтось заплатить.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ar_SA": {
+     "title": "مقطع حزمة الدفع near-light",
+     "scanner": "مقطع DRIVE STACK // لوحة خدمة Barnard Yards: beam-sail yoke وpellet catcher وfusion-electric throat وshadow shield وأضلاع المشعات وmagsail spool وaerobrake skin وcustody meter تحمل رقم طريق واحد.",
+     "field_note": "تضع اللوحة الحرارة قبل الدفع. لوحة جيدة. الطواقم الرخيصة تموت عند هامش المشعات قبل أن تتفاخر بالسرعة.",
+     "terminal": "ATLAS TRANSIT STACK // دفعة المغادرة: beam array خارجي. تغذية الرحلة: التقاط pellet lane. التحويل: fusion-electric throat. ضبط الفقد: جليد درع، كربون، أضلاع مشعات. سلطة الوصول: magsail spool وaerobrake skin وslot مستقبل وledger custody.",
+     "audio": "توقف عن تسمية المخروط محركا. المحرك هو الطريق، والحرارة المهدرة، ومن يملك فتحة الكبح.",
+     "in_game_wiki": "سفينة near-light ليست شعلة سحرية مثبتة على بدن. drive stack هو طريق كامل صار مادة: beam arrays تنفق الطاقة قبل المغادرة، pellet lanes تضع الكتلة القابلة للالتقاط حيث تستطيع السفينة شربها، fusion-electric throats تحول الوقود إلى كهرباء وحرارة، الدروع تقبل خسارة الغبار، المشعات ترمي الحرارة سنوات، والكبح مهم مثل التسارع.",
+     "external_site": "السفر near-light في HECTON-8 بنية تحتية لا أمنية: beam arrays وpellet lanes والمشعات وmagsails وaerobrake skins وحقوق المستقبل وledgers custody يجب أن تصطف.",
+     "external_site_article": "صنع مقطع Barnard Yards للمقاولين، لذلك يقول الحقيقة. لا يرسم جرسا بطوليا للمحرك ثم يدعي أن المشكلة انتهت. يبدأ بالطريق: من يملك beam array، من نظف pellet lane، كم فقد غبار يتحمله الدرع، كم سنة يبقى هامش المشعات صادقا، وأي مستقبل يملك حق كبح كتلة بشرية.\n\nهذه هي النقطة. السفر near-light لم يجعل المسافة صغيرة. جعله مجدولا، ومؤمنا، ومقاسا، وقابلا للعقاب. قد تحمل السفينة fusion-electric throat وتبقى عاجزة بلا بنية مغادرة. قد تنجو من الرحلة وتموت سياسيا عند فتحة الكبح. في HECTON-8 لا يعني الإنقاذ أبدا سفينة تستدير فقط. المحرك هو الطريق، والحرارة، وسلسلة custody، والكتلة التي سيدفع أحدهم ثمن إيقافها.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "id_ID": {
+     "title": "Potongan Drive Stack Nearlight",
+     "scanner": "POTONGAN DRIVE STACK // pelat servis Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, rusuk radiator, magsail spool, aerobrake skin, dan custody meter berbagi satu nomor rute.",
+     "field_note": "Pelat menaruh panas sebelum dorong. Pelat bagus. Kru murah mati di margin radiator sebelum sempat menyombongkan kecepatan.",
+     "terminal": "ATLAS TRANSIT STACK // Dorong keberangkatan: beam array eksternal. Suplai cruise: tangkapan pellet lane. Konversi: fusion-electric throat. Kendali rugi: es perisai, karbon, rusuk radiator. Otoritas tiba: magsail spool, aerobrake skin, slot receiver, ledger custody.",
+     "audio": "Berhenti menyebut kerucut itu mesin. Mesin adalah rute, panas buangan, dan siapa yang memiliki slot pengereman.",
+     "in_game_wiki": "Kapal nearlight bukan obor ajaib yang dibaut ke hull. Drive stack adalah seluruh rute yang dijadikan fisik: beam arrays membelanjakan daya sebelum berangkat, pellet lanes menaruh massa tangkapan di tempat kapal bisa meminumnya, fusion-electric throats mengubah bahan bakar menjadi listrik dan panas, perisai menerima rugi debu, radiator membuang panas selama bertahun-tahun, dan hardware pengereman sama pentingnya dengan akselerasi.",
+     "external_site": "Perjalanan nearlight di HECTON-8 adalah infrastruktur, bukan pemenuhan harapan: beam arrays, pellet lanes, radiator, magsails, aerobrake skins, hak receiver, dan ledger custody harus sejajar.",
+     "external_site_article": "Potongan Barnard Yards dibuat untuk kontraktor, jadi ia berkata jujur. Ia tidak menggambar corong mesin heroik lalu menyebut masalah selesai. Ia mulai dari rute: siapa pemilik beam array, siapa membersihkan pellet lane, berapa rugi debu yang bisa diterima perisai, berapa tahun margin radiator tetap jujur, dan receiver mana yang boleh mengerem massa manusia.\n\nItulah bagian penting. Perjalanan nearlight tidak membuat jarak kecil. Ia membuat jarak terjadwal, diasuransikan, diukur, dan dapat dihukum. Kapal bisa membawa fusion-electric throat dan tetap tak berdaya tanpa infrastruktur berangkat. Ia bisa selamat dari cruise dan mati secara politik di slot pengereman. Di HECTON-8, penyelamatan tidak pernah hanya kapal yang berbalik. Mesin adalah rute, panas, rantai custody, dan massa yang seseorang mau bayar untuk dihentikan.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ko_KR": {
+     "title": "Nearlight 드라이브 스택 절개도",
+     "scanner": "DRIVE STACK 절개 // Barnard Yards 서비스 플레이트: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiator ribs, magsail spool, aerobrake skin, custody meter가 하나의 경로 번호를 공유.",
+     "field_note": "플레이트는 추력보다 열을 먼저 둔다. 좋은 플레이트다. 싼 승무원은 속도를 자랑하기도 전에 라디에이터 여유에서 죽는다.",
+     "terminal": "ATLAS TRANSIT STACK // 출발 추진: 외부 beam array. 순항 공급: pellet lane 포획. 변환: fusion-electric throat. 손실 제어: 차폐 얼음, 탄소, 라디에이터 리브. 도착 권한: magsail spool, aerobrake skin, 수신 슬롯, custody ledger.",
+     "audio": "그 원뿔을 엔진이라 부르지 마라. 엔진은 경로, 폐열, 그리고 제동 슬롯의 소유자다.",
+     "in_game_wiki": "근광속 선박은 선체에 붙인 마법 횃불이 아니다. 드라이브 스택은 물리화된 전체 경로다. beam array는 출발 전에 전력을 쓰고, pellet lane은 선박이 마실 수 있는 곳에 포획 질량을 놓고, fusion-electric throat는 연료를 전기와 열로 바꾸며, 차폐는 먼지 손실을 받고, 라디에이터는 수년 동안 폐열을 버리고, 제동 장비는 가속만큼 중요하다.",
+     "external_site": "HECTON-8의 근광속 여행은 소원 성취가 아니라 인프라다. beam array, pellet lane, 라디에이터, magsail, aerobrake skin, 수신 권리, custody ledger가 모두 맞아야 선박이 움직인다.",
+     "external_site_article": "Barnard Yards 절개도는 계약자용으로 만들어졌기 때문에 진실을 말한다. 영웅적인 엔진 벨을 그리고 문제가 해결됐다고 하지 않는다. 경로부터 시작한다. 누가 beam array를 소유하는지, 누가 pellet lane을 비웠는지, 차폐가 얼마나 많은 먼지 손실을 견디는지, 라디에이터 여유가 몇 년이나 정직하게 남는지, 어떤 수신기가 인간 질량을 제동할 권리를 갖는지.\n\n중요한 것은 이것이다. 근광속 여행은 거리를 작게 만들지 않았다. 거리를 일정화하고, 보험화하고, 계량화하고, 처벌 가능하게 만들었다. 선박은 fusion-electric throat를 싣고도 출발 인프라 없이는 무력할 수 있다. 순항을 살아남고도 제동 슬롯에서 정치적으로 죽을 수 있다. HECTON-8에서 구조가 단순히 선박이 돌아서는 일이 아닌 이유다. 엔진은 경로, 열, custody chain, 그리고 누군가 멈추는 데 돈을 낼 질량이다.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "he_IL": {
+     "title": "חתך מערום הנעה Nearlight",
+     "scanner": "חתך DRIVE STACK // לוח שירות Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, צלעות רדיאטור, magsail spool, aerobrake skin ו-custody meter חולקים מספר נתיב.",
+     "field_note": "הלוח שם חום לפני דחף. לוח טוב. צוותים זולים מתים בשולי הרדיאטור לפני שמישהו מתפאר במהירות.",
+     "terminal": "ATLAS TRANSIT STACK // דחיפת יציאה: beam array חיצוני. הזנת שיוט: לכידת pellet lane. המרה: fusion-electric throat. בקרת אובדן: קרח מגן, פחמן, צלעות רדיאטור. סמכות הגעה: magsail spool, aerobrake skin, חריץ קליטה, ledger custody.",
+     "audio": "תפסיק לקרוא לחרוט מנוע. המנוע הוא הנתיב, חום הפסולת ומי שמחזיק בחריץ הבלימה.",
+     "in_game_wiki": "ספינת nearlight אינה לפיד קסום שמוברג לגוף. מערום ההנעה הוא נתיב שלם שהפך לחומרה: beam arrays מוציאים כוח לפני יציאה, pellet lanes מניחים מסה ללכידה במקום שהספינה יכולה לשתות אותה, fusion-electric throats הופכים דלק לחשמל וחום, מגנים מקבלים אובדן אבק, רדיאטורים זורקים חום במשך שנים, וחומרת בלימה חשובה כמו האצה.",
+     "external_site": "מסע nearlight ב-HECTON-8 הוא תשתית, לא הגשמת משאלה: beam arrays, pellet lanes, רדיאטורים, magsails, aerobrake skins, זכויות קליטה ו-ledgers custody חייבים להסתדר.",
+     "external_site_article": "החתך של Barnard Yards נעשה לקבלנים, ולכן הוא אומר אמת. הוא לא מצייר פעמון מנוע הירואי ומעמיד פנים שהבעיה נפתרה. הוא מתחיל בנתיב: מי מחזיק ב-beam array, מי פינה את pellet lane, כמה אובדן אבק המגן סובל, כמה שנים שולי הרדיאטור נשארים כנים, ואיזה מקלט רשאי לבלום מסה אנושית.\n\nזה העיקר. מסע nearlight לא הקטין מרחק. הוא הפך מרחק למתוזמן, מבוטח, מדוד ובר ענישה. כלי יכול לשאת fusion-electric throat ועדיין להיות חסר אונים בלי תשתית יציאה. הוא יכול לשרוד שיוט ולמות פוליטית בחריץ הבלימה. ב-HECTON-8 חילוץ לעולם אינו רק ספינה שמסתובבת. המנוע הוא הנתיב, החום, שרשרת custody והמסה שמישהו מוכן לשלם כדי לעצור.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pt_BR": {
+     "title": "Corte do drive stack nearlight",
+     "scanner": "CORTE DRIVE STACK // placa Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, nervuras radiador, magsail spool, aerobrake skin e custody meter compartilham um número de rota.",
+     "field_note": "A placa coloca calor antes de empuxo. Boa placa. Tripulações baratas morrem na margem do radiador antes de se gabar de velocidade.",
+     "terminal": "ATLAS TRANSIT STACK // Empuxo de partida: beam array externo. Alimentação de cruzeiro: captura pellet lane. Conversão: fusion-electric throat. Controle de perdas: gelo de escudo, carbono, nervuras radiador. Autoridade de chegada: magsail spool, aerobrake skin, slot receptor, ledger custody.",
+     "audio": "Pare de chamar o cone de motor. O motor é a rota, o calor residual e quem possui o slot de frenagem.",
+     "in_game_wiki": "Uma nave nearlight não é uma tocha mágica parafusada no casco. O drive stack é uma rota inteira tornada física: beam arrays gastam potência antes da partida, pellet lanes colocam massa capturável onde a nave pode beber, fusion-electric throats transformam combustível em eletricidade e calor, escudos aceitam perda de poeira, radiadores passam anos jogando calor fora, e hardware de frenagem importa tanto quanto aceleração.",
+     "external_site": "Viagem nearlight em HECTON-8 é infraestrutura, não realização de desejo: beam arrays, pellet lanes, radiadores, magsails, aerobrake skins, direitos receptores e ledgers custody precisam se alinhar.",
+     "external_site_article": "O corte da Barnard Yards foi feito para contratados, por isso fala a verdade. Ele não desenha uma campânula heroica e finge que o problema acabou. Começa pela rota: quem possui o beam array, quem limpou a pellet lane, quanta perda de poeira o escudo aguenta, quantos anos a margem do radiador fica honesta, e qual receptor tem direito de frear massa humana.\n\nEssa é a parte importante. Viajar nearlight não tornou a distância pequena. Tornou a distância agendada, segurada, medida e punível. Uma nave pode levar fusion-electric throat e ainda ser inútil sem infraestrutura de partida. Pode sobreviver ao cruzeiro e morrer politicamente no slot de frenagem. Em HECTON-8, resgate nunca é só uma nave dando meia-volta. O motor é a rota, o calor, a cadeia custody e a massa que alguém aceita pagar para parar.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "nl_NL": {
+     "title": "Doorsnede van Nearlight Drive Stack",
+     "scanner": "DRIVE STACK-DOORSNEDE // Barnard Yards-serviceplaat: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiatorribben, magsail spool, aerobrake skin en custody meter delen één routenummer.",
+     "field_note": "De plaat zet warmte vóór stuwkracht. Goede plaat. Goedkope crews sterven aan de radiatormarge voordat iemand over snelheid opschept.",
+     "terminal": "ATLAS TRANSIT STACK // Vertrekduw: externe beam array. Kruisvoeding: pellet lane capture. Omzetting: fusion-electric throat. Verliescontrole: schildijs, koolstof, radiatorribben. Aankomstbevoegdheid: magsail spool, aerobrake skin, ontvangslot, custody ledger.",
+     "audio": "Noem de kegel niet langer de motor. De motor is de route, de afvalwarmte en wie het remslot bezit.",
+     "in_game_wiki": "Een nearlight-schip is geen magische fakkel op een romp. De drive stack is een hele route die fysiek werd: beam arrays besteden vermogen voor vertrek, pellet lanes leggen vangbare massa waar het schip kan drinken, fusion-electric throats maken brandstof tot elektriciteit en warmte, schilden accepteren stofverlies, radiatoren gooien jaren warmte weg, en remhardware telt evenveel als versnelling.",
+     "external_site": "Nearlight-reizen in HECTON-8 zijn infrastructuur, geen wensvervulling: beam arrays, pellet lanes, radiatoren, magsails, aerobrake skins, ontvangstrechten en custody ledgers moeten samenvallen.",
+     "external_site_article": "De Barnard Yards-doorsnede is voor aannemers gemaakt en zegt daarom de waarheid. Zij tekent geen heroïsche motorbel om te doen alsof het probleem opgelost is. Zij begint met de route: wie bezit de beam array, wie maakte de pellet lane vrij, hoeveel stofverlies kan het schild nemen, hoeveel jaar blijft de radiatormarge eerlijk, en welke ontvanger mag menselijke massa afremmen?\n\nDat is het punt. Nearlight-reizen maakten afstand niet klein. Ze maakten afstand gepland, verzekerd, gemeten en strafbaar. Een schip kan een fusion-electric throat dragen en zonder vertrekinfrastructuur hulpeloos blijven. Het kan de cruise overleven en politiek sterven bij het remslot. In HECTON-8 is redding daarom nooit alleen een schip dat omkeert. De motor is de route, de warmte, de custody chain en de massa waarvoor iemand wil betalen om die te stoppen.",
+     "localization_status": "source_draft_pending_native_review"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

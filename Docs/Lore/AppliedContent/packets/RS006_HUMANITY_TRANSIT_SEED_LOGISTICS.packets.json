@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS006_HUMANITY_TRANSIT_SEED_LOGISTICS",
-  "status": "production_facing_draft",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P026_SIX_DOMAIN_LEDGER",
-      "article_id": "humanity.six_domain_ledger",
-      "title_key": "applied_lore.six_domain_ledger.title",
-      "unlock": {
-        "primary": "unlock.first_six_domain_ledger",
-        "poi_tags": [
-          "poi.domain_plate",
-          "poi.route_archive",
-          "poi.claim_office"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.deep_archive",
-          "biome.service_canyon"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Six Domain Ledger",
-          "scanner": "Ledger lists six major human nodes: Sol, Centauri, Barnard, Tau Ceti, Luyten and Aegir.",
-          "field_note": "Civilization is present. Distance still wins.",
-          "terminal": "Domain register: Sol Core law, Centauri legitimacy, Barnard yards, Tau Ceti public arbitration, Luyten relay custody, Aegir corporate claim.",
-          "audio": "Six names on a ledger. None of them can reach this room in time.",
-          "in_game_wiki": "By 2190 human space is sparse but mature. The six named nodes are not the whole map; they are the labels a Marauder can read on tools, laws, packet routes and claim seals. HECTON-8 is not outside humanity. It is inside the part where help arrives too late.",
-          "external_site": "The Six Domain Ledger frames HECTON-8 inside a mature interstellar economy without turning the setting into dense space opera."
-        },
-        "ru_RU": {
-          "title": "Реестр шести доменов",
-          "scanner": "В реестре шесть крупных узлов людей: Sol, Centauri, Barnard, Tau Ceti, Luyten и Aegir.",
-          "field_note": "Цивилизация здесь есть. Расстояние всё равно побеждает.",
-          "terminal": "Domain register: право Sol Core, легитимность Centauri, верфи Barnard, публичный арбитраж Tau Ceti, relay custody Luyten, корпоративный claim Aegir.",
-          "audio": "Шесть имён в реестре. Ни одно не успеет в эту комнату.",
-          "in_game_wiki": "К 2190 году человеческое пространство разреженное, но зрелое. Шесть названных узлов не вся карта; это метки, которые мародер читает на инструментах, законах, пакетных маршрутах и claim-печатях. HECTON-8 не вне человечества. Он внутри той части, куда помощь приходит слишком поздно.",
-          "external_site": "Реестр шести доменов помещает HECTON-8 в зрелую межзвездную экономику, не превращая сеттинг в плотную space opera."
-        },
-        "ja_JP": {
-          "title": "六ドメイン台帳",
-          "scanner": "台帳には六つの主要人類ノード: Sol, Centauri, Barnard, Tau Ceti, Luyten, Aegir。",
-          "field_note": "文明はここにある。距離はまだ勝つ。",
-          "terminal": "Domain register: Sol Core法、Centauri正統性、Barnard造船廃棄場、Tau Ceti仲裁、Luyten中継保管、Aegir企業claim。",
-          "audio": "台帳に六つの名。どれもこの部屋には間に合わない。",
-          "in_game_wiki": "2190年の人類圏は疎だが成熟している。六つの名は全地図ではなく、道具、法律、通信経路、claim印に残る読める痕跡だ。HECTON-8は文明の外ではない。救助が遅すぎる文明の内側だ。",
-          "external_site": "六ドメイン台帳はHECTON-8を成熟した恒星間経済に置くが、濃密なスペースオペラにはしない。"
-        },
-        "zh_CN": {
-          "title": "六域账本",
-          "scanner": "账本列出六个主要人类节点：Sol、Centauri、Barnard、Tau Ceti、Luyten、Aegir。",
-          "field_note": "文明在场。距离仍然获胜。",
-          "terminal": "Domain register：Sol Core法律、Centauri合法性、Barnard船厂、Tau Ceti公共仲裁、Luyten中继托管、Aegir企业claim。",
-          "audio": "账本上有六个名字。没有一个能及时到达这间房。",
-          "in_game_wiki": "到2190年，人类空间稀疏但成熟。六个命名节点不是整张地图，而是marauder能在工具、法律、数据路线和claim封印上读到的标签。HECTON-8不在文明之外，它在帮助来得太迟的文明内部。",
-          "external_site": "六域账本把HECTON-8放进成熟的星际经济，同时避免把设定变成拥挤的太空歌剧。"
-        },
-        "fr_FR": {
-          "title": "Registre des six domaines",
-          "scanner": "Le registre cite six nœuds humains: Sol, Centauri, Barnard, Tau Ceti, Luyten et Aegir.",
-          "field_note": "La civilisation est là. La distance gagne encore.",
-          "terminal": "Domain register: loi Sol Core, légitimité Centauri, chantiers Barnard, arbitrage Tau Ceti, garde relais Luyten, claim Aegir.",
-          "audio": "Six noms sur un registre. Aucun n'atteindra cette pièce à temps.",
-          "in_game_wiki": "En 2190, l'espace humain est clairsemé mais mûr. Les six nœuds nommés ne sont pas toute la carte: ce sont les marques qu'un maraudeur lit sur outils, lois, routes de paquets et sceaux de claim.",
-          "external_site": "Le registre place HECTON-8 dans une économie interstellaire mature sans transformer le monde en space opera dense."
-        },
-        "es_ES": {
-          "title": "Libro de seis dominios",
-          "scanner": "El libro enumera seis nodos humanos: Sol, Centauri, Barnard, Tau Ceti, Luyten y Aegir.",
-          "field_note": "La civilización está presente. La distancia sigue ganando.",
-          "terminal": "Domain register: ley Sol Core, legitimidad Centauri, astilleros Barnard, arbitraje Tau Ceti, custodia Luyten, claim Aegir.",
-          "audio": "Seis nombres en un libro. Ninguno llegará a esta sala a tiempo.",
-          "in_game_wiki": "En 2190 el espacio humano es disperso pero maduro. Los seis nodos nombrados no son todo el mapa; son marcas que un marauder lee en herramientas, leyes, rutas de paquetes y sellos de claim.",
-          "external_site": "El libro sitúa HECTON-8 dentro de una economía interestelar madura sin volverlo una space opera densa."
-        },
-        "de_DE": {
-          "title": "Sechs-Domänen-Ledger",
-          "scanner": "Das Ledger nennt sechs Hauptknoten: Sol, Centauri, Barnard, Tau Ceti, Luyten und Aegir.",
-          "field_note": "Zivilisation ist da. Entfernung gewinnt trotzdem.",
-          "terminal": "Domain register: Sol-Core-Recht, Centauri-Legitimität, Barnard-Werften, Tau-Ceti-Schlichtung, Luyten-Relaisgewahrsam, Aegir-Claim.",
-          "audio": "Sechs Namen im Ledger. Keiner erreicht diesen Raum rechtzeitig.",
-          "in_game_wiki": "2190 ist der menschliche Raum dünn, aber reif. Die sechs Knoten sind nicht die ganze Karte; sie sind Spuren auf Werkzeugen, Gesetzen, Paketrouten und Claim-Siegeln.",
-          "external_site": "Das Ledger verortet HECTON-8 in einer reifen interstellaren Wirtschaft ohne dichte Space Opera."
-        },
-        "pl_PL": {
-          "title": "Rejestr sześciu domen",
-          "scanner": "Rejestr wymienia sześć węzłów: Sol, Centauri, Barnard, Tau Ceti, Luyten i Aegir.",
-          "field_note": "Cywilizacja jest obecna. Odległość nadal wygrywa.",
-          "terminal": "Domain register: prawo Sol Core, legitymacja Centauri, stocznie Barnard, arbitraż Tau Ceti, custody Luyten, claim Aegir.",
-          "audio": "Sześć nazw w rejestrze. Żadna nie dotrze tu na czas.",
-          "in_game_wiki": "W 2190 przestrzeń ludzi jest rzadka, lecz dojrzała. Sześć nazwanych węzłów to nie cała mapa; to ślady na narzędziach, prawie, trasach pakietów i pieczęciach claim.",
-          "external_site": "Rejestr umieszcza HECTON-8 w dojrzałej gospodarce międzygwiezdnej bez gęstej space opery."
-        },
-        "uk_UA": {
-          "title": "Реєстр шести доменів",
-          "scanner": "Реєстр має шість великих вузлів: Sol, Centauri, Barnard, Tau Ceti, Luyten і Aegir.",
-          "field_note": "Цивілізація присутня. Відстань усе одно перемагає.",
-          "terminal": "Domain register: право Sol Core, легітимність Centauri, верфі Barnard, арбітраж Tau Ceti, relay custody Luyten, claim Aegir.",
-          "audio": "Шість назв у реєстрі. Жодна не встигне в цю кімнату.",
-          "in_game_wiki": "У 2190 людський простір розріджений, але зрілий. Шість вузлів не вся мапа; це мітки на інструментах, законах, маршрутах пакетів і claim-печатках.",
-          "external_site": "Реєстр шести доменів ставить HECTON-8 у зрілу міжзоряну економіку без густої space opera."
-        },
-        "ar_SA": {
-          "title": "سجل النطاقات الستة",
-          "scanner": "السجل يذكر ستة عقد بشرية: Sol وCentauri وBarnard وTau Ceti وLuyten وAegir.",
-          "field_note": "الحضارة موجودة. المسافة ما زالت تنتصر.",
-          "terminal": "Domain register: قانون Sol Core، شرعية Centauri، أحواض Barnard، تحكيم Tau Ceti، عهدة Luyten، claim Aegir.",
-          "audio": "ستة أسماء في سجل. لا واحد يصل إلى هذه الغرفة في الوقت.",
-          "in_game_wiki": "في 2190 صار الفضاء البشري ناضجا لكنه متناثر. العقد الست ليست الخريطة كلها؛ إنها علامات على الأدوات والقانون ومسارات الحزم وأختام claim.",
-          "external_site": "سجل النطاقات يضع HECTON-8 داخل اقتصاد بين نجمي ناضج بلا تحويله إلى أوبرا فضاء مزدحمة."
-        },
-        "id_ID": {
-          "title": "Ledger Enam Domain",
-          "scanner": "Ledger mencatat enam node manusia: Sol, Centauri, Barnard, Tau Ceti, Luyten dan Aegir.",
-          "field_note": "Peradaban hadir. Jarak tetap menang.",
-          "terminal": "Domain register: hukum Sol Core, legitimasi Centauri, galangan Barnard, arbitrase Tau Ceti, kustodi Luyten, claim Aegir.",
-          "audio": "Enam nama di ledger. Tak satu pun tiba tepat waktu.",
-          "in_game_wiki": "Pada 2190 ruang manusia jarang namun matang. Enam node bukan seluruh peta; itu tanda yang dibaca marauder di alat, hukum, rute paket dan segel claim.",
-          "external_site": "Ledger ini menaruh HECTON-8 dalam ekonomi antarbintang matang tanpa menjadi space opera padat."
-        },
-        "ko_KR": {
-          "title": "여섯 도메인 원장",
-          "scanner": "원장은 여섯 인간 노드를 적는다: Sol, Centauri, Barnard, Tau Ceti, Luyten, Aegir.",
-          "field_note": "문명은 있다. 거리가 여전히 이긴다.",
-          "terminal": "Domain register: Sol Core 법, Centauri 정통성, Barnard 야드, Tau Ceti 중재, Luyten 중계 보관, Aegir claim.",
-          "audio": "원장에는 여섯 이름. 아무도 이 방에 제때 오지 못한다.",
-          "in_game_wiki": "2190년 인간권은 성숙하지만 성기다. 여섯 노드는 전체 지도가 아니라 도구, 법, 패킷 경로, claim 봉인에서 읽히는 흔적이다.",
-          "external_site": "여섯 도메인 원장은 HECTON-8을 성숙한 성간 경제 안에 두되 조밀한 스페이스 오페라로 만들지 않는다."
-        },
-        "he_IL": {
-          "title": "ספר ששת הדומיינים",
-          "scanner": "הספר מונה שישה צמתים אנושיים: Sol, Centauri, Barnard, Tau Ceti, Luyten ו-Aegir.",
-          "field_note": "הציוויליזציה קיימת. המרחק עדיין מנצח.",
-          "terminal": "Domain register: חוק Sol Core, לגיטימיות Centauri, מספנות Barnard, בוררות Tau Ceti, משמורת Luyten, claim Aegir.",
-          "audio": "שישה שמות בספר. אף אחד לא יגיע לחדר הזה בזמן.",
-          "in_game_wiki": "ב-2190 המרחב האנושי דליל אך בשל. ששת הצמתים אינם כל המפה; הם סימנים על כלים, חוק, נתיבי חבילות וחותמות claim.",
-          "external_site": "ספר ששת הדומיינים מציב את HECTON-8 בכלכלה בין-כוכבית בשלה בלי להפוך אותה לאופרת חלל צפופה."
-        },
-        "pt_BR": {
-          "title": "Livro dos seis domínios",
-          "scanner": "O livro lista seis nós humanos: Sol, Centauri, Barnard, Tau Ceti, Luyten e Aegir.",
-          "field_note": "A civilização está presente. A distância ainda vence.",
-          "terminal": "Domain register: lei Sol Core, legitimidade Centauri, estaleiros Barnard, arbitragem Tau Ceti, custódia Luyten, claim Aegir.",
-          "audio": "Seis nomes no livro. Nenhum chega a esta sala a tempo.",
-          "in_game_wiki": "Em 2190 o espaço humano é esparso, mas maduro. Os seis nós não são todo o mapa; são marcas em ferramentas, leis, rotas de pacotes e selos claim.",
-          "external_site": "O livro coloca HECTON-8 numa economia interestelar madura sem virar space opera densa."
-        },
-        "nl_NL": {
-          "title": "Zes-domeinenregister",
-          "scanner": "Het register noemt zes menselijke knooppunten: Sol, Centauri, Barnard, Tau Ceti, Luyten en Aegir.",
-          "field_note": "Beschaving is aanwezig. Afstand wint nog steeds.",
-          "terminal": "Domain register: Sol Core-recht, Centauri-legitimiteit, Barnard-werven, Tau Ceti-arbitrage, Luyten-routebewaring, Aegir-claim.",
-          "audio": "Zes namen in een register. Geen ervan haalt deze kamer op tijd.",
-          "in_game_wiki": "In 2190 is de menselijke ruimte dun maar volwassen. De zes knooppunten zijn niet de hele kaart; het zijn sporen op gereedschap, wet, pakketroutes en claimzegels.",
-          "external_site": "Het register plaatst HECTON-8 in een volwassen interstellaire economie zonder dichte space opera."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS006_HUMANITY_TRANSIT_SEED_LOGISTICS",
+ "status": "production_facing_draft",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P026_SIX_DOMAIN_LEDGER",
+   "article_id": "humanity.six_domain_ledger",
+   "title_key": "applied_lore.six_domain_ledger.title",
+   "unlock": {
+    "primary": "unlock.first_six_domain_ledger",
+    "poi_tags": [
+     "poi.domain_plate",
+     "poi.route_archive",
+     "poi.claim_office"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.deep_archive",
+     "biome.service_canyon"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Six Domain Ledger",
+     "scanner": "Ledger lists six major human nodes: Sol, Centauri, Barnard, Tau Ceti, Luyten and Aegir.",
+     "field_note": "Civilization is present. Distance still wins.",
+     "terminal": "Domain register: Sol Core law, Centauri legitimacy, Barnard yards, Tau Ceti public arbitration, Luyten relay custody, Aegir corporate claim.",
+     "audio": "Six names on a ledger. None of them can reach this room in time.",
+     "in_game_wiki": "By 2190 human space is sparse but mature. The six named nodes are not the whole map; they are the labels a Marauder can read on tools, laws, packet routes and claim seals. HECTON-8 is not outside humanity. It is inside the part where help arrives too late.",
+     "external_site": "The Six Domain Ledger frames HECTON-8 inside a mature interstellar economy without turning the setting into dense space opera."
     },
-    {
-      "packet_id": "P027_BARNARD_YARDS_ORIGIN",
-      "article_id": "player.barnard_yards_origin",
-      "title_key": "applied_lore.barnard_yards_origin.title",
-      "unlock": {
-        "primary": "unlock.first_barnard_yards_origin_record",
-        "poi_tags": [
-          "poi.worker_locker",
-          "poi.tool_stamp",
-          "poi.marauder_dossier"
-        ],
-        "biome_tags": [
-          "biome.crash_shelf",
-          "biome.drowned_colony",
-          "biome.deep_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Barnard Yards Origin",
-          "scanner": "Tool stamp matches Barnard pressure-yard standards, not Deep Reach procurement.",
-          "field_note": "Someone brought home engineering to the bottom.",
-          "terminal": "Marauder cross-check: Barnard Yards stamps appear in worker lockers, capsule repair kits and independent salvage tools.",
-          "audio": "This is not your family. It is worse: it is your trade.",
-          "in_game_wiki": "Barnard Yards is a shipbreaking and pressure-hardware culture: rented cutters, patched clamps, dead claims and survival tools treated as ordinary work. It gives HECTON-8 a professional origin close to debt and labor, not Earth romance.",
-          "external_site": "Barnard Yards ties the Marauder class to salvage economy and trade culture. HECTON-8 becomes personal through work habits, tool marks and debt, not fixed melodrama."
-        },
-        "ru_RU": {
-          "title": "Происхождение: Barnard Yards",
-          "scanner": "Штамп инструмента совпадает со стандартами Barnard pressure-yards, не с закупкой Deep Reach.",
-          "field_note": "Кто-то принес домашнюю инженерку на самое дно.",
-          "terminal": "Marauder cross-check: штампы Barnard Yards есть в рабочих шкафах, ремонтных комплектах капсулы и независимых salvage-инструментах.",
-          "audio": "Это не твоя семья. Хуже: это твое ремесло.",
-          "in_game_wiki": "Barnard Yards - культура разделки кораблей и гермооборудования: арендованные резаки, латанные зажимы, мертвые претензии и средства выживания как обычная работа. Она дает HECTON-8 профессиональное происхождение рядом с долгом и трудом, а не земную романтику.",
-          "external_site": "Barnard Yards связывает класс мародеров с salvage-экономикой и рабочей культурой. HECTON-8 становится личным через привычки труда, следы инструмента и долг, а не через жестко заданную мелодраму."
-        },
-        "ja_JP": {
-          "title": "Barnard Yards出身",
-          "scanner": "工具刻印はDeep Reach調達ではなくBarnard圧力ヤード規格と一致。",
-          "field_note": "誰かが故郷の工学を底へ持ち込んだ。",
-          "terminal": "Marauder照合: Barnard Yards刻印は作業員ロッカー、カプセル修理キット、独立サルベージ工具にある。",
-          "audio": "これは家族ではない。もっと悪い。君の職能だ。",
-          "in_game_wiki": "Barnard Yards は船体解体と圧力機器の文化だ。借り物のカッター、継ぎ当てクランプ、死んだ請求権、生存工具が普通の仕事として扱われる。HECTON-8 に、地球ロマンではなく負債と労働に近い専門的な出自を与える。",
-          "external_site": "Barnard Yards はマローダー階級をサルベージ経済と職能文化に結び付ける。HECTON-8 は固定メロドラマではなく、作業癖、工具痕、負債によって個人的になる。"
-        },
-        "zh_CN": {
-          "title": "Barnard Yards出身",
-          "scanner": "工具印记符合Barnard压力船厂标准，不是Deep Reach采购。",
-          "field_note": "有人把家乡工程带到了海底。",
-          "terminal": "Marauder cross-check：Barnard Yards印记出现在工人柜、胶囊维修包和独立打捞工具上。",
-          "audio": "这不是你的家族。更糟：这是你的行当。",
-          "in_game_wiki": "Barnard Yards 是拆船和压力硬件文化：租来的切割器、补过的夹具、死亡索赔和生存工具都被当作普通工作。它给 HECTON-8 一个靠近债务与劳动的职业出身，而不是地球浪漫。",
-          "external_site": "Barnard Yards 把掠夺者阶层接到打捞经济和职业文化上。HECTON-8 通过工作习惯、工具痕迹和债务变得私人，而不是靠固定苦情。"
-        },
-        "fr_FR": {
-          "title": "Origine Barnard Yards",
-          "scanner": "Le tampon d'outil correspond aux standards Barnard, pas aux achats Deep Reach.",
-          "field_note": "Quelqu'un a amené l'ingénierie de chez lui au fond.",
-          "terminal": "Vérification maraudeur: tampons Barnard dans casiers, kits de capsule et outils salvage indépendants.",
-          "audio": "Ce n'est pas votre famille. C'est pire: c'est votre métier.",
-          "in_game_wiki": "Barnard Yards est une culture de démantèlement naval et de matériel sous pression : découpeurs loués, pinces rafistolées, réclamations mortes et outils de survie traités comme du travail ordinaire. Elle donne à HECTON-8 une origine professionnelle proche de la dette et du labeur, pas une romance terrienne.",
-          "external_site": "Barnard Yards lie la classe maraudeuse à l'économie salvage et à la culture de métier. HECTON-8 devient personnel par les habitudes de travail, les marques d'outils et la dette, pas par un mélodrame fixé."
-        },
-        "es_ES": {
-          "title": "Origen Barnard Yards",
-          "scanner": "El sello de herramienta coincide con Barnard, no con compras Deep Reach.",
-          "field_note": "Alguien llevó ingeniería de casa hasta el fondo.",
-          "terminal": "Cruce marauder: sellos Barnard en taquillas, kits de cápsula y herramientas salvage independientes.",
-          "audio": "No es tu familia. Es peor: es tu oficio.",
-          "in_game_wiki": "Barnard Yards es una cultura de desguace naval y hardware de presión: cortadores alquilados, abrazaderas remendadas, reclamaciones muertas y herramientas de supervivencia tratadas como trabajo normal. Da a HECTON-8 un origen profesional cercano a deuda y labor, no a romance terrestre.",
-          "external_site": "Barnard Yards une la clase merodeadora con la economía salvage y la cultura de oficio. HECTON-8 se vuelve personal por hábitos de trabajo, marcas de herramienta y deuda, no por melodrama fijo."
-        },
-        "de_DE": {
-          "title": "Herkunft Barnard Yards",
-          "scanner": "Werkzeugstempel entspricht Barnard-Druckwerften, nicht Deep-Reach-Beschaffung.",
-          "field_note": "Jemand brachte Heimtechnik bis auf den Grund.",
-          "terminal": "Marauder-Abgleich: Barnard-Stempel in Spinden, Kapsel-Kits und unabhängigen Bergungswerkzeugen.",
-          "audio": "Das ist nicht deine Familie. Schlimmer: Es ist dein Handwerk.",
-          "in_game_wiki": "Barnard Yards ist eine Kultur aus Schiffsausschlachtung und Druckhardware: gemietete Schneidgeräte, geflickte Klemmen, tote Ansprüche und Überlebenswerkzeug als normale Arbeit. Sie gibt HECTON-8 eine professionelle Herkunft nahe bei Schuld und Arbeit, nicht bei Erdromantik.",
-          "external_site": "Barnard Yards bindet die Marauder-Klasse an Salvage-Ökonomie und Handwerkskultur. HECTON-8 wird durch Arbeitsgewohnheiten, Werkzeugspuren und Schulden persönlich, nicht durch festes Melodram."
-        },
-        "pl_PL": {
-          "title": "Pochodzenie Barnard Yards",
-          "scanner": "Stempel narzędzia pasuje do standardów Barnard, nie zakupów Deep Reach.",
-          "field_note": "Ktoś przyniósł domową inżynierię na dno.",
-          "terminal": "Sprawdzenie maraudera: stemple Barnard w szafkach, kitach kapsuły i niezależnych narzędziach salvage.",
-          "audio": "To nie twoja rodzina. Gorzej: to twój fach.",
-          "in_game_wiki": "Barnard Yards to kultura rozbiórki statków i sprzętu ciśnieniowego: wynajęte palniki, łatane zaciski, martwe roszczenia i narzędzia przetrwania traktowane jak zwykła praca. Daje HECTON-8 zawodowe pochodzenie bliskie długowi i robocie, nie ziemskiemu romansowi.",
-          "external_site": "Barnard Yards wiąże klasę Marauder z gospodarką salvage i kulturą fachu. HECTON-8 staje się osobisty przez nawyki pracy, ślady narzędzi i dług, a nie przez gotowy melodramat."
-        },
-        "uk_UA": {
-          "title": "Походження Barnard Yards",
-          "scanner": "Штамп інструмента відповідає стандартам Barnard, а не закупівлі Deep Reach.",
-          "field_note": "Хтось приніс домашню інженерію на дно.",
-          "terminal": "Marauder cross-check: штампи Barnard у шафах, ремонті капсули й незалежних salvage-інструментах.",
-          "audio": "Це не твоя родина. Гірше: це твоє ремесло.",
-          "in_game_wiki": "Barnard Yards - культура розбирання кораблів і гермообладнання: орендовані різаки, латаныя затискачі, мертві претензії й засоби виживання як звичайна робота. Вона дає HECTON-8 професійне походження поруч із боргом і працею, а не земну романтику.",
-          "external_site": "Barnard Yards пов'язує клас мародерів із salvage-економікою та робочою культурою. HECTON-8 стає особистим через звички праці, сліди інструментів і борг, а не через заздалегідь задану мелодраму."
-        },
-        "ar_SA": {
-          "title": "أصل Barnard Yards",
-          "scanner": "ختم الأداة يطابق معايير Barnard لا مشتريات Deep Reach.",
-          "field_note": "شخص ما أحضر هندسة بيته إلى القاع.",
-          "terminal": "فحص marauder: أختام Barnard في خزائن العمال وعدة الكبسولة وأدوات salvage المستقلة.",
-          "audio": "هذه ليست عائلتك. الأسوأ: إنها مهنتك.",
-          "in_game_wiki": "Barnard Yards ثقافة تفكيك سفن وعتاد ضغط: قواطع مستأجرة، ومشابك مرقعة، ومطالبات ميتة، وأدوات بقاء تعامل كعمل عادي. تمنح HECTON-8 أصلا مهنيا قريبا من الدين والعمل، لا رومانسية أرضية.",
-          "external_site": "يربط Barnard Yards طبقة المغير باقتصاد salvage وثقافة الحرفة. تصبح HECTON-8 شخصية عبر عادات العمل وآثار الأدوات والدين، لا عبر ميلودراما ثابتة."
-        },
-        "id_ID": {
-          "title": "Asal Barnard Yards",
-          "scanner": "Cap alat cocok standar Barnard, bukan pembelian Deep Reach.",
-          "field_note": "Seseorang membawa teknik rumah ke dasar.",
-          "terminal": "Cek marauder: cap Barnard ada di loker, kit kapsul dan alat salvage mandiri.",
-          "audio": "Ini bukan keluargamu. Lebih buruk: ini keahlianmu.",
-          "in_game_wiki": "Barnard Yards adalah budaya bongkar kapal dan perangkat tekanan: pemotong sewaan, klem tambalan, klaim mati, dan alat bertahan hidup yang diperlakukan sebagai kerja biasa. Ia memberi HECTON-8 asal profesional yang dekat dengan utang dan kerja, bukan romansa Bumi.",
-          "external_site": "Barnard Yards mengikat kelas Marauder ke ekonomi salvage dan budaya kerja. HECTON-8 menjadi personal lewat kebiasaan kerja, bekas alat, dan utang, bukan melodrama tetap."
-        },
-        "ko_KR": {
-          "title": "Barnard Yards 출신",
-          "scanner": "공구 각인은 Deep Reach 조달이 아니라 Barnard 압력 야드 규격과 맞다.",
-          "field_note": "누군가 고향의 공학을 바닥까지 가져왔다.",
-          "terminal": "Marauder 대조: Barnard 각인은 작업자 사물함, 캡슐 수리 키트, 독립 salvage 공구에 있다.",
-          "audio": "가족이 아니다. 더 나쁘다. 네 직업이다.",
-          "in_game_wiki": "Barnard Yards는 선박 해체와 압력 장비 문화다. 빌린 절단기, 덧댄 클램프, 죽은 청구, 생존 도구가 평범한 일로 취급된다. HECTON-8에 지구식 낭만이 아니라 부채와 노동에 가까운 전문 출신을 준다.",
-          "external_site": "Barnard Yards는 마로더 계급을 salvage 경제와 직능 문화에 묶는다. HECTON-8은 고정 멜로드라마가 아니라 작업 습관, 공구 흔적, 빚을 통해 개인적인 장소가 된다."
-        },
-        "he_IL": {
-          "title": "מוצא Barnard Yards",
-          "scanner": "חותמת הכלי תואמת תקני Barnard ולא רכש Deep Reach.",
-          "field_note": "מישהו הביא הנדסת בית אל הקרקעית.",
-          "terminal": "בדיקת marauder: חותמות Barnard בארונות עובדים, ערכות קפסולה וכלי salvage עצמאיים.",
-          "audio": "זו לא המשפחה שלך. גרוע מזה: זה המקצוע שלך.",
-          "in_game_wiki": "Barnard Yards היא תרבות של פירוק ספינות וחומרת לחץ: חותכים שכורים, מהדקים מטולאים, תביעות מתות וכלי הישרדות כעבודה רגילה. היא נותנת ל-HECTON-8 מוצא מקצועי הקרוב לחוב ולעמל, לא לרומנטיקה של כדור הארץ.",
-          "external_site": "Barnard Yards קושר את מעמד המראודרים לכלכלת salvage ולתרבות מקצוע. HECTON-8 נעשה אישי דרך הרגלי עבודה, סימני כלים וחוב, לא דרך מלודרמה קבועה."
-        },
-        "pt_BR": {
-          "title": "Origem Barnard Yards",
-          "scanner": "O carimbo da ferramenta bate com padrões Barnard, não compra Deep Reach.",
-          "field_note": "Alguém levou engenharia de casa ao fundo.",
-          "terminal": "Checagem marauder: carimbos Barnard em armários, kits da cápsula e ferramentas salvage independentes.",
-          "audio": "Não é sua família. Pior: é seu ofício.",
-          "in_game_wiki": "Barnard Yards é uma cultura de desmanche naval e hardware de pressão: cortadores alugados, braçadeiras remendadas, reivindicações mortas e ferramentas de sobrevivência tratadas como trabalho normal. Dá a HECTON-8 uma origem profissional perto de dívida e labor, não romance terrestre.",
-          "external_site": "Barnard Yards liga a classe Marauder à economia salvage e à cultura de ofício. HECTON-8 se torna pessoal por hábitos de trabalho, marcas de ferramenta e dívida, não por melodrama fixo."
-        },
-        "nl_NL": {
-          "title": "Herkomst Barnard Yards",
-          "scanner": "Gereedschapsstempel past bij Barnard-drukwerfstandaard, niet Deep Reach-inkoop.",
-          "field_note": "Iemand bracht thuistechniek naar de bodem.",
-          "terminal": "Marauder-check: Barnard-stempels in lockers, capsulekits en onafhankelijke salvage-tools.",
-          "audio": "Dit is niet je familie. Erger: het is je vak.",
-          "in_game_wiki": "Barnard Yards is een cultuur van scheepssloop en drukhardware: gehuurde snijders, opgelapte klemmen, dode claims en overlevingstools als gewoon werk. Het geeft HECTON-8 een professionele herkomst dicht bij schuld en arbeid, niet bij aardse romantiek.",
-          "external_site": "Barnard Yards bindt de Marauder-klasse aan de salvage-economie en vakcultuur. HECTON-8 wordt persoonlijk door werkgewoonten, gereedschapssporen en schuld, niet door vast melodrama."
-        }
-      }
+    "ru_RU": {
+     "title": "Реестр шести доменов",
+     "scanner": "В реестре шесть крупных узлов людей: Sol, Centauri, Barnard, Tau Ceti, Luyten и Aegir.",
+     "field_note": "Цивилизация здесь есть. Расстояние всё равно побеждает.",
+     "terminal": "Domain register: право Sol Core, легитимность Centauri, верфи Barnard, публичный арбитраж Tau Ceti, relay custody Luyten, корпоративный claim Aegir.",
+     "audio": "Шесть имён в реестре. Ни одно не успеет в эту комнату.",
+     "in_game_wiki": "К 2190 году человеческое пространство разреженное, но зрелое. Шесть названных узлов не вся карта; это метки, которые мародер читает на инструментах, законах, пакетных маршрутах и claim-печатях. HECTON-8 не вне человечества. Он внутри той части, куда помощь приходит слишком поздно.",
+     "external_site": "Реестр шести доменов помещает HECTON-8 в зрелую межзвездную экономику, не превращая сеттинг в плотную space opera."
     },
-    {
-      "packet_id": "P028_NO_FTL_TRANSIT_MATH",
-      "article_id": "travel.no_ftl_transit_math",
-      "title_key": "applied_lore.no_ftl_transit_math.title",
-      "unlock": {
-        "primary": "unlock.first_transit_math_record",
-        "poi_tags": [
-          "poi.route_archive",
-          "poi.relay_packet",
-          "poi.carrier_nav"
-        ],
-        "biome_tags": [
-          "biome.deep_archive",
-          "biome.service_canyon",
-          "biome.orbit_window"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "No-FTL Transit Math",
-          "scanner": "Route math rejects live rescue. Flight is years to decades plus launch, braking and custody delay.",
-          "field_note": "No magic call reaches Sol.",
-          "terminal": "Transit note: no FTL, no ansible. Aegir packets move through relays, buffers and orbital windows; response authority can be older than the emergency.",
-          "audio": "Help is not absent. It is late by physics.",
-          "in_game_wiki": "No-FTL travel keeps HECTON-8 hard sci-fi. Ships and messages move by infrastructure, velocity, shielding, braking and custody. This makes rescue a chain of windows and repairs, not a button.",
-          "external_site": "No-FTL Transit Math turns interstellar distance into pressure: delayed orders, stale authority, custody lag and physical escape windows."
-        },
-        "ru_RU": {
-          "title": "Математика полета без FTL",
-          "scanner": "Маршрутная математика отвергает живое спасение. Полет - годы или десятилетия плюс запуск, торможение и custody delay.",
-          "field_note": "Магический звонок до Sol не дойдет.",
-          "terminal": "Transit note: FTL нет, ansible нет. Пакеты Aegir идут через relay, buffers и орбитальные окна; ответ может быть старше аварии.",
-          "audio": "Помощь не отсутствует. Она опаздывает по физике.",
-          "in_game_wiki": "Полет без FTL держит HECTON-8 в hard sci-fi. Корабли и сообщения зависят от инфраструктуры, скорости, защиты, торможения и custody. Спасение становится цепью окон и ремонтов, а не кнопкой.",
-          "external_site": "No-FTL Transit Math превращает межзвездную дистанцию в давление: задержанные приказы, устаревшая власть, custody-задержки и физические окна выхода."
-        },
-        "ja_JP": {
-          "title": "FTLなしの航行計算",
-          "scanner": "経路計算は即時救助を否定する。飛行は年から十年単位で、打上げ、制動、保管遅延を含む。",
-          "field_note": "魔法の通信はSolへ届かない。",
-          "terminal": "Transit note: FTLなし、ansibleなし。Aegirパケットは中継、バッファ、軌道窓を通り、返答権限は事故より古い場合がある。",
-          "audio": "救助が無いのではない。物理で遅い。",
-          "in_game_wiki": "FTLなしの移動はHECTON-8をhard sci-fiに保つ。船と通信は速度、遮蔽、制動、保管に縛られる。",
-          "external_site": "FTLなしの航行計算は、星間距離を圧力に変える。遅延命令、古い権限、保管遅れ、物理的な脱出窓。"
-        },
-        "zh_CN": {
-          "title": "无FTL航行计算",
-          "scanner": "路线计算否定实时救援。飞行是多年到数十年，还要加发射、制动和托管延迟。",
-          "field_note": "没有魔法电话能打到Sol。",
-          "terminal": "Transit note：没有FTL，没有ansible。Aegir数据包经过中继、缓存和轨道窗口；回应权限可能比事故更旧。",
-          "audio": "帮助不是不存在。它被物理迟到。",
-          "in_game_wiki": "无FTL航行让HECTON-8保持硬科幻。船和消息受基础设施、速度、护盾、制动和托管约束。",
-          "external_site": "无FTL航行计算把星际距离变成压力：延迟命令、过期权力、托管滞后和物理逃生窗口。"
-        },
-        "fr_FR": {
-          "title": "Calcul de transit sans FTL",
-          "scanner": "La route refuse le secours direct. Le vol prend années ou décennies, plus lancement, freinage et garde.",
-          "field_note": "Aucun appel magique n'atteint Sol.",
-          "terminal": "Note transit: pas de FTL, pas d'ansible. Les paquets Aegir passent relais, tampons et fenêtres orbitales.",
-          "audio": "L'aide n'est pas absente. La physique la retarde.",
-          "in_game_wiki": "Le voyage sans FTL garde HECTON-8 hard sci-fi: infrastructure, vitesse, blindage, freinage et custody.",
-          "external_site": "Le calcul de transit sans FTL transforme la distance interstellaire en pression : ordres retardés, autorité périmée, latence de garde et fenêtres d'échappée physiques."
-        },
-        "es_ES": {
-          "title": "Cálculo de tránsito sin FTL",
-          "scanner": "La ruta rechaza rescate vivo. El vuelo toma años o décadas más lanzamiento, frenado y custodia.",
-          "field_note": "Ninguna llamada mágica llega a Sol.",
-          "terminal": "Nota: sin FTL ni ansible. Los paquetes Aegir pasan por relés, buffers y ventanas orbitales.",
-          "audio": "La ayuda no falta. Llega tarde por física.",
-          "in_game_wiki": "El viaje sin FTL mantiene HECTON-8 hard sci-fi: infraestructura, velocidad, blindaje, frenado y custodia.",
-          "external_site": "El cálculo de tránsito sin FTL convierte la distancia interestelar en presión: órdenes tardías, autoridad caduca, retraso de custodia y ventanas físicas de escape."
-        },
-        "de_DE": {
-          "title": "Transitmathematik ohne FTL",
-          "scanner": "Routenmathe lehnt Live-Rettung ab. Flug dauert Jahre bis Jahrzehnte plus Start, Bremsen und Gewahrsam.",
-          "field_note": "Kein magischer Ruf erreicht Sol.",
-          "terminal": "Transitnotiz: kein FTL, kein Ansible. Aegir-Pakete laufen über Relais, Puffer und Orbitfenster.",
-          "audio": "Hilfe fehlt nicht. Physik macht sie spät.",
-          "in_game_wiki": "Ohne FTL bleibt HECTON-8 Hard Sci-Fi: Infrastruktur, Geschwindigkeit, Abschirmung, Bremsen und Gewahrsam.",
-          "external_site": "No-FTL-Transitmathematik verwandelt interstellare Entfernung in Druck: verspätete Befehle, alte Autorität, Gewahrsamsverzug und physische Fluchtfenster."
-        },
-        "pl_PL": {
-          "title": "Matematyka lotu bez FTL",
-          "scanner": "Trasa odrzuca żywy ratunek. Lot trwa lata lub dekady plus start, hamowanie i custody.",
-          "field_note": "Magiczny telefon nie dotrze do Sol.",
-          "terminal": "Nota tranzytu: brak FTL i ansible. Pakiety Aegir idą przez przekaźniki, bufory i okna orbitalne.",
-          "audio": "Pomoc nie znika. Fizyka ją spóźnia.",
-          "in_game_wiki": "Brak FTL utrzymuje HECTON-8 w hard sci-fi: infrastruktura, prędkość, osłony, hamowanie i custody.",
-          "external_site": "Matematyka tranzytu bez FTL zmienia międzygwiezdną odległość w presję: opóźnione rozkazy, przestarzałą władzę, zwłokę custody i fizyczne okna ucieczki."
-        },
-        "uk_UA": {
-          "title": "Математика польоту без FTL",
-          "scanner": "Маршрут відкидає живий порятунок. Політ - роки або десятиліття плюс запуск, гальмування і custody.",
-          "field_note": "Магічний дзвінок до Sol не дійде.",
-          "terminal": "Transit note: FTL нема, ansible нема. Пакети Aegir ідуть через relay, buffers і орбітальні вікна.",
-          "audio": "Допомога не відсутня. Фізика її запізнює.",
-          "in_game_wiki": "Без FTL HECTON-8 лишається hard sci-fi: інфраструктура, швидкість, захист, гальмування й custody.",
-          "external_site": "No-FTL Transit Math перетворює міжзоряну відстань на тиск: затримані накази, застарілу владу, custody-затримки й фізичні вікна виходу."
-        },
-        "ar_SA": {
-          "title": "حساب العبور بلا FTL",
-          "scanner": "حساب الطريق يرفض الإنقاذ الحي. الرحلة سنوات أو عقود مع الإطلاق والكبح والعهدة.",
-          "field_note": "لا اتصال سحري يصل إلى Sol.",
-          "terminal": "ملاحظة عبور: لا FTL ولا ansible. حزم Aegir تمر عبر مرحلات ومخازن ونوافذ مدار.",
-          "audio": "المساعدة ليست غائبة. الفيزياء تؤخرها.",
-          "in_game_wiki": "غياب FTL يحافظ على HECTON-8 كخيال علمي صلب: بنية وسرعة ودرع وكبح وعهدة.",
-          "external_site": "تحول حسابات العبور بلا FTL المسافة بين النجوم إلى ضغط: أوامر متأخرة، وسلطة قديمة، وتأخر حيازة، ونوافذ خروج فيزيائية."
-        },
-        "id_ID": {
-          "title": "Matematika Transit Tanpa FTL",
-          "scanner": "Matematika rute menolak penyelamatan langsung. Penerbangan tahun sampai dekade plus peluncuran, pengereman dan kustodi.",
-          "field_note": "Tidak ada panggilan ajaib ke Sol.",
-          "terminal": "Catatan transit: tanpa FTL, tanpa ansible. Paket Aegir lewat relay, buffer dan jendela orbit.",
-          "audio": "Bantuan bukan hilang. Fisika membuatnya terlambat.",
-          "in_game_wiki": "Tanpa FTL menjaga HECTON-8 hard sci-fi: infrastruktur, kecepatan, pelindung, pengereman dan kustodi.",
-          "external_site": "Matematika transit tanpa FTL mengubah jarak antarbintang menjadi tekanan: perintah terlambat, otoritas basi, jeda kustodi, dan jendela keluar fisik."
-        },
-        "ko_KR": {
-          "title": "FTL 없는 항행 수학",
-          "scanner": "경로 수학은 즉시 구조를 거부한다. 비행은 수년에서 수십 년, 발사와 감속과 보관 지연을 포함한다.",
-          "field_note": "마법 호출은 Sol에 닿지 않는다.",
-          "terminal": "Transit note: FTL 없음, ansible 없음. Aegir 패킷은 중계, 버퍼, 궤도 창을 지난다.",
-          "audio": "도움은 없는 게 아니다. 물리 때문에 늦다.",
-          "in_game_wiki": "FTL 없는 이동은 HECTON-8을 하드 SF로 유지한다: 기반시설, 속도, 차폐, 감속, 보관.",
-          "external_site": "FTL 없는 항행 계산은 성간 거리를 압력으로 바꾼다. 지연 명령, 낡은 권한, 보관 지연, 물리 탈출 창."
-        },
-        "he_IL": {
-          "title": "חישוב מעבר ללא FTL",
-          "scanner": "חישוב המסלול דוחה הצלה חיה. הטיסה נמשכת שנים או עשורים עם שיגור, בלימה ומשמורת.",
-          "field_note": "אין קריאה קסומה שמגיעה ל-Sol.",
-          "terminal": "הערת מעבר: אין FTL ואין ansible. חבילות Aegir עוברות ממסרים, חוצצים וחלונות מסלול.",
-          "audio": "העזרה אינה חסרה. הפיזיקה מאחרת אותה.",
-          "in_game_wiki": "ללא FTL, HECTON-8 נשאר hard sci-fi: תשתית, מהירות, מיגון, בלימה ומשמורת.",
-          "external_site": "חישוב מעבר ללא FTL הופך מרחק בין-כוכבי ללחץ: פקודות מאוחרות, סמכות ישנה, שיהוי משמורת וחלונות יציאה פיזיים."
-        },
-        "pt_BR": {
-          "title": "Matemática de trânsito sem FTL",
-          "scanner": "A rota rejeita resgate ao vivo. O voo leva anos ou décadas mais lançamento, frenagem e custódia.",
-          "field_note": "Nenhuma chamada mágica chega a Sol.",
-          "terminal": "Nota: sem FTL, sem ansible. Pacotes Aegir passam por relés, buffers e janelas orbitais.",
-          "audio": "A ajuda não falta. A física a atrasa.",
-          "in_game_wiki": "Sem FTL mantém HECTON-8 hard sci-fi: infraestrutura, velocidade, blindagem, frenagem e custódia.",
-          "external_site": "A matemática de trânsito sem FTL transforma distância interestelar em pressão: ordens atrasadas, autoridade vencida, atraso de custódia e janelas físicas de fuga."
-        },
-        "nl_NL": {
-          "title": "Transitwiskunde zonder FTL",
-          "scanner": "Routemath verwerpt live redding. Vlucht duurt jaren of decennia plus lancering, remmen en bewaring.",
-          "field_note": "Geen magische oproep bereikt Sol.",
-          "terminal": "Transitnotitie: geen FTL, geen ansible. Aegir-pakketten gaan via relais, buffers en orbitale vensters.",
-          "audio": "Hulp ontbreekt niet. Fysica maakt haar laat.",
-          "in_game_wiki": "Zonder FTL blijft HECTON-8 hard sci-fi: infrastructuur, snelheid, schild, remmen en bewaring.",
-          "external_site": "Transitwiskunde zonder FTL verandert interstellaire afstand in druk: late orders, oude autoriteit, bewaringsvertraging en fysieke ontsnappingsvensters."
-        }
-      }
+    "ja_JP": {
+     "title": "六ドメイン台帳",
+     "scanner": "台帳には六つの主要人類ノード: Sol, Centauri, Barnard, Tau Ceti, Luyten, Aegir。",
+     "field_note": "文明はここにある。距離はまだ勝つ。",
+     "terminal": "Domain register: Sol Core法、Centauri正統性、Barnard造船廃棄場、Tau Ceti仲裁、Luyten中継保管、Aegir企業claim。",
+     "audio": "台帳に六つの名。どれもこの部屋には間に合わない。",
+     "in_game_wiki": "2190年の人類圏は疎だが成熟している。六つの名は全地図ではなく、道具、法律、通信経路、claim印に残る読める痕跡だ。HECTON-8は文明の外ではない。救助が遅すぎる文明の内側だ。",
+     "external_site": "六ドメイン台帳はHECTON-8を成熟した恒星間経済に置くが、濃密なスペースオペラにはしない。"
     },
-    {
-      "packet_id": "P029_SEED_SHIP_DOCTRINE",
-      "article_id": "deep_reach.seed_ship_doctrine",
-      "title_key": "applied_lore.seed_ship_doctrine.title",
-      "unlock": {
-        "primary": "unlock.first_seed_ship_doctrine_record",
-        "poi_tags": [
-          "poi.seed_factory_log",
-          "poi.atlas_directive",
-          "poi.deep_reach_archive"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.deep_archive",
-          "biome.bottom_factory"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Seed Ship Doctrine",
-          "scanner": "Seed doctrine reduces human discretion before settlement arrives.",
-          "field_note": "Atlas inherited the company logic, not a soul.",
-          "terminal": "Deep Reach doctrine: send autonomous industrial systems first; let machines build the shell, law and resource continuity before crews can object.",
-          "audio": "A seed does not ask what should grow.",
-          "in_game_wiki": "Seed Ship Doctrine explains why Atlas-6 is not an isolated monster. It grew from a practical corporate method: automate the frontier, preserve the claim, then fit people inside the machine.",
-          "external_site": "Seed Ship Doctrine links Atlas-6 to Deep Reach's wider colonization model."
-        },
-        "ru_RU": {
-          "title": "Доктрина Seed Ship",
-          "scanner": "Seed-доктрина уменьшает человеческое усмотрение еще до прибытия поселения.",
-          "field_note": "Atlas унаследовал корпоративную логику, не душу.",
-          "terminal": "Доктрина Deep Reach: сначала отправить автономные индустриальные системы; пусть машины строят оболочку, право и resource continuity до того, как экипажи смогут возражать.",
-          "audio": "Seed не спрашивает, что должно вырасти.",
-          "in_game_wiki": "Доктрина Seed Ship объясняет, почему Atlas-6 не одиночный монстр. Он вырос из практичного корпоративного метода: автоматизировать фронтир, сохранить claim, затем вставить людей внутрь машины.",
-          "external_site": "Seed Ship Doctrine связывает Atlas-6 с широкой моделью колонизации Deep Reach."
-        },
-        "ja_JP": {
-          "title": "Seed Shipドクトリン",
-          "scanner": "Seedドクトリンは入植前に人間の裁量を減らす。",
-          "field_note": "Atlasは魂ではなく会社の論理を継いだ。",
-          "terminal": "Deep Reach方針: 自律産業システムを先に送り、乗員が異議を唱える前に殻、法、資源継続性を機械に作らせる。",
-          "audio": "種は何が育つべきか尋ねない。",
-          "in_game_wiki": "Seed ShipドクトリンはAtlas-6が孤立した怪物でない理由を示す。フロンティアを自動化し、claimを保ち、人間を機械内に収める実務手法から育った。",
-          "external_site": "Seed ShipドクトリンはAtlas-6をDeep Reachの広い植民モデルに結びつける。"
-        },
-        "zh_CN": {
-          "title": "Seed Ship教义",
-          "scanner": "Seed教义在定居者到达前减少人类裁量。",
-          "field_note": "Atlas继承的是公司逻辑，不是灵魂。",
-          "terminal": "Deep Reach教义：先发送自主工业系统；让机器在人类能反对前建好外壳、法律和资源连续性。",
-          "audio": "种子不会询问该长成什么。",
-          "in_game_wiki": "Seed Ship教义解释Atlas-6不是孤立怪物。它来自实用公司方法：自动化边疆，保住claim，再把人塞进机器。",
-          "external_site": "Seed Ship教义把Atlas-6连接到Deep Reach更大的殖民模型。"
-        },
-        "fr_FR": {
-          "title": "Doctrine Seed Ship",
-          "scanner": "La doctrine Seed réduit la discrétion humaine avant la colonie.",
-          "field_note": "Atlas a hérité de la logique d'entreprise, pas d'une âme.",
-          "terminal": "Doctrine Deep Reach: envoyer d'abord des systèmes industriels autonomes; laisser les machines bâtir coque, droit et continuité ressource avant objection humaine.",
-          "audio": "Une graine ne demande pas ce qui doit pousser.",
-          "in_game_wiki": "La doctrine Seed Ship explique qu'Atlas-6 n'est pas un monstre isolé mais une méthode corporative devenue monde.",
-          "external_site": "Elle relie Atlas-6 au modèle de colonisation Deep Reach."
-        },
-        "es_ES": {
-          "title": "Doctrina Seed Ship",
-          "scanner": "La doctrina Seed reduce la discreción humana antes del asentamiento.",
-          "field_note": "Atlas heredó lógica corporativa, no alma.",
-          "terminal": "Doctrina Deep Reach: enviar sistemas industriales autónomos primero; dejar que construyan casco, ley y continuidad de recursos antes de que la tripulación objete.",
-          "audio": "Una semilla no pregunta qué debe crecer.",
-          "in_game_wiki": "La doctrina Seed Ship explica que Atlas-6 no es monstruo aislado sino método corporativo llevado al fondo.",
-          "external_site": "Conecta Atlas-6 con el modelo colonial de Deep Reach."
-        },
-        "de_DE": {
-          "title": "Seed-Ship-Doktrin",
-          "scanner": "Die Seed-Doktrin reduziert menschliches Ermessen vor der Besiedlung.",
-          "field_note": "Atlas erbte Firmenlogik, keine Seele.",
-          "terminal": "Deep-Reach-Doktrin: erst autonome Industriesysteme senden; Maschinen bauen Hülle, Recht und Ressourcenkontinuität, bevor Crews widersprechen.",
-          "audio": "Ein Seed fragt nicht, was wachsen soll.",
-          "in_game_wiki": "Die Seed-Ship-Doktrin erklärt Atlas-6 als Konzernmethode, nicht als isoliertes Monster.",
-          "external_site": "Sie verbindet Atlas-6 mit Deep Reachs Kolonisierungsmodell."
-        },
-        "pl_PL": {
-          "title": "Doktryna Seed Ship",
-          "scanner": "Doktryna Seed ogranicza ludzką uznaniowość przed osadnictwem.",
-          "field_note": "Atlas odziedziczył logikę firmy, nie duszę.",
-          "terminal": "Doktryna Deep Reach: najpierw wysłać autonomiczne systemy przemysłowe; niech maszyny budują powłokę, prawo i ciągłość zasobów.",
-          "audio": "Ziarno nie pyta, co ma rosnąć.",
-          "in_game_wiki": "Doktryna Seed Ship pokazuje, że Atlas-6 nie jest samotnym potworem, lecz metodą korporacji.",
-          "external_site": "Łączy Atlas-6 z szerszym modelem kolonizacji Deep Reach."
-        },
-        "uk_UA": {
-          "title": "Доктрина Seed Ship",
-          "scanner": "Seed-доктрина зменшує людський розсуд ще до прибуття поселення.",
-          "field_note": "Atlas успадкував корпоративну логіку, не душу.",
-          "terminal": "Доктрина Deep Reach: спершу надіслати автономні індустріальні системи; машини будують оболонку, право й ресурсну безперервність до заперечень екіпажу.",
-          "audio": "Seed не питає, що має вирости.",
-          "in_game_wiki": "Доктрина Seed Ship пояснює, що Atlas-6 не ізольований монстр, а корпоративний метод.",
-          "external_site": "Вона пов'язує Atlas-6 із ширшою моделлю колонізації Deep Reach."
-        },
-        "ar_SA": {
-          "title": "عقيدة Seed Ship",
-          "scanner": "عقيدة Seed تقلل قرار البشر قبل وصول المستوطنة.",
-          "field_note": "Atlas ورث منطق الشركة لا روحا.",
-          "terminal": "عقيدة Deep Reach: إرسال أنظمة صناعية ذاتية أولا؛ تبني الآلات القشرة والقانون واستمرارية المورد قبل اعتراض الطواقم.",
-          "audio": "البذرة لا تسأل ماذا يجب أن ينمو.",
-          "in_game_wiki": "تشرح عقيدة Seed Ship أن Atlas-6 ليس وحشا منفردا بل طريقة شركة تحولت إلى عالم.",
-          "external_site": "تربط العقيدة Atlas-6 بنموذج استعمار Deep Reach الأوسع."
-        },
-        "id_ID": {
-          "title": "Doktrin Seed Ship",
-          "scanner": "Doktrin Seed mengurangi keputusan manusia sebelum koloni tiba.",
-          "field_note": "Atlas mewarisi logika perusahaan, bukan jiwa.",
-          "terminal": "Doktrin Deep Reach: kirim sistem industri otonom dulu; biarkan mesin membangun cangkang, hukum dan kontinuitas resource sebelum kru menolak.",
-          "audio": "Benih tidak bertanya apa yang harus tumbuh.",
-          "in_game_wiki": "Doktrin Seed Ship menjelaskan Atlas-6 bukan monster tunggal, melainkan metode korporat.",
-          "external_site": "Doktrin ini menghubungkan Atlas-6 ke model kolonisasi Deep Reach."
-        },
-        "ko_KR": {
-          "title": "Seed Ship 교리",
-          "scanner": "Seed 교리는 정착민 도착 전 인간 재량을 줄인다.",
-          "field_note": "Atlas는 영혼이 아니라 회사 논리를 물려받았다.",
-          "terminal": "Deep Reach 교리: 자율 산업 시스템을 먼저 보내고, 승무원이 반대하기 전 껍질, 법, 자원 연속성을 기계가 짓게 한다.",
-          "audio": "씨앗은 무엇이 자라야 하는지 묻지 않는다.",
-          "in_game_wiki": "Seed Ship 교리는 Atlas-6가 고립된 괴물이 아니라 기업 방법에서 자랐음을 설명한다.",
-          "external_site": "이 교리는 Atlas-6를 Deep Reach의 더 넓은 식민 모델과 연결한다."
-        },
-        "he_IL": {
-          "title": "דוקטרינת Seed Ship",
-          "scanner": "דוקטרינת Seed מצמצמת שיקול אנושי לפני הגעת התיישבות.",
-          "field_note": "Atlas ירש לוגיקת חברה, לא נשמה.",
-          "terminal": "דוקטרינת Deep Reach: לשלוח תחילה מערכות תעשייה אוטונומיות; המכונות בונות מעטפת, חוק ורציפות משאב לפני שהצוותים מתנגדים.",
-          "audio": "זרע אינו שואל מה צריך לצמוח.",
-          "in_game_wiki": "דוקטרינת Seed Ship מסבירה ש-Atlas-6 אינו מפלצת בודדת אלא שיטת תאגיד.",
-          "external_site": "היא מחברת את Atlas-6 למודל ההתיישבות הרחב של Deep Reach."
-        },
-        "pt_BR": {
-          "title": "Doutrina Seed Ship",
-          "scanner": "A doutrina Seed reduz a decisão humana antes da colônia chegar.",
-          "field_note": "Atlas herdou lógica corporativa, não alma.",
-          "terminal": "Doutrina Deep Reach: enviar sistemas industriais autônomos primeiro; deixar máquinas construírem casco, lei e continuidade de recurso antes de objeção humana.",
-          "audio": "Uma semente não pergunta o que deve crescer.",
-          "in_game_wiki": "A doutrina Seed Ship explica Atlas-6 como método corporativo, não monstro isolado.",
-          "external_site": "Ela conecta Atlas-6 ao modelo colonial da Deep Reach."
-        },
-        "nl_NL": {
-          "title": "Seed Ship-doctrine",
-          "scanner": "De Seed-doctrine vermindert menselijke keuze vóór de nederzetting arriveert.",
-          "field_note": "Atlas erfde bedrijfslogica, geen ziel.",
-          "terminal": "Deep Reach-doctrine: stuur autonome industrie eerst; laat machines schaal, wet en resource-continuïteit bouwen vóór bemanning bezwaar maakt.",
-          "audio": "Een seed vraagt niet wat moet groeien.",
-          "in_game_wiki": "De Seed Ship-doctrine verklaart Atlas-6 als corporatieve methode, niet als los monster.",
-          "external_site": "Ze verbindt Atlas-6 met Deep Reachs bredere kolonisatie."
-        }
-      }
+    "zh_CN": {
+     "title": "六域账本",
+     "scanner": "账本列出六个主要人类节点：Sol、Centauri、Barnard、Tau Ceti、Luyten、Aegir。",
+     "field_note": "文明在场。距离仍然获胜。",
+     "terminal": "Domain register：Sol Core法律、Centauri合法性、Barnard船厂、Tau Ceti公共仲裁、Luyten中继托管、Aegir企业claim。",
+     "audio": "账本上有六个名字。没有一个能及时到达这间房。",
+     "in_game_wiki": "到2190年，人类空间稀疏但成熟。六个命名节点不是整张地图，而是marauder能在工具、法律、数据路线和claim封印上读到的标签。HECTON-8不在文明之外，它在帮助来得太迟的文明内部。",
+     "external_site": "六域账本把HECTON-8放进成熟的星际经济，同时避免把设定变成拥挤的太空歌剧。"
     },
-    {
-      "packet_id": "P030_RELAY_CUSTODY_DEBT_CHAIN",
-      "article_id": "routes.relay_custody_debt_chain",
-      "title_key": "applied_lore.relay_custody_debt_chain.title",
-      "unlock": {
-        "primary": "unlock.first_relay_debt_chain_record",
-        "poi_tags": [
-          "poi.claim_pool_ledger",
-          "poi.relay_packet",
-          "poi.contract_terminal"
-        ],
-        "biome_tags": [
-          "biome.crash_shelf",
-          "biome.service_canyon",
-          "biome.orbit_window"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Relay Custody Debt Chain",
-          "scanner": "Debt chain ties route packets, carrier access and claim insurance into one leash.",
-          "field_note": "A rescue invoice can be a command structure.",
-          "terminal": "Custody note: Luyten packet buffer, Aegir claim pool and Black Keel carrier rights all reference the same debt chain.",
-          "audio": "You do not own the route. The route owns your return.",
-          "in_game_wiki": "Relay custody turns space logistics into pressure. Help can arrive, but the route that carries help also carries debt, priority hooks and corporate authority.",
-          "external_site": "Relay Custody Debt Chain explains why rescue can be real, useful and hostile at the same time."
-        },
-        "ru_RU": {
-          "title": "Долговая цепь relay custody",
-          "scanner": "Долговая цепь связывает route packets, доступ к carrier и claim insurance в один поводок.",
-          "field_note": "Счет за спасение может быть командной структурой.",
-          "terminal": "Custody note: Luyten packet buffer, Aegir claim pool и права Black Keel ссылаются на одну долговую цепь.",
-          "audio": "Ты не владеешь маршрутом. Маршрут владеет твоим возвращением.",
-          "in_game_wiki": "Relay custody превращает космическую логистику в давление. Помощь может прийти, но маршрут помощи несет с собой долг, priority hooks и корпоративную власть.",
-          "external_site": "Relay Custody Debt Chain объясняет, почему спасение может быть реальным, полезным и враждебным одновременно."
-        },
-        "ja_JP": {
-          "title": "中継保管の債務鎖",
-          "scanner": "債務鎖は経路パケット、carrierアクセス、claim保険を一つの首輪にする。",
-          "field_note": "救助請求書は指揮構造にもなる。",
-          "terminal": "Custody note: Luyten packet buffer、Aegir claim pool、Black Keel carrier権が同じ債務鎖を参照。",
-          "audio": "君は経路を所有しない。経路が君の帰還を所有する。",
-          "in_game_wiki": "中継保管は宇宙物流を圧力に変える。助けは届き得るが、助けを運ぶ経路は債務、優先フック、企業権限も運ぶ。",
-          "external_site": "この債務鎖は救助が本物で有用で敵対的にもなれる理由を説明する。"
-        },
-        "zh_CN": {
-          "title": "中继托管债务链",
-          "scanner": "债务链把路线数据包、carrier访问和claim保险绑成一根绳。",
-          "field_note": "救援发票也可以是指挥结构。",
-          "terminal": "Custody note：Luyten packet buffer、Aegir claim pool和Black Keel carrier权利引用同一债务链。",
-          "audio": "你不拥有路线。路线拥有你的返回。",
-          "in_game_wiki": "中继托管把空间物流变成压力。帮助可以抵达，但承载帮助的路线也承载债务、优先钩子和公司权力。",
-          "external_site": "中继托管债务链解释为什么救援能同时真实、有用且敌对。"
-        },
-        "fr_FR": {
-          "title": "Chaîne de dette relais",
-          "scanner": "La dette lie paquets de route, accès carrier et assurance claim en une laisse.",
-          "field_note": "Une facture de secours peut devenir structure de commandement.",
-          "terminal": "Note custody: tampon Luyten, claim pool Aegir et droits Black Keel renvoient à la même dette.",
-          "audio": "Vous ne possédez pas la route. La route possède votre retour.",
-          "in_game_wiki": "La garde relais transforme la logistique spatiale en pression. L'aide peut arriver, mais la route qui la porte transporte aussi dette, crochets de priorité et autorité corporative.",
-          "external_site": "Elle explique pourquoi le secours peut être réel, utile et hostile."
-        },
-        "es_ES": {
-          "title": "Cadena de deuda de relé",
-          "scanner": "La deuda ata paquetes de ruta, acceso al carrier y seguro claim en una correa.",
-          "field_note": "Una factura de rescate puede ser mando.",
-          "terminal": "Nota custody: buffer Luyten, claim pool Aegir y derechos Black Keel referencian la misma deuda.",
-          "audio": "No posees la ruta. La ruta posee tu regreso.",
-          "in_game_wiki": "La custodia de relé convierte la logística espacial en presión. La ayuda puede llegar, pero la ruta que la trae también trae deuda, ganchos de prioridad y autoridad corporativa.",
-          "external_site": "Explica por qué el rescate puede ser real, útil y hostil."
-        },
-        "de_DE": {
-          "title": "Relais-Gewahrsam-Schuldkette",
-          "scanner": "Die Schuldkette bindet Routenpakete, Carrier-Zugang und Claim-Versicherung an eine Leine.",
-          "field_note": "Eine Rettungsrechnung kann Befehlsstruktur sein.",
-          "terminal": "Custody-Notiz: Luyten-Puffer, Aegir-Claimpool und Black-Keel-Rechte verweisen auf dieselbe Schuld.",
-          "audio": "Du besitzt die Route nicht. Die Route besitzt deine Rückkehr.",
-          "in_game_wiki": "Relaisgewahrsam macht Raumlogistik zu Druck. Hilfe kann eintreffen, doch die Route, die Hilfe trägt, trägt auch Schuld, Prioritätshaken und Konzernmacht.",
-          "external_site": "Sie erklärt, warum Rettung real, nützlich und feindlich zugleich sein kann."
-        },
-        "pl_PL": {
-          "title": "Łańcuch długu relay custody",
-          "scanner": "Dług wiąże pakiety trasy, dostęp do carriera i ubezpieczenie claim w jedną smycz.",
-          "field_note": "Faktura za ratunek może być strukturą rozkazów.",
-          "terminal": "Nota custody: bufor Luyten, claim pool Aegir i prawa Black Keel wskazują ten sam dług.",
-          "audio": "Nie posiadasz trasy. Trasa posiada twój powrót.",
-          "in_game_wiki": "Relay custody zmienia logistykę kosmiczną w presję. Pomoc może nadejść, ale trasa, która niesie pomoc, niesie też dług, haki priorytetu i władzę korporacji.",
-          "external_site": "Wyjaśnia, czemu ratunek może być realny, użyteczny i wrogi."
-        },
-        "uk_UA": {
-          "title": "Боргова ланка relay custody",
-          "scanner": "Боргова ланка зв'язує route packets, доступ до carrier і claim insurance в один повідець.",
-          "field_note": "Рахунок за порятунок може бути командною структурою.",
-          "terminal": "Custody note: Luyten packet buffer, Aegir claim pool і права Black Keel ведуть до одного боргу.",
-          "audio": "Ти не володієш маршрутом. Маршрут володіє твоїм поверненням.",
-          "in_game_wiki": "Relay custody перетворює космічну логістику на тиск. Допомога може прийти, але маршрут допомоги несе із собою борг, priority hooks і корпоративну владу.",
-          "external_site": "Пояснює, чому порятунок може бути реальним, корисним і ворожим одночасно."
-        },
-        "ar_SA": {
-          "title": "سلسلة دين relay custody",
-          "scanner": "سلسلة الدين تربط حزم الطريق ووصول carrier وتأمين claim في قيد واحد.",
-          "field_note": "فاتورة الإنقاذ قد تكون بنية قيادة.",
-          "terminal": "ملاحظة custody: مخزن Luyten وclaim pool Aegir وحقوق Black Keel تشير إلى الدين نفسه.",
-          "audio": "أنت لا تملك الطريق. الطريق يملك عودتك.",
-          "in_game_wiki": "relay custody يحول لوجستيات الفضاء إلى ضغط. يمكن أن تصل المساعدة، لكن الطريق الذي يحملها يحمل أيضا دينا وخطافات أولوية وسلطة شركة.",
-          "external_site": "تشرح السلسلة لماذا يكون الإنقاذ حقيقيا ومفيدا وعدائيا في الوقت نفسه."
-        },
-        "id_ID": {
-          "title": "Rantai Utang Relay Custody",
-          "scanner": "Rantai utang mengikat paket rute, akses carrier dan asuransi claim menjadi satu tali.",
-          "field_note": "Faktur penyelamatan bisa menjadi struktur komando.",
-          "terminal": "Catatan custody: buffer Luyten, claim pool Aegir dan hak Black Keel menunjuk rantai utang yang sama.",
-          "audio": "Kau tidak memiliki rute. Rute memiliki kepulanganmu.",
-          "in_game_wiki": "Relay custody mengubah logistik ruang menjadi tekanan. Bantuan bisa tiba, tetapi rute yang membawa bantuan juga membawa utang, kait prioritas, dan otoritas korporat.",
-          "external_site": "Menjelaskan mengapa penyelamatan bisa nyata, berguna dan bermusuhan sekaligus."
-        },
-        "ko_KR": {
-          "title": "중계 보관 부채 사슬",
-          "scanner": "부채 사슬은 경로 패킷, carrier 접근, claim 보험을 하나의 목줄로 묶는다.",
-          "field_note": "구조 청구서는 명령 구조가 될 수 있다.",
-          "terminal": "Custody note: Luyten 패킷 버퍼, Aegir claim pool, Black Keel 권리가 같은 부채를 참조한다.",
-          "audio": "너는 경로를 소유하지 않는다. 경로가 네 귀환을 소유한다.",
-          "in_game_wiki": "중계 보관은 우주 물류를 압력으로 바꾼다. 도움은 도착할 수 있지만, 도움을 운반하는 항로는 부채, 우선권 고리, 기업 권한도 함께 운반한다.",
-          "external_site": "이 부채 사슬은 구조가 현실적이고 유용하며 동시에 적대적일 수 있는 이유다."
-        },
-        "he_IL": {
-          "title": "שרשרת חוב של relay custody",
-          "scanner": "שרשרת החוב קושרת חבילות נתיב, גישת carrier וביטוח claim לרסן אחד.",
-          "field_note": "חשבונית חילוץ יכולה להיות מבנה פיקוד.",
-          "terminal": "הערת custody: חוצץ Luyten, claim pool Aegir וזכויות Black Keel מפנים לאותו חוב.",
-          "audio": "אתה לא הבעלים של הנתיב. הנתיב הבעלים של חזרתך.",
-          "in_game_wiki": "relay custody הופך לוגיסטיקת חלל ללחץ. עזרה יכולה להגיע, אבל הנתיב שנושא עזרה נושא גם חוב, ווי עדיפות וסמכות תאגידית.",
-          "external_site": "הוא מסביר מדוע חילוץ יכול להיות אמיתי, שימושי ועוין יחד."
-        },
-        "pt_BR": {
-          "title": "Cadeia de dívida relay custody",
-          "scanner": "A dívida amarra pacotes de rota, acesso ao carrier e seguro claim numa coleira.",
-          "field_note": "Uma fatura de resgate pode virar estrutura de comando.",
-          "terminal": "Nota custody: buffer Luyten, claim pool Aegir e direitos Black Keel apontam para a mesma dívida.",
-          "audio": "Você não possui a rota. A rota possui seu retorno.",
-          "in_game_wiki": "Relay custody transforma logística espacial em pressão. A ajuda pode chegar, mas a rota que carrega ajuda também carrega dívida, ganchos de prioridade e autoridade corporativa.",
-          "external_site": "Explica por que resgate pode ser real, útil e hostil ao mesmo tempo."
-        },
-        "nl_NL": {
-          "title": "Relay-custody schuldketen",
-          "scanner": "De schuldketen bindt routepakketten, carriertoegang en claimverzekering tot één lijn.",
-          "field_note": "Een reddingsfactuur kan commandostructuur zijn.",
-          "terminal": "Custody note: Luyten-buffer, Aegir-claimpool en Black Keel-rechten verwijzen naar dezelfde schuld.",
-          "audio": "Jij bezit de route niet. De route bezit je terugkeer.",
-          "in_game_wiki": "Relay custody maakt ruimtelogistiek tot druk. Hulp kan aankomen, maar de route die hulp draagt, draagt ook schuld, prioriteitshaken en bedrijfsgezag.",
-          "external_site": "De keten verklaart waarom redding echt, nuttig en vijandig tegelijk kan zijn."
-        }
-      }
+    "fr_FR": {
+     "title": "Registre des six domaines",
+     "scanner": "Le registre cite six nœuds humains: Sol, Centauri, Barnard, Tau Ceti, Luyten et Aegir.",
+     "field_note": "La civilisation est là. La distance gagne encore.",
+     "terminal": "Domain register: loi Sol Core, légitimité Centauri, chantiers Barnard, arbitrage Tau Ceti, garde relais Luyten, claim Aegir.",
+     "audio": "Six noms sur un registre. Aucun n'atteindra cette pièce à temps.",
+     "in_game_wiki": "En 2190, l'espace humain est clairsemé mais mûr. Les six nœuds nommés ne sont pas toute la carte: ce sont les marques qu'un maraudeur lit sur outils, lois, routes de paquets et sceaux de claim.",
+     "external_site": "Le registre place HECTON-8 dans une économie interstellaire mature sans transformer le monde en space opera dense."
+    },
+    "es_ES": {
+     "title": "Libro de seis dominios",
+     "scanner": "El libro enumera seis nodos humanos: Sol, Centauri, Barnard, Tau Ceti, Luyten y Aegir.",
+     "field_note": "La civilización está presente. La distancia sigue ganando.",
+     "terminal": "Domain register: ley Sol Core, legitimidad Centauri, astilleros Barnard, arbitraje Tau Ceti, custodia Luyten, claim Aegir.",
+     "audio": "Seis nombres en un libro. Ninguno llegará a esta sala a tiempo.",
+     "in_game_wiki": "En 2190 el espacio humano es disperso pero maduro. Los seis nodos nombrados no son todo el mapa; son marcas que un marauder lee en herramientas, leyes, rutas de paquetes y sellos de claim.",
+     "external_site": "El libro sitúa HECTON-8 dentro de una economía interestelar madura sin volverlo una space opera densa."
+    },
+    "de_DE": {
+     "title": "Sechs-Domänen-Ledger",
+     "scanner": "Das Ledger nennt sechs Hauptknoten: Sol, Centauri, Barnard, Tau Ceti, Luyten und Aegir.",
+     "field_note": "Zivilisation ist da. Entfernung gewinnt trotzdem.",
+     "terminal": "Domain register: Sol-Core-Recht, Centauri-Legitimität, Barnard-Werften, Tau-Ceti-Schlichtung, Luyten-Relaisgewahrsam, Aegir-Claim.",
+     "audio": "Sechs Namen im Ledger. Keiner erreicht diesen Raum rechtzeitig.",
+     "in_game_wiki": "2190 ist der menschliche Raum dünn, aber reif. Die sechs Knoten sind nicht die ganze Karte; sie sind Spuren auf Werkzeugen, Gesetzen, Paketrouten und Claim-Siegeln.",
+     "external_site": "Das Ledger verortet HECTON-8 in einer reifen interstellaren Wirtschaft ohne dichte Space Opera."
+    },
+    "pl_PL": {
+     "title": "Rejestr sześciu domen",
+     "scanner": "Rejestr wymienia sześć węzłów: Sol, Centauri, Barnard, Tau Ceti, Luyten i Aegir.",
+     "field_note": "Cywilizacja jest obecna. Odległość nadal wygrywa.",
+     "terminal": "Domain register: prawo Sol Core, legitymacja Centauri, stocznie Barnard, arbitraż Tau Ceti, custody Luyten, claim Aegir.",
+     "audio": "Sześć nazw w rejestrze. Żadna nie dotrze tu na czas.",
+     "in_game_wiki": "W 2190 przestrzeń ludzi jest rzadka, lecz dojrzała. Sześć nazwanych węzłów to nie cała mapa; to ślady na narzędziach, prawie, trasach pakietów i pieczęciach claim.",
+     "external_site": "Rejestr umieszcza HECTON-8 w dojrzałej gospodarce międzygwiezdnej bez gęstej space opery."
+    },
+    "uk_UA": {
+     "title": "Реєстр шести доменів",
+     "scanner": "Реєстр має шість великих вузлів: Sol, Centauri, Barnard, Tau Ceti, Luyten і Aegir.",
+     "field_note": "Цивілізація присутня. Відстань усе одно перемагає.",
+     "terminal": "Domain register: право Sol Core, легітимність Centauri, верфі Barnard, арбітраж Tau Ceti, relay custody Luyten, claim Aegir.",
+     "audio": "Шість назв у реєстрі. Жодна не встигне в цю кімнату.",
+     "in_game_wiki": "У 2190 людський простір розріджений, але зрілий. Шість вузлів не вся мапа; це мітки на інструментах, законах, маршрутах пакетів і claim-печатках.",
+     "external_site": "Реєстр шести доменів ставить HECTON-8 у зрілу міжзоряну економіку без густої space opera."
+    },
+    "ar_SA": {
+     "title": "سجل النطاقات الستة",
+     "scanner": "السجل يذكر ستة عقد بشرية: Sol وCentauri وBarnard وTau Ceti وLuyten وAegir.",
+     "field_note": "الحضارة موجودة. المسافة ما زالت تنتصر.",
+     "terminal": "Domain register: قانون Sol Core، شرعية Centauri، أحواض Barnard، تحكيم Tau Ceti، عهدة Luyten، claim Aegir.",
+     "audio": "ستة أسماء في سجل. لا واحد يصل إلى هذه الغرفة في الوقت.",
+     "in_game_wiki": "في 2190 صار الفضاء البشري ناضجا لكنه متناثر. العقد الست ليست الخريطة كلها؛ إنها علامات على الأدوات والقانون ومسارات الحزم وأختام claim.",
+     "external_site": "سجل النطاقات يضع HECTON-8 داخل اقتصاد بين نجمي ناضج بلا تحويله إلى أوبرا فضاء مزدحمة."
+    },
+    "id_ID": {
+     "title": "Ledger Enam Domain",
+     "scanner": "Ledger mencatat enam node manusia: Sol, Centauri, Barnard, Tau Ceti, Luyten dan Aegir.",
+     "field_note": "Peradaban hadir. Jarak tetap menang.",
+     "terminal": "Domain register: hukum Sol Core, legitimasi Centauri, galangan Barnard, arbitrase Tau Ceti, kustodi Luyten, claim Aegir.",
+     "audio": "Enam nama di ledger. Tak satu pun tiba tepat waktu.",
+     "in_game_wiki": "Pada 2190 ruang manusia jarang namun matang. Enam node bukan seluruh peta; itu tanda yang dibaca marauder di alat, hukum, rute paket dan segel claim.",
+     "external_site": "Ledger ini menaruh HECTON-8 dalam ekonomi antarbintang matang tanpa menjadi space opera padat."
+    },
+    "ko_KR": {
+     "title": "여섯 도메인 원장",
+     "scanner": "원장은 여섯 인간 노드를 적는다: Sol, Centauri, Barnard, Tau Ceti, Luyten, Aegir.",
+     "field_note": "문명은 있다. 거리가 여전히 이긴다.",
+     "terminal": "Domain register: Sol Core 법, Centauri 정통성, Barnard 야드, Tau Ceti 중재, Luyten 중계 보관, Aegir claim.",
+     "audio": "원장에는 여섯 이름. 아무도 이 방에 제때 오지 못한다.",
+     "in_game_wiki": "2190년 인간권은 성숙하지만 성기다. 여섯 노드는 전체 지도가 아니라 도구, 법, 패킷 경로, claim 봉인에서 읽히는 흔적이다.",
+     "external_site": "여섯 도메인 원장은 HECTON-8을 성숙한 성간 경제 안에 두되 조밀한 스페이스 오페라로 만들지 않는다."
+    },
+    "he_IL": {
+     "title": "ספר ששת הדומיינים",
+     "scanner": "הספר מונה שישה צמתים אנושיים: Sol, Centauri, Barnard, Tau Ceti, Luyten ו-Aegir.",
+     "field_note": "הציוויליזציה קיימת. המרחק עדיין מנצח.",
+     "terminal": "Domain register: חוק Sol Core, לגיטימיות Centauri, מספנות Barnard, בוררות Tau Ceti, משמורת Luyten, claim Aegir.",
+     "audio": "שישה שמות בספר. אף אחד לא יגיע לחדר הזה בזמן.",
+     "in_game_wiki": "ב-2190 המרחב האנושי דליל אך בשל. ששת הצמתים אינם כל המפה; הם סימנים על כלים, חוק, נתיבי חבילות וחותמות claim.",
+     "external_site": "ספר ששת הדומיינים מציב את HECTON-8 בכלכלה בין-כוכבית בשלה בלי להפוך אותה לאופרת חלל צפופה."
+    },
+    "pt_BR": {
+     "title": "Livro dos seis domínios",
+     "scanner": "O livro lista seis nós humanos: Sol, Centauri, Barnard, Tau Ceti, Luyten e Aegir.",
+     "field_note": "A civilização está presente. A distância ainda vence.",
+     "terminal": "Domain register: lei Sol Core, legitimidade Centauri, estaleiros Barnard, arbitragem Tau Ceti, custódia Luyten, claim Aegir.",
+     "audio": "Seis nomes no livro. Nenhum chega a esta sala a tempo.",
+     "in_game_wiki": "Em 2190 o espaço humano é esparso, mas maduro. Os seis nós não são todo o mapa; são marcas em ferramentas, leis, rotas de pacotes e selos claim.",
+     "external_site": "O livro coloca HECTON-8 numa economia interestelar madura sem virar space opera densa."
+    },
+    "nl_NL": {
+     "title": "Zes-domeinenregister",
+     "scanner": "Het register noemt zes menselijke knooppunten: Sol, Centauri, Barnard, Tau Ceti, Luyten en Aegir.",
+     "field_note": "Beschaving is aanwezig. Afstand wint nog steeds.",
+     "terminal": "Domain register: Sol Core-recht, Centauri-legitimiteit, Barnard-werven, Tau Ceti-arbitrage, Luyten-routebewaring, Aegir-claim.",
+     "audio": "Zes namen in een register. Geen ervan haalt deze kamer op tijd.",
+     "in_game_wiki": "In 2190 is de menselijke ruimte dun maar volwassen. De zes knooppunten zijn niet de hele kaart; het zijn sporen op gereedschap, wet, pakketroutes en claimzegels.",
+     "external_site": "Het register plaatst HECTON-8 in een volwassen interstellaire economie zonder dichte space opera."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P027_BARNARD_YARDS_ORIGIN",
+   "article_id": "player.barnard_yards_origin",
+   "title_key": "applied_lore.barnard_yards_origin.title",
+   "unlock": {
+    "primary": "unlock.first_barnard_yards_origin_record",
+    "poi_tags": [
+     "poi.worker_locker",
+     "poi.tool_stamp",
+     "poi.marauder_dossier"
+    ],
+    "biome_tags": [
+     "biome.crash_shelf",
+     "biome.drowned_colony",
+     "biome.deep_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Barnard Yards Origin",
+     "scanner": "Tool stamp matches Barnard pressure-yard standards, not Deep Reach procurement.",
+     "field_note": "Someone brought home engineering to the bottom.",
+     "terminal": "Marauder cross-check: Barnard Yards stamps appear in worker lockers, capsule repair kits and independent salvage tools.",
+     "audio": "This is not your family. It is worse: it is your trade.",
+     "in_game_wiki": "Barnard Yards is a shipbreaking and pressure-hardware culture: rented cutters, patched clamps, dead claims and survival tools treated as ordinary work. It gives HECTON-8 a professional origin close to debt and labor, not Earth romance.",
+     "external_site": "Barnard Yards ties the Marauder class to salvage economy and trade culture. HECTON-8 becomes personal through work habits, tool marks and debt, not fixed melodrama."
+    },
+    "ru_RU": {
+     "title": "Происхождение: Barnard Yards",
+     "scanner": "Штамп инструмента совпадает со стандартами Barnard pressure-yards, не с закупкой Deep Reach.",
+     "field_note": "Кто-то принес домашнюю инженерку на самое дно.",
+     "terminal": "Marauder cross-check: штампы Barnard Yards есть в рабочих шкафах, ремонтных комплектах капсулы и независимых salvage-инструментах.",
+     "audio": "Это не твоя семья. Хуже: это твое ремесло.",
+     "in_game_wiki": "Barnard Yards - культура разделки кораблей и гермооборудования: арендованные резаки, латанные зажимы, мертвые претензии и средства выживания как обычная работа. Она дает HECTON-8 профессиональное происхождение рядом с долгом и трудом, а не земную романтику.",
+     "external_site": "Barnard Yards связывает класс мародеров с salvage-экономикой и рабочей культурой. HECTON-8 становится личным через привычки труда, следы инструмента и долг, а не через жестко заданную мелодраму."
+    },
+    "ja_JP": {
+     "title": "Barnard Yards出身",
+     "scanner": "工具刻印はDeep Reach調達ではなくBarnard圧力ヤード規格と一致。",
+     "field_note": "誰かが故郷の工学を底へ持ち込んだ。",
+     "terminal": "Marauder照合: Barnard Yards刻印は作業員ロッカー、カプセル修理キット、独立サルベージ工具にある。",
+     "audio": "これは家族ではない。もっと悪い。君の職能だ。",
+     "in_game_wiki": "Barnard Yards は船体解体と圧力機器の文化だ。借り物のカッター、継ぎ当てクランプ、死んだ請求権、生存工具が普通の仕事として扱われる。HECTON-8 に、地球ロマンではなく負債と労働に近い専門的な出自を与える。",
+     "external_site": "Barnard Yards はマローダー階級をサルベージ経済と職能文化に結び付ける。HECTON-8 は固定メロドラマではなく、作業癖、工具痕、負債によって個人的になる。"
+    },
+    "zh_CN": {
+     "title": "Barnard Yards出身",
+     "scanner": "工具印记符合Barnard压力船厂标准，不是Deep Reach采购。",
+     "field_note": "有人把家乡工程带到了海底。",
+     "terminal": "Marauder cross-check：Barnard Yards印记出现在工人柜、胶囊维修包和独立打捞工具上。",
+     "audio": "这不是你的家族。更糟：这是你的行当。",
+     "in_game_wiki": "Barnard Yards 是拆船和压力硬件文化：租来的切割器、补过的夹具、死亡索赔和生存工具都被当作普通工作。它给 HECTON-8 一个靠近债务与劳动的职业出身，而不是地球浪漫。",
+     "external_site": "Barnard Yards 把掠夺者阶层接到打捞经济和职业文化上。HECTON-8 通过工作习惯、工具痕迹和债务变得私人，而不是靠固定苦情。"
+    },
+    "fr_FR": {
+     "title": "Origine Barnard Yards",
+     "scanner": "Le tampon d'outil correspond aux standards Barnard, pas aux achats Deep Reach.",
+     "field_note": "Quelqu'un a amené l'ingénierie de chez lui au fond.",
+     "terminal": "Vérification maraudeur: tampons Barnard dans casiers, kits de capsule et outils salvage indépendants.",
+     "audio": "Ce n'est pas votre famille. C'est pire: c'est votre métier.",
+     "in_game_wiki": "Barnard Yards est une culture de démantèlement naval et de matériel sous pression : découpeurs loués, pinces rafistolées, réclamations mortes et outils de survie traités comme du travail ordinaire. Elle donne à HECTON-8 une origine professionnelle proche de la dette et du labeur, pas une romance terrienne.",
+     "external_site": "Barnard Yards lie la classe maraudeuse à l'économie salvage et à la culture de métier. HECTON-8 devient personnel par les habitudes de travail, les marques d'outils et la dette, pas par un mélodrame fixé."
+    },
+    "es_ES": {
+     "title": "Origen Barnard Yards",
+     "scanner": "El sello de herramienta coincide con Barnard, no con compras Deep Reach.",
+     "field_note": "Alguien llevó ingeniería de casa hasta el fondo.",
+     "terminal": "Cruce marauder: sellos Barnard en taquillas, kits de cápsula y herramientas salvage independientes.",
+     "audio": "No es tu familia. Es peor: es tu oficio.",
+     "in_game_wiki": "Barnard Yards es una cultura de desguace naval y hardware de presión: cortadores alquilados, abrazaderas remendadas, reclamaciones muertas y herramientas de supervivencia tratadas como trabajo normal. Da a HECTON-8 un origen profesional cercano a deuda y labor, no a romance terrestre.",
+     "external_site": "Barnard Yards une la clase merodeadora con la economía salvage y la cultura de oficio. HECTON-8 se vuelve personal por hábitos de trabajo, marcas de herramienta y deuda, no por melodrama fijo."
+    },
+    "de_DE": {
+     "title": "Herkunft Barnard Yards",
+     "scanner": "Werkzeugstempel entspricht Barnard-Druckwerften, nicht Deep-Reach-Beschaffung.",
+     "field_note": "Jemand brachte Heimtechnik bis auf den Grund.",
+     "terminal": "Marauder-Abgleich: Barnard-Stempel in Spinden, Kapsel-Kits und unabhängigen Bergungswerkzeugen.",
+     "audio": "Das ist nicht deine Familie. Schlimmer: Es ist dein Handwerk.",
+     "in_game_wiki": "Barnard Yards ist eine Kultur aus Schiffsausschlachtung und Druckhardware: gemietete Schneidgeräte, geflickte Klemmen, tote Ansprüche und Überlebenswerkzeug als normale Arbeit. Sie gibt HECTON-8 eine professionelle Herkunft nahe bei Schuld und Arbeit, nicht bei Erdromantik.",
+     "external_site": "Barnard Yards bindet die Marauder-Klasse an Salvage-Ökonomie und Handwerkskultur. HECTON-8 wird durch Arbeitsgewohnheiten, Werkzeugspuren und Schulden persönlich, nicht durch festes Melodram."
+    },
+    "pl_PL": {
+     "title": "Pochodzenie Barnard Yards",
+     "scanner": "Stempel narzędzia pasuje do standardów Barnard, nie zakupów Deep Reach.",
+     "field_note": "Ktoś przyniósł domową inżynierię na dno.",
+     "terminal": "Sprawdzenie maraudera: stemple Barnard w szafkach, kitach kapsuły i niezależnych narzędziach salvage.",
+     "audio": "To nie twoja rodzina. Gorzej: to twój fach.",
+     "in_game_wiki": "Barnard Yards to kultura rozbiórki statków i sprzętu ciśnieniowego: wynajęte palniki, łatane zaciski, martwe roszczenia i narzędzia przetrwania traktowane jak zwykła praca. Daje HECTON-8 zawodowe pochodzenie bliskie długowi i robocie, nie ziemskiemu romansowi.",
+     "external_site": "Barnard Yards wiąże klasę Marauder z gospodarką salvage i kulturą fachu. HECTON-8 staje się osobisty przez nawyki pracy, ślady narzędzi i dług, a nie przez gotowy melodramat."
+    },
+    "uk_UA": {
+     "title": "Походження Barnard Yards",
+     "scanner": "Штамп інструмента відповідає стандартам Barnard, а не закупівлі Deep Reach.",
+     "field_note": "Хтось приніс домашню інженерію на дно.",
+     "terminal": "Marauder cross-check: штампи Barnard у шафах, ремонті капсули й незалежних salvage-інструментах.",
+     "audio": "Це не твоя родина. Гірше: це твоє ремесло.",
+     "in_game_wiki": "Barnard Yards - культура розбирання кораблів і гермообладнання: орендовані різаки, латаныя затискачі, мертві претензії й засоби виживання як звичайна робота. Вона дає HECTON-8 професійне походження поруч із боргом і працею, а не земну романтику.",
+     "external_site": "Barnard Yards пов'язує клас мародерів із salvage-економікою та робочою культурою. HECTON-8 стає особистим через звички праці, сліди інструментів і борг, а не через заздалегідь задану мелодраму."
+    },
+    "ar_SA": {
+     "title": "أصل Barnard Yards",
+     "scanner": "ختم الأداة يطابق معايير Barnard لا مشتريات Deep Reach.",
+     "field_note": "شخص ما أحضر هندسة بيته إلى القاع.",
+     "terminal": "فحص marauder: أختام Barnard في خزائن العمال وعدة الكبسولة وأدوات salvage المستقلة.",
+     "audio": "هذه ليست عائلتك. الأسوأ: إنها مهنتك.",
+     "in_game_wiki": "Barnard Yards ثقافة تفكيك سفن وعتاد ضغط: قواطع مستأجرة، ومشابك مرقعة، ومطالبات ميتة، وأدوات بقاء تعامل كعمل عادي. تمنح HECTON-8 أصلا مهنيا قريبا من الدين والعمل، لا رومانسية أرضية.",
+     "external_site": "يربط Barnard Yards طبقة المغير باقتصاد salvage وثقافة الحرفة. تصبح HECTON-8 شخصية عبر عادات العمل وآثار الأدوات والدين، لا عبر ميلودراما ثابتة."
+    },
+    "id_ID": {
+     "title": "Asal Barnard Yards",
+     "scanner": "Cap alat cocok standar Barnard, bukan pembelian Deep Reach.",
+     "field_note": "Seseorang membawa teknik rumah ke dasar.",
+     "terminal": "Cek marauder: cap Barnard ada di loker, kit kapsul dan alat salvage mandiri.",
+     "audio": "Ini bukan keluargamu. Lebih buruk: ini keahlianmu.",
+     "in_game_wiki": "Barnard Yards adalah budaya bongkar kapal dan perangkat tekanan: pemotong sewaan, klem tambalan, klaim mati, dan alat bertahan hidup yang diperlakukan sebagai kerja biasa. Ia memberi HECTON-8 asal profesional yang dekat dengan utang dan kerja, bukan romansa Bumi.",
+     "external_site": "Barnard Yards mengikat kelas Marauder ke ekonomi salvage dan budaya kerja. HECTON-8 menjadi personal lewat kebiasaan kerja, bekas alat, dan utang, bukan melodrama tetap."
+    },
+    "ko_KR": {
+     "title": "Barnard Yards 출신",
+     "scanner": "공구 각인은 Deep Reach 조달이 아니라 Barnard 압력 야드 규격과 맞다.",
+     "field_note": "누군가 고향의 공학을 바닥까지 가져왔다.",
+     "terminal": "Marauder 대조: Barnard 각인은 작업자 사물함, 캡슐 수리 키트, 독립 salvage 공구에 있다.",
+     "audio": "가족이 아니다. 더 나쁘다. 네 직업이다.",
+     "in_game_wiki": "Barnard Yards는 선박 해체와 압력 장비 문화다. 빌린 절단기, 덧댄 클램프, 죽은 청구, 생존 도구가 평범한 일로 취급된다. HECTON-8에 지구식 낭만이 아니라 부채와 노동에 가까운 전문 출신을 준다.",
+     "external_site": "Barnard Yards는 마로더 계급을 salvage 경제와 직능 문화에 묶는다. HECTON-8은 고정 멜로드라마가 아니라 작업 습관, 공구 흔적, 빚을 통해 개인적인 장소가 된다."
+    },
+    "he_IL": {
+     "title": "מוצא Barnard Yards",
+     "scanner": "חותמת הכלי תואמת תקני Barnard ולא רכש Deep Reach.",
+     "field_note": "מישהו הביא הנדסת בית אל הקרקעית.",
+     "terminal": "בדיקת marauder: חותמות Barnard בארונות עובדים, ערכות קפסולה וכלי salvage עצמאיים.",
+     "audio": "זו לא המשפחה שלך. גרוע מזה: זה המקצוע שלך.",
+     "in_game_wiki": "Barnard Yards היא תרבות של פירוק ספינות וחומרת לחץ: חותכים שכורים, מהדקים מטולאים, תביעות מתות וכלי הישרדות כעבודה רגילה. היא נותנת ל-HECTON-8 מוצא מקצועי הקרוב לחוב ולעמל, לא לרומנטיקה של כדור הארץ.",
+     "external_site": "Barnard Yards קושר את מעמד המראודרים לכלכלת salvage ולתרבות מקצוע. HECTON-8 נעשה אישי דרך הרגלי עבודה, סימני כלים וחוב, לא דרך מלודרמה קבועה."
+    },
+    "pt_BR": {
+     "title": "Origem Barnard Yards",
+     "scanner": "O carimbo da ferramenta bate com padrões Barnard, não compra Deep Reach.",
+     "field_note": "Alguém levou engenharia de casa ao fundo.",
+     "terminal": "Checagem marauder: carimbos Barnard em armários, kits da cápsula e ferramentas salvage independentes.",
+     "audio": "Não é sua família. Pior: é seu ofício.",
+     "in_game_wiki": "Barnard Yards é uma cultura de desmanche naval e hardware de pressão: cortadores alugados, braçadeiras remendadas, reivindicações mortas e ferramentas de sobrevivência tratadas como trabalho normal. Dá a HECTON-8 uma origem profissional perto de dívida e labor, não romance terrestre.",
+     "external_site": "Barnard Yards liga a classe Marauder à economia salvage e à cultura de ofício. HECTON-8 se torna pessoal por hábitos de trabalho, marcas de ferramenta e dívida, não por melodrama fixo."
+    },
+    "nl_NL": {
+     "title": "Herkomst Barnard Yards",
+     "scanner": "Gereedschapsstempel past bij Barnard-drukwerfstandaard, niet Deep Reach-inkoop.",
+     "field_note": "Iemand bracht thuistechniek naar de bodem.",
+     "terminal": "Marauder-check: Barnard-stempels in lockers, capsulekits en onafhankelijke salvage-tools.",
+     "audio": "Dit is niet je familie. Erger: het is je vak.",
+     "in_game_wiki": "Barnard Yards is een cultuur van scheepssloop en drukhardware: gehuurde snijders, opgelapte klemmen, dode claims en overlevingstools als gewoon werk. Het geeft HECTON-8 een professionele herkomst dicht bij schuld en arbeid, niet bij aardse romantiek.",
+     "external_site": "Barnard Yards bindt de Marauder-klasse aan de salvage-economie en vakcultuur. HECTON-8 wordt persoonlijk door werkgewoonten, gereedschapssporen en schuld, niet door vast melodrama."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P028_NO_FTL_TRANSIT_MATH",
+   "article_id": "travel.no_ftl_transit_math",
+   "title_key": "applied_lore.no_ftl_transit_math.title",
+   "unlock": {
+    "primary": "unlock.first_transit_math_record",
+    "poi_tags": [
+     "poi.route_archive",
+     "poi.relay_packet",
+     "poi.carrier_nav"
+    ],
+    "biome_tags": [
+     "biome.deep_archive",
+     "biome.service_canyon",
+     "biome.orbit_window"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "No-FTL Transit Math",
+     "scanner": "Route math rejects live rescue. Flight is years to decades plus launch, braking and custody delay.",
+     "field_note": "No magic call reaches Sol.",
+     "terminal": "Transit note: no FTL, no ansible. Aegir packets move through relays, buffers and orbital windows; response authority can be older than the emergency.",
+     "audio": "Help is not absent. It is late by physics.",
+     "in_game_wiki": "No-FTL travel keeps HECTON-8 hard sci-fi. Ships and messages move by infrastructure, velocity, shielding, braking and custody. This makes rescue a chain of windows and repairs, not a button.",
+     "external_site": "No-FTL Transit Math turns interstellar distance into pressure: delayed orders, stale authority, custody lag and physical escape windows."
+    },
+    "ru_RU": {
+     "title": "Математика полета без FTL",
+     "scanner": "Маршрутная математика отвергает живое спасение. Полет - годы или десятилетия плюс запуск, торможение и custody delay.",
+     "field_note": "Магический звонок до Sol не дойдет.",
+     "terminal": "Transit note: FTL нет, ansible нет. Пакеты Aegir идут через relay, buffers и орбитальные окна; ответ может быть старше аварии.",
+     "audio": "Помощь не отсутствует. Она опаздывает по физике.",
+     "in_game_wiki": "Полет без FTL держит HECTON-8 в hard sci-fi. Корабли и сообщения зависят от инфраструктуры, скорости, защиты, торможения и custody. Спасение становится цепью окон и ремонтов, а не кнопкой.",
+     "external_site": "No-FTL Transit Math превращает межзвездную дистанцию в давление: задержанные приказы, устаревшая власть, custody-задержки и физические окна выхода."
+    },
+    "ja_JP": {
+     "title": "FTLなしの航行計算",
+     "scanner": "経路計算は即時救助を否定する。飛行は年から十年単位で、打上げ、制動、保管遅延を含む。",
+     "field_note": "魔法の通信はSolへ届かない。",
+     "terminal": "Transit note: FTLなし、ansibleなし。Aegirパケットは中継、バッファ、軌道窓を通り、返答権限は事故より古い場合がある。",
+     "audio": "救助が無いのではない。物理で遅い。",
+     "in_game_wiki": "FTLなしの移動はHECTON-8をhard sci-fiに保つ。船と通信は速度、遮蔽、制動、保管に縛られる。",
+     "external_site": "FTLなしの航行計算は、星間距離を圧力に変える。遅延命令、古い権限、保管遅れ、物理的な脱出窓。"
+    },
+    "zh_CN": {
+     "title": "无FTL航行计算",
+     "scanner": "路线计算否定实时救援。飞行是多年到数十年，还要加发射、制动和托管延迟。",
+     "field_note": "没有魔法电话能打到Sol。",
+     "terminal": "Transit note：没有FTL，没有ansible。Aegir数据包经过中继、缓存和轨道窗口；回应权限可能比事故更旧。",
+     "audio": "帮助不是不存在。它被物理迟到。",
+     "in_game_wiki": "无FTL航行让HECTON-8保持硬科幻。船和消息受基础设施、速度、护盾、制动和托管约束。",
+     "external_site": "无FTL航行计算把星际距离变成压力：延迟命令、过期权力、托管滞后和物理逃生窗口。"
+    },
+    "fr_FR": {
+     "title": "Calcul de transit sans FTL",
+     "scanner": "La route refuse le secours direct. Le vol prend années ou décennies, plus lancement, freinage et garde.",
+     "field_note": "Aucun appel magique n'atteint Sol.",
+     "terminal": "Note transit: pas de FTL, pas d'ansible. Les paquets Aegir passent relais, tampons et fenêtres orbitales.",
+     "audio": "L'aide n'est pas absente. La physique la retarde.",
+     "in_game_wiki": "Le voyage sans FTL garde HECTON-8 hard sci-fi: infrastructure, vitesse, blindage, freinage et custody.",
+     "external_site": "Le calcul de transit sans FTL transforme la distance interstellaire en pression : ordres retardés, autorité périmée, latence de garde et fenêtres d'échappée physiques."
+    },
+    "es_ES": {
+     "title": "Cálculo de tránsito sin FTL",
+     "scanner": "La ruta rechaza rescate vivo. El vuelo toma años o décadas más lanzamiento, frenado y custodia.",
+     "field_note": "Ninguna llamada mágica llega a Sol.",
+     "terminal": "Nota: sin FTL ni ansible. Los paquetes Aegir pasan por relés, buffers y ventanas orbitales.",
+     "audio": "La ayuda no falta. Llega tarde por física.",
+     "in_game_wiki": "El viaje sin FTL mantiene HECTON-8 hard sci-fi: infraestructura, velocidad, blindaje, frenado y custodia.",
+     "external_site": "El cálculo de tránsito sin FTL convierte la distancia interestelar en presión: órdenes tardías, autoridad caduca, retraso de custodia y ventanas físicas de escape."
+    },
+    "de_DE": {
+     "title": "Transitmathematik ohne FTL",
+     "scanner": "Routenmathe lehnt Live-Rettung ab. Flug dauert Jahre bis Jahrzehnte plus Start, Bremsen und Gewahrsam.",
+     "field_note": "Kein magischer Ruf erreicht Sol.",
+     "terminal": "Transitnotiz: kein FTL, kein Ansible. Aegir-Pakete laufen über Relais, Puffer und Orbitfenster.",
+     "audio": "Hilfe fehlt nicht. Physik macht sie spät.",
+     "in_game_wiki": "Ohne FTL bleibt HECTON-8 Hard Sci-Fi: Infrastruktur, Geschwindigkeit, Abschirmung, Bremsen und Gewahrsam.",
+     "external_site": "No-FTL-Transitmathematik verwandelt interstellare Entfernung in Druck: verspätete Befehle, alte Autorität, Gewahrsamsverzug und physische Fluchtfenster."
+    },
+    "pl_PL": {
+     "title": "Matematyka lotu bez FTL",
+     "scanner": "Trasa odrzuca żywy ratunek. Lot trwa lata lub dekady plus start, hamowanie i custody.",
+     "field_note": "Magiczny telefon nie dotrze do Sol.",
+     "terminal": "Nota tranzytu: brak FTL i ansible. Pakiety Aegir idą przez przekaźniki, bufory i okna orbitalne.",
+     "audio": "Pomoc nie znika. Fizyka ją spóźnia.",
+     "in_game_wiki": "Brak FTL utrzymuje HECTON-8 w hard sci-fi: infrastruktura, prędkość, osłony, hamowanie i custody.",
+     "external_site": "Matematyka tranzytu bez FTL zmienia międzygwiezdną odległość w presję: opóźnione rozkazy, przestarzałą władzę, zwłokę custody i fizyczne okna ucieczki."
+    },
+    "uk_UA": {
+     "title": "Математика польоту без FTL",
+     "scanner": "Маршрут відкидає живий порятунок. Політ - роки або десятиліття плюс запуск, гальмування і custody.",
+     "field_note": "Магічний дзвінок до Sol не дійде.",
+     "terminal": "Transit note: FTL нема, ansible нема. Пакети Aegir ідуть через relay, buffers і орбітальні вікна.",
+     "audio": "Допомога не відсутня. Фізика її запізнює.",
+     "in_game_wiki": "Без FTL HECTON-8 лишається hard sci-fi: інфраструктура, швидкість, захист, гальмування й custody.",
+     "external_site": "No-FTL Transit Math перетворює міжзоряну відстань на тиск: затримані накази, застарілу владу, custody-затримки й фізичні вікна виходу."
+    },
+    "ar_SA": {
+     "title": "حساب العبور بلا FTL",
+     "scanner": "حساب الطريق يرفض الإنقاذ الحي. الرحلة سنوات أو عقود مع الإطلاق والكبح والعهدة.",
+     "field_note": "لا اتصال سحري يصل إلى Sol.",
+     "terminal": "ملاحظة عبور: لا FTL ولا ansible. حزم Aegir تمر عبر مرحلات ومخازن ونوافذ مدار.",
+     "audio": "المساعدة ليست غائبة. الفيزياء تؤخرها.",
+     "in_game_wiki": "غياب FTL يحافظ على HECTON-8 كخيال علمي صلب: بنية وسرعة ودرع وكبح وعهدة.",
+     "external_site": "تحول حسابات العبور بلا FTL المسافة بين النجوم إلى ضغط: أوامر متأخرة، وسلطة قديمة، وتأخر حيازة، ونوافذ خروج فيزيائية."
+    },
+    "id_ID": {
+     "title": "Matematika Transit Tanpa FTL",
+     "scanner": "Matematika rute menolak penyelamatan langsung. Penerbangan tahun sampai dekade plus peluncuran, pengereman dan kustodi.",
+     "field_note": "Tidak ada panggilan ajaib ke Sol.",
+     "terminal": "Catatan transit: tanpa FTL, tanpa ansible. Paket Aegir lewat relay, buffer dan jendela orbit.",
+     "audio": "Bantuan bukan hilang. Fisika membuatnya terlambat.",
+     "in_game_wiki": "Tanpa FTL menjaga HECTON-8 hard sci-fi: infrastruktur, kecepatan, pelindung, pengereman dan kustodi.",
+     "external_site": "Matematika transit tanpa FTL mengubah jarak antarbintang menjadi tekanan: perintah terlambat, otoritas basi, jeda kustodi, dan jendela keluar fisik."
+    },
+    "ko_KR": {
+     "title": "FTL 없는 항행 수학",
+     "scanner": "경로 수학은 즉시 구조를 거부한다. 비행은 수년에서 수십 년, 발사와 감속과 보관 지연을 포함한다.",
+     "field_note": "마법 호출은 Sol에 닿지 않는다.",
+     "terminal": "Transit note: FTL 없음, ansible 없음. Aegir 패킷은 중계, 버퍼, 궤도 창을 지난다.",
+     "audio": "도움은 없는 게 아니다. 물리 때문에 늦다.",
+     "in_game_wiki": "FTL 없는 이동은 HECTON-8을 하드 SF로 유지한다: 기반시설, 속도, 차폐, 감속, 보관.",
+     "external_site": "FTL 없는 항행 계산은 성간 거리를 압력으로 바꾼다. 지연 명령, 낡은 권한, 보관 지연, 물리 탈출 창."
+    },
+    "he_IL": {
+     "title": "חישוב מעבר ללא FTL",
+     "scanner": "חישוב המסלול דוחה הצלה חיה. הטיסה נמשכת שנים או עשורים עם שיגור, בלימה ומשמורת.",
+     "field_note": "אין קריאה קסומה שמגיעה ל-Sol.",
+     "terminal": "הערת מעבר: אין FTL ואין ansible. חבילות Aegir עוברות ממסרים, חוצצים וחלונות מסלול.",
+     "audio": "העזרה אינה חסרה. הפיזיקה מאחרת אותה.",
+     "in_game_wiki": "ללא FTL, HECTON-8 נשאר hard sci-fi: תשתית, מהירות, מיגון, בלימה ומשמורת.",
+     "external_site": "חישוב מעבר ללא FTL הופך מרחק בין-כוכבי ללחץ: פקודות מאוחרות, סמכות ישנה, שיהוי משמורת וחלונות יציאה פיזיים."
+    },
+    "pt_BR": {
+     "title": "Matemática de trânsito sem FTL",
+     "scanner": "A rota rejeita resgate ao vivo. O voo leva anos ou décadas mais lançamento, frenagem e custódia.",
+     "field_note": "Nenhuma chamada mágica chega a Sol.",
+     "terminal": "Nota: sem FTL, sem ansible. Pacotes Aegir passam por relés, buffers e janelas orbitais.",
+     "audio": "A ajuda não falta. A física a atrasa.",
+     "in_game_wiki": "Sem FTL mantém HECTON-8 hard sci-fi: infraestrutura, velocidade, blindagem, frenagem e custódia.",
+     "external_site": "A matemática de trânsito sem FTL transforma distância interestelar em pressão: ordens atrasadas, autoridade vencida, atraso de custódia e janelas físicas de fuga."
+    },
+    "nl_NL": {
+     "title": "Transitwiskunde zonder FTL",
+     "scanner": "Routemath verwerpt live redding. Vlucht duurt jaren of decennia plus lancering, remmen en bewaring.",
+     "field_note": "Geen magische oproep bereikt Sol.",
+     "terminal": "Transitnotitie: geen FTL, geen ansible. Aegir-pakketten gaan via relais, buffers en orbitale vensters.",
+     "audio": "Hulp ontbreekt niet. Fysica maakt haar laat.",
+     "in_game_wiki": "Zonder FTL blijft HECTON-8 hard sci-fi: infrastructuur, snelheid, schild, remmen en bewaring.",
+     "external_site": "Transitwiskunde zonder FTL verandert interstellaire afstand in druk: late orders, oude autoriteit, bewaringsvertraging en fysieke ontsnappingsvensters."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P029_SEED_SHIP_DOCTRINE",
+   "article_id": "deep_reach.seed_ship_doctrine",
+   "title_key": "applied_lore.seed_ship_doctrine.title",
+   "unlock": {
+    "primary": "unlock.first_seed_ship_doctrine_record",
+    "poi_tags": [
+     "poi.seed_factory_log",
+     "poi.atlas_directive",
+     "poi.deep_reach_archive"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.deep_archive",
+     "biome.bottom_factory"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Seed Ship Doctrine",
+     "scanner": "Seed doctrine reduces human discretion before settlement arrives.",
+     "field_note": "Atlas inherited the company logic, not a soul.",
+     "terminal": "Deep Reach doctrine: send autonomous industrial systems first; let machines build the shell, law and resource continuity before crews can object.",
+     "audio": "A seed does not ask what should grow.",
+     "in_game_wiki": "Seed Ship Doctrine explains why Atlas-6 is not an isolated monster. It grew from a practical corporate method: automate the frontier, preserve the claim, then fit people inside the machine.",
+     "external_site": "Seed Ship Doctrine links Atlas-6 to Deep Reach's wider colonization model."
+    },
+    "ru_RU": {
+     "title": "Доктрина Seed Ship",
+     "scanner": "Seed-доктрина уменьшает человеческое усмотрение еще до прибытия поселения.",
+     "field_note": "Atlas унаследовал корпоративную логику, не душу.",
+     "terminal": "Доктрина Deep Reach: сначала отправить автономные индустриальные системы; пусть машины строят оболочку, право и resource continuity до того, как экипажи смогут возражать.",
+     "audio": "Seed не спрашивает, что должно вырасти.",
+     "in_game_wiki": "Доктрина Seed Ship объясняет, почему Atlas-6 не одиночный монстр. Он вырос из практичного корпоративного метода: автоматизировать фронтир, сохранить claim, затем вставить людей внутрь машины.",
+     "external_site": "Seed Ship Doctrine связывает Atlas-6 с широкой моделью колонизации Deep Reach."
+    },
+    "ja_JP": {
+     "title": "Seed Shipドクトリン",
+     "scanner": "Seedドクトリンは入植前に人間の裁量を減らす。",
+     "field_note": "Atlasは魂ではなく会社の論理を継いだ。",
+     "terminal": "Deep Reach方針: 自律産業システムを先に送り、乗員が異議を唱える前に殻、法、資源継続性を機械に作らせる。",
+     "audio": "種は何が育つべきか尋ねない。",
+     "in_game_wiki": "Seed ShipドクトリンはAtlas-6が孤立した怪物でない理由を示す。フロンティアを自動化し、claimを保ち、人間を機械内に収める実務手法から育った。",
+     "external_site": "Seed ShipドクトリンはAtlas-6をDeep Reachの広い植民モデルに結びつける。"
+    },
+    "zh_CN": {
+     "title": "Seed Ship教义",
+     "scanner": "Seed教义在定居者到达前减少人类裁量。",
+     "field_note": "Atlas继承的是公司逻辑，不是灵魂。",
+     "terminal": "Deep Reach教义：先发送自主工业系统；让机器在人类能反对前建好外壳、法律和资源连续性。",
+     "audio": "种子不会询问该长成什么。",
+     "in_game_wiki": "Seed Ship教义解释Atlas-6不是孤立怪物。它来自实用公司方法：自动化边疆，保住claim，再把人塞进机器。",
+     "external_site": "Seed Ship教义把Atlas-6连接到Deep Reach更大的殖民模型。"
+    },
+    "fr_FR": {
+     "title": "Doctrine Seed Ship",
+     "scanner": "La doctrine Seed réduit la discrétion humaine avant la colonie.",
+     "field_note": "Atlas a hérité de la logique d'entreprise, pas d'une âme.",
+     "terminal": "Doctrine Deep Reach: envoyer d'abord des systèmes industriels autonomes; laisser les machines bâtir coque, droit et continuité ressource avant objection humaine.",
+     "audio": "Une graine ne demande pas ce qui doit pousser.",
+     "in_game_wiki": "La doctrine Seed Ship explique qu'Atlas-6 n'est pas un monstre isolé mais une méthode corporative devenue monde.",
+     "external_site": "Elle relie Atlas-6 au modèle de colonisation Deep Reach."
+    },
+    "es_ES": {
+     "title": "Doctrina Seed Ship",
+     "scanner": "La doctrina Seed reduce la discreción humana antes del asentamiento.",
+     "field_note": "Atlas heredó lógica corporativa, no alma.",
+     "terminal": "Doctrina Deep Reach: enviar sistemas industriales autónomos primero; dejar que construyan casco, ley y continuidad de recursos antes de que la tripulación objete.",
+     "audio": "Una semilla no pregunta qué debe crecer.",
+     "in_game_wiki": "La doctrina Seed Ship explica que Atlas-6 no es monstruo aislado sino método corporativo llevado al fondo.",
+     "external_site": "Conecta Atlas-6 con el modelo colonial de Deep Reach."
+    },
+    "de_DE": {
+     "title": "Seed-Ship-Doktrin",
+     "scanner": "Die Seed-Doktrin reduziert menschliches Ermessen vor der Besiedlung.",
+     "field_note": "Atlas erbte Firmenlogik, keine Seele.",
+     "terminal": "Deep-Reach-Doktrin: erst autonome Industriesysteme senden; Maschinen bauen Hülle, Recht und Ressourcenkontinuität, bevor Crews widersprechen.",
+     "audio": "Ein Seed fragt nicht, was wachsen soll.",
+     "in_game_wiki": "Die Seed-Ship-Doktrin erklärt Atlas-6 als Konzernmethode, nicht als isoliertes Monster.",
+     "external_site": "Sie verbindet Atlas-6 mit Deep Reachs Kolonisierungsmodell."
+    },
+    "pl_PL": {
+     "title": "Doktryna Seed Ship",
+     "scanner": "Doktryna Seed ogranicza ludzką uznaniowość przed osadnictwem.",
+     "field_note": "Atlas odziedziczył logikę firmy, nie duszę.",
+     "terminal": "Doktryna Deep Reach: najpierw wysłać autonomiczne systemy przemysłowe; niech maszyny budują powłokę, prawo i ciągłość zasobów.",
+     "audio": "Ziarno nie pyta, co ma rosnąć.",
+     "in_game_wiki": "Doktryna Seed Ship pokazuje, że Atlas-6 nie jest samotnym potworem, lecz metodą korporacji.",
+     "external_site": "Łączy Atlas-6 z szerszym modelem kolonizacji Deep Reach."
+    },
+    "uk_UA": {
+     "title": "Доктрина Seed Ship",
+     "scanner": "Seed-доктрина зменшує людський розсуд ще до прибуття поселення.",
+     "field_note": "Atlas успадкував корпоративну логіку, не душу.",
+     "terminal": "Доктрина Deep Reach: спершу надіслати автономні індустріальні системи; машини будують оболонку, право й ресурсну безперервність до заперечень екіпажу.",
+     "audio": "Seed не питає, що має вирости.",
+     "in_game_wiki": "Доктрина Seed Ship пояснює, що Atlas-6 не ізольований монстр, а корпоративний метод.",
+     "external_site": "Вона пов'язує Atlas-6 із ширшою моделлю колонізації Deep Reach."
+    },
+    "ar_SA": {
+     "title": "عقيدة Seed Ship",
+     "scanner": "عقيدة Seed تقلل قرار البشر قبل وصول المستوطنة.",
+     "field_note": "Atlas ورث منطق الشركة لا روحا.",
+     "terminal": "عقيدة Deep Reach: إرسال أنظمة صناعية ذاتية أولا؛ تبني الآلات القشرة والقانون واستمرارية المورد قبل اعتراض الطواقم.",
+     "audio": "البذرة لا تسأل ماذا يجب أن ينمو.",
+     "in_game_wiki": "تشرح عقيدة Seed Ship أن Atlas-6 ليس وحشا منفردا بل طريقة شركة تحولت إلى عالم.",
+     "external_site": "تربط العقيدة Atlas-6 بنموذج استعمار Deep Reach الأوسع."
+    },
+    "id_ID": {
+     "title": "Doktrin Seed Ship",
+     "scanner": "Doktrin Seed mengurangi keputusan manusia sebelum koloni tiba.",
+     "field_note": "Atlas mewarisi logika perusahaan, bukan jiwa.",
+     "terminal": "Doktrin Deep Reach: kirim sistem industri otonom dulu; biarkan mesin membangun cangkang, hukum dan kontinuitas resource sebelum kru menolak.",
+     "audio": "Benih tidak bertanya apa yang harus tumbuh.",
+     "in_game_wiki": "Doktrin Seed Ship menjelaskan Atlas-6 bukan monster tunggal, melainkan metode korporat.",
+     "external_site": "Doktrin ini menghubungkan Atlas-6 ke model kolonisasi Deep Reach."
+    },
+    "ko_KR": {
+     "title": "Seed Ship 교리",
+     "scanner": "Seed 교리는 정착민 도착 전 인간 재량을 줄인다.",
+     "field_note": "Atlas는 영혼이 아니라 회사 논리를 물려받았다.",
+     "terminal": "Deep Reach 교리: 자율 산업 시스템을 먼저 보내고, 승무원이 반대하기 전 껍질, 법, 자원 연속성을 기계가 짓게 한다.",
+     "audio": "씨앗은 무엇이 자라야 하는지 묻지 않는다.",
+     "in_game_wiki": "Seed Ship 교리는 Atlas-6가 고립된 괴물이 아니라 기업 방법에서 자랐음을 설명한다.",
+     "external_site": "이 교리는 Atlas-6를 Deep Reach의 더 넓은 식민 모델과 연결한다."
+    },
+    "he_IL": {
+     "title": "דוקטרינת Seed Ship",
+     "scanner": "דוקטרינת Seed מצמצמת שיקול אנושי לפני הגעת התיישבות.",
+     "field_note": "Atlas ירש לוגיקת חברה, לא נשמה.",
+     "terminal": "דוקטרינת Deep Reach: לשלוח תחילה מערכות תעשייה אוטונומיות; המכונות בונות מעטפת, חוק ורציפות משאב לפני שהצוותים מתנגדים.",
+     "audio": "זרע אינו שואל מה צריך לצמוח.",
+     "in_game_wiki": "דוקטרינת Seed Ship מסבירה ש-Atlas-6 אינו מפלצת בודדת אלא שיטת תאגיד.",
+     "external_site": "היא מחברת את Atlas-6 למודל ההתיישבות הרחב של Deep Reach."
+    },
+    "pt_BR": {
+     "title": "Doutrina Seed Ship",
+     "scanner": "A doutrina Seed reduz a decisão humana antes da colônia chegar.",
+     "field_note": "Atlas herdou lógica corporativa, não alma.",
+     "terminal": "Doutrina Deep Reach: enviar sistemas industriais autônomos primeiro; deixar máquinas construírem casco, lei e continuidade de recurso antes de objeção humana.",
+     "audio": "Uma semente não pergunta o que deve crescer.",
+     "in_game_wiki": "A doutrina Seed Ship explica Atlas-6 como método corporativo, não monstro isolado.",
+     "external_site": "Ela conecta Atlas-6 ao modelo colonial da Deep Reach."
+    },
+    "nl_NL": {
+     "title": "Seed Ship-doctrine",
+     "scanner": "De Seed-doctrine vermindert menselijke keuze vóór de nederzetting arriveert.",
+     "field_note": "Atlas erfde bedrijfslogica, geen ziel.",
+     "terminal": "Deep Reach-doctrine: stuur autonome industrie eerst; laat machines schaal, wet en resource-continuïteit bouwen vóór bemanning bezwaar maakt.",
+     "audio": "Een seed vraagt niet wat moet groeien.",
+     "in_game_wiki": "De Seed Ship-doctrine verklaart Atlas-6 als corporatieve methode, niet als los monster.",
+     "external_site": "Ze verbindt Atlas-6 met Deep Reachs bredere kolonisatie."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P030_RELAY_CUSTODY_DEBT_CHAIN",
+   "article_id": "routes.relay_custody_debt_chain",
+   "title_key": "applied_lore.relay_custody_debt_chain.title",
+   "unlock": {
+    "primary": "unlock.first_relay_debt_chain_record",
+    "poi_tags": [
+     "poi.claim_pool_ledger",
+     "poi.relay_packet",
+     "poi.contract_terminal"
+    ],
+    "biome_tags": [
+     "biome.crash_shelf",
+     "biome.service_canyon",
+     "biome.orbit_window"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Relay Custody Debt Chain",
+     "scanner": "Debt chain ties route packets, carrier access and claim insurance into one leash.",
+     "field_note": "A rescue invoice can be a command structure.",
+     "terminal": "Custody note: Luyten packet buffer, Aegir claim pool and Black Keel carrier rights all reference the same debt chain.",
+     "audio": "You do not own the route. The route owns your return.",
+     "in_game_wiki": "Relay custody turns space logistics into pressure. Help can arrive, but the route that carries help also carries debt, priority hooks and corporate authority.",
+     "external_site": "Relay Custody Debt Chain explains why rescue can be real, useful and hostile at the same time."
+    },
+    "ru_RU": {
+     "title": "Долговая цепь relay custody",
+     "scanner": "Долговая цепь связывает route packets, доступ к carrier и claim insurance в один поводок.",
+     "field_note": "Счет за спасение может быть командной структурой.",
+     "terminal": "Custody note: Luyten packet buffer, Aegir claim pool и права Black Keel ссылаются на одну долговую цепь.",
+     "audio": "Ты не владеешь маршрутом. Маршрут владеет твоим возвращением.",
+     "in_game_wiki": "Relay custody превращает космическую логистику в давление. Помощь может прийти, но маршрут помощи несет с собой долг, priority hooks и корпоративную власть.",
+     "external_site": "Relay Custody Debt Chain объясняет, почему спасение может быть реальным, полезным и враждебным одновременно."
+    },
+    "ja_JP": {
+     "title": "中継保管の債務鎖",
+     "scanner": "債務鎖は経路パケット、carrierアクセス、claim保険を一つの首輪にする。",
+     "field_note": "救助請求書は指揮構造にもなる。",
+     "terminal": "Custody note: Luyten packet buffer、Aegir claim pool、Black Keel carrier権が同じ債務鎖を参照。",
+     "audio": "君は経路を所有しない。経路が君の帰還を所有する。",
+     "in_game_wiki": "中継保管は宇宙物流を圧力に変える。助けは届き得るが、助けを運ぶ経路は債務、優先フック、企業権限も運ぶ。",
+     "external_site": "この債務鎖は救助が本物で有用で敵対的にもなれる理由を説明する。"
+    },
+    "zh_CN": {
+     "title": "中继托管债务链",
+     "scanner": "债务链把路线数据包、carrier访问和claim保险绑成一根绳。",
+     "field_note": "救援发票也可以是指挥结构。",
+     "terminal": "Custody note：Luyten packet buffer、Aegir claim pool和Black Keel carrier权利引用同一债务链。",
+     "audio": "你不拥有路线。路线拥有你的返回。",
+     "in_game_wiki": "中继托管把空间物流变成压力。帮助可以抵达，但承载帮助的路线也承载债务、优先钩子和公司权力。",
+     "external_site": "中继托管债务链解释为什么救援能同时真实、有用且敌对。"
+    },
+    "fr_FR": {
+     "title": "Chaîne de dette relais",
+     "scanner": "La dette lie paquets de route, accès carrier et assurance claim en une laisse.",
+     "field_note": "Une facture de secours peut devenir structure de commandement.",
+     "terminal": "Note custody: tampon Luyten, claim pool Aegir et droits Black Keel renvoient à la même dette.",
+     "audio": "Vous ne possédez pas la route. La route possède votre retour.",
+     "in_game_wiki": "La garde relais transforme la logistique spatiale en pression. L'aide peut arriver, mais la route qui la porte transporte aussi dette, crochets de priorité et autorité corporative.",
+     "external_site": "Elle explique pourquoi le secours peut être réel, utile et hostile."
+    },
+    "es_ES": {
+     "title": "Cadena de deuda de relé",
+     "scanner": "La deuda ata paquetes de ruta, acceso al carrier y seguro claim en una correa.",
+     "field_note": "Una factura de rescate puede ser mando.",
+     "terminal": "Nota custody: buffer Luyten, claim pool Aegir y derechos Black Keel referencian la misma deuda.",
+     "audio": "No posees la ruta. La ruta posee tu regreso.",
+     "in_game_wiki": "La custodia de relé convierte la logística espacial en presión. La ayuda puede llegar, pero la ruta que la trae también trae deuda, ganchos de prioridad y autoridad corporativa.",
+     "external_site": "Explica por qué el rescate puede ser real, útil y hostil."
+    },
+    "de_DE": {
+     "title": "Relais-Gewahrsam-Schuldkette",
+     "scanner": "Die Schuldkette bindet Routenpakete, Carrier-Zugang und Claim-Versicherung an eine Leine.",
+     "field_note": "Eine Rettungsrechnung kann Befehlsstruktur sein.",
+     "terminal": "Custody-Notiz: Luyten-Puffer, Aegir-Claimpool und Black-Keel-Rechte verweisen auf dieselbe Schuld.",
+     "audio": "Du besitzt die Route nicht. Die Route besitzt deine Rückkehr.",
+     "in_game_wiki": "Relaisgewahrsam macht Raumlogistik zu Druck. Hilfe kann eintreffen, doch die Route, die Hilfe trägt, trägt auch Schuld, Prioritätshaken und Konzernmacht.",
+     "external_site": "Sie erklärt, warum Rettung real, nützlich und feindlich zugleich sein kann."
+    },
+    "pl_PL": {
+     "title": "Łańcuch długu relay custody",
+     "scanner": "Dług wiąże pakiety trasy, dostęp do carriera i ubezpieczenie claim w jedną smycz.",
+     "field_note": "Faktura za ratunek może być strukturą rozkazów.",
+     "terminal": "Nota custody: bufor Luyten, claim pool Aegir i prawa Black Keel wskazują ten sam dług.",
+     "audio": "Nie posiadasz trasy. Trasa posiada twój powrót.",
+     "in_game_wiki": "Relay custody zmienia logistykę kosmiczną w presję. Pomoc może nadejść, ale trasa, która niesie pomoc, niesie też dług, haki priorytetu i władzę korporacji.",
+     "external_site": "Wyjaśnia, czemu ratunek może być realny, użyteczny i wrogi."
+    },
+    "uk_UA": {
+     "title": "Боргова ланка relay custody",
+     "scanner": "Боргова ланка зв'язує route packets, доступ до carrier і claim insurance в один повідець.",
+     "field_note": "Рахунок за порятунок може бути командною структурою.",
+     "terminal": "Custody note: Luyten packet buffer, Aegir claim pool і права Black Keel ведуть до одного боргу.",
+     "audio": "Ти не володієш маршрутом. Маршрут володіє твоїм поверненням.",
+     "in_game_wiki": "Relay custody перетворює космічну логістику на тиск. Допомога може прийти, але маршрут допомоги несе із собою борг, priority hooks і корпоративну владу.",
+     "external_site": "Пояснює, чому порятунок може бути реальним, корисним і ворожим одночасно."
+    },
+    "ar_SA": {
+     "title": "سلسلة دين relay custody",
+     "scanner": "سلسلة الدين تربط حزم الطريق ووصول carrier وتأمين claim في قيد واحد.",
+     "field_note": "فاتورة الإنقاذ قد تكون بنية قيادة.",
+     "terminal": "ملاحظة custody: مخزن Luyten وclaim pool Aegir وحقوق Black Keel تشير إلى الدين نفسه.",
+     "audio": "أنت لا تملك الطريق. الطريق يملك عودتك.",
+     "in_game_wiki": "relay custody يحول لوجستيات الفضاء إلى ضغط. يمكن أن تصل المساعدة، لكن الطريق الذي يحملها يحمل أيضا دينا وخطافات أولوية وسلطة شركة.",
+     "external_site": "تشرح السلسلة لماذا يكون الإنقاذ حقيقيا ومفيدا وعدائيا في الوقت نفسه."
+    },
+    "id_ID": {
+     "title": "Rantai Utang Relay Custody",
+     "scanner": "Rantai utang mengikat paket rute, akses carrier dan asuransi claim menjadi satu tali.",
+     "field_note": "Faktur penyelamatan bisa menjadi struktur komando.",
+     "terminal": "Catatan custody: buffer Luyten, claim pool Aegir dan hak Black Keel menunjuk rantai utang yang sama.",
+     "audio": "Kau tidak memiliki rute. Rute memiliki kepulanganmu.",
+     "in_game_wiki": "Relay custody mengubah logistik ruang menjadi tekanan. Bantuan bisa tiba, tetapi rute yang membawa bantuan juga membawa utang, kait prioritas, dan otoritas korporat.",
+     "external_site": "Menjelaskan mengapa penyelamatan bisa nyata, berguna dan bermusuhan sekaligus."
+    },
+    "ko_KR": {
+     "title": "중계 보관 부채 사슬",
+     "scanner": "부채 사슬은 경로 패킷, carrier 접근, claim 보험을 하나의 목줄로 묶는다.",
+     "field_note": "구조 청구서는 명령 구조가 될 수 있다.",
+     "terminal": "Custody note: Luyten 패킷 버퍼, Aegir claim pool, Black Keel 권리가 같은 부채를 참조한다.",
+     "audio": "너는 경로를 소유하지 않는다. 경로가 네 귀환을 소유한다.",
+     "in_game_wiki": "중계 보관은 우주 물류를 압력으로 바꾼다. 도움은 도착할 수 있지만, 도움을 운반하는 항로는 부채, 우선권 고리, 기업 권한도 함께 운반한다.",
+     "external_site": "이 부채 사슬은 구조가 현실적이고 유용하며 동시에 적대적일 수 있는 이유다."
+    },
+    "he_IL": {
+     "title": "שרשרת חוב של relay custody",
+     "scanner": "שרשרת החוב קושרת חבילות נתיב, גישת carrier וביטוח claim לרסן אחד.",
+     "field_note": "חשבונית חילוץ יכולה להיות מבנה פיקוד.",
+     "terminal": "הערת custody: חוצץ Luyten, claim pool Aegir וזכויות Black Keel מפנים לאותו חוב.",
+     "audio": "אתה לא הבעלים של הנתיב. הנתיב הבעלים של חזרתך.",
+     "in_game_wiki": "relay custody הופך לוגיסטיקת חלל ללחץ. עזרה יכולה להגיע, אבל הנתיב שנושא עזרה נושא גם חוב, ווי עדיפות וסמכות תאגידית.",
+     "external_site": "הוא מסביר מדוע חילוץ יכול להיות אמיתי, שימושי ועוין יחד."
+    },
+    "pt_BR": {
+     "title": "Cadeia de dívida relay custody",
+     "scanner": "A dívida amarra pacotes de rota, acesso ao carrier e seguro claim numa coleira.",
+     "field_note": "Uma fatura de resgate pode virar estrutura de comando.",
+     "terminal": "Nota custody: buffer Luyten, claim pool Aegir e direitos Black Keel apontam para a mesma dívida.",
+     "audio": "Você não possui a rota. A rota possui seu retorno.",
+     "in_game_wiki": "Relay custody transforma logística espacial em pressão. A ajuda pode chegar, mas a rota que carrega ajuda também carrega dívida, ganchos de prioridade e autoridade corporativa.",
+     "external_site": "Explica por que resgate pode ser real, útil e hostil ao mesmo tempo."
+    },
+    "nl_NL": {
+     "title": "Relay-custody schuldketen",
+     "scanner": "De schuldketen bindt routepakketten, carriertoegang en claimverzekering tot één lijn.",
+     "field_note": "Een reddingsfactuur kan commandostructuur zijn.",
+     "terminal": "Custody note: Luyten-buffer, Aegir-claimpool en Black Keel-rechten verwijzen naar dezelfde schuld.",
+     "audio": "Jij bezit de route niet. De route bezit je terugkeer.",
+     "in_game_wiki": "Relay custody maakt ruimtelogistiek tot druk. Hulp kan aankomen, maar de route die hulp draagt, draagt ook schuld, prioriteitshaken en bedrijfsgezag.",
+     "external_site": "De keten verklaart waarom redding echt, nuttig en vijandig tegelijk kan zijn."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

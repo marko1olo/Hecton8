@@ -1,286 +1,287 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1338_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE",
+   "release_set_id": "RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE",
+   "article_id": "applied_lore.route_permission_stamp_overlap_field_article",
+   "title_key": "LORE_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/AppliedContent/packets/RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS273_ROUTE_PERMISSION_STAMP_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS276_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS277_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS288_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS289_PACKET_NOTARY_MASK_EDGE_FIELD_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1338_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE",
-      "release_set_id": "RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE",
-      "article_id": "applied_lore.route_permission_stamp_overlap_field_article",
-      "title_key": "LORE_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/AppliedContent/packets/RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS273_ROUTE_PERMISSION_STAMP_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS276_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS277_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS288_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS289_PACKET_NOTARY_MASK_EDGE_FIELD_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.route_permission_stamp_overlap_field_article",
-        "secondary": [
-          "unlock.first_route_permission_stamp_overlap",
-          "unlock.first_route_permission_stamp",
-          "unlock.first_packet_notary_mask_edge",
-          "unlock.first_transcript_damage_band_offset"
-        ],
-        "poi_tags": [
-          "poi.route_permission_stamp",
-          "poi.packet_notary_footer",
-          "poi.packet_notary_audio",
-          "poi.transcript_damage_band",
-          "poi.hatch_tag_scrape",
-          "poi.suit_tag_board",
-          "poi.triage_ledger",
-          "poi.recovery_table_mask"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.relay_spine",
-          "biome.claim_admin",
-          "biome.evidence_custody"
-        ],
-        "depth_band_m": "0-4200"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Route Desk QA Handling Note",
-          "audio": "Recovered Route Desk Clip",
-          "in_game_wiki": "PDA Forensic Object Article",
-          "external_site": "Public Lore Atlas Evidence Note",
-          "field_note": "Marauder Field Note"
-        },
-        "source_brief": {
-          "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
-          "spoiler_level": "1",
-          "speaker_source": "PDA scanner, route desk QA note, recovered clip, Marauder annotation, public lore atlas",
-          "audience": "player after route permission stamp, transcript damage band offset and packet notary mask edge evidence; public site reader under early-evidence spoiler boundary",
-          "date_era": "2190 recovery reading of 2147 route desk/transcript custody artifacts",
-          "location_depth_route": "route desk cache, pressure-room recorder carrier, drowned colony evidence route to relay spine",
-          "unlock_context": "after route permission stamp / transcript damage band offset / packet notary mask edge evidence is present or discoverable",
-          "evidence_object": "route permission stamp partly trapped under packet notary mask over hatch salt and carrier scrape",
-          "source_knows": "stamp/mask/salt layer order, missing return mark, hatch paint scrape mismatch, claim-document handling sequence",
-          "source_does_not_know": "the hidden transcript line, final legal culprit, ending payload receiver, complete corporate motive",
-          "truth_pressure": "Deep Reach hides chronology by calling a post-recovery processing stamp a valid authorization.",
-          "design_use": "Lets players compare route authorization against material sequence instead of accepting a transcript label."
-        },
-        "spoiler_boundary": {
-          "tier": 1,
-          "allowed_reveals": [
-            "route stamp can sit between exposure salt and late notary mask",
-            "missing return mark changes movement record into claim processing evidence",
-            "authorization and chronology can conflict"
-          ],
-          "blocked_reveals": [
-            "final culprit",
-            "hidden transcript sentence",
-            "ending payload identity"
-          ]
-        }
-      },
-      "localized": {
-        "en_US": {
-          "title": "Route Permission Stamp Overlap",
-          "scanner": "ROUTE STAMP OVERLAP // Permission stamp ink sits under the notary mask but over hatch salt. Route was logged before redaction and after exposure.",
-          "terminal": "ROUTE STAMP QA // Compare stamp edge, return mark, mask overlap, salt line and hatch-paint scrape. A stamp trapped under a late mask is custody evidence.",
-          "audio": "The route stamp is under the blackout. They did not erase a blank line.",
-          "in_game_wiki": "A route permission stamp was not decoration. It was the colony's permission to move: worker, hatch, task family, access class, time window and expected return mark. When the stamp appears on a transcript carrier, it shows that the record passed through a route desk before somebody tried to make it look private.\n\nThe overlap is the useful part. A clean stamp can still be boring. A stamp partly buried under a packet notary mask is different. Ink from the route desk sits in one layer, salt from the room sits in another, and blackout pigment cuts across both. If the stamp is below the mask but above hatch salt, the permission was logged after exposure and before redaction. The transcript was not simply damaged in place. It was handled, routed, stamped and then selectively covered.\n\nReturn marks matter. A normal route stamp closes with a return tick, a cancellation slash or a recovery exception. A missing return mark beside a late mask means the paperwork stopped being a movement record and became a claim record. Deep Reach could still quote the stamp as authorization, but the overlap shows what kind of authorization: not permission to enter the room, permission to process the evidence after it left the room.\n\nField handling is plain. Do not cut through the stamp. Photograph mask edge and stamp edge in the same frame. Compare the overlap to hatch paint, suit tag, triage ledger and the transcript damage band. The question is not only who had access. The question is who had the carrier on a desk long enough to cover the line.",
-          "external_site": "A route stamp trapped under a packet-notary mask turns a transcript from passive damage into handled evidence. The ink sequence can show whether Deep Reach processed the carrier after recovery.",
-          "external_site_article": "Route permission stamps are one of the most useful ordinary marks in HECTON-8 because they are not dramatic. They are admin residue: a worker was cleared through a hatch, a job family was assigned, a return state was expected. In a drowned colony, that small mark can outlive every official explanation around it.\n\nThe narrow reading sits at one contact patch: where route-stamp ink, salt, hatch-paint scrape and packet-notary blackout meet. If stamp ink lies below a blackout but above exposure salt, the carrier moved through a post-exposure handling desk before the blackout was applied. That does not reveal the hidden sentence. It reveals the custody lie.\n\nDeep Reach benefits from confusing authorization with chronology. A legal mask can be authorized and still be late. A route stamp can be valid and still belong to evidence handling rather than room entry. The overlap forces those two facts apart. It leaves a material sequence instead of a moral speech.\n\nAfter the transcript damage band and packet notary mask edge, the carrier stops looking like a clean story. It becomes an handled object: hands, water, salt, paint and office procedure, all stacked in the same corner of the material.",
-          "field_note": "If the stamp is under the blackout, the line existed when the route desk saw it.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Перекрытие маршрутного штампа",
-          "scanner": "ПЕРЕКРЫТИЕ МАРШРУТНОГО ШТАМПА // Чернила допуска лежат под маской notary, но поверх соли люка. Маршрут внесли после воздействия и до редакции.",
-          "terminal": "QA МАРШРУТНОГО ШТАМПА // Сравнить край штампа, метку возврата, перекрытие маской, солевую линию и соскоб краски люка. Штамп под поздней маской - улика хранения.",
-          "audio": "Маршрутный штамп под затемнением. Они не стирали пустую строку.",
-          "in_game_wiki": "Маршрутный штамп не был украшением. Это был допуск колонии на движение: работник, люк, тип задачи, класс доступа, временное окно и ожидаемая отметка возврата. Когда такой штамп появляется на носителе расшифровки, он показывает, что запись прошла через маршрутный стол до того, как кто-то попытался сделать ее частной.\n\nПолезно именно перекрытие. Чистый штамп сам по себе еще может быть скучной бюрократией. Штамп, частично похороненный под маской packet notary, работает иначе. Чернила маршрутного стола сидят в одном слое, соль из помещения в другом, а пигмент затемнения режет оба. Если штамп ниже маски, но выше соли люка, допуск внесли после воздействия и до редакции. Расшифровка не просто пострадала на месте. Ее вынесли, провели по маршруту, проштамповали и потом выборочно закрыли.\n\nВажны отметки возврата. Нормальный маршрут закрывается отметкой возвращения, отменяющей косой чертой или исключением извлечения. Отсутствующая отметка возврата рядом с поздней маской значит, что бумага перестала быть записью движения и стала документом претензии. Deep Reach все еще может называть штамп разрешением, но перекрытие показывает, каким именно: не разрешением войти в комнату, а разрешением обработать улику после того, как она вышла из комнаты.\n\nВ поле правило простое. Не режь через штамп. Сфотографируй край маски и край штампа в одном кадре. Сравни перекрытие с краской люка, меткой костюма, журналом триажа и полосой повреждения расшифровки. Вопрос не только в том, у кого был доступ. Вопрос в том, у кого носитель лежал на столе достаточно долго, чтобы закрыть строку.",
-          "external_site": "Маршрутный штамп под маской packet notary превращает расшифровку из пассивного повреждения в обработанную улику. Последовательность чернил показывает, работала ли Deep Reach с носителем после извлечения.",
-          "external_site_article": "Маршрутные штампы полезны именно тем, что не выглядят драматично. Это административный осадок: работника пропустили через люк, тип работы назначили, возвращение ожидалось. В утонувшей колонии такой маленький след может пережить любое официальное объяснение.\n\nУзкое чтение держится на месте контакта: где встречаются чернила маршрутного штампа, соль, соскоб краски люка и затемнение packet notary. Если чернила штампа лежат под затемнением, но поверх соли воздействия, носитель прошел через стол обработки после воздействия и до нанесения маски. Это не раскрывает скрытую строку. Это раскрывает ложь о цепочке хранения.\n\nDeep Reach выгодно смешивать разрешение и хронологию. Юридическая маска может быть разрешенной и все равно поздней. Маршрутный штамп может быть действительным и все равно относиться к обработке улики, а не к входу в помещение. Перекрытие разводит эти факты. Остается материальная последовательность вместо морализаторской речи.\n\nПосле полосы повреждения расшифровки и края маски packet notary носитель перестает выглядеть как готовая история. Он читается как обработанный предмет: руки, вода, соль, краска и офисная процедура, сложенные в одном углу материала.",
-          "field_note": "Если штамп под затемнением, строка существовала, когда маршрутный стол ее видел.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "経路許可スタンプの重なり",
-          "scanner": "経路スタンプ重なり // 許可スタンプのインクはnotaryマスクの下、ハッチ塩の上にある。経路は曝露後、編集前に記録された。",
-          "terminal": "経路スタンプQA // スタンプ縁、帰還印、マスク重なり、塩線、ハッチ塗装の削れを比較。遅いマスク下のスタンプは保管経路の証拠。",
-          "audio": "経路スタンプは黒塗りの下だ。空欄を消したわけじゃない。",
-          "in_game_wiki": "経路許可スタンプは飾りではない。作業者、ハッチ、作業系統、アクセス等級、時間枠、予定帰還印を結ぶ、コロニーの移動許可だった。転写媒体にそのスタンプが残るなら、誰かが記録を私的なものに見せる前に、媒体が経路デスクを通ったことを示す。\n\n重要なのは重なりだ。きれいなスタンプだけなら、ただの事務痕跡で終わる。packet notaryマスクの下に一部埋まったスタンプは別物だ。経路デスクのインク、部屋由来の塩、黒塗りの顔料が別々の層で交差する。スタンプがマスクの下で、ハッチ塩の上なら、許可は曝露後、編集前に記録された。転写は現場でただ壊れたのではない。回収され、経路に載せられ、押印され、それから選んで覆われた。\n\n帰還印も見る。通常の経路は帰還印、取消線、回収例外のどれかで閉じる。遅いマスクの横に帰還印がないなら、その紙は移動記録から請求文書に変わっている。Deep Reachはなお承認だと言えるが、重なりは承認の種類を示す。部屋に入る許可ではなく、部屋から出た証拠を処理する許可だ。\n\n現場では単純に扱う。スタンプを切らない。マスク縁とスタンプ縁を同じフレームで撮る。ハッチ塗装、スーツタグ、トリアージ台帳、転写損傷帯と照合する。問題は誰がアクセスできたかだけではない。誰がその媒体を机上に置き、行を覆うだけの時間を持っていたかだ。",
-          "external_site": "packet notaryマスク下の経路スタンプは、転写を単なる損傷ではなく処理済み証拠に変える。インク順序は、回収後のDeep Reach処理を示せる。",
-          "external_site_article": "経路許可スタンプが有用なのは、劇的ではないからだ。作業者がハッチを通され、作業系統が割り当てられ、帰還が期待されたという事務残渣にすぎない。だが沈んだコロニーでは、その小さな痕跡が公式説明より長く残る。\n\n狭い読み取り点は、経路スタンプのインク、塩、ハッチ塗装の削れ、packet notaryの黒塗りが交わる場所にある。スタンプのインクが黒塗りの下、曝露塩の上にあるなら、媒体は曝露後の処理デスクを通ってから黒塗りされた。隠された文を読む記事ではない。保管経路の嘘を読む記事だ。\n\nDeep Reachには承認と時系列を混ぜる利点がある。法的なマスクは承認済みでも遅いことがある。経路スタンプは有効でも、部屋への入室ではなく証拠処理を示すことがある。重なりはその二つを引き離す。\n\n転写損傷帯とpacket notaryマスク縁が先に見つかると、媒体は完成した物語ではなくなる。手、水、塩、塗装、事務手順を通った物体として読める。",
-          "field_note": "黒塗りの下にスタンプがあるなら、経路デスクが見た時点でその行は存在した。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "路线许可戳重叠",
-          "scanner": "路线戳重叠 // 许可戳墨层在notary遮盖下方，却在舱门盐层上方。路线记录发生在暴露之后、遮盖之前。",
-          "terminal": "路线戳QA // 对照戳边、返程标记、遮盖重叠、盐线和舱门漆刮痕。晚期遮盖下的戳记是保管链证据。",
-          "audio": "路线戳在黑条下面。他们抹掉的不是空行。",
-          "in_game_wiki": "路线许可戳不是装饰。它是殖民地的移动许可：工人、舱门、任务类别、访问等级、时间窗口和预期返程标记。当它出现在转录载体上，就说明记录在某人试图把它变成私密文件之前，已经经过路线台。\n\n有用的是重叠。单独一个干净戳记也许只是普通行政痕迹。被packet notary遮盖压住一部分的戳记不同。路线台墨层、房间盐层和黑色遮盖颜料在不同层次相交。如果戳记在遮盖下，却在舱门盐层上，许可记录就在暴露之后、编辑之前完成。转录不是单纯在现场损坏。它被取走、走过路线、盖过戳，然后被选择性遮住。\n\n返程标记也重要。正常路线会以返程勾、取消斜线或回收例外关闭。晚期遮盖旁边没有返程标记，说明文件已经不再是移动记录，而变成索赔文件。Deep Reach仍可称戳记为授权，但重叠说明授权的种类：不是进入房间的许可，而是证据离开房间后的处理许可。\n\n现场处理很直接。不要切穿戳记。把遮盖边缘和戳记边缘拍在同一帧。与舱门漆、潜服标签、分诊账本和转录损伤带对照。问题不只是“谁有访问权”。问题是谁把载体放在桌上，放得足够久，足以盖住那一行。",
-          "external_site": "被packet notary遮盖压住的路线戳，会把转录从被动损坏变成处理过的证据。墨层顺序能显示Deep Reach是否在回收后动过载体。",
-          "external_site_article": "路线许可戳有用，正因为它们不戏剧化。它们只是行政残留：某个工人获准通过舱门，某类工作被分配，返程被期待。在沉没殖民地里，这种小痕迹可能比任何官方解释活得更久。\n\n窄读数落在一个接触点：路线戳墨、盐、舱门漆刮痕和packet notary遮盖相遇的位置。如果戳墨在遮盖下，却在暴露盐层上，载体在暴露后经过处理台，然后才被遮盖。这不会揭开隐藏句子。它揭开的是保管链谎言。\n\nDeep Reach受益于把授权和时间顺序混在一起。法律遮盖可以被授权，同时仍然是后来加的。路线戳可以有效，同时指向证据处理而不是房间入口。重叠把这两个事实分开，留下材料顺序，而不是道德演讲。\n\n转录损伤带和packet notary遮盖边缘出现之后，载体不再像一段完整故事。它变成经过手、水、盐、油漆和办公流程叠压过的物体。",
-          "field_note": "如果戳在黑条下面，路线台看到它时，那一行已经存在。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Chevauchement du Tampon de Route",
-          "scanner": "CHEVAUCHEMENT ROUTE // L'encre d'autorisation est sous le masque notary mais au-dessus du sel du sas. Route inscrite après exposition et avant rédaction.",
-          "terminal": "QA TAMPON ROUTE // Comparer bord du tampon, marque retour, chevauchement du masque, ligne de sel et éraflure de peinture. Un tampon sous masque tardif est preuve de custody.",
-          "audio": "Le tampon de route est sous le noir. Ils n'ont pas effacé une ligne vide.",
-          "in_game_wiki": "Un tampon d'autorisation de route n'était pas un décor. C'était la permission de circuler: travailleur, sas, famille de tâche, classe d'accès, fenêtre horaire et marque de retour attendue. Quand il apparaît sur un support de transcription, il dit que le support est passé par un bureau de route avant que quelqu'un tente de le rendre privé.\n\nLe chevauchement compte. Un tampon propre peut rester banal. Un tampon en partie enterré sous un masque packet notary est autre chose. L'encre du bureau de route, le sel de la pièce et le pigment noir se croisent en couches séparées. Si le tampon est sous le masque mais au-dessus du sel du sas, l'autorisation a été inscrite après exposition et avant rédaction. La transcription n'a pas seulement été endommagée sur place. Elle a été sortie, routée, tamponnée, puis couverte à la main.\n\nLes marques de retour comptent aussi. Une route normale se ferme par un retour, une annulation ou une exception de récupération. Une marque absente près d'un masque tardif signifie que le papier a cessé d'être un relevé de mouvement et est devenu un document de réclamation. Deep Reach peut encore parler d'autorisation, mais le chevauchement montre laquelle: traiter une preuve après sa sortie de la pièce.\n\nSur le terrain, ne coupe pas le tampon. Photographie bord du masque et bord du tampon dans le même cadre. Compare avec peinture du sas, tag de combinaison, registre de triage et bande de dommage de transcription. La question n'est pas seulement qui avait accès. C'est qui a gardé le support sur un bureau assez longtemps pour couvrir la ligne.",
-          "external_site": "Un tampon de route piégé sous un masque packet-notary transforme une transcription abîmée en preuve manipulée. L'ordre des encres peut montrer un traitement Deep Reach après récupération.",
-          "external_site_article": "Les tampons de route sont utiles parce qu'ils ne sont pas spectaculaires. Ce sont des restes d'administration: une personne autorisée, une tâche assignée, un retour attendu. Dans une colonie noyée, cette petite marque peut survivre à toute explication officielle.\n\nLa lecture tient sur un point précis: rencontre entre encre du tampon, sel, éraflure de peinture du sas et masque packet notary. Si l'encre est sous le noir mais au-dessus du sel d'exposition, le support a traversé un bureau de traitement après exposition. Cela ne donne pas la phrase cachée. Cela donne le mensonge de custody.\n\nDeep Reach gagne à confondre autorisation et chronologie. Un masque légal peut être autorisé et tardif. Un tampon peut être valable et concerner le traitement d'une preuve, pas l'entrée dans une pièce. Le chevauchement sépare ces faits.\n\nAprès la bande de dommage de transcription et le bord du masque notary, le support cesse d'être une histoire propre. Il devient un objet manipulé: mains, eau, sel, peinture et procédure empilés au même coin.",
-          "field_note": "Si le tampon est sous le noir, la ligne existait quand le bureau de route l'a vue.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Solape del Sello de Ruta",
-          "scanner": "SOLAPE DE RUTA // La tinta del permiso queda bajo la máscara notary pero sobre la sal de escotilla. Ruta registrada tras exposición y antes de censura.",
-          "terminal": "QA SELLO RUTA // Compara borde del sello, marca de retorno, solape de máscara, línea de sal y raspado de pintura. Sello bajo máscara tardía es prueba de custodia.",
-          "audio": "El sello de ruta está bajo el negro. No borraron una línea vacía.",
-          "in_game_wiki": "Un sello de permiso de ruta no era adorno. Era permiso para moverse: trabajador, escotilla, familia de tarea, clase de acceso, ventana horaria y marca de retorno esperada. Si aparece en un soporte de transcripción, el soporte pasó por mesa de ruta antes de que alguien intentara volverlo privado.\n\nLo útil es el solape. Un sello limpio puede ser sólo administración. Un sello medio enterrado bajo una máscara packet notary dice otra cosa. La tinta de ruta, la sal de la sala y el pigmento negro se cruzan en capas. Si el sello queda bajo la máscara pero sobre la sal de escotilla, el permiso se registró después de la exposición y antes de la censura. La transcripción no sólo se dañó allí. Fue retirada, enrutada, sellada y tapada a mano.\n\nLa marca de retorno importa. Una ruta normal cierra con retorno, cancelación o excepción de rescate. Si falta junto a una máscara tardía, el papel dejó de ser registro de movimiento y pasó a ser documento de reclamación. Deep Reach aún puede llamarlo autorización, pero el solape muestra cuál: procesar evidencia después de sacarla de la sala.\n\nEn campo, no cortes el sello. Fotografía borde de máscara y borde de sello juntos. Compara con pintura de escotilla, tag de traje, libro de triaje y banda de daño de transcripción. No se pregunta sólo quién tenía acceso. Se pregunta quién tuvo el soporte sobre una mesa bastante tiempo para cubrir la línea.",
-          "external_site": "Un sello de ruta atrapado bajo una máscara packet-notary convierte una transcripción dañada en evidencia manipulada. El orden de tinta muestra tratamiento posterior a recuperación.",
-          "external_site_article": "Los sellos de ruta sirven porque no son dramáticos. Son residuo administrativo: una persona autorizada, una tarea asignada, un retorno esperado. En una colonia ahogada, esa marca pequeña puede sobrevivir a la explicación oficial.\n\nLa lectura útil está en el punto donde se cruzan tinta de ruta, sal, raspado de pintura de escotilla y máscara packet notary. Si la tinta está bajo el negro pero sobre la sal de exposición, el soporte pasó por una mesa de procesamiento después de exponerse. No revela la frase oculta. Revela la mentira de custodia.\n\nA Deep Reach le conviene mezclar autorización con cronología. Una máscara legal puede estar autorizada y aun así ser tardía. Un sello válido puede referirse a procesamiento de evidencia, no a entrada en sala. El solape separa esos hechos.\n\nDespués de la banda de daño y del borde de máscara, el soporte deja de parecer una historia limpia. Queda como objeto manipulado: manos, agua, sal, pintura y procedimiento en la misma esquina.",
-          "field_note": "Si el sello queda bajo el negro, la línea existía cuando la mesa de ruta la vio.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Überlagerung des Routenstempels",
-          "scanner": "ROUTENSTEMPEL-ÜBERLAGERUNG // Freigabetinte liegt unter Notary-Maske, aber über Schottsalz. Route wurde nach Exposition und vor Schwärzung erfasst.",
-          "terminal": "ROUTENSTEMPEL-QA // Stempelkante, Rückkehrmarke, Maskenüberdeckung, Salzlinie und Schottlack-Kratzer vergleichen. Stempel unter später Maske ist Custody-Beweis.",
-          "audio": "Der Routenstempel liegt unter der Schwärzung. Sie haben keine leere Zeile gelöscht.",
-          "in_game_wiki": "Ein Routenfreigabestempel war kein Schmuck. Er war Bewegungsrecht: Arbeiter, Schott, Aufgabenfamilie, Zugriffsklasse, Zeitfenster und erwartete Rückkehrmarke. Auf einem Transkriptträger zeigt er, dass der Träger durch ein Routenpult ging, bevor jemand ihn privat aussehen ließ.\n\nNützlich ist die Überlagerung. Ein sauberer Stempel kann langweilig sein. Ein Stempel, der teilweise unter einer packet-notary-Maske liegt, ist anders. Routenpult-Tinte, Raumsalz und Schwärzungspigment schneiden sich in Schichten. Liegt der Stempel unter der Maske, aber über dem Schottsalz, wurde die Route nach Exposition und vor Redaktion erfasst. Das Transkript wurde nicht nur vor Ort beschädigt. Es wurde geborgen, geroutet, gestempelt und dann selektiv bedeckt.\n\nRückkehrmarken zählen. Eine normale Route schließt mit Rückkehrhaken, Storno oder Bergungsausnahme. Fehlt die Marke neben einer späten Maske, wurde aus Bewegungsnachweis ein Anspruchsdokument. Deep Reach kann den Stempel weiter Autorisierung nennen, doch die Überlagerung zeigt die Art: nicht Eintritt in den Raum, sondern Bearbeitung der Beweiskopie nach Verlassen des Raums.\n\nIm Feld nicht durch den Stempel schneiden. Maskenkante und Stempelkante gemeinsam fotografieren. Mit Schottlack, Anzugtag, Triagebuch und Transkriptschadensband vergleichen. Es geht nicht nur darum, wer Zugriff hatte. Es geht darum, wer den Träger lange genug auf dem Tisch hatte, um die Zeile zu decken.",
-          "external_site": "Ein Routenstempel unter einer packet-notary-Maske macht aus beschädigtem Transkript behandelte Evidenz. Die Tintenschicht zeigt Bearbeitung nach Bergung.",
-          "external_site_article": "Routenstempel sind nützlich, weil sie unspektakulär sind. Sie sind Verwaltungsrückstand: Freigabe, Aufgabe, erwartete Rückkehr. In einer ertrunkenen Kolonie kann diese kleine Marke jede offizielle Erklärung überleben.\n\nDie brauchbare Lesestelle liegt dort, wo Stempeltinte, Salz, Schottlack-Kratzer und packet-notary-Maske zusammentreffen. Liegt Tinte unter Schwarz, aber über Expositionssalz, ging der Träger nach Exposition durch ein Bearbeitungspult. Die verborgene Zeile bleibt verborgen. Die Custody-Lüge nicht.\n\nDeep Reach profitiert davon, Autorisierung und Chronologie zu vermischen. Eine legale Maske kann autorisiert und spät sein. Ein gültiger Stempel kann Beweisbearbeitung statt Raumeintritt meinen. Die Überlagerung trennt das.\n\nMit Schadensband und Maskenkante ist der Träger kein sauberer Text mehr. Hände, Wasser, Salz, Lack und Büroverfahren liegen an derselben Materialkante.",
-          "field_note": "Wenn der Stempel unter Schwarz liegt, existierte die Zeile, als das Routenpult sie sah.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Nakładka Stempla Trasy",
-          "scanner": "NAKŁADKA TRASY // Tusz zezwolenia leży pod maską notary, ale nad solą włazu. Trasę wpisano po ekspozycji i przed redakcją.",
-          "terminal": "QA STEMPLA TRASY // Porównaj krawędź stempla, znak powrotu, maskę, linię soli i zdrapanie farby. Stempel pod późną maską to dowód custody.",
-          "audio": "Stempel trasy jest pod czernią. Nie wymazali pustej linii.",
-          "in_game_wiki": "Stempel zezwolenia trasy nie był ozdobą. Dawał kolonii prawo ruchu: pracownik, właz, rodzina zadania, klasa dostępu, okno czasu i oczekiwany znak powrotu. Gdy pojawia się na nośniku transkrypcji, znaczy, że nośnik przeszedł przez biurko tras, zanim ktoś zrobił z niego dokument prywatny.\n\nLiczy się nakładka. Czysty stempel może być zwykłą administracją. Stempel częściowo zakryty maską packet notary jest czymś innym. Tusz biurka tras, sól z pomieszczenia i czarny pigment przecinają się warstwami. Jeśli stempel jest pod maską, ale nad solą włazu, zezwolenie wpisano po ekspozycji i przed redakcją. Transkrypcja nie tylko uszkodziła się na miejscu. Została wyniesiona, puszczona trasą, ostemplowana i dopiero zakryta.\n\nZnak powrotu ma znaczenie. Normalna trasa kończy się powrotem, anulowaniem albo wyjątkiem odzysku. Brak znaku przy późnej masce oznacza, że papier przestał być zapisem ruchu, a stał się dokumentem roszczenia. Deep Reach może nazywać stempel autoryzacją, ale nakładka pokazuje jaką: obróbkę dowodu po opuszczeniu pokoju.\n\nW terenie nie tnij przez stempel. Fotografuj krawędź maski i stempla razem. Porównaj z farbą włazu, tagiem skafandra, księgą triażu i pasem uszkodzeń transkrypcji. Pytanie brzmi nie tylko kto miał dostęp. Pytanie brzmi kto trzymał nośnik na biurku dość długo, by zakryć linię.",
-          "external_site": "Stempel trasy uwięziony pod maską packet-notary zmienia uszkodzoną transkrypcję w obrobiony dowód. Kolejność tuszu pokazuje działania po odzysku.",
-          "external_site_article": "Stemple tras są użyteczne, bo nie są dramatyczne. To resztka administracji: ktoś dostał przejście, ktoś dostał zadanie, ktoś miał wrócić. W zatopionej kolonii mały ślad potrafi przeżyć oficjalną wersję.\n\nCzytelny punkt leży na styku tuszu, soli, zdrapanej farby włazu i maski packet notary. Jeśli tusz leży pod czernią, ale nad solą ekspozycji, nośnik przeszedł przez biurko obróbki po zdarzeniu. To nie odsłania zdania. Odsłania kłamstwo o custody.\n\nDeep Reach korzysta z mieszania autoryzacji z chronologią. Maska może być legalna i spóźniona. Stempel może być ważny i dotyczyć obróbki dowodu, nie wejścia do pokoju. Nakładka rozdziela te fakty.\n\nPo pasie uszkodzeń i krawędzi maski nośnik przestaje być czystą opowieścią. Zostaje przedmiotem po rękach, wodzie, soli, farbie i procedurze.",
-          "field_note": "Jeśli stempel jest pod czernią, linia istniała, gdy biurko tras ją widziało.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Перекриття маршрутного штампа",
-          "scanner": "ПЕРЕКРИТТЯ МАРШРУТУ // Чорнило допуску лежить під маскою notary, але над сіллю люка. Маршрут внесено після впливу і до редагування.",
-          "terminal": "QA МАРШРУТНОГО ШТАМПА // Звір край штампа, позначку повернення, перекриття маскою, лінію солі й подряпину фарби. Штамп під пізньою маскою - доказ custody.",
-          "audio": "Маршрутний штамп під затемненням. Вони не стирали порожній рядок.",
-          "in_game_wiki": "Маршрутний штамп не був прикрасою. Це був дозвіл колонії на рух: працівник, люк, тип завдання, клас доступу, часовий проміжок і очікувана позначка повернення. Коли він з'являється на носії розшифрування, носій пройшов маршрутний стіл до того, як хтось спробував зробити запис приватним.\n\nВажливе саме перекриття. Чистий штамп може бути звичайною адміністрацією. Штамп, частково похований під маскою packet notary, інший. Чорнило маршрутного столу, сіль з приміщення і чорний пігмент перетинаються шарами. Якщо штамп під маскою, але над сіллю люка, допуск внесено після впливу і до редакції. Розшифрування не просто пошкодилося на місці. Його винесли, провели маршрутом, проштампували і потім вибірково закрили.\n\nПозначка повернення має значення. Нормальний маршрут закривається поверненням, скасуванням або винятком вилучення. Якщо біля пізньої маски немає повернення, папір перестав бути записом руху і став документом претензії. Deep Reach може називати штамп дозволом, але перекриття показує вид дозволу: обробка доказу після виходу з кімнати.\n\nУ полі не ріж крізь штамп. Сфотографуй край маски й край штампа разом. Звір із фарбою люка, міткою костюма, журналом тріажу і смугою пошкодження розшифрування. Питання не лише в доступі. Питання в тому, хто тримав носій на столі досить довго, щоб закрити рядок.",
-          "external_site": "Маршрутний штамп під маскою packet-notary перетворює пошкоджене розшифрування на оброблений доказ. Порядок чорнила показує дії після вилучення.",
-          "external_site_article": "Маршрутні штампи корисні саме тому, що не драматичні. Це адміністративний залишок: людину пропустили, роботу призначили, повернення чекали. У затопленій колонії малий слід переживає офіційне пояснення.\n\nЧитабельна точка лежить там, де сходяться чорнило, сіль, подряпина фарби люка і маска packet notary. Якщо чорнило під темним шаром, але над сіллю впливу, носій після впливу пройшов стіл обробки. Прихований рядок не відкривається. Відкривається брехня про custody.\n\nDeep Reach вигідно змішувати дозвіл і хронологію. Законна маска може бути дозволеною і пізньою. Чинний штамп може стосуватися обробки доказу, а не входу в кімнату. Перекриття розводить ці факти.\n\nПісля смуги пошкодження і краю маски носій перестає бути готовою історією. Він лишається предметом після рук, води, солі, фарби і процедури.",
-          "field_note": "Якщо штамп під затемненням, рядок існував, коли маршрутний стіл його бачив.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "تداخل ختم تصريح المسار",
-          "scanner": "تداخل ختم المسار // حبر التصريح تحت قناع notary لكنه فوق ملح الفتحة. سُجل المسار بعد التعرض وقبل الحجب.",
-          "terminal": "فحص ختم المسار // قارن حافة الختم، علامة العودة، تداخل القناع، خط الملح وخدش طلاء الفتحة. ختم تحت قناع متأخر دليل حيازة.",
-          "audio": "ختم المسار تحت التعتيم. لم يمحوا سطرا فارغا.",
-          "in_game_wiki": "لم يكن ختم تصريح المسار زينة. كان إذنا بالحركة: عامل، فتحة، عائلة مهمة، درجة وصول، نافذة وقت، وعلامة عودة منتظرة. عندما يظهر على حامل تفريغ صوتي، فهذا يعني أن الحامل مر بمكتب المسار قبل أن يحاول أحد جعله خاصا.\n\nالتداخل هو المفيد. الختم النظيف قد يكون أثرا إداريا عاديا. الختم المدفون جزئيا تحت قناع packet notary مختلف. حبر مكتب المسار، وملح الغرفة، وصبغة التعتيم تتقاطع في طبقات. إذا كان الختم تحت القناع وفوق ملح الفتحة، فقد سُجل التصريح بعد التعرض وقبل التحرير. التفريغ لم يتلف في مكانه فقط. أُخرج، ومُرر عبر المسار، وخُتم، ثم غُطي انتقائيا.\n\nعلامة العودة مهمة. المسار الطبيعي يُغلق بعلامة عودة أو إلغاء أو استثناء استرداد. غيابها قرب قناع متأخر يعني أن الورقة لم تعد سجل حركة، بل صارت وثيقة مطالبة. تستطيع Deep Reach أن تسمي الختم تفويضا، لكن التداخل يحدد نوعه: ليس دخول الغرفة، بل معالجة الدليل بعد خروجه منها.\n\nفي الميدان، لا تقطع الختم. صوّر حافة القناع وحافة الختم في الإطار نفسه. قارن ذلك بطلاء الفتحة، ووسم البدلة، وسجل الفرز، وحزام تلف التفريغ. السؤال ليس من امتلك الوصول فقط. السؤال من أبقى الحامل على مكتب مدة تكفي لتغطية السطر.",
-          "external_site": "ختم مسار محاصر تحت قناع packet-notary يحول التفريغ من تلف سلبي إلى دليل مُعالج. ترتيب الحبر يكشف معالجة بعد الاسترداد.",
-          "external_site_article": "أختام المسار نافعة لأنها غير مسرحية. إنها بقايا إدارة: شخص مُصرح له، مهمة مخصصة، وعودة منتظرة. في مستعمرة غارقة، قد يبقى هذا الأثر الصغير أطول من التفسير الرسمي.\n\nتقع القراءة المفيدة عند التقاء حبر الختم، والملح، وخدش طلاء الفتحة، وقناع packet notary. إذا كان الحبر تحت السواد وفوق ملح التعرض، فقد مر الحامل بمكتب معالجة بعد التعرض. لا يكشف ذلك الجملة المخفية. يكشف كذبة الحيازة.\n\nتستفيد Deep Reach من خلط التفويض بالتسلسل الزمني. قد يكون القناع قانونيا ومتأخرا. وقد يكون الختم صالحا لكنه يخص معالجة دليل لا دخول غرفة. التداخل يفصل هاتين الحقيقتين.\n\nبعد حزام تلف التفريغ وحافة قناع notary لا يعود الحامل قصة نظيفة. يصبح جسما مر عبر أيد وماء وملح وطلاء وإجراء مكتبي.",
-          "field_note": "إذا كان الختم تحت السواد، كان السطر موجودا حين رآه مكتب المسار.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Tumpang-Tindih Cap Izin Rute",
-          "scanner": "TUMPANG CAP RUTE // Tinta izin berada di bawah masker notary tetapi di atas garam palka. Rute dicatat setelah paparan dan sebelum redaksi.",
-          "terminal": "QA CAP RUTE // Bandingkan tepi cap, tanda kembali, tumpang masker, garis garam, dan gores cat palka. Cap di bawah masker terlambat adalah bukti custody.",
-          "audio": "Cap rute ada di bawah hitam. Mereka tidak menghapus baris kosong.",
-          "in_game_wiki": "Cap izin rute bukan hiasan. Itu izin koloni untuk bergerak: pekerja, palka, keluarga tugas, kelas akses, jendela waktu, dan tanda kembali yang diharapkan. Jika muncul pada media transkrip, media itu melewati meja rute sebelum seseorang mencoba membuatnya tampak privat.\n\nYang berguna adalah tumpang-tindih. Cap bersih bisa saja administrasi biasa. Cap yang terkubur sebagian di bawah masker packet notary berbeda. Tinta meja rute, garam ruangan, dan pigmen hitam berpotongan sebagai lapisan. Jika cap berada di bawah masker tetapi di atas garam palka, izin dicatat setelah paparan dan sebelum redaksi. Transkrip bukan sekadar rusak di tempat. Ia diambil, dirutekan, dicap, lalu ditutup secara selektif.\n\nTanda kembali penting. Rute normal ditutup dengan tanda kembali, pembatalan, atau pengecualian pemulihan. Jika tanda itu hilang di samping masker terlambat, kertas berhenti menjadi catatan gerak dan menjadi dokumen klaim. Deep Reach masih bisa menyebut cap itu otorisasi, tetapi tumpangnya menunjukkan jenisnya: pemrosesan bukti setelah keluar dari ruangan.\n\nDi lapangan, jangan potong cap. Foto tepi masker dan tepi cap dalam bingkai yang sama. Bandingkan dengan cat palka, tag setelan, buku triase, dan pita kerusakan transkrip. Pertanyaannya bukan hanya siapa punya akses. Pertanyaannya siapa memegang media itu di meja cukup lama untuk menutup baris.",
-          "external_site": "Cap rute di bawah masker packet-notary mengubah transkrip rusak menjadi bukti yang diproses. Urutan tinta dapat menunjukkan kerja setelah pemulihan.",
-          "external_site_article": "Cap rute berguna karena tidak dramatis. Ia sisa administrasi: orang diizinkan lewat, tugas diberikan, kembali diharapkan. Di koloni tenggelam, tanda kecil itu bisa bertahan lebih lama dari penjelasan resmi.\n\nTitik baca yang berguna ada di pertemuan tinta cap, garam, gores cat palka, dan masker packet notary. Jika tinta berada di bawah hitam tetapi di atas garam paparan, media melewati meja pemrosesan setelah paparan. Itu tidak membuka kalimat tersembunyi. Itu membuka kebohongan custody.\n\nDeep Reach diuntungkan saat otorisasi dicampur dengan kronologi. Masker legal bisa sah dan tetap terlambat. Cap valid bisa berarti pemrosesan bukti, bukan masuk ruangan. Tumpang-tindih memisahkan fakta itu.\n\nSetelah pita kerusakan transkrip dan tepi masker, media itu bukan lagi cerita bersih. Ia menjadi benda yang melewati tangan, air, garam, cat, dan prosedur kantor.",
-          "field_note": "Jika cap berada di bawah hitam, baris itu ada saat meja rute melihatnya.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "경로 허가 스탬프 겹침",
-          "scanner": "경로 스탬프 겹침 // 허가 잉크가 notary 마스크 아래, 해치 염분 위에 있다. 경로는 노출 뒤, 검열 전 기록됐다.",
-          "terminal": "경로 스탬프 QA // 스탬프 가장자리, 귀환 표식, 마스크 겹침, 염분선, 해치 도장 긁힘을 비교. 늦은 마스크 밑 스탬프는 보관 증거.",
-          "audio": "경로 스탬프가 검은 칠 아래 있다. 빈 줄을 지운 게 아니다.",
-          "in_game_wiki": "경로 허가 스탬프는 장식이 아니었다. 작업자, 해치, 작업 계열, 접근 등급, 시간 창, 예상 귀환 표식을 묶는 이동 허가였다. 전사 매체에 그 스탬프가 보이면, 누군가 기록을 사적인 문서처럼 만들기 전에 매체가 경로 데스크를 지나갔다는 뜻이다.\n\n중요한 것은 겹침이다. 깨끗한 스탬프는 평범한 행정 흔적일 수 있다. packet notary 마스크 아래 일부 묻힌 스탬프는 다르다. 경로 데스크 잉크, 방의 염분, 검은 안료가 각기 다른 층으로 교차한다. 스탬프가 마스크 아래이면서 해치 염분 위라면, 허가는 노출 후, 편집 전 기록됐다. 전사는 현장에서 그냥 손상된 것이 아니다. 회수되고, 경로에 올라가고, 찍힌 뒤 선택적으로 덮였다.\n\n귀환 표식도 중요하다. 정상 경로는 귀환, 취소, 회수 예외 중 하나로 닫힌다. 늦은 마스크 옆에 귀환 표식이 없으면, 종이는 이동 기록이 아니라 청구 문서가 된 것이다. Deep Reach는 여전히 허가라고 부를 수 있지만, 겹침은 그 종류를 보여준다. 방에 들어가는 허가가 아니라, 방을 떠난 증거를 처리하는 허가다.\n\n현장에서는 스탬프를 자르지 않는다. 마스크 가장자리와 스탬프 가장자리를 한 프레임에 찍는다. 해치 도장, 슈트 태그, 트리아지 장부, 전사 손상 띠와 비교한다. 문제는 누가 접근권을 가졌는지만이 아니다. 누가 그 매체를 책상 위에 충분히 오래 두어 줄을 덮었는가다.",
-          "external_site": "packet-notary 마스크 아래 갇힌 경로 스탬프는 손상 전사를 처리된 증거로 바꾼다. 잉크 순서는 회수 후 처리를 보여줄 수 있다.",
-          "external_site_article": "경로 스탬프가 유용한 이유는 극적이지 않기 때문이다. 허가, 배정, 예상 귀환이라는 행정 잔여물이다. 침수된 식민지에서는 이런 작은 흔적이 공식 설명보다 오래 남는다.\n\n읽을 수 있는 지점은 스탬프 잉크, 염분, 해치 도장 긁힘, packet notary 마스크가 만나는 좁은 가장자리에 있다. 잉크가 검은 칠 아래, 노출 염분 위에 있으면 매체는 노출 후 처리 데스크를 지나간 것이다. 숨은 문장을 여는 것이 아니다. 보관 경로의 거짓을 여는 것이다.\n\nDeep Reach는 허가와 시간 순서를 섞을 때 이득을 본다. 법적 마스크는 승인됐지만 늦을 수 있다. 유효한 스탬프는 방 입장이 아니라 증거 처리를 뜻할 수 있다. 겹침은 그 둘을 분리한다.\n\n전사 손상 띠와 notary 마스크 가장자리가 먼저 잡히면, 매체는 더 이상 완성된 이야기가 아니다. 손, 물, 소금, 페인트, 사무 절차를 지난 물체가 된다.",
-          "field_note": "스탬프가 검은 칠 아래라면, 경로 데스크가 볼 때 그 줄은 이미 있었다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "חפיפת חותמת הרשאת מסלול",
-          "scanner": "חפיפת חותמת מסלול // דיו ההרשאה נמצא מתחת למסכת notary אך מעל מלח הפתח. המסלול נרשם אחרי חשיפה ולפני השחרה.",
-          "terminal": "בדיקת חותמת מסלול // להשוות שפת חותמת, סימון חזרה, חפיפת מסכה, קו מלח ושריטת צבע פתח. חותמת תחת מסכה מאוחרת היא ראיית custody.",
-          "audio": "חותמת המסלול מתחת לשחור. הם לא מחקו שורה ריקה.",
-          "in_game_wiki": "חותמת הרשאת מסלול לא הייתה קישוט. היא הייתה רשות תנועה: עובד, פתח, משפחת משימה, דרגת גישה, חלון זמן וסימון חזרה צפוי. כשהיא מופיעה על נשא תמלול, היא אומרת שהנשא עבר שולחן מסלול לפני שמישהו ניסה להפוך אותו למסמך פרטי.\n\nהחפיפה היא החלק החשוב. חותמת נקייה יכולה להיות מנהלה רגילה. חותמת שקבורה חלקית תחת מסכת packet notary היא דבר אחר. דיו שולחן המסלול, מלח החדר ופיגמנט ההשחרה מצטלבים בשכבות שונות. אם החותמת מתחת למסכה אך מעל מלח הפתח, ההרשאה נרשמה אחרי החשיפה ולפני העריכה. התמלול לא רק ניזוק במקום. הוא הוצא, נותב, הוחתם ואז כוסה באופן סלקטיבי.\n\nסימוני חזרה חשובים. מסלול רגיל נסגר בסימון חזרה, ביטול או חריג חילוץ. סימון חסר ליד מסכה מאוחרת אומר שהנייר חדל להיות רשומת תנועה והפך למסמך תביעה. Deep Reach עדיין יכולה לקרוא לזה הרשאה, אבל החפיפה מראה איזו: לא כניסה לחדר, אלא עיבוד ראיה לאחר שיצאה ממנו.\n\nבשטח לא חותכים דרך החותמת. מצלמים את שפת המסכה ושפת החותמת באותה מסגרת. משווים לצבע הפתח, תג החליפה, יומן הטריאז' ורצועת נזק התמלול. השאלה אינה רק למי הייתה גישה. השאלה היא מי החזיק את הנשא על שולחן מספיק זמן כדי לכסות את השורה.",
-          "external_site": "חותמת מסלול תחת מסכת packet-notary הופכת תמלול פגום לראיה שטופלה. סדר הדיו יכול להראות עיבוד לאחר חילוץ.",
-          "external_site_article": "חותמות מסלול מועילות כי הן אינן דרמטיות. הן שארית מנהלית: אדם אושר, משימה הוקצתה, חזרה הייתה צפויה. במושבה שטבעה, סימן קטן כזה יכול לשרוד כל הסבר רשמי.\n\nנקודת הקריאה הצרה נמצאת במפגש: דיו חותמת, מלח, שריטת צבע הפתח ומסכת packet notary. אם הדיו נמצא מתחת לשחור אך מעל מלח החשיפה, הנשא עבר שולחן עיבוד לאחר החשיפה. זה לא מגלה את המשפט החבוי. זה מגלה את שקר ה-custody.\n\nDeep Reach מרוויחה מערבוב הרשאה וכרונולוגיה. מסכה משפטית יכולה להיות מאושרת ומאוחרת. חותמת תקפה יכולה להתייחס לעיבוד ראיה, לא לכניסה לחדר. החפיפה מפרידה את העובדות.\n\nאחרי רצועת נזק התמלול ושפת מסכת notary, הנשא מפסיק להיות סיפור נקי. הוא נשאר חפץ שעבר ידיים, מים, מלח, צבע והליך משרדי.",
-          "field_note": "אם החותמת מתחת לשחור, השורה הייתה קיימת כששולחן המסלול ראה אותה.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Sobreposição do Carimbo de Rota",
-          "scanner": "SOBREPOSIÇÃO DE ROTA // Tinta da permissão fica sob a máscara notary, mas sobre sal da escotilha. Rota registrada após exposição e antes da redação.",
-          "terminal": "QA CARIMBO ROTA // Compare borda do carimbo, marca de retorno, sobreposição da máscara, linha de sal e raspão de tinta. Carimbo sob máscara tardia é prova de custódia.",
-          "audio": "O carimbo de rota está sob o preto. Eles não apagaram uma linha vazia.",
-          "in_game_wiki": "Um carimbo de permissão de rota não era decoração. Era a permissão de movimento da colônia: trabalhador, escotilha, família de tarefa, classe de acesso, janela de tempo e marca de retorno esperada. Quando aparece num suporte de transcrição, diz que o suporte passou por uma mesa de rota antes de alguém tentar torná-lo privado.\n\nA sobreposição é a parte útil. Um carimbo limpo pode ser só administração. Um carimbo parcialmente enterrado sob uma máscara packet notary é diferente. Tinta da mesa de rota, sal da sala e pigmento preto se cruzam em camadas. Se o carimbo está sob a máscara, mas sobre o sal da escotilha, a permissão foi registrada após exposição e antes da redação. A transcrição não apenas se danificou no local. Foi retirada, roteada, carimbada e então coberta de forma seletiva.\n\nMarcas de retorno importam. Uma rota normal fecha com retorno, cancelamento ou exceção de recuperação. Sem retorno ao lado de uma máscara tardia, o papel deixou de ser registro de movimento e virou documento de reclamação. A Deep Reach ainda pode chamar de autorização, mas a sobreposição mostra qual: processamento de prova depois que saiu da sala.\n\nEm campo, não corte o carimbo. Fotografe borda da máscara e borda do carimbo juntas. Compare com tinta da escotilha, tag do traje, livro de triagem e faixa de dano da transcrição. A pergunta não é só quem tinha acesso. É quem teve o suporte na mesa tempo suficiente para cobrir a linha.",
-          "external_site": "Um carimbo de rota preso sob uma máscara packet-notary transforma transcrição danificada em prova processada. A sequência da tinta mostra tratamento pós-recuperação.",
-          "external_site_article": "Carimbos de rota são úteis porque não são dramáticos. São resíduo administrativo: alguém autorizado, uma tarefa dada, um retorno esperado. Numa colônia afogada, essa marca pequena pode sobreviver a qualquer explicação oficial.\n\nA leitura útil fica no ponto onde tinta, sal, raspão de tinta da escotilha e máscara packet notary se encontram. Se a tinta está sob o preto, mas sobre o sal de exposição, o suporte passou por uma mesa de processamento depois da exposição. Não revela a frase escondida. Revela a mentira da custódia.\n\nA Deep Reach se beneficia ao misturar autorização e cronologia. Uma máscara legal pode ser autorizada e tardia. Um carimbo válido pode indicar processamento de prova, não entrada na sala. A sobreposição separa esses fatos.\n\nDepois da faixa de dano e da borda da máscara, o suporte deixa de parecer uma história limpa. Ele fica como objeto que cruzou mãos, água, sal, tinta e procedimento de escritório.",
-          "field_note": "Se o carimbo está sob o preto, a linha existia quando a mesa de rota a viu.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Overlap van Routepermissiestempel",
-          "scanner": "ROUTESTEMPEL-OVERLAP // Permissie-inkt ligt onder notary-masker maar boven luikzout. Route is na blootstelling en vóór redactie gelogd.",
-          "terminal": "QA ROUTESTEMPEL // Vergelijk stempelrand, terugkeermarkering, maskeroverlap, zoutlijn en lakschraap. Stempel onder laat masker is custody-bewijs.",
-          "audio": "De routestempel ligt onder het zwart. Ze wisten geen lege regel uit.",
-          "in_game_wiki": "Een routepermissiestempel was geen versiering. Het was toestemming om te bewegen: werker, luik, taakfamilie, toegangsklasse, tijdvenster en verwachte terugkeermarkering. Als hij op een transcriptdrager staat, ging de drager langs de routebalie voordat iemand hem privé wilde laten lijken.\n\nDe overlap is nuttig. Een nette stempel kan gewone administratie zijn. Een stempel die deels onder een packet notary-masker ligt, is anders. Balie-inkt, kamerzout en zwart pigment kruisen elkaar in lagen. Als de stempel onder het masker ligt maar boven het luikzout, werd de permissie na blootstelling en vóór redactie gelogd. Het transcript raakte niet alleen ter plekke beschadigd. Het werd meegenomen, gerouteerd, gestempeld en daarna selectief afgedekt.\n\nTerugkeermarkeringen tellen. Een normale route sluit met terugkeer, annulering of bergingsuitzondering. Ontbreekt die naast een laat masker, dan werd het papier geen bewegingsrecord meer maar een claimdocument. Deep Reach kan de stempel autorisatie noemen, maar de overlap toont welke: verwerking van bewijs nadat het de kamer verliet.\n\nIn het veld niet door de stempel snijden. Fotografeer maskerrand en stempelrand samen. Vergelijk met luiklak, paktag, triageboek en schadeband van het transcript. De vraag is niet alleen wie toegang had. De vraag is wie de drager lang genoeg op een bureau had om de regel te bedekken.",
-          "external_site": "Een routestempel onder een packet-notary-masker maakt van beschadigd transcript behandeld bewijs. De inktvolgorde toont verwerking na berging.",
-          "external_site_article": "Routestempels zijn nuttig omdat ze niet dramatisch zijn. Ze zijn administratief residu: iemand mocht door, een taak werd toegewezen, terugkeer werd verwacht. In een verdronken kolonie kan zo'n kleine markering elke officiële uitleg overleven.\n\nHet leesbare punt ligt waar stempelinkt, zout, luiklak-schraap en packet notary-masker samenkomen. Ligt de inkt onder zwart maar boven blootstellingszout, dan ging de drager na blootstelling door een verwerkingsbalie. Dat onthult niet de verborgen zin. Het onthult de custody-leugen.\n\nDeep Reach wint bij het mengen van autorisatie en chronologie. Een juridisch masker kan toegestaan en toch laat zijn. Een geldige stempel kan bewijsverwerking betekenen, geen toegang tot de kamer. De overlap scheidt die feiten.\n\nNa de transcript-schadeband en maskerrand is de drager geen schoon verhaal meer. Hij blijft een object dat door handen, water, zout, verf en kantoorprocedure ging.",
-          "field_note": "Als de stempel onder zwart ligt, bestond de regel toen de routebalie hem zag.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.route_permission_stamp_overlap_field_article",
+    "secondary": [
+     "unlock.first_route_permission_stamp_overlap",
+     "unlock.first_route_permission_stamp",
+     "unlock.first_packet_notary_mask_edge",
+     "unlock.first_transcript_damage_band_offset"
+    ],
+    "poi_tags": [
+     "poi.route_permission_stamp",
+     "poi.packet_notary_footer",
+     "poi.packet_notary_audio",
+     "poi.transcript_damage_band",
+     "poi.hatch_tag_scrape",
+     "poi.suit_tag_board",
+     "poi.triage_ledger",
+     "poi.recovery_table_mask"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.relay_spine",
+     "biome.claim_admin",
+     "biome.evidence_custody"
+    ],
+    "depth_band_m": "0-4200"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Route Desk QA Handling Note",
+     "audio": "Recovered Route Desk Clip",
+     "in_game_wiki": "PDA Forensic Object Article",
+     "external_site": "Public Lore Atlas Evidence Note",
+     "field_note": "Marauder Field Note"
+    },
+    "source_brief": {
+     "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
+     "spoiler_level": "1",
+     "speaker_source": "PDA scanner, route desk QA note, recovered clip, Marauder annotation, public lore atlas",
+     "audience": "player after route permission stamp, transcript damage band offset and packet notary mask edge evidence; public site reader under early-evidence spoiler boundary",
+     "date_era": "2190 recovery reading of 2147 route desk/transcript custody artifacts",
+     "location_depth_route": "route desk cache, pressure-room recorder carrier, drowned colony evidence route to relay spine",
+     "unlock_context": "after route permission stamp / transcript damage band offset / packet notary mask edge evidence is present or discoverable",
+     "evidence_object": "route permission stamp partly trapped under packet notary mask over hatch salt and carrier scrape",
+     "source_knows": "stamp/mask/salt layer order, missing return mark, hatch paint scrape mismatch, claim-document handling sequence",
+     "source_does_not_know": "the hidden transcript line, final legal culprit, ending payload receiver, complete corporate motive",
+     "truth_pressure": "Deep Reach hides chronology by calling a post-recovery processing stamp a valid authorization.",
+     "design_use": "Lets players compare route authorization against material sequence instead of accepting a transcript label."
+    },
+    "spoiler_boundary": {
+     "tier": 1,
+     "allowed_reveals": [
+      "route stamp can sit between exposure salt and late notary mask",
+      "missing return mark changes movement record into claim processing evidence",
+      "authorization and chronology can conflict"
+     ],
+     "blocked_reveals": [
+      "final culprit",
+      "hidden transcript sentence",
+      "ending payload identity"
+     ]
     }
-  ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Route Permission Stamp Overlap",
+     "scanner": "ROUTE STAMP OVERLAP // Permission stamp ink sits under the notary mask but over hatch salt. Route was logged before redaction and after exposure.",
+     "terminal": "ROUTE STAMP QA // Compare stamp edge, return mark, mask overlap, salt line and hatch-paint scrape. A stamp trapped under a late mask is custody evidence.",
+     "audio": "The route stamp is under the blackout. They did not erase a blank line.",
+     "in_game_wiki": "A route permission stamp was not decoration. It was the colony's permission to move: worker, hatch, task family, access class, time window and expected return mark. When the stamp appears on a transcript carrier, it shows that the record passed through a route desk before somebody tried to make it look private.\n\nThe overlap is the useful part. A clean stamp can still be boring. A stamp partly buried under a packet notary mask is different. Ink from the route desk sits in one layer, salt from the room sits in another, and blackout pigment cuts across both. If the stamp is below the mask but above hatch salt, the permission was logged after exposure and before redaction. The transcript was not simply damaged in place. It was handled, routed, stamped and then selectively covered.\n\nReturn marks matter. A normal route stamp closes with a return tick, a cancellation slash or a recovery exception. A missing return mark beside a late mask means the paperwork stopped being a movement record and became a claim record. Deep Reach could still quote the stamp as authorization, but the overlap shows what kind of authorization: not permission to enter the room, permission to process the evidence after it left the room.\n\nField handling is plain. Do not cut through the stamp. Photograph mask edge and stamp edge in the same frame. Compare the overlap to hatch paint, suit tag, triage ledger and the transcript damage band. The question is not only who had access. The question is who had the carrier on a desk long enough to cover the line.",
+     "external_site": "A route stamp trapped under a packet-notary mask turns a transcript from passive damage into handled evidence. The ink sequence can show whether Deep Reach processed the carrier after recovery.",
+     "external_site_article": "Route permission stamps are one of the most useful ordinary marks in HECTON-8 because they are not dramatic. They are admin residue: a worker was cleared through a hatch, a job family was assigned, a return state was expected. In a drowned colony, that small mark can outlive every official explanation around it.\n\nThe narrow reading sits at one contact patch: where route-stamp ink, salt, hatch-paint scrape and packet-notary blackout meet. If stamp ink lies below a blackout but above exposure salt, the carrier moved through a post-exposure handling desk before the blackout was applied. That does not reveal the hidden sentence. It reveals the custody lie.\n\nDeep Reach benefits from confusing authorization with chronology. A legal mask can be authorized and still be late. A route stamp can be valid and still belong to evidence handling rather than room entry. The overlap forces those two facts apart. It leaves a material sequence instead of a moral speech.\n\nAfter the transcript damage band and packet notary mask edge, the carrier stops looking like a clean story. It becomes an handled object: hands, water, salt, paint and office procedure, all stacked in the same corner of the material.",
+     "field_note": "If the stamp is under the blackout, the line existed when the route desk saw it.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Перекрытие маршрутного штампа",
+     "scanner": "ПЕРЕКРЫТИЕ МАРШРУТНОГО ШТАМПА // Чернила допуска лежат под маской notary, но поверх соли люка. Маршрут внесли после воздействия и до редакции.",
+     "terminal": "QA МАРШРУТНОГО ШТАМПА // Сравнить край штампа, метку возврата, перекрытие маской, солевую линию и соскоб краски люка. Штамп под поздней маской - улика хранения.",
+     "audio": "Маршрутный штамп под затемнением. Они не стирали пустую строку.",
+     "in_game_wiki": "Маршрутный штамп не был украшением. Это был допуск колонии на движение: работник, люк, тип задачи, класс доступа, временное окно и ожидаемая отметка возврата. Когда такой штамп появляется на носителе расшифровки, он показывает, что запись прошла через маршрутный стол до того, как кто-то попытался сделать ее частной.\n\nПолезно именно перекрытие. Чистый штамп сам по себе еще может быть скучной бюрократией. Штамп, частично похороненный под маской packet notary, работает иначе. Чернила маршрутного стола сидят в одном слое, соль из помещения в другом, а пигмент затемнения режет оба. Если штамп ниже маски, но выше соли люка, допуск внесли после воздействия и до редакции. Расшифровка не просто пострадала на месте. Ее вынесли, провели по маршруту, проштамповали и потом выборочно закрыли.\n\nВажны отметки возврата. Нормальный маршрут закрывается отметкой возвращения, отменяющей косой чертой или исключением извлечения. Отсутствующая отметка возврата рядом с поздней маской значит, что бумага перестала быть записью движения и стала документом претензии. Deep Reach все еще может называть штамп разрешением, но перекрытие показывает, каким именно: не разрешением войти в комнату, а разрешением обработать улику после того, как она вышла из комнаты.\n\nВ поле правило простое. Не режь через штамп. Сфотографируй край маски и край штампа в одном кадре. Сравни перекрытие с краской люка, меткой костюма, журналом триажа и полосой повреждения расшифровки. Вопрос не только в том, у кого был доступ. Вопрос в том, у кого носитель лежал на столе достаточно долго, чтобы закрыть строку.",
+     "external_site": "Маршрутный штамп под маской packet notary превращает расшифровку из пассивного повреждения в обработанную улику. Последовательность чернил показывает, работала ли Deep Reach с носителем после извлечения.",
+     "external_site_article": "Маршрутные штампы полезны именно тем, что не выглядят драматично. Это административный осадок: работника пропустили через люк, тип работы назначили, возвращение ожидалось. В утонувшей колонии такой маленький след может пережить любое официальное объяснение.\n\nУзкое чтение держится на месте контакта: где встречаются чернила маршрутного штампа, соль, соскоб краски люка и затемнение packet notary. Если чернила штампа лежат под затемнением, но поверх соли воздействия, носитель прошел через стол обработки после воздействия и до нанесения маски. Это не раскрывает скрытую строку. Это раскрывает ложь о цепочке хранения.\n\nDeep Reach выгодно смешивать разрешение и хронологию. Юридическая маска может быть разрешенной и все равно поздней. Маршрутный штамп может быть действительным и все равно относиться к обработке улики, а не к входу в помещение. Перекрытие разводит эти факты. Остается материальная последовательность вместо морализаторской речи.\n\nПосле полосы повреждения расшифровки и края маски packet notary носитель перестает выглядеть как готовая история. Он читается как обработанный предмет: руки, вода, соль, краска и офисная процедура, сложенные в одном углу материала.",
+     "field_note": "Если штамп под затемнением, строка существовала, когда маршрутный стол ее видел.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "経路許可スタンプの重なり",
+     "scanner": "経路スタンプ重なり // 許可スタンプのインクはnotaryマスクの下、ハッチ塩の上にある。経路は曝露後、編集前に記録された。",
+     "terminal": "経路スタンプQA // スタンプ縁、帰還印、マスク重なり、塩線、ハッチ塗装の削れを比較。遅いマスク下のスタンプは保管経路の証拠。",
+     "audio": "経路スタンプは黒塗りの下だ。空欄を消したわけじゃない。",
+     "in_game_wiki": "経路許可スタンプは飾りではない。作業者、ハッチ、作業系統、アクセス等級、時間枠、予定帰還印を結ぶ、コロニーの移動許可だった。転写媒体にそのスタンプが残るなら、誰かが記録を私的なものに見せる前に、媒体が経路デスクを通ったことを示す。\n\n重要なのは重なりだ。きれいなスタンプだけなら、ただの事務痕跡で終わる。packet notaryマスクの下に一部埋まったスタンプは別物だ。経路デスクのインク、部屋由来の塩、黒塗りの顔料が別々の層で交差する。スタンプがマスクの下で、ハッチ塩の上なら、許可は曝露後、編集前に記録された。転写は現場でただ壊れたのではない。回収され、経路に載せられ、押印され、それから選んで覆われた。\n\n帰還印も見る。通常の経路は帰還印、取消線、回収例外のどれかで閉じる。遅いマスクの横に帰還印がないなら、その紙は移動記録から請求文書に変わっている。Deep Reachはなお承認だと言えるが、重なりは承認の種類を示す。部屋に入る許可ではなく、部屋から出た証拠を処理する許可だ。\n\n現場では単純に扱う。スタンプを切らない。マスク縁とスタンプ縁を同じフレームで撮る。ハッチ塗装、スーツタグ、トリアージ台帳、転写損傷帯と照合する。問題は誰がアクセスできたかだけではない。誰がその媒体を机上に置き、行を覆うだけの時間を持っていたかだ。",
+     "external_site": "packet notaryマスク下の経路スタンプは、転写を単なる損傷ではなく処理済み証拠に変える。インク順序は、回収後のDeep Reach処理を示せる。",
+     "external_site_article": "経路許可スタンプが有用なのは、劇的ではないからだ。作業者がハッチを通され、作業系統が割り当てられ、帰還が期待されたという事務残渣にすぎない。だが沈んだコロニーでは、その小さな痕跡が公式説明より長く残る。\n\n狭い読み取り点は、経路スタンプのインク、塩、ハッチ塗装の削れ、packet notaryの黒塗りが交わる場所にある。スタンプのインクが黒塗りの下、曝露塩の上にあるなら、媒体は曝露後の処理デスクを通ってから黒塗りされた。隠された文を読む記事ではない。保管経路の嘘を読む記事だ。\n\nDeep Reachには承認と時系列を混ぜる利点がある。法的なマスクは承認済みでも遅いことがある。経路スタンプは有効でも、部屋への入室ではなく証拠処理を示すことがある。重なりはその二つを引き離す。\n\n転写損傷帯とpacket notaryマスク縁が先に見つかると、媒体は完成した物語ではなくなる。手、水、塩、塗装、事務手順を通った物体として読める。",
+     "field_note": "黒塗りの下にスタンプがあるなら、経路デスクが見た時点でその行は存在した。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "路线许可戳重叠",
+     "scanner": "路线戳重叠 // 许可戳墨层在notary遮盖下方，却在舱门盐层上方。路线记录发生在暴露之后、遮盖之前。",
+     "terminal": "路线戳QA // 对照戳边、返程标记、遮盖重叠、盐线和舱门漆刮痕。晚期遮盖下的戳记是保管链证据。",
+     "audio": "路线戳在黑条下面。他们抹掉的不是空行。",
+     "in_game_wiki": "路线许可戳不是装饰。它是殖民地的移动许可：工人、舱门、任务类别、访问等级、时间窗口和预期返程标记。当它出现在转录载体上，就说明记录在某人试图把它变成私密文件之前，已经经过路线台。\n\n有用的是重叠。单独一个干净戳记也许只是普通行政痕迹。被packet notary遮盖压住一部分的戳记不同。路线台墨层、房间盐层和黑色遮盖颜料在不同层次相交。如果戳记在遮盖下，却在舱门盐层上，许可记录就在暴露之后、编辑之前完成。转录不是单纯在现场损坏。它被取走、走过路线、盖过戳，然后被选择性遮住。\n\n返程标记也重要。正常路线会以返程勾、取消斜线或回收例外关闭。晚期遮盖旁边没有返程标记，说明文件已经不再是移动记录，而变成索赔文件。Deep Reach仍可称戳记为授权，但重叠说明授权的种类：不是进入房间的许可，而是证据离开房间后的处理许可。\n\n现场处理很直接。不要切穿戳记。把遮盖边缘和戳记边缘拍在同一帧。与舱门漆、潜服标签、分诊账本和转录损伤带对照。问题不只是“谁有访问权”。问题是谁把载体放在桌上，放得足够久，足以盖住那一行。",
+     "external_site": "被packet notary遮盖压住的路线戳，会把转录从被动损坏变成处理过的证据。墨层顺序能显示Deep Reach是否在回收后动过载体。",
+     "external_site_article": "路线许可戳有用，正因为它们不戏剧化。它们只是行政残留：某个工人获准通过舱门，某类工作被分配，返程被期待。在沉没殖民地里，这种小痕迹可能比任何官方解释活得更久。\n\n窄读数落在一个接触点：路线戳墨、盐、舱门漆刮痕和packet notary遮盖相遇的位置。如果戳墨在遮盖下，却在暴露盐层上，载体在暴露后经过处理台，然后才被遮盖。这不会揭开隐藏句子。它揭开的是保管链谎言。\n\nDeep Reach受益于把授权和时间顺序混在一起。法律遮盖可以被授权，同时仍然是后来加的。路线戳可以有效，同时指向证据处理而不是房间入口。重叠把这两个事实分开，留下材料顺序，而不是道德演讲。\n\n转录损伤带和packet notary遮盖边缘出现之后，载体不再像一段完整故事。它变成经过手、水、盐、油漆和办公流程叠压过的物体。",
+     "field_note": "如果戳在黑条下面，路线台看到它时，那一行已经存在。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Chevauchement du Tampon de Route",
+     "scanner": "CHEVAUCHEMENT ROUTE // L'encre d'autorisation est sous le masque notary mais au-dessus du sel du sas. Route inscrite après exposition et avant rédaction.",
+     "terminal": "QA TAMPON ROUTE // Comparer bord du tampon, marque retour, chevauchement du masque, ligne de sel et éraflure de peinture. Un tampon sous masque tardif est preuve de custody.",
+     "audio": "Le tampon de route est sous le noir. Ils n'ont pas effacé une ligne vide.",
+     "in_game_wiki": "Un tampon d'autorisation de route n'était pas un décor. C'était la permission de circuler: travailleur, sas, famille de tâche, classe d'accès, fenêtre horaire et marque de retour attendue. Quand il apparaît sur un support de transcription, il dit que le support est passé par un bureau de route avant que quelqu'un tente de le rendre privé.\n\nLe chevauchement compte. Un tampon propre peut rester banal. Un tampon en partie enterré sous un masque packet notary est autre chose. L'encre du bureau de route, le sel de la pièce et le pigment noir se croisent en couches séparées. Si le tampon est sous le masque mais au-dessus du sel du sas, l'autorisation a été inscrite après exposition et avant rédaction. La transcription n'a pas seulement été endommagée sur place. Elle a été sortie, routée, tamponnée, puis couverte à la main.\n\nLes marques de retour comptent aussi. Une route normale se ferme par un retour, une annulation ou une exception de récupération. Une marque absente près d'un masque tardif signifie que le papier a cessé d'être un relevé de mouvement et est devenu un document de réclamation. Deep Reach peut encore parler d'autorisation, mais le chevauchement montre laquelle: traiter une preuve après sa sortie de la pièce.\n\nSur le terrain, ne coupe pas le tampon. Photographie bord du masque et bord du tampon dans le même cadre. Compare avec peinture du sas, tag de combinaison, registre de triage et bande de dommage de transcription. La question n'est pas seulement qui avait accès. C'est qui a gardé le support sur un bureau assez longtemps pour couvrir la ligne.",
+     "external_site": "Un tampon de route piégé sous un masque packet-notary transforme une transcription abîmée en preuve manipulée. L'ordre des encres peut montrer un traitement Deep Reach après récupération.",
+     "external_site_article": "Les tampons de route sont utiles parce qu'ils ne sont pas spectaculaires. Ce sont des restes d'administration: une personne autorisée, une tâche assignée, un retour attendu. Dans une colonie noyée, cette petite marque peut survivre à toute explication officielle.\n\nLa lecture tient sur un point précis: rencontre entre encre du tampon, sel, éraflure de peinture du sas et masque packet notary. Si l'encre est sous le noir mais au-dessus du sel d'exposition, le support a traversé un bureau de traitement après exposition. Cela ne donne pas la phrase cachée. Cela donne le mensonge de custody.\n\nDeep Reach gagne à confondre autorisation et chronologie. Un masque légal peut être autorisé et tardif. Un tampon peut être valable et concerner le traitement d'une preuve, pas l'entrée dans une pièce. Le chevauchement sépare ces faits.\n\nAprès la bande de dommage de transcription et le bord du masque notary, le support cesse d'être une histoire propre. Il devient un objet manipulé: mains, eau, sel, peinture et procédure empilés au même coin.",
+     "field_note": "Si le tampon est sous le noir, la ligne existait quand le bureau de route l'a vue.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Solape del Sello de Ruta",
+     "scanner": "SOLAPE DE RUTA // La tinta del permiso queda bajo la máscara notary pero sobre la sal de escotilla. Ruta registrada tras exposición y antes de censura.",
+     "terminal": "QA SELLO RUTA // Compara borde del sello, marca de retorno, solape de máscara, línea de sal y raspado de pintura. Sello bajo máscara tardía es prueba de custodia.",
+     "audio": "El sello de ruta está bajo el negro. No borraron una línea vacía.",
+     "in_game_wiki": "Un sello de permiso de ruta no era adorno. Era permiso para moverse: trabajador, escotilla, familia de tarea, clase de acceso, ventana horaria y marca de retorno esperada. Si aparece en un soporte de transcripción, el soporte pasó por mesa de ruta antes de que alguien intentara volverlo privado.\n\nLo útil es el solape. Un sello limpio puede ser sólo administración. Un sello medio enterrado bajo una máscara packet notary dice otra cosa. La tinta de ruta, la sal de la sala y el pigmento negro se cruzan en capas. Si el sello queda bajo la máscara pero sobre la sal de escotilla, el permiso se registró después de la exposición y antes de la censura. La transcripción no sólo se dañó allí. Fue retirada, enrutada, sellada y tapada a mano.\n\nLa marca de retorno importa. Una ruta normal cierra con retorno, cancelación o excepción de rescate. Si falta junto a una máscara tardía, el papel dejó de ser registro de movimiento y pasó a ser documento de reclamación. Deep Reach aún puede llamarlo autorización, pero el solape muestra cuál: procesar evidencia después de sacarla de la sala.\n\nEn campo, no cortes el sello. Fotografía borde de máscara y borde de sello juntos. Compara con pintura de escotilla, tag de traje, libro de triaje y banda de daño de transcripción. No se pregunta sólo quién tenía acceso. Se pregunta quién tuvo el soporte sobre una mesa bastante tiempo para cubrir la línea.",
+     "external_site": "Un sello de ruta atrapado bajo una máscara packet-notary convierte una transcripción dañada en evidencia manipulada. El orden de tinta muestra tratamiento posterior a recuperación.",
+     "external_site_article": "Los sellos de ruta sirven porque no son dramáticos. Son residuo administrativo: una persona autorizada, una tarea asignada, un retorno esperado. En una colonia ahogada, esa marca pequeña puede sobrevivir a la explicación oficial.\n\nLa lectura útil está en el punto donde se cruzan tinta de ruta, sal, raspado de pintura de escotilla y máscara packet notary. Si la tinta está bajo el negro pero sobre la sal de exposición, el soporte pasó por una mesa de procesamiento después de exponerse. No revela la frase oculta. Revela la mentira de custodia.\n\nA Deep Reach le conviene mezclar autorización con cronología. Una máscara legal puede estar autorizada y aun así ser tardía. Un sello válido puede referirse a procesamiento de evidencia, no a entrada en sala. El solape separa esos hechos.\n\nDespués de la banda de daño y del borde de máscara, el soporte deja de parecer una historia limpia. Queda como objeto manipulado: manos, agua, sal, pintura y procedimiento en la misma esquina.",
+     "field_note": "Si el sello queda bajo el negro, la línea existía cuando la mesa de ruta la vio.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Überlagerung des Routenstempels",
+     "scanner": "ROUTENSTEMPEL-ÜBERLAGERUNG // Freigabetinte liegt unter Notary-Maske, aber über Schottsalz. Route wurde nach Exposition und vor Schwärzung erfasst.",
+     "terminal": "ROUTENSTEMPEL-QA // Stempelkante, Rückkehrmarke, Maskenüberdeckung, Salzlinie und Schottlack-Kratzer vergleichen. Stempel unter später Maske ist Custody-Beweis.",
+     "audio": "Der Routenstempel liegt unter der Schwärzung. Sie haben keine leere Zeile gelöscht.",
+     "in_game_wiki": "Ein Routenfreigabestempel war kein Schmuck. Er war Bewegungsrecht: Arbeiter, Schott, Aufgabenfamilie, Zugriffsklasse, Zeitfenster und erwartete Rückkehrmarke. Auf einem Transkriptträger zeigt er, dass der Träger durch ein Routenpult ging, bevor jemand ihn privat aussehen ließ.\n\nNützlich ist die Überlagerung. Ein sauberer Stempel kann langweilig sein. Ein Stempel, der teilweise unter einer packet-notary-Maske liegt, ist anders. Routenpult-Tinte, Raumsalz und Schwärzungspigment schneiden sich in Schichten. Liegt der Stempel unter der Maske, aber über dem Schottsalz, wurde die Route nach Exposition und vor Redaktion erfasst. Das Transkript wurde nicht nur vor Ort beschädigt. Es wurde geborgen, geroutet, gestempelt und dann selektiv bedeckt.\n\nRückkehrmarken zählen. Eine normale Route schließt mit Rückkehrhaken, Storno oder Bergungsausnahme. Fehlt die Marke neben einer späten Maske, wurde aus Bewegungsnachweis ein Anspruchsdokument. Deep Reach kann den Stempel weiter Autorisierung nennen, doch die Überlagerung zeigt die Art: nicht Eintritt in den Raum, sondern Bearbeitung der Beweiskopie nach Verlassen des Raums.\n\nIm Feld nicht durch den Stempel schneiden. Maskenkante und Stempelkante gemeinsam fotografieren. Mit Schottlack, Anzugtag, Triagebuch und Transkriptschadensband vergleichen. Es geht nicht nur darum, wer Zugriff hatte. Es geht darum, wer den Träger lange genug auf dem Tisch hatte, um die Zeile zu decken.",
+     "external_site": "Ein Routenstempel unter einer packet-notary-Maske macht aus beschädigtem Transkript behandelte Evidenz. Die Tintenschicht zeigt Bearbeitung nach Bergung.",
+     "external_site_article": "Routenstempel sind nützlich, weil sie unspektakulär sind. Sie sind Verwaltungsrückstand: Freigabe, Aufgabe, erwartete Rückkehr. In einer ertrunkenen Kolonie kann diese kleine Marke jede offizielle Erklärung überleben.\n\nDie brauchbare Lesestelle liegt dort, wo Stempeltinte, Salz, Schottlack-Kratzer und packet-notary-Maske zusammentreffen. Liegt Tinte unter Schwarz, aber über Expositionssalz, ging der Träger nach Exposition durch ein Bearbeitungspult. Die verborgene Zeile bleibt verborgen. Die Custody-Lüge nicht.\n\nDeep Reach profitiert davon, Autorisierung und Chronologie zu vermischen. Eine legale Maske kann autorisiert und spät sein. Ein gültiger Stempel kann Beweisbearbeitung statt Raumeintritt meinen. Die Überlagerung trennt das.\n\nMit Schadensband und Maskenkante ist der Träger kein sauberer Text mehr. Hände, Wasser, Salz, Lack und Büroverfahren liegen an derselben Materialkante.",
+     "field_note": "Wenn der Stempel unter Schwarz liegt, existierte die Zeile, als das Routenpult sie sah.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Nakładka Stempla Trasy",
+     "scanner": "NAKŁADKA TRASY // Tusz zezwolenia leży pod maską notary, ale nad solą włazu. Trasę wpisano po ekspozycji i przed redakcją.",
+     "terminal": "QA STEMPLA TRASY // Porównaj krawędź stempla, znak powrotu, maskę, linię soli i zdrapanie farby. Stempel pod późną maską to dowód custody.",
+     "audio": "Stempel trasy jest pod czernią. Nie wymazali pustej linii.",
+     "in_game_wiki": "Stempel zezwolenia trasy nie był ozdobą. Dawał kolonii prawo ruchu: pracownik, właz, rodzina zadania, klasa dostępu, okno czasu i oczekiwany znak powrotu. Gdy pojawia się na nośniku transkrypcji, znaczy, że nośnik przeszedł przez biurko tras, zanim ktoś zrobił z niego dokument prywatny.\n\nLiczy się nakładka. Czysty stempel może być zwykłą administracją. Stempel częściowo zakryty maską packet notary jest czymś innym. Tusz biurka tras, sól z pomieszczenia i czarny pigment przecinają się warstwami. Jeśli stempel jest pod maską, ale nad solą włazu, zezwolenie wpisano po ekspozycji i przed redakcją. Transkrypcja nie tylko uszkodziła się na miejscu. Została wyniesiona, puszczona trasą, ostemplowana i dopiero zakryta.\n\nZnak powrotu ma znaczenie. Normalna trasa kończy się powrotem, anulowaniem albo wyjątkiem odzysku. Brak znaku przy późnej masce oznacza, że papier przestał być zapisem ruchu, a stał się dokumentem roszczenia. Deep Reach może nazywać stempel autoryzacją, ale nakładka pokazuje jaką: obróbkę dowodu po opuszczeniu pokoju.\n\nW terenie nie tnij przez stempel. Fotografuj krawędź maski i stempla razem. Porównaj z farbą włazu, tagiem skafandra, księgą triażu i pasem uszkodzeń transkrypcji. Pytanie brzmi nie tylko kto miał dostęp. Pytanie brzmi kto trzymał nośnik na biurku dość długo, by zakryć linię.",
+     "external_site": "Stempel trasy uwięziony pod maską packet-notary zmienia uszkodzoną transkrypcję w obrobiony dowód. Kolejność tuszu pokazuje działania po odzysku.",
+     "external_site_article": "Stemple tras są użyteczne, bo nie są dramatyczne. To resztka administracji: ktoś dostał przejście, ktoś dostał zadanie, ktoś miał wrócić. W zatopionej kolonii mały ślad potrafi przeżyć oficjalną wersję.\n\nCzytelny punkt leży na styku tuszu, soli, zdrapanej farby włazu i maski packet notary. Jeśli tusz leży pod czernią, ale nad solą ekspozycji, nośnik przeszedł przez biurko obróbki po zdarzeniu. To nie odsłania zdania. Odsłania kłamstwo o custody.\n\nDeep Reach korzysta z mieszania autoryzacji z chronologią. Maska może być legalna i spóźniona. Stempel może być ważny i dotyczyć obróbki dowodu, nie wejścia do pokoju. Nakładka rozdziela te fakty.\n\nPo pasie uszkodzeń i krawędzi maski nośnik przestaje być czystą opowieścią. Zostaje przedmiotem po rękach, wodzie, soli, farbie i procedurze.",
+     "field_note": "Jeśli stempel jest pod czernią, linia istniała, gdy biurko tras ją widziało.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Перекриття маршрутного штампа",
+     "scanner": "ПЕРЕКРИТТЯ МАРШРУТУ // Чорнило допуску лежить під маскою notary, але над сіллю люка. Маршрут внесено після впливу і до редагування.",
+     "terminal": "QA МАРШРУТНОГО ШТАМПА // Звір край штампа, позначку повернення, перекриття маскою, лінію солі й подряпину фарби. Штамп під пізньою маскою - доказ custody.",
+     "audio": "Маршрутний штамп під затемненням. Вони не стирали порожній рядок.",
+     "in_game_wiki": "Маршрутний штамп не був прикрасою. Це був дозвіл колонії на рух: працівник, люк, тип завдання, клас доступу, часовий проміжок і очікувана позначка повернення. Коли він з'являється на носії розшифрування, носій пройшов маршрутний стіл до того, як хтось спробував зробити запис приватним.\n\nВажливе саме перекриття. Чистий штамп може бути звичайною адміністрацією. Штамп, частково похований під маскою packet notary, інший. Чорнило маршрутного столу, сіль з приміщення і чорний пігмент перетинаються шарами. Якщо штамп під маскою, але над сіллю люка, допуск внесено після впливу і до редакції. Розшифрування не просто пошкодилося на місці. Його винесли, провели маршрутом, проштампували і потім вибірково закрили.\n\nПозначка повернення має значення. Нормальний маршрут закривається поверненням, скасуванням або винятком вилучення. Якщо біля пізньої маски немає повернення, папір перестав бути записом руху і став документом претензії. Deep Reach може називати штамп дозволом, але перекриття показує вид дозволу: обробка доказу після виходу з кімнати.\n\nУ полі не ріж крізь штамп. Сфотографуй край маски й край штампа разом. Звір із фарбою люка, міткою костюма, журналом тріажу і смугою пошкодження розшифрування. Питання не лише в доступі. Питання в тому, хто тримав носій на столі досить довго, щоб закрити рядок.",
+     "external_site": "Маршрутний штамп під маскою packet-notary перетворює пошкоджене розшифрування на оброблений доказ. Порядок чорнила показує дії після вилучення.",
+     "external_site_article": "Маршрутні штампи корисні саме тому, що не драматичні. Це адміністративний залишок: людину пропустили, роботу призначили, повернення чекали. У затопленій колонії малий слід переживає офіційне пояснення.\n\nЧитабельна точка лежить там, де сходяться чорнило, сіль, подряпина фарби люка і маска packet notary. Якщо чорнило під темним шаром, але над сіллю впливу, носій після впливу пройшов стіл обробки. Прихований рядок не відкривається. Відкривається брехня про custody.\n\nDeep Reach вигідно змішувати дозвіл і хронологію. Законна маска може бути дозволеною і пізньою. Чинний штамп може стосуватися обробки доказу, а не входу в кімнату. Перекриття розводить ці факти.\n\nПісля смуги пошкодження і краю маски носій перестає бути готовою історією. Він лишається предметом після рук, води, солі, фарби і процедури.",
+     "field_note": "Якщо штамп під затемненням, рядок існував, коли маршрутний стіл його бачив.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "تداخل ختم تصريح المسار",
+     "scanner": "تداخل ختم المسار // حبر التصريح تحت قناع notary لكنه فوق ملح الفتحة. سُجل المسار بعد التعرض وقبل الحجب.",
+     "terminal": "فحص ختم المسار // قارن حافة الختم، علامة العودة، تداخل القناع، خط الملح وخدش طلاء الفتحة. ختم تحت قناع متأخر دليل حيازة.",
+     "audio": "ختم المسار تحت التعتيم. لم يمحوا سطرا فارغا.",
+     "in_game_wiki": "لم يكن ختم تصريح المسار زينة. كان إذنا بالحركة: عامل، فتحة، عائلة مهمة، درجة وصول، نافذة وقت، وعلامة عودة منتظرة. عندما يظهر على حامل تفريغ صوتي، فهذا يعني أن الحامل مر بمكتب المسار قبل أن يحاول أحد جعله خاصا.\n\nالتداخل هو المفيد. الختم النظيف قد يكون أثرا إداريا عاديا. الختم المدفون جزئيا تحت قناع packet notary مختلف. حبر مكتب المسار، وملح الغرفة، وصبغة التعتيم تتقاطع في طبقات. إذا كان الختم تحت القناع وفوق ملح الفتحة، فقد سُجل التصريح بعد التعرض وقبل التحرير. التفريغ لم يتلف في مكانه فقط. أُخرج، ومُرر عبر المسار، وخُتم، ثم غُطي انتقائيا.\n\nعلامة العودة مهمة. المسار الطبيعي يُغلق بعلامة عودة أو إلغاء أو استثناء استرداد. غيابها قرب قناع متأخر يعني أن الورقة لم تعد سجل حركة، بل صارت وثيقة مطالبة. تستطيع Deep Reach أن تسمي الختم تفويضا، لكن التداخل يحدد نوعه: ليس دخول الغرفة، بل معالجة الدليل بعد خروجه منها.\n\nفي الميدان، لا تقطع الختم. صوّر حافة القناع وحافة الختم في الإطار نفسه. قارن ذلك بطلاء الفتحة، ووسم البدلة، وسجل الفرز، وحزام تلف التفريغ. السؤال ليس من امتلك الوصول فقط. السؤال من أبقى الحامل على مكتب مدة تكفي لتغطية السطر.",
+     "external_site": "ختم مسار محاصر تحت قناع packet-notary يحول التفريغ من تلف سلبي إلى دليل مُعالج. ترتيب الحبر يكشف معالجة بعد الاسترداد.",
+     "external_site_article": "أختام المسار نافعة لأنها غير مسرحية. إنها بقايا إدارة: شخص مُصرح له، مهمة مخصصة، وعودة منتظرة. في مستعمرة غارقة، قد يبقى هذا الأثر الصغير أطول من التفسير الرسمي.\n\nتقع القراءة المفيدة عند التقاء حبر الختم، والملح، وخدش طلاء الفتحة، وقناع packet notary. إذا كان الحبر تحت السواد وفوق ملح التعرض، فقد مر الحامل بمكتب معالجة بعد التعرض. لا يكشف ذلك الجملة المخفية. يكشف كذبة الحيازة.\n\nتستفيد Deep Reach من خلط التفويض بالتسلسل الزمني. قد يكون القناع قانونيا ومتأخرا. وقد يكون الختم صالحا لكنه يخص معالجة دليل لا دخول غرفة. التداخل يفصل هاتين الحقيقتين.\n\nبعد حزام تلف التفريغ وحافة قناع notary لا يعود الحامل قصة نظيفة. يصبح جسما مر عبر أيد وماء وملح وطلاء وإجراء مكتبي.",
+     "field_note": "إذا كان الختم تحت السواد، كان السطر موجودا حين رآه مكتب المسار.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Tumpang-Tindih Cap Izin Rute",
+     "scanner": "TUMPANG CAP RUTE // Tinta izin berada di bawah masker notary tetapi di atas garam palka. Rute dicatat setelah paparan dan sebelum redaksi.",
+     "terminal": "QA CAP RUTE // Bandingkan tepi cap, tanda kembali, tumpang masker, garis garam, dan gores cat palka. Cap di bawah masker terlambat adalah bukti custody.",
+     "audio": "Cap rute ada di bawah hitam. Mereka tidak menghapus baris kosong.",
+     "in_game_wiki": "Cap izin rute bukan hiasan. Itu izin koloni untuk bergerak: pekerja, palka, keluarga tugas, kelas akses, jendela waktu, dan tanda kembali yang diharapkan. Jika muncul pada media transkrip, media itu melewati meja rute sebelum seseorang mencoba membuatnya tampak privat.\n\nYang berguna adalah tumpang-tindih. Cap bersih bisa saja administrasi biasa. Cap yang terkubur sebagian di bawah masker packet notary berbeda. Tinta meja rute, garam ruangan, dan pigmen hitam berpotongan sebagai lapisan. Jika cap berada di bawah masker tetapi di atas garam palka, izin dicatat setelah paparan dan sebelum redaksi. Transkrip bukan sekadar rusak di tempat. Ia diambil, dirutekan, dicap, lalu ditutup secara selektif.\n\nTanda kembali penting. Rute normal ditutup dengan tanda kembali, pembatalan, atau pengecualian pemulihan. Jika tanda itu hilang di samping masker terlambat, kertas berhenti menjadi catatan gerak dan menjadi dokumen klaim. Deep Reach masih bisa menyebut cap itu otorisasi, tetapi tumpangnya menunjukkan jenisnya: pemrosesan bukti setelah keluar dari ruangan.\n\nDi lapangan, jangan potong cap. Foto tepi masker dan tepi cap dalam bingkai yang sama. Bandingkan dengan cat palka, tag setelan, buku triase, dan pita kerusakan transkrip. Pertanyaannya bukan hanya siapa punya akses. Pertanyaannya siapa memegang media itu di meja cukup lama untuk menutup baris.",
+     "external_site": "Cap rute di bawah masker packet-notary mengubah transkrip rusak menjadi bukti yang diproses. Urutan tinta dapat menunjukkan kerja setelah pemulihan.",
+     "external_site_article": "Cap rute berguna karena tidak dramatis. Ia sisa administrasi: orang diizinkan lewat, tugas diberikan, kembali diharapkan. Di koloni tenggelam, tanda kecil itu bisa bertahan lebih lama dari penjelasan resmi.\n\nTitik baca yang berguna ada di pertemuan tinta cap, garam, gores cat palka, dan masker packet notary. Jika tinta berada di bawah hitam tetapi di atas garam paparan, media melewati meja pemrosesan setelah paparan. Itu tidak membuka kalimat tersembunyi. Itu membuka kebohongan custody.\n\nDeep Reach diuntungkan saat otorisasi dicampur dengan kronologi. Masker legal bisa sah dan tetap terlambat. Cap valid bisa berarti pemrosesan bukti, bukan masuk ruangan. Tumpang-tindih memisahkan fakta itu.\n\nSetelah pita kerusakan transkrip dan tepi masker, media itu bukan lagi cerita bersih. Ia menjadi benda yang melewati tangan, air, garam, cat, dan prosedur kantor.",
+     "field_note": "Jika cap berada di bawah hitam, baris itu ada saat meja rute melihatnya.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "경로 허가 스탬프 겹침",
+     "scanner": "경로 스탬프 겹침 // 허가 잉크가 notary 마스크 아래, 해치 염분 위에 있다. 경로는 노출 뒤, 검열 전 기록됐다.",
+     "terminal": "경로 스탬프 QA // 스탬프 가장자리, 귀환 표식, 마스크 겹침, 염분선, 해치 도장 긁힘을 비교. 늦은 마스크 밑 스탬프는 보관 증거.",
+     "audio": "경로 스탬프가 검은 칠 아래 있다. 빈 줄을 지운 게 아니다.",
+     "in_game_wiki": "경로 허가 스탬프는 장식이 아니었다. 작업자, 해치, 작업 계열, 접근 등급, 시간 창, 예상 귀환 표식을 묶는 이동 허가였다. 전사 매체에 그 스탬프가 보이면, 누군가 기록을 사적인 문서처럼 만들기 전에 매체가 경로 데스크를 지나갔다는 뜻이다.\n\n중요한 것은 겹침이다. 깨끗한 스탬프는 평범한 행정 흔적일 수 있다. packet notary 마스크 아래 일부 묻힌 스탬프는 다르다. 경로 데스크 잉크, 방의 염분, 검은 안료가 각기 다른 층으로 교차한다. 스탬프가 마스크 아래이면서 해치 염분 위라면, 허가는 노출 후, 편집 전 기록됐다. 전사는 현장에서 그냥 손상된 것이 아니다. 회수되고, 경로에 올라가고, 찍힌 뒤 선택적으로 덮였다.\n\n귀환 표식도 중요하다. 정상 경로는 귀환, 취소, 회수 예외 중 하나로 닫힌다. 늦은 마스크 옆에 귀환 표식이 없으면, 종이는 이동 기록이 아니라 청구 문서가 된 것이다. Deep Reach는 여전히 허가라고 부를 수 있지만, 겹침은 그 종류를 보여준다. 방에 들어가는 허가가 아니라, 방을 떠난 증거를 처리하는 허가다.\n\n현장에서는 스탬프를 자르지 않는다. 마스크 가장자리와 스탬프 가장자리를 한 프레임에 찍는다. 해치 도장, 슈트 태그, 트리아지 장부, 전사 손상 띠와 비교한다. 문제는 누가 접근권을 가졌는지만이 아니다. 누가 그 매체를 책상 위에 충분히 오래 두어 줄을 덮었는가다.",
+     "external_site": "packet-notary 마스크 아래 갇힌 경로 스탬프는 손상 전사를 처리된 증거로 바꾼다. 잉크 순서는 회수 후 처리를 보여줄 수 있다.",
+     "external_site_article": "경로 스탬프가 유용한 이유는 극적이지 않기 때문이다. 허가, 배정, 예상 귀환이라는 행정 잔여물이다. 침수된 식민지에서는 이런 작은 흔적이 공식 설명보다 오래 남는다.\n\n읽을 수 있는 지점은 스탬프 잉크, 염분, 해치 도장 긁힘, packet notary 마스크가 만나는 좁은 가장자리에 있다. 잉크가 검은 칠 아래, 노출 염분 위에 있으면 매체는 노출 후 처리 데스크를 지나간 것이다. 숨은 문장을 여는 것이 아니다. 보관 경로의 거짓을 여는 것이다.\n\nDeep Reach는 허가와 시간 순서를 섞을 때 이득을 본다. 법적 마스크는 승인됐지만 늦을 수 있다. 유효한 스탬프는 방 입장이 아니라 증거 처리를 뜻할 수 있다. 겹침은 그 둘을 분리한다.\n\n전사 손상 띠와 notary 마스크 가장자리가 먼저 잡히면, 매체는 더 이상 완성된 이야기가 아니다. 손, 물, 소금, 페인트, 사무 절차를 지난 물체가 된다.",
+     "field_note": "스탬프가 검은 칠 아래라면, 경로 데스크가 볼 때 그 줄은 이미 있었다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "חפיפת חותמת הרשאת מסלול",
+     "scanner": "חפיפת חותמת מסלול // דיו ההרשאה נמצא מתחת למסכת notary אך מעל מלח הפתח. המסלול נרשם אחרי חשיפה ולפני השחרה.",
+     "terminal": "בדיקת חותמת מסלול // להשוות שפת חותמת, סימון חזרה, חפיפת מסכה, קו מלח ושריטת צבע פתח. חותמת תחת מסכה מאוחרת היא ראיית custody.",
+     "audio": "חותמת המסלול מתחת לשחור. הם לא מחקו שורה ריקה.",
+     "in_game_wiki": "חותמת הרשאת מסלול לא הייתה קישוט. היא הייתה רשות תנועה: עובד, פתח, משפחת משימה, דרגת גישה, חלון זמן וסימון חזרה צפוי. כשהיא מופיעה על נשא תמלול, היא אומרת שהנשא עבר שולחן מסלול לפני שמישהו ניסה להפוך אותו למסמך פרטי.\n\nהחפיפה היא החלק החשוב. חותמת נקייה יכולה להיות מנהלה רגילה. חותמת שקבורה חלקית תחת מסכת packet notary היא דבר אחר. דיו שולחן המסלול, מלח החדר ופיגמנט ההשחרה מצטלבים בשכבות שונות. אם החותמת מתחת למסכה אך מעל מלח הפתח, ההרשאה נרשמה אחרי החשיפה ולפני העריכה. התמלול לא רק ניזוק במקום. הוא הוצא, נותב, הוחתם ואז כוסה באופן סלקטיבי.\n\nסימוני חזרה חשובים. מסלול רגיל נסגר בסימון חזרה, ביטול או חריג חילוץ. סימון חסר ליד מסכה מאוחרת אומר שהנייר חדל להיות רשומת תנועה והפך למסמך תביעה. Deep Reach עדיין יכולה לקרוא לזה הרשאה, אבל החפיפה מראה איזו: לא כניסה לחדר, אלא עיבוד ראיה לאחר שיצאה ממנו.\n\nבשטח לא חותכים דרך החותמת. מצלמים את שפת המסכה ושפת החותמת באותה מסגרת. משווים לצבע הפתח, תג החליפה, יומן הטריאז' ורצועת נזק התמלול. השאלה אינה רק למי הייתה גישה. השאלה היא מי החזיק את הנשא על שולחן מספיק זמן כדי לכסות את השורה.",
+     "external_site": "חותמת מסלול תחת מסכת packet-notary הופכת תמלול פגום לראיה שטופלה. סדר הדיו יכול להראות עיבוד לאחר חילוץ.",
+     "external_site_article": "חותמות מסלול מועילות כי הן אינן דרמטיות. הן שארית מנהלית: אדם אושר, משימה הוקצתה, חזרה הייתה צפויה. במושבה שטבעה, סימן קטן כזה יכול לשרוד כל הסבר רשמי.\n\nנקודת הקריאה הצרה נמצאת במפגש: דיו חותמת, מלח, שריטת צבע הפתח ומסכת packet notary. אם הדיו נמצא מתחת לשחור אך מעל מלח החשיפה, הנשא עבר שולחן עיבוד לאחר החשיפה. זה לא מגלה את המשפט החבוי. זה מגלה את שקר ה-custody.\n\nDeep Reach מרוויחה מערבוב הרשאה וכרונולוגיה. מסכה משפטית יכולה להיות מאושרת ומאוחרת. חותמת תקפה יכולה להתייחס לעיבוד ראיה, לא לכניסה לחדר. החפיפה מפרידה את העובדות.\n\nאחרי רצועת נזק התמלול ושפת מסכת notary, הנשא מפסיק להיות סיפור נקי. הוא נשאר חפץ שעבר ידיים, מים, מלח, צבע והליך משרדי.",
+     "field_note": "אם החותמת מתחת לשחור, השורה הייתה קיימת כששולחן המסלול ראה אותה.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Sobreposição do Carimbo de Rota",
+     "scanner": "SOBREPOSIÇÃO DE ROTA // Tinta da permissão fica sob a máscara notary, mas sobre sal da escotilha. Rota registrada após exposição e antes da redação.",
+     "terminal": "QA CARIMBO ROTA // Compare borda do carimbo, marca de retorno, sobreposição da máscara, linha de sal e raspão de tinta. Carimbo sob máscara tardia é prova de custódia.",
+     "audio": "O carimbo de rota está sob o preto. Eles não apagaram uma linha vazia.",
+     "in_game_wiki": "Um carimbo de permissão de rota não era decoração. Era a permissão de movimento da colônia: trabalhador, escotilha, família de tarefa, classe de acesso, janela de tempo e marca de retorno esperada. Quando aparece num suporte de transcrição, diz que o suporte passou por uma mesa de rota antes de alguém tentar torná-lo privado.\n\nA sobreposição é a parte útil. Um carimbo limpo pode ser só administração. Um carimbo parcialmente enterrado sob uma máscara packet notary é diferente. Tinta da mesa de rota, sal da sala e pigmento preto se cruzam em camadas. Se o carimbo está sob a máscara, mas sobre o sal da escotilha, a permissão foi registrada após exposição e antes da redação. A transcrição não apenas se danificou no local. Foi retirada, roteada, carimbada e então coberta de forma seletiva.\n\nMarcas de retorno importam. Uma rota normal fecha com retorno, cancelamento ou exceção de recuperação. Sem retorno ao lado de uma máscara tardia, o papel deixou de ser registro de movimento e virou documento de reclamação. A Deep Reach ainda pode chamar de autorização, mas a sobreposição mostra qual: processamento de prova depois que saiu da sala.\n\nEm campo, não corte o carimbo. Fotografe borda da máscara e borda do carimbo juntas. Compare com tinta da escotilha, tag do traje, livro de triagem e faixa de dano da transcrição. A pergunta não é só quem tinha acesso. É quem teve o suporte na mesa tempo suficiente para cobrir a linha.",
+     "external_site": "Um carimbo de rota preso sob uma máscara packet-notary transforma transcrição danificada em prova processada. A sequência da tinta mostra tratamento pós-recuperação.",
+     "external_site_article": "Carimbos de rota são úteis porque não são dramáticos. São resíduo administrativo: alguém autorizado, uma tarefa dada, um retorno esperado. Numa colônia afogada, essa marca pequena pode sobreviver a qualquer explicação oficial.\n\nA leitura útil fica no ponto onde tinta, sal, raspão de tinta da escotilha e máscara packet notary se encontram. Se a tinta está sob o preto, mas sobre o sal de exposição, o suporte passou por uma mesa de processamento depois da exposição. Não revela a frase escondida. Revela a mentira da custódia.\n\nA Deep Reach se beneficia ao misturar autorização e cronologia. Uma máscara legal pode ser autorizada e tardia. Um carimbo válido pode indicar processamento de prova, não entrada na sala. A sobreposição separa esses fatos.\n\nDepois da faixa de dano e da borda da máscara, o suporte deixa de parecer uma história limpa. Ele fica como objeto que cruzou mãos, água, sal, tinta e procedimento de escritório.",
+     "field_note": "Se o carimbo está sob o preto, a linha existia quando a mesa de rota a viu.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Overlap van Routepermissiestempel",
+     "scanner": "ROUTESTEMPEL-OVERLAP // Permissie-inkt ligt onder notary-masker maar boven luikzout. Route is na blootstelling en vóór redactie gelogd.",
+     "terminal": "QA ROUTESTEMPEL // Vergelijk stempelrand, terugkeermarkering, maskeroverlap, zoutlijn en lakschraap. Stempel onder laat masker is custody-bewijs.",
+     "audio": "De routestempel ligt onder het zwart. Ze wisten geen lege regel uit.",
+     "in_game_wiki": "Een routepermissiestempel was geen versiering. Het was toestemming om te bewegen: werker, luik, taakfamilie, toegangsklasse, tijdvenster en verwachte terugkeermarkering. Als hij op een transcriptdrager staat, ging de drager langs de routebalie voordat iemand hem privé wilde laten lijken.\n\nDe overlap is nuttig. Een nette stempel kan gewone administratie zijn. Een stempel die deels onder een packet notary-masker ligt, is anders. Balie-inkt, kamerzout en zwart pigment kruisen elkaar in lagen. Als de stempel onder het masker ligt maar boven het luikzout, werd de permissie na blootstelling en vóór redactie gelogd. Het transcript raakte niet alleen ter plekke beschadigd. Het werd meegenomen, gerouteerd, gestempeld en daarna selectief afgedekt.\n\nTerugkeermarkeringen tellen. Een normale route sluit met terugkeer, annulering of bergingsuitzondering. Ontbreekt die naast een laat masker, dan werd het papier geen bewegingsrecord meer maar een claimdocument. Deep Reach kan de stempel autorisatie noemen, maar de overlap toont welke: verwerking van bewijs nadat het de kamer verliet.\n\nIn het veld niet door de stempel snijden. Fotografeer maskerrand en stempelrand samen. Vergelijk met luiklak, paktag, triageboek en schadeband van het transcript. De vraag is niet alleen wie toegang had. De vraag is wie de drager lang genoeg op een bureau had om de regel te bedekken.",
+     "external_site": "Een routestempel onder een packet-notary-masker maakt van beschadigd transcript behandeld bewijs. De inktvolgorde toont verwerking na berging.",
+     "external_site_article": "Routestempels zijn nuttig omdat ze niet dramatisch zijn. Ze zijn administratief residu: iemand mocht door, een taak werd toegewezen, terugkeer werd verwacht. In een verdronken kolonie kan zo'n kleine markering elke officiële uitleg overleven.\n\nHet leesbare punt ligt waar stempelinkt, zout, luiklak-schraap en packet notary-masker samenkomen. Ligt de inkt onder zwart maar boven blootstellingszout, dan ging de drager na blootstelling door een verwerkingsbalie. Dat onthult niet de verborgen zin. Het onthult de custody-leugen.\n\nDeep Reach wint bij het mengen van autorisatie en chronologie. Een juridisch masker kan toegestaan en toch laat zijn. Een geldige stempel kan bewijsverwerking betekenen, geen toegang tot de kamer. De overlap scheidt die feiten.\n\nNa de transcript-schadeband en maskerrand is de drager geen schoon verhaal meer. Hij blijft een object dat door handen, water, zout, verf en kantoorprocedure ging.",
+     "field_note": "Als de stempel onder zwart ligt, bestond de regel toen de routebalie hem zag.",
+     "localization_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,285 +1,286 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1341_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE",
+   "release_set_id": "RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE",
+   "article_id": "applied_lore.suit_reserve_delta_mismatch_field_article",
+   "title_key": "LORE_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/AppliedContent/packets/RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1341_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE",
-      "release_set_id": "RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE",
-      "article_id": "applied_lore.suit_reserve_delta_mismatch_field_article",
-      "title_key": "LORE_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/AppliedContent/packets/RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.suit_reserve_delta_mismatch_field_article",
-        "secondary": [
-          "unlock.first_suit_reserve_delta_mismatch",
-          "unlock.first_oxygen_ledger_cutoff_claim_hold",
-          "unlock.first_missing_return_mark_claim_conversion"
-        ],
-        "poi_tags": [
-          "poi.suit_reserve_delta",
-          "poi.wrist_counter",
-          "poi.tank_seal",
-          "poi.hose_coupler",
-          "poi.fill_throat_brine",
-          "poi.scrubber_cutoff_row",
-          "poi.oxygen_ledger_cutoff",
-          "poi.claim_hold_field",
-          "poi.route_permission_stamp",
-          "poi.missing_return_mark"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.suit_service_bay",
-          "biome.life_support",
-          "biome.claim_admin",
-          "biome.evidence_custody"
-        ],
-        "depth_band_m": "0-4200"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Suit Service QA Note",
-          "audio": "Recovered Suit Bay Clip",
-          "in_game_wiki": "PDA Forensic Object Article",
-          "external_site": "Public Lore Atlas Evidence Note",
-          "field_note": "Marauder Field Note"
-        },
-        "source_brief": {
-          "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
-          "spoiler_level": "1",
-          "speaker_source": "PDA scanner, suit service QA note, suit bay clip, Marauder annotation, public lore atlas",
-          "audience": "after oxygen ledger cutoff and claim hold evidence; public atlas under early-evidence spoiler boundary",
-          "date_era": "2190 recovery reading of 2147 suit reserve counter, oxygen ledger and claim artifacts",
-          "location_depth_route": "suit service bay, pressure-room support panel, oxygen ledger strip, route desk cache",
-          "unlock_context": "after oxygen ledger cutoff claim hold and missing return mark claim conversion",
-          "evidence_object": "wrist reserve counter, tank seal, hose coupler, fill throat brine and room ledger reserve delta",
-          "source_knows": "suit reserve can disagree with room oxygen ledger and later claim status; wrist counter may fix air loss before desk records close",
-          "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
-          "truth_pressure": "A suit reserve mismatch can show where breath became inventory without naming the final culprit.",
-          "design_use": "bind wearable life-support evidence to oxygen ledger cutoff and claim desk ambiguity"
-        },
-        "spoiler_boundary": {
-          "tier": 1,
-          "allowed_reveals": [
-            "suit reserve can disagree with room ledger",
-            "desk records can restore reserve without physical refill evidence",
-            "active route status can persist after wearable air evidence fails"
-          ],
-          "blocked_reveals": [
-            "final culprit",
-            "hidden transcript sentence",
-            "ending payload identity"
-          ]
-        }
-      },
-      "localized": {
-        "en_US": {
-          "title": "Suit Reserve Delta Mismatch",
-          "scanner": "SUIT RESERVE DELTA // Wrist counter falls out of step with the room ledger. The suit carried less air than the desk later claimed.",
-          "terminal": "SUIT RESERVE QA // Compare wrist reserve, tank seal, hose coupler, scrubber cutoff, compressor handoff, route closure and claim hold. The mismatch follows custody, not oxygen.",
-          "audio": "Suit reserve says empty. Room ledger says pending. Somebody moved the number, not the air.",
-          "in_game_wiki": "A suit reserve delta is the difference between three records: what the suit counted at the wrist, what the room said it delivered and what the compressor row claimed to hand off. It is a dull number until it disagrees with the oxygen ledger. Then it becomes the record that stayed bolted to the body.\n\nA working suit does not spend air in clean blocks. Panic, exertion, mask leaks, cold seals and brine in a hose all leave jagged reserve loss. A later desk entry tends to look smooth. If the wrist counter drops into the low-air dead band before the room ledger admits cutoff, the room was no longer carrying the worker. If the desk later restores reserve without a matching tank seal or refill event, the air exists only in paperwork.\n\nThe mismatch matters because each owner can tell a different lie. Life support can say the room was still pending. Route desk can say the worker had not returned. Claim desk can say the suit remained recoverable equipment. The suit itself only knows pressure, draw and valve state. That narrowness makes it hard to bribe.\n\nField handling is physical. Do not vent or top up the suit before recording the counter. Photograph the wrist display, tank valve salt, seal wire, hose coupler scratch and any brine in the fill throat. Compare those marks to the scrubber cutoff row and claim hold. A reserve delta can show where air ended and accounting continued.",
-          "external_site": "A suit reserve delta mismatch catches the moment when the worker's own gear stopped agreeing with the colony ledger. The suit records pressure; the desks record permission, delay and claim language.",
-          "external_site_article": "The wrist counter is an ugly little record: not a confession, not a final message, just pressure dropping under a worker's hand. That is why it belongs beside the oxygen ledger. It does not care whether a route was still open.\n\nOn Aegir, room support and suit reserve were supposed to move together. The room fed air; the suit buffered loss; the compressor wrote its handoff; the route board waited for a return mark. When those numbers split, the colony's paper map no longer matches the body path.\n\nDeep Reach could use that gap. A suit with an unresolved reserve could stay tagged as recoverable equipment. A worker with an open route could stay billable. A claim hold could sit over both, delaying clean loss closure until the useful ownership language hardened.\n\nThe reserve delta does not solve the death. It points to the desk where breath became inventory. Read it with the oxygen ledger cutoff, missing return mark and route permission stamp overlap before trusting any active-worker status.",
-          "field_note": "If the wrist ran dry before the ledger closed, trust the suit record first.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Несовпадение дельты резерва костюма",
-          "scanner": "ДЕЛЬТА РЕЗЕРВА КОСТЮМА // Наручный счетчик расходится с комнатным журналом. В костюме было меньше воздуха, чем позже заявил стол.",
-          "terminal": "QA РЕЗЕРВА КОСТЮМА // Сверить наручный резерв, пломбу баллона, муфту шланга, отсечку скруббера, передачу компрессора, закрытие маршрута и claim hold. Несовпадение идет за цепочкой хранения, а не за кислородом.",
-          "audio": "Резерв костюма говорит: пусто. Комнатный журнал говорит: ожидание. Кто-то двигал число, а не воздух.",
-          "in_game_wiki": "Дельта резерва костюма — это разница между тремя записями: что посчитал костюм на запястье, что комната якобы подала и что строка компрессора записала как передачу. Сама по себе это сухая цифра. Когда она спорит с кислородным журналом, она становится записью, которая осталась прикручена к телу.\n\nРабочий костюм не тратит воздух ровными блоками. Паника, нагрузка, протечка маски, холодные уплотнители и рассол в шланге оставляют рваный расход. Поздняя строка на столе обычно гладкая. Если наручный счетчик уходит в мертвую зону малого воздуха раньше, чем комнатный журнал признает отсечку, комната уже не несла работника. Если стол потом возвращает резерв без совпадающей пломбы баллона или события дозаправки, этот воздух существует только в бумагах.\n\nНесовпадение важно потому, что каждый владелец данных может врать по-своему. Жизнеобеспечение может сказать, что комната еще в ожидании. Route desk может сказать, что работник не вернулся. Claim desk может назвать костюм извлекаемым оборудованием. Сам костюм знает только давление, расход и положение клапана. Такая узость плохо поддается подкупу.\n\nПолевая работа здесь физическая. Не стравливать и не дозаправлять костюм до фиксации счетчика. Снять наручный дисплей, соль на клапане баллона, проволоку пломбы, царапину на муфте шланга и любой рассол в горловине заправки. Сверить эти следы со строкой отсечки скруббера и claim hold. Дельта резерва может показать, где воздух закончился, а учет продолжился.",
-          "external_site": "Несовпадение дельты резерва костюма ловит момент, когда снаряжение работника перестало соглашаться с журналом колонии. Костюм пишет давление; столы пишут разрешение, задержку и язык претензии.",
-          "external_site_article": "Наручный счетчик — уродливая маленькая запись: не признание, не последнее сообщение, а давление, падающее под рукой работника. Поэтому он должен лежать рядом с кислородным журналом. Ему все равно, был ли маршрут еще открыт.\n\nНа Aegir поддержка комнаты и резерв костюма должны были двигаться вместе. Комната подавала воздух; костюм держал запас; компрессор писал передачу; маршрутная доска ждала отметку возврата. Когда эти числа расходятся, бумажная карта колонии перестает совпадать с телесным путем.\n\nDeep Reach могла использовать этот разрыв. Костюм с неразрешенным резервом оставался помеченным как извлекаемое оборудование. Работник с открытым маршрутом оставался оплачиваемым. Claim hold ложился поверх обоих и откладывал чистое закрытие потери, пока полезный язык собственности не твердел.\n\nДельта резерва не решает смерть. Она показывает стол, где дыхание стало инвентарем. Читать ее нужно вместе с отсечкой кислородного журнала, отсутствующей отметкой возврата и наложением штампа разрешения маршрута, прежде чем верить любому активному статусу работника.",
-          "field_note": "Если запястье высохло раньше журнала, сначала верь записи костюма.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "スーツ予備差分の不一致",
-          "scanner": "スーツ予備差分 // 手首カウンターが部屋の台帳とずれる。後でデスクが主張した量より、スーツの空気は少なかった。",
-          "terminal": "スーツ予備QA // 手首予備、タンク封印、ホース継手、スクラバー停止、コンプレッサー引き渡し、ルート閉鎖、claim holdを照合。不一致は酸素ではなく保管経路を追う。",
-          "audio": "スーツ予備は空を示す。部屋台帳は保留を示す。誰かが動かしたのは空気ではなく数字だ。",
-          "in_game_wiki": "スーツ予備差分は三つの記録の差だ。手首でスーツが数えた量、部屋が供給したと言った量、コンプレッサー行が引き渡したと書いた量。この数字だけなら退屈だ。酸素台帳と食い違うと、体に固定された記録になる。\n\n作業中のスーツは空気をきれいな塊で使わない。恐怖、運動、マスク漏れ、冷えたシール、ホース内の塩水はぎざぎざの消費を残す。後から机で入れた行は滑らかになりやすい。手首カウンターが部屋台帳の停止より先に低空気の死帯へ落ちるなら、部屋はもう作業員を支えていない。対応するタンク封印や再充填イベントなしに予備が戻るなら、その空気は書類上にしかない。\n\n不一致が重要なのは、所有者ごとに違う嘘をつけるからだ。生命維持は部屋がまだ保留中だと言える。route deskは作業員が未帰還だと言える。claim deskはスーツを回収可能装備と呼べる。スーツ自身が知るのは圧力、消費、弁の状態だけだ。その狭さが買収しにくい。\n\n現場処理は物理優先。カウンター記録前にスーツを排気したり補充したりしない。手首表示、タンク弁の塩、封印線、ホース継手の擦り傷、充填口の塩水を撮影する。スクラバー停止行とclaim holdに照合する。予備差分は、空気が終わり、会計が続いた場所を示せる。",
-          "external_site": "スーツ予備差分の不一致は、作業員自身の装備がコロニー台帳と合わなくなった瞬間を捕まえる。スーツは圧力を記録する。デスクは許可、遅延、claimの言葉を記録する。",
-          "external_site_article": "手首カウンターは見栄えの悪い小さな記録だ。告白でも最後の言葉でもない。ただ作業員の手元で圧力が落ちていく。それが酸素台帳の隣に置く理由だ。ルートがまだ開いていたかどうかを気にしない。\n\nAegirでは、部屋の支援とスーツ予備は一緒に動くはずだった。部屋が空気を送り、スーツが損失を吸収し、コンプレッサーが引き渡しを書き、ルート盤が帰還印を待つ。数字が割れると、コロニーの紙の地図は体の経路と一致しなくなる。\n\nDeep Reachはその隙間を使えた。未解決の予備を持つスーツは回収可能装備として残せる。開いたルートの作業員は請求可能でいられる。claim holdはその両方にかかり、有利な所有権の言葉が固まるまで清算を遅らせる。\n\n予備差分は死を解かない。呼吸が在庫になった机を指す。酸素台帳停止、欠けた帰還印、ルート許可スタンプの重なりと合わせて読んでから、作業員有効状態を信じるべきだ。",
-          "field_note": "台帳が閉じる前に手首が空になったなら、まずスーツの記録を読む。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "潜服储备差值不匹配",
-          "scanner": "潜服储备差值 // 腕部计数器与房间账本脱节。潜服携带的空气少于后来柜台声称的数量。",
-          "terminal": "潜服储备 QA // 对照腕部储备、气瓶封签、软管接头、洗涤器截断、压缩机交接、路线关闭和claim hold。不匹配追随保管链，不追随氧气。",
-          "audio": "潜服储备显示为空。房间账本显示待处理。有人移动了数字，不是空气。",
-          "in_game_wiki": "潜服储备差值是三份记录之间的差：潜服在手腕上计到的量，房间声称送出的量，以及压缩机行声称交接的量。它本来只是一个干巴巴的数字。可一旦它和氧气账本打架，它就成了扣在身体上的记录。\n\n工作的潜服不会按整齐块状消耗空气。恐慌、用力、面罩漏气、低温密封和软管里的卤水都会留下锯齿状损耗。后来的柜台记录往往很平滑。如果腕部计数器先于房间账本的截断落入低气死区，房间已经不再支撑工人。如果柜台后来恢复了储备，却没有对应的气瓶封签或再充填事件，那些空气只存在于文件里。\n\n这种不匹配重要，是因为每个数据所有者都能撒不同的谎。生命支持可以说房间还在待处理。route desk可以说工人尚未返回。claim desk可以把潜服称作可回收设备。潜服自己只知道压力、消耗和阀门状态。正因为它知道得窄，才不容易被收买。\n\n现场处理必须抓实物。记录计数器前，不要排气，也不要补气。拍下腕部显示、气瓶阀门上的盐、封签线、软管接头刮痕，以及充填口里的任何卤水。再把这些痕迹同洗涤器截断行和claim hold对照。储备差值能显示空气在哪里结束，而账目在哪里继续。",
-          "external_site": "潜服储备差值不匹配抓住了一个时刻：工人自己的装备停止同殖民地账本保持一致。潜服记录压力；柜台记录许可、延误和claim语言。",
-          "external_site_article": "腕部计数器是一条难看的小记录：不是供词，不是遗言，只是压力在工人手边下降。正因为如此，它应该放在氧气账本旁边。它不关心路线是否还开着。\n\n在Aegir，房间支持和潜服储备本该一起移动。房间供气，潜服缓冲损耗，压缩机写下交接，路线板等待返程标记。当这些数字分裂时，殖民地的纸面地图就不再匹配身体路径。\n\nDeep Reach可以利用这道缝。储备未解决的潜服可以继续标成可回收设备。路线仍开着的工人可以继续计费。claim hold可以压在两者上面，推迟干净的损失关闭，直到有用的所有权语言变硬。\n\n储备差值不能解开死亡。它指向呼吸变成库存的那张桌子。先把它同氧气账本截断、缺失返程标记和路线许可章重叠一起读，再相信任何激活工人状态。",
-          "field_note": "如果手腕读数先于账本见底，先信潜服记录。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Écart de réserve de combinaison incohérent",
-          "scanner": "ÉCART RÉSERVE COMBINAISON // Le compteur au poignet décroche du registre de salle. La combinaison portait moins d’air que le bureau ne l’a affirmé plus tard.",
-          "terminal": "QA RÉSERVE COMBINAISON // Comparer réserve au poignet, scellé de bouteille, raccord de flexible, coupure scrubber, relais compresseur, clôture de route et claim hold. L’écart suit la garde, pas l’oxygène.",
-          "audio": "La réserve de combinaison dit vide. Le registre de salle dit en attente. Quelqu’un a déplacé le chiffre, pas l’air.",
-          "in_game_wiki": "Un écart de réserve de combinaison est la différence entre trois relevés: ce que la combinaison a compté au poignet, ce que la salle dit avoir livré, et ce que la ligne compresseur affirme avoir transféré. C’est un chiffre sec jusqu’à ce qu’il contredise le registre d’oxygène. Là, il devient le relevé resté boulonné au corps.\n\nUne combinaison en travail ne consomme pas l’air par blocs propres. Panique, effort, fuite de masque, joints froids et saumure dans un flexible laissent une perte dentelée. Une entrée de bureau tardive paraît souvent lisse. Si le compteur au poignet tombe en zone morte basse avant que le registre de salle n’admette la coupure, la salle ne portait plus l’ouvrier. Si le bureau restaure ensuite une réserve sans scellé de bouteille ni recharge correspondante, cet air n’existe que dans les papiers.\n\nL’incohérence compte parce que chaque propriétaire peut mentir autrement. La survie peut dire que la salle était encore en attente. Le route desk peut dire que l’ouvrier n’était pas revenu. Le claim desk peut classer la combinaison comme équipement récupérable. La combinaison ne connaît que pression, tirage et état de valve. Cette pauvreté d’information la rend difficile à acheter.\n\nLa manipulation terrain reste matérielle. Ne pas purger ni compléter la combinaison avant de relever le compteur. Photographier l’affichage au poignet, le sel sur la valve de bouteille, le fil de scellé, la rayure du raccord et toute saumure dans le col de remplissage. Comparer ces traces à la coupure scrubber et au claim hold. Un écart de réserve peut montrer où l’air s’est arrêté et où la comptabilité a continué.",
-          "external_site": "Un écart de réserve de combinaison incohérent capture l’instant où l’équipement de l’ouvrier cesse d’être d’accord avec le registre colonial. La combinaison relève la pression; les bureaux écrivent permission, retard et vocabulaire de claim.",
-          "external_site_article": "Le compteur au poignet est une petite archive laide: ni aveu, ni dernier message, seulement une pression qui baisse sous la main d’un ouvrier. C’est pour cela qu’il doit rester près du registre d’oxygène. Il ignore qu’une route soit encore ouverte.\n\nSur Aegir, soutien de salle et réserve de combinaison devaient avancer ensemble. La salle donnait l’air; la combinaison amortissait la perte; le compresseur écrivait son relais; le tableau de route attendait une marque de retour. Quand ces nombres se séparent, la carte papier de la colonie ne suit plus le trajet du corps.\n\nDeep Reach pouvait exploiter cet écart. Une combinaison à réserve non résolue restait équipement récupérable. Un ouvrier sur route ouverte restait facturable. Le claim hold pouvait couvrir les deux et retarder la clôture propre de perte jusqu’à durcir le bon vocabulaire de propriété.\n\nL’écart de réserve ne résout pas la mort. Il désigne le bureau où le souffle est devenu inventaire. Il faut le lire avec la coupure du registre d’oxygène, la marque de retour absente et le chevauchement du tampon de route avant de croire un statut d’ouvrier actif.",
-          "field_note": "Si le poignet est tombé à sec avant la clôture du registre, lis d'abord le relevé de la combinaison.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Desajuste del delta de reserva del traje",
-          "scanner": "DELTA DE RESERVA DEL TRAJE // El contador de muñeca deja de cuadrar con el registro de sala. El traje llevaba menos aire del que el despacho reclamó después.",
-          "terminal": "QA RESERVA DEL TRAJE // Comparar reserva de muñeca, sello del tanque, acople de manguera, corte del depurador, traspaso del compresor, cierre de ruta y claim hold. El desajuste sigue custodia, no oxígeno.",
-          "audio": "La reserva del traje dice vacío. El registro de sala dice pendiente. Alguien movió el número, no el aire.",
-          "in_game_wiki": "Un delta de reserva del traje es la diferencia entre tres registros: lo que contó el traje en la muñeca, lo que la sala dijo entregar y lo que la fila del compresor afirmó traspasar. Es un número seco hasta que contradice el registro de oxígeno. Entonces se vuelve el registro que quedó atornillado al cuerpo.\n\nUn traje en uso no gasta aire en bloques limpios. Pánico, esfuerzo, fugas de máscara, sellos fríos y salmuera en una manguera dejan una pérdida dentada. Una entrada tardía de despacho suele verse lisa. Si el contador de muñeca cae en banda muerta de aire bajo antes de que el registro de sala admita el corte, la sala ya no sostenía al trabajador. Si el despacho restaura reserva sin sello de tanque ni recarga coincidente, ese aire solo existe en papeles.\n\nEl desajuste importa porque cada propietario puede mentir de otra forma. Soporte vital puede decir que la sala seguía pendiente. Route desk puede decir que el trabajador no regresó. Claim desk puede llamar al traje equipo recuperable. El traje solo conoce presión, consumo y estado de válvula. Esa estrechez lo hace difícil de comprar.\n\nEl manejo de campo es físico. No ventiles ni rellenes el traje antes de registrar el contador. Fotografía la pantalla de muñeca, la sal en la válvula del tanque, el hilo del sello, el arañazo del acople y cualquier salmuera en la boca de llenado. Compáralo con la fila de corte del depurador y el claim hold. Un delta de reserva puede mostrar dónde terminó el aire y dónde siguió la contabilidad.",
-          "external_site": "Un desajuste del delta de reserva del traje atrapa el momento en que el equipo del trabajador dejó de coincidir con el registro de la colonia. El traje registra presión; los despachos registran permiso, demora y lenguaje de claim.",
-          "external_site_article": "El contador de muñeca es un registro feo y pequeño: no una confesión, no un último mensaje, solo presión bajando bajo la mano de un trabajador. Por eso pertenece junto al registro de oxígeno. No le importa si la ruta seguía abierta.\n\nEn Aegir, soporte de sala y reserva del traje debían moverse juntos. La sala alimentaba aire; el traje amortiguaba la pérdida; el compresor escribía su traspaso; la tabla de ruta esperaba una marca de retorno. Cuando esos números se separan, el mapa de papel de la colonia ya no encaja con el camino del cuerpo.\n\nDeep Reach podía usar esa brecha. Un traje con reserva sin resolver podía quedar etiquetado como equipo recuperable. Un trabajador con ruta abierta podía seguir siendo facturable. Un claim hold podía cubrir ambos y retrasar el cierre limpio de pérdida hasta endurecer el lenguaje útil de propiedad.\n\nEl delta de reserva no resuelve la muerte. Señala el despacho donde el aliento se volvió inventario. Léelo con el corte del registro de oxígeno, la marca de retorno ausente y el solape del sello de permiso antes de confiar en un estado de trabajador activo.",
-          "field_note": "Si la muñeca se quedó seca antes de que cerrara el registro, lee primero el registro del traje.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Abweichung im Anzugreserve-Delta",
-          "scanner": "ANZUGRESERVE-DELTA // Handgelenkzähler passt nicht mehr zum Raumregister. Der Anzug trug weniger Luft, als der Schreibtisch später behauptete.",
-          "terminal": "QA ANZUGRESERVE // Handgelenkreserve, Tankplombe, Schlauchkupplung, Scrubber-Schnitt, Kompressorübergabe, Routenschluss und claim hold vergleichen. Die Abweichung folgt Verwahrung, nicht Sauerstoff.",
-          "audio": "Anzugreserve sagt leer. Raumregister sagt ausstehend. Jemand bewegte die Zahl, nicht die Luft.",
-          "in_game_wiki": "Ein Anzugreserve-Delta ist die Differenz zwischen drei Aufzeichnungen: was der Anzug am Handgelenk zählte, was der Raum geliefert haben will, und was die Kompressorzeile als Übergabe meldete. Es ist eine trockene Zahl, bis sie dem Sauerstoffbuch widerspricht. Dann wird sie zur Aufzeichnung, die am Körper verschraubt blieb.\n\nEin Arbeitsanzug verbraucht Luft nicht in sauberen Blöcken. Panik, Belastung, Maskenleck, kalte Dichtungen und Sole im Schlauch hinterlassen gezackten Verlust. Ein später Schreibtischeintrag wirkt oft glatt. Fällt der Handgelenkzähler vor dem Raumregister in die Totzone niedriger Luft, trug der Raum den Arbeiter nicht mehr. Stellt der Schreibtisch später Reserve ohne passende Tankplombe oder Füllung wieder her, existiert diese Luft nur im Papier.\n\nDie Abweichung zählt, weil jeder Besitzer anders lügen kann. Lebenserhaltung kann sagen, der Raum sei noch ausstehend gewesen. Route desk kann sagen, der Arbeiter sei nicht zurückgekehrt. Claim desk kann den Anzug als bergbare Ausrüstung führen. Der Anzug kennt nur Druck, Zug und Ventilzustand. Diese Enge macht ihn schwer bestechlich.\n\nFeldarbeit ist hier körperlich. Den Anzug vor dem Zählerfoto nicht entlüften oder auffüllen. Handgelenkanzeige, Salz an der Tankventilöffnung, Plombendraht, Kratzer der Schlauchkupplung und Sole im Füllhals fotografieren. Diese Spuren mit Scrubber-Schnitt und claim hold vergleichen. Ein Reserve-Delta kann zeigen, wo Luft endete und Abrechnung weiterlief.",
-          "external_site": "Eine Abweichung im Anzugreserve-Delta fängt den Moment, in dem die Ausrüstung des Arbeiters nicht mehr zum Kolonieregister passte. Der Anzug schreibt Druck; die Schreibtische schreiben Erlaubnis, Verzögerung und claim-Sprache.",
-          "external_site_article": "Der Handgelenkzähler ist eine hässliche kleine Akte: kein Geständnis, keine letzte Nachricht, nur fallender Druck unter der Hand eines Arbeiters. Darum gehört er neben das Sauerstoffbuch. Es kümmert ihn nicht, ob eine Route offen blieb.\n\nAuf Aegir sollten Raumunterstützung und Anzugreserve zusammenlaufen. Der Raum speiste Luft; der Anzug pufferte Verlust; der Kompressor schrieb seine Übergabe; die Routentafel wartete auf eine Rückkehrmarke. Wenn diese Zahlen auseinanderlaufen, passt die Papierkarte der Kolonie nicht mehr zum Körperpfad.\n\nDeep Reach konnte diese Lücke nutzen. Ein Anzug mit ungeklärter Reserve blieb bergbare Ausrüstung. Ein Arbeiter mit offener Route blieb abrechenbar. Ein claim hold konnte über beiden liegen und den sauberen Verlustschluss verzögern, bis die passende Eigentumssprache hart wurde.\n\nDas Reserve-Delta löst den Tod nicht. Es zeigt auf den Schreibtisch, an dem Atem zu Inventar wurde. Mit Sauerstoffbuch-Schnitt, fehlender Rückkehrmarke und überlappendem Routengenehmigungsstempel lesen, bevor ein aktiver Arbeiterstatus gilt.",
-          "field_note": "Wenn das Handgelenk vor dem Register leer lief, nimm zuerst die Anzugaufzeichnung.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Niezgodność delty rezerwy skafandra",
-          "scanner": "DELTA REZERWY SKAFANDRA // Licznik na nadgarstku rozchodzi się z księgą pomieszczenia. Skafander miał mniej powietrza, niż później twierdził desk.",
-          "terminal": "QA REZERWY SKAFANDRA // Porównać rezerwę na nadgarstku, plombę butli, złączkę węża, odcięcie scrubbera, przekazanie kompresora, zamknięcie trasy i claim hold. Niezgodność idzie za custody, nie za tlenem.",
-          "audio": "Rezerwa skafandra mówi: pusto. Księga pomieszczenia mówi: oczekuje. Ktoś przesunął liczbę, nie powietrze.",
-          "in_game_wiki": "Delta rezerwy skafandra to różnica między trzema zapisami: tym, co skafander policzył na nadgarstku, tym, co pomieszczenie miało dostarczyć, i tym, co wiersz kompresora wpisał jako przekazanie. To sucha liczba, dopóki nie kłóci się z księgą tlenu. Wtedy staje się zapisem przykręconym do ciała.\n\nSkafander w pracy nie zużywa powietrza równymi blokami. Panika, wysiłek, przeciek maski, zimne uszczelki i solanka w wężu zostawiają postrzępiony ubytek. Późny wpis biurkowy bywa gładki. Jeśli licznik na nadgarstku wpada w martwą strefę niskiego powietrza zanim księga pomieszczenia uzna odcięcie, pomieszczenie nie niosło już pracownika. Jeśli desk przywraca rezerwę bez pasującej plomby butli albo zdarzenia uzupełnienia, to powietrze istnieje tylko w papierach.\n\nNiezgodność jest ważna, bo każdy właściciel danych może kłamać inaczej. Podtrzymanie życia może mówić, że pomieszczenie było nadal oczekujące. Route desk może mówić, że pracownik nie wrócił. Claim desk może nazwać skafander sprzętem do odzysku. Sam skafander zna tylko ciśnienie, pobór i stan zaworu. Taka wąskość trudno daje się kupić.\n\nObsługa terenowa jest fizyczna. Nie odpowietrzać ani nie dopełniać skafandra przed zapisem licznika. Sfotografować wyświetlacz na nadgarstku, sól na zaworze butli, drut plomby, rysę na złączce i solankę w gardzieli napełniania. Porównać te ślady z wierszem odcięcia scrubbera i claim hold. Delta rezerwy może pokazać, gdzie skończyło się powietrze, a gdzie dalej działało rozliczenie.",
-          "external_site": "Niezgodność delty rezerwy skafandra łapie moment, w którym sprzęt pracownika przestał zgadzać się z księgą kolonii. Skafander zapisuje ciśnienie; biurka zapisują zgodę, opóźnienie i język claim.",
-          "external_site_article": "Licznik na nadgarstku to brzydki mały zapis: nie wyznanie, nie ostatnia wiadomość, tylko ciśnienie spadające pod ręką pracownika. Dlatego należy do księgi tlenu. Nie obchodzi go, czy trasa była nadal otwarta.\n\nNa Aegir wsparcie pomieszczenia i rezerwa skafandra miały iść razem. Pomieszczenie dawało powietrze; skafander amortyzował stratę; kompresor pisał przekazanie; tablica trasy czekała na znak powrotu. Kiedy te liczby się rozchodzą, papierowa mapa kolonii przestaje pasować do ścieżki ciała.\n\nDeep Reach mogła użyć tej luki. Skafander z nierozwiązaną rezerwą zostawał sprzętem do odzysku. Pracownik z otwartą trasą pozostawał rozliczalny. Claim hold mógł przykryć jedno i drugie, opóźniając czyste zamknięcie straty, aż przydatny język własności stwardniał.\n\nDelta rezerwy nie rozwiązuje śmierci. Wskazuje biurko, przy którym oddech stał się inwentarzem. Czytać ją z odcięciem księgi tlenu, brakującym znakiem powrotu i nakładką stempla zgody trasy, zanim zaufa się statusowi aktywnego pracownika.",
-          "field_note": "Jeśli nadgarstek wyschł przed zamknięciem księgi, najpierw ufaj zapisowi skafandra.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Невідповідність дельти резерву костюма",
-          "scanner": "ДЕЛЬТА РЕЗЕРВУ КОСТЮМА // Наручний лічильник розходиться з журналом кімнати. У костюмі було менше повітря, ніж пізніше заявив стіл.",
-          "terminal": "QA РЕЗЕРВУ КОСТЮМА // Звірити наручний резерв, пломбу балона, муфту шланга, відсічення скрубера, передачу компресора, закриття маршруту й claim hold. Невідповідність іде за custody, не за киснем.",
-          "audio": "Резерв костюма каже: порожньо. Журнал кімнати каже: очікує. Хтось рухав число, не повітря.",
-          "in_game_wiki": "Дельта резерву костюма — це різниця між трьома записами: що костюм порахував на зап'ясті, що кімната нібито подала, і що рядок компресора записав як передачу. Сама по собі це суха цифра. Коли вона сперечається з кисневим журналом, вона стає записом, прикрученим до тіла.\n\nРобочий костюм не витрачає повітря рівними блоками. Паніка, навантаження, протікання маски, холодні ущільнювачі й розсіл у шлангу лишають рваний спад. Пізній запис зі столу часто виглядає гладко. Якщо наручний лічильник падає в мертву зону малого повітря раніше, ніж журнал кімнати визнає відсічення, кімната вже не несла працівника. Якщо стіл потім повертає резерв без відповідної пломби балона або події дозаправки, це повітря існує тільки в паперах.\n\nНевідповідність важлива, бо кожен власник даних може брехати по-своєму. Життєзабезпечення може сказати, що кімната ще очікувала. Route desk може сказати, що працівник не повернувся. Claim desk може назвати костюм обладнанням для вилучення. Сам костюм знає лише тиск, витрату й стан клапана. Така вузькість погано продається.\n\nПольова робота тут фізична. Не стравлювати й не дозаправляти костюм до фіксації лічильника. Зняти наручний дисплей, сіль на клапані балона, дріт пломби, подряпину на муфті шланга й будь-який розсіл у горловині заправки. Звірити ці сліди з рядком відсічення скрубера й claim hold. Дельта резерву може показати, де повітря закінчилося, а облік продовжився.",
-          "external_site": "Невідповідність дельти резерву костюма ловить момент, коли спорядження працівника перестало збігатися з журналом колонії. Костюм пише тиск; столи пишуть дозвіл, затримку й мову claim.",
-          "external_site_article": "Наручний лічильник — негарний малий запис: не зізнання, не останнє повідомлення, лише тиск, що падає під рукою працівника. Тому він має лежати поруч із кисневим журналом. Йому байдуже, чи маршрут лишався відкритим.\n\nНа Aegir підтримка кімнати й резерв костюма мали рухатися разом. Кімната подавала повітря; костюм гасив втрату; компресор писав передачу; маршрутна дошка чекала позначку повернення. Коли ці числа розходяться, паперова карта колонії більше не збігається з тілесним шляхом.\n\nDeep Reach могла використати цю щілину. Костюм із нерозв'язаним резервом лишався обладнанням для вилучення. Працівник з відкритим маршрутом лишався оплачуваним. Claim hold лягав поверх обох і відкладав чисте закриття втрати, поки корисна мова власності не тверднула.\n\nДельта резерву не розв'язує смерть. Вона показує стіл, де дихання стало інвентарем. Читати її треба з відсіченням кисневого журналу, відсутньою позначкою повернення й накладанням штампа дозволу маршруту, перш ніж вірити будь-якому активному статусу працівника.",
-          "field_note": "Якщо зап'ястя висохло раніше за журнал, спершу вір запису костюма.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "اختلاف فرق احتياطي البدلة",
-          "scanner": "فرق احتياطي البدلة // يخرج عداد المعصم عن سجل الغرفة. حملت البدلة هواء أقل مما ادعاه المكتب لاحقاً.",
-          "terminal": "فحص احتياطي البدلة // قارن احتياطي المعصم، ختم الخزان، وصلة الخرطوم، قطع المرشح، تسليم الضاغط، إغلاق المسار وclaim hold. الاختلاف يتبع الحيازة، لا الأكسجين.",
-          "audio": "احتياطي البدلة يقول فارغ. سجل الغرفة يقول معلق. شخص ما حرك الرقم، لا الهواء.",
-          "in_game_wiki": "فرق احتياطي البدلة هو الفرق بين ثلاثة سجلات: ما عدته البدلة عند المعصم، وما قالت الغرفة إنها سلمته، وما زعم صف الضاغط أنه نقله. إنه رقم جاف حتى يعارض سجل الأكسجين. عندها يصبح السجل الذي بقي مثبتاً بالجسد.\n\nالبدلة العاملة لا تنفق الهواء في كتل نظيفة. الذعر، الجهد، تسرب القناع، الأختام الباردة والمحلول الملحي في الخرطوم تترك خسارة مسننة. إدخال المكتب المتأخر يميل إلى النعومة. إذا هبط عداد المعصم إلى منطقة الهواء المنخفض الميتة قبل أن يعترف سجل الغرفة بالقطع، فالغرفة لم تعد تحمل العامل. إذا أعاد المكتب الاحتياطي لاحقاً بلا ختم خزان مطابق أو حدث تعبئة، فهذا الهواء موجود في الورق فقط.\n\nيهم الاختلاف لأن كل مالك بيانات يستطيع أن يكذب بطريقة مختلفة. دعم الحياة يستطيع القول إن الغرفة ما زالت معلقة. Route desk يستطيع القول إن العامل لم يعد. Claim desk يستطيع تسمية البدلة معدات قابلة للاسترداد. البدلة نفسها تعرف الضغط والسحب وحالة الصمام فقط. هذا الضيق يجعل شراءها صعباً.\n\nالتعامل الميداني مادي. لا تفرغ البدلة ولا تملأها قبل تسجيل العداد. صور شاشة المعصم، ملح صمام الخزان، سلك الختم، خدش وصلة الخرطوم وأي محلول ملحي في فوهة التعبئة. قارن تلك الآثار بصف قطع المرشح وclaim hold. يمكن لفرق الاحتياطي أن يبين أين انتهى الهواء وأين استمرت المحاسبة.",
-          "external_site": "اختلاف فرق احتياطي البدلة يلتقط لحظة توقف معدات العامل عن موافقة سجل المستعمرة. البدلة تسجل الضغط؛ المكاتب تسجل الإذن والتأخير ولغة claim.",
-          "external_site_article": "عداد المعصم سجل صغير قبيح: ليس اعترافاً، وليس رسالة أخيرة، بل ضغط يهبط تحت يد عامل. لهذا مكانه قرب سجل الأكسجين. لا يهمه إن كان المسار ما زال مفتوحاً.\n\nعلى Aegir كان دعم الغرفة واحتياطي البدلة يفترض أن يتحركا معاً. الغرفة تغذي الهواء؛ البدلة تمتص الخسارة؛ الضاغط يكتب التسليم؛ لوحة المسار تنتظر علامة العودة. عندما تنفصل هذه الأرقام، لا تعود خريطة المستعمرة الورقية تطابق مسار الجسد.\n\nاستطاعت Deep Reach استخدام تلك الفجوة. بدلة باحتياطي غير محسوم تبقى معدات قابلة للاسترداد. عامل بمسار مفتوح يبقى قابلاً للفوترة. يستطيع claim hold أن يغطي الاثنين، مؤجلاً إغلاق الخسارة النظيف حتى تقسو لغة الملكية المفيدة.\n\nفرق الاحتياطي لا يحل الموت. يشير إلى المكتب حيث صار النفس مخزوناً. اقرأه مع قطع سجل الأكسجين، علامة العودة المفقودة وتداخل ختم إذن المسار قبل الوثوق بأي حالة عامل نشط.",
-          "field_note": "إذا جف عداد المعصم قبل إغلاق السجل، فاقرأ سجل البدلة أولاً.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Ketidakcocokan Delta Cadangan Baju",
-          "scanner": "DELTA CADANGAN BAJU // Penghitung pergelangan keluar dari jalur buku ruang. Baju membawa udara lebih sedikit daripada klaim meja kemudian.",
-          "terminal": "QA CADANGAN BAJU // Bandingkan cadangan pergelangan, segel tangki, kopler selang, potongan scrubber, serah-terima kompresor, penutupan rute dan claim hold. Ketidakcocokan mengikuti custody, bukan oksigen.",
-          "audio": "Cadangan baju bilang kosong. Buku ruang bilang tertunda. Seseorang memindahkan angka, bukan udara.",
-          "in_game_wiki": "Delta cadangan baju adalah selisih antara tiga catatan: yang dihitung baju di pergelangan, yang diklaim ruang sudah dikirim, dan yang ditulis baris kompresor sebagai serah-terima. Angka itu kering sampai bertentangan dengan buku oksigen. Saat itu ia menjadi catatan yang masih terpasang pada tubuh.\n\nBaju kerja tidak menghabiskan udara dalam blok rapi. Panik, tenaga, kebocoran masker, seal dingin dan air garam di selang meninggalkan kehilangan bergerigi. Entri meja yang datang belakangan cenderung halus. Jika penghitung pergelangan jatuh ke zona mati udara rendah sebelum buku ruang mengakui potongan, ruang sudah tidak menopang pekerja. Jika meja kemudian mengembalikan cadangan tanpa segel tangki atau kejadian isi ulang yang cocok, udara itu hanya ada di kertas.\n\nKetidakcocokan ini penting karena setiap pemilik data bisa berbohong dengan cara berbeda. Dukungan hidup bisa berkata ruang masih tertunda. Route desk bisa berkata pekerja belum kembali. Claim desk bisa menyebut baju sebagai peralatan yang dapat diambil. Baju itu sendiri hanya tahu tekanan, tarikan dan keadaan katup. Kesempitan itu membuatnya sulit dibeli.\n\nPenanganan lapangan bersifat fisik. Jangan buang atau tambah udara baju sebelum mencatat penghitung. Foto layar pergelangan, garam pada katup tangki, kawat segel, goresan kopler selang dan air garam di leher isi. Bandingkan jejak itu dengan baris potongan scrubber dan claim hold. Delta cadangan dapat menunjukkan di mana udara selesai dan pembukuan terus berjalan.",
-          "external_site": "Ketidakcocokan delta cadangan baju menangkap saat peralatan pekerja berhenti cocok dengan buku koloni. Baju mencatat tekanan; meja mencatat izin, penundaan dan bahasa claim.",
-          "external_site_article": "Penghitung pergelangan adalah catatan kecil yang buruk rupa: bukan pengakuan, bukan pesan terakhir, hanya tekanan yang turun di bawah tangan pekerja. Karena itu ia layak berada di sebelah buku oksigen. Ia tidak peduli apakah rute masih terbuka.\n\nDi Aegir, dukungan ruang dan cadangan baju seharusnya bergerak bersama. Ruang memberi udara; baju menahan rugi; kompresor menulis serah-terima; papan rute menunggu tanda pulang. Ketika angka-angka itu pecah, peta kertas koloni tidak lagi cocok dengan jalur tubuh.\n\nDeep Reach bisa memakai celah itu. Baju dengan cadangan belum selesai bisa tetap diberi tag peralatan yang dapat diambil. Pekerja dengan rute terbuka bisa tetap dapat ditagih. Claim hold bisa duduk di atas keduanya, menunda penutupan rugi yang bersih sampai bahasa kepemilikan yang berguna mengeras.\n\nDelta cadangan tidak memecahkan kematian. Ia menunjuk meja tempat napas menjadi inventaris. Baca bersama potongan buku oksigen, tanda pulang yang hilang dan tumpang tindih stempel izin rute sebelum mempercayai status pekerja aktif.",
-          "field_note": "Jika pergelangan kering sebelum buku ditutup, baca catatan baju dulu.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "슈트 예비량 델타 불일치",
-          "scanner": "슈트 예비량 델타 // 손목 계수기가 방 장부와 어긋난다. 슈트에는 나중에 데스크가 주장한 것보다 적은 공기가 있었다.",
-          "terminal": "슈트 예비량 QA // 손목 예비량, 탱크 봉인, 호스 커플러, 스크러버 절단, 압축기 인계, 경로 폐쇄, claim hold를 대조한다. 불일치는 산소가 아니라 보관 경로를 따른다.",
-          "audio": "슈트 예비량은 비었다고 한다. 방 장부는 대기라고 한다. 누군가 공기가 아니라 숫자를 옮겼다.",
-          "in_game_wiki": "슈트 예비량 델타는 세 기록의 차이다. 슈트가 손목에서 센 양, 방이 공급했다고 말한 양, 압축기 행이 인계했다고 쓴 양이다. 산소 장부와 어긋나기 전까지는 건조한 숫자다. 어긋나는 순간, 몸에 볼트로 남은 기록이 된다.\n\n작업 중인 슈트는 공기를 깔끔한 덩어리로 쓰지 않는다. 공포, 힘쓰기, 마스크 누출, 차가운 실, 호스 속 염수는 들쭉날쭉한 손실을 남긴다. 늦은 데스크 입력은 보통 매끈하다. 손목 계수기가 방 장부의 절단보다 먼저 저공기 사각대로 떨어지면 방은 더는 작업자를 떠받치지 않았다. 데스크가 나중에 맞는 탱크 봉인이나 재충전 사건 없이 예비량을 되돌리면, 그 공기는 서류에만 있다.\n\n이 불일치가 중요한 이유는 소유자마다 다른 거짓말을 할 수 있기 때문이다. 생명유지는 방이 아직 대기 중이었다고 말할 수 있다. route desk는 작업자가 돌아오지 않았다고 말할 수 있다. claim desk는 슈트를 회수 가능 장비라고 부를 수 있다. 슈트 자체는 압력, 소모, 밸브 상태만 안다. 그 좁음 때문에 매수하기 어렵다.\n\n현장 처리는 물리적으로 해야 한다. 계수기를 기록하기 전에 슈트를 배기하거나 보충하지 않는다. 손목 표시, 탱크 밸브의 소금, 봉인선, 호스 커플러 긁힘, 충전 목의 염수를 촬영한다. 이 흔적을 스크러버 절단 행과 claim hold에 맞춘다. 예비량 델타는 공기가 끝난 곳과 회계가 계속된 곳을 보여줄 수 있다.",
-          "external_site": "슈트 예비량 델타 불일치는 작업자의 장비가 식민지 장부와 더는 맞지 않던 순간을 잡는다. 슈트는 압력을 기록한다. 데스크는 허가, 지연, claim 언어를 기록한다.",
-          "external_site_article": "손목 계수기는 보기 나쁜 작은 기록이다. 고백도 아니고 마지막 메시지도 아니다. 작업자의 손 아래서 떨어지는 압력일 뿐이다. 그래서 산소 장부 옆에 있어야 한다. 경로가 아직 열려 있었는지는 신경 쓰지 않는다.\n\nAegir에서 방 지원과 슈트 예비량은 함께 움직여야 했다. 방은 공기를 먹이고, 슈트는 손실을 완충하고, 압축기는 인계를 쓰고, 경로판은 귀환 표식을 기다렸다. 이 숫자들이 갈라지면 식민지의 종이 지도는 몸의 경로와 맞지 않는다.\n\nDeep Reach는 그 틈을 쓸 수 있었다. 미해결 예비량을 가진 슈트는 회수 가능 장비로 남을 수 있었다. 열린 경로의 작업자는 청구 가능 상태로 남을 수 있었다. claim hold는 둘 위에 앉아 유용한 소유권 언어가 굳을 때까지 깨끗한 손실 폐쇄를 늦출 수 있었다.\n\n예비량 델타는 죽음을 해결하지 않는다. 호흡이 재고가 된 데스크를 가리킨다. 산소 장부 절단, 빠진 귀환 표식, 경로 허가 스탬프 겹침과 함께 읽은 뒤 활성 작업자 상태를 믿어야 한다.",
-          "field_note": "장부가 닫히기 전에 손목이 먼저 말랐다면, 슈트 기록을 먼저 믿어라.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "פער דלתא בעתודת חליפה",
-          "scanner": "דלתא עתודת חליפה // מונה פרק היד יוצא מסנכרון עם יומן החדר. בחליפה היה פחות אוויר ממה שהשולחן טען אחר כך.",
-          "terminal": "בדיקת עתודת חליפה // להשוות עתודת פרק יד, חותם מכל, מחבר צינור, חיתוך סקרבר, מסירת מדחס, סגירת מסלול ו-claim hold. הפער עוקב אחרי משמורת, לא אחרי חמצן.",
-          "audio": "עתודת החליפה אומרת ריק. יומן החדר אומר ממתין. מישהו הזיז את המספר, לא את האוויר.",
-          "in_game_wiki": "דלתא עתודת חליפה היא ההפרש בין שלושה רישומים: מה שהחליפה ספרה בפרק היד, מה שהחדר אמר שסיפק, ומה ששורת המדחס טענה שמסרה. זה מספר יבש עד שהוא מתנגש עם יומן החמצן. אז הוא הופך לרישום שנשאר מוברג לגוף.\n\nחליפת עבודה לא צורכת אוויר בבלוקים נקיים. פאניקה, מאמץ, דליפת מסכה, אטמים קרים ותמלחת בצינור משאירים אובדן משונן. רשומת שולחן מאוחרת נראית לרוב חלקה. אם מונה פרק היד נופל לאזור מת של אוויר נמוך לפני שיומן החדר מודה בחיתוך, החדר כבר לא נשא את העובד. אם השולחן מחזיר עתודה בלי חותם מכל או אירוע מילוי תואם, האוויר הזה קיים רק בניירת.\n\nהפער חשוב כי כל בעל נתונים יכול לשקר אחרת. תמיכת חיים יכולה לומר שהחדר עוד היה ממתין. Route desk יכול לומר שהעובד לא חזר. Claim desk יכול לקרוא לחליפה ציוד בר-השבה. החליפה עצמה יודעת רק לחץ, משיכה ומצב שסתום. הצרות הזאת מקשה לקנות אותה.\n\nהטיפול בשטח פיזי. לא לרוקן ולא למלא את החליפה לפני רישום המונה. לצלם את תצוגת פרק היד, המלח על שסתום המכל, חוט החותם, שריטת מחבר הצינור וכל תמלחת בצוואר המילוי. להשוות את הסימנים לשורת חיתוך הסקרבר ול-claim hold. דלתא עתודה יכולה להראות איפה האוויר נגמר ואיפה החשבונאות המשיכה.",
-          "external_site": "פער דלתא בעתודת חליפה תופס את הרגע שבו ציוד העובד הפסיק להסכים עם יומן המושבה. החליפה רושמת לחץ; השולחנות רושמים הרשאה, עיכוב ושפת claim.",
-          "external_site_article": "מונה פרק היד הוא רשומה קטנה ומכוערת: לא וידוי, לא הודעה אחרונה, רק לחץ שיורד תחת יד של עובד. לכן מקומו ליד יומן החמצן. לא אכפת לו אם מסלול עוד היה פתוח.\n\nב-Aegir, תמיכת החדר ועתודת החליפה היו אמורות לזוז יחד. החדר הזין אוויר; החליפה ספגה אובדן; המדחס כתב מסירה; לוח המסלול חיכה לסימן חזרה. כשהמספרים האלה נפרדים, מפת הנייר של המושבה כבר לא מתאימה לדרך הגוף.\n\nDeep Reach יכלה להשתמש בפער הזה. חליפה עם עתודה לא פתורה יכלה להישאר מסומנת כציוד בר-השבה. עובד עם מסלול פתוח יכול היה להישאר בר חיוב. Claim hold יכול לשבת מעל שניהם, ולעכב סגירת אובדן נקייה עד ששפת הבעלות המועילה מתקשה.\n\nדלתא העתודה לא פותרת את המוות. היא מצביעה על השולחן שבו נשימה הפכה למלאי. לקרוא אותה עם חיתוך יומן החמצן, סימן החזרה החסר וחפיפת חותמת הרשאת המסלול לפני שמאמינים לכל סטטוס עובד פעיל.",
-          "field_note": "אם פרק היד התרוקן לפני שהיומן נסגר, קרא קודם את רישום החליפה.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Incompatibilidade da Delta de Reserva do Traje",
-          "scanner": "DELTA DA RESERVA DO TRAJE // Contador de pulso sai do passo com o livro da sala. O traje carregava menos ar do que a mesa afirmou depois.",
-          "terminal": "QA RESERVA DO TRAJE // Compare reserva de pulso, lacre do tanque, engate da mangueira, corte do scrubber, handoff do compressor, fechamento de rota e claim hold. A incompatibilidade segue custódia, não oxigênio.",
-          "audio": "A reserva do traje diz vazio. O livro da sala diz pendente. Alguém moveu o número, não o ar.",
-          "in_game_wiki": "A delta de reserva do traje é a diferença entre três registros: o que o traje contou no pulso, o que a sala disse entregar e o que a linha do compressor afirmou transferir. É um número seco até discordar do livro de oxigênio. Aí vira o registro preso ao corpo.\n\nUm traje em trabalho não gasta ar em blocos limpos. Pânico, esforço, vazamento de máscara, selos frios e salmoura na mangueira deixam perda serrilhada. Uma entrada tardia de mesa tende a parecer lisa. Se o contador de pulso cai na zona morta de baixo ar antes de o livro da sala admitir o corte, a sala já não sustentava o trabalhador. Se a mesa restaura reserva depois sem lacre de tanque ou recarga correspondente, esse ar existe só nos papéis.\n\nA incompatibilidade importa porque cada dono de dados pode mentir de um jeito. Suporte de vida pode dizer que a sala ainda estava pendente. Route desk pode dizer que o trabalhador não voltou. Claim desk pode chamar o traje de equipamento recuperável. O traje em si só sabe pressão, consumo e estado da válvula. Essa estreiteza dificulta suborno.\n\nO manejo em campo é físico. Não ventile nem complete o traje antes de registrar o contador. Fotografe visor de pulso, sal na válvula do tanque, fio do lacre, arranhão do engate e qualquer salmoura no bocal de enchimento. Compare esses sinais com a linha de corte do scrubber e o claim hold. Uma delta de reserva pode mostrar onde o ar terminou e onde a contabilidade continuou.",
-          "external_site": "Uma incompatibilidade da delta de reserva do traje captura o momento em que o equipamento do trabalhador parou de concordar com o livro da colônia. O traje registra pressão; as mesas registram permissão, atraso e linguagem de claim.",
-          "external_site_article": "O contador de pulso é um registro pequeno e feio: não uma confissão, não uma última mensagem, só pressão caindo sob a mão de um trabalhador. Por isso pertence ao lado do livro de oxigênio. Ele não liga se a rota ainda estava aberta.\n\nEm Aegir, suporte da sala e reserva do traje deviam andar juntos. A sala alimentava ar; o traje amortecia perda; o compressor escrevia seu handoff; o quadro de rota esperava uma marca de retorno. Quando esses números se separam, o mapa de papel da colônia já não combina com o caminho do corpo.\n\nA Deep Reach podia usar essa brecha. Um traje com reserva não resolvida podia seguir marcado como equipamento recuperável. Um trabalhador com rota aberta podia seguir faturável. Um claim hold podia sentar sobre ambos, atrasando o fechamento limpo da perda até a linguagem útil de propriedade endurecer.\n\nA delta de reserva não resolve a morte. Ela aponta para a mesa onde respiração virou inventário. Leia com o corte do livro de oxigênio, a marca de retorno ausente e a sobreposição do carimbo de permissão antes de confiar em qualquer status de trabalhador ativo.",
-          "field_note": "Se o pulso secou antes do livro fechar, confie primeiro no registro do traje.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Mismatch in pakreserve-delta",
-          "scanner": "PAKRESERVE-DELTA // Polsteller loopt uit de pas met het kamerregister. Het pak droeg minder lucht dan de desk later beweerde.",
-          "terminal": "QA PAKRESERVE // Vergelijk polsreserve, tankzegel, slangkoppeling, scrubbersnede, compressoroverdracht, routesluiting en claim hold. De mismatch volgt bewaring, niet zuurstof.",
-          "audio": "Pakreserve zegt leeg. Kamerregister zegt wachtend. Iemand verplaatste het getal, niet de lucht.",
-          "in_game_wiki": "Een pakreserve-delta is het verschil tussen drie registraties: wat het pak aan de pols telde, wat de kamer zei te leveren, en wat de compressorregel als overdracht noteerde. Het is een droog getal tot het botst met het zuurstofregister. Dan wordt het het register dat aan het lichaam vastzat.\n\nEen werkend pak verbruikt lucht niet in nette blokken. Paniek, inspanning, maskerlek, koude afdichtingen en pekel in een slang laten gekarteld verlies achter. Een late deskregel oogt vaak glad. Als de polsteller in de lage-lucht-dode zone valt voordat het kamerregister de snede toegeeft, droeg de kamer de werker niet meer. Als de desk later reserve herstelt zonder passend tankzegel of vulmoment, bestaat die lucht alleen op papier.\n\nDe mismatch telt omdat elke eigenaar anders kan liegen. Levensondersteuning kan zeggen dat de kamer nog wachtend was. Route desk kan zeggen dat de werker niet terug was. Claim desk kan het pak bergbare uitrusting noemen. Het pak zelf kent alleen druk, verbruik en klepstand. Die smalte maakt het moeilijk om te kopen.\n\nVeldbehandeling is fysiek. Ontlucht of vul het pak niet bij voor de teller is vastgelegd. Fotografeer polsscherm, zout op de tankklep, zegeldraad, kras op de slangkoppeling en pekel in de vulhals. Vergelijk die sporen met de scrubbersnede en claim hold. Een reserve-delta kan tonen waar lucht eindigde en boekhouding doorging.",
-          "external_site": "Een mismatch in pakreserve-delta vangt het moment waarop de uitrusting van de werker niet langer met het kolonieregister klopte. Het pak registreert druk; desks registreren toestemming, vertraging en claimtaal.",
-          "external_site_article": "De polsteller is een lelijk klein register: geen bekentenis, geen laatste bericht, alleen druk die onder de hand van een werker zakt. Daarom hoort hij naast het zuurstofregister. Het maakt hem niets uit of een route nog open stond.\n\nOp Aegir moesten kamersteun en pakreserve samen bewegen. De kamer voedde lucht; het pak ving verlies op; de compressor schreef overdracht; het routebord wachtte op een terugkeermarkering. Als die getallen splitsen, past de papieren kaart van de kolonie niet meer op het lichaamspad.\n\nDeep Reach kon die kloof gebruiken. Een pak met onopgeloste reserve kon bergbare uitrusting blijven. Een werker met open route kon factureerbaar blijven. Een claim hold kon over beide liggen en een schone verliessluiting uitstellen tot bruikbare eigendomstaal hard werd.\n\nDe reserve-delta lost de dood niet op. Hij wijst naar de desk waar adem voorraad werd. Lees hem met de zuurstofregistersnede, ontbrekende terugkeermarkering en overlap van de routetoestemmingsstempel voordat je actieve-werkerstatus vertrouwt.",
-          "field_note": "Als de pols eerder droogliep dan het register sloot, neem eerst de pakregistratie.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.suit_reserve_delta_mismatch_field_article",
+    "secondary": [
+     "unlock.first_suit_reserve_delta_mismatch",
+     "unlock.first_oxygen_ledger_cutoff_claim_hold",
+     "unlock.first_missing_return_mark_claim_conversion"
+    ],
+    "poi_tags": [
+     "poi.suit_reserve_delta",
+     "poi.wrist_counter",
+     "poi.tank_seal",
+     "poi.hose_coupler",
+     "poi.fill_throat_brine",
+     "poi.scrubber_cutoff_row",
+     "poi.oxygen_ledger_cutoff",
+     "poi.claim_hold_field",
+     "poi.route_permission_stamp",
+     "poi.missing_return_mark"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.suit_service_bay",
+     "biome.life_support",
+     "biome.claim_admin",
+     "biome.evidence_custody"
+    ],
+    "depth_band_m": "0-4200"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Suit Service QA Note",
+     "audio": "Recovered Suit Bay Clip",
+     "in_game_wiki": "PDA Forensic Object Article",
+     "external_site": "Public Lore Atlas Evidence Note",
+     "field_note": "Marauder Field Note"
+    },
+    "source_brief": {
+     "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
+     "spoiler_level": "1",
+     "speaker_source": "PDA scanner, suit service QA note, suit bay clip, Marauder annotation, public lore atlas",
+     "audience": "after oxygen ledger cutoff and claim hold evidence; public atlas under early-evidence spoiler boundary",
+     "date_era": "2190 recovery reading of 2147 suit reserve counter, oxygen ledger and claim artifacts",
+     "location_depth_route": "suit service bay, pressure-room support panel, oxygen ledger strip, route desk cache",
+     "unlock_context": "after oxygen ledger cutoff claim hold and missing return mark claim conversion",
+     "evidence_object": "wrist reserve counter, tank seal, hose coupler, fill throat brine and room ledger reserve delta",
+     "source_knows": "suit reserve can disagree with room oxygen ledger and later claim status; wrist counter may fix air loss before desk records close",
+     "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
+     "truth_pressure": "A suit reserve mismatch can show where breath became inventory without naming the final culprit.",
+     "design_use": "bind wearable life-support evidence to oxygen ledger cutoff and claim desk ambiguity"
+    },
+    "spoiler_boundary": {
+     "tier": 1,
+     "allowed_reveals": [
+      "suit reserve can disagree with room ledger",
+      "desk records can restore reserve without physical refill evidence",
+      "active route status can persist after wearable air evidence fails"
+     ],
+     "blocked_reveals": [
+      "final culprit",
+      "hidden transcript sentence",
+      "ending payload identity"
+     ]
     }
-  ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Suit Reserve Delta Mismatch",
+     "scanner": "SUIT RESERVE DELTA // Wrist counter falls out of step with the room ledger. The suit carried less air than the desk later claimed.",
+     "terminal": "SUIT RESERVE QA // Compare wrist reserve, tank seal, hose coupler, scrubber cutoff, compressor handoff, route closure and claim hold. The mismatch follows custody, not oxygen.",
+     "audio": "Suit reserve says empty. Room ledger says pending. Somebody moved the number, not the air.",
+     "in_game_wiki": "A suit reserve delta is the difference between three records: what the suit counted at the wrist, what the room said it delivered and what the compressor row claimed to hand off. It is a dull number until it disagrees with the oxygen ledger. Then it becomes the record that stayed bolted to the body.\n\nA working suit does not spend air in clean blocks. Panic, exertion, mask leaks, cold seals and brine in a hose all leave jagged reserve loss. A later desk entry tends to look smooth. If the wrist counter drops into the low-air dead band before the room ledger admits cutoff, the room was no longer carrying the worker. If the desk later restores reserve without a matching tank seal or refill event, the air exists only in paperwork.\n\nThe mismatch matters because each owner can tell a different lie. Life support can say the room was still pending. Route desk can say the worker had not returned. Claim desk can say the suit remained recoverable equipment. The suit itself only knows pressure, draw and valve state. That narrowness makes it hard to bribe.\n\nField handling is physical. Do not vent or top up the suit before recording the counter. Photograph the wrist display, tank valve salt, seal wire, hose coupler scratch and any brine in the fill throat. Compare those marks to the scrubber cutoff row and claim hold. A reserve delta can show where air ended and accounting continued.",
+     "external_site": "A suit reserve delta mismatch catches the moment when the worker's own gear stopped agreeing with the colony ledger. The suit records pressure; the desks record permission, delay and claim language.",
+     "external_site_article": "The wrist counter is an ugly little record: not a confession, not a final message, just pressure dropping under a worker's hand. That is why it belongs beside the oxygen ledger. It does not care whether a route was still open.\n\nOn Aegir, room support and suit reserve were supposed to move together. The room fed air; the suit buffered loss; the compressor wrote its handoff; the route board waited for a return mark. When those numbers split, the colony's paper map no longer matches the body path.\n\nDeep Reach could use that gap. A suit with an unresolved reserve could stay tagged as recoverable equipment. A worker with an open route could stay billable. A claim hold could sit over both, delaying clean loss closure until the useful ownership language hardened.\n\nThe reserve delta does not solve the death. It points to the desk where breath became inventory. Read it with the oxygen ledger cutoff, missing return mark and route permission stamp overlap before trusting any active-worker status.",
+     "field_note": "If the wrist ran dry before the ledger closed, trust the suit record first.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Несовпадение дельты резерва костюма",
+     "scanner": "ДЕЛЬТА РЕЗЕРВА КОСТЮМА // Наручный счетчик расходится с комнатным журналом. В костюме было меньше воздуха, чем позже заявил стол.",
+     "terminal": "QA РЕЗЕРВА КОСТЮМА // Сверить наручный резерв, пломбу баллона, муфту шланга, отсечку скруббера, передачу компрессора, закрытие маршрута и claim hold. Несовпадение идет за цепочкой хранения, а не за кислородом.",
+     "audio": "Резерв костюма говорит: пусто. Комнатный журнал говорит: ожидание. Кто-то двигал число, а не воздух.",
+     "in_game_wiki": "Дельта резерва костюма — это разница между тремя записями: что посчитал костюм на запястье, что комната якобы подала и что строка компрессора записала как передачу. Сама по себе это сухая цифра. Когда она спорит с кислородным журналом, она становится записью, которая осталась прикручена к телу.\n\nРабочий костюм не тратит воздух ровными блоками. Паника, нагрузка, протечка маски, холодные уплотнители и рассол в шланге оставляют рваный расход. Поздняя строка на столе обычно гладкая. Если наручный счетчик уходит в мертвую зону малого воздуха раньше, чем комнатный журнал признает отсечку, комната уже не несла работника. Если стол потом возвращает резерв без совпадающей пломбы баллона или события дозаправки, этот воздух существует только в бумагах.\n\nНесовпадение важно потому, что каждый владелец данных может врать по-своему. Жизнеобеспечение может сказать, что комната еще в ожидании. Route desk может сказать, что работник не вернулся. Claim desk может назвать костюм извлекаемым оборудованием. Сам костюм знает только давление, расход и положение клапана. Такая узость плохо поддается подкупу.\n\nПолевая работа здесь физическая. Не стравливать и не дозаправлять костюм до фиксации счетчика. Снять наручный дисплей, соль на клапане баллона, проволоку пломбы, царапину на муфте шланга и любой рассол в горловине заправки. Сверить эти следы со строкой отсечки скруббера и claim hold. Дельта резерва может показать, где воздух закончился, а учет продолжился.",
+     "external_site": "Несовпадение дельты резерва костюма ловит момент, когда снаряжение работника перестало соглашаться с журналом колонии. Костюм пишет давление; столы пишут разрешение, задержку и язык претензии.",
+     "external_site_article": "Наручный счетчик — уродливая маленькая запись: не признание, не последнее сообщение, а давление, падающее под рукой работника. Поэтому он должен лежать рядом с кислородным журналом. Ему все равно, был ли маршрут еще открыт.\n\nНа Aegir поддержка комнаты и резерв костюма должны были двигаться вместе. Комната подавала воздух; костюм держал запас; компрессор писал передачу; маршрутная доска ждала отметку возврата. Когда эти числа расходятся, бумажная карта колонии перестает совпадать с телесным путем.\n\nDeep Reach могла использовать этот разрыв. Костюм с неразрешенным резервом оставался помеченным как извлекаемое оборудование. Работник с открытым маршрутом оставался оплачиваемым. Claim hold ложился поверх обоих и откладывал чистое закрытие потери, пока полезный язык собственности не твердел.\n\nДельта резерва не решает смерть. Она показывает стол, где дыхание стало инвентарем. Читать ее нужно вместе с отсечкой кислородного журнала, отсутствующей отметкой возврата и наложением штампа разрешения маршрута, прежде чем верить любому активному статусу работника.",
+     "field_note": "Если запястье высохло раньше журнала, сначала верь записи костюма.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "スーツ予備差分の不一致",
+     "scanner": "スーツ予備差分 // 手首カウンターが部屋の台帳とずれる。後でデスクが主張した量より、スーツの空気は少なかった。",
+     "terminal": "スーツ予備QA // 手首予備、タンク封印、ホース継手、スクラバー停止、コンプレッサー引き渡し、ルート閉鎖、claim holdを照合。不一致は酸素ではなく保管経路を追う。",
+     "audio": "スーツ予備は空を示す。部屋台帳は保留を示す。誰かが動かしたのは空気ではなく数字だ。",
+     "in_game_wiki": "スーツ予備差分は三つの記録の差だ。手首でスーツが数えた量、部屋が供給したと言った量、コンプレッサー行が引き渡したと書いた量。この数字だけなら退屈だ。酸素台帳と食い違うと、体に固定された記録になる。\n\n作業中のスーツは空気をきれいな塊で使わない。恐怖、運動、マスク漏れ、冷えたシール、ホース内の塩水はぎざぎざの消費を残す。後から机で入れた行は滑らかになりやすい。手首カウンターが部屋台帳の停止より先に低空気の死帯へ落ちるなら、部屋はもう作業員を支えていない。対応するタンク封印や再充填イベントなしに予備が戻るなら、その空気は書類上にしかない。\n\n不一致が重要なのは、所有者ごとに違う嘘をつけるからだ。生命維持は部屋がまだ保留中だと言える。route deskは作業員が未帰還だと言える。claim deskはスーツを回収可能装備と呼べる。スーツ自身が知るのは圧力、消費、弁の状態だけだ。その狭さが買収しにくい。\n\n現場処理は物理優先。カウンター記録前にスーツを排気したり補充したりしない。手首表示、タンク弁の塩、封印線、ホース継手の擦り傷、充填口の塩水を撮影する。スクラバー停止行とclaim holdに照合する。予備差分は、空気が終わり、会計が続いた場所を示せる。",
+     "external_site": "スーツ予備差分の不一致は、作業員自身の装備がコロニー台帳と合わなくなった瞬間を捕まえる。スーツは圧力を記録する。デスクは許可、遅延、claimの言葉を記録する。",
+     "external_site_article": "手首カウンターは見栄えの悪い小さな記録だ。告白でも最後の言葉でもない。ただ作業員の手元で圧力が落ちていく。それが酸素台帳の隣に置く理由だ。ルートがまだ開いていたかどうかを気にしない。\n\nAegirでは、部屋の支援とスーツ予備は一緒に動くはずだった。部屋が空気を送り、スーツが損失を吸収し、コンプレッサーが引き渡しを書き、ルート盤が帰還印を待つ。数字が割れると、コロニーの紙の地図は体の経路と一致しなくなる。\n\nDeep Reachはその隙間を使えた。未解決の予備を持つスーツは回収可能装備として残せる。開いたルートの作業員は請求可能でいられる。claim holdはその両方にかかり、有利な所有権の言葉が固まるまで清算を遅らせる。\n\n予備差分は死を解かない。呼吸が在庫になった机を指す。酸素台帳停止、欠けた帰還印、ルート許可スタンプの重なりと合わせて読んでから、作業員有効状態を信じるべきだ。",
+     "field_note": "台帳が閉じる前に手首が空になったなら、まずスーツの記録を読む。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "潜服储备差值不匹配",
+     "scanner": "潜服储备差值 // 腕部计数器与房间账本脱节。潜服携带的空气少于后来柜台声称的数量。",
+     "terminal": "潜服储备 QA // 对照腕部储备、气瓶封签、软管接头、洗涤器截断、压缩机交接、路线关闭和claim hold。不匹配追随保管链，不追随氧气。",
+     "audio": "潜服储备显示为空。房间账本显示待处理。有人移动了数字，不是空气。",
+     "in_game_wiki": "潜服储备差值是三份记录之间的差：潜服在手腕上计到的量，房间声称送出的量，以及压缩机行声称交接的量。它本来只是一个干巴巴的数字。可一旦它和氧气账本打架，它就成了扣在身体上的记录。\n\n工作的潜服不会按整齐块状消耗空气。恐慌、用力、面罩漏气、低温密封和软管里的卤水都会留下锯齿状损耗。后来的柜台记录往往很平滑。如果腕部计数器先于房间账本的截断落入低气死区，房间已经不再支撑工人。如果柜台后来恢复了储备，却没有对应的气瓶封签或再充填事件，那些空气只存在于文件里。\n\n这种不匹配重要，是因为每个数据所有者都能撒不同的谎。生命支持可以说房间还在待处理。route desk可以说工人尚未返回。claim desk可以把潜服称作可回收设备。潜服自己只知道压力、消耗和阀门状态。正因为它知道得窄，才不容易被收买。\n\n现场处理必须抓实物。记录计数器前，不要排气，也不要补气。拍下腕部显示、气瓶阀门上的盐、封签线、软管接头刮痕，以及充填口里的任何卤水。再把这些痕迹同洗涤器截断行和claim hold对照。储备差值能显示空气在哪里结束，而账目在哪里继续。",
+     "external_site": "潜服储备差值不匹配抓住了一个时刻：工人自己的装备停止同殖民地账本保持一致。潜服记录压力；柜台记录许可、延误和claim语言。",
+     "external_site_article": "腕部计数器是一条难看的小记录：不是供词，不是遗言，只是压力在工人手边下降。正因为如此，它应该放在氧气账本旁边。它不关心路线是否还开着。\n\n在Aegir，房间支持和潜服储备本该一起移动。房间供气，潜服缓冲损耗，压缩机写下交接，路线板等待返程标记。当这些数字分裂时，殖民地的纸面地图就不再匹配身体路径。\n\nDeep Reach可以利用这道缝。储备未解决的潜服可以继续标成可回收设备。路线仍开着的工人可以继续计费。claim hold可以压在两者上面，推迟干净的损失关闭，直到有用的所有权语言变硬。\n\n储备差值不能解开死亡。它指向呼吸变成库存的那张桌子。先把它同氧气账本截断、缺失返程标记和路线许可章重叠一起读，再相信任何激活工人状态。",
+     "field_note": "如果手腕读数先于账本见底，先信潜服记录。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Écart de réserve de combinaison incohérent",
+     "scanner": "ÉCART RÉSERVE COMBINAISON // Le compteur au poignet décroche du registre de salle. La combinaison portait moins d’air que le bureau ne l’a affirmé plus tard.",
+     "terminal": "QA RÉSERVE COMBINAISON // Comparer réserve au poignet, scellé de bouteille, raccord de flexible, coupure scrubber, relais compresseur, clôture de route et claim hold. L’écart suit la garde, pas l’oxygène.",
+     "audio": "La réserve de combinaison dit vide. Le registre de salle dit en attente. Quelqu’un a déplacé le chiffre, pas l’air.",
+     "in_game_wiki": "Un écart de réserve de combinaison est la différence entre trois relevés: ce que la combinaison a compté au poignet, ce que la salle dit avoir livré, et ce que la ligne compresseur affirme avoir transféré. C’est un chiffre sec jusqu’à ce qu’il contredise le registre d’oxygène. Là, il devient le relevé resté boulonné au corps.\n\nUne combinaison en travail ne consomme pas l’air par blocs propres. Panique, effort, fuite de masque, joints froids et saumure dans un flexible laissent une perte dentelée. Une entrée de bureau tardive paraît souvent lisse. Si le compteur au poignet tombe en zone morte basse avant que le registre de salle n’admette la coupure, la salle ne portait plus l’ouvrier. Si le bureau restaure ensuite une réserve sans scellé de bouteille ni recharge correspondante, cet air n’existe que dans les papiers.\n\nL’incohérence compte parce que chaque propriétaire peut mentir autrement. La survie peut dire que la salle était encore en attente. Le route desk peut dire que l’ouvrier n’était pas revenu. Le claim desk peut classer la combinaison comme équipement récupérable. La combinaison ne connaît que pression, tirage et état de valve. Cette pauvreté d’information la rend difficile à acheter.\n\nLa manipulation terrain reste matérielle. Ne pas purger ni compléter la combinaison avant de relever le compteur. Photographier l’affichage au poignet, le sel sur la valve de bouteille, le fil de scellé, la rayure du raccord et toute saumure dans le col de remplissage. Comparer ces traces à la coupure scrubber et au claim hold. Un écart de réserve peut montrer où l’air s’est arrêté et où la comptabilité a continué.",
+     "external_site": "Un écart de réserve de combinaison incohérent capture l’instant où l’équipement de l’ouvrier cesse d’être d’accord avec le registre colonial. La combinaison relève la pression; les bureaux écrivent permission, retard et vocabulaire de claim.",
+     "external_site_article": "Le compteur au poignet est une petite archive laide: ni aveu, ni dernier message, seulement une pression qui baisse sous la main d’un ouvrier. C’est pour cela qu’il doit rester près du registre d’oxygène. Il ignore qu’une route soit encore ouverte.\n\nSur Aegir, soutien de salle et réserve de combinaison devaient avancer ensemble. La salle donnait l’air; la combinaison amortissait la perte; le compresseur écrivait son relais; le tableau de route attendait une marque de retour. Quand ces nombres se séparent, la carte papier de la colonie ne suit plus le trajet du corps.\n\nDeep Reach pouvait exploiter cet écart. Une combinaison à réserve non résolue restait équipement récupérable. Un ouvrier sur route ouverte restait facturable. Le claim hold pouvait couvrir les deux et retarder la clôture propre de perte jusqu’à durcir le bon vocabulaire de propriété.\n\nL’écart de réserve ne résout pas la mort. Il désigne le bureau où le souffle est devenu inventaire. Il faut le lire avec la coupure du registre d’oxygène, la marque de retour absente et le chevauchement du tampon de route avant de croire un statut d’ouvrier actif.",
+     "field_note": "Si le poignet est tombé à sec avant la clôture du registre, lis d'abord le relevé de la combinaison.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Desajuste del delta de reserva del traje",
+     "scanner": "DELTA DE RESERVA DEL TRAJE // El contador de muñeca deja de cuadrar con el registro de sala. El traje llevaba menos aire del que el despacho reclamó después.",
+     "terminal": "QA RESERVA DEL TRAJE // Comparar reserva de muñeca, sello del tanque, acople de manguera, corte del depurador, traspaso del compresor, cierre de ruta y claim hold. El desajuste sigue custodia, no oxígeno.",
+     "audio": "La reserva del traje dice vacío. El registro de sala dice pendiente. Alguien movió el número, no el aire.",
+     "in_game_wiki": "Un delta de reserva del traje es la diferencia entre tres registros: lo que contó el traje en la muñeca, lo que la sala dijo entregar y lo que la fila del compresor afirmó traspasar. Es un número seco hasta que contradice el registro de oxígeno. Entonces se vuelve el registro que quedó atornillado al cuerpo.\n\nUn traje en uso no gasta aire en bloques limpios. Pánico, esfuerzo, fugas de máscara, sellos fríos y salmuera en una manguera dejan una pérdida dentada. Una entrada tardía de despacho suele verse lisa. Si el contador de muñeca cae en banda muerta de aire bajo antes de que el registro de sala admita el corte, la sala ya no sostenía al trabajador. Si el despacho restaura reserva sin sello de tanque ni recarga coincidente, ese aire solo existe en papeles.\n\nEl desajuste importa porque cada propietario puede mentir de otra forma. Soporte vital puede decir que la sala seguía pendiente. Route desk puede decir que el trabajador no regresó. Claim desk puede llamar al traje equipo recuperable. El traje solo conoce presión, consumo y estado de válvula. Esa estrechez lo hace difícil de comprar.\n\nEl manejo de campo es físico. No ventiles ni rellenes el traje antes de registrar el contador. Fotografía la pantalla de muñeca, la sal en la válvula del tanque, el hilo del sello, el arañazo del acople y cualquier salmuera en la boca de llenado. Compáralo con la fila de corte del depurador y el claim hold. Un delta de reserva puede mostrar dónde terminó el aire y dónde siguió la contabilidad.",
+     "external_site": "Un desajuste del delta de reserva del traje atrapa el momento en que el equipo del trabajador dejó de coincidir con el registro de la colonia. El traje registra presión; los despachos registran permiso, demora y lenguaje de claim.",
+     "external_site_article": "El contador de muñeca es un registro feo y pequeño: no una confesión, no un último mensaje, solo presión bajando bajo la mano de un trabajador. Por eso pertenece junto al registro de oxígeno. No le importa si la ruta seguía abierta.\n\nEn Aegir, soporte de sala y reserva del traje debían moverse juntos. La sala alimentaba aire; el traje amortiguaba la pérdida; el compresor escribía su traspaso; la tabla de ruta esperaba una marca de retorno. Cuando esos números se separan, el mapa de papel de la colonia ya no encaja con el camino del cuerpo.\n\nDeep Reach podía usar esa brecha. Un traje con reserva sin resolver podía quedar etiquetado como equipo recuperable. Un trabajador con ruta abierta podía seguir siendo facturable. Un claim hold podía cubrir ambos y retrasar el cierre limpio de pérdida hasta endurecer el lenguaje útil de propiedad.\n\nEl delta de reserva no resuelve la muerte. Señala el despacho donde el aliento se volvió inventario. Léelo con el corte del registro de oxígeno, la marca de retorno ausente y el solape del sello de permiso antes de confiar en un estado de trabajador activo.",
+     "field_note": "Si la muñeca se quedó seca antes de que cerrara el registro, lee primero el registro del traje.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Abweichung im Anzugreserve-Delta",
+     "scanner": "ANZUGRESERVE-DELTA // Handgelenkzähler passt nicht mehr zum Raumregister. Der Anzug trug weniger Luft, als der Schreibtisch später behauptete.",
+     "terminal": "QA ANZUGRESERVE // Handgelenkreserve, Tankplombe, Schlauchkupplung, Scrubber-Schnitt, Kompressorübergabe, Routenschluss und claim hold vergleichen. Die Abweichung folgt Verwahrung, nicht Sauerstoff.",
+     "audio": "Anzugreserve sagt leer. Raumregister sagt ausstehend. Jemand bewegte die Zahl, nicht die Luft.",
+     "in_game_wiki": "Ein Anzugreserve-Delta ist die Differenz zwischen drei Aufzeichnungen: was der Anzug am Handgelenk zählte, was der Raum geliefert haben will, und was die Kompressorzeile als Übergabe meldete. Es ist eine trockene Zahl, bis sie dem Sauerstoffbuch widerspricht. Dann wird sie zur Aufzeichnung, die am Körper verschraubt blieb.\n\nEin Arbeitsanzug verbraucht Luft nicht in sauberen Blöcken. Panik, Belastung, Maskenleck, kalte Dichtungen und Sole im Schlauch hinterlassen gezackten Verlust. Ein später Schreibtischeintrag wirkt oft glatt. Fällt der Handgelenkzähler vor dem Raumregister in die Totzone niedriger Luft, trug der Raum den Arbeiter nicht mehr. Stellt der Schreibtisch später Reserve ohne passende Tankplombe oder Füllung wieder her, existiert diese Luft nur im Papier.\n\nDie Abweichung zählt, weil jeder Besitzer anders lügen kann. Lebenserhaltung kann sagen, der Raum sei noch ausstehend gewesen. Route desk kann sagen, der Arbeiter sei nicht zurückgekehrt. Claim desk kann den Anzug als bergbare Ausrüstung führen. Der Anzug kennt nur Druck, Zug und Ventilzustand. Diese Enge macht ihn schwer bestechlich.\n\nFeldarbeit ist hier körperlich. Den Anzug vor dem Zählerfoto nicht entlüften oder auffüllen. Handgelenkanzeige, Salz an der Tankventilöffnung, Plombendraht, Kratzer der Schlauchkupplung und Sole im Füllhals fotografieren. Diese Spuren mit Scrubber-Schnitt und claim hold vergleichen. Ein Reserve-Delta kann zeigen, wo Luft endete und Abrechnung weiterlief.",
+     "external_site": "Eine Abweichung im Anzugreserve-Delta fängt den Moment, in dem die Ausrüstung des Arbeiters nicht mehr zum Kolonieregister passte. Der Anzug schreibt Druck; die Schreibtische schreiben Erlaubnis, Verzögerung und claim-Sprache.",
+     "external_site_article": "Der Handgelenkzähler ist eine hässliche kleine Akte: kein Geständnis, keine letzte Nachricht, nur fallender Druck unter der Hand eines Arbeiters. Darum gehört er neben das Sauerstoffbuch. Es kümmert ihn nicht, ob eine Route offen blieb.\n\nAuf Aegir sollten Raumunterstützung und Anzugreserve zusammenlaufen. Der Raum speiste Luft; der Anzug pufferte Verlust; der Kompressor schrieb seine Übergabe; die Routentafel wartete auf eine Rückkehrmarke. Wenn diese Zahlen auseinanderlaufen, passt die Papierkarte der Kolonie nicht mehr zum Körperpfad.\n\nDeep Reach konnte diese Lücke nutzen. Ein Anzug mit ungeklärter Reserve blieb bergbare Ausrüstung. Ein Arbeiter mit offener Route blieb abrechenbar. Ein claim hold konnte über beiden liegen und den sauberen Verlustschluss verzögern, bis die passende Eigentumssprache hart wurde.\n\nDas Reserve-Delta löst den Tod nicht. Es zeigt auf den Schreibtisch, an dem Atem zu Inventar wurde. Mit Sauerstoffbuch-Schnitt, fehlender Rückkehrmarke und überlappendem Routengenehmigungsstempel lesen, bevor ein aktiver Arbeiterstatus gilt.",
+     "field_note": "Wenn das Handgelenk vor dem Register leer lief, nimm zuerst die Anzugaufzeichnung.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Niezgodność delty rezerwy skafandra",
+     "scanner": "DELTA REZERWY SKAFANDRA // Licznik na nadgarstku rozchodzi się z księgą pomieszczenia. Skafander miał mniej powietrza, niż później twierdził desk.",
+     "terminal": "QA REZERWY SKAFANDRA // Porównać rezerwę na nadgarstku, plombę butli, złączkę węża, odcięcie scrubbera, przekazanie kompresora, zamknięcie trasy i claim hold. Niezgodność idzie za custody, nie za tlenem.",
+     "audio": "Rezerwa skafandra mówi: pusto. Księga pomieszczenia mówi: oczekuje. Ktoś przesunął liczbę, nie powietrze.",
+     "in_game_wiki": "Delta rezerwy skafandra to różnica między trzema zapisami: tym, co skafander policzył na nadgarstku, tym, co pomieszczenie miało dostarczyć, i tym, co wiersz kompresora wpisał jako przekazanie. To sucha liczba, dopóki nie kłóci się z księgą tlenu. Wtedy staje się zapisem przykręconym do ciała.\n\nSkafander w pracy nie zużywa powietrza równymi blokami. Panika, wysiłek, przeciek maski, zimne uszczelki i solanka w wężu zostawiają postrzępiony ubytek. Późny wpis biurkowy bywa gładki. Jeśli licznik na nadgarstku wpada w martwą strefę niskiego powietrza zanim księga pomieszczenia uzna odcięcie, pomieszczenie nie niosło już pracownika. Jeśli desk przywraca rezerwę bez pasującej plomby butli albo zdarzenia uzupełnienia, to powietrze istnieje tylko w papierach.\n\nNiezgodność jest ważna, bo każdy właściciel danych może kłamać inaczej. Podtrzymanie życia może mówić, że pomieszczenie było nadal oczekujące. Route desk może mówić, że pracownik nie wrócił. Claim desk może nazwać skafander sprzętem do odzysku. Sam skafander zna tylko ciśnienie, pobór i stan zaworu. Taka wąskość trudno daje się kupić.\n\nObsługa terenowa jest fizyczna. Nie odpowietrzać ani nie dopełniać skafandra przed zapisem licznika. Sfotografować wyświetlacz na nadgarstku, sól na zaworze butli, drut plomby, rysę na złączce i solankę w gardzieli napełniania. Porównać te ślady z wierszem odcięcia scrubbera i claim hold. Delta rezerwy może pokazać, gdzie skończyło się powietrze, a gdzie dalej działało rozliczenie.",
+     "external_site": "Niezgodność delty rezerwy skafandra łapie moment, w którym sprzęt pracownika przestał zgadzać się z księgą kolonii. Skafander zapisuje ciśnienie; biurka zapisują zgodę, opóźnienie i język claim.",
+     "external_site_article": "Licznik na nadgarstku to brzydki mały zapis: nie wyznanie, nie ostatnia wiadomość, tylko ciśnienie spadające pod ręką pracownika. Dlatego należy do księgi tlenu. Nie obchodzi go, czy trasa była nadal otwarta.\n\nNa Aegir wsparcie pomieszczenia i rezerwa skafandra miały iść razem. Pomieszczenie dawało powietrze; skafander amortyzował stratę; kompresor pisał przekazanie; tablica trasy czekała na znak powrotu. Kiedy te liczby się rozchodzą, papierowa mapa kolonii przestaje pasować do ścieżki ciała.\n\nDeep Reach mogła użyć tej luki. Skafander z nierozwiązaną rezerwą zostawał sprzętem do odzysku. Pracownik z otwartą trasą pozostawał rozliczalny. Claim hold mógł przykryć jedno i drugie, opóźniając czyste zamknięcie straty, aż przydatny język własności stwardniał.\n\nDelta rezerwy nie rozwiązuje śmierci. Wskazuje biurko, przy którym oddech stał się inwentarzem. Czytać ją z odcięciem księgi tlenu, brakującym znakiem powrotu i nakładką stempla zgody trasy, zanim zaufa się statusowi aktywnego pracownika.",
+     "field_note": "Jeśli nadgarstek wyschł przed zamknięciem księgi, najpierw ufaj zapisowi skafandra.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Невідповідність дельти резерву костюма",
+     "scanner": "ДЕЛЬТА РЕЗЕРВУ КОСТЮМА // Наручний лічильник розходиться з журналом кімнати. У костюмі було менше повітря, ніж пізніше заявив стіл.",
+     "terminal": "QA РЕЗЕРВУ КОСТЮМА // Звірити наручний резерв, пломбу балона, муфту шланга, відсічення скрубера, передачу компресора, закриття маршруту й claim hold. Невідповідність іде за custody, не за киснем.",
+     "audio": "Резерв костюма каже: порожньо. Журнал кімнати каже: очікує. Хтось рухав число, не повітря.",
+     "in_game_wiki": "Дельта резерву костюма — це різниця між трьома записами: що костюм порахував на зап'ясті, що кімната нібито подала, і що рядок компресора записав як передачу. Сама по собі це суха цифра. Коли вона сперечається з кисневим журналом, вона стає записом, прикрученим до тіла.\n\nРобочий костюм не витрачає повітря рівними блоками. Паніка, навантаження, протікання маски, холодні ущільнювачі й розсіл у шлангу лишають рваний спад. Пізній запис зі столу часто виглядає гладко. Якщо наручний лічильник падає в мертву зону малого повітря раніше, ніж журнал кімнати визнає відсічення, кімната вже не несла працівника. Якщо стіл потім повертає резерв без відповідної пломби балона або події дозаправки, це повітря існує тільки в паперах.\n\nНевідповідність важлива, бо кожен власник даних може брехати по-своєму. Життєзабезпечення може сказати, що кімната ще очікувала. Route desk може сказати, що працівник не повернувся. Claim desk може назвати костюм обладнанням для вилучення. Сам костюм знає лише тиск, витрату й стан клапана. Така вузькість погано продається.\n\nПольова робота тут фізична. Не стравлювати й не дозаправляти костюм до фіксації лічильника. Зняти наручний дисплей, сіль на клапані балона, дріт пломби, подряпину на муфті шланга й будь-який розсіл у горловині заправки. Звірити ці сліди з рядком відсічення скрубера й claim hold. Дельта резерву може показати, де повітря закінчилося, а облік продовжився.",
+     "external_site": "Невідповідність дельти резерву костюма ловить момент, коли спорядження працівника перестало збігатися з журналом колонії. Костюм пише тиск; столи пишуть дозвіл, затримку й мову claim.",
+     "external_site_article": "Наручний лічильник — негарний малий запис: не зізнання, не останнє повідомлення, лише тиск, що падає під рукою працівника. Тому він має лежати поруч із кисневим журналом. Йому байдуже, чи маршрут лишався відкритим.\n\nНа Aegir підтримка кімнати й резерв костюма мали рухатися разом. Кімната подавала повітря; костюм гасив втрату; компресор писав передачу; маршрутна дошка чекала позначку повернення. Коли ці числа розходяться, паперова карта колонії більше не збігається з тілесним шляхом.\n\nDeep Reach могла використати цю щілину. Костюм із нерозв'язаним резервом лишався обладнанням для вилучення. Працівник з відкритим маршрутом лишався оплачуваним. Claim hold лягав поверх обох і відкладав чисте закриття втрати, поки корисна мова власності не тверднула.\n\nДельта резерву не розв'язує смерть. Вона показує стіл, де дихання стало інвентарем. Читати її треба з відсіченням кисневого журналу, відсутньою позначкою повернення й накладанням штампа дозволу маршруту, перш ніж вірити будь-якому активному статусу працівника.",
+     "field_note": "Якщо зап'ястя висохло раніше за журнал, спершу вір запису костюма.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "اختلاف فرق احتياطي البدلة",
+     "scanner": "فرق احتياطي البدلة // يخرج عداد المعصم عن سجل الغرفة. حملت البدلة هواء أقل مما ادعاه المكتب لاحقاً.",
+     "terminal": "فحص احتياطي البدلة // قارن احتياطي المعصم، ختم الخزان، وصلة الخرطوم، قطع المرشح، تسليم الضاغط، إغلاق المسار وclaim hold. الاختلاف يتبع الحيازة، لا الأكسجين.",
+     "audio": "احتياطي البدلة يقول فارغ. سجل الغرفة يقول معلق. شخص ما حرك الرقم، لا الهواء.",
+     "in_game_wiki": "فرق احتياطي البدلة هو الفرق بين ثلاثة سجلات: ما عدته البدلة عند المعصم، وما قالت الغرفة إنها سلمته، وما زعم صف الضاغط أنه نقله. إنه رقم جاف حتى يعارض سجل الأكسجين. عندها يصبح السجل الذي بقي مثبتاً بالجسد.\n\nالبدلة العاملة لا تنفق الهواء في كتل نظيفة. الذعر، الجهد، تسرب القناع، الأختام الباردة والمحلول الملحي في الخرطوم تترك خسارة مسننة. إدخال المكتب المتأخر يميل إلى النعومة. إذا هبط عداد المعصم إلى منطقة الهواء المنخفض الميتة قبل أن يعترف سجل الغرفة بالقطع، فالغرفة لم تعد تحمل العامل. إذا أعاد المكتب الاحتياطي لاحقاً بلا ختم خزان مطابق أو حدث تعبئة، فهذا الهواء موجود في الورق فقط.\n\nيهم الاختلاف لأن كل مالك بيانات يستطيع أن يكذب بطريقة مختلفة. دعم الحياة يستطيع القول إن الغرفة ما زالت معلقة. Route desk يستطيع القول إن العامل لم يعد. Claim desk يستطيع تسمية البدلة معدات قابلة للاسترداد. البدلة نفسها تعرف الضغط والسحب وحالة الصمام فقط. هذا الضيق يجعل شراءها صعباً.\n\nالتعامل الميداني مادي. لا تفرغ البدلة ولا تملأها قبل تسجيل العداد. صور شاشة المعصم، ملح صمام الخزان، سلك الختم، خدش وصلة الخرطوم وأي محلول ملحي في فوهة التعبئة. قارن تلك الآثار بصف قطع المرشح وclaim hold. يمكن لفرق الاحتياطي أن يبين أين انتهى الهواء وأين استمرت المحاسبة.",
+     "external_site": "اختلاف فرق احتياطي البدلة يلتقط لحظة توقف معدات العامل عن موافقة سجل المستعمرة. البدلة تسجل الضغط؛ المكاتب تسجل الإذن والتأخير ولغة claim.",
+     "external_site_article": "عداد المعصم سجل صغير قبيح: ليس اعترافاً، وليس رسالة أخيرة، بل ضغط يهبط تحت يد عامل. لهذا مكانه قرب سجل الأكسجين. لا يهمه إن كان المسار ما زال مفتوحاً.\n\nعلى Aegir كان دعم الغرفة واحتياطي البدلة يفترض أن يتحركا معاً. الغرفة تغذي الهواء؛ البدلة تمتص الخسارة؛ الضاغط يكتب التسليم؛ لوحة المسار تنتظر علامة العودة. عندما تنفصل هذه الأرقام، لا تعود خريطة المستعمرة الورقية تطابق مسار الجسد.\n\nاستطاعت Deep Reach استخدام تلك الفجوة. بدلة باحتياطي غير محسوم تبقى معدات قابلة للاسترداد. عامل بمسار مفتوح يبقى قابلاً للفوترة. يستطيع claim hold أن يغطي الاثنين، مؤجلاً إغلاق الخسارة النظيف حتى تقسو لغة الملكية المفيدة.\n\nفرق الاحتياطي لا يحل الموت. يشير إلى المكتب حيث صار النفس مخزوناً. اقرأه مع قطع سجل الأكسجين، علامة العودة المفقودة وتداخل ختم إذن المسار قبل الوثوق بأي حالة عامل نشط.",
+     "field_note": "إذا جف عداد المعصم قبل إغلاق السجل، فاقرأ سجل البدلة أولاً.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Ketidakcocokan Delta Cadangan Baju",
+     "scanner": "DELTA CADANGAN BAJU // Penghitung pergelangan keluar dari jalur buku ruang. Baju membawa udara lebih sedikit daripada klaim meja kemudian.",
+     "terminal": "QA CADANGAN BAJU // Bandingkan cadangan pergelangan, segel tangki, kopler selang, potongan scrubber, serah-terima kompresor, penutupan rute dan claim hold. Ketidakcocokan mengikuti custody, bukan oksigen.",
+     "audio": "Cadangan baju bilang kosong. Buku ruang bilang tertunda. Seseorang memindahkan angka, bukan udara.",
+     "in_game_wiki": "Delta cadangan baju adalah selisih antara tiga catatan: yang dihitung baju di pergelangan, yang diklaim ruang sudah dikirim, dan yang ditulis baris kompresor sebagai serah-terima. Angka itu kering sampai bertentangan dengan buku oksigen. Saat itu ia menjadi catatan yang masih terpasang pada tubuh.\n\nBaju kerja tidak menghabiskan udara dalam blok rapi. Panik, tenaga, kebocoran masker, seal dingin dan air garam di selang meninggalkan kehilangan bergerigi. Entri meja yang datang belakangan cenderung halus. Jika penghitung pergelangan jatuh ke zona mati udara rendah sebelum buku ruang mengakui potongan, ruang sudah tidak menopang pekerja. Jika meja kemudian mengembalikan cadangan tanpa segel tangki atau kejadian isi ulang yang cocok, udara itu hanya ada di kertas.\n\nKetidakcocokan ini penting karena setiap pemilik data bisa berbohong dengan cara berbeda. Dukungan hidup bisa berkata ruang masih tertunda. Route desk bisa berkata pekerja belum kembali. Claim desk bisa menyebut baju sebagai peralatan yang dapat diambil. Baju itu sendiri hanya tahu tekanan, tarikan dan keadaan katup. Kesempitan itu membuatnya sulit dibeli.\n\nPenanganan lapangan bersifat fisik. Jangan buang atau tambah udara baju sebelum mencatat penghitung. Foto layar pergelangan, garam pada katup tangki, kawat segel, goresan kopler selang dan air garam di leher isi. Bandingkan jejak itu dengan baris potongan scrubber dan claim hold. Delta cadangan dapat menunjukkan di mana udara selesai dan pembukuan terus berjalan.",
+     "external_site": "Ketidakcocokan delta cadangan baju menangkap saat peralatan pekerja berhenti cocok dengan buku koloni. Baju mencatat tekanan; meja mencatat izin, penundaan dan bahasa claim.",
+     "external_site_article": "Penghitung pergelangan adalah catatan kecil yang buruk rupa: bukan pengakuan, bukan pesan terakhir, hanya tekanan yang turun di bawah tangan pekerja. Karena itu ia layak berada di sebelah buku oksigen. Ia tidak peduli apakah rute masih terbuka.\n\nDi Aegir, dukungan ruang dan cadangan baju seharusnya bergerak bersama. Ruang memberi udara; baju menahan rugi; kompresor menulis serah-terima; papan rute menunggu tanda pulang. Ketika angka-angka itu pecah, peta kertas koloni tidak lagi cocok dengan jalur tubuh.\n\nDeep Reach bisa memakai celah itu. Baju dengan cadangan belum selesai bisa tetap diberi tag peralatan yang dapat diambil. Pekerja dengan rute terbuka bisa tetap dapat ditagih. Claim hold bisa duduk di atas keduanya, menunda penutupan rugi yang bersih sampai bahasa kepemilikan yang berguna mengeras.\n\nDelta cadangan tidak memecahkan kematian. Ia menunjuk meja tempat napas menjadi inventaris. Baca bersama potongan buku oksigen, tanda pulang yang hilang dan tumpang tindih stempel izin rute sebelum mempercayai status pekerja aktif.",
+     "field_note": "Jika pergelangan kering sebelum buku ditutup, baca catatan baju dulu.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "슈트 예비량 델타 불일치",
+     "scanner": "슈트 예비량 델타 // 손목 계수기가 방 장부와 어긋난다. 슈트에는 나중에 데스크가 주장한 것보다 적은 공기가 있었다.",
+     "terminal": "슈트 예비량 QA // 손목 예비량, 탱크 봉인, 호스 커플러, 스크러버 절단, 압축기 인계, 경로 폐쇄, claim hold를 대조한다. 불일치는 산소가 아니라 보관 경로를 따른다.",
+     "audio": "슈트 예비량은 비었다고 한다. 방 장부는 대기라고 한다. 누군가 공기가 아니라 숫자를 옮겼다.",
+     "in_game_wiki": "슈트 예비량 델타는 세 기록의 차이다. 슈트가 손목에서 센 양, 방이 공급했다고 말한 양, 압축기 행이 인계했다고 쓴 양이다. 산소 장부와 어긋나기 전까지는 건조한 숫자다. 어긋나는 순간, 몸에 볼트로 남은 기록이 된다.\n\n작업 중인 슈트는 공기를 깔끔한 덩어리로 쓰지 않는다. 공포, 힘쓰기, 마스크 누출, 차가운 실, 호스 속 염수는 들쭉날쭉한 손실을 남긴다. 늦은 데스크 입력은 보통 매끈하다. 손목 계수기가 방 장부의 절단보다 먼저 저공기 사각대로 떨어지면 방은 더는 작업자를 떠받치지 않았다. 데스크가 나중에 맞는 탱크 봉인이나 재충전 사건 없이 예비량을 되돌리면, 그 공기는 서류에만 있다.\n\n이 불일치가 중요한 이유는 소유자마다 다른 거짓말을 할 수 있기 때문이다. 생명유지는 방이 아직 대기 중이었다고 말할 수 있다. route desk는 작업자가 돌아오지 않았다고 말할 수 있다. claim desk는 슈트를 회수 가능 장비라고 부를 수 있다. 슈트 자체는 압력, 소모, 밸브 상태만 안다. 그 좁음 때문에 매수하기 어렵다.\n\n현장 처리는 물리적으로 해야 한다. 계수기를 기록하기 전에 슈트를 배기하거나 보충하지 않는다. 손목 표시, 탱크 밸브의 소금, 봉인선, 호스 커플러 긁힘, 충전 목의 염수를 촬영한다. 이 흔적을 스크러버 절단 행과 claim hold에 맞춘다. 예비량 델타는 공기가 끝난 곳과 회계가 계속된 곳을 보여줄 수 있다.",
+     "external_site": "슈트 예비량 델타 불일치는 작업자의 장비가 식민지 장부와 더는 맞지 않던 순간을 잡는다. 슈트는 압력을 기록한다. 데스크는 허가, 지연, claim 언어를 기록한다.",
+     "external_site_article": "손목 계수기는 보기 나쁜 작은 기록이다. 고백도 아니고 마지막 메시지도 아니다. 작업자의 손 아래서 떨어지는 압력일 뿐이다. 그래서 산소 장부 옆에 있어야 한다. 경로가 아직 열려 있었는지는 신경 쓰지 않는다.\n\nAegir에서 방 지원과 슈트 예비량은 함께 움직여야 했다. 방은 공기를 먹이고, 슈트는 손실을 완충하고, 압축기는 인계를 쓰고, 경로판은 귀환 표식을 기다렸다. 이 숫자들이 갈라지면 식민지의 종이 지도는 몸의 경로와 맞지 않는다.\n\nDeep Reach는 그 틈을 쓸 수 있었다. 미해결 예비량을 가진 슈트는 회수 가능 장비로 남을 수 있었다. 열린 경로의 작업자는 청구 가능 상태로 남을 수 있었다. claim hold는 둘 위에 앉아 유용한 소유권 언어가 굳을 때까지 깨끗한 손실 폐쇄를 늦출 수 있었다.\n\n예비량 델타는 죽음을 해결하지 않는다. 호흡이 재고가 된 데스크를 가리킨다. 산소 장부 절단, 빠진 귀환 표식, 경로 허가 스탬프 겹침과 함께 읽은 뒤 활성 작업자 상태를 믿어야 한다.",
+     "field_note": "장부가 닫히기 전에 손목이 먼저 말랐다면, 슈트 기록을 먼저 믿어라.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "פער דלתא בעתודת חליפה",
+     "scanner": "דלתא עתודת חליפה // מונה פרק היד יוצא מסנכרון עם יומן החדר. בחליפה היה פחות אוויר ממה שהשולחן טען אחר כך.",
+     "terminal": "בדיקת עתודת חליפה // להשוות עתודת פרק יד, חותם מכל, מחבר צינור, חיתוך סקרבר, מסירת מדחס, סגירת מסלול ו-claim hold. הפער עוקב אחרי משמורת, לא אחרי חמצן.",
+     "audio": "עתודת החליפה אומרת ריק. יומן החדר אומר ממתין. מישהו הזיז את המספר, לא את האוויר.",
+     "in_game_wiki": "דלתא עתודת חליפה היא ההפרש בין שלושה רישומים: מה שהחליפה ספרה בפרק היד, מה שהחדר אמר שסיפק, ומה ששורת המדחס טענה שמסרה. זה מספר יבש עד שהוא מתנגש עם יומן החמצן. אז הוא הופך לרישום שנשאר מוברג לגוף.\n\nחליפת עבודה לא צורכת אוויר בבלוקים נקיים. פאניקה, מאמץ, דליפת מסכה, אטמים קרים ותמלחת בצינור משאירים אובדן משונן. רשומת שולחן מאוחרת נראית לרוב חלקה. אם מונה פרק היד נופל לאזור מת של אוויר נמוך לפני שיומן החדר מודה בחיתוך, החדר כבר לא נשא את העובד. אם השולחן מחזיר עתודה בלי חותם מכל או אירוע מילוי תואם, האוויר הזה קיים רק בניירת.\n\nהפער חשוב כי כל בעל נתונים יכול לשקר אחרת. תמיכת חיים יכולה לומר שהחדר עוד היה ממתין. Route desk יכול לומר שהעובד לא חזר. Claim desk יכול לקרוא לחליפה ציוד בר-השבה. החליפה עצמה יודעת רק לחץ, משיכה ומצב שסתום. הצרות הזאת מקשה לקנות אותה.\n\nהטיפול בשטח פיזי. לא לרוקן ולא למלא את החליפה לפני רישום המונה. לצלם את תצוגת פרק היד, המלח על שסתום המכל, חוט החותם, שריטת מחבר הצינור וכל תמלחת בצוואר המילוי. להשוות את הסימנים לשורת חיתוך הסקרבר ול-claim hold. דלתא עתודה יכולה להראות איפה האוויר נגמר ואיפה החשבונאות המשיכה.",
+     "external_site": "פער דלתא בעתודת חליפה תופס את הרגע שבו ציוד העובד הפסיק להסכים עם יומן המושבה. החליפה רושמת לחץ; השולחנות רושמים הרשאה, עיכוב ושפת claim.",
+     "external_site_article": "מונה פרק היד הוא רשומה קטנה ומכוערת: לא וידוי, לא הודעה אחרונה, רק לחץ שיורד תחת יד של עובד. לכן מקומו ליד יומן החמצן. לא אכפת לו אם מסלול עוד היה פתוח.\n\nב-Aegir, תמיכת החדר ועתודת החליפה היו אמורות לזוז יחד. החדר הזין אוויר; החליפה ספגה אובדן; המדחס כתב מסירה; לוח המסלול חיכה לסימן חזרה. כשהמספרים האלה נפרדים, מפת הנייר של המושבה כבר לא מתאימה לדרך הגוף.\n\nDeep Reach יכלה להשתמש בפער הזה. חליפה עם עתודה לא פתורה יכלה להישאר מסומנת כציוד בר-השבה. עובד עם מסלול פתוח יכול היה להישאר בר חיוב. Claim hold יכול לשבת מעל שניהם, ולעכב סגירת אובדן נקייה עד ששפת הבעלות המועילה מתקשה.\n\nדלתא העתודה לא פותרת את המוות. היא מצביעה על השולחן שבו נשימה הפכה למלאי. לקרוא אותה עם חיתוך יומן החמצן, סימן החזרה החסר וחפיפת חותמת הרשאת המסלול לפני שמאמינים לכל סטטוס עובד פעיל.",
+     "field_note": "אם פרק היד התרוקן לפני שהיומן נסגר, קרא קודם את רישום החליפה.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Incompatibilidade da Delta de Reserva do Traje",
+     "scanner": "DELTA DA RESERVA DO TRAJE // Contador de pulso sai do passo com o livro da sala. O traje carregava menos ar do que a mesa afirmou depois.",
+     "terminal": "QA RESERVA DO TRAJE // Compare reserva de pulso, lacre do tanque, engate da mangueira, corte do scrubber, handoff do compressor, fechamento de rota e claim hold. A incompatibilidade segue custódia, não oxigênio.",
+     "audio": "A reserva do traje diz vazio. O livro da sala diz pendente. Alguém moveu o número, não o ar.",
+     "in_game_wiki": "A delta de reserva do traje é a diferença entre três registros: o que o traje contou no pulso, o que a sala disse entregar e o que a linha do compressor afirmou transferir. É um número seco até discordar do livro de oxigênio. Aí vira o registro preso ao corpo.\n\nUm traje em trabalho não gasta ar em blocos limpos. Pânico, esforço, vazamento de máscara, selos frios e salmoura na mangueira deixam perda serrilhada. Uma entrada tardia de mesa tende a parecer lisa. Se o contador de pulso cai na zona morta de baixo ar antes de o livro da sala admitir o corte, a sala já não sustentava o trabalhador. Se a mesa restaura reserva depois sem lacre de tanque ou recarga correspondente, esse ar existe só nos papéis.\n\nA incompatibilidade importa porque cada dono de dados pode mentir de um jeito. Suporte de vida pode dizer que a sala ainda estava pendente. Route desk pode dizer que o trabalhador não voltou. Claim desk pode chamar o traje de equipamento recuperável. O traje em si só sabe pressão, consumo e estado da válvula. Essa estreiteza dificulta suborno.\n\nO manejo em campo é físico. Não ventile nem complete o traje antes de registrar o contador. Fotografe visor de pulso, sal na válvula do tanque, fio do lacre, arranhão do engate e qualquer salmoura no bocal de enchimento. Compare esses sinais com a linha de corte do scrubber e o claim hold. Uma delta de reserva pode mostrar onde o ar terminou e onde a contabilidade continuou.",
+     "external_site": "Uma incompatibilidade da delta de reserva do traje captura o momento em que o equipamento do trabalhador parou de concordar com o livro da colônia. O traje registra pressão; as mesas registram permissão, atraso e linguagem de claim.",
+     "external_site_article": "O contador de pulso é um registro pequeno e feio: não uma confissão, não uma última mensagem, só pressão caindo sob a mão de um trabalhador. Por isso pertence ao lado do livro de oxigênio. Ele não liga se a rota ainda estava aberta.\n\nEm Aegir, suporte da sala e reserva do traje deviam andar juntos. A sala alimentava ar; o traje amortecia perda; o compressor escrevia seu handoff; o quadro de rota esperava uma marca de retorno. Quando esses números se separam, o mapa de papel da colônia já não combina com o caminho do corpo.\n\nA Deep Reach podia usar essa brecha. Um traje com reserva não resolvida podia seguir marcado como equipamento recuperável. Um trabalhador com rota aberta podia seguir faturável. Um claim hold podia sentar sobre ambos, atrasando o fechamento limpo da perda até a linguagem útil de propriedade endurecer.\n\nA delta de reserva não resolve a morte. Ela aponta para a mesa onde respiração virou inventário. Leia com o corte do livro de oxigênio, a marca de retorno ausente e a sobreposição do carimbo de permissão antes de confiar em qualquer status de trabalhador ativo.",
+     "field_note": "Se o pulso secou antes do livro fechar, confie primeiro no registro do traje.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Mismatch in pakreserve-delta",
+     "scanner": "PAKRESERVE-DELTA // Polsteller loopt uit de pas met het kamerregister. Het pak droeg minder lucht dan de desk later beweerde.",
+     "terminal": "QA PAKRESERVE // Vergelijk polsreserve, tankzegel, slangkoppeling, scrubbersnede, compressoroverdracht, routesluiting en claim hold. De mismatch volgt bewaring, niet zuurstof.",
+     "audio": "Pakreserve zegt leeg. Kamerregister zegt wachtend. Iemand verplaatste het getal, niet de lucht.",
+     "in_game_wiki": "Een pakreserve-delta is het verschil tussen drie registraties: wat het pak aan de pols telde, wat de kamer zei te leveren, en wat de compressorregel als overdracht noteerde. Het is een droog getal tot het botst met het zuurstofregister. Dan wordt het het register dat aan het lichaam vastzat.\n\nEen werkend pak verbruikt lucht niet in nette blokken. Paniek, inspanning, maskerlek, koude afdichtingen en pekel in een slang laten gekarteld verlies achter. Een late deskregel oogt vaak glad. Als de polsteller in de lage-lucht-dode zone valt voordat het kamerregister de snede toegeeft, droeg de kamer de werker niet meer. Als de desk later reserve herstelt zonder passend tankzegel of vulmoment, bestaat die lucht alleen op papier.\n\nDe mismatch telt omdat elke eigenaar anders kan liegen. Levensondersteuning kan zeggen dat de kamer nog wachtend was. Route desk kan zeggen dat de werker niet terug was. Claim desk kan het pak bergbare uitrusting noemen. Het pak zelf kent alleen druk, verbruik en klepstand. Die smalte maakt het moeilijk om te kopen.\n\nVeldbehandeling is fysiek. Ontlucht of vul het pak niet bij voor de teller is vastgelegd. Fotografeer polsscherm, zout op de tankklep, zegeldraad, kras op de slangkoppeling en pekel in de vulhals. Vergelijk die sporen met de scrubbersnede en claim hold. Een reserve-delta kan tonen waar lucht eindigde en boekhouding doorging.",
+     "external_site": "Een mismatch in pakreserve-delta vangt het moment waarop de uitrusting van de werker niet langer met het kolonieregister klopte. Het pak registreert druk; desks registreren toestemming, vertraging en claimtaal.",
+     "external_site_article": "De polsteller is een lelijk klein register: geen bekentenis, geen laatste bericht, alleen druk die onder de hand van een werker zakt. Daarom hoort hij naast het zuurstofregister. Het maakt hem niets uit of een route nog open stond.\n\nOp Aegir moesten kamersteun en pakreserve samen bewegen. De kamer voedde lucht; het pak ving verlies op; de compressor schreef overdracht; het routebord wachtte op een terugkeermarkering. Als die getallen splitsen, past de papieren kaart van de kolonie niet meer op het lichaamspad.\n\nDeep Reach kon die kloof gebruiken. Een pak met onopgeloste reserve kon bergbare uitrusting blijven. Een werker met open route kon factureerbaar blijven. Een claim hold kon over beide liggen en een schone verliessluiting uitstellen tot bruikbare eigendomstaal hard werd.\n\nDe reserve-delta lost de dood niet op. Hij wijst naar de desk waar adem voorraad werd. Lees hem met de zuurstofregistersnede, ontbrekende terugkeermarkering en overlap van de routetoestemmingsstempel voordat je actieve-werkerstatus vertrouwt.",
+     "field_note": "Als de pols eerder droogliep dan het register sloot, neem eerst de pakregistratie.",
+     "localization_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

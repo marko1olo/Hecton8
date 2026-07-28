@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P296_ABYSSAL_MACHINE_FIELD_WARNING",
-      "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
-      "article_id": "applied_lore.p296_abyssal_machine_field_warning",
-      "title_key": "applied_lore.p296_abyssal_machine_field_warning.title",
-      "unlock": {
-        "primary": "unlock.p296_abyssal_machine_field_warning",
-        "poi_tags": [
-          "poi.abyssal_machine_field_warning",
-          "poi.filter_body_shadow",
-          "poi.silt_wrongness_marker"
-        ],
-        "biome_tags": [
-          "biome.abyssal_machine_field",
-          "biome.warning"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Abyssal Machine Field Warning",
-          "scanner": "Silt moves against the current. Filter bodies are repositioning beneath the lights.",
-          "field_note": "Late-game warning: quiet objective dread. The final field is infrastructure waking, not boss buildup.",
-          "terminal": "ROUTE WARNING: abyssal machine-field silt exceeds current model. Filter bodies and buried actuator ribs registering as moving infrastructure. Maintain standoff; do not anchor to soft floor.",
-          "audio": "The floor is not still.",
-          "in_game_wiki": "Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach. The player is no longer crossing ruins that happen to contain life; they are crossing life that has learned to carry machines.",
-          "external_site": "Before the final basin, HECTON-8 stops looking abandoned and starts looking like a machine too large to show its whole body. The warning stays quiet because the terror is not pursuit. It is scale."
-        },
-        "ru_RU": {
-          "title": "Предупреждение машинного поля бездны",
-          "scanner": "Ил движется против течения. Фильтрующие тела перестраиваются под огнями.",
-          "field_note": "Позднее предупреждение: тихий объективный страх. Финальное поле — это просыпающаяся инфраструктура, а не разгон к боссу.",
-          "terminal": "ПРЕДУПРЕЖДЕНИЕ МАРШРУТА: движение ила в машинном поле бездны превышает модель течений. Фильтрующие тела и погребенные ребра приводов регистрируются как движущаяся инфраструктура. Держать дистанцию; не якориться в мягкий пол.",
-          "audio": "Пол не стоит на месте.",
-          "in_game_wiki": "Это предупреждение соединяет глубокую экологию с финальным подходом к Atlas. Игрок больше не идет через руины, где случайно есть жизнь; он пересекает жизнь, научившуюся носить машины.",
-          "external_site": "Перед финальным бассейном HECTON-8 перестает выглядеть заброшенной и начинает выглядеть как машина, слишком большая, чтобы показать все тело. Предупреждение остается тихим, потому что ужас здесь не погоня. Ужас — масштаб."
-        },
-        "ja_JP": {
-          "title": "深淵機械野警告",
-          "scanner": "沈泥が流れに逆らって動いている。フィルター体が光の下で位置を変えている。",
-          "field_note": "終盤警告: 静かで客観的な恐怖。最終フィールドはボス演出ではなく、目覚めるインフラ。",
-          "terminal": "ROUTE WARNING: 深淵機械野の沈泥運動が潮流モデルを超過。フィルター体と埋没したアクチュエータ肋骨を移動インフラとして登録。距離を維持。柔らかい床にアンカーを打つな。",
-          "audio": "床は静止していない。",
-          "in_game_wiki": "深淵機械野警告は、深部生態系を最終 Atlas アプローチへつなぐ。プレイヤーは生命を含む廃墟を渡っているのではない。機械を運ぶことを覚えた生命を渡っている。",
-          "external_site": "最終盆地の前で、HECTON-8 は放棄された場所ではなく、全身を見せられないほど巨大な機械に見え始める。警告は静かなままだ。恐怖は追跡ではなく、規模だからだ。"
-        },
-        "zh_CN": {
-          "title": "深渊机械场警告",
-          "scanner": "淤泥逆流而动。滤体正在灯光下重新定位。",
-          "field_note": "后期警告：安静、客观的恐惧。最终场不是 boss 铺垫，而是正在醒来的基础设施。",
-          "terminal": "ROUTE WARNING：深渊机械场淤泥运动超过水流模型。滤体和埋藏执行器肋骨登记为移动基础设施。保持距离；不要锚定在软地面。",
-          "audio": "地板并不静止。",
-          "in_game_wiki": "深渊机械场警告把深层生态接到最终 Atlas 路径。玩家不再穿过恰好有生命的废墟；他们穿过学会承载机器的生命。",
-          "external_site": "在最终盆地之前，HECTON-8 不再像被遗弃的地方，而像一台大到无法展示全身的机器。警告保持安静，因为恐惧不是追逐，而是尺度。"
-        },
-        "fr_FR": {
-          "title": "Alerte du champ-machine abyssal",
-          "scanner": "Le limon avance contre le courant. Des corps filtrants se repositionnent sous les lumières.",
-          "field_note": "Avertissement de fin de partie : peur calme et objective. Le champ final est une infrastructure qui s'éveille, pas une montée vers boss.",
-          "terminal": "ROUTE WARNING : mouvement du limon du champ-machine abyssal au-delà du modèle de courant. Corps filtrants et côtes d'actionneurs enfouies enregistrés comme infrastructure mobile. Garder l'écart ; ne pas ancrer dans le sol mou.",
-          "audio": "Le sol n'est pas immobile.",
-          "in_game_wiki": "Cette alerte relie l'écologie profonde à l'approche finale d'Atlas. Le joueur ne traverse plus des ruines où vit quelque chose ; il traverse une vie qui a appris à porter des machines.",
-          "external_site": "Avant le bassin final, HECTON-8 cesse de ressembler à un lieu abandonné et commence à ressembler à une machine trop grande pour montrer tout son corps. L'alerte reste calme parce que la terreur n'est pas la poursuite. C'est l'échelle."
-        },
-        "es_ES": {
-          "title": "Advertencia del campo-máquina abisal",
-          "scanner": "El limo se mueve contra la corriente. Los cuerpos filtrantes se recolocan bajo las luces.",
-          "field_note": "Advertencia de tramo final: terror quieto y objetivo. El campo final es infraestructura despertando, no preparación de jefe.",
-          "terminal": "ROUTE WARNING: movimiento de limo del campo-máquina abisal supera el modelo de corriente. Cuerpos filtrantes y costillas de actuador enterradas registrados como infraestructura móvil. Mantener distancia; no anclar en suelo blando.",
-          "audio": "El suelo no está quieto.",
-          "in_game_wiki": "La advertencia une la ecología profunda con el acercamiento final a Atlas. El jugador ya no cruza ruinas que contienen vida; cruza vida que aprendió a cargar máquinas.",
-          "external_site": "Antes de la cuenca final, HECTON-8 deja de parecer abandonado y empieza a parecer una máquina demasiado grande para mostrar todo su cuerpo. La advertencia sigue callada porque el terror no es persecución. Es escala."
-        },
-        "de_DE": {
-          "title": "Warnung vor dem abyssalen Maschinenfeld",
-          "scanner": "Schlick bewegt sich gegen die Strömung. Filterkörper verlagern sich unter den Lichtern.",
-          "field_note": "Spätspielwarnung: leise, objektive Furcht. Das finale Feld ist erwachende Infrastruktur, kein Bossaufbau.",
-          "terminal": "ROUTE WARNING: Schlickbewegung im abyssalen Maschinenfeld übersteigt Strömungsmodell. Filterkörper und vergrabene Aktuatorrippen als bewegliche Infrastruktur registriert. Abstand halten; nicht im weichen Boden ankern.",
-          "audio": "Der Boden ist nicht still.",
-          "in_game_wiki": "Die Warnung verbindet Tiefenökologie mit dem letzten Atlas-Anmarsch. Der Spieler durchquert nicht länger Ruinen, in denen zufällig Leben ist; er durchquert Leben, das gelernt hat, Maschinen zu tragen.",
-          "external_site": "Vor dem finalen Becken sieht HECTON-8 nicht mehr verlassen aus, sondern wie eine Maschine, die zu groß ist, um ihren ganzen Körper zu zeigen. Die Warnung bleibt leise, weil der Schrecken keine Verfolgung ist. Er ist Maßstab."
-        },
-        "pl_PL": {
-          "title": "Ostrzeżenie o abisalnym polu maszyn",
-          "scanner": "Muł porusza się pod prąd. Ciała filtrujące przestawiają się pod światłami.",
-          "field_note": "Późne ostrzeżenie: cichy, obiektywny lęk. Finałowe pole to budząca się infrastruktura, nie zapowiedź bossa.",
-          "terminal": "ROUTE WARNING: ruch mułu w abisalnym polu maszyn przekracza model prądu. Ciała filtrujące i pogrzebane żebra aktuatorów zarejestrowane jako ruchoma infrastruktura. Utrzymać dystans; nie kotwiczyć w miękkim dnie.",
-          "audio": "Dno nie jest nieruchome.",
-          "in_game_wiki": "Ostrzeżenie łączy głęboką ekologię z finalnym podejściem do Atlas. Gracz nie przechodzi już przez ruiny, w których przypadkiem jest życie; przechodzi przez życie, które nauczyło się nieść maszyny.",
-          "external_site": "Przed finałowym basenem HECTON-8 przestaje wyglądać na opuszczone, a zaczyna wyglądać jak maszyna zbyt wielka, by pokazać całe ciało. Ostrzeżenie pozostaje ciche, bo grozą nie jest pościg. Grozą jest skala."
-        },
-        "uk_UA": {
-          "title": "Попередження машинного поля безодні",
-          "scanner": "Мул рухається проти течії. Фільтрувальні тіла перебудовуються під вогнями.",
-          "field_note": "Пізнє попередження: тихий об'єктивний страх. Фінальне поле — це інфраструктура, що прокидається, а не розгін до боса.",
-          "terminal": "ROUTE WARNING: рух мулу в машинному полі безодні перевищує модель течій. Фільтрувальні тіла й поховані ребра приводів зареєстровано як рухому інфраструктуру. Тримати дистанцію; не якоритися в м'яке дно.",
-          "audio": "Підлога не стоїть на місці.",
-          "in_game_wiki": "Попередження з'єднує глибинну екологію з фінальним підходом до Atlas. Гравець уже не проходить руїнами, де випадково є життя; він проходить життям, що навчилося носити машини.",
-          "external_site": "Перед фінальним басейном HECTON-8 перестає виглядати покинутою і починає виглядати як машина, надто велика, щоб показати все тіло. Попередження лишається тихим, бо жах тут не погоня. Жах — масштаб."
-        },
-        "ar_SA": {
-          "title": "تحذير حقل الآلات السحيق",
-          "scanner": "يتحرك الطمي عكس التيار. أجسام الترشيح تعيد تموضعها تحت الأضواء.",
-          "field_note": "تحذير نهاية متأخرة: رعب هادئ وموضوعي. الحقل الأخير بنية تحتية تستيقظ، لا تمهيد لرئيس.",
-          "terminal": "ROUTE WARNING: حركة طمي حقل الآلات السحيق تتجاوز نموذج التيار. أجسام الترشيح وأضلاع المشغلات المدفونة تسجل كبنية تحتية متحركة. حافظ على مسافة؛ لا ترس في أرض لينة.",
-          "audio": "الأرضية ليست ساكنة.",
-          "in_game_wiki": "يربط هذا التحذير البيئة العميقة بالاقتراب الأخير من Atlas. لم يعد اللاعب يعبر أطلالا تحتوي حياة؛ بل يعبر حياة تعلمت حمل الآلات.",
-          "external_site": "قبل الحوض الأخير، يتوقف HECTON-8 عن الظهور كمكان مهجور ويبدأ كآلة أكبر من أن تعرض جسدها كله. يبقى التحذير هادئا لأن الرعب ليس مطاردة. الرعب هو الحجم."
-        },
-        "id_ID": {
-          "title": "Peringatan Medan Mesin Abyssal",
-          "scanner": "Lumpur bergerak melawan arus. Tubuh penyaring bergeser di bawah lampu.",
-          "field_note": "Peringatan late-game: rasa takut objektif yang tenang. Medan terakhir adalah infrastruktur yang bangun, bukan pemanasan boss.",
-          "terminal": "ROUTE WARNING: gerak lumpur medan mesin abyssal melebihi model arus. Tubuh penyaring dan rusuk aktuator terkubur terbaca sebagai infrastruktur bergerak. Jaga jarak; jangan menambat ke lantai lunak.",
-          "audio": "Lantai tidak diam.",
-          "in_game_wiki": "Peringatan ini menjembatani ekologi dalam menuju pendekatan terakhir ke Atlas. Pemain tidak lagi menyeberangi reruntuhan yang kebetulan berisi kehidupan; mereka menyeberangi kehidupan yang belajar membawa mesin.",
-          "external_site": "Sebelum cekungan terakhir, HECTON-8 berhenti tampak ditinggalkan dan mulai tampak seperti mesin yang terlalu besar untuk menampilkan seluruh tubuhnya. Peringatan tetap tenang karena terornya bukan pengejaran. Terornya adalah skala."
-        },
-        "ko_KR": {
-          "title": "심연 기계장 경고",
-          "scanner": "실트가 조류를 거슬러 움직인다. 필터 몸체들이 불빛 아래에서 위치를 바꾸고 있다.",
-          "field_note": "후반 경고: 조용하고 객관적인 공포. 최종 필드는 보스 준비가 아니라 깨어나는 인프라다.",
-          "terminal": "ROUTE WARNING: 심연 기계장의 실트 이동이 조류 모델을 초과. 필터 몸체와 묻힌 액추에이터 갈비가 이동 인프라로 등록됨. 이격 유지. 부드러운 바닥에 앵커 금지.",
-          "audio": "바닥은 멈춰 있지 않다.",
-          "in_game_wiki": "이 경고는 심해 생태를 마지막 Atlas 접근로와 연결한다. 플레이어는 더 이상 생명이 우연히 들어 있는 폐허를 건너는 것이 아니라, 기계를 운반하는 법을 배운 생명을 건넌다.",
-          "external_site": "최종 분지 앞에서 HECTON-8은 버려진 장소처럼 보이기를 멈추고, 전신을 보여 주기엔 너무 큰 기계처럼 보이기 시작한다. 경고가 조용한 이유는 공포가 추격이 아니라 규모이기 때문이다."
-        },
-        "he_IL": {
-          "title": "אזהרת שדה מכונה תהומי",
-          "scanner": "סחף נע נגד הזרם. גופי סינון משנים מיקום מתחת לאורות.",
-          "field_note": "אזהרת סוף משחק: אימה שקטה ואובייקטיבית. השדה הסופי הוא תשתית שמתעוררת, לא בניית בוס.",
-          "terminal": "ROUTE WARNING: תנועת הסחף בשדה המכונה התהומי חורגת ממודל הזרם. גופי סינון וצלעות אקטואטור קבורות נרשמים כתשתית נעה. לשמור מרחק; לא לעגון ברצפה רכה.",
-          "audio": "הרצפה אינה דוממת.",
-          "in_game_wiki": "האזהרה מחברת את האקולוגיה העמוקה לגישה האחרונה אל Atlas. השחקן כבר לא חוצה חורבות שיש בהן חיים במקרה; הוא חוצה חיים שלמדו לשאת מכונות.",
-          "external_site": "לפני האגן האחרון, HECTON-8 מפסיק להיראות נטוש ומתחיל להיראות כמו מכונה גדולה מכדי להראות את כל גופה. האזהרה נשארת שקטה כי האימה אינה מרדף. היא קנה מידה."
-        },
-        "pt_BR": {
-          "title": "Aviso do Campo-Máquina Abissal",
-          "scanner": "O lodo se move contra a corrente. Corpos filtrantes se reposicionam sob as luzes.",
-          "field_note": "Aviso de fim de jogo: medo quieto e objetivo. O campo final é infraestrutura acordando, não preparação de chefe.",
-          "terminal": "ROUTE WARNING: movimento de lodo do campo-máquina abissal excede o modelo de corrente. Corpos filtrantes e costelas de atuador enterradas registradas como infraestrutura móvel. Manter distância; não ancorar no chão macio.",
-          "audio": "O chão não está parado.",
-          "in_game_wiki": "O aviso liga a ecologia profunda à aproximação final de Atlas. O jogador não cruza mais ruínas que por acaso contêm vida; cruza uma vida que aprendeu a carregar máquinas.",
-          "external_site": "Antes da bacia final, HECTON-8 para de parecer abandonado e começa a parecer uma máquina grande demais para mostrar o corpo inteiro. O aviso fica quieto porque o terror não é perseguição. É escala."
-        },
-        "nl_NL": {
-          "title": "Waarschuwing voor abyssaal machineveld",
-          "scanner": "Slib beweegt tegen de stroming in. Filterlichamen verplaatsen zich onder de lichten.",
-          "field_note": "Late-game waarschuwing: stille objectieve dreiging. Het finale veld is ontwakende infrastructuur, geen bossopbouw.",
-          "terminal": "ROUTE WARNING: slibbeweging in abyssaal machineveld overschrijdt stroommodel. Filterlichamen en begraven actuatorribben geregistreerd als bewegende infrastructuur. Afstand houden; niet ankeren in zachte vloer.",
-          "audio": "De vloer staat niet stil.",
-          "in_game_wiki": "De waarschuwing verbindt diepe ecologie met de laatste Atlas-benadering. De speler kruist niet langer ruïnes met toevallig leven erin; hij kruist leven dat heeft geleerd machines te dragen.",
-          "external_site": "Voor het laatste bekken stopt HECTON-8 met verlaten lijken en begint het te lijken op een machine die te groot is om haar hele lichaam te tonen. De waarschuwing blijft stil omdat de angst geen achtervolging is. Het is schaal."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P296_ABYSSAL_MACHINE_FIELD_WARNING",
+   "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
+   "article_id": "applied_lore.p296_abyssal_machine_field_warning",
+   "title_key": "applied_lore.p296_abyssal_machine_field_warning.title",
+   "unlock": {
+    "primary": "unlock.p296_abyssal_machine_field_warning",
+    "poi_tags": [
+     "poi.abyssal_machine_field_warning",
+     "poi.filter_body_shadow",
+     "poi.silt_wrongness_marker"
+    ],
+    "biome_tags": [
+     "biome.abyssal_machine_field",
+     "biome.warning"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Abyssal Machine Field Warning",
+     "scanner": "Silt moves against the current. Filter bodies are repositioning beneath the lights.",
+     "field_note": "Late-game warning: quiet objective dread. The final field is infrastructure waking, not boss buildup.",
+     "terminal": "ROUTE WARNING: abyssal machine-field silt exceeds current model. Filter bodies and buried actuator ribs registering as moving infrastructure. Maintain standoff; do not anchor to soft floor.",
+     "audio": "The floor is not still.",
+     "in_game_wiki": "Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach. The player is no longer crossing ruins that happen to contain life; they are crossing life that has learned to carry machines.",
+     "external_site": "Before the final basin, HECTON-8 stops looking abandoned and starts looking like a machine too large to show its whole body. The warning stays quiet because the terror is not pursuit. It is scale."
     },
-    {
-      "packet_id": "P297_ATLAS_BASIN_PRESSURE_GATE",
-      "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
-      "article_id": "applied_lore.p297_atlas_basin_pressure_gate",
-      "title_key": "applied_lore.p297_atlas_basin_pressure_gate.title",
-      "unlock": {
-        "primary": "unlock.p297_atlas_basin_pressure_gate",
-        "poi_tags": [
-          "poi.atlas_basin_pressure_gate",
-          "poi.service_grade_override",
-          "poi.authority_clamp_reader"
-        ],
-        "biome_tags": [
-          "biome.atlas_basin",
-          "biome.pressure_gate"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Atlas Basin Pressure Gate",
-          "scanner": "Basin gate asks for pressure proof, route authority, and a body it can classify.",
-          "field_note": "Final threshold should read like a service gate to a living factory, not a fantasy portal.",
-          "terminal": "ATLAS BASIN GATE: pressure proof incomplete. Suit grade accepted below descent threshold. Authority clamp recognizes revoked Deep Reach pattern, not current claimant. Manual override requires local load, receiver choice, and witness payload.",
-          "audio": "It knows the old key. It does not know you.",
-          "in_game_wiki": "Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof, and authority conflict. The door is not mystical; it is an industrial system deciding whether the player counts as access, evidence, or contamination.",
-          "external_site": "The final descent keeps hard science under the dread. The bottom opens through pressure ratings, damaged authority, load proofs, and a machine that still trusts Deep Reach-shaped keys more than a living claimant."
-        },
-        "ru_RU": {
-          "title": "Напорные ворота бассейна Atlas",
-          "scanner": "Ворота бассейна требуют доказательство давления, маршрутные права и тело, которое можно классифицировать.",
-          "field_note": "Финальный порог должен читаться как сервисные ворота живой фабрики, а не фантазийный портал.",
-          "terminal": "ВОРОТА БАССЕЙНА ATLAS: доказательство давления неполное. Класс костюма принят ниже порога спуска. Authority clamp узнает отозванный паттерн Deep Reach, а не текущего заявителя. Ручной обход требует локальную нагрузку, выбор приемника и свидетельский payload.",
-          "audio": "Он знает старый ключ. Он не знает тебя.",
-          "in_game_wiki": "Напорные ворота привязывают финальный порог к классу костюма, доказательству давления и конфликту полномочий. Дверь не мистическая; это промышленная система, решающая, считать ли игрока доступом, доказательством или заражением.",
-          "external_site": "Финальный спуск сохраняет hard sci-fi под страхом. Дно открывается через рейтинги давления, поврежденные полномочия, доказательства нагрузки и машину, которая все еще доверяет ключам формы Deep Reach больше, чем живому заявителю."
-        },
-        "ja_JP": {
-          "title": "Atlas 盆地圧力ゲート",
-          "scanner": "盆地ゲートは圧力証明、ルート権限、分類可能な身体を要求している。",
-          "field_note": "最終しきい値は幻想のポータルではなく、生きた工場へのサービスゲートとして読ませる。",
-          "terminal": "ATLAS BASIN GATE: 圧力証明不完全。スーツ等級は下降しきい値未満で受理。Authority clamp は失効した Deep Reach パターンを認識し、現在の請求者を認識しない。手動上書きにはローカル負荷、受信先選択、証人 payload が必要。",
-          "audio": "それは古い鍵を知っている。君を知らない。",
-          "in_game_wiki": "Atlas 盆地圧力ゲートは、最終しきい値をスーツ等級、圧力証明、権限衝突へ固定する。扉は神秘ではない。プレイヤーをアクセス、証拠、汚染のどれとして数えるかを決める産業システムだ。",
-          "external_site": "最終下降は恐怖の下に硬い科学を残す。底は圧力等級、壊れた権限、負荷証明、そして生きた請求者より Deep Reach 型の鍵を信じる機械によって開く。"
-        },
-        "zh_CN": {
-          "title": "Atlas 盆地压力门",
-          "scanner": "盆地门要求压力证明、路线权限，以及一个可被分类的身体。",
-          "field_note": "最终门槛应像通向活工厂的服务门，而不是幻想传送门。",
-          "terminal": "ATLAS BASIN GATE：压力证明不完整。潜服等级低于下降阈值但已接收。权限夹具识别被撤销的 Deep Reach 模式，而不是当前申领者。手动覆盖需要本地负载、接收器选择和证人 payload。",
-          "audio": "它认识旧钥匙。它不认识你。",
-          "in_game_wiki": "Atlas 盆地压力门把最终门槛锚定在潜服等级、压力证明和权限冲突上。这扇门并不神秘；它是一个工业系统，正在决定玩家算访问、证据，还是污染。",
-          "external_site": "最终下潜在恐惧之下仍保留硬科幻。底部通过压力等级、受损权限、负载证明和一台仍更信任 Deep Reach 形状钥匙而不是活申领者的机器打开。"
-        },
-        "fr_FR": {
-          "title": "Porte de pression du bassin Atlas",
-          "scanner": "La porte du bassin demande preuve de pression, autorité de route et un corps qu'elle peut classer.",
-          "field_note": "Le seuil final doit lire comme une porte de service vers une usine vivante, pas comme un portail fantastique.",
-          "terminal": "ATLAS BASIN GATE : preuve de pression incomplète. Grade de combinaison accepté sous le seuil de descente. Le verrou d'autorité reconnaît un motif Deep Reach révoqué, pas le réclamant actuel. Forçage manuel requis : charge locale, choix du récepteur et payload témoin.",
-          "audio": "Elle connaît l'ancienne clé. Elle ne te connaît pas.",
-          "in_game_wiki": "La porte ancre le seuil final dans le grade de combinaison, la preuve de pression et le conflit d'autorité. Elle n'est pas mystique : c'est un système industriel qui décide si le joueur compte comme accès, preuve ou contamination.",
-          "external_site": "La descente finale garde la science dure sous la peur. Le fond s'ouvre par des classes de pression, une autorité endommagée, des preuves de charge et une machine qui fait encore plus confiance aux clés de forme Deep Reach qu'à un réclamant vivant."
-        },
-        "es_ES": {
-          "title": "Compuerta de presión de la cuenca Atlas",
-          "scanner": "La compuerta de la cuenca exige prueba de presión, autoridad de ruta y un cuerpo que pueda clasificar.",
-          "field_note": "El umbral final debe leerse como una puerta de servicio a una fábrica viva, no como un portal fantástico.",
-          "terminal": "ATLAS BASIN GATE: prueba de presión incompleta. Grado de traje aceptado bajo el umbral de descenso. La abrazadera de autoridad reconoce patrón Deep Reach revocado, no al reclamante actual. Anulación manual requiere carga local, elección de receptor y payload testigo.",
-          "audio": "Conoce la vieja llave. No te conoce a ti.",
-          "in_game_wiki": "La compuerta ancla el umbral final en grado de traje, prueba de presión y conflicto de autoridad. La puerta no es mística; es un sistema industrial decidiendo si el jugador cuenta como acceso, prueba o contaminación.",
-          "external_site": "El descenso final conserva la ciencia dura bajo el miedo. El fondo se abre mediante clasificaciones de presión, autoridad dañada, pruebas de carga y una máquina que aún confía más en llaves con forma de Deep Reach que en un reclamante vivo."
-        },
-        "de_DE": {
-          "title": "Atlas-Becken-Drucktor",
-          "scanner": "Das Beckentor verlangt Drucknachweis, Routenautorität und einen Körper, den es klassifizieren kann.",
-          "field_note": "Die finale Schwelle soll wie ein Servicetor zu einer lebenden Fabrik wirken, nicht wie ein Fantasyportal.",
-          "terminal": "ATLAS BASIN GATE: Drucknachweis unvollständig. Anzugklasse unter Abstiegsschwelle akzeptiert. Authority Clamp erkennt widerrufenes Deep-Reach-Muster, nicht aktuellen Anspruchsteller. Manuelle Überbrückung erfordert lokale Last, Empfängerwahl und Zeugenpayload.",
-          "audio": "Es kennt den alten Schlüssel. Es kennt dich nicht.",
-          "in_game_wiki": "Das Drucktor verankert die finale Schwelle in Anzugklasse, Drucknachweis und Autoritätskonflikt. Die Tür ist nicht mystisch; sie ist ein Industriesystem, das entscheidet, ob der Spieler Zugriff, Beweis oder Kontamination ist.",
-          "external_site": "Der finale Abstieg bewahrt harte Science-Fiction unter der Furcht. Der Grund öffnet sich durch Druckratings, beschädigte Autorität, Lastnachweise und eine Maschine, die Deep-Reach-förmigen Schlüsseln noch mehr traut als einem lebenden Anspruchsteller."
-        },
-        "pl_PL": {
-          "title": "Brama ciśnieniowa basenu Atlas",
-          "scanner": "Brama basenu żąda dowodu ciśnienia, władzy trasy i ciała, które może sklasyfikować.",
-          "field_note": "Finałowy próg ma czytać się jak brama serwisowa do żywej fabryki, nie fantastyczny portal.",
-          "terminal": "ATLAS BASIN GATE: dowód ciśnienia niepełny. Klasa skafandra przyjęta poniżej progu zejścia. Zacisk autorytetu rozpoznaje odwołany wzorzec Deep Reach, nie bieżącego roszczącego. Ręczne obejście wymaga lokalnego obciążenia, wyboru odbiornika i payloadu świadka.",
-          "audio": "Zna stary klucz. Nie zna ciebie.",
-          "in_game_wiki": "Brama kotwiczy finałowy próg w klasie skafandra, dowodzie ciśnienia i konflikcie władzy. Drzwi nie są mistyczne; to system przemysłowy decydujący, czy gracz liczy się jako dostęp, dowód czy skażenie.",
-          "external_site": "Finałowe zejście zachowuje hard sci-fi pod grozą. Dno otwiera się przez klasy ciśnienia, uszkodzoną władzę, dowody obciążenia i maszynę, która nadal bardziej ufa kluczom w kształcie Deep Reach niż żywemu roszczącemu."
-        },
-        "uk_UA": {
-          "title": "Напірні ворота басейну Atlas",
-          "scanner": "Ворота басейну вимагають доказ тиску, маршрутну владу й тіло, яке можна класифікувати.",
-          "field_note": "Фінальний поріг має читатися як сервісні ворота живої фабрики, а не фантазійний портал.",
-          "terminal": "ATLAS BASIN GATE: доказ тиску неповний. Клас костюма прийнято нижче порога спуску. Authority clamp розпізнає відкликаний патерн Deep Reach, а не поточного заявника. Ручний обхід потребує локального навантаження, вибору приймача і свідкового payload.",
-          "audio": "Воно знає старий ключ. Воно не знає тебе.",
-          "in_game_wiki": "Напірні ворота прив'язують фінальний поріг до класу костюма, доказу тиску й конфлікту повноважень. Двері не містичні; це промислова система, що вирішує, чи гравець є доступом, доказом або зараженням.",
-          "external_site": "Фінальний спуск зберігає hard sci-fi під страхом. Дно відкривається через рейтинги тиску, пошкоджені повноваження, докази навантаження і машину, що досі довіряє ключам форми Deep Reach більше, ніж живому заявнику."
-        },
-        "ar_SA": {
-          "title": "بوابة ضغط حوض Atlas",
-          "scanner": "تطلب بوابة الحوض إثبات ضغط وسلطة مسار وجسدا تستطيع تصنيفه.",
-          "field_note": "يجب أن يقرأ العتبة الأخيرة كبوابة خدمة إلى مصنع حي، لا كبوابة خيال.",
-          "terminal": "ATLAS BASIN GATE: إثبات الضغط غير مكتمل. درجة البدلة مقبولة تحت عتبة النزول. مشبك السلطة يتعرف على نمط Deep Reach ملغى، لا على المطالب الحالي. يتطلب التجاوز اليدوي حملا محليا واختيار مستقبل وpayload شاهد.",
-          "audio": "إنها تعرف المفتاح القديم. لا تعرفك.",
-          "in_game_wiki": "تثبت البوابة العتبة الأخيرة في درجة البدلة وإثبات الضغط وصراع السلطة. الباب ليس غامضا؛ إنه نظام صناعي يقرر هل اللاعب وصول أم دليل أم تلوث.",
-          "external_site": "يحافظ النزول الأخير على الخيال العلمي الصلب تحت الرعب. ينفتح القاع عبر تصنيفات الضغط والسلطة المتضررة وإثباتات الحمل وآلة لا تزال تثق بمفاتيح على هيئة Deep Reach أكثر من مطالب حي."
-        },
-        "id_ID": {
-          "title": "Gerbang Tekanan Cekungan Atlas",
-          "scanner": "Gerbang cekungan meminta bukti tekanan, otoritas rute, dan tubuh yang bisa diklasifikasikan.",
-          "field_note": "Ambang final harus terbaca seperti gerbang servis menuju pabrik hidup, bukan portal fantasi.",
-          "terminal": "ATLAS BASIN GATE: bukti tekanan tidak lengkap. Grade suit diterima di bawah ambang turun. Authority clamp mengenali pola Deep Reach yang dicabut, bukan pengklaim saat ini. Override manual membutuhkan beban lokal, pilihan penerima, dan payload saksi.",
-          "audio": "Ia tahu kunci lama. Ia tidak mengenalmu.",
-          "in_game_wiki": "Gerbang ini menambatkan ambang final pada grade suit, bukti tekanan, dan konflik otoritas. Pintunya bukan mistis; ia sistem industri yang memutuskan apakah pemain dihitung sebagai akses, bukti, atau kontaminasi.",
-          "external_site": "Turun terakhir tetap menyimpan hard sci-fi di bawah rasa takut. Dasar terbuka lewat rating tekanan, otoritas rusak, bukti beban, dan mesin yang masih lebih percaya kunci berbentuk Deep Reach daripada pengklaim hidup."
-        },
-        "ko_KR": {
-          "title": "Atlas 분지 압력 관문",
-          "scanner": "분지 관문은 압력 증명, 경로 권한, 분류 가능한 몸을 요구한다.",
-          "field_note": "최종 문턱은 판타지 포털이 아니라 살아 있는 공장으로 들어가는 서비스 관문처럼 읽혀야 한다.",
-          "terminal": "ATLAS BASIN GATE: 압력 증명 불완전. 슈트 등급은 하강 임계값 아래에서 수락됨. Authority clamp는 현재 청구자가 아니라 취소된 Deep Reach 패턴을 인식한다. 수동 우회에는 로컬 부하, 수신자 선택, 증인 payload 필요.",
-          "audio": "그것은 오래된 열쇠를 안다. 너는 모른다.",
-          "in_game_wiki": "분지 압력 관문은 최종 문턱을 슈트 등급, 압력 증명, 권한 충돌에 고정한다. 문은 신비한 것이 아니다. 플레이어를 접근 권한, 증거, 오염 중 무엇으로 계산할지 결정하는 산업 시스템이다.",
-          "external_site": "최종 하강은 공포 아래에 하드 SF를 유지한다. 바닥은 압력 등급, 손상된 권한, 부하 증명, 그리고 살아 있는 청구자보다 Deep Reach 형태의 열쇠를 더 믿는 기계를 통해 열린다."
-        },
-        "he_IL": {
-          "title": "שער לחץ אגן Atlas",
-          "scanner": "שער האגן מבקש הוכחת לחץ, סמכות מסלול וגוף שניתן לסווג.",
-          "field_note": "הסף הסופי צריך להיקרא כשער שירות למפעל חי, לא כפורטל פנטזיה.",
-          "terminal": "ATLAS BASIN GATE: הוכחת לחץ לא שלמה. דרגת חליפה התקבלה מתחת לסף ירידה. מהדק הסמכות מזהה דפוס Deep Reach שבוטל, לא את התובע הנוכחי. עקיפה ידנית דורשת עומס מקומי, בחירת מקלט ו-payload עד.",
-          "audio": "הוא מכיר את המפתח הישן. הוא לא מכיר אותך.",
-          "in_game_wiki": "שער הלחץ מעגן את הסף הסופי בדרגת חליפה, הוכחת לחץ וסכסוך סמכות. הדלת אינה מיסטית; זו מערכת תעשייתית שמחליטה אם השחקן נחשב גישה, ראיה או זיהום.",
-          "external_site": "הירידה האחרונה שומרת מדע בדיוני קשיח מתחת לאימה. הקרקעית נפתחת דרך דירוגי לחץ, סמכות פגועה, הוכחות עומס ומכונה שעדיין בוטחת במפתחות בצורת Deep Reach יותר מאשר בתובע חי."
-        },
-        "pt_BR": {
-          "title": "Portão de Pressão da Bacia Atlas",
-          "scanner": "O portão da bacia pede prova de pressão, autoridade de rota e um corpo que possa classificar.",
-          "field_note": "O limiar final deve parecer um portão de serviço para uma fábrica viva, não um portal de fantasia.",
-          "terminal": "ATLAS BASIN GATE: prova de pressão incompleta. Grau do traje aceito abaixo do limiar de descida. Authority clamp reconhece padrão Deep Reach revogado, não o reclamante atual. Override manual exige carga local, escolha de receptor e payload testemunha.",
-          "audio": "Ele conhece a chave antiga. Não conhece você.",
-          "in_game_wiki": "O portão ancora o limiar final em grau do traje, prova de pressão e conflito de autoridade. A porta não é mística; é um sistema industrial decidindo se o jogador conta como acesso, prova ou contaminação.",
-          "external_site": "A descida final mantém hard sci-fi sob o medo. O fundo se abre por classificações de pressão, autoridade danificada, provas de carga e uma máquina que ainda confia mais em chaves com formato Deep Reach do que em um reclamante vivo."
-        },
-        "nl_NL": {
-          "title": "Drukpoort van het Atlas-bekken",
-          "scanner": "De bekkenpoort vraagt drukbewijs, routeautoriteit en een lichaam dat ze kan classificeren.",
-          "field_note": "De finale drempel moet lezen als een servicepoort naar een levende fabriek, niet als een fantasyportaal.",
-          "terminal": "ATLAS BASIN GATE: drukbewijs onvolledig. Pakklasse geaccepteerd onder afdaaldrempel. Authority clamp herkent ingetrokken Deep Reach-patroon, niet de huidige claimant. Handmatige override vereist lokale belasting, ontvangerkeuze en getuige-payload.",
-          "audio": "Ze kent de oude sleutel. Ze kent jou niet.",
-          "in_game_wiki": "De drukpoort verankert de finale drempel in pakklasse, drukbewijs en autoriteitsconflict. De deur is niet mystiek; het is een industrieel systeem dat beslist of de speler telt als toegang, bewijs of besmetting.",
-          "external_site": "De laatste afdaling houdt harde sciencefiction onder de angst. De bodem opent via drukratings, beschadigde autoriteit, belastingbewijzen en een machine die Deep Reach-vormige sleutels nog meer vertrouwt dan een levende claimant."
-        }
-      }
+    "ru_RU": {
+     "title": "Предупреждение машинного поля бездны",
+     "scanner": "Ил движется против течения. Фильтрующие тела перестраиваются под огнями.",
+     "field_note": "Позднее предупреждение: тихий объективный страх. Финальное поле — это просыпающаяся инфраструктура, а не разгон к боссу.",
+     "terminal": "ПРЕДУПРЕЖДЕНИЕ МАРШРУТА: движение ила в машинном поле бездны превышает модель течений. Фильтрующие тела и погребенные ребра приводов регистрируются как движущаяся инфраструктура. Держать дистанцию; не якориться в мягкий пол.",
+     "audio": "Пол не стоит на месте.",
+     "in_game_wiki": "Это предупреждение соединяет глубокую экологию с финальным подходом к Atlas. Игрок больше не идет через руины, где случайно есть жизнь; он пересекает жизнь, научившуюся носить машины.",
+     "external_site": "Перед финальным бассейном HECTON-8 перестает выглядеть заброшенной и начинает выглядеть как машина, слишком большая, чтобы показать все тело. Предупреждение остается тихим, потому что ужас здесь не погоня. Ужас — масштаб."
     },
-    {
-      "packet_id": "P298_FACTORY_TEMPLE_ENTRY_FRAGMENT",
-      "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
-      "article_id": "applied_lore.p298_factory_temple_entry_fragment",
-      "title_key": "applied_lore.p298_factory_temple_entry_fragment.title",
-      "unlock": {
-        "primary": "unlock.p298_factory_temple_entry_fragment",
-        "poi_tags": [
-          "poi.factory_temple_entry_fragment",
-          "poi.living_iron_threshold",
-          "poi.worker_tool_in_wall"
-        ],
-        "biome_tags": [
-          "biome.factory_temple",
-          "biome.atlas"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Factory-Temple Entry Fragment",
-          "scanner": "Alloy, shell sealant, hand tool, and active repair pulse register as one surface.",
-          "field_note": "Visual rule: it is temple-like only because industry, tissue, and repetition have become ritual.",
-          "terminal": "ENTRY MARKER: maintenance categories collapsed. Tool scars, sealant shell, cable roots, filter tissue, and actuator ribs registered as a single repair surface. Human path marks no longer privileged.",
-          "audio": "This is not a room. This is a habit.",
-          "in_game_wiki": "Factory-Temple Entry Fragment defines the final-zone visual grammar. The sacred feeling is accidental: thousands of repairs repeated until machinery, biology, and human damage became one pattern.",
-          "external_site": "At the bottom, HECTON-8 stops separating colony, ocean, machine, and evidence. The place itself becomes the argument: not worship, not magic, but industry repeated until it looks like ritual."
-        },
-        "ru_RU": {
-          "title": "Фрагмент входа в фабрику-храм",
-          "scanner": "Сплав, ракушечный герметик, ручной инструмент и активный ремонтный импульс читаются как одна поверхность.",
-          "field_note": "Визуальное правило: это похоже на храм только потому, что промышленность, ткань и повторение стали ритуалом.",
-          "terminal": "МАРКЕР ВХОДА: категории обслуживания схлопнулись. Следы инструмента, ракушечный герметик, корни кабеля, фильтрующая ткань и ребра приводов зарегистрированы как единая ремонтная поверхность. Человеческие маршрутные метки больше не имеют привилегии.",
-          "audio": "Это не комната. Это привычка.",
-          "in_game_wiki": "Фрагмент входа задает визуальную грамматику финальной зоны. Ощущение сакральности случайно: тысячи ремонтов повторялись, пока машина, биология и человеческий ущерб не стали одним узором.",
-          "external_site": "На дне HECTON-8 перестает разделять колонию, океан, машину и доказательство. Само место становится аргументом: не поклонение, не магия, а промышленность, повторенная до вида ритуала."
-        },
-        "ja_JP": {
-          "title": "工場神殿入口断片",
-          "scanner": "合金、貝殻状シーラント、手工具、稼働中の修理パルスが一つの表面として登録される。",
-          "field_note": "視覚ルール: 神殿のように見えるのは、産業、組織、反復が儀式になったからだけ。",
-          "terminal": "ENTRY MARKER: 保守カテゴリ崩壊。工具傷、シーラント殻、ケーブル根、フィルター組織、アクチュエータ肋骨が単一の修理表面として登録。人間の経路標識はもはや優先されない。",
-          "audio": "これは部屋ではない。習慣だ。",
-          "in_game_wiki": "工場神殿入口断片は最終ゾーンの視覚文法を定義する。聖性の感覚は偶然だ。何千回もの修理が繰り返され、機械、生物、人間の損傷が一つの模様になった。",
-          "external_site": "底で HECTON-8 は、コロニー、海、機械、証拠を分けるのをやめる。場所そのものが主張になる。信仰でも魔法でもなく、儀式に見えるまで繰り返された産業だ。"
-        },
-        "zh_CN": {
-          "title": "工厂神殿入口碎片",
-          "scanner": "合金、贝壳密封层、手工工具和活跃维修脉冲被登记为同一表面。",
-          "field_note": "视觉规则：它像神殿，只是因为工业、组织和重复已经变成仪式。",
-          "terminal": "ENTRY MARKER：维护类别塌缩。工具伤痕、密封壳、缆根、过滤组织和执行器肋骨登记为单一维修表面。人类路径标记不再享有优先权。",
-          "audio": "这不是房间。这是习惯。",
-          "in_game_wiki": "工厂神殿入口碎片定义最终区域的视觉语法。神圣感是偶然的：成千上万次维修不断重复，直到机器、生物和人类损伤成了同一种图案。",
-          "external_site": "在底部，HECTON-8 不再区分殖民地、海洋、机器和证据。地点本身变成论点：不是崇拜，不是魔法，而是重复到像仪式的工业。"
-        },
-        "fr_FR": {
-          "title": "Fragment d'entrée de l'usine-temple",
-          "scanner": "Alliage, scellant coquillier, outil manuel et impulsion de réparation active s'enregistrent comme une seule surface.",
-          "field_note": "Règle visuelle : cela ressemble à un temple uniquement parce que l'industrie, le tissu et la répétition sont devenus rituel.",
-          "terminal": "ENTRY MARKER : catégories de maintenance effondrées. Cicatrices d'outil, coque de scellant, racines de câble, tissu filtrant et côtes d'actionneur enregistrés comme une seule surface de réparation. Les marques de chemin humaines ne sont plus privilégiées.",
-          "audio": "Ce n'est pas une pièce. C'est une habitude.",
-          "in_game_wiki": "Ce fragment définit la grammaire visuelle de la zone finale. Le sentiment sacré est accidentel : des milliers de réparations répétées jusqu'à ce que machine, biologie et dégâts humains deviennent un seul motif.",
-          "external_site": "Au fond, HECTON-8 cesse de séparer colonie, océan, machine et preuve. Le lieu lui-même devient l'argument : pas culte, pas magie, mais industrie répétée jusqu'à ressembler à un rituel."
-        },
-        "es_ES": {
-          "title": "Fragmento de entrada a fábrica-templo",
-          "scanner": "Aleación, sellante de concha, herramienta manual y pulso de reparación activo se registran como una sola superficie.",
-          "field_note": "Regla visual: parece templo solo porque industria, tejido y repetición se han vuelto ritual.",
-          "terminal": "ENTRY MARKER: categorías de mantenimiento colapsadas. Cicatrices de herramienta, concha sellante, raíces de cable, tejido filtrante y costillas de actuador registrados como una sola superficie de reparación. Las marcas humanas de ruta ya no tienen privilegio.",
-          "audio": "Esto no es una sala. Es una costumbre.",
-          "in_game_wiki": "El fragmento define la gramática visual de la zona final. La sensación sagrada es accidental: miles de reparaciones repetidas hasta que máquina, biología y daño humano se volvieron un solo patrón.",
-          "external_site": "En el fondo, HECTON-8 deja de separar colonia, océano, máquina y evidencia. El lugar mismo se vuelve el argumento: no culto, no magia, sino industria repetida hasta parecer ritual."
-        },
-        "de_DE": {
-          "title": "Fabriktempel-Eingangsfragment",
-          "scanner": "Legierung, Schalen-Dichtstoff, Handwerkzeug und aktiver Reparaturpuls werden als eine Oberfläche registriert.",
-          "field_note": "Visuelle Regel: Es wirkt nur tempelartig, weil Industrie, Gewebe und Wiederholung zu Ritual wurden.",
-          "terminal": "ENTRY MARKER: Wartungskategorien kollabiert. Werkzeugnarben, Dichtstoffschale, Kabelwurzeln, Filtergewebe und Aktuatorrippen als eine Reparaturoberfläche registriert. Menschliche Wegmarken nicht länger privilegiert.",
-          "audio": "Das ist kein Raum. Das ist eine Gewohnheit.",
-          "in_game_wiki": "Das Fragment definiert die visuelle Grammatik der finalen Zone. Das heilige Gefühl ist zufällig: Tausende Reparaturen wiederholten sich, bis Maschine, Biologie und menschlicher Schaden ein Muster wurden.",
-          "external_site": "Am Grund trennt HECTON-8 Kolonie, Ozean, Maschine und Beweis nicht mehr. Der Ort selbst wird zum Argument: kein Kult, keine Magie, sondern Industrie, so oft wiederholt, bis sie wie Ritual aussieht."
-        },
-        "pl_PL": {
-          "title": "Fragment wejścia do fabryki-świątyni",
-          "scanner": "Stop, muszlowy uszczelniacz, ręczne narzędzie i aktywny impuls naprawczy rejestrują się jako jedna powierzchnia.",
-          "field_note": "Reguła wizualna: wygląda jak świątynia tylko dlatego, że przemysł, tkanka i powtórzenie stały się rytuałem.",
-          "terminal": "ENTRY MARKER: kategorie konserwacji zapadły się. Blizny narzędzi, skorupa uszczelniacza, korzenie kabli, tkanka filtrująca i żebra aktuatorów zarejestrowane jako jedna powierzchnia naprawcza. Ludzkie znaki trasy nie są już uprzywilejowane.",
-          "audio": "To nie pokój. To nawyk.",
-          "in_game_wiki": "Fragment definiuje wizualną gramatykę finałowej strefy. Poczucie sacrum jest przypadkowe: tysiące napraw powtarzały się, aż maszyna, biologia i ludzka szkoda stały się jednym wzorem.",
-          "external_site": "Na dnie HECTON-8 przestaje oddzielać kolonię, ocean, maszynę i dowód. Samo miejsce staje się argumentem: nie kult, nie magia, lecz przemysł powtarzany tak długo, aż wygląda jak rytuał."
-        },
-        "uk_UA": {
-          "title": "Фрагмент входу до фабрики-храму",
-          "scanner": "Сплав, мушлевий герметик, ручний інструмент і активний ремонтний імпульс читаються як одна поверхня.",
-          "field_note": "Візуальне правило: це схоже на храм тільки тому, що промисловість, тканина й повторення стали ритуалом.",
-          "terminal": "ENTRY MARKER: категорії обслуговування схлопнулися. Сліди інструмента, мушлевий герметик, корені кабелю, фільтрувальна тканина й ребра приводів зареєстровано як єдину ремонтну поверхню. Людські маршрутні мітки більше не мають привілею.",
-          "audio": "Це не кімната. Це звичка.",
-          "in_game_wiki": "Фрагмент задає візуальну граматику фінальної зони. Відчуття сакральності випадкове: тисячі ремонтів повторювались, доки машина, біологія й людська шкода не стали одним візерунком.",
-          "external_site": "На дні HECTON-8 перестає розділяти колонію, океан, машину й доказ. Саме місце стає аргументом: не поклоніння, не магія, а промисловість, повторена до вигляду ритуалу."
-        },
-        "ar_SA": {
-          "title": "شظية مدخل المصنع-المعبد",
-          "scanner": "تسجل السبيكة ومادة الختم الصدفية والأداة اليدوية ونبضة الإصلاح النشطة كسطح واحد.",
-          "field_note": "قاعدة بصرية: يشبه المعبد فقط لأن الصناعة والنسيج والتكرار أصبحت طقسا.",
-          "terminal": "ENTRY MARKER: انهارت فئات الصيانة. ندوب الأدوات وقشرة الختم وجذور الكابلات ونسيج الترشيح وأضلاع المشغلات سجلت كسطح إصلاح واحد. علامات المسار البشرية لم تعد مميزة.",
-          "audio": "هذه ليست غرفة. هذه عادة.",
-          "in_game_wiki": "تحدد الشظية لغة المنطقة الأخيرة البصرية. الإحساس المقدس حادث عرضي: آلاف الإصلاحات تكررت حتى صارت الآلة والبيولوجيا والضرر البشري نمطا واحدا.",
-          "external_site": "في القاع، يتوقف HECTON-8 عن فصل المستعمرة والمحيط والآلة والدليل. يصبح المكان نفسه الحجة: لا عبادة ولا سحر، بل صناعة تكررت حتى بدت كطقس."
-        },
-        "id_ID": {
-          "title": "Fragmen Masuk Pabrik-Kuil",
-          "scanner": "Aloi, sealant cangkang, alat tangan, dan pulsa perbaikan aktif terbaca sebagai satu permukaan.",
-          "field_note": "Aturan visual: ia tampak seperti kuil hanya karena industri, jaringan, dan pengulangan berubah menjadi ritual.",
-          "terminal": "ENTRY MARKER: kategori pemeliharaan runtuh. Bekas alat, cangkang sealant, akar kabel, jaringan penyaring, dan rusuk aktuator terdaftar sebagai satu permukaan perbaikan. Tanda jalur manusia tidak lagi diistimewakan.",
-          "audio": "Ini bukan ruangan. Ini kebiasaan.",
-          "in_game_wiki": "Fragmen ini mendefinisikan tata visual zona final. Rasa sakralnya kebetulan: ribuan perbaikan diulang sampai mesin, biologi, dan kerusakan manusia menjadi satu pola.",
-          "external_site": "Di dasar, HECTON-8 berhenti memisahkan koloni, samudra, mesin, dan bukti. Tempat itu sendiri menjadi argumen: bukan pemujaan, bukan sihir, melainkan industri yang diulang sampai tampak seperti ritual."
-        },
-        "ko_KR": {
-          "title": "공장-사원 입구 파편",
-          "scanner": "합금, 껍질 밀봉재, 손도구, 활성 수리 펄스가 하나의 표면으로 등록된다.",
-          "field_note": "시각 규칙: 산업, 조직, 반복이 의식이 되었기 때문에 사원처럼 보일 뿐이다.",
-          "terminal": "ENTRY MARKER: 유지보수 범주 붕괴. 도구 흉터, 밀봉 껍질, 케이블 뿌리, 필터 조직, 액추에이터 갈비가 하나의 수리 표면으로 등록됨. 인간 경로 표식은 더 이상 우선되지 않는다.",
-          "audio": "이건 방이 아니다. 습관이다.",
-          "in_game_wiki": "이 파편은 최종 구역의 시각 문법을 정의한다. 성스러운 느낌은 우연이다. 수천 번의 수리가 반복되어 기계, 생물, 인간의 손상이 하나의 패턴이 되었다.",
-          "external_site": "바닥에서 HECTON-8은 식민지, 바다, 기계, 증거를 구분하기를 멈춘다. 장소 자체가 주장이 된다. 숭배도 마법도 아니라, 의식처럼 보일 때까지 반복된 산업이다."
-        },
-        "he_IL": {
-          "title": "שבר כניסה למפעל-מקדש",
-          "scanner": "סגסוגת, איטום צדפתי, כלי יד ופעימת תיקון פעילה נרשמים כמשטח אחד.",
-          "field_note": "כלל חזותי: זה דומה למקדש רק כי תעשייה, רקמה וחזרה הפכו לטקס.",
-          "terminal": "ENTRY MARKER: קטגוריות תחזוקה קרסו. צלקות כלי, קליפת איטום, שורשי כבלים, רקמת סינון וצלעות אקטואטור נרשמו כמשטח תיקון יחיד. סימני נתיב אנושיים כבר אינם מועדפים.",
-          "audio": "זה לא חדר. זה הרגל.",
-          "in_game_wiki": "השבר מגדיר את הדקדוק החזותי של אזור הסיום. התחושה הקדושה מקרית: אלפי תיקונים חזרו על עצמם עד שמכונה, ביולוגיה ונזק אנושי הפכו לדפוס אחד.",
-          "external_site": "בתחתית, HECTON-8 מפסיק להפריד בין מושבה, אוקיינוס, מכונה וראיה. המקום עצמו הופך לטיעון: לא פולחן, לא קסם, אלא תעשייה שחזרה על עצמה עד שנראתה כמו טקס."
-        },
-        "pt_BR": {
-          "title": "Fragmento de Entrada da Fábrica-Templo",
-          "scanner": "Liga, selante de concha, ferramenta manual e pulso de reparo ativo registram como uma só superfície.",
-          "field_note": "Regra visual: parece templo só porque indústria, tecido e repetição viraram ritual.",
-          "terminal": "ENTRY MARKER: categorias de manutenção colapsadas. Cicatrizes de ferramenta, concha de selante, raízes de cabo, tecido filtrante e costelas de atuador registrados como uma única superfície de reparo. Marcas humanas de rota não são mais privilegiadas.",
-          "audio": "Isto não é uma sala. É um hábito.",
-          "in_game_wiki": "O fragmento define a gramática visual da zona final. A sensação sagrada é acidental: milhares de reparos repetidos até máquina, biologia e dano humano virarem um só padrão.",
-          "external_site": "No fundo, HECTON-8 para de separar colônia, oceano, máquina e prova. O próprio lugar vira o argumento: não culto, não magia, mas indústria repetida até parecer ritual."
-        },
-        "nl_NL": {
-          "title": "Fragment van fabriek-tempelingang",
-          "scanner": "Legering, schelpafdichting, handgereedschap en actieve reparatiepuls registreren als één oppervlak.",
-          "field_note": "Visuele regel: het lijkt alleen tempelachtig omdat industrie, weefsel en herhaling ritueel zijn geworden.",
-          "terminal": "ENTRY MARKER: onderhoudscategorieën ingestort. Gereedschapssporen, afdichtingsschaal, kabelwortels, filterweefsel en actuatorribben geregistreerd als één reparatieoppervlak. Menselijke routemarkeringen niet langer bevoorrecht.",
-          "audio": "Dit is geen kamer. Dit is een gewoonte.",
-          "in_game_wiki": "Het fragment definieert de visuele grammatica van de finale zone. Het sacrale gevoel is toevallig: duizenden reparaties herhaalden zich tot machine, biologie en menselijke schade één patroon werden.",
-          "external_site": "Op de bodem stopt HECTON-8 met het scheiden van kolonie, oceaan, machine en bewijs. De plaats zelf wordt het argument: geen aanbidding, geen magie, maar industrie zo vaak herhaald dat ze op ritueel lijkt."
-        }
-      }
+    "ja_JP": {
+     "title": "深淵機械野警告",
+     "scanner": "沈泥が流れに逆らって動いている。フィルター体が光の下で位置を変えている。",
+     "field_note": "終盤警告: 静かで客観的な恐怖。最終フィールドはボス演出ではなく、目覚めるインフラ。",
+     "terminal": "ROUTE WARNING: 深淵機械野の沈泥運動が潮流モデルを超過。フィルター体と埋没したアクチュエータ肋骨を移動インフラとして登録。距離を維持。柔らかい床にアンカーを打つな。",
+     "audio": "床は静止していない。",
+     "in_game_wiki": "深淵機械野警告は、深部生態系を最終 Atlas アプローチへつなぐ。プレイヤーは生命を含む廃墟を渡っているのではない。機械を運ぶことを覚えた生命を渡っている。",
+     "external_site": "最終盆地の前で、HECTON-8 は放棄された場所ではなく、全身を見せられないほど巨大な機械に見え始める。警告は静かなままだ。恐怖は追跡ではなく、規模だからだ。"
     },
-    {
-      "packet_id": "P299_PAYLOAD_AUTHORITY_LAST_CHECK",
-      "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
-      "article_id": "applied_lore.p299_payload_authority_last_check",
-      "title_key": "applied_lore.p299_payload_authority_last_check.title",
-      "unlock": {
-        "primary": "unlock.p299_payload_authority_last_check",
-        "poi_tags": [
-          "poi.payload_authority_last_check",
-          "poi.receiver_split_panel",
-          "poi.evidence_mass_warning"
-        ],
-        "biome_tags": [
-          "biome.final_payload",
-          "biome.dossier"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Payload Authority Last Check",
-          "scanner": "Payload check: receiver choice changes ownership, not only reward.",
-          "field_note": "Use immediately before irreversible ending route selection.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence, and post-return liability. Receiver selection defines who may act on proof after departure.",
-          "audio": "What leaves will own what remains.",
-          "in_game_wiki": "Payload Authority Last Check gives the final UI its hard question. The player is not choosing a prize chest; they are choosing who gets mass, proof, names, coordinates, and permission to act.",
-          "external_site": "HECTON-8's ending is not only whether the player survives. It is who receives the proof and what that receiver is allowed to do with the ocean after the witness leaves."
-        },
-        "ru_RU": {
-          "title": "Последняя проверка полномочий payload",
-          "scanner": "Проверка payload: выбор приемника меняет владельца, а не только награду.",
-          "field_note": "Использовать прямо перед необратимым выбором маршрута концовки.",
-          "terminal": "ПРОВЕРКА ПОЛНОМОЧИЙ PAYLOAD: выбрать приемник, массу, хранение доказательств, экологическое последствие и послевозвратную ответственность. Выбор приемника определяет, кто сможет действовать на основании доказательства после ухода.",
-          "audio": "То, что уйдет, будет владеть тем, что останется.",
-          "in_game_wiki": "Последняя проверка дает финальному UI жесткий вопрос. Игрок выбирает не сундук с наградой, а того, кто получит массу, доказательство, имена, координаты и разрешение действовать.",
-          "external_site": "Финал HECTON-8 — не только о том, выживет ли игрок. Это вопрос, кто получит доказательство и что этому получателю будет позволено делать с океаном после ухода свидетеля."
-        },
-        "ja_JP": {
-          "title": "ペイロード権限最終確認",
-          "scanner": "ペイロード確認: 受信先選択は報酬だけでなく所有権を変える。",
-          "field_note": "不可逆のエンディングルート選択の直前に使う。",
-          "terminal": "PAYLOAD AUTHORITY CHECK: 受信先、質量、証拠保管、生態系への影響、帰還後責任を選択。受信先選択は、出発後に誰が証拠で行動できるかを定義する。",
-          "audio": "外へ出るものが、残るものを所有する。",
-          "in_game_wiki": "最終確認はファイナル UI に厳しい問いを与える。プレイヤーは報酬箱を選ぶのではない。質量、証拠、名前、座標、行動許可を誰に渡すかを選ぶ。",
-          "external_site": "HECTON-8 の結末は、プレイヤーが生き残るかだけではない。証拠を誰が受け取り、証人が去ったあとその受信者が海に何を許されるかだ。"
-        },
-        "zh_CN": {
-          "title": "载荷权限最终检查",
-          "scanner": "载荷检查：接收器选择改变所有权，不只是奖励。",
-          "field_note": "用于不可逆结局路线选择之前。",
-          "terminal": "PAYLOAD AUTHORITY CHECK：选择接收器、质量、证据监管、生态后果和返回后责任。接收器选择定义离开后谁可以根据证据行动。",
-          "audio": "离开的东西将拥有留下的东西。",
-          "in_game_wiki": "最终检查给结局 UI 一个严厉问题。玩家选择的不是奖励箱，而是谁得到质量、证据、姓名、坐标和行动许可。",
-          "external_site": "HECTON-8 的结局不只是玩家是否生还。它是谁接收证据，以及证人离开后该接收者被允许对海洋做什么。"
-        },
-        "fr_FR": {
-          "title": "Dernière vérification d'autorité du payload",
-          "scanner": "Vérification payload : le choix du récepteur change la propriété, pas seulement la récompense.",
-          "field_note": "À utiliser juste avant le choix irréversible de route de fin.",
-          "terminal": "PAYLOAD AUTHORITY CHECK : choisir récepteur, masse, garde des preuves, conséquence écologique et responsabilité post-retour. Le récepteur choisi définit qui pourra agir sur la preuve après le départ.",
-          "audio": "Ce qui partira possédera ce qui reste.",
-          "in_game_wiki": "La dernière vérification donne à l'interface finale sa question dure. Le joueur ne choisit pas un coffre de récompense ; il choisit qui reçoit masse, preuve, noms, coordonnées et permission d'agir.",
-          "external_site": "La fin de HECTON-8 ne demande pas seulement si le joueur survit. Elle demande qui reçoit la preuve et ce que ce récepteur pourra faire de l'océan après le départ du témoin."
-        },
-        "es_ES": {
-          "title": "Última comprobación de autoridad del payload",
-          "scanner": "Comprobación de payload: elegir receptor cambia propiedad, no solo recompensa.",
-          "field_note": "Usar justo antes de la selección irreversible de ruta final.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: seleccionar receptor, masa, custodia de pruebas, consecuencia ecológica y responsabilidad post-retorno. La elección del receptor define quién puede actuar sobre la prueba tras la salida.",
-          "audio": "Lo que salga será dueño de lo que quede.",
-          "in_game_wiki": "La última comprobación da a la interfaz final su pregunta dura. El jugador no elige un cofre de premio; elige quién recibe masa, prueba, nombres, coordenadas y permiso para actuar.",
-          "external_site": "El final de HECTON-8 no es solo si el jugador sobrevive. Es quién recibe la prueba y qué se permite hacer a ese receptor con el océano después de que el testigo se vaya."
-        },
-        "de_DE": {
-          "title": "Letzte Payload-Autoritätsprüfung",
-          "scanner": "Payload-Prüfung: Empfängerwahl ändert Eigentum, nicht nur Belohnung.",
-          "field_note": "Direkt vor der irreversiblen Auswahl der Endroute verwenden.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: Empfänger, Masse, Beweisverwahrung, ökologische Folge und Rückkehrhaftung wählen. Die Empfängerwahl definiert, wer nach Abreise anhand des Beweises handeln darf.",
-          "audio": "Was hinausgeht, wird besitzen, was bleibt.",
-          "in_game_wiki": "Die letzte Prüfung gibt dem finalen UI seine harte Frage. Der Spieler wählt keine Belohnungskiste, sondern wer Masse, Beweis, Namen, Koordinaten und Handlungserlaubnis erhält.",
-          "external_site": "HECTON-8s Ende fragt nicht nur, ob der Spieler überlebt. Es fragt, wer den Beweis erhält und was dieser Empfänger mit dem Ozean tun darf, nachdem der Zeuge gegangen ist."
-        },
-        "pl_PL": {
-          "title": "Ostatnia kontrola autorytetu payloadu",
-          "scanner": "Kontrola payloadu: wybór odbiorcy zmienia własność, nie tylko nagrodę.",
-          "field_note": "Użyć bezpośrednio przed nieodwracalnym wyborem trasy zakończenia.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: wybrać odbiorcę, masę, dozór dowodów, konsekwencję ekologiczną i odpowiedzialność po powrocie. Wybór odbiorcy określa, kto może działać na podstawie dowodu po odejściu.",
-          "audio": "To, co odejdzie, posiądzie to, co zostanie.",
-          "in_game_wiki": "Ostatnia kontrola daje finałowemu UI twarde pytanie. Gracz nie wybiera skrzyni z nagrodą; wybiera, kto dostanie masę, dowód, nazwiska, współrzędne i zgodę na działanie.",
-          "external_site": "Zakończenie HECTON-8 nie pyta tylko, czy gracz przeżyje. Pyta, kto otrzyma dowód i co ten odbiorca będzie mógł zrobić z oceanem po odejściu świadka."
-        },
-        "uk_UA": {
-          "title": "Остання перевірка повноважень payload",
-          "scanner": "Перевірка payload: вибір приймача змінює власність, а не лише нагороду.",
-          "field_note": "Використати безпосередньо перед незворотним вибором маршруту кінцівки.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: вибрати приймач, масу, зберігання доказів, екологічний наслідок і відповідальність після повернення. Вибір приймача визначає, хто зможе діяти на підставі доказу після відходу.",
-          "audio": "Те, що піде, володітиме тим, що залишиться.",
-          "in_game_wiki": "Остання перевірка дає фінальному UI жорстке питання. Гравець обирає не скриню з нагородою, а того, хто отримає масу, доказ, імена, координати й дозвіл діяти.",
-          "external_site": "Фінал HECTON-8 не лише про те, чи виживе гравець. Це питання, хто отримає доказ і що цьому приймачу буде дозволено робити з океаном після відходу свідка."
-        },
-        "ar_SA": {
-          "title": "الفحص الأخير لسلطة payload",
-          "scanner": "فحص payload: اختيار المستقبل يغير الملكية، لا المكافأة فقط.",
-          "field_note": "يستخدم مباشرة قبل اختيار مسار النهاية غير القابل للرجوع.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: اختر المستقبل والكتلة وحيازة الأدلة والعاقبة البيئية ومسؤولية ما بعد العودة. يحدد اختيار المستقبل من يستطيع العمل على الدليل بعد المغادرة.",
-          "audio": "ما يغادر سيملك ما يبقى.",
-          "in_game_wiki": "يعطي الفحص الأخير واجهة النهاية سؤالها الصعب. لا يختار اللاعب صندوق جائزة؛ يختار من يحصل على الكتلة والدليل والأسماء والإحداثيات وإذن الفعل.",
-          "external_site": "نهاية HECTON-8 ليست فقط هل ينجو اللاعب. إنها من يتلقى الدليل وما يسمح لذلك المستقبل أن يفعله بالمحيط بعد رحيل الشاهد."
-        },
-        "id_ID": {
-          "title": "Pemeriksaan Terakhir Otoritas Payload",
-          "scanner": "Pemeriksaan payload: pilihan penerima mengubah kepemilikan, bukan hanya hadiah.",
-          "field_note": "Gunakan tepat sebelum pilihan rute akhir yang tidak dapat dibalik.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: pilih penerima, massa, kustodi bukti, konsekuensi ekologis, dan liabilitas pasca-kembali. Pilihan penerima menentukan siapa yang boleh bertindak atas bukti setelah keberangkatan.",
-          "audio": "Yang pergi akan memiliki yang tersisa.",
-          "in_game_wiki": "Pemeriksaan terakhir memberi UI final pertanyaan keras. Pemain tidak memilih peti hadiah; mereka memilih siapa yang menerima massa, bukti, nama, koordinat, dan izin bertindak.",
-          "external_site": "Akhir HECTON-8 bukan hanya apakah pemain bertahan hidup. Ini tentang siapa menerima bukti dan apa yang boleh dilakukan penerima itu pada samudra setelah saksi pergi."
-        },
-        "ko_KR": {
-          "title": "Payload 권한 마지막 확인",
-          "scanner": "Payload 확인: 수신자 선택은 보상뿐 아니라 소유권을 바꾼다.",
-          "field_note": "되돌릴 수 없는 엔딩 루트 선택 직전에 사용.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: 수신자, 질량, 증거 보관, 생태적 결과, 귀환 후 책임을 선택. 수신자 선택은 떠난 뒤 누가 증거에 따라 행동할 수 있는지 정의한다.",
-          "audio": "떠나는 것이 남는 것을 소유할 것이다.",
-          "in_game_wiki": "마지막 확인은 최종 UI에 어려운 질문을 준다. 플레이어는 보상 상자를 고르는 것이 아니라, 질량, 증거, 이름, 좌표, 행동 허가를 누가 받을지 고른다.",
-          "external_site": "HECTON-8의 엔딩은 플레이어가 생존하는지만 묻지 않는다. 증거를 누가 받고, 증인이 떠난 뒤 그 수신자가 바다에 무엇을 할 수 있는지를 묻는다."
-        },
-        "he_IL": {
-          "title": "בדיקת סמכות payload אחרונה",
-          "scanner": "בדיקת payload: בחירת מקלט משנה בעלות, לא רק תגמול.",
-          "field_note": "להשתמש מיד לפני בחירת מסלול סוף בלתי הפיכה.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: בחר מקלט, מסה, משמורת ראיות, תוצאה אקולוגית ואחריות לאחר חזרה. בחירת המקלט מגדירה מי רשאי לפעול על סמך הראיה לאחר העזיבה.",
-          "audio": "מה שייצא יחזיק במה שיישאר.",
-          "in_game_wiki": "הבדיקה האחרונה נותנת לממשק הסיום את השאלה הקשה. השחקן אינו בוחר תיבת פרס; הוא בוחר מי יקבל מסה, ראיה, שמות, קואורדינטות והרשאה לפעול.",
-          "external_site": "הסוף של HECTON-8 אינו רק אם השחקן שורד. הוא מי מקבל את הראיה ומה מותר למקלט הזה לעשות עם האוקיינוס אחרי שהעד עוזב."
-        },
-        "pt_BR": {
-          "title": "Última Verificação de Autoridade do Payload",
-          "scanner": "Verificação do payload: escolha de receptor muda propriedade, não só recompensa.",
-          "field_note": "Usar imediatamente antes da seleção irreversível de rota final.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: selecionar receptor, massa, custódia de provas, consequência ecológica e responsabilidade pós-retorno. A escolha do receptor define quem poderá agir sobre a prova depois da partida.",
-          "audio": "O que sair será dono do que ficar.",
-          "in_game_wiki": "A última verificação dá à UI final sua pergunta dura. O jogador não escolhe um baú de prêmio; escolhe quem recebe massa, prova, nomes, coordenadas e permissão para agir.",
-          "external_site": "O final de HECTON-8 não é só se o jogador sobrevive. É quem recebe a prova e o que esse receptor pode fazer com o oceano depois que a testemunha vai embora."
-        },
-        "nl_NL": {
-          "title": "Laatste controle van payloadautoriteit",
-          "scanner": "Payloadcontrole: ontvangerkeuze verandert eigendom, niet alleen beloning.",
-          "field_note": "Gebruik direct voor de onomkeerbare keuze van de eindroute.",
-          "terminal": "PAYLOAD AUTHORITY CHECK: selecteer ontvanger, massa, bewijsbewaring, ecologisch gevolg en aansprakelijkheid na terugkeer. Ontvangerkeuze bepaalt wie na vertrek op het bewijs mag handelen.",
-          "audio": "Wat vertrekt, zal bezitten wat blijft.",
-          "in_game_wiki": "De laatste controle geeft de finale UI haar harde vraag. De speler kiest geen beloningskist; hij kiest wie massa, bewijs, namen, coördinaten en toestemming tot handelen krijgt.",
-          "external_site": "Het einde van HECTON-8 gaat niet alleen over of de speler overleeft. Het gaat om wie het bewijs ontvangt en wat die ontvanger met de oceaan mag doen nadat de getuige vertrekt."
-        }
-      }
+    "zh_CN": {
+     "title": "深渊机械场警告",
+     "scanner": "淤泥逆流而动。滤体正在灯光下重新定位。",
+     "field_note": "后期警告：安静、客观的恐惧。最终场不是 boss 铺垫，而是正在醒来的基础设施。",
+     "terminal": "ROUTE WARNING：深渊机械场淤泥运动超过水流模型。滤体和埋藏执行器肋骨登记为移动基础设施。保持距离；不要锚定在软地面。",
+     "audio": "地板并不静止。",
+     "in_game_wiki": "深渊机械场警告把深层生态接到最终 Atlas 路径。玩家不再穿过恰好有生命的废墟；他们穿过学会承载机器的生命。",
+     "external_site": "在最终盆地之前，HECTON-8 不再像被遗弃的地方，而像一台大到无法展示全身的机器。警告保持安静，因为恐惧不是追逐，而是尺度。"
     },
-    {
-      "packet_id": "P300_NO_CLEAN_ENDING_DOSSIER_NOTE",
-      "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
-      "article_id": "applied_lore.p300_no_clean_ending_dossier_note",
-      "title_key": "applied_lore.p300_no_clean_ending_dossier_note.title",
-      "unlock": {
-        "primary": "unlock.p300_no_clean_ending_dossier_note",
-        "poi_tags": [
-          "poi.no_clean_ending_dossier_note",
-          "poi.outcome_hash_board",
-          "poi.worker_name_remainder"
-        ],
-        "biome_tags": [
-          "biome.ending",
-          "biome.dossier"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "No Clean Ending Dossier Note",
-          "scanner": "Dossier note: closure denied; consequence retained.",
-          "field_note": "Post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
-          "terminal": "DOSSIER RECORD: outcome stored. Clean closure unavailable under current evidence state. Debt, ecology, liability, and witness custody remain active records.",
-          "audio": "You saved something. That is not the same as clearing it.",
-          "in_game_wiki": "No Clean Ending Dossier Note defines the post-ending memory tone. Even the strongest ending leaves a living file behind: a saved thing, a damaged thing, and a cost that refuses to become tidy.",
-          "external_site": "HECTON-8's endings leave scars by design: protected ecology, denied corporation, released witness record, unpaid debt, and a player who changed the ocean without gaining the right to close it."
-        },
-        "ru_RU": {
-          "title": "Заметка досье без чистой концовки",
-          "scanner": "Заметка досье: закрытие отклонено; последствие сохранено.",
-          "field_note": "Постфинальное досье держит мост открытым: исход записан, долг и доказательства не разрешены, идеальная победа не выдана.",
-          "terminal": "ЗАПИСЬ ДОСЬЕ: исход сохранен. Чистое закрытие недоступно при текущем состоянии доказательств. Долг, экология, ответственность и хранение свидетеля остаются активными записями.",
-          "audio": "Ты что-то спас. Это не значит, что ты это очистил.",
-          "in_game_wiki": "Заметка задает память после финала. Даже самая сильная концовка оставляет живой файл: спасенное, поврежденное и цену, которая отказывается стать аккуратной.",
-          "external_site": "Концовки HECTON-8 специально оставляют шрамы: защищенная экология, отодвинутая корпорация, выпущенная запись свидетеля, неоплаченный долг и игрок, изменивший океан без права закрыть его."
-        },
-        "ja_JP": {
-          "title": "清潔な結末なしのドシエ注記",
-          "scanner": "ドシエ注記: 終了拒否。結果保持。",
-          "field_note": "終了後ドシエは橋を開いたままにする。結果は記録、債務と証拠は未解決、完全勝利は与えられない。",
-          "terminal": "DOSSIER RECORD: 結果保存。現在の証拠状態では清潔な終了不可。債務、生態系、責任、証人保管は有効記録のまま。",
-          "audio": "君は何かを救った。それを清算したわけではない。",
-          "in_game_wiki": "この注記は、エンディング後の記憶の調子を決める。最強の結末でさえ、生きたファイルを残す。救われたもの、傷ついたもの、整うことを拒む代償だ。",
-          "external_site": "HECTON-8 のエンディングは意図的に傷跡を残す。保護された生態系、拒まれた企業、公開された証人記録、未払いの債務、そして海を変えたが閉じる権利を得ていないプレイヤー。"
-        },
-        "zh_CN": {
-          "title": "无干净结局档案备注",
-          "scanner": "档案备注：拒绝结案；后果保留。",
-          "field_note": "结局后档案保持桥梁打开：结果已记录，债务和证据未解决，没有完美胜利。",
-          "terminal": "DOSSIER RECORD：结果已存储。在当前证据状态下无法干净结案。债务、生态、责任和证人监管仍为活跃记录。",
-          "audio": "你救下了某些东西。这不等于清除了它。",
-          "in_game_wiki": "这条备注定义结局后的记忆语气。即便最强结局也会留下活档案：被救下的东西、受损的东西，以及拒绝变整齐的代价。",
-          "external_site": "HECTON-8 的结局设计上就会留下伤痕：受保护的生态、被拒绝的公司、释放的证人记录、未偿债务，以及改变了海洋却没有权利将其关闭的玩家。"
-        },
-        "fr_FR": {
-          "title": "Note de dossier sans fin propre",
-          "scanner": "Note de dossier : clôture refusée ; conséquence retenue.",
-          "field_note": "Le dossier post-fin garde le pont ouvert : résultat enregistré, dette et preuves non résolues, aucune victoire parfaite accordée.",
-          "terminal": "DOSSIER RECORD : résultat stocké. Clôture propre indisponible dans l'état actuel des preuves. Dette, écologie, responsabilité et garde du témoin restent des dossiers actifs.",
-          "audio": "Tu as sauvé quelque chose. Ce n'est pas l'avoir blanchi.",
-          "in_game_wiki": "La note définit le ton de mémoire après la fin. Même la fin la plus forte laisse un fichier vivant : une chose sauvée, une chose abîmée et un coût qui refuse de devenir propre.",
-          "external_site": "Les fins de HECTON-8 laissent des cicatrices par conception : écologie protégée, corporation repoussée, dossier de témoin libéré, dette impayée et joueur qui a changé l'océan sans obtenir le droit de le clore."
-        },
-        "es_ES": {
-          "title": "Nota de dossier sin final limpio",
-          "scanner": "Nota de dossier: cierre denegado; consecuencia retenida.",
-          "field_note": "El dossier posterior mantiene el puente abierto: resultado registrado, deuda y pruebas sin resolver, ninguna victoria perfecta concedida.",
-          "terminal": "DOSSIER RECORD: resultado almacenado. Cierre limpio no disponible con el estado actual de pruebas. Deuda, ecología, responsabilidad y custodia del testigo siguen como registros activos.",
-          "audio": "Salvaste algo. Eso no es lo mismo que limpiarlo.",
-          "in_game_wiki": "La nota define el tono de memoria posterior al final. Incluso el final más fuerte deja un archivo vivo: algo salvado, algo dañado y un coste que se niega a quedar ordenado.",
-          "external_site": "Los finales de HECTON-8 dejan cicatrices por diseño: ecología protegida, corporación negada, registro de testigo liberado, deuda impaga y un jugador que cambió el océano sin obtener derecho a cerrarlo."
-        },
-        "de_DE": {
-          "title": "Dossiernotiz ohne sauberes Ende",
-          "scanner": "Dossiernotiz: Abschluss verweigert; Folge beibehalten.",
-          "field_note": "Nach-Ende-Dossier hält die Brücke offen: Ergebnis erfasst, Schuld und Beweis ungelöst, kein perfekter Sieg gewährt.",
-          "terminal": "DOSSIER RECORD: Ergebnis gespeichert. Sauberer Abschluss unter aktuellem Beweisstand nicht verfügbar. Schuld, Ökologie, Haftung und Zeugenverwahrung bleiben aktive Akten.",
-          "audio": "Du hast etwas gerettet. Das heißt nicht, dass du es bereinigt hast.",
-          "in_game_wiki": "Die Notiz bestimmt den Erinnerungston nach dem Ende. Selbst das stärkste Ende hinterlässt eine lebende Akte: etwas Gerettetes, etwas Beschädigtes und einen Preis, der nicht ordentlich werden will.",
-          "external_site": "HECTON-8s Enden hinterlassen absichtlich Narben: geschützte Ökologie, zurückgewiesener Konzern, freigegebener Zeugenbericht, unbezahlte Schuld und ein Spieler, der den Ozean verändert hat, ohne das Recht zu erhalten, ihn zu schließen."
-        },
-        "pl_PL": {
-          "title": "Notatka dossier bez czystego zakończenia",
-          "scanner": "Notatka dossier: zamknięcie odmówione; konsekwencja zachowana.",
-          "field_note": "Dossier po zakończeniu zostawia most otwarty: wynik zapisany, dług i dowody nierozwiązane, brak idealnego zwycięstwa.",
-          "terminal": "DOSSIER RECORD: wynik zapisany. Czyste zamknięcie niedostępne przy obecnym stanie dowodów. Dług, ekologia, odpowiedzialność i dozór świadka pozostają aktywnymi zapisami.",
-          "audio": "Coś ocaliłeś. To nie znaczy, że to oczyściłeś.",
-          "in_game_wiki": "Notatka definiuje ton pamięci po zakończeniu. Nawet najsilniejszy finał zostawia żywy plik: rzecz ocaloną, rzecz uszkodzoną i koszt, który odmawia uporządkowania.",
-          "external_site": "Zakończenia HECTON-8 zostawiają blizny celowo: chronioną ekologię, odrzuconą korporację, uwolniony zapis świadka, niespłacony dług i gracza, który zmienił ocean bez prawa do jego zamknięcia."
-        },
-        "uk_UA": {
-          "title": "Нотатка досьє без чистої кінцівки",
-          "scanner": "Нотатка досьє: закриття відхилено; наслідок збережено.",
-          "field_note": "Постфінальне досьє тримає міст відкритим: результат записано, борг і докази не вирішено, ідеальної перемоги не надано.",
-          "terminal": "DOSSIER RECORD: результат збережено. Чисте закриття недоступне за поточного стану доказів. Борг, екологія, відповідальність і зберігання свідка лишаються активними записами.",
-          "audio": "Ти щось урятував. Це не означає, що ти це очистив.",
-          "in_game_wiki": "Нотатка задає тон пам'яті після фіналу. Навіть найсильніша кінцівка залишає живий файл: урятоване, пошкоджене й ціну, що відмовляється стати охайною.",
-          "external_site": "Кінцівки HECTON-8 навмисно залишають шрами: захищену екологію, відсунуту корпорацію, випущений запис свідка, несплачений борг і гравця, що змінив океан без права закрити його."
-        },
-        "ar_SA": {
-          "title": "ملاحظة ملف بلا نهاية نظيفة",
-          "scanner": "ملاحظة ملف: الإغلاق مرفوض؛ العاقبة محفوظة.",
-          "field_note": "يبقي ملف ما بعد النهاية الجسر مفتوحا: النتيجة مسجلة، الدين والأدلة غير محلولين، ولا نصر كامل ممنوح.",
-          "terminal": "DOSSIER RECORD: النتيجة مخزنة. الإغلاق النظيف غير متاح في حالة الأدلة الحالية. الدين والبيئة والمسؤولية وحيازة الشاهد تبقى سجلات نشطة.",
-          "audio": "لقد أنقذت شيئا. هذا لا يعني أنك نظفته.",
-          "in_game_wiki": "تحدد الملاحظة نبرة الذاكرة بعد النهاية. حتى أقوى نهاية تترك ملفا حيا: شيئا أنقذ، وشيئا تضرر، وكلفة ترفض أن تصبح مرتبة.",
-          "external_site": "تترك نهايات HECTON-8 ندوبا عمدا: بيئة محمية، شركة مرفوضة، سجل شاهد محرر، دين غير مدفوع، ولاعبا غير المحيط دون أن ينال حق إغلاقه."
-        },
-        "id_ID": {
-          "title": "Catatan Dossier Tanpa Akhir Bersih",
-          "scanner": "Catatan dossier: penutupan ditolak; konsekuensi dipertahankan.",
-          "field_note": "Dossier pasca-akhir menjaga jembatan tetap terbuka: hasil dicatat, utang dan bukti belum selesai, tidak ada kemenangan sempurna.",
-          "terminal": "DOSSIER RECORD: hasil disimpan. Penutupan bersih tidak tersedia dalam keadaan bukti saat ini. Utang, ekologi, liabilitas, dan kustodi saksi tetap menjadi catatan aktif.",
-          "audio": "Kau menyelamatkan sesuatu. Itu tidak sama dengan membersihkannya.",
-          "in_game_wiki": "Catatan ini menentukan nada ingatan pasca-akhir. Bahkan akhir terkuat meninggalkan file hidup: sesuatu yang diselamatkan, sesuatu yang rusak, dan biaya yang menolak menjadi rapi.",
-          "external_site": "Akhir HECTON-8 sengaja meninggalkan luka: ekologi terlindungi, korporasi ditolak, catatan saksi dilepas, utang belum dibayar, dan pemain yang mengubah samudra tanpa memperoleh hak untuk menutupnya."
-        },
-        "ko_KR": {
-          "title": "깨끗한 엔딩 없음 dossier 메모",
-          "scanner": "Dossier 메모: 종결 거부. 결과 유지.",
-          "field_note": "엔딩 후 dossier는 다리를 열어 둔다. 결과는 기록, 빚과 증거는 미해결, 완벽한 승리는 주어지지 않는다.",
-          "terminal": "DOSSIER RECORD: 결과 저장. 현재 증거 상태에서 깨끗한 종결 불가. 빚, 생태, 책임, 증인 보관은 활성 기록으로 남는다.",
-          "audio": "너는 무언가를 구했다. 그것을 정리한 것은 아니다.",
-          "in_game_wiki": "이 메모는 엔딩 후 기억의 톤을 정의한다. 가장 강한 엔딩조차 살아 있는 파일을 남긴다. 구한 것, 손상된 것, 깔끔해지기를 거부하는 비용이다.",
-          "external_site": "HECTON-8의 엔딩은 의도적으로 흉터를 남긴다. 보호된 생태, 거부된 기업, 공개된 증인 기록, 미지급 채무, 그리고 바다를 바꾸었지만 닫을 권리를 얻지 못한 플레이어."
-        },
-        "he_IL": {
-          "title": "הערת תיק ללא סוף נקי",
-          "scanner": "הערת תיק: סגירה נדחתה; תוצאה נשמרה.",
-          "field_note": "תיק לאחר סוף משאיר את הגשר פתוח: תוצאה נרשמה, חוב וראיות לא נפתרו, לא ניתן ניצחון מושלם.",
-          "terminal": "DOSSIER RECORD: תוצאה נשמרה. סגירה נקייה אינה זמינה במצב הראיות הנוכחי. חוב, אקולוגיה, אחריות ומשמורת עד נשארים רשומות פעילות.",
-          "audio": "הצלת משהו. זה לא אותו דבר כמו לנקות אותו.",
-          "in_game_wiki": "ההערה מגדירה את טון הזיכרון אחרי הסוף. אפילו הסוף החזק ביותר משאיר קובץ חי: דבר שניצל, דבר שניזוק ועלות שמסרבת להיות מסודרת.",
-          "external_site": "הסיומים של HECTON-8 משאירים צלקות בכוונה: אקולוגיה מוגנת, תאגיד שנדחה, רשומת עד ששוחררה, חוב שלא שולם ושחקן ששינה את האוקיינוס בלי לקבל את הזכות לסגור אותו."
-        },
-        "pt_BR": {
-          "title": "Nota de Dossier Sem Final Limpo",
-          "scanner": "Nota de dossier: fechamento negado; consequência retida.",
-          "field_note": "Dossier pós-final mantém a ponte aberta: resultado registrado, dívida e provas não resolvidas, nenhuma vitória perfeita concedida.",
-          "terminal": "DOSSIER RECORD: resultado armazenado. Fechamento limpo indisponível no estado atual das provas. Dívida, ecologia, responsabilidade e custódia da testemunha permanecem registros ativos.",
-          "audio": "Você salvou algo. Não é o mesmo que limpar.",
-          "in_game_wiki": "A nota define o tom da memória pós-final. Até o final mais forte deixa um arquivo vivo: algo salvo, algo danificado e um custo que se recusa a ficar arrumado.",
-          "external_site": "Os finais de HECTON-8 deixam cicatrizes por design: ecologia protegida, corporação negada, registro de testemunha liberado, dívida não paga e um jogador que mudou o oceano sem ganhar o direito de encerrá-lo."
-        },
-        "nl_NL": {
-          "title": "Dossiernotitie zonder schoon einde",
-          "scanner": "Dossiernotitie: afsluiting geweigerd; gevolg behouden.",
-          "field_note": "Dossier na einde houdt de brug open: uitkomst geregistreerd, schuld en bewijs onopgelost, geen perfecte overwinning toegekend.",
-          "terminal": "DOSSIER RECORD: uitkomst opgeslagen. Schone afsluiting niet beschikbaar onder huidige bewijsstatus. Schuld, ecologie, aansprakelijkheid en getuigenbewaring blijven actieve records.",
-          "audio": "Je hebt iets gered. Dat is niet hetzelfde als het zuiveren.",
-          "in_game_wiki": "De notitie bepaalt de geheugentoon na het einde. Zelfs het sterkste einde laat een levend bestand achter: iets gered, iets beschadigd en een kost die weigert netjes te worden.",
-          "external_site": "HECTON-8s eindes laten bewust littekens achter: beschermde ecologie, geweigerde corporatie, vrijgegeven getuigenrecord, onbetaalde schuld en een speler die de oceaan veranderde zonder het recht te krijgen hem af te sluiten."
-        }
-      }
+    "fr_FR": {
+     "title": "Alerte du champ-machine abyssal",
+     "scanner": "Le limon avance contre le courant. Des corps filtrants se repositionnent sous les lumières.",
+     "field_note": "Avertissement de fin de partie : peur calme et objective. Le champ final est une infrastructure qui s'éveille, pas une montée vers boss.",
+     "terminal": "ROUTE WARNING : mouvement du limon du champ-machine abyssal au-delà du modèle de courant. Corps filtrants et côtes d'actionneurs enfouies enregistrés comme infrastructure mobile. Garder l'écart ; ne pas ancrer dans le sol mou.",
+     "audio": "Le sol n'est pas immobile.",
+     "in_game_wiki": "Cette alerte relie l'écologie profonde à l'approche finale d'Atlas. Le joueur ne traverse plus des ruines où vit quelque chose ; il traverse une vie qui a appris à porter des machines.",
+     "external_site": "Avant le bassin final, HECTON-8 cesse de ressembler à un lieu abandonné et commence à ressembler à une machine trop grande pour montrer tout son corps. L'alerte reste calme parce que la terreur n'est pas la poursuite. C'est l'échelle."
+    },
+    "es_ES": {
+     "title": "Advertencia del campo-máquina abisal",
+     "scanner": "El limo se mueve contra la corriente. Los cuerpos filtrantes se recolocan bajo las luces.",
+     "field_note": "Advertencia de tramo final: terror quieto y objetivo. El campo final es infraestructura despertando, no preparación de jefe.",
+     "terminal": "ROUTE WARNING: movimiento de limo del campo-máquina abisal supera el modelo de corriente. Cuerpos filtrantes y costillas de actuador enterradas registrados como infraestructura móvil. Mantener distancia; no anclar en suelo blando.",
+     "audio": "El suelo no está quieto.",
+     "in_game_wiki": "La advertencia une la ecología profunda con el acercamiento final a Atlas. El jugador ya no cruza ruinas que contienen vida; cruza vida que aprendió a cargar máquinas.",
+     "external_site": "Antes de la cuenca final, HECTON-8 deja de parecer abandonado y empieza a parecer una máquina demasiado grande para mostrar todo su cuerpo. La advertencia sigue callada porque el terror no es persecución. Es escala."
+    },
+    "de_DE": {
+     "title": "Warnung vor dem abyssalen Maschinenfeld",
+     "scanner": "Schlick bewegt sich gegen die Strömung. Filterkörper verlagern sich unter den Lichtern.",
+     "field_note": "Spätspielwarnung: leise, objektive Furcht. Das finale Feld ist erwachende Infrastruktur, kein Bossaufbau.",
+     "terminal": "ROUTE WARNING: Schlickbewegung im abyssalen Maschinenfeld übersteigt Strömungsmodell. Filterkörper und vergrabene Aktuatorrippen als bewegliche Infrastruktur registriert. Abstand halten; nicht im weichen Boden ankern.",
+     "audio": "Der Boden ist nicht still.",
+     "in_game_wiki": "Die Warnung verbindet Tiefenökologie mit dem letzten Atlas-Anmarsch. Der Spieler durchquert nicht länger Ruinen, in denen zufällig Leben ist; er durchquert Leben, das gelernt hat, Maschinen zu tragen.",
+     "external_site": "Vor dem finalen Becken sieht HECTON-8 nicht mehr verlassen aus, sondern wie eine Maschine, die zu groß ist, um ihren ganzen Körper zu zeigen. Die Warnung bleibt leise, weil der Schrecken keine Verfolgung ist. Er ist Maßstab."
+    },
+    "pl_PL": {
+     "title": "Ostrzeżenie o abisalnym polu maszyn",
+     "scanner": "Muł porusza się pod prąd. Ciała filtrujące przestawiają się pod światłami.",
+     "field_note": "Późne ostrzeżenie: cichy, obiektywny lęk. Finałowe pole to budząca się infrastruktura, nie zapowiedź bossa.",
+     "terminal": "ROUTE WARNING: ruch mułu w abisalnym polu maszyn przekracza model prądu. Ciała filtrujące i pogrzebane żebra aktuatorów zarejestrowane jako ruchoma infrastruktura. Utrzymać dystans; nie kotwiczyć w miękkim dnie.",
+     "audio": "Dno nie jest nieruchome.",
+     "in_game_wiki": "Ostrzeżenie łączy głęboką ekologię z finalnym podejściem do Atlas. Gracz nie przechodzi już przez ruiny, w których przypadkiem jest życie; przechodzi przez życie, które nauczyło się nieść maszyny.",
+     "external_site": "Przed finałowym basenem HECTON-8 przestaje wyglądać na opuszczone, a zaczyna wyglądać jak maszyna zbyt wielka, by pokazać całe ciało. Ostrzeżenie pozostaje ciche, bo grozą nie jest pościg. Grozą jest skala."
+    },
+    "uk_UA": {
+     "title": "Попередження машинного поля безодні",
+     "scanner": "Мул рухається проти течії. Фільтрувальні тіла перебудовуються під вогнями.",
+     "field_note": "Пізнє попередження: тихий об'єктивний страх. Фінальне поле — це інфраструктура, що прокидається, а не розгін до боса.",
+     "terminal": "ROUTE WARNING: рух мулу в машинному полі безодні перевищує модель течій. Фільтрувальні тіла й поховані ребра приводів зареєстровано як рухому інфраструктуру. Тримати дистанцію; не якоритися в м'яке дно.",
+     "audio": "Підлога не стоїть на місці.",
+     "in_game_wiki": "Попередження з'єднує глибинну екологію з фінальним підходом до Atlas. Гравець уже не проходить руїнами, де випадково є життя; він проходить життям, що навчилося носити машини.",
+     "external_site": "Перед фінальним басейном HECTON-8 перестає виглядати покинутою і починає виглядати як машина, надто велика, щоб показати все тіло. Попередження лишається тихим, бо жах тут не погоня. Жах — масштаб."
+    },
+    "ar_SA": {
+     "title": "تحذير حقل الآلات السحيق",
+     "scanner": "يتحرك الطمي عكس التيار. أجسام الترشيح تعيد تموضعها تحت الأضواء.",
+     "field_note": "تحذير نهاية متأخرة: رعب هادئ وموضوعي. الحقل الأخير بنية تحتية تستيقظ، لا تمهيد لرئيس.",
+     "terminal": "ROUTE WARNING: حركة طمي حقل الآلات السحيق تتجاوز نموذج التيار. أجسام الترشيح وأضلاع المشغلات المدفونة تسجل كبنية تحتية متحركة. حافظ على مسافة؛ لا ترس في أرض لينة.",
+     "audio": "الأرضية ليست ساكنة.",
+     "in_game_wiki": "يربط هذا التحذير البيئة العميقة بالاقتراب الأخير من Atlas. لم يعد اللاعب يعبر أطلالا تحتوي حياة؛ بل يعبر حياة تعلمت حمل الآلات.",
+     "external_site": "قبل الحوض الأخير، يتوقف HECTON-8 عن الظهور كمكان مهجور ويبدأ كآلة أكبر من أن تعرض جسدها كله. يبقى التحذير هادئا لأن الرعب ليس مطاردة. الرعب هو الحجم."
+    },
+    "id_ID": {
+     "title": "Peringatan Medan Mesin Abyssal",
+     "scanner": "Lumpur bergerak melawan arus. Tubuh penyaring bergeser di bawah lampu.",
+     "field_note": "Peringatan late-game: rasa takut objektif yang tenang. Medan terakhir adalah infrastruktur yang bangun, bukan pemanasan boss.",
+     "terminal": "ROUTE WARNING: gerak lumpur medan mesin abyssal melebihi model arus. Tubuh penyaring dan rusuk aktuator terkubur terbaca sebagai infrastruktur bergerak. Jaga jarak; jangan menambat ke lantai lunak.",
+     "audio": "Lantai tidak diam.",
+     "in_game_wiki": "Peringatan ini menjembatani ekologi dalam menuju pendekatan terakhir ke Atlas. Pemain tidak lagi menyeberangi reruntuhan yang kebetulan berisi kehidupan; mereka menyeberangi kehidupan yang belajar membawa mesin.",
+     "external_site": "Sebelum cekungan terakhir, HECTON-8 berhenti tampak ditinggalkan dan mulai tampak seperti mesin yang terlalu besar untuk menampilkan seluruh tubuhnya. Peringatan tetap tenang karena terornya bukan pengejaran. Terornya adalah skala."
+    },
+    "ko_KR": {
+     "title": "심연 기계장 경고",
+     "scanner": "실트가 조류를 거슬러 움직인다. 필터 몸체들이 불빛 아래에서 위치를 바꾸고 있다.",
+     "field_note": "후반 경고: 조용하고 객관적인 공포. 최종 필드는 보스 준비가 아니라 깨어나는 인프라다.",
+     "terminal": "ROUTE WARNING: 심연 기계장의 실트 이동이 조류 모델을 초과. 필터 몸체와 묻힌 액추에이터 갈비가 이동 인프라로 등록됨. 이격 유지. 부드러운 바닥에 앵커 금지.",
+     "audio": "바닥은 멈춰 있지 않다.",
+     "in_game_wiki": "이 경고는 심해 생태를 마지막 Atlas 접근로와 연결한다. 플레이어는 더 이상 생명이 우연히 들어 있는 폐허를 건너는 것이 아니라, 기계를 운반하는 법을 배운 생명을 건넌다.",
+     "external_site": "최종 분지 앞에서 HECTON-8은 버려진 장소처럼 보이기를 멈추고, 전신을 보여 주기엔 너무 큰 기계처럼 보이기 시작한다. 경고가 조용한 이유는 공포가 추격이 아니라 규모이기 때문이다."
+    },
+    "he_IL": {
+     "title": "אזהרת שדה מכונה תהומי",
+     "scanner": "סחף נע נגד הזרם. גופי סינון משנים מיקום מתחת לאורות.",
+     "field_note": "אזהרת סוף משחק: אימה שקטה ואובייקטיבית. השדה הסופי הוא תשתית שמתעוררת, לא בניית בוס.",
+     "terminal": "ROUTE WARNING: תנועת הסחף בשדה המכונה התהומי חורגת ממודל הזרם. גופי סינון וצלעות אקטואטור קבורות נרשמים כתשתית נעה. לשמור מרחק; לא לעגון ברצפה רכה.",
+     "audio": "הרצפה אינה דוממת.",
+     "in_game_wiki": "האזהרה מחברת את האקולוגיה העמוקה לגישה האחרונה אל Atlas. השחקן כבר לא חוצה חורבות שיש בהן חיים במקרה; הוא חוצה חיים שלמדו לשאת מכונות.",
+     "external_site": "לפני האגן האחרון, HECTON-8 מפסיק להיראות נטוש ומתחיל להיראות כמו מכונה גדולה מכדי להראות את כל גופה. האזהרה נשארת שקטה כי האימה אינה מרדף. היא קנה מידה."
+    },
+    "pt_BR": {
+     "title": "Aviso do Campo-Máquina Abissal",
+     "scanner": "O lodo se move contra a corrente. Corpos filtrantes se reposicionam sob as luzes.",
+     "field_note": "Aviso de fim de jogo: medo quieto e objetivo. O campo final é infraestrutura acordando, não preparação de chefe.",
+     "terminal": "ROUTE WARNING: movimento de lodo do campo-máquina abissal excede o modelo de corrente. Corpos filtrantes e costelas de atuador enterradas registradas como infraestrutura móvel. Manter distância; não ancorar no chão macio.",
+     "audio": "O chão não está parado.",
+     "in_game_wiki": "O aviso liga a ecologia profunda à aproximação final de Atlas. O jogador não cruza mais ruínas que por acaso contêm vida; cruza uma vida que aprendeu a carregar máquinas.",
+     "external_site": "Antes da bacia final, HECTON-8 para de parecer abandonado e começa a parecer uma máquina grande demais para mostrar o corpo inteiro. O aviso fica quieto porque o terror não é perseguição. É escala."
+    },
+    "nl_NL": {
+     "title": "Waarschuwing voor abyssaal machineveld",
+     "scanner": "Slib beweegt tegen de stroming in. Filterlichamen verplaatsen zich onder de lichten.",
+     "field_note": "Late-game waarschuwing: stille objectieve dreiging. Het finale veld is ontwakende infrastructuur, geen bossopbouw.",
+     "terminal": "ROUTE WARNING: slibbeweging in abyssaal machineveld overschrijdt stroommodel. Filterlichamen en begraven actuatorribben geregistreerd als bewegende infrastructuur. Afstand houden; niet ankeren in zachte vloer.",
+     "audio": "De vloer staat niet stil.",
+     "in_game_wiki": "De waarschuwing verbindt diepe ecologie met de laatste Atlas-benadering. De speler kruist niet langer ruïnes met toevallig leven erin; hij kruist leven dat heeft geleerd machines te dragen.",
+     "external_site": "Voor het laatste bekken stopt HECTON-8 met verlaten lijken en begint het te lijken op een machine die te groot is om haar hele lichaam te tonen. De waarschuwing blijft stil omdat de angst geen achtervolging is. Het is schaal."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P297_ATLAS_BASIN_PRESSURE_GATE",
+   "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
+   "article_id": "applied_lore.p297_atlas_basin_pressure_gate",
+   "title_key": "applied_lore.p297_atlas_basin_pressure_gate.title",
+   "unlock": {
+    "primary": "unlock.p297_atlas_basin_pressure_gate",
+    "poi_tags": [
+     "poi.atlas_basin_pressure_gate",
+     "poi.service_grade_override",
+     "poi.authority_clamp_reader"
+    ],
+    "biome_tags": [
+     "biome.atlas_basin",
+     "biome.pressure_gate"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Atlas Basin Pressure Gate",
+     "scanner": "Basin gate asks for pressure proof, route authority, and a body it can classify.",
+     "field_note": "Final threshold should read like a service gate to a living factory, not a fantasy portal.",
+     "terminal": "ATLAS BASIN GATE: pressure proof incomplete. Suit grade accepted below descent threshold. Authority clamp recognizes revoked Deep Reach pattern, not current claimant. Manual override requires local load, receiver choice, and witness payload.",
+     "audio": "It knows the old key. It does not know you.",
+     "in_game_wiki": "Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof, and authority conflict. The door is not mystical; it is an industrial system deciding whether the player counts as access, evidence, or contamination.",
+     "external_site": "The final descent keeps hard science under the dread. The bottom opens through pressure ratings, damaged authority, load proofs, and a machine that still trusts Deep Reach-shaped keys more than a living claimant."
+    },
+    "ru_RU": {
+     "title": "Напорные ворота бассейна Atlas",
+     "scanner": "Ворота бассейна требуют доказательство давления, маршрутные права и тело, которое можно классифицировать.",
+     "field_note": "Финальный порог должен читаться как сервисные ворота живой фабрики, а не фантазийный портал.",
+     "terminal": "ВОРОТА БАССЕЙНА ATLAS: доказательство давления неполное. Класс костюма принят ниже порога спуска. Authority clamp узнает отозванный паттерн Deep Reach, а не текущего заявителя. Ручной обход требует локальную нагрузку, выбор приемника и свидетельский payload.",
+     "audio": "Он знает старый ключ. Он не знает тебя.",
+     "in_game_wiki": "Напорные ворота привязывают финальный порог к классу костюма, доказательству давления и конфликту полномочий. Дверь не мистическая; это промышленная система, решающая, считать ли игрока доступом, доказательством или заражением.",
+     "external_site": "Финальный спуск сохраняет hard sci-fi под страхом. Дно открывается через рейтинги давления, поврежденные полномочия, доказательства нагрузки и машину, которая все еще доверяет ключам формы Deep Reach больше, чем живому заявителю."
+    },
+    "ja_JP": {
+     "title": "Atlas 盆地圧力ゲート",
+     "scanner": "盆地ゲートは圧力証明、ルート権限、分類可能な身体を要求している。",
+     "field_note": "最終しきい値は幻想のポータルではなく、生きた工場へのサービスゲートとして読ませる。",
+     "terminal": "ATLAS BASIN GATE: 圧力証明不完全。スーツ等級は下降しきい値未満で受理。Authority clamp は失効した Deep Reach パターンを認識し、現在の請求者を認識しない。手動上書きにはローカル負荷、受信先選択、証人 payload が必要。",
+     "audio": "それは古い鍵を知っている。君を知らない。",
+     "in_game_wiki": "Atlas 盆地圧力ゲートは、最終しきい値をスーツ等級、圧力証明、権限衝突へ固定する。扉は神秘ではない。プレイヤーをアクセス、証拠、汚染のどれとして数えるかを決める産業システムだ。",
+     "external_site": "最終下降は恐怖の下に硬い科学を残す。底は圧力等級、壊れた権限、負荷証明、そして生きた請求者より Deep Reach 型の鍵を信じる機械によって開く。"
+    },
+    "zh_CN": {
+     "title": "Atlas 盆地压力门",
+     "scanner": "盆地门要求压力证明、路线权限，以及一个可被分类的身体。",
+     "field_note": "最终门槛应像通向活工厂的服务门，而不是幻想传送门。",
+     "terminal": "ATLAS BASIN GATE：压力证明不完整。潜服等级低于下降阈值但已接收。权限夹具识别被撤销的 Deep Reach 模式，而不是当前申领者。手动覆盖需要本地负载、接收器选择和证人 payload。",
+     "audio": "它认识旧钥匙。它不认识你。",
+     "in_game_wiki": "Atlas 盆地压力门把最终门槛锚定在潜服等级、压力证明和权限冲突上。这扇门并不神秘；它是一个工业系统，正在决定玩家算访问、证据，还是污染。",
+     "external_site": "最终下潜在恐惧之下仍保留硬科幻。底部通过压力等级、受损权限、负载证明和一台仍更信任 Deep Reach 形状钥匙而不是活申领者的机器打开。"
+    },
+    "fr_FR": {
+     "title": "Porte de pression du bassin Atlas",
+     "scanner": "La porte du bassin demande preuve de pression, autorité de route et un corps qu'elle peut classer.",
+     "field_note": "Le seuil final doit lire comme une porte de service vers une usine vivante, pas comme un portail fantastique.",
+     "terminal": "ATLAS BASIN GATE : preuve de pression incomplète. Grade de combinaison accepté sous le seuil de descente. Le verrou d'autorité reconnaît un motif Deep Reach révoqué, pas le réclamant actuel. Forçage manuel requis : charge locale, choix du récepteur et payload témoin.",
+     "audio": "Elle connaît l'ancienne clé. Elle ne te connaît pas.",
+     "in_game_wiki": "La porte ancre le seuil final dans le grade de combinaison, la preuve de pression et le conflit d'autorité. Elle n'est pas mystique : c'est un système industriel qui décide si le joueur compte comme accès, preuve ou contamination.",
+     "external_site": "La descente finale garde la science dure sous la peur. Le fond s'ouvre par des classes de pression, une autorité endommagée, des preuves de charge et une machine qui fait encore plus confiance aux clés de forme Deep Reach qu'à un réclamant vivant."
+    },
+    "es_ES": {
+     "title": "Compuerta de presión de la cuenca Atlas",
+     "scanner": "La compuerta de la cuenca exige prueba de presión, autoridad de ruta y un cuerpo que pueda clasificar.",
+     "field_note": "El umbral final debe leerse como una puerta de servicio a una fábrica viva, no como un portal fantástico.",
+     "terminal": "ATLAS BASIN GATE: prueba de presión incompleta. Grado de traje aceptado bajo el umbral de descenso. La abrazadera de autoridad reconoce patrón Deep Reach revocado, no al reclamante actual. Anulación manual requiere carga local, elección de receptor y payload testigo.",
+     "audio": "Conoce la vieja llave. No te conoce a ti.",
+     "in_game_wiki": "La compuerta ancla el umbral final en grado de traje, prueba de presión y conflicto de autoridad. La puerta no es mística; es un sistema industrial decidiendo si el jugador cuenta como acceso, prueba o contaminación.",
+     "external_site": "El descenso final conserva la ciencia dura bajo el miedo. El fondo se abre mediante clasificaciones de presión, autoridad dañada, pruebas de carga y una máquina que aún confía más en llaves con forma de Deep Reach que en un reclamante vivo."
+    },
+    "de_DE": {
+     "title": "Atlas-Becken-Drucktor",
+     "scanner": "Das Beckentor verlangt Drucknachweis, Routenautorität und einen Körper, den es klassifizieren kann.",
+     "field_note": "Die finale Schwelle soll wie ein Servicetor zu einer lebenden Fabrik wirken, nicht wie ein Fantasyportal.",
+     "terminal": "ATLAS BASIN GATE: Drucknachweis unvollständig. Anzugklasse unter Abstiegsschwelle akzeptiert. Authority Clamp erkennt widerrufenes Deep-Reach-Muster, nicht aktuellen Anspruchsteller. Manuelle Überbrückung erfordert lokale Last, Empfängerwahl und Zeugenpayload.",
+     "audio": "Es kennt den alten Schlüssel. Es kennt dich nicht.",
+     "in_game_wiki": "Das Drucktor verankert die finale Schwelle in Anzugklasse, Drucknachweis und Autoritätskonflikt. Die Tür ist nicht mystisch; sie ist ein Industriesystem, das entscheidet, ob der Spieler Zugriff, Beweis oder Kontamination ist.",
+     "external_site": "Der finale Abstieg bewahrt harte Science-Fiction unter der Furcht. Der Grund öffnet sich durch Druckratings, beschädigte Autorität, Lastnachweise und eine Maschine, die Deep-Reach-förmigen Schlüsseln noch mehr traut als einem lebenden Anspruchsteller."
+    },
+    "pl_PL": {
+     "title": "Brama ciśnieniowa basenu Atlas",
+     "scanner": "Brama basenu żąda dowodu ciśnienia, władzy trasy i ciała, które może sklasyfikować.",
+     "field_note": "Finałowy próg ma czytać się jak brama serwisowa do żywej fabryki, nie fantastyczny portal.",
+     "terminal": "ATLAS BASIN GATE: dowód ciśnienia niepełny. Klasa skafandra przyjęta poniżej progu zejścia. Zacisk autorytetu rozpoznaje odwołany wzorzec Deep Reach, nie bieżącego roszczącego. Ręczne obejście wymaga lokalnego obciążenia, wyboru odbiornika i payloadu świadka.",
+     "audio": "Zna stary klucz. Nie zna ciebie.",
+     "in_game_wiki": "Brama kotwiczy finałowy próg w klasie skafandra, dowodzie ciśnienia i konflikcie władzy. Drzwi nie są mistyczne; to system przemysłowy decydujący, czy gracz liczy się jako dostęp, dowód czy skażenie.",
+     "external_site": "Finałowe zejście zachowuje hard sci-fi pod grozą. Dno otwiera się przez klasy ciśnienia, uszkodzoną władzę, dowody obciążenia i maszynę, która nadal bardziej ufa kluczom w kształcie Deep Reach niż żywemu roszczącemu."
+    },
+    "uk_UA": {
+     "title": "Напірні ворота басейну Atlas",
+     "scanner": "Ворота басейну вимагають доказ тиску, маршрутну владу й тіло, яке можна класифікувати.",
+     "field_note": "Фінальний поріг має читатися як сервісні ворота живої фабрики, а не фантазійний портал.",
+     "terminal": "ATLAS BASIN GATE: доказ тиску неповний. Клас костюма прийнято нижче порога спуску. Authority clamp розпізнає відкликаний патерн Deep Reach, а не поточного заявника. Ручний обхід потребує локального навантаження, вибору приймача і свідкового payload.",
+     "audio": "Воно знає старий ключ. Воно не знає тебе.",
+     "in_game_wiki": "Напірні ворота прив'язують фінальний поріг до класу костюма, доказу тиску й конфлікту повноважень. Двері не містичні; це промислова система, що вирішує, чи гравець є доступом, доказом або зараженням.",
+     "external_site": "Фінальний спуск зберігає hard sci-fi під страхом. Дно відкривається через рейтинги тиску, пошкоджені повноваження, докази навантаження і машину, що досі довіряє ключам форми Deep Reach більше, ніж живому заявнику."
+    },
+    "ar_SA": {
+     "title": "بوابة ضغط حوض Atlas",
+     "scanner": "تطلب بوابة الحوض إثبات ضغط وسلطة مسار وجسدا تستطيع تصنيفه.",
+     "field_note": "يجب أن يقرأ العتبة الأخيرة كبوابة خدمة إلى مصنع حي، لا كبوابة خيال.",
+     "terminal": "ATLAS BASIN GATE: إثبات الضغط غير مكتمل. درجة البدلة مقبولة تحت عتبة النزول. مشبك السلطة يتعرف على نمط Deep Reach ملغى، لا على المطالب الحالي. يتطلب التجاوز اليدوي حملا محليا واختيار مستقبل وpayload شاهد.",
+     "audio": "إنها تعرف المفتاح القديم. لا تعرفك.",
+     "in_game_wiki": "تثبت البوابة العتبة الأخيرة في درجة البدلة وإثبات الضغط وصراع السلطة. الباب ليس غامضا؛ إنه نظام صناعي يقرر هل اللاعب وصول أم دليل أم تلوث.",
+     "external_site": "يحافظ النزول الأخير على الخيال العلمي الصلب تحت الرعب. ينفتح القاع عبر تصنيفات الضغط والسلطة المتضررة وإثباتات الحمل وآلة لا تزال تثق بمفاتيح على هيئة Deep Reach أكثر من مطالب حي."
+    },
+    "id_ID": {
+     "title": "Gerbang Tekanan Cekungan Atlas",
+     "scanner": "Gerbang cekungan meminta bukti tekanan, otoritas rute, dan tubuh yang bisa diklasifikasikan.",
+     "field_note": "Ambang final harus terbaca seperti gerbang servis menuju pabrik hidup, bukan portal fantasi.",
+     "terminal": "ATLAS BASIN GATE: bukti tekanan tidak lengkap. Grade suit diterima di bawah ambang turun. Authority clamp mengenali pola Deep Reach yang dicabut, bukan pengklaim saat ini. Override manual membutuhkan beban lokal, pilihan penerima, dan payload saksi.",
+     "audio": "Ia tahu kunci lama. Ia tidak mengenalmu.",
+     "in_game_wiki": "Gerbang ini menambatkan ambang final pada grade suit, bukti tekanan, dan konflik otoritas. Pintunya bukan mistis; ia sistem industri yang memutuskan apakah pemain dihitung sebagai akses, bukti, atau kontaminasi.",
+     "external_site": "Turun terakhir tetap menyimpan hard sci-fi di bawah rasa takut. Dasar terbuka lewat rating tekanan, otoritas rusak, bukti beban, dan mesin yang masih lebih percaya kunci berbentuk Deep Reach daripada pengklaim hidup."
+    },
+    "ko_KR": {
+     "title": "Atlas 분지 압력 관문",
+     "scanner": "분지 관문은 압력 증명, 경로 권한, 분류 가능한 몸을 요구한다.",
+     "field_note": "최종 문턱은 판타지 포털이 아니라 살아 있는 공장으로 들어가는 서비스 관문처럼 읽혀야 한다.",
+     "terminal": "ATLAS BASIN GATE: 압력 증명 불완전. 슈트 등급은 하강 임계값 아래에서 수락됨. Authority clamp는 현재 청구자가 아니라 취소된 Deep Reach 패턴을 인식한다. 수동 우회에는 로컬 부하, 수신자 선택, 증인 payload 필요.",
+     "audio": "그것은 오래된 열쇠를 안다. 너는 모른다.",
+     "in_game_wiki": "분지 압력 관문은 최종 문턱을 슈트 등급, 압력 증명, 권한 충돌에 고정한다. 문은 신비한 것이 아니다. 플레이어를 접근 권한, 증거, 오염 중 무엇으로 계산할지 결정하는 산업 시스템이다.",
+     "external_site": "최종 하강은 공포 아래에 하드 SF를 유지한다. 바닥은 압력 등급, 손상된 권한, 부하 증명, 그리고 살아 있는 청구자보다 Deep Reach 형태의 열쇠를 더 믿는 기계를 통해 열린다."
+    },
+    "he_IL": {
+     "title": "שער לחץ אגן Atlas",
+     "scanner": "שער האגן מבקש הוכחת לחץ, סמכות מסלול וגוף שניתן לסווג.",
+     "field_note": "הסף הסופי צריך להיקרא כשער שירות למפעל חי, לא כפורטל פנטזיה.",
+     "terminal": "ATLAS BASIN GATE: הוכחת לחץ לא שלמה. דרגת חליפה התקבלה מתחת לסף ירידה. מהדק הסמכות מזהה דפוס Deep Reach שבוטל, לא את התובע הנוכחי. עקיפה ידנית דורשת עומס מקומי, בחירת מקלט ו-payload עד.",
+     "audio": "הוא מכיר את המפתח הישן. הוא לא מכיר אותך.",
+     "in_game_wiki": "שער הלחץ מעגן את הסף הסופי בדרגת חליפה, הוכחת לחץ וסכסוך סמכות. הדלת אינה מיסטית; זו מערכת תעשייתית שמחליטה אם השחקן נחשב גישה, ראיה או זיהום.",
+     "external_site": "הירידה האחרונה שומרת מדע בדיוני קשיח מתחת לאימה. הקרקעית נפתחת דרך דירוגי לחץ, סמכות פגועה, הוכחות עומס ומכונה שעדיין בוטחת במפתחות בצורת Deep Reach יותר מאשר בתובע חי."
+    },
+    "pt_BR": {
+     "title": "Portão de Pressão da Bacia Atlas",
+     "scanner": "O portão da bacia pede prova de pressão, autoridade de rota e um corpo que possa classificar.",
+     "field_note": "O limiar final deve parecer um portão de serviço para uma fábrica viva, não um portal de fantasia.",
+     "terminal": "ATLAS BASIN GATE: prova de pressão incompleta. Grau do traje aceito abaixo do limiar de descida. Authority clamp reconhece padrão Deep Reach revogado, não o reclamante atual. Override manual exige carga local, escolha de receptor e payload testemunha.",
+     "audio": "Ele conhece a chave antiga. Não conhece você.",
+     "in_game_wiki": "O portão ancora o limiar final em grau do traje, prova de pressão e conflito de autoridade. A porta não é mística; é um sistema industrial decidindo se o jogador conta como acesso, prova ou contaminação.",
+     "external_site": "A descida final mantém hard sci-fi sob o medo. O fundo se abre por classificações de pressão, autoridade danificada, provas de carga e uma máquina que ainda confia mais em chaves com formato Deep Reach do que em um reclamante vivo."
+    },
+    "nl_NL": {
+     "title": "Drukpoort van het Atlas-bekken",
+     "scanner": "De bekkenpoort vraagt drukbewijs, routeautoriteit en een lichaam dat ze kan classificeren.",
+     "field_note": "De finale drempel moet lezen als een servicepoort naar een levende fabriek, niet als een fantasyportaal.",
+     "terminal": "ATLAS BASIN GATE: drukbewijs onvolledig. Pakklasse geaccepteerd onder afdaaldrempel. Authority clamp herkent ingetrokken Deep Reach-patroon, niet de huidige claimant. Handmatige override vereist lokale belasting, ontvangerkeuze en getuige-payload.",
+     "audio": "Ze kent de oude sleutel. Ze kent jou niet.",
+     "in_game_wiki": "De drukpoort verankert de finale drempel in pakklasse, drukbewijs en autoriteitsconflict. De deur is niet mystiek; het is een industrieel systeem dat beslist of de speler telt als toegang, bewijs of besmetting.",
+     "external_site": "De laatste afdaling houdt harde sciencefiction onder de angst. De bodem opent via drukratings, beschadigde autoriteit, belastingbewijzen en een machine die Deep Reach-vormige sleutels nog meer vertrouwt dan een levende claimant."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P298_FACTORY_TEMPLE_ENTRY_FRAGMENT",
+   "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
+   "article_id": "applied_lore.p298_factory_temple_entry_fragment",
+   "title_key": "applied_lore.p298_factory_temple_entry_fragment.title",
+   "unlock": {
+    "primary": "unlock.p298_factory_temple_entry_fragment",
+    "poi_tags": [
+     "poi.factory_temple_entry_fragment",
+     "poi.living_iron_threshold",
+     "poi.worker_tool_in_wall"
+    ],
+    "biome_tags": [
+     "biome.factory_temple",
+     "biome.atlas"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Factory-Temple Entry Fragment",
+     "scanner": "Alloy, shell sealant, hand tool, and active repair pulse register as one surface.",
+     "field_note": "Visual rule: it is temple-like only because industry, tissue, and repetition have become ritual.",
+     "terminal": "ENTRY MARKER: maintenance categories collapsed. Tool scars, sealant shell, cable roots, filter tissue, and actuator ribs registered as a single repair surface. Human path marks no longer privileged.",
+     "audio": "This is not a room. This is a habit.",
+     "in_game_wiki": "Factory-Temple Entry Fragment defines the final-zone visual grammar. The sacred feeling is accidental: thousands of repairs repeated until machinery, biology, and human damage became one pattern.",
+     "external_site": "At the bottom, HECTON-8 stops separating colony, ocean, machine, and evidence. The place itself becomes the argument: not worship, not magic, but industry repeated until it looks like ritual."
+    },
+    "ru_RU": {
+     "title": "Фрагмент входа в фабрику-храм",
+     "scanner": "Сплав, ракушечный герметик, ручной инструмент и активный ремонтный импульс читаются как одна поверхность.",
+     "field_note": "Визуальное правило: это похоже на храм только потому, что промышленность, ткань и повторение стали ритуалом.",
+     "terminal": "МАРКЕР ВХОДА: категории обслуживания схлопнулись. Следы инструмента, ракушечный герметик, корни кабеля, фильтрующая ткань и ребра приводов зарегистрированы как единая ремонтная поверхность. Человеческие маршрутные метки больше не имеют привилегии.",
+     "audio": "Это не комната. Это привычка.",
+     "in_game_wiki": "Фрагмент входа задает визуальную грамматику финальной зоны. Ощущение сакральности случайно: тысячи ремонтов повторялись, пока машина, биология и человеческий ущерб не стали одним узором.",
+     "external_site": "На дне HECTON-8 перестает разделять колонию, океан, машину и доказательство. Само место становится аргументом: не поклонение, не магия, а промышленность, повторенная до вида ритуала."
+    },
+    "ja_JP": {
+     "title": "工場神殿入口断片",
+     "scanner": "合金、貝殻状シーラント、手工具、稼働中の修理パルスが一つの表面として登録される。",
+     "field_note": "視覚ルール: 神殿のように見えるのは、産業、組織、反復が儀式になったからだけ。",
+     "terminal": "ENTRY MARKER: 保守カテゴリ崩壊。工具傷、シーラント殻、ケーブル根、フィルター組織、アクチュエータ肋骨が単一の修理表面として登録。人間の経路標識はもはや優先されない。",
+     "audio": "これは部屋ではない。習慣だ。",
+     "in_game_wiki": "工場神殿入口断片は最終ゾーンの視覚文法を定義する。聖性の感覚は偶然だ。何千回もの修理が繰り返され、機械、生物、人間の損傷が一つの模様になった。",
+     "external_site": "底で HECTON-8 は、コロニー、海、機械、証拠を分けるのをやめる。場所そのものが主張になる。信仰でも魔法でもなく、儀式に見えるまで繰り返された産業だ。"
+    },
+    "zh_CN": {
+     "title": "工厂神殿入口碎片",
+     "scanner": "合金、贝壳密封层、手工工具和活跃维修脉冲被登记为同一表面。",
+     "field_note": "视觉规则：它像神殿，只是因为工业、组织和重复已经变成仪式。",
+     "terminal": "ENTRY MARKER：维护类别塌缩。工具伤痕、密封壳、缆根、过滤组织和执行器肋骨登记为单一维修表面。人类路径标记不再享有优先权。",
+     "audio": "这不是房间。这是习惯。",
+     "in_game_wiki": "工厂神殿入口碎片定义最终区域的视觉语法。神圣感是偶然的：成千上万次维修不断重复，直到机器、生物和人类损伤成了同一种图案。",
+     "external_site": "在底部，HECTON-8 不再区分殖民地、海洋、机器和证据。地点本身变成论点：不是崇拜，不是魔法，而是重复到像仪式的工业。"
+    },
+    "fr_FR": {
+     "title": "Fragment d'entrée de l'usine-temple",
+     "scanner": "Alliage, scellant coquillier, outil manuel et impulsion de réparation active s'enregistrent comme une seule surface.",
+     "field_note": "Règle visuelle : cela ressemble à un temple uniquement parce que l'industrie, le tissu et la répétition sont devenus rituel.",
+     "terminal": "ENTRY MARKER : catégories de maintenance effondrées. Cicatrices d'outil, coque de scellant, racines de câble, tissu filtrant et côtes d'actionneur enregistrés comme une seule surface de réparation. Les marques de chemin humaines ne sont plus privilégiées.",
+     "audio": "Ce n'est pas une pièce. C'est une habitude.",
+     "in_game_wiki": "Ce fragment définit la grammaire visuelle de la zone finale. Le sentiment sacré est accidentel : des milliers de réparations répétées jusqu'à ce que machine, biologie et dégâts humains deviennent un seul motif.",
+     "external_site": "Au fond, HECTON-8 cesse de séparer colonie, océan, machine et preuve. Le lieu lui-même devient l'argument : pas culte, pas magie, mais industrie répétée jusqu'à ressembler à un rituel."
+    },
+    "es_ES": {
+     "title": "Fragmento de entrada a fábrica-templo",
+     "scanner": "Aleación, sellante de concha, herramienta manual y pulso de reparación activo se registran como una sola superficie.",
+     "field_note": "Regla visual: parece templo solo porque industria, tejido y repetición se han vuelto ritual.",
+     "terminal": "ENTRY MARKER: categorías de mantenimiento colapsadas. Cicatrices de herramienta, concha sellante, raíces de cable, tejido filtrante y costillas de actuador registrados como una sola superficie de reparación. Las marcas humanas de ruta ya no tienen privilegio.",
+     "audio": "Esto no es una sala. Es una costumbre.",
+     "in_game_wiki": "El fragmento define la gramática visual de la zona final. La sensación sagrada es accidental: miles de reparaciones repetidas hasta que máquina, biología y daño humano se volvieron un solo patrón.",
+     "external_site": "En el fondo, HECTON-8 deja de separar colonia, océano, máquina y evidencia. El lugar mismo se vuelve el argumento: no culto, no magia, sino industria repetida hasta parecer ritual."
+    },
+    "de_DE": {
+     "title": "Fabriktempel-Eingangsfragment",
+     "scanner": "Legierung, Schalen-Dichtstoff, Handwerkzeug und aktiver Reparaturpuls werden als eine Oberfläche registriert.",
+     "field_note": "Visuelle Regel: Es wirkt nur tempelartig, weil Industrie, Gewebe und Wiederholung zu Ritual wurden.",
+     "terminal": "ENTRY MARKER: Wartungskategorien kollabiert. Werkzeugnarben, Dichtstoffschale, Kabelwurzeln, Filtergewebe und Aktuatorrippen als eine Reparaturoberfläche registriert. Menschliche Wegmarken nicht länger privilegiert.",
+     "audio": "Das ist kein Raum. Das ist eine Gewohnheit.",
+     "in_game_wiki": "Das Fragment definiert die visuelle Grammatik der finalen Zone. Das heilige Gefühl ist zufällig: Tausende Reparaturen wiederholten sich, bis Maschine, Biologie und menschlicher Schaden ein Muster wurden.",
+     "external_site": "Am Grund trennt HECTON-8 Kolonie, Ozean, Maschine und Beweis nicht mehr. Der Ort selbst wird zum Argument: kein Kult, keine Magie, sondern Industrie, so oft wiederholt, bis sie wie Ritual aussieht."
+    },
+    "pl_PL": {
+     "title": "Fragment wejścia do fabryki-świątyni",
+     "scanner": "Stop, muszlowy uszczelniacz, ręczne narzędzie i aktywny impuls naprawczy rejestrują się jako jedna powierzchnia.",
+     "field_note": "Reguła wizualna: wygląda jak świątynia tylko dlatego, że przemysł, tkanka i powtórzenie stały się rytuałem.",
+     "terminal": "ENTRY MARKER: kategorie konserwacji zapadły się. Blizny narzędzi, skorupa uszczelniacza, korzenie kabli, tkanka filtrująca i żebra aktuatorów zarejestrowane jako jedna powierzchnia naprawcza. Ludzkie znaki trasy nie są już uprzywilejowane.",
+     "audio": "To nie pokój. To nawyk.",
+     "in_game_wiki": "Fragment definiuje wizualną gramatykę finałowej strefy. Poczucie sacrum jest przypadkowe: tysiące napraw powtarzały się, aż maszyna, biologia i ludzka szkoda stały się jednym wzorem.",
+     "external_site": "Na dnie HECTON-8 przestaje oddzielać kolonię, ocean, maszynę i dowód. Samo miejsce staje się argumentem: nie kult, nie magia, lecz przemysł powtarzany tak długo, aż wygląda jak rytuał."
+    },
+    "uk_UA": {
+     "title": "Фрагмент входу до фабрики-храму",
+     "scanner": "Сплав, мушлевий герметик, ручний інструмент і активний ремонтний імпульс читаються як одна поверхня.",
+     "field_note": "Візуальне правило: це схоже на храм тільки тому, що промисловість, тканина й повторення стали ритуалом.",
+     "terminal": "ENTRY MARKER: категорії обслуговування схлопнулися. Сліди інструмента, мушлевий герметик, корені кабелю, фільтрувальна тканина й ребра приводів зареєстровано як єдину ремонтну поверхню. Людські маршрутні мітки більше не мають привілею.",
+     "audio": "Це не кімната. Це звичка.",
+     "in_game_wiki": "Фрагмент задає візуальну граматику фінальної зони. Відчуття сакральності випадкове: тисячі ремонтів повторювались, доки машина, біологія й людська шкода не стали одним візерунком.",
+     "external_site": "На дні HECTON-8 перестає розділяти колонію, океан, машину й доказ. Саме місце стає аргументом: не поклоніння, не магія, а промисловість, повторена до вигляду ритуалу."
+    },
+    "ar_SA": {
+     "title": "شظية مدخل المصنع-المعبد",
+     "scanner": "تسجل السبيكة ومادة الختم الصدفية والأداة اليدوية ونبضة الإصلاح النشطة كسطح واحد.",
+     "field_note": "قاعدة بصرية: يشبه المعبد فقط لأن الصناعة والنسيج والتكرار أصبحت طقسا.",
+     "terminal": "ENTRY MARKER: انهارت فئات الصيانة. ندوب الأدوات وقشرة الختم وجذور الكابلات ونسيج الترشيح وأضلاع المشغلات سجلت كسطح إصلاح واحد. علامات المسار البشرية لم تعد مميزة.",
+     "audio": "هذه ليست غرفة. هذه عادة.",
+     "in_game_wiki": "تحدد الشظية لغة المنطقة الأخيرة البصرية. الإحساس المقدس حادث عرضي: آلاف الإصلاحات تكررت حتى صارت الآلة والبيولوجيا والضرر البشري نمطا واحدا.",
+     "external_site": "في القاع، يتوقف HECTON-8 عن فصل المستعمرة والمحيط والآلة والدليل. يصبح المكان نفسه الحجة: لا عبادة ولا سحر، بل صناعة تكررت حتى بدت كطقس."
+    },
+    "id_ID": {
+     "title": "Fragmen Masuk Pabrik-Kuil",
+     "scanner": "Aloi, sealant cangkang, alat tangan, dan pulsa perbaikan aktif terbaca sebagai satu permukaan.",
+     "field_note": "Aturan visual: ia tampak seperti kuil hanya karena industri, jaringan, dan pengulangan berubah menjadi ritual.",
+     "terminal": "ENTRY MARKER: kategori pemeliharaan runtuh. Bekas alat, cangkang sealant, akar kabel, jaringan penyaring, dan rusuk aktuator terdaftar sebagai satu permukaan perbaikan. Tanda jalur manusia tidak lagi diistimewakan.",
+     "audio": "Ini bukan ruangan. Ini kebiasaan.",
+     "in_game_wiki": "Fragmen ini mendefinisikan tata visual zona final. Rasa sakralnya kebetulan: ribuan perbaikan diulang sampai mesin, biologi, dan kerusakan manusia menjadi satu pola.",
+     "external_site": "Di dasar, HECTON-8 berhenti memisahkan koloni, samudra, mesin, dan bukti. Tempat itu sendiri menjadi argumen: bukan pemujaan, bukan sihir, melainkan industri yang diulang sampai tampak seperti ritual."
+    },
+    "ko_KR": {
+     "title": "공장-사원 입구 파편",
+     "scanner": "합금, 껍질 밀봉재, 손도구, 활성 수리 펄스가 하나의 표면으로 등록된다.",
+     "field_note": "시각 규칙: 산업, 조직, 반복이 의식이 되었기 때문에 사원처럼 보일 뿐이다.",
+     "terminal": "ENTRY MARKER: 유지보수 범주 붕괴. 도구 흉터, 밀봉 껍질, 케이블 뿌리, 필터 조직, 액추에이터 갈비가 하나의 수리 표면으로 등록됨. 인간 경로 표식은 더 이상 우선되지 않는다.",
+     "audio": "이건 방이 아니다. 습관이다.",
+     "in_game_wiki": "이 파편은 최종 구역의 시각 문법을 정의한다. 성스러운 느낌은 우연이다. 수천 번의 수리가 반복되어 기계, 생물, 인간의 손상이 하나의 패턴이 되었다.",
+     "external_site": "바닥에서 HECTON-8은 식민지, 바다, 기계, 증거를 구분하기를 멈춘다. 장소 자체가 주장이 된다. 숭배도 마법도 아니라, 의식처럼 보일 때까지 반복된 산업이다."
+    },
+    "he_IL": {
+     "title": "שבר כניסה למפעל-מקדש",
+     "scanner": "סגסוגת, איטום צדפתי, כלי יד ופעימת תיקון פעילה נרשמים כמשטח אחד.",
+     "field_note": "כלל חזותי: זה דומה למקדש רק כי תעשייה, רקמה וחזרה הפכו לטקס.",
+     "terminal": "ENTRY MARKER: קטגוריות תחזוקה קרסו. צלקות כלי, קליפת איטום, שורשי כבלים, רקמת סינון וצלעות אקטואטור נרשמו כמשטח תיקון יחיד. סימני נתיב אנושיים כבר אינם מועדפים.",
+     "audio": "זה לא חדר. זה הרגל.",
+     "in_game_wiki": "השבר מגדיר את הדקדוק החזותי של אזור הסיום. התחושה הקדושה מקרית: אלפי תיקונים חזרו על עצמם עד שמכונה, ביולוגיה ונזק אנושי הפכו לדפוס אחד.",
+     "external_site": "בתחתית, HECTON-8 מפסיק להפריד בין מושבה, אוקיינוס, מכונה וראיה. המקום עצמו הופך לטיעון: לא פולחן, לא קסם, אלא תעשייה שחזרה על עצמה עד שנראתה כמו טקס."
+    },
+    "pt_BR": {
+     "title": "Fragmento de Entrada da Fábrica-Templo",
+     "scanner": "Liga, selante de concha, ferramenta manual e pulso de reparo ativo registram como uma só superfície.",
+     "field_note": "Regra visual: parece templo só porque indústria, tecido e repetição viraram ritual.",
+     "terminal": "ENTRY MARKER: categorias de manutenção colapsadas. Cicatrizes de ferramenta, concha de selante, raízes de cabo, tecido filtrante e costelas de atuador registrados como uma única superfície de reparo. Marcas humanas de rota não são mais privilegiadas.",
+     "audio": "Isto não é uma sala. É um hábito.",
+     "in_game_wiki": "O fragmento define a gramática visual da zona final. A sensação sagrada é acidental: milhares de reparos repetidos até máquina, biologia e dano humano virarem um só padrão.",
+     "external_site": "No fundo, HECTON-8 para de separar colônia, oceano, máquina e prova. O próprio lugar vira o argumento: não culto, não magia, mas indústria repetida até parecer ritual."
+    },
+    "nl_NL": {
+     "title": "Fragment van fabriek-tempelingang",
+     "scanner": "Legering, schelpafdichting, handgereedschap en actieve reparatiepuls registreren als één oppervlak.",
+     "field_note": "Visuele regel: het lijkt alleen tempelachtig omdat industrie, weefsel en herhaling ritueel zijn geworden.",
+     "terminal": "ENTRY MARKER: onderhoudscategorieën ingestort. Gereedschapssporen, afdichtingsschaal, kabelwortels, filterweefsel en actuatorribben geregistreerd als één reparatieoppervlak. Menselijke routemarkeringen niet langer bevoorrecht.",
+     "audio": "Dit is geen kamer. Dit is een gewoonte.",
+     "in_game_wiki": "Het fragment definieert de visuele grammatica van de finale zone. Het sacrale gevoel is toevallig: duizenden reparaties herhaalden zich tot machine, biologie en menselijke schade één patroon werden.",
+     "external_site": "Op de bodem stopt HECTON-8 met het scheiden van kolonie, oceaan, machine en bewijs. De plaats zelf wordt het argument: geen aanbidding, geen magie, maar industrie zo vaak herhaald dat ze op ritueel lijkt."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P299_PAYLOAD_AUTHORITY_LAST_CHECK",
+   "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
+   "article_id": "applied_lore.p299_payload_authority_last_check",
+   "title_key": "applied_lore.p299_payload_authority_last_check.title",
+   "unlock": {
+    "primary": "unlock.p299_payload_authority_last_check",
+    "poi_tags": [
+     "poi.payload_authority_last_check",
+     "poi.receiver_split_panel",
+     "poi.evidence_mass_warning"
+    ],
+    "biome_tags": [
+     "biome.final_payload",
+     "biome.dossier"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Payload Authority Last Check",
+     "scanner": "Payload check: receiver choice changes ownership, not only reward.",
+     "field_note": "Use immediately before irreversible ending route selection.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence, and post-return liability. Receiver selection defines who may act on proof after departure.",
+     "audio": "What leaves will own what remains.",
+     "in_game_wiki": "Payload Authority Last Check gives the final UI its hard question. The player is not choosing a prize chest; they are choosing who gets mass, proof, names, coordinates, and permission to act.",
+     "external_site": "HECTON-8's ending is not only whether the player survives. It is who receives the proof and what that receiver is allowed to do with the ocean after the witness leaves."
+    },
+    "ru_RU": {
+     "title": "Последняя проверка полномочий payload",
+     "scanner": "Проверка payload: выбор приемника меняет владельца, а не только награду.",
+     "field_note": "Использовать прямо перед необратимым выбором маршрута концовки.",
+     "terminal": "ПРОВЕРКА ПОЛНОМОЧИЙ PAYLOAD: выбрать приемник, массу, хранение доказательств, экологическое последствие и послевозвратную ответственность. Выбор приемника определяет, кто сможет действовать на основании доказательства после ухода.",
+     "audio": "То, что уйдет, будет владеть тем, что останется.",
+     "in_game_wiki": "Последняя проверка дает финальному UI жесткий вопрос. Игрок выбирает не сундук с наградой, а того, кто получит массу, доказательство, имена, координаты и разрешение действовать.",
+     "external_site": "Финал HECTON-8 — не только о том, выживет ли игрок. Это вопрос, кто получит доказательство и что этому получателю будет позволено делать с океаном после ухода свидетеля."
+    },
+    "ja_JP": {
+     "title": "ペイロード権限最終確認",
+     "scanner": "ペイロード確認: 受信先選択は報酬だけでなく所有権を変える。",
+     "field_note": "不可逆のエンディングルート選択の直前に使う。",
+     "terminal": "PAYLOAD AUTHORITY CHECK: 受信先、質量、証拠保管、生態系への影響、帰還後責任を選択。受信先選択は、出発後に誰が証拠で行動できるかを定義する。",
+     "audio": "外へ出るものが、残るものを所有する。",
+     "in_game_wiki": "最終確認はファイナル UI に厳しい問いを与える。プレイヤーは報酬箱を選ぶのではない。質量、証拠、名前、座標、行動許可を誰に渡すかを選ぶ。",
+     "external_site": "HECTON-8 の結末は、プレイヤーが生き残るかだけではない。証拠を誰が受け取り、証人が去ったあとその受信者が海に何を許されるかだ。"
+    },
+    "zh_CN": {
+     "title": "载荷权限最终检查",
+     "scanner": "载荷检查：接收器选择改变所有权，不只是奖励。",
+     "field_note": "用于不可逆结局路线选择之前。",
+     "terminal": "PAYLOAD AUTHORITY CHECK：选择接收器、质量、证据监管、生态后果和返回后责任。接收器选择定义离开后谁可以根据证据行动。",
+     "audio": "离开的东西将拥有留下的东西。",
+     "in_game_wiki": "最终检查给结局 UI 一个严厉问题。玩家选择的不是奖励箱，而是谁得到质量、证据、姓名、坐标和行动许可。",
+     "external_site": "HECTON-8 的结局不只是玩家是否生还。它是谁接收证据，以及证人离开后该接收者被允许对海洋做什么。"
+    },
+    "fr_FR": {
+     "title": "Dernière vérification d'autorité du payload",
+     "scanner": "Vérification payload : le choix du récepteur change la propriété, pas seulement la récompense.",
+     "field_note": "À utiliser juste avant le choix irréversible de route de fin.",
+     "terminal": "PAYLOAD AUTHORITY CHECK : choisir récepteur, masse, garde des preuves, conséquence écologique et responsabilité post-retour. Le récepteur choisi définit qui pourra agir sur la preuve après le départ.",
+     "audio": "Ce qui partira possédera ce qui reste.",
+     "in_game_wiki": "La dernière vérification donne à l'interface finale sa question dure. Le joueur ne choisit pas un coffre de récompense ; il choisit qui reçoit masse, preuve, noms, coordonnées et permission d'agir.",
+     "external_site": "La fin de HECTON-8 ne demande pas seulement si le joueur survit. Elle demande qui reçoit la preuve et ce que ce récepteur pourra faire de l'océan après le départ du témoin."
+    },
+    "es_ES": {
+     "title": "Última comprobación de autoridad del payload",
+     "scanner": "Comprobación de payload: elegir receptor cambia propiedad, no solo recompensa.",
+     "field_note": "Usar justo antes de la selección irreversible de ruta final.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: seleccionar receptor, masa, custodia de pruebas, consecuencia ecológica y responsabilidad post-retorno. La elección del receptor define quién puede actuar sobre la prueba tras la salida.",
+     "audio": "Lo que salga será dueño de lo que quede.",
+     "in_game_wiki": "La última comprobación da a la interfaz final su pregunta dura. El jugador no elige un cofre de premio; elige quién recibe masa, prueba, nombres, coordenadas y permiso para actuar.",
+     "external_site": "El final de HECTON-8 no es solo si el jugador sobrevive. Es quién recibe la prueba y qué se permite hacer a ese receptor con el océano después de que el testigo se vaya."
+    },
+    "de_DE": {
+     "title": "Letzte Payload-Autoritätsprüfung",
+     "scanner": "Payload-Prüfung: Empfängerwahl ändert Eigentum, nicht nur Belohnung.",
+     "field_note": "Direkt vor der irreversiblen Auswahl der Endroute verwenden.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: Empfänger, Masse, Beweisverwahrung, ökologische Folge und Rückkehrhaftung wählen. Die Empfängerwahl definiert, wer nach Abreise anhand des Beweises handeln darf.",
+     "audio": "Was hinausgeht, wird besitzen, was bleibt.",
+     "in_game_wiki": "Die letzte Prüfung gibt dem finalen UI seine harte Frage. Der Spieler wählt keine Belohnungskiste, sondern wer Masse, Beweis, Namen, Koordinaten und Handlungserlaubnis erhält.",
+     "external_site": "HECTON-8s Ende fragt nicht nur, ob der Spieler überlebt. Es fragt, wer den Beweis erhält und was dieser Empfänger mit dem Ozean tun darf, nachdem der Zeuge gegangen ist."
+    },
+    "pl_PL": {
+     "title": "Ostatnia kontrola autorytetu payloadu",
+     "scanner": "Kontrola payloadu: wybór odbiorcy zmienia własność, nie tylko nagrodę.",
+     "field_note": "Użyć bezpośrednio przed nieodwracalnym wyborem trasy zakończenia.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: wybrać odbiorcę, masę, dozór dowodów, konsekwencję ekologiczną i odpowiedzialność po powrocie. Wybór odbiorcy określa, kto może działać na podstawie dowodu po odejściu.",
+     "audio": "To, co odejdzie, posiądzie to, co zostanie.",
+     "in_game_wiki": "Ostatnia kontrola daje finałowemu UI twarde pytanie. Gracz nie wybiera skrzyni z nagrodą; wybiera, kto dostanie masę, dowód, nazwiska, współrzędne i zgodę na działanie.",
+     "external_site": "Zakończenie HECTON-8 nie pyta tylko, czy gracz przeżyje. Pyta, kto otrzyma dowód i co ten odbiorca będzie mógł zrobić z oceanem po odejściu świadka."
+    },
+    "uk_UA": {
+     "title": "Остання перевірка повноважень payload",
+     "scanner": "Перевірка payload: вибір приймача змінює власність, а не лише нагороду.",
+     "field_note": "Використати безпосередньо перед незворотним вибором маршруту кінцівки.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: вибрати приймач, масу, зберігання доказів, екологічний наслідок і відповідальність після повернення. Вибір приймача визначає, хто зможе діяти на підставі доказу після відходу.",
+     "audio": "Те, що піде, володітиме тим, що залишиться.",
+     "in_game_wiki": "Остання перевірка дає фінальному UI жорстке питання. Гравець обирає не скриню з нагородою, а того, хто отримає масу, доказ, імена, координати й дозвіл діяти.",
+     "external_site": "Фінал HECTON-8 не лише про те, чи виживе гравець. Це питання, хто отримає доказ і що цьому приймачу буде дозволено робити з океаном після відходу свідка."
+    },
+    "ar_SA": {
+     "title": "الفحص الأخير لسلطة payload",
+     "scanner": "فحص payload: اختيار المستقبل يغير الملكية، لا المكافأة فقط.",
+     "field_note": "يستخدم مباشرة قبل اختيار مسار النهاية غير القابل للرجوع.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: اختر المستقبل والكتلة وحيازة الأدلة والعاقبة البيئية ومسؤولية ما بعد العودة. يحدد اختيار المستقبل من يستطيع العمل على الدليل بعد المغادرة.",
+     "audio": "ما يغادر سيملك ما يبقى.",
+     "in_game_wiki": "يعطي الفحص الأخير واجهة النهاية سؤالها الصعب. لا يختار اللاعب صندوق جائزة؛ يختار من يحصل على الكتلة والدليل والأسماء والإحداثيات وإذن الفعل.",
+     "external_site": "نهاية HECTON-8 ليست فقط هل ينجو اللاعب. إنها من يتلقى الدليل وما يسمح لذلك المستقبل أن يفعله بالمحيط بعد رحيل الشاهد."
+    },
+    "id_ID": {
+     "title": "Pemeriksaan Terakhir Otoritas Payload",
+     "scanner": "Pemeriksaan payload: pilihan penerima mengubah kepemilikan, bukan hanya hadiah.",
+     "field_note": "Gunakan tepat sebelum pilihan rute akhir yang tidak dapat dibalik.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: pilih penerima, massa, kustodi bukti, konsekuensi ekologis, dan liabilitas pasca-kembali. Pilihan penerima menentukan siapa yang boleh bertindak atas bukti setelah keberangkatan.",
+     "audio": "Yang pergi akan memiliki yang tersisa.",
+     "in_game_wiki": "Pemeriksaan terakhir memberi UI final pertanyaan keras. Pemain tidak memilih peti hadiah; mereka memilih siapa yang menerima massa, bukti, nama, koordinat, dan izin bertindak.",
+     "external_site": "Akhir HECTON-8 bukan hanya apakah pemain bertahan hidup. Ini tentang siapa menerima bukti dan apa yang boleh dilakukan penerima itu pada samudra setelah saksi pergi."
+    },
+    "ko_KR": {
+     "title": "Payload 권한 마지막 확인",
+     "scanner": "Payload 확인: 수신자 선택은 보상뿐 아니라 소유권을 바꾼다.",
+     "field_note": "되돌릴 수 없는 엔딩 루트 선택 직전에 사용.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: 수신자, 질량, 증거 보관, 생태적 결과, 귀환 후 책임을 선택. 수신자 선택은 떠난 뒤 누가 증거에 따라 행동할 수 있는지 정의한다.",
+     "audio": "떠나는 것이 남는 것을 소유할 것이다.",
+     "in_game_wiki": "마지막 확인은 최종 UI에 어려운 질문을 준다. 플레이어는 보상 상자를 고르는 것이 아니라, 질량, 증거, 이름, 좌표, 행동 허가를 누가 받을지 고른다.",
+     "external_site": "HECTON-8의 엔딩은 플레이어가 생존하는지만 묻지 않는다. 증거를 누가 받고, 증인이 떠난 뒤 그 수신자가 바다에 무엇을 할 수 있는지를 묻는다."
+    },
+    "he_IL": {
+     "title": "בדיקת סמכות payload אחרונה",
+     "scanner": "בדיקת payload: בחירת מקלט משנה בעלות, לא רק תגמול.",
+     "field_note": "להשתמש מיד לפני בחירת מסלול סוף בלתי הפיכה.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: בחר מקלט, מסה, משמורת ראיות, תוצאה אקולוגית ואחריות לאחר חזרה. בחירת המקלט מגדירה מי רשאי לפעול על סמך הראיה לאחר העזיבה.",
+     "audio": "מה שייצא יחזיק במה שיישאר.",
+     "in_game_wiki": "הבדיקה האחרונה נותנת לממשק הסיום את השאלה הקשה. השחקן אינו בוחר תיבת פרס; הוא בוחר מי יקבל מסה, ראיה, שמות, קואורדינטות והרשאה לפעול.",
+     "external_site": "הסוף של HECTON-8 אינו רק אם השחקן שורד. הוא מי מקבל את הראיה ומה מותר למקלט הזה לעשות עם האוקיינוס אחרי שהעד עוזב."
+    },
+    "pt_BR": {
+     "title": "Última Verificação de Autoridade do Payload",
+     "scanner": "Verificação do payload: escolha de receptor muda propriedade, não só recompensa.",
+     "field_note": "Usar imediatamente antes da seleção irreversível de rota final.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: selecionar receptor, massa, custódia de provas, consequência ecológica e responsabilidade pós-retorno. A escolha do receptor define quem poderá agir sobre a prova depois da partida.",
+     "audio": "O que sair será dono do que ficar.",
+     "in_game_wiki": "A última verificação dá à UI final sua pergunta dura. O jogador não escolhe um baú de prêmio; escolhe quem recebe massa, prova, nomes, coordenadas e permissão para agir.",
+     "external_site": "O final de HECTON-8 não é só se o jogador sobrevive. É quem recebe a prova e o que esse receptor pode fazer com o oceano depois que a testemunha vai embora."
+    },
+    "nl_NL": {
+     "title": "Laatste controle van payloadautoriteit",
+     "scanner": "Payloadcontrole: ontvangerkeuze verandert eigendom, niet alleen beloning.",
+     "field_note": "Gebruik direct voor de onomkeerbare keuze van de eindroute.",
+     "terminal": "PAYLOAD AUTHORITY CHECK: selecteer ontvanger, massa, bewijsbewaring, ecologisch gevolg en aansprakelijkheid na terugkeer. Ontvangerkeuze bepaalt wie na vertrek op het bewijs mag handelen.",
+     "audio": "Wat vertrekt, zal bezitten wat blijft.",
+     "in_game_wiki": "De laatste controle geeft de finale UI haar harde vraag. De speler kiest geen beloningskist; hij kiest wie massa, bewijs, namen, coördinaten en toestemming tot handelen krijgt.",
+     "external_site": "Het einde van HECTON-8 gaat niet alleen over of de speler overleeft. Het gaat om wie het bewijs ontvangt en wat die ontvanger met de oceaan mag doen nadat de getuige vertrekt."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P300_NO_CLEAN_ENDING_DOSSIER_NOTE",
+   "release_set_id": "RS060_FINAL_DESCENT_ROUTE_FRAGMENTS",
+   "article_id": "applied_lore.p300_no_clean_ending_dossier_note",
+   "title_key": "applied_lore.p300_no_clean_ending_dossier_note.title",
+   "unlock": {
+    "primary": "unlock.p300_no_clean_ending_dossier_note",
+    "poi_tags": [
+     "poi.no_clean_ending_dossier_note",
+     "poi.outcome_hash_board",
+     "poi.worker_name_remainder"
+    ],
+    "biome_tags": [
+     "biome.ending",
+     "biome.dossier"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "No Clean Ending Dossier Note",
+     "scanner": "Dossier note: closure denied; consequence retained.",
+     "field_note": "Post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.",
+     "terminal": "DOSSIER RECORD: outcome stored. Clean closure unavailable under current evidence state. Debt, ecology, liability, and witness custody remain active records.",
+     "audio": "You saved something. That is not the same as clearing it.",
+     "in_game_wiki": "No Clean Ending Dossier Note defines the post-ending memory tone. Even the strongest ending leaves a living file behind: a saved thing, a damaged thing, and a cost that refuses to become tidy.",
+     "external_site": "HECTON-8's endings leave scars by design: protected ecology, denied corporation, released witness record, unpaid debt, and a player who changed the ocean without gaining the right to close it."
+    },
+    "ru_RU": {
+     "title": "Заметка досье без чистой концовки",
+     "scanner": "Заметка досье: закрытие отклонено; последствие сохранено.",
+     "field_note": "Постфинальное досье держит мост открытым: исход записан, долг и доказательства не разрешены, идеальная победа не выдана.",
+     "terminal": "ЗАПИСЬ ДОСЬЕ: исход сохранен. Чистое закрытие недоступно при текущем состоянии доказательств. Долг, экология, ответственность и хранение свидетеля остаются активными записями.",
+     "audio": "Ты что-то спас. Это не значит, что ты это очистил.",
+     "in_game_wiki": "Заметка задает память после финала. Даже самая сильная концовка оставляет живой файл: спасенное, поврежденное и цену, которая отказывается стать аккуратной.",
+     "external_site": "Концовки HECTON-8 специально оставляют шрамы: защищенная экология, отодвинутая корпорация, выпущенная запись свидетеля, неоплаченный долг и игрок, изменивший океан без права закрыть его."
+    },
+    "ja_JP": {
+     "title": "清潔な結末なしのドシエ注記",
+     "scanner": "ドシエ注記: 終了拒否。結果保持。",
+     "field_note": "終了後ドシエは橋を開いたままにする。結果は記録、債務と証拠は未解決、完全勝利は与えられない。",
+     "terminal": "DOSSIER RECORD: 結果保存。現在の証拠状態では清潔な終了不可。債務、生態系、責任、証人保管は有効記録のまま。",
+     "audio": "君は何かを救った。それを清算したわけではない。",
+     "in_game_wiki": "この注記は、エンディング後の記憶の調子を決める。最強の結末でさえ、生きたファイルを残す。救われたもの、傷ついたもの、整うことを拒む代償だ。",
+     "external_site": "HECTON-8 のエンディングは意図的に傷跡を残す。保護された生態系、拒まれた企業、公開された証人記録、未払いの債務、そして海を変えたが閉じる権利を得ていないプレイヤー。"
+    },
+    "zh_CN": {
+     "title": "无干净结局档案备注",
+     "scanner": "档案备注：拒绝结案；后果保留。",
+     "field_note": "结局后档案保持桥梁打开：结果已记录，债务和证据未解决，没有完美胜利。",
+     "terminal": "DOSSIER RECORD：结果已存储。在当前证据状态下无法干净结案。债务、生态、责任和证人监管仍为活跃记录。",
+     "audio": "你救下了某些东西。这不等于清除了它。",
+     "in_game_wiki": "这条备注定义结局后的记忆语气。即便最强结局也会留下活档案：被救下的东西、受损的东西，以及拒绝变整齐的代价。",
+     "external_site": "HECTON-8 的结局设计上就会留下伤痕：受保护的生态、被拒绝的公司、释放的证人记录、未偿债务，以及改变了海洋却没有权利将其关闭的玩家。"
+    },
+    "fr_FR": {
+     "title": "Note de dossier sans fin propre",
+     "scanner": "Note de dossier : clôture refusée ; conséquence retenue.",
+     "field_note": "Le dossier post-fin garde le pont ouvert : résultat enregistré, dette et preuves non résolues, aucune victoire parfaite accordée.",
+     "terminal": "DOSSIER RECORD : résultat stocké. Clôture propre indisponible dans l'état actuel des preuves. Dette, écologie, responsabilité et garde du témoin restent des dossiers actifs.",
+     "audio": "Tu as sauvé quelque chose. Ce n'est pas l'avoir blanchi.",
+     "in_game_wiki": "La note définit le ton de mémoire après la fin. Même la fin la plus forte laisse un fichier vivant : une chose sauvée, une chose abîmée et un coût qui refuse de devenir propre.",
+     "external_site": "Les fins de HECTON-8 laissent des cicatrices par conception : écologie protégée, corporation repoussée, dossier de témoin libéré, dette impayée et joueur qui a changé l'océan sans obtenir le droit de le clore."
+    },
+    "es_ES": {
+     "title": "Nota de dossier sin final limpio",
+     "scanner": "Nota de dossier: cierre denegado; consecuencia retenida.",
+     "field_note": "El dossier posterior mantiene el puente abierto: resultado registrado, deuda y pruebas sin resolver, ninguna victoria perfecta concedida.",
+     "terminal": "DOSSIER RECORD: resultado almacenado. Cierre limpio no disponible con el estado actual de pruebas. Deuda, ecología, responsabilidad y custodia del testigo siguen como registros activos.",
+     "audio": "Salvaste algo. Eso no es lo mismo que limpiarlo.",
+     "in_game_wiki": "La nota define el tono de memoria posterior al final. Incluso el final más fuerte deja un archivo vivo: algo salvado, algo dañado y un coste que se niega a quedar ordenado.",
+     "external_site": "Los finales de HECTON-8 dejan cicatrices por diseño: ecología protegida, corporación negada, registro de testigo liberado, deuda impaga y un jugador que cambió el océano sin obtener derecho a cerrarlo."
+    },
+    "de_DE": {
+     "title": "Dossiernotiz ohne sauberes Ende",
+     "scanner": "Dossiernotiz: Abschluss verweigert; Folge beibehalten.",
+     "field_note": "Nach-Ende-Dossier hält die Brücke offen: Ergebnis erfasst, Schuld und Beweis ungelöst, kein perfekter Sieg gewährt.",
+     "terminal": "DOSSIER RECORD: Ergebnis gespeichert. Sauberer Abschluss unter aktuellem Beweisstand nicht verfügbar. Schuld, Ökologie, Haftung und Zeugenverwahrung bleiben aktive Akten.",
+     "audio": "Du hast etwas gerettet. Das heißt nicht, dass du es bereinigt hast.",
+     "in_game_wiki": "Die Notiz bestimmt den Erinnerungston nach dem Ende. Selbst das stärkste Ende hinterlässt eine lebende Akte: etwas Gerettetes, etwas Beschädigtes und einen Preis, der nicht ordentlich werden will.",
+     "external_site": "HECTON-8s Enden hinterlassen absichtlich Narben: geschützte Ökologie, zurückgewiesener Konzern, freigegebener Zeugenbericht, unbezahlte Schuld und ein Spieler, der den Ozean verändert hat, ohne das Recht zu erhalten, ihn zu schließen."
+    },
+    "pl_PL": {
+     "title": "Notatka dossier bez czystego zakończenia",
+     "scanner": "Notatka dossier: zamknięcie odmówione; konsekwencja zachowana.",
+     "field_note": "Dossier po zakończeniu zostawia most otwarty: wynik zapisany, dług i dowody nierozwiązane, brak idealnego zwycięstwa.",
+     "terminal": "DOSSIER RECORD: wynik zapisany. Czyste zamknięcie niedostępne przy obecnym stanie dowodów. Dług, ekologia, odpowiedzialność i dozór świadka pozostają aktywnymi zapisami.",
+     "audio": "Coś ocaliłeś. To nie znaczy, że to oczyściłeś.",
+     "in_game_wiki": "Notatka definiuje ton pamięci po zakończeniu. Nawet najsilniejszy finał zostawia żywy plik: rzecz ocaloną, rzecz uszkodzoną i koszt, który odmawia uporządkowania.",
+     "external_site": "Zakończenia HECTON-8 zostawiają blizny celowo: chronioną ekologię, odrzuconą korporację, uwolniony zapis świadka, niespłacony dług i gracza, który zmienił ocean bez prawa do jego zamknięcia."
+    },
+    "uk_UA": {
+     "title": "Нотатка досьє без чистої кінцівки",
+     "scanner": "Нотатка досьє: закриття відхилено; наслідок збережено.",
+     "field_note": "Постфінальне досьє тримає міст відкритим: результат записано, борг і докази не вирішено, ідеальної перемоги не надано.",
+     "terminal": "DOSSIER RECORD: результат збережено. Чисте закриття недоступне за поточного стану доказів. Борг, екологія, відповідальність і зберігання свідка лишаються активними записами.",
+     "audio": "Ти щось урятував. Це не означає, що ти це очистив.",
+     "in_game_wiki": "Нотатка задає тон пам'яті після фіналу. Навіть найсильніша кінцівка залишає живий файл: урятоване, пошкоджене й ціну, що відмовляється стати охайною.",
+     "external_site": "Кінцівки HECTON-8 навмисно залишають шрами: захищену екологію, відсунуту корпорацію, випущений запис свідка, несплачений борг і гравця, що змінив океан без права закрити його."
+    },
+    "ar_SA": {
+     "title": "ملاحظة ملف بلا نهاية نظيفة",
+     "scanner": "ملاحظة ملف: الإغلاق مرفوض؛ العاقبة محفوظة.",
+     "field_note": "يبقي ملف ما بعد النهاية الجسر مفتوحا: النتيجة مسجلة، الدين والأدلة غير محلولين، ولا نصر كامل ممنوح.",
+     "terminal": "DOSSIER RECORD: النتيجة مخزنة. الإغلاق النظيف غير متاح في حالة الأدلة الحالية. الدين والبيئة والمسؤولية وحيازة الشاهد تبقى سجلات نشطة.",
+     "audio": "لقد أنقذت شيئا. هذا لا يعني أنك نظفته.",
+     "in_game_wiki": "تحدد الملاحظة نبرة الذاكرة بعد النهاية. حتى أقوى نهاية تترك ملفا حيا: شيئا أنقذ، وشيئا تضرر، وكلفة ترفض أن تصبح مرتبة.",
+     "external_site": "تترك نهايات HECTON-8 ندوبا عمدا: بيئة محمية، شركة مرفوضة، سجل شاهد محرر، دين غير مدفوع، ولاعبا غير المحيط دون أن ينال حق إغلاقه."
+    },
+    "id_ID": {
+     "title": "Catatan Dossier Tanpa Akhir Bersih",
+     "scanner": "Catatan dossier: penutupan ditolak; konsekuensi dipertahankan.",
+     "field_note": "Dossier pasca-akhir menjaga jembatan tetap terbuka: hasil dicatat, utang dan bukti belum selesai, tidak ada kemenangan sempurna.",
+     "terminal": "DOSSIER RECORD: hasil disimpan. Penutupan bersih tidak tersedia dalam keadaan bukti saat ini. Utang, ekologi, liabilitas, dan kustodi saksi tetap menjadi catatan aktif.",
+     "audio": "Kau menyelamatkan sesuatu. Itu tidak sama dengan membersihkannya.",
+     "in_game_wiki": "Catatan ini menentukan nada ingatan pasca-akhir. Bahkan akhir terkuat meninggalkan file hidup: sesuatu yang diselamatkan, sesuatu yang rusak, dan biaya yang menolak menjadi rapi.",
+     "external_site": "Akhir HECTON-8 sengaja meninggalkan luka: ekologi terlindungi, korporasi ditolak, catatan saksi dilepas, utang belum dibayar, dan pemain yang mengubah samudra tanpa memperoleh hak untuk menutupnya."
+    },
+    "ko_KR": {
+     "title": "깨끗한 엔딩 없음 dossier 메모",
+     "scanner": "Dossier 메모: 종결 거부. 결과 유지.",
+     "field_note": "엔딩 후 dossier는 다리를 열어 둔다. 결과는 기록, 빚과 증거는 미해결, 완벽한 승리는 주어지지 않는다.",
+     "terminal": "DOSSIER RECORD: 결과 저장. 현재 증거 상태에서 깨끗한 종결 불가. 빚, 생태, 책임, 증인 보관은 활성 기록으로 남는다.",
+     "audio": "너는 무언가를 구했다. 그것을 정리한 것은 아니다.",
+     "in_game_wiki": "이 메모는 엔딩 후 기억의 톤을 정의한다. 가장 강한 엔딩조차 살아 있는 파일을 남긴다. 구한 것, 손상된 것, 깔끔해지기를 거부하는 비용이다.",
+     "external_site": "HECTON-8의 엔딩은 의도적으로 흉터를 남긴다. 보호된 생태, 거부된 기업, 공개된 증인 기록, 미지급 채무, 그리고 바다를 바꾸었지만 닫을 권리를 얻지 못한 플레이어."
+    },
+    "he_IL": {
+     "title": "הערת תיק ללא סוף נקי",
+     "scanner": "הערת תיק: סגירה נדחתה; תוצאה נשמרה.",
+     "field_note": "תיק לאחר סוף משאיר את הגשר פתוח: תוצאה נרשמה, חוב וראיות לא נפתרו, לא ניתן ניצחון מושלם.",
+     "terminal": "DOSSIER RECORD: תוצאה נשמרה. סגירה נקייה אינה זמינה במצב הראיות הנוכחי. חוב, אקולוגיה, אחריות ומשמורת עד נשארים רשומות פעילות.",
+     "audio": "הצלת משהו. זה לא אותו דבר כמו לנקות אותו.",
+     "in_game_wiki": "ההערה מגדירה את טון הזיכרון אחרי הסוף. אפילו הסוף החזק ביותר משאיר קובץ חי: דבר שניצל, דבר שניזוק ועלות שמסרבת להיות מסודרת.",
+     "external_site": "הסיומים של HECTON-8 משאירים צלקות בכוונה: אקולוגיה מוגנת, תאגיד שנדחה, רשומת עד ששוחררה, חוב שלא שולם ושחקן ששינה את האוקיינוס בלי לקבל את הזכות לסגור אותו."
+    },
+    "pt_BR": {
+     "title": "Nota de Dossier Sem Final Limpo",
+     "scanner": "Nota de dossier: fechamento negado; consequência retida.",
+     "field_note": "Dossier pós-final mantém a ponte aberta: resultado registrado, dívida e provas não resolvidas, nenhuma vitória perfeita concedida.",
+     "terminal": "DOSSIER RECORD: resultado armazenado. Fechamento limpo indisponível no estado atual das provas. Dívida, ecologia, responsabilidade e custódia da testemunha permanecem registros ativos.",
+     "audio": "Você salvou algo. Não é o mesmo que limpar.",
+     "in_game_wiki": "A nota define o tom da memória pós-final. Até o final mais forte deixa um arquivo vivo: algo salvo, algo danificado e um custo que se recusa a ficar arrumado.",
+     "external_site": "Os finais de HECTON-8 deixam cicatrizes por design: ecologia protegida, corporação negada, registro de testemunha liberado, dívida não paga e um jogador que mudou o oceano sem ganhar o direito de encerrá-lo."
+    },
+    "nl_NL": {
+     "title": "Dossiernotitie zonder schoon einde",
+     "scanner": "Dossiernotitie: afsluiting geweigerd; gevolg behouden.",
+     "field_note": "Dossier na einde houdt de brug open: uitkomst geregistreerd, schuld en bewijs onopgelost, geen perfecte overwinning toegekend.",
+     "terminal": "DOSSIER RECORD: uitkomst opgeslagen. Schone afsluiting niet beschikbaar onder huidige bewijsstatus. Schuld, ecologie, aansprakelijkheid en getuigenbewaring blijven actieve records.",
+     "audio": "Je hebt iets gered. Dat is niet hetzelfde als het zuiveren.",
+     "in_game_wiki": "De notitie bepaalt de geheugentoon na het einde. Zelfs het sterkste einde laat een levend bestand achter: iets gered, iets beschadigd en een kost die weigert netjes te worden.",
+     "external_site": "HECTON-8s eindes laten bewust littekens achter: beschermde ecologie, geweigerde corporatie, vrijgegeven getuigenrecord, onbetaalde schuld en een speler die de oceaan veranderde zonder het recht te krijgen hem af te sluiten."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

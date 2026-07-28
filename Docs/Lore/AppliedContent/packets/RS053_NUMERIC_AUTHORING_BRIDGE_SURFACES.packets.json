@@ -1,792 +1,797 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P261_RESOURCE_YIELD_AUTHORING_ROWS",
-      "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
-      "surface_mask": 65,
-      "article_id": "applied_lore.resource_yield_authoring_rows",
-      "title_key": "applied_lore.resource_yield_authoring_rows.title",
-      "unlock": {
-        "primary": "unlock.resource_yield_authoring_rows",
-        "poi_tags": [
-          "poi.resource_yield_table_card",
-          "poi.sample_bin_label",
-          "poi.vent_forge_manifest"
-        ],
-        "biome_tags": [
-          "biome.authoring",
-          "biome.resource"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Resource Yield Table Contract",
-          "scanner": "The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Resource Yield Table Contract",
-          "scanner": "Ценность пробы не лор. Это строка таблицы с давлением, глубиной и ответственностью.",
-          "field_note": "RU LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "RU LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "Если число будут балансить, ему не место в логе.",
-          "in_game_wiki": "RU LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "RU LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Resource Yield Table Contract",
-          "scanner": "JP LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "JP LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "JP LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "JP LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "JP LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "JP LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Resource Yield Table Contract",
-          "scanner": "CN LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "CN LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "CN LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "CN LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "CN LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "CN LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Resource Yield Table Contract",
-          "scanner": "FR LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "FR LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "FR LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "FR LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "FR LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "FR LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Resource Yield Table Contract",
-          "scanner": "ES LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "ES LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "ES LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "ES LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "ES LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "ES LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Resource Yield Table Contract",
-          "scanner": "DE LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "DE LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "DE LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "DE LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "DE LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "DE LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Resource Yield Table Contract",
-          "scanner": "PL LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "PL LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "PL LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "PL LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "PL LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "PL LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Resource Yield Table Contract",
-          "scanner": "UA LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "UA LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "UA LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "UA LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "UA LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "UA LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Resource Yield Table Contract",
-          "scanner": "AR LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "AR LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "AR LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "AR LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "AR LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "AR LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Resource Yield Table Contract",
-          "scanner": "ID LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "ID LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "ID LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "ID LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "ID LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "ID LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Resource Yield Table Contract",
-          "scanner": "KR LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "KO LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "KO LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "KR LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "KO LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "KO LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Resource Yield Table Contract",
-          "scanner": "HE LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "HE LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "HE LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "HE LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "HE LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "HE LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Resource Yield Table Contract",
-          "scanner": "PT-BR LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "PT LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "PT LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "PT-BR LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "PT LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "PT LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Resource Yield Table Contract",
-          "scanner": "NL LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
-          "field_note": "NL LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
-          "terminal": "NL LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
-          "audio": "NL LOC HOLD: If a number can be tuned, it does not belong in a log.",
-          "in_game_wiki": "NL LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
-          "external_site": "NL LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P261_RESOURCE_YIELD_AUTHORING_ROWS",
+   "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
+   "surface_mask": 65,
+   "article_id": "applied_lore.resource_yield_authoring_rows",
+   "title_key": "applied_lore.resource_yield_authoring_rows.title",
+   "unlock": {
+    "primary": "unlock.resource_yield_authoring_rows",
+    "poi_tags": [
+     "poi.resource_yield_table_card",
+     "poi.sample_bin_label",
+     "poi.vent_forge_manifest"
+    ],
+    "biome_tags": [
+     "biome.authoring",
+     "biome.resource"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Resource Yield Table Contract",
+     "scanner": "The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
     },
-    {
-      "packet_id": "P262_INVENTORY_STACK_AUTHORING_ROWS",
-      "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
-      "surface_mask": 65,
-      "article_id": "applied_lore.inventory_stack_authoring_rows",
-      "title_key": "applied_lore.inventory_stack_authoring_rows.title",
-      "unlock": {
-        "primary": "unlock.inventory_stack_authoring_rows",
-        "poi_tags": [
-          "poi.inventory_stack_table_card",
-          "poi.containment_rack",
-          "poi.lien_mass_label"
-        ],
-        "biome_tags": [
-          "biome.authoring",
-          "biome.inventory"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Inventory Stack Table Contract",
-          "scanner": "This rack stores pressure, not icons.",
-          "field_note": "Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "Эта стойка хранит давление, а не иконки.",
-          "field_note": "RU LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "STACK TABLE: стабильный item id; max stack принадлежит таблице; причина контейнера принадлежит packet lore.",
-          "audio": "Дешевая тара держит лом. Она не держит пробу-свидетеля.",
-          "in_game_wiki": "RU LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "RU LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "JP LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "JP LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "JP LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "JP LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "JP LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "JP LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "CN LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "CN LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "CN LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "CN LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "CN LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "CN LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "FR LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "FR LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "FR LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "FR LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "FR LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "FR LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "ES LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "ES LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "ES LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "ES LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "ES LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "ES LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "DE LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "DE LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "DE LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "DE LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "DE LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "DE LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "PL LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "PL LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "PL LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "PL LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "PL LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "PL LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "UA LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "UA LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "UA LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "UA LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "UA LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "UA LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "AR LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "AR LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "AR LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "AR LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "AR LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "AR LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "ID LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "ID LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "ID LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "ID LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "ID LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "ID LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "KR LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "KO LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "KR LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "KR LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "KO LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "KO LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "HE LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "HE LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "HE LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "HE LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "HE LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "HE LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "PT-BR LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "PT LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "PT-BR LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "PT-BR LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "PT LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "PT LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Inventory Stack Table Contract",
-          "scanner": "NL LOC HOLD: This rack stores pressure, not icons.",
-          "field_note": "NL LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
-          "terminal": "NL LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
-          "audio": "NL LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
-          "in_game_wiki": "NL LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
-          "external_site": "NL LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: Resource Yield Table Contract",
+     "scanner": "Ценность пробы не лор. Это строка таблицы с давлением, глубиной и ответственностью.",
+     "field_note": "RU LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "RU LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "Если число будут балансить, ему не место в логе.",
+     "in_game_wiki": "RU LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "RU LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
     },
-    {
-      "packet_id": "P263_ESCAPE_RECIPE_AUTHORING_ROWS",
-      "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
-      "surface_mask": 65,
-      "article_id": "applied_lore.escape_recipe_authoring_rows",
-      "title_key": "applied_lore.escape_recipe_authoring_rows.title",
-      "unlock": {
-        "primary": "unlock.escape_recipe_authoring_rows",
-        "poi_tags": [
-          "poi.escape_recipe_table_card",
-          "poi.ascent_part_rack",
-          "poi.p63_recipe_gate"
-        ],
-        "biome_tags": [
-          "biome.authoring",
-          "biome.escape"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ascent Recipe Table Contract",
-          "scanner": "The recipe is a launch certificate in pieces.",
-          "field_note": "Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "Рецепт побега - это сертификат запуска, разорванный на детали.",
-          "field_note": "RU LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "ASCENT RECIPE: аварийная заплатка не является ascent-qualified hardware.",
-          "audio": "Не доверяй фабрикатору, который не может испытать собственный ответ давлением.",
-          "in_game_wiki": "RU LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "RU LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "JP LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "JP LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "JP LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "JP LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "JP LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "JP LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "CN LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "CN LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "CN LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "CN LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "CN LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "CN LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "FR LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "FR LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "FR LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "FR LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "FR LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "FR LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "ES LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "ES LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "ES LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "ES LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "ES LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "ES LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "DE LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "DE LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "DE LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "DE LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "DE LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "DE LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "PL LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "PL LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "PL LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "PL LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "PL LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "PL LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "UA LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "UA LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "UA LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "UA LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "UA LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "UA LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "AR LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "AR LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "AR LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "AR LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "AR LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "AR LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "ID LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "ID LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "ID LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "ID LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "ID LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "ID LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "KR LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "KO LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "KR LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "KR LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "KO LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "KO LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "HE LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "HE LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "HE LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "HE LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "HE LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "HE LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "PT-BR LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "PT LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "PT-BR LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "PT-BR LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "PT LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "PT LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Ascent Recipe Table Contract",
-          "scanner": "NL LOC HOLD: The recipe is a launch certificate in pieces.",
-          "field_note": "NL LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
-          "terminal": "NL LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
-          "audio": "NL LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
-          "in_game_wiki": "NL LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
-          "external_site": "NL LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
-        }
-      }
+    "ja_JP": {
+     "title": "JP LOC HOLD: Resource Yield Table Contract",
+     "scanner": "JP LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "JP LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "JP LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "JP LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "JP LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "JP LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
     },
-    {
-      "packet_id": "P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS",
-      "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
-      "surface_mask": 65,
-      "article_id": "applied_lore.contract_risk_reward_authoring_rows",
-      "title_key": "applied_lore.contract_risk_reward_authoring_rows.title",
-      "unlock": {
-        "primary": "unlock.contract_risk_reward_authoring_rows",
-        "poi_tags": [
-          "poi.contract_risk_table_card",
-          "poi.black_keel_lien_board",
-          "poi.storm_window_ledger"
-        ],
-        "biome_tags": [
-          "biome.authoring",
-          "biome.contract"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Contract Risk Reward Table Contract",
-          "scanner": "The contract is another pressure system.",
-          "field_note": "Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "The clause that pays you can also trap you.",
-          "in_game_wiki": "Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "Контракт - еще одна система давления.",
-          "field_note": "RU LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "CONTRACT TABLE: риск является непрерывным давлением, а не тумблером сложности.",
-          "audio": "Пункт договора, который платит, может и запереть.",
-          "in_game_wiki": "RU LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "RU LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "JP LOC HOLD: The contract is another pressure system.",
-          "field_note": "JP LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "JP LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "JP LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "JP LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "JP LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "CN LOC HOLD: The contract is another pressure system.",
-          "field_note": "CN LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "CN LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "CN LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "CN LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "CN LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "FR LOC HOLD: The contract is another pressure system.",
-          "field_note": "FR LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "FR LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "FR LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "FR LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "FR LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "ES LOC HOLD: The contract is another pressure system.",
-          "field_note": "ES LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "ES LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "ES LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "ES LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "ES LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "DE LOC HOLD: The contract is another pressure system.",
-          "field_note": "DE LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "DE LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "DE LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "DE LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "DE LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "PL LOC HOLD: The contract is another pressure system.",
-          "field_note": "PL LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "PL LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "PL LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "PL LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "PL LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "UA LOC HOLD: The contract is another pressure system.",
-          "field_note": "UA LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "UA LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "UA LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "UA LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "UA LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "AR LOC HOLD: The contract is another pressure system.",
-          "field_note": "AR LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "AR LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "AR LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "AR LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "AR LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "ID LOC HOLD: The contract is another pressure system.",
-          "field_note": "ID LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "ID LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "ID LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "ID LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "ID LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "KR LOC HOLD: The contract is another pressure system.",
-          "field_note": "KO LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "KR LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "KR LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "KO LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "KO LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "HE LOC HOLD: The contract is another pressure system.",
-          "field_note": "HE LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "HE LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "HE LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "HE LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "HE LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "PT-BR LOC HOLD: The contract is another pressure system.",
-          "field_note": "PT LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "PT-BR LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "PT-BR LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "PT LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "PT LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Contract Risk Reward Table Contract",
-          "scanner": "NL LOC HOLD: The contract is another pressure system.",
-          "field_note": "NL LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
-          "terminal": "NL LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
-          "audio": "NL LOC HOLD: The clause that pays you can also trap you.",
-          "in_game_wiki": "NL LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
-          "external_site": "NL LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
-        }
-      }
+    "zh_CN": {
+     "title": "CN LOC HOLD: Resource Yield Table Contract",
+     "scanner": "CN LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "CN LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "CN LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "CN LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "CN LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "CN LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
     },
-    {
-      "packet_id": "P265_ENDING_PAYOUT_AUTHORING_ROWS",
-      "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
-      "surface_mask": 65,
-      "article_id": "applied_lore.ending_payout_authoring_rows",
-      "title_key": "applied_lore.ending_payout_authoring_rows.title",
-      "unlock": {
-        "primary": "unlock.ending_payout_authoring_rows",
-        "poi_tags": [
-          "poi.ending_payout_table_card",
-          "poi.payload_receiver_sheet",
-          "poi.keelmark_adjustment_log"
-        ],
-        "biome_tags": [
-          "biome.authoring",
-          "biome.ending"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ending Payout Table Contract",
-          "scanner": "The payout ledger is not the ending. It is the receipt.",
-          "field_note": "Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "A paid claim can still be a failed witness.",
-          "in_game_wiki": "Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Ending Payout Table Contract",
-          "scanner": "Ledger выплаты не концовка. Это квитанция.",
-          "field_note": "RU LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "ENDING PAYOUT: credits, custody, silence и public truth являются разными полями.",
-          "audio": "Оплаченный claim все еще может быть проваленным свидетельством.",
-          "in_game_wiki": "RU LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "RU LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Ending Payout Table Contract",
-          "scanner": "JP LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "JP LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "JP LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "JP LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "JP LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "JP LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Ending Payout Table Contract",
-          "scanner": "CN LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "CN LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "CN LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "CN LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "CN LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "CN LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Ending Payout Table Contract",
-          "scanner": "FR LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "FR LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "FR LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "FR LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "FR LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "FR LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Ending Payout Table Contract",
-          "scanner": "ES LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "ES LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "ES LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "ES LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "ES LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "ES LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Ending Payout Table Contract",
-          "scanner": "DE LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "DE LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "DE LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "DE LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "DE LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "DE LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Ending Payout Table Contract",
-          "scanner": "PL LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "PL LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "PL LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "PL LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "PL LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "PL LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Ending Payout Table Contract",
-          "scanner": "UA LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "UA LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "UA LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "UA LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "UA LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "UA LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Ending Payout Table Contract",
-          "scanner": "AR LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "AR LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "AR LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "AR LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "AR LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "AR LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Ending Payout Table Contract",
-          "scanner": "ID LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "ID LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "ID LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "ID LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "ID LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "ID LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Ending Payout Table Contract",
-          "scanner": "KR LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "KO LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "KR LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "KR LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "KO LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "KO LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Ending Payout Table Contract",
-          "scanner": "HE LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "HE LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "HE LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "HE LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "HE LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "HE LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Ending Payout Table Contract",
-          "scanner": "PT-BR LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "PT LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "PT-BR LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "PT-BR LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "PT LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "PT LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Ending Payout Table Contract",
-          "scanner": "NL LOC HOLD: The payout ledger is not the ending. It is the receipt.",
-          "field_note": "NL LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
-          "terminal": "NL LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
-          "audio": "NL LOC HOLD: A paid claim can still be a failed witness.",
-          "in_game_wiki": "NL LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
-          "external_site": "NL LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Resource Yield Table Contract",
+     "scanner": "FR LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "FR LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "FR LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "FR LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "FR LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "FR LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Resource Yield Table Contract",
+     "scanner": "ES LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "ES LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "ES LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "ES LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "ES LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "ES LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Resource Yield Table Contract",
+     "scanner": "DE LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "DE LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "DE LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "DE LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "DE LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "DE LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Resource Yield Table Contract",
+     "scanner": "PL LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "PL LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "PL LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "PL LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "PL LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "PL LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Resource Yield Table Contract",
+     "scanner": "UA LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "UA LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "UA LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "UA LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "UA LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "UA LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Resource Yield Table Contract",
+     "scanner": "AR LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "AR LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "AR LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "AR LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "AR LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "AR LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Resource Yield Table Contract",
+     "scanner": "ID LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "ID LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "ID LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "ID LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "ID LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "ID LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Resource Yield Table Contract",
+     "scanner": "KR LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "KO LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "KO LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "KR LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "KO LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "KO LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Resource Yield Table Contract",
+     "scanner": "HE LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "HE LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "HE LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "HE LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "HE LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "HE LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Resource Yield Table Contract",
+     "scanner": "PT-BR LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "PT LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "PT LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "PT-BR LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "PT LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "PT LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Resource Yield Table Contract",
+     "scanner": "NL LOC HOLD: The sample value is not lore. It is a table row with pressure context.",
+     "field_note": "NL LOC HOLD: Yield records require resource class, depth band, containment stage, seed variance, and custody grade. Article prose does not own final numbers.",
+     "terminal": "NL LOC HOLD: RESOURCE YIELD CONTRACT: packet id, resource class, depth band, rarity curve, depletion rule, and evidence role are required before a yield number is accepted.",
+     "audio": "NL LOC HOLD: If a number can be tuned, it does not belong in a log.",
+     "in_game_wiki": "NL LOC HOLD: Resource Yield Table Contract keeps resource value deterministic while the lore keeps pressure, custody, and evidence context readable.",
+     "external_site": "NL LOC HOLD: HECTON-8 resources are hard-sci-fi categories first; table-owned balance numbers come after pressure, custody, and route evidence."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P262_INVENTORY_STACK_AUTHORING_ROWS",
+   "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
+   "surface_mask": 65,
+   "article_id": "applied_lore.inventory_stack_authoring_rows",
+   "title_key": "applied_lore.inventory_stack_authoring_rows.title",
+   "unlock": {
+    "primary": "unlock.inventory_stack_authoring_rows",
+    "poi_tags": [
+     "poi.inventory_stack_table_card",
+     "poi.containment_rack",
+     "poi.lien_mass_label"
+    ],
+    "biome_tags": [
+     "biome.authoring",
+     "biome.inventory"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Inventory Stack Table Contract",
+     "scanner": "This rack stores pressure, not icons.",
+     "field_note": "Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "Эта стойка хранит давление, а не иконки.",
+     "field_note": "RU LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "STACK TABLE: стабильный item id; max stack принадлежит таблице; причина контейнера принадлежит packet lore.",
+     "audio": "Дешевая тара держит лом. Она не держит пробу-свидетеля.",
+     "in_game_wiki": "RU LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "RU LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "JP LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "JP LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "JP LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "JP LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "JP LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "JP LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "CN LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "CN LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "CN LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "CN LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "CN LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "CN LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "FR LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "FR LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "FR LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "FR LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "FR LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "FR LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "ES LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "ES LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "ES LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "ES LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "ES LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "ES LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "DE LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "DE LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "DE LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "DE LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "DE LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "DE LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "PL LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "PL LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "PL LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "PL LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "PL LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "PL LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "UA LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "UA LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "UA LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "UA LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "UA LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "UA LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "AR LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "AR LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "AR LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "AR LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "AR LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "AR LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "ID LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "ID LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "ID LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "ID LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "ID LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "ID LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "KR LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "KO LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "KR LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "KR LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "KO LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "KO LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "HE LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "HE LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "HE LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "HE LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "HE LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "HE LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "PT-BR LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "PT LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "PT-BR LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "PT-BR LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "PT LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "PT LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Inventory Stack Table Contract",
+     "scanner": "NL LOC HOLD: This rack stores pressure, not icons.",
+     "field_note": "NL LOC HOLD: Stack records require item class, vessel class, pressure certification, contamination stage, mass equivalent, and UI warning tier.",
+     "terminal": "NL LOC HOLD: STACK TABLE: stable item id; table-owned max stack; packet-owned containment reason.",
+     "audio": "NL LOC HOLD: A cheap crate can hold scrap. It cannot hold a witness sample.",
+     "in_game_wiki": "NL LOC HOLD: Inventory Stack Table Contract keeps resource storage physical, pressure-rated, and debt-aware.",
+     "external_site": "NL LOC HOLD: HECTON-8 inventory pressure comes from vessel class, certification, contamination, and mass rather than generic loot-stack convenience."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P263_ESCAPE_RECIPE_AUTHORING_ROWS",
+   "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
+   "surface_mask": 65,
+   "article_id": "applied_lore.escape_recipe_authoring_rows",
+   "title_key": "applied_lore.escape_recipe_authoring_rows.title",
+   "unlock": {
+    "primary": "unlock.escape_recipe_authoring_rows",
+    "poi_tags": [
+     "poi.escape_recipe_table_card",
+     "poi.ascent_part_rack",
+     "poi.p63_recipe_gate"
+    ],
+    "biome_tags": [
+     "biome.authoring",
+     "biome.escape"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ascent Recipe Table Contract",
+     "scanner": "The recipe is a launch certificate in pieces.",
+     "field_note": "Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "Рецепт побега - это сертификат запуска, разорванный на детали.",
+     "field_note": "RU LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "ASCENT RECIPE: аварийная заплатка не является ascent-qualified hardware.",
+     "audio": "Не доверяй фабрикатору, который не может испытать собственный ответ давлением.",
+     "in_game_wiki": "RU LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "RU LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "JP LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "JP LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "JP LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "JP LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "JP LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "JP LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "CN LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "CN LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "CN LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "CN LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "CN LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "CN LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "FR LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "FR LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "FR LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "FR LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "FR LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "FR LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "ES LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "ES LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "ES LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "ES LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "ES LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "ES LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "DE LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "DE LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "DE LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "DE LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "DE LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "DE LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "PL LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "PL LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "PL LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "PL LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "PL LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "PL LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "UA LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "UA LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "UA LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "UA LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "UA LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "UA LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "AR LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "AR LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "AR LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "AR LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "AR LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "AR LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "ID LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "ID LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "ID LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "ID LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "ID LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "ID LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "KR LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "KO LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "KR LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "KR LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "KO LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "KO LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "HE LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "HE LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "HE LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "HE LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "HE LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "HE LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "PT-BR LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "PT LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "PT-BR LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "PT-BR LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "PT LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "PT LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Ascent Recipe Table Contract",
+     "scanner": "NL LOC HOLD: The recipe is a launch certificate in pieces.",
+     "field_note": "NL LOC HOLD: Ascent records require component family, certification band, source depth, pressure test, authority proof, and failure consequence.",
+     "terminal": "NL LOC HOLD: ASCENT RECIPE: emergency patch is not ascent-qualified hardware.",
+     "audio": "NL LOC HOLD: Do not trust a fabricator that cannot pressure-test its own answer.",
+     "in_game_wiki": "NL LOC HOLD: Ascent Recipe Table Contract keeps extraction mechanical: component family, certification, source depth, pressure test, authority, and consequence.",
+     "external_site": "NL LOC HOLD: Leaving HECTON-8 is engineering under pressure: signal, seal, guidance, ascent energy, legal handshake, and payload custody."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P264_CONTRACT_RISK_REWARD_AUTHORING_ROWS",
+   "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
+   "surface_mask": 65,
+   "article_id": "applied_lore.contract_risk_reward_authoring_rows",
+   "title_key": "applied_lore.contract_risk_reward_authoring_rows.title",
+   "unlock": {
+    "primary": "unlock.contract_risk_reward_authoring_rows",
+    "poi_tags": [
+     "poi.contract_risk_table_card",
+     "poi.black_keel_lien_board",
+     "poi.storm_window_ledger"
+    ],
+    "biome_tags": [
+     "biome.authoring",
+     "biome.contract"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Contract Risk Reward Table Contract",
+     "scanner": "The contract is another pressure system.",
+     "field_note": "Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "The clause that pays you can also trap you.",
+     "in_game_wiki": "Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "Контракт - еще одна система давления.",
+     "field_note": "RU LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "CONTRACT TABLE: риск является непрерывным давлением, а не тумблером сложности.",
+     "audio": "Пункт договора, который платит, может и запереть.",
+     "in_game_wiki": "RU LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "RU LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "JP LOC HOLD: The contract is another pressure system.",
+     "field_note": "JP LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "JP LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "JP LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "JP LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "JP LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "CN LOC HOLD: The contract is another pressure system.",
+     "field_note": "CN LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "CN LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "CN LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "CN LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "CN LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "FR LOC HOLD: The contract is another pressure system.",
+     "field_note": "FR LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "FR LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "FR LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "FR LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "FR LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "ES LOC HOLD: The contract is another pressure system.",
+     "field_note": "ES LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "ES LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "ES LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "ES LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "ES LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "DE LOC HOLD: The contract is another pressure system.",
+     "field_note": "DE LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "DE LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "DE LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "DE LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "DE LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "PL LOC HOLD: The contract is another pressure system.",
+     "field_note": "PL LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "PL LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "PL LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "PL LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "PL LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "UA LOC HOLD: The contract is another pressure system.",
+     "field_note": "UA LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "UA LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "UA LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "UA LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "UA LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "AR LOC HOLD: The contract is another pressure system.",
+     "field_note": "AR LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "AR LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "AR LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "AR LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "AR LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "ID LOC HOLD: The contract is another pressure system.",
+     "field_note": "ID LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "ID LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "ID LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "ID LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "ID LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "KR LOC HOLD: The contract is another pressure system.",
+     "field_note": "KO LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "KR LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "KR LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "KO LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "KO LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "HE LOC HOLD: The contract is another pressure system.",
+     "field_note": "HE LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "HE LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "HE LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "HE LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "HE LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "PT-BR LOC HOLD: The contract is another pressure system.",
+     "field_note": "PT LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "PT-BR LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "PT-BR LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "PT LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "PT LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Contract Risk Reward Table Contract",
+     "scanner": "NL LOC HOLD: The contract is another pressure system.",
+     "field_note": "NL LOC HOLD: Reward records tie payout to return route, custody, evidence order, storm window, lien mass, and clause pressure.",
+     "terminal": "NL LOC HOLD: CONTRACT TABLE: risk is continuous pressure, not a difficulty toggle.",
+     "audio": "NL LOC HOLD: The clause that pays you can also trap you.",
+     "in_game_wiki": "NL LOC HOLD: Contract Risk Reward Table Contract makes replay pressure physical, legal, orbital, and debt-driven without inherited power.",
+     "external_site": "NL LOC HOLD: HECTON-8 salvage contracts pressure the player through return routes, custody, evidence order, lien mass, storm windows, and Deep Reach clauses."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P265_ENDING_PAYOUT_AUTHORING_ROWS",
+   "release_set_id": "RS053_NUMERIC_AUTHORING_BRIDGE_SURFACES",
+   "surface_mask": 65,
+   "article_id": "applied_lore.ending_payout_authoring_rows",
+   "title_key": "applied_lore.ending_payout_authoring_rows.title",
+   "unlock": {
+    "primary": "unlock.ending_payout_authoring_rows",
+    "poi_tags": [
+     "poi.ending_payout_table_card",
+     "poi.payload_receiver_sheet",
+     "poi.keelmark_adjustment_log"
+    ],
+    "biome_tags": [
+     "biome.authoring",
+     "biome.ending"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ending Payout Table Contract",
+     "scanner": "The payout ledger is not the ending. It is the receipt.",
+     "field_note": "Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "A paid claim can still be a failed witness.",
+     "in_game_wiki": "Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Ending Payout Table Contract",
+     "scanner": "Ledger выплаты не концовка. Это квитанция.",
+     "field_note": "RU LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "ENDING PAYOUT: credits, custody, silence и public truth являются разными полями.",
+     "audio": "Оплаченный claim все еще может быть проваленным свидетельством.",
+     "in_game_wiki": "RU LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "RU LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Ending Payout Table Contract",
+     "scanner": "JP LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "JP LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "JP LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "JP LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "JP LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "JP LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Ending Payout Table Contract",
+     "scanner": "CN LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "CN LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "CN LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "CN LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "CN LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "CN LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Ending Payout Table Contract",
+     "scanner": "FR LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "FR LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "FR LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "FR LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "FR LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "FR LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Ending Payout Table Contract",
+     "scanner": "ES LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "ES LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "ES LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "ES LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "ES LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "ES LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Ending Payout Table Contract",
+     "scanner": "DE LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "DE LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "DE LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "DE LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "DE LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "DE LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Ending Payout Table Contract",
+     "scanner": "PL LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "PL LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "PL LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "PL LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "PL LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "PL LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Ending Payout Table Contract",
+     "scanner": "UA LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "UA LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "UA LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "UA LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "UA LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "UA LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Ending Payout Table Contract",
+     "scanner": "AR LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "AR LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "AR LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "AR LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "AR LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "AR LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Ending Payout Table Contract",
+     "scanner": "ID LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "ID LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "ID LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "ID LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "ID LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "ID LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Ending Payout Table Contract",
+     "scanner": "KR LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "KO LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "KR LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "KR LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "KO LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "KO LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Ending Payout Table Contract",
+     "scanner": "HE LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "HE LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "HE LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "HE LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "HE LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "HE LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Ending Payout Table Contract",
+     "scanner": "PT-BR LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "PT LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "PT-BR LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "PT-BR LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "PT LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "PT LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Ending Payout Table Contract",
+     "scanner": "NL LOC HOLD: The payout ledger is not the ending. It is the receipt.",
+     "field_note": "NL LOC HOLD: Ending records require receiver, payload route, evidence state, lien adjustment, consequence tag, and dossier flag.",
+     "terminal": "NL LOC HOLD: ENDING PAYOUT: credits, custody, silence and public truth are separate fields.",
+     "audio": "NL LOC HOLD: A paid claim can still be a failed witness.",
+     "in_game_wiki": "NL LOC HOLD: Ending Payout Table Contract records what a material route or truth route leaves in the Marauder dossier.",
+     "external_site": "NL LOC HOLD: HECTON-8 endings remember payload authority, receiver custody, public truth, credits, silence, and unresolved cost without turning consequence into victory score."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

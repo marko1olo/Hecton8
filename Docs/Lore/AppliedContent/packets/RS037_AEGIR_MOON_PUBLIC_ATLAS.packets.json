@@ -1,787 +1,794 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P181_MOON_NAME_LOCK_POLICY",
-      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
-      "article_id": "aegir_moons.moon_name_lock_policy",
-      "title_key": "applied_lore.moon_name_lock_policy.title",
-      "unlock": {
-        "primary": "unlock.moon_name_lock_policy",
-        "poi_tags": [
-          "poi.moon_atlas_name_plate",
-          "poi.route_catalog_stamp",
-          "poi.insurance_ephemeris_note"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.relay_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Aegir Moon Role Ledger",
-          "scanner": "Public names drift between charts; the orbits keep their jobs.",
-          "field_note": "Skarn shears particles. Vela masks relays. Claw throws ice. Lumen prints routes. Thorne carries quarantine rumors. Anvil feeds salvage. Kestrel owns high windows. HECTON keeps the deep claim. Mute sells dead beacons.",
-          "terminal": "ATLAS LEDGER: public labels vary by insurer and route chart. Functional roles remain fixed: radiation shear, relay mask, tide forcing, ice scatter, public routing, quarantine rumor, industrial salvage, high-window traffic, deep claim and dead-beacon economy.",
-          "audio": "You can rename a moon. You still pay the orbit.",
-          "in_game_wiki": "Aegir's moon list is a working traffic chart. Each body around the gas giant changes traffic, salvage claim law, communication timing or HECTON-8 extraction planning.",
-          "external_site": "Aegir Moon Role Ledger records why public names can drift while orbital labor stays fixed: relay masking, tide forcing, quarantine rumor and high-window traffic decide who can move."
-        },
-        "ru_RU": {
-          "title": "Реестр ролей лун Aegir",
-          "scanner": "Публичные имена дрейфуют между картами; орбиты продолжают выполнять свою работу.",
-          "field_note": "Skarn режет частицы. Vela маскирует ретрансляторы. Claw бросает лед. Lumen печатает маршруты. Thorne несет карантинные слухи. Anvil кормит salvage. Kestrel держит высокие окна. HECTON хранит глубокую претензию. Mute продает мертвые маяки.",
-          "terminal": "РЕЕСТР ATLAS: публичные ярлыки меняются у страховщиков и маршрутных карт. Функции остаются фиксированными: радиационный сдвиг, маска ретрансляции, приливное давление, ледяное рассеяние, публичная маршрутизация, карантинный слух, промышленный salvage, трафик высоких окон, глубокая претензия и экономика мертвых маяков.",
-          "audio": "Луну можно переименовать. За орбиту все равно придется платить.",
-          "in_game_wiki": "Список лун Aegir - рабочая карта движения. Каждое тело вокруг газового гиганта меняет трафик, право спасательных претензий, тайминг связи или планирование выхода с HECTON-8.",
-          "external_site": "Реестр ролей лун Aegir фиксирует, почему публичные названия могут дрейфовать, а орбитальная работа остается прежней: маска ретрансляторов, приливное давление, карантинные слухи и высокие окна решают, кто вообще может двигаться."
-        },
-        "ja_JP": {
-          "title": "Aegir 月群役割台帳",
-          "scanner": "公開名はチャートの間で揺れる。軌道の仕事は変わらない。",
-          "field_note": "Skarn は粒子を裂く。Vela はリレーを隠す。Claw は氷を投げる。Lumen は航路を印刷する。Thorne は検疫の噂を運ぶ。Anvil は salvage を供給する。Kestrel は高窓を押さえる。HECTON は深部請求を抱える。Mute は死んだビーコンを売る。",
-          "terminal": "ATLAS LEDGER: 公開ラベルは保険者と航路チャートごとに変動する。機能役割は固定: 放射線シア、リレーマスク、潮汐強制、氷散乱、公開航路、検疫噂、工業 salvage、高窓交通、深部請求、死ビーコン経済。",
-          "audio": "月の名は変えられる。軌道の請求書は残る。",
-          "in_game_wiki": "Aegir の月リストは稼働中の交通図だ。ガス巨星の周囲にある各天体は、交通、サルベージ請求法、通信タイミング、または HECTON-8 からの離脱計画を変える。",
-          "external_site": "Aegir 月群役割台帳は、公開名が揺れても軌道上の仕事が固定される理由を記録する。リレーマスク、潮汐強制、検疫の噂、高窓交通が、誰が動けるかを決める。"
-        },
-        "zh_CN": {
-          "title": "Aegir 月群职能账簿",
-          "scanner": "公共名称会在星图之间漂移；轨道仍然做自己的事。",
-          "field_note": "Skarn 剪切粒子。Vela 遮蔽中继。Claw 抛撒冰粒。Lumen 印发航路。Thorne 携带隔离传闻。Anvil 供养 salvage。Kestrel 掌握高窗口交通。HECTON 保留深层索赔。Mute 出售死信标。",
-          "terminal": "ATLAS LEDGER: 公共标签会随保险方和航路图变化。功能角色保持固定：辐射剪切、中继遮蔽、潮汐强迫、冰粒散射、公共航路、隔离传闻、工业 salvage、高窗口交通、深层索赔和死信标经济。",
-          "audio": "你可以重命名一颗月亮。轨道照样收费。",
-          "in_game_wiki": "Aegir 的月群名单是一张正在工作的交通图。气态巨行星周围的每个天体都会改变交通、打捞索赔法、通信时机或 HECTON-8 撤离规划。",
-          "external_site": "Aegir 月群职能账簿记录了为什么公共名称可以漂移，而轨道职责保持不变：中继遮蔽、潮汐强迫、隔离传闻和高窗口交通决定谁能移动。"
-        },
-        "fr_FR": {
-          "title": "Registre des rôles lunaires d'Aegir",
-          "scanner": "Les noms publics dérivent selon les cartes ; les orbites gardent leur travail.",
-          "field_note": "Skarn cisaille les particules. Vela masque les relais. Claw projette la glace. Lumen imprime les routes. Thorne porte les rumeurs de quarantaine. Anvil nourrit le salvage. Kestrel tient les fenêtres hautes. HECTON garde la réclamation profonde. Mute vend des balises mortes.",
-          "terminal": "REGISTRE ATLAS : les étiquettes publiques varient selon l'assureur et la carte de route. Les rôles fonctionnels restent fixes : cisaillement radiatif, masque de relais, forçage de marée, diffusion de glace, routage public, rumeur de quarantaine, salvage industriel, trafic de fenêtre haute, réclamation profonde et économie de balises mortes.",
-          "audio": "On peut renommer une lune. L'orbite présente quand même la facture.",
-          "in_game_wiki": "La liste des lunes d'Aegir est une carte de trafic en service. Chaque corps autour de la géante gazeuse modifie le trafic, le droit des réclamations de salvage, le timing de communication ou la planification d'extraction depuis HECTON-8.",
-          "external_site": "Le registre des rôles lunaires d'Aegir note pourquoi les noms publics peuvent dériver tandis que le travail orbital reste fixe : masquage des relais, forçage de marée, rumeur de quarantaine et trafic de fenêtre haute décident qui peut bouger."
-        },
-        "es_ES": {
-          "title": "Registro de roles lunares de Aegir",
-          "scanner": "Los nombres públicos derivan entre cartas; las órbitas conservan su trabajo.",
-          "field_note": "Skarn corta partículas. Vela enmascara relés. Claw arroja hielo. Lumen imprime rutas. Thorne carga rumores de cuarentena. Anvil alimenta salvage. Kestrel controla ventanas altas. HECTON conserva la reclamación profunda. Mute vende balizas muertas.",
-          "terminal": "REGISTRO ATLAS: las etiquetas públicas varían por aseguradora y carta de ruta. Los roles funcionales permanecen fijos: cizalla de radiación, máscara de relé, forzado de marea, dispersión de hielo, rutas públicas, rumor de cuarentena, salvage industrial, tráfico de ventana alta, reclamación profunda y economía de balizas muertas.",
-          "audio": "Puedes renombrar una luna. La órbita sigue cobrando.",
-          "in_game_wiki": "La lista de lunas de Aegir es una carta de tráfico en servicio. Cada cuerpo alrededor del gigante gaseoso cambia tráfico, ley de reclamaciones de salvamento, tiempos de comunicación o planificación de extracción desde HECTON-8.",
-          "external_site": "El Registro de roles lunares de Aegir anota por qué los nombres públicos pueden derivar mientras el trabajo orbital queda fijo: máscara de relé, fuerza de marea, rumor de cuarentena y tráfico de ventana alta deciden quién puede moverse."
-        },
-        "de_DE": {
-          "title": "Aegir-Mondrollen-Ledger",
-          "scanner": "Öffentliche Namen wandern zwischen Karten; die Orbits behalten ihre Arbeit.",
-          "field_note": "Skarn schert Partikel. Vela maskiert Relais. Claw wirft Eis. Lumen druckt Routen. Thorne trägt Quarantänegerüchte. Anvil füttert salvage. Kestrel hält Hochfenster. HECTON bewahrt den Tiefenanspruch. Mute verkauft tote Baken.",
-          "terminal": "ATLAS LEDGER: öffentliche Labels variieren je nach Versicherer und Routenkarte. Funktionsrollen bleiben fix: Strahlungsscherung, Relaismaske, Gezeitenzwang, Eisstreuung, öffentliche Routen, Quarantänegerücht, industrielles salvage, Hochfensterverkehr, Tiefenanspruch und Tote-Baken-Ökonomie.",
-          "audio": "Du kannst einen Mond umbenennen. Der Orbit stellt trotzdem die Rechnung.",
-          "in_game_wiki": "Aegirs Mondliste ist eine laufende Verkehrskarte. Jeder Körper um den Gasriesen verändert Verkehr, Bergungsanspruchsrecht, Kommunikationstiming oder HECTON-8-Extraktionsplanung.",
-          "external_site": "Das Aegir-Mondrollen-Ledger hält fest, warum öffentliche Namen wandern können, während orbitale Arbeit fix bleibt: Relaismasken, Gezeitenzwang, Quarantänegerüchte und Hochfensterverkehr entscheiden, wer sich bewegen darf."
-        },
-        "pl_PL": {
-          "title": "Rejestr ról księżyców Aegir",
-          "scanner": "Publiczne nazwy dryfują między mapami; orbity dalej wykonują swoją pracę.",
-          "field_note": "Skarn tnie cząstki. Vela maskuje przekaźniki. Claw rzuca lodem. Lumen drukuje trasy. Thorne niesie plotki o kwarantannie. Anvil karmi salvage. Kestrel trzyma wysokie okna. HECTON przechowuje głębokie roszczenie. Mute sprzedaje martwe boje.",
-          "terminal": "REJESTR ATLAS: publiczne etykiety różnią się według ubezpieczyciela i mapy trasy. Role funkcjonalne zostają stałe: ścinanie promieniowania, maska przekaźnika, wymuszenie pływowe, rozpraszanie lodu, trasy publiczne, plotka kwarantanny, przemysłowy salvage, ruch wysokich okien, głębokie roszczenie i ekonomia martwych boi.",
-          "audio": "Księżyc można przemianować. Orbita i tak wystawi rachunek.",
-          "in_game_wiki": "Lista księżyców Aegir jest działającą mapą ruchu. Każde ciało wokół gazowego olbrzyma zmienia ruch, prawo roszczeń salvage, timing łączności albo planowanie wyjścia z HECTON-8.",
-          "external_site": "Rejestr ról księżyców Aegir zapisuje, dlaczego publiczne nazwy mogą dryfować, a praca orbitalna zostaje stała: maskowanie przekaźników, wymuszenie pływowe, plotka kwarantanny i ruch wysokich okien decydują, kto może się ruszyć."
-        },
-        "uk_UA": {
-          "title": "Реєстр ролей місяців Aegir",
-          "scanner": "Публічні назви дрейфують між картами; орбіти продовжують свою роботу.",
-          "field_note": "Skarn ріже частинки. Vela маскує ретранслятори. Claw кидає лід. Lumen друкує маршрути. Thorne несе карантинні чутки. Anvil живить salvage. Kestrel тримає високі вікна. HECTON зберігає глибоку претензію. Mute продає мертві маяки.",
-          "terminal": "РЕЄСТР ATLAS: публічні ярлики змінюються залежно від страховика й маршрутної карти. Функції лишаються фіксованими: радіаційний зсув, маска ретрансляції, припливний тиск, крижане розсіювання, публічна маршрутизація, карантинний слух, промисловий salvage, трафік високих вікон, глибока претензія й економіка мертвих маяків.",
-          "audio": "Місяць можна перейменувати. За орбіту все одно доведеться платити.",
-          "in_game_wiki": "Список місяців Aegir - робоча карта руху. Кожне тіло навколо газового гіганта змінює трафік, право рятувальних претензій, таймінг зв'язку або планування виходу з HECTON-8.",
-          "external_site": "Реєстр ролей місяців Aegir фіксує, чому публічні назви можуть дрейфувати, а орбітальна робота лишається сталою: маска ретрансляторів, припливний тиск, карантинні чутки й високі вікна вирішують, хто взагалі може рухатися."
-        },
-        "ar_SA": {
-          "title": "سجل أدوار أقمار Aegir",
-          "scanner": "تنجرف الأسماء العامة بين الخرائط؛ أما المدارات فتحتفظ بوظائفها.",
-          "field_note": "Skarn يمزق الجسيمات. Vela يحجب المرحلات. Claw يقذف الجليد. Lumen يطبع المسارات. Thorne يحمل شائعات الحجر. Anvil يغذي salvage. Kestrel يملك النوافذ العالية. HECTON يحتفظ بالمطالبة العميقة. Mute يبيع منارات ميتة.",
-          "terminal": "سجل ATLAS: تختلف التسميات العامة حسب شركة التأمين وخريطة المسار. تبقى الأدوار ثابتة: قص إشعاعي، قناع مرحل، دفع مدي، تشتت جليدي، توجيه عام، شائعة حجر، salvage صناعي، مرور النوافذ العالية، مطالبة عميقة، واقتصاد المنارات الميتة.",
-          "audio": "يمكنك تغيير اسم قمر. لكن المدار يطالبك بالفاتورة.",
-          "in_game_wiki": "قائمة أقمار Aegir خريطة مرور عاملة. كل جسم حول العملاق الغازي يغير المرور، وقانون مطالبات الإنقاذ، وتوقيت الاتصال، أو تخطيط الخروج من HECTON-8.",
-          "external_site": "يسجل سجل أدوار أقمار Aegir سبب انجراف الأسماء العامة بينما يبقى العمل المداري ثابتا: حجب المرحلات، ودفع المد، وشائعة الحجر، ومرور النوافذ العالية تحدد من يستطيع التحرك."
-        },
-        "id_ID": {
-          "title": "Ledger Peran Bulan Aegir",
-          "scanner": "Nama publik bergeser antar peta; orbit tetap menjalankan tugasnya.",
-          "field_note": "Skarn membelah partikel. Vela menutupi relai. Claw melempar es. Lumen mencetak rute. Thorne membawa rumor karantina. Anvil memberi makan salvage. Kestrel menguasai jendela tinggi. HECTON menyimpan klaim dalam. Mute menjual suar mati.",
-          "terminal": "LEDGER ATLAS: label publik berubah menurut asuransi dan peta rute. Peran fungsional tetap: geser radiasi, masker relai, paksa pasang, sebar es, rute publik, rumor karantina, salvage industri, lalu lintas jendela tinggi, klaim dalam, dan ekonomi suar mati.",
-          "audio": "Kau bisa mengganti nama bulan. Orbit tetap menagih.",
-          "in_game_wiki": "Daftar bulan Aegir adalah peta lalu lintas yang sedang bekerja. Setiap benda di sekitar raksasa gas mengubah lalu lintas, hukum klaim salvage, waktu komunikasi, atau rencana ekstraksi HECTON-8.",
-          "external_site": "Ledger Peran Bulan Aegir mencatat mengapa nama publik bisa bergeser sementara kerja orbit tetap: penutup relai, paksa pasang, rumor karantina, dan lalu lintas jendela tinggi menentukan siapa yang bisa bergerak."
-        },
-        "ko_KR": {
-          "title": "Aegir 달 역할 원장",
-          "scanner": "공개 명칭은 차트마다 흔들리지만, 궤도는 제 일을 계속한다.",
-          "field_note": "Skarn은 입자를 전단한다. Vela는 중계를 가린다. Claw는 얼음을 던진다. Lumen은 항로를 인쇄한다. Thorne은 격리 소문을 운반한다. Anvil은 salvage를 먹인다. Kestrel은 높은 창을 장악한다. HECTON은 깊은 청구를 품는다. Mute는 죽은 비콘을 판다.",
-          "terminal": "ATLAS LEDGER: 공개 라벨은 보험자와 항로 차트에 따라 달라진다. 기능 역할은 고정된다: 방사선 전단, 중계 마스크, 조석 강제, 얼음 산란, 공개 항로, 격리 소문, 산업 salvage, 높은 창 교통, 깊은 청구, 죽은 비콘 경제.",
-          "audio": "달 이름은 바꿀 수 있다. 궤도는 여전히 청구서를 보낸다.",
-          "in_game_wiki": "Aegir의 달 목록은 실제로 돌아가는 교통도다. 가스 거성 주변의 각 천체는 교통, salvage 청구법, 통신 타이밍 또는 HECTON-8 탈출 계획을 바꾼다.",
-          "external_site": "Aegir 달 역할 원장은 공개 이름이 흔들려도 궤도 업무가 고정되는 이유를 기록한다. 중계 가림, 조석 강제, 격리 소문, 높은 창 교통이 누가 움직일 수 있는지를 결정한다."
-        },
-        "he_IL": {
-          "title": "יומן תפקידי הירחים של Aegir",
-          "scanner": "השמות הציבוריים נודדים בין מפות; המסלולים שומרים על עבודתם.",
-          "field_note": "Skarn גוזר חלקיקים. Vela מסתיר ממסרים. Claw זורק קרח. Lumen מדפיס נתיבים. Thorne נושא שמועות הסגר. Anvil מזין salvage. Kestrel מחזיק חלונות גבוהים. HECTON שומר את התביעה העמוקה. Mute מוכר משואות מתות.",
-          "terminal": "יומן ATLAS: תוויות ציבוריות משתנות לפי מבטח ומפת נתיב. התפקידים קבועים: גזירת קרינה, מסכת ממסר, אילוץ גאות, פיזור קרח, ניתוב ציבורי, שמועת הסגר, salvage תעשייתי, תנועת חלון גבוה, תביעה עמוקה וכלכלת משואות מתות.",
-          "audio": "אפשר לשנות שם של ירח. המסלול עדיין מגיש חשבון.",
-          "in_game_wiki": "רשימת הירחים של Aegir היא מפת תנועה עובדת. כל גוף סביב ענק הגז משנה תנועה, חוק תביעות חילוץ, תזמון תקשורת או תכנון יציאה מ-HECTON-8.",
-          "external_site": "יומן תפקידי הירחים של Aegir מתעד מדוע שמות ציבוריים יכולים לנדוד בזמן שעבודת המסלול נשארת קבועה: הסתרת ממסרים, אילוץ גאות, שמועת הסגר ותנועת חלון גבוה קובעים מי יכול לזוז."
-        },
-        "pt_BR": {
-          "title": "Ledger de Funções Lunares de Aegir",
-          "scanner": "Nomes públicos derivam entre cartas; as órbitas mantêm seus trabalhos.",
-          "field_note": "Skarn cisalha partículas. Vela mascara relés. Claw arremessa gelo. Lumen imprime rotas. Thorne carrega rumores de quarentena. Anvil alimenta salvage. Kestrel controla janelas altas. HECTON guarda a reivindicação profunda. Mute vende balizas mortas.",
-          "terminal": "LEDGER ATLAS: rótulos públicos variam por seguradora e carta de rota. Funções permanecem fixas: cisalhamento de radiação, máscara de relé, força de maré, dispersão de gelo, roteamento público, rumor de quarentena, salvage industrial, tráfego de janela alta, reivindicação profunda e economia de balizas mortas.",
-          "audio": "Você pode renomear uma lua. A órbita ainda cobra.",
-          "in_game_wiki": "A lista de luas de Aegir é uma carta de tráfego em operação. Cada corpo ao redor do gigante gasoso muda tráfego, lei de reivindicação de salvage, timing de comunicação ou planejamento de extração de HECTON-8.",
-          "external_site": "O Ledger de Funções Lunares de Aegir registra por que nomes públicos podem derivar enquanto o trabalho orbital fica fixo: máscara de relé, força de maré, rumor de quarentena e tráfego de janela alta decidem quem pode se mover."
-        },
-        "nl_NL": {
-          "title": "Aegir-maanrollenledger",
-          "scanner": "Publieke namen verschuiven tussen kaarten; de banen houden hun werk.",
-          "field_note": "Skarn scheert deeltjes. Vela maskeert relais. Claw werpt ijs. Lumen drukt routes. Thorne draagt quarantaineruchten. Anvil voedt salvage. Kestrel bezit hoge vensters. HECTON bewaart de diepe claim. Mute verkoopt dode bakens.",
-          "terminal": "ATLAS LEDGER: publieke labels verschillen per verzekeraar en routekaart. Functionele rollen blijven vast: stralingsschering, relaismasker, getijdenforcing, ijsverstrooiing, publieke routering, quarantainerucht, industriële salvage, hoog-vensterverkeer, diepe claim en dode-baken-economie.",
-          "audio": "Je kunt een maan hernoemen. De baan stuurt nog steeds de rekening.",
-          "in_game_wiki": "Aegirs maanlijst is een werkende verkeerskaart. Elk lichaam rond de gasreus verandert verkeer, bergingsclaimrecht, communicatietiming of HECTON-8-extractieplanning.",
-          "external_site": "Het Aegir-maanrollenledger legt vast waarom publieke namen kunnen verschuiven terwijl orbitaal werk vast blijft: relaismaskering, getijdedwang, quarantaineruchten en hoogvensterverkeer bepalen wie mag bewegen."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P181_MOON_NAME_LOCK_POLICY",
+   "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+   "article_id": "aegir_moons.moon_name_lock_policy",
+   "title_key": "applied_lore.moon_name_lock_policy.title",
+   "unlock": {
+    "primary": "unlock.moon_name_lock_policy",
+    "poi_tags": [
+     "poi.moon_atlas_name_plate",
+     "poi.route_catalog_stamp",
+     "poi.insurance_ephemeris_note"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.relay_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Aegir Moon Role Ledger",
+     "scanner": "Public names drift between charts; the orbits keep their jobs.",
+     "field_note": "Skarn shears particles. Vela masks relays. Claw throws ice. Lumen prints routes. Thorne carries quarantine rumors. Anvil feeds salvage. Kestrel owns high windows. HECTON keeps the deep claim. Mute sells dead beacons.",
+     "terminal": "ATLAS LEDGER: public labels vary by insurer and route chart. Functional roles remain fixed: radiation shear, relay mask, tide forcing, ice scatter, public routing, quarantine rumor, industrial salvage, high-window traffic, deep claim and dead-beacon economy.",
+     "audio": "You can rename a moon. You still pay the orbit.",
+     "in_game_wiki": "Aegir's moon list is a working traffic chart. Each body around the gas giant changes traffic, salvage claim law, communication timing or HECTON-8 extraction planning.",
+     "external_site": "Aegir Moon Role Ledger records why public names can drift while orbital labor stays fixed: relay masking, tide forcing, quarantine rumor and high-window traffic decide who can move."
     },
-    {
-      "packet_id": "P182_HECTON8_ORBITAL_HAZARD_TABLE",
-      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
-      "article_id": "aegir_moons.hecton8_orbital_hazard_table",
-      "title_key": "applied_lore.hecton8_orbital_hazard_table.title",
-      "unlock": {
-        "primary": "unlock.hecton8_orbital_hazard_table",
-        "poi_tags": [
-          "poi.eclipse_window_chart",
-          "poi.radiation_shutter_clock",
-          "poi.ice_scatter_warning"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.upper_atmosphere"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "HECTON-8 Orbital Hazard Table",
-          "scanner": "Extraction from HECTON-8 is gated by eclipse, radiation surge, relay shutter, ice scatter and storm-plume windows.",
-          "field_note": "No one is parking rescue for drama. Ascent has to meet the sky's bad schedule.",
-          "terminal": "ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be cleared before ascent.",
-          "audio": "The sky above the ocean is a machine with teeth in the timing.",
-          "in_game_wiki": "Orbital hazards explain why a repaired capsule is not enough. The ascent chain still needs relay access, guidance timing, shielding work and a legal launch window before HECTON-8 can be left behind.",
-          "external_site": "HECTON-8 Orbital Hazard Table shows rescue as a chain of moving gates: radiation shear, debris, eclipse, legal beacons and custody windows, each able to close an otherwise repaired ascent."
-        },
-        "ru_RU": {
-          "title": "Таблица орбитальных угроз HECTON-8",
-          "scanner": "Выход с HECTON-8 заперт окнами затмения, радиационного всплеска, релейного затвора, ледяного рассеяния и штормового plume.",
-          "field_note": "Спасение не держат в стороне ради драмы. Взлет должен попасть в плохое расписание неба.",
-          "terminal": "ТАБЛИЦА ОРБИТАЛЬНЫХ УГРОЗ: blackout затмения, всплеск заряженных частиц Aegir, лунный релейный затвор, рассеяние ледяных зерен, storm plume и окна guidance-lag должны быть закрыты до взлета.",
-          "audio": "Небо над океаном - машина, у которой зубья сидят в тайминге.",
-          "in_game_wiki": "Орбитальные угрозы объясняют, почему отремонтированной капсулы мало. Цепи подъема все еще нужны доступ к ретранслятору, тайминг наведения, защита и законное стартовое окно, прежде чем HECTON-8 можно будет оставить позади.",
-          "external_site": "Таблица орбитальных угроз HECTON-8 показывает спасение как цепь движущихся ворот: радиационный сдвиг, обломки, затмение, юридические маяки и окна удержания права, каждое из которых может закрыть даже исправный подъем."
-        },
-        "ja_JP": {
-          "title": "HECTON-8 軌道危険表",
-          "scanner": "HECTON-8 からの脱出は、食、放射線サージ、リレーシャッター、氷散乱、嵐プルームの窓に縛られる。",
-          "field_note": "救助が演出のために待機しているわけではない。上昇は空の悪い時刻表に合わせなければならない。",
-          "terminal": "ORBITAL HAZARD TABLE: 食による blackout、Aegir 荷電粒子サージ、月面リレーシャッター、氷粒散乱、storm plume、guidance-lag 窓は上昇前に解決が必要。",
-          "audio": "海の上の空は、タイミングに歯を持つ機械だ。",
-          "in_game_wiki": "軌道危険は、修理済みカプセルだけでは足りない理由を示す。HECTON-8 を後にする前に、上昇系にはリレーアクセス、誘導タイミング、遮蔽作業、合法の発射窓がまだ必要だ。",
-          "external_site": "HECTON-8 軌道危険表は、救助を動く門の連鎖として示す。放射線シア、デブリ、食、法的ビーコン、保管権ウィンドウのどれもが、修理済みの上昇を閉ざし得る。"
-        },
-        "zh_CN": {
-          "title": "HECTON-8 轨道危险表",
-          "scanner": "从 HECTON-8 撤离受限于食、辐射激增、中继闸门、冰粒散射和风暴羽流窗口。",
-          "field_note": "救援不是为了戏剧效果而停在外面。升空必须对上天空糟糕的时间表。",
-          "terminal": "ORBITAL HAZARD TABLE: 食 blackout、Aegir 带电粒子激增、月面中继闸门、冰粒散射、storm plume 与 guidance-lag 窗口必须在升空前清除。",
-          "audio": "海洋上方的天空是一台机器，齿牙咬在时机里。",
-          "in_game_wiki": "轨道危险解释了为什么修好的胶囊还不够。离开 HECTON-8 前，上升链仍需要中继访问、制导时机、屏蔽工作和合法发射窗口。",
-          "external_site": "HECTON-8 轨道危险表把救援呈现为一串移动闸门：辐射剪切、碎片、食影、合法信标和监管窗口，每一项都能关闭一条本已修好的上升路径。"
-        },
-        "fr_FR": {
-          "title": "Table des dangers orbitaux de HECTON-8",
-          "scanner": "L'extraction depuis HECTON-8 est verrouillée par les fenêtres d'éclipse, de poussée radiative, de volet relais, de diffusion de glace et de panache de tempête.",
-          "field_note": "Personne ne retient le secours pour le drame. L'ascension doit rencontrer le mauvais horaire du ciel.",
-          "terminal": "TABLE DES DANGERS ORBITAUX : blackout d'éclipse, poussée de particules chargées d'Aegir, volet relais lunaire, diffusion de grains de glace, storm plume et fenêtres guidance-lag doivent être dégagés avant l'ascension.",
-          "audio": "Le ciel au-dessus de l'océan est une machine dont les dents sont dans le timing.",
-          "in_game_wiki": "Les dangers orbitaux expliquent pourquoi une capsule réparée ne suffit pas. Avant de laisser HECTON-8 derrière soi, la chaîne d'ascension a encore besoin d'accès relais, de timing de guidage, de blindage et d'une fenêtre de lancement légale.",
-          "external_site": "La Table des dangers orbitaux de HECTON-8 montre le secours comme une chaîne de portes mobiles : cisaillement radiatif, débris, éclipse, balises légales et fenêtres de garde peuvent chacun fermer une ascension pourtant réparée."
-        },
-        "es_ES": {
-          "title": "Tabla de peligros orbitales de HECTON-8",
-          "scanner": "La extracción desde HECTON-8 está cerrada por ventanas de eclipse, pico de radiación, compuerta de relé, dispersión de hielo y penacho de tormenta.",
-          "field_note": "Nadie retiene el rescate por drama. El ascenso debe encajar con el mal horario del cielo.",
-          "terminal": "TABLA DE PELIGROS ORBITALES: blackout de eclipse, pico de partículas cargadas de Aegir, compuerta lunar de relé, dispersión de granos de hielo, storm plume y ventanas guidance-lag deben despejarse antes del ascenso.",
-          "audio": "El cielo sobre el océano es una máquina con dientes en el tiempo.",
-          "in_game_wiki": "Los peligros orbitales explican por qué una cápsula reparada no basta. Antes de dejar atrás HECTON-8, la cadena de ascenso aún necesita acceso de relé, sincronía de guiado, blindaje y una ventana legal de lanzamiento.",
-          "external_site": "La Tabla de peligros orbitales de HECTON-8 muestra el rescate como una cadena de compuertas móviles: cizalla de radiación, escombros, eclipse, balizas legales y ventanas de custodia, cualquiera capaz de cerrar un ascenso reparado."
-        },
-        "de_DE": {
-          "title": "HECTON-8-Orbitalgefahrentabelle",
-          "scanner": "Extraktion von HECTON-8 wird durch Finsternis, Strahlungsspitzen, Relaisschotten, Eisstreuung und Sturm-Plume-Fenster begrenzt.",
-          "field_note": "Niemand parkt Rettung für Drama. Der Aufstieg muss den schlechten Fahrplan des Himmels treffen.",
-          "terminal": "ORBITALGEFAHRENTABELLE: Finsternis-blackout, Aegir-Ladungspartikelspitze, Mondrelaisschott, Eispartikelstreuung, storm plume und guidance-lag-Fenster müssen vor dem Aufstieg geklärt sein.",
-          "audio": "Der Himmel über dem Ozean ist eine Maschine mit Zähnen im Timing.",
-          "in_game_wiki": "Orbitalgefahren erklären, warum eine reparierte Kapsel nicht genügt. Bevor HECTON-8 zurückbleiben kann, braucht die Aufstiegskette weiter Relaiszugang, Führungstiming, Abschirmungsarbeit und ein legales Startfenster.",
-          "external_site": "Die HECTON-8-Orbitalgefahrentabelle zeigt Rettung als Kette beweglicher Tore: Strahlungsscherung, Trümmer, Finsternis, legale Baken und Verwahrfenster können jeden sonst reparierten Aufstieg schließen."
-        },
-        "pl_PL": {
-          "title": "Tabela zagrożeń orbitalnych HECTON-8",
-          "scanner": "Wydostanie się z HECTON-8 ograniczają okna zaćmienia, skoku promieniowania, zamknięcia przekaźnika, rozpraszania lodu i pióropusza burzy.",
-          "field_note": "Nikt nie parkuje ratunku dla dramatu. Wznoszenie musi trafić w zły rozkład nieba.",
-          "terminal": "TABELA ZAGROŻEŃ ORBITALNYCH: blackout zaćmienia, skok cząstek naładowanych Aegir, księżycowa blokada przekaźnika, rozpraszanie ziaren lodu, storm plume i okna guidance-lag muszą zostać oczyszczone przed wznoszeniem.",
-          "audio": "Niebo nad oceanem to maszyna z zębami w timingu.",
-          "in_game_wiki": "Zagrożenia orbitalne wyjaśniają, dlaczego naprawiona kapsuła nie wystarczy. Zanim HECTON-8 zostanie za plecami, łańcuch wznoszenia nadal potrzebuje dostępu do przekaźnika, timingu naprowadzania, osłon i legalnego okna startowego.",
-          "external_site": "Tabela zagrożeń orbitalnych HECTON-8 pokazuje ratunek jako łańcuch ruchomych bram: ścinanie promieniowania, odłamki, zaćmienie, legalne boje i okna nadzoru, z których każde może zamknąć nawet naprawione wznoszenie."
-        },
-        "uk_UA": {
-          "title": "Таблиця орбітальних загроз HECTON-8",
-          "scanner": "Вихід із HECTON-8 заблокований вікнами затемнення, радіаційного сплеску, релейного затвора, крижаного розсіювання й штормового plume.",
-          "field_note": "Порятунок не тримають осторонь заради драми. Підйом має влучити в поганий розклад неба.",
-          "terminal": "ТАБЛИЦЯ ОРБІТАЛЬНИХ ЗАГРОЗ: blackout затемнення, сплеск заряджених частинок Aegir, місячний релейний затвор, розсіювання крижаних зерен, storm plume і вікна guidance-lag мають бути очищені до підйому.",
-          "audio": "Небо над океаном - машина із зубами в таймінгу.",
-          "in_game_wiki": "Орбітальні загрози пояснюють, чому відремонтованої капсули замало. Ланцюгу підйому все ще потрібні доступ до ретранслятора, таймінг наведення, захист і законне стартове вікно, перш ніж HECTON-8 можна буде залишити позаду.",
-          "external_site": "Таблиця орбітальних загроз HECTON-8 показує порятунок як ланцюг рухомих воріт: радіаційний зсув, уламки, затемнення, юридичні маяки й вікна утримання права, кожне з яких може закрити навіть справний підйом."
-        },
-        "ar_SA": {
-          "title": "جدول الأخطار المدارية لـ HECTON-8",
-          "scanner": "الخروج من HECTON-8 محكوم بنوافذ الكسوف، واندفاع الإشعاع، ومغلاق المرحل، وتشتت الجليد، وأعمدة العاصفة.",
-          "field_note": "لا أحد يوقف الإنقاذ لأجل الدراما. الصعود يجب أن يطابق جدول السماء السيئ.",
-          "terminal": "جدول الأخطار المدارية: blackout الكسوف، اندفاع جسيمات Aegir المشحونة، مغلاق مرحل القمر، تشتت حبيبات الجليد، storm plume، ونوافذ guidance-lag يجب أن تزول قبل الصعود.",
-          "audio": "السماء فوق المحيط آلة تملك أسنانها في التوقيت.",
-          "in_game_wiki": "تشرح الأخطار المدارية لماذا لا تكفي كبسولة مصلحة. قبل ترك HECTON-8 خلفك، ما زالت سلسلة الصعود تحتاج إلى وصول مرحل، وتوقيت توجيه، وعمل تدريع، ونافذة إطلاق قانونية.",
-          "external_site": "يعرض جدول الأخطار المدارية لـ HECTON-8 الإنقاذ كسلسلة بوابات متحركة: قص إشعاعي، وحطام، وكسوف، ومنارات قانونية، ونوافذ حيازة، وكل واحدة قادرة على إغلاق صعود مصلح."
-        },
-        "id_ID": {
-          "title": "Tabel Bahaya Orbital HECTON-8",
-          "scanner": "Ekstraksi dari HECTON-8 dikunci oleh jendela gerhana, lonjakan radiasi, penutup relai, sebar es, dan plume badai.",
-          "field_note": "Tidak ada yang menahan penyelamatan demi drama. Pendakian harus bertemu jadwal langit yang buruk.",
-          "terminal": "TABEL BAHAYA ORBITAL: blackout gerhana, lonjakan partikel bermuatan Aegir, penutup relai bulan, sebar butir es, storm plume, dan jendela guidance-lag harus bersih sebelum pendakian.",
-          "audio": "Langit di atas laut adalah mesin dengan gigi pada waktunya.",
-          "in_game_wiki": "Bahaya orbital menjelaskan mengapa kapsul yang diperbaiki belum cukup. Sebelum HECTON-8 bisa ditinggalkan, rantai naik masih membutuhkan akses relai, waktu panduan, kerja perisai, dan jendela peluncuran legal.",
-          "external_site": "Tabel Bahaya Orbital HECTON-8 menampilkan penyelamatan sebagai rantai gerbang bergerak: geser radiasi, puing, gerhana, suar legal, dan jendela kustodi, masing-masing mampu menutup kenaikan yang sudah diperbaiki."
-        },
-        "ko_KR": {
-          "title": "HECTON-8 궤도 위험표",
-          "scanner": "HECTON-8 탈출은 식, 방사선 급증, 중계 셔터, 얼음 산란, 폭풍 플룸 창에 의해 제한된다.",
-          "field_note": "구조가 극적 연출을 위해 대기하는 것이 아니다. 상승은 하늘의 나쁜 시간표와 맞아야 한다.",
-          "terminal": "ORBITAL HAZARD TABLE: 식 blackout, Aegir 하전 입자 급증, 달 중계 셔터, 얼음 입자 산란, storm plume, guidance-lag 창은 상승 전에 해소되어야 한다.",
-          "audio": "바다 위의 하늘은 타이밍에 이빨을 박은 기계다.",
-          "in_game_wiki": "궤도 위험은 수리된 캡슐만으로 부족한 이유를 설명한다. HECTON-8을 뒤에 두기 전에 상승 사슬에는 중계 접근, 유도 타이밍, 차폐 작업, 합법 발사 창이 아직 필요하다.",
-          "external_site": "HECTON-8 궤도 위험표는 구조를 움직이는 문들의 사슬로 보여준다. 방사선 전단, 잔해, 식, 합법 비콘, 보관권 창은 각각 수리된 상승도 닫을 수 있다."
-        },
-        "he_IL": {
-          "title": "טבלת הסיכונים המסלוליים של HECTON-8",
-          "scanner": "חילוץ מ-HECTON-8 נחסם על ידי חלונות ליקוי, התפרצות קרינה, תריס ממסר, פיזור קרח ונוצות סערה.",
-          "field_note": "איש אינו מחנה חילוץ בשביל דרמה. העלייה חייבת לפגוש את לוח הזמנים הרע של השמים.",
-          "terminal": "טבלת סיכונים מסלוליים: blackout ליקוי, התפרצות חלקיקים טעונים של Aegir, תריס ממסר ירחי, פיזור גרגרי קרח, storm plume וחלונות guidance-lag חייבים להתנקות לפני עלייה.",
-          "audio": "השמים מעל האוקיינוס הם מכונה עם שיניים בתזמון.",
-          "in_game_wiki": "סיכונים מסלוליים מסבירים מדוע קפסולה מתוקנת אינה מספיקה. לפני שאפשר להשאיר את HECTON-8 מאחור, שרשרת העלייה עדיין צריכה גישת ממסר, תזמון הנחיה, עבודת מיגון וחלון שיגור חוקי.",
-          "external_site": "טבלת הסיכונים המסלוליים של HECTON-8 מציגה חילוץ כשרשרת שערים נעים: גזירת קרינה, פסולת, ליקוי, משואות חוקיות וחלונות משמורת, שכל אחד מהם יכול לסגור עלייה שתוקנה."
-        },
-        "pt_BR": {
-          "title": "Tabela de Perigos Orbitais de HECTON-8",
-          "scanner": "A extração de HECTON-8 é bloqueada por janelas de eclipse, pico de radiação, obturador de relé, dispersão de gelo e plume de tempestade.",
-          "field_note": "Ninguém está segurando resgate por drama. A subida precisa encontrar o horário ruim do céu.",
-          "terminal": "TABELA DE PERIGOS ORBITAIS: blackout de eclipse, pico de partículas carregadas de Aegir, obturador de relé lunar, dispersão de grãos de gelo, storm plume e janelas guidance-lag devem estar livres antes da subida.",
-          "audio": "O céu sobre o oceano é uma máquina com dentes no timing.",
-          "in_game_wiki": "Perigos orbitais explicam por que uma cápsula reparada não basta. Antes que HECTON-8 fique para trás, a cadeia de subida ainda precisa de acesso a relé, timing de orientação, blindagem e uma janela legal de lançamento.",
-          "external_site": "A Tabela de Perigos Orbitais de HECTON-8 mostra resgate como uma cadeia de portões móveis: cisalhamento de radiação, detritos, eclipse, balizas legais e janelas de custódia, cada um capaz de fechar uma subida reparada."
-        },
-        "nl_NL": {
-          "title": "HECTON-8-orbitaalgevaarstabel",
-          "scanner": "Extractie vanaf HECTON-8 wordt begrensd door eclips, stralingspiek, relaissluiter, ijsverstrooiing en stormpluimvensters.",
-          "field_note": "Niemand parkeert redding voor drama. De opstijging moet het slechte schema van de hemel raken.",
-          "terminal": "ORBITAALGEVAARSTABEL: eclips-blackout, Aegir-geladen-deeltjespiek, maanrelaissluiter, ijsgruisverstrooiing, storm plume en guidance-lag-vensters moeten vrij zijn voor opstijging.",
-          "audio": "De hemel boven de oceaan is een machine met tanden in de timing.",
-          "in_game_wiki": "Orbitale gevaren verklaren waarom een gerepareerde capsule niet genoeg is. Voordat HECTON-8 achtergelaten kan worden, heeft de opstijgketen nog relaistoegang, geleidingstiming, afscherming en een wettelijk lanceervenster nodig.",
-          "external_site": "De HECTON-8-orbitaalgevaarstabel toont redding als een keten van bewegende poorten: stralingsschering, puin, eclips, wettelijke bakens en bewaarvensters kunnen elk een anders gerepareerde opstijging sluiten."
-        }
-      }
+    "ru_RU": {
+     "title": "Реестр ролей лун Aegir",
+     "scanner": "Публичные имена дрейфуют между картами; орбиты продолжают выполнять свою работу.",
+     "field_note": "Skarn режет частицы. Vela маскирует ретрансляторы. Claw бросает лед. Lumen печатает маршруты. Thorne несет карантинные слухи. Anvil кормит salvage. Kestrel держит высокие окна. HECTON хранит глубокую претензию. Mute продает мертвые маяки.",
+     "terminal": "РЕЕСТР ATLAS: публичные ярлыки меняются у страховщиков и маршрутных карт. Функции остаются фиксированными: радиационный сдвиг, маска ретрансляции, приливное давление, ледяное рассеяние, публичная маршрутизация, карантинный слух, промышленный salvage, трафик высоких окон, глубокая претензия и экономика мертвых маяков.",
+     "audio": "Луну можно переименовать. За орбиту все равно придется платить.",
+     "in_game_wiki": "Список лун Aegir - рабочая карта движения. Каждое тело вокруг газового гиганта меняет трафик, право спасательных претензий, тайминг связи или планирование выхода с HECTON-8.",
+     "external_site": "Реестр ролей лун Aegir фиксирует, почему публичные названия могут дрейфовать, а орбитальная работа остается прежней: маска ретрансляторов, приливное давление, карантинные слухи и высокие окна решают, кто вообще может двигаться."
     },
-    {
-      "packet_id": "P183_AEGIR_MOON_LEDGER_ROLE_TABLE",
-      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
-      "article_id": "aegir_moons.aegir_moon_ledger_role_table",
-      "title_key": "applied_lore.aegir_moon_ledger_role_table.title",
-      "unlock": {
-        "primary": "unlock.aegir_moon_ledger_role_table",
-        "poi_tags": [
-          "poi.moon_role_ledger",
-          "poi.relay_lane_card",
-          "poi.salvage_moon_stamp"
-        ],
-        "biome_tags": [
-          "biome.claim_admin",
-          "biome.relay_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Aegir Moon Route Ledger",
-          "scanner": "Aegir's moons earn their names by what they break, hide, scatter, relay or sell.",
-          "field_note": "The ocean moon is alone under water, not alone in the system.",
-          "terminal": "LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumor traffic, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
-          "audio": "More bodies. More excuses. More ways for help to miss.",
-          "in_game_wiki": "The Aegir moon ledger gives nearby moons hard route functions while keeping HECTON-8 as the ocean moon where the deep claim is fought. The sky feels inhabited without turning every moon into a promised destination.",
-          "external_site": "Aegir Moon Route Ledger maps the moon ladder around HECTON-8: nearby bodies do not offer easy exits, they make rescue timing, traffic rights and beacon trust harder."
-        },
-        "ru_RU": {
-          "title": "Маршрутный реестр лун Aegir",
-          "scanner": "Луны Aegir заслуживают имена тем, что ломают, скрывают, рассеивают, ретранслируют или продают.",
-          "field_note": "Океанская луна одна под водой, но не одна в системе.",
-          "terminal": "РЕЕСТР: радиационный сдвиг Skarn, релейная маскировка Vela, ледяное рассеяние Claw, публичные маршрутные карты Lumen, карантинный трафик слухов Thorne, промышленный salvage Anvil, трафик высоких окон Kestrel, глубокая претензия HECTON, экономика мертвых маяков Mute.",
-          "audio": "Больше тел. Больше оправданий. Больше способов, чтобы помощь промахнулась.",
-          "in_game_wiki": "Маршрутный реестр лун Aegir дает соседним лунам жесткие функции, оставляя HECTON-8 океанской луной, где идет борьба за глубокую претензию. Небо выглядит заселенным, но не каждая луна обещает дорогу.",
-          "external_site": "Маршрутный реестр лун Aegir показывает лунную лестницу вокруг HECTON-8: соседние тела не дают легких выходов, а усложняют тайминг спасения, права движения и доверие к маякам."
-        },
-        "ja_JP": {
-          "title": "Aegir 月群航路台帳",
-          "scanner": "Aegir の月は、壊し、隠し、散らし、中継し、売るものによって名前を得る。",
-          "field_note": "海洋月は水の下で孤独だが、星系の中では孤独ではない。",
-          "terminal": "LEDGER: Skarn 放射線シア、Vela リレーマスク、Claw 氷散乱、Lumen 公開航路図、Thorne 検疫噂交通、Anvil 工業 salvage、Kestrel 高窓交通、HECTON 深部請求、Mute 死ビーコン経済。",
-          "audio": "天体が増える。言い訳が増える。救助が外れる道が増える。",
-          "in_game_wiki": "Aegir 月群台帳は近傍の月に硬い航路機能を与え、HECTON-8 を深部請求が争われる海洋月として残す。空は人の手で満ちるが、すべての月が約束の目的地になるわけではない。",
-          "external_site": "Aegir 月群航路台帳は HECTON-8 周辺の月の梯子を描く。近い天体は安易な出口ではなく、救助タイミング、交通権、ビーコン信用を難しくする。"
-        },
-        "zh_CN": {
-          "title": "Aegir 月群航路账簿",
-          "scanner": "Aegir 的月亮靠它们破坏、隐藏、散射、中继或出售的东西赢得名字。",
-          "field_note": "海洋月在水下孤独，但在系统里并不孤单。",
-          "terminal": "LEDGER: Skarn 辐射剪切，Vela 中继遮蔽，Claw 冰粒散射，Lumen 公共航路图，Thorne 隔离传闻流量，Anvil 工业 salvage，Kestrel 高窗口交通，HECTON 深层索赔，Mute 死信标经济。",
-          "audio": "更多天体。更多借口。更多让援助错过的方式。",
-          "in_game_wiki": "Aegir 月群账簿给附近月亮明确的航路功能，同时保留 HECTON-8 作为深层索赔被争夺的海洋月。天空显得有人活动，却不会把每颗月亮都变成承诺目的地。",
-          "external_site": "Aegir 月群航路账簿绘出 HECTON-8 周围的月梯：附近天体不提供轻松出口，而是让救援时机、通行权和信标可信度更难处理。"
-        },
-        "fr_FR": {
-          "title": "Registre de route des lunes d'Aegir",
-          "scanner": "Les lunes d'Aegir gagnent leurs noms par ce qu'elles brisent, cachent, dispersent, relaient ou vendent.",
-          "field_note": "La lune océan est seule sous l'eau, pas seule dans le système.",
-          "terminal": "REGISTRE : cisaillement radiatif de Skarn, masquage relais de Vela, diffusion de glace de Claw, cartes de route publiques de Lumen, trafic de rumeurs de quarantaine de Thorne, salvage industriel d'Anvil, trafic de fenêtre haute de Kestrel, réclamation profonde HECTON, économie de balises mortes de Mute.",
-          "audio": "Plus de corps. Plus d'excuses. Plus de façons pour l'aide de manquer sa cible.",
-          "in_game_wiki": "Le registre lunaire d'Aegir donne aux lunes proches des fonctions de route dures tout en gardant HECTON-8 comme lune océanique où se dispute la réclamation profonde. Le ciel paraît habité sans faire de chaque lune une destination promise.",
-          "external_site": "Le Registre de route des lunes d'Aegir cartographie l'échelle lunaire autour de HECTON-8 : les corps proches n'offrent pas de sorties faciles, ils durcissent timing de secours, droits de trafic et confiance dans les balises."
-        },
-        "es_ES": {
-          "title": "Registro de rutas lunares de Aegir",
-          "scanner": "Las lunas de Aegir ganan sus nombres por lo que rompen, ocultan, dispersan, retransmiten o venden.",
-          "field_note": "La luna oceánica está sola bajo el agua, no sola en el sistema.",
-          "terminal": "REGISTRO: cizalla de radiación de Skarn, enmascaramiento de relé de Vela, dispersión de hielo de Claw, cartas públicas de ruta de Lumen, tráfico de rumores de cuarentena de Thorne, salvage industrial de Anvil, tráfico de ventana alta de Kestrel, reclamación profunda HECTON, economía de balizas muertas de Mute.",
-          "audio": "Más cuerpos. Más excusas. Más formas de que la ayuda falle.",
-          "in_game_wiki": "El registro lunar de Aegir da funciones de ruta duras a las lunas cercanas mientras conserva HECTON-8 como la luna oceánica donde se disputa la reclamación profunda. El cielo parece habitado sin convertir cada luna en un destino prometido.",
-          "external_site": "El Registro de rutas lunares de Aegir traza la escalera lunar alrededor de HECTON-8: los cuerpos cercanos no ofrecen salidas fáciles, complican tiempos de rescate, derechos de tráfico y confianza en balizas."
-        },
-        "de_DE": {
-          "title": "Aegir-Mondrouten-Ledger",
-          "scanner": "Aegirs Monde verdienen ihre Namen durch das, was sie brechen, verbergen, streuen, weiterleiten oder verkaufen.",
-          "field_note": "Der Ozeanmond ist unter Wasser allein, nicht im System.",
-          "terminal": "LEDGER: Skarn-Strahlungsscherung, Vela-Relaismaskierung, Claw-Eisstreuung, Lumen-öffentliche Routenkarten, Thorne-Quarantänegerüchteverkehr, Anvil-industrielles salvage, Kestrel-Hochfensterverkehr, HECTON-Tiefenanspruch, Mute-Tote-Baken-Ökonomie.",
-          "audio": "Mehr Körper. Mehr Ausreden. Mehr Wege, wie Hilfe verfehlt.",
-          "in_game_wiki": "Das Aegir-Mondledger gibt nahen Monden harte Routenfunktionen und lässt HECTON-8 den Ozeanmond bleiben, auf dem um den Tiefenanspruch gekämpft wird. Der Himmel wirkt bewohnt, ohne jeden Mond zum versprochenen Ziel zu machen.",
-          "external_site": "Das Aegir-Mondrouten-Ledger kartiert die Mondleiter um HECTON-8: nahe Körper bieten keine leichten Ausgänge, sie erschweren Rettungstiming, Verkehrsrechte und Vertrauen in Baken."
-        },
-        "pl_PL": {
-          "title": "Rejestr tras księżyców Aegir",
-          "scanner": "Księżyce Aegir zasługują na nazwy tym, co łamią, ukrywają, rozpraszają, przekaźnikują albo sprzedają.",
-          "field_note": "Księżyc oceaniczny jest sam pod wodą, nie sam w systemie.",
-          "terminal": "REJESTR: ścinanie promieniowania Skarn, maskowanie przekaźników Vela, rozpraszanie lodu Claw, publiczne mapy tras Lumen, ruch plotek kwarantanny Thorne, przemysłowy salvage Anvil, ruch wysokich okien Kestrel, głębokie roszczenie HECTON, ekonomia martwych boi Mute.",
-          "audio": "Więcej ciał. Więcej wymówek. Więcej sposobów, by pomoc chybiła.",
-          "in_game_wiki": "Rejestr księżyców Aegir daje pobliskim księżycom twarde funkcje tras, zachowując HECTON-8 jako oceaniczny księżyc, gdzie toczy się spór o głębokie roszczenie. Niebo wygląda na zamieszkane, ale nie każdy księżyc obiecuje drogę.",
-          "external_site": "Rejestr tras księżyców Aegir mapuje księżycową drabinę wokół HECTON-8: bliskie ciała nie dają łatwych wyjść, tylko utrudniają timing ratunku, prawa ruchu i zaufanie do boi."
-        },
-        "uk_UA": {
-          "title": "Маршрутний реєстр місяців Aegir",
-          "scanner": "Місяці Aegir заробляють імена тим, що ламають, ховають, розсіюють, ретранслюють або продають.",
-          "field_note": "Океанський місяць сам під водою, але не сам у системі.",
-          "terminal": "РЕЄСТР: радіаційний зсув Skarn, релейне маскування Vela, крижане розсіювання Claw, публічні маршрутні карти Lumen, карантинний трафік чуток Thorne, промисловий salvage Anvil, трафік високих вікон Kestrel, глибока претензія HECTON, економіка мертвих маяків Mute.",
-          "audio": "Більше тіл. Більше виправдань. Більше способів, щоб допомога промахнулася.",
-          "in_game_wiki": "Реєстр місяців Aegir дає сусіднім місяцям жорсткі маршрутні функції, залишаючи HECTON-8 океанським місяцем, де триває боротьба за глибоку претензію. Небо здається заселеним, але не кожен місяць обіцяє дорогу.",
-          "external_site": "Маршрутний реєстр місяців Aegir показує місячну драбину навколо HECTON-8: сусідні тіла не дають легких виходів, а ускладнюють таймінг порятунку, права руху й довіру до маяків."
-        },
-        "ar_SA": {
-          "title": "سجل مسارات أقمار Aegir",
-          "scanner": "تكسب أقمار Aegir أسماءها بما تكسره أو تخفيه أو تشتته أو ترحله أو تبيعه.",
-          "field_note": "القمر المحيطي وحيد تحت الماء، لكنه ليس وحيدا في النظام.",
-          "terminal": "السجل: قص إشعاع Skarn، حجب مرحلات Vela، تشتت جليد Claw، خرائط مسار عامة من Lumen، مرور شائعات حجر Thorne، salvage صناعي من Anvil، مرور نوافذ عالية Kestrel، مطالبة HECTON العميقة، واقتصاد منارات Mute الميتة.",
-          "audio": "أجسام أكثر. أعذار أكثر. طرق أكثر لكي تخطئ المساعدة.",
-          "in_game_wiki": "يعطي سجل أقمار Aegir الأقمار القريبة وظائف مسار صلبة، ويبقي HECTON-8 قمرا محيطيا تقاتل فيه المطالبة العميقة. تبدو السماء مأهولة من دون أن يتحول كل قمر إلى وجهة موعودة.",
-          "external_site": "يرسم سجل مسارات أقمار Aegir سلم الأقمار حول HECTON-8: الأجسام القريبة لا تقدم مخارج سهلة، بل تزيد صعوبة توقيت الإنقاذ وحقوق المرور والثقة بالمنارات."
-        },
-        "id_ID": {
-          "title": "Ledger Rute Bulan Aegir",
-          "scanner": "Bulan-bulan Aegir mendapat nama dari apa yang mereka patahkan, sembunyikan, sebarkan, teruskan, atau jual.",
-          "field_note": "Bulan samudra sendirian di bawah air, bukan sendirian dalam sistem.",
-          "terminal": "LEDGER: geser radiasi Skarn, masker relai Vela, sebar es Claw, peta rute publik Lumen, lalu lintas rumor karantina Thorne, salvage industri Anvil, lalu lintas jendela tinggi Kestrel, klaim dalam HECTON, ekonomi suar mati Mute.",
-          "audio": "Lebih banyak benda. Lebih banyak alasan. Lebih banyak cara bantuan meleset.",
-          "in_game_wiki": "Ledger bulan Aegir memberi bulan-bulan dekat fungsi rute keras sambil menjaga HECTON-8 sebagai bulan samudra tempat klaim dalam diperebutkan. Langit terasa berpenghuni tanpa mengubah setiap bulan menjadi tujuan yang dijanjikan.",
-          "external_site": "Ledger Rute Bulan Aegir memetakan tangga bulan di sekitar HECTON-8: benda dekat tidak menawarkan jalan keluar mudah, tetapi mempersulit waktu penyelamatan, hak lalu lintas, dan kepercayaan suar."
-        },
-        "ko_KR": {
-          "title": "Aegir 달 항로 원장",
-          "scanner": "Aegir의 달들은 무엇을 부수고, 숨기고, 흩뿌리고, 중계하고, 파는지로 이름값을 한다.",
-          "field_note": "바다 달은 물속에서 혼자지만, 성계 안에서는 혼자가 아니다.",
-          "terminal": "LEDGER: Skarn 방사선 전단, Vela 중계 마스킹, Claw 얼음 산란, Lumen 공개 항로 차트, Thorne 격리 소문 교통, Anvil 산업 salvage, Kestrel 높은 창 교통, HECTON 깊은 청구, Mute 죽은 비콘 경제.",
-          "audio": "더 많은 천체. 더 많은 변명. 도움이 빗나갈 더 많은 방법.",
-          "in_game_wiki": "Aegir 달 원장은 가까운 달들에 단단한 항로 기능을 부여하면서 HECTON-8을 깊은 청구가 다투어지는 바다 달로 남겨 둔다. 하늘은 사람이 사는 듯하지만 모든 달이 약속된 목적지는 아니다.",
-          "external_site": "Aegir 달 항로 원장은 HECTON-8 주변의 달 사다리를 그린다. 가까운 천체들은 쉬운 출구를 주지 않고, 구조 타이밍과 교통권, 비콘 신뢰를 더 어렵게 만든다."
-        },
-        "he_IL": {
-          "title": "יומן נתיבי הירחים של Aegir",
-          "scanner": "ירחי Aegir מרוויחים את שמם לפי מה שהם שוברים, מסתירים, מפזרים, ממסרים או מוכרים.",
-          "field_note": "ירח האוקיינוס לבד מתחת למים, לא לבד במערכת.",
-          "terminal": "יומן: גזירת קרינה Skarn, מיסוך ממסר Vela, פיזור קרח Claw, מפות נתיב ציבוריות Lumen, תנועת שמועות הסגר Thorne, salvage תעשייתי Anvil, תנועת חלון גבוה Kestrel, תביעה עמוקה HECTON, כלכלת משואות מתות Mute.",
-          "audio": "יותר גופים. יותר תירוצים. יותר דרכים שבהן עזרה מחמיצה.",
-          "in_game_wiki": "יומן הירחים של Aegir נותן לירחים קרובים תפקידי נתיב קשיחים ומשאיר את HECTON-8 כירח האוקיינוס שבו נלחמים על התביעה העמוקה. השמים נראים מיושבים בלי להפוך כל ירח ליעד מובטח.",
-          "external_site": "יומן נתיבי הירחים של Aegir ממפה את סולם הירחים סביב HECTON-8: גופים קרובים אינם נותנים יציאות קלות, אלא מקשים תזמון חילוץ, זכויות תנועה ואמון במשואות."
-        },
-        "pt_BR": {
-          "title": "Ledger de Rotas Lunares de Aegir",
-          "scanner": "As luas de Aegir ganham seus nomes pelo que quebram, escondem, dispersam, retransmitem ou vendem.",
-          "field_note": "A lua oceânica está sozinha debaixo d'água, não sozinha no sistema.",
-          "terminal": "LEDGER: cisalhamento de radiação Skarn, mascaramento de relé Vela, dispersão de gelo Claw, cartas públicas de rota Lumen, tráfego de rumores de quarentena Thorne, salvage industrial Anvil, tráfego de janela alta Kestrel, reivindicação profunda HECTON, economia de balizas mortas Mute.",
-          "audio": "Mais corpos. Mais desculpas. Mais formas de a ajuda errar.",
-          "in_game_wiki": "O ledger lunar de Aegir dá funções de rota duras às luas próximas enquanto mantém HECTON-8 como a lua oceânica onde a reivindicação profunda é disputada. O céu parece habitado sem transformar cada lua em destino prometido.",
-          "external_site": "O Ledger de Rotas Lunares de Aegir mapeia a escada lunar ao redor de HECTON-8: corpos próximos não oferecem saídas fáceis, eles dificultam timing de resgate, direitos de tráfego e confiança em balizas."
-        },
-        "nl_NL": {
-          "title": "Aegir-maanrouteledger",
-          "scanner": "Aegirs manen verdienen hun namen door wat ze breken, verbergen, verstrooien, doorgeven of verkopen.",
-          "field_note": "De oceaanmaan is alleen onder water, niet alleen in het systeem.",
-          "terminal": "LEDGER: Skarn-stralingsschering, Vela-relaismaskering, Claw-ijsverstrooiing, Lumen-publieke routekaarten, Thorne-quarantaineruchtverkeer, Anvil-industriële salvage, Kestrel-hoog-vensterverkeer, HECTON-diepe claim, Mute-dode-bakeneconomie.",
-          "audio": "Meer lichamen. Meer excuses. Meer manieren waarop hulp mist.",
-          "in_game_wiki": "Het Aegir-maanledger geeft nabije manen harde routefuncties terwijl HECTON-8 de oceaanmaan blijft waar om de diepe claim wordt gevochten. De hemel voelt bewoond zonder elke maan tot beloofde bestemming te maken.",
-          "external_site": "Het Aegir-maanrouteledger brengt de maanladder rond HECTON-8 in kaart: nabije lichamen bieden geen makkelijke uitwegen, ze maken reddingstiming, verkeersrechten en bakenvertrouwen moeilijker."
-        }
-      }
+    "ja_JP": {
+     "title": "Aegir 月群役割台帳",
+     "scanner": "公開名はチャートの間で揺れる。軌道の仕事は変わらない。",
+     "field_note": "Skarn は粒子を裂く。Vela はリレーを隠す。Claw は氷を投げる。Lumen は航路を印刷する。Thorne は検疫の噂を運ぶ。Anvil は salvage を供給する。Kestrel は高窓を押さえる。HECTON は深部請求を抱える。Mute は死んだビーコンを売る。",
+     "terminal": "ATLAS LEDGER: 公開ラベルは保険者と航路チャートごとに変動する。機能役割は固定: 放射線シア、リレーマスク、潮汐強制、氷散乱、公開航路、検疫噂、工業 salvage、高窓交通、深部請求、死ビーコン経済。",
+     "audio": "月の名は変えられる。軌道の請求書は残る。",
+     "in_game_wiki": "Aegir の月リストは稼働中の交通図だ。ガス巨星の周囲にある各天体は、交通、サルベージ請求法、通信タイミング、または HECTON-8 からの離脱計画を変える。",
+     "external_site": "Aegir 月群役割台帳は、公開名が揺れても軌道上の仕事が固定される理由を記録する。リレーマスク、潮汐強制、検疫の噂、高窓交通が、誰が動けるかを決める。"
     },
-    {
-      "packet_id": "P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE",
-      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
-      "article_id": "aegir_moons.ran_aegir_ephemeris_tuning_rule",
-      "title_key": "applied_lore.ran_aegir_ephemeris_tuning_rule.title",
-      "unlock": {
-        "primary": "unlock.ran_aegir_ephemeris_tuning_rule",
-        "poi_tags": [
-          "poi.ephemeris_tuning_sheet",
-          "poi.route_band_calculator",
-          "poi.window_solver_plate"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "RAN-Aegir Ephemeris Band Record",
-          "scanner": "This record gives window bands and hazard causes, not table-owned exact periods.",
-          "field_note": "The honest public chart says enough to navigate risk and not enough to fake the celestial table.",
-          "terminal": "EPHEMERIS BAND RECORD: public atlas entries may state window band, hazard class and relation to Aegir. Exact periods, inclinations and resonance values remain under the celestial-table authority.",
-          "audio": "A band can save you. A guessed number can kill you.",
-          "in_game_wiki": "Ephemeris bands keep public charts honest: they show enough route pressure to trust the window, while exact orbital values stay with the tables that own flight planning.",
-          "external_site": "RAN-Aegir Ephemeris Band Record separates stable route records from exact celestial values, so public articles can stay reliable without freezing guessed numbers into navigation law."
-        },
-        "ru_RU": {
-          "title": "Запись эфемеридных полос RAN-Aegir",
-          "scanner": "Эта запись дает полосы окон и причины угроз, а не точные периоды, принадлежащие таблицам.",
-          "field_note": "Честная публичная карта говорит достаточно, чтобы пройти риск, и недостаточно, чтобы подделать небесную таблицу.",
-          "terminal": "ЗАПИСЬ ЭФЕМЕРИДНЫХ ПОЛОС: публичные записи atlas могут указывать полосу окна, класс угрозы и связь с Aegir. Точные периоды, наклонения и резонансные значения остаются под властью celestial-table.",
-          "audio": "Полоса может спасти. Угаданное число может убить.",
-          "in_game_wiki": "Эфемеридные полосы держат публичные карты честными: показывают достаточно маршрутного давления, чтобы верить окну, а точные орбитальные значения остаются в таблицах полетного планирования.",
-          "external_site": "Запись эфемеридных полос RAN-Aegir отделяет стабильные маршрутные записи от точных небесных значений, чтобы публичные статьи оставались надежными и не превращали угаданные числа в навигационный закон."
-        },
-        "ja_JP": {
-          "title": "RAN-Aegir 暦表帯域記録",
-          "scanner": "この記録が示すのは窓の帯域と危険原因であり、表が所有する正確な周期ではない。",
-          "field_note": "誠実な公開チャートは危険を進むには十分で、天体表を偽造するには足りない。",
-          "terminal": "EPHEMERIS BAND RECORD: 公開 atlas 記録は窓帯域、危険分類、Aegir との関係を記載できる。正確な周期、傾斜、共鳴値は celestial-table authority に残る。",
-          "audio": "帯域は命を救う。推測した数字は人を殺す。",
-          "in_game_wiki": "暦表帯域は公開チャートを正直に保つ。ウィンドウを信じるだけの航路圧力を示し、正確な軌道値は飛行計画を所有する表に残す。",
-          "external_site": "RAN-Aegir 暦表帯域記録は、安定した航路記録と正確な天体値を分ける。公開記事は、推測値を航法法に凍結せずに信頼性を保てる。"
-        },
-        "zh_CN": {
-          "title": "RAN-Aegir 星历窗口带记录",
-          "scanner": "这份记录给出窗口带和危险成因，而不是归天体表所有的精确周期。",
-          "field_note": "诚实的公共星图足够导航风险，却不足以伪造天体表。",
-          "terminal": "EPHEMERIS BAND RECORD: 公共 atlas 条目可陈述窗口带、危险类别及其与 Aegir 的关系。精确周期、倾角和共振值仍归 celestial-table authority 管辖。",
-          "audio": "窗口带可以救命。猜来的数字会杀人。",
-          "in_game_wiki": "星历窗口带让公共星图保持诚实：它们显示足够的航路压力来信任窗口，而精确轨道值留在掌管飞行规划的表格里。",
-          "external_site": "RAN-Aegir 星历窗口带记录把稳定航路记录与精确天体数值分开，使公共文章保持可靠，而不会把猜测数字冻结成导航法规。"
-        },
-        "fr_FR": {
-          "title": "Relevé des bandes d'éphémérides RAN-Aegir",
-          "scanner": "Ce relevé donne des bandes de fenêtre et des causes de danger, pas les périodes exactes détenues par les tables.",
-          "field_note": "La carte publique honnête en dit assez pour naviguer le risque, pas assez pour falsifier la table céleste.",
-          "terminal": "RELEVÉ DE BANDES D'ÉPHÉMÉRIDES : les entrées d'atlas publiques peuvent indiquer bande de fenêtre, classe de danger et relation à Aegir. Périodes, inclinaisons et résonances exactes restent sous autorité des tables célestes.",
-          "audio": "Une bande peut te sauver. Un nombre deviné peut te tuer.",
-          "in_game_wiki": "Les bandes d'éphémérides gardent les cartes publiques honnêtes : elles montrent assez de pression de route pour croire à la fenêtre, tandis que les valeurs orbitales exactes restent dans les tables qui possèdent la planification de vol.",
-          "external_site": "Le Relevé des bandes d'éphémérides RAN-Aegir sépare les dossiers de route stables des valeurs célestes exactes, afin que les articles publics restent fiables sans figer des nombres devinés en loi de navigation."
-        },
-        "es_ES": {
-          "title": "Registro de bandas de efemérides RAN-Aegir",
-          "scanner": "Este registro da bandas de ventana y causas de peligro, no periodos exactos propiedad de las tablas.",
-          "field_note": "La carta pública honesta dice lo bastante para navegar el riesgo y no lo bastante para falsificar la tabla celeste.",
-          "terminal": "REGISTRO DE BANDAS DE EFEMÉRIDES: las entradas públicas de atlas pueden indicar banda de ventana, clase de peligro y relación con Aegir. Periodos, inclinaciones y resonancias exactas quedan bajo autoridad de la tabla celeste.",
-          "audio": "Una banda puede salvarte. Un número inventado puede matarte.",
-          "in_game_wiki": "Las bandas de efemérides mantienen honestas las cartas públicas: muestran suficiente presión de ruta para confiar en la ventana, mientras los valores orbitales exactos permanecen en las tablas que poseen la planificación de vuelo.",
-          "external_site": "El Registro de bandas de efemérides RAN-Aegir separa registros de ruta estables de valores celestes exactos, para que los artículos públicos sigan siendo fiables sin congelar números adivinados como ley de navegación."
-        },
-        "de_DE": {
-          "title": "RAN-Aegir-Ephemeridenband-Datensatz",
-          "scanner": "Dieser Datensatz liefert Fensterbänder und Gefahrenursachen, keine tabelleneigenen exakten Perioden.",
-          "field_note": "Die ehrliche öffentliche Karte sagt genug, um Risiko zu navigieren, und nicht genug, um die Himmelstabelle zu fälschen.",
-          "terminal": "EPHEMERIDENBAND-DATENSATZ: öffentliche Atlas-Einträge dürfen Fensterband, Gefahrenklasse und Beziehung zu Aegir nennen. Exakte Perioden, Inklinationen und Resonanzen bleiben unter Autorität der Himmelstabelle.",
-          "audio": "Ein Band kann dich retten. Eine geratene Zahl kann dich töten.",
-          "in_game_wiki": "Ephemeridenbänder halten öffentliche Karten ehrlich: Sie zeigen genug Routendruck, um dem Fenster zu vertrauen, während exakte Orbitalwerte in den Tabellen bleiben, die Flugplanung besitzen.",
-          "external_site": "Der RAN-Aegir-Ephemeridenband-Datensatz trennt stabile Routenaufzeichnungen von exakten Himmelswerten, damit öffentliche Artikel verlässlich bleiben, ohne geratene Zahlen in Navigationsrecht einzufrieren."
-        },
-        "pl_PL": {
-          "title": "Zapis pasm efemeryd RAN-Aegir",
-          "scanner": "Ten zapis podaje pasma okien i przyczyny zagrożeń, nie dokładne okresy należące do tabel.",
-          "field_note": "Uczciwa publiczna mapa mówi dość, by prowadzić przez ryzyko, i za mało, by sfałszować tabelę nieba.",
-          "terminal": "ZAPIS PASM EFEMERYD: publiczne wpisy atlasu mogą podawać pasmo okna, klasę zagrożenia i relację z Aegir. Dokładne okresy, nachylenia i wartości rezonansu pozostają pod władzą tabeli nieba.",
-          "audio": "Pasmo może cię uratować. Zgadnięta liczba może zabić.",
-          "in_game_wiki": "Pasma efemeryd utrzymują uczciwość publicznych map: pokazują dość presji trasy, by ufać oknu, a dokładne wartości orbitalne zostają w tabelach odpowiedzialnych za planowanie lotu.",
-          "external_site": "Zapis pasm efemeryd RAN-Aegir oddziela stabilne zapisy tras od dokładnych wartości niebieskich, aby publiczne artykuły pozostały wiarygodne bez zamrażania zgadywanych liczb jako prawa nawigacji."
-        },
-        "uk_UA": {
-          "title": "Запис ефемеридних смуг RAN-Aegir",
-          "scanner": "Цей запис дає смуги вікон і причини загроз, а не точні періоди, що належать таблицям.",
-          "field_note": "Чесна публічна карта каже достатньо, щоб пройти ризик, і недостатньо, щоб підробити небесну таблицю.",
-          "terminal": "ЗАПИС ЕФЕМЕРИДНИХ СМУГ: публічні записи atlas можуть зазначати смугу вікна, клас загрози й зв'язок з Aegir. Точні періоди, нахили та резонансні значення лишаються під владою celestial-table.",
-          "audio": "Смуга може врятувати. Вгадане число може вбити.",
-          "in_game_wiki": "Ефемеридні смуги тримають публічні карти чесними: показують достатньо маршрутного тиску, щоб довіряти вікну, а точні орбітальні значення лишаються в таблицях польотного планування.",
-          "external_site": "Запис ефемеридних смуг RAN-Aegir відділяє стабільні маршрутні записи від точних небесних значень, щоб публічні статті лишалися надійними й не перетворювали вгадані числа на навігаційний закон."
-        },
-        "ar_SA": {
-          "title": "سجل نطاقات التقويم RAN-Aegir",
-          "scanner": "يعطي هذا السجل نطاقات النوافذ وأسباب الخطر، لا الفترات الدقيقة التي تملكها الجداول.",
-          "field_note": "الخريطة العامة الصادقة تقول ما يكفي لعبور الخطر، ولا تقول ما يكفي لتزوير الجدول السماوي.",
-          "terminal": "سجل نطاقات التقويم: يمكن لمدخلات atlas العامة ذكر نطاق النافذة، وفئة الخطر، والعلاقة مع Aegir. تبقى الفترات الدقيقة والميول وقيم الرنين تحت سلطة الجدول السماوي.",
-          "audio": "النطاق قد ينقذك. الرقم المخمن قد يقتلك.",
-          "in_game_wiki": "تحافظ نطاقات التقويم على صدق الخرائط العامة: تعرض ضغط مسار كافيا للثقة بالنافذة، بينما تبقى القيم المدارية الدقيقة في الجداول المالكة لتخطيط الطيران.",
-          "external_site": "يفصل سجل نطاقات التقويم RAN-Aegir بين سجلات المسار الثابتة والقيم السماوية الدقيقة، كي تبقى المقالات العامة موثوقة من دون تجميد أرقام مخمنة كقانون ملاحة."
-        },
-        "id_ID": {
-          "title": "Catatan Pita Efemeris RAN-Aegir",
-          "scanner": "Catatan ini memberi pita jendela dan penyebab bahaya, bukan periode tepat milik tabel.",
-          "field_note": "Peta publik yang jujur memberi cukup untuk menavigasi risiko dan tidak cukup untuk memalsukan tabel langit.",
-          "terminal": "CATATAN PITA EFEMERIS: entri atlas publik boleh menyatakan pita jendela, kelas bahaya, dan hubungan dengan Aegir. Periode tepat, inklinasi, dan nilai resonansi tetap berada di bawah otoritas tabel langit.",
-          "audio": "Pita bisa menyelamatkanmu. Angka tebakan bisa membunuhmu.",
-          "in_game_wiki": "Pita efemeris menjaga peta publik tetap jujur: mereka menunjukkan cukup tekanan rute untuk mempercayai jendela, sementara nilai orbit tepat tetap berada di tabel yang memegang perencanaan penerbangan.",
-          "external_site": "Catatan Pita Efemeris RAN-Aegir memisahkan catatan rute stabil dari nilai langit yang tepat, agar artikel publik tetap dapat dipercaya tanpa membekukan angka tebakan menjadi hukum navigasi."
-        },
-        "ko_KR": {
-          "title": "RAN-Aegir 천문력 대역 기록",
-          "scanner": "이 기록은 창 대역과 위험 원인을 제공하지, 표가 소유한 정확한 주기를 제공하지 않는다.",
-          "field_note": "정직한 공개 차트는 위험을 항해할 만큼 말하고, 천체 표를 위조할 만큼 말하지 않는다.",
-          "terminal": "EPHEMERIS BAND RECORD: 공개 atlas 항목은 창 대역, 위험 등급, Aegir와의 관계를 명시할 수 있다. 정확한 주기, 궤도 경사, 공명 값은 celestial-table authority 아래 남는다.",
-          "audio": "대역은 너를 살릴 수 있다. 추측한 숫자는 너를 죽일 수 있다.",
-          "in_game_wiki": "천문력 대역은 공개 차트를 정직하게 유지한다. 창을 믿을 만큼의 항로 압력을 보여 주고, 정확한 궤도 값은 비행 계획을 소유한 표에 남긴다.",
-          "external_site": "RAN-Aegir 천문력 대역 기록은 안정된 항로 기록과 정확한 천체 값을 분리한다. 공개 기사는 추정 숫자를 항법 법으로 굳히지 않고도 신뢰를 유지할 수 있다."
-        },
-        "he_IL": {
-          "title": "רשומת רצועות אפמריס RAN-Aegir",
-          "scanner": "הרשומה הזו נותנת רצועות חלון וסיבות סיכון, לא מחזורים מדויקים השייכים לטבלאות.",
-          "field_note": "המפה הציבורית הישרה אומרת מספיק כדי לנווט סיכון, ולא מספיק כדי לזייף את הטבלה השמימית.",
-          "terminal": "רשומת רצועות אפמריס: ערכי atlas ציבוריים רשאים לציין רצועת חלון, מחלקת סיכון וקשר ל-Aegir. מחזורים מדויקים, נטיות וערכי תהודה נשארים תחת סמכות הטבלה השמימית.",
-          "audio": "רצועה יכולה להציל אותך. מספר מנוחש יכול להרוג אותך.",
-          "in_game_wiki": "רצועות אפמריס שומרות על מפות ציבוריות כנות: הן מראות מספיק לחץ נתיב כדי לסמוך על החלון, בעוד ערכי המסלול המדויקים נשארים בטבלאות שמחזיקות בתכנון הטיסה.",
-          "external_site": "רשומת רצועות אפמריס RAN-Aegir מפרידה בין רשומות נתיב יציבות לערכים שמימיים מדויקים, כדי שמאמרים ציבוריים יישארו אמינים בלי להקפיא מספרים מנוחשים כחוק ניווט."
-        },
-        "pt_BR": {
-          "title": "Registro de Bandas de Efemérides RAN-Aegir",
-          "scanner": "Este registro dá bandas de janela e causas de perigo, não períodos exatos pertencentes às tabelas.",
-          "field_note": "A carta pública honesta diz o bastante para navegar o risco e não o bastante para falsificar a tabela celeste.",
-          "terminal": "REGISTRO DE BANDAS DE EFEMÉRIDES: entradas públicas de atlas podem declarar banda de janela, classe de perigo e relação com Aegir. Períodos, inclinações e valores de ressonância exatos ficam sob autoridade da tabela celeste.",
-          "audio": "Uma banda pode salvar você. Um número chutado pode matar.",
-          "in_game_wiki": "Bandas de efemérides mantêm as cartas públicas honestas: mostram pressão de rota suficiente para confiar na janela, enquanto valores orbitais exatos ficam nas tabelas que possuem o planejamento de voo.",
-          "external_site": "O Registro de Bandas de Efemérides RAN-Aegir separa registros de rota estáveis de valores celestes exatos, para que artigos públicos sigam confiáveis sem congelar números chutados como lei de navegação."
-        },
-        "nl_NL": {
-          "title": "RAN-Aegir-efemeridenbandrecord",
-          "scanner": "Dit record geeft vensterbanden en gevarencausen, geen tabel-eigen exacte perioden.",
-          "field_note": "De eerlijke publieke kaart zegt genoeg om risico te navigeren en niet genoeg om de hemeltabel te vervalsen.",
-          "terminal": "EFEMERIDENBANDRECORD: publieke atlasvermeldingen mogen vensterband, gevarenklasse en relatie tot Aegir noemen. Exacte perioden, inclinaties en resonantiewaarden blijven onder gezag van de hemeltabel.",
-          "audio": "Een band kan je redden. Een gegokt getal kan je doden.",
-          "in_game_wiki": "Efemeridenbanden houden publieke kaarten eerlijk: ze tonen genoeg routedruk om het venster te vertrouwen, terwijl exacte baanwaarden in de tabellen blijven die vluchtplanning bezitten.",
-          "external_site": "Het RAN-Aegir-efemeridenbandrecord scheidt stabiele routerecords van exacte hemelwaarden, zodat publieke artikelen betrouwbaar blijven zonder gegokte getallen tot navigatiewet te bevriezen."
-        }
-      }
+    "zh_CN": {
+     "title": "Aegir 月群职能账簿",
+     "scanner": "公共名称会在星图之间漂移；轨道仍然做自己的事。",
+     "field_note": "Skarn 剪切粒子。Vela 遮蔽中继。Claw 抛撒冰粒。Lumen 印发航路。Thorne 携带隔离传闻。Anvil 供养 salvage。Kestrel 掌握高窗口交通。HECTON 保留深层索赔。Mute 出售死信标。",
+     "terminal": "ATLAS LEDGER: 公共标签会随保险方和航路图变化。功能角色保持固定：辐射剪切、中继遮蔽、潮汐强迫、冰粒散射、公共航路、隔离传闻、工业 salvage、高窗口交通、深层索赔和死信标经济。",
+     "audio": "你可以重命名一颗月亮。轨道照样收费。",
+     "in_game_wiki": "Aegir 的月群名单是一张正在工作的交通图。气态巨行星周围的每个天体都会改变交通、打捞索赔法、通信时机或 HECTON-8 撤离规划。",
+     "external_site": "Aegir 月群职能账簿记录了为什么公共名称可以漂移，而轨道职责保持不变：中继遮蔽、潮汐强迫、隔离传闻和高窗口交通决定谁能移动。"
     },
-    {
-      "packet_id": "P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY",
-      "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
-      "article_id": "aegir_moons.moon_route_article_spoiler_boundary",
-      "title_key": "applied_lore.moon_route_article_spoiler_boundary.title",
-      "unlock": {
-        "primary": "unlock.moon_route_article_spoiler_boundary",
-        "poi_tags": [
-          "poi.public_moon_article_gate",
-          "poi.spoiler_boundary_stamp",
-          "poi.atlas_basin_redaction"
-        ],
-        "biome_tags": [
-          "biome.public_archive",
-          "biome.relay_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Atlas Basin Redaction Line",
-          "scanner": "The public moon atlas can name the sky hazards; it cannot print what the Atlas basin payload does.",
-          "field_note": "Above the clouds, the route is public. Under the basin, every answer still has a lock on it.",
-          "terminal": "ATLAS REDACTION: public moon pages may list names, route windows, hazards, salvage economy and HECTON-8 disaster facts. Payload effects, basin receiver behavior and final decision outcomes remain gated.",
-          "audio": "Publish the sky. Seal the bottom.",
-          "in_game_wiki": "Moon-route articles can explain how Aegir works without opening the Atlas basin early. The sky can be understood from public records; the bottom still has to be earned in the dark.",
-          "external_site": "Atlas Basin Redaction Line marks what public Aegir coverage may say about moons, routes and rescue pressure while keeping the sealed basin out of open charts."
-        },
-        "ru_RU": {
-          "title": "Линия редактуры Atlas Basin",
-          "scanner": "Публичный атлас лун может назвать угрозы неба; он не может напечатать, что делает payload Atlas basin.",
-          "field_note": "Над облаками маршрут публичен. Под basin у каждого ответа все еще есть замок.",
-          "terminal": "РЕДАКТУРА ATLAS: публичные страницы лун могут перечислять имена, маршрутные окна, угрозы, salvage economy и факты катастрофы HECTON-8. Эффекты payload, поведение basin receiver и исходы финального решения остаются закрытыми.",
-          "audio": "Публикуй небо. Запечатывай дно.",
-          "in_game_wiki": "Статьи о лунных маршрутах могут объяснять, как работает Aegir, не открывая Atlas basin слишком рано. Небо понятно по публичным записям; дно еще придется заслужить в темноте.",
-          "external_site": "Линия редактуры Atlas Basin отмечает, что публичное покрытие Aegir может говорить о лунах, маршрутах и давлении спасения, оставляя запечатанный бассейн вне открытых карт."
-        },
-        "ja_JP": {
-          "title": "Atlas Basin 編集線",
-          "scanner": "公開月面アトラスは空の危険を名指しできるが、Atlas basin の payload が何をするかは印刷できない。",
-          "field_note": "雲の上では航路は公開される。basin の下では、すべての答えにまだ鍵がかかっている。",
-          "terminal": "ATLAS REDACTION: 公開月ページは名称、航路窓、危険、salvage economy、HECTON-8 災害事実を記載できる。payload 効果、basin receiver 挙動、最終決定結果はゲート下に残る。",
-          "audio": "空を公開しろ。底を封じろ。",
-          "in_game_wiki": "月航路記事は、Atlas basin を早く開かずに Aegir の仕組みを説明できる。空は公開記録から理解できる。底はまだ暗闇で獲得しなければならない。",
-          "external_site": "Atlas Basin 編集線は、公開 Aegir 情報が月、航路、救助圧力について何を語れるかを示し、封印された盆地を開示チャートの外に置く。"
-        },
-        "zh_CN": {
-          "title": "Atlas Basin 删节线",
-          "scanner": "公共月群图集可以说出天空危险；它不能印出 Atlas basin payload 到底做什么。",
-          "field_note": "云层之上，航路是公共的。basin 之下，每个答案仍然上着锁。",
-          "terminal": "ATLAS REDACTION: 公共月面页面可列出名称、航路窗口、危险、salvage economy 和 HECTON-8 灾难事实。payload 效果、basin receiver 行为和最终抉择结果保持门控。",
-          "audio": "公开天空。封住底部。",
-          "in_game_wiki": "月面航路文章可以解释 Aegir 如何运转，而不提前打开 Atlas basin。天空可以从公共记录中理解；底部仍要在黑暗里挣来。",
-          "external_site": "Atlas Basin 删节线标明公共 Aegir 覆盖可以如何谈论月群、航路和救援压力，同时把封闭盆地留在公开星图之外。"
-        },
-        "fr_FR": {
-          "title": "Ligne de caviardage du bassin Atlas",
-          "scanner": "L'atlas lunaire public peut nommer les dangers du ciel ; il ne peut pas imprimer ce que fait le payload du bassin Atlas.",
-          "field_note": "Au-dessus des nuages, la route est publique. Sous le bassin, chaque réponse a encore un verrou.",
-          "terminal": "CAVIARDAGE ATLAS : les pages lunaires publiques peuvent lister noms, fenêtres de route, dangers, économie de salvage et faits du désastre HECTON-8. Effets du payload, comportement du basin receiver et résultats de décision finale restent verrouillés.",
-          "audio": "Publie le ciel. Scelle le fond.",
-          "in_game_wiki": "Les articles de route lunaire peuvent expliquer le fonctionnement d'Aegir sans ouvrir trop tôt le bassin Atlas. Le ciel se comprend par les archives publiques ; le fond doit encore se gagner dans le noir.",
-          "external_site": "La Ligne de caviardage du bassin Atlas marque ce que la couverture publique d'Aegir peut dire des lunes, des routes et de la pression de secours tout en gardant le bassin scellé hors des cartes ouvertes."
-        },
-        "es_ES": {
-          "title": "Línea de redacción de la cuenca Atlas",
-          "scanner": "El atlas lunar público puede nombrar los peligros del cielo; no puede imprimir lo que hace el payload de la cuenca Atlas.",
-          "field_note": "Sobre las nubes, la ruta es pública. Bajo la cuenca, cada respuesta sigue cerrada.",
-          "terminal": "REDACCIÓN ATLAS: las páginas lunares públicas pueden listar nombres, ventanas de ruta, peligros, economía de salvage y hechos del desastre de HECTON-8. Efectos del payload, conducta del basin receiver y resultados de decisión final permanecen bloqueados.",
-          "audio": "Publica el cielo. Sella el fondo.",
-          "in_game_wiki": "Los artículos de rutas lunares pueden explicar cómo funciona Aegir sin abrir demasiado pronto la cuenca Atlas. El cielo puede entenderse desde registros públicos; el fondo aún hay que ganárselo en la oscuridad.",
-          "external_site": "La Línea de redacción de la cuenca Atlas marca lo que la cobertura pública de Aegir puede decir sobre lunas, rutas y presión de rescate mientras mantiene la cuenca sellada fuera de las cartas abiertas."
-        },
-        "de_DE": {
-          "title": "Atlas-Becken-Redaktionslinie",
-          "scanner": "Der öffentliche Mondatlas darf die Himmelsgefahren nennen; er darf nicht drucken, was das Atlas-Becken-payload tut.",
-          "field_note": "Über den Wolken ist die Route öffentlich. Unter dem Becken hat jede Antwort noch ein Schloss.",
-          "terminal": "ATLAS-REDAKTION: öffentliche Mondseiten dürfen Namen, Routenfenster, Gefahren, salvage economy und HECTON-8-Katastrophenfakten listen. Payload-Effekte, Verhalten des basin receiver und Endentscheidungsfolgen bleiben gesperrt.",
-          "audio": "Veröffentliche den Himmel. Versiegle den Boden.",
-          "in_game_wiki": "Mondroutenartikel können erklären, wie Aegir funktioniert, ohne das Atlas-Becken zu früh zu öffnen. Der Himmel lässt sich aus öffentlichen Aufzeichnungen verstehen; der Boden muss im Dunkeln noch verdient werden.",
-          "external_site": "Die Atlas-Becken-Redaktionslinie markiert, was öffentliche Aegir-Abdeckung über Monde, Routen und Rettungsdruck sagen darf, während das versiegelte Becken aus offenen Karten herausbleibt."
-        },
-        "pl_PL": {
-          "title": "Linia redakcji Basenu Atlas",
-          "scanner": "Publiczny atlas księżyców może nazwać zagrożenia nieba; nie może wydrukować, co robi payload Basenu Atlas.",
-          "field_note": "Nad chmurami trasa jest publiczna. Pod basenem każda odpowiedź nadal ma zamek.",
-          "terminal": "REDAKCJA ATLAS: publiczne strony księżyców mogą podawać nazwy, okna tras, zagrożenia, salvage economy i fakty katastrofy HECTON-8. Efekty payload, zachowanie basin receiver i wyniki decyzji finałowej pozostają zamknięte.",
-          "audio": "Publikuj niebo. Pieczętuj dno.",
-          "in_game_wiki": "Artykuły tras księżycowych mogą wyjaśniać, jak działa Aegir, bez zbyt wczesnego otwierania Basenu Atlas. Niebo da się zrozumieć z publicznych zapisów; dno trzeba jeszcze zdobyć w ciemności.",
-          "external_site": "Linia redakcji Basenu Atlas oznacza, co publiczne pokrycie Aegir może mówić o księżycach, trasach i presji ratunku, zostawiając zapieczętowany basen poza otwartymi mapami."
-        },
-        "uk_UA": {
-          "title": "Лінія редагування Atlas Basin",
-          "scanner": "Публічний атлас місяців може назвати загрози неба; він не може надрукувати, що робить payload Atlas basin.",
-          "field_note": "Над хмарами маршрут публічний. Під basin кожна відповідь досі замкнена.",
-          "terminal": "РЕДАКТУРА ATLAS: публічні сторінки місяців можуть перелічувати імена, маршрутні вікна, загрози, salvage economy і факти катастрофи HECTON-8. Ефекти payload, поведінка basin receiver і наслідки фінального рішення лишаються закритими.",
-          "audio": "Публікуй небо. Запечатуй дно.",
-          "in_game_wiki": "Статті про місячні маршрути можуть пояснювати, як працює Aegir, не відкриваючи Atlas basin зарано. Небо зрозуміле з публічних записів; дно ще доведеться заслужити в темряві.",
-          "external_site": "Лінія редагування Atlas Basin позначає, що публічне покриття Aegir може казати про місяці, маршрути й тиск порятунку, залишаючи запечатаний басейн поза відкритими картами."
-        },
-        "ar_SA": {
-          "title": "خط حجب حوض Atlas",
-          "scanner": "يمكن للأطلس القمري العام تسمية أخطار السماء؛ ولا يمكنه طباعة ما يفعله payload حوض Atlas.",
-          "field_note": "فوق الغيوم، المسار عام. تحت الحوض، لا يزال لكل جواب قفل.",
-          "terminal": "حجب ATLAS: يمكن للصفحات القمرية العامة ذكر الأسماء، ونوافذ المسار، والأخطار، وsalvage economy، وحقائق كارثة HECTON-8. تبقى آثار payload، وسلوك basin receiver، ونتائج القرار الأخير خلف البوابات.",
-          "audio": "انشر السماء. اختم القاع.",
-          "in_game_wiki": "يمكن لمقالات مسارات الأقمار أن تشرح كيف يعمل Aegir من دون فتح حوض Atlas مبكرا. يمكن فهم السماء من السجلات العامة؛ أما القاع فيجب كسبه في الظلام.",
-          "external_site": "يحدد خط حجب حوض Atlas ما يمكن للتغطية العامة عن Aegir قوله عن الأقمار والمسارات وضغط الإنقاذ، مع إبقاء الحوض المختوم خارج الخرائط المفتوحة."
-        },
-        "id_ID": {
-          "title": "Garis Redaksi Cekungan Atlas",
-          "scanner": "Atlas bulan publik dapat menyebut bahaya langit; ia tidak boleh mencetak apa yang dilakukan payload cekungan Atlas.",
-          "field_note": "Di atas awan, rute bersifat publik. Di bawah cekungan, setiap jawaban masih terkunci.",
-          "terminal": "REDAKSI ATLAS: halaman bulan publik boleh mencantumkan nama, jendela rute, bahaya, salvage economy, dan fakta bencana HECTON-8. Efek payload, perilaku basin receiver, dan hasil keputusan akhir tetap berpagar.",
-          "audio": "Terbitkan langit. Segel dasar.",
-          "in_game_wiki": "Artikel rute bulan dapat menjelaskan cara kerja Aegir tanpa membuka cekungan Atlas terlalu awal. Langit bisa dipahami dari catatan publik; dasar masih harus diperoleh dalam gelap.",
-          "external_site": "Garis Redaksi Cekungan Atlas menandai apa yang boleh dikatakan cakupan publik Aegir tentang bulan, rute, dan tekanan penyelamatan sambil menjaga cekungan tersegel di luar peta terbuka."
-        },
-        "ko_KR": {
-          "title": "Atlas 분지 검열선",
-          "scanner": "공개 달 atlas는 하늘 위험의 이름을 댈 수 있다. Atlas basin payload가 무엇을 하는지는 인쇄할 수 없다.",
-          "field_note": "구름 위에서 항로는 공개된다. basin 아래에서 모든 답은 아직 잠겨 있다.",
-          "terminal": "ATLAS REDACTION: 공개 달 페이지는 이름, 항로 창, 위험, salvage economy, HECTON-8 재난 사실을 나열할 수 있다. payload 효과, basin receiver 동작, 최종 결정 결과는 게이트 뒤에 남는다.",
-          "audio": "하늘은 공개하라. 바닥은 봉인하라.",
-          "in_game_wiki": "달 항로 기사는 Atlas basin을 일찍 열지 않고도 Aegir가 어떻게 작동하는지 설명할 수 있다. 하늘은 공개 기록으로 이해할 수 있지만, 바닥은 아직 어둠 속에서 얻어야 한다.",
-          "external_site": "Atlas 분지 검열선은 공개 Aegir 보도가 달, 항로, 구조 압력에 대해 말할 수 있는 범위를 표시하고, 봉인된 분지는 공개 차트 밖에 둔다."
-        },
-        "he_IL": {
-          "title": "קו ההשחרה של אגן Atlas",
-          "scanner": "אטלס הירחים הציבורי יכול לנקוב בסיכוני השמים; הוא אינו יכול להדפיס מה payload של אגן Atlas עושה.",
-          "field_note": "מעל העננים, הנתיב ציבורי. מתחת לאגן, לכל תשובה עדיין יש מנעול.",
-          "terminal": "השחרת ATLAS: דפי ירחים ציבוריים רשאים לרשום שמות, חלונות נתיב, סיכונים, salvage economy ועובדות אסון HECTON-8. השפעות payload, התנהגות basin receiver ותוצאות ההחלטה הסופית נשארות מאחורי שערים.",
-          "audio": "פרסם את השמים. חתום את הקרקעית.",
-          "in_game_wiki": "מאמרי נתיבי ירחים יכולים להסביר איך Aegir פועל בלי לפתוח את אגן Atlas מוקדם מדי. את השמים אפשר להבין מרשומות ציבוריות; את הקרקעית עדיין צריך להרוויח בחושך.",
-          "external_site": "קו ההשחרה של אגן Atlas מסמן מה כיסוי ציבורי של Aegir רשאי לומר על ירחים, נתיבים ולחץ חילוץ, בזמן שהאגן החתום נשאר מחוץ למפות פתוחות."
-        },
-        "pt_BR": {
-          "title": "Linha de Redação da Bacia Atlas",
-          "scanner": "O atlas lunar público pode nomear os perigos do céu; não pode imprimir o que o payload da bacia Atlas faz.",
-          "field_note": "Acima das nuvens, a rota é pública. Sob a bacia, toda resposta ainda tem uma trava.",
-          "terminal": "REDAÇÃO ATLAS: páginas lunares públicas podem listar nomes, janelas de rota, perigos, salvage economy e fatos do desastre de HECTON-8. Efeitos do payload, comportamento do basin receiver e resultados da decisão final permanecem bloqueados.",
-          "audio": "Publique o céu. Sele o fundo.",
-          "in_game_wiki": "Artigos de rotas lunares podem explicar como Aegir funciona sem abrir cedo demais a bacia Atlas. O céu pode ser entendido por registros públicos; o fundo ainda precisa ser conquistado no escuro.",
-          "external_site": "A Linha de Redação da Bacia Atlas marca o que a cobertura pública de Aegir pode dizer sobre luas, rotas e pressão de resgate enquanto mantém a bacia selada fora das cartas abertas."
-        },
-        "nl_NL": {
-          "title": "Atlasbekken-redactielijn",
-          "scanner": "De publieke maanatlas mag de hemelgevaren noemen; hij mag niet afdrukken wat de Atlasbekken-payload doet.",
-          "field_note": "Boven de wolken is de route openbaar. Onder het bekken heeft elk antwoord nog een slot.",
-          "terminal": "ATLAS-REDACTIE: publieke maanpagina's mogen namen, routevensters, gevaren, salvage economy en HECTON-8-rampfeiten noemen. Payload-effecten, basin receiver-gedrag en eindbeslissingsuitkomsten blijven afgeschermd.",
-          "audio": "Publiceer de hemel. Verzegel de bodem.",
-          "in_game_wiki": "Maanrouteartikelen kunnen uitleggen hoe Aegir werkt zonder het Atlasbekken te vroeg te openen. De hemel kan uit publieke records worden begrepen; de bodem moet nog in het donker verdiend worden.",
-          "external_site": "De Atlasbekken-redactielijn markeert wat publieke Aegir-dekking mag zeggen over manen, routes en reddingsdruk, terwijl het verzegelde bekken buiten open kaarten blijft."
-        }
-      }
+    "fr_FR": {
+     "title": "Registre des rôles lunaires d'Aegir",
+     "scanner": "Les noms publics dérivent selon les cartes ; les orbites gardent leur travail.",
+     "field_note": "Skarn cisaille les particules. Vela masque les relais. Claw projette la glace. Lumen imprime les routes. Thorne porte les rumeurs de quarantaine. Anvil nourrit le salvage. Kestrel tient les fenêtres hautes. HECTON garde la réclamation profonde. Mute vend des balises mortes.",
+     "terminal": "REGISTRE ATLAS : les étiquettes publiques varient selon l'assureur et la carte de route. Les rôles fonctionnels restent fixes : cisaillement radiatif, masque de relais, forçage de marée, diffusion de glace, routage public, rumeur de quarantaine, salvage industriel, trafic de fenêtre haute, réclamation profonde et économie de balises mortes.",
+     "audio": "On peut renommer une lune. L'orbite présente quand même la facture.",
+     "in_game_wiki": "La liste des lunes d'Aegir est une carte de trafic en service. Chaque corps autour de la géante gazeuse modifie le trafic, le droit des réclamations de salvage, le timing de communication ou la planification d'extraction depuis HECTON-8.",
+     "external_site": "Le registre des rôles lunaires d'Aegir note pourquoi les noms publics peuvent dériver tandis que le travail orbital reste fixe : masquage des relais, forçage de marée, rumeur de quarantaine et trafic de fenêtre haute décident qui peut bouger."
+    },
+    "es_ES": {
+     "title": "Registro de roles lunares de Aegir",
+     "scanner": "Los nombres públicos derivan entre cartas; las órbitas conservan su trabajo.",
+     "field_note": "Skarn corta partículas. Vela enmascara relés. Claw arroja hielo. Lumen imprime rutas. Thorne carga rumores de cuarentena. Anvil alimenta salvage. Kestrel controla ventanas altas. HECTON conserva la reclamación profunda. Mute vende balizas muertas.",
+     "terminal": "REGISTRO ATLAS: las etiquetas públicas varían por aseguradora y carta de ruta. Los roles funcionales permanecen fijos: cizalla de radiación, máscara de relé, forzado de marea, dispersión de hielo, rutas públicas, rumor de cuarentena, salvage industrial, tráfico de ventana alta, reclamación profunda y economía de balizas muertas.",
+     "audio": "Puedes renombrar una luna. La órbita sigue cobrando.",
+     "in_game_wiki": "La lista de lunas de Aegir es una carta de tráfico en servicio. Cada cuerpo alrededor del gigante gaseoso cambia tráfico, ley de reclamaciones de salvamento, tiempos de comunicación o planificación de extracción desde HECTON-8.",
+     "external_site": "El Registro de roles lunares de Aegir anota por qué los nombres públicos pueden derivar mientras el trabajo orbital queda fijo: máscara de relé, fuerza de marea, rumor de cuarentena y tráfico de ventana alta deciden quién puede moverse."
+    },
+    "de_DE": {
+     "title": "Aegir-Mondrollen-Ledger",
+     "scanner": "Öffentliche Namen wandern zwischen Karten; die Orbits behalten ihre Arbeit.",
+     "field_note": "Skarn schert Partikel. Vela maskiert Relais. Claw wirft Eis. Lumen druckt Routen. Thorne trägt Quarantänegerüchte. Anvil füttert salvage. Kestrel hält Hochfenster. HECTON bewahrt den Tiefenanspruch. Mute verkauft tote Baken.",
+     "terminal": "ATLAS LEDGER: öffentliche Labels variieren je nach Versicherer und Routenkarte. Funktionsrollen bleiben fix: Strahlungsscherung, Relaismaske, Gezeitenzwang, Eisstreuung, öffentliche Routen, Quarantänegerücht, industrielles salvage, Hochfensterverkehr, Tiefenanspruch und Tote-Baken-Ökonomie.",
+     "audio": "Du kannst einen Mond umbenennen. Der Orbit stellt trotzdem die Rechnung.",
+     "in_game_wiki": "Aegirs Mondliste ist eine laufende Verkehrskarte. Jeder Körper um den Gasriesen verändert Verkehr, Bergungsanspruchsrecht, Kommunikationstiming oder HECTON-8-Extraktionsplanung.",
+     "external_site": "Das Aegir-Mondrollen-Ledger hält fest, warum öffentliche Namen wandern können, während orbitale Arbeit fix bleibt: Relaismasken, Gezeitenzwang, Quarantänegerüchte und Hochfensterverkehr entscheiden, wer sich bewegen darf."
+    },
+    "pl_PL": {
+     "title": "Rejestr ról księżyców Aegir",
+     "scanner": "Publiczne nazwy dryfują między mapami; orbity dalej wykonują swoją pracę.",
+     "field_note": "Skarn tnie cząstki. Vela maskuje przekaźniki. Claw rzuca lodem. Lumen drukuje trasy. Thorne niesie plotki o kwarantannie. Anvil karmi salvage. Kestrel trzyma wysokie okna. HECTON przechowuje głębokie roszczenie. Mute sprzedaje martwe boje.",
+     "terminal": "REJESTR ATLAS: publiczne etykiety różnią się według ubezpieczyciela i mapy trasy. Role funkcjonalne zostają stałe: ścinanie promieniowania, maska przekaźnika, wymuszenie pływowe, rozpraszanie lodu, trasy publiczne, plotka kwarantanny, przemysłowy salvage, ruch wysokich okien, głębokie roszczenie i ekonomia martwych boi.",
+     "audio": "Księżyc można przemianować. Orbita i tak wystawi rachunek.",
+     "in_game_wiki": "Lista księżyców Aegir jest działającą mapą ruchu. Każde ciało wokół gazowego olbrzyma zmienia ruch, prawo roszczeń salvage, timing łączności albo planowanie wyjścia z HECTON-8.",
+     "external_site": "Rejestr ról księżyców Aegir zapisuje, dlaczego publiczne nazwy mogą dryfować, a praca orbitalna zostaje stała: maskowanie przekaźników, wymuszenie pływowe, plotka kwarantanny i ruch wysokich okien decydują, kto może się ruszyć."
+    },
+    "uk_UA": {
+     "title": "Реєстр ролей місяців Aegir",
+     "scanner": "Публічні назви дрейфують між картами; орбіти продовжують свою роботу.",
+     "field_note": "Skarn ріже частинки. Vela маскує ретранслятори. Claw кидає лід. Lumen друкує маршрути. Thorne несе карантинні чутки. Anvil живить salvage. Kestrel тримає високі вікна. HECTON зберігає глибоку претензію. Mute продає мертві маяки.",
+     "terminal": "РЕЄСТР ATLAS: публічні ярлики змінюються залежно від страховика й маршрутної карти. Функції лишаються фіксованими: радіаційний зсув, маска ретрансляції, припливний тиск, крижане розсіювання, публічна маршрутизація, карантинний слух, промисловий salvage, трафік високих вікон, глибока претензія й економіка мертвих маяків.",
+     "audio": "Місяць можна перейменувати. За орбіту все одно доведеться платити.",
+     "in_game_wiki": "Список місяців Aegir - робоча карта руху. Кожне тіло навколо газового гіганта змінює трафік, право рятувальних претензій, таймінг зв'язку або планування виходу з HECTON-8.",
+     "external_site": "Реєстр ролей місяців Aegir фіксує, чому публічні назви можуть дрейфувати, а орбітальна робота лишається сталою: маска ретрансляторів, припливний тиск, карантинні чутки й високі вікна вирішують, хто взагалі може рухатися."
+    },
+    "ar_SA": {
+     "title": "سجل أدوار أقمار Aegir",
+     "scanner": "تنجرف الأسماء العامة بين الخرائط؛ أما المدارات فتحتفظ بوظائفها.",
+     "field_note": "Skarn يمزق الجسيمات. Vela يحجب المرحلات. Claw يقذف الجليد. Lumen يطبع المسارات. Thorne يحمل شائعات الحجر. Anvil يغذي salvage. Kestrel يملك النوافذ العالية. HECTON يحتفظ بالمطالبة العميقة. Mute يبيع منارات ميتة.",
+     "terminal": "سجل ATLAS: تختلف التسميات العامة حسب شركة التأمين وخريطة المسار. تبقى الأدوار ثابتة: قص إشعاعي، قناع مرحل، دفع مدي، تشتت جليدي، توجيه عام، شائعة حجر، salvage صناعي، مرور النوافذ العالية، مطالبة عميقة، واقتصاد المنارات الميتة.",
+     "audio": "يمكنك تغيير اسم قمر. لكن المدار يطالبك بالفاتورة.",
+     "in_game_wiki": "قائمة أقمار Aegir خريطة مرور عاملة. كل جسم حول العملاق الغازي يغير المرور، وقانون مطالبات الإنقاذ، وتوقيت الاتصال، أو تخطيط الخروج من HECTON-8.",
+     "external_site": "يسجل سجل أدوار أقمار Aegir سبب انجراف الأسماء العامة بينما يبقى العمل المداري ثابتا: حجب المرحلات، ودفع المد، وشائعة الحجر، ومرور النوافذ العالية تحدد من يستطيع التحرك."
+    },
+    "id_ID": {
+     "title": "Ledger Peran Bulan Aegir",
+     "scanner": "Nama publik bergeser antar peta; orbit tetap menjalankan tugasnya.",
+     "field_note": "Skarn membelah partikel. Vela menutupi relai. Claw melempar es. Lumen mencetak rute. Thorne membawa rumor karantina. Anvil memberi makan salvage. Kestrel menguasai jendela tinggi. HECTON menyimpan klaim dalam. Mute menjual suar mati.",
+     "terminal": "LEDGER ATLAS: label publik berubah menurut asuransi dan peta rute. Peran fungsional tetap: geser radiasi, masker relai, paksa pasang, sebar es, rute publik, rumor karantina, salvage industri, lalu lintas jendela tinggi, klaim dalam, dan ekonomi suar mati.",
+     "audio": "Kau bisa mengganti nama bulan. Orbit tetap menagih.",
+     "in_game_wiki": "Daftar bulan Aegir adalah peta lalu lintas yang sedang bekerja. Setiap benda di sekitar raksasa gas mengubah lalu lintas, hukum klaim salvage, waktu komunikasi, atau rencana ekstraksi HECTON-8.",
+     "external_site": "Ledger Peran Bulan Aegir mencatat mengapa nama publik bisa bergeser sementara kerja orbit tetap: penutup relai, paksa pasang, rumor karantina, dan lalu lintas jendela tinggi menentukan siapa yang bisa bergerak."
+    },
+    "ko_KR": {
+     "title": "Aegir 달 역할 원장",
+     "scanner": "공개 명칭은 차트마다 흔들리지만, 궤도는 제 일을 계속한다.",
+     "field_note": "Skarn은 입자를 전단한다. Vela는 중계를 가린다. Claw는 얼음을 던진다. Lumen은 항로를 인쇄한다. Thorne은 격리 소문을 운반한다. Anvil은 salvage를 먹인다. Kestrel은 높은 창을 장악한다. HECTON은 깊은 청구를 품는다. Mute는 죽은 비콘을 판다.",
+     "terminal": "ATLAS LEDGER: 공개 라벨은 보험자와 항로 차트에 따라 달라진다. 기능 역할은 고정된다: 방사선 전단, 중계 마스크, 조석 강제, 얼음 산란, 공개 항로, 격리 소문, 산업 salvage, 높은 창 교통, 깊은 청구, 죽은 비콘 경제.",
+     "audio": "달 이름은 바꿀 수 있다. 궤도는 여전히 청구서를 보낸다.",
+     "in_game_wiki": "Aegir의 달 목록은 실제로 돌아가는 교통도다. 가스 거성 주변의 각 천체는 교통, salvage 청구법, 통신 타이밍 또는 HECTON-8 탈출 계획을 바꾼다.",
+     "external_site": "Aegir 달 역할 원장은 공개 이름이 흔들려도 궤도 업무가 고정되는 이유를 기록한다. 중계 가림, 조석 강제, 격리 소문, 높은 창 교통이 누가 움직일 수 있는지를 결정한다."
+    },
+    "he_IL": {
+     "title": "יומן תפקידי הירחים של Aegir",
+     "scanner": "השמות הציבוריים נודדים בין מפות; המסלולים שומרים על עבודתם.",
+     "field_note": "Skarn גוזר חלקיקים. Vela מסתיר ממסרים. Claw זורק קרח. Lumen מדפיס נתיבים. Thorne נושא שמועות הסגר. Anvil מזין salvage. Kestrel מחזיק חלונות גבוהים. HECTON שומר את התביעה העמוקה. Mute מוכר משואות מתות.",
+     "terminal": "יומן ATLAS: תוויות ציבוריות משתנות לפי מבטח ומפת נתיב. התפקידים קבועים: גזירת קרינה, מסכת ממסר, אילוץ גאות, פיזור קרח, ניתוב ציבורי, שמועת הסגר, salvage תעשייתי, תנועת חלון גבוה, תביעה עמוקה וכלכלת משואות מתות.",
+     "audio": "אפשר לשנות שם של ירח. המסלול עדיין מגיש חשבון.",
+     "in_game_wiki": "רשימת הירחים של Aegir היא מפת תנועה עובדת. כל גוף סביב ענק הגז משנה תנועה, חוק תביעות חילוץ, תזמון תקשורת או תכנון יציאה מ-HECTON-8.",
+     "external_site": "יומן תפקידי הירחים של Aegir מתעד מדוע שמות ציבוריים יכולים לנדוד בזמן שעבודת המסלול נשארת קבועה: הסתרת ממסרים, אילוץ גאות, שמועת הסגר ותנועת חלון גבוה קובעים מי יכול לזוז."
+    },
+    "pt_BR": {
+     "title": "Ledger de Funções Lunares de Aegir",
+     "scanner": "Nomes públicos derivam entre cartas; as órbitas mantêm seus trabalhos.",
+     "field_note": "Skarn cisalha partículas. Vela mascara relés. Claw arremessa gelo. Lumen imprime rotas. Thorne carrega rumores de quarentena. Anvil alimenta salvage. Kestrel controla janelas altas. HECTON guarda a reivindicação profunda. Mute vende balizas mortas.",
+     "terminal": "LEDGER ATLAS: rótulos públicos variam por seguradora e carta de rota. Funções permanecem fixas: cisalhamento de radiação, máscara de relé, força de maré, dispersão de gelo, roteamento público, rumor de quarentena, salvage industrial, tráfego de janela alta, reivindicação profunda e economia de balizas mortas.",
+     "audio": "Você pode renomear uma lua. A órbita ainda cobra.",
+     "in_game_wiki": "A lista de luas de Aegir é uma carta de tráfego em operação. Cada corpo ao redor do gigante gasoso muda tráfego, lei de reivindicação de salvage, timing de comunicação ou planejamento de extração de HECTON-8.",
+     "external_site": "O Ledger de Funções Lunares de Aegir registra por que nomes públicos podem derivar enquanto o trabalho orbital fica fixo: máscara de relé, força de maré, rumor de quarentena e tráfego de janela alta decidem quem pode se mover."
+    },
+    "nl_NL": {
+     "title": "Aegir-maanrollenledger",
+     "scanner": "Publieke namen verschuiven tussen kaarten; de banen houden hun werk.",
+     "field_note": "Skarn scheert deeltjes. Vela maskeert relais. Claw werpt ijs. Lumen drukt routes. Thorne draagt quarantaineruchten. Anvil voedt salvage. Kestrel bezit hoge vensters. HECTON bewaart de diepe claim. Mute verkoopt dode bakens.",
+     "terminal": "ATLAS LEDGER: publieke labels verschillen per verzekeraar en routekaart. Functionele rollen blijven vast: stralingsschering, relaismasker, getijdenforcing, ijsverstrooiing, publieke routering, quarantainerucht, industriële salvage, hoog-vensterverkeer, diepe claim en dode-baken-economie.",
+     "audio": "Je kunt een maan hernoemen. De baan stuurt nog steeds de rekening.",
+     "in_game_wiki": "Aegirs maanlijst is een werkende verkeerskaart. Elk lichaam rond de gasreus verandert verkeer, bergingsclaimrecht, communicatietiming of HECTON-8-extractieplanning.",
+     "external_site": "Het Aegir-maanrollenledger legt vast waarom publieke namen kunnen verschuiven terwijl orbitaal werk vast blijft: relaismaskering, getijdedwang, quarantaineruchten en hoogvensterverkeer bepalen wie mag bewegen."
     }
-  ]
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P182_HECTON8_ORBITAL_HAZARD_TABLE",
+   "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+   "article_id": "aegir_moons.hecton8_orbital_hazard_table",
+   "title_key": "applied_lore.hecton8_orbital_hazard_table.title",
+   "unlock": {
+    "primary": "unlock.hecton8_orbital_hazard_table",
+    "poi_tags": [
+     "poi.eclipse_window_chart",
+     "poi.radiation_shutter_clock",
+     "poi.ice_scatter_warning"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.upper_atmosphere"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "HECTON-8 Orbital Hazard Table",
+     "scanner": "Extraction from HECTON-8 is gated by eclipse, radiation surge, relay shutter, ice scatter and storm-plume windows.",
+     "field_note": "No one is parking rescue for drama. Ascent has to meet the sky's bad schedule.",
+     "terminal": "ORBITAL HAZARD TABLE: eclipse blackout, Aegir charged-particle surge, moon relay shutter, ice-grain scatter, storm plume and guidance-lag windows must be cleared before ascent.",
+     "audio": "The sky above the ocean is a machine with teeth in the timing.",
+     "in_game_wiki": "Orbital hazards explain why a repaired capsule is not enough. The ascent chain still needs relay access, guidance timing, shielding work and a legal launch window before HECTON-8 can be left behind.",
+     "external_site": "HECTON-8 Orbital Hazard Table shows rescue as a chain of moving gates: radiation shear, debris, eclipse, legal beacons and custody windows, each able to close an otherwise repaired ascent."
+    },
+    "ru_RU": {
+     "title": "Таблица орбитальных угроз HECTON-8",
+     "scanner": "Выход с HECTON-8 заперт окнами затмения, радиационного всплеска, релейного затвора, ледяного рассеяния и штормового plume.",
+     "field_note": "Спасение не держат в стороне ради драмы. Взлет должен попасть в плохое расписание неба.",
+     "terminal": "ТАБЛИЦА ОРБИТАЛЬНЫХ УГРОЗ: blackout затмения, всплеск заряженных частиц Aegir, лунный релейный затвор, рассеяние ледяных зерен, storm plume и окна guidance-lag должны быть закрыты до взлета.",
+     "audio": "Небо над океаном - машина, у которой зубья сидят в тайминге.",
+     "in_game_wiki": "Орбитальные угрозы объясняют, почему отремонтированной капсулы мало. Цепи подъема все еще нужны доступ к ретранслятору, тайминг наведения, защита и законное стартовое окно, прежде чем HECTON-8 можно будет оставить позади.",
+     "external_site": "Таблица орбитальных угроз HECTON-8 показывает спасение как цепь движущихся ворот: радиационный сдвиг, обломки, затмение, юридические маяки и окна удержания права, каждое из которых может закрыть даже исправный подъем."
+    },
+    "ja_JP": {
+     "title": "HECTON-8 軌道危険表",
+     "scanner": "HECTON-8 からの脱出は、食、放射線サージ、リレーシャッター、氷散乱、嵐プルームの窓に縛られる。",
+     "field_note": "救助が演出のために待機しているわけではない。上昇は空の悪い時刻表に合わせなければならない。",
+     "terminal": "ORBITAL HAZARD TABLE: 食による blackout、Aegir 荷電粒子サージ、月面リレーシャッター、氷粒散乱、storm plume、guidance-lag 窓は上昇前に解決が必要。",
+     "audio": "海の上の空は、タイミングに歯を持つ機械だ。",
+     "in_game_wiki": "軌道危険は、修理済みカプセルだけでは足りない理由を示す。HECTON-8 を後にする前に、上昇系にはリレーアクセス、誘導タイミング、遮蔽作業、合法の発射窓がまだ必要だ。",
+     "external_site": "HECTON-8 軌道危険表は、救助を動く門の連鎖として示す。放射線シア、デブリ、食、法的ビーコン、保管権ウィンドウのどれもが、修理済みの上昇を閉ざし得る。"
+    },
+    "zh_CN": {
+     "title": "HECTON-8 轨道危险表",
+     "scanner": "从 HECTON-8 撤离受限于食、辐射激增、中继闸门、冰粒散射和风暴羽流窗口。",
+     "field_note": "救援不是为了戏剧效果而停在外面。升空必须对上天空糟糕的时间表。",
+     "terminal": "ORBITAL HAZARD TABLE: 食 blackout、Aegir 带电粒子激增、月面中继闸门、冰粒散射、storm plume 与 guidance-lag 窗口必须在升空前清除。",
+     "audio": "海洋上方的天空是一台机器，齿牙咬在时机里。",
+     "in_game_wiki": "轨道危险解释了为什么修好的胶囊还不够。离开 HECTON-8 前，上升链仍需要中继访问、制导时机、屏蔽工作和合法发射窗口。",
+     "external_site": "HECTON-8 轨道危险表把救援呈现为一串移动闸门：辐射剪切、碎片、食影、合法信标和监管窗口，每一项都能关闭一条本已修好的上升路径。"
+    },
+    "fr_FR": {
+     "title": "Table des dangers orbitaux de HECTON-8",
+     "scanner": "L'extraction depuis HECTON-8 est verrouillée par les fenêtres d'éclipse, de poussée radiative, de volet relais, de diffusion de glace et de panache de tempête.",
+     "field_note": "Personne ne retient le secours pour le drame. L'ascension doit rencontrer le mauvais horaire du ciel.",
+     "terminal": "TABLE DES DANGERS ORBITAUX : blackout d'éclipse, poussée de particules chargées d'Aegir, volet relais lunaire, diffusion de grains de glace, storm plume et fenêtres guidance-lag doivent être dégagés avant l'ascension.",
+     "audio": "Le ciel au-dessus de l'océan est une machine dont les dents sont dans le timing.",
+     "in_game_wiki": "Les dangers orbitaux expliquent pourquoi une capsule réparée ne suffit pas. Avant de laisser HECTON-8 derrière soi, la chaîne d'ascension a encore besoin d'accès relais, de timing de guidage, de blindage et d'une fenêtre de lancement légale.",
+     "external_site": "La Table des dangers orbitaux de HECTON-8 montre le secours comme une chaîne de portes mobiles : cisaillement radiatif, débris, éclipse, balises légales et fenêtres de garde peuvent chacun fermer une ascension pourtant réparée."
+    },
+    "es_ES": {
+     "title": "Tabla de peligros orbitales de HECTON-8",
+     "scanner": "La extracción desde HECTON-8 está cerrada por ventanas de eclipse, pico de radiación, compuerta de relé, dispersión de hielo y penacho de tormenta.",
+     "field_note": "Nadie retiene el rescate por drama. El ascenso debe encajar con el mal horario del cielo.",
+     "terminal": "TABLA DE PELIGROS ORBITALES: blackout de eclipse, pico de partículas cargadas de Aegir, compuerta lunar de relé, dispersión de granos de hielo, storm plume y ventanas guidance-lag deben despejarse antes del ascenso.",
+     "audio": "El cielo sobre el océano es una máquina con dientes en el tiempo.",
+     "in_game_wiki": "Los peligros orbitales explican por qué una cápsula reparada no basta. Antes de dejar atrás HECTON-8, la cadena de ascenso aún necesita acceso de relé, sincronía de guiado, blindaje y una ventana legal de lanzamiento.",
+     "external_site": "La Tabla de peligros orbitales de HECTON-8 muestra el rescate como una cadena de compuertas móviles: cizalla de radiación, escombros, eclipse, balizas legales y ventanas de custodia, cualquiera capaz de cerrar un ascenso reparado."
+    },
+    "de_DE": {
+     "title": "HECTON-8-Orbitalgefahrentabelle",
+     "scanner": "Extraktion von HECTON-8 wird durch Finsternis, Strahlungsspitzen, Relaisschotten, Eisstreuung und Sturm-Plume-Fenster begrenzt.",
+     "field_note": "Niemand parkt Rettung für Drama. Der Aufstieg muss den schlechten Fahrplan des Himmels treffen.",
+     "terminal": "ORBITALGEFAHRENTABELLE: Finsternis-blackout, Aegir-Ladungspartikelspitze, Mondrelaisschott, Eispartikelstreuung, storm plume und guidance-lag-Fenster müssen vor dem Aufstieg geklärt sein.",
+     "audio": "Der Himmel über dem Ozean ist eine Maschine mit Zähnen im Timing.",
+     "in_game_wiki": "Orbitalgefahren erklären, warum eine reparierte Kapsel nicht genügt. Bevor HECTON-8 zurückbleiben kann, braucht die Aufstiegskette weiter Relaiszugang, Führungstiming, Abschirmungsarbeit und ein legales Startfenster.",
+     "external_site": "Die HECTON-8-Orbitalgefahrentabelle zeigt Rettung als Kette beweglicher Tore: Strahlungsscherung, Trümmer, Finsternis, legale Baken und Verwahrfenster können jeden sonst reparierten Aufstieg schließen."
+    },
+    "pl_PL": {
+     "title": "Tabela zagrożeń orbitalnych HECTON-8",
+     "scanner": "Wydostanie się z HECTON-8 ograniczają okna zaćmienia, skoku promieniowania, zamknięcia przekaźnika, rozpraszania lodu i pióropusza burzy.",
+     "field_note": "Nikt nie parkuje ratunku dla dramatu. Wznoszenie musi trafić w zły rozkład nieba.",
+     "terminal": "TABELA ZAGROŻEŃ ORBITALNYCH: blackout zaćmienia, skok cząstek naładowanych Aegir, księżycowa blokada przekaźnika, rozpraszanie ziaren lodu, storm plume i okna guidance-lag muszą zostać oczyszczone przed wznoszeniem.",
+     "audio": "Niebo nad oceanem to maszyna z zębami w timingu.",
+     "in_game_wiki": "Zagrożenia orbitalne wyjaśniają, dlaczego naprawiona kapsuła nie wystarczy. Zanim HECTON-8 zostanie za plecami, łańcuch wznoszenia nadal potrzebuje dostępu do przekaźnika, timingu naprowadzania, osłon i legalnego okna startowego.",
+     "external_site": "Tabela zagrożeń orbitalnych HECTON-8 pokazuje ratunek jako łańcuch ruchomych bram: ścinanie promieniowania, odłamki, zaćmienie, legalne boje i okna nadzoru, z których każde może zamknąć nawet naprawione wznoszenie."
+    },
+    "uk_UA": {
+     "title": "Таблиця орбітальних загроз HECTON-8",
+     "scanner": "Вихід із HECTON-8 заблокований вікнами затемнення, радіаційного сплеску, релейного затвора, крижаного розсіювання й штормового plume.",
+     "field_note": "Порятунок не тримають осторонь заради драми. Підйом має влучити в поганий розклад неба.",
+     "terminal": "ТАБЛИЦЯ ОРБІТАЛЬНИХ ЗАГРОЗ: blackout затемнення, сплеск заряджених частинок Aegir, місячний релейний затвор, розсіювання крижаних зерен, storm plume і вікна guidance-lag мають бути очищені до підйому.",
+     "audio": "Небо над океаном - машина із зубами в таймінгу.",
+     "in_game_wiki": "Орбітальні загрози пояснюють, чому відремонтованої капсули замало. Ланцюгу підйому все ще потрібні доступ до ретранслятора, таймінг наведення, захист і законне стартове вікно, перш ніж HECTON-8 можна буде залишити позаду.",
+     "external_site": "Таблиця орбітальних загроз HECTON-8 показує порятунок як ланцюг рухомих воріт: радіаційний зсув, уламки, затемнення, юридичні маяки й вікна утримання права, кожне з яких може закрити навіть справний підйом."
+    },
+    "ar_SA": {
+     "title": "جدول الأخطار المدارية لـ HECTON-8",
+     "scanner": "الخروج من HECTON-8 محكوم بنوافذ الكسوف، واندفاع الإشعاع، ومغلاق المرحل، وتشتت الجليد، وأعمدة العاصفة.",
+     "field_note": "لا أحد يوقف الإنقاذ لأجل الدراما. الصعود يجب أن يطابق جدول السماء السيئ.",
+     "terminal": "جدول الأخطار المدارية: blackout الكسوف، اندفاع جسيمات Aegir المشحونة، مغلاق مرحل القمر، تشتت حبيبات الجليد، storm plume، ونوافذ guidance-lag يجب أن تزول قبل الصعود.",
+     "audio": "السماء فوق المحيط آلة تملك أسنانها في التوقيت.",
+     "in_game_wiki": "تشرح الأخطار المدارية لماذا لا تكفي كبسولة مصلحة. قبل ترك HECTON-8 خلفك، ما زالت سلسلة الصعود تحتاج إلى وصول مرحل، وتوقيت توجيه، وعمل تدريع، ونافذة إطلاق قانونية.",
+     "external_site": "يعرض جدول الأخطار المدارية لـ HECTON-8 الإنقاذ كسلسلة بوابات متحركة: قص إشعاعي، وحطام، وكسوف، ومنارات قانونية، ونوافذ حيازة، وكل واحدة قادرة على إغلاق صعود مصلح."
+    },
+    "id_ID": {
+     "title": "Tabel Bahaya Orbital HECTON-8",
+     "scanner": "Ekstraksi dari HECTON-8 dikunci oleh jendela gerhana, lonjakan radiasi, penutup relai, sebar es, dan plume badai.",
+     "field_note": "Tidak ada yang menahan penyelamatan demi drama. Pendakian harus bertemu jadwal langit yang buruk.",
+     "terminal": "TABEL BAHAYA ORBITAL: blackout gerhana, lonjakan partikel bermuatan Aegir, penutup relai bulan, sebar butir es, storm plume, dan jendela guidance-lag harus bersih sebelum pendakian.",
+     "audio": "Langit di atas laut adalah mesin dengan gigi pada waktunya.",
+     "in_game_wiki": "Bahaya orbital menjelaskan mengapa kapsul yang diperbaiki belum cukup. Sebelum HECTON-8 bisa ditinggalkan, rantai naik masih membutuhkan akses relai, waktu panduan, kerja perisai, dan jendela peluncuran legal.",
+     "external_site": "Tabel Bahaya Orbital HECTON-8 menampilkan penyelamatan sebagai rantai gerbang bergerak: geser radiasi, puing, gerhana, suar legal, dan jendela kustodi, masing-masing mampu menutup kenaikan yang sudah diperbaiki."
+    },
+    "ko_KR": {
+     "title": "HECTON-8 궤도 위험표",
+     "scanner": "HECTON-8 탈출은 식, 방사선 급증, 중계 셔터, 얼음 산란, 폭풍 플룸 창에 의해 제한된다.",
+     "field_note": "구조가 극적 연출을 위해 대기하는 것이 아니다. 상승은 하늘의 나쁜 시간표와 맞아야 한다.",
+     "terminal": "ORBITAL HAZARD TABLE: 식 blackout, Aegir 하전 입자 급증, 달 중계 셔터, 얼음 입자 산란, storm plume, guidance-lag 창은 상승 전에 해소되어야 한다.",
+     "audio": "바다 위의 하늘은 타이밍에 이빨을 박은 기계다.",
+     "in_game_wiki": "궤도 위험은 수리된 캡슐만으로 부족한 이유를 설명한다. HECTON-8을 뒤에 두기 전에 상승 사슬에는 중계 접근, 유도 타이밍, 차폐 작업, 합법 발사 창이 아직 필요하다.",
+     "external_site": "HECTON-8 궤도 위험표는 구조를 움직이는 문들의 사슬로 보여준다. 방사선 전단, 잔해, 식, 합법 비콘, 보관권 창은 각각 수리된 상승도 닫을 수 있다."
+    },
+    "he_IL": {
+     "title": "טבלת הסיכונים המסלוליים של HECTON-8",
+     "scanner": "חילוץ מ-HECTON-8 נחסם על ידי חלונות ליקוי, התפרצות קרינה, תריס ממסר, פיזור קרח ונוצות סערה.",
+     "field_note": "איש אינו מחנה חילוץ בשביל דרמה. העלייה חייבת לפגוש את לוח הזמנים הרע של השמים.",
+     "terminal": "טבלת סיכונים מסלוליים: blackout ליקוי, התפרצות חלקיקים טעונים של Aegir, תריס ממסר ירחי, פיזור גרגרי קרח, storm plume וחלונות guidance-lag חייבים להתנקות לפני עלייה.",
+     "audio": "השמים מעל האוקיינוס הם מכונה עם שיניים בתזמון.",
+     "in_game_wiki": "סיכונים מסלוליים מסבירים מדוע קפסולה מתוקנת אינה מספיקה. לפני שאפשר להשאיר את HECTON-8 מאחור, שרשרת העלייה עדיין צריכה גישת ממסר, תזמון הנחיה, עבודת מיגון וחלון שיגור חוקי.",
+     "external_site": "טבלת הסיכונים המסלוליים של HECTON-8 מציגה חילוץ כשרשרת שערים נעים: גזירת קרינה, פסולת, ליקוי, משואות חוקיות וחלונות משמורת, שכל אחד מהם יכול לסגור עלייה שתוקנה."
+    },
+    "pt_BR": {
+     "title": "Tabela de Perigos Orbitais de HECTON-8",
+     "scanner": "A extração de HECTON-8 é bloqueada por janelas de eclipse, pico de radiação, obturador de relé, dispersão de gelo e plume de tempestade.",
+     "field_note": "Ninguém está segurando resgate por drama. A subida precisa encontrar o horário ruim do céu.",
+     "terminal": "TABELA DE PERIGOS ORBITAIS: blackout de eclipse, pico de partículas carregadas de Aegir, obturador de relé lunar, dispersão de grãos de gelo, storm plume e janelas guidance-lag devem estar livres antes da subida.",
+     "audio": "O céu sobre o oceano é uma máquina com dentes no timing.",
+     "in_game_wiki": "Perigos orbitais explicam por que uma cápsula reparada não basta. Antes que HECTON-8 fique para trás, a cadeia de subida ainda precisa de acesso a relé, timing de orientação, blindagem e uma janela legal de lançamento.",
+     "external_site": "A Tabela de Perigos Orbitais de HECTON-8 mostra resgate como uma cadeia de portões móveis: cisalhamento de radiação, detritos, eclipse, balizas legais e janelas de custódia, cada um capaz de fechar uma subida reparada."
+    },
+    "nl_NL": {
+     "title": "HECTON-8-orbitaalgevaarstabel",
+     "scanner": "Extractie vanaf HECTON-8 wordt begrensd door eclips, stralingspiek, relaissluiter, ijsverstrooiing en stormpluimvensters.",
+     "field_note": "Niemand parkeert redding voor drama. De opstijging moet het slechte schema van de hemel raken.",
+     "terminal": "ORBITAALGEVAARSTABEL: eclips-blackout, Aegir-geladen-deeltjespiek, maanrelaissluiter, ijsgruisverstrooiing, storm plume en guidance-lag-vensters moeten vrij zijn voor opstijging.",
+     "audio": "De hemel boven de oceaan is een machine met tanden in de timing.",
+     "in_game_wiki": "Orbitale gevaren verklaren waarom een gerepareerde capsule niet genoeg is. Voordat HECTON-8 achtergelaten kan worden, heeft de opstijgketen nog relaistoegang, geleidingstiming, afscherming en een wettelijk lanceervenster nodig.",
+     "external_site": "De HECTON-8-orbitaalgevaarstabel toont redding als een keten van bewegende poorten: stralingsschering, puin, eclips, wettelijke bakens en bewaarvensters kunnen elk een anders gerepareerde opstijging sluiten."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P183_AEGIR_MOON_LEDGER_ROLE_TABLE",
+   "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+   "article_id": "aegir_moons.aegir_moon_ledger_role_table",
+   "title_key": "applied_lore.aegir_moon_ledger_role_table.title",
+   "unlock": {
+    "primary": "unlock.aegir_moon_ledger_role_table",
+    "poi_tags": [
+     "poi.moon_role_ledger",
+     "poi.relay_lane_card",
+     "poi.salvage_moon_stamp"
+    ],
+    "biome_tags": [
+     "biome.claim_admin",
+     "biome.relay_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Aegir Moon Route Ledger",
+     "scanner": "Aegir's moons earn their names by what they break, hide, scatter, relay or sell.",
+     "field_note": "The ocean moon is alone under water, not alone in the system.",
+     "terminal": "LEDGER: Skarn radiation shear, Vela relay masking, Claw ice scatter, Lumen public route charts, Thorne quarantine rumor traffic, Anvil industrial salvage, Kestrel high-window traffic, HECTON deep claim, Mute dead beacon economy.",
+     "audio": "More bodies. More excuses. More ways for help to miss.",
+     "in_game_wiki": "The Aegir moon ledger gives nearby moons hard route functions while keeping HECTON-8 as the ocean moon where the deep claim is fought. The sky feels inhabited without turning every moon into a promised destination.",
+     "external_site": "Aegir Moon Route Ledger maps the moon ladder around HECTON-8: nearby bodies do not offer easy exits, they make rescue timing, traffic rights and beacon trust harder."
+    },
+    "ru_RU": {
+     "title": "Маршрутный реестр лун Aegir",
+     "scanner": "Луны Aegir заслуживают имена тем, что ломают, скрывают, рассеивают, ретранслируют или продают.",
+     "field_note": "Океанская луна одна под водой, но не одна в системе.",
+     "terminal": "РЕЕСТР: радиационный сдвиг Skarn, релейная маскировка Vela, ледяное рассеяние Claw, публичные маршрутные карты Lumen, карантинный трафик слухов Thorne, промышленный salvage Anvil, трафик высоких окон Kestrel, глубокая претензия HECTON, экономика мертвых маяков Mute.",
+     "audio": "Больше тел. Больше оправданий. Больше способов, чтобы помощь промахнулась.",
+     "in_game_wiki": "Маршрутный реестр лун Aegir дает соседним лунам жесткие функции, оставляя HECTON-8 океанской луной, где идет борьба за глубокую претензию. Небо выглядит заселенным, но не каждая луна обещает дорогу.",
+     "external_site": "Маршрутный реестр лун Aegir показывает лунную лестницу вокруг HECTON-8: соседние тела не дают легких выходов, а усложняют тайминг спасения, права движения и доверие к маякам."
+    },
+    "ja_JP": {
+     "title": "Aegir 月群航路台帳",
+     "scanner": "Aegir の月は、壊し、隠し、散らし、中継し、売るものによって名前を得る。",
+     "field_note": "海洋月は水の下で孤独だが、星系の中では孤独ではない。",
+     "terminal": "LEDGER: Skarn 放射線シア、Vela リレーマスク、Claw 氷散乱、Lumen 公開航路図、Thorne 検疫噂交通、Anvil 工業 salvage、Kestrel 高窓交通、HECTON 深部請求、Mute 死ビーコン経済。",
+     "audio": "天体が増える。言い訳が増える。救助が外れる道が増える。",
+     "in_game_wiki": "Aegir 月群台帳は近傍の月に硬い航路機能を与え、HECTON-8 を深部請求が争われる海洋月として残す。空は人の手で満ちるが、すべての月が約束の目的地になるわけではない。",
+     "external_site": "Aegir 月群航路台帳は HECTON-8 周辺の月の梯子を描く。近い天体は安易な出口ではなく、救助タイミング、交通権、ビーコン信用を難しくする。"
+    },
+    "zh_CN": {
+     "title": "Aegir 月群航路账簿",
+     "scanner": "Aegir 的月亮靠它们破坏、隐藏、散射、中继或出售的东西赢得名字。",
+     "field_note": "海洋月在水下孤独，但在系统里并不孤单。",
+     "terminal": "LEDGER: Skarn 辐射剪切，Vela 中继遮蔽，Claw 冰粒散射，Lumen 公共航路图，Thorne 隔离传闻流量，Anvil 工业 salvage，Kestrel 高窗口交通，HECTON 深层索赔，Mute 死信标经济。",
+     "audio": "更多天体。更多借口。更多让援助错过的方式。",
+     "in_game_wiki": "Aegir 月群账簿给附近月亮明确的航路功能，同时保留 HECTON-8 作为深层索赔被争夺的海洋月。天空显得有人活动，却不会把每颗月亮都变成承诺目的地。",
+     "external_site": "Aegir 月群航路账簿绘出 HECTON-8 周围的月梯：附近天体不提供轻松出口，而是让救援时机、通行权和信标可信度更难处理。"
+    },
+    "fr_FR": {
+     "title": "Registre de route des lunes d'Aegir",
+     "scanner": "Les lunes d'Aegir gagnent leurs noms par ce qu'elles brisent, cachent, dispersent, relaient ou vendent.",
+     "field_note": "La lune océan est seule sous l'eau, pas seule dans le système.",
+     "terminal": "REGISTRE : cisaillement radiatif de Skarn, masquage relais de Vela, diffusion de glace de Claw, cartes de route publiques de Lumen, trafic de rumeurs de quarantaine de Thorne, salvage industriel d'Anvil, trafic de fenêtre haute de Kestrel, réclamation profonde HECTON, économie de balises mortes de Mute.",
+     "audio": "Plus de corps. Plus d'excuses. Plus de façons pour l'aide de manquer sa cible.",
+     "in_game_wiki": "Le registre lunaire d'Aegir donne aux lunes proches des fonctions de route dures tout en gardant HECTON-8 comme lune océanique où se dispute la réclamation profonde. Le ciel paraît habité sans faire de chaque lune une destination promise.",
+     "external_site": "Le Registre de route des lunes d'Aegir cartographie l'échelle lunaire autour de HECTON-8 : les corps proches n'offrent pas de sorties faciles, ils durcissent timing de secours, droits de trafic et confiance dans les balises."
+    },
+    "es_ES": {
+     "title": "Registro de rutas lunares de Aegir",
+     "scanner": "Las lunas de Aegir ganan sus nombres por lo que rompen, ocultan, dispersan, retransmiten o venden.",
+     "field_note": "La luna oceánica está sola bajo el agua, no sola en el sistema.",
+     "terminal": "REGISTRO: cizalla de radiación de Skarn, enmascaramiento de relé de Vela, dispersión de hielo de Claw, cartas públicas de ruta de Lumen, tráfico de rumores de cuarentena de Thorne, salvage industrial de Anvil, tráfico de ventana alta de Kestrel, reclamación profunda HECTON, economía de balizas muertas de Mute.",
+     "audio": "Más cuerpos. Más excusas. Más formas de que la ayuda falle.",
+     "in_game_wiki": "El registro lunar de Aegir da funciones de ruta duras a las lunas cercanas mientras conserva HECTON-8 como la luna oceánica donde se disputa la reclamación profunda. El cielo parece habitado sin convertir cada luna en un destino prometido.",
+     "external_site": "El Registro de rutas lunares de Aegir traza la escalera lunar alrededor de HECTON-8: los cuerpos cercanos no ofrecen salidas fáciles, complican tiempos de rescate, derechos de tráfico y confianza en balizas."
+    },
+    "de_DE": {
+     "title": "Aegir-Mondrouten-Ledger",
+     "scanner": "Aegirs Monde verdienen ihre Namen durch das, was sie brechen, verbergen, streuen, weiterleiten oder verkaufen.",
+     "field_note": "Der Ozeanmond ist unter Wasser allein, nicht im System.",
+     "terminal": "LEDGER: Skarn-Strahlungsscherung, Vela-Relaismaskierung, Claw-Eisstreuung, Lumen-öffentliche Routenkarten, Thorne-Quarantänegerüchteverkehr, Anvil-industrielles salvage, Kestrel-Hochfensterverkehr, HECTON-Tiefenanspruch, Mute-Tote-Baken-Ökonomie.",
+     "audio": "Mehr Körper. Mehr Ausreden. Mehr Wege, wie Hilfe verfehlt.",
+     "in_game_wiki": "Das Aegir-Mondledger gibt nahen Monden harte Routenfunktionen und lässt HECTON-8 den Ozeanmond bleiben, auf dem um den Tiefenanspruch gekämpft wird. Der Himmel wirkt bewohnt, ohne jeden Mond zum versprochenen Ziel zu machen.",
+     "external_site": "Das Aegir-Mondrouten-Ledger kartiert die Mondleiter um HECTON-8: nahe Körper bieten keine leichten Ausgänge, sie erschweren Rettungstiming, Verkehrsrechte und Vertrauen in Baken."
+    },
+    "pl_PL": {
+     "title": "Rejestr tras księżyców Aegir",
+     "scanner": "Księżyce Aegir zasługują na nazwy tym, co łamią, ukrywają, rozpraszają, przekaźnikują albo sprzedają.",
+     "field_note": "Księżyc oceaniczny jest sam pod wodą, nie sam w systemie.",
+     "terminal": "REJESTR: ścinanie promieniowania Skarn, maskowanie przekaźników Vela, rozpraszanie lodu Claw, publiczne mapy tras Lumen, ruch plotek kwarantanny Thorne, przemysłowy salvage Anvil, ruch wysokich okien Kestrel, głębokie roszczenie HECTON, ekonomia martwych boi Mute.",
+     "audio": "Więcej ciał. Więcej wymówek. Więcej sposobów, by pomoc chybiła.",
+     "in_game_wiki": "Rejestr księżyców Aegir daje pobliskim księżycom twarde funkcje tras, zachowując HECTON-8 jako oceaniczny księżyc, gdzie toczy się spór o głębokie roszczenie. Niebo wygląda na zamieszkane, ale nie każdy księżyc obiecuje drogę.",
+     "external_site": "Rejestr tras księżyców Aegir mapuje księżycową drabinę wokół HECTON-8: bliskie ciała nie dają łatwych wyjść, tylko utrudniają timing ratunku, prawa ruchu i zaufanie do boi."
+    },
+    "uk_UA": {
+     "title": "Маршрутний реєстр місяців Aegir",
+     "scanner": "Місяці Aegir заробляють імена тим, що ламають, ховають, розсіюють, ретранслюють або продають.",
+     "field_note": "Океанський місяць сам під водою, але не сам у системі.",
+     "terminal": "РЕЄСТР: радіаційний зсув Skarn, релейне маскування Vela, крижане розсіювання Claw, публічні маршрутні карти Lumen, карантинний трафік чуток Thorne, промисловий salvage Anvil, трафік високих вікон Kestrel, глибока претензія HECTON, економіка мертвих маяків Mute.",
+     "audio": "Більше тіл. Більше виправдань. Більше способів, щоб допомога промахнулася.",
+     "in_game_wiki": "Реєстр місяців Aegir дає сусіднім місяцям жорсткі маршрутні функції, залишаючи HECTON-8 океанським місяцем, де триває боротьба за глибоку претензію. Небо здається заселеним, але не кожен місяць обіцяє дорогу.",
+     "external_site": "Маршрутний реєстр місяців Aegir показує місячну драбину навколо HECTON-8: сусідні тіла не дають легких виходів, а ускладнюють таймінг порятунку, права руху й довіру до маяків."
+    },
+    "ar_SA": {
+     "title": "سجل مسارات أقمار Aegir",
+     "scanner": "تكسب أقمار Aegir أسماءها بما تكسره أو تخفيه أو تشتته أو ترحله أو تبيعه.",
+     "field_note": "القمر المحيطي وحيد تحت الماء، لكنه ليس وحيدا في النظام.",
+     "terminal": "السجل: قص إشعاع Skarn، حجب مرحلات Vela، تشتت جليد Claw، خرائط مسار عامة من Lumen، مرور شائعات حجر Thorne، salvage صناعي من Anvil، مرور نوافذ عالية Kestrel، مطالبة HECTON العميقة، واقتصاد منارات Mute الميتة.",
+     "audio": "أجسام أكثر. أعذار أكثر. طرق أكثر لكي تخطئ المساعدة.",
+     "in_game_wiki": "يعطي سجل أقمار Aegir الأقمار القريبة وظائف مسار صلبة، ويبقي HECTON-8 قمرا محيطيا تقاتل فيه المطالبة العميقة. تبدو السماء مأهولة من دون أن يتحول كل قمر إلى وجهة موعودة.",
+     "external_site": "يرسم سجل مسارات أقمار Aegir سلم الأقمار حول HECTON-8: الأجسام القريبة لا تقدم مخارج سهلة، بل تزيد صعوبة توقيت الإنقاذ وحقوق المرور والثقة بالمنارات."
+    },
+    "id_ID": {
+     "title": "Ledger Rute Bulan Aegir",
+     "scanner": "Bulan-bulan Aegir mendapat nama dari apa yang mereka patahkan, sembunyikan, sebarkan, teruskan, atau jual.",
+     "field_note": "Bulan samudra sendirian di bawah air, bukan sendirian dalam sistem.",
+     "terminal": "LEDGER: geser radiasi Skarn, masker relai Vela, sebar es Claw, peta rute publik Lumen, lalu lintas rumor karantina Thorne, salvage industri Anvil, lalu lintas jendela tinggi Kestrel, klaim dalam HECTON, ekonomi suar mati Mute.",
+     "audio": "Lebih banyak benda. Lebih banyak alasan. Lebih banyak cara bantuan meleset.",
+     "in_game_wiki": "Ledger bulan Aegir memberi bulan-bulan dekat fungsi rute keras sambil menjaga HECTON-8 sebagai bulan samudra tempat klaim dalam diperebutkan. Langit terasa berpenghuni tanpa mengubah setiap bulan menjadi tujuan yang dijanjikan.",
+     "external_site": "Ledger Rute Bulan Aegir memetakan tangga bulan di sekitar HECTON-8: benda dekat tidak menawarkan jalan keluar mudah, tetapi mempersulit waktu penyelamatan, hak lalu lintas, dan kepercayaan suar."
+    },
+    "ko_KR": {
+     "title": "Aegir 달 항로 원장",
+     "scanner": "Aegir의 달들은 무엇을 부수고, 숨기고, 흩뿌리고, 중계하고, 파는지로 이름값을 한다.",
+     "field_note": "바다 달은 물속에서 혼자지만, 성계 안에서는 혼자가 아니다.",
+     "terminal": "LEDGER: Skarn 방사선 전단, Vela 중계 마스킹, Claw 얼음 산란, Lumen 공개 항로 차트, Thorne 격리 소문 교통, Anvil 산업 salvage, Kestrel 높은 창 교통, HECTON 깊은 청구, Mute 죽은 비콘 경제.",
+     "audio": "더 많은 천체. 더 많은 변명. 도움이 빗나갈 더 많은 방법.",
+     "in_game_wiki": "Aegir 달 원장은 가까운 달들에 단단한 항로 기능을 부여하면서 HECTON-8을 깊은 청구가 다투어지는 바다 달로 남겨 둔다. 하늘은 사람이 사는 듯하지만 모든 달이 약속된 목적지는 아니다.",
+     "external_site": "Aegir 달 항로 원장은 HECTON-8 주변의 달 사다리를 그린다. 가까운 천체들은 쉬운 출구를 주지 않고, 구조 타이밍과 교통권, 비콘 신뢰를 더 어렵게 만든다."
+    },
+    "he_IL": {
+     "title": "יומן נתיבי הירחים של Aegir",
+     "scanner": "ירחי Aegir מרוויחים את שמם לפי מה שהם שוברים, מסתירים, מפזרים, ממסרים או מוכרים.",
+     "field_note": "ירח האוקיינוס לבד מתחת למים, לא לבד במערכת.",
+     "terminal": "יומן: גזירת קרינה Skarn, מיסוך ממסר Vela, פיזור קרח Claw, מפות נתיב ציבוריות Lumen, תנועת שמועות הסגר Thorne, salvage תעשייתי Anvil, תנועת חלון גבוה Kestrel, תביעה עמוקה HECTON, כלכלת משואות מתות Mute.",
+     "audio": "יותר גופים. יותר תירוצים. יותר דרכים שבהן עזרה מחמיצה.",
+     "in_game_wiki": "יומן הירחים של Aegir נותן לירחים קרובים תפקידי נתיב קשיחים ומשאיר את HECTON-8 כירח האוקיינוס שבו נלחמים על התביעה העמוקה. השמים נראים מיושבים בלי להפוך כל ירח ליעד מובטח.",
+     "external_site": "יומן נתיבי הירחים של Aegir ממפה את סולם הירחים סביב HECTON-8: גופים קרובים אינם נותנים יציאות קלות, אלא מקשים תזמון חילוץ, זכויות תנועה ואמון במשואות."
+    },
+    "pt_BR": {
+     "title": "Ledger de Rotas Lunares de Aegir",
+     "scanner": "As luas de Aegir ganham seus nomes pelo que quebram, escondem, dispersam, retransmitem ou vendem.",
+     "field_note": "A lua oceânica está sozinha debaixo d'água, não sozinha no sistema.",
+     "terminal": "LEDGER: cisalhamento de radiação Skarn, mascaramento de relé Vela, dispersão de gelo Claw, cartas públicas de rota Lumen, tráfego de rumores de quarentena Thorne, salvage industrial Anvil, tráfego de janela alta Kestrel, reivindicação profunda HECTON, economia de balizas mortas Mute.",
+     "audio": "Mais corpos. Mais desculpas. Mais formas de a ajuda errar.",
+     "in_game_wiki": "O ledger lunar de Aegir dá funções de rota duras às luas próximas enquanto mantém HECTON-8 como a lua oceânica onde a reivindicação profunda é disputada. O céu parece habitado sem transformar cada lua em destino prometido.",
+     "external_site": "O Ledger de Rotas Lunares de Aegir mapeia a escada lunar ao redor de HECTON-8: corpos próximos não oferecem saídas fáceis, eles dificultam timing de resgate, direitos de tráfego e confiança em balizas."
+    },
+    "nl_NL": {
+     "title": "Aegir-maanrouteledger",
+     "scanner": "Aegirs manen verdienen hun namen door wat ze breken, verbergen, verstrooien, doorgeven of verkopen.",
+     "field_note": "De oceaanmaan is alleen onder water, niet alleen in het systeem.",
+     "terminal": "LEDGER: Skarn-stralingsschering, Vela-relaismaskering, Claw-ijsverstrooiing, Lumen-publieke routekaarten, Thorne-quarantaineruchtverkeer, Anvil-industriële salvage, Kestrel-hoog-vensterverkeer, HECTON-diepe claim, Mute-dode-bakeneconomie.",
+     "audio": "Meer lichamen. Meer excuses. Meer manieren waarop hulp mist.",
+     "in_game_wiki": "Het Aegir-maanledger geeft nabije manen harde routefuncties terwijl HECTON-8 de oceaanmaan blijft waar om de diepe claim wordt gevochten. De hemel voelt bewoond zonder elke maan tot beloofde bestemming te maken.",
+     "external_site": "Het Aegir-maanrouteledger brengt de maanladder rond HECTON-8 in kaart: nabije lichamen bieden geen makkelijke uitwegen, ze maken reddingstiming, verkeersrechten en bakenvertrouwen moeilijker."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P184_RAN_AEGIR_EPHEMERIS_TUNING_RULE",
+   "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+   "article_id": "aegir_moons.ran_aegir_ephemeris_tuning_rule",
+   "title_key": "applied_lore.ran_aegir_ephemeris_tuning_rule.title",
+   "unlock": {
+    "primary": "unlock.ran_aegir_ephemeris_tuning_rule",
+    "poi_tags": [
+     "poi.ephemeris_tuning_sheet",
+     "poi.route_band_calculator",
+     "poi.window_solver_plate"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "RAN-Aegir Ephemeris Band Record",
+     "scanner": "This record gives window bands and hazard causes, not table-owned exact periods.",
+     "field_note": "The honest public chart says enough to navigate risk and not enough to fake the celestial table.",
+     "terminal": "EPHEMERIS BAND RECORD: public atlas entries may state window band, hazard class and relation to Aegir. Exact periods, inclinations and resonance values remain under the celestial-table authority.",
+     "audio": "A band can save you. A guessed number can kill you.",
+     "in_game_wiki": "Ephemeris bands keep public charts honest: they show enough route pressure to trust the window, while exact orbital values stay with the tables that own flight planning.",
+     "external_site": "RAN-Aegir Ephemeris Band Record separates stable route records from exact celestial values, so public articles can stay reliable without freezing guessed numbers into navigation law."
+    },
+    "ru_RU": {
+     "title": "Запись эфемеридных полос RAN-Aegir",
+     "scanner": "Эта запись дает полосы окон и причины угроз, а не точные периоды, принадлежащие таблицам.",
+     "field_note": "Честная публичная карта говорит достаточно, чтобы пройти риск, и недостаточно, чтобы подделать небесную таблицу.",
+     "terminal": "ЗАПИСЬ ЭФЕМЕРИДНЫХ ПОЛОС: публичные записи atlas могут указывать полосу окна, класс угрозы и связь с Aegir. Точные периоды, наклонения и резонансные значения остаются под властью celestial-table.",
+     "audio": "Полоса может спасти. Угаданное число может убить.",
+     "in_game_wiki": "Эфемеридные полосы держат публичные карты честными: показывают достаточно маршрутного давления, чтобы верить окну, а точные орбитальные значения остаются в таблицах полетного планирования.",
+     "external_site": "Запись эфемеридных полос RAN-Aegir отделяет стабильные маршрутные записи от точных небесных значений, чтобы публичные статьи оставались надежными и не превращали угаданные числа в навигационный закон."
+    },
+    "ja_JP": {
+     "title": "RAN-Aegir 暦表帯域記録",
+     "scanner": "この記録が示すのは窓の帯域と危険原因であり、表が所有する正確な周期ではない。",
+     "field_note": "誠実な公開チャートは危険を進むには十分で、天体表を偽造するには足りない。",
+     "terminal": "EPHEMERIS BAND RECORD: 公開 atlas 記録は窓帯域、危険分類、Aegir との関係を記載できる。正確な周期、傾斜、共鳴値は celestial-table authority に残る。",
+     "audio": "帯域は命を救う。推測した数字は人を殺す。",
+     "in_game_wiki": "暦表帯域は公開チャートを正直に保つ。ウィンドウを信じるだけの航路圧力を示し、正確な軌道値は飛行計画を所有する表に残す。",
+     "external_site": "RAN-Aegir 暦表帯域記録は、安定した航路記録と正確な天体値を分ける。公開記事は、推測値を航法法に凍結せずに信頼性を保てる。"
+    },
+    "zh_CN": {
+     "title": "RAN-Aegir 星历窗口带记录",
+     "scanner": "这份记录给出窗口带和危险成因，而不是归天体表所有的精确周期。",
+     "field_note": "诚实的公共星图足够导航风险，却不足以伪造天体表。",
+     "terminal": "EPHEMERIS BAND RECORD: 公共 atlas 条目可陈述窗口带、危险类别及其与 Aegir 的关系。精确周期、倾角和共振值仍归 celestial-table authority 管辖。",
+     "audio": "窗口带可以救命。猜来的数字会杀人。",
+     "in_game_wiki": "星历窗口带让公共星图保持诚实：它们显示足够的航路压力来信任窗口，而精确轨道值留在掌管飞行规划的表格里。",
+     "external_site": "RAN-Aegir 星历窗口带记录把稳定航路记录与精确天体数值分开，使公共文章保持可靠，而不会把猜测数字冻结成导航法规。"
+    },
+    "fr_FR": {
+     "title": "Relevé des bandes d'éphémérides RAN-Aegir",
+     "scanner": "Ce relevé donne des bandes de fenêtre et des causes de danger, pas les périodes exactes détenues par les tables.",
+     "field_note": "La carte publique honnête en dit assez pour naviguer le risque, pas assez pour falsifier la table céleste.",
+     "terminal": "RELEVÉ DE BANDES D'ÉPHÉMÉRIDES : les entrées d'atlas publiques peuvent indiquer bande de fenêtre, classe de danger et relation à Aegir. Périodes, inclinaisons et résonances exactes restent sous autorité des tables célestes.",
+     "audio": "Une bande peut te sauver. Un nombre deviné peut te tuer.",
+     "in_game_wiki": "Les bandes d'éphémérides gardent les cartes publiques honnêtes : elles montrent assez de pression de route pour croire à la fenêtre, tandis que les valeurs orbitales exactes restent dans les tables qui possèdent la planification de vol.",
+     "external_site": "Le Relevé des bandes d'éphémérides RAN-Aegir sépare les dossiers de route stables des valeurs célestes exactes, afin que les articles publics restent fiables sans figer des nombres devinés en loi de navigation."
+    },
+    "es_ES": {
+     "title": "Registro de bandas de efemérides RAN-Aegir",
+     "scanner": "Este registro da bandas de ventana y causas de peligro, no periodos exactos propiedad de las tablas.",
+     "field_note": "La carta pública honesta dice lo bastante para navegar el riesgo y no lo bastante para falsificar la tabla celeste.",
+     "terminal": "REGISTRO DE BANDAS DE EFEMÉRIDES: las entradas públicas de atlas pueden indicar banda de ventana, clase de peligro y relación con Aegir. Periodos, inclinaciones y resonancias exactas quedan bajo autoridad de la tabla celeste.",
+     "audio": "Una banda puede salvarte. Un número inventado puede matarte.",
+     "in_game_wiki": "Las bandas de efemérides mantienen honestas las cartas públicas: muestran suficiente presión de ruta para confiar en la ventana, mientras los valores orbitales exactos permanecen en las tablas que poseen la planificación de vuelo.",
+     "external_site": "El Registro de bandas de efemérides RAN-Aegir separa registros de ruta estables de valores celestes exactos, para que los artículos públicos sigan siendo fiables sin congelar números adivinados como ley de navegación."
+    },
+    "de_DE": {
+     "title": "RAN-Aegir-Ephemeridenband-Datensatz",
+     "scanner": "Dieser Datensatz liefert Fensterbänder und Gefahrenursachen, keine tabelleneigenen exakten Perioden.",
+     "field_note": "Die ehrliche öffentliche Karte sagt genug, um Risiko zu navigieren, und nicht genug, um die Himmelstabelle zu fälschen.",
+     "terminal": "EPHEMERIDENBAND-DATENSATZ: öffentliche Atlas-Einträge dürfen Fensterband, Gefahrenklasse und Beziehung zu Aegir nennen. Exakte Perioden, Inklinationen und Resonanzen bleiben unter Autorität der Himmelstabelle.",
+     "audio": "Ein Band kann dich retten. Eine geratene Zahl kann dich töten.",
+     "in_game_wiki": "Ephemeridenbänder halten öffentliche Karten ehrlich: Sie zeigen genug Routendruck, um dem Fenster zu vertrauen, während exakte Orbitalwerte in den Tabellen bleiben, die Flugplanung besitzen.",
+     "external_site": "Der RAN-Aegir-Ephemeridenband-Datensatz trennt stabile Routenaufzeichnungen von exakten Himmelswerten, damit öffentliche Artikel verlässlich bleiben, ohne geratene Zahlen in Navigationsrecht einzufrieren."
+    },
+    "pl_PL": {
+     "title": "Zapis pasm efemeryd RAN-Aegir",
+     "scanner": "Ten zapis podaje pasma okien i przyczyny zagrożeń, nie dokładne okresy należące do tabel.",
+     "field_note": "Uczciwa publiczna mapa mówi dość, by prowadzić przez ryzyko, i za mało, by sfałszować tabelę nieba.",
+     "terminal": "ZAPIS PASM EFEMERYD: publiczne wpisy atlasu mogą podawać pasmo okna, klasę zagrożenia i relację z Aegir. Dokładne okresy, nachylenia i wartości rezonansu pozostają pod władzą tabeli nieba.",
+     "audio": "Pasmo może cię uratować. Zgadnięta liczba może zabić.",
+     "in_game_wiki": "Pasma efemeryd utrzymują uczciwość publicznych map: pokazują dość presji trasy, by ufać oknu, a dokładne wartości orbitalne zostają w tabelach odpowiedzialnych za planowanie lotu.",
+     "external_site": "Zapis pasm efemeryd RAN-Aegir oddziela stabilne zapisy tras od dokładnych wartości niebieskich, aby publiczne artykuły pozostały wiarygodne bez zamrażania zgadywanych liczb jako prawa nawigacji."
+    },
+    "uk_UA": {
+     "title": "Запис ефемеридних смуг RAN-Aegir",
+     "scanner": "Цей запис дає смуги вікон і причини загроз, а не точні періоди, що належать таблицям.",
+     "field_note": "Чесна публічна карта каже достатньо, щоб пройти ризик, і недостатньо, щоб підробити небесну таблицю.",
+     "terminal": "ЗАПИС ЕФЕМЕРИДНИХ СМУГ: публічні записи atlas можуть зазначати смугу вікна, клас загрози й зв'язок з Aegir. Точні періоди, нахили та резонансні значення лишаються під владою celestial-table.",
+     "audio": "Смуга може врятувати. Вгадане число може вбити.",
+     "in_game_wiki": "Ефемеридні смуги тримають публічні карти чесними: показують достатньо маршрутного тиску, щоб довіряти вікну, а точні орбітальні значення лишаються в таблицях польотного планування.",
+     "external_site": "Запис ефемеридних смуг RAN-Aegir відділяє стабільні маршрутні записи від точних небесних значень, щоб публічні статті лишалися надійними й не перетворювали вгадані числа на навігаційний закон."
+    },
+    "ar_SA": {
+     "title": "سجل نطاقات التقويم RAN-Aegir",
+     "scanner": "يعطي هذا السجل نطاقات النوافذ وأسباب الخطر، لا الفترات الدقيقة التي تملكها الجداول.",
+     "field_note": "الخريطة العامة الصادقة تقول ما يكفي لعبور الخطر، ولا تقول ما يكفي لتزوير الجدول السماوي.",
+     "terminal": "سجل نطاقات التقويم: يمكن لمدخلات atlas العامة ذكر نطاق النافذة، وفئة الخطر، والعلاقة مع Aegir. تبقى الفترات الدقيقة والميول وقيم الرنين تحت سلطة الجدول السماوي.",
+     "audio": "النطاق قد ينقذك. الرقم المخمن قد يقتلك.",
+     "in_game_wiki": "تحافظ نطاقات التقويم على صدق الخرائط العامة: تعرض ضغط مسار كافيا للثقة بالنافذة، بينما تبقى القيم المدارية الدقيقة في الجداول المالكة لتخطيط الطيران.",
+     "external_site": "يفصل سجل نطاقات التقويم RAN-Aegir بين سجلات المسار الثابتة والقيم السماوية الدقيقة، كي تبقى المقالات العامة موثوقة من دون تجميد أرقام مخمنة كقانون ملاحة."
+    },
+    "id_ID": {
+     "title": "Catatan Pita Efemeris RAN-Aegir",
+     "scanner": "Catatan ini memberi pita jendela dan penyebab bahaya, bukan periode tepat milik tabel.",
+     "field_note": "Peta publik yang jujur memberi cukup untuk menavigasi risiko dan tidak cukup untuk memalsukan tabel langit.",
+     "terminal": "CATATAN PITA EFEMERIS: entri atlas publik boleh menyatakan pita jendela, kelas bahaya, dan hubungan dengan Aegir. Periode tepat, inklinasi, dan nilai resonansi tetap berada di bawah otoritas tabel langit.",
+     "audio": "Pita bisa menyelamatkanmu. Angka tebakan bisa membunuhmu.",
+     "in_game_wiki": "Pita efemeris menjaga peta publik tetap jujur: mereka menunjukkan cukup tekanan rute untuk mempercayai jendela, sementara nilai orbit tepat tetap berada di tabel yang memegang perencanaan penerbangan.",
+     "external_site": "Catatan Pita Efemeris RAN-Aegir memisahkan catatan rute stabil dari nilai langit yang tepat, agar artikel publik tetap dapat dipercaya tanpa membekukan angka tebakan menjadi hukum navigasi."
+    },
+    "ko_KR": {
+     "title": "RAN-Aegir 천문력 대역 기록",
+     "scanner": "이 기록은 창 대역과 위험 원인을 제공하지, 표가 소유한 정확한 주기를 제공하지 않는다.",
+     "field_note": "정직한 공개 차트는 위험을 항해할 만큼 말하고, 천체 표를 위조할 만큼 말하지 않는다.",
+     "terminal": "EPHEMERIS BAND RECORD: 공개 atlas 항목은 창 대역, 위험 등급, Aegir와의 관계를 명시할 수 있다. 정확한 주기, 궤도 경사, 공명 값은 celestial-table authority 아래 남는다.",
+     "audio": "대역은 너를 살릴 수 있다. 추측한 숫자는 너를 죽일 수 있다.",
+     "in_game_wiki": "천문력 대역은 공개 차트를 정직하게 유지한다. 창을 믿을 만큼의 항로 압력을 보여 주고, 정확한 궤도 값은 비행 계획을 소유한 표에 남긴다.",
+     "external_site": "RAN-Aegir 천문력 대역 기록은 안정된 항로 기록과 정확한 천체 값을 분리한다. 공개 기사는 추정 숫자를 항법 법으로 굳히지 않고도 신뢰를 유지할 수 있다."
+    },
+    "he_IL": {
+     "title": "רשומת רצועות אפמריס RAN-Aegir",
+     "scanner": "הרשומה הזו נותנת רצועות חלון וסיבות סיכון, לא מחזורים מדויקים השייכים לטבלאות.",
+     "field_note": "המפה הציבורית הישרה אומרת מספיק כדי לנווט סיכון, ולא מספיק כדי לזייף את הטבלה השמימית.",
+     "terminal": "רשומת רצועות אפמריס: ערכי atlas ציבוריים רשאים לציין רצועת חלון, מחלקת סיכון וקשר ל-Aegir. מחזורים מדויקים, נטיות וערכי תהודה נשארים תחת סמכות הטבלה השמימית.",
+     "audio": "רצועה יכולה להציל אותך. מספר מנוחש יכול להרוג אותך.",
+     "in_game_wiki": "רצועות אפמריס שומרות על מפות ציבוריות כנות: הן מראות מספיק לחץ נתיב כדי לסמוך על החלון, בעוד ערכי המסלול המדויקים נשארים בטבלאות שמחזיקות בתכנון הטיסה.",
+     "external_site": "רשומת רצועות אפמריס RAN-Aegir מפרידה בין רשומות נתיב יציבות לערכים שמימיים מדויקים, כדי שמאמרים ציבוריים יישארו אמינים בלי להקפיא מספרים מנוחשים כחוק ניווט."
+    },
+    "pt_BR": {
+     "title": "Registro de Bandas de Efemérides RAN-Aegir",
+     "scanner": "Este registro dá bandas de janela e causas de perigo, não períodos exatos pertencentes às tabelas.",
+     "field_note": "A carta pública honesta diz o bastante para navegar o risco e não o bastante para falsificar a tabela celeste.",
+     "terminal": "REGISTRO DE BANDAS DE EFEMÉRIDES: entradas públicas de atlas podem declarar banda de janela, classe de perigo e relação com Aegir. Períodos, inclinações e valores de ressonância exatos ficam sob autoridade da tabela celeste.",
+     "audio": "Uma banda pode salvar você. Um número chutado pode matar.",
+     "in_game_wiki": "Bandas de efemérides mantêm as cartas públicas honestas: mostram pressão de rota suficiente para confiar na janela, enquanto valores orbitais exatos ficam nas tabelas que possuem o planejamento de voo.",
+     "external_site": "O Registro de Bandas de Efemérides RAN-Aegir separa registros de rota estáveis de valores celestes exatos, para que artigos públicos sigam confiáveis sem congelar números chutados como lei de navegação."
+    },
+    "nl_NL": {
+     "title": "RAN-Aegir-efemeridenbandrecord",
+     "scanner": "Dit record geeft vensterbanden en gevarencausen, geen tabel-eigen exacte perioden.",
+     "field_note": "De eerlijke publieke kaart zegt genoeg om risico te navigeren en niet genoeg om de hemeltabel te vervalsen.",
+     "terminal": "EFEMERIDENBANDRECORD: publieke atlasvermeldingen mogen vensterband, gevarenklasse en relatie tot Aegir noemen. Exacte perioden, inclinaties en resonantiewaarden blijven onder gezag van de hemeltabel.",
+     "audio": "Een band kan je redden. Een gegokt getal kan je doden.",
+     "in_game_wiki": "Efemeridenbanden houden publieke kaarten eerlijk: ze tonen genoeg routedruk om het venster te vertrouwen, terwijl exacte baanwaarden in de tabellen blijven die vluchtplanning bezitten.",
+     "external_site": "Het RAN-Aegir-efemeridenbandrecord scheidt stabiele routerecords van exacte hemelwaarden, zodat publieke artikelen betrouwbaar blijven zonder gegokte getallen tot navigatiewet te bevriezen."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY",
+   "release_set_id": "RS037_AEGIR_MOON_PUBLIC_ATLAS",
+   "article_id": "aegir_moons.moon_route_article_spoiler_boundary",
+   "title_key": "applied_lore.moon_route_article_spoiler_boundary.title",
+   "unlock": {
+    "primary": "unlock.moon_route_article_spoiler_boundary",
+    "poi_tags": [
+     "poi.public_moon_article_gate",
+     "poi.spoiler_boundary_stamp",
+     "poi.atlas_basin_redaction"
+    ],
+    "biome_tags": [
+     "biome.public_archive",
+     "biome.relay_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Atlas Basin Redaction Line",
+     "scanner": "The public moon atlas can name the sky hazards; it cannot print what the Atlas basin payload does.",
+     "field_note": "Above the clouds, the route is public. Under the basin, every answer still has a lock on it.",
+     "terminal": "ATLAS REDACTION: public moon pages may list names, route windows, hazards, salvage economy and HECTON-8 disaster facts. Payload effects, basin receiver behavior and final decision outcomes remain gated.",
+     "audio": "Publish the sky. Seal the bottom.",
+     "in_game_wiki": "Moon-route articles can explain how Aegir works without opening the Atlas basin early. The sky can be understood from public records; the bottom still has to be earned in the dark.",
+     "external_site": "Atlas Basin Redaction Line marks what public Aegir coverage may say about moons, routes and rescue pressure while keeping the sealed basin out of open charts."
+    },
+    "ru_RU": {
+     "title": "Линия редактуры Atlas Basin",
+     "scanner": "Публичный атлас лун может назвать угрозы неба; он не может напечатать, что делает payload Atlas basin.",
+     "field_note": "Над облаками маршрут публичен. Под basin у каждого ответа все еще есть замок.",
+     "terminal": "РЕДАКТУРА ATLAS: публичные страницы лун могут перечислять имена, маршрутные окна, угрозы, salvage economy и факты катастрофы HECTON-8. Эффекты payload, поведение basin receiver и исходы финального решения остаются закрытыми.",
+     "audio": "Публикуй небо. Запечатывай дно.",
+     "in_game_wiki": "Статьи о лунных маршрутах могут объяснять, как работает Aegir, не открывая Atlas basin слишком рано. Небо понятно по публичным записям; дно еще придется заслужить в темноте.",
+     "external_site": "Линия редактуры Atlas Basin отмечает, что публичное покрытие Aegir может говорить о лунах, маршрутах и давлении спасения, оставляя запечатанный бассейн вне открытых карт."
+    },
+    "ja_JP": {
+     "title": "Atlas Basin 編集線",
+     "scanner": "公開月面アトラスは空の危険を名指しできるが、Atlas basin の payload が何をするかは印刷できない。",
+     "field_note": "雲の上では航路は公開される。basin の下では、すべての答えにまだ鍵がかかっている。",
+     "terminal": "ATLAS REDACTION: 公開月ページは名称、航路窓、危険、salvage economy、HECTON-8 災害事実を記載できる。payload 効果、basin receiver 挙動、最終決定結果はゲート下に残る。",
+     "audio": "空を公開しろ。底を封じろ。",
+     "in_game_wiki": "月航路記事は、Atlas basin を早く開かずに Aegir の仕組みを説明できる。空は公開記録から理解できる。底はまだ暗闇で獲得しなければならない。",
+     "external_site": "Atlas Basin 編集線は、公開 Aegir 情報が月、航路、救助圧力について何を語れるかを示し、封印された盆地を開示チャートの外に置く。"
+    },
+    "zh_CN": {
+     "title": "Atlas Basin 删节线",
+     "scanner": "公共月群图集可以说出天空危险；它不能印出 Atlas basin payload 到底做什么。",
+     "field_note": "云层之上，航路是公共的。basin 之下，每个答案仍然上着锁。",
+     "terminal": "ATLAS REDACTION: 公共月面页面可列出名称、航路窗口、危险、salvage economy 和 HECTON-8 灾难事实。payload 效果、basin receiver 行为和最终抉择结果保持门控。",
+     "audio": "公开天空。封住底部。",
+     "in_game_wiki": "月面航路文章可以解释 Aegir 如何运转，而不提前打开 Atlas basin。天空可以从公共记录中理解；底部仍要在黑暗里挣来。",
+     "external_site": "Atlas Basin 删节线标明公共 Aegir 覆盖可以如何谈论月群、航路和救援压力，同时把封闭盆地留在公开星图之外。"
+    },
+    "fr_FR": {
+     "title": "Ligne de caviardage du bassin Atlas",
+     "scanner": "L'atlas lunaire public peut nommer les dangers du ciel ; il ne peut pas imprimer ce que fait le payload du bassin Atlas.",
+     "field_note": "Au-dessus des nuages, la route est publique. Sous le bassin, chaque réponse a encore un verrou.",
+     "terminal": "CAVIARDAGE ATLAS : les pages lunaires publiques peuvent lister noms, fenêtres de route, dangers, économie de salvage et faits du désastre HECTON-8. Effets du payload, comportement du basin receiver et résultats de décision finale restent verrouillés.",
+     "audio": "Publie le ciel. Scelle le fond.",
+     "in_game_wiki": "Les articles de route lunaire peuvent expliquer le fonctionnement d'Aegir sans ouvrir trop tôt le bassin Atlas. Le ciel se comprend par les archives publiques ; le fond doit encore se gagner dans le noir.",
+     "external_site": "La Ligne de caviardage du bassin Atlas marque ce que la couverture publique d'Aegir peut dire des lunes, des routes et de la pression de secours tout en gardant le bassin scellé hors des cartes ouvertes."
+    },
+    "es_ES": {
+     "title": "Línea de redacción de la cuenca Atlas",
+     "scanner": "El atlas lunar público puede nombrar los peligros del cielo; no puede imprimir lo que hace el payload de la cuenca Atlas.",
+     "field_note": "Sobre las nubes, la ruta es pública. Bajo la cuenca, cada respuesta sigue cerrada.",
+     "terminal": "REDACCIÓN ATLAS: las páginas lunares públicas pueden listar nombres, ventanas de ruta, peligros, economía de salvage y hechos del desastre de HECTON-8. Efectos del payload, conducta del basin receiver y resultados de decisión final permanecen bloqueados.",
+     "audio": "Publica el cielo. Sella el fondo.",
+     "in_game_wiki": "Los artículos de rutas lunares pueden explicar cómo funciona Aegir sin abrir demasiado pronto la cuenca Atlas. El cielo puede entenderse desde registros públicos; el fondo aún hay que ganárselo en la oscuridad.",
+     "external_site": "La Línea de redacción de la cuenca Atlas marca lo que la cobertura pública de Aegir puede decir sobre lunas, rutas y presión de rescate mientras mantiene la cuenca sellada fuera de las cartas abiertas."
+    },
+    "de_DE": {
+     "title": "Atlas-Becken-Redaktionslinie",
+     "scanner": "Der öffentliche Mondatlas darf die Himmelsgefahren nennen; er darf nicht drucken, was das Atlas-Becken-payload tut.",
+     "field_note": "Über den Wolken ist die Route öffentlich. Unter dem Becken hat jede Antwort noch ein Schloss.",
+     "terminal": "ATLAS-REDAKTION: öffentliche Mondseiten dürfen Namen, Routenfenster, Gefahren, salvage economy und HECTON-8-Katastrophenfakten listen. Payload-Effekte, Verhalten des basin receiver und Endentscheidungsfolgen bleiben gesperrt.",
+     "audio": "Veröffentliche den Himmel. Versiegle den Boden.",
+     "in_game_wiki": "Mondroutenartikel können erklären, wie Aegir funktioniert, ohne das Atlas-Becken zu früh zu öffnen. Der Himmel lässt sich aus öffentlichen Aufzeichnungen verstehen; der Boden muss im Dunkeln noch verdient werden.",
+     "external_site": "Die Atlas-Becken-Redaktionslinie markiert, was öffentliche Aegir-Abdeckung über Monde, Routen und Rettungsdruck sagen darf, während das versiegelte Becken aus offenen Karten herausbleibt."
+    },
+    "pl_PL": {
+     "title": "Linia redakcji Basenu Atlas",
+     "scanner": "Publiczny atlas księżyców może nazwać zagrożenia nieba; nie może wydrukować, co robi payload Basenu Atlas.",
+     "field_note": "Nad chmurami trasa jest publiczna. Pod basenem każda odpowiedź nadal ma zamek.",
+     "terminal": "REDAKCJA ATLAS: publiczne strony księżyców mogą podawać nazwy, okna tras, zagrożenia, salvage economy i fakty katastrofy HECTON-8. Efekty payload, zachowanie basin receiver i wyniki decyzji finałowej pozostają zamknięte.",
+     "audio": "Publikuj niebo. Pieczętuj dno.",
+     "in_game_wiki": "Artykuły tras księżycowych mogą wyjaśniać, jak działa Aegir, bez zbyt wczesnego otwierania Basenu Atlas. Niebo da się zrozumieć z publicznych zapisów; dno trzeba jeszcze zdobyć w ciemności.",
+     "external_site": "Linia redakcji Basenu Atlas oznacza, co publiczne pokrycie Aegir może mówić o księżycach, trasach i presji ratunku, zostawiając zapieczętowany basen poza otwartymi mapami."
+    },
+    "uk_UA": {
+     "title": "Лінія редагування Atlas Basin",
+     "scanner": "Публічний атлас місяців може назвати загрози неба; він не може надрукувати, що робить payload Atlas basin.",
+     "field_note": "Над хмарами маршрут публічний. Під basin кожна відповідь досі замкнена.",
+     "terminal": "РЕДАКТУРА ATLAS: публічні сторінки місяців можуть перелічувати імена, маршрутні вікна, загрози, salvage economy і факти катастрофи HECTON-8. Ефекти payload, поведінка basin receiver і наслідки фінального рішення лишаються закритими.",
+     "audio": "Публікуй небо. Запечатуй дно.",
+     "in_game_wiki": "Статті про місячні маршрути можуть пояснювати, як працює Aegir, не відкриваючи Atlas basin зарано. Небо зрозуміле з публічних записів; дно ще доведеться заслужити в темряві.",
+     "external_site": "Лінія редагування Atlas Basin позначає, що публічне покриття Aegir може казати про місяці, маршрути й тиск порятунку, залишаючи запечатаний басейн поза відкритими картами."
+    },
+    "ar_SA": {
+     "title": "خط حجب حوض Atlas",
+     "scanner": "يمكن للأطلس القمري العام تسمية أخطار السماء؛ ولا يمكنه طباعة ما يفعله payload حوض Atlas.",
+     "field_note": "فوق الغيوم، المسار عام. تحت الحوض، لا يزال لكل جواب قفل.",
+     "terminal": "حجب ATLAS: يمكن للصفحات القمرية العامة ذكر الأسماء، ونوافذ المسار، والأخطار، وsalvage economy، وحقائق كارثة HECTON-8. تبقى آثار payload، وسلوك basin receiver، ونتائج القرار الأخير خلف البوابات.",
+     "audio": "انشر السماء. اختم القاع.",
+     "in_game_wiki": "يمكن لمقالات مسارات الأقمار أن تشرح كيف يعمل Aegir من دون فتح حوض Atlas مبكرا. يمكن فهم السماء من السجلات العامة؛ أما القاع فيجب كسبه في الظلام.",
+     "external_site": "يحدد خط حجب حوض Atlas ما يمكن للتغطية العامة عن Aegir قوله عن الأقمار والمسارات وضغط الإنقاذ، مع إبقاء الحوض المختوم خارج الخرائط المفتوحة."
+    },
+    "id_ID": {
+     "title": "Garis Redaksi Cekungan Atlas",
+     "scanner": "Atlas bulan publik dapat menyebut bahaya langit; ia tidak boleh mencetak apa yang dilakukan payload cekungan Atlas.",
+     "field_note": "Di atas awan, rute bersifat publik. Di bawah cekungan, setiap jawaban masih terkunci.",
+     "terminal": "REDAKSI ATLAS: halaman bulan publik boleh mencantumkan nama, jendela rute, bahaya, salvage economy, dan fakta bencana HECTON-8. Efek payload, perilaku basin receiver, dan hasil keputusan akhir tetap berpagar.",
+     "audio": "Terbitkan langit. Segel dasar.",
+     "in_game_wiki": "Artikel rute bulan dapat menjelaskan cara kerja Aegir tanpa membuka cekungan Atlas terlalu awal. Langit bisa dipahami dari catatan publik; dasar masih harus diperoleh dalam gelap.",
+     "external_site": "Garis Redaksi Cekungan Atlas menandai apa yang boleh dikatakan cakupan publik Aegir tentang bulan, rute, dan tekanan penyelamatan sambil menjaga cekungan tersegel di luar peta terbuka."
+    },
+    "ko_KR": {
+     "title": "Atlas 분지 검열선",
+     "scanner": "공개 달 atlas는 하늘 위험의 이름을 댈 수 있다. Atlas basin payload가 무엇을 하는지는 인쇄할 수 없다.",
+     "field_note": "구름 위에서 항로는 공개된다. basin 아래에서 모든 답은 아직 잠겨 있다.",
+     "terminal": "ATLAS REDACTION: 공개 달 페이지는 이름, 항로 창, 위험, salvage economy, HECTON-8 재난 사실을 나열할 수 있다. payload 효과, basin receiver 동작, 최종 결정 결과는 게이트 뒤에 남는다.",
+     "audio": "하늘은 공개하라. 바닥은 봉인하라.",
+     "in_game_wiki": "달 항로 기사는 Atlas basin을 일찍 열지 않고도 Aegir가 어떻게 작동하는지 설명할 수 있다. 하늘은 공개 기록으로 이해할 수 있지만, 바닥은 아직 어둠 속에서 얻어야 한다.",
+     "external_site": "Atlas 분지 검열선은 공개 Aegir 보도가 달, 항로, 구조 압력에 대해 말할 수 있는 범위를 표시하고, 봉인된 분지는 공개 차트 밖에 둔다."
+    },
+    "he_IL": {
+     "title": "קו ההשחרה של אגן Atlas",
+     "scanner": "אטלס הירחים הציבורי יכול לנקוב בסיכוני השמים; הוא אינו יכול להדפיס מה payload של אגן Atlas עושה.",
+     "field_note": "מעל העננים, הנתיב ציבורי. מתחת לאגן, לכל תשובה עדיין יש מנעול.",
+     "terminal": "השחרת ATLAS: דפי ירחים ציבוריים רשאים לרשום שמות, חלונות נתיב, סיכונים, salvage economy ועובדות אסון HECTON-8. השפעות payload, התנהגות basin receiver ותוצאות ההחלטה הסופית נשארות מאחורי שערים.",
+     "audio": "פרסם את השמים. חתום את הקרקעית.",
+     "in_game_wiki": "מאמרי נתיבי ירחים יכולים להסביר איך Aegir פועל בלי לפתוח את אגן Atlas מוקדם מדי. את השמים אפשר להבין מרשומות ציבוריות; את הקרקעית עדיין צריך להרוויח בחושך.",
+     "external_site": "קו ההשחרה של אגן Atlas מסמן מה כיסוי ציבורי של Aegir רשאי לומר על ירחים, נתיבים ולחץ חילוץ, בזמן שהאגן החתום נשאר מחוץ למפות פתוחות."
+    },
+    "pt_BR": {
+     "title": "Linha de Redação da Bacia Atlas",
+     "scanner": "O atlas lunar público pode nomear os perigos do céu; não pode imprimir o que o payload da bacia Atlas faz.",
+     "field_note": "Acima das nuvens, a rota é pública. Sob a bacia, toda resposta ainda tem uma trava.",
+     "terminal": "REDAÇÃO ATLAS: páginas lunares públicas podem listar nomes, janelas de rota, perigos, salvage economy e fatos do desastre de HECTON-8. Efeitos do payload, comportamento do basin receiver e resultados da decisão final permanecem bloqueados.",
+     "audio": "Publique o céu. Sele o fundo.",
+     "in_game_wiki": "Artigos de rotas lunares podem explicar como Aegir funciona sem abrir cedo demais a bacia Atlas. O céu pode ser entendido por registros públicos; o fundo ainda precisa ser conquistado no escuro.",
+     "external_site": "A Linha de Redação da Bacia Atlas marca o que a cobertura pública de Aegir pode dizer sobre luas, rotas e pressão de resgate enquanto mantém a bacia selada fora das cartas abertas."
+    },
+    "nl_NL": {
+     "title": "Atlasbekken-redactielijn",
+     "scanner": "De publieke maanatlas mag de hemelgevaren noemen; hij mag niet afdrukken wat de Atlasbekken-payload doet.",
+     "field_note": "Boven de wolken is de route openbaar. Onder het bekken heeft elk antwoord nog een slot.",
+     "terminal": "ATLAS-REDACTIE: publieke maanpagina's mogen namen, routevensters, gevaren, salvage economy en HECTON-8-rampfeiten noemen. Payload-effecten, basin receiver-gedrag en eindbeslissingsuitkomsten blijven afgeschermd.",
+     "audio": "Publiceer de hemel. Verzegel de bodem.",
+     "in_game_wiki": "Maanrouteartikelen kunnen uitleggen hoe Aegir werkt zonder het Atlasbekken te vroeg te openen. De hemel kan uit publieke records worden begrepen; de bodem moet nog in het donker verdiend worden.",
+     "external_site": "De Atlasbekken-redactielijn markeert wat publieke Aegir-dekking mag zeggen over manen, routes en reddingsdruk, terwijl het verzegelde bekken buiten open kaarten blijft."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

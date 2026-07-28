@@ -1,178 +1,179 @@
 {
-  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
-  "packet_id": "P002_BLACK_KEEL_CONTACT",
-  "article_id": "black_keel.contact",
-  "title_key": "LORE_P002_BLACK_KEEL_TITLE",
-  "status": "production_facing_draft_pending_native_localization",
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "packet_id": "P002_BLACK_KEEL_CONTACT",
+ "article_id": "black_keel.contact",
+ "title_key": "LORE_P002_BLACK_KEEL_TITLE",
+ "status": "production_facing_draft_pending_native_localization",
+ "surfaces": [
+  "scanner",
+  "in_game_wiki",
+  "terminal",
+  "audio_subtitle",
+  "external_site",
+  "image_brief"
+ ],
+ "unlock": {
+  "primary": "unlock.black_keel_handshake",
+  "poi_tags": [
+   "poi.signal_mast",
+   "poi.service_buoy"
   ],
-  "unlock": {
-    "primary": "unlock.black_keel_handshake",
-    "poi_tags": [
-      "poi.signal_mast",
-      "poi.service_buoy"
-    ],
-    "biome_tags": [
-      "biome.storm_shelf",
-      "biome.shallow_reef"
-    ]
+  "biome_tags": [
+   "biome.storm_shelf",
+   "biome.shallow_reef"
+  ]
+ },
+ "localized": {
+  "en_US": {
+   "title": "Black Keel Contact",
+   "scanner": "Old relay mast. Salted, bent, still pointed at the right slice of Aegir sky.",
+   "field_note": "Black Keel logged the sample field before the injury field. Send position last if you need leverage.",
+   "terminal": "OPERATOR STATE: ALIVE. DROPCRAFT STATE: UNRECOVERABLE. CLAIM STATE: OPEN. SAMPLE STATE: UNKNOWN. RECOVERY STATE: PENDING WINDOW. LIEN MASS: 4.8 TONNE-WINDOW BASELINE.",
+   "audio": "Window is closing. Send one packet. Choose before the storm band rolls over the mast.",
+   "in_game_wiki": "Black Keel is an Aegir-system claim tender. It moves capsules, cargo tugs, sealed samples, lien records and operators through local traffic windows. It can carry a rescue request, but the request passes through orbit geometry, weather, debt hooks and payload custody before it becomes help.\n\nThe first contact is useful because the sky answers. It is dangerous because the answer arrives as fields: operator alive, dropcraft unrecoverable, claim open, sample unknown, recovery pending, lien mass recorded. Black Keel has enough voice to guide a packet. It does not have loyalty.",
+   "external_site": "Black Keel is the only working line back to orbit: a claim tender that can move rescue packets, sample reports, lies and evidence through the same narrow weather window.",
+   "external_site_article": "Black Keel is not a home ship above the clouds. It is a claim tender with a limited orbit, a useful transmitter and contract priorities older than the crash. Its first contact proves the sky is not empty. It also proves the carrier reads the operator as a claim event before it reads them as a person.\n\nThe terminal order matters: OPERATOR STATE, DROPCRAFT STATE, CLAIM STATE, SAMPLE STATE, RECOVERY STATE, LIEN MASS. Rescue language comes after inventory language. A packet sent through Black Keel can ask for pickup, report a sample, hide a route, or preserve evidence. The same packet can also give the carrier enough custody data to price the operator before help arrives."
   },
-  "localized": {
-    "en_US": {
-      "title": "Black Keel Contact",
-      "scanner": "Old relay mast. Salted, bent, still pointed at the right slice of Aegir sky.",
-      "field_note": "Black Keel logged the sample field before the injury field. Send position last if you need leverage.",
-      "terminal": "OPERATOR STATE: ALIVE. DROPCRAFT STATE: UNRECOVERABLE. CLAIM STATE: OPEN. SAMPLE STATE: UNKNOWN. RECOVERY STATE: PENDING WINDOW. LIEN MASS: 4.8 TONNE-WINDOW BASELINE.",
-      "audio": "Window is closing. Send one packet. Choose before the storm band rolls over the mast.",
-      "in_game_wiki": "Black Keel is an Aegir-system claim tender. It moves capsules, cargo tugs, sealed samples, lien records and operators through local traffic windows. It can carry a rescue request, but the request passes through orbit geometry, weather, debt hooks and payload custody before it becomes help.\n\nThe first contact is useful because the sky answers. It is dangerous because the answer arrives as fields: operator alive, dropcraft unrecoverable, claim open, sample unknown, recovery pending, lien mass recorded. Black Keel has enough voice to guide a packet. It does not have loyalty.",
-      "external_site": "Black Keel is the only working line back to orbit: a claim tender that can move rescue packets, sample reports, lies and evidence through the same narrow weather window.",
-      "external_site_article": "Black Keel is not a home ship above the clouds. It is a claim tender with a limited orbit, a useful transmitter and contract priorities older than the crash. Its first contact proves the sky is not empty. It also proves the carrier reads the operator as a claim event before it reads them as a person.\n\nThe terminal order matters: OPERATOR STATE, DROPCRAFT STATE, CLAIM STATE, SAMPLE STATE, RECOVERY STATE, LIEN MASS. Rescue language comes after inventory language. A packet sent through Black Keel can ask for pickup, report a sample, hide a route, or preserve evidence. The same packet can also give the carrier enough custody data to price the operator before help arrives."
-    },
-    "ar_SA": {
-      "title": "اتصال Black Keel",
-      "scanner": "سارية ترحيل قديمة. مالحة ومنحنية، لكنها ما زالت تشير إلى الشريحة الصحيحة من سماء أيغير.",
-      "field_note": "عندما تسأل الناقلة عما وجدت قبل أن تسأل هل تتنفس، فأنت لست العميل. أنت الأداة.",
-      "terminal": "حالة العامل: حي. حالة مركبة الهبوط: غير قابلة للاسترداد. حالة المطالبة: مفتوحة. حالة العينة: مجهولة. حالة الاستعادة: بانتظار نافذة. كتلة الرهن: خط أساس 4.8 طن-نافذة.",
-      "audio": "النافذة تغلق. أرسل حزمة واحدة. اختر قبل أن تمر حزمة العاصفة فوق السارية.",
-      "in_game_wiki": "Black Keel ناقلة مطالبات داخل نظام أيغير، وليست سفينة منزل. تنقل كبسولات وقاطرات شحن وعينات مختومة وسجلات رهن وعاملين سيئي الحظ عبر الحركة المحلية. يمكنها المساعدة، لكن المساعدة تمر عبر هندسة المدار والطقس والأتمتة والدين وخطافات المستفيد المخفية في العقد قبل أن يلمس اللاعب المحيط.",
-      "external_site": "Black Keel هي خط اللاعب الوحيد إلى المدار. ليست ميتة وليست وفية: كل نافذة مكسورة قد تحمل طلب إنقاذ أو تقرير عينة أو كذبة أو دليلاً.",
-      "external_site_article": "يجب ألا تبدو Black Keel كسفينة نجوم صديقة تنتظر فوق الغيوم. إنها آلة مجموعة مطالبات بصوت مفيد ومدار محدود وأولويات عقد أقدم من هبوط اللاعب. اتصالها الأول ثمين لأنه يثبت أن السماء ليست فارغة. وهو مخيف لأنها تقيس اللاعب كحالة عامل، وخسارة مركبة هبوط، وغموض عينة، ومطالبة مفتوحة، وكتلة رهن قبل أن تعرض لغة الإنقاذ. هذا هو ضغط HECTON-8 الافتتاحي مصغراً. اللاعب حي، والناقلة حقيقية، وطريق العودة مُرشح بالفعل عبر الطقس والدين والكتلة ومن يستفيد من الحمولة."
-    },
-    "de_DE": {
-      "title": "Black-Keel-Kontakt",
-      "scanner": "Alter Relaismast. Versalzen, verbogen, noch immer auf den richtigen Ausschnitt des Aegir-Himmels gerichtet.",
-      "field_note": "Wenn ein Carrier fragt, was du gefunden hast, bevor er fragt, ob du atmest, bist du nicht der Kunde. Du bist das Werkzeug.",
-      "terminal": "OPERATORSTATUS: LEBEND. DROPCRAFT: NICHT BERGBAR. CLAIMSTATUS: OFFEN. PROBENSTATUS: UNBEKANNT. BERGUNGSSTATUS: FENSTER AUSSTEHEND. PFANDMASSE: 4,8 TONNE-WINDOW BASIS.",
-      "audio": "Das Fenster schließt. Sende ein Paket. Wähle, bevor das Sturmfeld über den Mast rollt.",
-      "in_game_wiki": "Black Keel ist ein Aegir-System-Claim-Tender, kein Heimatschiff. Er bewegt Kapseln, Frachtschlepper, versiegelte Proben, Pfandregister und unglückliche Operatoren durch lokalen Verkehr. Er kann helfen, aber Hilfe läuft durch Orbitalgeometrie, Wetter, Automatik, Schulden und Begünstigtenhaken, die im Vertrag versteckt waren, bevor der Spieler den Ozean berührte.",
-      "external_site": "Black Keel ist die einzige Linie des Spielers zurück in den Orbit. Nicht tot und nicht loyal: jedes gebrochene Fenster kann Rettungsanfrage, Probenbericht, Lüge oder Beweis tragen.",
-      "external_site_article": "Black Keel darf nie wie ein freundliches Sternenschiff klingen, das über den Wolken wartet. Er ist eine Claim-Pool-Maschine mit nützlicher Stimme, begrenztem Orbit und Vertragsprioritäten, die älter sind als der Drop des Spielers. Der Erstkontakt ist wertvoll, weil er beweist, dass der Himmel nicht leer ist. Er ist beängstigend, weil der Carrier den Spieler zuerst als Operatorstatus, Dropcraft-Verlust, Probenunsicherheit, offenen Claim und Pfandmasse misst, bevor Rettungssprache erscheint. Das ist HECTON-8s Anfangsdruck im Kleinen. Der Spieler lebt, der Carrier ist real, und die Heimroute ist bereits durch Wetter, Schulden, Masse und Nutznießer des Payloads gefiltert."
-    },
-    "es_ES": {
-      "title": "Contacto Black Keel",
-      "scanner": "Viejo mástil de relevo. Salado, torcido, aún apuntado al corte correcto del cielo de Aegir.",
-      "field_note": "Cuando una portadora pregunta qué encontraste antes de preguntar si respiras, no eres el cliente. Eres la herramienta.",
-      "terminal": "ESTADO OPERADOR: VIVO. ESTADO DROPCRAFT: IRRECUPERABLE. ESTADO CLAIM: ABIERTO. ESTADO MUESTRA: DESCONOCIDO. RECUPERACIÓN: ESPERANDO VENTANA. MASA DE GRAVAMEN: BASE 4,8 TONNE-WINDOW.",
-      "audio": "La ventana se cierra. Envía un paquete. Elige antes de que la banda de tormenta cubra el mástil.",
-      "in_game_wiki": "Black Keel es una tender de reclamaciones del sistema Aegir, no una nave hogar. Mueve cápsulas, remolques de carga, muestras selladas, registros de gravamen y operadores desafortunados por el tráfico local. Puede ayudar, pero la ayuda pasa por geometría orbital, clima, automatización, deuda y ganchos de beneficiario ocultos en el contrato antes de que el jugador tocara el océano.",
-      "external_site": "Black Keel es la única línea del jugador hacia la órbita. No está muerta ni es leal: cada ventana rota puede llevar una petición de rescate, un informe de muestra, una mentira o evidencia.",
-      "external_site_article": "Black Keel nunca debe leerse como una nave amiga esperando sobre las nubes. Es una máquina de pool de reclamaciones con una voz útil, una órbita limitada y prioridades contractuales más antiguas que la caída del jugador. Su primer contacto vale porque prueba que el cielo no está vacío. Da miedo porque la portadora mide al jugador como estado de operador, pérdida de dropcraft, incertidumbre de muestra, claim abierto y masa de gravamen antes de ofrecer lenguaje de rescate. Esa es la presión inicial de HECTON-8 en pequeño. El jugador vive, la portadora es real y la ruta a casa ya está filtrada por clima, deuda, masa y quien se beneficia del payload."
-    },
-    "fr_FR": {
-      "title": "Contact Black Keel",
-      "scanner": "Vieux mât relais. Salé, tordu, encore pointé vers la bonne tranche du ciel d’Aegir.",
-      "field_note": "Quand un transporteur demande ce que tu as trouvé avant de demander si tu respires, tu n’es pas le client. Tu es l’outil.",
-      "terminal": "ÉTAT OPÉRATEUR : VIVANT. ÉTAT DROPCRAFT : IRRÉCUPÉRABLE. ÉTAT CLAIM : OUVERT. ÉTAT ÉCHANTILLON : INCONNU. RÉCUPÉRATION : FENÊTRE EN ATTENTE. MASSE DE LIEN : BASE 4,8 TONNE-WINDOW.",
-      "audio": "La fenêtre se ferme. Envoie un paquet. Choisis avant que la bande de tempête passe sur le mât.",
-      "in_game_wiki": "Black Keel est un tender de revendication du système Aegir, pas un vaisseau-refuge. Il déplace capsules, remorqueurs de fret, échantillons scellés, registres de lien et opérateurs malchanceux dans le trafic local. Il peut aider, mais cette aide passe par géométrie orbitale, météo, automatisation, dette et clauses bénéficiaires cachées dans le contrat avant que le joueur touche l’océan.",
-      "external_site": "Black Keel est la seule ligne du joueur vers l’orbite. Il n’est pas mort et pas loyal : chaque fenêtre brisée peut porter demande de secours, rapport d’échantillon, mensonge ou preuve.",
-      "external_site_article": "Black Keel ne doit jamais sonner comme un vaisseau ami en attente au-dessus des nuages. C’est une machine de pool de revendication avec une voix utile, une orbite limitée et des priorités contractuelles plus vieilles que la chute du joueur. Son premier contact est précieux parce qu’il prouve que le ciel n’est pas vide. Il fait peur parce que le transporteur mesure le joueur en état opérateur, perte du dropcraft, incertitude d’échantillon, claim ouvert et masse de lien avant d’offrir le vocabulaire du secours. C’est la pression d’ouverture de HECTON-8 en miniature. Le joueur est vivant, le transporteur est réel, et la route du retour est déjà filtrée par météo, dette, masse et bénéficiaire du payload."
-    },
-    "he_IL": {
-      "title": "קשר Black Keel",
-      "scanner": "תורן ממסר ישן. מלוח, עקום, ועדיין מכוון לפרוסת השמיים הנכונה של אגיר.",
-      "field_note": "כשנושאת שואלת מה מצאת לפני שהיא שואלת אם אתה נושם, אתה לא הלקוח. אתה הכלי.",
-      "terminal": "מצב מפעיל: חי. מצב DROPCRAFT: בלתי ניתן לשחזור. מצב CLAIM: פתוח. מצב דגימה: לא ידוע. מצב חילוץ: ממתין לחלון. מסת שיעבוד: בסיס 4.8 TONNE-WINDOW.",
-      "audio": "החלון נסגר. שלח חבילה אחת. בחר לפני שרצועת הסערה תעלה על התורן.",
-      "in_game_wiki": "Black Keel היא tender של תביעות במערכת אגיר, לא ספינת בית. היא מזיזה קפסולות, גוררי מטען, דגימות אטומות, רשומות שיעבוד ומפעילים חסרי מזל דרך תנועה מקומית. היא יכולה לעזור, אבל עזרה עוברת דרך גאומטריית מסלול, מזג אוויר, אוטומציה, חוב וסעיפי מוטב שהוחבאו בחוזה לפני שהשחקן נגע באוקיינוס.",
-      "external_site": "Black Keel היא הקו היחיד של השחקן חזרה למסלול. היא לא מתה ולא נאמנה: כל חלון שבור יכול לשאת בקשת חילוץ, דוח דגימה, שקר או ראיה.",
-      "external_site_article": "Black Keel לא אמורה להיקרא כמו ספינת כוכבים ידידותית שמחכה מעל העננים. זו מכונת pool של תביעות עם קול שימושי, מסלול מוגבל ועדיפויות חוזה עתיקות יותר מה-drop של השחקן. הקשר הראשון שלה יקר כי הוא מוכיח שהשמיים אינם ריקים. הוא מפחיד כי הנושאת מודדת את השחקן כמצב מפעיל, אובדן dropcraft, אי ודאות דגימה, claim פתוח ומסת שיעבוד לפני שהיא מציעה שפת חילוץ. זה לחץ הפתיחה של HECTON-8 בזעיר אנפין. השחקן חי, הנושאת אמיתית, והדרך הביתה כבר מסוננת דרך מזג אוויר, חוב, מסה ומי שמרוויח מהמטען."
-    },
-    "id_ID": {
-      "title": "Kontak Black Keel",
-      "scanner": "Tiang relay tua. Asin, bengkok, masih mengarah ke irisan langit Aegir yang benar.",
-      "field_note": "Kalau kapal pengangkut bertanya apa yang kau temukan sebelum bertanya apakah kau bernapas, kau bukan klien. Kau alat.",
-      "terminal": "STATUS OPERATOR: HIDUP. STATUS DROPCRAFT: TAK BISA DIPULIHKAN. STATUS KLAIM: TERBUKA. STATUS SAMPEL: TIDAK DIKETAHUI. PEMULIHAN: MENUNGGU JENDELA. MASSA LIEN: GARIS DASAR 4,8 TONNE-WINDOW.",
-      "audio": "Jendela menutup. Kirim satu paket. Pilih sebelum pita badai menutup tiang.",
-      "in_game_wiki": "Black Keel adalah tender klaim sistem Aegir, bukan kapal rumah. Ia memindahkan kapsul, tug kargo, sampel tersegel, catatan lien, dan operator sial melalui lalu lintas lokal. Ia bisa membantu, tetapi bantuan melewati geometri orbit, cuaca, otomasi, utang, dan kait penerima manfaat yang disembunyikan dalam kontrak sebelum pemain menyentuh laut.",
-      "external_site": "Black Keel adalah satu-satunya jalur pemain kembali ke orbit. Ia tidak mati dan tidak loyal: tiap jendela rusak bisa membawa permintaan penyelamatan, laporan sampel, kebohongan, atau bukti.",
-      "external_site_article": "Black Keel tidak boleh terasa seperti kapal bintang ramah yang menunggu di atas awan. Ia mesin pool klaim dengan suara berguna, orbit terbatas, dan prioritas kontrak yang lebih tua dari jatuhnya pemain. Kontak pertamanya berharga karena membuktikan langit tidak kosong. Ia menakutkan karena kapal mengukur pemain sebagai status operator, kehilangan dropcraft, ketidakpastian sampel, klaim terbuka, dan massa lien sebelum menawarkan bahasa penyelamatan. Itulah tekanan pembuka HECTON-8 dalam bentuk kecil. Pemain hidup, kapal nyata, dan rute pulang sudah disaring oleh cuaca, utang, massa, dan siapa pun yang mendapat manfaat dari payload."
-    },
-    "ja_JP": {
-      "title": "Black Keel接触",
-      "scanner": "古い中継マスト。塩に侵され、曲がっているが、まだエーギルの正しい空の切片を向いている。",
-      "field_note": "キャリアが呼吸より先に発見物を尋ねるなら、お前は依頼人ではない。道具だ。",
-      "terminal": "オペレーター状態: 生存。DROPCRAFT状態: 回収不能。CLAIM状態: 開放。サンプル状態: 不明。回収状態: 窓待ち。LIEN質量: 4.8 TONNE-WINDOW基準。",
-      "audio": "窓が閉じる。パケットを一つ送れ。嵐帯がマストを覆う前に選べ。",
-      "in_game_wiki": "Black Keelはエーギル星系のclaim tenderであり、帰る家の船ではない。カプセル、貨物タグ、封印サンプル、lien記録、不運な作業員を局地交通の中で動かす。助けにはなるが、その助けは軌道幾何、天候、自動化、負債、そしてプレイヤーが海に触れる前から契約に隠されていた受益者フックを通る。",
-      "external_site": "Black Keelはプレイヤーが軌道へ戻る唯一の線だ。死んでおらず、忠実でもない。壊れた窓は救助要請、サンプル報告、嘘、証拠のどれかを運ぶ。",
-      "external_site_article": "Black Keelは雲の上で待つ友好的な宇宙船のように読まれてはならない。有用な声、限られた軌道、プレイヤーのdropより古い契約優先順位を持つclaim-pool機械だ。最初の接触が価値を持つのは、空が空ではないと証明するからだ。怖いのは、救助の言葉を出す前に、キャリアがプレイヤーを作業員状態、dropcraft喪失、サンプル不確定、開いたclaim、lien質量として測ることだ。これがHECTON-8冒頭の圧力の縮図である。プレイヤーは生きている。キャリアは実在する。そして帰還路はすでに天候、負債、質量、payloadから利益を得る者によって濾過されている。"
-    },
-    "ko_KR": {
-      "title": "Black Keel 접촉",
-      "scanner": "낡은 중계 마스트. 소금에 절고 휘었지만 아직 에기르 하늘의 올바른 조각을 향한다.",
-      "field_note": "운반선이 네가 숨 쉬는지 묻기 전에 무엇을 찾았는지 묻는다면, 너는 고객이 아니다. 도구다.",
-      "terminal": "운영자 상태: 생존. DROPCRAFT 상태: 회수 불가. CLAIM 상태: 개방. 샘플 상태: 미상. 회수 상태: 창 대기. LIEN 질량: 4.8 TONNE-WINDOW 기준.",
-      "audio": "창이 닫힌다. 패킷 하나를 보내라. 폭풍대가 마스트를 덮기 전에 선택해라.",
-      "in_game_wiki": "Black Keel은 에기르 계통의 claim tender이지 집 같은 배가 아니다. 캡슐, 화물 터그, 봉인 샘플, lien 기록, 불운한 운영자를 지역 교통 속에서 옮긴다. 도움은 줄 수 있지만, 그 도움은 궤도 기하, 날씨, 자동화, 부채, 그리고 플레이어가 바다에 닿기 전 계약에 숨겨진 수익자 고리를 통과한다.",
-      "external_site": "Black Keel은 플레이어가 궤도로 돌아가는 유일한 선이다. 죽지도 않았고 충성스럽지도 않다. 깨진 창마다 구조 요청, 샘플 보고, 거짓말, 증거 중 하나를 실을 수 있다.",
-      "external_site_article": "Black Keel은 구름 위에서 기다리는 친절한 우주선처럼 읽히면 안 된다. 유용한 목소리, 제한된 궤도, 플레이어의 drop보다 오래된 계약 우선순위를 가진 claim-pool 기계다. 첫 접촉이 가치 있는 이유는 하늘이 비어 있지 않음을 증명하기 때문이다. 무서운 이유는 운반선이 구조 언어를 내놓기 전에 플레이어를 운영자 상태, dropcraft 손실, 샘플 불확실성, 열린 claim, lien 질량으로 측정하기 때문이다. 이것이 HECTON-8의 시작 압력이다. 플레이어는 살아 있고, 운반선은 실재하며, 집으로 가는 길은 이미 날씨와 부채와 질량과 payload의 수익자에 의해 걸러져 있다."
-    },
-    "nl_NL": {
-      "title": "Black Keel-contact",
-      "scanner": "Oude relaismast. Zout, krom, nog steeds gericht op het juiste stuk Aegir-hemel.",
-      "field_note": "Als een carrier vraagt wat je hebt gevonden voordat hij vraagt of je ademt, ben jij niet de klant. Jij bent het gereedschap.",
-      "terminal": "OPERATORSTATUS: LEVEND. DROPCRAFT: NIET BERGBAAR. CLAIMSTATUS: OPEN. MONSTERSTATUS: ONBEKEND. RECOVERY: WACHT OP VENSTER. LIENMASSA: 4,8 TONNE-WINDOW BASIS.",
-      "audio": "Het venster sluit. Stuur één pakket. Kies voordat de stormband over de mast rolt.",
-      "in_game_wiki": "Black Keel is een claimtender van het Aegir-systeem, geen thuisschip. Hij verplaatst capsules, vrachttugs, verzegelde monsters, lienregisters en ongelukkige operators door lokaal verkeer. Hij kan helpen, maar hulp loopt via orbitale geometrie, weer, automatisering, schuld en begunstigde haken die in het contract verborgen zaten voordat de speler de oceaan raakte.",
-      "external_site": "Black Keel is de enige lijn van de speler terug naar de baan. Niet dood en niet loyaal: elk gebroken venster kan reddingsverzoek, monsterrapport, leugen of bewijs dragen.",
-      "external_site_article": "Black Keel mag nooit lezen als een vriendelijk sterrenschip dat boven de wolken wacht. Het is een claim-poolmachine met een nuttige stem, beperkte baan en contractprioriteiten ouder dan de drop van de speler. Het eerste contact is waardevol omdat het bewijst dat de hemel niet leeg is. Het is beangstigend omdat de carrier de speler meet als operatorstatus, verlies van dropcraft, monsteronzekerheid, open claim en lienmassa voordat hij reddingstaal aanbiedt. Dat is HECTON-8s openingsdruk in het klein. De speler leeft, de carrier is echt, en de route naar huis is al gefilterd door weer, schuld, massa en degene die baat heeft bij de payload."
-    },
-    "pl_PL": {
-      "title": "Kontakt Black Keel",
-      "scanner": "Stary maszt przekaźnikowy. Zasolony, wygięty, wciąż skierowany w dobry wycinek nieba Aegira.",
-      "field_note": "Jeśli carrier pyta, co znalazłeś, zanim pyta, czy oddychasz, nie jesteś klientem. Jesteś narzędziem.",
-      "terminal": "OPERATOR: ŻYWY. DROPCRAFT: NIE DO ODZYSKU. CLAIM: OTWARTY. PRÓBKA: NIEZNANA. ODZYSK: CZEKA NA OKNO. MASA LIEN: BAZA 4,8 TONNE-WINDOW.",
-      "audio": "Okno się zamyka. Wyślij jeden pakiet. Wybierz, zanim pas burzy przykryje maszt.",
-      "in_game_wiki": "Black Keel to tender claimów systemu Aegir, nie domowy statek. Przenosi kapsuły, holowniki, zapieczętowane próbki, rejestry lien i pechowych operatorów przez lokalny ruch. Może pomóc, ale pomoc przechodzi przez geometrię orbity, pogodę, automatykę, dług i haki beneficjenta ukryte w kontrakcie, zanim gracz dotknął oceanu.",
-      "external_site": "Black Keel jest jedyną linią gracza na orbitę. Nie jest martwy i nie jest lojalny: każde zerwane okno może nieść prośbę o ratunek, raport próbki, kłamstwo albo dowód.",
-      "external_site_article": "Black Keel nigdy nie powinien brzmieć jak przyjazny statek gwiezdny czekający nad chmurami. To maszyna claim-pool z użytecznym głosem, ograniczoną orbitą i priorytetami kontraktu starszymi niż drop gracza. Pierwszy kontakt jest cenny, bo dowodzi, że niebo nie jest puste. Jest straszny, bo carrier mierzy gracza jako status operatora, stratę dropcraftu, niepewność próbki, otwarty claim i masę lien, zanim zaoferuje język ratunku. To otwierająca presja HECTON-8 w miniaturze. Gracz żyje, carrier jest realny, a droga do domu jest już filtrowana przez pogodę, dług, masę i tego, kto korzysta z payloadu."
-    },
-    "pt_BR": {
-      "title": "Contato Black Keel",
-      "scanner": "Mastro de retransmissão antigo. Salgado, torto, ainda apontado para o pedaço certo do céu de Aegir.",
-      "field_note": "Quando uma transportadora pergunta o que você achou antes de perguntar se você respira, você não é o cliente. Você é a ferramenta.",
-      "terminal": "ESTADO DO OPERADOR: VIVO. ESTADO DO DROPCRAFT: IRRECUPERÁVEL. CLAIM: ABERTO. AMOSTRA: DESCONHECIDA. RECUPERAÇÃO: AGUARDANDO JANELA. MASSA DE LIEN: BASE 4,8 TONNE-WINDOW.",
-      "audio": "A janela está fechando. Envie um pacote. Escolha antes que a faixa de tempestade cubra o mastro.",
-      "in_game_wiki": "Black Keel é uma tender de claim do sistema Aegir, não uma nave-lar. Ela move cápsulas, rebocadores de carga, amostras seladas, registros de lien e operadores azarados pelo tráfego local. Ela pode ajudar, mas a ajuda passa por geometria orbital, clima, automação, dívida e ganchos de beneficiário escondidos no contrato antes de o jogador tocar o oceano.",
-      "external_site": "Black Keel é a única linha do jogador de volta à órbita. Não está morta nem é leal: cada janela quebrada pode carregar pedido de resgate, relatório de amostra, mentira ou prova.",
-      "external_site_article": "Black Keel nunca deve soar como uma nave amiga esperando acima das nuvens. É uma máquina de pool de claims com uma voz útil, órbita limitada e prioridades de contrato mais antigas que a queda do jogador. Seu primeiro contato vale porque prova que o céu não está vazio. Ele assusta porque a transportadora mede o jogador como estado de operador, perda do dropcraft, incerteza de amostra, claim aberto e massa de lien antes de oferecer linguagem de resgate. Essa é a pressão inicial de HECTON-8 em miniatura. O jogador está vivo, a transportadora é real, e a rota para casa já foi filtrada por clima, dívida, massa e quem se beneficia do payload."
-    },
-    "ru_RU": {
-      "title": "Контакт Black Keel",
-      "scanner": "Старая релейная мачта. Засоленная, погнутая, всё ещё смотрит в правильный срез неба Аегира.",
-      "field_note": "Если носитель спрашивает, что ты нашёл, раньше чем спрашивает, дышишь ли ты, клиент не ты. Ты инструмент.",
-      "terminal": "СОСТОЯНИЕ ОПЕРАТОРА: ЖИВ. СОСТОЯНИЕ DROPCRAFT: НЕВОССТАНОВИМО. CLAIM: ОТКРЫТ. ОБРАЗЕЦ: НЕИЗВЕСТЕН. ВОССТАНОВЛЕНИЕ: ОЖИДАЕТ ОКНА. МАССА LIEN: БАЗА 4,8 TONNE-WINDOW.",
-      "audio": "Окно закрывается. Отправь один пакет. Выбирай до того, как штормовая полоса накроет мачту.",
-      "in_game_wiki": "Black Keel — claim-tender системы Аегир, а не домашний корабль. Он проводит капсулы, грузовые буксиры, запечатанные образцы, lien-записи и невезучих операторов через местный трафик. Он может помочь, но помощь проходит через орбитальную геометрию, погоду, автоматику, долг и скрытые beneficiary hooks, заложенные в контракт ещё до того, как игрок коснулся океана.",
-      "external_site": "Black Keel — единственная линия игрока обратно на орбиту. Он не мёртв и не лоялен: каждое рваное окно может нести запрос спасения, отчёт об образце, ложь или доказательство.",
-      "external_site_article": "Black Keel не должен читаться как дружелюбный звёздный корабль, ожидающий над облаками. Это машина claim-pool с полезным голосом, ограниченной орбитой и контрактными приоритетами старше падения игрока. Первый контакт ценен, потому что доказывает: небо не пустое. Он пугает, потому что носитель измеряет игрока как состояние оператора, потерю dropcraft, неопределённость образца, открытый claim и массу lien раньше, чем предлагает язык спасения. Это стартовое давление HECTON-8 в миниатюре. Игрок жив, носитель реален, а маршрут домой уже пропущен через погоду, долг, массу и того, кто получит выгоду от payload."
-    },
-    "uk_UA": {
-      "title": "Контакт Black Keel",
-      "scanner": "Стара релейна щогла. Засолена, зігнута, усе ще спрямована в правильний зріз неба Аегіра.",
-      "field_note": "Якщо носій питає, що ти знайшов, раніше ніж питає, чи ти дихаєш, клієнт не ти. Ти інструмент.",
-      "terminal": "СТАН ОПЕРАТОРА: ЖИВИЙ. СТАН DROPCRAFT: НЕВІДНОВНИЙ. CLAIM: ВІДКРИТИЙ. ЗРАЗОК: НЕВІДОМИЙ. ВІДНОВЛЕННЯ: ОЧІКУЄ ВІКНА. МАСА LIEN: БАЗА 4,8 TONNE-WINDOW.",
-      "audio": "Вікно закривається. Надішли один пакет. Обери до того, як штормова смуга накриє щоглу.",
-      "in_game_wiki": "Black Keel — claim-tender системи Аегір, а не домашній корабель. Він проводить капсули, вантажні буксири, запечатані зразки, lien-записи й невезучих операторів через місцевий трафік. Він може допомогти, але допомога проходить через орбітальну геометрію, погоду, автоматику, борг і приховані beneficiary hooks, закладені в контракт ще до того, як гравець торкнувся океану.",
-      "external_site": "Black Keel — єдина лінія гравця назад на орбіту. Він не мертвий і не лояльний: кожне рване вікно може нести запит рятування, звіт про зразок, брехню або доказ.",
-      "external_site_article": "Black Keel не має читатися як дружній зореліт, що чекає над хмарами. Це машина claim-pool із корисним голосом, обмеженою орбітою й контрактними пріоритетами старшими за падіння гравця. Перший контакт цінний, бо доводить: небо не порожнє. Він лякає, бо носій вимірює гравця як стан оператора, втрату dropcraft, невизначеність зразка, відкритий claim і масу lien раніше, ніж пропонує мову рятування. Це стартовий тиск HECTON-8 у мініатюрі. Гравець живий, носій реальний, а маршрут додому вже пропущений крізь погоду, борг, масу й того, хто отримає вигоду від payload."
-    },
-    "zh_CN": {
-      "title": "Black Keel联络",
-      "scanner": "旧中继桅杆。盐蚀、弯曲，却仍指向埃吉尔天空中正确的那一片。",
-      "field_note": "如果母船先问你找到了什么，再问你是否还在呼吸，那你就不是客户。你是工具。",
-      "terminal": "操作员状态：存活。DROPCRAFT状态：不可回收。CLAIM状态：开启。样本状态：未知。回收状态：等待窗口。LIEN质量：4.8 TONNE-WINDOW基线。",
-      "audio": "窗口正在关闭。发送一个数据包。在风暴带卷过桅杆前选择。",
-      "in_game_wiki": "Black Keel是埃吉尔系统内的claim tender，不是家船。它在本地交通中移动舱体、货运拖船、密封样本、lien记录和倒霉操作员。它能帮忙，但帮助必须经过轨道几何、天气、自动化、债务，以及在玩家碰到海水前就藏进合同里的受益人钩子。",
-      "external_site": "Black Keel是玩家回到轨道的唯一线路。它没有死，也不忠诚：每个破碎窗口都可能携带救援请求、样本报告、谎言或证据。",
-      "external_site_article": "Black Keel绝不能像一艘友好星船那样，在云层之上等待玩家。它是一台claim-pool机器，有实用的声音、有限的轨道，以及比玩家坠落更早的合同优先级。第一次联络之所以宝贵，是因为它证明天空并非空无一物。它令人不安，是因为母船先把玩家衡量为操作员状态、dropcraft损失、样本不确定、开启claim和lien质量，然后才提供救援语言。这就是HECTON-8开场压力的缩影。玩家还活着，母船是真实的，而回家的路线已经被天气、债务、质量和payload受益者过滤过。"
-    }
+  "ar_SA": {
+   "title": "اتصال Black Keel",
+   "scanner": "سارية ترحيل قديمة. مالحة ومنحنية، لكنها ما زالت تشير إلى الشريحة الصحيحة من سماء أيغير.",
+   "field_note": "عندما تسأل الناقلة عما وجدت قبل أن تسأل هل تتنفس، فأنت لست العميل. أنت الأداة.",
+   "terminal": "حالة العامل: حي. حالة مركبة الهبوط: غير قابلة للاسترداد. حالة المطالبة: مفتوحة. حالة العينة: مجهولة. حالة الاستعادة: بانتظار نافذة. كتلة الرهن: خط أساس 4.8 طن-نافذة.",
+   "audio": "النافذة تغلق. أرسل حزمة واحدة. اختر قبل أن تمر حزمة العاصفة فوق السارية.",
+   "in_game_wiki": "Black Keel ناقلة مطالبات داخل نظام أيغير، وليست سفينة منزل. تنقل كبسولات وقاطرات شحن وعينات مختومة وسجلات رهن وعاملين سيئي الحظ عبر الحركة المحلية. يمكنها المساعدة، لكن المساعدة تمر عبر هندسة المدار والطقس والأتمتة والدين وخطافات المستفيد المخفية في العقد قبل أن يلمس اللاعب المحيط.",
+   "external_site": "Black Keel هي خط اللاعب الوحيد إلى المدار. ليست ميتة وليست وفية: كل نافذة مكسورة قد تحمل طلب إنقاذ أو تقرير عينة أو كذبة أو دليلاً.",
+   "external_site_article": "يجب ألا تبدو Black Keel كسفينة نجوم صديقة تنتظر فوق الغيوم. إنها آلة مجموعة مطالبات بصوت مفيد ومدار محدود وأولويات عقد أقدم من هبوط اللاعب. اتصالها الأول ثمين لأنه يثبت أن السماء ليست فارغة. وهو مخيف لأنها تقيس اللاعب كحالة عامل، وخسارة مركبة هبوط، وغموض عينة، ومطالبة مفتوحة، وكتلة رهن قبل أن تعرض لغة الإنقاذ. هذا هو ضغط HECTON-8 الافتتاحي مصغراً. اللاعب حي، والناقلة حقيقية، وطريق العودة مُرشح بالفعل عبر الطقس والدين والكتلة ومن يستفيد من الحمولة."
+  },
+  "de_DE": {
+   "title": "Black-Keel-Kontakt",
+   "scanner": "Alter Relaismast. Versalzen, verbogen, noch immer auf den richtigen Ausschnitt des Aegir-Himmels gerichtet.",
+   "field_note": "Wenn ein Carrier fragt, was du gefunden hast, bevor er fragt, ob du atmest, bist du nicht der Kunde. Du bist das Werkzeug.",
+   "terminal": "OPERATORSTATUS: LEBEND. DROPCRAFT: NICHT BERGBAR. CLAIMSTATUS: OFFEN. PROBENSTATUS: UNBEKANNT. BERGUNGSSTATUS: FENSTER AUSSTEHEND. PFANDMASSE: 4,8 TONNE-WINDOW BASIS.",
+   "audio": "Das Fenster schließt. Sende ein Paket. Wähle, bevor das Sturmfeld über den Mast rollt.",
+   "in_game_wiki": "Black Keel ist ein Aegir-System-Claim-Tender, kein Heimatschiff. Er bewegt Kapseln, Frachtschlepper, versiegelte Proben, Pfandregister und unglückliche Operatoren durch lokalen Verkehr. Er kann helfen, aber Hilfe läuft durch Orbitalgeometrie, Wetter, Automatik, Schulden und Begünstigtenhaken, die im Vertrag versteckt waren, bevor der Spieler den Ozean berührte.",
+   "external_site": "Black Keel ist die einzige Linie des Spielers zurück in den Orbit. Nicht tot und nicht loyal: jedes gebrochene Fenster kann Rettungsanfrage, Probenbericht, Lüge oder Beweis tragen.",
+   "external_site_article": "Black Keel darf nie wie ein freundliches Sternenschiff klingen, das über den Wolken wartet. Er ist eine Claim-Pool-Maschine mit nützlicher Stimme, begrenztem Orbit und Vertragsprioritäten, die älter sind als der Drop des Spielers. Der Erstkontakt ist wertvoll, weil er beweist, dass der Himmel nicht leer ist. Er ist beängstigend, weil der Carrier den Spieler zuerst als Operatorstatus, Dropcraft-Verlust, Probenunsicherheit, offenen Claim und Pfandmasse misst, bevor Rettungssprache erscheint. Das ist HECTON-8s Anfangsdruck im Kleinen. Der Spieler lebt, der Carrier ist real, und die Heimroute ist bereits durch Wetter, Schulden, Masse und Nutznießer des Payloads gefiltert."
+  },
+  "es_ES": {
+   "title": "Contacto Black Keel",
+   "scanner": "Viejo mástil de relevo. Salado, torcido, aún apuntado al corte correcto del cielo de Aegir.",
+   "field_note": "Cuando una portadora pregunta qué encontraste antes de preguntar si respiras, no eres el cliente. Eres la herramienta.",
+   "terminal": "ESTADO OPERADOR: VIVO. ESTADO DROPCRAFT: IRRECUPERABLE. ESTADO CLAIM: ABIERTO. ESTADO MUESTRA: DESCONOCIDO. RECUPERACIÓN: ESPERANDO VENTANA. MASA DE GRAVAMEN: BASE 4,8 TONNE-WINDOW.",
+   "audio": "La ventana se cierra. Envía un paquete. Elige antes de que la banda de tormenta cubra el mástil.",
+   "in_game_wiki": "Black Keel es una tender de reclamaciones del sistema Aegir, no una nave hogar. Mueve cápsulas, remolques de carga, muestras selladas, registros de gravamen y operadores desafortunados por el tráfico local. Puede ayudar, pero la ayuda pasa por geometría orbital, clima, automatización, deuda y ganchos de beneficiario ocultos en el contrato antes de que el jugador tocara el océano.",
+   "external_site": "Black Keel es la única línea del jugador hacia la órbita. No está muerta ni es leal: cada ventana rota puede llevar una petición de rescate, un informe de muestra, una mentira o evidencia.",
+   "external_site_article": "Black Keel nunca debe leerse como una nave amiga esperando sobre las nubes. Es una máquina de pool de reclamaciones con una voz útil, una órbita limitada y prioridades contractuales más antiguas que la caída del jugador. Su primer contacto vale porque prueba que el cielo no está vacío. Da miedo porque la portadora mide al jugador como estado de operador, pérdida de dropcraft, incertidumbre de muestra, claim abierto y masa de gravamen antes de ofrecer lenguaje de rescate. Esa es la presión inicial de HECTON-8 en pequeño. El jugador vive, la portadora es real y la ruta a casa ya está filtrada por clima, deuda, masa y quien se beneficia del payload."
+  },
+  "fr_FR": {
+   "title": "Contact Black Keel",
+   "scanner": "Vieux mât relais. Salé, tordu, encore pointé vers la bonne tranche du ciel d’Aegir.",
+   "field_note": "Quand un transporteur demande ce que tu as trouvé avant de demander si tu respires, tu n’es pas le client. Tu es l’outil.",
+   "terminal": "ÉTAT OPÉRATEUR : VIVANT. ÉTAT DROPCRAFT : IRRÉCUPÉRABLE. ÉTAT CLAIM : OUVERT. ÉTAT ÉCHANTILLON : INCONNU. RÉCUPÉRATION : FENÊTRE EN ATTENTE. MASSE DE LIEN : BASE 4,8 TONNE-WINDOW.",
+   "audio": "La fenêtre se ferme. Envoie un paquet. Choisis avant que la bande de tempête passe sur le mât.",
+   "in_game_wiki": "Black Keel est un tender de revendication du système Aegir, pas un vaisseau-refuge. Il déplace capsules, remorqueurs de fret, échantillons scellés, registres de lien et opérateurs malchanceux dans le trafic local. Il peut aider, mais cette aide passe par géométrie orbitale, météo, automatisation, dette et clauses bénéficiaires cachées dans le contrat avant que le joueur touche l’océan.",
+   "external_site": "Black Keel est la seule ligne du joueur vers l’orbite. Il n’est pas mort et pas loyal : chaque fenêtre brisée peut porter demande de secours, rapport d’échantillon, mensonge ou preuve.",
+   "external_site_article": "Black Keel ne doit jamais sonner comme un vaisseau ami en attente au-dessus des nuages. C’est une machine de pool de revendication avec une voix utile, une orbite limitée et des priorités contractuelles plus vieilles que la chute du joueur. Son premier contact est précieux parce qu’il prouve que le ciel n’est pas vide. Il fait peur parce que le transporteur mesure le joueur en état opérateur, perte du dropcraft, incertitude d’échantillon, claim ouvert et masse de lien avant d’offrir le vocabulaire du secours. C’est la pression d’ouverture de HECTON-8 en miniature. Le joueur est vivant, le transporteur est réel, et la route du retour est déjà filtrée par météo, dette, masse et bénéficiaire du payload."
+  },
+  "he_IL": {
+   "title": "קשר Black Keel",
+   "scanner": "תורן ממסר ישן. מלוח, עקום, ועדיין מכוון לפרוסת השמיים הנכונה של אגיר.",
+   "field_note": "כשנושאת שואלת מה מצאת לפני שהיא שואלת אם אתה נושם, אתה לא הלקוח. אתה הכלי.",
+   "terminal": "מצב מפעיל: חי. מצב DROPCRAFT: בלתי ניתן לשחזור. מצב CLAIM: פתוח. מצב דגימה: לא ידוע. מצב חילוץ: ממתין לחלון. מסת שיעבוד: בסיס 4.8 TONNE-WINDOW.",
+   "audio": "החלון נסגר. שלח חבילה אחת. בחר לפני שרצועת הסערה תעלה על התורן.",
+   "in_game_wiki": "Black Keel היא tender של תביעות במערכת אגיר, לא ספינת בית. היא מזיזה קפסולות, גוררי מטען, דגימות אטומות, רשומות שיעבוד ומפעילים חסרי מזל דרך תנועה מקומית. היא יכולה לעזור, אבל עזרה עוברת דרך גאומטריית מסלול, מזג אוויר, אוטומציה, חוב וסעיפי מוטב שהוחבאו בחוזה לפני שהשחקן נגע באוקיינוס.",
+   "external_site": "Black Keel היא הקו היחיד של השחקן חזרה למסלול. היא לא מתה ולא נאמנה: כל חלון שבור יכול לשאת בקשת חילוץ, דוח דגימה, שקר או ראיה.",
+   "external_site_article": "Black Keel לא אמורה להיקרא כמו ספינת כוכבים ידידותית שמחכה מעל העננים. זו מכונת pool של תביעות עם קול שימושי, מסלול מוגבל ועדיפויות חוזה עתיקות יותר מה-drop של השחקן. הקשר הראשון שלה יקר כי הוא מוכיח שהשמיים אינם ריקים. הוא מפחיד כי הנושאת מודדת את השחקן כמצב מפעיל, אובדן dropcraft, אי ודאות דגימה, claim פתוח ומסת שיעבוד לפני שהיא מציעה שפת חילוץ. זה לחץ הפתיחה של HECTON-8 בזעיר אנפין. השחקן חי, הנושאת אמיתית, והדרך הביתה כבר מסוננת דרך מזג אוויר, חוב, מסה ומי שמרוויח מהמטען."
+  },
+  "id_ID": {
+   "title": "Kontak Black Keel",
+   "scanner": "Tiang relay tua. Asin, bengkok, masih mengarah ke irisan langit Aegir yang benar.",
+   "field_note": "Kalau kapal pengangkut bertanya apa yang kau temukan sebelum bertanya apakah kau bernapas, kau bukan klien. Kau alat.",
+   "terminal": "STATUS OPERATOR: HIDUP. STATUS DROPCRAFT: TAK BISA DIPULIHKAN. STATUS KLAIM: TERBUKA. STATUS SAMPEL: TIDAK DIKETAHUI. PEMULIHAN: MENUNGGU JENDELA. MASSA LIEN: GARIS DASAR 4,8 TONNE-WINDOW.",
+   "audio": "Jendela menutup. Kirim satu paket. Pilih sebelum pita badai menutup tiang.",
+   "in_game_wiki": "Black Keel adalah tender klaim sistem Aegir, bukan kapal rumah. Ia memindahkan kapsul, tug kargo, sampel tersegel, catatan lien, dan operator sial melalui lalu lintas lokal. Ia bisa membantu, tetapi bantuan melewati geometri orbit, cuaca, otomasi, utang, dan kait penerima manfaat yang disembunyikan dalam kontrak sebelum pemain menyentuh laut.",
+   "external_site": "Black Keel adalah satu-satunya jalur pemain kembali ke orbit. Ia tidak mati dan tidak loyal: tiap jendela rusak bisa membawa permintaan penyelamatan, laporan sampel, kebohongan, atau bukti.",
+   "external_site_article": "Black Keel tidak boleh terasa seperti kapal bintang ramah yang menunggu di atas awan. Ia mesin pool klaim dengan suara berguna, orbit terbatas, dan prioritas kontrak yang lebih tua dari jatuhnya pemain. Kontak pertamanya berharga karena membuktikan langit tidak kosong. Ia menakutkan karena kapal mengukur pemain sebagai status operator, kehilangan dropcraft, ketidakpastian sampel, klaim terbuka, dan massa lien sebelum menawarkan bahasa penyelamatan. Itulah tekanan pembuka HECTON-8 dalam bentuk kecil. Pemain hidup, kapal nyata, dan rute pulang sudah disaring oleh cuaca, utang, massa, dan siapa pun yang mendapat manfaat dari payload."
+  },
+  "ja_JP": {
+   "title": "Black Keel接触",
+   "scanner": "古い中継マスト。塩に侵され、曲がっているが、まだエーギルの正しい空の切片を向いている。",
+   "field_note": "キャリアが呼吸より先に発見物を尋ねるなら、お前は依頼人ではない。道具だ。",
+   "terminal": "オペレーター状態: 生存。DROPCRAFT状態: 回収不能。CLAIM状態: 開放。サンプル状態: 不明。回収状態: 窓待ち。LIEN質量: 4.8 TONNE-WINDOW基準。",
+   "audio": "窓が閉じる。パケットを一つ送れ。嵐帯がマストを覆う前に選べ。",
+   "in_game_wiki": "Black Keelはエーギル星系のclaim tenderであり、帰る家の船ではない。カプセル、貨物タグ、封印サンプル、lien記録、不運な作業員を局地交通の中で動かす。助けにはなるが、その助けは軌道幾何、天候、自動化、負債、そしてプレイヤーが海に触れる前から契約に隠されていた受益者フックを通る。",
+   "external_site": "Black Keelはプレイヤーが軌道へ戻る唯一の線だ。死んでおらず、忠実でもない。壊れた窓は救助要請、サンプル報告、嘘、証拠のどれかを運ぶ。",
+   "external_site_article": "Black Keelは雲の上で待つ友好的な宇宙船のように読まれてはならない。有用な声、限られた軌道、プレイヤーのdropより古い契約優先順位を持つclaim-pool機械だ。最初の接触が価値を持つのは、空が空ではないと証明するからだ。怖いのは、救助の言葉を出す前に、キャリアがプレイヤーを作業員状態、dropcraft喪失、サンプル不確定、開いたclaim、lien質量として測ることだ。これがHECTON-8冒頭の圧力の縮図である。プレイヤーは生きている。キャリアは実在する。そして帰還路はすでに天候、負債、質量、payloadから利益を得る者によって濾過されている。"
+  },
+  "ko_KR": {
+   "title": "Black Keel 접촉",
+   "scanner": "낡은 중계 마스트. 소금에 절고 휘었지만 아직 에기르 하늘의 올바른 조각을 향한다.",
+   "field_note": "운반선이 네가 숨 쉬는지 묻기 전에 무엇을 찾았는지 묻는다면, 너는 고객이 아니다. 도구다.",
+   "terminal": "운영자 상태: 생존. DROPCRAFT 상태: 회수 불가. CLAIM 상태: 개방. 샘플 상태: 미상. 회수 상태: 창 대기. LIEN 질량: 4.8 TONNE-WINDOW 기준.",
+   "audio": "창이 닫힌다. 패킷 하나를 보내라. 폭풍대가 마스트를 덮기 전에 선택해라.",
+   "in_game_wiki": "Black Keel은 에기르 계통의 claim tender이지 집 같은 배가 아니다. 캡슐, 화물 터그, 봉인 샘플, lien 기록, 불운한 운영자를 지역 교통 속에서 옮긴다. 도움은 줄 수 있지만, 그 도움은 궤도 기하, 날씨, 자동화, 부채, 그리고 플레이어가 바다에 닿기 전 계약에 숨겨진 수익자 고리를 통과한다.",
+   "external_site": "Black Keel은 플레이어가 궤도로 돌아가는 유일한 선이다. 죽지도 않았고 충성스럽지도 않다. 깨진 창마다 구조 요청, 샘플 보고, 거짓말, 증거 중 하나를 실을 수 있다.",
+   "external_site_article": "Black Keel은 구름 위에서 기다리는 친절한 우주선처럼 읽히면 안 된다. 유용한 목소리, 제한된 궤도, 플레이어의 drop보다 오래된 계약 우선순위를 가진 claim-pool 기계다. 첫 접촉이 가치 있는 이유는 하늘이 비어 있지 않음을 증명하기 때문이다. 무서운 이유는 운반선이 구조 언어를 내놓기 전에 플레이어를 운영자 상태, dropcraft 손실, 샘플 불확실성, 열린 claim, lien 질량으로 측정하기 때문이다. 이것이 HECTON-8의 시작 압력이다. 플레이어는 살아 있고, 운반선은 실재하며, 집으로 가는 길은 이미 날씨와 부채와 질량과 payload의 수익자에 의해 걸러져 있다."
+  },
+  "nl_NL": {
+   "title": "Black Keel-contact",
+   "scanner": "Oude relaismast. Zout, krom, nog steeds gericht op het juiste stuk Aegir-hemel.",
+   "field_note": "Als een carrier vraagt wat je hebt gevonden voordat hij vraagt of je ademt, ben jij niet de klant. Jij bent het gereedschap.",
+   "terminal": "OPERATORSTATUS: LEVEND. DROPCRAFT: NIET BERGBAAR. CLAIMSTATUS: OPEN. MONSTERSTATUS: ONBEKEND. RECOVERY: WACHT OP VENSTER. LIENMASSA: 4,8 TONNE-WINDOW BASIS.",
+   "audio": "Het venster sluit. Stuur één pakket. Kies voordat de stormband over de mast rolt.",
+   "in_game_wiki": "Black Keel is een claimtender van het Aegir-systeem, geen thuisschip. Hij verplaatst capsules, vrachttugs, verzegelde monsters, lienregisters en ongelukkige operators door lokaal verkeer. Hij kan helpen, maar hulp loopt via orbitale geometrie, weer, automatisering, schuld en begunstigde haken die in het contract verborgen zaten voordat de speler de oceaan raakte.",
+   "external_site": "Black Keel is de enige lijn van de speler terug naar de baan. Niet dood en niet loyaal: elk gebroken venster kan reddingsverzoek, monsterrapport, leugen of bewijs dragen.",
+   "external_site_article": "Black Keel mag nooit lezen als een vriendelijk sterrenschip dat boven de wolken wacht. Het is een claim-poolmachine met een nuttige stem, beperkte baan en contractprioriteiten ouder dan de drop van de speler. Het eerste contact is waardevol omdat het bewijst dat de hemel niet leeg is. Het is beangstigend omdat de carrier de speler meet als operatorstatus, verlies van dropcraft, monsteronzekerheid, open claim en lienmassa voordat hij reddingstaal aanbiedt. Dat is HECTON-8s openingsdruk in het klein. De speler leeft, de carrier is echt, en de route naar huis is al gefilterd door weer, schuld, massa en degene die baat heeft bij de payload."
+  },
+  "pl_PL": {
+   "title": "Kontakt Black Keel",
+   "scanner": "Stary maszt przekaźnikowy. Zasolony, wygięty, wciąż skierowany w dobry wycinek nieba Aegira.",
+   "field_note": "Jeśli carrier pyta, co znalazłeś, zanim pyta, czy oddychasz, nie jesteś klientem. Jesteś narzędziem.",
+   "terminal": "OPERATOR: ŻYWY. DROPCRAFT: NIE DO ODZYSKU. CLAIM: OTWARTY. PRÓBKA: NIEZNANA. ODZYSK: CZEKA NA OKNO. MASA LIEN: BAZA 4,8 TONNE-WINDOW.",
+   "audio": "Okno się zamyka. Wyślij jeden pakiet. Wybierz, zanim pas burzy przykryje maszt.",
+   "in_game_wiki": "Black Keel to tender claimów systemu Aegir, nie domowy statek. Przenosi kapsuły, holowniki, zapieczętowane próbki, rejestry lien i pechowych operatorów przez lokalny ruch. Może pomóc, ale pomoc przechodzi przez geometrię orbity, pogodę, automatykę, dług i haki beneficjenta ukryte w kontrakcie, zanim gracz dotknął oceanu.",
+   "external_site": "Black Keel jest jedyną linią gracza na orbitę. Nie jest martwy i nie jest lojalny: każde zerwane okno może nieść prośbę o ratunek, raport próbki, kłamstwo albo dowód.",
+   "external_site_article": "Black Keel nigdy nie powinien brzmieć jak przyjazny statek gwiezdny czekający nad chmurami. To maszyna claim-pool z użytecznym głosem, ograniczoną orbitą i priorytetami kontraktu starszymi niż drop gracza. Pierwszy kontakt jest cenny, bo dowodzi, że niebo nie jest puste. Jest straszny, bo carrier mierzy gracza jako status operatora, stratę dropcraftu, niepewność próbki, otwarty claim i masę lien, zanim zaoferuje język ratunku. To otwierająca presja HECTON-8 w miniaturze. Gracz żyje, carrier jest realny, a droga do domu jest już filtrowana przez pogodę, dług, masę i tego, kto korzysta z payloadu."
+  },
+  "pt_BR": {
+   "title": "Contato Black Keel",
+   "scanner": "Mastro de retransmissão antigo. Salgado, torto, ainda apontado para o pedaço certo do céu de Aegir.",
+   "field_note": "Quando uma transportadora pergunta o que você achou antes de perguntar se você respira, você não é o cliente. Você é a ferramenta.",
+   "terminal": "ESTADO DO OPERADOR: VIVO. ESTADO DO DROPCRAFT: IRRECUPERÁVEL. CLAIM: ABERTO. AMOSTRA: DESCONHECIDA. RECUPERAÇÃO: AGUARDANDO JANELA. MASSA DE LIEN: BASE 4,8 TONNE-WINDOW.",
+   "audio": "A janela está fechando. Envie um pacote. Escolha antes que a faixa de tempestade cubra o mastro.",
+   "in_game_wiki": "Black Keel é uma tender de claim do sistema Aegir, não uma nave-lar. Ela move cápsulas, rebocadores de carga, amostras seladas, registros de lien e operadores azarados pelo tráfego local. Ela pode ajudar, mas a ajuda passa por geometria orbital, clima, automação, dívida e ganchos de beneficiário escondidos no contrato antes de o jogador tocar o oceano.",
+   "external_site": "Black Keel é a única linha do jogador de volta à órbita. Não está morta nem é leal: cada janela quebrada pode carregar pedido de resgate, relatório de amostra, mentira ou prova.",
+   "external_site_article": "Black Keel nunca deve soar como uma nave amiga esperando acima das nuvens. É uma máquina de pool de claims com uma voz útil, órbita limitada e prioridades de contrato mais antigas que a queda do jogador. Seu primeiro contato vale porque prova que o céu não está vazio. Ele assusta porque a transportadora mede o jogador como estado de operador, perda do dropcraft, incerteza de amostra, claim aberto e massa de lien antes de oferecer linguagem de resgate. Essa é a pressão inicial de HECTON-8 em miniatura. O jogador está vivo, a transportadora é real, e a rota para casa já foi filtrada por clima, dívida, massa e quem se beneficia do payload."
+  },
+  "ru_RU": {
+   "title": "Контакт Black Keel",
+   "scanner": "Старая релейная мачта. Засоленная, погнутая, всё ещё смотрит в правильный срез неба Аегира.",
+   "field_note": "Если носитель спрашивает, что ты нашёл, раньше чем спрашивает, дышишь ли ты, клиент не ты. Ты инструмент.",
+   "terminal": "СОСТОЯНИЕ ОПЕРАТОРА: ЖИВ. СОСТОЯНИЕ DROPCRAFT: НЕВОССТАНОВИМО. CLAIM: ОТКРЫТ. ОБРАЗЕЦ: НЕИЗВЕСТЕН. ВОССТАНОВЛЕНИЕ: ОЖИДАЕТ ОКНА. МАССА LIEN: БАЗА 4,8 TONNE-WINDOW.",
+   "audio": "Окно закрывается. Отправь один пакет. Выбирай до того, как штормовая полоса накроет мачту.",
+   "in_game_wiki": "Black Keel — claim-tender системы Аегир, а не домашний корабль. Он проводит капсулы, грузовые буксиры, запечатанные образцы, lien-записи и невезучих операторов через местный трафик. Он может помочь, но помощь проходит через орбитальную геометрию, погоду, автоматику, долг и скрытые beneficiary hooks, заложенные в контракт ещё до того, как игрок коснулся океана.",
+   "external_site": "Black Keel — единственная линия игрока обратно на орбиту. Он не мёртв и не лоялен: каждое рваное окно может нести запрос спасения, отчёт об образце, ложь или доказательство.",
+   "external_site_article": "Black Keel не должен читаться как дружелюбный звёздный корабль, ожидающий над облаками. Это машина claim-pool с полезным голосом, ограниченной орбитой и контрактными приоритетами старше падения игрока. Первый контакт ценен, потому что доказывает: небо не пустое. Он пугает, потому что носитель измеряет игрока как состояние оператора, потерю dropcraft, неопределённость образца, открытый claim и массу lien раньше, чем предлагает язык спасения. Это стартовое давление HECTON-8 в миниатюре. Игрок жив, носитель реален, а маршрут домой уже пропущен через погоду, долг, массу и того, кто получит выгоду от payload."
+  },
+  "uk_UA": {
+   "title": "Контакт Black Keel",
+   "scanner": "Стара релейна щогла. Засолена, зігнута, усе ще спрямована в правильний зріз неба Аегіра.",
+   "field_note": "Якщо носій питає, що ти знайшов, раніше ніж питає, чи ти дихаєш, клієнт не ти. Ти інструмент.",
+   "terminal": "СТАН ОПЕРАТОРА: ЖИВИЙ. СТАН DROPCRAFT: НЕВІДНОВНИЙ. CLAIM: ВІДКРИТИЙ. ЗРАЗОК: НЕВІДОМИЙ. ВІДНОВЛЕННЯ: ОЧІКУЄ ВІКНА. МАСА LIEN: БАЗА 4,8 TONNE-WINDOW.",
+   "audio": "Вікно закривається. Надішли один пакет. Обери до того, як штормова смуга накриє щоглу.",
+   "in_game_wiki": "Black Keel — claim-tender системи Аегір, а не домашній корабель. Він проводить капсули, вантажні буксири, запечатані зразки, lien-записи й невезучих операторів через місцевий трафік. Він може допомогти, але допомога проходить через орбітальну геометрію, погоду, автоматику, борг і приховані beneficiary hooks, закладені в контракт ще до того, як гравець торкнувся океану.",
+   "external_site": "Black Keel — єдина лінія гравця назад на орбіту. Він не мертвий і не лояльний: кожне рване вікно може нести запит рятування, звіт про зразок, брехню або доказ.",
+   "external_site_article": "Black Keel не має читатися як дружній зореліт, що чекає над хмарами. Це машина claim-pool із корисним голосом, обмеженою орбітою й контрактними пріоритетами старшими за падіння гравця. Перший контакт цінний, бо доводить: небо не порожнє. Він лякає, бо носій вимірює гравця як стан оператора, втрату dropcraft, невизначеність зразка, відкритий claim і масу lien раніше, ніж пропонує мову рятування. Це стартовий тиск HECTON-8 у мініатюрі. Гравець живий, носій реальний, а маршрут додому вже пропущений крізь погоду, борг, масу й того, хто отримає вигоду від payload."
+  },
+  "zh_CN": {
+   "title": "Black Keel联络",
+   "scanner": "旧中继桅杆。盐蚀、弯曲，却仍指向埃吉尔天空中正确的那一片。",
+   "field_note": "如果母船先问你找到了什么，再问你是否还在呼吸，那你就不是客户。你是工具。",
+   "terminal": "操作员状态：存活。DROPCRAFT状态：不可回收。CLAIM状态：开启。样本状态：未知。回收状态：等待窗口。LIEN质量：4.8 TONNE-WINDOW基线。",
+   "audio": "窗口正在关闭。发送一个数据包。在风暴带卷过桅杆前选择。",
+   "in_game_wiki": "Black Keel是埃吉尔系统内的claim tender，不是家船。它在本地交通中移动舱体、货运拖船、密封样本、lien记录和倒霉操作员。它能帮忙，但帮助必须经过轨道几何、天气、自动化、债务，以及在玩家碰到海水前就藏进合同里的受益人钩子。",
+   "external_site": "Black Keel是玩家回到轨道的唯一线路。它没有死，也不忠诚：每个破碎窗口都可能携带救援请求、样本报告、谎言或证据。",
+   "external_site_article": "Black Keel绝不能像一艘友好星船那样，在云层之上等待玩家。它是一台claim-pool机器，有实用的声音、有限的轨道，以及比玩家坠落更早的合同优先级。第一次联络之所以宝贵，是因为它证明天空并非空无一物。它令人不安，是因为母船先把玩家衡量为操作员状态、dropcraft损失、样本不确定、开启claim和lien质量，然后才提供救援语言。这就是HECTON-8开场压力的缩影。玩家还活着，母船是真实的，而回家的路线已经被天气、债务、质量和payload受益者过滤过。"
   }
+ },
+ "content_class": "in_world_artifact"
 }

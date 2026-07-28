@@ -1,287 +1,288 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS295_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS295_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1343_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE",
+   "release_set_id": "RS295_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE",
+   "article_id": "applied_lore.compressor_handoff_backfill_field_article",
+   "title_key": "LORE_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/AppliedContent/packets/RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS294_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1343_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE",
-      "release_set_id": "RS295_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE",
-      "article_id": "applied_lore.compressor_handoff_backfill_field_article",
-      "title_key": "LORE_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/AppliedContent/packets/RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS294_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.compressor_handoff_backfill_field_article",
-        "secondary": [
-          "unlock.first_compressor_handoff_backfill",
-          "unlock.first_oxygen_ledger_cutoff_claim_hold",
-          "unlock.first_suit_reserve_delta_mismatch",
-          "unlock.first_scrubber_cartridge_serial_mismatch"
-        ],
-        "poi_tags": [
-          "poi.compressor_handoff_backfill",
-          "poi.pump_counter",
-          "poi.relay_tick",
-          "poi.check_valve_salt_ring",
-          "poi.drain_cup_brine",
-          "poi.compressor_handoff_row",
-          "poi.oxygen_ledger_cutoff",
-          "poi.suit_reserve_delta",
-          "poi.scrubber_serial_mismatch",
-          "poi.claim_hold_field"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.life_support",
-          "biome.compressor_room",
-          "biome.service_bay",
-          "biome.claim_admin",
-          "biome.evidence_custody"
-        ],
-        "depth_band_m": "0-4200"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Life-Support Compressor QA Note",
-          "audio": "Recovered Compressor Room Clip",
-          "in_game_wiki": "PDA Forensic Object Article",
-          "external_site": "Public Lore Atlas Evidence Note",
-          "field_note": "Marauder Field Note"
-        },
-        "source_brief": {
-          "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
-          "spoiler_level": "1",
-          "speaker_source": "PDA scanner, compressor QA note, compressor room clip, Marauder annotation, public lore atlas",
-          "audience": "after oxygen ledger cutoff, suit reserve delta and scrubber serial mismatch evidence; public atlas under early-evidence spoiler boundary",
-          "date_era": "2190 recovery reading of 2147 compressor handoff artifacts, oxygen ledger rows and claim records",
-          "location_depth_route": "compressor room, life-support pump panel, check-valve line, oxygen ledger strip, claim desk cache",
-          "unlock_context": "after scrubber cartridge serial mismatch, suit reserve delta mismatch and oxygen ledger cutoff claim hold",
-          "evidence_object": "pump counter, relay tick, check-valve salt ring, drain cup brine, compressor handoff row and later claim hold",
-          "source_knows": "mechanical compressor traces can stop before a late handoff row carries support language forward",
-          "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
-          "truth_pressure": "Compressor handoff backfill binds mechanical air movement to later custody language without naming final culprit.",
-          "design_use": "extend life-support evidence chain through pump mechanics and late administrative handoff rows"
-        },
-        "spoiler_boundary": {
-          "tier": 1,
-          "allowed_reveals": [
-            "pump counter and relay evidence can stop before a later handoff row",
-            "a handoff row can carry support language after mechanical air movement fails",
-            "claim hold can follow a smooth row that does not match machine traces"
-          ],
-          "blocked_reveals": [
-            "final culprit",
-            "hidden transcript sentence",
-            "ending payload identity"
-          ]
-        }
-      },
-      "localized": {
-        "en_US": {
-          "title": "Compressor Handoff Backfill",
-          "scanner": "COMPRESSOR HANDOFF BACKFILL // Pump counter stops before the handoff row. Check-valve salt and relay tick do not support the later clean transfer.",
-          "terminal": "COMPRESSOR HANDOFF QA // Compare pump counter, relay tick, check-valve salt ring, oxygen ledger cutoff, suit reserve delta, scrubber serial mismatch and claim hold. A handoff row is not proof that air moved.",
-          "audio": "Counter stopped. Relay stopped. The row kept walking because somebody needed a clean handoff.",
-          "in_game_wiki": "A compressor handoff row is supposed to sit between mechanical air movement and the room ledger. The compressor moves pressure. The relay clicks when the feed changes state. The pump counter marks cycles. The check valve keeps one side of the system from dragging brine back into the other. When those four marks agree, the handoff row is boring. It means the room passed a load to the next account.\n\nThe backfill problem starts when the row stays smooth after the machinery becomes jagged. A drowned compressor does not fail like a clerk writes. It stalls, coughs through relay gaps, leaves salt on one side of the check valve and stops counting clean cycles. A later desk row can still look complete. That row may say transfer accepted, compressor handoff pending or support load carried forward. None of those words move air through a stopped pump.\n\nRead this record after the oxygen ledger cutoff, suit reserve delta and scrubber serial mismatch. The ledger shows the room limit. The suit shows what stayed with the body. The scrubber plate shows which cartridge sat in the air train. The compressor handoff shows whether the room ever pushed that load onward. If the pump counter died first and the handoff row arrived later, the chain has left mechanics and entered custody language.\n\nField work should keep the compressor ugly. Photograph the counter face before cleaning it. Record the relay tick position, salt ring on the check valve, brine stain inside the drain cup and the exact handoff row that claims transfer. Do not accept a smooth row without matching marks on the machine. The row can explain who carried responsibility forward. It cannot make the room breathe again.",
-          "external_site": "A compressor handoff backfill is the gap between a stopped machine and a later row that says the transfer continued.",
-          "external_site_article": "The compressor is a bad place to hide a clean lie. It has too many little failures: a relay that stops mid-tick, a counter with one half-stained digit, a valve lip salted only on the room side, a drain cup that catches brine before the desk knows anything is wrong.\n\nThat is why handoff rows matter. In Deep Reach procedure, a room support load could be passed from local life support into a wider account. The row was useful. It let route, maintenance and claim desks know where the air cost had gone. It also gave them a place to keep writing after the room had stopped doing the work.\n\nBackfill does not require a grand falsification. It only needs a later line that smooths the break: compressor accepted, handoff pending, support load carried, route still active. Read beside the pump counter, those phrases lose their comfort. The machine stopped in pieces. The row arrived in one clean block.\n\nThis record does not name the final desk owner. It leaves another hard join: pump, relay, valve, ledger. If that join breaks before the claim hold, the active route was carried by paperwork, not pressure.",
-          "field_note": "If the pump stopped before the row, the handoff is a desk entry, not air.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Позднее внесение передачи компрессора",
-          "scanner": "ПОЗДНЯЯ ПЕРЕДАЧА КОМПРЕССОРА // Счетчик насоса остановился раньше строки передачи. Солевое кольцо на обратном клапане и щелчок реле не подтверждают поздний чистый перенос.",
-          "terminal": "QA ПЕРЕДАЧИ КОМПРЕССОРА // Сверить счетчик насоса, щелчок реле, солевое кольцо обратного клапана, отсечку кислородного журнала, дельту резерва костюма, несовпадение серийника скруббера и claim hold. Строка handoff не доказывает, что воздух двигался.",
-          "audio": "Счетчик встал. Реле встало. Строка пошла дальше, потому что кому-то нужна была чистая передача.",
-          "in_game_wiki": "Строка передачи компрессора должна стоять между механическим движением воздуха и комнатным журналом. Компрессор гонит давление. Реле щелкает, когда подача меняет состояние. Счетчик насоса отмечает циклы. Обратный клапан не дает одной стороне системы тянуть рассол в другую. Когда эти четыре следа сходятся, строка скучная. Она значит, что комната передала нагрузку в следующий счет.\n\nПроблема позднего внесения начинается там, где строка остается гладкой после того, как машина стала рваной. Затопленный компрессор не отказывает так, как пишет клерк. Он глохнет, сбивается в промежутках реле, оставляет соль с одной стороны обратного клапана и перестает считать чистые циклы. Поздняя строка на столе все еще может выглядеть полной. В ней может стоять: transfer accepted, compressor handoff pending или support load carried forward. Ни одна из этих формул не проталкивает воздух через остановленный насос.\n\nЭтот пакет нужно читать после отсечки кислородного журнала, дельты резерва костюма и несовпадения серийника скруббера. Журнал показывает предел комнаты. Костюм показывает, что осталось при теле. Табличка скруббера показывает, какой картридж сидел в воздушной линии. Передача компрессора показывает, толкнула ли комната эту нагрузку дальше. Если счетчик насоса умер первым, а строка передачи пришла позже, цепочка вышла из механики и попала в язык хранения.\n\nПолевая работа должна оставить компрессор неприятным. Снять счетчик до чистки. Записать положение щелчка реле, солевое кольцо на обратном клапане, пятно рассола в дренажной чашке и точную строку handoff, которая заявляет передачу. Не принимать гладкую строку без совпадающих следов на машине. Строка может объяснить, кто понес ответственность дальше. Она не заставляет комнату снова дышать.",
-          "external_site": "Позднее внесение передачи компрессора — это разрыв между остановленной машиной и поздней строкой, где написано, что перенос продолжался.",
-          "external_site_article": "Компрессор — плохое место для чистой лжи. У него слишком много мелких отказов: реле, застывшее между щелчками, счетчик с наполовину испачканной цифрой, губа клапана с солью только со стороны комнаты, дренажная чашка, которая ловит рассол раньше, чем стол узнает о проблеме.\n\nПоэтому строки передачи важны. В процедуре Deep Reach нагрузку комнатного жизнеобеспечения можно было передать из локальной системы в более широкий счет. Строка была полезной. Она сообщала route, maintenance и claim desk, куда ушла стоимость воздуха. Она же давала место, где можно продолжать писать после того, как комната перестала работать.\n\nДля backfill не нужна большая подделка. Достаточно поздней строки, которая сглаживает обрыв: compressor accepted, handoff pending, support load carried, route still active. Рядом со счетчиком насоса эти фразы теряют удобство. Машина остановилась кусками. Строка пришла одним чистым блоком.\n\nЭта статья не называет последнего владельца стола. Она дает игроку еще один жесткий стык: насос, реле, клапан, журнал. Если этот стык ломается раньше claim hold, открытый маршрут несла бумага, а не давление.",
-          "field_note": "Если насос остановился раньше строки, handoff — запись стола, а не воздух.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "コンプレッサー引き渡しの後追い記入",
-          "scanner": "コンプレッサー引き渡し後追い // ポンプカウンターは引き渡し行より先に止まっている。逆止弁の塩輪とリレーの刻みは、後のきれいな転送を支えていない。",
-          "terminal": "コンプレッサー引き渡し QA // ポンプカウンター、リレー刻み、逆止弁の塩輪、酸素台帳の遮断、スーツ予備デルタ、スクラバー番号不一致、claim holdを照合。handoff行は空気が動いた証拠ではない。",
-          "audio": "カウンターは止まった。リレーも止まった。誰かがきれいな引き渡しを必要としたから、行だけが進んだ。",
-          "in_game_wiki": "コンプレッサーの引き渡し行は、機械としての空気移動と部屋の台帳の間に置かれる。コンプレッサーは圧力を動かす。リレーは供給状態が変わると刻む。ポンプカウンターはサイクルを数える。逆止弁は、片側の系統がもう片側へ塩水を引き戻すのを止める。この四つが揃っていれば、引き渡し行は退屈な記録だ。部屋が負荷を次の勘定へ渡したというだけでいい。\n\n後追い記入の問題は、機械が荒れた後も行だけが滑らかに残るところから始まる。水没したコンプレッサーは、事務員の文章のようには故障しない。失速し、リレーの間隔で咳き込み、逆止弁の片側だけに塩を残し、きれいなサイクルを数えなくなる。後の机上行は、それでも完成して見えることがある。transfer accepted、compressor handoff pending、support load carried forward。どの文言も、止まったポンプに空気を通さない。\n\nこのパケットは、酸素台帳の遮断、スーツ予備デルタ、スクラバー番号不一致の後で読むものだ。台帳は部屋の限界を示す。スーツは身体に残った数を示す。スクラバーの銘板は空気列にいたカートリッジを示す。コンプレッサー引き渡しは、その負荷を部屋が本当に先へ押したかを示す。ポンプカウンターが先に死に、引き渡し行が後で来たなら、鎖は機械から離れて管理言語へ入った。\n\n現場ではコンプレッサーの汚さを残す。清掃前にカウンター面を撮る。リレー刻みの位置、逆止弁の塩輪、ドレンカップ内部の塩水染み、転送を主張するhandoff行を記録する。機械側の印と合わない滑らかな行を受け入れない。その行は、誰が責任を先へ運んだかを説明できる。部屋をもう一度呼吸させることはできない。",
-          "external_site": "コンプレッサー引き渡しの後追い記入は、止まった機械と、転送が続いたと主張する後の行との隙間だ。",
-          "external_site_article": "コンプレッサーは、きれいな嘘を隠すには不向きな場所だ。小さな故障が多すぎる。途中で止まったリレー、半分だけ汚れたカウンター数字、部屋側だけに塩を抱いた弁の縁、机が異常を知る前に塩水を受けたドレンカップ。\n\nだから引き渡し行は重要になる。Deep Reachの手順では、部屋の支援負荷をローカル生命維持から広い勘定へ渡すことができた。その行は役に立った。route、maintenance、claim deskに、空気の費用がどこへ行ったかを知らせた。同時に、部屋が仕事をやめた後も書き続ける場所になった。\n\n後追い記入に大きな偽造は要らない。切れ目を滑らかにする遅い一行だけで足りる。compressor accepted、handoff pending、support load carried、route still active。ポンプカウンターの隣で読むと、その語句は安心を失う。機械はばらばらに止まった。行だけが一つのきれいな塊で来た。\n\nこの記事は最後の机の所有者を名指ししない。プレイヤーにもう一つの硬い継ぎ目を渡す。ポンプ、リレー、弁、台帳。その継ぎ目がclaim holdより先に壊れていれば、開いたルートを運んだのは圧力ではなく書類だ。",
-          "field_note": "ポンプが行より先に止まったなら、handoffは空気ではなく机上入力だ。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "压缩机交接回填",
-          "scanner": "压缩机交接回填 // 泵计数器先于交接行停止。止回阀盐环和继电器刻点不支持后来的干净转移。",
-          "terminal": "压缩机交接 QA // 对照泵计数器、继电器刻点、止回阀盐环、氧气账本截断、潜服储备差值、洗涤器序号不符和 claim hold。handoff 行不能证明空气移动过。",
-          "audio": "计数器停了。继电器停了。行还在往前走，因为有人需要一条干净交接。",
-          "in_game_wiki": "压缩机交接行本应站在机械送气和房间账本之间。压缩机移动压力。继电器在供给状态变化时留下刻点。泵计数器记录循环。止回阀阻止系统一侧把卤水拖回另一侧。四个痕迹一致时，交接行很无聊。它只说明房间把负载交给了下一笔账。\n\n回填问题从机械变得参差，而行仍然平滑开始。被淹过的压缩机不会像文员写字那样失效。它会停滞，会在继电器间隙里断续，会只在止回阀一侧留下盐，会停止记录干净循环。后来的桌面行仍可能看上去完整。transfer accepted、compressor handoff pending、support load carried forward。没有哪个短语能让空气穿过一台停泵。\n\n这个条目应放在氧气账本截断、潜服储备差值和洗涤器序号不符之后阅读。账本显示房间边界。潜服显示留在身体上的数字。洗涤器铭牌显示哪个滤芯坐在空气列里。压缩机交接显示房间是否真的把这份负载推向下一处。如果泵计数器先死，交接行后到，链条已经离开机械，进入了保管语言。\n\n现场处理要保留压缩机的难看。清理前拍下计数器面。记录继电器刻点位置、止回阀盐环、排水杯内的卤水污迹，以及声称转移完成的确切 handoff 行。没有机器痕迹配套时，不要接受平滑行。那一行可以说明责任被谁继续带走。它不能让房间重新呼吸。",
-          "external_site": "压缩机交接回填，是停机和后来声称转移继续的行之间的空隙。",
-          "external_site_article": "压缩机不是藏干净谎言的好地方。它有太多小故障：停在半刻的继电器，半个数字被污住的计数器，只在房间侧带盐的阀唇，在桌面知道问题前就接到卤水的排水杯。\n\n所以交接行很重要。在 Deep Reach 程序中，房间支持负载可以从本地生命维持转入更大的账户。那一行有用。它告诉 route、maintenance 和 claim desk，空气成本去了哪里。它也给了他们一个地方，让他们在房间停止工作后继续书写。\n\n回填不需要宏大的伪造。只需要一条较晚的行，把断口抹平：compressor accepted、handoff pending、support load carried、route still active。放在泵计数器旁读，这些词会失去舒服感。机器是分段停下的。那一行却作为一个干净块到来。\n\n本文不指名最后的桌面所有者。它给玩家另一个硬接点：泵、继电器、阀、账本。如果这个接点在 claim hold 之前断开，开放路线就是由文件承载，不是由压力承载。",
-          "field_note": "如果泵先于行停止，handoff 就是桌面输入，不是空气。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Rattrapage de passation compresseur",
-          "scanner": "RATTRAPAGE COMPRESSEUR // Le compteur de pompe s'arrete avant la ligne de passation. L'anneau de sel du clapet et le cran du relais ne soutiennent pas le transfert propre ajoute plus tard.",
-          "terminal": "QA PASSATION COMPRESSEUR // Comparer compteur de pompe, cran de relais, anneau de sel du clapet, coupure du registre oxygene, delta de reserve de combinaison, serie de scrubber discordante et claim hold. Une ligne handoff ne prouve pas que l'air a bouge.",
-          "audio": "Le compteur s'est arrete. Le relais aussi. La ligne a continue parce que quelqu'un avait besoin d'une passation propre.",
-          "in_game_wiki": "Une ligne de passation compresseur devrait se placer entre le mouvement mecanique de l'air et le registre de la piece. Le compresseur deplace la pression. Le relais marque le changement d'etat. Le compteur de pompe compte les cycles. Le clapet empeche un cote du circuit de tirer de la saumure dans l'autre. Quand ces quatre marques concordent, la ligne est banale. Elle dit seulement que la piece a transmis une charge au compte suivant.\n\nLe rattrapage commence quand la ligne reste lisse apres que la machine est devenue irreguliere. Un compresseur noye ne tombe pas en panne comme ecrit un employe. Il cale, tousse dans les blancs du relais, laisse du sel d'un seul cote du clapet et cesse de compter des cycles propres. Une ligne ajoutee plus tard peut encore paraitre complete. transfer accepted, compressor handoff pending, support load carried forward. Aucune de ces formules ne pousse de l'air dans une pompe arretee.\n\nCe registre se lit apres la coupure du registre oxygene, le delta de reserve de combinaison et la discordance de serie du scrubber. Le registre donne la limite de la piece. La combinaison donne ce qui est reste avec le corps. La plaque du scrubber donne quelle cartouche occupait le train d'air. La passation compresseur dit si la piece a vraiment pousse cette charge plus loin. Si le compteur meurt d'abord et la ligne arrive ensuite, la chaine a quitte la mecanique pour entrer dans la langue de garde.\n\nSur le terrain, il faut garder la laideur du compresseur. Photographier la face du compteur avant nettoyage. Noter la position du relais, l'anneau de sel du clapet, la tache de saumure dans la coupelle de purge et la ligne handoff exacte qui declare le transfert. Ne pas accepter une ligne lisse sans marques machine concordantes. La ligne peut dire qui a porte la responsabilite plus loin. Elle ne peut pas rendre de l'air a la piece.",
-          "external_site": "Un rattrapage de passation compresseur est l'ecart entre une machine arretee et une ligne posterieure qui affirme que le transfert continuait.",
-          "external_site_article": "Le compresseur est un mauvais endroit pour cacher un mensonge propre. Il a trop de petites defaillances : relais bloque entre deux crans, compteur avec un chiffre a demi tache, levre de clapet salee seulement cote piece, coupelle de purge qui prend la saumure avant que le bureau sache quoi que ce soit.\n\nC'est pourquoi les lignes de passation comptent. Dans la procedure Deep Reach, une charge de soutien de piece pouvait passer du support local a un compte plus large. La ligne servait. Elle disait aux desks route, maintenance et claim ou etait parti le cout de l'air. Elle leur donnait aussi un endroit ou continuer a ecrire apres l'arret du travail reel.\n\nLe rattrapage ne demande pas de grande falsification. Il suffit d'une ligne tardive qui lisse la rupture : compressor accepted, handoff pending, support load carried, route still active. Lues pres du compteur de pompe, ces phrases perdent leur confort. La machine s'est arretee par morceaux. La ligne est arrivee en un seul bloc propre.\n\nCe registre ne nomme pas le dernier proprietaire de desk. Il laisse une jointure dure de plus : pompe, relais, clapet, registre. Si cette jointure casse avant le claim hold, la route active etait portee par le papier, pas par la pression.",
-          "field_note": "Si la pompe s'est arretee avant la ligne, le handoff est une entree de desk, pas de l'air.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Relleno de traspaso del compresor",
-          "scanner": "RELLENO DE TRASPASO // El contador de la bomba se detiene antes de la linea de handoff. El anillo de sal de la valvula y el clic del rele no sostienen el traspaso limpio posterior.",
-          "terminal": "QA TRASPASO COMPRESOR // Comparar contador de bomba, clic de rele, anillo de sal de valvula, corte del libro de oxigeno, delta de reserva del traje, serie del scrubber y claim hold. Una linea handoff no prueba que el aire se moviera.",
-          "audio": "El contador paro. El rele paro. La linea siguio andando porque alguien necesitaba un traspaso limpio.",
-          "in_game_wiki": "Una linea de traspaso del compresor debe quedar entre el movimiento mecanico del aire y el libro de la sala. El compresor mueve presion. El rele hace clic cuando cambia el estado de alimentacion. El contador de bomba marca ciclos. La valvula de retencion evita que un lado del sistema arrastre salmuera al otro. Cuando esas cuatro marcas coinciden, la linea es aburrida. Significa que la sala paso una carga a la siguiente cuenta.\n\nEl problema del relleno empieza cuando la linea sigue lisa despues de que la maquina se vuelve irregular. Un compresor ahogado no falla como escribe un oficinista. Se cala, tose entre huecos de rele, deja sal en un solo lado de la valvula y deja de contar ciclos limpios. Una linea de mesa posterior aun puede parecer completa. transfer accepted, compressor handoff pending, support load carried forward. Ninguna de esas frases empuja aire por una bomba parada.\n\nEste registro va despues del corte del libro de oxigeno, la delta de reserva del traje y la discordancia de serie del scrubber. El libro muestra el limite de la sala. El traje muestra lo que quedo con el cuerpo. La placa del scrubber muestra que cartucho estaba en el tren de aire. El handoff del compresor muestra si la sala empujo esa carga mas lejos. Si el contador murio primero y la linea llego despues, la cadena salio de la mecanica y entro en lenguaje de custodia.\n\nEl trabajo de campo debe conservar lo feo del compresor. Fotografia la cara del contador antes de limpiarla. Registra posicion del clic de rele, anillo de sal en la valvula, mancha de salmuera en la copa de drenaje y la linea handoff exacta que afirma el traspaso. No aceptes una linea lisa sin marcas coincidentes en la maquina. La linea puede explicar quien llevo la responsabilidad hacia delante. No puede hacer respirar de nuevo la sala.",
-          "external_site": "Un relleno de traspaso del compresor es la brecha entre una maquina parada y una linea posterior que dice que el traspaso continuo.",
-          "external_site_article": "El compresor es mal sitio para esconder una mentira limpia. Tiene demasiados fallos pequenos: un rele que se queda a medio clic, un contador con medio digito manchado, un labio de valvula con sal solo del lado de la sala, una copa de drenaje que recoge salmuera antes de que el escritorio sepa nada.\n\nPor eso importan las lineas de traspaso. En el procedimiento Deep Reach, la carga de soporte de una sala podia pasar del sistema local a una cuenta mas amplia. La linea era util. Decia a route, maintenance y claim desk donde se habia ido el coste del aire. Tambien les daba un lugar donde seguir escribiendo despues de que la sala dejara de trabajar.\n\nEl relleno no requiere una gran falsificacion. Solo necesita una linea tardia que alise la rotura: compressor accepted, handoff pending, support load carried, route still active. Leidas junto al contador, esas frases pierden comodidad. La maquina se paro por partes. La linea llego en un bloque limpio.\n\nEste registro no nombra al ultimo dueno del escritorio. Deja otra union dura: bomba, rele, valvula, libro. Si esa union se rompe antes del claim hold, la ruta activa la cargaba el papel, no la presion.",
-          "field_note": "Si la bomba paro antes de la linea, el handoff es entrada de mesa, no aire.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Nachtrag der Kompressoruebergabe",
-          "scanner": "KOMPRESSORUEBERGABE NACHTRAG // Pumpenzaehler stoppt vor der Uebergabezeile. Salzring am Rueckschlagventil und Relaisklick stuetzen die spaetere saubere Uebergabe nicht.",
-          "terminal": "QA KOMPRESSORUEBERGABE // Pumpenzaehler, Relaisklick, Salzring am Rueckschlagventil, Sauerstoffbuch-Schnitt, Anzugreserve-Delta, Scrubber-Serienbruch und claim hold vergleichen. Eine handoff-Zeile beweist keine Luftbewegung.",
-          "audio": "Zaehler stoppte. Relais stoppte. Die Zeile lief weiter, weil jemand eine saubere Uebergabe brauchte.",
-          "in_game_wiki": "Eine Kompressoruebergabezeile gehoert zwischen mechanische Luftbewegung und Raumregister. Der Kompressor bewegt Druck. Das Relais klickt, wenn die Einspeisung den Zustand wechselt. Der Pumpenzaehler markiert Zyklen. Das Rueckschlagventil verhindert, dass eine Systemseite Sole in die andere zieht. Stimmen diese vier Spuren ueberein, ist die Uebergabezeile langweilig. Sie sagt, dass der Raum eine Last an das naechste Konto weitergab.\n\nDas Nachtragsproblem beginnt, wenn die Zeile glatt bleibt, nachdem die Maschine zackig geworden ist. Ein ertrunkener Kompressor versagt nicht wie ein Sachbearbeiter schreibt. Er bleibt stehen, hustet durch Relaisluecken, laesst Salz auf einer Ventilseite und zaehlt keine sauberen Zyklen mehr. Eine spaetere Desk-Zeile kann trotzdem vollstaendig aussehen. transfer accepted, compressor handoff pending, support load carried forward. Keiner dieser Begriffe drueckt Luft durch eine stehende Pumpe.\n\nDieser Eintrag gehoert nach Sauerstoffbuch-Schnitt, Anzugreserve-Delta und Scrubber-Serienbruch. Das Buch zeigt die Raumgrenze. Der Anzug zeigt, was am Koerper blieb. Die Scrubber-Platte zeigt, welche Kartusche im Luftstrang sass. Die Kompressoruebergabe zeigt, ob der Raum diese Last wirklich weiterdrueckte. Starb der Pumpenzaehler zuerst und kam die Uebergabezeile spaeter, hat die Kette die Mechanik verlassen und ist in Custody-Sprache geraten.\n\nIm Feld muss der Kompressor haesslich bleiben. Zaehlerflaeche vor der Reinigung fotografieren. Relaisstellung, Salzring am Rueckschlagventil, Solefleck im Ablaufbecher und die genaue handoff-Zeile aufnehmen, die den Transfer behauptet. Eine glatte Zeile ohne passende Maschinenspuren nicht akzeptieren. Die Zeile kann erklaeren, wer Verantwortung weitertrug. Sie kann den Raum nicht wieder atmen lassen.",
-          "external_site": "Ein Nachtrag der Kompressoruebergabe ist die Luecke zwischen einer stehenden Maschine und einer spaeteren Zeile, die fortgesetzten Transfer behauptet.",
-          "external_site_article": "Der Kompressor ist ein schlechter Ort fuer eine saubere Luege. Er hat zu viele kleine Ausfaelle: ein Relais mitten im Klick, ein halb verschmutztes Zaehlerzeichen, eine Ventillippe mit Salz nur auf Raumseite, ein Ablaufbecher, der Sole faengt, bevor der Desk etwas weiss.\n\nDarum zaehlen Uebergabezeilen. Im Deep-Reach-Verfahren konnte eine Raumlast aus lokaler Lebenserhaltung in ein groesseres Konto uebergeben werden. Die Zeile war nuetzlich. Sie sagte Route, Maintenance und Claim Desk, wohin die Luftkosten gingen. Sie bot auch einen Platz, an dem weitergeschrieben werden konnte, nachdem der Raum die Arbeit eingestellt hatte.\n\nNachtrag braucht keine grosse Faelschung. Eine spaete Zeile reicht, die den Bruch glaettet: compressor accepted, handoff pending, support load carried, route still active. Neben dem Pumpenzaehler gelesen verlieren diese Phrasen ihren Trost. Die Maschine stoppte in Teilen. Die Zeile kam als sauberer Block.\n\nDieser Eintrag nennt keinen letzten Desk-Besitzer. Er laesst eine weitere harte Fuge: Pumpe, Relais, Ventil, Buch. Bricht diese Fuge vor dem claim hold, wurde die aktive Route von Papier getragen, nicht von Druck.",
-          "field_note": "Wenn die Pumpe vor der Zeile stoppte, ist handoff ein Desk-Eintrag, keine Luft.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Wsteczne dopisanie przekazania sprężarki",
-          "scanner": "WSTECZNE PRZEKAZANIE SPRĘŻARKI // Licznik pompy zatrzymuje się przed wierszem handoff. Pierścień soli na zaworze zwrotnym i klik przekaźnika nie podpierają późniejszego czystego transferu.",
-          "terminal": "QA PRZEKAZANIA SPRĘŻARKI // Porównaj licznik pompy, klik przekaźnika, pierścień soli zaworu zwrotnego, odcięcie dziennika tlenu, deltę rezerwy skafandra, niezgodność serii scrubbera i claim hold. Wiersz handoff nie dowodzi ruchu powietrza.",
-          "audio": "Licznik stanął. Przekaźnik stanął. Wiersz szedł dalej, bo komuś potrzebne było czyste przekazanie.",
-          "in_game_wiki": "Wiersz przekazania sprężarki powinien leżeć między mechanicznym ruchem powietrza a dziennikiem pokoju. Sprężarka przesuwa ciśnienie. Przekaźnik klika, gdy zasilanie zmienia stan. Licznik pompy oznacza cykle. Zawór zwrotny nie pozwala jednej stronie układu ciągnąć solanki w drugą. Gdy te cztery ślady się zgadzają, wiersz jest nudny. Znaczy tylko, że pokój przekazał obciążenie na następne konto.\n\nProblem wstecznego dopisania zaczyna się, gdy wiersz zostaje gładki po tym, jak maszyna stała się poszarpana. Zalana sprężarka nie psuje się tak, jak pisze urzędnik. Dławi się, gubi w przerwach przekaźnika, zostawia sól po jednej stronie zaworu i przestaje liczyć czyste cykle. Późniejszy wiersz z biurka nadal może wyglądać na pełny. transfer accepted, compressor handoff pending, support load carried forward. Żadna z tych formuł nie przepycha powietrza przez zatrzymaną pompę.\n\nTen pakiet należy czytać po odcięciu dziennika tlenu, delcie rezerwy skafandra i niezgodności serii scrubbera. Dziennik pokazuje granicę pokoju. Skafander pokazuje, co zostało przy ciele. Tabliczka scrubbera pokazuje, który wkład siedział w ciągu powietrza. Przekazanie sprężarki pokazuje, czy pokój naprawdę pchnął to obciążenie dalej. Jeśli licznik pompy umarł pierwszy, a wiersz przyszedł później, łańcuch wyszedł z mechaniki i wszedł w język nadzoru.\n\nW terenie trzeba zachować brzydotę sprężarki. Sfografować tarczę licznika przed czyszczeniem. Zapisać pozycję kliku przekaźnika, pierścień soli na zaworze zwrotnym, plamę solanki w kubku odpływu i dokładny wiersz handoff, który zgłasza transfer. Nie przyjmować gładkiego wiersza bez pasujących śladów maszyny. Wiersz może wyjaśnić, kto poniósł odpowiedzialność dalej. Nie może sprawić, że pokój znów oddycha.",
-          "external_site": "Wsteczne dopisanie przekazania sprężarki to luka między zatrzymaną maszyną a późniejszym wierszem, który mówi, że transfer trwał.",
-          "external_site_article": "Sprężarka to złe miejsce na czyste kłamstwo. Ma zbyt wiele drobnych awarii: przekaźnik zatrzymany w pół kliku, licznik z półzabrudzoną cyfrą, warga zaworu z solą tylko od strony pokoju, kubek odpływu łapiący solankę zanim biurko wie o problemie.\n\nDlatego wiersze przekazania są ważne. W procedurze Deep Reach obciążenie wsparcia pokoju mogło przejść z lokalnego systemu życia na szersze konto. Wiersz był użyteczny. Mówił route, maintenance i claim desk, gdzie poszedł koszt powietrza. Dawał też miejsce, gdzie można było pisać dalej po tym, jak pokój przestał wykonywać pracę.\n\nBackfill nie wymaga wielkiego fałszerstwa. Wystarczy późna linia wygładzająca pęknięcie: compressor accepted, handoff pending, support load carried, route still active. Czytane obok licznika pompy, te zdania tracą wygodę. Maszyna zatrzymała się kawałkami. Wiersz przyszedł jednym czystym blokiem.\n\nTen artykuł nie wskazuje ostatniego właściciela biurka. Daje graczowi kolejny twardy styk: pompa, przekaźnik, zawór, dziennik. Jeśli ten styk pęka przed claim hold, aktywną trasę niosły papiery, nie ciśnienie.",
-          "field_note": "Jeśli pompa stanęła przed wierszem, handoff jest wpisem biurka, nie powietrzem.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Пізнє внесення передачі компресора",
-          "scanner": "ПІЗНЯ ПЕРЕДАЧА КОМПРЕСОРА // Лічильник помпи зупиняється раніше за рядок передачі. Соляне кільце на зворотному клапані й клацання реле не підтверджують пізній чистий перенос.",
-          "terminal": "QA ПЕРЕДАЧІ КОМПРЕСОРА // Звірити лічильник помпи, клацання реле, соляне кільце зворотного клапана, відсічення кисневого журналу, дельту резерву костюма, невідповідність серійника скрубера й claim hold. Рядок handoff не доводить, що повітря рухалося.",
-          "audio": "Лічильник став. Реле стало. Рядок пішов далі, бо комусь була потрібна чиста передача.",
-          "in_game_wiki": "Рядок передачі компресора має стояти між механічним рухом повітря і кімнатним журналом. Компресор рухає тиск. Реле клацає, коли подача змінює стан. Лічильник помпи позначає цикли. Зворотний клапан не дає одній стороні системи тягнути розсіл в іншу. Коли ці чотири сліди сходяться, рядок нудний. Він означає, що кімната передала навантаження до наступного рахунку.\n\nПроблема пізнього внесення починається там, де рядок лишається гладким після того, як машина стала рваною. Затоплений компресор не відмовляє так, як пише клерк. Він глухне, зривається у проміжках реле, лишає сіль з одного боку зворотного клапана й перестає рахувати чисті цикли. Пізній рядок на столі все ще може виглядати повним. transfer accepted, compressor handoff pending, support load carried forward. Жодна з цих формул не проштовхує повітря через зупинену помпу.\n\nЦей пакет слід читати після відсічення кисневого журналу, дельти резерву костюма й невідповідності серійника скрубера. Журнал показує межу кімнати. Костюм показує, що залишилося при тілі. Табличка скрубера показує, який картридж сидів у повітряній лінії. Передача компресора показує, чи справді кімната проштовхнула це навантаження далі. Якщо лічильник помпи помер першим, а рядок передачі прийшов пізніше, ланцюг вийшов із механіки й увійшов у мову зберігання.\n\nПольова робота має лишити компресор неприємним. Зняти лічильник до чистки. Записати положення клацання реле, соляне кільце на зворотному клапані, пляму розсолу в дренажній чашці й точний рядок handoff, який заявляє передачу. Не приймати гладкий рядок без відповідних слідів на машині. Рядок може пояснити, хто поніс відповідальність далі. Він не змусить кімнату знову дихати.",
-          "external_site": "Пізнє внесення передачі компресора — це розрив між зупиненою машиною і пізнім рядком, де написано, що перенос тривав.",
-          "external_site_article": "Компресор — погане місце для чистої брехні. У нього забагато дрібних відмов: реле, застигле між клацаннями, лічильник із наполовину забрудненою цифрою, губа клапана з сіллю лише з боку кімнати, дренажна чашка, що ловить розсіл раніше, ніж стіл дізнається про проблему.\n\nТому рядки передачі важливі. У процедурі Deep Reach навантаження кімнатного життєзабезпечення можна було передати з локальної системи до ширшого рахунку. Рядок був корисним. Він казав route, maintenance і claim desk, куди пішла вартість повітря. Він же давав місце, де можна писати далі після того, як кімната перестала працювати.\n\nДля backfill не потрібна велика підробка. Досить пізнього рядка, який згладжує обрив: compressor accepted, handoff pending, support load carried, route still active. Біля лічильника помпи ці фрази втрачають зручність. Машина зупинилася шматками. Рядок прийшов одним чистим блоком.\n\nЦя стаття не називає останнього власника стола. Вона дає гравцю ще один жорсткий стик: помпа, реле, клапан, журнал. Якщо цей стик ламається раніше claim hold, відкритий маршрут несла паперова форма, а не тиск.",
-          "field_note": "Якщо помпа зупинилася раніше за рядок, handoff — це запис столу, не повітря.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "إدخال لاحق لتسليم الضاغط",
-          "scanner": "إدخال لاحق لتسليم الضاغط // يتوقف عداد المضخة قبل صف التسليم. حلقة الملح على صمام الرجوع ونقرة المرحل لا تدعمان النقل النظيف اللاحق.",
-          "terminal": "فحص تسليم الضاغط // قارن عداد المضخة، نقرة المرحل، حلقة ملح صمام الرجوع، قطع سجل الأكسجين، فرق احتياطي البدلة، عدم تطابق رقم المرشح وclaim hold. صف handoff لا يثبت أن الهواء تحرك.",
-          "audio": "توقف العداد. توقف المرحل. بقي الصف يمشي لأن أحدهم احتاج إلى تسليم نظيف.",
-          "in_game_wiki": "يفترض أن يقف صف تسليم الضاغط بين حركة الهواء الميكانيكية وسجل الغرفة. الضاغط يحرك الضغط. المرحل ينقر عندما تتغير حالة التغذية. عداد المضخة يحدد الدورات. صمام الرجوع يمنع أحد جانبي النظام من سحب المحلول الملحي إلى الجانب الآخر. عندما تتفق هذه العلامات الأربع، يكون الصف مملا. يعني فقط أن الغرفة مررت حملا إلى الحساب التالي.\n\nتبدأ مشكلة الإدخال اللاحق عندما يبقى الصف ناعما بعد أن تصبح الآلة متقطعة. الضاغط الغارق لا يفشل كما يكتب موظف مكتب. يتوقف، يتلعثم بين فراغات المرحل، يترك الملح على جانب واحد من صمام الرجوع، ويتوقف عن عد الدورات النظيفة. يمكن لصف مكتب لاحق أن يبدو كاملا. transfer accepted، compressor handoff pending، support load carried forward. لا تدفع أي من هذه العبارات الهواء عبر مضخة متوقفة.\n\nيأتي هذا الملف بعد قطع سجل الأكسجين، وفرق احتياطي البدلة، وعدم تطابق رقم خرطوشة المرشح. السجل يبين حد الغرفة. البدلة تبين ما بقي مع الجسد. لوحة المرشح تبين أي خرطوشة جلست في خط الهواء. تسليم الضاغط يبين هل دفعت الغرفة ذلك الحمل إلى الأمام فعلا. إذا مات عداد المضخة أولا وجاء صف التسليم لاحقا، فقد خرجت السلسلة من الميكانيكا ودخلت لغة الحيازة.\n\nيجب أن يبقى الضاغط قبيحا في الميدان. صور وجه العداد قبل التنظيف. سجل موضع نقرة المرحل، وحلقة الملح على صمام الرجوع، وبقعة المحلول الملحي داخل كأس التصريف، وصف handoff الدقيق الذي يدعي النقل. لا تقبل صفا ناعما بلا علامات آلة مطابقة. يمكن للصف أن يشرح من حمل المسؤولية إلى الأمام. لا يمكنه أن يجعل الغرفة تتنفس مرة أخرى.",
-          "external_site": "الإدخال اللاحق لتسليم الضاغط هو الفجوة بين آلة متوقفة وصف لاحق يقول إن النقل استمر.",
-          "external_site_article": "الضاغط مكان سيئ لإخفاء كذبة نظيفة. لديه أعطال صغيرة كثيرة: مرحل يتوقف في منتصف النقرة، عداد بنصف رقم ملطخ، شفة صمام عليها ملح في جهة الغرفة فقط، وكأس تصريف يلتقط المحلول الملحي قبل أن يعرف المكتب بوجود مشكلة.\n\nلذلك تهم صفوف التسليم. في إجراء Deep Reach كان يمكن نقل حمل دعم الغرفة من دعم الحياة المحلي إلى حساب أوسع. كان الصف مفيدا. يخبر route وmaintenance وclaim desk أين ذهبت كلفة الهواء. وكان يعطيهم أيضا مكانا يواصلون الكتابة فيه بعد أن تتوقف الغرفة عن العمل.\n\nلا يحتاج backfill إلى تزوير كبير. يحتاج فقط إلى سطر متأخر يملس الكسر: compressor accepted، handoff pending، support load carried، route still active. عند قراءة هذه العبارات بجانب عداد المضخة تفقد راحتها. توقفت الآلة على أجزاء. وصل الصف في كتلة نظيفة واحدة.\n\nلا يسمي هذا المقال مالك المكتب الأخير. يعطي اللاعب وصلة صلبة أخرى: مضخة، مرحل، صمام، سجل. إذا انكسرت هذه الوصلة قبل claim hold، فقد حمل الورق المسار النشط، لا الضغط.",
-          "field_note": "إذا توقفت المضخة قبل الصف، فالـ handoff إدخال مكتب لا هواء.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Backfill Serah-Terima Kompresor",
-          "scanner": "BACKFILL HANDOFF KOMPRESOR // Penghitung pompa berhenti sebelum baris handoff. Cincin garam katup balik dan tik relai tidak mendukung transfer bersih yang datang belakangan.",
-          "terminal": "QA HANDOFF KOMPRESOR // Bandingkan penghitung pompa, tik relai, cincin garam katup balik, pemutusan buku oksigen, delta cadangan suit, mismatch seri scrubber, dan claim hold. Baris handoff bukan bukti udara bergerak.",
-          "audio": "Penghitung berhenti. Relai berhenti. Barisnya terus berjalan karena seseorang butuh handoff yang bersih.",
-          "in_game_wiki": "Baris handoff kompresor seharusnya berada di antara gerak udara mekanis dan buku ruang. Kompresor memindahkan tekanan. Relai mengetik saat suplai berubah keadaan. Penghitung pompa menandai siklus. Katup balik mencegah satu sisi sistem menarik brine ke sisi lain. Saat empat tanda itu sejalan, baris handoff membosankan. Artinya ruang meneruskan beban ke akun berikutnya.\n\nMasalah backfill mulai saat baris tetap halus setelah mesin menjadi patah-patah. Kompresor yang tenggelam tidak gagal seperti tulisan petugas meja. Ia macet, batuk di sela relai, meninggalkan garam di satu sisi katup balik, dan berhenti menghitung siklus bersih. Baris meja yang datang belakangan masih bisa tampak lengkap. transfer accepted, compressor handoff pending, support load carried forward. Tidak satu pun frasa itu mendorong udara melewati pompa yang sudah berhenti.\n\nCatatan ini dibaca setelah pemutusan buku oksigen, delta cadangan suit, dan mismatch seri scrubber. Buku menunjukkan batas ruang. Suit menunjukkan angka yang tetap bersama tubuh. Pelat scrubber menunjukkan cartridge mana yang duduk di jalur udara. Handoff kompresor menunjukkan apakah ruang pernah benar-benar mendorong beban itu lebih jauh. Jika penghitung pompa mati dulu dan baris handoff datang kemudian, rantai sudah meninggalkan mekanik dan masuk ke bahasa custody.\n\nKerja lapangan harus membiarkan kompresor tetap jelek. Foto wajah penghitung sebelum dibersihkan. Catat posisi tik relai, cincin garam pada katup balik, noda brine di cangkir drainase, dan baris handoff persis yang mengklaim transfer. Jangan terima baris halus tanpa tanda mesin yang cocok. Baris itu bisa menjelaskan siapa membawa tanggung jawab maju. Ia tidak bisa membuat ruang bernapas lagi.",
-          "external_site": "Backfill handoff kompresor adalah celah antara mesin yang berhenti dan baris belakangan yang mengatakan transfer berlanjut.",
-          "external_site_article": "Kompresor adalah tempat buruk untuk menyembunyikan kebohongan bersih. Terlalu banyak kegagalan kecil: relai berhenti di tengah tik, penghitung dengan setengah digit bernoda, bibir katup bergaram hanya di sisi ruang, cangkir drainase yang menangkap brine sebelum meja tahu ada masalah.\n\nKarena itu baris handoff penting. Dalam prosedur Deep Reach, beban dukungan ruang bisa dipindahkan dari life support lokal ke akun yang lebih luas. Baris itu berguna. Ia memberi tahu route, maintenance, dan claim desk ke mana biaya udara pergi. Ia juga memberi mereka tempat untuk terus menulis setelah ruang berhenti bekerja.\n\nBackfill tidak butuh pemalsuan besar. Cukup satu baris terlambat yang merapikan patahan: compressor accepted, handoff pending, support load carried, route still active. Dibaca di samping penghitung pompa, frasa itu kehilangan rasa aman. Mesin berhenti dalam potongan. Baris datang sebagai satu blok bersih.\n\nCatatan ini tidak menamai pemilik meja terakhir. Ia meninggalkan sambungan keras lain: pompa, relai, katup, buku. Jika sambungan itu patah sebelum claim hold, rute aktif dibawa oleh kertas, bukan tekanan.",
-          "field_note": "Jika pompa berhenti sebelum baris, handoff adalah entri meja, bukan udara.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "압축기 인계 사후기입",
-          "scanner": "압축기 인계 사후기입 // 펌프 계수기가 handoff 행보다 먼저 멈췄다. 체크 밸브의 소금 고리와 릴레이 틱은 뒤늦은 깨끗한 이송을 뒷받침하지 않는다.",
-          "terminal": "압축기 인계 QA // 펌프 계수기, 릴레이 틱, 체크 밸브 소금 고리, 산소 장부 절단, 슈트 예비량 델타, 스크러버 일련번호 불일치, claim hold를 대조한다. handoff 행은 공기가 움직였다는 증거가 아니다.",
-          "audio": "계수기는 멈췄다. 릴레이도 멈췄다. 누군가 깨끗한 인계가 필요했기 때문에 행만 계속 걸었다.",
-          "in_game_wiki": "압축기 handoff 행은 기계적 공기 이동과 방 장부 사이에 있어야 한다. 압축기는 압력을 움직인다. 릴레이는 공급 상태가 바뀔 때 틱을 남긴다. 펌프 계수기는 사이클을 센다. 체크 밸브는 시스템 한쪽이 염수를 다른 쪽으로 끌어들이지 못하게 한다. 이 네 흔적이 맞으면 handoff 행은 지루하다. 방이 부하를 다음 계정으로 넘겼다는 뜻이면 충분하다.\n\n사후기입 문제는 기계가 들쭉날쭉해진 뒤에도 행만 매끈할 때 시작된다. 물에 잠긴 압축기는 사무원이 쓰듯 고장 나지 않는다. 멎고, 릴레이 틈에서 끊기고, 체크 밸브 한쪽에만 소금을 남기고, 깨끗한 사이클을 세지 못한다. 나중에 온 데스크 행은 여전히 완성돼 보일 수 있다. transfer accepted, compressor handoff pending, support load carried forward. 그 어떤 문구도 멈춘 펌프를 통해 공기를 밀지 못한다.\n\n이 패킷은 산소 장부 절단, 슈트 예비량 델타, 스크러버 일련번호 불일치 다음에 읽어야 한다. 장부는 방의 한계를 보인다. 슈트는 몸에 붙어 남은 수치를 보인다. 스크러버 명판은 어떤 카트리지가 공기열에 있었는지 보인다. 압축기 handoff는 방이 그 부하를 실제로 더 밀었는지를 보인다. 펌프 계수기가 먼저 죽고 handoff 행이 나중에 왔다면, 사슬은 기계를 떠나 custody 언어로 들어간 것이다.\n\n현장 작업은 압축기의 지저분함을 남겨야 한다. 청소 전 계수기 면을 찍는다. 릴레이 틱 위치, 체크 밸브의 소금 고리, 배수컵 안 염수 얼룩, 이송을 주장하는 정확한 handoff 행을 기록한다. 기계 흔적과 맞지 않는 매끈한 행을 받아들이지 않는다. 그 행은 누가 책임을 앞으로 실어 보냈는지 설명할 수 있다. 방을 다시 숨 쉬게 하지는 못한다.",
-          "external_site": "압축기 handoff 사후기입은 멈춘 기계와 이송이 계속됐다고 말하는 뒤늦은 행 사이의 틈이다.",
-          "external_site_article": "압축기는 깨끗한 거짓말을 숨기기에 나쁜 장소다. 작은 고장이 너무 많다. 반쯤 멈춘 릴레이, 숫자 절반이 얼룩진 계수기, 방 쪽에만 소금이 묻은 밸브 입술, 데스크가 문제를 알기 전에 염수를 받은 배수컵.\n\n그래서 handoff 행이 중요하다. Deep Reach 절차에서 방 지원 부하는 로컬 생명유지에서 더 큰 계정으로 넘어갈 수 있었다. 그 행은 쓸모가 있었다. route, maintenance, claim desk에 공기 비용이 어디로 갔는지 알려줬다. 또한 방이 일을 멈춘 뒤에도 계속 쓸 자리를 주었다.\n\nBackfill에는 거대한 위조가 필요 없다. 끊어진 곳을 매끈하게 만드는 늦은 한 줄이면 된다. compressor accepted, handoff pending, support load carried, route still active. 펌프 계수기 옆에서 읽으면 이 문구들은 편안함을 잃는다. 기계는 조각나 멈췄다. 행은 하나의 깨끗한 블록으로 도착했다.\n\n이 글은 마지막 데스크 소유자를 지목하지 않는다. 플레이어에게 또 하나의 단단한 접합부를 준다. 펌프, 릴레이, 밸브, 장부. 그 접합부가 claim hold보다 먼저 깨졌다면, 열린 경로를 운반한 것은 압력이 아니라 서류다.",
-          "field_note": "펌프가 행보다 먼저 멈췄다면 handoff는 공기가 아니라 데스크 입력이다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "מילוי מאוחר של מסירת מדחס",
-          "scanner": "מילוי מאוחר של מסירת מדחס // מונה המשאבה נעצר לפני שורת ה-handoff. טבעת המלח בשסתום החוזר ותקתוק הממסר אינם תומכים בהעברה הנקייה המאוחרת.",
-          "terminal": "בדיקת מסירת מדחס // להשוות מונה משאבה, תקתוק ממסר, טבעת מלח בשסתום חוזר, חיתוך יומן חמצן, דלתא עתודת חליפה, אי-התאמת סדרת scrubber ו-claim hold. שורת handoff אינה הוכחה שאוויר זז.",
-          "audio": "המונה נעצר. הממסר נעצר. השורה המשיכה ללכת כי מישהו היה צריך מסירה נקייה.",
-          "in_game_wiki": "שורת מסירת מדחס אמורה לשבת בין תנועת אוויר מכנית לבין יומן החדר. המדחס מזיז לחץ. הממסר מתקתק כשמצב ההזנה משתנה. מונה המשאבה מסמן מחזורים. השסתום החוזר מונע מצד אחד של המערכת למשוך תמלחת לצד האחר. כשארבעה סימנים אלה מסכימים, שורת המסירה משעממת. היא אומרת שהחדר העביר עומס לחשבון הבא.\n\nבעיית המילוי המאוחר מתחילה כשהשורה נשארת חלקה אחרי שהמכונה נעשית משוננת. מדחס שטבע אינו נכשל כמו שפקיד כותב. הוא נתקע, משתעל בין פערי ממסר, משאיר מלח בצד אחד של השסתום החוזר ומפסיק לספור מחזורים נקיים. שורת שולחן מאוחרת עדיין יכולה להיראות שלמה. transfer accepted, compressor handoff pending, support load carried forward. אף אחת מהנוסחאות האלה אינה דוחפת אוויר דרך משאבה שעצרה.\n\nאת החבילה הזאת קוראים אחרי חיתוך יומן החמצן, דלתא עתודת החליפה ואי-התאמת סדרת הסקראבר. היומן מראה את גבול החדר. החליפה מראה מה נשאר עם הגוף. לוחית הסקראבר מראה איזו מחסנית ישבה בקו האוויר. מסירת המדחס מראה אם החדר באמת דחף את העומס הזה הלאה. אם מונה המשאבה מת ראשון ושורת המסירה באה אחר כך, השרשרת עזבה את המכניקה ונכנסה לשפת משמורת.\n\nעבודת השטח צריכה להשאיר את המדחס מכוער. לצלם את פני המונה לפני ניקוי. לרשום את מיקום תקתוק הממסר, טבעת המלח על השסתום החוזר, כתם התמלחת בכוס הניקוז ואת שורת ה-handoff המדויקת שטוענת להעברה. לא לקבל שורה חלקה בלי סימני מכונה תואמים. השורה יכולה להסביר מי נשא אחריות קדימה. היא לא יכולה לגרום לחדר לנשום שוב.",
-          "external_site": "מילוי מאוחר של מסירת מדחס הוא הפער בין מכונה שעצרה לבין שורה מאוחרת שאומרת שההעברה נמשכה.",
-          "external_site_article": "המדחס הוא מקום רע להסתיר שקר נקי. יש לו יותר מדי תקלות קטנות: ממסר שנתקע באמצע תקתוק, מונה עם חצי ספרה מוכתמת, שפת שסתום עם מלח רק בצד החדר, כוס ניקוז שתופסת תמלחת לפני שהשולחן יודע שמשהו השתבש.\n\nלכן שורות מסירה חשובות. בנוהל Deep Reach, עומס התמיכה של חדר יכול היה לעבור מתמיכת חיים מקומית לחשבון רחב יותר. השורה הייתה שימושית. היא אמרה ל-route, maintenance ו-claim desk לאן הלכה עלות האוויר. היא גם נתנה להם מקום להמשיך לכתוב אחרי שהחדר הפסיק לבצע את העבודה.\n\nמילוי מאוחר אינו דורש זיוף גדול. צריך רק שורה מאוחרת שמחליקה את השבר: compressor accepted, handoff pending, support load carried, route still active. ליד מונה המשאבה, הביטויים האלה מאבדים נוחות. המכונה נעצרה בחלקים. השורה הגיעה בבלוק נקי אחד.\n\nהמאמר הזה אינו מצביע על בעל השולחן האחרון. הוא נותן לשחקן חיבור קשיח נוסף: משאבה, ממסר, שסתום, יומן. אם החיבור הזה נשבר לפני claim hold, המסלול הפעיל נישא בידי ניירת, לא בידי לחץ.",
-          "field_note": "אם המשאבה נעצרה לפני השורה, handoff הוא קלט שולחן, לא אוויר.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Backfill do Handoff do Compressor",
-          "scanner": "BACKFILL DO COMPRESSOR // Contador da bomba para antes da linha de handoff. Anel de sal na válvula de retenção e tique do relé não sustentam a transferência limpa posterior.",
-          "terminal": "QA HANDOFF DO COMPRESSOR // Compare contador da bomba, tique do relé, anel de sal da válvula, corte do livro de oxigênio, delta da reserva do traje, série do scrubber divergente e claim hold. Linha handoff não prova que ar se moveu.",
-          "audio": "O contador parou. O relé parou. A linha continuou andando porque alguém precisava de um handoff limpo.",
-          "in_game_wiki": "Uma linha de handoff do compressor deveria ficar entre o movimento mecânico do ar e o livro da sala. O compressor move pressão. O relé marca quando a alimentação muda de estado. O contador da bomba marca ciclos. A válvula de retenção impede que um lado do sistema arraste salmoura para o outro. Quando essas quatro marcas concordam, a linha de handoff é sem graça. Ela significa que a sala passou uma carga para a próxima conta.\n\nO problema do backfill começa quando a linha fica lisa depois que a máquina fica serrilhada. Um compressor afogado não falha como um escrivão escreve. Ele engasga, tosse nos intervalos do relé, deixa sal de um lado da válvula de retenção e para de contar ciclos limpos. Uma linha de mesa posterior ainda pode parecer completa. transfer accepted, compressor handoff pending, support load carried forward. Nenhuma dessas frases move ar por uma bomba parada.\n\nEste pacote vem depois do corte do livro de oxigênio, da delta de reserva do traje e da divergência de série do scrubber. O livro mostra o limite da sala. O traje mostra o que ficou com o corpo. A placa do scrubber mostra qual cartucho estava no trem de ar. O handoff do compressor mostra se a sala empurrou essa carga adiante de verdade. Se o contador da bomba morreu primeiro e a linha veio depois, a cadeia saiu da mecânica e entrou na linguagem de custódia.\n\nO trabalho de campo deve manter o compressor feio. Fotografe a face do contador antes de limpar. Registre posição do tique do relé, anel de sal na válvula de retenção, mancha de salmoura no copo de dreno e a linha handoff exata que afirma transferência. Não aceite uma linha lisa sem marcas compatíveis na máquina. A linha pode explicar quem carregou responsabilidade adiante. Não pode fazer a sala respirar de novo.",
-          "external_site": "Um backfill do handoff do compressor é a brecha entre uma máquina parada e uma linha posterior dizendo que a transferência continuou.",
-          "external_site_article": "O compressor é um lugar ruim para esconder mentira limpa. Ele tem falhas pequenas demais: relé parado no meio do tique, contador com meio dígito manchado, lábio de válvula com sal só do lado da sala, copo de dreno pegando salmoura antes de a mesa saber do problema.\n\nPor isso linhas de handoff importam. No procedimento Deep Reach, uma carga de suporte de sala podia passar do suporte local para uma conta mais ampla. A linha era útil. Dizia a route, maintenance e claim desk para onde tinha ido o custo do ar. Também dava a eles um lugar para continuar escrevendo depois que a sala parava de trabalhar.\n\nBackfill não exige grande falsificação. Só precisa de uma linha tardia que alise a quebra: compressor accepted, handoff pending, support load carried, route still active. Lidas junto do contador da bomba, essas frases perdem conforto. A máquina parou em pedaços. A linha chegou em um bloco limpo.\n\nEste artigo não nomeia o último dono da mesa. Ele dá ao jogador outra junta dura: bomba, relé, válvula, livro. Se essa junta quebra antes do claim hold, a rota ativa foi carregada por papel, não por pressão.",
-          "field_note": "Se a bomba parou antes da linha, o handoff é entrada de mesa, não ar.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Nagevulde compressoroverdracht",
-          "scanner": "NAGEVULDE COMPRESSOROVERDRACHT // Pompteller stopt vóór de handoff-regel. Zoutring op de terugslagklep en relaistik steunen de latere schone overdracht niet.",
-          "terminal": "QA COMPRESSOROVERDRACHT // Vergelijk pompteller, relaistik, zoutring op terugslagklep, zuurstofregistersnede, pakreserve-delta, scrubber-seriemismatch en claim hold. Een handoff-regel bewijst geen luchtbeweging.",
-          "audio": "Teller stopte. Relais stopte. De regel liep door omdat iemand een schone overdracht nodig had.",
-          "in_game_wiki": "Een compressoroverdrachtsregel hoort tussen mechanische luchtbeweging en het kamerregister te staan. De compressor verplaatst druk. Het relais tikt wanneer de voeding van staat verandert. De pompteller markeert cycli. De terugslagklep voorkomt dat de ene kant pekel naar de andere trekt. Als die vier sporen overeenkomen, is de handoff-regel saai. Hij betekent dat de kamer een last aan de volgende rekening doorgaf.\n\nHet backfill-probleem begint wanneer de regel glad blijft nadat de machine rafelig is geworden. Een verdronken compressor faalt niet zoals een klerk schrijft. Hij slaat af, hoest door relaisgaten, laat zout aan één kant van de terugslagklep en stopt met schone cycli tellen. Een latere deskregel kan nog volledig ogen. transfer accepted, compressor handoff pending, support load carried forward. Geen van die woorden beweegt lucht door een stilstaande pomp.\n\nDit record hoort na de zuurstofregistersnede, pakreserve-delta en scrubber-seriemismatch. Het register toont de kamergrens. Het pak toont wat bij het lichaam bleef. De scrubberplaat toont welke cartridge in de luchtlijn zat. De compressoroverdracht toont of de kamer die last ooit echt verder duwde. Als de pompteller eerst stierf en de handoff-regel later kwam, verliet de keten de mechanica en ging hij custody-taal in.\n\nVeldwerk moet de compressor lelijk houden. Fotografeer de tellerplaat voor het schoonmaken. Noteer positie van de relaistik, zoutring op de terugslagklep, pekelvlek in de drainbeker en de exacte handoff-regel die overdracht claimt. Accepteer geen gladde regel zonder passende machinesporen. De regel kan uitleggen wie verantwoordelijkheid verder droeg. Hij kan de kamer niet opnieuw laten ademen.",
-          "external_site": "Een nagevulde compressoroverdracht is de kloof tussen een gestopte machine en een latere regel die zegt dat de overdracht doorging.",
-          "external_site_article": "De compressor is een slechte plek om een schone leugen te verbergen. Hij heeft te veel kleine storingen: een relais dat midden in de tik stopt, een teller met een half bevlekt cijfer, een kleplip met zout alleen aan kamerzijde, een drainbeker die pekel vangt voordat de desk iets weet.\n\nDaarom tellen handoff-regels. In Deep Reach-procedure kon een kamersteunlast van lokale life support naar een breder account gaan. De regel was nuttig. Hij vertelde route, maintenance en claim desk waar de luchtkosten heen waren. Hij gaf hun ook een plek om door te schrijven nadat de kamer stopte met werken.\n\nBackfill vraagt geen grote vervalsing. Een late regel die de breuk gladstrijkt is genoeg: compressor accepted, handoff pending, support load carried, route still active. Naast de pompteller gelezen verliezen die zinnen hun comfort. De machine stopte in stukken. De regel kwam als één schoon blok.\n\nDit record noemt de laatste deskeigenaar niet. Het laat nog een harde koppeling achter: pomp, relais, klep, register. Als die koppeling vóór claim hold breekt, werd de actieve route gedragen door papier, niet door druk.",
-          "field_note": "Als de pomp stopte vóór de regel, is handoff een deskregel, geen lucht.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.compressor_handoff_backfill_field_article",
+    "secondary": [
+     "unlock.first_compressor_handoff_backfill",
+     "unlock.first_oxygen_ledger_cutoff_claim_hold",
+     "unlock.first_suit_reserve_delta_mismatch",
+     "unlock.first_scrubber_cartridge_serial_mismatch"
+    ],
+    "poi_tags": [
+     "poi.compressor_handoff_backfill",
+     "poi.pump_counter",
+     "poi.relay_tick",
+     "poi.check_valve_salt_ring",
+     "poi.drain_cup_brine",
+     "poi.compressor_handoff_row",
+     "poi.oxygen_ledger_cutoff",
+     "poi.suit_reserve_delta",
+     "poi.scrubber_serial_mismatch",
+     "poi.claim_hold_field"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.life_support",
+     "biome.compressor_room",
+     "biome.service_bay",
+     "biome.claim_admin",
+     "biome.evidence_custody"
+    ],
+    "depth_band_m": "0-4200"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Life-Support Compressor QA Note",
+     "audio": "Recovered Compressor Room Clip",
+     "in_game_wiki": "PDA Forensic Object Article",
+     "external_site": "Public Lore Atlas Evidence Note",
+     "field_note": "Marauder Field Note"
+    },
+    "source_brief": {
+     "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
+     "spoiler_level": "1",
+     "speaker_source": "PDA scanner, compressor QA note, compressor room clip, Marauder annotation, public lore atlas",
+     "audience": "after oxygen ledger cutoff, suit reserve delta and scrubber serial mismatch evidence; public atlas under early-evidence spoiler boundary",
+     "date_era": "2190 recovery reading of 2147 compressor handoff artifacts, oxygen ledger rows and claim records",
+     "location_depth_route": "compressor room, life-support pump panel, check-valve line, oxygen ledger strip, claim desk cache",
+     "unlock_context": "after scrubber cartridge serial mismatch, suit reserve delta mismatch and oxygen ledger cutoff claim hold",
+     "evidence_object": "pump counter, relay tick, check-valve salt ring, drain cup brine, compressor handoff row and later claim hold",
+     "source_knows": "mechanical compressor traces can stop before a late handoff row carries support language forward",
+     "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
+     "truth_pressure": "Compressor handoff backfill binds mechanical air movement to later custody language without naming final culprit.",
+     "design_use": "extend life-support evidence chain through pump mechanics and late administrative handoff rows"
+    },
+    "spoiler_boundary": {
+     "tier": 1,
+     "allowed_reveals": [
+      "pump counter and relay evidence can stop before a later handoff row",
+      "a handoff row can carry support language after mechanical air movement fails",
+      "claim hold can follow a smooth row that does not match machine traces"
+     ],
+     "blocked_reveals": [
+      "final culprit",
+      "hidden transcript sentence",
+      "ending payload identity"
+     ]
     }
-  ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Compressor Handoff Backfill",
+     "scanner": "COMPRESSOR HANDOFF BACKFILL // Pump counter stops before the handoff row. Check-valve salt and relay tick do not support the later clean transfer.",
+     "terminal": "COMPRESSOR HANDOFF QA // Compare pump counter, relay tick, check-valve salt ring, oxygen ledger cutoff, suit reserve delta, scrubber serial mismatch and claim hold. A handoff row is not proof that air moved.",
+     "audio": "Counter stopped. Relay stopped. The row kept walking because somebody needed a clean handoff.",
+     "in_game_wiki": "A compressor handoff row is supposed to sit between mechanical air movement and the room ledger. The compressor moves pressure. The relay clicks when the feed changes state. The pump counter marks cycles. The check valve keeps one side of the system from dragging brine back into the other. When those four marks agree, the handoff row is boring. It means the room passed a load to the next account.\n\nThe backfill problem starts when the row stays smooth after the machinery becomes jagged. A drowned compressor does not fail like a clerk writes. It stalls, coughs through relay gaps, leaves salt on one side of the check valve and stops counting clean cycles. A later desk row can still look complete. That row may say transfer accepted, compressor handoff pending or support load carried forward. None of those words move air through a stopped pump.\n\nRead this record after the oxygen ledger cutoff, suit reserve delta and scrubber serial mismatch. The ledger shows the room limit. The suit shows what stayed with the body. The scrubber plate shows which cartridge sat in the air train. The compressor handoff shows whether the room ever pushed that load onward. If the pump counter died first and the handoff row arrived later, the chain has left mechanics and entered custody language.\n\nField work should keep the compressor ugly. Photograph the counter face before cleaning it. Record the relay tick position, salt ring on the check valve, brine stain inside the drain cup and the exact handoff row that claims transfer. Do not accept a smooth row without matching marks on the machine. The row can explain who carried responsibility forward. It cannot make the room breathe again.",
+     "external_site": "A compressor handoff backfill is the gap between a stopped machine and a later row that says the transfer continued.",
+     "external_site_article": "The compressor is a bad place to hide a clean lie. It has too many little failures: a relay that stops mid-tick, a counter with one half-stained digit, a valve lip salted only on the room side, a drain cup that catches brine before the desk knows anything is wrong.\n\nThat is why handoff rows matter. In Deep Reach procedure, a room support load could be passed from local life support into a wider account. The row was useful. It let route, maintenance and claim desks know where the air cost had gone. It also gave them a place to keep writing after the room had stopped doing the work.\n\nBackfill does not require a grand falsification. It only needs a later line that smooths the break: compressor accepted, handoff pending, support load carried, route still active. Read beside the pump counter, those phrases lose their comfort. The machine stopped in pieces. The row arrived in one clean block.\n\nThis record does not name the final desk owner. It leaves another hard join: pump, relay, valve, ledger. If that join breaks before the claim hold, the active route was carried by paperwork, not pressure.",
+     "field_note": "If the pump stopped before the row, the handoff is a desk entry, not air.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Позднее внесение передачи компрессора",
+     "scanner": "ПОЗДНЯЯ ПЕРЕДАЧА КОМПРЕССОРА // Счетчик насоса остановился раньше строки передачи. Солевое кольцо на обратном клапане и щелчок реле не подтверждают поздний чистый перенос.",
+     "terminal": "QA ПЕРЕДАЧИ КОМПРЕССОРА // Сверить счетчик насоса, щелчок реле, солевое кольцо обратного клапана, отсечку кислородного журнала, дельту резерва костюма, несовпадение серийника скруббера и claim hold. Строка handoff не доказывает, что воздух двигался.",
+     "audio": "Счетчик встал. Реле встало. Строка пошла дальше, потому что кому-то нужна была чистая передача.",
+     "in_game_wiki": "Строка передачи компрессора должна стоять между механическим движением воздуха и комнатным журналом. Компрессор гонит давление. Реле щелкает, когда подача меняет состояние. Счетчик насоса отмечает циклы. Обратный клапан не дает одной стороне системы тянуть рассол в другую. Когда эти четыре следа сходятся, строка скучная. Она значит, что комната передала нагрузку в следующий счет.\n\nПроблема позднего внесения начинается там, где строка остается гладкой после того, как машина стала рваной. Затопленный компрессор не отказывает так, как пишет клерк. Он глохнет, сбивается в промежутках реле, оставляет соль с одной стороны обратного клапана и перестает считать чистые циклы. Поздняя строка на столе все еще может выглядеть полной. В ней может стоять: transfer accepted, compressor handoff pending или support load carried forward. Ни одна из этих формул не проталкивает воздух через остановленный насос.\n\nЭтот пакет нужно читать после отсечки кислородного журнала, дельты резерва костюма и несовпадения серийника скруббера. Журнал показывает предел комнаты. Костюм показывает, что осталось при теле. Табличка скруббера показывает, какой картридж сидел в воздушной линии. Передача компрессора показывает, толкнула ли комната эту нагрузку дальше. Если счетчик насоса умер первым, а строка передачи пришла позже, цепочка вышла из механики и попала в язык хранения.\n\nПолевая работа должна оставить компрессор неприятным. Снять счетчик до чистки. Записать положение щелчка реле, солевое кольцо на обратном клапане, пятно рассола в дренажной чашке и точную строку handoff, которая заявляет передачу. Не принимать гладкую строку без совпадающих следов на машине. Строка может объяснить, кто понес ответственность дальше. Она не заставляет комнату снова дышать.",
+     "external_site": "Позднее внесение передачи компрессора — это разрыв между остановленной машиной и поздней строкой, где написано, что перенос продолжался.",
+     "external_site_article": "Компрессор — плохое место для чистой лжи. У него слишком много мелких отказов: реле, застывшее между щелчками, счетчик с наполовину испачканной цифрой, губа клапана с солью только со стороны комнаты, дренажная чашка, которая ловит рассол раньше, чем стол узнает о проблеме.\n\nПоэтому строки передачи важны. В процедуре Deep Reach нагрузку комнатного жизнеобеспечения можно было передать из локальной системы в более широкий счет. Строка была полезной. Она сообщала route, maintenance и claim desk, куда ушла стоимость воздуха. Она же давала место, где можно продолжать писать после того, как комната перестала работать.\n\nДля backfill не нужна большая подделка. Достаточно поздней строки, которая сглаживает обрыв: compressor accepted, handoff pending, support load carried, route still active. Рядом со счетчиком насоса эти фразы теряют удобство. Машина остановилась кусками. Строка пришла одним чистым блоком.\n\nЭта статья не называет последнего владельца стола. Она дает игроку еще один жесткий стык: насос, реле, клапан, журнал. Если этот стык ломается раньше claim hold, открытый маршрут несла бумага, а не давление.",
+     "field_note": "Если насос остановился раньше строки, handoff — запись стола, а не воздух.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "コンプレッサー引き渡しの後追い記入",
+     "scanner": "コンプレッサー引き渡し後追い // ポンプカウンターは引き渡し行より先に止まっている。逆止弁の塩輪とリレーの刻みは、後のきれいな転送を支えていない。",
+     "terminal": "コンプレッサー引き渡し QA // ポンプカウンター、リレー刻み、逆止弁の塩輪、酸素台帳の遮断、スーツ予備デルタ、スクラバー番号不一致、claim holdを照合。handoff行は空気が動いた証拠ではない。",
+     "audio": "カウンターは止まった。リレーも止まった。誰かがきれいな引き渡しを必要としたから、行だけが進んだ。",
+     "in_game_wiki": "コンプレッサーの引き渡し行は、機械としての空気移動と部屋の台帳の間に置かれる。コンプレッサーは圧力を動かす。リレーは供給状態が変わると刻む。ポンプカウンターはサイクルを数える。逆止弁は、片側の系統がもう片側へ塩水を引き戻すのを止める。この四つが揃っていれば、引き渡し行は退屈な記録だ。部屋が負荷を次の勘定へ渡したというだけでいい。\n\n後追い記入の問題は、機械が荒れた後も行だけが滑らかに残るところから始まる。水没したコンプレッサーは、事務員の文章のようには故障しない。失速し、リレーの間隔で咳き込み、逆止弁の片側だけに塩を残し、きれいなサイクルを数えなくなる。後の机上行は、それでも完成して見えることがある。transfer accepted、compressor handoff pending、support load carried forward。どの文言も、止まったポンプに空気を通さない。\n\nこのパケットは、酸素台帳の遮断、スーツ予備デルタ、スクラバー番号不一致の後で読むものだ。台帳は部屋の限界を示す。スーツは身体に残った数を示す。スクラバーの銘板は空気列にいたカートリッジを示す。コンプレッサー引き渡しは、その負荷を部屋が本当に先へ押したかを示す。ポンプカウンターが先に死に、引き渡し行が後で来たなら、鎖は機械から離れて管理言語へ入った。\n\n現場ではコンプレッサーの汚さを残す。清掃前にカウンター面を撮る。リレー刻みの位置、逆止弁の塩輪、ドレンカップ内部の塩水染み、転送を主張するhandoff行を記録する。機械側の印と合わない滑らかな行を受け入れない。その行は、誰が責任を先へ運んだかを説明できる。部屋をもう一度呼吸させることはできない。",
+     "external_site": "コンプレッサー引き渡しの後追い記入は、止まった機械と、転送が続いたと主張する後の行との隙間だ。",
+     "external_site_article": "コンプレッサーは、きれいな嘘を隠すには不向きな場所だ。小さな故障が多すぎる。途中で止まったリレー、半分だけ汚れたカウンター数字、部屋側だけに塩を抱いた弁の縁、机が異常を知る前に塩水を受けたドレンカップ。\n\nだから引き渡し行は重要になる。Deep Reachの手順では、部屋の支援負荷をローカル生命維持から広い勘定へ渡すことができた。その行は役に立った。route、maintenance、claim deskに、空気の費用がどこへ行ったかを知らせた。同時に、部屋が仕事をやめた後も書き続ける場所になった。\n\n後追い記入に大きな偽造は要らない。切れ目を滑らかにする遅い一行だけで足りる。compressor accepted、handoff pending、support load carried、route still active。ポンプカウンターの隣で読むと、その語句は安心を失う。機械はばらばらに止まった。行だけが一つのきれいな塊で来た。\n\nこの記事は最後の机の所有者を名指ししない。プレイヤーにもう一つの硬い継ぎ目を渡す。ポンプ、リレー、弁、台帳。その継ぎ目がclaim holdより先に壊れていれば、開いたルートを運んだのは圧力ではなく書類だ。",
+     "field_note": "ポンプが行より先に止まったなら、handoffは空気ではなく机上入力だ。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "压缩机交接回填",
+     "scanner": "压缩机交接回填 // 泵计数器先于交接行停止。止回阀盐环和继电器刻点不支持后来的干净转移。",
+     "terminal": "压缩机交接 QA // 对照泵计数器、继电器刻点、止回阀盐环、氧气账本截断、潜服储备差值、洗涤器序号不符和 claim hold。handoff 行不能证明空气移动过。",
+     "audio": "计数器停了。继电器停了。行还在往前走，因为有人需要一条干净交接。",
+     "in_game_wiki": "压缩机交接行本应站在机械送气和房间账本之间。压缩机移动压力。继电器在供给状态变化时留下刻点。泵计数器记录循环。止回阀阻止系统一侧把卤水拖回另一侧。四个痕迹一致时，交接行很无聊。它只说明房间把负载交给了下一笔账。\n\n回填问题从机械变得参差，而行仍然平滑开始。被淹过的压缩机不会像文员写字那样失效。它会停滞，会在继电器间隙里断续，会只在止回阀一侧留下盐，会停止记录干净循环。后来的桌面行仍可能看上去完整。transfer accepted、compressor handoff pending、support load carried forward。没有哪个短语能让空气穿过一台停泵。\n\n这个条目应放在氧气账本截断、潜服储备差值和洗涤器序号不符之后阅读。账本显示房间边界。潜服显示留在身体上的数字。洗涤器铭牌显示哪个滤芯坐在空气列里。压缩机交接显示房间是否真的把这份负载推向下一处。如果泵计数器先死，交接行后到，链条已经离开机械，进入了保管语言。\n\n现场处理要保留压缩机的难看。清理前拍下计数器面。记录继电器刻点位置、止回阀盐环、排水杯内的卤水污迹，以及声称转移完成的确切 handoff 行。没有机器痕迹配套时，不要接受平滑行。那一行可以说明责任被谁继续带走。它不能让房间重新呼吸。",
+     "external_site": "压缩机交接回填，是停机和后来声称转移继续的行之间的空隙。",
+     "external_site_article": "压缩机不是藏干净谎言的好地方。它有太多小故障：停在半刻的继电器，半个数字被污住的计数器，只在房间侧带盐的阀唇，在桌面知道问题前就接到卤水的排水杯。\n\n所以交接行很重要。在 Deep Reach 程序中，房间支持负载可以从本地生命维持转入更大的账户。那一行有用。它告诉 route、maintenance 和 claim desk，空气成本去了哪里。它也给了他们一个地方，让他们在房间停止工作后继续书写。\n\n回填不需要宏大的伪造。只需要一条较晚的行，把断口抹平：compressor accepted、handoff pending、support load carried、route still active。放在泵计数器旁读，这些词会失去舒服感。机器是分段停下的。那一行却作为一个干净块到来。\n\n本文不指名最后的桌面所有者。它给玩家另一个硬接点：泵、继电器、阀、账本。如果这个接点在 claim hold 之前断开，开放路线就是由文件承载，不是由压力承载。",
+     "field_note": "如果泵先于行停止，handoff 就是桌面输入，不是空气。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Rattrapage de passation compresseur",
+     "scanner": "RATTRAPAGE COMPRESSEUR // Le compteur de pompe s'arrete avant la ligne de passation. L'anneau de sel du clapet et le cran du relais ne soutiennent pas le transfert propre ajoute plus tard.",
+     "terminal": "QA PASSATION COMPRESSEUR // Comparer compteur de pompe, cran de relais, anneau de sel du clapet, coupure du registre oxygene, delta de reserve de combinaison, serie de scrubber discordante et claim hold. Une ligne handoff ne prouve pas que l'air a bouge.",
+     "audio": "Le compteur s'est arrete. Le relais aussi. La ligne a continue parce que quelqu'un avait besoin d'une passation propre.",
+     "in_game_wiki": "Une ligne de passation compresseur devrait se placer entre le mouvement mecanique de l'air et le registre de la piece. Le compresseur deplace la pression. Le relais marque le changement d'etat. Le compteur de pompe compte les cycles. Le clapet empeche un cote du circuit de tirer de la saumure dans l'autre. Quand ces quatre marques concordent, la ligne est banale. Elle dit seulement que la piece a transmis une charge au compte suivant.\n\nLe rattrapage commence quand la ligne reste lisse apres que la machine est devenue irreguliere. Un compresseur noye ne tombe pas en panne comme ecrit un employe. Il cale, tousse dans les blancs du relais, laisse du sel d'un seul cote du clapet et cesse de compter des cycles propres. Une ligne ajoutee plus tard peut encore paraitre complete. transfer accepted, compressor handoff pending, support load carried forward. Aucune de ces formules ne pousse de l'air dans une pompe arretee.\n\nCe registre se lit apres la coupure du registre oxygene, le delta de reserve de combinaison et la discordance de serie du scrubber. Le registre donne la limite de la piece. La combinaison donne ce qui est reste avec le corps. La plaque du scrubber donne quelle cartouche occupait le train d'air. La passation compresseur dit si la piece a vraiment pousse cette charge plus loin. Si le compteur meurt d'abord et la ligne arrive ensuite, la chaine a quitte la mecanique pour entrer dans la langue de garde.\n\nSur le terrain, il faut garder la laideur du compresseur. Photographier la face du compteur avant nettoyage. Noter la position du relais, l'anneau de sel du clapet, la tache de saumure dans la coupelle de purge et la ligne handoff exacte qui declare le transfert. Ne pas accepter une ligne lisse sans marques machine concordantes. La ligne peut dire qui a porte la responsabilite plus loin. Elle ne peut pas rendre de l'air a la piece.",
+     "external_site": "Un rattrapage de passation compresseur est l'ecart entre une machine arretee et une ligne posterieure qui affirme que le transfert continuait.",
+     "external_site_article": "Le compresseur est un mauvais endroit pour cacher un mensonge propre. Il a trop de petites defaillances : relais bloque entre deux crans, compteur avec un chiffre a demi tache, levre de clapet salee seulement cote piece, coupelle de purge qui prend la saumure avant que le bureau sache quoi que ce soit.\n\nC'est pourquoi les lignes de passation comptent. Dans la procedure Deep Reach, une charge de soutien de piece pouvait passer du support local a un compte plus large. La ligne servait. Elle disait aux desks route, maintenance et claim ou etait parti le cout de l'air. Elle leur donnait aussi un endroit ou continuer a ecrire apres l'arret du travail reel.\n\nLe rattrapage ne demande pas de grande falsification. Il suffit d'une ligne tardive qui lisse la rupture : compressor accepted, handoff pending, support load carried, route still active. Lues pres du compteur de pompe, ces phrases perdent leur confort. La machine s'est arretee par morceaux. La ligne est arrivee en un seul bloc propre.\n\nCe registre ne nomme pas le dernier proprietaire de desk. Il laisse une jointure dure de plus : pompe, relais, clapet, registre. Si cette jointure casse avant le claim hold, la route active etait portee par le papier, pas par la pression.",
+     "field_note": "Si la pompe s'est arretee avant la ligne, le handoff est une entree de desk, pas de l'air.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Relleno de traspaso del compresor",
+     "scanner": "RELLENO DE TRASPASO // El contador de la bomba se detiene antes de la linea de handoff. El anillo de sal de la valvula y el clic del rele no sostienen el traspaso limpio posterior.",
+     "terminal": "QA TRASPASO COMPRESOR // Comparar contador de bomba, clic de rele, anillo de sal de valvula, corte del libro de oxigeno, delta de reserva del traje, serie del scrubber y claim hold. Una linea handoff no prueba que el aire se moviera.",
+     "audio": "El contador paro. El rele paro. La linea siguio andando porque alguien necesitaba un traspaso limpio.",
+     "in_game_wiki": "Una linea de traspaso del compresor debe quedar entre el movimiento mecanico del aire y el libro de la sala. El compresor mueve presion. El rele hace clic cuando cambia el estado de alimentacion. El contador de bomba marca ciclos. La valvula de retencion evita que un lado del sistema arrastre salmuera al otro. Cuando esas cuatro marcas coinciden, la linea es aburrida. Significa que la sala paso una carga a la siguiente cuenta.\n\nEl problema del relleno empieza cuando la linea sigue lisa despues de que la maquina se vuelve irregular. Un compresor ahogado no falla como escribe un oficinista. Se cala, tose entre huecos de rele, deja sal en un solo lado de la valvula y deja de contar ciclos limpios. Una linea de mesa posterior aun puede parecer completa. transfer accepted, compressor handoff pending, support load carried forward. Ninguna de esas frases empuja aire por una bomba parada.\n\nEste registro va despues del corte del libro de oxigeno, la delta de reserva del traje y la discordancia de serie del scrubber. El libro muestra el limite de la sala. El traje muestra lo que quedo con el cuerpo. La placa del scrubber muestra que cartucho estaba en el tren de aire. El handoff del compresor muestra si la sala empujo esa carga mas lejos. Si el contador murio primero y la linea llego despues, la cadena salio de la mecanica y entro en lenguaje de custodia.\n\nEl trabajo de campo debe conservar lo feo del compresor. Fotografia la cara del contador antes de limpiarla. Registra posicion del clic de rele, anillo de sal en la valvula, mancha de salmuera en la copa de drenaje y la linea handoff exacta que afirma el traspaso. No aceptes una linea lisa sin marcas coincidentes en la maquina. La linea puede explicar quien llevo la responsabilidad hacia delante. No puede hacer respirar de nuevo la sala.",
+     "external_site": "Un relleno de traspaso del compresor es la brecha entre una maquina parada y una linea posterior que dice que el traspaso continuo.",
+     "external_site_article": "El compresor es mal sitio para esconder una mentira limpia. Tiene demasiados fallos pequenos: un rele que se queda a medio clic, un contador con medio digito manchado, un labio de valvula con sal solo del lado de la sala, una copa de drenaje que recoge salmuera antes de que el escritorio sepa nada.\n\nPor eso importan las lineas de traspaso. En el procedimiento Deep Reach, la carga de soporte de una sala podia pasar del sistema local a una cuenta mas amplia. La linea era util. Decia a route, maintenance y claim desk donde se habia ido el coste del aire. Tambien les daba un lugar donde seguir escribiendo despues de que la sala dejara de trabajar.\n\nEl relleno no requiere una gran falsificacion. Solo necesita una linea tardia que alise la rotura: compressor accepted, handoff pending, support load carried, route still active. Leidas junto al contador, esas frases pierden comodidad. La maquina se paro por partes. La linea llego en un bloque limpio.\n\nEste registro no nombra al ultimo dueno del escritorio. Deja otra union dura: bomba, rele, valvula, libro. Si esa union se rompe antes del claim hold, la ruta activa la cargaba el papel, no la presion.",
+     "field_note": "Si la bomba paro antes de la linea, el handoff es entrada de mesa, no aire.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Nachtrag der Kompressoruebergabe",
+     "scanner": "KOMPRESSORUEBERGABE NACHTRAG // Pumpenzaehler stoppt vor der Uebergabezeile. Salzring am Rueckschlagventil und Relaisklick stuetzen die spaetere saubere Uebergabe nicht.",
+     "terminal": "QA KOMPRESSORUEBERGABE // Pumpenzaehler, Relaisklick, Salzring am Rueckschlagventil, Sauerstoffbuch-Schnitt, Anzugreserve-Delta, Scrubber-Serienbruch und claim hold vergleichen. Eine handoff-Zeile beweist keine Luftbewegung.",
+     "audio": "Zaehler stoppte. Relais stoppte. Die Zeile lief weiter, weil jemand eine saubere Uebergabe brauchte.",
+     "in_game_wiki": "Eine Kompressoruebergabezeile gehoert zwischen mechanische Luftbewegung und Raumregister. Der Kompressor bewegt Druck. Das Relais klickt, wenn die Einspeisung den Zustand wechselt. Der Pumpenzaehler markiert Zyklen. Das Rueckschlagventil verhindert, dass eine Systemseite Sole in die andere zieht. Stimmen diese vier Spuren ueberein, ist die Uebergabezeile langweilig. Sie sagt, dass der Raum eine Last an das naechste Konto weitergab.\n\nDas Nachtragsproblem beginnt, wenn die Zeile glatt bleibt, nachdem die Maschine zackig geworden ist. Ein ertrunkener Kompressor versagt nicht wie ein Sachbearbeiter schreibt. Er bleibt stehen, hustet durch Relaisluecken, laesst Salz auf einer Ventilseite und zaehlt keine sauberen Zyklen mehr. Eine spaetere Desk-Zeile kann trotzdem vollstaendig aussehen. transfer accepted, compressor handoff pending, support load carried forward. Keiner dieser Begriffe drueckt Luft durch eine stehende Pumpe.\n\nDieser Eintrag gehoert nach Sauerstoffbuch-Schnitt, Anzugreserve-Delta und Scrubber-Serienbruch. Das Buch zeigt die Raumgrenze. Der Anzug zeigt, was am Koerper blieb. Die Scrubber-Platte zeigt, welche Kartusche im Luftstrang sass. Die Kompressoruebergabe zeigt, ob der Raum diese Last wirklich weiterdrueckte. Starb der Pumpenzaehler zuerst und kam die Uebergabezeile spaeter, hat die Kette die Mechanik verlassen und ist in Custody-Sprache geraten.\n\nIm Feld muss der Kompressor haesslich bleiben. Zaehlerflaeche vor der Reinigung fotografieren. Relaisstellung, Salzring am Rueckschlagventil, Solefleck im Ablaufbecher und die genaue handoff-Zeile aufnehmen, die den Transfer behauptet. Eine glatte Zeile ohne passende Maschinenspuren nicht akzeptieren. Die Zeile kann erklaeren, wer Verantwortung weitertrug. Sie kann den Raum nicht wieder atmen lassen.",
+     "external_site": "Ein Nachtrag der Kompressoruebergabe ist die Luecke zwischen einer stehenden Maschine und einer spaeteren Zeile, die fortgesetzten Transfer behauptet.",
+     "external_site_article": "Der Kompressor ist ein schlechter Ort fuer eine saubere Luege. Er hat zu viele kleine Ausfaelle: ein Relais mitten im Klick, ein halb verschmutztes Zaehlerzeichen, eine Ventillippe mit Salz nur auf Raumseite, ein Ablaufbecher, der Sole faengt, bevor der Desk etwas weiss.\n\nDarum zaehlen Uebergabezeilen. Im Deep-Reach-Verfahren konnte eine Raumlast aus lokaler Lebenserhaltung in ein groesseres Konto uebergeben werden. Die Zeile war nuetzlich. Sie sagte Route, Maintenance und Claim Desk, wohin die Luftkosten gingen. Sie bot auch einen Platz, an dem weitergeschrieben werden konnte, nachdem der Raum die Arbeit eingestellt hatte.\n\nNachtrag braucht keine grosse Faelschung. Eine spaete Zeile reicht, die den Bruch glaettet: compressor accepted, handoff pending, support load carried, route still active. Neben dem Pumpenzaehler gelesen verlieren diese Phrasen ihren Trost. Die Maschine stoppte in Teilen. Die Zeile kam als sauberer Block.\n\nDieser Eintrag nennt keinen letzten Desk-Besitzer. Er laesst eine weitere harte Fuge: Pumpe, Relais, Ventil, Buch. Bricht diese Fuge vor dem claim hold, wurde die aktive Route von Papier getragen, nicht von Druck.",
+     "field_note": "Wenn die Pumpe vor der Zeile stoppte, ist handoff ein Desk-Eintrag, keine Luft.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Wsteczne dopisanie przekazania sprężarki",
+     "scanner": "WSTECZNE PRZEKAZANIE SPRĘŻARKI // Licznik pompy zatrzymuje się przed wierszem handoff. Pierścień soli na zaworze zwrotnym i klik przekaźnika nie podpierają późniejszego czystego transferu.",
+     "terminal": "QA PRZEKAZANIA SPRĘŻARKI // Porównaj licznik pompy, klik przekaźnika, pierścień soli zaworu zwrotnego, odcięcie dziennika tlenu, deltę rezerwy skafandra, niezgodność serii scrubbera i claim hold. Wiersz handoff nie dowodzi ruchu powietrza.",
+     "audio": "Licznik stanął. Przekaźnik stanął. Wiersz szedł dalej, bo komuś potrzebne było czyste przekazanie.",
+     "in_game_wiki": "Wiersz przekazania sprężarki powinien leżeć między mechanicznym ruchem powietrza a dziennikiem pokoju. Sprężarka przesuwa ciśnienie. Przekaźnik klika, gdy zasilanie zmienia stan. Licznik pompy oznacza cykle. Zawór zwrotny nie pozwala jednej stronie układu ciągnąć solanki w drugą. Gdy te cztery ślady się zgadzają, wiersz jest nudny. Znaczy tylko, że pokój przekazał obciążenie na następne konto.\n\nProblem wstecznego dopisania zaczyna się, gdy wiersz zostaje gładki po tym, jak maszyna stała się poszarpana. Zalana sprężarka nie psuje się tak, jak pisze urzędnik. Dławi się, gubi w przerwach przekaźnika, zostawia sól po jednej stronie zaworu i przestaje liczyć czyste cykle. Późniejszy wiersz z biurka nadal może wyglądać na pełny. transfer accepted, compressor handoff pending, support load carried forward. Żadna z tych formuł nie przepycha powietrza przez zatrzymaną pompę.\n\nTen pakiet należy czytać po odcięciu dziennika tlenu, delcie rezerwy skafandra i niezgodności serii scrubbera. Dziennik pokazuje granicę pokoju. Skafander pokazuje, co zostało przy ciele. Tabliczka scrubbera pokazuje, który wkład siedział w ciągu powietrza. Przekazanie sprężarki pokazuje, czy pokój naprawdę pchnął to obciążenie dalej. Jeśli licznik pompy umarł pierwszy, a wiersz przyszedł później, łańcuch wyszedł z mechaniki i wszedł w język nadzoru.\n\nW terenie trzeba zachować brzydotę sprężarki. Sfografować tarczę licznika przed czyszczeniem. Zapisać pozycję kliku przekaźnika, pierścień soli na zaworze zwrotnym, plamę solanki w kubku odpływu i dokładny wiersz handoff, który zgłasza transfer. Nie przyjmować gładkiego wiersza bez pasujących śladów maszyny. Wiersz może wyjaśnić, kto poniósł odpowiedzialność dalej. Nie może sprawić, że pokój znów oddycha.",
+     "external_site": "Wsteczne dopisanie przekazania sprężarki to luka między zatrzymaną maszyną a późniejszym wierszem, który mówi, że transfer trwał.",
+     "external_site_article": "Sprężarka to złe miejsce na czyste kłamstwo. Ma zbyt wiele drobnych awarii: przekaźnik zatrzymany w pół kliku, licznik z półzabrudzoną cyfrą, warga zaworu z solą tylko od strony pokoju, kubek odpływu łapiący solankę zanim biurko wie o problemie.\n\nDlatego wiersze przekazania są ważne. W procedurze Deep Reach obciążenie wsparcia pokoju mogło przejść z lokalnego systemu życia na szersze konto. Wiersz był użyteczny. Mówił route, maintenance i claim desk, gdzie poszedł koszt powietrza. Dawał też miejsce, gdzie można było pisać dalej po tym, jak pokój przestał wykonywać pracę.\n\nBackfill nie wymaga wielkiego fałszerstwa. Wystarczy późna linia wygładzająca pęknięcie: compressor accepted, handoff pending, support load carried, route still active. Czytane obok licznika pompy, te zdania tracą wygodę. Maszyna zatrzymała się kawałkami. Wiersz przyszedł jednym czystym blokiem.\n\nTen artykuł nie wskazuje ostatniego właściciela biurka. Daje graczowi kolejny twardy styk: pompa, przekaźnik, zawór, dziennik. Jeśli ten styk pęka przed claim hold, aktywną trasę niosły papiery, nie ciśnienie.",
+     "field_note": "Jeśli pompa stanęła przed wierszem, handoff jest wpisem biurka, nie powietrzem.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Пізнє внесення передачі компресора",
+     "scanner": "ПІЗНЯ ПЕРЕДАЧА КОМПРЕСОРА // Лічильник помпи зупиняється раніше за рядок передачі. Соляне кільце на зворотному клапані й клацання реле не підтверджують пізній чистий перенос.",
+     "terminal": "QA ПЕРЕДАЧІ КОМПРЕСОРА // Звірити лічильник помпи, клацання реле, соляне кільце зворотного клапана, відсічення кисневого журналу, дельту резерву костюма, невідповідність серійника скрубера й claim hold. Рядок handoff не доводить, що повітря рухалося.",
+     "audio": "Лічильник став. Реле стало. Рядок пішов далі, бо комусь була потрібна чиста передача.",
+     "in_game_wiki": "Рядок передачі компресора має стояти між механічним рухом повітря і кімнатним журналом. Компресор рухає тиск. Реле клацає, коли подача змінює стан. Лічильник помпи позначає цикли. Зворотний клапан не дає одній стороні системи тягнути розсіл в іншу. Коли ці чотири сліди сходяться, рядок нудний. Він означає, що кімната передала навантаження до наступного рахунку.\n\nПроблема пізнього внесення починається там, де рядок лишається гладким після того, як машина стала рваною. Затоплений компресор не відмовляє так, як пише клерк. Він глухне, зривається у проміжках реле, лишає сіль з одного боку зворотного клапана й перестає рахувати чисті цикли. Пізній рядок на столі все ще може виглядати повним. transfer accepted, compressor handoff pending, support load carried forward. Жодна з цих формул не проштовхує повітря через зупинену помпу.\n\nЦей пакет слід читати після відсічення кисневого журналу, дельти резерву костюма й невідповідності серійника скрубера. Журнал показує межу кімнати. Костюм показує, що залишилося при тілі. Табличка скрубера показує, який картридж сидів у повітряній лінії. Передача компресора показує, чи справді кімната проштовхнула це навантаження далі. Якщо лічильник помпи помер першим, а рядок передачі прийшов пізніше, ланцюг вийшов із механіки й увійшов у мову зберігання.\n\nПольова робота має лишити компресор неприємним. Зняти лічильник до чистки. Записати положення клацання реле, соляне кільце на зворотному клапані, пляму розсолу в дренажній чашці й точний рядок handoff, який заявляє передачу. Не приймати гладкий рядок без відповідних слідів на машині. Рядок може пояснити, хто поніс відповідальність далі. Він не змусить кімнату знову дихати.",
+     "external_site": "Пізнє внесення передачі компресора — це розрив між зупиненою машиною і пізнім рядком, де написано, що перенос тривав.",
+     "external_site_article": "Компресор — погане місце для чистої брехні. У нього забагато дрібних відмов: реле, застигле між клацаннями, лічильник із наполовину забрудненою цифрою, губа клапана з сіллю лише з боку кімнати, дренажна чашка, що ловить розсіл раніше, ніж стіл дізнається про проблему.\n\nТому рядки передачі важливі. У процедурі Deep Reach навантаження кімнатного життєзабезпечення можна було передати з локальної системи до ширшого рахунку. Рядок був корисним. Він казав route, maintenance і claim desk, куди пішла вартість повітря. Він же давав місце, де можна писати далі після того, як кімната перестала працювати.\n\nДля backfill не потрібна велика підробка. Досить пізнього рядка, який згладжує обрив: compressor accepted, handoff pending, support load carried, route still active. Біля лічильника помпи ці фрази втрачають зручність. Машина зупинилася шматками. Рядок прийшов одним чистим блоком.\n\nЦя стаття не називає останнього власника стола. Вона дає гравцю ще один жорсткий стик: помпа, реле, клапан, журнал. Якщо цей стик ламається раніше claim hold, відкритий маршрут несла паперова форма, а не тиск.",
+     "field_note": "Якщо помпа зупинилася раніше за рядок, handoff — це запис столу, не повітря.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "إدخال لاحق لتسليم الضاغط",
+     "scanner": "إدخال لاحق لتسليم الضاغط // يتوقف عداد المضخة قبل صف التسليم. حلقة الملح على صمام الرجوع ونقرة المرحل لا تدعمان النقل النظيف اللاحق.",
+     "terminal": "فحص تسليم الضاغط // قارن عداد المضخة، نقرة المرحل، حلقة ملح صمام الرجوع، قطع سجل الأكسجين، فرق احتياطي البدلة، عدم تطابق رقم المرشح وclaim hold. صف handoff لا يثبت أن الهواء تحرك.",
+     "audio": "توقف العداد. توقف المرحل. بقي الصف يمشي لأن أحدهم احتاج إلى تسليم نظيف.",
+     "in_game_wiki": "يفترض أن يقف صف تسليم الضاغط بين حركة الهواء الميكانيكية وسجل الغرفة. الضاغط يحرك الضغط. المرحل ينقر عندما تتغير حالة التغذية. عداد المضخة يحدد الدورات. صمام الرجوع يمنع أحد جانبي النظام من سحب المحلول الملحي إلى الجانب الآخر. عندما تتفق هذه العلامات الأربع، يكون الصف مملا. يعني فقط أن الغرفة مررت حملا إلى الحساب التالي.\n\nتبدأ مشكلة الإدخال اللاحق عندما يبقى الصف ناعما بعد أن تصبح الآلة متقطعة. الضاغط الغارق لا يفشل كما يكتب موظف مكتب. يتوقف، يتلعثم بين فراغات المرحل، يترك الملح على جانب واحد من صمام الرجوع، ويتوقف عن عد الدورات النظيفة. يمكن لصف مكتب لاحق أن يبدو كاملا. transfer accepted، compressor handoff pending، support load carried forward. لا تدفع أي من هذه العبارات الهواء عبر مضخة متوقفة.\n\nيأتي هذا الملف بعد قطع سجل الأكسجين، وفرق احتياطي البدلة، وعدم تطابق رقم خرطوشة المرشح. السجل يبين حد الغرفة. البدلة تبين ما بقي مع الجسد. لوحة المرشح تبين أي خرطوشة جلست في خط الهواء. تسليم الضاغط يبين هل دفعت الغرفة ذلك الحمل إلى الأمام فعلا. إذا مات عداد المضخة أولا وجاء صف التسليم لاحقا، فقد خرجت السلسلة من الميكانيكا ودخلت لغة الحيازة.\n\nيجب أن يبقى الضاغط قبيحا في الميدان. صور وجه العداد قبل التنظيف. سجل موضع نقرة المرحل، وحلقة الملح على صمام الرجوع، وبقعة المحلول الملحي داخل كأس التصريف، وصف handoff الدقيق الذي يدعي النقل. لا تقبل صفا ناعما بلا علامات آلة مطابقة. يمكن للصف أن يشرح من حمل المسؤولية إلى الأمام. لا يمكنه أن يجعل الغرفة تتنفس مرة أخرى.",
+     "external_site": "الإدخال اللاحق لتسليم الضاغط هو الفجوة بين آلة متوقفة وصف لاحق يقول إن النقل استمر.",
+     "external_site_article": "الضاغط مكان سيئ لإخفاء كذبة نظيفة. لديه أعطال صغيرة كثيرة: مرحل يتوقف في منتصف النقرة، عداد بنصف رقم ملطخ، شفة صمام عليها ملح في جهة الغرفة فقط، وكأس تصريف يلتقط المحلول الملحي قبل أن يعرف المكتب بوجود مشكلة.\n\nلذلك تهم صفوف التسليم. في إجراء Deep Reach كان يمكن نقل حمل دعم الغرفة من دعم الحياة المحلي إلى حساب أوسع. كان الصف مفيدا. يخبر route وmaintenance وclaim desk أين ذهبت كلفة الهواء. وكان يعطيهم أيضا مكانا يواصلون الكتابة فيه بعد أن تتوقف الغرفة عن العمل.\n\nلا يحتاج backfill إلى تزوير كبير. يحتاج فقط إلى سطر متأخر يملس الكسر: compressor accepted، handoff pending، support load carried، route still active. عند قراءة هذه العبارات بجانب عداد المضخة تفقد راحتها. توقفت الآلة على أجزاء. وصل الصف في كتلة نظيفة واحدة.\n\nلا يسمي هذا المقال مالك المكتب الأخير. يعطي اللاعب وصلة صلبة أخرى: مضخة، مرحل، صمام، سجل. إذا انكسرت هذه الوصلة قبل claim hold، فقد حمل الورق المسار النشط، لا الضغط.",
+     "field_note": "إذا توقفت المضخة قبل الصف، فالـ handoff إدخال مكتب لا هواء.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Backfill Serah-Terima Kompresor",
+     "scanner": "BACKFILL HANDOFF KOMPRESOR // Penghitung pompa berhenti sebelum baris handoff. Cincin garam katup balik dan tik relai tidak mendukung transfer bersih yang datang belakangan.",
+     "terminal": "QA HANDOFF KOMPRESOR // Bandingkan penghitung pompa, tik relai, cincin garam katup balik, pemutusan buku oksigen, delta cadangan suit, mismatch seri scrubber, dan claim hold. Baris handoff bukan bukti udara bergerak.",
+     "audio": "Penghitung berhenti. Relai berhenti. Barisnya terus berjalan karena seseorang butuh handoff yang bersih.",
+     "in_game_wiki": "Baris handoff kompresor seharusnya berada di antara gerak udara mekanis dan buku ruang. Kompresor memindahkan tekanan. Relai mengetik saat suplai berubah keadaan. Penghitung pompa menandai siklus. Katup balik mencegah satu sisi sistem menarik brine ke sisi lain. Saat empat tanda itu sejalan, baris handoff membosankan. Artinya ruang meneruskan beban ke akun berikutnya.\n\nMasalah backfill mulai saat baris tetap halus setelah mesin menjadi patah-patah. Kompresor yang tenggelam tidak gagal seperti tulisan petugas meja. Ia macet, batuk di sela relai, meninggalkan garam di satu sisi katup balik, dan berhenti menghitung siklus bersih. Baris meja yang datang belakangan masih bisa tampak lengkap. transfer accepted, compressor handoff pending, support load carried forward. Tidak satu pun frasa itu mendorong udara melewati pompa yang sudah berhenti.\n\nCatatan ini dibaca setelah pemutusan buku oksigen, delta cadangan suit, dan mismatch seri scrubber. Buku menunjukkan batas ruang. Suit menunjukkan angka yang tetap bersama tubuh. Pelat scrubber menunjukkan cartridge mana yang duduk di jalur udara. Handoff kompresor menunjukkan apakah ruang pernah benar-benar mendorong beban itu lebih jauh. Jika penghitung pompa mati dulu dan baris handoff datang kemudian, rantai sudah meninggalkan mekanik dan masuk ke bahasa custody.\n\nKerja lapangan harus membiarkan kompresor tetap jelek. Foto wajah penghitung sebelum dibersihkan. Catat posisi tik relai, cincin garam pada katup balik, noda brine di cangkir drainase, dan baris handoff persis yang mengklaim transfer. Jangan terima baris halus tanpa tanda mesin yang cocok. Baris itu bisa menjelaskan siapa membawa tanggung jawab maju. Ia tidak bisa membuat ruang bernapas lagi.",
+     "external_site": "Backfill handoff kompresor adalah celah antara mesin yang berhenti dan baris belakangan yang mengatakan transfer berlanjut.",
+     "external_site_article": "Kompresor adalah tempat buruk untuk menyembunyikan kebohongan bersih. Terlalu banyak kegagalan kecil: relai berhenti di tengah tik, penghitung dengan setengah digit bernoda, bibir katup bergaram hanya di sisi ruang, cangkir drainase yang menangkap brine sebelum meja tahu ada masalah.\n\nKarena itu baris handoff penting. Dalam prosedur Deep Reach, beban dukungan ruang bisa dipindahkan dari life support lokal ke akun yang lebih luas. Baris itu berguna. Ia memberi tahu route, maintenance, dan claim desk ke mana biaya udara pergi. Ia juga memberi mereka tempat untuk terus menulis setelah ruang berhenti bekerja.\n\nBackfill tidak butuh pemalsuan besar. Cukup satu baris terlambat yang merapikan patahan: compressor accepted, handoff pending, support load carried, route still active. Dibaca di samping penghitung pompa, frasa itu kehilangan rasa aman. Mesin berhenti dalam potongan. Baris datang sebagai satu blok bersih.\n\nCatatan ini tidak menamai pemilik meja terakhir. Ia meninggalkan sambungan keras lain: pompa, relai, katup, buku. Jika sambungan itu patah sebelum claim hold, rute aktif dibawa oleh kertas, bukan tekanan.",
+     "field_note": "Jika pompa berhenti sebelum baris, handoff adalah entri meja, bukan udara.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "압축기 인계 사후기입",
+     "scanner": "압축기 인계 사후기입 // 펌프 계수기가 handoff 행보다 먼저 멈췄다. 체크 밸브의 소금 고리와 릴레이 틱은 뒤늦은 깨끗한 이송을 뒷받침하지 않는다.",
+     "terminal": "압축기 인계 QA // 펌프 계수기, 릴레이 틱, 체크 밸브 소금 고리, 산소 장부 절단, 슈트 예비량 델타, 스크러버 일련번호 불일치, claim hold를 대조한다. handoff 행은 공기가 움직였다는 증거가 아니다.",
+     "audio": "계수기는 멈췄다. 릴레이도 멈췄다. 누군가 깨끗한 인계가 필요했기 때문에 행만 계속 걸었다.",
+     "in_game_wiki": "압축기 handoff 행은 기계적 공기 이동과 방 장부 사이에 있어야 한다. 압축기는 압력을 움직인다. 릴레이는 공급 상태가 바뀔 때 틱을 남긴다. 펌프 계수기는 사이클을 센다. 체크 밸브는 시스템 한쪽이 염수를 다른 쪽으로 끌어들이지 못하게 한다. 이 네 흔적이 맞으면 handoff 행은 지루하다. 방이 부하를 다음 계정으로 넘겼다는 뜻이면 충분하다.\n\n사후기입 문제는 기계가 들쭉날쭉해진 뒤에도 행만 매끈할 때 시작된다. 물에 잠긴 압축기는 사무원이 쓰듯 고장 나지 않는다. 멎고, 릴레이 틈에서 끊기고, 체크 밸브 한쪽에만 소금을 남기고, 깨끗한 사이클을 세지 못한다. 나중에 온 데스크 행은 여전히 완성돼 보일 수 있다. transfer accepted, compressor handoff pending, support load carried forward. 그 어떤 문구도 멈춘 펌프를 통해 공기를 밀지 못한다.\n\n이 패킷은 산소 장부 절단, 슈트 예비량 델타, 스크러버 일련번호 불일치 다음에 읽어야 한다. 장부는 방의 한계를 보인다. 슈트는 몸에 붙어 남은 수치를 보인다. 스크러버 명판은 어떤 카트리지가 공기열에 있었는지 보인다. 압축기 handoff는 방이 그 부하를 실제로 더 밀었는지를 보인다. 펌프 계수기가 먼저 죽고 handoff 행이 나중에 왔다면, 사슬은 기계를 떠나 custody 언어로 들어간 것이다.\n\n현장 작업은 압축기의 지저분함을 남겨야 한다. 청소 전 계수기 면을 찍는다. 릴레이 틱 위치, 체크 밸브의 소금 고리, 배수컵 안 염수 얼룩, 이송을 주장하는 정확한 handoff 행을 기록한다. 기계 흔적과 맞지 않는 매끈한 행을 받아들이지 않는다. 그 행은 누가 책임을 앞으로 실어 보냈는지 설명할 수 있다. 방을 다시 숨 쉬게 하지는 못한다.",
+     "external_site": "압축기 handoff 사후기입은 멈춘 기계와 이송이 계속됐다고 말하는 뒤늦은 행 사이의 틈이다.",
+     "external_site_article": "압축기는 깨끗한 거짓말을 숨기기에 나쁜 장소다. 작은 고장이 너무 많다. 반쯤 멈춘 릴레이, 숫자 절반이 얼룩진 계수기, 방 쪽에만 소금이 묻은 밸브 입술, 데스크가 문제를 알기 전에 염수를 받은 배수컵.\n\n그래서 handoff 행이 중요하다. Deep Reach 절차에서 방 지원 부하는 로컬 생명유지에서 더 큰 계정으로 넘어갈 수 있었다. 그 행은 쓸모가 있었다. route, maintenance, claim desk에 공기 비용이 어디로 갔는지 알려줬다. 또한 방이 일을 멈춘 뒤에도 계속 쓸 자리를 주었다.\n\nBackfill에는 거대한 위조가 필요 없다. 끊어진 곳을 매끈하게 만드는 늦은 한 줄이면 된다. compressor accepted, handoff pending, support load carried, route still active. 펌프 계수기 옆에서 읽으면 이 문구들은 편안함을 잃는다. 기계는 조각나 멈췄다. 행은 하나의 깨끗한 블록으로 도착했다.\n\n이 글은 마지막 데스크 소유자를 지목하지 않는다. 플레이어에게 또 하나의 단단한 접합부를 준다. 펌프, 릴레이, 밸브, 장부. 그 접합부가 claim hold보다 먼저 깨졌다면, 열린 경로를 운반한 것은 압력이 아니라 서류다.",
+     "field_note": "펌프가 행보다 먼저 멈췄다면 handoff는 공기가 아니라 데스크 입력이다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "מילוי מאוחר של מסירת מדחס",
+     "scanner": "מילוי מאוחר של מסירת מדחס // מונה המשאבה נעצר לפני שורת ה-handoff. טבעת המלח בשסתום החוזר ותקתוק הממסר אינם תומכים בהעברה הנקייה המאוחרת.",
+     "terminal": "בדיקת מסירת מדחס // להשוות מונה משאבה, תקתוק ממסר, טבעת מלח בשסתום חוזר, חיתוך יומן חמצן, דלתא עתודת חליפה, אי-התאמת סדרת scrubber ו-claim hold. שורת handoff אינה הוכחה שאוויר זז.",
+     "audio": "המונה נעצר. הממסר נעצר. השורה המשיכה ללכת כי מישהו היה צריך מסירה נקייה.",
+     "in_game_wiki": "שורת מסירת מדחס אמורה לשבת בין תנועת אוויר מכנית לבין יומן החדר. המדחס מזיז לחץ. הממסר מתקתק כשמצב ההזנה משתנה. מונה המשאבה מסמן מחזורים. השסתום החוזר מונע מצד אחד של המערכת למשוך תמלחת לצד האחר. כשארבעה סימנים אלה מסכימים, שורת המסירה משעממת. היא אומרת שהחדר העביר עומס לחשבון הבא.\n\nבעיית המילוי המאוחר מתחילה כשהשורה נשארת חלקה אחרי שהמכונה נעשית משוננת. מדחס שטבע אינו נכשל כמו שפקיד כותב. הוא נתקע, משתעל בין פערי ממסר, משאיר מלח בצד אחד של השסתום החוזר ומפסיק לספור מחזורים נקיים. שורת שולחן מאוחרת עדיין יכולה להיראות שלמה. transfer accepted, compressor handoff pending, support load carried forward. אף אחת מהנוסחאות האלה אינה דוחפת אוויר דרך משאבה שעצרה.\n\nאת החבילה הזאת קוראים אחרי חיתוך יומן החמצן, דלתא עתודת החליפה ואי-התאמת סדרת הסקראבר. היומן מראה את גבול החדר. החליפה מראה מה נשאר עם הגוף. לוחית הסקראבר מראה איזו מחסנית ישבה בקו האוויר. מסירת המדחס מראה אם החדר באמת דחף את העומס הזה הלאה. אם מונה המשאבה מת ראשון ושורת המסירה באה אחר כך, השרשרת עזבה את המכניקה ונכנסה לשפת משמורת.\n\nעבודת השטח צריכה להשאיר את המדחס מכוער. לצלם את פני המונה לפני ניקוי. לרשום את מיקום תקתוק הממסר, טבעת המלח על השסתום החוזר, כתם התמלחת בכוס הניקוז ואת שורת ה-handoff המדויקת שטוענת להעברה. לא לקבל שורה חלקה בלי סימני מכונה תואמים. השורה יכולה להסביר מי נשא אחריות קדימה. היא לא יכולה לגרום לחדר לנשום שוב.",
+     "external_site": "מילוי מאוחר של מסירת מדחס הוא הפער בין מכונה שעצרה לבין שורה מאוחרת שאומרת שההעברה נמשכה.",
+     "external_site_article": "המדחס הוא מקום רע להסתיר שקר נקי. יש לו יותר מדי תקלות קטנות: ממסר שנתקע באמצע תקתוק, מונה עם חצי ספרה מוכתמת, שפת שסתום עם מלח רק בצד החדר, כוס ניקוז שתופסת תמלחת לפני שהשולחן יודע שמשהו השתבש.\n\nלכן שורות מסירה חשובות. בנוהל Deep Reach, עומס התמיכה של חדר יכול היה לעבור מתמיכת חיים מקומית לחשבון רחב יותר. השורה הייתה שימושית. היא אמרה ל-route, maintenance ו-claim desk לאן הלכה עלות האוויר. היא גם נתנה להם מקום להמשיך לכתוב אחרי שהחדר הפסיק לבצע את העבודה.\n\nמילוי מאוחר אינו דורש זיוף גדול. צריך רק שורה מאוחרת שמחליקה את השבר: compressor accepted, handoff pending, support load carried, route still active. ליד מונה המשאבה, הביטויים האלה מאבדים נוחות. המכונה נעצרה בחלקים. השורה הגיעה בבלוק נקי אחד.\n\nהמאמר הזה אינו מצביע על בעל השולחן האחרון. הוא נותן לשחקן חיבור קשיח נוסף: משאבה, ממסר, שסתום, יומן. אם החיבור הזה נשבר לפני claim hold, המסלול הפעיל נישא בידי ניירת, לא בידי לחץ.",
+     "field_note": "אם המשאבה נעצרה לפני השורה, handoff הוא קלט שולחן, לא אוויר.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Backfill do Handoff do Compressor",
+     "scanner": "BACKFILL DO COMPRESSOR // Contador da bomba para antes da linha de handoff. Anel de sal na válvula de retenção e tique do relé não sustentam a transferência limpa posterior.",
+     "terminal": "QA HANDOFF DO COMPRESSOR // Compare contador da bomba, tique do relé, anel de sal da válvula, corte do livro de oxigênio, delta da reserva do traje, série do scrubber divergente e claim hold. Linha handoff não prova que ar se moveu.",
+     "audio": "O contador parou. O relé parou. A linha continuou andando porque alguém precisava de um handoff limpo.",
+     "in_game_wiki": "Uma linha de handoff do compressor deveria ficar entre o movimento mecânico do ar e o livro da sala. O compressor move pressão. O relé marca quando a alimentação muda de estado. O contador da bomba marca ciclos. A válvula de retenção impede que um lado do sistema arraste salmoura para o outro. Quando essas quatro marcas concordam, a linha de handoff é sem graça. Ela significa que a sala passou uma carga para a próxima conta.\n\nO problema do backfill começa quando a linha fica lisa depois que a máquina fica serrilhada. Um compressor afogado não falha como um escrivão escreve. Ele engasga, tosse nos intervalos do relé, deixa sal de um lado da válvula de retenção e para de contar ciclos limpos. Uma linha de mesa posterior ainda pode parecer completa. transfer accepted, compressor handoff pending, support load carried forward. Nenhuma dessas frases move ar por uma bomba parada.\n\nEste pacote vem depois do corte do livro de oxigênio, da delta de reserva do traje e da divergência de série do scrubber. O livro mostra o limite da sala. O traje mostra o que ficou com o corpo. A placa do scrubber mostra qual cartucho estava no trem de ar. O handoff do compressor mostra se a sala empurrou essa carga adiante de verdade. Se o contador da bomba morreu primeiro e a linha veio depois, a cadeia saiu da mecânica e entrou na linguagem de custódia.\n\nO trabalho de campo deve manter o compressor feio. Fotografe a face do contador antes de limpar. Registre posição do tique do relé, anel de sal na válvula de retenção, mancha de salmoura no copo de dreno e a linha handoff exata que afirma transferência. Não aceite uma linha lisa sem marcas compatíveis na máquina. A linha pode explicar quem carregou responsabilidade adiante. Não pode fazer a sala respirar de novo.",
+     "external_site": "Um backfill do handoff do compressor é a brecha entre uma máquina parada e uma linha posterior dizendo que a transferência continuou.",
+     "external_site_article": "O compressor é um lugar ruim para esconder mentira limpa. Ele tem falhas pequenas demais: relé parado no meio do tique, contador com meio dígito manchado, lábio de válvula com sal só do lado da sala, copo de dreno pegando salmoura antes de a mesa saber do problema.\n\nPor isso linhas de handoff importam. No procedimento Deep Reach, uma carga de suporte de sala podia passar do suporte local para uma conta mais ampla. A linha era útil. Dizia a route, maintenance e claim desk para onde tinha ido o custo do ar. Também dava a eles um lugar para continuar escrevendo depois que a sala parava de trabalhar.\n\nBackfill não exige grande falsificação. Só precisa de uma linha tardia que alise a quebra: compressor accepted, handoff pending, support load carried, route still active. Lidas junto do contador da bomba, essas frases perdem conforto. A máquina parou em pedaços. A linha chegou em um bloco limpo.\n\nEste artigo não nomeia o último dono da mesa. Ele dá ao jogador outra junta dura: bomba, relé, válvula, livro. Se essa junta quebra antes do claim hold, a rota ativa foi carregada por papel, não por pressão.",
+     "field_note": "Se a bomba parou antes da linha, o handoff é entrada de mesa, não ar.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Nagevulde compressoroverdracht",
+     "scanner": "NAGEVULDE COMPRESSOROVERDRACHT // Pompteller stopt vóór de handoff-regel. Zoutring op de terugslagklep en relaistik steunen de latere schone overdracht niet.",
+     "terminal": "QA COMPRESSOROVERDRACHT // Vergelijk pompteller, relaistik, zoutring op terugslagklep, zuurstofregistersnede, pakreserve-delta, scrubber-seriemismatch en claim hold. Een handoff-regel bewijst geen luchtbeweging.",
+     "audio": "Teller stopte. Relais stopte. De regel liep door omdat iemand een schone overdracht nodig had.",
+     "in_game_wiki": "Een compressoroverdrachtsregel hoort tussen mechanische luchtbeweging en het kamerregister te staan. De compressor verplaatst druk. Het relais tikt wanneer de voeding van staat verandert. De pompteller markeert cycli. De terugslagklep voorkomt dat de ene kant pekel naar de andere trekt. Als die vier sporen overeenkomen, is de handoff-regel saai. Hij betekent dat de kamer een last aan de volgende rekening doorgaf.\n\nHet backfill-probleem begint wanneer de regel glad blijft nadat de machine rafelig is geworden. Een verdronken compressor faalt niet zoals een klerk schrijft. Hij slaat af, hoest door relaisgaten, laat zout aan één kant van de terugslagklep en stopt met schone cycli tellen. Een latere deskregel kan nog volledig ogen. transfer accepted, compressor handoff pending, support load carried forward. Geen van die woorden beweegt lucht door een stilstaande pomp.\n\nDit record hoort na de zuurstofregistersnede, pakreserve-delta en scrubber-seriemismatch. Het register toont de kamergrens. Het pak toont wat bij het lichaam bleef. De scrubberplaat toont welke cartridge in de luchtlijn zat. De compressoroverdracht toont of de kamer die last ooit echt verder duwde. Als de pompteller eerst stierf en de handoff-regel later kwam, verliet de keten de mechanica en ging hij custody-taal in.\n\nVeldwerk moet de compressor lelijk houden. Fotografeer de tellerplaat voor het schoonmaken. Noteer positie van de relaistik, zoutring op de terugslagklep, pekelvlek in de drainbeker en de exacte handoff-regel die overdracht claimt. Accepteer geen gladde regel zonder passende machinesporen. De regel kan uitleggen wie verantwoordelijkheid verder droeg. Hij kan de kamer niet opnieuw laten ademen.",
+     "external_site": "Een nagevulde compressoroverdracht is de kloof tussen een gestopte machine en een latere regel die zegt dat de overdracht doorging.",
+     "external_site_article": "De compressor is een slechte plek om een schone leugen te verbergen. Hij heeft te veel kleine storingen: een relais dat midden in de tik stopt, een teller met een half bevlekt cijfer, een kleplip met zout alleen aan kamerzijde, een drainbeker die pekel vangt voordat de desk iets weet.\n\nDaarom tellen handoff-regels. In Deep Reach-procedure kon een kamersteunlast van lokale life support naar een breder account gaan. De regel was nuttig. Hij vertelde route, maintenance en claim desk waar de luchtkosten heen waren. Hij gaf hun ook een plek om door te schrijven nadat de kamer stopte met werken.\n\nBackfill vraagt geen grote vervalsing. Een late regel die de breuk gladstrijkt is genoeg: compressor accepted, handoff pending, support load carried, route still active. Naast de pompteller gelezen verliezen die zinnen hun comfort. De machine stopte in stukken. De regel kwam als één schoon blok.\n\nDit record noemt de laatste deskeigenaar niet. Het laat nog een harde koppeling achter: pomp, relais, klep, register. Als die koppeling vóór claim hold breekt, werd de actieve route gedragen door papier, niet door druk.",
+     "field_note": "Als de pomp stopte vóór de regel, is handoff een deskregel, geen lucht.",
+     "localization_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

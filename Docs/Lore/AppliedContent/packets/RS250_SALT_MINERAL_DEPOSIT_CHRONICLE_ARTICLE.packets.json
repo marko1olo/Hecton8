@@ -1,11 +1,46 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS250_SALT_MINERAL_DEPOSIT_CHRONICLE_ARTICLE",
-  "title": "Salt Mineral Deposit Chronicle Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS250_SALT_MINERAL_DEPOSIT_CHRONICLE_ARTICLE",
+ "title": "Salt Mineral Deposit Chronicle Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1420_SALT_MINERAL_DEPOSIT_LEDGER",
+   "release_set_id": "RS250_SALT_MINERAL_DEPOSIT_CHRONICLE_ARTICLE",
+   "article_id": "applied_lore.salt_mineral_deposit_ledger",
+   "title_key": "LORE_SALT_MINERAL_DEPOSIT_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": "Narrative",
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -14,251 +49,217 @@
     "data_monolith_ready": false,
     "h8bin_ready": false,
     "unity_placement_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1420_SALT_MINERAL_DEPOSIT_LEDGER",
-      "release_set_id": "RS250_SALT_MINERAL_DEPOSIT_CHRONICLE_ARTICLE",
-      "article_id": "applied_lore.salt_mineral_deposit_ledger",
-      "title_key": "LORE_SALT_MINERAL_DEPOSIT_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": "Narrative",
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.salt_mineral_deposit_ledger",
-        "secondary": [
-          "unlock.first_salt_bloom_scan",
-          "unlock.first_calcium_drip_read",
-          "unlock.first_pressure_breathing_ring"
-        ],
-        "poi_tags": [
-          "poi.salt_mineral_deposit",
-          "poi.calcium_drip_seam",
-          "poi.pressure_breathing_ring",
-          "poi.gasket_salt_powder"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.limestone_caves",
-          "biome.pressure_route"
-        ]
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Mineral Deposit Scanner",
-          "terminal": "Old Colony Salt Trace Readout",
-          "audio": "Marauder Water Memory Instructor",
-          "in_game_wiki": "PDA Mineral Deposit Field Guide",
-          "external_site": "Public Site Salt Memory Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_salt_bloom_or_pressure_breathing_ring",
-        "truth_payload": "Salt and mineral deposits record water migration, pressure breathing, hidden seepage and old wet failure.",
-        "player_question": "Which surface kept counting tides after the room was supposed to be dry?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Salt Mineral Deposit Memory Ledger",
-          "scanner": "MINERAL DEPOSIT // White salt bloom on seam lip, calcium drip below old bolt, green-gray ring around a pressure stain. Not foam. Not snow. The water moved through here, stopped, breathed, and left its minerals behind.",
-          "terminal": "SALT READING // Dry salt on top of rust means old wet failure. Salt under fresh black runoff means the seal leaked later. Calcium fingers that grow downward mark gravity during low-pressure drainage; rings around a bolt mark pressure cycling.",
-          "audio": "Salt is a receipt. The ocean signs slowly, but it signs everything.",
-          "in_game_wiki": "Salt and mineral deposits are the quiet handwriting of HECTON-8. A clean crack can lie. A polished panel can lie. A mineral edge is harder to fake, because it records motion, drying, pressure breathing and chemistry in separate layers.\n\nWhite bloom on a seam means water migrated and left its load behind. Calcium drips below a bolt mean slow drainage under gravity, usually after a room stopped being scrubbed. Green-gray rings around a stain mean a repeated wet edge, not one splash. Powder in a gasket groove means the seal moved air or brine through many cycles. If new black runoff crosses the salt, the machine leaked after the mineral crust was already old.\n\nFor a Marauder, deposits are not dirt. They are water memory. They can mark a hidden seep, a weak hatch, a cave route that dries during pressure swings, or a supposedly sealed compartment that kept breathing after shutdown. The best deposits do not shout. They wait for someone to notice that the wall has been counting tides without a clock.",
-          "external_site": "Salt bloom, calcium drips and mineral rings preserve water-memory evidence in old colony rooms, caves and hull seams.",
-          "external_site_article": "The colony tried to keep surfaces clean because clean surfaces looked controlled. Salt refused that lie. It came back after wiping, returned under gasket lips, gathered in screw pockets, and drew pale borders where water had stood long enough to become a record.\n\nA mineral deposit has grammar. Bloom along a lower seam says migration. Downward calcium fingers say drainage. A ring around a bolt says the metal breathed under pressure. Powder trapped under newer oil says the water was there first. Crust broken only on one side says a panel flexed, not that somebody kicked it.\n\nThis is the kind of evidence a salvage crew learns to respect. Salt can show which corridor floods first, which hatch should not be trusted, which cave pocket hides brine, and which official “single breach” was really a long conversation between pressure, metal and neglect.",
-          "field_note": "Do not clean the salt before you read it. The first swipe erases the tide count."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал памяти солевых и минеральных отложений",
-          "scanner": "МИНЕРАЛЬНЫЙ СЛЕД // Белая соль на губе шва, кальциевый потек под старым болтом, зелено-серое кольцо вокруг пятна давления. Это не пена и не снег. Вода шла здесь, останавливалась, дышала и оставила минералы.",
-          "terminal": "ЧТЕНИЕ СОЛИ // Сухая соль поверх ржавчины - старый мокрый отказ. Соль под свежим черным стоком - уплотнение потекло позже. Кальциевые пальцы вниз показывают слив при малом давлении; кольца вокруг болта - циклы давления.",
-          "audio": "Соль - квитанция. Океан подписывает медленно, но подписывает все.",
-          "in_game_wiki": "Солевые и минеральные отложения - тихий почерк HECTON-8. Чистая трещина может врать. Полированная панель может врать. Минеральный край подделать сложнее: он пишет движение воды, высыхание, дыхание давления и химию разными слоями.\n\nБелый налет на шве значит, что вода мигрировала и оставила груз. Кальциевые потеки под болтом говорят о медленном сливе, обычно уже после того, как комнату перестали протирать. Зелено-серые кольца вокруг пятна - повторяющийся мокрый край, а не один всплеск. Порошок в пазу прокладки значит, что уплотнение много циклов гоняло воздух или рассол. Свежий черный сток поверх соли значит, что машина потекла позже старой корки.\n\nДля мародера такие отложения не грязь. Это память воды. Они отмечают скрытый просачивающийся шов, слабый люк, cave-карман с рассолом или отсек, который должен быть герметичным, но продолжал дышать после отключения. Хороший след не кричит. Он ждет, пока кто-то заметит: стена считала приливы без часов.",
-          "external_site": "Полевая статья о солевом налете, кальциевых потеках и минеральных кольцах как доказательстве водной памяти в старых отсеках, пещерах и швах корпуса.",
-          "external_site_article": "Колония пыталась держать поверхности чистыми, потому что чистота выглядела как контроль. Соль эту ложь не принимала. Она возвращалась после протирки, выползала под губами прокладок, собиралась в карманах винтов и рисовала бледные границы там, где вода стояла достаточно долго, чтобы стать записью.\n\nУ минерального следа есть грамматика. Налет вдоль нижнего шва говорит о миграции. Кальциевые пальцы вниз - о сливе. Кольцо вокруг болта - о металле, который дышал давлением. Порошок под новым маслом значит, что вода была раньше. Корка, сломанная только с одной стороны, говорит о прогибе панели, а не о случайном ударе.\n\nТакому доказательству экипаж добытчиков быстро учится верить. Соль показывает, какой коридор топит первым, какому люку нельзя доверять, где в пещерном кармане сидит рассол и какой официальный \"одиночный прорыв\" на самом деле был долгим разговором давления, металла и запущенности.",
-          "field_note": "Не стирай соль до чтения. Первый взмах забирает счет приливов."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "塩分・鉱物沈着記憶台帳",
-          "scanner": "鉱物沈着 // 継ぎ目の縁に白い塩、古いボルト下に石灰の垂れ、圧力染みの周囲に緑灰色の輪。泡でも雪でもない。水はここを通り、止まり、呼吸し、鉱物を残した。",
-          "terminal": "塩の読み方 // 錆の上の乾いた塩は古い湿潤故障。新しい黒い流れの下の塩は、その後に封止が漏れた証拠。下向きの石灰指は低圧排水、ボルト周囲の輪は圧力周期を示す。",
-          "audio": "塩は領収書だ。海は遅く署名するが、すべてに署名する。",
-          "in_game_wiki": "塩分と鉱物の沈着は、HECTON-8の静かな筆跡だ。きれいな亀裂は嘘をつける。磨かれたパネルも嘘をつける。だが鉱物の縁は偽りにくい。水の移動、乾燥、圧力の呼吸、化学反応を別々の層で残すからだ。\n\n継ぎ目の白い花は水が移動し、荷を置いていった印だ。ボルト下の石灰垂れは遅い排水を示す。緑灰色の輪は一度の飛沫ではなく、何度も戻った湿った境界だ。ガスケット溝の粉は、空気か濃塩水が何周期も通った証拠になる。新しい黒い流れが塩を横切るなら、機械漏れは鉱物殻より後だ。\n\nマローダーにとって、沈着は汚れではない。水の記憶だ。隠れた浸み、弱いハッチ、圧力変動で乾く洞窟ポケット、停止後も呼吸していた密閉区画を示す。良い沈着は叫ばない。時計なしで潮を数えていた壁に気づく者を待つ。",
-          "external_site": "塩の花、石灰垂れ、鉱物輪を、水の記憶として読むための現場記事。",
-          "external_site_article": "植民地は表面をきれいに保とうとした。きれいなら制御されているように見えるからだ。塩はその嘘を拒んだ。拭き取っても戻り、ガスケットの唇から出て、ねじのくぼみに集まり、水が記録になるまで留まった境界を淡く描いた。\n\n鉱物沈着には文法がある。下側の継ぎ目に沿う花は移動を示す。下向きの石灰指は排水を示す。ボルト周囲の輪は金属が圧力で呼吸した印だ。新しい油の下に粉があれば、水が先にいた。片側だけ割れた殻は蹴られたのでなく、パネルがたわんだ証拠かもしれない。\n\n回収班はこういう証拠を尊重する。塩は最初に沈む廊下、信用できないハッチ、濃塩水を隠す洞窟ポケット、そして公式報告の「単一破口」が実は圧力と金属と放置の長い会話だったことを示す。",
-          "field_note": "読む前に塩を拭くな。最初の一拭きで潮の数が消える。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "盐与矿物沉积记忆账",
-          "scanner": "矿物沉积 // 接缝边缘有白色盐花，旧螺栓下有钙质滴痕，压力污迹周围有绿灰色环。不是泡沫，不是雪。水从这里走过、停下、呼吸，把矿物留下。",
-          "terminal": "读盐 // 锈上干盐表示老湿故障。新黑色流痕下有盐，说明密封后来才漏。向下的钙质指痕表示低压排水；螺栓周围的环表示压力循环。",
-          "audio": "盐是收据。海洋签得很慢，但它给一切签名。",
-          "in_game_wiki": "盐与矿物沉积是HECTON-8安静的笔迹。干净裂缝会撒谎，抛光面板也会撒谎。矿物边缘更难伪造，因为它把水的移动、干燥、压力呼吸和化学反应分成不同层。\n\n接缝上的白花说明水迁移并留下负载。螺栓下的钙质滴痕说明缓慢排水，通常发生在房间不再被擦洗之后。污迹周围的绿灰色环说明反复湿边，而不是一次飞溅。垫圈槽里的粉末说明空气或盐水经过了许多压力循环。新黑色流痕越过盐壳，机器泄漏就晚于矿物外壳。\n\n对拾荒者来说，沉积不是脏东西，而是水的记忆。它能标出隐藏渗流、脆弱舱门、压力摆动时会变干的洞穴口袋，或一个停机后仍在呼吸的所谓密封隔间。好的沉积不会大喊。它等人发现：这面墙没有时钟，也一直在数潮。",
-          "external_site": "关于盐花、钙质滴痕和矿物环的现场文章：它们是旧殖民地房间、洞穴和船壳接缝中的水记忆证据。",
-          "external_site_article": "殖民地曾努力保持表面清洁，因为清洁看起来像控制。盐拒绝这个谎言。擦掉后它会回来，从垫圈边缘爬出，聚在螺丝口袋里，在水停留足够久的地方画出苍白边界。\n\n矿物沉积有语法。下接缝上的盐花说明迁移。向下的钙质指痕说明排水。螺栓周围的环说明金属在压力下呼吸。新油下的粉末说明水先到。只在一侧破裂的盐壳说明面板弯曲，而不一定是被踢坏。\n\n打捞队会很快学会尊重这种证据。盐会指出哪条走廊先淹、哪扇舱门不能信、哪个洞穴口袋藏着盐水，以及哪份“单次破裂”报告其实掩盖了一场压力、金属与疏忽之间的长谈。",
-          "field_note": "读完之前别擦盐。第一下擦拭会抹掉潮汐计数。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre de mémoire des dépôts salins et minéraux",
-          "scanner": "DÉPÔT MINÉRAL // Sel blanc sur lèvre de joint, coulée calcaire sous vieux boulon, anneau vert-gris autour d'une tache de pression. Ce n'est ni mousse ni neige. L'eau est passée, s'est arrêtée, a respiré, puis a laissé ses minéraux.",
-          "terminal": "LECTURE DU SEL // Sel sec sur rouille : vieille panne humide. Sel sous coulure noire fraîche : fuite de joint plus tardive. Doigts calcaires vers le bas : drainage basse pression. Anneaux autour d'un boulon : cycles de pression.",
-          "audio": "Le sel est un reçu. L'océan signe lentement, mais il signe tout.",
-          "in_game_wiki": "Les dépôts de sel et de minéraux sont l'écriture discrète de HECTON-8. Une fissure propre peut mentir. Un panneau poli peut mentir. Un bord minéral ment plus difficilement : il garde séparés le mouvement de l'eau, le séchage, la respiration de pression et la chimie.\n\nUne fleur blanche sur une couture signifie que l'eau a migré et laissé sa charge. Les coulées calcaires sous un boulon parlent d'un drainage lent, souvent après l'arrêt du nettoyage. Les anneaux vert-gris signalent un bord humide répété, pas une éclaboussure unique. La poudre dans une gorge de joint indique de nombreux cycles d'air ou de saumure.\n\nPour un maraudeur, ce n'est pas de la saleté. C'est une mémoire d'eau. Elle marque un suintement caché, une trappe faible, une poche de grotte qui sèche avec la pression, ou un compartiment censé être scellé qui respirait encore après l'arrêt.",
-          "external_site": "Article de terrain sur fleurs de sel, coulées calcaires et anneaux minéraux comme mémoire de l'eau.",
-          "external_site_article": "La colonie nettoyait les surfaces parce que le propre ressemblait au contrôle. Le sel refusait ce mensonge. Il revenait après l'essuyage, rampait sous les lèvres de joint, se déposait dans les vis, dessinait des frontières pâles là où l'eau avait attendu assez longtemps.\n\nUn dépôt minéral a une grammaire. Fleur sur couture basse : migration. Doigts calcaires vers le bas : drainage. Anneau autour d'un boulon : métal respirant sous pression. Poudre sous huile récente : l'eau était là d'abord. Croûte cassée d'un seul côté : flexion du panneau, pas forcément choc.\n\nUne équipe de récupération apprend vite à respecter ces preuves. Le sel montre quel couloir noie en premier, quelle trappe ment, quelle poche de grotte cache de la saumure et quel rapport officiel a réduit une longue négligence à une seule rupture.",
-          "field_note": "Ne nettoie pas le sel avant de le lire. Le premier geste efface le compte des marées."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de memoria de depósitos salinos y minerales",
-          "scanner": "DEPÓSITO MINERAL // Flor blanca de sal en borde de junta, goteo calcáreo bajo perno viejo, anillo verde gris alrededor de mancha de presión. No es espuma ni nieve. El agua pasó, se detuvo, respiró y dejó minerales.",
-          "terminal": "LECTURA DE SAL // Sal seca sobre óxido: fallo húmedo antiguo. Sal bajo escorrentía negra fresca: la junta fugó después. Dedos calcáreos hacia abajo: drenaje de baja presión. Anillos en pernos: ciclos de presión.",
-          "audio": "La sal es un recibo. El océano firma lento, pero firma todo.",
-          "in_game_wiki": "Los depósitos de sal y minerales son la letra silenciosa de HECTON-8. Una grieta limpia puede mentir. Un panel pulido puede mentir. Un borde mineral miente peor: separa movimiento de agua, secado, respiración de presión y química.\n\nFlor blanca en una costura significa migración. Goteos calcáreos bajo un perno significan drenaje lento, a menudo después de que dejaron de limpiar la sala. Anillos verde gris señalan borde húmedo repetido, no una salpicadura. Polvo en una ranura de junta indica muchos ciclos de aire o salmuera.\n\nPara un saqueador, eso no es suciedad. Es memoria de agua. Puede marcar filtración oculta, compuerta débil, bolsillo de cueva que seca con la presión o compartimento supuestamente sellado que siguió respirando tras el apagado.",
-          "external_site": "Artículo de campo sobre sal, calcio y anillos minerales como memoria del agua en ruinas, cuevas y juntas.",
-          "external_site_article": "La colonia limpiaba superficies porque lo limpio parecía control. La sal rechazó esa mentira. Volvía después del paño, salía bajo juntas, se reunía en huecos de tornillo y dibujaba fronteras pálidas donde el agua había esperado demasiado.\n\nUn depósito mineral tiene gramática. Flor en costura baja: migración. Dedos calcáreos hacia abajo: drenaje. Anillo alrededor de perno: metal respirando presión. Polvo bajo aceite nuevo: el agua estuvo primero. Costra rota sólo a un lado: flexión de panel, no simple golpe.\n\nUna tripulación de rescate aprende a respetarlo. La sal muestra qué pasillo se inunda primero, qué escotilla no merece confianza, qué bolsillo guarda salmuera y qué informe de \"rotura única\" escondió semanas de presión, metal y abandono.",
-          "field_note": "No limpies la sal antes de leerla. El primer paño borra el conteo de mareas."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Gedächtnisprotokoll für Salz- und Mineralablagerungen",
-          "scanner": "MINERALABLAGERUNG // Weißes Salz an Nahtlippe, Kalklauf unter altem Bolzen, grüngrauer Ring um Druckfleck. Kein Schaum. Kein Schnee. Wasser ging hier durch, hielt an, atmete und ließ Mineralien zurück.",
-          "terminal": "SALZ LESEN // Trockenes Salz über Rost: alter nasser Fehler. Salz unter frischer schwarzer Spur: Dichtung leckte später. Kalkfinger nach unten: Niederdruckdrainage. Ringe um Bolzen: Druckzyklen.",
-          "audio": "Salz ist eine Quittung. Der Ozean unterschreibt langsam, aber er unterschreibt alles.",
-          "in_game_wiki": "Salz- und Mineralablagerungen sind die leise Handschrift von HECTON-8. Ein sauberer Riss kann lügen. Ein poliertes Paneel kann lügen. Eine Mineralkante lügt schlechter, weil sie Wasserbewegung, Trocknung, Druckatmung und Chemie getrennt aufzeichnet.\n\nWeißer Belag an einer Naht bedeutet Wanderung. Kalkläufe unter einem Bolzen bedeuten langsame Entwässerung, meist nachdem niemand mehr wischte. Grüngraue Ringe zeigen wiederkehrende Feuchte, keinen einzelnen Spritzer. Pulver in einer Dichtungsnut bedeutet viele Zyklen Luft oder Sole.\n\nFür einen Marauder ist das kein Schmutz. Es ist Wassergedächtnis. Es markiert versteckte Lecks, schwache Luken, Höhlentaschen, die mit Druckschwankungen trocknen, oder angeblich versiegelte Räume, die nach Abschaltung weiter atmeten.",
-          "external_site": "Feldartikel über Salzblüten, Kalkläufe und Mineralringe als Wassergedächtnis.",
-          "external_site_article": "Die Kolonie hielt Flächen sauber, weil Sauberkeit wie Kontrolle aussah. Salz verweigerte diese Lüge. Es kam nach dem Wischen zurück, kroch unter Dichtungslippen, sammelte sich in Schraubentaschen und zeichnete blasse Grenzen dort, wo Wasser lange genug stand.\n\nEine Mineralspur hat Grammatik. Belag an tiefer Naht heißt Migration. Kalkfinger nach unten heißt Drainage. Ring um Bolzen heißt Druckatmung. Pulver unter frischem Öl heißt: Wasser war zuerst da. Einseitig gebrochene Kruste zeigt Paneelbiegung, nicht nur Tritt.\n\nBergungsteams lernen solche Beweise zu achten. Salz zeigt, welcher Gang zuerst flutet, welcher Luke man nicht traut, welche Höhle Sole versteckt und welcher Bericht aus langer Vernachlässigung einen einzelnen Bruch machte.",
-          "field_note": "Wisch das Salz nicht weg, bevor du es liest. Der erste Lappen löscht den Tidezähler."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr pamięci osadów soli i minerałów",
-          "scanner": "OSAD MINERALNY // Biała sól na krawędzi szwu, wapienny zaciek pod starym boltem, zielonoszary pierścień wokół plamy ciśnienia. To nie piana ani śnieg. Woda przeszła, stanęła, oddychała i zostawiła minerały.",
-          "terminal": "CZYTANIE SOLI // Sucha sól na rdzy: stara mokra awaria. Sól pod świeżym czarnym spływem: późniejszy wyciek uszczelki. Wapienne palce w dół: drenaż niskiego ciśnienia. Pierścienie wokół bolta: cykle ciśnienia.",
-          "audio": "Sól jest pokwitowaniem. Ocean podpisuje powoli, ale podpisuje wszystko.",
-          "in_game_wiki": "Osady soli i minerałów to ciche pismo HECTON-8. Czyste pęknięcie potrafi kłamać. Wypolerowany panel też. Krawędź mineralna kłamie gorzej, bo osobno zapisuje ruch wody, schnięcie, oddychanie ciśnienia i chemię.\n\nBiały nalot na szwie oznacza migrację. Wapienne zacieki pod boltem mówią o powolnym drenażu, często po końcu sprzątania. Zielonoszare pierścienie wskazują powracającą mokrą granicę, nie pojedynczy rozbryzg. Proszek w rowku uszczelki znaczy wiele cykli powietrza lub solanki.\n\nDla maraudera to nie brud, tylko pamięć wody. Zaznacza ukryty przeciek, słaby właz, kieszeń jaskini wysychającą przy zmianach ciśnienia albo rzekomo szczelny przedział, który oddychał po wyłączeniu.",
-          "external_site": "Artykuł terenowy o soli, wapniu i pierścieniach mineralnych jako pamięci wody.",
-          "external_site_article": "Kolonia czyściła powierzchnie, bo czystość wyglądała jak kontrola. Sól odrzucała to kłamstwo. Wracała po przetarciu, wychodziła spod uszczelek, siadała w gniazdach śrub i rysowała blade granice tam, gdzie woda czekała zbyt długo.\n\nOsad mineralny ma gramatykę. Nalot na dolnym szwie to migracja. Wapienne palce w dół to drenaż. Pierścień wokół bolta to oddychanie metalu pod ciśnieniem. Proszek pod nowym olejem mówi, że woda była pierwsza. Skorupa pęknięta z jednej strony oznacza ugięcie panelu.\n\nZałoga wydobywcza szybko uczy się szanować taki dowód. Sól pokazuje pierwszy zalewany korytarz, fałszywy właz, solankową kieszeń w jaskini i raport, który tygodnie zaniedbań nazwał jednym pęknięciem.",
-          "field_note": "Nie ścieraj soli przed czytaniem. Pierwsze przetarcie kasuje licznik pływów."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал пам'яті соляних і мінеральних відкладів",
-          "scanner": "МІНЕРАЛЬНИЙ СЛІД // Біла сіль на губі шва, кальцієвий потік під старим болтом, зелено-сіре кільце навколо плями тиску. Це не піна й не сніг. Вода пройшла, зупинилась, дихала й лишила мінерали.",
-          "terminal": "ЧИТАННЯ СОЛІ // Суха сіль поверх іржі - стара мокра відмова. Сіль під свіжим чорним стоком - ущільнення потекло пізніше. Кальцієві пальці вниз - дренаж малого тиску. Кільця біля болта - цикли тиску.",
-          "audio": "Сіль - квитанція. Океан підписує повільно, але підписує все.",
-          "in_game_wiki": "Соляні й мінеральні відклади - тихий почерк HECTON-8. Чиста тріщина може брехати. Полірована панель теж. Мінеральний край бреше гірше, бо окремо пише рух води, висихання, дихання тиску й хімію.\n\nБілий наліт на шві означає міграцію води. Кальцієві потоки під болтом говорять про повільний дренаж, часто після кінця прибирання. Зелено-сірі кільця - повторюваний мокрий край, не один сплеск. Порошок у пазі прокладки означає багато циклів повітря або розсолу.\n\nДля мародера це не бруд, а пам'ять води. Вона позначає приховане просочування, слабкий люк, печерну кишеню, що висихає під тиском, або начебто герметичний відсік, який дихав після вимкнення.",
-          "external_site": "Польова стаття про соляний наліт, кальцієві потоки й мінеральні кільця як пам'ять води.",
-          "external_site_article": "Колонія чистила поверхні, бо чистота виглядала як контроль. Сіль цю брехню не приймала. Вона верталася після протирання, виходила з-під прокладок, збиралася в гніздах гвинтів і малювала бліді межі там, де вода стояла задовго.\n\nУ мінерального сліду є граматика. Наліт на нижньому шві - міграція. Кальцієві пальці вниз - дренаж. Кільце біля болта - метал дихав тиском. Порошок під новою олією означає, що вода була першою. Корка, зламана з одного боку, говорить про згин панелі.\n\nВидобувна команда швидко вчиться поважати такі докази. Сіль показує перший затоплений коридор, люк, якому не можна вірити, розсільну кишеню в печері й звіт, що назвав довгу занедбаність одним проривом.",
-          "field_note": "Не стирай сіль до читання. Перший рух стирає рахунок припливів."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل ذاكرة ترسبات الملح والمعادن",
-          "scanner": "ترسب معدني // زهرة ملح بيضاء على حافة وصلة، قطرة كلس تحت برغي قديم، حلقة خضراء رمادية حول بقعة ضغط. ليس رغوة ولا ثلجا. الماء مر هنا، توقف، تنفس، وترك معادنه.",
-          "terminal": "قراءة الملح // ملح جاف فوق الصدأ يعني عطلا رطبا قديما. ملح تحت سيلان أسود جديد يعني أن الختم سرّب لاحقا. أصابع الكلس إلى الأسفل تعني تصريفا بضغط منخفض. حلقات البرغي تعني دورات ضغط.",
-          "audio": "الملح إيصال. المحيط يوقع ببطء، لكنه يوقع على كل شيء.",
-          "in_game_wiki": "ترسبات الملح والمعادن هي خط HECTON-8 الهادئ. الشق النظيف قد يكذب. اللوح المصقول قد يكذب. حافة المعدن أصعب كذبا لأنها تسجل حركة الماء والجفاف وتنفس الضغط والكيمياء في طبقات منفصلة.\n\nالزهرة البيضاء على الوصلة تعني أن الماء هاجر وترك حمله. القطرات الكلسية تحت البرغي تعني تصريفا بطيئا، غالبا بعد توقف التنظيف. الحلقة الخضراء الرمادية تعني حافة رطبة عادت مرارا، لا رشة واحدة. المسحوق في مجرى الحشية يعني دورات كثيرة من هواء أو محلول ملحي.\n\nبالنسبة إلى المغير، هذا ليس وسخا. إنه ذاكرة الماء. يحدد رشحا مخفيا، فتحة ضعيفة، جيب كهف يجف مع تبدل الضغط، أو مقصورة قيل إنها مختومة لكنها ظلت تتنفس بعد الإغلاق.",
-          "external_site": "مقال ميداني عن أزهار الملح وقطرات الكلس والحلقات المعدنية كذاكرة للماء.",
-          "external_site_article": "حاولت المستعمرة إبقاء السطوح نظيفة لأن النظافة تشبه السيطرة. الملح رفض تلك الكذبة. عاد بعد المسح، زحف من تحت الحشيات، تجمع في جيوب البراغي، ورسم حدودا شاحبة حيث انتظر الماء طويلا.\n\nللترسب المعدني نحو. الزهرة على الوصلة السفلى تعني هجرة. الأصابع الكلسية إلى الأسفل تعني تصريفا. الحلقة حول البرغي تعني أن المعدن تنفس تحت الضغط. مسحوق تحت زيت جديد يعني أن الماء سبق الزيت. قشرة مكسورة من جهة واحدة تعني انحناء اللوح.\n\nيتعلم طاقم الانتشال احترام هذا الدليل. الملح يريهم أي ممر يغرق أولا، وأي فتحة تكذب، وأي جيب كهفي يخفي محلولا ملحيا، وأي تقرير حول أسابيع الإهمال إلى كلمة: خرق واحد.",
-          "field_note": "لا تمسح الملح قبل قراءته. أول مسحة تمحو عدّ المد."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Log Memori Endapan Garam dan Mineral",
-          "scanner": "ENDAPAN MINERAL // Mekar garam putih di bibir sambungan, tetes kalsium di bawah baut tua, cincin hijau-abu di sekitar noda tekanan. Bukan busa. Bukan salju. Air lewat, berhenti, bernapas, lalu meninggalkan mineral.",
-          "terminal": "MEMBACA GARAM // Garam kering di atas karat berarti kegagalan basah lama. Garam di bawah aliran hitam baru berarti seal bocor belakangan. Jari kalsium ke bawah berarti drainase tekanan rendah. Cincin baut berarti siklus tekanan.",
-          "audio": "Garam adalah kuitansi. Laut menandatangani pelan, tapi menandatangani semuanya.",
-          "in_game_wiki": "Endapan garam dan mineral adalah tulisan sunyi HECTON-8. Retak bersih bisa berbohong. Panel mengilap bisa berbohong. Tepi mineral lebih sulit palsu karena mencatat gerak air, pengeringan, napas tekanan, dan kimia dalam lapisan terpisah.\n\nMekar putih pada sambungan berarti air bermigrasi dan meninggalkan muatan. Tetes kalsium di bawah baut berarti drainase lambat, biasanya setelah ruangan tak lagi dilap. Cincin hijau-abu berarti tepi basah berulang, bukan satu cipratan. Bubuk di alur gasket berarti banyak siklus udara atau brine.\n\nBagi perompak laut-dalam, endapan bukan kotoran. Itu memori air. Ia menandai rembesan tersembunyi, palka lemah, kantong gua yang mengering saat tekanan berubah, atau kompartemen yang katanya tertutup tetapi masih bernapas setelah mati daya.",
-          "external_site": "Artikel lapangan tentang mekar garam, tetes kalsium, dan cincin mineral sebagai memori air.",
-          "external_site_article": "Koloni menjaga permukaan tetap bersih karena bersih tampak seperti kendali. Garam menolak kebohongan itu. Ia kembali setelah dilap, keluar dari bibir gasket, berkumpul di kantong sekrup, dan menggambar batas pucat di tempat air menunggu terlalu lama.\n\nEndapan mineral punya tata bahasa. Mekar di sambungan bawah berarti migrasi. Jari kalsium ke bawah berarti drainase. Cincin di sekitar baut berarti logam bernapas dalam tekanan. Bubuk di bawah oli baru berarti air datang duluan. Kerak pecah di satu sisi berarti panel melentur.\n\nKru salvage cepat belajar menghormati bukti ini. Garam menunjukkan koridor yang banjir duluan, palka yang tak bisa dipercaya, kantong brine dalam gua, dan laporan yang mengubah minggu-minggu kelalaian menjadi satu kata: pecah.",
-          "field_note": "Jangan lap garam sebelum dibaca. Sapuan pertama menghapus hitungan pasang."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "염분 및 광물 침전 기억 장부",
-          "scanner": "광물 침전 // 이음부 가장자리의 흰 소금꽃, 오래된 볼트 아래 석회 방울, 압력 얼룩 주변의 녹회색 고리. 거품도 눈도 아니다. 물이 지나가고 멈추고 숨 쉬며 광물을 남겼다.",
-          "terminal": "소금 읽기 // 녹 위의 마른 소금은 오래된 습식 고장이다. 새 검은 유출 아래 소금은 밀봉이 나중에 샜다는 뜻이다. 아래로 난 석회 손가락은 저압 배수, 볼트 고리는 압력 주기를 뜻한다.",
-          "audio": "소금은 영수증이다. 바다는 천천히 서명하지만 모든 것에 서명한다.",
-          "in_game_wiki": "소금과 광물 침전은 HECTON-8의 조용한 필적이다. 깨끗한 균열은 거짓말할 수 있다. 닦인 패널도 그렇다. 광물 가장자리는 물의 이동, 건조, 압력 호흡, 화학을 층마다 따로 남기기 때문에 속이기 어렵다.\n\n이음부의 흰 꽃은 물이 이동하며 짐을 내려놓았다는 뜻이다. 볼트 아래 석회 방울은 느린 배수, 보통 청소가 멈춘 뒤의 배수를 말한다. 녹회색 고리는 한 번 튄 물이 아니라 반복된 젖은 경계다. 가스켓 홈의 가루는 공기나 염수가 많은 주기를 통과했다는 증거다.\n\n마라우더에게 침전은 먼지가 아니라 물의 기억이다. 숨은 스며듦, 약한 해치, 압력 변화 때 마르는 동굴 주머니, 정지 후에도 숨 쉬던 밀폐 구획을 표시한다. 좋은 침전은 소리치지 않는다. 시계 없이 조수를 세던 벽을 알아볼 사람을 기다린다.",
-          "external_site": "소금꽃, 석회 방울, 광물 고리를 물의 기억으로 읽는 현장 기사.",
-          "external_site_article": "식민지는 표면을 깨끗하게 유지하려 했다. 깨끗함은 통제처럼 보였기 때문이다. 소금은 그 거짓말을 거부했다. 닦아도 돌아왔고, 가스켓 입술 아래서 기어 나왔고, 나사 구멍에 모였고, 물이 오래 머문 곳에 창백한 경계를 그렸다.\n\n광물 침전에는 문법이 있다. 낮은 이음부의 꽃은 이동이다. 아래로 난 석회 손가락은 배수다. 볼트 주변의 고리는 금속이 압력 속에서 숨 쉰 흔적이다. 새 기름 아래 가루가 있으면 물이 먼저 있었다. 한쪽만 깨진 껍질은 패널이 휘었다는 뜻이다.\n\n회수 대원은 이런 증거를 존중하는 법을 빠르게 배운다. 소금은 먼저 잠기는 복도, 믿을 수 없는 해치, 염수를 숨긴 동굴 주머니, 그리고 긴 방치를 \"단일 파열\"로 줄인 보고서를 보여준다.",
-          "field_note": "읽기 전에 소금을 닦지 마라. 첫 닦음이 조수 계수를 지운다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן זיכרון משקעי מלח ומינרלים",
-          "scanner": "משקע מינרלי // פריחת מלח לבנה על שפת תפר, טפטוף סידן מתחת לבורג ישן, טבעת ירוקה-אפורה סביב כתם לחץ. לא קצף ולא שלג. המים עברו, עצרו, נשמו והשאירו מינרלים.",
-          "terminal": "קריאת מלח // מלח יבש על חלודה הוא כשל רטוב ישן. מלח מתחת לנזילה שחורה חדשה אומר שהאטם דלף מאוחר יותר. אצבעות סידן מטה הן ניקוז בלחץ נמוך. טבעות סביב בורג הן מחזורי לחץ.",
-          "audio": "מלח הוא קבלה. האוקיינוס חותם לאט, אבל חותם על הכול.",
-          "in_game_wiki": "משקעי מלח ומינרלים הם כתב היד השקט של HECTON-8. סדק נקי יכול לשקר. לוח מלוטש יכול לשקר. שפה מינרלית משקרת פחות, כי היא שומרת תנועה של מים, ייבוש, נשימת לחץ וכימיה בשכבות נפרדות.\n\nפריחה לבנה על תפר אומרת שמים נדדו והשאירו מטען. טפטוף סידן מתחת לבורג אומר ניקוז איטי, לרוב אחרי שהפסיקו לנקות את החדר. טבעות ירוקות-אפורות הן גבול רטוב חוזר, לא התזה אחת. אבקה בחריץ אטם אומרת מחזורים רבים של אוויר או תמלחת.\n\nלמראודר זה לא לכלוך. זה זיכרון מים. הוא מסמן חלחול נסתר, פתח חלש, כיס מערה שמתייבש בשינוי לחץ, או תא שלכאורה נאטם אבל המשיך לנשום אחרי הכיבוי.",
-          "external_site": "מאמר שטח על פריחת מלח, טפטופי סידן וטבעות מינרליות כזיכרון מים.",
-          "external_site_article": "המושבה ניסתה לשמור משטחים נקיים כי ניקיון נראה כמו שליטה. המלח סירב לשקר הזה. הוא חזר אחרי ניגוב, זחל מתחת לשפתי אטם, נאסף בכיסי ברגים וצייר גבולות חיוורים במקום שבו מים עמדו זמן רב מדי.\n\nלמשקע מינרלי יש דקדוק. פריחה על תפר תחתון היא נדידה. אצבעות סידן מטה הן ניקוז. טבעת סביב בורג היא מתכת שנשמה בלחץ. אבקה מתחת לשמן חדש אומרת שהמים היו קודם. קליפה שבורה מצד אחד אומרת שהלוח התכופף.\n\nצוות חילוץ לומד לכבד ראיות כאלה. מלח מראה איזה מסדרון מוצף ראשון, איזה פתח משקר, איזה כיס מערה מחביא תמלחת ואיזה דוח הפך שבועות של הזנחה ל\"פריצה יחידה\".",
-          "field_note": "אל תמחק את המלח לפני הקריאה. הניגוב הראשון מוחק את ספירת הגאות."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Memória de Depósitos de Sal e Minerais",
-          "scanner": "DEPÓSITO MINERAL // Flor branca de sal no lábio da junta, gotejo de cálcio sob parafuso velho, anel verde-cinza ao redor de mancha de pressão. Não é espuma. Não é neve. A água passou, parou, respirou e deixou minerais.",
-          "terminal": "LEITURA DO SAL // Sal seco sobre ferrugem: falha úmida antiga. Sal sob escorrimento preto novo: vedação vazou depois. Dedos de cálcio para baixo: drenagem de baixa pressão. Anéis no parafuso: ciclos de pressão.",
-          "audio": "Sal é recibo. O oceano assina devagar, mas assina tudo.",
-          "in_game_wiki": "Depósitos de sal e minerais são a caligrafia silenciosa de HECTON-8. Uma rachadura limpa pode mentir. Um painel polido também. Uma borda mineral mente pior, porque registra movimento de água, secagem, respiração de pressão e química em camadas separadas.\n\nFlor branca numa emenda significa migração. Gotejo de cálcio sob parafuso significa drenagem lenta, muitas vezes depois que a sala deixou de ser limpa. Anéis verde-cinza mostram borda molhada repetida, não respingo único. Pó no canal da gaxeta significa muitos ciclos de ar ou salmoura.\n\nPara um saqueador, isso não é sujeira. É memória da água. Marca infiltração escondida, escotilha fraca, bolsa de caverna que seca com pressão ou compartimento supostamente selado que continuou respirando após o desligamento.",
-          "external_site": "Artigo de campo sobre flor de sal, gotejo de cálcio e anéis minerais como memória da água.",
-          "external_site_article": "A colônia limpava superfícies porque limpeza parecia controle. O sal recusava essa mentira. Voltava depois do pano, saía sob gaxetas, juntava em bolsos de parafuso e desenhava bordas pálidas onde a água esperou tempo demais.\n\nUm depósito mineral tem gramática. Flor em emenda baixa: migração. Dedos de cálcio para baixo: drenagem. Anel no parafuso: metal respirando sob pressão. Pó sob óleo novo: a água chegou primeiro. Crosta quebrada só de um lado: flexão de painel.\n\nUma equipe de resgate aprende a respeitar esse tipo de prova. Sal mostra qual corredor alaga primeiro, qual escotilha mente, qual bolsa de caverna guarda salmoura e qual relatório transformou semanas de negligência em uma só ruptura.",
-          "field_note": "Não limpe o sal antes de ler. O primeiro pano apaga a contagem da maré."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Geheugenlog van zout- en mineraalafzetting",
-          "scanner": "MINERAALAFZETTING // Witte zoutbloei op naadrand, kalkdruip onder oude bout, groengrijze ring rond drukvlek. Geen schuim. Geen sneeuw. Water kwam hier langs, stopte, ademde en liet mineralen achter.",
-          "terminal": "ZOUT LEZEN // Droog zout op roest: oude natte fout. Zout onder verse zwarte afvoer: latere lekkende pakking. Kalkvingers omlaag: lagedrukdrainage. Ringen rond bout: drukcycli.",
-          "audio": "Zout is een bon. De oceaan tekent traag, maar tekent alles.",
-          "in_game_wiki": "Zout- en mineraalafzettingen zijn het stille handschrift van HECTON-8. Een schone scheur kan liegen. Een gepolijst paneel ook. Een mineraalrand liegt slechter, omdat hij waterbeweging, droging, drukademhaling en chemie in lagen bewaart.\n\nWitte bloei op een naad betekent migratie. Kalkdruip onder een bout betekent langzame drainage, vaak nadat niemand nog schoonmaakte. Groengrijze ringen tonen een herhaalde natte rand, geen enkele spetter. Poeder in een pakkinggroef betekent veel cycli lucht of pekel.\n\nVoor een marauder is dit geen vuil. Het is watergeheugen. Het markeert verborgen sijpeling, zwakke luiken, grotzakken die drogen bij drukwissel, of zogenaamd gesloten kamers die na uitschakeling bleven ademen.",
-          "external_site": "Veldartikel over zoutbloei, kalkdruip en mineraalringen als watergeheugen.",
-          "external_site_article": "De kolonie hield oppervlakken schoon omdat schoon op controle leek. Zout weigerde die leugen. Het keerde terug na vegen, kroop onder pakkingen, verzamelde in schroefzakken en trok bleke grenzen waar water te lang had gestaan.\n\nEen mineraalafzetting heeft grammatica. Bloei op lage naad betekent migratie. Kalkvingers omlaag betekenen drainage. Ring rond bout betekent metaal dat onder druk ademde. Poeder onder verse olie betekent dat water eerst kwam. Korst slechts aan één kant gebroken wijst op buiging.\n\nEen bergingsploeg leert dit bewijs respecteren. Zout toont welke gang eerst overstroomt, welk luik liegt, welke grot pekel bewaart en welk rapport weken verwaarlozing tot één breuk maakte.",
-          "field_note": "Veeg zout niet weg voor je het leest. De eerste veeg wist de getijdetelling."
-        }
-      }
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.salt_mineral_deposit_ledger",
+    "secondary": [
+     "unlock.first_salt_bloom_scan",
+     "unlock.first_calcium_drip_read",
+     "unlock.first_pressure_breathing_ring"
+    ],
+    "poi_tags": [
+     "poi.salt_mineral_deposit",
+     "poi.calcium_drip_seam",
+     "poi.pressure_breathing_ring",
+     "poi.gasket_salt_powder"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.limestone_caves",
+     "biome.pressure_route"
+    ]
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Mineral Deposit Scanner",
+     "terminal": "Old Colony Salt Trace Readout",
+     "audio": "Marauder Water Memory Instructor",
+     "in_game_wiki": "PDA Mineral Deposit Field Guide",
+     "external_site": "Public Site Salt Memory Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_salt_bloom_or_pressure_breathing_ring",
+    "truth_payload": "Salt and mineral deposits record water migration, pressure breathing, hidden seepage and old wet failure.",
+    "player_question": "Which surface kept counting tides after the room was supposed to be dry?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Salt Mineral Deposit Memory Ledger",
+     "scanner": "MINERAL DEPOSIT // White salt bloom on seam lip, calcium drip below old bolt, green-gray ring around a pressure stain. Not foam. Not snow. The water moved through here, stopped, breathed, and left its minerals behind.",
+     "terminal": "SALT READING // Dry salt on top of rust means old wet failure. Salt under fresh black runoff means the seal leaked later. Calcium fingers that grow downward mark gravity during low-pressure drainage; rings around a bolt mark pressure cycling.",
+     "audio": "Salt is a receipt. The ocean signs slowly, but it signs everything.",
+     "in_game_wiki": "Salt and mineral deposits are the quiet handwriting of HECTON-8. A clean crack can lie. A polished panel can lie. A mineral edge is harder to fake, because it records motion, drying, pressure breathing and chemistry in separate layers.\n\nWhite bloom on a seam means water migrated and left its load behind. Calcium drips below a bolt mean slow drainage under gravity, usually after a room stopped being scrubbed. Green-gray rings around a stain mean a repeated wet edge, not one splash. Powder in a gasket groove means the seal moved air or brine through many cycles. If new black runoff crosses the salt, the machine leaked after the mineral crust was already old.\n\nFor a Marauder, deposits are not dirt. They are water memory. They can mark a hidden seep, a weak hatch, a cave route that dries during pressure swings, or a supposedly sealed compartment that kept breathing after shutdown. The best deposits do not shout. They wait for someone to notice that the wall has been counting tides without a clock.",
+     "external_site": "Salt bloom, calcium drips and mineral rings preserve water-memory evidence in old colony rooms, caves and hull seams.",
+     "external_site_article": "The colony tried to keep surfaces clean because clean surfaces looked controlled. Salt refused that lie. It came back after wiping, returned under gasket lips, gathered in screw pockets, and drew pale borders where water had stood long enough to become a record.\n\nA mineral deposit has grammar. Bloom along a lower seam says migration. Downward calcium fingers say drainage. A ring around a bolt says the metal breathed under pressure. Powder trapped under newer oil says the water was there first. Crust broken only on one side says a panel flexed, not that somebody kicked it.\n\nThis is the kind of evidence a salvage crew learns to respect. Salt can show which corridor floods first, which hatch should not be trusted, which cave pocket hides brine, and which official “single breach” was really a long conversation between pressure, metal and neglect.",
+     "field_note": "Do not clean the salt before you read it. The first swipe erases the tide count."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал памяти солевых и минеральных отложений",
+     "scanner": "МИНЕРАЛЬНЫЙ СЛЕД // Белая соль на губе шва, кальциевый потек под старым болтом, зелено-серое кольцо вокруг пятна давления. Это не пена и не снег. Вода шла здесь, останавливалась, дышала и оставила минералы.",
+     "terminal": "ЧТЕНИЕ СОЛИ // Сухая соль поверх ржавчины - старый мокрый отказ. Соль под свежим черным стоком - уплотнение потекло позже. Кальциевые пальцы вниз показывают слив при малом давлении; кольца вокруг болта - циклы давления.",
+     "audio": "Соль - квитанция. Океан подписывает медленно, но подписывает все.",
+     "in_game_wiki": "Солевые и минеральные отложения - тихий почерк HECTON-8. Чистая трещина может врать. Полированная панель может врать. Минеральный край подделать сложнее: он пишет движение воды, высыхание, дыхание давления и химию разными слоями.\n\nБелый налет на шве значит, что вода мигрировала и оставила груз. Кальциевые потеки под болтом говорят о медленном сливе, обычно уже после того, как комнату перестали протирать. Зелено-серые кольца вокруг пятна - повторяющийся мокрый край, а не один всплеск. Порошок в пазу прокладки значит, что уплотнение много циклов гоняло воздух или рассол. Свежий черный сток поверх соли значит, что машина потекла позже старой корки.\n\nДля мародера такие отложения не грязь. Это память воды. Они отмечают скрытый просачивающийся шов, слабый люк, cave-карман с рассолом или отсек, который должен быть герметичным, но продолжал дышать после отключения. Хороший след не кричит. Он ждет, пока кто-то заметит: стена считала приливы без часов.",
+     "external_site": "Полевая статья о солевом налете, кальциевых потеках и минеральных кольцах как доказательстве водной памяти в старых отсеках, пещерах и швах корпуса.",
+     "external_site_article": "Колония пыталась держать поверхности чистыми, потому что чистота выглядела как контроль. Соль эту ложь не принимала. Она возвращалась после протирки, выползала под губами прокладок, собиралась в карманах винтов и рисовала бледные границы там, где вода стояла достаточно долго, чтобы стать записью.\n\nУ минерального следа есть грамматика. Налет вдоль нижнего шва говорит о миграции. Кальциевые пальцы вниз - о сливе. Кольцо вокруг болта - о металле, который дышал давлением. Порошок под новым маслом значит, что вода была раньше. Корка, сломанная только с одной стороны, говорит о прогибе панели, а не о случайном ударе.\n\nТакому доказательству экипаж добытчиков быстро учится верить. Соль показывает, какой коридор топит первым, какому люку нельзя доверять, где в пещерном кармане сидит рассол и какой официальный \"одиночный прорыв\" на самом деле был долгим разговором давления, металла и запущенности.",
+     "field_note": "Не стирай соль до чтения. Первый взмах забирает счет приливов."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "塩分・鉱物沈着記憶台帳",
+     "scanner": "鉱物沈着 // 継ぎ目の縁に白い塩、古いボルト下に石灰の垂れ、圧力染みの周囲に緑灰色の輪。泡でも雪でもない。水はここを通り、止まり、呼吸し、鉱物を残した。",
+     "terminal": "塩の読み方 // 錆の上の乾いた塩は古い湿潤故障。新しい黒い流れの下の塩は、その後に封止が漏れた証拠。下向きの石灰指は低圧排水、ボルト周囲の輪は圧力周期を示す。",
+     "audio": "塩は領収書だ。海は遅く署名するが、すべてに署名する。",
+     "in_game_wiki": "塩分と鉱物の沈着は、HECTON-8の静かな筆跡だ。きれいな亀裂は嘘をつける。磨かれたパネルも嘘をつける。だが鉱物の縁は偽りにくい。水の移動、乾燥、圧力の呼吸、化学反応を別々の層で残すからだ。\n\n継ぎ目の白い花は水が移動し、荷を置いていった印だ。ボルト下の石灰垂れは遅い排水を示す。緑灰色の輪は一度の飛沫ではなく、何度も戻った湿った境界だ。ガスケット溝の粉は、空気か濃塩水が何周期も通った証拠になる。新しい黒い流れが塩を横切るなら、機械漏れは鉱物殻より後だ。\n\nマローダーにとって、沈着は汚れではない。水の記憶だ。隠れた浸み、弱いハッチ、圧力変動で乾く洞窟ポケット、停止後も呼吸していた密閉区画を示す。良い沈着は叫ばない。時計なしで潮を数えていた壁に気づく者を待つ。",
+     "external_site": "塩の花、石灰垂れ、鉱物輪を、水の記憶として読むための現場記事。",
+     "external_site_article": "植民地は表面をきれいに保とうとした。きれいなら制御されているように見えるからだ。塩はその嘘を拒んだ。拭き取っても戻り、ガスケットの唇から出て、ねじのくぼみに集まり、水が記録になるまで留まった境界を淡く描いた。\n\n鉱物沈着には文法がある。下側の継ぎ目に沿う花は移動を示す。下向きの石灰指は排水を示す。ボルト周囲の輪は金属が圧力で呼吸した印だ。新しい油の下に粉があれば、水が先にいた。片側だけ割れた殻は蹴られたのでなく、パネルがたわんだ証拠かもしれない。\n\n回収班はこういう証拠を尊重する。塩は最初に沈む廊下、信用できないハッチ、濃塩水を隠す洞窟ポケット、そして公式報告の「単一破口」が実は圧力と金属と放置の長い会話だったことを示す。",
+     "field_note": "読む前に塩を拭くな。最初の一拭きで潮の数が消える。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "盐与矿物沉积记忆账",
+     "scanner": "矿物沉积 // 接缝边缘有白色盐花，旧螺栓下有钙质滴痕，压力污迹周围有绿灰色环。不是泡沫，不是雪。水从这里走过、停下、呼吸，把矿物留下。",
+     "terminal": "读盐 // 锈上干盐表示老湿故障。新黑色流痕下有盐，说明密封后来才漏。向下的钙质指痕表示低压排水；螺栓周围的环表示压力循环。",
+     "audio": "盐是收据。海洋签得很慢，但它给一切签名。",
+     "in_game_wiki": "盐与矿物沉积是HECTON-8安静的笔迹。干净裂缝会撒谎，抛光面板也会撒谎。矿物边缘更难伪造，因为它把水的移动、干燥、压力呼吸和化学反应分成不同层。\n\n接缝上的白花说明水迁移并留下负载。螺栓下的钙质滴痕说明缓慢排水，通常发生在房间不再被擦洗之后。污迹周围的绿灰色环说明反复湿边，而不是一次飞溅。垫圈槽里的粉末说明空气或盐水经过了许多压力循环。新黑色流痕越过盐壳，机器泄漏就晚于矿物外壳。\n\n对拾荒者来说，沉积不是脏东西，而是水的记忆。它能标出隐藏渗流、脆弱舱门、压力摆动时会变干的洞穴口袋，或一个停机后仍在呼吸的所谓密封隔间。好的沉积不会大喊。它等人发现：这面墙没有时钟，也一直在数潮。",
+     "external_site": "关于盐花、钙质滴痕和矿物环的现场文章：它们是旧殖民地房间、洞穴和船壳接缝中的水记忆证据。",
+     "external_site_article": "殖民地曾努力保持表面清洁，因为清洁看起来像控制。盐拒绝这个谎言。擦掉后它会回来，从垫圈边缘爬出，聚在螺丝口袋里，在水停留足够久的地方画出苍白边界。\n\n矿物沉积有语法。下接缝上的盐花说明迁移。向下的钙质指痕说明排水。螺栓周围的环说明金属在压力下呼吸。新油下的粉末说明水先到。只在一侧破裂的盐壳说明面板弯曲，而不一定是被踢坏。\n\n打捞队会很快学会尊重这种证据。盐会指出哪条走廊先淹、哪扇舱门不能信、哪个洞穴口袋藏着盐水，以及哪份“单次破裂”报告其实掩盖了一场压力、金属与疏忽之间的长谈。",
+     "field_note": "读完之前别擦盐。第一下擦拭会抹掉潮汐计数。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre de mémoire des dépôts salins et minéraux",
+     "scanner": "DÉPÔT MINÉRAL // Sel blanc sur lèvre de joint, coulée calcaire sous vieux boulon, anneau vert-gris autour d'une tache de pression. Ce n'est ni mousse ni neige. L'eau est passée, s'est arrêtée, a respiré, puis a laissé ses minéraux.",
+     "terminal": "LECTURE DU SEL // Sel sec sur rouille : vieille panne humide. Sel sous coulure noire fraîche : fuite de joint plus tardive. Doigts calcaires vers le bas : drainage basse pression. Anneaux autour d'un boulon : cycles de pression.",
+     "audio": "Le sel est un reçu. L'océan signe lentement, mais il signe tout.",
+     "in_game_wiki": "Les dépôts de sel et de minéraux sont l'écriture discrète de HECTON-8. Une fissure propre peut mentir. Un panneau poli peut mentir. Un bord minéral ment plus difficilement : il garde séparés le mouvement de l'eau, le séchage, la respiration de pression et la chimie.\n\nUne fleur blanche sur une couture signifie que l'eau a migré et laissé sa charge. Les coulées calcaires sous un boulon parlent d'un drainage lent, souvent après l'arrêt du nettoyage. Les anneaux vert-gris signalent un bord humide répété, pas une éclaboussure unique. La poudre dans une gorge de joint indique de nombreux cycles d'air ou de saumure.\n\nPour un maraudeur, ce n'est pas de la saleté. C'est une mémoire d'eau. Elle marque un suintement caché, une trappe faible, une poche de grotte qui sèche avec la pression, ou un compartiment censé être scellé qui respirait encore après l'arrêt.",
+     "external_site": "Article de terrain sur fleurs de sel, coulées calcaires et anneaux minéraux comme mémoire de l'eau.",
+     "external_site_article": "La colonie nettoyait les surfaces parce que le propre ressemblait au contrôle. Le sel refusait ce mensonge. Il revenait après l'essuyage, rampait sous les lèvres de joint, se déposait dans les vis, dessinait des frontières pâles là où l'eau avait attendu assez longtemps.\n\nUn dépôt minéral a une grammaire. Fleur sur couture basse : migration. Doigts calcaires vers le bas : drainage. Anneau autour d'un boulon : métal respirant sous pression. Poudre sous huile récente : l'eau était là d'abord. Croûte cassée d'un seul côté : flexion du panneau, pas forcément choc.\n\nUne équipe de récupération apprend vite à respecter ces preuves. Le sel montre quel couloir noie en premier, quelle trappe ment, quelle poche de grotte cache de la saumure et quel rapport officiel a réduit une longue négligence à une seule rupture.",
+     "field_note": "Ne nettoie pas le sel avant de le lire. Le premier geste efface le compte des marées."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de memoria de depósitos salinos y minerales",
+     "scanner": "DEPÓSITO MINERAL // Flor blanca de sal en borde de junta, goteo calcáreo bajo perno viejo, anillo verde gris alrededor de mancha de presión. No es espuma ni nieve. El agua pasó, se detuvo, respiró y dejó minerales.",
+     "terminal": "LECTURA DE SAL // Sal seca sobre óxido: fallo húmedo antiguo. Sal bajo escorrentía negra fresca: la junta fugó después. Dedos calcáreos hacia abajo: drenaje de baja presión. Anillos en pernos: ciclos de presión.",
+     "audio": "La sal es un recibo. El océano firma lento, pero firma todo.",
+     "in_game_wiki": "Los depósitos de sal y minerales son la letra silenciosa de HECTON-8. Una grieta limpia puede mentir. Un panel pulido puede mentir. Un borde mineral miente peor: separa movimiento de agua, secado, respiración de presión y química.\n\nFlor blanca en una costura significa migración. Goteos calcáreos bajo un perno significan drenaje lento, a menudo después de que dejaron de limpiar la sala. Anillos verde gris señalan borde húmedo repetido, no una salpicadura. Polvo en una ranura de junta indica muchos ciclos de aire o salmuera.\n\nPara un saqueador, eso no es suciedad. Es memoria de agua. Puede marcar filtración oculta, compuerta débil, bolsillo de cueva que seca con la presión o compartimento supuestamente sellado que siguió respirando tras el apagado.",
+     "external_site": "Artículo de campo sobre sal, calcio y anillos minerales como memoria del agua en ruinas, cuevas y juntas.",
+     "external_site_article": "La colonia limpiaba superficies porque lo limpio parecía control. La sal rechazó esa mentira. Volvía después del paño, salía bajo juntas, se reunía en huecos de tornillo y dibujaba fronteras pálidas donde el agua había esperado demasiado.\n\nUn depósito mineral tiene gramática. Flor en costura baja: migración. Dedos calcáreos hacia abajo: drenaje. Anillo alrededor de perno: metal respirando presión. Polvo bajo aceite nuevo: el agua estuvo primero. Costra rota sólo a un lado: flexión de panel, no simple golpe.\n\nUna tripulación de rescate aprende a respetarlo. La sal muestra qué pasillo se inunda primero, qué escotilla no merece confianza, qué bolsillo guarda salmuera y qué informe de \"rotura única\" escondió semanas de presión, metal y abandono.",
+     "field_note": "No limpies la sal antes de leerla. El primer paño borra el conteo de mareas."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Gedächtnisprotokoll für Salz- und Mineralablagerungen",
+     "scanner": "MINERALABLAGERUNG // Weißes Salz an Nahtlippe, Kalklauf unter altem Bolzen, grüngrauer Ring um Druckfleck. Kein Schaum. Kein Schnee. Wasser ging hier durch, hielt an, atmete und ließ Mineralien zurück.",
+     "terminal": "SALZ LESEN // Trockenes Salz über Rost: alter nasser Fehler. Salz unter frischer schwarzer Spur: Dichtung leckte später. Kalkfinger nach unten: Niederdruckdrainage. Ringe um Bolzen: Druckzyklen.",
+     "audio": "Salz ist eine Quittung. Der Ozean unterschreibt langsam, aber er unterschreibt alles.",
+     "in_game_wiki": "Salz- und Mineralablagerungen sind die leise Handschrift von HECTON-8. Ein sauberer Riss kann lügen. Ein poliertes Paneel kann lügen. Eine Mineralkante lügt schlechter, weil sie Wasserbewegung, Trocknung, Druckatmung und Chemie getrennt aufzeichnet.\n\nWeißer Belag an einer Naht bedeutet Wanderung. Kalkläufe unter einem Bolzen bedeuten langsame Entwässerung, meist nachdem niemand mehr wischte. Grüngraue Ringe zeigen wiederkehrende Feuchte, keinen einzelnen Spritzer. Pulver in einer Dichtungsnut bedeutet viele Zyklen Luft oder Sole.\n\nFür einen Marauder ist das kein Schmutz. Es ist Wassergedächtnis. Es markiert versteckte Lecks, schwache Luken, Höhlentaschen, die mit Druckschwankungen trocknen, oder angeblich versiegelte Räume, die nach Abschaltung weiter atmeten.",
+     "external_site": "Feldartikel über Salzblüten, Kalkläufe und Mineralringe als Wassergedächtnis.",
+     "external_site_article": "Die Kolonie hielt Flächen sauber, weil Sauberkeit wie Kontrolle aussah. Salz verweigerte diese Lüge. Es kam nach dem Wischen zurück, kroch unter Dichtungslippen, sammelte sich in Schraubentaschen und zeichnete blasse Grenzen dort, wo Wasser lange genug stand.\n\nEine Mineralspur hat Grammatik. Belag an tiefer Naht heißt Migration. Kalkfinger nach unten heißt Drainage. Ring um Bolzen heißt Druckatmung. Pulver unter frischem Öl heißt: Wasser war zuerst da. Einseitig gebrochene Kruste zeigt Paneelbiegung, nicht nur Tritt.\n\nBergungsteams lernen solche Beweise zu achten. Salz zeigt, welcher Gang zuerst flutet, welcher Luke man nicht traut, welche Höhle Sole versteckt und welcher Bericht aus langer Vernachlässigung einen einzelnen Bruch machte.",
+     "field_note": "Wisch das Salz nicht weg, bevor du es liest. Der erste Lappen löscht den Tidezähler."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr pamięci osadów soli i minerałów",
+     "scanner": "OSAD MINERALNY // Biała sól na krawędzi szwu, wapienny zaciek pod starym boltem, zielonoszary pierścień wokół plamy ciśnienia. To nie piana ani śnieg. Woda przeszła, stanęła, oddychała i zostawiła minerały.",
+     "terminal": "CZYTANIE SOLI // Sucha sól na rdzy: stara mokra awaria. Sól pod świeżym czarnym spływem: późniejszy wyciek uszczelki. Wapienne palce w dół: drenaż niskiego ciśnienia. Pierścienie wokół bolta: cykle ciśnienia.",
+     "audio": "Sól jest pokwitowaniem. Ocean podpisuje powoli, ale podpisuje wszystko.",
+     "in_game_wiki": "Osady soli i minerałów to ciche pismo HECTON-8. Czyste pęknięcie potrafi kłamać. Wypolerowany panel też. Krawędź mineralna kłamie gorzej, bo osobno zapisuje ruch wody, schnięcie, oddychanie ciśnienia i chemię.\n\nBiały nalot na szwie oznacza migrację. Wapienne zacieki pod boltem mówią o powolnym drenażu, często po końcu sprzątania. Zielonoszare pierścienie wskazują powracającą mokrą granicę, nie pojedynczy rozbryzg. Proszek w rowku uszczelki znaczy wiele cykli powietrza lub solanki.\n\nDla maraudera to nie brud, tylko pamięć wody. Zaznacza ukryty przeciek, słaby właz, kieszeń jaskini wysychającą przy zmianach ciśnienia albo rzekomo szczelny przedział, który oddychał po wyłączeniu.",
+     "external_site": "Artykuł terenowy o soli, wapniu i pierścieniach mineralnych jako pamięci wody.",
+     "external_site_article": "Kolonia czyściła powierzchnie, bo czystość wyglądała jak kontrola. Sól odrzucała to kłamstwo. Wracała po przetarciu, wychodziła spod uszczelek, siadała w gniazdach śrub i rysowała blade granice tam, gdzie woda czekała zbyt długo.\n\nOsad mineralny ma gramatykę. Nalot na dolnym szwie to migracja. Wapienne palce w dół to drenaż. Pierścień wokół bolta to oddychanie metalu pod ciśnieniem. Proszek pod nowym olejem mówi, że woda była pierwsza. Skorupa pęknięta z jednej strony oznacza ugięcie panelu.\n\nZałoga wydobywcza szybko uczy się szanować taki dowód. Sól pokazuje pierwszy zalewany korytarz, fałszywy właz, solankową kieszeń w jaskini i raport, który tygodnie zaniedbań nazwał jednym pęknięciem.",
+     "field_note": "Nie ścieraj soli przed czytaniem. Pierwsze przetarcie kasuje licznik pływów."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал пам'яті соляних і мінеральних відкладів",
+     "scanner": "МІНЕРАЛЬНИЙ СЛІД // Біла сіль на губі шва, кальцієвий потік під старим болтом, зелено-сіре кільце навколо плями тиску. Це не піна й не сніг. Вода пройшла, зупинилась, дихала й лишила мінерали.",
+     "terminal": "ЧИТАННЯ СОЛІ // Суха сіль поверх іржі - стара мокра відмова. Сіль під свіжим чорним стоком - ущільнення потекло пізніше. Кальцієві пальці вниз - дренаж малого тиску. Кільця біля болта - цикли тиску.",
+     "audio": "Сіль - квитанція. Океан підписує повільно, але підписує все.",
+     "in_game_wiki": "Соляні й мінеральні відклади - тихий почерк HECTON-8. Чиста тріщина може брехати. Полірована панель теж. Мінеральний край бреше гірше, бо окремо пише рух води, висихання, дихання тиску й хімію.\n\nБілий наліт на шві означає міграцію води. Кальцієві потоки під болтом говорять про повільний дренаж, часто після кінця прибирання. Зелено-сірі кільця - повторюваний мокрий край, не один сплеск. Порошок у пазі прокладки означає багато циклів повітря або розсолу.\n\nДля мародера це не бруд, а пам'ять води. Вона позначає приховане просочування, слабкий люк, печерну кишеню, що висихає під тиском, або начебто герметичний відсік, який дихав після вимкнення.",
+     "external_site": "Польова стаття про соляний наліт, кальцієві потоки й мінеральні кільця як пам'ять води.",
+     "external_site_article": "Колонія чистила поверхні, бо чистота виглядала як контроль. Сіль цю брехню не приймала. Вона верталася після протирання, виходила з-під прокладок, збиралася в гніздах гвинтів і малювала бліді межі там, де вода стояла задовго.\n\nУ мінерального сліду є граматика. Наліт на нижньому шві - міграція. Кальцієві пальці вниз - дренаж. Кільце біля болта - метал дихав тиском. Порошок під новою олією означає, що вода була першою. Корка, зламана з одного боку, говорить про згин панелі.\n\nВидобувна команда швидко вчиться поважати такі докази. Сіль показує перший затоплений коридор, люк, якому не можна вірити, розсільну кишеню в печері й звіт, що назвав довгу занедбаність одним проривом.",
+     "field_note": "Не стирай сіль до читання. Перший рух стирає рахунок припливів."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل ذاكرة ترسبات الملح والمعادن",
+     "scanner": "ترسب معدني // زهرة ملح بيضاء على حافة وصلة، قطرة كلس تحت برغي قديم، حلقة خضراء رمادية حول بقعة ضغط. ليس رغوة ولا ثلجا. الماء مر هنا، توقف، تنفس، وترك معادنه.",
+     "terminal": "قراءة الملح // ملح جاف فوق الصدأ يعني عطلا رطبا قديما. ملح تحت سيلان أسود جديد يعني أن الختم سرّب لاحقا. أصابع الكلس إلى الأسفل تعني تصريفا بضغط منخفض. حلقات البرغي تعني دورات ضغط.",
+     "audio": "الملح إيصال. المحيط يوقع ببطء، لكنه يوقع على كل شيء.",
+     "in_game_wiki": "ترسبات الملح والمعادن هي خط HECTON-8 الهادئ. الشق النظيف قد يكذب. اللوح المصقول قد يكذب. حافة المعدن أصعب كذبا لأنها تسجل حركة الماء والجفاف وتنفس الضغط والكيمياء في طبقات منفصلة.\n\nالزهرة البيضاء على الوصلة تعني أن الماء هاجر وترك حمله. القطرات الكلسية تحت البرغي تعني تصريفا بطيئا، غالبا بعد توقف التنظيف. الحلقة الخضراء الرمادية تعني حافة رطبة عادت مرارا، لا رشة واحدة. المسحوق في مجرى الحشية يعني دورات كثيرة من هواء أو محلول ملحي.\n\nبالنسبة إلى المغير، هذا ليس وسخا. إنه ذاكرة الماء. يحدد رشحا مخفيا، فتحة ضعيفة، جيب كهف يجف مع تبدل الضغط، أو مقصورة قيل إنها مختومة لكنها ظلت تتنفس بعد الإغلاق.",
+     "external_site": "مقال ميداني عن أزهار الملح وقطرات الكلس والحلقات المعدنية كذاكرة للماء.",
+     "external_site_article": "حاولت المستعمرة إبقاء السطوح نظيفة لأن النظافة تشبه السيطرة. الملح رفض تلك الكذبة. عاد بعد المسح، زحف من تحت الحشيات، تجمع في جيوب البراغي، ورسم حدودا شاحبة حيث انتظر الماء طويلا.\n\nللترسب المعدني نحو. الزهرة على الوصلة السفلى تعني هجرة. الأصابع الكلسية إلى الأسفل تعني تصريفا. الحلقة حول البرغي تعني أن المعدن تنفس تحت الضغط. مسحوق تحت زيت جديد يعني أن الماء سبق الزيت. قشرة مكسورة من جهة واحدة تعني انحناء اللوح.\n\nيتعلم طاقم الانتشال احترام هذا الدليل. الملح يريهم أي ممر يغرق أولا، وأي فتحة تكذب، وأي جيب كهفي يخفي محلولا ملحيا، وأي تقرير حول أسابيع الإهمال إلى كلمة: خرق واحد.",
+     "field_note": "لا تمسح الملح قبل قراءته. أول مسحة تمحو عدّ المد."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Log Memori Endapan Garam dan Mineral",
+     "scanner": "ENDAPAN MINERAL // Mekar garam putih di bibir sambungan, tetes kalsium di bawah baut tua, cincin hijau-abu di sekitar noda tekanan. Bukan busa. Bukan salju. Air lewat, berhenti, bernapas, lalu meninggalkan mineral.",
+     "terminal": "MEMBACA GARAM // Garam kering di atas karat berarti kegagalan basah lama. Garam di bawah aliran hitam baru berarti seal bocor belakangan. Jari kalsium ke bawah berarti drainase tekanan rendah. Cincin baut berarti siklus tekanan.",
+     "audio": "Garam adalah kuitansi. Laut menandatangani pelan, tapi menandatangani semuanya.",
+     "in_game_wiki": "Endapan garam dan mineral adalah tulisan sunyi HECTON-8. Retak bersih bisa berbohong. Panel mengilap bisa berbohong. Tepi mineral lebih sulit palsu karena mencatat gerak air, pengeringan, napas tekanan, dan kimia dalam lapisan terpisah.\n\nMekar putih pada sambungan berarti air bermigrasi dan meninggalkan muatan. Tetes kalsium di bawah baut berarti drainase lambat, biasanya setelah ruangan tak lagi dilap. Cincin hijau-abu berarti tepi basah berulang, bukan satu cipratan. Bubuk di alur gasket berarti banyak siklus udara atau brine.\n\nBagi perompak laut-dalam, endapan bukan kotoran. Itu memori air. Ia menandai rembesan tersembunyi, palka lemah, kantong gua yang mengering saat tekanan berubah, atau kompartemen yang katanya tertutup tetapi masih bernapas setelah mati daya.",
+     "external_site": "Artikel lapangan tentang mekar garam, tetes kalsium, dan cincin mineral sebagai memori air.",
+     "external_site_article": "Koloni menjaga permukaan tetap bersih karena bersih tampak seperti kendali. Garam menolak kebohongan itu. Ia kembali setelah dilap, keluar dari bibir gasket, berkumpul di kantong sekrup, dan menggambar batas pucat di tempat air menunggu terlalu lama.\n\nEndapan mineral punya tata bahasa. Mekar di sambungan bawah berarti migrasi. Jari kalsium ke bawah berarti drainase. Cincin di sekitar baut berarti logam bernapas dalam tekanan. Bubuk di bawah oli baru berarti air datang duluan. Kerak pecah di satu sisi berarti panel melentur.\n\nKru salvage cepat belajar menghormati bukti ini. Garam menunjukkan koridor yang banjir duluan, palka yang tak bisa dipercaya, kantong brine dalam gua, dan laporan yang mengubah minggu-minggu kelalaian menjadi satu kata: pecah.",
+     "field_note": "Jangan lap garam sebelum dibaca. Sapuan pertama menghapus hitungan pasang."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "염분 및 광물 침전 기억 장부",
+     "scanner": "광물 침전 // 이음부 가장자리의 흰 소금꽃, 오래된 볼트 아래 석회 방울, 압력 얼룩 주변의 녹회색 고리. 거품도 눈도 아니다. 물이 지나가고 멈추고 숨 쉬며 광물을 남겼다.",
+     "terminal": "소금 읽기 // 녹 위의 마른 소금은 오래된 습식 고장이다. 새 검은 유출 아래 소금은 밀봉이 나중에 샜다는 뜻이다. 아래로 난 석회 손가락은 저압 배수, 볼트 고리는 압력 주기를 뜻한다.",
+     "audio": "소금은 영수증이다. 바다는 천천히 서명하지만 모든 것에 서명한다.",
+     "in_game_wiki": "소금과 광물 침전은 HECTON-8의 조용한 필적이다. 깨끗한 균열은 거짓말할 수 있다. 닦인 패널도 그렇다. 광물 가장자리는 물의 이동, 건조, 압력 호흡, 화학을 층마다 따로 남기기 때문에 속이기 어렵다.\n\n이음부의 흰 꽃은 물이 이동하며 짐을 내려놓았다는 뜻이다. 볼트 아래 석회 방울은 느린 배수, 보통 청소가 멈춘 뒤의 배수를 말한다. 녹회색 고리는 한 번 튄 물이 아니라 반복된 젖은 경계다. 가스켓 홈의 가루는 공기나 염수가 많은 주기를 통과했다는 증거다.\n\n마라우더에게 침전은 먼지가 아니라 물의 기억이다. 숨은 스며듦, 약한 해치, 압력 변화 때 마르는 동굴 주머니, 정지 후에도 숨 쉬던 밀폐 구획을 표시한다. 좋은 침전은 소리치지 않는다. 시계 없이 조수를 세던 벽을 알아볼 사람을 기다린다.",
+     "external_site": "소금꽃, 석회 방울, 광물 고리를 물의 기억으로 읽는 현장 기사.",
+     "external_site_article": "식민지는 표면을 깨끗하게 유지하려 했다. 깨끗함은 통제처럼 보였기 때문이다. 소금은 그 거짓말을 거부했다. 닦아도 돌아왔고, 가스켓 입술 아래서 기어 나왔고, 나사 구멍에 모였고, 물이 오래 머문 곳에 창백한 경계를 그렸다.\n\n광물 침전에는 문법이 있다. 낮은 이음부의 꽃은 이동이다. 아래로 난 석회 손가락은 배수다. 볼트 주변의 고리는 금속이 압력 속에서 숨 쉰 흔적이다. 새 기름 아래 가루가 있으면 물이 먼저 있었다. 한쪽만 깨진 껍질은 패널이 휘었다는 뜻이다.\n\n회수 대원은 이런 증거를 존중하는 법을 빠르게 배운다. 소금은 먼저 잠기는 복도, 믿을 수 없는 해치, 염수를 숨긴 동굴 주머니, 그리고 긴 방치를 \"단일 파열\"로 줄인 보고서를 보여준다.",
+     "field_note": "읽기 전에 소금을 닦지 마라. 첫 닦음이 조수 계수를 지운다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן זיכרון משקעי מלח ומינרלים",
+     "scanner": "משקע מינרלי // פריחת מלח לבנה על שפת תפר, טפטוף סידן מתחת לבורג ישן, טבעת ירוקה-אפורה סביב כתם לחץ. לא קצף ולא שלג. המים עברו, עצרו, נשמו והשאירו מינרלים.",
+     "terminal": "קריאת מלח // מלח יבש על חלודה הוא כשל רטוב ישן. מלח מתחת לנזילה שחורה חדשה אומר שהאטם דלף מאוחר יותר. אצבעות סידן מטה הן ניקוז בלחץ נמוך. טבעות סביב בורג הן מחזורי לחץ.",
+     "audio": "מלח הוא קבלה. האוקיינוס חותם לאט, אבל חותם על הכול.",
+     "in_game_wiki": "משקעי מלח ומינרלים הם כתב היד השקט של HECTON-8. סדק נקי יכול לשקר. לוח מלוטש יכול לשקר. שפה מינרלית משקרת פחות, כי היא שומרת תנועה של מים, ייבוש, נשימת לחץ וכימיה בשכבות נפרדות.\n\nפריחה לבנה על תפר אומרת שמים נדדו והשאירו מטען. טפטוף סידן מתחת לבורג אומר ניקוז איטי, לרוב אחרי שהפסיקו לנקות את החדר. טבעות ירוקות-אפורות הן גבול רטוב חוזר, לא התזה אחת. אבקה בחריץ אטם אומרת מחזורים רבים של אוויר או תמלחת.\n\nלמראודר זה לא לכלוך. זה זיכרון מים. הוא מסמן חלחול נסתר, פתח חלש, כיס מערה שמתייבש בשינוי לחץ, או תא שלכאורה נאטם אבל המשיך לנשום אחרי הכיבוי.",
+     "external_site": "מאמר שטח על פריחת מלח, טפטופי סידן וטבעות מינרליות כזיכרון מים.",
+     "external_site_article": "המושבה ניסתה לשמור משטחים נקיים כי ניקיון נראה כמו שליטה. המלח סירב לשקר הזה. הוא חזר אחרי ניגוב, זחל מתחת לשפתי אטם, נאסף בכיסי ברגים וצייר גבולות חיוורים במקום שבו מים עמדו זמן רב מדי.\n\nלמשקע מינרלי יש דקדוק. פריחה על תפר תחתון היא נדידה. אצבעות סידן מטה הן ניקוז. טבעת סביב בורג היא מתכת שנשמה בלחץ. אבקה מתחת לשמן חדש אומרת שהמים היו קודם. קליפה שבורה מצד אחד אומרת שהלוח התכופף.\n\nצוות חילוץ לומד לכבד ראיות כאלה. מלח מראה איזה מסדרון מוצף ראשון, איזה פתח משקר, איזה כיס מערה מחביא תמלחת ואיזה דוח הפך שבועות של הזנחה ל\"פריצה יחידה\".",
+     "field_note": "אל תמחק את המלח לפני הקריאה. הניגוב הראשון מוחק את ספירת הגאות."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Memória de Depósitos de Sal e Minerais",
+     "scanner": "DEPÓSITO MINERAL // Flor branca de sal no lábio da junta, gotejo de cálcio sob parafuso velho, anel verde-cinza ao redor de mancha de pressão. Não é espuma. Não é neve. A água passou, parou, respirou e deixou minerais.",
+     "terminal": "LEITURA DO SAL // Sal seco sobre ferrugem: falha úmida antiga. Sal sob escorrimento preto novo: vedação vazou depois. Dedos de cálcio para baixo: drenagem de baixa pressão. Anéis no parafuso: ciclos de pressão.",
+     "audio": "Sal é recibo. O oceano assina devagar, mas assina tudo.",
+     "in_game_wiki": "Depósitos de sal e minerais são a caligrafia silenciosa de HECTON-8. Uma rachadura limpa pode mentir. Um painel polido também. Uma borda mineral mente pior, porque registra movimento de água, secagem, respiração de pressão e química em camadas separadas.\n\nFlor branca numa emenda significa migração. Gotejo de cálcio sob parafuso significa drenagem lenta, muitas vezes depois que a sala deixou de ser limpa. Anéis verde-cinza mostram borda molhada repetida, não respingo único. Pó no canal da gaxeta significa muitos ciclos de ar ou salmoura.\n\nPara um saqueador, isso não é sujeira. É memória da água. Marca infiltração escondida, escotilha fraca, bolsa de caverna que seca com pressão ou compartimento supostamente selado que continuou respirando após o desligamento.",
+     "external_site": "Artigo de campo sobre flor de sal, gotejo de cálcio e anéis minerais como memória da água.",
+     "external_site_article": "A colônia limpava superfícies porque limpeza parecia controle. O sal recusava essa mentira. Voltava depois do pano, saía sob gaxetas, juntava em bolsos de parafuso e desenhava bordas pálidas onde a água esperou tempo demais.\n\nUm depósito mineral tem gramática. Flor em emenda baixa: migração. Dedos de cálcio para baixo: drenagem. Anel no parafuso: metal respirando sob pressão. Pó sob óleo novo: a água chegou primeiro. Crosta quebrada só de um lado: flexão de painel.\n\nUma equipe de resgate aprende a respeitar esse tipo de prova. Sal mostra qual corredor alaga primeiro, qual escotilha mente, qual bolsa de caverna guarda salmoura e qual relatório transformou semanas de negligência em uma só ruptura.",
+     "field_note": "Não limpe o sal antes de ler. O primeiro pano apaga a contagem da maré."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Geheugenlog van zout- en mineraalafzetting",
+     "scanner": "MINERAALAFZETTING // Witte zoutbloei op naadrand, kalkdruip onder oude bout, groengrijze ring rond drukvlek. Geen schuim. Geen sneeuw. Water kwam hier langs, stopte, ademde en liet mineralen achter.",
+     "terminal": "ZOUT LEZEN // Droog zout op roest: oude natte fout. Zout onder verse zwarte afvoer: latere lekkende pakking. Kalkvingers omlaag: lagedrukdrainage. Ringen rond bout: drukcycli.",
+     "audio": "Zout is een bon. De oceaan tekent traag, maar tekent alles.",
+     "in_game_wiki": "Zout- en mineraalafzettingen zijn het stille handschrift van HECTON-8. Een schone scheur kan liegen. Een gepolijst paneel ook. Een mineraalrand liegt slechter, omdat hij waterbeweging, droging, drukademhaling en chemie in lagen bewaart.\n\nWitte bloei op een naad betekent migratie. Kalkdruip onder een bout betekent langzame drainage, vaak nadat niemand nog schoonmaakte. Groengrijze ringen tonen een herhaalde natte rand, geen enkele spetter. Poeder in een pakkinggroef betekent veel cycli lucht of pekel.\n\nVoor een marauder is dit geen vuil. Het is watergeheugen. Het markeert verborgen sijpeling, zwakke luiken, grotzakken die drogen bij drukwissel, of zogenaamd gesloten kamers die na uitschakeling bleven ademen.",
+     "external_site": "Veldartikel over zoutbloei, kalkdruip en mineraalringen als watergeheugen.",
+     "external_site_article": "De kolonie hield oppervlakken schoon omdat schoon op controle leek. Zout weigerde die leugen. Het keerde terug na vegen, kroop onder pakkingen, verzamelde in schroefzakken en trok bleke grenzen waar water te lang had gestaan.\n\nEen mineraalafzetting heeft grammatica. Bloei op lage naad betekent migratie. Kalkvingers omlaag betekenen drainage. Ring rond bout betekent metaal dat onder druk ademde. Poeder onder verse olie betekent dat water eerst kwam. Korst slechts aan één kant gebroken wijst op buiging.\n\nEen bergingsploeg leert dit bewijs respecteren. Zout toont welke gang eerst overstroomt, welk luik liegt, welke grot pekel bewaart en welk rapport weken verwaarlozing tot één breuk maakte.",
+     "field_note": "Veeg zout niet weg voor je het leest. De eerste veeg wist de getijdetelling."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,195 +1,196 @@
 {
-  "schema": "H8.APPLIED_CONTENT_PACKET_BUNDLE.V0",
-  "release_set_id": "RS002_DEEPENING_DESCENT",
-  "status": "production_facing_draft",
-  "runtime_contract": {
-    "authoring_only": true,
-    "runtime_reads_markdown": false,
-    "runtime_generates_translation": false
-  },
-  "packets": [
-    {
-      "packet_id": "P006_DEAD_CLAIM_CACHE",
-      "article_id": "marauder.dead_claim_cache",
-      "unlock": {
-        "primary": "unlock.first_marauder_cache",
-        "poi_tags": [
-          "poi.dead_claim_buoy",
-          "poi.marauder_cache",
-          "poi.cut_tether"
-        ],
-        "biome_tags": [
-          "biome.service_canyons",
-          "biome.drowned_infrastructure"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Dead Claim Cache",
-          "scanner": "Hidden field cache. Packed dry, tied low, marked by a cut tether and a map that says safe too many times.",
-          "field_note": "Someone reached this canyon before you and learned enough to hide gear, not enough to leave clean.",
-          "terminal": "CACHE NOTE: north-pipe route quiet until lamp grid wakes. Blue casket remains sealed. Do not answer carrier pings inside canyon shadow. If tether is cut, count the cache as inherited trouble.",
-          "audio": "This is not Deep Reach kit. Another professional came down with a cutter, a bad map, and hope they did not deserve.",
-          "in_game_wiki": "Dead claim caches prove the player is not the first scavenger to follow money into HECTON-8. The caches sit below normal survey routes: dry bags wedged under service pipework, private claim marks scratched into ballast, oxygen tabs wrapped in oil paper, and maps corrected by hands that shook. Their value is not the gear. Their value is chronology. After the 2147 loss and before the player's descent, independent crews came down, found partial routes through the drowned infrastructure, and vanished into the same dark that kept the colony quiet.",
-          "external_site": "Dead Claim Cache introduces HECTON-8's shadow salvage history: the years when illegal or unlicensed crews entered Aegir water, worked below the public search line, and left warnings instead of official records.",
-          "external_site_article": "A dead claim cache is a survival argument left by someone who lost. The bag is waterproof, double-tied, and hidden where a quick diver would never look: under the north pipe, below the lamp grid, behind a strip of torn acoustic baffling. Whoever packed it expected to come back. They marked a route, sealed spare cutters, folded a map until the wax cracked, and wrote the word safe twice in the same margin. That repetition is the first warning. On HECTON-8, safe usually means one person survived long enough to lie to himself. The cache matters because it widens the world without making it crowded. The player is still alone in the ocean, but not first. Between the carrier disaster and the present run, other professionals slipped down after metal, salvage rights, sealed cargo, and rumors. They found enough to leave equipment. They did not find enough to leave testimony. The blue casket note, the carrier ping warning, and the cut tether make the cache feel less like treasure and more like a hand reaching out from a failed route."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "مخبأ مطالبة ميتة",
-          "scanner": "مخبأ ميداني مخفي. بقي جافا، ربط في موضع منخفض، ووسم بحبل مقطوع وخريطة تقول آمن أكثر مما ينبغي.",
-          "field_note": "وصل شخص إلى هذا الوادي قبلك، وتعلم ما يكفي لإخفاء العدة، لا ما يكفي للخروج نظيفا.",
-          "terminal": "ملاحظة مخبأ: مسار الأنبوب الشمالي هادئ حتى تستيقظ شبكة المصابيح. الصندوق الأزرق يبقى مختوما. لا تجب على نبضات الحاملة داخل ظل الوادي. إذا كان الحبل مقطوعا فعد المخبأ مشكلة موروثة.",
-          "audio": "هذه ليست عدة Deep Reach. محترف آخر نزل إلى هنا بقاطع وخريطة سيئة وأمل لم يكن يستحقه.",
-          "in_game_wiki": "مخابئ المطالبات الميتة تثبت أن اللاعب ليس أول نابش يتبع المال إلى HECTON-8. تقع هذه المخابئ تحت مسارات المسح العادية: أكياس جافة محشورة تحت أنابيب الخدمة، علامات مطالبة خاصة مخدوشة في الثقل، أقراص أكسجين ملفوفة بورق زيتي، وخرائط صححتها أيد مرتجفة. قيمتها ليست في العدة. قيمتها في التسلسل الزمني. بعد خسارة 2147 وقبل نزول اللاعب، جاءت أطقم مستقلة إلى الأسفل، ووجدت مسارات جزئية عبر البنية الغارقة، ثم اختفت في الظلام نفسه الذي أبقى المستعمرة صامتة.",
-          "external_site": "مخبأ مطالبة ميتة يفتح تاريخ الإنقاذ الظلي في HECTON-8: سنوات دخلت فيها أطقم غير قانونية أو غير مرخصة مياه Aegir، وعملت تحت خط البحث العام، وتركت تحذيرات بدلا من سجلات رسمية.",
-          "external_site_article": "مخبأ المطالبة الميتة حجة بقاء تركها شخص خسر. الكيس مقاوم للماء، مربوط مرتين، ومخبأ حيث لا يبحث الغواص العابر: تحت الأنبوب الشمالي، أسفل شبكة المصابيح، خلف شريط من عزل صوتي ممزق. من جهزه توقع العودة. وضع علامة لمسار، وختم قواطع احتياطية، وطوى خريطة حتى تشقق الشمع، وكتب كلمة آمن مرتين في الهامش نفسه. هذا التكرار هو التحذير الأول. على HECTON-8، آمن تعني غالبا أن شخصا عاش طويلا بما يكفي ليكذب على نفسه. أهمية المخبأ أنه يوسع العالم من دون أن يجعله مزدحما. اللاعب لا يزال وحيدا في المحيط، لكنه ليس الأول. بين كارثة الحاملة والرحلة الحالية، تسلل محترفون آخرون إلى الأسفل بحثا عن المعدن وحقوق الإنقاذ والحمولات المختومة والشائعات. وجدوا ما يكفي ليتركوا معدات. لم يجدوا ما يكفي ليتركوا شهادة. ملاحظة الصندوق الأزرق، وتحذير نبضات الحاملة، والحبل المقطوع تجعل المخبأ أقل شبها بالغنيمة وأكثر شبها بيد تمتد من مسار فشل."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Toter-Claim-Cache",
-          "scanner": "Versteckter Feldcache. Trocken gepackt, tief festgebunden, markiert durch eine geschnittene Leine und eine Karte, die zu oft sicher sagt.",
-          "field_note": "Jemand erreichte diesen Canyon vor dir und lernte genug, um Ausrüstung zu verstecken, aber nicht genug, um sauber wieder herauszukommen.",
-          "terminal": "CACHE-NOTIZ: Nordrohrroute ruhig, bis das Lampengitter erwacht. Blaue Kassette bleibt versiegelt. Keine Carrier-Pings im Canyonschatten beantworten. Wenn die Leine geschnitten ist, gilt der Cache als geerbter Ärger.",
-          "audio": "Das ist kein Deep-Reach-Kit. Ein anderer Profi kam mit einem Cutter, einer schlechten Karte und Hoffnung herunter, die er nicht verdient hatte.",
-          "in_game_wiki": "Tote-Claim-Caches beweisen, dass der Spieler nicht der erste Plünderer ist, der dem Geld nach HECTON-8 folgt. Die Caches liegen unter den normalen Vermessungsrouten: Trockensäcke unter Serviceleitungen, private Claim-Zeichen in Ballast geritzt, Sauerstofftabletten in Ölpapier und Karten, korrigiert von Händen, die zitterten. Ihr Wert ist nicht die Ausrüstung. Ihr Wert ist die Chronologie. Nach dem Verlust von 2147 und vor dem Abstieg des Spielers kamen unabhängige Crews hinab, fanden Teilrouten durch die ertrunkene Infrastruktur und verschwanden in derselben Dunkelheit, die die Kolonie still hielt.",
-          "external_site": "Dead Claim Cache eröffnet HECTON-8s Schattenbergungsgeschichte: die Jahre, in denen illegale oder unlizenzierte Crews in Aegir-Wasser eindrangen, unterhalb der öffentlichen Suchlinie arbeiteten und Warnungen statt offizieller Akten hinterließen.",
-          "external_site_article": "Ein Toter-Claim-Cache ist ein Überlebensargument, das jemand Verlorenes zurückließ. Der Beutel ist wasserdicht, doppelt gebunden und dort versteckt, wo ein schneller Taucher nie suchen würde: unter dem Nordrohr, unter dem Lampengitter, hinter einem Streifen gerissener Akustikdämmung. Wer ihn packte, erwartete zurückzukehren. Die Person markierte eine Route, versiegelte Ersatzcutter, faltete eine Karte, bis das Wachs riss, und schrieb das Wort sicher zweimal an denselben Rand. Diese Wiederholung ist die erste Warnung. Auf HECTON-8 bedeutet sicher meist, dass jemand lange genug überlebte, um sich selbst zu belügen. Der Cache zählt, weil er die Welt erweitert, ohne sie zu bevölkern. Der Spieler ist weiter allein im Ozean, aber nicht der erste. Zwischen der Carrier-Katastrophe und dem aktuellen Lauf schlichen andere Profis hinab: wegen Metall, Bergungsrechten, versiegelter Fracht und Gerüchten. Sie fanden genug, um Ausrüstung zurückzulassen. Sie fanden nicht genug, um Zeugnis abzulegen. Die blaue Kassettennotiz, die Carrier-Ping-Warnung und die geschnittene Leine lassen den Cache weniger wie Beute wirken und mehr wie eine Hand aus einer gescheiterten Route."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Caché de reclamación muerta",
-          "scanner": "Caché de campo oculto. Guardado en seco, atado bajo, marcado por una línea cortada y un mapa que dice seguro demasiadas veces.",
-          "field_note": "Alguien llegó a este cañón antes que tú y aprendió lo suficiente para esconder equipo, no lo suficiente para salir limpio.",
-          "terminal": "NOTA DE CACHÉ: ruta bajo la tubería norte tranquila hasta que despierte la red de lámparas. El cofre azul sigue sellado. No respondas pings del carrier dentro de la sombra del cañón. Si la línea está cortada, cuenta el caché como problema heredado.",
-          "audio": "Esto no es equipo Deep Reach. Otro profesional bajó con un cortador, un mal mapa y una esperanza que no merecía.",
-          "in_game_wiki": "Los cachés de reclamación muerta prueban que el jugador no es el primer saqueador que sigue el dinero hasta HECTON-8. Se esconden por debajo de las rutas normales de reconocimiento: bolsas secas encajadas bajo tuberías de servicio, marcas privadas de reclamo rayadas en el lastre, pastillas de oxígeno envueltas en papel aceitado y mapas corregidos por manos que temblaban. Su valor no es el equipo. Su valor es la cronología. Después de la pérdida de 2147 y antes del descenso del jugador, tripulaciones independientes bajaron, encontraron rutas parciales por la infraestructura ahogada y desaparecieron en la misma oscuridad que mantuvo callada a la colonia.",
-          "external_site": "Dead Claim Cache presenta la historia de salvamento en sombra de HECTON-8: los años en que tripulaciones ilegales o sin licencia entraron en el agua de Aegir, trabajaron bajo la línea pública de búsqueda y dejaron advertencias en vez de registros oficiales.",
-          "external_site_article": "Un caché de reclamación muerta es un argumento de supervivencia dejado por alguien que perdió. La bolsa es impermeable, atada dos veces y escondida donde un buzo rápido nunca miraría: bajo la tubería norte, debajo de la red de lámparas, detrás de una tira de aislamiento acústico rasgado. Quien la preparó esperaba volver. Marcó una ruta, selló cortadores de repuesto, dobló un mapa hasta quebrar la cera y escribió la palabra seguro dos veces en el mismo margen. Esa repetición es la primera advertencia. En HECTON-8, seguro suele significar que una persona sobrevivió lo bastante para mentirse. El caché importa porque amplía el mundo sin llenarlo de gente. El jugador sigue solo en el océano, pero no fue el primero. Entre el desastre del carrier y la incursión actual, otros profesionales bajaron tras metal, derechos de salvamento, carga sellada y rumores. Encontraron lo suficiente para dejar equipo. No encontraron lo suficiente para dejar testimonio. La nota del cofre azul, la advertencia de los pings del carrier y la línea cortada hacen que el caché parezca menos un tesoro y más una mano que sale de una ruta fallida."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Cache de revendication morte",
-          "scanner": "Cache de terrain dissimulée. Gardée au sec, attachée bas, marquée par une longe coupée et une carte qui dit sûr trop souvent.",
-          "field_note": "Quelqu'un a atteint ce canyon avant toi et a appris assez pour cacher du matériel, pas assez pour repartir proprement.",
-          "terminal": "NOTE DE CACHE : route du tuyau nord calme jusqu'au réveil du réseau de lampes. Le coffre bleu reste scellé. Ne réponds pas aux pings du carrier dans l'ombre du canyon. Si la longe est coupée, considère cette cache comme un ennui hérité.",
-          "audio": "Ce n'est pas du matériel Deep Reach. Un autre professionnel est descendu avec un cutter, une mauvaise carte et un espoir qu'il ne méritait pas.",
-          "in_game_wiki": "Les caches de revendication morte prouvent que le joueur n'est pas le premier pillard à suivre l'argent jusqu'à HECTON-8. Elles reposent sous les routes de relevé normales : sacs étanches coincés sous les tuyaux de service, marques privées gravées dans le ballast, pastilles d'oxygène enveloppées de papier huilé, cartes corrigées par des mains tremblantes. Leur valeur n'est pas le matériel. Leur valeur est la chronologie. Après la perte de 2147 et avant la descente du joueur, des équipages indépendants sont descendus, ont trouvé des routes partielles dans l'infrastructure noyée et ont disparu dans la même obscurité qui gardait la colonie silencieuse.",
-          "external_site": "Dead Claim Cache ouvre l'histoire de récupération clandestine de HECTON-8 : les années où des équipes illégales ou sans licence sont entrées dans l'eau d'Aegir, ont travaillé sous la ligne publique de recherche et ont laissé des avertissements au lieu de dossiers officiels.",
-          "external_site_article": "Une cache de revendication morte est un argument de survie laissé par quelqu'un qui a perdu. Le sac est étanche, doublement noué, caché là où un plongeur pressé ne regarderait jamais : sous le tuyau nord, sous le réseau de lampes, derrière une bande d'isolant acoustique déchirée. La personne qui l'a préparé pensait revenir. Elle a marqué une route, scellé des cutters de rechange, plié une carte jusqu'à fendre la cire et écrit le mot sûr deux fois dans la même marge. Cette répétition est le premier avertissement. Sur HECTON-8, sûr signifie souvent qu'une personne a survécu assez longtemps pour se mentir. La cache compte parce qu'elle élargit le monde sans le peupler. Le joueur reste seul dans l'océan, mais il n'est pas le premier. Entre la catastrophe du carrier et l'incursion actuelle, d'autres professionnels sont descendus chercher du métal, des droits de récupération, des cargaisons scellées et des rumeurs. Ils ont trouvé assez pour laisser du matériel. Pas assez pour laisser un témoignage. La note du coffre bleu, l'avertissement sur les pings du carrier et la longe coupée donnent à la cache moins l'air d'un trésor que d'une main tendue depuis une route ratée."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "מטמון תביעה מתה",
-          "scanner": "מטמון שדה מוסתר. נארז יבש, נקשר נמוך, וסומן בכבל חתוך ובמפה שאומרת בטוח יותר מדי פעמים.",
-          "field_note": "מישהו הגיע לקניון הזה לפניך ולמד מספיק כדי להחביא ציוד, לא מספיק כדי לצאת נקי.",
-          "terminal": "הערת מטמון: נתיב הצינור הצפוני שקט עד שרשת המנורות מתעוררת. התיבה הכחולה נשארת חתומה. אל תענה לפינגים של carrier בתוך צל הקניון. אם הכבל חתוך, ספור את המטמון כצרה בירושה.",
-          "audio": "זה לא ציוד Deep Reach. מקצוען אחר ירד לכאן עם חותך, מפה גרועה ותקווה שלא הגיעה לו.",
-          "in_game_wiki": "מטמוני תביעה מתה מוכיחים שהשחקן אינו הבוזז הראשון שעקב אחרי כסף אל HECTON-8. המטמונים יושבים מתחת למסלולי הסקר הרגילים: שקיות יבשות תקועות מתחת לצנרת שירות, סימני תביעה פרטיים חרוטים במשקולת, טבליות חמצן עטופות בנייר שמן ומפות שתוקנו בידיים רועדות. הערך שלהם אינו הציוד. הערך שלהם הוא הכרונולוגיה. אחרי אובדן 2147 ולפני ירידת השחקן, צוותים עצמאיים ירדו, מצאו נתיבים חלקיים דרך התשתית הטבועה ונעלמו באותו חושך ששמר את המושבה שקטה.",
-          "external_site": "Dead Claim Cache מציג את היסטוריית החילוץ הצללית של HECTON-8: השנים שבהן צוותים לא חוקיים או חסרי רישיון נכנסו למי Aegir, עבדו מתחת לקו החיפוש הציבורי והשאירו אזהרות במקום רשומות רשמיות.",
-          "external_site_article": "מטמון תביעה מתה הוא טיעון הישרדות שהושאר בידי מי שהפסיד. השקית עמידה למים, קשורה פעמיים ומוסתרת במקום שצולל מהיר לעולם לא היה בודק: מתחת לצינור הצפוני, מתחת לרשת המנורות, מאחורי רצועה של בידוד אקוסטי קרוע. מי שארז אותה ציפה לחזור. הוא סימן נתיב, אטם חותכים חלופיים, קיפל מפה עד שהשעווה נסדקה וכתב את המילה בטוח פעמיים באותו שול. החזרה הזאת היא האזהרה הראשונה. ב-HECTON-8, בטוח פירושו לעיתים שמישהו שרד מספיק זמן כדי לשקר לעצמו. המטמון חשוב כי הוא מרחיב את העולם בלי לאכלס אותו. השחקן עדיין לבד באוקיינוס, אבל לא ראשון. בין אסון ה-carrier לבין הריצה הנוכחית, מקצוענים אחרים התגנבו למטה אחרי מתכת, זכויות חילוץ, מטען חתום ושמועות. הם מצאו מספיק כדי להשאיר ציוד. הם לא מצאו מספיק כדי להשאיר עדות. הערת התיבה הכחולה, אזהרת הפינגים של ה-carrier והכבל החתוך גורמים למטמון להרגיש פחות כמו אוצר ויותר כמו יד הנשלחת מנתיב שנכשל."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Cache Klaim Mati",
-          "scanner": "Cache lapangan tersembunyi. Dikemas kering, diikat rendah, ditandai tether terpotong dan peta yang terlalu sering bilang aman.",
-          "field_note": "Seseorang mencapai ngarai ini sebelum kamu dan belajar cukup untuk menyembunyikan peralatan, tidak cukup untuk keluar bersih.",
-          "terminal": "CATATAN CACHE: rute pipa utara tenang sampai kisi lampu bangun. Peti biru tetap tersegel. Jangan jawab ping carrier di bayangan ngarai. Jika tether terpotong, anggap cache ini masalah warisan.",
-          "audio": "Ini bukan kit Deep Reach. Profesional lain turun dengan cutter, peta buruk, dan harapan yang tidak pantas ia miliki.",
-          "in_game_wiki": "Cache klaim mati membuktikan pemain bukan penjarah pertama yang mengikuti uang ke HECTON-8. Cache itu berada di bawah rute survei normal: kantong kering terselip di bawah pipa layanan, tanda klaim pribadi digores pada ballast, tablet oksigen dibungkus kertas minyak, dan peta yang dikoreksi oleh tangan gemetar. Nilainya bukan peralatan. Nilainya adalah kronologi. Setelah kehilangan tahun 2147 dan sebelum turunnya pemain, kru independen datang ke bawah, menemukan rute parsial melalui infrastruktur tenggelam, lalu menghilang dalam gelap yang sama yang membuat koloni tetap diam.",
-          "external_site": "Dead Claim Cache memperkenalkan sejarah salvage bayangan HECTON-8: tahun-tahun ketika kru ilegal atau tanpa lisensi memasuki air Aegir, bekerja di bawah garis pencarian publik, dan meninggalkan peringatan alih-alih catatan resmi.",
-          "external_site_article": "Cache klaim mati adalah argumen bertahan hidup yang ditinggalkan oleh seseorang yang kalah. Kantongnya tahan air, diikat ganda, dan disembunyikan di tempat yang tidak akan dilihat penyelam cepat: di bawah pipa utara, di bawah kisi lampu, di balik sobekan peredam akustik. Orang yang mengemasnya berharap kembali. Ia menandai rute, menyegel cutter cadangan, melipat peta sampai lilinnya retak, dan menulis kata aman dua kali di margin yang sama. Pengulangan itu peringatan pertama. Di HECTON-8, aman biasanya berarti seseorang bertahan cukup lama untuk berbohong kepada dirinya sendiri. Cache ini penting karena memperluas dunia tanpa membuatnya ramai. Pemain masih sendirian di laut, tetapi bukan yang pertama. Di antara bencana carrier dan perjalanan sekarang, profesional lain menyelinap turun demi logam, hak salvage, kargo tersegel, dan rumor. Mereka menemukan cukup banyak untuk meninggalkan peralatan. Mereka tidak menemukan cukup banyak untuk meninggalkan kesaksian. Catatan peti biru, peringatan ping carrier, dan tether terpotong membuat cache terasa bukan seperti harta, melainkan tangan yang terulur dari rute gagal."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "死んだ請求権のキャッシュ",
-          "scanner": "隠された現場キャッシュ。乾いたまま低く結ばれ、切られたテザーと、安全と書きすぎた地図で印を付けられている。",
-          "field_note": "誰かが君より先にこの峡谷へ着き、装備を隠すだけの知識を得た。きれいに出るだけの知識は得られなかった。",
-          "terminal": "キャッシュ記録: 北パイプ下の経路はランプ格子が目覚めるまで静か。青い箱は封印のまま。峡谷の影の中ではcarrier pingに応答するな。テザーが切れているなら、このキャッシュは引き継いだ厄介事として数えろ。",
-          "audio": "これはDeep Reachの装備ではない。別のプロがカッターと悪い地図と、持つ資格のない希望を持って降りてきた。",
-          "in_game_wiki": "死んだ請求権のキャッシュは、プレイヤーがHECTON-8の金を追った最初の略奪者ではないことを示す。キャッシュは通常の調査経路より下にある。保守配管の下へ押し込まれたドライバッグ、バラストに削られた私的な請求印、油紙に包まれた酸素錠、震える手で修正された地図。価値があるのは装備ではない。価値があるのは時系列だ。2147年の喪失の後、プレイヤーの降下の前に、独立クルーが下へ来て、沈んだインフラを抜ける部分的な道を見つけ、植民地を沈黙させていた同じ暗闇へ消えた。",
-          "external_site": "Dead Claim CacheはHECTON-8の影のサルベージ史を開く。違法または無許可のクルーがAegirの水域へ入り、公的な捜索線より下で働き、公式記録ではなく警告を残した年月である。",
-          "external_site_article": "死んだ請求権のキャッシュは、負けた者が残した生存の主張だ。バッグは防水で、二重に結ばれ、急ぐ潜水者なら絶対に見ない場所に隠されている。北パイプの下、ランプ格子の下、破れた音響防壁の裏。詰めた者は戻るつもりだった。経路を印し、予備カッターを封じ、ワックスが割れるまで地図を折り、同じ余白に安全という言葉を二度書いた。その反復が最初の警告になる。HECTON-8で安全とは、多くの場合、自分に嘘をつけるほど長く生き延びたという意味だ。このキャッシュが重要なのは、世界を広げても混雑させないからだ。プレイヤーはまだ海で一人だが、最初ではない。carrierの惨事と現在の侵入の間に、別のプロたちが金属、サルベージ権、封印貨物、噂を追って下へ滑り込んだ。彼らは装備を残せるだけのものを見つけた。証言を残せるだけのものは見つけなかった。青い箱のメモ、carrier pingの警告、切られたテザーが、このキャッシュを宝ではなく、失敗した経路から伸びる手に見せている。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "죽은 클레임 캐시",
-          "scanner": "숨겨진 현장 캐시. 마른 상태로 낮게 묶였고, 잘린 테더와 안전하다는 말을 너무 많이 적은 지도로 표시되어 있다.",
-          "field_note": "누군가 너보다 먼저 이 협곡에 도착했고 장비를 숨길 만큼은 배웠지만, 깨끗하게 빠져나갈 만큼은 배우지 못했다.",
-          "terminal": "캐시 메모: 북쪽 파이프 경로는 램프 격자가 깨어날 때까지 조용하다. 파란 케이스는 봉인 유지. 협곡 그림자 안에서 carrier ping에 응답하지 말 것. 테더가 잘려 있다면 이 캐시는 물려받은 문제로 계산하라.",
-          "audio": "이건 Deep Reach 장비가 아니다. 다른 전문가가 커터와 나쁜 지도, 가질 자격이 없던 희망을 들고 내려왔다.",
-          "in_game_wiki": "죽은 클레임 캐시는 플레이어가 HECTON-8의 돈을 쫓아온 첫 약탈자가 아님을 증명한다. 캐시는 일반 조사 경로 아래에 있다. 서비스 배관 아래에 끼워 넣은 드라이백, 밸러스트에 긁은 개인 클레임 표식, 기름종이에 싼 산소 정제, 떨리는 손으로 고친 지도. 가치는 장비가 아니다. 가치는 연대기다. 2147년의 상실 이후, 플레이어의 하강 이전에 독립 승무원들이 내려와 침수된 기반시설을 통과하는 부분 경로를 찾았고, 식민지를 조용하게 만든 같은 어둠 속으로 사라졌다.",
-          "external_site": "Dead Claim Cache는 HECTON-8의 그림자 인양사를 연다. 불법 또는 무허가 승무원들이 Aegir 수역으로 들어가 공개 수색선 아래에서 작업하고 공식 기록 대신 경고를 남긴 시기다.",
-          "external_site_article": "죽은 클레임 캐시는 패배한 사람이 남긴 생존 주장이다. 가방은 방수 처리되고 두 번 묶였으며, 빠른 잠수부라면 절대 보지 않을 곳에 숨겨져 있다. 북쪽 파이프 아래, 램프 격자 밑, 찢어진 음향 차폐재 뒤다. 그것을 싼 사람은 돌아올 생각이었다. 그는 경로를 표시하고 예비 커터를 봉인하고 왁스가 갈라질 때까지 지도를 접고 같은 여백에 안전이라는 말을 두 번 썼다. 그 반복이 첫 경고다. HECTON-8에서 안전은 보통 누군가가 자기 자신에게 거짓말할 만큼 오래 살아남았다는 뜻이다. 이 캐시는 세계를 넓히지만 붐비게 만들지 않기 때문에 중요하다. 플레이어는 여전히 바다에서 혼자지만 첫 번째는 아니다. carrier 참사와 현재 침투 사이에 다른 전문가들이 금속, 인양권, 봉인 화물, 소문을 따라 아래로 숨어들었다. 그들은 장비를 남길 만큼은 찾았다. 증언을 남길 만큼은 찾지 못했다. 파란 케이스의 메모, carrier ping 경고, 잘린 테더 때문에 이 캐시는 보물보다 실패한 경로에서 뻗은 손처럼 느껴진다."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Dode-claimcache",
-          "scanner": "Verborgen veldcache. Droog verpakt, laag vastgezet, gemarkeerd door een doorgesneden tether en een kaart die te vaak veilig zegt.",
-          "field_note": "Iemand bereikte deze kloof voor jou en leerde genoeg om uitrusting te verbergen, niet genoeg om schoon weg te komen.",
-          "terminal": "CACHE-NOTITIE: noordpijproute stil tot het lamprooster wakker wordt. Blauwe kist blijft verzegeld. Beantwoord geen carrier-pings in de kloofschaduw. Als de tether is doorgesneden, tel de cache als geërfde ellende.",
-          "audio": "Dit is geen Deep Reach-kit. Een andere professional kwam naar beneden met een cutter, een slechte kaart en hoop die hij niet verdiende.",
-          "in_game_wiki": "Dode-claimcaches bewijzen dat de speler niet de eerste plunderaar is die geld naar HECTON-8 volgde. De caches liggen onder normale surveyroutes: droge zakken vast onder serviceleidingen, privéclaimtekens in ballast gekrast, zuurstoftabletten in oliepapier en kaarten gecorrigeerd door trillende handen. Hun waarde is niet de uitrusting. Hun waarde is de chronologie. Na het verlies van 2147 en voor de afdaling van de speler kwamen onafhankelijke crews naar beneden, vonden deelroutes door de verdronken infrastructuur en verdwenen in dezelfde duisternis die de kolonie stil hield.",
-          "external_site": "Dead Claim Cache opent HECTON-8's schaduwgeschiedenis van berging: de jaren waarin illegale of ongelicentieerde crews Aegir-water binnengingen, onder de openbare zoeklijn werkten en waarschuwingen achterlieten in plaats van officiële dossiers.",
-          "external_site_article": "Een dode-claimcache is een overlevingsargument achtergelaten door iemand die verloor. De zak is waterdicht, dubbel vastgebonden en verborgen waar een snelle duiker nooit zou kijken: onder de noordpijp, onder het lamprooster, achter een strook gescheurde akoestische demping. Wie hem inpakte, verwachtte terug te komen. Die persoon markeerde een route, verzegelde reservecutters, vouwde een kaart tot de was barstte en schreef het woord veilig twee keer in dezelfde marge. Die herhaling is de eerste waarschuwing. Op HECTON-8 betekent veilig meestal dat iemand lang genoeg overleefde om tegen zichzelf te liegen. De cache telt omdat hij de wereld groter maakt zonder haar vol te zetten. De speler is nog steeds alleen in de oceaan, maar niet eerste. Tussen de carrier-ramp en de huidige tocht slopen andere professionals omlaag achter metaal, bergingsrechten, verzegelde lading en geruchten aan. Ze vonden genoeg om uitrusting achter te laten. Niet genoeg om getuigenis achter te laten. De notitie over de blauwe kist, de waarschuwing voor carrier-pings en de doorgesneden tether maken de cache minder een schat en meer een hand uit een mislukte route."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Skrytka martwego roszczenia",
-          "scanner": "Ukryta skrytka polowa. Spakowana na sucho, przywiązana nisko, oznaczona przeciętą linką i mapą, która zbyt często mówi bezpiecznie.",
-          "field_note": "Ktoś dotarł do tego kanionu przed tobą i nauczył się dość, by ukryć sprzęt, ale nie dość, by wyjść czysto.",
-          "terminal": "NOTATKA SKRYTKI: trasa pod północną rurą cicha, dopóki nie obudzi się siatka lamp. Niebieska kaseta pozostaje zapieczętowana. Nie odpowiadaj na pingi carriera w cieniu kanionu. Jeśli linka jest przecięta, uznaj skrytkę za odziedziczony kłopot.",
-          "audio": "To nie jest sprzęt Deep Reach. Inny profesjonalista zszedł tu z cutterem, złą mapą i nadzieją, na którą nie zasługiwał.",
-          "in_game_wiki": "Skrytki martwych roszczeń dowodzą, że gracz nie jest pierwszym szabrownikiem, który poszedł za pieniędzmi na HECTON-8. Leżą poniżej normalnych tras pomiarowych: suche worki wciśnięte pod rury serwisowe, prywatne znaki roszczeń wydrapane w balast, tabletki tlenowe owinięte w papier olejowany i mapy poprawiane drżącymi rękami. Ich wartością nie jest sprzęt. Ich wartością jest chronologia. Po stracie z 2147 roku i przed zejściem gracza niezależne załogi schodziły w dół, znajdowały częściowe trasy przez zatopioną infrastrukturę i znikały w tej samej ciemności, która trzymała kolonię w ciszy.",
-          "external_site": "Dead Claim Cache otwiera cienistą historię salvage HECTON-8: lata, gdy nielegalne albo nielicencjonowane załogi wchodziły do wód Aegir, pracowały poniżej publicznej linii poszukiwań i zostawiały ostrzeżenia zamiast oficjalnych zapisów.",
-          "external_site_article": "Skrytka martwego roszczenia to argument o przetrwaniu zostawiony przez kogoś, kto przegrał. Torba jest wodoodporna, związana podwójnie i ukryta tam, gdzie szybki nurek nigdy by nie spojrzał: pod północną rurą, pod siatką lamp, za pasem rozdartego tłumienia akustycznego. Ten, kto ją pakował, spodziewał się wrócić. Oznaczył trasę, zapieczętował zapasowe cuttery, złożył mapę tak mocno, że pękł wosk, i napisał słowo bezpiecznie dwa razy na tym samym marginesie. To powtórzenie jest pierwszym ostrzeżeniem. Na HECTON-8 bezpiecznie zwykle znaczy, że ktoś przeżył wystarczająco długo, by okłamać samego siebie. Skrytka jest ważna, bo poszerza świat, nie zaludniając go. Gracz nadal jest sam w oceanie, ale nie jest pierwszy. Między katastrofą carriera a obecną wyprawą inni profesjonaliści wymykali się w dół po metal, prawa salvage, zapieczętowany ładunek i plotki. Znaleźli dość, by zostawić sprzęt. Nie znaleźli dość, by zostawić świadectwo. Notatka o niebieskiej kasecie, ostrzeżenie przed pingami carriera i przecięta linka sprawiają, że skrytka przypomina mniej skarb, a bardziej rękę wyciągniętą z nieudanej trasy."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Cache de reivindicação morta",
-          "scanner": "Cache de campo escondido. Embalado seco, preso baixo, marcado por um tether cortado e um mapa que diz seguro vezes demais.",
-          "field_note": "Alguém chegou a este cânion antes de você e aprendeu o bastante para esconder equipamento, não o bastante para sair limpo.",
-          "terminal": "NOTA DO CACHE: rota sob o tubo norte quieta até a grade de lâmpadas acordar. A caixa azul permanece selada. Não responda pings do carrier dentro da sombra do cânion. Se o tether estiver cortado, conte o cache como problema herdado.",
-          "audio": "Isso não é kit Deep Reach. Outro profissional desceu com um cutter, um mapa ruim e uma esperança que não merecia.",
-          "in_game_wiki": "Caches de reivindicação morta provam que o jogador não é o primeiro saqueador a seguir dinheiro até HECTON-8. Eles ficam abaixo das rotas normais de varredura: bolsas secas presas sob tubulações de serviço, marcas privadas de reivindicação riscadas no lastro, pastilhas de oxigênio embrulhadas em papel oleado e mapas corrigidos por mãos trêmulas. O valor deles não é o equipamento. O valor deles é a cronologia. Depois da perda de 2147 e antes da descida do jogador, equipes independentes desceram, encontraram rotas parciais pela infraestrutura afogada e sumiram na mesma escuridão que manteve a colônia calada.",
-          "external_site": "Dead Claim Cache apresenta a história de salvage nas sombras de HECTON-8: os anos em que equipes ilegais ou sem licença entraram na água de Aegir, trabalharam abaixo da linha pública de busca e deixaram avisos em vez de registros oficiais.",
-          "external_site_article": "Um cache de reivindicação morta é um argumento de sobrevivência deixado por alguém que perdeu. A bolsa é impermeável, presa com dois nós e escondida onde um mergulhador apressado nunca olharia: sob o tubo norte, abaixo da grade de lâmpadas, atrás de uma faixa rasgada de isolamento acústico. Quem a preparou esperava voltar. Marcou uma rota, selou cutters reserva, dobrou um mapa até a cera rachar e escreveu a palavra seguro duas vezes na mesma margem. Essa repetição é o primeiro aviso. Em HECTON-8, seguro geralmente significa que alguém sobreviveu tempo suficiente para mentir para si mesmo. O cache importa porque amplia o mundo sem enchê-lo de gente. O jogador ainda está sozinho no oceano, mas não foi o primeiro. Entre o desastre do carrier e a incursão atual, outros profissionais desceram atrás de metal, direitos de salvage, carga selada e rumores. Encontraram o bastante para deixar equipamento. Não encontraram o bastante para deixar testemunho. A nota da caixa azul, o aviso sobre pings do carrier e o tether cortado fazem o cache parecer menos tesouro e mais uma mão estendida de uma rota fracassada."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Кэш мертвой заявки",
-          "scanner": "Скрытый полевой кэш. Упакован сухо, закреплен низко, отмечен перерезанным фалом и картой, где слово безопасно повторено слишком часто.",
-          "field_note": "Кто-то добрался до этого каньона раньше тебя и узнал достаточно, чтобы спрятать снаряжение, но недостаточно, чтобы выйти чисто.",
-          "terminal": "ЗАМЕТКА КЭША: маршрут под северной трубой тихий, пока не проснется решетка ламп. Синий кейс остается запечатанным. Не отвечать на пинги carrier в тени каньона. Если фал перерезан, считать кэш унаследованной проблемой.",
-          "audio": "Это не комплект Deep Reach. Другой профессионал спустился сюда с резаком, плохой картой и надеждой, которой не заслуживал.",
-          "in_game_wiki": "Кэши мертвых заявок доказывают, что игрок не первый мародер, пошедший за деньгами на HECTON-8. Они лежат ниже обычных маршрутов съемки: сухие мешки, зажатые под сервисными трубами, частные метки заявки, выцарапанные на балласте, кислородные таблетки в промасленной бумаге и карты, исправленные дрожащими руками. Их ценность не в снаряжении. Их ценность в хронологии. После потери 2147 года и до спуска игрока независимые экипажи уже уходили вниз, находили частичные проходы через затонувшую инфраструктуру и исчезали в той же темноте, которая держала колонию молчащей.",
-          "external_site": "Dead Claim Cache открывает теневую историю спасработ HECTON-8: годы, когда нелегальные или нелицензированные экипажи входили в воды Aegir, работали ниже публичной линии поиска и оставляли предупреждения вместо официальных записей.",
-          "external_site_article": "Кэш мертвой заявки — это довод о выживании, оставленный тем, кто проиграл. Мешок водонепроницаемый, перевязан дважды и спрятан там, куда быстрый ныряльщик не посмотрит: под северной трубой, ниже решетки ламп, за полосой разорванной акустической изоляции. Тот, кто его паковал, рассчитывал вернуться. Он пометил маршрут, запечатал запасные резаки, сложил карту так, что треснул воск, и дважды написал слово безопасно на одном поле. Это повторение — первое предупреждение. На HECTON-8 безопасно обычно значит, что человек прожил достаточно долго, чтобы соврать самому себе. Кэш важен потому, что расширяет мир, но не заселяет его. Игрок все еще один в океане, но он не первый. Между катастрофой carrier и нынешним заходом другие профессионалы пробирались вниз за металлом, правами на salvage, запечатанным грузом и слухами. Они нашли достаточно, чтобы оставить снаряжение. Недостаточно, чтобы оставить свидетельство. Заметка о синем кейсе, предупреждение о пингах carrier и перерезанный фал делают кэш не сокровищем, а рукой, протянутой из проваленного маршрута."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Сховок мертвої заявки",
-          "scanner": "Прихований польовий сховок. Запакований сухо, прив'язаний низько, позначений перерізаним фалом і картою, де слово безпечно написане надто часто.",
-          "field_note": "Хтось дістався цього каньйону раніше за тебе й навчився достатньо, щоб сховати спорядження, але не достатньо, щоб вийти чисто.",
-          "terminal": "НОТАТКА СХОВКУ: маршрут під північною трубою тихий, доки не прокинеться решітка ламп. Синій кейс лишається запечатаним. Не відповідати на пінги carrier у тіні каньйону. Якщо фал перерізано, вважай сховок успадкованою проблемою.",
-          "audio": "Це не комплект Deep Reach. Інший професіонал спустився сюди з різаком, поганою картою й надією, на яку не заслуговував.",
-          "in_game_wiki": "Сховки мертвих заявок доводять, що гравець не перший мародер, який пішов за грошима на HECTON-8. Вони лежать нижче звичних маршрутів зйомки: сухі мішки, затиснуті під сервісними трубами, приватні позначки заявки, видряпані на баласті, кисневі таблетки в промащеному папері й карти, виправлені тремтячими руками. Їхня цінність не в спорядженні. Їхня цінність у хронології. Після втрати 2147 року й до спуску гравця незалежні екіпажі вже йшли вниз, знаходили часткові проходи крізь затоплену інфраструктуру й зникали в тій самій темряві, яка тримала колонію мовчазною.",
-          "external_site": "Dead Claim Cache відкриває тіньову історію salvage на HECTON-8: роки, коли нелегальні або неліцензовані екіпажі входили у води Aegir, працювали нижче публічної лінії пошуку й залишали попередження замість офіційних записів.",
-          "external_site_article": "Сховок мертвої заявки — це доказ виживання, залишений тим, хто програв. Мішок водонепроникний, перев'язаний двічі й схований там, куди швидкий нирець не подивиться: під північною трубою, нижче решітки ламп, за смугою розірваної акустичної ізоляції. Той, хто його пакував, розраховував повернутися. Він позначив маршрут, запечатав запасні різаки, склав карту так, що тріснув віск, і двічі написав слово безпечно на тому самому полі. Це повторення — перше попередження. На HECTON-8 безпечно зазвичай означає, що людина прожила достатньо довго, щоб збрехати самій собі. Сховок важливий, бо розширює світ, не заселяючи його. Гравець усе ще сам в океані, але він не перший. Між катастрофою carrier і нинішнім заходом інші професіонали пробиралися вниз за металом, правами на salvage, запечатаним вантажем і чутками. Вони знайшли достатньо, щоб залишити спорядження. Не достатньо, щоб залишити свідчення. Нотатка про синій кейс, попередження про пінги carrier і перерізаний фал роблять сховок не скарбом, а рукою, простягнутою з проваленого маршруту."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "死亡索取缓存",
-          "scanner": "隐藏的现场缓存。干燥封装，低位绑牢，用一根切断的系绳和一张把安全写得太多次的地图标记。",
-          "field_note": "有人在你之前抵达这条峡谷，学会了足够多来藏装备，却没有学会足够多来干净离开。",
-          "terminal": "缓存备注：北管下方路线安静，直到灯栅醒来。蓝色箱体保持封存。不要在峡谷阴影内回应carrier ping。如果系绳被切断，把这份缓存算作继承来的麻烦。",
-          "audio": "这不是Deep Reach装备。另一个专业人士带着切割器、烂地图和不该拥有的希望下到了这里。",
-          "in_game_wiki": "死亡索取缓存证明玩家不是第一个追着钱来到HECTON-8的掠夺者。这些缓存位于常规测绘路线以下：塞在服务管线下的干袋，刻在压载物上的私人索取标记，包在油纸里的氧片，还有被颤抖的手修改过的地图。它们的价值不在装备。它们的价值在时间顺序。2147年的失事之后、玩家下潜之前，独立船组已经下到这里，找到穿过淹没基础设施的部分路线，然后消失在让殖民地保持沉默的同一片黑暗里。",
-          "external_site": "Dead Claim Cache开启HECTON-8的阴影打捞史：那些年里，非法或无执照船组进入Aegir水域，在公共搜索线以下作业，留下警告而不是官方记录。",
-          "external_site_article": "死亡索取缓存是一个失败者留下的生存论证。袋子防水，双重捆扎，藏在匆忙潜水员绝不会看的地方：北管下方、灯栅下面、一条撕裂的声学隔层之后。打包它的人以为自己会回来。他标出路线，封好备用切割器，把地图折到蜡层开裂，并在同一个页边写了两次安全。这个重复就是第一个警告。在HECTON-8，安全通常意味着某个人活得够久，足以骗自己。这个缓存重要，是因为它扩大世界，却不让世界变得拥挤。玩家仍然独自在海里，但不是第一个。carrier灾难和当前航次之间，其他专业人士为金属、打捞权、封存货物和传闻偷偷下潜。他们找到的东西足够留下装备。不足以留下证词。蓝色箱体的备注、carrier ping的警告、被切断的系绳，让这份缓存不像宝物，更像一只从失败路线里伸出来的手。"
-        }
-      }
+ "schema": "H8.APPLIED_CONTENT_PACKET_BUNDLE.V0",
+ "release_set_id": "RS002_DEEPENING_DESCENT",
+ "status": "production_facing_draft",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false
+ },
+ "packets": [
+  {
+   "packet_id": "P006_DEAD_CLAIM_CACHE",
+   "article_id": "marauder.dead_claim_cache",
+   "unlock": {
+    "primary": "unlock.first_marauder_cache",
+    "poi_tags": [
+     "poi.dead_claim_buoy",
+     "poi.marauder_cache",
+     "poi.cut_tether"
+    ],
+    "biome_tags": [
+     "biome.service_canyons",
+     "biome.drowned_infrastructure"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Dead Claim Cache",
+     "scanner": "Hidden field cache. Packed dry, tied low, marked by a cut tether and a map that says safe too many times.",
+     "field_note": "Someone reached this canyon before you and learned enough to hide gear, not enough to leave clean.",
+     "terminal": "CACHE NOTE: north-pipe route quiet until lamp grid wakes. Blue casket remains sealed. Do not answer carrier pings inside canyon shadow. If tether is cut, count the cache as inherited trouble.",
+     "audio": "This is not Deep Reach kit. Another professional came down with a cutter, a bad map, and hope they did not deserve.",
+     "in_game_wiki": "Dead claim caches prove the player is not the first scavenger to follow money into HECTON-8. The caches sit below normal survey routes: dry bags wedged under service pipework, private claim marks scratched into ballast, oxygen tabs wrapped in oil paper, and maps corrected by hands that shook. Their value is not the gear. Their value is chronology. After the 2147 loss and before the player's descent, independent crews came down, found partial routes through the drowned infrastructure, and vanished into the same dark that kept the colony quiet.",
+     "external_site": "Dead Claim Cache introduces HECTON-8's shadow salvage history: the years when illegal or unlicensed crews entered Aegir water, worked below the public search line, and left warnings instead of official records.",
+     "external_site_article": "A dead claim cache is a survival argument left by someone who lost. The bag is waterproof, double-tied, and hidden where a quick diver would never look: under the north pipe, below the lamp grid, behind a strip of torn acoustic baffling. Whoever packed it expected to come back. They marked a route, sealed spare cutters, folded a map until the wax cracked, and wrote the word safe twice in the same margin. That repetition is the first warning. On HECTON-8, safe usually means one person survived long enough to lie to himself. The cache matters because it widens the world without making it crowded. The player is still alone in the ocean, but not first. Between the carrier disaster and the present run, other professionals slipped down after metal, salvage rights, sealed cargo, and rumors. They found enough to leave equipment. They did not find enough to leave testimony. The blue casket note, the carrier ping warning, and the cut tether make the cache feel less like treasure and more like a hand reaching out from a failed route."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "مخبأ مطالبة ميتة",
+     "scanner": "مخبأ ميداني مخفي. بقي جافا، ربط في موضع منخفض، ووسم بحبل مقطوع وخريطة تقول آمن أكثر مما ينبغي.",
+     "field_note": "وصل شخص إلى هذا الوادي قبلك، وتعلم ما يكفي لإخفاء العدة، لا ما يكفي للخروج نظيفا.",
+     "terminal": "ملاحظة مخبأ: مسار الأنبوب الشمالي هادئ حتى تستيقظ شبكة المصابيح. الصندوق الأزرق يبقى مختوما. لا تجب على نبضات الحاملة داخل ظل الوادي. إذا كان الحبل مقطوعا فعد المخبأ مشكلة موروثة.",
+     "audio": "هذه ليست عدة Deep Reach. محترف آخر نزل إلى هنا بقاطع وخريطة سيئة وأمل لم يكن يستحقه.",
+     "in_game_wiki": "مخابئ المطالبات الميتة تثبت أن اللاعب ليس أول نابش يتبع المال إلى HECTON-8. تقع هذه المخابئ تحت مسارات المسح العادية: أكياس جافة محشورة تحت أنابيب الخدمة، علامات مطالبة خاصة مخدوشة في الثقل، أقراص أكسجين ملفوفة بورق زيتي، وخرائط صححتها أيد مرتجفة. قيمتها ليست في العدة. قيمتها في التسلسل الزمني. بعد خسارة 2147 وقبل نزول اللاعب، جاءت أطقم مستقلة إلى الأسفل، ووجدت مسارات جزئية عبر البنية الغارقة، ثم اختفت في الظلام نفسه الذي أبقى المستعمرة صامتة.",
+     "external_site": "مخبأ مطالبة ميتة يفتح تاريخ الإنقاذ الظلي في HECTON-8: سنوات دخلت فيها أطقم غير قانونية أو غير مرخصة مياه Aegir، وعملت تحت خط البحث العام، وتركت تحذيرات بدلا من سجلات رسمية.",
+     "external_site_article": "مخبأ المطالبة الميتة حجة بقاء تركها شخص خسر. الكيس مقاوم للماء، مربوط مرتين، ومخبأ حيث لا يبحث الغواص العابر: تحت الأنبوب الشمالي، أسفل شبكة المصابيح، خلف شريط من عزل صوتي ممزق. من جهزه توقع العودة. وضع علامة لمسار، وختم قواطع احتياطية، وطوى خريطة حتى تشقق الشمع، وكتب كلمة آمن مرتين في الهامش نفسه. هذا التكرار هو التحذير الأول. على HECTON-8، آمن تعني غالبا أن شخصا عاش طويلا بما يكفي ليكذب على نفسه. أهمية المخبأ أنه يوسع العالم من دون أن يجعله مزدحما. اللاعب لا يزال وحيدا في المحيط، لكنه ليس الأول. بين كارثة الحاملة والرحلة الحالية، تسلل محترفون آخرون إلى الأسفل بحثا عن المعدن وحقوق الإنقاذ والحمولات المختومة والشائعات. وجدوا ما يكفي ليتركوا معدات. لم يجدوا ما يكفي ليتركوا شهادة. ملاحظة الصندوق الأزرق، وتحذير نبضات الحاملة، والحبل المقطوع تجعل المخبأ أقل شبها بالغنيمة وأكثر شبها بيد تمتد من مسار فشل."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Toter-Claim-Cache",
+     "scanner": "Versteckter Feldcache. Trocken gepackt, tief festgebunden, markiert durch eine geschnittene Leine und eine Karte, die zu oft sicher sagt.",
+     "field_note": "Jemand erreichte diesen Canyon vor dir und lernte genug, um Ausrüstung zu verstecken, aber nicht genug, um sauber wieder herauszukommen.",
+     "terminal": "CACHE-NOTIZ: Nordrohrroute ruhig, bis das Lampengitter erwacht. Blaue Kassette bleibt versiegelt. Keine Carrier-Pings im Canyonschatten beantworten. Wenn die Leine geschnitten ist, gilt der Cache als geerbter Ärger.",
+     "audio": "Das ist kein Deep-Reach-Kit. Ein anderer Profi kam mit einem Cutter, einer schlechten Karte und Hoffnung herunter, die er nicht verdient hatte.",
+     "in_game_wiki": "Tote-Claim-Caches beweisen, dass der Spieler nicht der erste Plünderer ist, der dem Geld nach HECTON-8 folgt. Die Caches liegen unter den normalen Vermessungsrouten: Trockensäcke unter Serviceleitungen, private Claim-Zeichen in Ballast geritzt, Sauerstofftabletten in Ölpapier und Karten, korrigiert von Händen, die zitterten. Ihr Wert ist nicht die Ausrüstung. Ihr Wert ist die Chronologie. Nach dem Verlust von 2147 und vor dem Abstieg des Spielers kamen unabhängige Crews hinab, fanden Teilrouten durch die ertrunkene Infrastruktur und verschwanden in derselben Dunkelheit, die die Kolonie still hielt.",
+     "external_site": "Dead Claim Cache eröffnet HECTON-8s Schattenbergungsgeschichte: die Jahre, in denen illegale oder unlizenzierte Crews in Aegir-Wasser eindrangen, unterhalb der öffentlichen Suchlinie arbeiteten und Warnungen statt offizieller Akten hinterließen.",
+     "external_site_article": "Ein Toter-Claim-Cache ist ein Überlebensargument, das jemand Verlorenes zurückließ. Der Beutel ist wasserdicht, doppelt gebunden und dort versteckt, wo ein schneller Taucher nie suchen würde: unter dem Nordrohr, unter dem Lampengitter, hinter einem Streifen gerissener Akustikdämmung. Wer ihn packte, erwartete zurückzukehren. Die Person markierte eine Route, versiegelte Ersatzcutter, faltete eine Karte, bis das Wachs riss, und schrieb das Wort sicher zweimal an denselben Rand. Diese Wiederholung ist die erste Warnung. Auf HECTON-8 bedeutet sicher meist, dass jemand lange genug überlebte, um sich selbst zu belügen. Der Cache zählt, weil er die Welt erweitert, ohne sie zu bevölkern. Der Spieler ist weiter allein im Ozean, aber nicht der erste. Zwischen der Carrier-Katastrophe und dem aktuellen Lauf schlichen andere Profis hinab: wegen Metall, Bergungsrechten, versiegelter Fracht und Gerüchten. Sie fanden genug, um Ausrüstung zurückzulassen. Sie fanden nicht genug, um Zeugnis abzulegen. Die blaue Kassettennotiz, die Carrier-Ping-Warnung und die geschnittene Leine lassen den Cache weniger wie Beute wirken und mehr wie eine Hand aus einer gescheiterten Route."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Caché de reclamación muerta",
+     "scanner": "Caché de campo oculto. Guardado en seco, atado bajo, marcado por una línea cortada y un mapa que dice seguro demasiadas veces.",
+     "field_note": "Alguien llegó a este cañón antes que tú y aprendió lo suficiente para esconder equipo, no lo suficiente para salir limpio.",
+     "terminal": "NOTA DE CACHÉ: ruta bajo la tubería norte tranquila hasta que despierte la red de lámparas. El cofre azul sigue sellado. No respondas pings del carrier dentro de la sombra del cañón. Si la línea está cortada, cuenta el caché como problema heredado.",
+     "audio": "Esto no es equipo Deep Reach. Otro profesional bajó con un cortador, un mal mapa y una esperanza que no merecía.",
+     "in_game_wiki": "Los cachés de reclamación muerta prueban que el jugador no es el primer saqueador que sigue el dinero hasta HECTON-8. Se esconden por debajo de las rutas normales de reconocimiento: bolsas secas encajadas bajo tuberías de servicio, marcas privadas de reclamo rayadas en el lastre, pastillas de oxígeno envueltas en papel aceitado y mapas corregidos por manos que temblaban. Su valor no es el equipo. Su valor es la cronología. Después de la pérdida de 2147 y antes del descenso del jugador, tripulaciones independientes bajaron, encontraron rutas parciales por la infraestructura ahogada y desaparecieron en la misma oscuridad que mantuvo callada a la colonia.",
+     "external_site": "Dead Claim Cache presenta la historia de salvamento en sombra de HECTON-8: los años en que tripulaciones ilegales o sin licencia entraron en el agua de Aegir, trabajaron bajo la línea pública de búsqueda y dejaron advertencias en vez de registros oficiales.",
+     "external_site_article": "Un caché de reclamación muerta es un argumento de supervivencia dejado por alguien que perdió. La bolsa es impermeable, atada dos veces y escondida donde un buzo rápido nunca miraría: bajo la tubería norte, debajo de la red de lámparas, detrás de una tira de aislamiento acústico rasgado. Quien la preparó esperaba volver. Marcó una ruta, selló cortadores de repuesto, dobló un mapa hasta quebrar la cera y escribió la palabra seguro dos veces en el mismo margen. Esa repetición es la primera advertencia. En HECTON-8, seguro suele significar que una persona sobrevivió lo bastante para mentirse. El caché importa porque amplía el mundo sin llenarlo de gente. El jugador sigue solo en el océano, pero no fue el primero. Entre el desastre del carrier y la incursión actual, otros profesionales bajaron tras metal, derechos de salvamento, carga sellada y rumores. Encontraron lo suficiente para dejar equipo. No encontraron lo suficiente para dejar testimonio. La nota del cofre azul, la advertencia de los pings del carrier y la línea cortada hacen que el caché parezca menos un tesoro y más una mano que sale de una ruta fallida."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Cache de revendication morte",
+     "scanner": "Cache de terrain dissimulée. Gardée au sec, attachée bas, marquée par une longe coupée et une carte qui dit sûr trop souvent.",
+     "field_note": "Quelqu'un a atteint ce canyon avant toi et a appris assez pour cacher du matériel, pas assez pour repartir proprement.",
+     "terminal": "NOTE DE CACHE : route du tuyau nord calme jusqu'au réveil du réseau de lampes. Le coffre bleu reste scellé. Ne réponds pas aux pings du carrier dans l'ombre du canyon. Si la longe est coupée, considère cette cache comme un ennui hérité.",
+     "audio": "Ce n'est pas du matériel Deep Reach. Un autre professionnel est descendu avec un cutter, une mauvaise carte et un espoir qu'il ne méritait pas.",
+     "in_game_wiki": "Les caches de revendication morte prouvent que le joueur n'est pas le premier pillard à suivre l'argent jusqu'à HECTON-8. Elles reposent sous les routes de relevé normales : sacs étanches coincés sous les tuyaux de service, marques privées gravées dans le ballast, pastilles d'oxygène enveloppées de papier huilé, cartes corrigées par des mains tremblantes. Leur valeur n'est pas le matériel. Leur valeur est la chronologie. Après la perte de 2147 et avant la descente du joueur, des équipages indépendants sont descendus, ont trouvé des routes partielles dans l'infrastructure noyée et ont disparu dans la même obscurité qui gardait la colonie silencieuse.",
+     "external_site": "Dead Claim Cache ouvre l'histoire de récupération clandestine de HECTON-8 : les années où des équipes illégales ou sans licence sont entrées dans l'eau d'Aegir, ont travaillé sous la ligne publique de recherche et ont laissé des avertissements au lieu de dossiers officiels.",
+     "external_site_article": "Une cache de revendication morte est un argument de survie laissé par quelqu'un qui a perdu. Le sac est étanche, doublement noué, caché là où un plongeur pressé ne regarderait jamais : sous le tuyau nord, sous le réseau de lampes, derrière une bande d'isolant acoustique déchirée. La personne qui l'a préparé pensait revenir. Elle a marqué une route, scellé des cutters de rechange, plié une carte jusqu'à fendre la cire et écrit le mot sûr deux fois dans la même marge. Cette répétition est le premier avertissement. Sur HECTON-8, sûr signifie souvent qu'une personne a survécu assez longtemps pour se mentir. La cache compte parce qu'elle élargit le monde sans le peupler. Le joueur reste seul dans l'océan, mais il n'est pas le premier. Entre la catastrophe du carrier et l'incursion actuelle, d'autres professionnels sont descendus chercher du métal, des droits de récupération, des cargaisons scellées et des rumeurs. Ils ont trouvé assez pour laisser du matériel. Pas assez pour laisser un témoignage. La note du coffre bleu, l'avertissement sur les pings du carrier et la longe coupée donnent à la cache moins l'air d'un trésor que d'une main tendue depuis une route ratée."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "מטמון תביעה מתה",
+     "scanner": "מטמון שדה מוסתר. נארז יבש, נקשר נמוך, וסומן בכבל חתוך ובמפה שאומרת בטוח יותר מדי פעמים.",
+     "field_note": "מישהו הגיע לקניון הזה לפניך ולמד מספיק כדי להחביא ציוד, לא מספיק כדי לצאת נקי.",
+     "terminal": "הערת מטמון: נתיב הצינור הצפוני שקט עד שרשת המנורות מתעוררת. התיבה הכחולה נשארת חתומה. אל תענה לפינגים של carrier בתוך צל הקניון. אם הכבל חתוך, ספור את המטמון כצרה בירושה.",
+     "audio": "זה לא ציוד Deep Reach. מקצוען אחר ירד לכאן עם חותך, מפה גרועה ותקווה שלא הגיעה לו.",
+     "in_game_wiki": "מטמוני תביעה מתה מוכיחים שהשחקן אינו הבוזז הראשון שעקב אחרי כסף אל HECTON-8. המטמונים יושבים מתחת למסלולי הסקר הרגילים: שקיות יבשות תקועות מתחת לצנרת שירות, סימני תביעה פרטיים חרוטים במשקולת, טבליות חמצן עטופות בנייר שמן ומפות שתוקנו בידיים רועדות. הערך שלהם אינו הציוד. הערך שלהם הוא הכרונולוגיה. אחרי אובדן 2147 ולפני ירידת השחקן, צוותים עצמאיים ירדו, מצאו נתיבים חלקיים דרך התשתית הטבועה ונעלמו באותו חושך ששמר את המושבה שקטה.",
+     "external_site": "Dead Claim Cache מציג את היסטוריית החילוץ הצללית של HECTON-8: השנים שבהן צוותים לא חוקיים או חסרי רישיון נכנסו למי Aegir, עבדו מתחת לקו החיפוש הציבורי והשאירו אזהרות במקום רשומות רשמיות.",
+     "external_site_article": "מטמון תביעה מתה הוא טיעון הישרדות שהושאר בידי מי שהפסיד. השקית עמידה למים, קשורה פעמיים ומוסתרת במקום שצולל מהיר לעולם לא היה בודק: מתחת לצינור הצפוני, מתחת לרשת המנורות, מאחורי רצועה של בידוד אקוסטי קרוע. מי שארז אותה ציפה לחזור. הוא סימן נתיב, אטם חותכים חלופיים, קיפל מפה עד שהשעווה נסדקה וכתב את המילה בטוח פעמיים באותו שול. החזרה הזאת היא האזהרה הראשונה. ב-HECTON-8, בטוח פירושו לעיתים שמישהו שרד מספיק זמן כדי לשקר לעצמו. המטמון חשוב כי הוא מרחיב את העולם בלי לאכלס אותו. השחקן עדיין לבד באוקיינוס, אבל לא ראשון. בין אסון ה-carrier לבין הריצה הנוכחית, מקצוענים אחרים התגנבו למטה אחרי מתכת, זכויות חילוץ, מטען חתום ושמועות. הם מצאו מספיק כדי להשאיר ציוד. הם לא מצאו מספיק כדי להשאיר עדות. הערת התיבה הכחולה, אזהרת הפינגים של ה-carrier והכבל החתוך גורמים למטמון להרגיש פחות כמו אוצר ויותר כמו יד הנשלחת מנתיב שנכשל."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Cache Klaim Mati",
+     "scanner": "Cache lapangan tersembunyi. Dikemas kering, diikat rendah, ditandai tether terpotong dan peta yang terlalu sering bilang aman.",
+     "field_note": "Seseorang mencapai ngarai ini sebelum kamu dan belajar cukup untuk menyembunyikan peralatan, tidak cukup untuk keluar bersih.",
+     "terminal": "CATATAN CACHE: rute pipa utara tenang sampai kisi lampu bangun. Peti biru tetap tersegel. Jangan jawab ping carrier di bayangan ngarai. Jika tether terpotong, anggap cache ini masalah warisan.",
+     "audio": "Ini bukan kit Deep Reach. Profesional lain turun dengan cutter, peta buruk, dan harapan yang tidak pantas ia miliki.",
+     "in_game_wiki": "Cache klaim mati membuktikan pemain bukan penjarah pertama yang mengikuti uang ke HECTON-8. Cache itu berada di bawah rute survei normal: kantong kering terselip di bawah pipa layanan, tanda klaim pribadi digores pada ballast, tablet oksigen dibungkus kertas minyak, dan peta yang dikoreksi oleh tangan gemetar. Nilainya bukan peralatan. Nilainya adalah kronologi. Setelah kehilangan tahun 2147 dan sebelum turunnya pemain, kru independen datang ke bawah, menemukan rute parsial melalui infrastruktur tenggelam, lalu menghilang dalam gelap yang sama yang membuat koloni tetap diam.",
+     "external_site": "Dead Claim Cache memperkenalkan sejarah salvage bayangan HECTON-8: tahun-tahun ketika kru ilegal atau tanpa lisensi memasuki air Aegir, bekerja di bawah garis pencarian publik, dan meninggalkan peringatan alih-alih catatan resmi.",
+     "external_site_article": "Cache klaim mati adalah argumen bertahan hidup yang ditinggalkan oleh seseorang yang kalah. Kantongnya tahan air, diikat ganda, dan disembunyikan di tempat yang tidak akan dilihat penyelam cepat: di bawah pipa utara, di bawah kisi lampu, di balik sobekan peredam akustik. Orang yang mengemasnya berharap kembali. Ia menandai rute, menyegel cutter cadangan, melipat peta sampai lilinnya retak, dan menulis kata aman dua kali di margin yang sama. Pengulangan itu peringatan pertama. Di HECTON-8, aman biasanya berarti seseorang bertahan cukup lama untuk berbohong kepada dirinya sendiri. Cache ini penting karena memperluas dunia tanpa membuatnya ramai. Pemain masih sendirian di laut, tetapi bukan yang pertama. Di antara bencana carrier dan perjalanan sekarang, profesional lain menyelinap turun demi logam, hak salvage, kargo tersegel, dan rumor. Mereka menemukan cukup banyak untuk meninggalkan peralatan. Mereka tidak menemukan cukup banyak untuk meninggalkan kesaksian. Catatan peti biru, peringatan ping carrier, dan tether terpotong membuat cache terasa bukan seperti harta, melainkan tangan yang terulur dari rute gagal."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "死んだ請求権のキャッシュ",
+     "scanner": "隠された現場キャッシュ。乾いたまま低く結ばれ、切られたテザーと、安全と書きすぎた地図で印を付けられている。",
+     "field_note": "誰かが君より先にこの峡谷へ着き、装備を隠すだけの知識を得た。きれいに出るだけの知識は得られなかった。",
+     "terminal": "キャッシュ記録: 北パイプ下の経路はランプ格子が目覚めるまで静か。青い箱は封印のまま。峡谷の影の中ではcarrier pingに応答するな。テザーが切れているなら、このキャッシュは引き継いだ厄介事として数えろ。",
+     "audio": "これはDeep Reachの装備ではない。別のプロがカッターと悪い地図と、持つ資格のない希望を持って降りてきた。",
+     "in_game_wiki": "死んだ請求権のキャッシュは、プレイヤーがHECTON-8の金を追った最初の略奪者ではないことを示す。キャッシュは通常の調査経路より下にある。保守配管の下へ押し込まれたドライバッグ、バラストに削られた私的な請求印、油紙に包まれた酸素錠、震える手で修正された地図。価値があるのは装備ではない。価値があるのは時系列だ。2147年の喪失の後、プレイヤーの降下の前に、独立クルーが下へ来て、沈んだインフラを抜ける部分的な道を見つけ、植民地を沈黙させていた同じ暗闇へ消えた。",
+     "external_site": "Dead Claim CacheはHECTON-8の影のサルベージ史を開く。違法または無許可のクルーがAegirの水域へ入り、公的な捜索線より下で働き、公式記録ではなく警告を残した年月である。",
+     "external_site_article": "死んだ請求権のキャッシュは、負けた者が残した生存の主張だ。バッグは防水で、二重に結ばれ、急ぐ潜水者なら絶対に見ない場所に隠されている。北パイプの下、ランプ格子の下、破れた音響防壁の裏。詰めた者は戻るつもりだった。経路を印し、予備カッターを封じ、ワックスが割れるまで地図を折り、同じ余白に安全という言葉を二度書いた。その反復が最初の警告になる。HECTON-8で安全とは、多くの場合、自分に嘘をつけるほど長く生き延びたという意味だ。このキャッシュが重要なのは、世界を広げても混雑させないからだ。プレイヤーはまだ海で一人だが、最初ではない。carrierの惨事と現在の侵入の間に、別のプロたちが金属、サルベージ権、封印貨物、噂を追って下へ滑り込んだ。彼らは装備を残せるだけのものを見つけた。証言を残せるだけのものは見つけなかった。青い箱のメモ、carrier pingの警告、切られたテザーが、このキャッシュを宝ではなく、失敗した経路から伸びる手に見せている。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "죽은 클레임 캐시",
+     "scanner": "숨겨진 현장 캐시. 마른 상태로 낮게 묶였고, 잘린 테더와 안전하다는 말을 너무 많이 적은 지도로 표시되어 있다.",
+     "field_note": "누군가 너보다 먼저 이 협곡에 도착했고 장비를 숨길 만큼은 배웠지만, 깨끗하게 빠져나갈 만큼은 배우지 못했다.",
+     "terminal": "캐시 메모: 북쪽 파이프 경로는 램프 격자가 깨어날 때까지 조용하다. 파란 케이스는 봉인 유지. 협곡 그림자 안에서 carrier ping에 응답하지 말 것. 테더가 잘려 있다면 이 캐시는 물려받은 문제로 계산하라.",
+     "audio": "이건 Deep Reach 장비가 아니다. 다른 전문가가 커터와 나쁜 지도, 가질 자격이 없던 희망을 들고 내려왔다.",
+     "in_game_wiki": "죽은 클레임 캐시는 플레이어가 HECTON-8의 돈을 쫓아온 첫 약탈자가 아님을 증명한다. 캐시는 일반 조사 경로 아래에 있다. 서비스 배관 아래에 끼워 넣은 드라이백, 밸러스트에 긁은 개인 클레임 표식, 기름종이에 싼 산소 정제, 떨리는 손으로 고친 지도. 가치는 장비가 아니다. 가치는 연대기다. 2147년의 상실 이후, 플레이어의 하강 이전에 독립 승무원들이 내려와 침수된 기반시설을 통과하는 부분 경로를 찾았고, 식민지를 조용하게 만든 같은 어둠 속으로 사라졌다.",
+     "external_site": "Dead Claim Cache는 HECTON-8의 그림자 인양사를 연다. 불법 또는 무허가 승무원들이 Aegir 수역으로 들어가 공개 수색선 아래에서 작업하고 공식 기록 대신 경고를 남긴 시기다.",
+     "external_site_article": "죽은 클레임 캐시는 패배한 사람이 남긴 생존 주장이다. 가방은 방수 처리되고 두 번 묶였으며, 빠른 잠수부라면 절대 보지 않을 곳에 숨겨져 있다. 북쪽 파이프 아래, 램프 격자 밑, 찢어진 음향 차폐재 뒤다. 그것을 싼 사람은 돌아올 생각이었다. 그는 경로를 표시하고 예비 커터를 봉인하고 왁스가 갈라질 때까지 지도를 접고 같은 여백에 안전이라는 말을 두 번 썼다. 그 반복이 첫 경고다. HECTON-8에서 안전은 보통 누군가가 자기 자신에게 거짓말할 만큼 오래 살아남았다는 뜻이다. 이 캐시는 세계를 넓히지만 붐비게 만들지 않기 때문에 중요하다. 플레이어는 여전히 바다에서 혼자지만 첫 번째는 아니다. carrier 참사와 현재 침투 사이에 다른 전문가들이 금속, 인양권, 봉인 화물, 소문을 따라 아래로 숨어들었다. 그들은 장비를 남길 만큼은 찾았다. 증언을 남길 만큼은 찾지 못했다. 파란 케이스의 메모, carrier ping 경고, 잘린 테더 때문에 이 캐시는 보물보다 실패한 경로에서 뻗은 손처럼 느껴진다."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Dode-claimcache",
+     "scanner": "Verborgen veldcache. Droog verpakt, laag vastgezet, gemarkeerd door een doorgesneden tether en een kaart die te vaak veilig zegt.",
+     "field_note": "Iemand bereikte deze kloof voor jou en leerde genoeg om uitrusting te verbergen, niet genoeg om schoon weg te komen.",
+     "terminal": "CACHE-NOTITIE: noordpijproute stil tot het lamprooster wakker wordt. Blauwe kist blijft verzegeld. Beantwoord geen carrier-pings in de kloofschaduw. Als de tether is doorgesneden, tel de cache als geërfde ellende.",
+     "audio": "Dit is geen Deep Reach-kit. Een andere professional kwam naar beneden met een cutter, een slechte kaart en hoop die hij niet verdiende.",
+     "in_game_wiki": "Dode-claimcaches bewijzen dat de speler niet de eerste plunderaar is die geld naar HECTON-8 volgde. De caches liggen onder normale surveyroutes: droge zakken vast onder serviceleidingen, privéclaimtekens in ballast gekrast, zuurstoftabletten in oliepapier en kaarten gecorrigeerd door trillende handen. Hun waarde is niet de uitrusting. Hun waarde is de chronologie. Na het verlies van 2147 en voor de afdaling van de speler kwamen onafhankelijke crews naar beneden, vonden deelroutes door de verdronken infrastructuur en verdwenen in dezelfde duisternis die de kolonie stil hield.",
+     "external_site": "Dead Claim Cache opent HECTON-8's schaduwgeschiedenis van berging: de jaren waarin illegale of ongelicentieerde crews Aegir-water binnengingen, onder de openbare zoeklijn werkten en waarschuwingen achterlieten in plaats van officiële dossiers.",
+     "external_site_article": "Een dode-claimcache is een overlevingsargument achtergelaten door iemand die verloor. De zak is waterdicht, dubbel vastgebonden en verborgen waar een snelle duiker nooit zou kijken: onder de noordpijp, onder het lamprooster, achter een strook gescheurde akoestische demping. Wie hem inpakte, verwachtte terug te komen. Die persoon markeerde een route, verzegelde reservecutters, vouwde een kaart tot de was barstte en schreef het woord veilig twee keer in dezelfde marge. Die herhaling is de eerste waarschuwing. Op HECTON-8 betekent veilig meestal dat iemand lang genoeg overleefde om tegen zichzelf te liegen. De cache telt omdat hij de wereld groter maakt zonder haar vol te zetten. De speler is nog steeds alleen in de oceaan, maar niet eerste. Tussen de carrier-ramp en de huidige tocht slopen andere professionals omlaag achter metaal, bergingsrechten, verzegelde lading en geruchten aan. Ze vonden genoeg om uitrusting achter te laten. Niet genoeg om getuigenis achter te laten. De notitie over de blauwe kist, de waarschuwing voor carrier-pings en de doorgesneden tether maken de cache minder een schat en meer een hand uit een mislukte route."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Skrytka martwego roszczenia",
+     "scanner": "Ukryta skrytka polowa. Spakowana na sucho, przywiązana nisko, oznaczona przeciętą linką i mapą, która zbyt często mówi bezpiecznie.",
+     "field_note": "Ktoś dotarł do tego kanionu przed tobą i nauczył się dość, by ukryć sprzęt, ale nie dość, by wyjść czysto.",
+     "terminal": "NOTATKA SKRYTKI: trasa pod północną rurą cicha, dopóki nie obudzi się siatka lamp. Niebieska kaseta pozostaje zapieczętowana. Nie odpowiadaj na pingi carriera w cieniu kanionu. Jeśli linka jest przecięta, uznaj skrytkę za odziedziczony kłopot.",
+     "audio": "To nie jest sprzęt Deep Reach. Inny profesjonalista zszedł tu z cutterem, złą mapą i nadzieją, na którą nie zasługiwał.",
+     "in_game_wiki": "Skrytki martwych roszczeń dowodzą, że gracz nie jest pierwszym szabrownikiem, który poszedł za pieniędzmi na HECTON-8. Leżą poniżej normalnych tras pomiarowych: suche worki wciśnięte pod rury serwisowe, prywatne znaki roszczeń wydrapane w balast, tabletki tlenowe owinięte w papier olejowany i mapy poprawiane drżącymi rękami. Ich wartością nie jest sprzęt. Ich wartością jest chronologia. Po stracie z 2147 roku i przed zejściem gracza niezależne załogi schodziły w dół, znajdowały częściowe trasy przez zatopioną infrastrukturę i znikały w tej samej ciemności, która trzymała kolonię w ciszy.",
+     "external_site": "Dead Claim Cache otwiera cienistą historię salvage HECTON-8: lata, gdy nielegalne albo nielicencjonowane załogi wchodziły do wód Aegir, pracowały poniżej publicznej linii poszukiwań i zostawiały ostrzeżenia zamiast oficjalnych zapisów.",
+     "external_site_article": "Skrytka martwego roszczenia to argument o przetrwaniu zostawiony przez kogoś, kto przegrał. Torba jest wodoodporna, związana podwójnie i ukryta tam, gdzie szybki nurek nigdy by nie spojrzał: pod północną rurą, pod siatką lamp, za pasem rozdartego tłumienia akustycznego. Ten, kto ją pakował, spodziewał się wrócić. Oznaczył trasę, zapieczętował zapasowe cuttery, złożył mapę tak mocno, że pękł wosk, i napisał słowo bezpiecznie dwa razy na tym samym marginesie. To powtórzenie jest pierwszym ostrzeżeniem. Na HECTON-8 bezpiecznie zwykle znaczy, że ktoś przeżył wystarczająco długo, by okłamać samego siebie. Skrytka jest ważna, bo poszerza świat, nie zaludniając go. Gracz nadal jest sam w oceanie, ale nie jest pierwszy. Między katastrofą carriera a obecną wyprawą inni profesjonaliści wymykali się w dół po metal, prawa salvage, zapieczętowany ładunek i plotki. Znaleźli dość, by zostawić sprzęt. Nie znaleźli dość, by zostawić świadectwo. Notatka o niebieskiej kasecie, ostrzeżenie przed pingami carriera i przecięta linka sprawiają, że skrytka przypomina mniej skarb, a bardziej rękę wyciągniętą z nieudanej trasy."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Cache de reivindicação morta",
+     "scanner": "Cache de campo escondido. Embalado seco, preso baixo, marcado por um tether cortado e um mapa que diz seguro vezes demais.",
+     "field_note": "Alguém chegou a este cânion antes de você e aprendeu o bastante para esconder equipamento, não o bastante para sair limpo.",
+     "terminal": "NOTA DO CACHE: rota sob o tubo norte quieta até a grade de lâmpadas acordar. A caixa azul permanece selada. Não responda pings do carrier dentro da sombra do cânion. Se o tether estiver cortado, conte o cache como problema herdado.",
+     "audio": "Isso não é kit Deep Reach. Outro profissional desceu com um cutter, um mapa ruim e uma esperança que não merecia.",
+     "in_game_wiki": "Caches de reivindicação morta provam que o jogador não é o primeiro saqueador a seguir dinheiro até HECTON-8. Eles ficam abaixo das rotas normais de varredura: bolsas secas presas sob tubulações de serviço, marcas privadas de reivindicação riscadas no lastro, pastilhas de oxigênio embrulhadas em papel oleado e mapas corrigidos por mãos trêmulas. O valor deles não é o equipamento. O valor deles é a cronologia. Depois da perda de 2147 e antes da descida do jogador, equipes independentes desceram, encontraram rotas parciais pela infraestrutura afogada e sumiram na mesma escuridão que manteve a colônia calada.",
+     "external_site": "Dead Claim Cache apresenta a história de salvage nas sombras de HECTON-8: os anos em que equipes ilegais ou sem licença entraram na água de Aegir, trabalharam abaixo da linha pública de busca e deixaram avisos em vez de registros oficiais.",
+     "external_site_article": "Um cache de reivindicação morta é um argumento de sobrevivência deixado por alguém que perdeu. A bolsa é impermeável, presa com dois nós e escondida onde um mergulhador apressado nunca olharia: sob o tubo norte, abaixo da grade de lâmpadas, atrás de uma faixa rasgada de isolamento acústico. Quem a preparou esperava voltar. Marcou uma rota, selou cutters reserva, dobrou um mapa até a cera rachar e escreveu a palavra seguro duas vezes na mesma margem. Essa repetição é o primeiro aviso. Em HECTON-8, seguro geralmente significa que alguém sobreviveu tempo suficiente para mentir para si mesmo. O cache importa porque amplia o mundo sem enchê-lo de gente. O jogador ainda está sozinho no oceano, mas não foi o primeiro. Entre o desastre do carrier e a incursão atual, outros profissionais desceram atrás de metal, direitos de salvage, carga selada e rumores. Encontraram o bastante para deixar equipamento. Não encontraram o bastante para deixar testemunho. A nota da caixa azul, o aviso sobre pings do carrier e o tether cortado fazem o cache parecer menos tesouro e mais uma mão estendida de uma rota fracassada."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Кэш мертвой заявки",
+     "scanner": "Скрытый полевой кэш. Упакован сухо, закреплен низко, отмечен перерезанным фалом и картой, где слово безопасно повторено слишком часто.",
+     "field_note": "Кто-то добрался до этого каньона раньше тебя и узнал достаточно, чтобы спрятать снаряжение, но недостаточно, чтобы выйти чисто.",
+     "terminal": "ЗАМЕТКА КЭША: маршрут под северной трубой тихий, пока не проснется решетка ламп. Синий кейс остается запечатанным. Не отвечать на пинги carrier в тени каньона. Если фал перерезан, считать кэш унаследованной проблемой.",
+     "audio": "Это не комплект Deep Reach. Другой профессионал спустился сюда с резаком, плохой картой и надеждой, которой не заслуживал.",
+     "in_game_wiki": "Кэши мертвых заявок доказывают, что игрок не первый мародер, пошедший за деньгами на HECTON-8. Они лежат ниже обычных маршрутов съемки: сухие мешки, зажатые под сервисными трубами, частные метки заявки, выцарапанные на балласте, кислородные таблетки в промасленной бумаге и карты, исправленные дрожащими руками. Их ценность не в снаряжении. Их ценность в хронологии. После потери 2147 года и до спуска игрока независимые экипажи уже уходили вниз, находили частичные проходы через затонувшую инфраструктуру и исчезали в той же темноте, которая держала колонию молчащей.",
+     "external_site": "Dead Claim Cache открывает теневую историю спасработ HECTON-8: годы, когда нелегальные или нелицензированные экипажи входили в воды Aegir, работали ниже публичной линии поиска и оставляли предупреждения вместо официальных записей.",
+     "external_site_article": "Кэш мертвой заявки — это довод о выживании, оставленный тем, кто проиграл. Мешок водонепроницаемый, перевязан дважды и спрятан там, куда быстрый ныряльщик не посмотрит: под северной трубой, ниже решетки ламп, за полосой разорванной акустической изоляции. Тот, кто его паковал, рассчитывал вернуться. Он пометил маршрут, запечатал запасные резаки, сложил карту так, что треснул воск, и дважды написал слово безопасно на одном поле. Это повторение — первое предупреждение. На HECTON-8 безопасно обычно значит, что человек прожил достаточно долго, чтобы соврать самому себе. Кэш важен потому, что расширяет мир, но не заселяет его. Игрок все еще один в океане, но он не первый. Между катастрофой carrier и нынешним заходом другие профессионалы пробирались вниз за металлом, правами на salvage, запечатанным грузом и слухами. Они нашли достаточно, чтобы оставить снаряжение. Недостаточно, чтобы оставить свидетельство. Заметка о синем кейсе, предупреждение о пингах carrier и перерезанный фал делают кэш не сокровищем, а рукой, протянутой из проваленного маршрута."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Сховок мертвої заявки",
+     "scanner": "Прихований польовий сховок. Запакований сухо, прив'язаний низько, позначений перерізаним фалом і картою, де слово безпечно написане надто часто.",
+     "field_note": "Хтось дістався цього каньйону раніше за тебе й навчився достатньо, щоб сховати спорядження, але не достатньо, щоб вийти чисто.",
+     "terminal": "НОТАТКА СХОВКУ: маршрут під північною трубою тихий, доки не прокинеться решітка ламп. Синій кейс лишається запечатаним. Не відповідати на пінги carrier у тіні каньйону. Якщо фал перерізано, вважай сховок успадкованою проблемою.",
+     "audio": "Це не комплект Deep Reach. Інший професіонал спустився сюди з різаком, поганою картою й надією, на яку не заслуговував.",
+     "in_game_wiki": "Сховки мертвих заявок доводять, що гравець не перший мародер, який пішов за грошима на HECTON-8. Вони лежать нижче звичних маршрутів зйомки: сухі мішки, затиснуті під сервісними трубами, приватні позначки заявки, видряпані на баласті, кисневі таблетки в промащеному папері й карти, виправлені тремтячими руками. Їхня цінність не в спорядженні. Їхня цінність у хронології. Після втрати 2147 року й до спуску гравця незалежні екіпажі вже йшли вниз, знаходили часткові проходи крізь затоплену інфраструктуру й зникали в тій самій темряві, яка тримала колонію мовчазною.",
+     "external_site": "Dead Claim Cache відкриває тіньову історію salvage на HECTON-8: роки, коли нелегальні або неліцензовані екіпажі входили у води Aegir, працювали нижче публічної лінії пошуку й залишали попередження замість офіційних записів.",
+     "external_site_article": "Сховок мертвої заявки — це доказ виживання, залишений тим, хто програв. Мішок водонепроникний, перев'язаний двічі й схований там, куди швидкий нирець не подивиться: під північною трубою, нижче решітки ламп, за смугою розірваної акустичної ізоляції. Той, хто його пакував, розраховував повернутися. Він позначив маршрут, запечатав запасні різаки, склав карту так, що тріснув віск, і двічі написав слово безпечно на тому самому полі. Це повторення — перше попередження. На HECTON-8 безпечно зазвичай означає, що людина прожила достатньо довго, щоб збрехати самій собі. Сховок важливий, бо розширює світ, не заселяючи його. Гравець усе ще сам в океані, але він не перший. Між катастрофою carrier і нинішнім заходом інші професіонали пробиралися вниз за металом, правами на salvage, запечатаним вантажем і чутками. Вони знайшли достатньо, щоб залишити спорядження. Не достатньо, щоб залишити свідчення. Нотатка про синій кейс, попередження про пінги carrier і перерізаний фал роблять сховок не скарбом, а рукою, простягнутою з проваленого маршруту."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "死亡索取缓存",
+     "scanner": "隐藏的现场缓存。干燥封装，低位绑牢，用一根切断的系绳和一张把安全写得太多次的地图标记。",
+     "field_note": "有人在你之前抵达这条峡谷，学会了足够多来藏装备，却没有学会足够多来干净离开。",
+     "terminal": "缓存备注：北管下方路线安静，直到灯栅醒来。蓝色箱体保持封存。不要在峡谷阴影内回应carrier ping。如果系绳被切断，把这份缓存算作继承来的麻烦。",
+     "audio": "这不是Deep Reach装备。另一个专业人士带着切割器、烂地图和不该拥有的希望下到了这里。",
+     "in_game_wiki": "死亡索取缓存证明玩家不是第一个追着钱来到HECTON-8的掠夺者。这些缓存位于常规测绘路线以下：塞在服务管线下的干袋，刻在压载物上的私人索取标记，包在油纸里的氧片，还有被颤抖的手修改过的地图。它们的价值不在装备。它们的价值在时间顺序。2147年的失事之后、玩家下潜之前，独立船组已经下到这里，找到穿过淹没基础设施的部分路线，然后消失在让殖民地保持沉默的同一片黑暗里。",
+     "external_site": "Dead Claim Cache开启HECTON-8的阴影打捞史：那些年里，非法或无执照船组进入Aegir水域，在公共搜索线以下作业，留下警告而不是官方记录。",
+     "external_site_article": "死亡索取缓存是一个失败者留下的生存论证。袋子防水，双重捆扎，藏在匆忙潜水员绝不会看的地方：北管下方、灯栅下面、一条撕裂的声学隔层之后。打包它的人以为自己会回来。他标出路线，封好备用切割器，把地图折到蜡层开裂，并在同一个页边写了两次安全。这个重复就是第一个警告。在HECTON-8，安全通常意味着某个人活得够久，足以骗自己。这个缓存重要，是因为它扩大世界，却不让世界变得拥挤。玩家仍然独自在海里，但不是第一个。carrier灾难和当前航次之间，其他专业人士为金属、打捞权、封存货物和传闻偷偷下潜。他们找到的东西足够留下装备。不足以留下证词。蓝色箱体的备注、carrier ping的警告、被切断的系绳，让这份缓存不像宝物，更像一只从失败路线里伸出来的手。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

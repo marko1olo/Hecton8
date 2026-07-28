@@ -1,11 +1,54 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS246_VIEWPORT_GLASS_STRESS_AND_FOG_ARTICLE",
-  "title": "Viewport Glass Stress And Fog Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS246_VIEWPORT_GLASS_STRESS_AND_FOG_ARTICLE",
+ "title": "Viewport Glass Stress And Fog Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1416_VIEWPORT_GLASS_STRESS_FOG_LEDGER",
+   "release_set_id": "RS246_VIEWPORT_GLASS_STRESS_AND_FOG_ARTICLE",
+   "article_id": "applied_lore.viewport_glass_stress_fog_ledger",
+   "title_key": "LORE_VIEWPORT_GLASS_STRESS_FOG_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/WriterScenarioAgentPrompt.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,261 +56,219 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1416_VIEWPORT_GLASS_STRESS_FOG_LEDGER",
-      "release_set_id": "RS246_VIEWPORT_GLASS_STRESS_AND_FOG_ARTICLE",
-      "article_id": "applied_lore.viewport_glass_stress_fog_ledger",
-      "title_key": "LORE_VIEWPORT_GLASS_STRESS_FOG_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/WriterScenarioAgentPrompt.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.viewport_glass_stress_fog_ledger",
-        "secondary": [
-          "unlock.first_viewport_edge_scan",
-          "unlock.first_dry_pocket_viewport",
-          "unlock.first_pressure_window_cut_choice"
-        ],
-        "poi_tags": [
-          "poi.viewport_stress_arc",
-          "poi.gasket_salt_fog_edge",
-          "poi.condensation_laminate_beads",
-          "poi.cleaning_arm_crescent_scratches"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.pressure_route",
-          "biome.shallow_annex"
-        ],
-        "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Viewport Stress Scanner",
-          "terminal": "Pressure Window Maintenance Readout",
-          "audio": "Marauder Glass-Cut Instructor",
-          "in_game_wiki": "PDA Viewport Field Guide",
-          "external_site": "Public Site Viewport Stress Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_viewport_edge_scan_or_dry_pocket_choice",
-        "truth_payload": "Viewport safety is read at the rim, not the clear center: delamination, salt fog, gasket grime and trapped condensation reveal pressure history.",
-        "player_question": "When does a clear window stop being safe?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Viewport Stress Fog Ledger",
-          "scanner": "VIEWPORT GLASS // Thick pane edge, milky delamination arc, salt fog under gasket. Scratches are crescent-shaped from cleaning arms, not fauna. Clouded rim means pressure history; clear center does not mean safe pane.",
-          "terminal": "PRESSURE WINDOW READ // Do not trust visibility alone. Stress arcs at the edge show old flex. Condensation beads inside the laminate mean the dry side failed slowly. Gasket grime below the rim means repeated leak cycling, not one impact.",
-          "audio": "A clear window can still be tired. The ocean does not need to crack glass all at once.",
-          "in_game_wiki": "Viewport glass in HECTON-8 is a promise made under pressure. It lets a room look out without letting the ocean in, and that makes every stain political. A clear center is only the part people cleaned. The edge tells the truth: milky delamination, salt fog, crescent scratches from old cleaning arms, gasket grime, trapped condensation and cloudy pressure arcs.\n\nThe player should read viewports like instruments. A pane with stress arcs but clean gasket may be old but stable. A pane with fog under the gasket has leaked between layers. A pane with droplets inside the laminate failed slowly from the dry side. A pane scratched in crescents probably belonged to a maintained room; random cuts suggest collapse debris or later salvage. The glass is not just a window. It is a pressure history record.\n\nThis matters because a viewport can mark both route and risk. It can show a dry pocket behind a wall, expose a room that still has air, reveal whether workers watched the ocean daily, or prove that a claimed 'instant breach' was actually a slow failure. Cutting around a tired pane may release a room gently. Striking the center because it looks clean can turn a quiet wall into knives.",
-          "external_site": "A field article on thick underwater viewport glass: how delamination, fogging, gasket grime and stress arcs tell pressure history better than visibility.",
-          "external_site_article": "A viewport is one of the crueler objects in a drowned colony. It was built to make the ocean visible without letting it become present. After the colony fails, it keeps doing half of that job. You can see through it. That does not mean it is safe.\n\nHECTON-8 viewport reading starts at the edge. The middle of the glass is a liar because humans cleaned it, cameras stared through it, and players naturally trust what they can see. The rim is less vain. Milky arcs mean layers flexed under pressure. Salt fog under the gasket means water migrated where it was never invited. Condensation sealed inside the laminate means the dry side breathed wet air for a long time before collapse. Dark grime at the lower rim marks leak cycles, not decoration.\n\nGood use of a viewport changes behavior. The player can identify a dry pocket, choose a low-stress cut line, preserve the pane as proof of slow failure, or avoid a room whose glass has already become a pressure spring. It also changes mood without a monologue. A clean observation blister says someone still tried to work normally. A fogged family-room pane says the ocean arrived slowly enough for people to watch it negotiate.\n\nPressure glass as a resource can be valuable, but this article is about built glass as witness. The pane does not accuse anyone. It records patience, maintenance, denial and the exact places where the colony stopped keeping water outside.",
-          "field_note": "Look at the rim. The center is what people wanted to see."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал напряжения и тумана обзорного стекла",
-          "scanner": "ОБЗОРНОЕ СТЕКЛО // Толстая кромка, молочная дуга расслоения, соляной туман под прокладкой. Царапины полумесяцем от чистящих рычагов, не от фауны. Мутный край - история давления; чистый центр не означает безопасное стекло.",
-          "terminal": "ЧТЕНИЕ НАПОРНОГО ОКНА // Не доверять одной видимости. Дуги напряжения на краю показывают старый изгиб. Капли внутри ламината означают медленный отказ сухой стороны. Грязь под нижней прокладкой - повторные циклы течи, не один удар.",
-          "audio": "Прозрачное окно тоже может устать. Океану не обязательно ломать стекло сразу.",
-          "in_game_wiki": "Обзорное стекло HECTON-8 - обещание под давлением. Оно позволяет комнате смотреть наружу и не впускать океан, поэтому каждое пятно на нем важно. Чистый центр - только место, которое чистили. Правду говорит край: молочное расслоение, соляной туман, полукруглые царапины от старых чистящих рычагов, грязь прокладки, запертый конденсат и мутные дуги давления.\n\nИгрок должен читать окно как прибор. Стекло с дугами напряжения, но чистой прокладкой может быть старым, но стабильным. Туман под прокладкой означает воду между слоями. Капли внутри ламината говорят, что сухая сторона умирала медленно. Царапины полумесяцем указывают на обслуживаемую комнату; случайные резы - на обвал или поздний разбор. Это не просто окно, а запись истории давления.\n\nЭто важно для маршрута. Обзорное окно может указать на сухой карман, комнату с остаточным воздухом, рабочее место, где каждый день смотрели в океан, или доказать, что заявленный \"мгновенный прорыв\" был медленным отказом. Рез вокруг уставшей панели может выпустить комнату мягко. Удар по чистому центру превращает тихую стену в ножи.",
-          "external_site": "Полевой материал о толстом подводном обзорном стекле: как расслоение, соляной туман, грязь прокладки и дуги напряжения лучше видимости показывают историю давления.",
-          "external_site_article": "Обзорное окно - один из самых жестоких объектов утонувшей колонии. Его построили, чтобы океан был виден, но не присутствовал. После гибели колонии оно продолжает делать половину этой работы. Ты видишь сквозь него. Это не значит, что оно безопасно.\n\nЧтение начинается с края. Центр стекла врет, потому что его чистили, через него смотрели камеры, и человек доверяет тому, что видит. Кромка менее тщеславна. Молочные дуги говорят о слоях, гнувшихся под давлением. Соляной туман под прокладкой - о воде, ушедшей туда, куда ее не звали. Конденсат внутри ламината - о сухой стороне, которая долго дышала влажным воздухом до обвала.\n\nХорошее чтение меняет поведение. Игрок находит сухой карман, выбирает линию реза с меньшим напряжением, сохраняет стекло как доказательство медленного отказа или обходит комнату, где стекло уже стало пружиной давления. Такое окно меняет и настроение без монолога: чистый наблюдательный пузырь говорит, что кто-то пытался работать нормально; мутное окно жилого отсека говорит, что океан приходил достаточно медленно, чтобы люди смотрели на переговоры.\n\nНапорное стекло как ресурс может быть ценным, но здесь речь о встроенном стекле как свидетеле. Оно никого не обвиняет. Оно записывает терпение, обслуживание, отрицание и точные места, где колония перестала держать воду снаружи.",
-          "field_note": "Смотри на кромку. Центр показывает то, что люди хотели видеть."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "観察窓の応力霧台帳",
-          "scanner": "観察窓ガラス // 厚い縁、乳白の剥離弧、ガスケット下の塩霧。三日月傷は清掃アーム由来で、生物ではない。濁った縁は圧力履歴を示し、透明な中心は安全を意味しない。",
-          "terminal": "圧力窓読取 // 視界だけを信じるな。縁の応力弧は古い曲げを示す。ラミネート内の水滴は乾いた側の遅い失敗。下縁の汚れは一撃ではなく漏れ周期だ。",
-          "audio": "透明な窓も疲れる。海は一度に割る必要がない。",
-          "in_game_wiki": "HECTON-8の観察窓は、圧力下で交わされた約束だ。部屋に外を見せるが、海を入れない。そのため汚れの一つ一つが意味を持つ。透明な中心は人間が清掃した部分であり、縁が真実を話す。乳白の剥離、塩霧、清掃アームの半月傷、ガスケットの黒ずみ、閉じ込められた水滴、曇った応力弧。\n\nプレイヤーは窓を計器として読む。応力弧があってもガスケットがきれいなら古いが安定しているかもしれない。ガスケット下の霧は層間に水が入った印だ。ラミネート内の水滴は乾いた側がゆっくり死んだ証拠になる。半月傷は整備された部屋を示し、乱れた切り傷は崩落や後日の解体を示す。\n\n観察窓は経路にも危険にもなる。乾いた空間を教え、空気の残る部屋を見せ、日々海を見ながら働いた場所を残し、公表された「瞬時破断」が実は遅い失敗だったことを証明する。きれいな中心を叩くと、静かな壁が刃になる。",
-          "external_site": "厚い水中観察窓の現場記事。剥離、塩霧、ガスケット汚れ、応力弧が視界より正確に圧力履歴を語る。",
-          "external_site_article": "観察窓は沈んだコロニーで最も残酷な物体の一つだ。海を見せるが、海を存在させないために作られた。失敗後も、その仕事を半分だけ続ける。見える。だから安全、ではない。\n\nHECTON-8の窓読取は縁から始まる。中心は人に磨かれ、カメラに使われ、見る者に信用されすぎる。縁は虚栄が少ない。乳白の弧は層が圧力で曲がった記録だ。ガスケット下の塩霧は、水が招かれていない場所へ進んだ印だ。ラミネート内の結露は、乾いた側が長く湿気を吸った証拠になる。\n\n良い読取は行動を変える。乾いたポケットを見つけ、低応力の切断線を選び、遅い破損の証拠として窓を残し、すでに圧力ばねになった部屋を避ける。資源としての圧力ガラスではなく、ここでの窓は証人だ。",
-          "field_note": "縁を見ろ。中心は人が見たかったものだ。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "观察窗应力雾账本",
-          "scanner": "观察窗玻璃 // 厚边、乳白分层弧、密封圈下盐雾。月牙划痕来自清洁臂，不是生物。浑浊边缘是压力史；清晰中心不代表安全。",
-          "terminal": "压力窗读取 // 不要只相信能见度。边缘应力弧表示旧弯曲。夹层内水珠说明干燥侧缓慢失败。下缘密封污垢说明反复渗漏，不是一次撞击。",
-          "audio": "清澈的窗也会疲劳。海不必一次打碎玻璃。",
-          "in_game_wiki": "HECTON-8的观察窗是在压力下做出的承诺。它允许房间看向外面，却不让海进来。因此每一处污迹都有意义。清晰中心只是被人清理过的部分；边缘才说真话：乳白分层、盐雾、清洁臂留下的月牙划痕、密封污垢、夹层冷凝和浑浊应力弧。\n\n玩家应该像读仪表一样读窗。边缘有应力弧但密封干净的玻璃可能很老，却仍稳定。密封圈下有雾，说明水进入了层间。夹层里有水珠，说明干燥侧是慢慢失败的。月牙划痕通常属于被维护过的房间；随机切痕更像坍塌碎片或后期拆解。\n\n观察窗既是路线标记，也是风险。它能显示墙后干燥口袋、仍有空气的房间、曾经每天看海工作的岗位，也能证明所谓“瞬间破裂”其实是缓慢失效。沿疲劳边缘切割可能温和释放房间；敲击清晰中心会把安静的墙变成刀。",
-          "external_site": "关于厚水下观察窗的现场文章：分层、盐雾、密封污垢和应力弧如何比能见度更准确地记录压力史。",
-          "external_site_article": "观察窗是淹没殖民地里最残酷的物件之一。它被建造出来，是为了让海可见，却不让海成为房间的一部分。殖民地失败后，它仍在完成一半工作。你能看穿它，但这不等于安全。\n\nHECTON-8的观察窗读取从边缘开始。玻璃中心会骗人，因为人清洁它，摄像头盯着它，玩家也自然相信自己能看见的东西。边缘没有那么爱面子。乳白弧线表示层间在压力下弯曲。密封圈下的盐雾表示水迁移到了不该去的地方。夹层里的冷凝说明干燥侧在坍塌前长期吸入湿气。\n\n好的读取会改变行为。玩家可以识别干燥口袋，选择低应力切线，保留玻璃作为缓慢失效的证据，或避开已经变成压力弹簧的房间。这里的玻璃不是单纯资源，而是见证物。",
-          "field_note": "看边缘。中心只显示人想看见的东西。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre de brouillard et contrainte de hublot",
-          "scanner": "VERRE DE HUBLOT // Bord épais, arc de délamination laiteux, brouillard salin sous joint. Les rayures en croissant viennent des bras de nettoyage, pas de la faune. Bord trouble : histoire de pression ; centre clair : pas une preuve de sécurité.",
-          "terminal": "LECTURE DE FENÊTRE PRESSION // Ne pas croire la visibilité seule. Les arcs au bord montrent une flexion ancienne. Les gouttes dans le laminé signalent une défaillance lente du côté sec. La crasse sous le joint indique des cycles de fuite.",
-          "audio": "Une vitre claire peut être fatiguée. L'océan n'a pas besoin de casser tout d'un coup.",
-          "in_game_wiki": "Le hublot de HECTON-8 est une promesse tenue sous pression. Il permet à une pièce de voir dehors sans laisser entrer l'océan. Le centre clair n'est que la zone nettoyée. Le bord dit la vérité : délamination laiteuse, brouillard de sel, rayures en croissant des anciens bras de nettoyage, crasse de joint, condensation piégée et arcs de contrainte.\n\nLe joueur doit lire le hublot comme un instrument. Une vitre avec arcs de contrainte mais joint propre peut être vieille et stable. Du brouillard sous le joint signifie que l'eau est passée entre les couches. Des gouttes dans le laminé indiquent une mort lente du côté sec. Des rayures régulières en croissant signalent une pièce entretenue ; des coupes aléatoires parlent d'effondrement ou de récupération tardive.\n\nUn hublot marque à la fois route et risque. Il peut révéler une poche sèche, une salle avec reste d'air, un poste où quelqu'un regardait l'océan chaque jour, ou prouver qu'une rupture dite instantanée fut lente. Frapper le centre parce qu'il est clair peut transformer un mur tranquille en couteaux.",
-          "external_site": "Article de terrain sur le verre épais des hublots sous-marins : délamination, sel, crasse de joint et arcs de contrainte racontent mieux l'histoire de pression que la visibilité.",
-          "external_site_article": "Un hublot est l'un des objets les plus cruels d'une colonie noyée. Il a été conçu pour rendre l'océan visible sans le laisser devenir présent. Après l'échec, il continue la moitié de ce travail : on voit à travers, mais cela ne le rend pas sûr.\n\nLa lecture commence au bord. Le centre ment parce qu'on l'a nettoyé, surveillé, utilisé par les caméras. Le bord est moins vaniteux. Les arcs laiteux montrent des couches fléchies sous pression. Le brouillard salin sous le joint montre une eau entrée sans invitation. La condensation dans le laminé montre que le côté sec a respiré humide longtemps avant l'effondrement.\n\nBien lire change le comportement. Identifier une poche sèche, choisir une ligne de coupe moins tendue, préserver la vitre comme preuve de défaillance lente, éviter une salle devenue ressort de pression. Ici le verre n'est pas seulement ressource : il est témoin.",
-          "field_note": "Regarde le bord. Le centre montre ce que les gens voulaient voir."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de niebla y tensión de ventana de observación",
-          "scanner": "VIDRIO DE OBSERVACIÓN // Borde grueso, arco lechoso de delaminación, niebla de sal bajo la junta. Las rayas de media luna vienen de brazos de limpieza, no de fauna. Borde turbio: historia de presión; centro claro no significa seguridad.",
-          "terminal": "LECTURA DE VENTANA DE PRESIÓN // No confíes solo en la visibilidad. Los arcos del borde muestran flexión antigua. Gotas dentro del laminado significan fallo lento del lado seco. Suciedad bajo la junta indica ciclos de fuga.",
-          "audio": "Una ventana clara también se cansa. El océano no necesita romper el vidrio de golpe.",
-          "in_game_wiki": "La ventana de observación de HECTON-8 es una promesa bajo presión. Permite mirar al océano sin dejarlo entrar. El centro claro es la parte limpiada por humanos. El borde dice la verdad: delaminación lechosa, niebla de sal, rayas de media luna de brazos de limpieza, suciedad de junta, condensación atrapada y arcos de presión.\n\nEl jugador debe leerla como un instrumento. Una luna con arcos de tensión pero junta limpia puede ser vieja y estable. Niebla bajo la junta significa agua entre capas. Gotas en el laminado indican que el lado seco falló despacio. Rayas en media luna hablan de una sala mantenida; cortes aleatorios sugieren colapso o desmontaje tardío.\n\nEsta ventana marca ruta y riesgo. Puede mostrar un bolsillo seco, una sala con aire residual, un puesto donde alguien miraba el mar cada día, o probar que una supuesta rotura instantánea fue lenta. Golpear el centro porque está claro puede convertir una pared silenciosa en cuchillos.",
-          "external_site": "Artículo de campo sobre vidrio grueso de observación submarina: delaminación, sal, suciedad de junta y arcos de tensión explican la historia de presión mejor que la visibilidad.",
-          "external_site_article": "Una ventana de observación es uno de los objetos más crueles de una colonia ahogada. Fue construida para hacer visible el océano sin dejarlo entrar. Tras el fallo, sigue haciendo la mitad de ese trabajo. Se puede ver a través de ella. Eso no la vuelve segura.\n\nLa lectura empieza en el borde. El centro miente porque fue limpiado, vigilado y usado por cámaras. El borde tiene menos vanidad. Los arcos lechosos significan capas dobladas por presión. La niebla salina bajo la junta revela agua migrando donde no debía. La condensación atrapada muestra que el lado seco respiró humedad durante mucho tiempo.\n\nUna buena lectura cambia la acción: encontrar un bolsillo seco, elegir una línea de corte de menor tensión, conservar el panel como prueba de fallo lento, o evitar una sala que ya funciona como resorte de presión. Aquí el vidrio no es solo recurso; es testigo.",
-          "field_note": "Mira el borde. El centro muestra lo que la gente quería ver."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Protokoll für Sichtfenster-Stressnebel",
-          "scanner": "SICHTFENSTERGLAS // Dicke Kante, milchiger Delaminationsbogen, Salznebel unter der Dichtung. Halbmondkratzer stammen von Reinigungsarmen, nicht von Fauna. Trüber Rand bedeutet Druckgeschichte; klare Mitte bedeutet keine Sicherheit.",
-          "terminal": "DRUCKFENSTERLESUNG // Sicht allein trügt. Stressbögen an der Kante zeigen alte Biegung. Tropfen im Laminat bedeuten langsames Versagen der trockenen Seite. Schmutz unter der Dichtung zeigt Leckzyklen.",
-          "audio": "Ein klares Fenster kann müde sein. Der Ozean muss Glas nicht auf einmal brechen.",
-          "in_game_wiki": "Sichtfensterglas in HECTON-8 ist ein Versprechen unter Druck. Es lässt einen Raum hinausblicken, ohne den Ozean hereinzulassen. Die klare Mitte ist nur der geputzte Teil. Die Kante sagt die Wahrheit: milchige Delamination, Salznebel, Halbmondkratzer alter Reinigungsarme, Dichtungsschmutz, eingeschlossene Kondensation und trübe Stressbögen.\n\nDer Spieler sollte Fenster wie Instrumente lesen. Stressbögen mit sauberer Dichtung können alt, aber stabil sein. Nebel unter der Dichtung bedeutet Wasser zwischen Schichten. Tropfen im Laminat bedeuten langsames Sterben der trockenen Seite. Regelmäßige Kratzer deuten Wartung an; chaotische Schnitte deuten Einsturz oder spätere Bergung an.\n\nEin Sichtfenster markiert Route und Risiko. Es zeigt trockene Taschen, Räume mit Restluft, Arbeitsplätze mit täglichem Blick ins Meer oder beweist, dass ein angeblicher Sofortbruch langsam war. Die klare Mitte zu schlagen kann eine ruhige Wand in Messer verwandeln.",
-          "external_site": "Feldartikel zu dickem Unterwasser-Sichtfensterglas: Delamination, Salznebel, Dichtungsschmutz und Stressbögen erzählen Druckgeschichte besser als Sicht.",
-          "external_site_article": "Ein Sichtfenster ist eines der härteren Objekte einer ertrunkenen Kolonie. Es sollte den Ozean sichtbar machen, ohne ihn anwesend werden zu lassen. Nach dem Scheitern erledigt es noch die Hälfte dieser Arbeit: Man sieht hindurch. Sicher ist es deshalb nicht.\n\nHECTON-8-Fensterlesen beginnt an der Kante. Die Mitte lügt, weil Menschen sie putzten, Kameras hindurch sahen und Spieler dem Sichtbaren vertrauen. Die Kante ist weniger eitel. Milchige Bögen zeigen Schichten, die unter Druck bogen. Salznebel unter der Dichtung zeigt Wasserwanderung. Kondensation im Laminat zeigt lange Feuchte auf der trockenen Seite.\n\nGute Lesung verändert Verhalten: trockene Tasche finden, spannungsarme Schnittlinie wählen, Glas als Beweis langsamen Versagens bewahren oder einen Raum meiden, der schon zur Druckfeder wurde. Hier ist Glas nicht nur Ressource, sondern Zeuge.",
-          "field_note": "Sieh auf die Kante. Die Mitte zeigt, was Menschen sehen wollten."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr mgły i naprężeń okna obserwacyjnego",
-          "scanner": "SZKŁO OKNA OBSERWACYJNEGO // Gruba krawędź, mleczny łuk rozwarstwienia, sól pod uszczelką. Rysy półksiężycem pochodzą od ramion czyszczących, nie od fauny. Mętny brzeg to historia ciśnienia; czysty środek nie oznacza bezpieczeństwa.",
-          "terminal": "ODCZYT OKNA CIŚNIENIOWEGO // Nie ufaj samej widoczności. Łuki przy krawędzi pokazują stare ugięcie. Krople w laminacie oznaczają powolną awarię strony suchej. Brud pod uszczelką to cykle przecieku.",
-          "audio": "Przezroczyste okno też się męczy. Ocean nie musi pękać szkła naraz.",
-          "in_game_wiki": "Szkło obserwacyjne HECTON-8 jest obietnicą złożoną pod ciśnieniem. Pozwala patrzeć na ocean, nie wpuszczając go do środka. Czysty środek to tylko część myta przez ludzi. Prawda mieszka na krawędzi: mleczne rozwarstwienie, mgła soli, rysy po ramionach czyszczących, brud uszczelki, uwięziona kondensacja i łuki naprężeń.\n\nGracz powinien czytać okno jak przyrząd. Łuki naprężeń przy czystej uszczelce mogą oznaczać stare, ale stabilne szkło. Mgła pod uszczelką to woda między warstwami. Krople w laminacie mówią o powolnej śmierci suchej strony. Regularne rysy półksiężycem wskazują konserwowaną salę; chaotyczne cięcia - zawalenie lub późniejszy demontaż.\n\nTakie okno jest drogą i ryzykiem naraz. Może pokazać suchą kieszeń, salę z resztką powietrza, stanowisko codziennego patrzenia w morze albo dowód, że rzekome nagłe pęknięcie było powolne. Uderzenie w czysty środek może zamienić cichą ścianę w noże.",
-          "external_site": "Artykuł o grubym podwodnym szkle obserwacyjnym: rozwarstwienie, sól, brud uszczelki i łuki naprężeń lepiej niż widoczność opisują historię ciśnienia.",
-          "external_site_article": "Okno obserwacyjne jest jednym z okrutniejszych obiektów zatopionej kolonii. Zbudowano je, by ocean był widoczny, ale nie obecny. Po upadku kolonii nadal wykonuje połowę pracy: widać przez nie. To nie znaczy, że jest bezpieczne.\n\nCzytanie zaczyna się od krawędzi. Środek kłamie, bo był czyszczony, oglądany przez kamery i naturalnie wzbudza zaufanie. Krawędź jest mniej próżna. Mleczne łuki mówią o warstwach zginanych przez ciśnienie. Mgła soli pod uszczelką mówi o wodzie w złym miejscu. Kondensacja w laminacie mówi o długiej wilgoci po stronie suchej.\n\nDobra lektura zmienia zachowanie: znaleźć suchą kieszeń, wybrać linię cięcia o mniejszym naprężeniu, zachować szybę jako dowód powolnej awarii albo ominąć salę zamienioną w sprężynę ciśnienia. To szkło jest świadkiem, nie tylko surowcem.",
-          "field_note": "Patrz na krawędź. Środek pokazuje to, co ludzie chcieli widzieć."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал туману й напруги оглядового скла",
-          "scanner": "ОГЛЯДОВЕ СКЛО // Товста крайка, молочна дуга розшарування, сіль під прокладкою. Півмісяці подряпин від чистильних важелів, не від фауни. Мутний край - історія тиску; чистий центр не гарантія.",
-          "terminal": "ЧИТАННЯ НАПІРНОГО ВІКНА // Не вір лише видимості. Дуги на краю показують старий вигин. Краплі в ламінаті означають повільну відмову сухого боку. Бруд під прокладкою - цикли течі.",
-          "audio": "Прозоре вікно теж втомлюється. Океану не треба ламати скло одразу.",
-          "in_game_wiki": "Оглядове скло HECTON-8 - обіцянка під тиском. Воно дозволяє кімнаті дивитися назовні й не впускати океан. Чистий центр - лише місце, яке мили люди. Правду говорить край: молочне розшарування, соляний туман, півмісяці подряпин від старих чистильних важелів, бруд прокладки, замкнений конденсат і мутні дуги напруги.\n\nГравець має читати вікно як прилад. Скло з дугами, але чистою прокладкою може бути старим, але стабільним. Туман під прокладкою означає воду між шарами. Краплі всередині ламінату кажуть, що сухий бік відмовляв повільно. Регулярні подряпини показують обслуговувану кімнату; випадкові різи - обвал або пізній розбір.\n\nТаке вікно позначає маршрут і ризик. Воно може показати суху кишеню, кімнату з рештками повітря, робоче місце щоденного погляду в океан або доказ, що \"миттєвий прорив\" був повільною відмовою. Удар по чистому центру перетворює тиху стіну на ножі.",
-          "external_site": "Польова стаття про товсте підводне оглядове скло: розшарування, сіль, бруд прокладки й дуги напруги краще за видимість показують історію тиску.",
-          "external_site_article": "Оглядове вікно - один із найжорсткіших об'єктів затопленої колонії. Його створили, щоб океан був видимим, але не присутнім. Після провалу воно досі робить половину цієї роботи. Крізь нього видно. Це не означає безпеку.\n\nЧитання починається з краю. Центр бреше, бо його мили, через нього дивилися камери, і люди довіряють видимому. Край менш марнославний. Молочні дуги показують шари, що гнулися під тиском. Соляний туман під прокладкою показує воду в забороненому місці. Конденсат у ламінаті показує довгу вологу на сухому боці.\n\nДобре читання змінює дію: знайти суху кишеню, вибрати менш напружену лінію різу, зберегти скло як доказ повільної відмови або оминути кімнату, що стала пружиною тиску. Тут скло - свідок, а не просто ресурс.",
-          "field_note": "Дивись на край. Центр показує те, що люди хотіли бачити."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل ضباب وإجهاد نافذة الرؤية",
-          "scanner": "زجاج نافذة الرؤية // حافة سميكة، قوس انفصال لبني، ضباب ملح تحت الحشية. خدوش الهلال من أذرع التنظيف لا من الكائنات. الحافة المعتمة تاريخ ضغط؛ المركز الصافي لا يعني الأمان.",
-          "terminal": "قراءة نافذة الضغط // لا تثق بالرؤية وحدها. أقواس الحافة تكشف انثناء قديما. قطرات داخل الطبقات تعني فشل الجانب الجاف ببطء. وسخ أسفل الحشية يعني دورات تسرب.",
-          "audio": "قد تتعب النافذة الصافية أيضا. لا يحتاج البحر إلى كسر الزجاج مرة واحدة.",
-          "in_game_wiki": "زجاج الرؤية في HECTON-8 وعد تحت الضغط. يسمح للغرفة أن ترى الخارج دون أن تدخل البحر. المركز الصافي هو الجزء الذي نظفه البشر. الحافة تقول الحقيقة: انفصال لبني، ضباب ملح، خدوش هلالية من أذرع تنظيف قديمة، وسخ حشية، تكاثف محبوس، وأقواس إجهاد معتمة.\n\nيجب أن يقرأ اللاعب النافذة كأداة. زجاج فيه أقواس إجهاد وحشية نظيفة قد يكون قديما لكنه مستقر. الضباب تحت الحشية يعني ماء بين الطبقات. القطرات داخل الطبقات تعني موتا بطيئا للجانب الجاف. الخدوش المنتظمة تعني غرفة صينت؛ الجروح العشوائية تعني انهيارا أو تفكيكا لاحقا.\n\nالنافذة علامة طريق وخطر معا. قد تكشف جيبا جافا، أو غرفة بقي فيها هواء، أو مكان عمل كان يرى البحر كل يوم، أو دليلا على أن \"الكسر الفوري\" كان فشلا بطيئا. ضرب المركز الصافي قد يحول جدارا هادئا إلى سكاكين.",
-          "external_site": "مقال ميداني عن زجاج الرؤية السميك تحت الماء: الانفصال وضباب الملح ووسخ الحشية وأقواس الإجهاد تروي تاريخ الضغط أفضل من الرؤية.",
-          "external_site_article": "نافذة الرؤية من أقسى أشياء المستعمرة الغارقة. صنعت لكي تجعل المحيط مرئيا دون أن تسمح له بالحضور. بعد الفشل تواصل نصف هذا العمل: تستطيع أن ترى من خلالها. هذا لا يجعلها آمنة.\n\nتبدأ قراءة HECTON-8 من الحافة. المركز يكذب لأنه نظف، ونظرت عبره الكاميرات، ويميل البشر إلى الثقة بما يرونه. الحافة أقل غرورا. الأقواس اللبنية تعني طبقات انثنت تحت الضغط. ضباب الملح تحت الحشية يعني ماء هاجر إلى مكان ممنوع. التكاثف داخل الطبقات يعني أن الجانب الجاف تنفس رطوبة طويلا.\n\nالقراءة الجيدة تغير السلوك: تحديد جيب جاف، اختيار خط قطع أقل إجهادا، حفظ الزجاج كدليل على فشل بطيء، أو تجنب غرفة صارت نابضا للضغط. هنا الزجاج شاهد، لا مورد فقط.",
-          "field_note": "انظر إلى الحافة. المركز يعرض ما أراد الناس رؤيته."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Catatan Kabut Tegangan Kaca Pandang",
-          "scanner": "KACA PANDANG // Tepi tebal, busur delaminasi susu, kabut garam di bawah segel. Gores sabit berasal dari lengan pembersih, bukan fauna. Tepi keruh adalah riwayat tekanan; pusat jernih bukan tanda aman.",
-          "terminal": "BACAAN JENDELA TEKANAN // Jangan percaya visibilitas saja. Busur stres di tepi menunjukkan lentur lama. Tetes dalam laminat berarti sisi kering gagal perlahan. Kotoran bawah segel berarti siklus bocor.",
-          "audio": "Jendela jernih juga bisa lelah. Laut tidak harus memecahkan kaca sekaligus.",
-          "in_game_wiki": "Kaca pandang HECTON-8 adalah janji di bawah tekanan. Ia membuat ruangan bisa melihat keluar tanpa membiarkan laut masuk. Pusat yang jernih hanyalah bagian yang dibersihkan manusia. Tepi mengatakan kebenaran: delaminasi susu, kabut garam, gores sabit dari lengan pembersih, kotoran segel, kondensasi terperangkap, dan busur tekanan.\n\nPemain harus membacanya seperti alat ukur. Kaca dengan busur stres tetapi segel bersih mungkin tua namun stabil. Kabut di bawah segel berarti air masuk di antara lapisan. Tetes dalam laminat berarti sisi kering gagal perlahan. Gores sabit teratur menandai ruangan yang dirawat; sayatan acak menandai runtuhan atau pembongkaran akhir.\n\nKaca pandang bisa menjadi rute dan risiko. Ia menunjukkan kantong kering, ruangan dengan sisa udara, tempat kerja yang menatap laut setiap hari, atau bukti bahwa \"jebol seketika\" sebenarnya kegagalan lambat. Memukul pusat jernih dapat mengubah dinding sunyi menjadi pisau.",
-          "external_site": "Artikel lapangan tentang kaca pandang bawah air tebal: delaminasi, kabut garam, kotoran segel, dan busur stres menjelaskan riwayat tekanan lebih baik daripada visibilitas.",
-          "external_site_article": "Jendela pandang adalah salah satu benda paling kejam di koloni tenggelam. Ia dibuat agar laut terlihat tanpa hadir di dalam ruangan. Setelah koloni gagal, ia masih melakukan separuh tugas itu. Kita bisa melihat melaluinya. Itu tidak berarti aman.\n\nPembacaan HECTON-8 dimulai dari tepi. Pusat berbohong karena dibersihkan, dipakai kamera, dan dipercaya manusia. Tepi kurang sombong. Busur susu berarti lapisan melentur di bawah tekanan. Kabut garam di bawah segel berarti air pindah ke tempat terlarang. Kondensasi dalam laminat berarti sisi kering lama bernapas lembap.\n\nPembacaan baik mengubah tindakan: menemukan kantong kering, memilih garis potong rendah tekanan, menyimpan panel sebagai bukti kegagalan lambat, atau menghindari ruangan yang sudah menjadi pegas tekanan. Di sini kaca adalah saksi, bukan hanya sumber daya.",
-          "field_note": "Lihat tepinya. Pusat menunjukkan apa yang ingin dilihat manusia."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "관측창 응력 안개 장부",
-          "scanner": "관측창 유리 // 두꺼운 가장자리, 젖빛 박리 호, 밀봉재 아래 소금 안개. 초승달 긁힘은 청소 팔 자국이지 생물 흔적이 아니다. 흐린 테두리는 압력 이력이며 맑은 중앙은 안전이 아니다.",
-          "terminal": "압력창 판독 // 시야만 믿지 마라. 가장자리 응력 호는 오래된 휨을 보여 준다. 라미네이트 안 물방울은 건조측의 느린 실패를 뜻한다. 아래 밀봉 오염은 반복 누수다.",
-          "audio": "맑은 창도 지친다. 바다는 유리를 한 번에 깰 필요가 없다.",
-          "in_game_wiki": "HECTON-8의 관측창 유리는 압력 아래 맺은 약속이다. 방이 바깥을 보게 하면서 바다는 들이지 않는다. 맑은 중앙은 사람이 닦은 부분일 뿐이다. 진실은 가장자리에 있다. 젖빛 박리, 소금 안개, 오래된 청소 팔의 초승달 자국, 밀봉 오염, 갇힌 응결, 흐린 응력 호.\n\n플레이어는 창을 계기처럼 읽어야 한다. 응력 호가 있어도 밀봉이 깨끗하면 오래됐지만 안정적일 수 있다. 밀봉 아래 안개는 층 사이의 물을 말한다. 라미네이트 속 물방울은 건조측이 천천히 실패했다는 뜻이다. 규칙적인 초승달 자국은 관리된 방이고, 무작위 절단은 붕괴나 후일 해체를 말한다.\n\n관측창은 길과 위험을 동시에 표시한다. 건조 포켓, 남은 공기, 매일 바다를 보던 작업 자리, 그리고 \"즉시 파손\"이 사실은 느린 실패였다는 증거를 보여 준다. 맑은 중앙을 치면 조용한 벽이 칼날이 될 수 있다.",
-          "external_site": "두꺼운 수중 관측창 유리에 대한 현장 글. 박리, 소금 안개, 밀봉 오염, 응력 호가 시야보다 정확하게 압력 이력을 말한다.",
-          "external_site_article": "관측창은 침수된 식민지에서 가장 잔인한 물건 중 하나다. 바다를 보이게 하되 방 안에 들이지 않기 위해 만들어졌다. 실패 뒤에도 그 일의 절반은 계속한다. 보인다. 그렇다고 안전한 것은 아니다.\n\nHECTON-8의 창 판독은 가장자리에서 시작한다. 중앙은 닦였고, 카메라가 통과했고, 사람은 보이는 것을 믿는다. 가장자리는 덜 허영스럽다. 젖빛 호는 압력에 휜 층을 말한다. 밀봉 아래 소금 안개는 초대받지 않은 물의 이동을 말한다. 라미네이트 안 응결은 건조측이 오래 습기를 마셨다는 뜻이다.\n\n좋은 판독은 행동을 바꾼다. 건조 포켓을 찾고, 낮은 응력 절단선을 고르고, 느린 실패의 증거로 유리를 보존하며, 이미 압력 스프링이 된 방을 피한다. 여기서 유리는 단순한 자원이 아니라 증인이다.",
-          "field_note": "가장자리를 보라. 중앙은 사람들이 보고 싶었던 것을 보여 준다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן ערפל ומאמץ של חלון צפייה",
-          "scanner": "זכוכית חלון צפייה // קצה עבה, קשת דלמינציה חלבית, ערפל מלח תחת האטם. שריטות חצי ירח באות מזרועות ניקוי, לא מפאונה. קצה עכור הוא היסטוריית לחץ; מרכז צלול אינו בטיחות.",
-          "terminal": "קריאת חלון לחץ // אל תסמוך על ראות בלבד. קשתות בקצה מראות כיפוף ישן. טיפות בתוך הלמינציה אומרות כשל איטי של הצד היבש. לכלוך תחת האטם אומר מחזורי דליפה.",
-          "audio": "גם חלון צלול יכול להיות עייף. הים לא חייב לשבור זכוכית בבת אחת.",
-          "in_game_wiki": "זכוכית צפייה ב-HECTON-8 היא הבטחה תחת לחץ. היא מאפשרת לחדר לראות החוצה בלי להכניס את הים פנימה. המרכז הצלול הוא רק החלק שנוקה. הקצה אומר אמת: דלמינציה חלבית, ערפל מלח, שריטות מזרועות ניקוי, לכלוך אטם, עיבוי כלוא וקשתות מאמץ עכורות.\n\nהשחקן צריך לקרוא את החלון כמו מכשיר. קשתות מאמץ עם אטם נקי עשויות להיות ישנות אך יציבות. ערפל תחת האטם אומר מים בין שכבות. טיפות בלמינציה אומרות שהצד היבש נכשל לאט. שריטות סדירות מצביעות על חדר שתוחזק; חתכים אקראיים מצביעים על קריסה או פירוק מאוחר.\n\nחלון צפייה מסמן גם דרך וגם סכנה. הוא יכול להראות כיס יבש, חדר עם אוויר שנותר, עמדה שהביטה בים מדי יום, או ראיה לכך ש\"שבירה מיידית\" הייתה כשל איטי. מכה במרכז הצלול עלולה להפוך קיר שקט לסכינים.",
-          "external_site": "מאמר שטח על זכוכית צפייה עבה מתחת למים: דלמינציה, ערפל מלח, לכלוך אטם וקשתות מאמץ מספרים היסטוריית לחץ טוב יותר מראות.",
-          "external_site_article": "חלון צפייה הוא אחד החפצים האכזריים במושבה שטבעה. הוא נבנה כדי להפוך את הים לנראה בלי לתת לו להיות נוכח. אחרי הכשל הוא ממשיך חצי מהעבודה: אפשר לראות דרכו. זה לא עושה אותו בטוח.\n\nקריאת HECTON-8 מתחילה בקצה. המרכז משקר משום שנוקה, מצלמות הביטו דרכו, ואנשים סומכים על מה שהם רואים. הקצה פחות יהיר. קשתות חלביות מספרות על שכבות שכופפו בלחץ. ערפל מלח תחת האטם מספר על מים במקום אסור. עיבוי בלמינציה מספר על צד יבש שנשם לחות זמן רב.\n\nקריאה טובה משנה פעולה: למצוא כיס יבש, לבחור קו חיתוך במתח נמוך, לשמור את הזכוכית כראיה לכשל איטי, או לעקוף חדר שכבר הפך לקפיץ לחץ. כאן הזכוכית היא עד, לא רק משאב.",
-          "field_note": "הבט בקצה. המרכז מראה את מה שאנשים רצו לראות."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de névoa e tensão da janela de observação",
-          "scanner": "VIDRO DE OBSERVAÇÃO // Borda grossa, arco leitoso de delaminação, névoa de sal sob a junta. Riscos em meia-lua vêm dos braços de limpeza, não da fauna. Borda turva é histórico de pressão; centro claro não é segurança.",
-          "terminal": "LEITURA DE JANELA DE PRESSÃO // Não confie só na visibilidade. Arcos na borda mostram flexão antiga. Gotas no laminado significam falha lenta do lado seco. Sujeira sob a junta indica ciclos de vazamento.",
-          "audio": "Janela clara também cansa. O oceano não precisa quebrar vidro de uma vez.",
-          "in_game_wiki": "O vidro de observação de HECTON-8 é uma promessa sob pressão. Ele deixa a sala olhar para fora sem permitir que o oceano entre. O centro claro é apenas a parte limpa por humanos. A borda diz a verdade: delaminação leitosa, névoa de sal, riscos em meia-lua dos braços de limpeza, sujeira de junta, condensação presa e arcos de tensão.\n\nO jogador deve ler a janela como instrumento. Vidro com arcos de tensão e junta limpa pode ser velho, mas estável. Névoa sob a junta significa água entre camadas. Gotas no laminado mostram falha lenta do lado seco. Riscos regulares indicam sala mantida; cortes aleatórios sugerem colapso ou desmontagem tardia.\n\nA janela marca rota e risco. Pode revelar um bolso seco, uma sala com ar restante, um posto onde alguém via o oceano todo dia, ou provar que uma \"ruptura instantânea\" foi lenta. Bater no centro claro pode transformar uma parede quieta em lâminas.",
-          "external_site": "Artigo de campo sobre vidro grosso de observação subaquática: delaminação, sal, sujeira de junta e arcos de tensão contam histórico de pressão melhor que visibilidade.",
-          "external_site_article": "Uma janela de observação é um dos objetos mais duros de uma colônia afogada. Foi construída para tornar o oceano visível sem deixá-lo presente. Depois da falha, continua fazendo metade do trabalho. Dá para ver através dela. Isso não a torna segura.\n\nA leitura começa na borda. O centro mente porque foi limpo, usado por câmeras, e humanos confiam no que veem. A borda é menos vaidosa. Arcos leitosos mostram camadas dobradas pela pressão. Névoa de sal sob a junta mostra água migrando para onde nunca deveria. Condensação no laminado mostra o lado seco respirando umidade por muito tempo.\n\nBoa leitura muda ação: identificar bolso seco, escolher linha de corte de baixa tensão, preservar o vidro como prova de falha lenta ou evitar uma sala que virou mola de pressão. Aqui o vidro é testemunha, não só recurso.",
-          "field_note": "Olhe a borda. O centro mostra o que as pessoas queriam ver."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Logboek voor stressmist in kijkvensterglas",
-          "scanner": "KIJKVENSTERGLAS // Dikke rand, melkachtige delaminatieboog, zoutmist onder de pakking. Halvemaanvormige krassen komen van reinigingsarmen, niet van fauna. Troebele rand is drukgeschiedenis; helder midden is geen veiligheid.",
-          "terminal": "DRUKVENSTERLEZING // Vertrouw zicht niet alleen. Stressbogen aan de rand tonen oude buiging. Druppels in het laminaat betekenen langzaam falen van de droge zijde. Vuil onder de pakking wijst op lekcycli.",
-          "audio": "Een helder venster kan ook moe zijn. De oceaan hoeft glas niet in één keer te breken.",
-          "in_game_wiki": "Kijkvensterglas in HECTON-8 is een belofte onder druk. Het laat een kamer naar buiten kijken zonder de oceaan binnen te laten. Het heldere midden is alleen het schoongemaakte deel. De rand spreekt waarheid: melkachtige delaminatie, zoutmist, halve maankrassen van oude reinigingsarmen, pakkingsvuil, opgesloten condens en troebele stressbogen.\n\nDe speler moet een venster lezen als instrument. Stressbogen met schone pakking kunnen oud maar stabiel zijn. Mist onder de pakking betekent water tussen lagen. Druppels in het laminaat betekenen traag falen aan de droge zijde. Regelmatige krassen wijzen op onderhoud; willekeurige sneden op instorting of late demontage.\n\nEen kijkvenster markeert route en risico tegelijk. Het kan een droge pocket tonen, een ruimte met restlucht, een werkplek waar dagelijks naar zee werd gekeken, of bewijzen dat een zogenaamd direct breukmoment langzaam was. Het heldere midden raken kan een stille wand in messen veranderen.",
-          "external_site": "Veldartikel over dik onderwater-kijkvensterglas: delaminatie, zoutmist, pakkingsvuil en stressbogen vertellen drukgeschiedenis beter dan zicht.",
-          "external_site_article": "Een kijkvenster is een van de hardere objecten in een verdronken kolonie. Het moest de oceaan zichtbaar maken zonder hem aanwezig te laten zijn. Na het falen doet het nog de helft van dat werk. Je kunt erdoorheen kijken. Dat maakt het niet veilig.\n\nHECTON-8-vensterlezen begint aan de rand. Het midden liegt omdat mensen het schoonmaakten, camera's erdoor keken, en spelers vertrouwen op wat ze zien. De rand is minder ijdel. Melkachtige bogen tonen lagen die onder druk bogen. Zoutmist onder de pakking toont water op een verboden pad. Condens in het laminaat toont een droge zijde die lang vocht ademde.\n\nGoed lezen verandert gedrag: droge pocket vinden, lage-spanningssnede kiezen, glas bewaren als bewijs van traag falen, of een kamer vermijden die al een drukveer is geworden. Hier is glas een getuige, niet alleen een grondstof.",
-          "field_note": "Kijk naar de rand. Het midden toont wat mensen wilden zien."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.viewport_glass_stress_fog_ledger",
+    "secondary": [
+     "unlock.first_viewport_edge_scan",
+     "unlock.first_dry_pocket_viewport",
+     "unlock.first_pressure_window_cut_choice"
+    ],
+    "poi_tags": [
+     "poi.viewport_stress_arc",
+     "poi.gasket_salt_fog_edge",
+     "poi.condensation_laminate_beads",
+     "poi.cleaning_arm_crescent_scratches"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.pressure_route",
+     "biome.shallow_annex"
+    ],
+    "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Viewport Stress Scanner",
+     "terminal": "Pressure Window Maintenance Readout",
+     "audio": "Marauder Glass-Cut Instructor",
+     "in_game_wiki": "PDA Viewport Field Guide",
+     "external_site": "Public Site Viewport Stress Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_viewport_edge_scan_or_dry_pocket_choice",
+    "truth_payload": "Viewport safety is read at the rim, not the clear center: delamination, salt fog, gasket grime and trapped condensation reveal pressure history.",
+    "player_question": "When does a clear window stop being safe?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Viewport Stress Fog Ledger",
+     "scanner": "VIEWPORT GLASS // Thick pane edge, milky delamination arc, salt fog under gasket. Scratches are crescent-shaped from cleaning arms, not fauna. Clouded rim means pressure history; clear center does not mean safe pane.",
+     "terminal": "PRESSURE WINDOW READ // Do not trust visibility alone. Stress arcs at the edge show old flex. Condensation beads inside the laminate mean the dry side failed slowly. Gasket grime below the rim means repeated leak cycling, not one impact.",
+     "audio": "A clear window can still be tired. The ocean does not need to crack glass all at once.",
+     "in_game_wiki": "Viewport glass in HECTON-8 is a promise made under pressure. It lets a room look out without letting the ocean in, and that makes every stain political. A clear center is only the part people cleaned. The edge tells the truth: milky delamination, salt fog, crescent scratches from old cleaning arms, gasket grime, trapped condensation and cloudy pressure arcs.\n\nThe player should read viewports like instruments. A pane with stress arcs but clean gasket may be old but stable. A pane with fog under the gasket has leaked between layers. A pane with droplets inside the laminate failed slowly from the dry side. A pane scratched in crescents probably belonged to a maintained room; random cuts suggest collapse debris or later salvage. The glass is not just a window. It is a pressure history record.\n\nThis matters because a viewport can mark both route and risk. It can show a dry pocket behind a wall, expose a room that still has air, reveal whether workers watched the ocean daily, or prove that a claimed 'instant breach' was actually a slow failure. Cutting around a tired pane may release a room gently. Striking the center because it looks clean can turn a quiet wall into knives.",
+     "external_site": "A field article on thick underwater viewport glass: how delamination, fogging, gasket grime and stress arcs tell pressure history better than visibility.",
+     "external_site_article": "A viewport is one of the crueler objects in a drowned colony. It was built to make the ocean visible without letting it become present. After the colony fails, it keeps doing half of that job. You can see through it. That does not mean it is safe.\n\nHECTON-8 viewport reading starts at the edge. The middle of the glass is a liar because humans cleaned it, cameras stared through it, and players naturally trust what they can see. The rim is less vain. Milky arcs mean layers flexed under pressure. Salt fog under the gasket means water migrated where it was never invited. Condensation sealed inside the laminate means the dry side breathed wet air for a long time before collapse. Dark grime at the lower rim marks leak cycles, not decoration.\n\nGood use of a viewport changes behavior. The player can identify a dry pocket, choose a low-stress cut line, preserve the pane as proof of slow failure, or avoid a room whose glass has already become a pressure spring. It also changes mood without a monologue. A clean observation blister says someone still tried to work normally. A fogged family-room pane says the ocean arrived slowly enough for people to watch it negotiate.\n\nPressure glass as a resource can be valuable, but this article is about built glass as witness. The pane does not accuse anyone. It records patience, maintenance, denial and the exact places where the colony stopped keeping water outside.",
+     "field_note": "Look at the rim. The center is what people wanted to see."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал напряжения и тумана обзорного стекла",
+     "scanner": "ОБЗОРНОЕ СТЕКЛО // Толстая кромка, молочная дуга расслоения, соляной туман под прокладкой. Царапины полумесяцем от чистящих рычагов, не от фауны. Мутный край - история давления; чистый центр не означает безопасное стекло.",
+     "terminal": "ЧТЕНИЕ НАПОРНОГО ОКНА // Не доверять одной видимости. Дуги напряжения на краю показывают старый изгиб. Капли внутри ламината означают медленный отказ сухой стороны. Грязь под нижней прокладкой - повторные циклы течи, не один удар.",
+     "audio": "Прозрачное окно тоже может устать. Океану не обязательно ломать стекло сразу.",
+     "in_game_wiki": "Обзорное стекло HECTON-8 - обещание под давлением. Оно позволяет комнате смотреть наружу и не впускать океан, поэтому каждое пятно на нем важно. Чистый центр - только место, которое чистили. Правду говорит край: молочное расслоение, соляной туман, полукруглые царапины от старых чистящих рычагов, грязь прокладки, запертый конденсат и мутные дуги давления.\n\nИгрок должен читать окно как прибор. Стекло с дугами напряжения, но чистой прокладкой может быть старым, но стабильным. Туман под прокладкой означает воду между слоями. Капли внутри ламината говорят, что сухая сторона умирала медленно. Царапины полумесяцем указывают на обслуживаемую комнату; случайные резы - на обвал или поздний разбор. Это не просто окно, а запись истории давления.\n\nЭто важно для маршрута. Обзорное окно может указать на сухой карман, комнату с остаточным воздухом, рабочее место, где каждый день смотрели в океан, или доказать, что заявленный \"мгновенный прорыв\" был медленным отказом. Рез вокруг уставшей панели может выпустить комнату мягко. Удар по чистому центру превращает тихую стену в ножи.",
+     "external_site": "Полевой материал о толстом подводном обзорном стекле: как расслоение, соляной туман, грязь прокладки и дуги напряжения лучше видимости показывают историю давления.",
+     "external_site_article": "Обзорное окно - один из самых жестоких объектов утонувшей колонии. Его построили, чтобы океан был виден, но не присутствовал. После гибели колонии оно продолжает делать половину этой работы. Ты видишь сквозь него. Это не значит, что оно безопасно.\n\nЧтение начинается с края. Центр стекла врет, потому что его чистили, через него смотрели камеры, и человек доверяет тому, что видит. Кромка менее тщеславна. Молочные дуги говорят о слоях, гнувшихся под давлением. Соляной туман под прокладкой - о воде, ушедшей туда, куда ее не звали. Конденсат внутри ламината - о сухой стороне, которая долго дышала влажным воздухом до обвала.\n\nХорошее чтение меняет поведение. Игрок находит сухой карман, выбирает линию реза с меньшим напряжением, сохраняет стекло как доказательство медленного отказа или обходит комнату, где стекло уже стало пружиной давления. Такое окно меняет и настроение без монолога: чистый наблюдательный пузырь говорит, что кто-то пытался работать нормально; мутное окно жилого отсека говорит, что океан приходил достаточно медленно, чтобы люди смотрели на переговоры.\n\nНапорное стекло как ресурс может быть ценным, но здесь речь о встроенном стекле как свидетеле. Оно никого не обвиняет. Оно записывает терпение, обслуживание, отрицание и точные места, где колония перестала держать воду снаружи.",
+     "field_note": "Смотри на кромку. Центр показывает то, что люди хотели видеть."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "観察窓の応力霧台帳",
+     "scanner": "観察窓ガラス // 厚い縁、乳白の剥離弧、ガスケット下の塩霧。三日月傷は清掃アーム由来で、生物ではない。濁った縁は圧力履歴を示し、透明な中心は安全を意味しない。",
+     "terminal": "圧力窓読取 // 視界だけを信じるな。縁の応力弧は古い曲げを示す。ラミネート内の水滴は乾いた側の遅い失敗。下縁の汚れは一撃ではなく漏れ周期だ。",
+     "audio": "透明な窓も疲れる。海は一度に割る必要がない。",
+     "in_game_wiki": "HECTON-8の観察窓は、圧力下で交わされた約束だ。部屋に外を見せるが、海を入れない。そのため汚れの一つ一つが意味を持つ。透明な中心は人間が清掃した部分であり、縁が真実を話す。乳白の剥離、塩霧、清掃アームの半月傷、ガスケットの黒ずみ、閉じ込められた水滴、曇った応力弧。\n\nプレイヤーは窓を計器として読む。応力弧があってもガスケットがきれいなら古いが安定しているかもしれない。ガスケット下の霧は層間に水が入った印だ。ラミネート内の水滴は乾いた側がゆっくり死んだ証拠になる。半月傷は整備された部屋を示し、乱れた切り傷は崩落や後日の解体を示す。\n\n観察窓は経路にも危険にもなる。乾いた空間を教え、空気の残る部屋を見せ、日々海を見ながら働いた場所を残し、公表された「瞬時破断」が実は遅い失敗だったことを証明する。きれいな中心を叩くと、静かな壁が刃になる。",
+     "external_site": "厚い水中観察窓の現場記事。剥離、塩霧、ガスケット汚れ、応力弧が視界より正確に圧力履歴を語る。",
+     "external_site_article": "観察窓は沈んだコロニーで最も残酷な物体の一つだ。海を見せるが、海を存在させないために作られた。失敗後も、その仕事を半分だけ続ける。見える。だから安全、ではない。\n\nHECTON-8の窓読取は縁から始まる。中心は人に磨かれ、カメラに使われ、見る者に信用されすぎる。縁は虚栄が少ない。乳白の弧は層が圧力で曲がった記録だ。ガスケット下の塩霧は、水が招かれていない場所へ進んだ印だ。ラミネート内の結露は、乾いた側が長く湿気を吸った証拠になる。\n\n良い読取は行動を変える。乾いたポケットを見つけ、低応力の切断線を選び、遅い破損の証拠として窓を残し、すでに圧力ばねになった部屋を避ける。資源としての圧力ガラスではなく、ここでの窓は証人だ。",
+     "field_note": "縁を見ろ。中心は人が見たかったものだ。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "观察窗应力雾账本",
+     "scanner": "观察窗玻璃 // 厚边、乳白分层弧、密封圈下盐雾。月牙划痕来自清洁臂，不是生物。浑浊边缘是压力史；清晰中心不代表安全。",
+     "terminal": "压力窗读取 // 不要只相信能见度。边缘应力弧表示旧弯曲。夹层内水珠说明干燥侧缓慢失败。下缘密封污垢说明反复渗漏，不是一次撞击。",
+     "audio": "清澈的窗也会疲劳。海不必一次打碎玻璃。",
+     "in_game_wiki": "HECTON-8的观察窗是在压力下做出的承诺。它允许房间看向外面，却不让海进来。因此每一处污迹都有意义。清晰中心只是被人清理过的部分；边缘才说真话：乳白分层、盐雾、清洁臂留下的月牙划痕、密封污垢、夹层冷凝和浑浊应力弧。\n\n玩家应该像读仪表一样读窗。边缘有应力弧但密封干净的玻璃可能很老，却仍稳定。密封圈下有雾，说明水进入了层间。夹层里有水珠，说明干燥侧是慢慢失败的。月牙划痕通常属于被维护过的房间；随机切痕更像坍塌碎片或后期拆解。\n\n观察窗既是路线标记，也是风险。它能显示墙后干燥口袋、仍有空气的房间、曾经每天看海工作的岗位，也能证明所谓“瞬间破裂”其实是缓慢失效。沿疲劳边缘切割可能温和释放房间；敲击清晰中心会把安静的墙变成刀。",
+     "external_site": "关于厚水下观察窗的现场文章：分层、盐雾、密封污垢和应力弧如何比能见度更准确地记录压力史。",
+     "external_site_article": "观察窗是淹没殖民地里最残酷的物件之一。它被建造出来，是为了让海可见，却不让海成为房间的一部分。殖民地失败后，它仍在完成一半工作。你能看穿它，但这不等于安全。\n\nHECTON-8的观察窗读取从边缘开始。玻璃中心会骗人，因为人清洁它，摄像头盯着它，玩家也自然相信自己能看见的东西。边缘没有那么爱面子。乳白弧线表示层间在压力下弯曲。密封圈下的盐雾表示水迁移到了不该去的地方。夹层里的冷凝说明干燥侧在坍塌前长期吸入湿气。\n\n好的读取会改变行为。玩家可以识别干燥口袋，选择低应力切线，保留玻璃作为缓慢失效的证据，或避开已经变成压力弹簧的房间。这里的玻璃不是单纯资源，而是见证物。",
+     "field_note": "看边缘。中心只显示人想看见的东西。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre de brouillard et contrainte de hublot",
+     "scanner": "VERRE DE HUBLOT // Bord épais, arc de délamination laiteux, brouillard salin sous joint. Les rayures en croissant viennent des bras de nettoyage, pas de la faune. Bord trouble : histoire de pression ; centre clair : pas une preuve de sécurité.",
+     "terminal": "LECTURE DE FENÊTRE PRESSION // Ne pas croire la visibilité seule. Les arcs au bord montrent une flexion ancienne. Les gouttes dans le laminé signalent une défaillance lente du côté sec. La crasse sous le joint indique des cycles de fuite.",
+     "audio": "Une vitre claire peut être fatiguée. L'océan n'a pas besoin de casser tout d'un coup.",
+     "in_game_wiki": "Le hublot de HECTON-8 est une promesse tenue sous pression. Il permet à une pièce de voir dehors sans laisser entrer l'océan. Le centre clair n'est que la zone nettoyée. Le bord dit la vérité : délamination laiteuse, brouillard de sel, rayures en croissant des anciens bras de nettoyage, crasse de joint, condensation piégée et arcs de contrainte.\n\nLe joueur doit lire le hublot comme un instrument. Une vitre avec arcs de contrainte mais joint propre peut être vieille et stable. Du brouillard sous le joint signifie que l'eau est passée entre les couches. Des gouttes dans le laminé indiquent une mort lente du côté sec. Des rayures régulières en croissant signalent une pièce entretenue ; des coupes aléatoires parlent d'effondrement ou de récupération tardive.\n\nUn hublot marque à la fois route et risque. Il peut révéler une poche sèche, une salle avec reste d'air, un poste où quelqu'un regardait l'océan chaque jour, ou prouver qu'une rupture dite instantanée fut lente. Frapper le centre parce qu'il est clair peut transformer un mur tranquille en couteaux.",
+     "external_site": "Article de terrain sur le verre épais des hublots sous-marins : délamination, sel, crasse de joint et arcs de contrainte racontent mieux l'histoire de pression que la visibilité.",
+     "external_site_article": "Un hublot est l'un des objets les plus cruels d'une colonie noyée. Il a été conçu pour rendre l'océan visible sans le laisser devenir présent. Après l'échec, il continue la moitié de ce travail : on voit à travers, mais cela ne le rend pas sûr.\n\nLa lecture commence au bord. Le centre ment parce qu'on l'a nettoyé, surveillé, utilisé par les caméras. Le bord est moins vaniteux. Les arcs laiteux montrent des couches fléchies sous pression. Le brouillard salin sous le joint montre une eau entrée sans invitation. La condensation dans le laminé montre que le côté sec a respiré humide longtemps avant l'effondrement.\n\nBien lire change le comportement. Identifier une poche sèche, choisir une ligne de coupe moins tendue, préserver la vitre comme preuve de défaillance lente, éviter une salle devenue ressort de pression. Ici le verre n'est pas seulement ressource : il est témoin.",
+     "field_note": "Regarde le bord. Le centre montre ce que les gens voulaient voir."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de niebla y tensión de ventana de observación",
+     "scanner": "VIDRIO DE OBSERVACIÓN // Borde grueso, arco lechoso de delaminación, niebla de sal bajo la junta. Las rayas de media luna vienen de brazos de limpieza, no de fauna. Borde turbio: historia de presión; centro claro no significa seguridad.",
+     "terminal": "LECTURA DE VENTANA DE PRESIÓN // No confíes solo en la visibilidad. Los arcos del borde muestran flexión antigua. Gotas dentro del laminado significan fallo lento del lado seco. Suciedad bajo la junta indica ciclos de fuga.",
+     "audio": "Una ventana clara también se cansa. El océano no necesita romper el vidrio de golpe.",
+     "in_game_wiki": "La ventana de observación de HECTON-8 es una promesa bajo presión. Permite mirar al océano sin dejarlo entrar. El centro claro es la parte limpiada por humanos. El borde dice la verdad: delaminación lechosa, niebla de sal, rayas de media luna de brazos de limpieza, suciedad de junta, condensación atrapada y arcos de presión.\n\nEl jugador debe leerla como un instrumento. Una luna con arcos de tensión pero junta limpia puede ser vieja y estable. Niebla bajo la junta significa agua entre capas. Gotas en el laminado indican que el lado seco falló despacio. Rayas en media luna hablan de una sala mantenida; cortes aleatorios sugieren colapso o desmontaje tardío.\n\nEsta ventana marca ruta y riesgo. Puede mostrar un bolsillo seco, una sala con aire residual, un puesto donde alguien miraba el mar cada día, o probar que una supuesta rotura instantánea fue lenta. Golpear el centro porque está claro puede convertir una pared silenciosa en cuchillos.",
+     "external_site": "Artículo de campo sobre vidrio grueso de observación submarina: delaminación, sal, suciedad de junta y arcos de tensión explican la historia de presión mejor que la visibilidad.",
+     "external_site_article": "Una ventana de observación es uno de los objetos más crueles de una colonia ahogada. Fue construida para hacer visible el océano sin dejarlo entrar. Tras el fallo, sigue haciendo la mitad de ese trabajo. Se puede ver a través de ella. Eso no la vuelve segura.\n\nLa lectura empieza en el borde. El centro miente porque fue limpiado, vigilado y usado por cámaras. El borde tiene menos vanidad. Los arcos lechosos significan capas dobladas por presión. La niebla salina bajo la junta revela agua migrando donde no debía. La condensación atrapada muestra que el lado seco respiró humedad durante mucho tiempo.\n\nUna buena lectura cambia la acción: encontrar un bolsillo seco, elegir una línea de corte de menor tensión, conservar el panel como prueba de fallo lento, o evitar una sala que ya funciona como resorte de presión. Aquí el vidrio no es solo recurso; es testigo.",
+     "field_note": "Mira el borde. El centro muestra lo que la gente quería ver."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Protokoll für Sichtfenster-Stressnebel",
+     "scanner": "SICHTFENSTERGLAS // Dicke Kante, milchiger Delaminationsbogen, Salznebel unter der Dichtung. Halbmondkratzer stammen von Reinigungsarmen, nicht von Fauna. Trüber Rand bedeutet Druckgeschichte; klare Mitte bedeutet keine Sicherheit.",
+     "terminal": "DRUCKFENSTERLESUNG // Sicht allein trügt. Stressbögen an der Kante zeigen alte Biegung. Tropfen im Laminat bedeuten langsames Versagen der trockenen Seite. Schmutz unter der Dichtung zeigt Leckzyklen.",
+     "audio": "Ein klares Fenster kann müde sein. Der Ozean muss Glas nicht auf einmal brechen.",
+     "in_game_wiki": "Sichtfensterglas in HECTON-8 ist ein Versprechen unter Druck. Es lässt einen Raum hinausblicken, ohne den Ozean hereinzulassen. Die klare Mitte ist nur der geputzte Teil. Die Kante sagt die Wahrheit: milchige Delamination, Salznebel, Halbmondkratzer alter Reinigungsarme, Dichtungsschmutz, eingeschlossene Kondensation und trübe Stressbögen.\n\nDer Spieler sollte Fenster wie Instrumente lesen. Stressbögen mit sauberer Dichtung können alt, aber stabil sein. Nebel unter der Dichtung bedeutet Wasser zwischen Schichten. Tropfen im Laminat bedeuten langsames Sterben der trockenen Seite. Regelmäßige Kratzer deuten Wartung an; chaotische Schnitte deuten Einsturz oder spätere Bergung an.\n\nEin Sichtfenster markiert Route und Risiko. Es zeigt trockene Taschen, Räume mit Restluft, Arbeitsplätze mit täglichem Blick ins Meer oder beweist, dass ein angeblicher Sofortbruch langsam war. Die klare Mitte zu schlagen kann eine ruhige Wand in Messer verwandeln.",
+     "external_site": "Feldartikel zu dickem Unterwasser-Sichtfensterglas: Delamination, Salznebel, Dichtungsschmutz und Stressbögen erzählen Druckgeschichte besser als Sicht.",
+     "external_site_article": "Ein Sichtfenster ist eines der härteren Objekte einer ertrunkenen Kolonie. Es sollte den Ozean sichtbar machen, ohne ihn anwesend werden zu lassen. Nach dem Scheitern erledigt es noch die Hälfte dieser Arbeit: Man sieht hindurch. Sicher ist es deshalb nicht.\n\nHECTON-8-Fensterlesen beginnt an der Kante. Die Mitte lügt, weil Menschen sie putzten, Kameras hindurch sahen und Spieler dem Sichtbaren vertrauen. Die Kante ist weniger eitel. Milchige Bögen zeigen Schichten, die unter Druck bogen. Salznebel unter der Dichtung zeigt Wasserwanderung. Kondensation im Laminat zeigt lange Feuchte auf der trockenen Seite.\n\nGute Lesung verändert Verhalten: trockene Tasche finden, spannungsarme Schnittlinie wählen, Glas als Beweis langsamen Versagens bewahren oder einen Raum meiden, der schon zur Druckfeder wurde. Hier ist Glas nicht nur Ressource, sondern Zeuge.",
+     "field_note": "Sieh auf die Kante. Die Mitte zeigt, was Menschen sehen wollten."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr mgły i naprężeń okna obserwacyjnego",
+     "scanner": "SZKŁO OKNA OBSERWACYJNEGO // Gruba krawędź, mleczny łuk rozwarstwienia, sól pod uszczelką. Rysy półksiężycem pochodzą od ramion czyszczących, nie od fauny. Mętny brzeg to historia ciśnienia; czysty środek nie oznacza bezpieczeństwa.",
+     "terminal": "ODCZYT OKNA CIŚNIENIOWEGO // Nie ufaj samej widoczności. Łuki przy krawędzi pokazują stare ugięcie. Krople w laminacie oznaczają powolną awarię strony suchej. Brud pod uszczelką to cykle przecieku.",
+     "audio": "Przezroczyste okno też się męczy. Ocean nie musi pękać szkła naraz.",
+     "in_game_wiki": "Szkło obserwacyjne HECTON-8 jest obietnicą złożoną pod ciśnieniem. Pozwala patrzeć na ocean, nie wpuszczając go do środka. Czysty środek to tylko część myta przez ludzi. Prawda mieszka na krawędzi: mleczne rozwarstwienie, mgła soli, rysy po ramionach czyszczących, brud uszczelki, uwięziona kondensacja i łuki naprężeń.\n\nGracz powinien czytać okno jak przyrząd. Łuki naprężeń przy czystej uszczelce mogą oznaczać stare, ale stabilne szkło. Mgła pod uszczelką to woda między warstwami. Krople w laminacie mówią o powolnej śmierci suchej strony. Regularne rysy półksiężycem wskazują konserwowaną salę; chaotyczne cięcia - zawalenie lub późniejszy demontaż.\n\nTakie okno jest drogą i ryzykiem naraz. Może pokazać suchą kieszeń, salę z resztką powietrza, stanowisko codziennego patrzenia w morze albo dowód, że rzekome nagłe pęknięcie było powolne. Uderzenie w czysty środek może zamienić cichą ścianę w noże.",
+     "external_site": "Artykuł o grubym podwodnym szkle obserwacyjnym: rozwarstwienie, sól, brud uszczelki i łuki naprężeń lepiej niż widoczność opisują historię ciśnienia.",
+     "external_site_article": "Okno obserwacyjne jest jednym z okrutniejszych obiektów zatopionej kolonii. Zbudowano je, by ocean był widoczny, ale nie obecny. Po upadku kolonii nadal wykonuje połowę pracy: widać przez nie. To nie znaczy, że jest bezpieczne.\n\nCzytanie zaczyna się od krawędzi. Środek kłamie, bo był czyszczony, oglądany przez kamery i naturalnie wzbudza zaufanie. Krawędź jest mniej próżna. Mleczne łuki mówią o warstwach zginanych przez ciśnienie. Mgła soli pod uszczelką mówi o wodzie w złym miejscu. Kondensacja w laminacie mówi o długiej wilgoci po stronie suchej.\n\nDobra lektura zmienia zachowanie: znaleźć suchą kieszeń, wybrać linię cięcia o mniejszym naprężeniu, zachować szybę jako dowód powolnej awarii albo ominąć salę zamienioną w sprężynę ciśnienia. To szkło jest świadkiem, nie tylko surowcem.",
+     "field_note": "Patrz na krawędź. Środek pokazuje to, co ludzie chcieli widzieć."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал туману й напруги оглядового скла",
+     "scanner": "ОГЛЯДОВЕ СКЛО // Товста крайка, молочна дуга розшарування, сіль під прокладкою. Півмісяці подряпин від чистильних важелів, не від фауни. Мутний край - історія тиску; чистий центр не гарантія.",
+     "terminal": "ЧИТАННЯ НАПІРНОГО ВІКНА // Не вір лише видимості. Дуги на краю показують старий вигин. Краплі в ламінаті означають повільну відмову сухого боку. Бруд під прокладкою - цикли течі.",
+     "audio": "Прозоре вікно теж втомлюється. Океану не треба ламати скло одразу.",
+     "in_game_wiki": "Оглядове скло HECTON-8 - обіцянка під тиском. Воно дозволяє кімнаті дивитися назовні й не впускати океан. Чистий центр - лише місце, яке мили люди. Правду говорить край: молочне розшарування, соляний туман, півмісяці подряпин від старих чистильних важелів, бруд прокладки, замкнений конденсат і мутні дуги напруги.\n\nГравець має читати вікно як прилад. Скло з дугами, але чистою прокладкою може бути старим, але стабільним. Туман під прокладкою означає воду між шарами. Краплі всередині ламінату кажуть, що сухий бік відмовляв повільно. Регулярні подряпини показують обслуговувану кімнату; випадкові різи - обвал або пізній розбір.\n\nТаке вікно позначає маршрут і ризик. Воно може показати суху кишеню, кімнату з рештками повітря, робоче місце щоденного погляду в океан або доказ, що \"миттєвий прорив\" був повільною відмовою. Удар по чистому центру перетворює тиху стіну на ножі.",
+     "external_site": "Польова стаття про товсте підводне оглядове скло: розшарування, сіль, бруд прокладки й дуги напруги краще за видимість показують історію тиску.",
+     "external_site_article": "Оглядове вікно - один із найжорсткіших об'єктів затопленої колонії. Його створили, щоб океан був видимим, але не присутнім. Після провалу воно досі робить половину цієї роботи. Крізь нього видно. Це не означає безпеку.\n\nЧитання починається з краю. Центр бреше, бо його мили, через нього дивилися камери, і люди довіряють видимому. Край менш марнославний. Молочні дуги показують шари, що гнулися під тиском. Соляний туман під прокладкою показує воду в забороненому місці. Конденсат у ламінаті показує довгу вологу на сухому боці.\n\nДобре читання змінює дію: знайти суху кишеню, вибрати менш напружену лінію різу, зберегти скло як доказ повільної відмови або оминути кімнату, що стала пружиною тиску. Тут скло - свідок, а не просто ресурс.",
+     "field_note": "Дивись на край. Центр показує те, що люди хотіли бачити."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل ضباب وإجهاد نافذة الرؤية",
+     "scanner": "زجاج نافذة الرؤية // حافة سميكة، قوس انفصال لبني، ضباب ملح تحت الحشية. خدوش الهلال من أذرع التنظيف لا من الكائنات. الحافة المعتمة تاريخ ضغط؛ المركز الصافي لا يعني الأمان.",
+     "terminal": "قراءة نافذة الضغط // لا تثق بالرؤية وحدها. أقواس الحافة تكشف انثناء قديما. قطرات داخل الطبقات تعني فشل الجانب الجاف ببطء. وسخ أسفل الحشية يعني دورات تسرب.",
+     "audio": "قد تتعب النافذة الصافية أيضا. لا يحتاج البحر إلى كسر الزجاج مرة واحدة.",
+     "in_game_wiki": "زجاج الرؤية في HECTON-8 وعد تحت الضغط. يسمح للغرفة أن ترى الخارج دون أن تدخل البحر. المركز الصافي هو الجزء الذي نظفه البشر. الحافة تقول الحقيقة: انفصال لبني، ضباب ملح، خدوش هلالية من أذرع تنظيف قديمة، وسخ حشية، تكاثف محبوس، وأقواس إجهاد معتمة.\n\nيجب أن يقرأ اللاعب النافذة كأداة. زجاج فيه أقواس إجهاد وحشية نظيفة قد يكون قديما لكنه مستقر. الضباب تحت الحشية يعني ماء بين الطبقات. القطرات داخل الطبقات تعني موتا بطيئا للجانب الجاف. الخدوش المنتظمة تعني غرفة صينت؛ الجروح العشوائية تعني انهيارا أو تفكيكا لاحقا.\n\nالنافذة علامة طريق وخطر معا. قد تكشف جيبا جافا، أو غرفة بقي فيها هواء، أو مكان عمل كان يرى البحر كل يوم، أو دليلا على أن \"الكسر الفوري\" كان فشلا بطيئا. ضرب المركز الصافي قد يحول جدارا هادئا إلى سكاكين.",
+     "external_site": "مقال ميداني عن زجاج الرؤية السميك تحت الماء: الانفصال وضباب الملح ووسخ الحشية وأقواس الإجهاد تروي تاريخ الضغط أفضل من الرؤية.",
+     "external_site_article": "نافذة الرؤية من أقسى أشياء المستعمرة الغارقة. صنعت لكي تجعل المحيط مرئيا دون أن تسمح له بالحضور. بعد الفشل تواصل نصف هذا العمل: تستطيع أن ترى من خلالها. هذا لا يجعلها آمنة.\n\nتبدأ قراءة HECTON-8 من الحافة. المركز يكذب لأنه نظف، ونظرت عبره الكاميرات، ويميل البشر إلى الثقة بما يرونه. الحافة أقل غرورا. الأقواس اللبنية تعني طبقات انثنت تحت الضغط. ضباب الملح تحت الحشية يعني ماء هاجر إلى مكان ممنوع. التكاثف داخل الطبقات يعني أن الجانب الجاف تنفس رطوبة طويلا.\n\nالقراءة الجيدة تغير السلوك: تحديد جيب جاف، اختيار خط قطع أقل إجهادا، حفظ الزجاج كدليل على فشل بطيء، أو تجنب غرفة صارت نابضا للضغط. هنا الزجاج شاهد، لا مورد فقط.",
+     "field_note": "انظر إلى الحافة. المركز يعرض ما أراد الناس رؤيته."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Catatan Kabut Tegangan Kaca Pandang",
+     "scanner": "KACA PANDANG // Tepi tebal, busur delaminasi susu, kabut garam di bawah segel. Gores sabit berasal dari lengan pembersih, bukan fauna. Tepi keruh adalah riwayat tekanan; pusat jernih bukan tanda aman.",
+     "terminal": "BACAAN JENDELA TEKANAN // Jangan percaya visibilitas saja. Busur stres di tepi menunjukkan lentur lama. Tetes dalam laminat berarti sisi kering gagal perlahan. Kotoran bawah segel berarti siklus bocor.",
+     "audio": "Jendela jernih juga bisa lelah. Laut tidak harus memecahkan kaca sekaligus.",
+     "in_game_wiki": "Kaca pandang HECTON-8 adalah janji di bawah tekanan. Ia membuat ruangan bisa melihat keluar tanpa membiarkan laut masuk. Pusat yang jernih hanyalah bagian yang dibersihkan manusia. Tepi mengatakan kebenaran: delaminasi susu, kabut garam, gores sabit dari lengan pembersih, kotoran segel, kondensasi terperangkap, dan busur tekanan.\n\nPemain harus membacanya seperti alat ukur. Kaca dengan busur stres tetapi segel bersih mungkin tua namun stabil. Kabut di bawah segel berarti air masuk di antara lapisan. Tetes dalam laminat berarti sisi kering gagal perlahan. Gores sabit teratur menandai ruangan yang dirawat; sayatan acak menandai runtuhan atau pembongkaran akhir.\n\nKaca pandang bisa menjadi rute dan risiko. Ia menunjukkan kantong kering, ruangan dengan sisa udara, tempat kerja yang menatap laut setiap hari, atau bukti bahwa \"jebol seketika\" sebenarnya kegagalan lambat. Memukul pusat jernih dapat mengubah dinding sunyi menjadi pisau.",
+     "external_site": "Artikel lapangan tentang kaca pandang bawah air tebal: delaminasi, kabut garam, kotoran segel, dan busur stres menjelaskan riwayat tekanan lebih baik daripada visibilitas.",
+     "external_site_article": "Jendela pandang adalah salah satu benda paling kejam di koloni tenggelam. Ia dibuat agar laut terlihat tanpa hadir di dalam ruangan. Setelah koloni gagal, ia masih melakukan separuh tugas itu. Kita bisa melihat melaluinya. Itu tidak berarti aman.\n\nPembacaan HECTON-8 dimulai dari tepi. Pusat berbohong karena dibersihkan, dipakai kamera, dan dipercaya manusia. Tepi kurang sombong. Busur susu berarti lapisan melentur di bawah tekanan. Kabut garam di bawah segel berarti air pindah ke tempat terlarang. Kondensasi dalam laminat berarti sisi kering lama bernapas lembap.\n\nPembacaan baik mengubah tindakan: menemukan kantong kering, memilih garis potong rendah tekanan, menyimpan panel sebagai bukti kegagalan lambat, atau menghindari ruangan yang sudah menjadi pegas tekanan. Di sini kaca adalah saksi, bukan hanya sumber daya.",
+     "field_note": "Lihat tepinya. Pusat menunjukkan apa yang ingin dilihat manusia."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "관측창 응력 안개 장부",
+     "scanner": "관측창 유리 // 두꺼운 가장자리, 젖빛 박리 호, 밀봉재 아래 소금 안개. 초승달 긁힘은 청소 팔 자국이지 생물 흔적이 아니다. 흐린 테두리는 압력 이력이며 맑은 중앙은 안전이 아니다.",
+     "terminal": "압력창 판독 // 시야만 믿지 마라. 가장자리 응력 호는 오래된 휨을 보여 준다. 라미네이트 안 물방울은 건조측의 느린 실패를 뜻한다. 아래 밀봉 오염은 반복 누수다.",
+     "audio": "맑은 창도 지친다. 바다는 유리를 한 번에 깰 필요가 없다.",
+     "in_game_wiki": "HECTON-8의 관측창 유리는 압력 아래 맺은 약속이다. 방이 바깥을 보게 하면서 바다는 들이지 않는다. 맑은 중앙은 사람이 닦은 부분일 뿐이다. 진실은 가장자리에 있다. 젖빛 박리, 소금 안개, 오래된 청소 팔의 초승달 자국, 밀봉 오염, 갇힌 응결, 흐린 응력 호.\n\n플레이어는 창을 계기처럼 읽어야 한다. 응력 호가 있어도 밀봉이 깨끗하면 오래됐지만 안정적일 수 있다. 밀봉 아래 안개는 층 사이의 물을 말한다. 라미네이트 속 물방울은 건조측이 천천히 실패했다는 뜻이다. 규칙적인 초승달 자국은 관리된 방이고, 무작위 절단은 붕괴나 후일 해체를 말한다.\n\n관측창은 길과 위험을 동시에 표시한다. 건조 포켓, 남은 공기, 매일 바다를 보던 작업 자리, 그리고 \"즉시 파손\"이 사실은 느린 실패였다는 증거를 보여 준다. 맑은 중앙을 치면 조용한 벽이 칼날이 될 수 있다.",
+     "external_site": "두꺼운 수중 관측창 유리에 대한 현장 글. 박리, 소금 안개, 밀봉 오염, 응력 호가 시야보다 정확하게 압력 이력을 말한다.",
+     "external_site_article": "관측창은 침수된 식민지에서 가장 잔인한 물건 중 하나다. 바다를 보이게 하되 방 안에 들이지 않기 위해 만들어졌다. 실패 뒤에도 그 일의 절반은 계속한다. 보인다. 그렇다고 안전한 것은 아니다.\n\nHECTON-8의 창 판독은 가장자리에서 시작한다. 중앙은 닦였고, 카메라가 통과했고, 사람은 보이는 것을 믿는다. 가장자리는 덜 허영스럽다. 젖빛 호는 압력에 휜 층을 말한다. 밀봉 아래 소금 안개는 초대받지 않은 물의 이동을 말한다. 라미네이트 안 응결은 건조측이 오래 습기를 마셨다는 뜻이다.\n\n좋은 판독은 행동을 바꾼다. 건조 포켓을 찾고, 낮은 응력 절단선을 고르고, 느린 실패의 증거로 유리를 보존하며, 이미 압력 스프링이 된 방을 피한다. 여기서 유리는 단순한 자원이 아니라 증인이다.",
+     "field_note": "가장자리를 보라. 중앙은 사람들이 보고 싶었던 것을 보여 준다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן ערפל ומאמץ של חלון צפייה",
+     "scanner": "זכוכית חלון צפייה // קצה עבה, קשת דלמינציה חלבית, ערפל מלח תחת האטם. שריטות חצי ירח באות מזרועות ניקוי, לא מפאונה. קצה עכור הוא היסטוריית לחץ; מרכז צלול אינו בטיחות.",
+     "terminal": "קריאת חלון לחץ // אל תסמוך על ראות בלבד. קשתות בקצה מראות כיפוף ישן. טיפות בתוך הלמינציה אומרות כשל איטי של הצד היבש. לכלוך תחת האטם אומר מחזורי דליפה.",
+     "audio": "גם חלון צלול יכול להיות עייף. הים לא חייב לשבור זכוכית בבת אחת.",
+     "in_game_wiki": "זכוכית צפייה ב-HECTON-8 היא הבטחה תחת לחץ. היא מאפשרת לחדר לראות החוצה בלי להכניס את הים פנימה. המרכז הצלול הוא רק החלק שנוקה. הקצה אומר אמת: דלמינציה חלבית, ערפל מלח, שריטות מזרועות ניקוי, לכלוך אטם, עיבוי כלוא וקשתות מאמץ עכורות.\n\nהשחקן צריך לקרוא את החלון כמו מכשיר. קשתות מאמץ עם אטם נקי עשויות להיות ישנות אך יציבות. ערפל תחת האטם אומר מים בין שכבות. טיפות בלמינציה אומרות שהצד היבש נכשל לאט. שריטות סדירות מצביעות על חדר שתוחזק; חתכים אקראיים מצביעים על קריסה או פירוק מאוחר.\n\nחלון צפייה מסמן גם דרך וגם סכנה. הוא יכול להראות כיס יבש, חדר עם אוויר שנותר, עמדה שהביטה בים מדי יום, או ראיה לכך ש\"שבירה מיידית\" הייתה כשל איטי. מכה במרכז הצלול עלולה להפוך קיר שקט לסכינים.",
+     "external_site": "מאמר שטח על זכוכית צפייה עבה מתחת למים: דלמינציה, ערפל מלח, לכלוך אטם וקשתות מאמץ מספרים היסטוריית לחץ טוב יותר מראות.",
+     "external_site_article": "חלון צפייה הוא אחד החפצים האכזריים במושבה שטבעה. הוא נבנה כדי להפוך את הים לנראה בלי לתת לו להיות נוכח. אחרי הכשל הוא ממשיך חצי מהעבודה: אפשר לראות דרכו. זה לא עושה אותו בטוח.\n\nקריאת HECTON-8 מתחילה בקצה. המרכז משקר משום שנוקה, מצלמות הביטו דרכו, ואנשים סומכים על מה שהם רואים. הקצה פחות יהיר. קשתות חלביות מספרות על שכבות שכופפו בלחץ. ערפל מלח תחת האטם מספר על מים במקום אסור. עיבוי בלמינציה מספר על צד יבש שנשם לחות זמן רב.\n\nקריאה טובה משנה פעולה: למצוא כיס יבש, לבחור קו חיתוך במתח נמוך, לשמור את הזכוכית כראיה לכשל איטי, או לעקוף חדר שכבר הפך לקפיץ לחץ. כאן הזכוכית היא עד, לא רק משאב.",
+     "field_note": "הבט בקצה. המרכז מראה את מה שאנשים רצו לראות."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de névoa e tensão da janela de observação",
+     "scanner": "VIDRO DE OBSERVAÇÃO // Borda grossa, arco leitoso de delaminação, névoa de sal sob a junta. Riscos em meia-lua vêm dos braços de limpeza, não da fauna. Borda turva é histórico de pressão; centro claro não é segurança.",
+     "terminal": "LEITURA DE JANELA DE PRESSÃO // Não confie só na visibilidade. Arcos na borda mostram flexão antiga. Gotas no laminado significam falha lenta do lado seco. Sujeira sob a junta indica ciclos de vazamento.",
+     "audio": "Janela clara também cansa. O oceano não precisa quebrar vidro de uma vez.",
+     "in_game_wiki": "O vidro de observação de HECTON-8 é uma promessa sob pressão. Ele deixa a sala olhar para fora sem permitir que o oceano entre. O centro claro é apenas a parte limpa por humanos. A borda diz a verdade: delaminação leitosa, névoa de sal, riscos em meia-lua dos braços de limpeza, sujeira de junta, condensação presa e arcos de tensão.\n\nO jogador deve ler a janela como instrumento. Vidro com arcos de tensão e junta limpa pode ser velho, mas estável. Névoa sob a junta significa água entre camadas. Gotas no laminado mostram falha lenta do lado seco. Riscos regulares indicam sala mantida; cortes aleatórios sugerem colapso ou desmontagem tardia.\n\nA janela marca rota e risco. Pode revelar um bolso seco, uma sala com ar restante, um posto onde alguém via o oceano todo dia, ou provar que uma \"ruptura instantânea\" foi lenta. Bater no centro claro pode transformar uma parede quieta em lâminas.",
+     "external_site": "Artigo de campo sobre vidro grosso de observação subaquática: delaminação, sal, sujeira de junta e arcos de tensão contam histórico de pressão melhor que visibilidade.",
+     "external_site_article": "Uma janela de observação é um dos objetos mais duros de uma colônia afogada. Foi construída para tornar o oceano visível sem deixá-lo presente. Depois da falha, continua fazendo metade do trabalho. Dá para ver através dela. Isso não a torna segura.\n\nA leitura começa na borda. O centro mente porque foi limpo, usado por câmeras, e humanos confiam no que veem. A borda é menos vaidosa. Arcos leitosos mostram camadas dobradas pela pressão. Névoa de sal sob a junta mostra água migrando para onde nunca deveria. Condensação no laminado mostra o lado seco respirando umidade por muito tempo.\n\nBoa leitura muda ação: identificar bolso seco, escolher linha de corte de baixa tensão, preservar o vidro como prova de falha lenta ou evitar uma sala que virou mola de pressão. Aqui o vidro é testemunha, não só recurso.",
+     "field_note": "Olhe a borda. O centro mostra o que as pessoas queriam ver."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Logboek voor stressmist in kijkvensterglas",
+     "scanner": "KIJKVENSTERGLAS // Dikke rand, melkachtige delaminatieboog, zoutmist onder de pakking. Halvemaanvormige krassen komen van reinigingsarmen, niet van fauna. Troebele rand is drukgeschiedenis; helder midden is geen veiligheid.",
+     "terminal": "DRUKVENSTERLEZING // Vertrouw zicht niet alleen. Stressbogen aan de rand tonen oude buiging. Druppels in het laminaat betekenen langzaam falen van de droge zijde. Vuil onder de pakking wijst op lekcycli.",
+     "audio": "Een helder venster kan ook moe zijn. De oceaan hoeft glas niet in één keer te breken.",
+     "in_game_wiki": "Kijkvensterglas in HECTON-8 is een belofte onder druk. Het laat een kamer naar buiten kijken zonder de oceaan binnen te laten. Het heldere midden is alleen het schoongemaakte deel. De rand spreekt waarheid: melkachtige delaminatie, zoutmist, halve maankrassen van oude reinigingsarmen, pakkingsvuil, opgesloten condens en troebele stressbogen.\n\nDe speler moet een venster lezen als instrument. Stressbogen met schone pakking kunnen oud maar stabiel zijn. Mist onder de pakking betekent water tussen lagen. Druppels in het laminaat betekenen traag falen aan de droge zijde. Regelmatige krassen wijzen op onderhoud; willekeurige sneden op instorting of late demontage.\n\nEen kijkvenster markeert route en risico tegelijk. Het kan een droge pocket tonen, een ruimte met restlucht, een werkplek waar dagelijks naar zee werd gekeken, of bewijzen dat een zogenaamd direct breukmoment langzaam was. Het heldere midden raken kan een stille wand in messen veranderen.",
+     "external_site": "Veldartikel over dik onderwater-kijkvensterglas: delaminatie, zoutmist, pakkingsvuil en stressbogen vertellen drukgeschiedenis beter dan zicht.",
+     "external_site_article": "Een kijkvenster is een van de hardere objecten in een verdronken kolonie. Het moest de oceaan zichtbaar maken zonder hem aanwezig te laten zijn. Na het falen doet het nog de helft van dat werk. Je kunt erdoorheen kijken. Dat maakt het niet veilig.\n\nHECTON-8-vensterlezen begint aan de rand. Het midden liegt omdat mensen het schoonmaakten, camera's erdoor keken, en spelers vertrouwen op wat ze zien. De rand is minder ijdel. Melkachtige bogen tonen lagen die onder druk bogen. Zoutmist onder de pakking toont water op een verboden pad. Condens in het laminaat toont een droge zijde die lang vocht ademde.\n\nGoed lezen verandert gedrag: droge pocket vinden, lage-spanningssnede kiezen, glas bewaren als bewijs van traag falen, of een kamer vermijden die al een drukveer is geworden. Hier is glas een getuige, niet alleen een grondstof.",
+     "field_note": "Kijk naar de rand. Het midden toont wat mensen wilden zien."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

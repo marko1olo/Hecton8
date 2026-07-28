@@ -1,241 +1,242 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS194_HUSH_BELT_ORBITAL_SILENCE_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS194_HUSH_BELT_ORBITAL_SILENCE_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1265_HUSH_BELT_ORBITAL_SILENCE_CHART",
+   "release_set_id": "RS194_HUSH_BELT_ORBITAL_SILENCE_ARTICLE",
+   "article_id": "applied_lore.hush_belt_orbital_silence_chart",
+   "title_key": "LORE_HUSH_BELT_ORBITAL_SILENCE_CHART_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/Aegir_System_Game_Texture.md",
+    "Docs/Lore/Grand_Library/01_ASTRONOMY_AND_HISTORY_en_US.md",
+    "Docs/Lore/Grand_Library/09_COMMUNICATIONS_AND_ISOLATION_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1265_HUSH_BELT_ORBITAL_SILENCE_CHART",
-      "release_set_id": "RS194_HUSH_BELT_ORBITAL_SILENCE_ARTICLE",
-      "article_id": "applied_lore.hush_belt_orbital_silence_chart",
-      "title_key": "LORE_HUSH_BELT_ORBITAL_SILENCE_CHART_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/Aegir_System_Game_Texture.md",
-        "Docs/Lore/Grand_Library/01_ASTRONOMY_AND_HISTORY_en_US.md",
-        "Docs/Lore/Grand_Library/09_COMMUNICATIONS_AND_ISOLATION_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.hush_belt_orbital_silence_chart",
-        "secondary": [
-          "unlock.first_failed_black_keel_ping",
-          "unlock.first_kestrel_occultation_window",
-          "unlock.first_acoustic_relay_custody_notice"
-        ],
-        "poi_tags": [
-          "poi.black_keel_window_console",
-          "poi.hush_belt_chart",
-          "poi.acoustic_relay_buoy_custody_log"
-        ],
-        "biome_tags": [
-          "biome.surface_storm",
-          "biome.cable_reef",
-          "biome.atlas_basin"
-        ],
-        "first_20_boundary": "Explains early isolation through water chemistry, orbital timing and Black Keel custody before the player mistakes silence for empty worldbuilding."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Orbital Window Scanner Overlay",
-          "terminal": "Black Keel Relay Custody Notice",
-          "audio": "Marauder Comms Training Cut",
-          "in_game_wiki": "PDA Communications Archive",
-          "external_site": "Public Site Isolation Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_hush_belt_chart_or_failed_orbit_ping",
-        "truth_payload": "The Hush Belt is an overlap of mineral-ocean attenuation, acoustic relay delay, Aegir and Kestrel geometry, and Black Keel custody policy. Silence is a rule state, not emptiness.",
-        "player_question": "If orbit exists above the ocean, why does nobody answer when the player is drowning?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Hush Belt Orbital Silence Chart",
-          "scanner": "HUSH BELT CHART // Black Keel return window degraded. Aegir magnetic noise, Kestrel occultation, mineral-ocean attenuation and relay custody overlap. Orbit sees the storm top. It does not see you.",
-          "terminal": "ORBITAL SILENCE NOTICE // Radio dies in the upper water. Laser line fails through plume ice, storm cloud and Ran glare. Acoustic packets climb through slow buoys and ownership filters. Silence is a condition, not proof of absence.",
-          "audio": "Orbit can be above you and still be unreachable. The lock is timing, water and custody.",
-          "in_game_wiki": "Marauders call the overlap the Hush Belt. It is not a place on a map. It is the hours when four separate locks close at once: Aegir floods the band with magnetic noise, Kestrel breaks line of sight, HECTON-8's mineral ocean eats electromagnetic signal, and Black Keel accepts only custody-tagged acoustic packets.\n\nThat is why a sky contact can exist and still be useless. The carrier may know the storm. It may know the relay buoy answered. It may even receipt a salvage manifest. None of that means a human operator heard you. Below the upper water, communication becomes a slow legal object moving through pressure, salt, buoys and contract filters. A distress call is not a scream. It is a packet asking permission to be believed.",
-          "external_site": "The Hush Belt makes HECTON-8 isolation physical and procedural. The player is alone because water, orbit, relay infrastructure and Black Keel policy can all be true at the same time.",
-          "external_site_article": "HECTON-8 is close enough for orbit to matter and far enough for rescue to fail. Black Keel can pass overhead while the Marauder below still has no usable channel. The Hush Belt names that contradiction: an overlap of Aegir magnetic weather, Kestrel occultation, conductive ocean chemistry and Deep Reach relay custody.\n\nRadio dies first. Lasers need clean line of sight through storm, plume ice and glare. Acoustic telemetry survives, but it is slow, narrow and owned. Every useful packet climbs by buoy, buffer and receipt. The result is a cruel kind of realism: silence does not mean nobody is there. It means the system is working exactly as designed.",
-          "field_note": "If Black Keel answers late, do not call it mercy. Accounting found your packet."
-        },
-        "ru_RU": {
-          "title": "Карта орбитальной тишины Hush Belt",
-          "scanner": "КАРТА HUSH BELT // Окно ответа Black Keel ухудшено. Магнитный шум Aegir, покрытие Kestrel, затухание в минеральном океане и опека реле наложились друг на друга. Орбита видит верх шторма. Тебя она не видит.",
-          "terminal": "УВЕДОМЛЕНИЕ ОБ ОРБИТАЛЬНОЙ ТИШИНЕ // Радио умирает в верхней воде. Лазерная линия срывается на ледяных плюмах, штормовой облачности и блике Ran. Акустические пакеты поднимаются через медленные буи и фильтры владения. Тишина это состояние, а не доказательство отсутствия.",
-          "audio": "Орбита может быть прямо над тобой и все равно быть недосягаемой. Замок состоит из времени, воды и опеки.",
-          "in_game_wiki": "Мародеры называют это наложение Hush Belt. Это не точка на карте. Это часы, когда сразу закрываются четыре замка: Aegir заливает диапазон магнитным шумом, Kestrel ломает прямую видимость, минеральный океан HECTON-8 съедает электромагнитный сигнал, а Black Keel принимает только акустические пакеты с меткой опеки.\n\nПоэтому контакт в небе может существовать и быть бесполезным. Носитель может знать о шторме. Он может знать, что релейный буй ответил. Он может даже принять квитанцию манифеста добычи. Это не значит, что человек тебя услышал. Ниже верхней воды связь становится медленным юридическим объектом, который ползет через давление, соль, буи и контрактные фильтры. Сигнал бедствия это не крик. Это пакет, который просит разрешения считаться правдой.",
-          "external_site": "Hush Belt делает изоляцию HECTON-8 физической и процедурной. Игрок один, потому что вода, орбита, релейная инфраструктура и политика Black Keel могут быть правдой одновременно.",
-          "external_site_article": "HECTON-8 достаточно близок к орбите, чтобы она влияла на игру, и достаточно недоступен, чтобы спасение срывалось. Black Keel может проходить над головой, пока мародер внизу не имеет ни одного пригодного канала. Hush Belt называет это противоречие: наложение магнитной погоды Aegir, покрытия Kestrel, проводящей химии океана и релейной опеки Deep Reach.\n\nСначала умирает радио. Лазерам нужна чистая линия через шторм, ледяные плюмы и блики. Акустическая телеметрия выживает, но она медленная, узкая и кому-то принадлежит. Каждый полезный пакет поднимается через буй, буфер и квитанцию. Получается жесткая реалистичность: тишина не значит, что там никого нет. Она значит, что система работает ровно так, как ее спроектировали.",
-          "field_note": "Если Black Keel отвечает поздно, не называй это милостью. Бухгалтерия нашла твой пакет."
-        },
-        "ja_JP": {
-          "title": "ハッシュベルト軌道沈黙図",
-          "scanner": "ハッシュベルト図 // Black Keelの返信窓が劣化。Aegirの磁気ノイズ、Kestrelの掩蔽、鉱物海洋での減衰、リレー保管権が重なっている。軌道は嵐の上面を見る。あなたは見えない。",
-          "terminal": "軌道沈黙通知 // 無線は上層水で死ぬ。レーザー線は噴出氷、嵐雲、Ranの眩光で途切れる。音響パケットは遅いブイと所有権フィルターを通って上がる。沈黙は状態であり、不在の証明ではない。",
-          "audio": "軌道が頭上にあっても届かないことはある。鍵は距離ではなく、時刻と水と保管権だ。",
-          "in_game_wiki": "マローダーはこの重なりをハッシュベルトと呼ぶ。地図上の場所ではない。Aegirが帯域を磁気ノイズで満たし、Kestrelが見通し線を切り、HECTON-8の鉱物海洋が電磁信号を食い、Black Keelが保管タグ付きの音響パケットだけを受ける時間帯のことだ。\n\nだから空の連絡先は存在していても役に立たない。船は嵐を知っているかもしれない。リレーブイの応答も知っているかもしれない。サルベージ目録の受領だけなら返すかもしれない。それでも人間の通信士が聞いたとは限らない。上層水より下では、通信は圧力、塩、ブイ、契約フィルターを通る遅い法的物体になる。遭難信号は叫びではない。信じてもらう許可を求めるパケットだ。",
-          "external_site": "ハッシュベルトはHECTON-8の孤立を物理と手続きに落とし込む。水、軌道、リレー設備、Black Keelの方針が同時に真実になるから、プレイヤーは一人になる。",
-          "external_site_article": "HECTON-8は軌道が意味を持つほど近く、救助が失敗するほど遠い。Black Keelが頭上を通過しても、下のマローダーには使える通信路がない。ハッシュベルトはその矛盾に付いた名前だ。Aegirの磁気天候、Kestrelの掩蔽、導電性の海洋化学、Deep Reachのリレー保管権が重なる。\n\n最初に死ぬのは無線だ。レーザーには嵐、噴出氷、眩光を抜ける清潔な見通し線が要る。音響テレメトリは生き残るが、遅く、細く、所有されている。有用なパケットはすべてブイ、バッファ、受領を通って上がる。残るのは冷たい現実だ。沈黙は誰もいないという意味ではない。システムが設計通りに動いているという意味だ。",
-          "field_note": "Black Keelの返事が遅いなら、慈悲だと思うな。会計があなたのパケットを見つけただけだ。"
-        },
-        "zh_CN": {
-          "title": "静默带轨道静默图",
-          "scanner": "静默带图 // Black Keel返回窗口恶化。Aegir磁噪、Kestrel掩星、矿物海洋衰减和中继托管同时重叠。轨道能看见风暴顶层。它看不见你。",
-          "terminal": "轨道静默通知 // 无线电死在上层水体。激光线会被喷流冰、风暴云和Ran眩光切断。声学数据包只能通过迟缓浮标和所有权过滤器上行。静默是一种条件，不是不在场的证据。",
-          "audio": "轨道可以就在你头顶，却依旧不可抵达。锁住你的不是距离，是时机、水和托管权。",
-          "in_game_wiki": "掠夺者把这种重叠叫作静默带。它不是地图上的地点，而是四把锁同时合上的时段：Aegir用磁噪淹没频段，Kestrel切断视线，HECTON-8的矿物海洋吞掉电磁信号，Black Keel只接收带托管标签的声学数据包。\n\n所以天空中的联系人可以存在，却完全没用。航母也许知道风暴。也许知道中继浮标答复过。甚至可能给打捞清单开出回执。那不代表有人听见了你。在上层水体以下，通信变成一个缓慢的法律物件，穿过压力、盐、浮标和合同过滤器。求救信号不是尖叫。它是一个请求被相信的数据包。",
-          "external_site": "静默带把HECTON-8的孤立做成物理和流程。玩家孤身一人，是因为水、轨道、中继设施和Black Keel政策可以同时成立。",
-          "external_site_article": "HECTON-8近到轨道会影响一切，又远到救援会失败。Black Keel可以从头顶掠过，而下方的掠夺者仍然没有可用频道。静默带就是这个矛盾的名字：Aegir磁暴、Kestrel掩星、导电海洋化学和Deep Reach中继托管权的重叠。\n\n最先死掉的是无线电。激光需要穿过风暴、喷流冰和眩光的干净视线。声学遥测能活下来，但它慢、窄，而且有主人。每个有用的数据包都必须经由浮标、缓存和回执上行。结果是一种残酷的现实感：静默不表示那里没人。静默表示系统正按设计运转。",
-          "field_note": "如果Black Keel迟迟才回复，别把那叫仁慈。只是会计找到了你的数据包。"
-        },
-        "fr_FR": {
-          "title": "Carte du silence orbital de la Ceinture Muette",
-          "scanner": "CARTE CEINTURE MUETTE // Fenêtre de retour Black Keel dégradée. Bruit magnétique d'Aegir, occultation de Kestrel, atténuation de l'océan minéral et garde des relais se recouvrent. L'orbite voit le sommet de la tempête. Elle ne vous voit pas.",
-          "terminal": "AVIS DE SILENCE ORBITAL // La radio meurt dans les eaux hautes. La ligne laser casse sur la glace des panaches, les nuages d'orage et l'éblouissement de Ran. Les paquets acoustiques montent par bouées lentes et filtres de propriété. Le silence est une condition, pas une preuve d'absence.",
-          "audio": "L'orbite peut être au-dessus de vous et rester hors d'atteinte. Le verrou tient au moment, à l'eau et à la garde.",
-          "in_game_wiki": "Les Maraudeurs appellent ce recouvrement la Ceinture Muette. Ce n'est pas un lieu sur une carte. Ce sont les heures où quatre verrous se ferment ensemble : Aegir noie la bande de bruit magnétique, Kestrel brise la ligne de vue, l'océan minéral de HECTON-8 mange le signal électromagnétique, et Black Keel n'accepte que les paquets acoustiques marqués en garde.\n\nVoilà pourquoi un contact dans le ciel peut exister et ne servir à rien. Le transporteur peut connaître la tempête. Il peut savoir que la bouée relais a répondu. Il peut même accuser réception d'un manifeste de récupération. Cela ne veut pas dire qu'un opérateur humain vous a entendu. Sous les eaux hautes, la communication devient un objet légal lent qui traverse pression, sel, bouées et filtres contractuels. Un appel de détresse n'est pas un cri. C'est un paquet qui demande la permission d'être cru.",
-          "external_site": "La Ceinture Muette rend l'isolement de HECTON-8 physique et procédural. Le joueur est seul parce que l'eau, l'orbite, les relais et la politique de Black Keel peuvent être vrais en même temps.",
-          "external_site_article": "HECTON-8 est assez proche pour que l'orbite compte, et assez inaccessible pour que le secours échoue. Black Keel peut passer au-dessus tandis que le Maraudeur en dessous n'a toujours aucun canal utilisable. La Ceinture Muette nomme cette contradiction : météo magnétique d'Aegir, occultation de Kestrel, chimie conductrice de l'océan et garde des relais de Deep Reach.\n\nLa radio meurt d'abord. Les lasers exigent une ligne propre à travers l'orage, la glace des panaches et l'éblouissement. La télémétrie acoustique survit, mais elle est lente, étroite et possédée. Chaque paquet utile monte par bouée, tampon et reçu. Le résultat est un réalisme cruel : le silence ne veut pas dire qu'il n'y a personne. Il veut dire que le système fonctionne exactement comme prévu.",
-          "field_note": "Si Black Keel répond tard, n'appelez pas cela de la pitié. La comptabilité a trouvé votre paquet."
-        },
-        "es_ES": {
-          "title": "Carta del silencio orbital del Cinturón Mudo",
-          "scanner": "CARTA DEL CINTURÓN MUDO // Ventana de retorno de Black Keel degradada. Ruido magnético de Aegir, ocultación de Kestrel, atenuación del océano mineral y custodia de relés superpuestas. La órbita ve la cima de la tormenta. No te ve a ti.",
-          "terminal": "AVISO DE SILENCIO ORBITAL // La radio muere en el agua superior. La línea láser falla con hielo de pluma, nube de tormenta y resplandor de Ran. Los paquetes acústicos suben por boyas lentas y filtros de propiedad. El silencio es una condición, no prueba de ausencia.",
-          "audio": "La órbita puede estar encima de ti y seguir fuera de alcance. La cerradura es tiempo, agua y custodia.",
-          "in_game_wiki": "Los saqueadores llaman a ese solapamiento el Cinturón Mudo. No es un lugar del mapa. Son las horas en que se cierran cuatro cerraduras a la vez: Aegir inunda la banda con ruido magnético, Kestrel rompe la línea de visión, el océano mineral de HECTON-8 devora la señal electromagnética y Black Keel solo acepta paquetes acústicos con etiqueta de custodia.\n\nPor eso un contacto en el cielo puede existir y no servir para nada. El portador puede conocer la tormenta. Puede saber que la boya de relé respondió. Incluso puede emitir recibo por un manifiesto de rescate. Nada de eso significa que un operador humano te haya oído. Bajo el agua superior, la comunicación se vuelve un objeto legal lento que atraviesa presión, sal, boyas y filtros contractuales. Una llamada de auxilio no es un grito. Es un paquete que pide permiso para ser creído.",
-          "external_site": "El Cinturón Mudo vuelve físico y procedural el aislamiento de HECTON-8. El jugador está solo porque agua, órbita, infraestructura de relés y política de Black Keel pueden ser ciertas al mismo tiempo.",
-          "external_site_article": "HECTON-8 está lo bastante cerca para que la órbita importe y lo bastante inaccesible para que el rescate falle. Black Keel puede pasar por encima mientras el saqueador de abajo sigue sin canal útil. El Cinturón Mudo nombra esa contradicción: clima magnético de Aegir, ocultación de Kestrel, química oceánica conductora y custodia de relés de Deep Reach.\n\nLa radio muere primero. Los láseres necesitan una línea limpia a través de tormenta, hielo de pluma y resplandor. La telemetría acústica sobrevive, pero es lenta, estrecha y tiene dueño. Cada paquete útil sube por boya, búfer y recibo. El resultado es un realismo cruel: el silencio no significa que no haya nadie. Significa que el sistema funciona exactamente como fue diseñado.",
-          "field_note": "Si Black Keel responde tarde, no lo llames misericordia. Contabilidad encontró tu paquete."
-        },
-        "de_DE": {
-          "title": "Orbitale Schweigekarte des Hush Belt",
-          "scanner": "HUSH-BELT-KARTE // Black-Keel-Rückfenster verschlechtert. Aegir-Magnetrauschen, Kestrel-Bedeckung, Mineralozean-Dämpfung und Relaisverwahrung überlappen. Der Orbit sieht die Sturmoberkante. Er sieht dich nicht.",
-          "terminal": "HINWEIS ZU ORBITALER STILLE // Funk stirbt im oberen Wasser. Die Laserlinie bricht an Eisfahnen, Sturmwolken und Ran-Blendung. Akustikpakete steigen durch langsame Bojen und Eigentumsfilter. Stille ist ein Zustand, kein Beweis für Abwesenheit.",
-          "audio": "Der Orbit kann über dir sein und trotzdem unerreichbar bleiben. Das Schloss besteht aus Timing, Wasser und Verwahrung.",
-          "in_game_wiki": "Marauder nennen diese Überlagerung den Hush Belt. Er ist kein Ort auf der Karte. Er sind die Stunden, in denen vier Schlösser zugleich schließen: Aegir flutet das Band mit Magnetrauschen, Kestrel bricht die Sichtlinie, HECTON-8s Mineralozean frisst elektromagnetisches Signal, und Black Keel akzeptiert nur akustische Pakete mit Verwahrungsmarke.\n\nDarum kann ein Kontakt am Himmel existieren und trotzdem nutzlos sein. Der Träger kennt vielleicht den Sturm. Er weiß vielleicht, dass die Relaisboje geantwortet hat. Er kann sogar ein Bergungsmanifest quittieren. Nichts davon heißt, dass ein menschlicher Operator dich gehört hat. Unter dem oberen Wasser wird Kommunikation zu einem langsamen Rechtsobjekt, das durch Druck, Salz, Bojen und Vertragsfilter wandert. Ein Notruf ist kein Schrei. Er ist ein Paket, das um Erlaubnis bittet, geglaubt zu werden.",
-          "external_site": "Der Hush Belt macht HECTON-8s Isolation physisch und prozedural. Der Spieler ist allein, weil Wasser, Orbit, Relaisinfrastruktur und Black-Keel-Politik gleichzeitig wahr sein können.",
-          "external_site_article": "HECTON-8 ist nah genug, damit der Orbit zählt, und unzugänglich genug, damit Rettung scheitert. Black Keel kann über Kopf vorbeiziehen, während der Marauder darunter keinen brauchbaren Kanal hat. Hush Belt ist der Name für diesen Widerspruch: Aegirs Magnetwetter, Kestrel-Bedeckung, leitfähige Ozeanchemie und Deep-Reach-Relaisverwahrung.\n\nFunk stirbt zuerst. Laser brauchen freie Sicht durch Sturm, Eisfahnen und Blendung. Akustische Telemetrie überlebt, aber sie ist langsam, schmal und besitzt einen Eigentümer. Jedes nützliche Paket steigt über Boje, Puffer und Quittung. Das Ergebnis ist grausamer Realismus: Stille bedeutet nicht, dass niemand da ist. Sie bedeutet, dass das System genau wie entworfen arbeitet.",
-          "field_note": "Wenn Black Keel spät antwortet, nenn es nicht Gnade. Die Buchhaltung hat dein Paket gefunden."
-        },
-        "pl_PL": {
-          "title": "Mapa ciszy orbitalnej Pasa Wyciszenia",
-          "scanner": "MAPA PASA WYCISZENIA // Okno odpowiedzi Black Keel pogorszone. Szum magnetyczny Aegira, zakrycie przez Kestrel, tłumienie w mineralnym oceanie i nadzór przekaźników nakładają się. Orbita widzi szczyt burzy. Ciebie nie widzi.",
-          "terminal": "KOMUNIKAT O CISZY ORBITALNEJ // Radio umiera w górnej wodzie. Linia laserowa rwie się na lodzie pióropuszy, chmurach burzowych i blasku Ran. Pakiety akustyczne wspinają się przez powolne boje i filtry własności. Cisza jest stanem, nie dowodem nieobecności.",
-          "audio": "Orbita może być nad tobą i nadal być poza zasięgiem. Zamek składa się z czasu, wody i nadzoru.",
-          "in_game_wiki": "Marauderzy nazywają to nałożenie Pasem Wyciszenia. To nie miejsce na mapie. To godziny, w których zamykają się cztery zamki naraz: Aegir zalewa pasmo szumem magnetycznym, Kestrel przecina linię widzenia, mineralny ocean HECTON-8 zjada sygnał elektromagnetyczny, a Black Keel przyjmuje tylko pakiety akustyczne z etykietą nadzoru.\n\nDlatego kontakt na niebie może istnieć i nic nie dawać. Nośnik może znać burzę. Może wiedzieć, że boja przekaźnikowa odpowiedziała. Może nawet wystawić pokwitowanie manifestu złomu. To nie znaczy, że usłyszał cię człowiek. Pod górną wodą komunikacja staje się powolnym obiektem prawnym, który przechodzi przez ciśnienie, sól, boje i filtry kontraktowe. Wezwanie pomocy nie jest krzykiem. To pakiet proszący o pozwolenie, by uznano go za prawdę.",
-          "external_site": "Pas Wyciszenia robi z izolacji HECTON-8 fizykę i procedurę. Gracz jest sam, bo woda, orbita, infrastruktura przekaźników i polityka Black Keel mogą być prawdziwe jednocześnie.",
-          "external_site_article": "HECTON-8 jest dość blisko, by orbita miała znaczenie, i dość niedostępny, by ratunek zawodził. Black Keel może przejść nad głową, a Marauder na dole nadal nie ma użytecznego kanału. Pas Wyciszenia nazywa tę sprzeczność: pogoda magnetyczna Aegira, zakrycie przez Kestrel, przewodząca chemia oceanu i nadzór przekaźników Deep Reach.\n\nNajpierw umiera radio. Lasery potrzebują czystej linii przez burzę, lód pióropuszy i blask. Telemetria akustyczna przeżywa, ale jest wolna, wąska i czyjaś. Każdy użyteczny pakiet idzie przez boję, bufor i pokwitowanie. Wynik jest okrutnie realistyczny: cisza nie znaczy, że nikogo tam nie ma. Znaczy, że system działa dokładnie tak, jak go zaprojektowano.",
-          "field_note": "Jeśli Black Keel odpowiada późno, nie nazywaj tego łaską. Księgowość znalazła twój pakiet."
-        },
-        "uk_UA": {
-          "title": "Карта орбітальної тиші Пояса Мовчання",
-          "scanner": "КАРТА ПОЯСА МОВЧАННЯ // Вікно відповіді Black Keel погіршене. Магнітний шум Aegir, покриття Kestrel, згасання в мінеральному океані й опіка реле наклалися. Орбіта бачить верхівку шторму. Тебе вона не бачить.",
-          "terminal": "ПОВІДОМЛЕННЯ ПРО ОРБІТАЛЬНУ ТИШУ // Радіо помирає у верхній воді. Лазерна лінія рветься на крижаних плюмах, штормових хмарах і відблиску Ran. Акустичні пакети піднімаються через повільні буї та фільтри власності. Тиша це стан, а не доказ відсутності.",
-          "audio": "Орбіта може бути над тобою і все одно лишатися недосяжною. Замок складається з часу, води й опіки.",
-          "in_game_wiki": "Мародери називають це накладання Поясом Мовчання. Це не місце на карті. Це години, коли одночасно зачиняються чотири замки: Aegir заливає діапазон магнітним шумом, Kestrel ламає пряму видимість, мінеральний океан HECTON-8 з'їдає електромагнітний сигнал, а Black Keel приймає лише акустичні пакети з міткою опіки.\n\nТому контакт у небі може існувати й нічого не давати. Носій може знати про шторм. Він може знати, що релейний буй відповів. Він може навіть видати квитанцію на маніфест видобутку. Це не означає, що людина тебе почула. Нижче верхньої води зв'язок стає повільним юридичним об'єктом, який проходить крізь тиск, сіль, буї та контрактні фільтри. Сигнал лиха не є криком. Це пакет, який просить дозволу бути визнаним правдою.",
-          "external_site": "Пояс Мовчання робить ізоляцію HECTON-8 фізичною і процедурною. Гравець сам, бо вода, орбіта, релейна інфраструктура й політика Black Keel можуть бути правдою одночасно.",
-          "external_site_article": "HECTON-8 досить близький, щоб орбіта мала значення, і досить недосяжний, щоб рятунок зривався. Black Keel може проходити над головою, поки мародер унизу не має жодного придатного каналу. Пояс Мовчання називає цю суперечність: магнітна погода Aegir, покриття Kestrel, провідна хімія океану та релейна опіка Deep Reach.\n\nПершим помирає радіо. Лазерам потрібна чиста лінія крізь шторм, крижані плюми й відблиски. Акустична телеметрія виживає, але вона повільна, вузька і комусь належить. Кожен корисний пакет піднімається через буй, буфер і квитанцію. Результат жорстко реалістичний: тиша не означає, що там нікого немає. Вона означає, що система працює саме так, як її спроєктували.",
-          "field_note": "Якщо Black Keel відповідає пізно, не називай це милістю. Бухгалтерія знайшла твій пакет."
-        },
-        "ar_SA": {
-          "title": "خريطة الصمت المداري لحزام السكون",
-          "scanner": "خريطة حزام السكون // تدهورت نافذة رد Black Keel. ضجيج Aegir المغناطيسي واحتجاب Kestrel وتوهين المحيط المعدني وحراسة المرحلات كلها متداخلة. المدار يرى قمة العاصفة. لا يراك.",
-          "terminal": "إشعار صمت مداري // يموت الراديو في الماء العلوي. خط الليزر ينقطع عند جليد الأعمدة وسحب العاصفة ووهج Ran. الحزم الصوتية تصعد عبر عوامات بطيئة ومرشحات ملكية. الصمت حالة، وليس دليلا على الغياب.",
-          "audio": "قد يكون المدار فوقك ويبقى غير قابل للوصول. القفل هو التوقيت والماء والحراسة.",
-          "in_game_wiki": "يسمي المغيرون هذا التداخل حزام السكون. إنه ليس موضعا على الخريطة. إنه الساعات التي تنغلق فيها أربعة أقفال معا: يغمر Aegir الحزمة بضجيج مغناطيسي، ويقطع Kestrel خط النظر، ويلتهم محيط HECTON-8 المعدني الإشارة الكهرومغناطيسية، ولا يقبل Black Keel إلا الحزم الصوتية ذات وسم الحراسة.\n\nلهذا يمكن أن يوجد اتصال في السماء ويبقى عديم الفائدة. قد يعرف الناقل أمر العاصفة. قد يعرف أن عوامة المرحل ردت. وقد يصدر إيصالا لبيان إنقاذ. لا يعني ذلك أن مشغلا بشريا سمعك. تحت الماء العلوي يصبح الاتصال جسما قانونيا بطيئا يمر عبر الضغط والملح والعوامات ومرشحات العقد. نداء الاستغاثة ليس صرخة. إنه حزمة تطلب الإذن بأن يصدقها أحد.",
-          "external_site": "يجعل حزام السكون عزلة HECTON-8 فيزيائية وإجرائية. يكون اللاعب وحيدا لأن الماء والمدار وبنية المرحلات وسياسة Black Keel يمكن أن تكون كلها صحيحة في الوقت نفسه.",
-          "external_site_article": "HECTON-8 قريب بما يكفي كي يهم المدار، وبعيد بما يكفي كي يفشل الإنقاذ. يمكن أن يمر Black Keel فوق الرأس بينما لا يملك المغير في الأسفل قناة صالحة. حزام السكون هو اسم هذا التناقض: طقس Aegir المغناطيسي، واحتجاب Kestrel، وكيمياء المحيط الموصلة، وحراسة مرحلات Deep Reach.\n\nيموت الراديو أولا. تحتاج الليزرات إلى خط نظيف عبر العاصفة وجليد الأعمدة والوهج. تبقى القياسات الصوتية، لكنها بطيئة وضيقة ومملوكة. كل حزمة نافعة تصعد عبر عوامة ومخزن مؤقت وإيصال. النتيجة واقعية قاسية: الصمت لا يعني أن لا أحد هناك. إنه يعني أن النظام يعمل تماما كما صمم.",
-          "field_note": "إذا أجاب Black Keel متأخرا فلا تسمه رحمة. الحسابات وجدت حزمتك."
-        },
-        "id_ID": {
-          "title": "Peta Sunyi Orbit Sabuk Hening",
-          "scanner": "PETA SABUK HENING // Jendela balasan Black Keel memburuk. Derau magnetik Aegir, okultasi Kestrel, redaman samudra mineral, dan kustodi relai saling bertumpuk. Orbit melihat puncak badai. Orbit tidak melihatmu.",
-          "terminal": "PEMBERITAHUAN KESUNYIAN ORBIT // Radio mati di air atas. Garis laser gagal oleh es semburan, awan badai, dan silau Ran. Paket akustik naik lewat pelampung lambat dan filter kepemilikan. Sunyi adalah kondisi, bukan bukti ketiadaan.",
-          "audio": "Orbit bisa berada tepat di atasmu dan tetap tak terjangkau. Kuncinya adalah waktu, air, dan kustodi.",
-          "in_game_wiki": "Para Marauder menyebut tumpukan ini Sabuk Hening. Itu bukan lokasi di peta. Itu jam ketika empat kunci menutup sekaligus: Aegir membanjiri pita dengan derau magnetik, Kestrel memutus garis pandang, samudra mineral HECTON-8 memakan sinyal elektromagnetik, dan Black Keel hanya menerima paket akustik bertanda kustodi.\n\nItulah sebabnya kontak di langit bisa ada tetapi tetap tak berguna. Kapal pengangkut mungkin tahu tentang badai. Mungkin tahu pelampung relai menjawab. Mungkin bahkan mengeluarkan tanda terima untuk manifes salvase. Tidak satu pun berarti operator manusia mendengarmu. Di bawah air atas, komunikasi menjadi objek legal lambat yang bergerak melewati tekanan, garam, pelampung, dan filter kontrak. Panggilan darurat bukan jeritan. Itu paket yang meminta izin untuk dipercaya.",
-          "external_site": "Sabuk Hening membuat isolasi HECTON-8 bersifat fisik dan prosedural. Pemain sendirian karena air, orbit, infrastruktur relai, dan kebijakan Black Keel dapat benar pada saat yang sama.",
-          "external_site_article": "HECTON-8 cukup dekat sehingga orbit berarti, dan cukup tak terjangkau sehingga penyelamatan gagal. Black Keel dapat lewat di atas kepala sementara Marauder di bawah tetap tidak punya kanal yang berguna. Sabuk Hening menamai kontradiksi itu: cuaca magnetik Aegir, okultasi Kestrel, kimia samudra konduktif, dan kustodi relai Deep Reach.\n\nRadio mati duluan. Laser butuh garis bersih melewati badai, es semburan, dan silau. Telemetri akustik bertahan, tetapi lambat, sempit, dan dimiliki. Setiap paket berguna naik lewat pelampung, penyangga, dan tanda terima. Hasilnya realisme yang kejam: sunyi bukan berarti tak ada orang. Sunyi berarti sistem bekerja persis seperti dirancang.",
-          "field_note": "Kalau Black Keel terlambat menjawab, jangan sebut itu belas kasihan. Akuntansi menemukan paketmu."
-        },
-        "ko_KR": {
-          "title": "허시 벨트 궤도 침묵도",
-          "scanner": "허시 벨트 도표 // Black Keel 회신 창 악화. Aegir 자기 소음, Kestrel 엄폐, 광물 해양 감쇠, 중계 보관권이 겹침. 궤도는 폭풍의 윗면을 본다. 너는 보지 못한다.",
-          "terminal": "궤도 침묵 고지 // 무전은 상층수에서 죽는다. 레이저 선은 분출 얼음, 폭풍 구름, Ran 눈부심에 끊긴다. 음향 패킷은 느린 부표와 소유권 필터를 지나 올라간다. 침묵은 조건이지 부재의 증거가 아니다.",
-          "audio": "궤도가 네 위에 있어도 닿지 않을 수 있다. 자물쇠는 거리보다 시각, 물, 보관권이다.",
-          "in_game_wiki": "Marauder들은 이 겹침을 허시 벨트라 부른다. 지도 위의 장소가 아니다. 네 개의 잠금이 동시에 닫히는 시간이다. Aegir가 대역을 자기 소음으로 채우고, Kestrel이 가시선을 끊고, HECTON-8의 광물 해양이 전자기 신호를 먹고, Black Keel은 보관 태그가 붙은 음향 패킷만 받는다.\n\n그래서 하늘의 연락처가 존재해도 아무 쓸모가 없을 수 있다. 운반선은 폭풍을 알고 있을지 모른다. 중계 부표가 응답했다는 것도 알 수 있다. 회수 명세서에 영수증을 발행할 수도 있다. 하지만 그것이 인간 교신원이 너를 들었다는 뜻은 아니다. 상층수 아래에서 통신은 압력, 소금, 부표, 계약 필터를 통과하는 느린 법적 물건이 된다. 조난 호출은 비명이 아니다. 믿어 달라고 허가를 요청하는 패킷이다.",
-          "external_site": "허시 벨트는 HECTON-8의 고립을 물리와 절차로 만든다. 물, 궤도, 중계 인프라, Black Keel 정책이 동시에 참일 수 있기 때문에 플레이어는 혼자다.",
-          "external_site_article": "HECTON-8은 궤도가 의미를 가질 만큼 가깝고, 구조가 실패할 만큼 닿기 어렵다. Black Keel이 머리 위를 지나가도 아래의 Marauder에게는 쓸 수 있는 채널이 없을 수 있다. 허시 벨트는 그 모순의 이름이다. Aegir의 자기 기상, Kestrel 엄폐, 전도성 해양 화학, Deep Reach 중계 보관권이 겹친다.\n\n무전이 먼저 죽는다. 레이저는 폭풍, 분출 얼음, 눈부심을 지나는 깨끗한 시야가 필요하다. 음향 원격 측정은 살아남지만 느리고 좁고 소유되어 있다. 모든 유용한 패킷은 부표, 버퍼, 영수증을 거쳐 올라간다. 결과는 잔혹한 현실감이다. 침묵은 아무도 없다는 뜻이 아니다. 시스템이 설계된 대로 작동한다는 뜻이다.",
-          "field_note": "Black Keel이 늦게 답하면 자비라 부르지 마라. 회계가 네 패킷을 찾은 것이다."
-        },
-        "he_IL": {
-          "title": "מפת הדממה המסלולית של חגורת השקט",
-          "scanner": "מפת חגורת השקט // חלון התגובה של Black Keel הידרדר. רעש מגנטי של Aegir, הסתרת Kestrel, דעיכה באוקיינוס המינרלי ומשמורת ממסרים חופפים. המסלול רואה את ראש הסערה. אותך הוא לא רואה.",
-          "terminal": "הודעת דממה מסלולית // הרדיו מת במים העליונים. קו הלייזר נכשל בקרח פלומות, בענני סערה ובסנוור Ran. חבילות אקוסטיות עולות דרך מצופים איטיים ומסנני בעלות. דממה היא תנאי, לא הוכחת היעדר.",
-          "audio": "המסלול יכול להיות מעליך ועדיין לא להיות נגיש. המנעול הוא תזמון, מים ומשמורת.",
-          "in_game_wiki": "הבוזזים קוראים לחפיפה הזאת חגורת השקט. זה לא מקום במפה. אלה השעות שבהן ארבעה מנעולים נסגרים יחד: Aegir מציף את התחום ברעש מגנטי, Kestrel שובר את קו הראייה, האוקיינוס המינרלי של HECTON-8 אוכל אות אלקטרומגנטי, ו-Black Keel מקבל רק חבילות אקוסטיות עם תג משמורת.\n\nלכן קשר בשמיים יכול להתקיים ועדיין להיות חסר תועלת. המוביל עשוי לדעת על הסערה. הוא עשוי לדעת שמצוף הממסר ענה. הוא אפילו עשוי לאשר מניפסט חילוץ. שום דבר מזה לא אומר שמפעיל אנושי שמע אותך. מתחת למים העליונים, תקשורת הופכת לחפץ משפטי איטי שעובר דרך לחץ, מלח, מצופים ומסנני חוזה. קריאת מצוקה אינה צרחה. היא חבילה שמבקשת רשות שיאמינו לה.",
-          "external_site": "חגורת השקט הופכת את הבידוד של HECTON-8 לפיזי ולתהליכי. השחקן לבד מפני שמים, מסלול, תשתית ממסרים ומדיניות Black Keel יכולים להיות אמיתיים בו זמנית.",
-          "external_site_article": "HECTON-8 קרוב מספיק כדי שהמסלול ישנה, ורחוק מספיק כדי שחילוץ ייכשל. Black Keel יכול לעבור מעל הראש בזמן שלבוזז למטה אין ערוץ שימושי. חגורת השקט היא שם הסתירה הזאת: מזג אוויר מגנטי של Aegir, הסתרת Kestrel, כימיה מוליכה של האוקיינוס ומשמורת ממסרים של Deep Reach.\n\nהרדיו מת ראשון. לייזרים צריכים קו נקי דרך סערה, קרח פלומות וסנוור. טלמטריה אקוסטית שורדת, אבל היא איטית, צרה ושייכת למישהו. כל חבילה שימושית עולה דרך מצוף, חוצץ וקבלה. התוצאה היא ריאליזם אכזרי: דממה לא אומרת שאין שם אף אחד. היא אומרת שהמערכת עובדת בדיוק כפי שתוכננה.",
-          "field_note": "אם Black Keel עונה מאוחר, אל תקרא לזה רחמים. הנהלת החשבונות מצאה את החבילה שלך."
-        },
-        "pt_BR": {
-          "title": "Carta do silêncio orbital da Faixa Muda",
-          "scanner": "CARTA DA FAIXA MUDA // Janela de retorno da Black Keel degradada. Ruído magnético de Aegir, ocultação de Kestrel, atenuação do oceano mineral e custódia de relés sobrepostas. A órbita vê o topo da tempestade. Não vê você.",
-          "terminal": "AVISO DE SILÊNCIO ORBITAL // O rádio morre na água superior. A linha laser falha em gelo de pluma, nuvem de tempestade e brilho de Ran. Pacotes acústicos sobem por boias lentas e filtros de propriedade. Silêncio é uma condição, não prova de ausência.",
-          "audio": "A órbita pode estar acima de você e ainda assim ser inalcançável. A trava é tempo, água e custódia.",
-          "in_game_wiki": "Os saqueadores chamam essa sobreposição de Faixa Muda. Não é um lugar no mapa. São as horas em que quatro travas fecham ao mesmo tempo: Aegir inunda a banda com ruído magnético, Kestrel quebra a linha de visão, o oceano mineral de HECTON-8 engole sinal eletromagnético, e a Black Keel só aceita pacotes acústicos com etiqueta de custódia.\n\nPor isso um contato no céu pode existir e ainda não servir para nada. A transportadora pode saber da tempestade. Pode saber que a boia de relé respondeu. Pode até emitir recibo de um manifesto de salvamento. Nada disso significa que um operador humano ouviu você. Abaixo da água superior, comunicação vira um objeto legal lento que atravessa pressão, sal, boias e filtros contratuais. Um chamado de socorro não é um grito. É um pacote pedindo permissão para ser acreditado.",
-          "external_site": "A Faixa Muda torna físico e procedural o isolamento de HECTON-8. O jogador está só porque água, órbita, infraestrutura de relés e política da Black Keel podem ser verdade ao mesmo tempo.",
-          "external_site_article": "HECTON-8 é perto o bastante para a órbita importar e inacessível o bastante para o resgate falhar. A Black Keel pode passar por cima enquanto o saqueador abaixo continua sem canal útil. A Faixa Muda dá nome a essa contradição: clima magnético de Aegir, ocultação de Kestrel, química condutiva do oceano e custódia de relés da Deep Reach.\n\nO rádio morre primeiro. Lasers precisam de uma linha limpa através de tempestade, gelo de pluma e brilho. A telemetria acústica sobrevive, mas é lenta, estreita e tem dono. Cada pacote útil sobe por boia, buffer e recibo. O resultado é um realismo cruel: silêncio não significa que não há ninguém. Significa que o sistema funciona exatamente como foi projetado.",
-          "field_note": "Se a Black Keel responde tarde, não chame de misericórdia. A contabilidade encontrou seu pacote."
-        },
-        "nl_NL": {
-          "title": "Orbitale stiltekaart van de Hush Belt",
-          "scanner": "HUSH BELT-KAART // Terugvenster van Black Keel verslechterd. Magnetische ruis van Aegir, occultatie door Kestrel, demping in de mineraaloceaan en relaisbewaring vallen samen. De omloop ziet de stormtop. Jou ziet hij niet.",
-          "terminal": "BERICHT OVER ORBITALE STILTE // Radio sterft in het bovenwater. De laserlijn breekt op pluimijs, stormwolken en Ran-schittering. Akoestische pakketten stijgen via trage boeien en eigendomsfilters. Stilte is een toestand, geen bewijs van afwezigheid.",
-          "audio": "De omloop kan boven je zijn en toch onbereikbaar blijven. Het slot is timing, water en bewaring.",
-          "in_game_wiki": "Marauders noemen deze overlapping de Hush Belt. Het is geen plek op de kaart. Het zijn de uren waarin vier sloten tegelijk dichtgaan: Aegir vult de band met magnetische ruis, Kestrel breekt de zichtlijn, de mineraaloceaan van HECTON-8 eet elektromagnetisch signaal, en Black Keel accepteert alleen akoestische pakketten met bewaartag.\n\nDaarom kan er een contact in de lucht bestaan dat toch nutteloos is. De carrier kan de storm kennen. Hij kan weten dat de relaisboei antwoordde. Hij kan zelfs een bergingsmanifest kwiteren. Dat betekent niet dat een menselijke operator je hoorde. Onder het bovenwater wordt communicatie een traag juridisch object dat door druk, zout, boeien en contractfilters beweegt. Een noodoproep is geen schreeuw. Het is een pakket dat toestemming vraagt om geloofd te worden.",
-          "external_site": "De Hush Belt maakt de isolatie van HECTON-8 fysiek en procedureel. De speler is alleen omdat water, omloop, relaisinfrastructuur en Black Keel-beleid tegelijk waar kunnen zijn.",
-          "external_site_article": "HECTON-8 is dichtbij genoeg om de omloop belangrijk te maken en onbereikbaar genoeg om redding te laten mislukken. Black Keel kan bovenlangs komen terwijl de Marauder beneden nog steeds geen bruikbaar kanaal heeft. De Hush Belt benoemt die tegenspraak: magnetisch weer van Aegir, occultatie door Kestrel, geleidende oceaanchemie en relaisbewaring van Deep Reach.\n\nRadio sterft eerst. Lasers hebben een schone lijn nodig door storm, pluimijs en schittering. Akoestische telemetrie overleeft, maar is traag, smal en eigendom. Elk bruikbaar pakket stijgt via boei, buffer en ontvangstbewijs. Het resultaat is wrede realiteit: stilte betekent niet dat er niemand is. Het betekent dat het systeem precies werkt zoals het ontworpen is.",
-          "field_note": "Als Black Keel laat antwoordt, noem het geen genade. De boekhouding heeft je pakket gevonden."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.hush_belt_orbital_silence_chart",
+    "secondary": [
+     "unlock.first_failed_black_keel_ping",
+     "unlock.first_kestrel_occultation_window",
+     "unlock.first_acoustic_relay_custody_notice"
+    ],
+    "poi_tags": [
+     "poi.black_keel_window_console",
+     "poi.hush_belt_chart",
+     "poi.acoustic_relay_buoy_custody_log"
+    ],
+    "biome_tags": [
+     "biome.surface_storm",
+     "biome.cable_reef",
+     "biome.atlas_basin"
+    ],
+    "first_20_boundary": "Explains early isolation through water chemistry, orbital timing and Black Keel custody before the player mistakes silence for empty worldbuilding."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Orbital Window Scanner Overlay",
+     "terminal": "Black Keel Relay Custody Notice",
+     "audio": "Marauder Comms Training Cut",
+     "in_game_wiki": "PDA Communications Archive",
+     "external_site": "Public Site Isolation Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_hush_belt_chart_or_failed_orbit_ping",
+    "truth_payload": "The Hush Belt is an overlap of mineral-ocean attenuation, acoustic relay delay, Aegir and Kestrel geometry, and Black Keel custody policy. Silence is a rule state, not emptiness.",
+    "player_question": "If orbit exists above the ocean, why does nobody answer when the player is drowning?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Hush Belt Orbital Silence Chart",
+     "scanner": "HUSH BELT CHART // Black Keel return window degraded. Aegir magnetic noise, Kestrel occultation, mineral-ocean attenuation and relay custody overlap. Orbit sees the storm top. It does not see you.",
+     "terminal": "ORBITAL SILENCE NOTICE // Radio dies in the upper water. Laser line fails through plume ice, storm cloud and Ran glare. Acoustic packets climb through slow buoys and ownership filters. Silence is a condition, not proof of absence.",
+     "audio": "Orbit can be above you and still be unreachable. The lock is timing, water and custody.",
+     "in_game_wiki": "Marauders call the overlap the Hush Belt. It is not a place on a map. It is the hours when four separate locks close at once: Aegir floods the band with magnetic noise, Kestrel breaks line of sight, HECTON-8's mineral ocean eats electromagnetic signal, and Black Keel accepts only custody-tagged acoustic packets.\n\nThat is why a sky contact can exist and still be useless. The carrier may know the storm. It may know the relay buoy answered. It may even receipt a salvage manifest. None of that means a human operator heard you. Below the upper water, communication becomes a slow legal object moving through pressure, salt, buoys and contract filters. A distress call is not a scream. It is a packet asking permission to be believed.",
+     "external_site": "The Hush Belt makes HECTON-8 isolation physical and procedural. The player is alone because water, orbit, relay infrastructure and Black Keel policy can all be true at the same time.",
+     "external_site_article": "HECTON-8 is close enough for orbit to matter and far enough for rescue to fail. Black Keel can pass overhead while the Marauder below still has no usable channel. The Hush Belt names that contradiction: an overlap of Aegir magnetic weather, Kestrel occultation, conductive ocean chemistry and Deep Reach relay custody.\n\nRadio dies first. Lasers need clean line of sight through storm, plume ice and glare. Acoustic telemetry survives, but it is slow, narrow and owned. Every useful packet climbs by buoy, buffer and receipt. The result is a cruel kind of realism: silence does not mean nobody is there. It means the system is working exactly as designed.",
+     "field_note": "If Black Keel answers late, do not call it mercy. Accounting found your packet."
+    },
+    "ru_RU": {
+     "title": "Карта орбитальной тишины Hush Belt",
+     "scanner": "КАРТА HUSH BELT // Окно ответа Black Keel ухудшено. Магнитный шум Aegir, покрытие Kestrel, затухание в минеральном океане и опека реле наложились друг на друга. Орбита видит верх шторма. Тебя она не видит.",
+     "terminal": "УВЕДОМЛЕНИЕ ОБ ОРБИТАЛЬНОЙ ТИШИНЕ // Радио умирает в верхней воде. Лазерная линия срывается на ледяных плюмах, штормовой облачности и блике Ran. Акустические пакеты поднимаются через медленные буи и фильтры владения. Тишина это состояние, а не доказательство отсутствия.",
+     "audio": "Орбита может быть прямо над тобой и все равно быть недосягаемой. Замок состоит из времени, воды и опеки.",
+     "in_game_wiki": "Мародеры называют это наложение Hush Belt. Это не точка на карте. Это часы, когда сразу закрываются четыре замка: Aegir заливает диапазон магнитным шумом, Kestrel ломает прямую видимость, минеральный океан HECTON-8 съедает электромагнитный сигнал, а Black Keel принимает только акустические пакеты с меткой опеки.\n\nПоэтому контакт в небе может существовать и быть бесполезным. Носитель может знать о шторме. Он может знать, что релейный буй ответил. Он может даже принять квитанцию манифеста добычи. Это не значит, что человек тебя услышал. Ниже верхней воды связь становится медленным юридическим объектом, который ползет через давление, соль, буи и контрактные фильтры. Сигнал бедствия это не крик. Это пакет, который просит разрешения считаться правдой.",
+     "external_site": "Hush Belt делает изоляцию HECTON-8 физической и процедурной. Игрок один, потому что вода, орбита, релейная инфраструктура и политика Black Keel могут быть правдой одновременно.",
+     "external_site_article": "HECTON-8 достаточно близок к орбите, чтобы она влияла на игру, и достаточно недоступен, чтобы спасение срывалось. Black Keel может проходить над головой, пока мародер внизу не имеет ни одного пригодного канала. Hush Belt называет это противоречие: наложение магнитной погоды Aegir, покрытия Kestrel, проводящей химии океана и релейной опеки Deep Reach.\n\nСначала умирает радио. Лазерам нужна чистая линия через шторм, ледяные плюмы и блики. Акустическая телеметрия выживает, но она медленная, узкая и кому-то принадлежит. Каждый полезный пакет поднимается через буй, буфер и квитанцию. Получается жесткая реалистичность: тишина не значит, что там никого нет. Она значит, что система работает ровно так, как ее спроектировали.",
+     "field_note": "Если Black Keel отвечает поздно, не называй это милостью. Бухгалтерия нашла твой пакет."
+    },
+    "ja_JP": {
+     "title": "ハッシュベルト軌道沈黙図",
+     "scanner": "ハッシュベルト図 // Black Keelの返信窓が劣化。Aegirの磁気ノイズ、Kestrelの掩蔽、鉱物海洋での減衰、リレー保管権が重なっている。軌道は嵐の上面を見る。あなたは見えない。",
+     "terminal": "軌道沈黙通知 // 無線は上層水で死ぬ。レーザー線は噴出氷、嵐雲、Ranの眩光で途切れる。音響パケットは遅いブイと所有権フィルターを通って上がる。沈黙は状態であり、不在の証明ではない。",
+     "audio": "軌道が頭上にあっても届かないことはある。鍵は距離ではなく、時刻と水と保管権だ。",
+     "in_game_wiki": "マローダーはこの重なりをハッシュベルトと呼ぶ。地図上の場所ではない。Aegirが帯域を磁気ノイズで満たし、Kestrelが見通し線を切り、HECTON-8の鉱物海洋が電磁信号を食い、Black Keelが保管タグ付きの音響パケットだけを受ける時間帯のことだ。\n\nだから空の連絡先は存在していても役に立たない。船は嵐を知っているかもしれない。リレーブイの応答も知っているかもしれない。サルベージ目録の受領だけなら返すかもしれない。それでも人間の通信士が聞いたとは限らない。上層水より下では、通信は圧力、塩、ブイ、契約フィルターを通る遅い法的物体になる。遭難信号は叫びではない。信じてもらう許可を求めるパケットだ。",
+     "external_site": "ハッシュベルトはHECTON-8の孤立を物理と手続きに落とし込む。水、軌道、リレー設備、Black Keelの方針が同時に真実になるから、プレイヤーは一人になる。",
+     "external_site_article": "HECTON-8は軌道が意味を持つほど近く、救助が失敗するほど遠い。Black Keelが頭上を通過しても、下のマローダーには使える通信路がない。ハッシュベルトはその矛盾に付いた名前だ。Aegirの磁気天候、Kestrelの掩蔽、導電性の海洋化学、Deep Reachのリレー保管権が重なる。\n\n最初に死ぬのは無線だ。レーザーには嵐、噴出氷、眩光を抜ける清潔な見通し線が要る。音響テレメトリは生き残るが、遅く、細く、所有されている。有用なパケットはすべてブイ、バッファ、受領を通って上がる。残るのは冷たい現実だ。沈黙は誰もいないという意味ではない。システムが設計通りに動いているという意味だ。",
+     "field_note": "Black Keelの返事が遅いなら、慈悲だと思うな。会計があなたのパケットを見つけただけだ。"
+    },
+    "zh_CN": {
+     "title": "静默带轨道静默图",
+     "scanner": "静默带图 // Black Keel返回窗口恶化。Aegir磁噪、Kestrel掩星、矿物海洋衰减和中继托管同时重叠。轨道能看见风暴顶层。它看不见你。",
+     "terminal": "轨道静默通知 // 无线电死在上层水体。激光线会被喷流冰、风暴云和Ran眩光切断。声学数据包只能通过迟缓浮标和所有权过滤器上行。静默是一种条件，不是不在场的证据。",
+     "audio": "轨道可以就在你头顶，却依旧不可抵达。锁住你的不是距离，是时机、水和托管权。",
+     "in_game_wiki": "掠夺者把这种重叠叫作静默带。它不是地图上的地点，而是四把锁同时合上的时段：Aegir用磁噪淹没频段，Kestrel切断视线，HECTON-8的矿物海洋吞掉电磁信号，Black Keel只接收带托管标签的声学数据包。\n\n所以天空中的联系人可以存在，却完全没用。航母也许知道风暴。也许知道中继浮标答复过。甚至可能给打捞清单开出回执。那不代表有人听见了你。在上层水体以下，通信变成一个缓慢的法律物件，穿过压力、盐、浮标和合同过滤器。求救信号不是尖叫。它是一个请求被相信的数据包。",
+     "external_site": "静默带把HECTON-8的孤立做成物理和流程。玩家孤身一人，是因为水、轨道、中继设施和Black Keel政策可以同时成立。",
+     "external_site_article": "HECTON-8近到轨道会影响一切，又远到救援会失败。Black Keel可以从头顶掠过，而下方的掠夺者仍然没有可用频道。静默带就是这个矛盾的名字：Aegir磁暴、Kestrel掩星、导电海洋化学和Deep Reach中继托管权的重叠。\n\n最先死掉的是无线电。激光需要穿过风暴、喷流冰和眩光的干净视线。声学遥测能活下来，但它慢、窄，而且有主人。每个有用的数据包都必须经由浮标、缓存和回执上行。结果是一种残酷的现实感：静默不表示那里没人。静默表示系统正按设计运转。",
+     "field_note": "如果Black Keel迟迟才回复，别把那叫仁慈。只是会计找到了你的数据包。"
+    },
+    "fr_FR": {
+     "title": "Carte du silence orbital de la Ceinture Muette",
+     "scanner": "CARTE CEINTURE MUETTE // Fenêtre de retour Black Keel dégradée. Bruit magnétique d'Aegir, occultation de Kestrel, atténuation de l'océan minéral et garde des relais se recouvrent. L'orbite voit le sommet de la tempête. Elle ne vous voit pas.",
+     "terminal": "AVIS DE SILENCE ORBITAL // La radio meurt dans les eaux hautes. La ligne laser casse sur la glace des panaches, les nuages d'orage et l'éblouissement de Ran. Les paquets acoustiques montent par bouées lentes et filtres de propriété. Le silence est une condition, pas une preuve d'absence.",
+     "audio": "L'orbite peut être au-dessus de vous et rester hors d'atteinte. Le verrou tient au moment, à l'eau et à la garde.",
+     "in_game_wiki": "Les Maraudeurs appellent ce recouvrement la Ceinture Muette. Ce n'est pas un lieu sur une carte. Ce sont les heures où quatre verrous se ferment ensemble : Aegir noie la bande de bruit magnétique, Kestrel brise la ligne de vue, l'océan minéral de HECTON-8 mange le signal électromagnétique, et Black Keel n'accepte que les paquets acoustiques marqués en garde.\n\nVoilà pourquoi un contact dans le ciel peut exister et ne servir à rien. Le transporteur peut connaître la tempête. Il peut savoir que la bouée relais a répondu. Il peut même accuser réception d'un manifeste de récupération. Cela ne veut pas dire qu'un opérateur humain vous a entendu. Sous les eaux hautes, la communication devient un objet légal lent qui traverse pression, sel, bouées et filtres contractuels. Un appel de détresse n'est pas un cri. C'est un paquet qui demande la permission d'être cru.",
+     "external_site": "La Ceinture Muette rend l'isolement de HECTON-8 physique et procédural. Le joueur est seul parce que l'eau, l'orbite, les relais et la politique de Black Keel peuvent être vrais en même temps.",
+     "external_site_article": "HECTON-8 est assez proche pour que l'orbite compte, et assez inaccessible pour que le secours échoue. Black Keel peut passer au-dessus tandis que le Maraudeur en dessous n'a toujours aucun canal utilisable. La Ceinture Muette nomme cette contradiction : météo magnétique d'Aegir, occultation de Kestrel, chimie conductrice de l'océan et garde des relais de Deep Reach.\n\nLa radio meurt d'abord. Les lasers exigent une ligne propre à travers l'orage, la glace des panaches et l'éblouissement. La télémétrie acoustique survit, mais elle est lente, étroite et possédée. Chaque paquet utile monte par bouée, tampon et reçu. Le résultat est un réalisme cruel : le silence ne veut pas dire qu'il n'y a personne. Il veut dire que le système fonctionne exactement comme prévu.",
+     "field_note": "Si Black Keel répond tard, n'appelez pas cela de la pitié. La comptabilité a trouvé votre paquet."
+    },
+    "es_ES": {
+     "title": "Carta del silencio orbital del Cinturón Mudo",
+     "scanner": "CARTA DEL CINTURÓN MUDO // Ventana de retorno de Black Keel degradada. Ruido magnético de Aegir, ocultación de Kestrel, atenuación del océano mineral y custodia de relés superpuestas. La órbita ve la cima de la tormenta. No te ve a ti.",
+     "terminal": "AVISO DE SILENCIO ORBITAL // La radio muere en el agua superior. La línea láser falla con hielo de pluma, nube de tormenta y resplandor de Ran. Los paquetes acústicos suben por boyas lentas y filtros de propiedad. El silencio es una condición, no prueba de ausencia.",
+     "audio": "La órbita puede estar encima de ti y seguir fuera de alcance. La cerradura es tiempo, agua y custodia.",
+     "in_game_wiki": "Los saqueadores llaman a ese solapamiento el Cinturón Mudo. No es un lugar del mapa. Son las horas en que se cierran cuatro cerraduras a la vez: Aegir inunda la banda con ruido magnético, Kestrel rompe la línea de visión, el océano mineral de HECTON-8 devora la señal electromagnética y Black Keel solo acepta paquetes acústicos con etiqueta de custodia.\n\nPor eso un contacto en el cielo puede existir y no servir para nada. El portador puede conocer la tormenta. Puede saber que la boya de relé respondió. Incluso puede emitir recibo por un manifiesto de rescate. Nada de eso significa que un operador humano te haya oído. Bajo el agua superior, la comunicación se vuelve un objeto legal lento que atraviesa presión, sal, boyas y filtros contractuales. Una llamada de auxilio no es un grito. Es un paquete que pide permiso para ser creído.",
+     "external_site": "El Cinturón Mudo vuelve físico y procedural el aislamiento de HECTON-8. El jugador está solo porque agua, órbita, infraestructura de relés y política de Black Keel pueden ser ciertas al mismo tiempo.",
+     "external_site_article": "HECTON-8 está lo bastante cerca para que la órbita importe y lo bastante inaccesible para que el rescate falle. Black Keel puede pasar por encima mientras el saqueador de abajo sigue sin canal útil. El Cinturón Mudo nombra esa contradicción: clima magnético de Aegir, ocultación de Kestrel, química oceánica conductora y custodia de relés de Deep Reach.\n\nLa radio muere primero. Los láseres necesitan una línea limpia a través de tormenta, hielo de pluma y resplandor. La telemetría acústica sobrevive, pero es lenta, estrecha y tiene dueño. Cada paquete útil sube por boya, búfer y recibo. El resultado es un realismo cruel: el silencio no significa que no haya nadie. Significa que el sistema funciona exactamente como fue diseñado.",
+     "field_note": "Si Black Keel responde tarde, no lo llames misericordia. Contabilidad encontró tu paquete."
+    },
+    "de_DE": {
+     "title": "Orbitale Schweigekarte des Hush Belt",
+     "scanner": "HUSH-BELT-KARTE // Black-Keel-Rückfenster verschlechtert. Aegir-Magnetrauschen, Kestrel-Bedeckung, Mineralozean-Dämpfung und Relaisverwahrung überlappen. Der Orbit sieht die Sturmoberkante. Er sieht dich nicht.",
+     "terminal": "HINWEIS ZU ORBITALER STILLE // Funk stirbt im oberen Wasser. Die Laserlinie bricht an Eisfahnen, Sturmwolken und Ran-Blendung. Akustikpakete steigen durch langsame Bojen und Eigentumsfilter. Stille ist ein Zustand, kein Beweis für Abwesenheit.",
+     "audio": "Der Orbit kann über dir sein und trotzdem unerreichbar bleiben. Das Schloss besteht aus Timing, Wasser und Verwahrung.",
+     "in_game_wiki": "Marauder nennen diese Überlagerung den Hush Belt. Er ist kein Ort auf der Karte. Er sind die Stunden, in denen vier Schlösser zugleich schließen: Aegir flutet das Band mit Magnetrauschen, Kestrel bricht die Sichtlinie, HECTON-8s Mineralozean frisst elektromagnetisches Signal, und Black Keel akzeptiert nur akustische Pakete mit Verwahrungsmarke.\n\nDarum kann ein Kontakt am Himmel existieren und trotzdem nutzlos sein. Der Träger kennt vielleicht den Sturm. Er weiß vielleicht, dass die Relaisboje geantwortet hat. Er kann sogar ein Bergungsmanifest quittieren. Nichts davon heißt, dass ein menschlicher Operator dich gehört hat. Unter dem oberen Wasser wird Kommunikation zu einem langsamen Rechtsobjekt, das durch Druck, Salz, Bojen und Vertragsfilter wandert. Ein Notruf ist kein Schrei. Er ist ein Paket, das um Erlaubnis bittet, geglaubt zu werden.",
+     "external_site": "Der Hush Belt macht HECTON-8s Isolation physisch und prozedural. Der Spieler ist allein, weil Wasser, Orbit, Relaisinfrastruktur und Black-Keel-Politik gleichzeitig wahr sein können.",
+     "external_site_article": "HECTON-8 ist nah genug, damit der Orbit zählt, und unzugänglich genug, damit Rettung scheitert. Black Keel kann über Kopf vorbeiziehen, während der Marauder darunter keinen brauchbaren Kanal hat. Hush Belt ist der Name für diesen Widerspruch: Aegirs Magnetwetter, Kestrel-Bedeckung, leitfähige Ozeanchemie und Deep-Reach-Relaisverwahrung.\n\nFunk stirbt zuerst. Laser brauchen freie Sicht durch Sturm, Eisfahnen und Blendung. Akustische Telemetrie überlebt, aber sie ist langsam, schmal und besitzt einen Eigentümer. Jedes nützliche Paket steigt über Boje, Puffer und Quittung. Das Ergebnis ist grausamer Realismus: Stille bedeutet nicht, dass niemand da ist. Sie bedeutet, dass das System genau wie entworfen arbeitet.",
+     "field_note": "Wenn Black Keel spät antwortet, nenn es nicht Gnade. Die Buchhaltung hat dein Paket gefunden."
+    },
+    "pl_PL": {
+     "title": "Mapa ciszy orbitalnej Pasa Wyciszenia",
+     "scanner": "MAPA PASA WYCISZENIA // Okno odpowiedzi Black Keel pogorszone. Szum magnetyczny Aegira, zakrycie przez Kestrel, tłumienie w mineralnym oceanie i nadzór przekaźników nakładają się. Orbita widzi szczyt burzy. Ciebie nie widzi.",
+     "terminal": "KOMUNIKAT O CISZY ORBITALNEJ // Radio umiera w górnej wodzie. Linia laserowa rwie się na lodzie pióropuszy, chmurach burzowych i blasku Ran. Pakiety akustyczne wspinają się przez powolne boje i filtry własności. Cisza jest stanem, nie dowodem nieobecności.",
+     "audio": "Orbita może być nad tobą i nadal być poza zasięgiem. Zamek składa się z czasu, wody i nadzoru.",
+     "in_game_wiki": "Marauderzy nazywają to nałożenie Pasem Wyciszenia. To nie miejsce na mapie. To godziny, w których zamykają się cztery zamki naraz: Aegir zalewa pasmo szumem magnetycznym, Kestrel przecina linię widzenia, mineralny ocean HECTON-8 zjada sygnał elektromagnetyczny, a Black Keel przyjmuje tylko pakiety akustyczne z etykietą nadzoru.\n\nDlatego kontakt na niebie może istnieć i nic nie dawać. Nośnik może znać burzę. Może wiedzieć, że boja przekaźnikowa odpowiedziała. Może nawet wystawić pokwitowanie manifestu złomu. To nie znaczy, że usłyszał cię człowiek. Pod górną wodą komunikacja staje się powolnym obiektem prawnym, który przechodzi przez ciśnienie, sól, boje i filtry kontraktowe. Wezwanie pomocy nie jest krzykiem. To pakiet proszący o pozwolenie, by uznano go za prawdę.",
+     "external_site": "Pas Wyciszenia robi z izolacji HECTON-8 fizykę i procedurę. Gracz jest sam, bo woda, orbita, infrastruktura przekaźników i polityka Black Keel mogą być prawdziwe jednocześnie.",
+     "external_site_article": "HECTON-8 jest dość blisko, by orbita miała znaczenie, i dość niedostępny, by ratunek zawodził. Black Keel może przejść nad głową, a Marauder na dole nadal nie ma użytecznego kanału. Pas Wyciszenia nazywa tę sprzeczność: pogoda magnetyczna Aegira, zakrycie przez Kestrel, przewodząca chemia oceanu i nadzór przekaźników Deep Reach.\n\nNajpierw umiera radio. Lasery potrzebują czystej linii przez burzę, lód pióropuszy i blask. Telemetria akustyczna przeżywa, ale jest wolna, wąska i czyjaś. Każdy użyteczny pakiet idzie przez boję, bufor i pokwitowanie. Wynik jest okrutnie realistyczny: cisza nie znaczy, że nikogo tam nie ma. Znaczy, że system działa dokładnie tak, jak go zaprojektowano.",
+     "field_note": "Jeśli Black Keel odpowiada późno, nie nazywaj tego łaską. Księgowość znalazła twój pakiet."
+    },
+    "uk_UA": {
+     "title": "Карта орбітальної тиші Пояса Мовчання",
+     "scanner": "КАРТА ПОЯСА МОВЧАННЯ // Вікно відповіді Black Keel погіршене. Магнітний шум Aegir, покриття Kestrel, згасання в мінеральному океані й опіка реле наклалися. Орбіта бачить верхівку шторму. Тебе вона не бачить.",
+     "terminal": "ПОВІДОМЛЕННЯ ПРО ОРБІТАЛЬНУ ТИШУ // Радіо помирає у верхній воді. Лазерна лінія рветься на крижаних плюмах, штормових хмарах і відблиску Ran. Акустичні пакети піднімаються через повільні буї та фільтри власності. Тиша це стан, а не доказ відсутності.",
+     "audio": "Орбіта може бути над тобою і все одно лишатися недосяжною. Замок складається з часу, води й опіки.",
+     "in_game_wiki": "Мародери називають це накладання Поясом Мовчання. Це не місце на карті. Це години, коли одночасно зачиняються чотири замки: Aegir заливає діапазон магнітним шумом, Kestrel ламає пряму видимість, мінеральний океан HECTON-8 з'їдає електромагнітний сигнал, а Black Keel приймає лише акустичні пакети з міткою опіки.\n\nТому контакт у небі може існувати й нічого не давати. Носій може знати про шторм. Він може знати, що релейний буй відповів. Він може навіть видати квитанцію на маніфест видобутку. Це не означає, що людина тебе почула. Нижче верхньої води зв'язок стає повільним юридичним об'єктом, який проходить крізь тиск, сіль, буї та контрактні фільтри. Сигнал лиха не є криком. Це пакет, який просить дозволу бути визнаним правдою.",
+     "external_site": "Пояс Мовчання робить ізоляцію HECTON-8 фізичною і процедурною. Гравець сам, бо вода, орбіта, релейна інфраструктура й політика Black Keel можуть бути правдою одночасно.",
+     "external_site_article": "HECTON-8 досить близький, щоб орбіта мала значення, і досить недосяжний, щоб рятунок зривався. Black Keel може проходити над головою, поки мародер унизу не має жодного придатного каналу. Пояс Мовчання називає цю суперечність: магнітна погода Aegir, покриття Kestrel, провідна хімія океану та релейна опіка Deep Reach.\n\nПершим помирає радіо. Лазерам потрібна чиста лінія крізь шторм, крижані плюми й відблиски. Акустична телеметрія виживає, але вона повільна, вузька і комусь належить. Кожен корисний пакет піднімається через буй, буфер і квитанцію. Результат жорстко реалістичний: тиша не означає, що там нікого немає. Вона означає, що система працює саме так, як її спроєктували.",
+     "field_note": "Якщо Black Keel відповідає пізно, не називай це милістю. Бухгалтерія знайшла твій пакет."
+    },
+    "ar_SA": {
+     "title": "خريطة الصمت المداري لحزام السكون",
+     "scanner": "خريطة حزام السكون // تدهورت نافذة رد Black Keel. ضجيج Aegir المغناطيسي واحتجاب Kestrel وتوهين المحيط المعدني وحراسة المرحلات كلها متداخلة. المدار يرى قمة العاصفة. لا يراك.",
+     "terminal": "إشعار صمت مداري // يموت الراديو في الماء العلوي. خط الليزر ينقطع عند جليد الأعمدة وسحب العاصفة ووهج Ran. الحزم الصوتية تصعد عبر عوامات بطيئة ومرشحات ملكية. الصمت حالة، وليس دليلا على الغياب.",
+     "audio": "قد يكون المدار فوقك ويبقى غير قابل للوصول. القفل هو التوقيت والماء والحراسة.",
+     "in_game_wiki": "يسمي المغيرون هذا التداخل حزام السكون. إنه ليس موضعا على الخريطة. إنه الساعات التي تنغلق فيها أربعة أقفال معا: يغمر Aegir الحزمة بضجيج مغناطيسي، ويقطع Kestrel خط النظر، ويلتهم محيط HECTON-8 المعدني الإشارة الكهرومغناطيسية، ولا يقبل Black Keel إلا الحزم الصوتية ذات وسم الحراسة.\n\nلهذا يمكن أن يوجد اتصال في السماء ويبقى عديم الفائدة. قد يعرف الناقل أمر العاصفة. قد يعرف أن عوامة المرحل ردت. وقد يصدر إيصالا لبيان إنقاذ. لا يعني ذلك أن مشغلا بشريا سمعك. تحت الماء العلوي يصبح الاتصال جسما قانونيا بطيئا يمر عبر الضغط والملح والعوامات ومرشحات العقد. نداء الاستغاثة ليس صرخة. إنه حزمة تطلب الإذن بأن يصدقها أحد.",
+     "external_site": "يجعل حزام السكون عزلة HECTON-8 فيزيائية وإجرائية. يكون اللاعب وحيدا لأن الماء والمدار وبنية المرحلات وسياسة Black Keel يمكن أن تكون كلها صحيحة في الوقت نفسه.",
+     "external_site_article": "HECTON-8 قريب بما يكفي كي يهم المدار، وبعيد بما يكفي كي يفشل الإنقاذ. يمكن أن يمر Black Keel فوق الرأس بينما لا يملك المغير في الأسفل قناة صالحة. حزام السكون هو اسم هذا التناقض: طقس Aegir المغناطيسي، واحتجاب Kestrel، وكيمياء المحيط الموصلة، وحراسة مرحلات Deep Reach.\n\nيموت الراديو أولا. تحتاج الليزرات إلى خط نظيف عبر العاصفة وجليد الأعمدة والوهج. تبقى القياسات الصوتية، لكنها بطيئة وضيقة ومملوكة. كل حزمة نافعة تصعد عبر عوامة ومخزن مؤقت وإيصال. النتيجة واقعية قاسية: الصمت لا يعني أن لا أحد هناك. إنه يعني أن النظام يعمل تماما كما صمم.",
+     "field_note": "إذا أجاب Black Keel متأخرا فلا تسمه رحمة. الحسابات وجدت حزمتك."
+    },
+    "id_ID": {
+     "title": "Peta Sunyi Orbit Sabuk Hening",
+     "scanner": "PETA SABUK HENING // Jendela balasan Black Keel memburuk. Derau magnetik Aegir, okultasi Kestrel, redaman samudra mineral, dan kustodi relai saling bertumpuk. Orbit melihat puncak badai. Orbit tidak melihatmu.",
+     "terminal": "PEMBERITAHUAN KESUNYIAN ORBIT // Radio mati di air atas. Garis laser gagal oleh es semburan, awan badai, dan silau Ran. Paket akustik naik lewat pelampung lambat dan filter kepemilikan. Sunyi adalah kondisi, bukan bukti ketiadaan.",
+     "audio": "Orbit bisa berada tepat di atasmu dan tetap tak terjangkau. Kuncinya adalah waktu, air, dan kustodi.",
+     "in_game_wiki": "Para Marauder menyebut tumpukan ini Sabuk Hening. Itu bukan lokasi di peta. Itu jam ketika empat kunci menutup sekaligus: Aegir membanjiri pita dengan derau magnetik, Kestrel memutus garis pandang, samudra mineral HECTON-8 memakan sinyal elektromagnetik, dan Black Keel hanya menerima paket akustik bertanda kustodi.\n\nItulah sebabnya kontak di langit bisa ada tetapi tetap tak berguna. Kapal pengangkut mungkin tahu tentang badai. Mungkin tahu pelampung relai menjawab. Mungkin bahkan mengeluarkan tanda terima untuk manifes salvase. Tidak satu pun berarti operator manusia mendengarmu. Di bawah air atas, komunikasi menjadi objek legal lambat yang bergerak melewati tekanan, garam, pelampung, dan filter kontrak. Panggilan darurat bukan jeritan. Itu paket yang meminta izin untuk dipercaya.",
+     "external_site": "Sabuk Hening membuat isolasi HECTON-8 bersifat fisik dan prosedural. Pemain sendirian karena air, orbit, infrastruktur relai, dan kebijakan Black Keel dapat benar pada saat yang sama.",
+     "external_site_article": "HECTON-8 cukup dekat sehingga orbit berarti, dan cukup tak terjangkau sehingga penyelamatan gagal. Black Keel dapat lewat di atas kepala sementara Marauder di bawah tetap tidak punya kanal yang berguna. Sabuk Hening menamai kontradiksi itu: cuaca magnetik Aegir, okultasi Kestrel, kimia samudra konduktif, dan kustodi relai Deep Reach.\n\nRadio mati duluan. Laser butuh garis bersih melewati badai, es semburan, dan silau. Telemetri akustik bertahan, tetapi lambat, sempit, dan dimiliki. Setiap paket berguna naik lewat pelampung, penyangga, dan tanda terima. Hasilnya realisme yang kejam: sunyi bukan berarti tak ada orang. Sunyi berarti sistem bekerja persis seperti dirancang.",
+     "field_note": "Kalau Black Keel terlambat menjawab, jangan sebut itu belas kasihan. Akuntansi menemukan paketmu."
+    },
+    "ko_KR": {
+     "title": "허시 벨트 궤도 침묵도",
+     "scanner": "허시 벨트 도표 // Black Keel 회신 창 악화. Aegir 자기 소음, Kestrel 엄폐, 광물 해양 감쇠, 중계 보관권이 겹침. 궤도는 폭풍의 윗면을 본다. 너는 보지 못한다.",
+     "terminal": "궤도 침묵 고지 // 무전은 상층수에서 죽는다. 레이저 선은 분출 얼음, 폭풍 구름, Ran 눈부심에 끊긴다. 음향 패킷은 느린 부표와 소유권 필터를 지나 올라간다. 침묵은 조건이지 부재의 증거가 아니다.",
+     "audio": "궤도가 네 위에 있어도 닿지 않을 수 있다. 자물쇠는 거리보다 시각, 물, 보관권이다.",
+     "in_game_wiki": "Marauder들은 이 겹침을 허시 벨트라 부른다. 지도 위의 장소가 아니다. 네 개의 잠금이 동시에 닫히는 시간이다. Aegir가 대역을 자기 소음으로 채우고, Kestrel이 가시선을 끊고, HECTON-8의 광물 해양이 전자기 신호를 먹고, Black Keel은 보관 태그가 붙은 음향 패킷만 받는다.\n\n그래서 하늘의 연락처가 존재해도 아무 쓸모가 없을 수 있다. 운반선은 폭풍을 알고 있을지 모른다. 중계 부표가 응답했다는 것도 알 수 있다. 회수 명세서에 영수증을 발행할 수도 있다. 하지만 그것이 인간 교신원이 너를 들었다는 뜻은 아니다. 상층수 아래에서 통신은 압력, 소금, 부표, 계약 필터를 통과하는 느린 법적 물건이 된다. 조난 호출은 비명이 아니다. 믿어 달라고 허가를 요청하는 패킷이다.",
+     "external_site": "허시 벨트는 HECTON-8의 고립을 물리와 절차로 만든다. 물, 궤도, 중계 인프라, Black Keel 정책이 동시에 참일 수 있기 때문에 플레이어는 혼자다.",
+     "external_site_article": "HECTON-8은 궤도가 의미를 가질 만큼 가깝고, 구조가 실패할 만큼 닿기 어렵다. Black Keel이 머리 위를 지나가도 아래의 Marauder에게는 쓸 수 있는 채널이 없을 수 있다. 허시 벨트는 그 모순의 이름이다. Aegir의 자기 기상, Kestrel 엄폐, 전도성 해양 화학, Deep Reach 중계 보관권이 겹친다.\n\n무전이 먼저 죽는다. 레이저는 폭풍, 분출 얼음, 눈부심을 지나는 깨끗한 시야가 필요하다. 음향 원격 측정은 살아남지만 느리고 좁고 소유되어 있다. 모든 유용한 패킷은 부표, 버퍼, 영수증을 거쳐 올라간다. 결과는 잔혹한 현실감이다. 침묵은 아무도 없다는 뜻이 아니다. 시스템이 설계된 대로 작동한다는 뜻이다.",
+     "field_note": "Black Keel이 늦게 답하면 자비라 부르지 마라. 회계가 네 패킷을 찾은 것이다."
+    },
+    "he_IL": {
+     "title": "מפת הדממה המסלולית של חגורת השקט",
+     "scanner": "מפת חגורת השקט // חלון התגובה של Black Keel הידרדר. רעש מגנטי של Aegir, הסתרת Kestrel, דעיכה באוקיינוס המינרלי ומשמורת ממסרים חופפים. המסלול רואה את ראש הסערה. אותך הוא לא רואה.",
+     "terminal": "הודעת דממה מסלולית // הרדיו מת במים העליונים. קו הלייזר נכשל בקרח פלומות, בענני סערה ובסנוור Ran. חבילות אקוסטיות עולות דרך מצופים איטיים ומסנני בעלות. דממה היא תנאי, לא הוכחת היעדר.",
+     "audio": "המסלול יכול להיות מעליך ועדיין לא להיות נגיש. המנעול הוא תזמון, מים ומשמורת.",
+     "in_game_wiki": "הבוזזים קוראים לחפיפה הזאת חגורת השקט. זה לא מקום במפה. אלה השעות שבהן ארבעה מנעולים נסגרים יחד: Aegir מציף את התחום ברעש מגנטי, Kestrel שובר את קו הראייה, האוקיינוס המינרלי של HECTON-8 אוכל אות אלקטרומגנטי, ו-Black Keel מקבל רק חבילות אקוסטיות עם תג משמורת.\n\nלכן קשר בשמיים יכול להתקיים ועדיין להיות חסר תועלת. המוביל עשוי לדעת על הסערה. הוא עשוי לדעת שמצוף הממסר ענה. הוא אפילו עשוי לאשר מניפסט חילוץ. שום דבר מזה לא אומר שמפעיל אנושי שמע אותך. מתחת למים העליונים, תקשורת הופכת לחפץ משפטי איטי שעובר דרך לחץ, מלח, מצופים ומסנני חוזה. קריאת מצוקה אינה צרחה. היא חבילה שמבקשת רשות שיאמינו לה.",
+     "external_site": "חגורת השקט הופכת את הבידוד של HECTON-8 לפיזי ולתהליכי. השחקן לבד מפני שמים, מסלול, תשתית ממסרים ומדיניות Black Keel יכולים להיות אמיתיים בו זמנית.",
+     "external_site_article": "HECTON-8 קרוב מספיק כדי שהמסלול ישנה, ורחוק מספיק כדי שחילוץ ייכשל. Black Keel יכול לעבור מעל הראש בזמן שלבוזז למטה אין ערוץ שימושי. חגורת השקט היא שם הסתירה הזאת: מזג אוויר מגנטי של Aegir, הסתרת Kestrel, כימיה מוליכה של האוקיינוס ומשמורת ממסרים של Deep Reach.\n\nהרדיו מת ראשון. לייזרים צריכים קו נקי דרך סערה, קרח פלומות וסנוור. טלמטריה אקוסטית שורדת, אבל היא איטית, צרה ושייכת למישהו. כל חבילה שימושית עולה דרך מצוף, חוצץ וקבלה. התוצאה היא ריאליזם אכזרי: דממה לא אומרת שאין שם אף אחד. היא אומרת שהמערכת עובדת בדיוק כפי שתוכננה.",
+     "field_note": "אם Black Keel עונה מאוחר, אל תקרא לזה רחמים. הנהלת החשבונות מצאה את החבילה שלך."
+    },
+    "pt_BR": {
+     "title": "Carta do silêncio orbital da Faixa Muda",
+     "scanner": "CARTA DA FAIXA MUDA // Janela de retorno da Black Keel degradada. Ruído magnético de Aegir, ocultação de Kestrel, atenuação do oceano mineral e custódia de relés sobrepostas. A órbita vê o topo da tempestade. Não vê você.",
+     "terminal": "AVISO DE SILÊNCIO ORBITAL // O rádio morre na água superior. A linha laser falha em gelo de pluma, nuvem de tempestade e brilho de Ran. Pacotes acústicos sobem por boias lentas e filtros de propriedade. Silêncio é uma condição, não prova de ausência.",
+     "audio": "A órbita pode estar acima de você e ainda assim ser inalcançável. A trava é tempo, água e custódia.",
+     "in_game_wiki": "Os saqueadores chamam essa sobreposição de Faixa Muda. Não é um lugar no mapa. São as horas em que quatro travas fecham ao mesmo tempo: Aegir inunda a banda com ruído magnético, Kestrel quebra a linha de visão, o oceano mineral de HECTON-8 engole sinal eletromagnético, e a Black Keel só aceita pacotes acústicos com etiqueta de custódia.\n\nPor isso um contato no céu pode existir e ainda não servir para nada. A transportadora pode saber da tempestade. Pode saber que a boia de relé respondeu. Pode até emitir recibo de um manifesto de salvamento. Nada disso significa que um operador humano ouviu você. Abaixo da água superior, comunicação vira um objeto legal lento que atravessa pressão, sal, boias e filtros contratuais. Um chamado de socorro não é um grito. É um pacote pedindo permissão para ser acreditado.",
+     "external_site": "A Faixa Muda torna físico e procedural o isolamento de HECTON-8. O jogador está só porque água, órbita, infraestrutura de relés e política da Black Keel podem ser verdade ao mesmo tempo.",
+     "external_site_article": "HECTON-8 é perto o bastante para a órbita importar e inacessível o bastante para o resgate falhar. A Black Keel pode passar por cima enquanto o saqueador abaixo continua sem canal útil. A Faixa Muda dá nome a essa contradição: clima magnético de Aegir, ocultação de Kestrel, química condutiva do oceano e custódia de relés da Deep Reach.\n\nO rádio morre primeiro. Lasers precisam de uma linha limpa através de tempestade, gelo de pluma e brilho. A telemetria acústica sobrevive, mas é lenta, estreita e tem dono. Cada pacote útil sobe por boia, buffer e recibo. O resultado é um realismo cruel: silêncio não significa que não há ninguém. Significa que o sistema funciona exatamente como foi projetado.",
+     "field_note": "Se a Black Keel responde tarde, não chame de misericórdia. A contabilidade encontrou seu pacote."
+    },
+    "nl_NL": {
+     "title": "Orbitale stiltekaart van de Hush Belt",
+     "scanner": "HUSH BELT-KAART // Terugvenster van Black Keel verslechterd. Magnetische ruis van Aegir, occultatie door Kestrel, demping in de mineraaloceaan en relaisbewaring vallen samen. De omloop ziet de stormtop. Jou ziet hij niet.",
+     "terminal": "BERICHT OVER ORBITALE STILTE // Radio sterft in het bovenwater. De laserlijn breekt op pluimijs, stormwolken en Ran-schittering. Akoestische pakketten stijgen via trage boeien en eigendomsfilters. Stilte is een toestand, geen bewijs van afwezigheid.",
+     "audio": "De omloop kan boven je zijn en toch onbereikbaar blijven. Het slot is timing, water en bewaring.",
+     "in_game_wiki": "Marauders noemen deze overlapping de Hush Belt. Het is geen plek op de kaart. Het zijn de uren waarin vier sloten tegelijk dichtgaan: Aegir vult de band met magnetische ruis, Kestrel breekt de zichtlijn, de mineraaloceaan van HECTON-8 eet elektromagnetisch signaal, en Black Keel accepteert alleen akoestische pakketten met bewaartag.\n\nDaarom kan er een contact in de lucht bestaan dat toch nutteloos is. De carrier kan de storm kennen. Hij kan weten dat de relaisboei antwoordde. Hij kan zelfs een bergingsmanifest kwiteren. Dat betekent niet dat een menselijke operator je hoorde. Onder het bovenwater wordt communicatie een traag juridisch object dat door druk, zout, boeien en contractfilters beweegt. Een noodoproep is geen schreeuw. Het is een pakket dat toestemming vraagt om geloofd te worden.",
+     "external_site": "De Hush Belt maakt de isolatie van HECTON-8 fysiek en procedureel. De speler is alleen omdat water, omloop, relaisinfrastructuur en Black Keel-beleid tegelijk waar kunnen zijn.",
+     "external_site_article": "HECTON-8 is dichtbij genoeg om de omloop belangrijk te maken en onbereikbaar genoeg om redding te laten mislukken. Black Keel kan bovenlangs komen terwijl de Marauder beneden nog steeds geen bruikbaar kanaal heeft. De Hush Belt benoemt die tegenspraak: magnetisch weer van Aegir, occultatie door Kestrel, geleidende oceaanchemie en relaisbewaring van Deep Reach.\n\nRadio sterft eerst. Lasers hebben een schone lijn nodig door storm, pluimijs en schittering. Akoestische telemetrie overleeft, maar is traag, smal en eigendom. Elk bruikbaar pakket stijgt via boei, buffer en ontvangstbewijs. Het resultaat is wrede realiteit: stilte betekent niet dat er niemand is. Het betekent dat het systeem precies werkt zoals het ontworpen is.",
+     "field_note": "Als Black Keel laat antwoordt, noem het geen genade. De boekhouding heeft je pakket gevonden."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

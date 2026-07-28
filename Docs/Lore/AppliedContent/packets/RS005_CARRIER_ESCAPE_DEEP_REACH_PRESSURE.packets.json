@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS005_CARRIER_ESCAPE_DEEP_REACH_PRESSURE",
-  "status": "production_facing_draft",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P021_BLACK_KEEL_CUSTODY",
-      "article_id": "ships.black_keel_custody",
-      "title_key": "applied_lore.black_keel_custody.title",
-      "unlock": {
-        "primary": "unlock.first_black_keel_custody_record",
-        "poi_tags": [
-          "poi.carrier_contract",
-          "poi.claim_pool_ledger",
-          "poi.orbital_proxy"
-        ],
-        "biome_tags": [
-          "biome.crash_shelf",
-          "biome.surface_weather",
-          "biome.orbit_window"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Black Keel Custody",
-          "scanner": "Carrier custody is public salvage infrastructure with private priority hooks.",
-          "field_note": "A lifeline can still be a leash.",
-          "terminal": "Custody file: hull owner masked, claim-pool debt active, Deep Reach priority channel present but not declared to contractor.",
-          "audio": "Black Keel can recover you. It can also recover everything before you.",
-          "in_game_wiki": "Black Keel is not a luxury personal ship. It is a nearly automated salvage carrier operating through claim-pool custody, insurance debt and delayed orbital windows. It offers a real route back to orbit without making rescue simple or loyal.",
-          "external_site": "Black Keel Custody defines orbital support as useful, compromised infrastructure: a rescue route, a debt machine and a Deep Reach pressure surface in one object."
-        },
-        "ru_RU": {
-          "title": "Опека Black Keel",
-          "scanner": "Опека carrier - публичная salvage-инфраструктура с частными priority hooks.",
-          "field_note": "Спасательный трос тоже может быть поводком.",
-          "terminal": "Файл custody: владелец корпуса скрыт, claim-pool долг активен, приоритетный канал Deep Reach есть, но подрядчику не раскрыт.",
-          "audio": "Black Keel может поднять тебя. И может поднять всё остальное раньше тебя.",
-          "in_game_wiki": "Black Keel - не роскошный личный корабль. Это почти автоматический salvage carrier, работающий через custody пула претензий, страховой долг и задержанные орбитальные окна. Он дает реальный путь обратно на орбиту, но не делает спасение простым или верным.",
-          "external_site": "Black Keel Custody задает орбитальную поддержку как полезную, скомпрометированную инфраструктуру: маршрут спасения, долговую машину и поверхность давления Deep Reach в одном объекте."
-        },
-        "ja_JP": {
-          "title": "Black Keel保管",
-          "scanner": "Carrier保管は公共サルベージ基盤だが、私的な優先フックを持つ。",
-          "field_note": "命綱は首輪にもなる。",
-          "terminal": "保管ファイル: 船体所有者は伏せられ、claim-pool債務は有効、Deep Reach優先回線は契約者に未告知。",
-          "audio": "Black Keelは君を回収できる。君より先に他の物も回収できる。",
-          "in_game_wiki": "Black Keel は豪華な個人船ではない。請求プール保管、保険債務、遅延する軌道窓で動く、ほぼ自動化されたサルベージキャリアだ。軌道へ戻る本物の道を与えるが、救助を単純にも忠実にもしてくれない。",
-          "external_site": "Black Keel Custody は、軌道支援を有用で汚染されたインフラとして定義する。救助経路、債務機械、Deep Reach の圧力面が一つの物体に重なる。"
-        },
-        "zh_CN": {
-          "title": "Black Keel托管",
-          "scanner": "Carrier托管是公共打捞基础设施，但带有私人优先钩子。",
-          "field_note": "救命索也可以是缰绳。",
-          "terminal": "托管档案：船体所有者被遮蔽，claim-pool债务有效，Deep Reach优先通道存在但未向承包人声明。",
-          "audio": "Black Keel能回收你，也能先回收别的东西。",
-          "in_game_wiki": "Black Keel 不是豪华私人船。它是一艘近乎自动化的打捞航母，通过索赔池托管、保险债务和延迟轨道窗口运作。它提供真实的返轨路线，却不会让救援变得简单或忠诚。",
-          "external_site": "Black Keel Custody 把轨道支援定义为有用但被污染的基础设施：救援路线、债务机器和 Deep Reach 压力面集中在同一个物体上。"
-        },
-        "fr_FR": {
-          "title": "Garde Black Keel",
-          "scanner": "La garde du carrier est une infrastructure de récupération publique avec des priorités privées.",
-          "field_note": "Une ligne de vie peut rester une laisse.",
-          "terminal": "Dossier de garde: propriétaire masqué, dette claim-pool active, canal prioritaire Deep Reach présent mais non déclaré.",
-          "audio": "Black Keel peut vous récupérer. Il peut aussi récupérer le reste avant vous.",
-          "in_game_wiki": "Black Keel n'est pas un vaisseau personnel de luxe. C'est un carrier de salvage presque automatisé, régi par la garde d'un pool de réclamations, la dette d'assurance et des fenêtres orbitales retardées. Il offre une vraie route vers l'orbite sans rendre le secours simple ni loyal.",
-          "external_site": "Black Keel Custody définit le soutien orbital comme une infrastructure utile et compromise : route de secours, machine de dette et surface de pression Deep Reach dans un seul objet."
-        },
-        "es_ES": {
-          "title": "Custodia Black Keel",
-          "scanner": "La custodia del carrier es infraestructura pública de salvamento con prioridades privadas.",
-          "field_note": "Una línea de vida también puede ser una correa.",
-          "terminal": "Archivo de custodia: dueño del casco oculto, deuda claim-pool activa, canal Deep Reach prioritario no declarado.",
-          "audio": "Black Keel puede recuperarte. También puede recuperar todo lo demás antes.",
-          "in_game_wiki": "Black Keel no es una nave personal de lujo. Es un carrier de salvage casi automatizado que opera mediante custodia de fondo de reclamaciones, deuda de seguros y ventanas orbitales retrasadas. Ofrece una ruta real de vuelta a órbita sin volver el rescate simple ni leal.",
-          "external_site": "Black Keel Custody define el apoyo orbital como infraestructura útil y comprometida: ruta de rescate, máquina de deuda y superficie de presión de Deep Reach en un solo objeto."
-        },
-        "de_DE": {
-          "title": "Black-Keel-Gewahrsam",
-          "scanner": "Carrier-Gewahrsam ist öffentliche Bergungsinfrastruktur mit privaten Prioritätshaken.",
-          "field_note": "Eine Rettungsleine kann auch eine Leine sein.",
-          "terminal": "Gewahrsamsdatei: Rumpfeigner maskiert, Claim-Pool-Schuld aktiv, Deep-Reach-Prioritätskanal vorhanden aber nicht gemeldet.",
-          "audio": "Black Keel kann dich bergen. Es kann auch alles andere zuerst bergen.",
-          "in_game_wiki": "Black Keel ist kein luxuriöses Privatschiff. Es ist ein nahezu automatisierter Salvage-Carrier, der über Claim-Pool-Gewahrsam, Versicherungsschuld und verspätete Orbitalfenster arbeitet. Er bietet einen echten Weg zurück in den Orbit, ohne Rettung einfach oder loyal zu machen.",
-          "external_site": "Black Keel Custody definiert orbitale Unterstützung als nützliche, kompromittierte Infrastruktur: Rettungsroute, Schuldenmaschine und Deep-Reach-Druckfläche in einem Objekt."
-        },
-        "pl_PL": {
-          "title": "Nadzór Black Keel",
-          "scanner": "Nadzór carriera to publiczna infrastruktura odzysku z prywatnymi priorytetami.",
-          "field_note": "Lina ratunkowa może być smyczą.",
-          "terminal": "Plik nadzoru: właściciel kadłuba ukryty, dług claim-pool aktywny, kanał Deep Reach obecny lecz nieujawniony.",
-          "audio": "Black Keel może cię odzyskać. Może też odzyskać wszystko inne przed tobą.",
-          "in_game_wiki": "Black Keel nie jest luksusowym prywatnym statkiem. To niemal automatyczny carrier salvage działający przez custody puli roszczeń, dług ubezpieczeniowy i opóźnione okna orbitalne. Daje realną drogę na orbitę, ale nie czyni ratunku prostym ani lojalnym.",
-          "external_site": "Black Keel Custody definiuje wsparcie orbitalne jako użyteczną, skażoną infrastrukturę: drogę ratunku, maszynę długu i powierzchnię nacisku Deep Reach w jednym obiekcie."
-        },
-        "uk_UA": {
-          "title": "Опіка Black Keel",
-          "scanner": "Опіка carrier - публічна інфраструктура salvage з приватними priority hooks.",
-          "field_note": "Рятівний трос теж може бути повідцем.",
-          "terminal": "Файл custody: власник корпусу прихований, claim-pool борг активний, канал Deep Reach існує, але підряднику не розкритий.",
-          "audio": "Black Keel може підняти тебе. І може підняти все інше раніше.",
-          "in_game_wiki": "Black Keel - не розкішний особистий корабель. Це майже автоматичний salvage carrier, що працює через custody пулу претензій, страховий борг і затримані орбітальні вікна. Він дає реальний шлях назад на орбіту, але не робить порятунок простим або вірним.",
-          "external_site": "Black Keel Custody задає орбітальну підтримку як корисну, скомпрометовану інфраструктуру: маршрут порятунку, боргову машину й поверхню тиску Deep Reach в одному об'єкті."
-        },
-        "ar_SA": {
-          "title": "وصاية Black Keel",
-          "scanner": "وصاية الحاملة بنية إنقاذ عامة وفيها خطافات أولوية خاصة.",
-          "field_note": "حبل النجاة قد يكون قيدا.",
-          "terminal": "ملف الوصاية: مالك الهيكل مخفي، دين claim-pool نشط، وقناة Deep Reach ذات أولوية غير معلنة.",
-          "audio": "Black Keel يستطيع انتشالك. ويستطيع انتشال الحمولة قبلك.",
-          "in_game_wiki": "Black Keel ليست سفينة شخصية فاخرة. إنها carrier salvage شبه آلية تعمل عبر حيازة مجمع مطالبات ودين تأمين ونوافذ مدار متأخرة. تمنح طريقا حقيقيا إلى المدار من دون أن تجعل الإنقاذ بسيطا أو وفيا.",
-          "external_site": "تعرف Black Keel Custody الدعم المداري كبنية مفيدة ومخترقة: طريق إنقاذ، وآلة دين، وسطح ضغط من Deep Reach في جسم واحد."
-        },
-        "id_ID": {
-          "title": "Kustodi Black Keel",
-          "scanner": "Kustodi carrier adalah infrastruktur salvage publik dengan kait prioritas privat.",
-          "field_note": "Tali penyelamat bisa menjadi tali kekang.",
-          "terminal": "Berkas kustodi: pemilik lambung disamarkan, utang claim-pool aktif, kanal prioritas Deep Reach tidak diumumkan.",
-          "audio": "Black Keel bisa mengambilmu. Ia juga bisa mengambil muatan lebih dulu.",
-          "in_game_wiki": "Black Keel bukan kapal pribadi mewah. Ia carrier salvage nyaris otomatis yang bekerja melalui kustodi kolam klaim, utang asuransi, dan jendela orbit tertunda. Ia menawarkan rute nyata kembali ke orbit tanpa membuat penyelamatan sederhana atau setia.",
-          "external_site": "Black Keel Custody mendefinisikan dukungan orbital sebagai infrastruktur berguna tetapi tercemar: rute penyelamatan, mesin utang, dan permukaan tekanan Deep Reach dalam satu objek."
-        },
-        "ko_KR": {
-          "title": "Black Keel 보관권",
-          "scanner": "Carrier 보관권은 공공 salvage 기반이지만 사적 우선 후크가 붙어 있다.",
-          "field_note": "생명줄은 목줄이 될 수 있다.",
-          "terminal": "보관 파일: 선체 소유자는 가려졌고 claim-pool 부채는 활성, Deep Reach 우선 채널은 계약자에게 미고지.",
-          "audio": "Black Keel은 너를 회수할 수 있다. 그리고 다른 것을 먼저 회수할 수 있다.",
-          "in_game_wiki": "Black Keel은 호화 개인선이 아니다. 청구 풀 보관, 보험 부채, 지연된 궤도 창을 통해 움직이는 거의 자동화된 salvage carrier다. 궤도로 돌아가는 실제 길을 주지만, 구조를 단순하거나 충성스럽게 만들지는 않는다.",
-          "external_site": "Black Keel Custody는 궤도 지원을 유용하지만 오염된 인프라로 정의한다. 구조 경로, 부채 기계, Deep Reach 압력면이 한 물체에 겹친다."
-        },
-        "he_IL": {
-          "title": "משמורת Black Keel",
-          "scanner": "משמורת ה-carrier היא תשתית חילוץ ציבורית עם עדיפויות פרטיות.",
-          "field_note": "חבל הצלה יכול להיות גם רסן.",
-          "terminal": "קובץ משמורת: בעל הגוף מוסתר, חוב claim-pool פעיל, ערוץ Deep Reach עדיף קיים אך לא נמסר לקבלן.",
-          "audio": "Black Keel יכול לחלץ אותך. הוא יכול גם לחלץ את המטען קודם.",
-          "in_game_wiki": "Black Keel אינה ספינה אישית יוקרתית. היא carrier salvage כמעט אוטומטית שפועלת דרך משמורת מאגר תביעות, חוב ביטוח וחלונות מסלול מאוחרים. היא נותנת נתיב אמיתי חזרה למסלול בלי להפוך חילוץ לפשוט או נאמן.",
-          "external_site": "Black Keel Custody מגדירה תמיכה מסלולית כתשתית שימושית ומזוהמת: נתיב חילוץ, מכונת חוב ומשטח לחץ של Deep Reach באובייקט אחד."
-        },
-        "pt_BR": {
-          "title": "Custódia Black Keel",
-          "scanner": "A custódia do carrier é infraestrutura pública de salvage com ganchos privados de prioridade.",
-          "field_note": "Uma linha de vida também pode ser coleira.",
-          "terminal": "Arquivo de custódia: dono do casco mascarado, dívida claim-pool ativa, canal Deep Reach prioritário não declarado.",
-          "audio": "Black Keel pode resgatar você. Também pode resgatar todo o resto antes.",
-          "in_game_wiki": "Black Keel não é uma nave pessoal de luxo. É um carrier de salvage quase automatizado que opera por custódia de pool de reivindicações, dívida de seguro e janelas orbitais atrasadas. Oferece uma rota real de volta à órbita sem tornar o resgate simples nem leal.",
-          "external_site": "Black Keel Custody define suporte orbital como infraestrutura útil e comprometida: rota de resgate, máquina de dívida e superfície de pressão da Deep Reach em um só objeto."
-        },
-        "nl_NL": {
-          "title": "Black Keel-bewaring",
-          "scanner": "Carrier-bewaring is openbare bergingsinfrastructuur met private prioriteitshaken.",
-          "field_note": "Een reddingslijn kan ook een lijn om je nek zijn.",
-          "terminal": "Bewaringsdossier: rompheigenaar gemaskeerd, claim-poolschuld actief, Deep Reach-prioriteitskanaal aanwezig maar niet gemeld.",
-          "audio": "Black Keel kan je ophalen. Het kan ook eerst alles anders ophalen.",
-          "in_game_wiki": "Black Keel is geen luxe privéschip. Het is een bijna geautomatiseerde salvagecarrier die werkt via claimpoolbewaring, verzekeringsschuld en vertraagde orbitale vensters. Het biedt een echte route terug naar de baan zonder redding eenvoudig of loyaal te maken.",
-          "external_site": "Black Keel Custody definieert orbitale steun als nuttige, gecompromitteerde infrastructuur: reddingsroute, schuldenmachine en Deep Reach-drukvlak in één object."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS005_CARRIER_ESCAPE_DEEP_REACH_PRESSURE",
+ "status": "production_facing_draft",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P021_BLACK_KEEL_CUSTODY",
+   "article_id": "ships.black_keel_custody",
+   "title_key": "applied_lore.black_keel_custody.title",
+   "unlock": {
+    "primary": "unlock.first_black_keel_custody_record",
+    "poi_tags": [
+     "poi.carrier_contract",
+     "poi.claim_pool_ledger",
+     "poi.orbital_proxy"
+    ],
+    "biome_tags": [
+     "biome.crash_shelf",
+     "biome.surface_weather",
+     "biome.orbit_window"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Black Keel Custody",
+     "scanner": "Carrier custody is public salvage infrastructure with private priority hooks.",
+     "field_note": "A lifeline can still be a leash.",
+     "terminal": "Custody file: hull owner masked, claim-pool debt active, Deep Reach priority channel present but not declared to contractor.",
+     "audio": "Black Keel can recover you. It can also recover everything before you.",
+     "in_game_wiki": "Black Keel is not a luxury personal ship. It is a nearly automated salvage carrier operating through claim-pool custody, insurance debt and delayed orbital windows. It offers a real route back to orbit without making rescue simple or loyal.",
+     "external_site": "Black Keel Custody defines orbital support as useful, compromised infrastructure: a rescue route, a debt machine and a Deep Reach pressure surface in one object."
     },
-    {
-      "packet_id": "P022_DROP_CAPSULE_DAMAGE",
-      "article_id": "arrival.drop_capsule_damage",
-      "title_key": "applied_lore.drop_capsule_damage.title",
-      "unlock": {
-        "primary": "unlock.first_drop_capsule_damage_audit",
-        "poi_tags": [
-          "poi.drop_capsule",
-          "poi.crash_shelter",
-          "poi.reentry_blackbox"
-        ],
-        "biome_tags": [
-          "biome.crash_shelf",
-          "biome.shallow_repair",
-          "biome.storm_surge"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Drop Capsule Damage",
-          "scanner": "Launch seat intact. Ascent path destroyed. This capsule is shelter, not a return vehicle.",
-          "field_note": "The first prison is mechanical.",
-          "terminal": "Reentry blackbox: chute burn, ballast puncture, comm mast shear, ascent seal ruined. Orbit return requires external build chain.",
-          "audio": "Capsule cannot climb. Stop treating it like a ship.",
-          "in_game_wiki": "The drop capsule gets the Marauder to HECTON-8. The crash leaves enough systems alive for shelter, power and logs, but destroys ascent hardware. Early escape becomes an engineering chain, not a button.",
-          "external_site": "Drop Capsule Damage explains why the stranding is credible: descent worked, survival systems survived, ascent hardware did not."
-        },
-        "ru_RU": {
-          "title": "Повреждение спусковой капсулы",
-          "scanner": "Кресло цело. Траектория подъема уничтожена. Капсула - убежище, не обратный корабль.",
-          "field_note": "Первая тюрьма - механическая.",
-          "terminal": "Черный ящик входа: прожог парашюта, пробой балласта, срез антенны, сорван ascent seal. Возврат на орбиту требует внешней инженерной цепочки.",
-          "audio": "Капсула не взлетит. Хватит считать ее кораблем.",
-          "in_game_wiki": "Спусковая капсула доставляет мародера на HECTON-8. Авария оставляет достаточно живых систем для укрытия, питания и журналов, но уничтожает оборудование подъема. Ранний выход становится инженерной цепью, а не кнопкой.",
-          "external_site": "Повреждение спусковой капсулы объясняет, почему изоляция правдоподобна: спуск сработал, системы выживания уцелели, оборудование подъема - нет."
-        },
-        "ja_JP": {
-          "title": "投下カプセル損傷",
-          "scanner": "座席は生存。上昇経路は破壊。カプセルは避難所で、帰還船ではない。",
-          "field_note": "最初の牢は機械だ。",
-          "terminal": "再突入ブラックボックス: シュート焼損、バラスト穿孔、通信マスト剪断、上昇シール破損。軌道帰還には外部建造連鎖が必要。",
-          "audio": "カプセルは上がれない。船扱いをやめろ。",
-          "in_game_wiki": "降下カプセルがマローダーを HECTON-8 へ届ける。衝突後もシェルター、電力、ログに足るシステムは生き残るが、上昇機材は破壊される。早期脱出はボタンではなく工学の連鎖になる。",
-          "external_site": "降下カプセル損傷は、孤立が信じられる理由を説明する。降下は成功し、生存システムは残り、上昇機材は残らなかった。"
-        },
-        "zh_CN": {
-          "title": "投放舱损伤",
-          "scanner": "座椅完好。上升路径毁坏。舱体是庇护所，不是返航船。",
-          "field_note": "第一座牢笼是机械的。",
-          "terminal": "再入黑匣子：伞烧蚀、压载穿孔、通信桅剪断、上升密封毁坏。回轨需要外部工程链。",
-          "audio": "舱体不能爬升。别再把它当船。",
-          "in_game_wiki": "投放胶囊把掠夺者送到 HECTON-8。坠毁留下足够系统维持庇护、电力和日志，却摧毁了上升硬件。早期逃离变成工程链，而不是按钮。",
-          "external_site": "投放胶囊损伤解释了为什么搁浅可信：下降成功了，生存系统幸存了，上升硬件没有。"
-        },
-        "fr_FR": {
-          "title": "Dégâts de capsule",
-          "scanner": "Siège intact. Trajet d'ascension détruit. La capsule est un abri, pas un véhicule retour.",
-          "field_note": "La première prison est mécanique.",
-          "terminal": "Boîte noire: parachute brûlé, ballast percé, mât com cisaillé, joint d'ascension ruiné. Retour orbital via chaîne externe.",
-          "audio": "La capsule ne remonte pas. Ce n'est pas un vaisseau.",
-          "in_game_wiki": "La capsule de largage amène le Maraudeur sur HECTON-8. Le crash laisse assez de systèmes vivants pour abri, énergie et journaux, mais détruit le matériel d'ascension. La sortie précoce devient une chaîne d'ingénierie, pas un bouton.",
-          "external_site": "Les dégâts de capsule de largage expliquent pourquoi l'isolement tient : la descente a fonctionné, les systèmes de survie ont survécu, le matériel d'ascension non."
-        },
-        "es_ES": {
-          "title": "Daño de cápsula",
-          "scanner": "Asiento intacto. Ruta de ascenso destruida. La cápsula es refugio, no nave de regreso.",
-          "field_note": "La primera prisión es mecánica.",
-          "terminal": "Caja negra: paracaídas quemado, lastre perforado, mástil de comunicaciones cortado, sello de ascenso arruinado. Regreso orbital exige cadena externa.",
-          "audio": "La cápsula no sube. No es una nave.",
-          "in_game_wiki": "La cápsula de descenso lleva al merodeador a HECTON-8. El choque deja sistemas suficientes para refugio, energía y registros, pero destruye el hardware de ascenso. La salida temprana se vuelve una cadena de ingeniería, no un botón.",
-          "external_site": "El daño de la cápsula de descenso explica por qué el varamiento es creíble: el descenso funcionó, los sistemas de supervivencia sobrevivieron, el hardware de ascenso no."
-        },
-        "de_DE": {
-          "title": "Schaden der Landekapsel",
-          "scanner": "Sitz intakt. Aufstiegsweg zerstört. Die Kapsel ist Schutzraum, kein Rückkehrfahrzeug.",
-          "field_note": "Das erste Gefängnis ist mechanisch.",
-          "terminal": "Wiedereintrittsbox: Schirmbrand, Ballastloch, Antennenmast abgeschert, Aufstiegssiegel ruiniert. Orbitrückkehr braucht externe Kette.",
-          "audio": "Die Kapsel steigt nicht. Sie ist kein Schiff.",
-          "in_game_wiki": "Die Abwurfkapsel bringt den Marauder nach HECTON-8. Der Crash lässt genug Systeme für Schutz, Energie und Logs am Leben, zerstört aber die Aufstiegshardware. Frühe Flucht wird zur Ingenieurskette, nicht zum Knopf.",
-          "external_site": "Drop-Capsule-Schaden erklärt, warum das Festsitzen glaubwürdig ist: Der Abstieg funktionierte, Überlebenssysteme überlebten, Aufstiegshardware nicht."
-        },
-        "pl_PL": {
-          "title": "Uszkodzenie kapsuły",
-          "scanner": "Fotel cały. Ścieżka wznoszenia zniszczona. Kapsuła to schron, nie pojazd powrotny.",
-          "field_note": "Pierwsze więzienie jest mechaniczne.",
-          "terminal": "Czarna skrzynka: spalony spadochron, przebity balast, ścięty maszt łączności, zniszczona uszczelka wznoszenia. Powrót wymaga zewnętrznego łańcucha.",
-          "audio": "Kapsuła nie wzniesie się. To nie statek.",
-          "in_game_wiki": "Kapsuła zrzutowa dostarcza Maraudera na HECTON-8. Katastrofa zostawia dość systemów na schron, zasilanie i logi, ale niszczy sprzęt wznoszenia. Wczesna ucieczka staje się łańcuchem inżynieryjnym, nie przyciskiem.",
-          "external_site": "Uszkodzenie kapsuły zrzutowej wyjaśnia, czemu uwięzienie jest wiarygodne: zejście zadziałało, systemy przetrwania ocalały, sprzęt wznoszenia nie."
-        },
-        "uk_UA": {
-          "title": "Пошкодження спускової капсули",
-          "scanner": "Крісло ціле. Шлях підйому знищений. Капсула - укриття, не корабель повернення.",
-          "field_note": "Перша тюрма механічна.",
-          "terminal": "Чорна скринька входу: парашут вигорів, баласт пробитий, щоглу зв'язку зрізано, ascent seal зірвано. Повернення потребує зовнішнього ланцюга.",
-          "audio": "Капсула не злетить. Це не корабель.",
-          "in_game_wiki": "Спускова капсула доставляє мародера на HECTON-8. Аварія лишає достатньо живих систем для укриття, живлення й журналів, але знищує обладнання підйому. Ранній вихід стає інженерним ланцюгом, а не кнопкою.",
-          "external_site": "Пошкодження спускової капсули пояснює, чому ізоляція правдоподібна: спуск спрацював, системи виживання вціліли, обладнання підйому - ні."
-        },
-        "ar_SA": {
-          "title": "ضرر كبسولة الهبوط",
-          "scanner": "المقعد سليم. مسار الصعود محطم. الكبسولة ملجأ وليست مركبة عودة.",
-          "field_note": "السجن الأول ميكانيكي.",
-          "terminal": "الصندوق الأسود: مظلة محترقة، ثقب في الصابورة، صاري اتصال مقطوع، ختم صعود مدمّر. العودة للمدار تحتاج سلسلة هندسية خارجية.",
-          "audio": "الكبسولة لا تصعد. لا تعاملها كسفينة.",
-          "in_game_wiki": "توصل كبسولة الهبوط المغير إلى HECTON-8. يترك التحطم أنظمة كافية للمأوى والطاقة والسجلات، لكنه يدمر عتاد الصعود. يصبح الخروج المبكر سلسلة هندسية لا زرا.",
-          "external_site": "يفسر تلف كبسولة الهبوط سبب واقعية العزلة: نجح الهبوط، ونجت أنظمة البقاء، ولم ينج عتاد الصعود."
-        },
-        "id_ID": {
-          "title": "Kerusakan Kapsul Jatuh",
-          "scanner": "Kursi utuh. Jalur naik hancur. Kapsul ini tempat berlindung, bukan kendaraan pulang.",
-          "field_note": "Penjara pertama bersifat mekanis.",
-          "terminal": "Blackbox masuk: chute terbakar, ballast bocor, tiang komunikasi terpotong, segel naik rusak. Pulang ke orbit butuh rantai bangun eksternal.",
-          "audio": "Kapsul tidak bisa naik. Jangan anggap kapal.",
-          "in_game_wiki": "Kapsul jatuh membawa Marauder ke HECTON-8. Benturan menyisakan cukup sistem untuk perlindungan, daya, dan log, tetapi menghancurkan perangkat naik. Keluar dini menjadi rantai engineering, bukan tombol.",
-          "external_site": "Kerusakan kapsul jatuh menjelaskan mengapa keterdamparan masuk akal: turun berhasil, sistem bertahan hidup selamat, perangkat naik tidak."
-        },
-        "ko_KR": {
-          "title": "강하 캡슐 손상",
-          "scanner": "좌석은 멀쩡하다. 상승 경로는 파괴됐다. 캡슐은 피난처지 귀환선이 아니다.",
-          "field_note": "첫 감옥은 기계다.",
-          "terminal": "재진입 블랙박스: 낙하산 연소, 밸러스트 천공, 통신 마스트 절단, 상승 실링 파손. 궤도 복귀는 외부 제작 체인이 필요하다.",
-          "audio": "캡슐은 올라가지 못한다. 배가 아니다.",
-          "in_game_wiki": "강하 캡슐은 마로더를 HECTON-8로 보낸다. 충돌은 대피처, 전력, 로그에 충분한 시스템을 남기지만 상승 장비를 파괴한다. 초기 탈출은 버튼이 아니라 공학 사슬이 된다.",
-          "external_site": "강하 캡슐 손상은 고립이 왜 그럴듯한지 설명한다. 하강은 작동했고 생존 시스템은 살아남았지만 상승 장비는 그렇지 못했다."
-        },
-        "he_IL": {
-          "title": "נזק לקפסולת נחיתה",
-          "scanner": "מושב השיגור שלם. נתיב העלייה נהרס. הקפסולה היא מחסה, לא רכב חזרה.",
-          "field_note": "הכלא הראשון מכני.",
-          "terminal": "קופסה שחורה: מצנח שרוף, בלסט מנוקב, תורן תקשורת גזור, אטם עלייה הרוס. חזרה למסלול דורשת שרשרת חיצונית.",
-          "audio": "הקפסולה לא מטפסת. אל תקרא לה ספינה.",
-          "in_game_wiki": "קפסולת ההטלה מביאה את המראודר אל HECTON-8. ההתרסקות משאירה מספיק מערכות למחסה, כוח ויומנים, אך הורסת חומרת עלייה. יציאה מוקדמת נעשית שרשרת הנדסית, לא כפתור.",
-          "external_site": "נזק קפסולת ההטלה מסביר מדוע ההיתקעות אמינה: הירידה עבדה, מערכות ההישרדות שרדו, חומרת העלייה לא."
-        },
-        "pt_BR": {
-          "title": "Dano da cápsula de queda",
-          "scanner": "Assento intacto. Caminho de subida destruído. A cápsula é abrigo, não veículo de retorno.",
-          "field_note": "A primeira prisão é mecânica.",
-          "terminal": "Caixa-preta: paraquedas queimado, lastro perfurado, mastro de comunicação cortado, selo de subida arruinado. Retorno orbital exige cadeia externa.",
-          "audio": "A cápsula não sobe. Pare de tratá-la como nave.",
-          "in_game_wiki": "A cápsula de queda leva o Marauder a HECTON-8. O impacto deixa sistemas suficientes para abrigo, energia e logs, mas destrói o hardware de subida. Sair cedo vira uma cadeia de engenharia, não um botão.",
-          "external_site": "O dano da cápsula de queda explica por que o encalhe é crível: a descida funcionou, os sistemas de sobrevivência sobreviveram, o hardware de subida não."
-        },
-        "nl_NL": {
-          "title": "Schade aan daalcapsule",
-          "scanner": "Stoel intact. Stijgpad vernietigd. De capsule is schuilplaats, geen terugkeervoertuig.",
-          "field_note": "De eerste gevangenis is mechanisch.",
-          "terminal": "Herintrede-blackbox: chute verbrand, ballast lek, commast afgescheurd, stijgafdichting kapot. Terug naar orbit vraagt externe bouwketen.",
-          "audio": "De capsule klimt niet. Het is geen schip.",
-          "in_game_wiki": "De daalcapsule brengt de Marauder naar HECTON-8. De crash laat genoeg systemen over voor schuilplaats, stroom en logs, maar vernietigt opstijghardware. Vroege ontsnapping wordt een technische keten, geen knop.",
-          "external_site": "Schade aan de daalcapsule verklaart waarom de stranding geloofwaardig is: de afdaling werkte, overlevingssystemen overleefden, opstijghardware niet."
-        }
-      }
+    "ru_RU": {
+     "title": "Опека Black Keel",
+     "scanner": "Опека carrier - публичная salvage-инфраструктура с частными priority hooks.",
+     "field_note": "Спасательный трос тоже может быть поводком.",
+     "terminal": "Файл custody: владелец корпуса скрыт, claim-pool долг активен, приоритетный канал Deep Reach есть, но подрядчику не раскрыт.",
+     "audio": "Black Keel может поднять тебя. И может поднять всё остальное раньше тебя.",
+     "in_game_wiki": "Black Keel - не роскошный личный корабль. Это почти автоматический salvage carrier, работающий через custody пула претензий, страховой долг и задержанные орбитальные окна. Он дает реальный путь обратно на орбиту, но не делает спасение простым или верным.",
+     "external_site": "Black Keel Custody задает орбитальную поддержку как полезную, скомпрометированную инфраструктуру: маршрут спасения, долговую машину и поверхность давления Deep Reach в одном объекте."
     },
-    {
-      "packet_id": "P023_DEEP_REACH_RETURN_CLAIM",
-      "article_id": "factions.deep_reach_return_claim",
-      "title_key": "applied_lore.deep_reach_return_claim.title",
-      "unlock": {
-        "primary": "unlock.first_deep_reach_return_claim",
-        "poi_tags": [
-          "poi.deep_reach_contract",
-          "poi.relay_instruction",
-          "poi.sanitized_log"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.deep_relay",
-          "biome.black_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Deep Reach Return Claim",
-          "scanner": "Delayed instruction: recover coordinates, substrate and evidence control before human recovery.",
-          "field_note": "They are not returning for the dead.",
-          "terminal": "Proxy order chain: secure Atlas access, classify colony records, preserve Xenon-Omega claim, minimize contractor autonomy.",
-          "audio": "Deep Reach wants the site back, not the story back.",
-          "in_game_wiki": "Deep Reach is older than Aegir and treats HECTON-8 as a failed asset with surviving value. Its modern goal is not a clean rescue; it wants resource control, Atlas access, coordinates and evidence management.",
-          "external_site": "Deep Reach Return Claim frames the current corporate pressure: HECTON-8 is not forgotten because it is worthless, but because public attention makes the asset harder to reclaim."
-        },
-        "ru_RU": {
-          "title": "Возвратная претензия Deep Reach",
-          "scanner": "Отложенная инструкция: вернуть координаты, субстрат и контроль доказательств до спасения людей.",
-          "field_note": "Они возвращаются не за мертвыми.",
-          "terminal": "Цепочка proxy order: обеспечить доступ к Atlas, классифицировать записи колонии, сохранить claim на Xenon-Omega, ограничить автономию подрядчика.",
-          "audio": "Deep Reach хочет вернуть объект, не историю.",
-          "in_game_wiki": "Deep Reach старше Aegir и смотрит на HECTON-8 как на проваленный актив с живой ценностью. Современная цель - не честное спасение, а ресурсный контроль, доступ к Atlas, координаты и управление доказательствами.",
-          "external_site": "Возвратная претензия Deep Reach задает текущее корпоративное давление: HECTON-8 не забыли не потому, что он бесполезен, а потому что внимание мешает вернуть актив."
-        },
-        "ja_JP": {
-          "title": "Deep Reach帰還請求",
-          "scanner": "遅延命令: 人命回収より先に座標、基質、証拠管理を確保。",
-          "field_note": "彼らは死者のために戻らない。",
-          "terminal": "代理命令系: Atlasアクセス確保、植民地記録分類、Xenon-Omega請求維持、契約者自律性を最小化。",
-          "audio": "Deep Reachが取り戻したいのは現場で、物語ではない。",
-          "in_game_wiki": "Deep ReachはAegirより古く、HECTON-8を価値の残る失敗資産として扱う。救助ではなく、資源、Atlas、座標、証拠を欲しがる。",
-          "external_site": "Deep Reach帰還請求は、現在の企業圧力を示す。価値がないから忘れられたのではなく、注目が回収を難しくするからだ。"
-        },
-        "zh_CN": {
-          "title": "Deep Reach返还主张",
-          "scanner": "延迟指令：在人类回收前取得坐标、基质和证据控制。",
-          "field_note": "他们不是为死者而归。",
-          "terminal": "代理命令链：确保Atlas访问，分类殖民记录，保留Xenon-Omega主张，压低承包人自主权。",
-          "audio": "Deep Reach想拿回地点，不想拿回故事。",
-          "in_game_wiki": "Deep Reach早于Aegir，把HECTON-8视为失败但仍有价值的资产。现代目标不是干净救援，而是资源、Atlas、坐标和证据管理。",
-          "external_site": "Deep Reach返还主张定义当前压力：HECTON-8不是因无价值而被遗忘，而是因公开关注会妨碍重新占有。"
-        },
-        "fr_FR": {
-          "title": "Réclamation Deep Reach",
-          "scanner": "Instruction retardée: récupérer coordonnées, substrat et contrôle des preuves avant les humains.",
-          "field_note": "Ils ne reviennent pas pour les morts.",
-          "terminal": "Chaîne proxy: accès Atlas, classement des archives, claim Xenon-Omega, autonomie contracteur réduite.",
-          "audio": "Deep Reach veut récupérer le site, pas l'histoire.",
-          "in_game_wiki": "Deep Reach est antérieur à Aegir et voit HECTON-8 comme un actif raté encore précieux. Son but est contrôle, Atlas, coordonnées et preuves.",
-          "external_site": "Cette réclamation cadre la pression: HECTON-8 n'est pas oublié car inutile, mais car l'attention gêne la reprise."
-        },
-        "es_ES": {
-          "title": "Reclamo Deep Reach",
-          "scanner": "Instrucción demorada: recuperar coordenadas, sustrato y control de pruebas antes que personas.",
-          "field_note": "No vuelven por los muertos.",
-          "terminal": "Cadena proxy: acceso Atlas, clasificar registros, preservar claim Xenon-Omega, reducir autonomía del contratista.",
-          "audio": "Deep Reach quiere el sitio, no la historia.",
-          "in_game_wiki": "Deep Reach es más antiguo que Aegir y trata HECTON-8 como activo fallido con valor vivo. Quiere control de recursos, Atlas, coordenadas y pruebas.",
-          "external_site": "El reclamo explica la presión: HECTON-8 no se olvida por no valer, sino porque la atención impide recuperarlo."
-        },
-        "de_DE": {
-          "title": "Deep-Reach-Rückholanspruch",
-          "scanner": "Verzögerte Weisung: Koordinaten, Substrat und Beweiskontrolle vor Menschen sichern.",
-          "field_note": "Sie kommen nicht wegen der Toten zurück.",
-          "terminal": "Proxy-Kette: Atlas-Zugang sichern, Kolonieakten klassifizieren, Xenon-Omega-Claim halten, Auftragnehmerautonomie senken.",
-          "audio": "Deep Reach will den Ort zurück, nicht die Geschichte.",
-          "in_game_wiki": "Deep Reach ist älter als Aegir und sieht HECTON-8 als gescheiterten, wertvollen Vermögenswert. Ziel sind Ressourcen, Atlas, Koordinaten und Beweise.",
-          "external_site": "Der Anspruch erklärt den Druck: HECTON-8 ist nicht wertlos vergessen; Öffentlichkeit erschwert die Rücknahme."
-        },
-        "pl_PL": {
-          "title": "Roszczenie Deep Reach",
-          "scanner": "Opóźniona instrukcja: odzyskać współrzędne, substrat i kontrolę dowodów przed ludźmi.",
-          "field_note": "Nie wracają po zmarłych.",
-          "terminal": "Łańcuch proxy: dostęp Atlas, klasyfikacja zapisów, claim Xenon-Omega, ograniczenie autonomii wykonawcy.",
-          "audio": "Deep Reach chce miejsca, nie historii.",
-          "in_game_wiki": "Deep Reach jest starsze niż Aegir i traktuje HECTON-8 jako nieudany, lecz cenny aktyw. Chce zasobów, Atlasa, współrzędnych i dowodów.",
-          "external_site": "Roszczenie pokazuje presję: HECTON-8 nie zapomniano z braku wartości, tylko z powodu ryzyka uwagi publicznej."
-        },
-        "uk_UA": {
-          "title": "Повернення претензії Deep Reach",
-          "scanner": "Затримана інструкція: повернути координати, субстрат і контроль доказів до евакуації людей.",
-          "field_note": "Вони повертаються не за мертвими.",
-          "terminal": "Proxy order: доступ до Atlas, класифікація записів, claim Xenon-Omega, мінімум автономії підрядника.",
-          "audio": "Deep Reach хоче об'єкт, не історію.",
-          "in_game_wiki": "Deep Reach старша за Aegir і бачить HECTON-8 як провалений актив із живою цінністю. Мета - ресурси, Atlas, координати й докази.",
-          "external_site": "Претензія визначає тиск: HECTON-8 не забутий через безвартісність, а тому що увага заважає поверненню активу."
-        },
-        "ar_SA": {
-          "title": "مطالبة Deep Reach بالعودة",
-          "scanner": "تعليمات مؤجلة: استعادة الإحداثيات والركيزة والسيطرة على الأدلة قبل البشر.",
-          "field_note": "إنهم لا يعودون من أجل الموتى.",
-          "terminal": "سلسلة proxy: تأمين Atlas، تصنيف سجلات المستعمرة، حفظ claim Xenon-Omega، تقليل استقلال المقاول.",
-          "audio": "Deep Reach يريد الموقع لا القصة.",
-          "in_game_wiki": "Deep Reach أقدم من Aegir ويرى HECTON-8 أصلا فاشلا بقيمة باقية. الهدف موارد وAtlas وإحداثيات وأدلة.",
-          "external_site": "المطالبة تشرح الضغط: HECTON-8 ليس منسيا لأنه بلا قيمة، بل لأن الانتباه يصعب استعادته."
-        },
-        "id_ID": {
-          "title": "Klaim Kembali Deep Reach",
-          "scanner": "Instruksi tertunda: ambil koordinat, substrat dan kontrol bukti sebelum pemulihan manusia.",
-          "field_note": "Mereka tidak kembali untuk yang mati.",
-          "terminal": "Rantai proxy: amankan akses Atlas, klasifikasi catatan koloni, pertahankan claim Xenon-Omega, batasi otonomi kontraktor.",
-          "audio": "Deep Reach menginginkan situs, bukan ceritanya.",
-          "in_game_wiki": "Deep Reach lebih tua dari Aegir dan melihat HECTON-8 sebagai aset gagal bernilai. Targetnya sumber daya, Atlas, koordinat dan bukti.",
-          "external_site": "Klaim ini membingkai tekanan: HECTON-8 tidak dilupakan karena tak bernilai, tetapi karena perhatian publik menyulitkan perebutan kembali."
-        },
-        "ko_KR": {
-          "title": "Deep Reach 반환 청구",
-          "scanner": "지연 명령: 인간 회수 전 좌표, 기질, 증거 통제를 확보하라.",
-          "field_note": "그들은 죽은 자를 위해 돌아오지 않는다.",
-          "terminal": "프록시 명령: Atlas 접근, 식민지 기록 분류, Xenon-Omega 청구 유지, 계약자 자율성 축소.",
-          "audio": "Deep Reach가 원하는 것은 현장이지 이야기 아니다.",
-          "in_game_wiki": "Deep Reach는 Aegir보다 오래됐고 HECTON-8을 실패했지만 가치 있는 자산으로 본다. 목표는 자원, Atlas, 좌표, 증거다.",
-          "external_site": "이 청구는 압력을 정의한다: HECTON-8은 무가치해서 잊힌 게 아니라, 공개 관심이 재점유를 어렵게 해서 묻혔다."
-        },
-        "he_IL": {
-          "title": "תביעת חזרה Deep Reach",
-          "scanner": "הוראה מושהית: להשיב קואורדינטות, מצע ושליטה בראיות לפני בני אדם.",
-          "field_note": "הם לא חוזרים בשביל המתים.",
-          "terminal": "שרשרת proxy: גישת Atlas, סיווג רישומי מושבה, שימור claim Xenon-Omega, צמצום עצמאות הקבלן.",
-          "audio": "Deep Reach רוצה את האתר, לא את הסיפור.",
-          "in_game_wiki": "Deep Reach קדמה ל-Aegir ורואה ב-HECTON-8 נכס כושל עם ערך חי. המטרה היא משאבים, Atlas, קואורדינטות וראיות.",
-          "external_site": "התביעה מגדירה את הלחץ: HECTON-8 לא נשכח כי הוא חסר ערך, אלא כי תשומת לב מקשה להחזיר אותו."
-        },
-        "pt_BR": {
-          "title": "Reclamação Deep Reach",
-          "scanner": "Instrução atrasada: recuperar coordenadas, substrato e controle de provas antes das pessoas.",
-          "field_note": "Eles não voltam pelos mortos.",
-          "terminal": "Cadeia proxy: acesso Atlas, classificar registros, preservar claim Xenon-Omega, reduzir autonomia do contratado.",
-          "audio": "Deep Reach quer o local, não a história.",
-          "in_game_wiki": "Deep Reach é mais antiga que Aegir e trata HECTON-8 como ativo falho ainda valioso. Busca recursos, Atlas, coordenadas e provas.",
-          "external_site": "A reclamação enquadra a pressão: HECTON-8 não foi esquecido por não valer nada, mas porque atenção pública dificulta retomada."
-        },
-        "nl_NL": {
-          "title": "Deep Reach-terugvordering",
-          "scanner": "Vertraagde instructie: coördinaten, substraat en bewijscontrole vóór mensen terughalen.",
-          "field_note": "Ze komen niet terug voor de doden.",
-          "terminal": "Proxyketen: Atlas-toegang veiligstellen, koloniegegevens classificeren, Xenon-Omega-claim behouden, autonomie contractant beperken.",
-          "audio": "Deep Reach wil de locatie terug, niet het verhaal.",
-          "in_game_wiki": "Deep Reach is ouder dan Aegir en behandelt HECTON-8 als mislukt maar waardevol bezit. Het wil grondstoffen, Atlas, coördinaten en bewijscontrole.",
-          "external_site": "De terugvordering kadert de druk: HECTON-8 is niet vergeten omdat het waardeloos is, maar omdat aandacht terugname hindert."
-        }
-      }
+    "ja_JP": {
+     "title": "Black Keel保管",
+     "scanner": "Carrier保管は公共サルベージ基盤だが、私的な優先フックを持つ。",
+     "field_note": "命綱は首輪にもなる。",
+     "terminal": "保管ファイル: 船体所有者は伏せられ、claim-pool債務は有効、Deep Reach優先回線は契約者に未告知。",
+     "audio": "Black Keelは君を回収できる。君より先に他の物も回収できる。",
+     "in_game_wiki": "Black Keel は豪華な個人船ではない。請求プール保管、保険債務、遅延する軌道窓で動く、ほぼ自動化されたサルベージキャリアだ。軌道へ戻る本物の道を与えるが、救助を単純にも忠実にもしてくれない。",
+     "external_site": "Black Keel Custody は、軌道支援を有用で汚染されたインフラとして定義する。救助経路、債務機械、Deep Reach の圧力面が一つの物体に重なる。"
     },
-    {
-      "packet_id": "P024_FALSE_EXIT_MATERIAL",
-      "article_id": "endings.false_exit_material",
-      "title_key": "applied_lore.false_exit_material.title",
-      "unlock": {
-        "primary": "unlock.first_material_exit_offer",
-        "poi_tags": [
-          "poi.payload_gantry",
-          "poi.carrier_bargain",
-          "poi.claim_invoice"
-        ],
-        "biome_tags": [
-          "biome.deep_launch_route",
-          "biome.orbit_window",
-          "biome.resource_pressure"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Material Exit",
-          "scanner": "Carrier offer valid: payload mass pays debt. Evidence loss unresolved. Atlas coordinate request pending.",
-          "field_note": "A real ending can still be a bad answer.",
-          "terminal": "Exit contract: submit sealed sample, abandon deep proof, accept claim audit and return under debt review. Warning: truth chain remains incomplete.",
-          "audio": "You can leave with value. You may not leave clean.",
-          "in_game_wiki": "The material exit is a real partial outcome, not a dead route. Resources or a sample can buy withdrawal while the larger truth stays unresolved and a later return cuts sharper.",
-          "external_site": "Material Exit supports a profitable but compromised withdrawal: loot, contracts and survival can win the ascent while full descent truth stays below."
-        },
-        "ru_RU": {
-          "title": "Материальный выход",
-          "scanner": "Предложение carrier действительно: масса payload закрывает долг. Потеря доказательств не решена. Запрос координат Atlas ожидает.",
-          "field_note": "Настоящая концовка всё еще может быть плохим ответом.",
-          "terminal": "Контракт выхода: сдать sealed sample, бросить глубокие доказательства, принять claim audit и вернуться под debt review. Предупреждение: цепочка правды неполна.",
-          "audio": "Можно уйти с ценностью. Чистым уйти нельзя.",
-          "in_game_wiki": "Материальный выход - реальный частичный исход, а не тупиковый маршрут. Ресурсы или образец могут купить отход, пока большая правда остается нерешенной, а позднее возвращение режет сильнее.",
-          "external_site": "Material Exit поддерживает прибыльный, но скомпрометированный отход: добыча, контракты и выживание могут выиграть подъем, пока полная правда спуска остается внизу."
-        },
-        "ja_JP": {
-          "title": "物資離脱",
-          "scanner": "Carrier提案有効: payload質量で債務を支払える。証拠喪失は未解決。Atlas座標要求保留。",
-          "field_note": "本物の結末でも、悪い答えになり得る。",
-          "terminal": "離脱契約: sealed sample提出、深部証拠放棄、claim監査受諾、債務審査下で帰還。警告: 真実連鎖未完。",
-          "audio": "価値を持って出られる。清潔には出られない。",
-          "in_game_wiki": "物資出口は行き止まりではなく、本物の部分的結末だ。資源やサンプルは撤退を買えるが、大きな真実は未解決のまま残り、後の帰還がさらに鋭く刺さる。",
-          "external_site": "Material Exit は、利益のあるが妥協した撤退を支える。戦利品、契約、生存は上昇を勝ち取れるが、完全な降下の真実は下に残る。"
-        },
-        "zh_CN": {
-          "title": "物资撤离",
-          "scanner": "Carrier报价有效：payload质量可偿债。证据损失未解决。Atlas坐标请求待定。",
-          "field_note": "真实结局仍可能是坏答案。",
-          "terminal": "撤离合同：提交密封样本，放弃深层证据，接受claim审计并在债务审查下返回。警告：真相链未完成。",
-          "audio": "你可以带着价值离开。不能干净离开。",
-          "in_game_wiki": "物资出口是真实的部分结果，不是死路。资源或样本可以买来撤离，而更大的真相仍未解决，日后返回会切得更深。",
-          "external_site": "Material Exit 支持一种有利可图但受污染的撤离：战利品、合同和生存可以赢得上升，而完整的深潜真相仍留在下方。"
-        },
-        "fr_FR": {
-          "title": "Sortie matérielle",
-          "scanner": "Offre carrier valide: la masse payload paie la dette. Perte de preuves non résolue. Coordonnées Atlas en attente.",
-          "field_note": "Une vraie fin peut être une mauvaise réponse.",
-          "terminal": "Contrat: livrer échantillon scellé, abandonner preuve profonde, accepter audit claim et retour sous dette. Vérité incomplète.",
-          "audio": "Vous pouvez partir avec de la valeur. Pas propre.",
-          "in_game_wiki": "La sortie matérielle est une vraie issue partielle, pas une voie morte. Des ressources ou un échantillon peuvent acheter le retrait tandis que la vérité plus vaste reste irrésolue et qu'un retour ultérieur coupe plus net.",
-          "external_site": "Material Exit soutient un retrait rentable mais compromis : butin, contrats et survie peuvent gagner l'ascension pendant que la pleine vérité de la descente reste dessous."
-        },
-        "es_ES": {
-          "title": "Salida material",
-          "scanner": "Oferta del carrier válida: masa payload paga deuda. Pérdida de pruebas sin resolver. Solicitud Atlas pendiente.",
-          "field_note": "Un final real puede ser una mala respuesta.",
-          "terminal": "Contrato: entregar muestra sellada, abandonar pruebas profundas, aceptar auditoría claim y volver bajo revisión de deuda.",
-          "audio": "Puedes irte con valor. No limpio.",
-          "in_game_wiki": "La salida material es un resultado parcial real, no una ruta muerta. Recursos o una muestra pueden comprar retirada mientras la verdad mayor queda sin resolver y un regreso posterior corta más hondo.",
-          "external_site": "Material Exit sostiene una retirada rentable pero comprometida: botín, contratos y supervivencia pueden ganar el ascenso mientras la verdad completa del descenso queda abajo."
-        },
-        "de_DE": {
-          "title": "Materieller Ausstieg",
-          "scanner": "Carrier-Angebot gültig: Payload-Masse zahlt Schuld. Beweisverlust offen. Atlas-Koordinatenanfrage wartet.",
-          "field_note": "Ein echtes Ende kann trotzdem eine schlechte Antwort sein.",
-          "terminal": "Ausstiegsvertrag: versiegelte Probe abgeben, tiefe Beweise aufgeben, Claim-Audit und Schuldenprüfung akzeptieren.",
-          "audio": "Du kannst mit Wert gehen. Nicht sauber.",
-          "in_game_wiki": "Der Materialausstieg ist ein echtes Teilergebnis, keine tote Route. Ressourcen oder eine Probe können Rückzug erkaufen, während die größere Wahrheit ungelöst bleibt und eine spätere Rückkehr schärfer schneidet.",
-          "external_site": "Material Exit trägt einen profitablen, aber kompromittierten Rückzug: Beute, Verträge und Überleben können den Aufstieg gewinnen, während die ganze Abstiegswahrheit unten bleibt."
-        },
-        "pl_PL": {
-          "title": "Wyjście materialne",
-          "scanner": "Oferta carriera ważna: masa payload spłaca dług. Utrata dowodów nierozwiązana. Żądanie współrzędnych Atlas oczekuje.",
-          "field_note": "Prawdziwe zakończenie może być złą odpowiedzią.",
-          "terminal": "Kontrakt: oddaj próbkę, porzuć głębokie dowody, przyjmij audyt claim i powrót pod kontrolą długu.",
-          "audio": "Możesz wyjść z wartością. Nie czysto.",
-          "in_game_wiki": "Materialne wyjście jest prawdziwym częściowym wynikiem, nie martwą trasą. Zasoby albo próbka mogą kupić odwrót, gdy większa prawda zostaje nierozwiązana, a późniejszy powrót tnie ostrzej.",
-          "external_site": "Material Exit wspiera zyskowny, ale skażony odwrót: łup, kontrakty i przetrwanie mogą wygrać wznoszenie, podczas gdy pełna prawda zejścia zostaje na dole."
-        },
-        "uk_UA": {
-          "title": "Матеріальний вихід",
-          "scanner": "Пропозиція carrier чинна: маса payload закриває борг. Втрата доказів не вирішена. Запит координат Atlas очікує.",
-          "field_note": "Справжня кінцівка теж може бути поганою відповіддю.",
-          "terminal": "Контракт: здати sealed sample, покинути глибокі докази, прийняти claim audit і повернення під debt review.",
-          "audio": "Можна піти з цінністю. Чисто - ні.",
-          "in_game_wiki": "Матеріальний вихід - реальний частковий наслідок, а не мертвий маршрут. Ресурси або зразок можуть купити відхід, поки більша правда лишається нерозв'язаною, а пізніше повернення ріже гостріше.",
-          "external_site": "Material Exit підтримує прибутковий, але скомпрометований відхід: здобич, контракти й виживання можуть виграти підйом, поки повна правда спуску лишається внизу."
-        },
-        "ar_SA": {
-          "title": "خروج مادي",
-          "scanner": "عرض carrier صالح: كتلة payload تسدد الدين. فقدان الأدلة غير محلول. طلب إحداثيات Atlas معلق.",
-          "field_note": "النهاية الحقيقية قد تكون إجابة سيئة.",
-          "terminal": "عقد خروج: تسليم عينة مختومة، ترك الدليل العميق، قبول claim audit والعودة تحت مراجعة دين.",
-          "audio": "يمكنك المغادرة بقيمة. لا يمكنك المغادرة نظيفا.",
-          "in_game_wiki": "الخروج المادي نتيجة جزئية حقيقية، لا طريق ميت. تستطيع الموارد أو عينة أن تشتري انسحابا بينما تبقى الحقيقة الأكبر بلا حل، ويصير الرجوع اللاحق أكثر حدة.",
-          "external_site": "يدعم Material Exit انسحابا مربحا لكنه ملوث: الغنيمة والعقود والبقاء يمكن أن تكسب الصعود، بينما تبقى حقيقة النزول الكاملة في الأسفل."
-        },
-        "id_ID": {
-          "title": "Keluar Material",
-          "scanner": "Tawaran carrier sah: massa payload membayar utang. Hilangnya bukti belum selesai. Permintaan koordinat Atlas tertunda.",
-          "field_note": "Ending nyata tetap bisa menjadi jawaban buruk.",
-          "terminal": "Kontrak keluar: serahkan sampel tertutup, tinggalkan bukti dalam, terima audit claim dan kembali dalam review utang.",
-          "audio": "Kau bisa pergi membawa nilai. Tidak bisa bersih.",
-          "in_game_wiki": "Keluar material adalah hasil parsial yang nyata, bukan rute mati. Sumber daya atau sampel dapat membeli mundur sementara kebenaran besar tetap belum selesai dan kepulangan nanti terasa lebih tajam.",
-          "external_site": "Material Exit mendukung penarikan yang menguntungkan tetapi tercemar: jarahan, kontrak, dan bertahan hidup bisa memenangkan kenaikan sementara kebenaran turun penuh tetap di bawah."
-        },
-        "ko_KR": {
-          "title": "물질 탈출",
-          "scanner": "Carrier 제안 유효: payload 질량이 부채를 갚는다. 증거 손실 미해결. Atlas 좌표 요청 대기.",
-          "field_note": "진짜 결말도 나쁜 답일 수 있다.",
-          "terminal": "탈출 계약: 봉인 샘플 제출, 심층 증거 포기, claim 감사와 부채 심사 수락.",
-          "audio": "가치를 들고 나갈 수 있다. 깨끗하게는 못 나간다.",
-          "in_game_wiki": "물질 출구는 죽은 경로가 아니라 실제 부분 결과다. 자원이나 샘플은 철수를 살 수 있지만 더 큰 진실은 풀리지 않고, 나중의 귀환은 더 날카롭게 파고든다.",
-          "external_site": "Material Exit는 이익이 있지만 타협된 철수를 지탱한다. 전리품, 계약, 생존은 상승을 얻을 수 있지만 완전한 하강의 진실은 아래에 남는다."
-        },
-        "he_IL": {
-          "title": "יציאה חומרית",
-          "scanner": "הצעת carrier תקפה: מסת payload משלמת חוב. אובדן ראיות לא נפתר. בקשת קואורדינטות Atlas ממתינה.",
-          "field_note": "גם סוף אמיתי יכול להיות תשובה רעה.",
-          "terminal": "חוזה יציאה: למסור דגימה אטומה, לוותר על ראיות עומק, לקבל audit claim וחזרה תחת בדיקת חוב.",
-          "audio": "אפשר לצאת עם ערך. לא נקי.",
-          "in_game_wiki": "היציאה החומרית היא תוצאה חלקית אמיתית, לא נתיב מת. משאבים או דגימה יכולים לקנות נסיגה בזמן שהאמת הגדולה נשארת לא פתורה וחזרה מאוחרת חותכת עמוק יותר.",
-          "external_site": "Material Exit תומך בנסיגה רווחית אך מוכתמת: שלל, חוזים והישרדות יכולים לזכות בעלייה בזמן שאמת הירידה המלאה נשארת למטה."
-        },
-        "pt_BR": {
-          "title": "Saída material",
-          "scanner": "Oferta do carrier válida: massa payload paga dívida. Perda de provas sem solução. Pedido de coordenadas Atlas pendente.",
-          "field_note": "Um final real ainda pode ser uma resposta ruim.",
-          "terminal": "Contrato: entregar amostra selada, abandonar prova profunda, aceitar auditoria claim e voltar sob revisão de dívida.",
-          "audio": "Você pode sair com valor. Não limpo.",
-          "in_game_wiki": "A saída material é um resultado parcial real, não uma rota morta. Recursos ou uma amostra podem comprar retirada enquanto a verdade maior fica sem solução e um retorno posterior corta mais fundo.",
-          "external_site": "Material Exit sustenta uma retirada lucrativa, mas comprometida: saque, contratos e sobrevivência podem vencer a subida enquanto a verdade completa da descida fica abaixo."
-        },
-        "nl_NL": {
-          "title": "Materiële exit",
-          "scanner": "Carrier-aanbod geldig: payloadmassa betaalt schuld. Bewijsverlies open. Atlas-coördinatenverzoek wacht.",
-          "field_note": "Een echt einde kan nog steeds een slecht antwoord zijn.",
-          "terminal": "Exitcontract: verzegeld monster indienen, diep bewijs opgeven, claim-audit en schuldcontrole accepteren.",
-          "audio": "Je kunt met waarde vertrekken. Niet schoon.",
-          "in_game_wiki": "De materiële uitgang is een echte gedeeltelijke uitkomst, geen dode route. Grondstoffen of een monster kunnen terugtrekking kopen terwijl de grotere waarheid onopgelost blijft en een latere terugkeer scherper snijdt.",
-          "external_site": "Material Exit ondersteunt een winstgevende maar gecompromitteerde terugtocht: buit, contracten en overleving kunnen de opstijging winnen terwijl de volledige afdalingswaarheid beneden blijft."
-        }
-      }
+    "zh_CN": {
+     "title": "Black Keel托管",
+     "scanner": "Carrier托管是公共打捞基础设施，但带有私人优先钩子。",
+     "field_note": "救命索也可以是缰绳。",
+     "terminal": "托管档案：船体所有者被遮蔽，claim-pool债务有效，Deep Reach优先通道存在但未向承包人声明。",
+     "audio": "Black Keel能回收你，也能先回收别的东西。",
+     "in_game_wiki": "Black Keel 不是豪华私人船。它是一艘近乎自动化的打捞航母，通过索赔池托管、保险债务和延迟轨道窗口运作。它提供真实的返轨路线，却不会让救援变得简单或忠诚。",
+     "external_site": "Black Keel Custody 把轨道支援定义为有用但被污染的基础设施：救援路线、债务机器和 Deep Reach 压力面集中在同一个物体上。"
     },
-    {
-      "packet_id": "P025_PROFESSIONAL_MOTIVE",
-      "article_id": "player.professional_motive",
-      "title_key": "applied_lore.professional_motive.title",
-      "unlock": {
-        "primary": "unlock.first_professional_motive_shift",
-        "poi_tags": [
-          "poi.barnard_mark",
-          "poi.personal_object",
-          "poi.worker_record"
-        ],
-        "biome_tags": [
-          "biome.crash_shelf",
-          "biome.drowned_colony",
-          "biome.deep_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Professional Motive",
-          "scanner": "Contractor profile: salvage competence first. Personal escalation detected after Barnard-linked evidence.",
-          "field_note": "The job becomes personal after it proves it knows your language.",
-          "terminal": "Marauder dossier: origin band Barnard Yards or frontier salvage belt. No Earth tourist profile. Prior motive: contract and skill. Current motive: unresolved human trace.",
-          "audio": "You came for work. The work recognized you.",
-          "in_game_wiki": "The Marauder is not a blank tourist. The run begins with professional interest, salvage skill and a reason to accept a dead claim. Personal motive grows through evidence, familiar marks and the realization that HECTON-8 belongs to the same hard world that made this work normal.",
-          "external_site": "Professional Motive gives the Marauder agency without over-locking biography: competence comes first, personal investment arrives through evidence."
-        },
-        "ru_RU": {
-          "title": "Профессиональный мотив",
-          "scanner": "Профиль подрядчика: сначала salvage-компетенция. Личная эскалация после Barnard-linked evidence.",
-          "field_note": "Работа становится личной, когда доказывает, что знает твой язык.",
-          "terminal": "Marauder dossier: происхождение - Barnard Yards или frontier salvage belt. Не Earth tourist. Стартовый мотив: контракт и навык. Текущий мотив: незакрытый человеческий след.",
-          "audio": "Ты пришел за работой. Работа узнала тебя.",
-          "in_game_wiki": "Мародер - не пустой турист. Забег начинается с профессионального интереса, salvage-навыка и причины принять мертвую претензию. Личный мотив растет через доказательства, знакомые метки и понимание, что HECTON-8 принадлежит тому же жесткому миру, который сделал такую работу нормальной.",
-          "external_site": "Professional Motive дает мародеру agency без жесткой биографической клетки: сначала идет компетентность, личная вовлеченность приходит через доказательства."
-        },
-        "ja_JP": {
-          "title": "職業的動機",
-          "scanner": "契約者プロフィール: まずサルベージ能力。Barnard系証拠後に個人的上昇を検出。",
-          "field_note": "仕事は、君の言語を知ると個人的になる。",
-          "terminal": "Marauder dossier: 出自はBarnard Yardsまたは辺境サルベージ帯。地球観光客ではない。初期動機は契約と技術。現在は未解決の人間痕跡。",
-          "audio": "仕事で来た。仕事が君を認識した。",
-          "in_game_wiki": "マローダーは空っぽの観光客ではない。航行は専門的な関心、サルベージ技術、死んだ請求を受ける理由から始まる。個人的な動機は証拠、見慣れた印、そして HECTON-8 がこの仕事を普通にした同じ硬い世界に属するという理解から育つ。",
-          "external_site": "Professional Motive は、伝記を固定しすぎずにマローダーへ主体性を与える。能力が先にあり、個人的な投資は証拠から到着する。"
-        },
-        "zh_CN": {
-          "title": "职业动机",
-          "scanner": "承包人档案：先是打捞能力。Barnard相关证据后检测到个人升级。",
-          "field_note": "工作在证明它懂你的语言后变成私人问题。",
-          "terminal": "Marauder dossier：出身为Barnard Yards或边境打捞带。不是地球游客。初始动机：合同和技术。当前动机：未解决的人类痕迹。",
-          "audio": "你为工作而来。工作认出了你。",
-          "in_game_wiki": "掠夺者不是空白游客。这趟行动始于职业兴趣、打捞技能和接受死亡索赔的理由。个人动机通过证据、熟悉标记，以及意识到 HECTON-8 属于同一个把这种工作变正常的硬世界而增长。",
-          "external_site": "Professional Motive 给掠夺者行动力，却不过度锁死传记：能力先存在，个人投入通过证据到来。"
-        },
-        "fr_FR": {
-          "title": "Motif professionnel",
-          "scanner": "Profil contracteur: compétence salvage d'abord. Escalade personnelle après preuve liée à Barnard.",
-          "field_note": "Le travail devient personnel quand il parle votre langue.",
-          "terminal": "Dossier maraudeur: origine Barnard Yards ou ceinture salvage. Pas touriste de la Terre. Motif initial: contrat et savoir-faire. Motif actuel: trace humaine non résolue.",
-          "audio": "Vous êtes venu pour le travail. Le travail vous a reconnu.",
-          "in_game_wiki": "Le Maraudeur n'est pas un touriste vide. La course commence par intérêt professionnel, compétence de salvage et raison d'accepter une réclamation morte. Le motif personnel grandit par les preuves, les marques familières et la compréhension que HECTON-8 appartient au même monde dur qui a rendu ce travail normal.",
-          "external_site": "Professional Motive donne au Maraudeur de l'agence sans verrouiller la biographie : la compétence vient d'abord, l'investissement personnel arrive par les preuves."
-        },
-        "es_ES": {
-          "title": "Motivo profesional",
-          "scanner": "Perfil: competencia de salvage primero. Escalada personal tras evidencia Barnard.",
-          "field_note": "El trabajo se vuelve personal cuando habla tu idioma.",
-          "terminal": "Dossier marauder: origen Barnard Yards o cinturón salvage. No turista de Tierra. Motivo inicial: contrato y oficio. Motivo actual: rastro humano pendiente.",
-          "audio": "Viniste por trabajo. El trabajo te reconoció.",
-          "in_game_wiki": "El merodeador no es un turista vacío. La ruta empieza con interés profesional, habilidad de salvage y una razón para aceptar una reclamación muerta. El motivo personal crece mediante evidencia, marcas familiares y la comprensión de que HECTON-8 pertenece al mismo mundo duro que volvió normal este trabajo.",
-          "external_site": "Professional Motive da agencia al merodeador sin cerrar demasiado la biografía: la competencia viene primero, la inversión personal llega por la evidencia."
-        },
-        "de_DE": {
-          "title": "Professionelles Motiv",
-          "scanner": "Auftragnehmerprofil: Bergungskompetenz zuerst. Persönliche Eskalation nach Barnard-Beweis.",
-          "field_note": "Der Job wird persönlich, wenn er deine Sprache kennt.",
-          "terminal": "Marauder-Dossier: Herkunft Barnard Yards oder Frontier-Bergungsgürtel. Kein Erdtourist. Anfang: Vertrag und Können. Jetzt: ungelöste Menschenspur.",
-          "audio": "Du kamst für Arbeit. Die Arbeit erkannte dich.",
-          "in_game_wiki": "Der Marauder ist kein leerer Tourist. Der Lauf beginnt mit professionellem Interesse, Salvage-Fertigkeit und einem Grund, einen toten Claim anzunehmen. Persönliches Motiv wächst durch Beweise, vertraute Markierungen und die Erkenntnis, dass HECTON-8 zu derselben harten Welt gehört, die diese Arbeit normal gemacht hat.",
-          "external_site": "Professional Motive gibt dem Marauder Handlungsfähigkeit, ohne die Biografie zu stark zu verriegeln: Kompetenz kommt zuerst, persönliche Bindung kommt durch Beweise."
-        },
-        "pl_PL": {
-          "title": "Motyw zawodowy",
-          "scanner": "Profil wykonawcy: najpierw kompetencja salvage. Eskalacja osobista po dowodzie Barnard.",
-          "field_note": "Praca staje się osobista, gdy zna twój język.",
-          "terminal": "Dossier maraudera: Barnard Yards albo pas salvage. Nie turysta z Ziemi. Motyw startowy: kontrakt i fach. Obecny: nierozwiązany ślad ludzki.",
-          "audio": "Przyszedłeś po pracę. Praca cię rozpoznała.",
-          "in_game_wiki": "Marauder nie jest pustym turystą. Wyprawa zaczyna się od zawodowego interesu, umiejętności salvage i powodu, by przyjąć martwy claim. Osobisty motyw rośnie przez dowody, znajome znaki i zrozumienie, że HECTON-8 należy do tego samego twardego świata, który uczynił tę pracę normalną.",
-          "external_site": "Professional Motive daje Marauderowi sprawczość bez zamykania biografii: najpierw jest kompetencja, osobiste zaangażowanie przychodzi przez dowody."
-        },
-        "uk_UA": {
-          "title": "Професійний мотив",
-          "scanner": "Профіль підрядника: спершу salvage-компетенція. Особиста ескалація після Barnard evidence.",
-          "field_note": "Робота стає особистою, коли говорить твоєю мовою.",
-          "terminal": "Marauder dossier: походження - Barnard Yards або frontier salvage belt. Не турист із Землі. Старт: контракт і навичка. Зараз: незакритий людський слід.",
-          "audio": "Ти прийшов по роботу. Робота впізнала тебе.",
-          "in_game_wiki": "Мародер - не порожній турист. Рейс починається з професійного інтересу, salvage-навички й причини прийняти мертву претензію. Особистий мотив росте через докази, знайомі мітки й розуміння, що HECTON-8 належить тому самому жорсткому світу, який зробив таку роботу нормальною.",
-          "external_site": "Professional Motive дає мародеру agency без жорсткої біографічної клітки: спершу йде компетентність, особиста залученість приходить через докази."
-        },
-        "ar_SA": {
-          "title": "دافع مهني",
-          "scanner": "ملف المقاول: كفاءة salvage أولا. تصعيد شخصي بعد دليل مرتبط بBarnard.",
-          "field_note": "تصير المهمة شخصية حين تعرف لغتك.",
-          "terminal": "ملف marauder: الأصل Barnard Yards أو حزام salvage حدودي. ليس سائحا من الأرض. الدافع الأول: عقد ومهارة. الحالي: أثر بشري غير مغلق.",
-          "audio": "جئت للعمل. العمل تعرف عليك.",
-          "in_game_wiki": "المغير ليس سائحا فارغا. تبدأ الرحلة باهتمام مهني ومهارة salvage وسبب لقبول مطالبة ميتة. ينمو الدافع الشخصي عبر الأدلة والعلامات المألوفة وفهم أن HECTON-8 ينتمي إلى العالم القاسي نفسه الذي جعل هذا العمل عاديا.",
-          "external_site": "يمنح Professional Motive المغير قدرة فعل من دون إغلاق السيرة كثيرا: تأتي الكفاءة أولا، ثم يأتي الاستثمار الشخصي عبر الأدلة."
-        },
-        "id_ID": {
-          "title": "Motif Profesional",
-          "scanner": "Profil kontraktor: kompetensi salvage dulu. Eskalasi personal setelah bukti Barnard.",
-          "field_note": "Pekerjaan menjadi pribadi saat ia mengenali bahasamu.",
-          "terminal": "Dossier marauder: asal Barnard Yards atau frontier salvage belt. Bukan turis Earth. Motif awal: kontrak dan keahlian. Motif kini: jejak manusia belum selesai.",
-          "audio": "Kau datang untuk kerja. Kerja itu mengenalimu.",
-          "in_game_wiki": "Marauder bukan turis kosong. Perjalanan dimulai dengan minat profesional, keahlian salvage, dan alasan menerima klaim mati. Motif pribadi tumbuh melalui bukti, tanda yang dikenal, dan kesadaran bahwa HECTON-8 milik dunia keras yang sama yang membuat pekerjaan ini normal.",
-          "external_site": "Professional Motive memberi Marauder agensi tanpa mengunci biografi terlalu keras: kompetensi datang lebih dulu, keterlibatan pribadi datang lewat bukti."
-        },
-        "ko_KR": {
-          "title": "전문가 동기",
-          "scanner": "계약자 프로필: salvage 능력이 먼저. Barnard 증거 뒤 개인적 상승 감지.",
-          "field_note": "일은 네 언어를 알아볼 때 개인적이 된다.",
-          "terminal": "Marauder dossier: 출신은 Barnard Yards 또는 frontier salvage belt. Earth 관광객 아님. 초기 동기: 계약과 기술. 현재 동기: 미해결 인간 흔적.",
-          "audio": "일하러 왔다. 일이 너를 알아봤다.",
-          "in_game_wiki": "마로더는 빈 관광객이 아니다. 항로는 전문적 관심, salvage 기술, 죽은 청구를 받아들일 이유에서 시작된다. 개인적 동기는 증거, 익숙한 표식, 그리고 HECTON-8이 이 일을 정상으로 만든 같은 단단한 세계에 속한다는 깨달음으로 자란다.",
-          "external_site": "Professional Motive는 전기를 과하게 잠그지 않으면서 마로더에게 행위성을 준다. 능력이 먼저 오고, 개인적 투자는 증거를 통해 도착한다."
-        },
-        "he_IL": {
-          "title": "מניע מקצועי",
-          "scanner": "פרופיל קבלן: יכולת salvage קודם. הסלמה אישית אחרי ראיית Barnard.",
-          "field_note": "העבודה נעשית אישית כשהיא מכירה את השפה שלך.",
-          "terminal": "תיק marauder: מוצא Barnard Yards או חגורת salvage. לא תייר מכדור הארץ. מניע ראשון: חוזה ומיומנות. עכשיו: עקבה אנושית לא סגורה.",
-          "audio": "באת בשביל עבודה. העבודה זיהתה אותך.",
-          "in_game_wiki": "המראודר אינו תייר ריק. הריצה מתחילה מעניין מקצועי, מיומנות salvage וסיבה לקבל תביעה מתה. מניע אישי גדל דרך ראיות, סימנים מוכרים והבנה ש-HECTON-8 שייך לאותו עולם קשה שהפך עבודה כזו לרגילה.",
-          "external_site": "Professional Motive נותן למראודר פעולה בלי לנעול ביוגרפיה יתר על המידה: כשירות באה קודם, מעורבות אישית מגיעה דרך ראיות."
-        },
-        "pt_BR": {
-          "title": "Motivo profissional",
-          "scanner": "Perfil do contratado: competência salvage primeiro. Escalada pessoal após evidência Barnard.",
-          "field_note": "O trabalho vira pessoal quando fala sua língua.",
-          "terminal": "Dossiê marauder: origem Barnard Yards ou cinturão salvage. Não turista da Terra. Motivo inicial: contrato e técnica. Atual: rastro humano aberto.",
-          "audio": "Você veio pelo trabalho. O trabalho reconheceu você.",
-          "in_game_wiki": "O Marauder não é um turista vazio. A rota começa com interesse profissional, habilidade de salvage e uma razão para aceitar uma reivindicação morta. O motivo pessoal cresce por evidências, marcas familiares e a percepção de que HECTON-8 pertence ao mesmo mundo duro que tornou esse trabalho normal.",
-          "external_site": "Professional Motive dá agência ao Marauder sem travar demais a biografia: competência vem primeiro, investimento pessoal chega por evidências."
-        },
-        "nl_NL": {
-          "title": "Professioneel motief",
-          "scanner": "Contractantprofiel: eerst salvage-vakmanschap. Persoonlijke escalatie na Barnard-bewijs.",
-          "field_note": "Het werk wordt persoonlijk zodra het je taal kent.",
-          "terminal": "Marauder-dossier: herkomst Barnard Yards of frontier salvage belt. Geen aardtoerist. Startmotief: contract en kunde. Nu: onopgelost menselijk spoor.",
-          "audio": "Je kwam voor werk. Het werk herkende je.",
-          "in_game_wiki": "De Marauder is geen lege toerist. De run begint met professioneel belang, salvagevaardigheid en een reden om een dode claim aan te nemen. Persoonlijk motief groeit door bewijs, vertrouwde markeringen en het besef dat HECTON-8 bij dezelfde harde wereld hoort die dit werk normaal maakte.",
-          "external_site": "Professional Motive geeft de Marauder handelingsruimte zonder de biografie te strak vast te zetten: bekwaamheid komt eerst, persoonlijke investering komt via bewijs."
-        }
-      }
+    "fr_FR": {
+     "title": "Garde Black Keel",
+     "scanner": "La garde du carrier est une infrastructure de récupération publique avec des priorités privées.",
+     "field_note": "Une ligne de vie peut rester une laisse.",
+     "terminal": "Dossier de garde: propriétaire masqué, dette claim-pool active, canal prioritaire Deep Reach présent mais non déclaré.",
+     "audio": "Black Keel peut vous récupérer. Il peut aussi récupérer le reste avant vous.",
+     "in_game_wiki": "Black Keel n'est pas un vaisseau personnel de luxe. C'est un carrier de salvage presque automatisé, régi par la garde d'un pool de réclamations, la dette d'assurance et des fenêtres orbitales retardées. Il offre une vraie route vers l'orbite sans rendre le secours simple ni loyal.",
+     "external_site": "Black Keel Custody définit le soutien orbital comme une infrastructure utile et compromise : route de secours, machine de dette et surface de pression Deep Reach dans un seul objet."
+    },
+    "es_ES": {
+     "title": "Custodia Black Keel",
+     "scanner": "La custodia del carrier es infraestructura pública de salvamento con prioridades privadas.",
+     "field_note": "Una línea de vida también puede ser una correa.",
+     "terminal": "Archivo de custodia: dueño del casco oculto, deuda claim-pool activa, canal Deep Reach prioritario no declarado.",
+     "audio": "Black Keel puede recuperarte. También puede recuperar todo lo demás antes.",
+     "in_game_wiki": "Black Keel no es una nave personal de lujo. Es un carrier de salvage casi automatizado que opera mediante custodia de fondo de reclamaciones, deuda de seguros y ventanas orbitales retrasadas. Ofrece una ruta real de vuelta a órbita sin volver el rescate simple ni leal.",
+     "external_site": "Black Keel Custody define el apoyo orbital como infraestructura útil y comprometida: ruta de rescate, máquina de deuda y superficie de presión de Deep Reach en un solo objeto."
+    },
+    "de_DE": {
+     "title": "Black-Keel-Gewahrsam",
+     "scanner": "Carrier-Gewahrsam ist öffentliche Bergungsinfrastruktur mit privaten Prioritätshaken.",
+     "field_note": "Eine Rettungsleine kann auch eine Leine sein.",
+     "terminal": "Gewahrsamsdatei: Rumpfeigner maskiert, Claim-Pool-Schuld aktiv, Deep-Reach-Prioritätskanal vorhanden aber nicht gemeldet.",
+     "audio": "Black Keel kann dich bergen. Es kann auch alles andere zuerst bergen.",
+     "in_game_wiki": "Black Keel ist kein luxuriöses Privatschiff. Es ist ein nahezu automatisierter Salvage-Carrier, der über Claim-Pool-Gewahrsam, Versicherungsschuld und verspätete Orbitalfenster arbeitet. Er bietet einen echten Weg zurück in den Orbit, ohne Rettung einfach oder loyal zu machen.",
+     "external_site": "Black Keel Custody definiert orbitale Unterstützung als nützliche, kompromittierte Infrastruktur: Rettungsroute, Schuldenmaschine und Deep-Reach-Druckfläche in einem Objekt."
+    },
+    "pl_PL": {
+     "title": "Nadzór Black Keel",
+     "scanner": "Nadzór carriera to publiczna infrastruktura odzysku z prywatnymi priorytetami.",
+     "field_note": "Lina ratunkowa może być smyczą.",
+     "terminal": "Plik nadzoru: właściciel kadłuba ukryty, dług claim-pool aktywny, kanał Deep Reach obecny lecz nieujawniony.",
+     "audio": "Black Keel może cię odzyskać. Może też odzyskać wszystko inne przed tobą.",
+     "in_game_wiki": "Black Keel nie jest luksusowym prywatnym statkiem. To niemal automatyczny carrier salvage działający przez custody puli roszczeń, dług ubezpieczeniowy i opóźnione okna orbitalne. Daje realną drogę na orbitę, ale nie czyni ratunku prostym ani lojalnym.",
+     "external_site": "Black Keel Custody definiuje wsparcie orbitalne jako użyteczną, skażoną infrastrukturę: drogę ratunku, maszynę długu i powierzchnię nacisku Deep Reach w jednym obiekcie."
+    },
+    "uk_UA": {
+     "title": "Опіка Black Keel",
+     "scanner": "Опіка carrier - публічна інфраструктура salvage з приватними priority hooks.",
+     "field_note": "Рятівний трос теж може бути повідцем.",
+     "terminal": "Файл custody: власник корпусу прихований, claim-pool борг активний, канал Deep Reach існує, але підряднику не розкритий.",
+     "audio": "Black Keel може підняти тебе. І може підняти все інше раніше.",
+     "in_game_wiki": "Black Keel - не розкішний особистий корабель. Це майже автоматичний salvage carrier, що працює через custody пулу претензій, страховий борг і затримані орбітальні вікна. Він дає реальний шлях назад на орбіту, але не робить порятунок простим або вірним.",
+     "external_site": "Black Keel Custody задає орбітальну підтримку як корисну, скомпрометовану інфраструктуру: маршрут порятунку, боргову машину й поверхню тиску Deep Reach в одному об'єкті."
+    },
+    "ar_SA": {
+     "title": "وصاية Black Keel",
+     "scanner": "وصاية الحاملة بنية إنقاذ عامة وفيها خطافات أولوية خاصة.",
+     "field_note": "حبل النجاة قد يكون قيدا.",
+     "terminal": "ملف الوصاية: مالك الهيكل مخفي، دين claim-pool نشط، وقناة Deep Reach ذات أولوية غير معلنة.",
+     "audio": "Black Keel يستطيع انتشالك. ويستطيع انتشال الحمولة قبلك.",
+     "in_game_wiki": "Black Keel ليست سفينة شخصية فاخرة. إنها carrier salvage شبه آلية تعمل عبر حيازة مجمع مطالبات ودين تأمين ونوافذ مدار متأخرة. تمنح طريقا حقيقيا إلى المدار من دون أن تجعل الإنقاذ بسيطا أو وفيا.",
+     "external_site": "تعرف Black Keel Custody الدعم المداري كبنية مفيدة ومخترقة: طريق إنقاذ، وآلة دين، وسطح ضغط من Deep Reach في جسم واحد."
+    },
+    "id_ID": {
+     "title": "Kustodi Black Keel",
+     "scanner": "Kustodi carrier adalah infrastruktur salvage publik dengan kait prioritas privat.",
+     "field_note": "Tali penyelamat bisa menjadi tali kekang.",
+     "terminal": "Berkas kustodi: pemilik lambung disamarkan, utang claim-pool aktif, kanal prioritas Deep Reach tidak diumumkan.",
+     "audio": "Black Keel bisa mengambilmu. Ia juga bisa mengambil muatan lebih dulu.",
+     "in_game_wiki": "Black Keel bukan kapal pribadi mewah. Ia carrier salvage nyaris otomatis yang bekerja melalui kustodi kolam klaim, utang asuransi, dan jendela orbit tertunda. Ia menawarkan rute nyata kembali ke orbit tanpa membuat penyelamatan sederhana atau setia.",
+     "external_site": "Black Keel Custody mendefinisikan dukungan orbital sebagai infrastruktur berguna tetapi tercemar: rute penyelamatan, mesin utang, dan permukaan tekanan Deep Reach dalam satu objek."
+    },
+    "ko_KR": {
+     "title": "Black Keel 보관권",
+     "scanner": "Carrier 보관권은 공공 salvage 기반이지만 사적 우선 후크가 붙어 있다.",
+     "field_note": "생명줄은 목줄이 될 수 있다.",
+     "terminal": "보관 파일: 선체 소유자는 가려졌고 claim-pool 부채는 활성, Deep Reach 우선 채널은 계약자에게 미고지.",
+     "audio": "Black Keel은 너를 회수할 수 있다. 그리고 다른 것을 먼저 회수할 수 있다.",
+     "in_game_wiki": "Black Keel은 호화 개인선이 아니다. 청구 풀 보관, 보험 부채, 지연된 궤도 창을 통해 움직이는 거의 자동화된 salvage carrier다. 궤도로 돌아가는 실제 길을 주지만, 구조를 단순하거나 충성스럽게 만들지는 않는다.",
+     "external_site": "Black Keel Custody는 궤도 지원을 유용하지만 오염된 인프라로 정의한다. 구조 경로, 부채 기계, Deep Reach 압력면이 한 물체에 겹친다."
+    },
+    "he_IL": {
+     "title": "משמורת Black Keel",
+     "scanner": "משמורת ה-carrier היא תשתית חילוץ ציבורית עם עדיפויות פרטיות.",
+     "field_note": "חבל הצלה יכול להיות גם רסן.",
+     "terminal": "קובץ משמורת: בעל הגוף מוסתר, חוב claim-pool פעיל, ערוץ Deep Reach עדיף קיים אך לא נמסר לקבלן.",
+     "audio": "Black Keel יכול לחלץ אותך. הוא יכול גם לחלץ את המטען קודם.",
+     "in_game_wiki": "Black Keel אינה ספינה אישית יוקרתית. היא carrier salvage כמעט אוטומטית שפועלת דרך משמורת מאגר תביעות, חוב ביטוח וחלונות מסלול מאוחרים. היא נותנת נתיב אמיתי חזרה למסלול בלי להפוך חילוץ לפשוט או נאמן.",
+     "external_site": "Black Keel Custody מגדירה תמיכה מסלולית כתשתית שימושית ומזוהמת: נתיב חילוץ, מכונת חוב ומשטח לחץ של Deep Reach באובייקט אחד."
+    },
+    "pt_BR": {
+     "title": "Custódia Black Keel",
+     "scanner": "A custódia do carrier é infraestrutura pública de salvage com ganchos privados de prioridade.",
+     "field_note": "Uma linha de vida também pode ser coleira.",
+     "terminal": "Arquivo de custódia: dono do casco mascarado, dívida claim-pool ativa, canal Deep Reach prioritário não declarado.",
+     "audio": "Black Keel pode resgatar você. Também pode resgatar todo o resto antes.",
+     "in_game_wiki": "Black Keel não é uma nave pessoal de luxo. É um carrier de salvage quase automatizado que opera por custódia de pool de reivindicações, dívida de seguro e janelas orbitais atrasadas. Oferece uma rota real de volta à órbita sem tornar o resgate simples nem leal.",
+     "external_site": "Black Keel Custody define suporte orbital como infraestrutura útil e comprometida: rota de resgate, máquina de dívida e superfície de pressão da Deep Reach em um só objeto."
+    },
+    "nl_NL": {
+     "title": "Black Keel-bewaring",
+     "scanner": "Carrier-bewaring is openbare bergingsinfrastructuur met private prioriteitshaken.",
+     "field_note": "Een reddingslijn kan ook een lijn om je nek zijn.",
+     "terminal": "Bewaringsdossier: rompheigenaar gemaskeerd, claim-poolschuld actief, Deep Reach-prioriteitskanaal aanwezig maar niet gemeld.",
+     "audio": "Black Keel kan je ophalen. Het kan ook eerst alles anders ophalen.",
+     "in_game_wiki": "Black Keel is geen luxe privéschip. Het is een bijna geautomatiseerde salvagecarrier die werkt via claimpoolbewaring, verzekeringsschuld en vertraagde orbitale vensters. Het biedt een echte route terug naar de baan zonder redding eenvoudig of loyaal te maken.",
+     "external_site": "Black Keel Custody definieert orbitale steun als nuttige, gecompromitteerde infrastructuur: reddingsroute, schuldenmachine en Deep Reach-drukvlak in één object."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P022_DROP_CAPSULE_DAMAGE",
+   "article_id": "arrival.drop_capsule_damage",
+   "title_key": "applied_lore.drop_capsule_damage.title",
+   "unlock": {
+    "primary": "unlock.first_drop_capsule_damage_audit",
+    "poi_tags": [
+     "poi.drop_capsule",
+     "poi.crash_shelter",
+     "poi.reentry_blackbox"
+    ],
+    "biome_tags": [
+     "biome.crash_shelf",
+     "biome.shallow_repair",
+     "biome.storm_surge"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Drop Capsule Damage",
+     "scanner": "Launch seat intact. Ascent path destroyed. This capsule is shelter, not a return vehicle.",
+     "field_note": "The first prison is mechanical.",
+     "terminal": "Reentry blackbox: chute burn, ballast puncture, comm mast shear, ascent seal ruined. Orbit return requires external build chain.",
+     "audio": "Capsule cannot climb. Stop treating it like a ship.",
+     "in_game_wiki": "The drop capsule gets the Marauder to HECTON-8. The crash leaves enough systems alive for shelter, power and logs, but destroys ascent hardware. Early escape becomes an engineering chain, not a button.",
+     "external_site": "Drop Capsule Damage explains why the stranding is credible: descent worked, survival systems survived, ascent hardware did not."
+    },
+    "ru_RU": {
+     "title": "Повреждение спусковой капсулы",
+     "scanner": "Кресло цело. Траектория подъема уничтожена. Капсула - убежище, не обратный корабль.",
+     "field_note": "Первая тюрьма - механическая.",
+     "terminal": "Черный ящик входа: прожог парашюта, пробой балласта, срез антенны, сорван ascent seal. Возврат на орбиту требует внешней инженерной цепочки.",
+     "audio": "Капсула не взлетит. Хватит считать ее кораблем.",
+     "in_game_wiki": "Спусковая капсула доставляет мародера на HECTON-8. Авария оставляет достаточно живых систем для укрытия, питания и журналов, но уничтожает оборудование подъема. Ранний выход становится инженерной цепью, а не кнопкой.",
+     "external_site": "Повреждение спусковой капсулы объясняет, почему изоляция правдоподобна: спуск сработал, системы выживания уцелели, оборудование подъема - нет."
+    },
+    "ja_JP": {
+     "title": "投下カプセル損傷",
+     "scanner": "座席は生存。上昇経路は破壊。カプセルは避難所で、帰還船ではない。",
+     "field_note": "最初の牢は機械だ。",
+     "terminal": "再突入ブラックボックス: シュート焼損、バラスト穿孔、通信マスト剪断、上昇シール破損。軌道帰還には外部建造連鎖が必要。",
+     "audio": "カプセルは上がれない。船扱いをやめろ。",
+     "in_game_wiki": "降下カプセルがマローダーを HECTON-8 へ届ける。衝突後もシェルター、電力、ログに足るシステムは生き残るが、上昇機材は破壊される。早期脱出はボタンではなく工学の連鎖になる。",
+     "external_site": "降下カプセル損傷は、孤立が信じられる理由を説明する。降下は成功し、生存システムは残り、上昇機材は残らなかった。"
+    },
+    "zh_CN": {
+     "title": "投放舱损伤",
+     "scanner": "座椅完好。上升路径毁坏。舱体是庇护所，不是返航船。",
+     "field_note": "第一座牢笼是机械的。",
+     "terminal": "再入黑匣子：伞烧蚀、压载穿孔、通信桅剪断、上升密封毁坏。回轨需要外部工程链。",
+     "audio": "舱体不能爬升。别再把它当船。",
+     "in_game_wiki": "投放胶囊把掠夺者送到 HECTON-8。坠毁留下足够系统维持庇护、电力和日志，却摧毁了上升硬件。早期逃离变成工程链，而不是按钮。",
+     "external_site": "投放胶囊损伤解释了为什么搁浅可信：下降成功了，生存系统幸存了，上升硬件没有。"
+    },
+    "fr_FR": {
+     "title": "Dégâts de capsule",
+     "scanner": "Siège intact. Trajet d'ascension détruit. La capsule est un abri, pas un véhicule retour.",
+     "field_note": "La première prison est mécanique.",
+     "terminal": "Boîte noire: parachute brûlé, ballast percé, mât com cisaillé, joint d'ascension ruiné. Retour orbital via chaîne externe.",
+     "audio": "La capsule ne remonte pas. Ce n'est pas un vaisseau.",
+     "in_game_wiki": "La capsule de largage amène le Maraudeur sur HECTON-8. Le crash laisse assez de systèmes vivants pour abri, énergie et journaux, mais détruit le matériel d'ascension. La sortie précoce devient une chaîne d'ingénierie, pas un bouton.",
+     "external_site": "Les dégâts de capsule de largage expliquent pourquoi l'isolement tient : la descente a fonctionné, les systèmes de survie ont survécu, le matériel d'ascension non."
+    },
+    "es_ES": {
+     "title": "Daño de cápsula",
+     "scanner": "Asiento intacto. Ruta de ascenso destruida. La cápsula es refugio, no nave de regreso.",
+     "field_note": "La primera prisión es mecánica.",
+     "terminal": "Caja negra: paracaídas quemado, lastre perforado, mástil de comunicaciones cortado, sello de ascenso arruinado. Regreso orbital exige cadena externa.",
+     "audio": "La cápsula no sube. No es una nave.",
+     "in_game_wiki": "La cápsula de descenso lleva al merodeador a HECTON-8. El choque deja sistemas suficientes para refugio, energía y registros, pero destruye el hardware de ascenso. La salida temprana se vuelve una cadena de ingeniería, no un botón.",
+     "external_site": "El daño de la cápsula de descenso explica por qué el varamiento es creíble: el descenso funcionó, los sistemas de supervivencia sobrevivieron, el hardware de ascenso no."
+    },
+    "de_DE": {
+     "title": "Schaden der Landekapsel",
+     "scanner": "Sitz intakt. Aufstiegsweg zerstört. Die Kapsel ist Schutzraum, kein Rückkehrfahrzeug.",
+     "field_note": "Das erste Gefängnis ist mechanisch.",
+     "terminal": "Wiedereintrittsbox: Schirmbrand, Ballastloch, Antennenmast abgeschert, Aufstiegssiegel ruiniert. Orbitrückkehr braucht externe Kette.",
+     "audio": "Die Kapsel steigt nicht. Sie ist kein Schiff.",
+     "in_game_wiki": "Die Abwurfkapsel bringt den Marauder nach HECTON-8. Der Crash lässt genug Systeme für Schutz, Energie und Logs am Leben, zerstört aber die Aufstiegshardware. Frühe Flucht wird zur Ingenieurskette, nicht zum Knopf.",
+     "external_site": "Drop-Capsule-Schaden erklärt, warum das Festsitzen glaubwürdig ist: Der Abstieg funktionierte, Überlebenssysteme überlebten, Aufstiegshardware nicht."
+    },
+    "pl_PL": {
+     "title": "Uszkodzenie kapsuły",
+     "scanner": "Fotel cały. Ścieżka wznoszenia zniszczona. Kapsuła to schron, nie pojazd powrotny.",
+     "field_note": "Pierwsze więzienie jest mechaniczne.",
+     "terminal": "Czarna skrzynka: spalony spadochron, przebity balast, ścięty maszt łączności, zniszczona uszczelka wznoszenia. Powrót wymaga zewnętrznego łańcucha.",
+     "audio": "Kapsuła nie wzniesie się. To nie statek.",
+     "in_game_wiki": "Kapsuła zrzutowa dostarcza Maraudera na HECTON-8. Katastrofa zostawia dość systemów na schron, zasilanie i logi, ale niszczy sprzęt wznoszenia. Wczesna ucieczka staje się łańcuchem inżynieryjnym, nie przyciskiem.",
+     "external_site": "Uszkodzenie kapsuły zrzutowej wyjaśnia, czemu uwięzienie jest wiarygodne: zejście zadziałało, systemy przetrwania ocalały, sprzęt wznoszenia nie."
+    },
+    "uk_UA": {
+     "title": "Пошкодження спускової капсули",
+     "scanner": "Крісло ціле. Шлях підйому знищений. Капсула - укриття, не корабель повернення.",
+     "field_note": "Перша тюрма механічна.",
+     "terminal": "Чорна скринька входу: парашут вигорів, баласт пробитий, щоглу зв'язку зрізано, ascent seal зірвано. Повернення потребує зовнішнього ланцюга.",
+     "audio": "Капсула не злетить. Це не корабель.",
+     "in_game_wiki": "Спускова капсула доставляє мародера на HECTON-8. Аварія лишає достатньо живих систем для укриття, живлення й журналів, але знищує обладнання підйому. Ранній вихід стає інженерним ланцюгом, а не кнопкою.",
+     "external_site": "Пошкодження спускової капсули пояснює, чому ізоляція правдоподібна: спуск спрацював, системи виживання вціліли, обладнання підйому - ні."
+    },
+    "ar_SA": {
+     "title": "ضرر كبسولة الهبوط",
+     "scanner": "المقعد سليم. مسار الصعود محطم. الكبسولة ملجأ وليست مركبة عودة.",
+     "field_note": "السجن الأول ميكانيكي.",
+     "terminal": "الصندوق الأسود: مظلة محترقة، ثقب في الصابورة، صاري اتصال مقطوع، ختم صعود مدمّر. العودة للمدار تحتاج سلسلة هندسية خارجية.",
+     "audio": "الكبسولة لا تصعد. لا تعاملها كسفينة.",
+     "in_game_wiki": "توصل كبسولة الهبوط المغير إلى HECTON-8. يترك التحطم أنظمة كافية للمأوى والطاقة والسجلات، لكنه يدمر عتاد الصعود. يصبح الخروج المبكر سلسلة هندسية لا زرا.",
+     "external_site": "يفسر تلف كبسولة الهبوط سبب واقعية العزلة: نجح الهبوط، ونجت أنظمة البقاء، ولم ينج عتاد الصعود."
+    },
+    "id_ID": {
+     "title": "Kerusakan Kapsul Jatuh",
+     "scanner": "Kursi utuh. Jalur naik hancur. Kapsul ini tempat berlindung, bukan kendaraan pulang.",
+     "field_note": "Penjara pertama bersifat mekanis.",
+     "terminal": "Blackbox masuk: chute terbakar, ballast bocor, tiang komunikasi terpotong, segel naik rusak. Pulang ke orbit butuh rantai bangun eksternal.",
+     "audio": "Kapsul tidak bisa naik. Jangan anggap kapal.",
+     "in_game_wiki": "Kapsul jatuh membawa Marauder ke HECTON-8. Benturan menyisakan cukup sistem untuk perlindungan, daya, dan log, tetapi menghancurkan perangkat naik. Keluar dini menjadi rantai engineering, bukan tombol.",
+     "external_site": "Kerusakan kapsul jatuh menjelaskan mengapa keterdamparan masuk akal: turun berhasil, sistem bertahan hidup selamat, perangkat naik tidak."
+    },
+    "ko_KR": {
+     "title": "강하 캡슐 손상",
+     "scanner": "좌석은 멀쩡하다. 상승 경로는 파괴됐다. 캡슐은 피난처지 귀환선이 아니다.",
+     "field_note": "첫 감옥은 기계다.",
+     "terminal": "재진입 블랙박스: 낙하산 연소, 밸러스트 천공, 통신 마스트 절단, 상승 실링 파손. 궤도 복귀는 외부 제작 체인이 필요하다.",
+     "audio": "캡슐은 올라가지 못한다. 배가 아니다.",
+     "in_game_wiki": "강하 캡슐은 마로더를 HECTON-8로 보낸다. 충돌은 대피처, 전력, 로그에 충분한 시스템을 남기지만 상승 장비를 파괴한다. 초기 탈출은 버튼이 아니라 공학 사슬이 된다.",
+     "external_site": "강하 캡슐 손상은 고립이 왜 그럴듯한지 설명한다. 하강은 작동했고 생존 시스템은 살아남았지만 상승 장비는 그렇지 못했다."
+    },
+    "he_IL": {
+     "title": "נזק לקפסולת נחיתה",
+     "scanner": "מושב השיגור שלם. נתיב העלייה נהרס. הקפסולה היא מחסה, לא רכב חזרה.",
+     "field_note": "הכלא הראשון מכני.",
+     "terminal": "קופסה שחורה: מצנח שרוף, בלסט מנוקב, תורן תקשורת גזור, אטם עלייה הרוס. חזרה למסלול דורשת שרשרת חיצונית.",
+     "audio": "הקפסולה לא מטפסת. אל תקרא לה ספינה.",
+     "in_game_wiki": "קפסולת ההטלה מביאה את המראודר אל HECTON-8. ההתרסקות משאירה מספיק מערכות למחסה, כוח ויומנים, אך הורסת חומרת עלייה. יציאה מוקדמת נעשית שרשרת הנדסית, לא כפתור.",
+     "external_site": "נזק קפסולת ההטלה מסביר מדוע ההיתקעות אמינה: הירידה עבדה, מערכות ההישרדות שרדו, חומרת העלייה לא."
+    },
+    "pt_BR": {
+     "title": "Dano da cápsula de queda",
+     "scanner": "Assento intacto. Caminho de subida destruído. A cápsula é abrigo, não veículo de retorno.",
+     "field_note": "A primeira prisão é mecânica.",
+     "terminal": "Caixa-preta: paraquedas queimado, lastro perfurado, mastro de comunicação cortado, selo de subida arruinado. Retorno orbital exige cadeia externa.",
+     "audio": "A cápsula não sobe. Pare de tratá-la como nave.",
+     "in_game_wiki": "A cápsula de queda leva o Marauder a HECTON-8. O impacto deixa sistemas suficientes para abrigo, energia e logs, mas destrói o hardware de subida. Sair cedo vira uma cadeia de engenharia, não um botão.",
+     "external_site": "O dano da cápsula de queda explica por que o encalhe é crível: a descida funcionou, os sistemas de sobrevivência sobreviveram, o hardware de subida não."
+    },
+    "nl_NL": {
+     "title": "Schade aan daalcapsule",
+     "scanner": "Stoel intact. Stijgpad vernietigd. De capsule is schuilplaats, geen terugkeervoertuig.",
+     "field_note": "De eerste gevangenis is mechanisch.",
+     "terminal": "Herintrede-blackbox: chute verbrand, ballast lek, commast afgescheurd, stijgafdichting kapot. Terug naar orbit vraagt externe bouwketen.",
+     "audio": "De capsule klimt niet. Het is geen schip.",
+     "in_game_wiki": "De daalcapsule brengt de Marauder naar HECTON-8. De crash laat genoeg systemen over voor schuilplaats, stroom en logs, maar vernietigt opstijghardware. Vroege ontsnapping wordt een technische keten, geen knop.",
+     "external_site": "Schade aan de daalcapsule verklaart waarom de stranding geloofwaardig is: de afdaling werkte, overlevingssystemen overleefden, opstijghardware niet."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P023_DEEP_REACH_RETURN_CLAIM",
+   "article_id": "factions.deep_reach_return_claim",
+   "title_key": "applied_lore.deep_reach_return_claim.title",
+   "unlock": {
+    "primary": "unlock.first_deep_reach_return_claim",
+    "poi_tags": [
+     "poi.deep_reach_contract",
+     "poi.relay_instruction",
+     "poi.sanitized_log"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.deep_relay",
+     "biome.black_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Deep Reach Return Claim",
+     "scanner": "Delayed instruction: recover coordinates, substrate and evidence control before human recovery.",
+     "field_note": "They are not returning for the dead.",
+     "terminal": "Proxy order chain: secure Atlas access, classify colony records, preserve Xenon-Omega claim, minimize contractor autonomy.",
+     "audio": "Deep Reach wants the site back, not the story back.",
+     "in_game_wiki": "Deep Reach is older than Aegir and treats HECTON-8 as a failed asset with surviving value. Its modern goal is not a clean rescue; it wants resource control, Atlas access, coordinates and evidence management.",
+     "external_site": "Deep Reach Return Claim frames the current corporate pressure: HECTON-8 is not forgotten because it is worthless, but because public attention makes the asset harder to reclaim."
+    },
+    "ru_RU": {
+     "title": "Возвратная претензия Deep Reach",
+     "scanner": "Отложенная инструкция: вернуть координаты, субстрат и контроль доказательств до спасения людей.",
+     "field_note": "Они возвращаются не за мертвыми.",
+     "terminal": "Цепочка proxy order: обеспечить доступ к Atlas, классифицировать записи колонии, сохранить claim на Xenon-Omega, ограничить автономию подрядчика.",
+     "audio": "Deep Reach хочет вернуть объект, не историю.",
+     "in_game_wiki": "Deep Reach старше Aegir и смотрит на HECTON-8 как на проваленный актив с живой ценностью. Современная цель - не честное спасение, а ресурсный контроль, доступ к Atlas, координаты и управление доказательствами.",
+     "external_site": "Возвратная претензия Deep Reach задает текущее корпоративное давление: HECTON-8 не забыли не потому, что он бесполезен, а потому что внимание мешает вернуть актив."
+    },
+    "ja_JP": {
+     "title": "Deep Reach帰還請求",
+     "scanner": "遅延命令: 人命回収より先に座標、基質、証拠管理を確保。",
+     "field_note": "彼らは死者のために戻らない。",
+     "terminal": "代理命令系: Atlasアクセス確保、植民地記録分類、Xenon-Omega請求維持、契約者自律性を最小化。",
+     "audio": "Deep Reachが取り戻したいのは現場で、物語ではない。",
+     "in_game_wiki": "Deep ReachはAegirより古く、HECTON-8を価値の残る失敗資産として扱う。救助ではなく、資源、Atlas、座標、証拠を欲しがる。",
+     "external_site": "Deep Reach帰還請求は、現在の企業圧力を示す。価値がないから忘れられたのではなく、注目が回収を難しくするからだ。"
+    },
+    "zh_CN": {
+     "title": "Deep Reach返还主张",
+     "scanner": "延迟指令：在人类回收前取得坐标、基质和证据控制。",
+     "field_note": "他们不是为死者而归。",
+     "terminal": "代理命令链：确保Atlas访问，分类殖民记录，保留Xenon-Omega主张，压低承包人自主权。",
+     "audio": "Deep Reach想拿回地点，不想拿回故事。",
+     "in_game_wiki": "Deep Reach早于Aegir，把HECTON-8视为失败但仍有价值的资产。现代目标不是干净救援，而是资源、Atlas、坐标和证据管理。",
+     "external_site": "Deep Reach返还主张定义当前压力：HECTON-8不是因无价值而被遗忘，而是因公开关注会妨碍重新占有。"
+    },
+    "fr_FR": {
+     "title": "Réclamation Deep Reach",
+     "scanner": "Instruction retardée: récupérer coordonnées, substrat et contrôle des preuves avant les humains.",
+     "field_note": "Ils ne reviennent pas pour les morts.",
+     "terminal": "Chaîne proxy: accès Atlas, classement des archives, claim Xenon-Omega, autonomie contracteur réduite.",
+     "audio": "Deep Reach veut récupérer le site, pas l'histoire.",
+     "in_game_wiki": "Deep Reach est antérieur à Aegir et voit HECTON-8 comme un actif raté encore précieux. Son but est contrôle, Atlas, coordonnées et preuves.",
+     "external_site": "Cette réclamation cadre la pression: HECTON-8 n'est pas oublié car inutile, mais car l'attention gêne la reprise."
+    },
+    "es_ES": {
+     "title": "Reclamo Deep Reach",
+     "scanner": "Instrucción demorada: recuperar coordenadas, sustrato y control de pruebas antes que personas.",
+     "field_note": "No vuelven por los muertos.",
+     "terminal": "Cadena proxy: acceso Atlas, clasificar registros, preservar claim Xenon-Omega, reducir autonomía del contratista.",
+     "audio": "Deep Reach quiere el sitio, no la historia.",
+     "in_game_wiki": "Deep Reach es más antiguo que Aegir y trata HECTON-8 como activo fallido con valor vivo. Quiere control de recursos, Atlas, coordenadas y pruebas.",
+     "external_site": "El reclamo explica la presión: HECTON-8 no se olvida por no valer, sino porque la atención impide recuperarlo."
+    },
+    "de_DE": {
+     "title": "Deep-Reach-Rückholanspruch",
+     "scanner": "Verzögerte Weisung: Koordinaten, Substrat und Beweiskontrolle vor Menschen sichern.",
+     "field_note": "Sie kommen nicht wegen der Toten zurück.",
+     "terminal": "Proxy-Kette: Atlas-Zugang sichern, Kolonieakten klassifizieren, Xenon-Omega-Claim halten, Auftragnehmerautonomie senken.",
+     "audio": "Deep Reach will den Ort zurück, nicht die Geschichte.",
+     "in_game_wiki": "Deep Reach ist älter als Aegir und sieht HECTON-8 als gescheiterten, wertvollen Vermögenswert. Ziel sind Ressourcen, Atlas, Koordinaten und Beweise.",
+     "external_site": "Der Anspruch erklärt den Druck: HECTON-8 ist nicht wertlos vergessen; Öffentlichkeit erschwert die Rücknahme."
+    },
+    "pl_PL": {
+     "title": "Roszczenie Deep Reach",
+     "scanner": "Opóźniona instrukcja: odzyskać współrzędne, substrat i kontrolę dowodów przed ludźmi.",
+     "field_note": "Nie wracają po zmarłych.",
+     "terminal": "Łańcuch proxy: dostęp Atlas, klasyfikacja zapisów, claim Xenon-Omega, ograniczenie autonomii wykonawcy.",
+     "audio": "Deep Reach chce miejsca, nie historii.",
+     "in_game_wiki": "Deep Reach jest starsze niż Aegir i traktuje HECTON-8 jako nieudany, lecz cenny aktyw. Chce zasobów, Atlasa, współrzędnych i dowodów.",
+     "external_site": "Roszczenie pokazuje presję: HECTON-8 nie zapomniano z braku wartości, tylko z powodu ryzyka uwagi publicznej."
+    },
+    "uk_UA": {
+     "title": "Повернення претензії Deep Reach",
+     "scanner": "Затримана інструкція: повернути координати, субстрат і контроль доказів до евакуації людей.",
+     "field_note": "Вони повертаються не за мертвими.",
+     "terminal": "Proxy order: доступ до Atlas, класифікація записів, claim Xenon-Omega, мінімум автономії підрядника.",
+     "audio": "Deep Reach хоче об'єкт, не історію.",
+     "in_game_wiki": "Deep Reach старша за Aegir і бачить HECTON-8 як провалений актив із живою цінністю. Мета - ресурси, Atlas, координати й докази.",
+     "external_site": "Претензія визначає тиск: HECTON-8 не забутий через безвартісність, а тому що увага заважає поверненню активу."
+    },
+    "ar_SA": {
+     "title": "مطالبة Deep Reach بالعودة",
+     "scanner": "تعليمات مؤجلة: استعادة الإحداثيات والركيزة والسيطرة على الأدلة قبل البشر.",
+     "field_note": "إنهم لا يعودون من أجل الموتى.",
+     "terminal": "سلسلة proxy: تأمين Atlas، تصنيف سجلات المستعمرة، حفظ claim Xenon-Omega، تقليل استقلال المقاول.",
+     "audio": "Deep Reach يريد الموقع لا القصة.",
+     "in_game_wiki": "Deep Reach أقدم من Aegir ويرى HECTON-8 أصلا فاشلا بقيمة باقية. الهدف موارد وAtlas وإحداثيات وأدلة.",
+     "external_site": "المطالبة تشرح الضغط: HECTON-8 ليس منسيا لأنه بلا قيمة، بل لأن الانتباه يصعب استعادته."
+    },
+    "id_ID": {
+     "title": "Klaim Kembali Deep Reach",
+     "scanner": "Instruksi tertunda: ambil koordinat, substrat dan kontrol bukti sebelum pemulihan manusia.",
+     "field_note": "Mereka tidak kembali untuk yang mati.",
+     "terminal": "Rantai proxy: amankan akses Atlas, klasifikasi catatan koloni, pertahankan claim Xenon-Omega, batasi otonomi kontraktor.",
+     "audio": "Deep Reach menginginkan situs, bukan ceritanya.",
+     "in_game_wiki": "Deep Reach lebih tua dari Aegir dan melihat HECTON-8 sebagai aset gagal bernilai. Targetnya sumber daya, Atlas, koordinat dan bukti.",
+     "external_site": "Klaim ini membingkai tekanan: HECTON-8 tidak dilupakan karena tak bernilai, tetapi karena perhatian publik menyulitkan perebutan kembali."
+    },
+    "ko_KR": {
+     "title": "Deep Reach 반환 청구",
+     "scanner": "지연 명령: 인간 회수 전 좌표, 기질, 증거 통제를 확보하라.",
+     "field_note": "그들은 죽은 자를 위해 돌아오지 않는다.",
+     "terminal": "프록시 명령: Atlas 접근, 식민지 기록 분류, Xenon-Omega 청구 유지, 계약자 자율성 축소.",
+     "audio": "Deep Reach가 원하는 것은 현장이지 이야기 아니다.",
+     "in_game_wiki": "Deep Reach는 Aegir보다 오래됐고 HECTON-8을 실패했지만 가치 있는 자산으로 본다. 목표는 자원, Atlas, 좌표, 증거다.",
+     "external_site": "이 청구는 압력을 정의한다: HECTON-8은 무가치해서 잊힌 게 아니라, 공개 관심이 재점유를 어렵게 해서 묻혔다."
+    },
+    "he_IL": {
+     "title": "תביעת חזרה Deep Reach",
+     "scanner": "הוראה מושהית: להשיב קואורדינטות, מצע ושליטה בראיות לפני בני אדם.",
+     "field_note": "הם לא חוזרים בשביל המתים.",
+     "terminal": "שרשרת proxy: גישת Atlas, סיווג רישומי מושבה, שימור claim Xenon-Omega, צמצום עצמאות הקבלן.",
+     "audio": "Deep Reach רוצה את האתר, לא את הסיפור.",
+     "in_game_wiki": "Deep Reach קדמה ל-Aegir ורואה ב-HECTON-8 נכס כושל עם ערך חי. המטרה היא משאבים, Atlas, קואורדינטות וראיות.",
+     "external_site": "התביעה מגדירה את הלחץ: HECTON-8 לא נשכח כי הוא חסר ערך, אלא כי תשומת לב מקשה להחזיר אותו."
+    },
+    "pt_BR": {
+     "title": "Reclamação Deep Reach",
+     "scanner": "Instrução atrasada: recuperar coordenadas, substrato e controle de provas antes das pessoas.",
+     "field_note": "Eles não voltam pelos mortos.",
+     "terminal": "Cadeia proxy: acesso Atlas, classificar registros, preservar claim Xenon-Omega, reduzir autonomia do contratado.",
+     "audio": "Deep Reach quer o local, não a história.",
+     "in_game_wiki": "Deep Reach é mais antiga que Aegir e trata HECTON-8 como ativo falho ainda valioso. Busca recursos, Atlas, coordenadas e provas.",
+     "external_site": "A reclamação enquadra a pressão: HECTON-8 não foi esquecido por não valer nada, mas porque atenção pública dificulta retomada."
+    },
+    "nl_NL": {
+     "title": "Deep Reach-terugvordering",
+     "scanner": "Vertraagde instructie: coördinaten, substraat en bewijscontrole vóór mensen terughalen.",
+     "field_note": "Ze komen niet terug voor de doden.",
+     "terminal": "Proxyketen: Atlas-toegang veiligstellen, koloniegegevens classificeren, Xenon-Omega-claim behouden, autonomie contractant beperken.",
+     "audio": "Deep Reach wil de locatie terug, niet het verhaal.",
+     "in_game_wiki": "Deep Reach is ouder dan Aegir en behandelt HECTON-8 als mislukt maar waardevol bezit. Het wil grondstoffen, Atlas, coördinaten en bewijscontrole.",
+     "external_site": "De terugvordering kadert de druk: HECTON-8 is niet vergeten omdat het waardeloos is, maar omdat aandacht terugname hindert."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P024_FALSE_EXIT_MATERIAL",
+   "article_id": "endings.false_exit_material",
+   "title_key": "applied_lore.false_exit_material.title",
+   "unlock": {
+    "primary": "unlock.first_material_exit_offer",
+    "poi_tags": [
+     "poi.payload_gantry",
+     "poi.carrier_bargain",
+     "poi.claim_invoice"
+    ],
+    "biome_tags": [
+     "biome.deep_launch_route",
+     "biome.orbit_window",
+     "biome.resource_pressure"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Material Exit",
+     "scanner": "Carrier offer valid: payload mass pays debt. Evidence loss unresolved. Atlas coordinate request pending.",
+     "field_note": "A real ending can still be a bad answer.",
+     "terminal": "Exit contract: submit sealed sample, abandon deep proof, accept claim audit and return under debt review. Warning: truth chain remains incomplete.",
+     "audio": "You can leave with value. You may not leave clean.",
+     "in_game_wiki": "The material exit is a real partial outcome, not a dead route. Resources or a sample can buy withdrawal while the larger truth stays unresolved and a later return cuts sharper.",
+     "external_site": "Material Exit supports a profitable but compromised withdrawal: loot, contracts and survival can win the ascent while full descent truth stays below."
+    },
+    "ru_RU": {
+     "title": "Материальный выход",
+     "scanner": "Предложение carrier действительно: масса payload закрывает долг. Потеря доказательств не решена. Запрос координат Atlas ожидает.",
+     "field_note": "Настоящая концовка всё еще может быть плохим ответом.",
+     "terminal": "Контракт выхода: сдать sealed sample, бросить глубокие доказательства, принять claim audit и вернуться под debt review. Предупреждение: цепочка правды неполна.",
+     "audio": "Можно уйти с ценностью. Чистым уйти нельзя.",
+     "in_game_wiki": "Материальный выход - реальный частичный исход, а не тупиковый маршрут. Ресурсы или образец могут купить отход, пока большая правда остается нерешенной, а позднее возвращение режет сильнее.",
+     "external_site": "Material Exit поддерживает прибыльный, но скомпрометированный отход: добыча, контракты и выживание могут выиграть подъем, пока полная правда спуска остается внизу."
+    },
+    "ja_JP": {
+     "title": "物資離脱",
+     "scanner": "Carrier提案有効: payload質量で債務を支払える。証拠喪失は未解決。Atlas座標要求保留。",
+     "field_note": "本物の結末でも、悪い答えになり得る。",
+     "terminal": "離脱契約: sealed sample提出、深部証拠放棄、claim監査受諾、債務審査下で帰還。警告: 真実連鎖未完。",
+     "audio": "価値を持って出られる。清潔には出られない。",
+     "in_game_wiki": "物資出口は行き止まりではなく、本物の部分的結末だ。資源やサンプルは撤退を買えるが、大きな真実は未解決のまま残り、後の帰還がさらに鋭く刺さる。",
+     "external_site": "Material Exit は、利益のあるが妥協した撤退を支える。戦利品、契約、生存は上昇を勝ち取れるが、完全な降下の真実は下に残る。"
+    },
+    "zh_CN": {
+     "title": "物资撤离",
+     "scanner": "Carrier报价有效：payload质量可偿债。证据损失未解决。Atlas坐标请求待定。",
+     "field_note": "真实结局仍可能是坏答案。",
+     "terminal": "撤离合同：提交密封样本，放弃深层证据，接受claim审计并在债务审查下返回。警告：真相链未完成。",
+     "audio": "你可以带着价值离开。不能干净离开。",
+     "in_game_wiki": "物资出口是真实的部分结果，不是死路。资源或样本可以买来撤离，而更大的真相仍未解决，日后返回会切得更深。",
+     "external_site": "Material Exit 支持一种有利可图但受污染的撤离：战利品、合同和生存可以赢得上升，而完整的深潜真相仍留在下方。"
+    },
+    "fr_FR": {
+     "title": "Sortie matérielle",
+     "scanner": "Offre carrier valide: la masse payload paie la dette. Perte de preuves non résolue. Coordonnées Atlas en attente.",
+     "field_note": "Une vraie fin peut être une mauvaise réponse.",
+     "terminal": "Contrat: livrer échantillon scellé, abandonner preuve profonde, accepter audit claim et retour sous dette. Vérité incomplète.",
+     "audio": "Vous pouvez partir avec de la valeur. Pas propre.",
+     "in_game_wiki": "La sortie matérielle est une vraie issue partielle, pas une voie morte. Des ressources ou un échantillon peuvent acheter le retrait tandis que la vérité plus vaste reste irrésolue et qu'un retour ultérieur coupe plus net.",
+     "external_site": "Material Exit soutient un retrait rentable mais compromis : butin, contrats et survie peuvent gagner l'ascension pendant que la pleine vérité de la descente reste dessous."
+    },
+    "es_ES": {
+     "title": "Salida material",
+     "scanner": "Oferta del carrier válida: masa payload paga deuda. Pérdida de pruebas sin resolver. Solicitud Atlas pendiente.",
+     "field_note": "Un final real puede ser una mala respuesta.",
+     "terminal": "Contrato: entregar muestra sellada, abandonar pruebas profundas, aceptar auditoría claim y volver bajo revisión de deuda.",
+     "audio": "Puedes irte con valor. No limpio.",
+     "in_game_wiki": "La salida material es un resultado parcial real, no una ruta muerta. Recursos o una muestra pueden comprar retirada mientras la verdad mayor queda sin resolver y un regreso posterior corta más hondo.",
+     "external_site": "Material Exit sostiene una retirada rentable pero comprometida: botín, contratos y supervivencia pueden ganar el ascenso mientras la verdad completa del descenso queda abajo."
+    },
+    "de_DE": {
+     "title": "Materieller Ausstieg",
+     "scanner": "Carrier-Angebot gültig: Payload-Masse zahlt Schuld. Beweisverlust offen. Atlas-Koordinatenanfrage wartet.",
+     "field_note": "Ein echtes Ende kann trotzdem eine schlechte Antwort sein.",
+     "terminal": "Ausstiegsvertrag: versiegelte Probe abgeben, tiefe Beweise aufgeben, Claim-Audit und Schuldenprüfung akzeptieren.",
+     "audio": "Du kannst mit Wert gehen. Nicht sauber.",
+     "in_game_wiki": "Der Materialausstieg ist ein echtes Teilergebnis, keine tote Route. Ressourcen oder eine Probe können Rückzug erkaufen, während die größere Wahrheit ungelöst bleibt und eine spätere Rückkehr schärfer schneidet.",
+     "external_site": "Material Exit trägt einen profitablen, aber kompromittierten Rückzug: Beute, Verträge und Überleben können den Aufstieg gewinnen, während die ganze Abstiegswahrheit unten bleibt."
+    },
+    "pl_PL": {
+     "title": "Wyjście materialne",
+     "scanner": "Oferta carriera ważna: masa payload spłaca dług. Utrata dowodów nierozwiązana. Żądanie współrzędnych Atlas oczekuje.",
+     "field_note": "Prawdziwe zakończenie może być złą odpowiedzią.",
+     "terminal": "Kontrakt: oddaj próbkę, porzuć głębokie dowody, przyjmij audyt claim i powrót pod kontrolą długu.",
+     "audio": "Możesz wyjść z wartością. Nie czysto.",
+     "in_game_wiki": "Materialne wyjście jest prawdziwym częściowym wynikiem, nie martwą trasą. Zasoby albo próbka mogą kupić odwrót, gdy większa prawda zostaje nierozwiązana, a późniejszy powrót tnie ostrzej.",
+     "external_site": "Material Exit wspiera zyskowny, ale skażony odwrót: łup, kontrakty i przetrwanie mogą wygrać wznoszenie, podczas gdy pełna prawda zejścia zostaje na dole."
+    },
+    "uk_UA": {
+     "title": "Матеріальний вихід",
+     "scanner": "Пропозиція carrier чинна: маса payload закриває борг. Втрата доказів не вирішена. Запит координат Atlas очікує.",
+     "field_note": "Справжня кінцівка теж може бути поганою відповіддю.",
+     "terminal": "Контракт: здати sealed sample, покинути глибокі докази, прийняти claim audit і повернення під debt review.",
+     "audio": "Можна піти з цінністю. Чисто - ні.",
+     "in_game_wiki": "Матеріальний вихід - реальний частковий наслідок, а не мертвий маршрут. Ресурси або зразок можуть купити відхід, поки більша правда лишається нерозв'язаною, а пізніше повернення ріже гостріше.",
+     "external_site": "Material Exit підтримує прибутковий, але скомпрометований відхід: здобич, контракти й виживання можуть виграти підйом, поки повна правда спуску лишається внизу."
+    },
+    "ar_SA": {
+     "title": "خروج مادي",
+     "scanner": "عرض carrier صالح: كتلة payload تسدد الدين. فقدان الأدلة غير محلول. طلب إحداثيات Atlas معلق.",
+     "field_note": "النهاية الحقيقية قد تكون إجابة سيئة.",
+     "terminal": "عقد خروج: تسليم عينة مختومة، ترك الدليل العميق، قبول claim audit والعودة تحت مراجعة دين.",
+     "audio": "يمكنك المغادرة بقيمة. لا يمكنك المغادرة نظيفا.",
+     "in_game_wiki": "الخروج المادي نتيجة جزئية حقيقية، لا طريق ميت. تستطيع الموارد أو عينة أن تشتري انسحابا بينما تبقى الحقيقة الأكبر بلا حل، ويصير الرجوع اللاحق أكثر حدة.",
+     "external_site": "يدعم Material Exit انسحابا مربحا لكنه ملوث: الغنيمة والعقود والبقاء يمكن أن تكسب الصعود، بينما تبقى حقيقة النزول الكاملة في الأسفل."
+    },
+    "id_ID": {
+     "title": "Keluar Material",
+     "scanner": "Tawaran carrier sah: massa payload membayar utang. Hilangnya bukti belum selesai. Permintaan koordinat Atlas tertunda.",
+     "field_note": "Ending nyata tetap bisa menjadi jawaban buruk.",
+     "terminal": "Kontrak keluar: serahkan sampel tertutup, tinggalkan bukti dalam, terima audit claim dan kembali dalam review utang.",
+     "audio": "Kau bisa pergi membawa nilai. Tidak bisa bersih.",
+     "in_game_wiki": "Keluar material adalah hasil parsial yang nyata, bukan rute mati. Sumber daya atau sampel dapat membeli mundur sementara kebenaran besar tetap belum selesai dan kepulangan nanti terasa lebih tajam.",
+     "external_site": "Material Exit mendukung penarikan yang menguntungkan tetapi tercemar: jarahan, kontrak, dan bertahan hidup bisa memenangkan kenaikan sementara kebenaran turun penuh tetap di bawah."
+    },
+    "ko_KR": {
+     "title": "물질 탈출",
+     "scanner": "Carrier 제안 유효: payload 질량이 부채를 갚는다. 증거 손실 미해결. Atlas 좌표 요청 대기.",
+     "field_note": "진짜 결말도 나쁜 답일 수 있다.",
+     "terminal": "탈출 계약: 봉인 샘플 제출, 심층 증거 포기, claim 감사와 부채 심사 수락.",
+     "audio": "가치를 들고 나갈 수 있다. 깨끗하게는 못 나간다.",
+     "in_game_wiki": "물질 출구는 죽은 경로가 아니라 실제 부분 결과다. 자원이나 샘플은 철수를 살 수 있지만 더 큰 진실은 풀리지 않고, 나중의 귀환은 더 날카롭게 파고든다.",
+     "external_site": "Material Exit는 이익이 있지만 타협된 철수를 지탱한다. 전리품, 계약, 생존은 상승을 얻을 수 있지만 완전한 하강의 진실은 아래에 남는다."
+    },
+    "he_IL": {
+     "title": "יציאה חומרית",
+     "scanner": "הצעת carrier תקפה: מסת payload משלמת חוב. אובדן ראיות לא נפתר. בקשת קואורדינטות Atlas ממתינה.",
+     "field_note": "גם סוף אמיתי יכול להיות תשובה רעה.",
+     "terminal": "חוזה יציאה: למסור דגימה אטומה, לוותר על ראיות עומק, לקבל audit claim וחזרה תחת בדיקת חוב.",
+     "audio": "אפשר לצאת עם ערך. לא נקי.",
+     "in_game_wiki": "היציאה החומרית היא תוצאה חלקית אמיתית, לא נתיב מת. משאבים או דגימה יכולים לקנות נסיגה בזמן שהאמת הגדולה נשארת לא פתורה וחזרה מאוחרת חותכת עמוק יותר.",
+     "external_site": "Material Exit תומך בנסיגה רווחית אך מוכתמת: שלל, חוזים והישרדות יכולים לזכות בעלייה בזמן שאמת הירידה המלאה נשארת למטה."
+    },
+    "pt_BR": {
+     "title": "Saída material",
+     "scanner": "Oferta do carrier válida: massa payload paga dívida. Perda de provas sem solução. Pedido de coordenadas Atlas pendente.",
+     "field_note": "Um final real ainda pode ser uma resposta ruim.",
+     "terminal": "Contrato: entregar amostra selada, abandonar prova profunda, aceitar auditoria claim e voltar sob revisão de dívida.",
+     "audio": "Você pode sair com valor. Não limpo.",
+     "in_game_wiki": "A saída material é um resultado parcial real, não uma rota morta. Recursos ou uma amostra podem comprar retirada enquanto a verdade maior fica sem solução e um retorno posterior corta mais fundo.",
+     "external_site": "Material Exit sustenta uma retirada lucrativa, mas comprometida: saque, contratos e sobrevivência podem vencer a subida enquanto a verdade completa da descida fica abaixo."
+    },
+    "nl_NL": {
+     "title": "Materiële exit",
+     "scanner": "Carrier-aanbod geldig: payloadmassa betaalt schuld. Bewijsverlies open. Atlas-coördinatenverzoek wacht.",
+     "field_note": "Een echt einde kan nog steeds een slecht antwoord zijn.",
+     "terminal": "Exitcontract: verzegeld monster indienen, diep bewijs opgeven, claim-audit en schuldcontrole accepteren.",
+     "audio": "Je kunt met waarde vertrekken. Niet schoon.",
+     "in_game_wiki": "De materiële uitgang is een echte gedeeltelijke uitkomst, geen dode route. Grondstoffen of een monster kunnen terugtrekking kopen terwijl de grotere waarheid onopgelost blijft en een latere terugkeer scherper snijdt.",
+     "external_site": "Material Exit ondersteunt een winstgevende maar gecompromitteerde terugtocht: buit, contracten en overleving kunnen de opstijging winnen terwijl de volledige afdalingswaarheid beneden blijft."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P025_PROFESSIONAL_MOTIVE",
+   "article_id": "player.professional_motive",
+   "title_key": "applied_lore.professional_motive.title",
+   "unlock": {
+    "primary": "unlock.first_professional_motive_shift",
+    "poi_tags": [
+     "poi.barnard_mark",
+     "poi.personal_object",
+     "poi.worker_record"
+    ],
+    "biome_tags": [
+     "biome.crash_shelf",
+     "biome.drowned_colony",
+     "biome.deep_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Professional Motive",
+     "scanner": "Contractor profile: salvage competence first. Personal escalation detected after Barnard-linked evidence.",
+     "field_note": "The job becomes personal after it proves it knows your language.",
+     "terminal": "Marauder dossier: origin band Barnard Yards or frontier salvage belt. No Earth tourist profile. Prior motive: contract and skill. Current motive: unresolved human trace.",
+     "audio": "You came for work. The work recognized you.",
+     "in_game_wiki": "The Marauder is not a blank tourist. The run begins with professional interest, salvage skill and a reason to accept a dead claim. Personal motive grows through evidence, familiar marks and the realization that HECTON-8 belongs to the same hard world that made this work normal.",
+     "external_site": "Professional Motive gives the Marauder agency without over-locking biography: competence comes first, personal investment arrives through evidence."
+    },
+    "ru_RU": {
+     "title": "Профессиональный мотив",
+     "scanner": "Профиль подрядчика: сначала salvage-компетенция. Личная эскалация после Barnard-linked evidence.",
+     "field_note": "Работа становится личной, когда доказывает, что знает твой язык.",
+     "terminal": "Marauder dossier: происхождение - Barnard Yards или frontier salvage belt. Не Earth tourist. Стартовый мотив: контракт и навык. Текущий мотив: незакрытый человеческий след.",
+     "audio": "Ты пришел за работой. Работа узнала тебя.",
+     "in_game_wiki": "Мародер - не пустой турист. Забег начинается с профессионального интереса, salvage-навыка и причины принять мертвую претензию. Личный мотив растет через доказательства, знакомые метки и понимание, что HECTON-8 принадлежит тому же жесткому миру, который сделал такую работу нормальной.",
+     "external_site": "Professional Motive дает мародеру agency без жесткой биографической клетки: сначала идет компетентность, личная вовлеченность приходит через доказательства."
+    },
+    "ja_JP": {
+     "title": "職業的動機",
+     "scanner": "契約者プロフィール: まずサルベージ能力。Barnard系証拠後に個人的上昇を検出。",
+     "field_note": "仕事は、君の言語を知ると個人的になる。",
+     "terminal": "Marauder dossier: 出自はBarnard Yardsまたは辺境サルベージ帯。地球観光客ではない。初期動機は契約と技術。現在は未解決の人間痕跡。",
+     "audio": "仕事で来た。仕事が君を認識した。",
+     "in_game_wiki": "マローダーは空っぽの観光客ではない。航行は専門的な関心、サルベージ技術、死んだ請求を受ける理由から始まる。個人的な動機は証拠、見慣れた印、そして HECTON-8 がこの仕事を普通にした同じ硬い世界に属するという理解から育つ。",
+     "external_site": "Professional Motive は、伝記を固定しすぎずにマローダーへ主体性を与える。能力が先にあり、個人的な投資は証拠から到着する。"
+    },
+    "zh_CN": {
+     "title": "职业动机",
+     "scanner": "承包人档案：先是打捞能力。Barnard相关证据后检测到个人升级。",
+     "field_note": "工作在证明它懂你的语言后变成私人问题。",
+     "terminal": "Marauder dossier：出身为Barnard Yards或边境打捞带。不是地球游客。初始动机：合同和技术。当前动机：未解决的人类痕迹。",
+     "audio": "你为工作而来。工作认出了你。",
+     "in_game_wiki": "掠夺者不是空白游客。这趟行动始于职业兴趣、打捞技能和接受死亡索赔的理由。个人动机通过证据、熟悉标记，以及意识到 HECTON-8 属于同一个把这种工作变正常的硬世界而增长。",
+     "external_site": "Professional Motive 给掠夺者行动力，却不过度锁死传记：能力先存在，个人投入通过证据到来。"
+    },
+    "fr_FR": {
+     "title": "Motif professionnel",
+     "scanner": "Profil contracteur: compétence salvage d'abord. Escalade personnelle après preuve liée à Barnard.",
+     "field_note": "Le travail devient personnel quand il parle votre langue.",
+     "terminal": "Dossier maraudeur: origine Barnard Yards ou ceinture salvage. Pas touriste de la Terre. Motif initial: contrat et savoir-faire. Motif actuel: trace humaine non résolue.",
+     "audio": "Vous êtes venu pour le travail. Le travail vous a reconnu.",
+     "in_game_wiki": "Le Maraudeur n'est pas un touriste vide. La course commence par intérêt professionnel, compétence de salvage et raison d'accepter une réclamation morte. Le motif personnel grandit par les preuves, les marques familières et la compréhension que HECTON-8 appartient au même monde dur qui a rendu ce travail normal.",
+     "external_site": "Professional Motive donne au Maraudeur de l'agence sans verrouiller la biographie : la compétence vient d'abord, l'investissement personnel arrive par les preuves."
+    },
+    "es_ES": {
+     "title": "Motivo profesional",
+     "scanner": "Perfil: competencia de salvage primero. Escalada personal tras evidencia Barnard.",
+     "field_note": "El trabajo se vuelve personal cuando habla tu idioma.",
+     "terminal": "Dossier marauder: origen Barnard Yards o cinturón salvage. No turista de Tierra. Motivo inicial: contrato y oficio. Motivo actual: rastro humano pendiente.",
+     "audio": "Viniste por trabajo. El trabajo te reconoció.",
+     "in_game_wiki": "El merodeador no es un turista vacío. La ruta empieza con interés profesional, habilidad de salvage y una razón para aceptar una reclamación muerta. El motivo personal crece mediante evidencia, marcas familiares y la comprensión de que HECTON-8 pertenece al mismo mundo duro que volvió normal este trabajo.",
+     "external_site": "Professional Motive da agencia al merodeador sin cerrar demasiado la biografía: la competencia viene primero, la inversión personal llega por la evidencia."
+    },
+    "de_DE": {
+     "title": "Professionelles Motiv",
+     "scanner": "Auftragnehmerprofil: Bergungskompetenz zuerst. Persönliche Eskalation nach Barnard-Beweis.",
+     "field_note": "Der Job wird persönlich, wenn er deine Sprache kennt.",
+     "terminal": "Marauder-Dossier: Herkunft Barnard Yards oder Frontier-Bergungsgürtel. Kein Erdtourist. Anfang: Vertrag und Können. Jetzt: ungelöste Menschenspur.",
+     "audio": "Du kamst für Arbeit. Die Arbeit erkannte dich.",
+     "in_game_wiki": "Der Marauder ist kein leerer Tourist. Der Lauf beginnt mit professionellem Interesse, Salvage-Fertigkeit und einem Grund, einen toten Claim anzunehmen. Persönliches Motiv wächst durch Beweise, vertraute Markierungen und die Erkenntnis, dass HECTON-8 zu derselben harten Welt gehört, die diese Arbeit normal gemacht hat.",
+     "external_site": "Professional Motive gibt dem Marauder Handlungsfähigkeit, ohne die Biografie zu stark zu verriegeln: Kompetenz kommt zuerst, persönliche Bindung kommt durch Beweise."
+    },
+    "pl_PL": {
+     "title": "Motyw zawodowy",
+     "scanner": "Profil wykonawcy: najpierw kompetencja salvage. Eskalacja osobista po dowodzie Barnard.",
+     "field_note": "Praca staje się osobista, gdy zna twój język.",
+     "terminal": "Dossier maraudera: Barnard Yards albo pas salvage. Nie turysta z Ziemi. Motyw startowy: kontrakt i fach. Obecny: nierozwiązany ślad ludzki.",
+     "audio": "Przyszedłeś po pracę. Praca cię rozpoznała.",
+     "in_game_wiki": "Marauder nie jest pustym turystą. Wyprawa zaczyna się od zawodowego interesu, umiejętności salvage i powodu, by przyjąć martwy claim. Osobisty motyw rośnie przez dowody, znajome znaki i zrozumienie, że HECTON-8 należy do tego samego twardego świata, który uczynił tę pracę normalną.",
+     "external_site": "Professional Motive daje Marauderowi sprawczość bez zamykania biografii: najpierw jest kompetencja, osobiste zaangażowanie przychodzi przez dowody."
+    },
+    "uk_UA": {
+     "title": "Професійний мотив",
+     "scanner": "Профіль підрядника: спершу salvage-компетенція. Особиста ескалація після Barnard evidence.",
+     "field_note": "Робота стає особистою, коли говорить твоєю мовою.",
+     "terminal": "Marauder dossier: походження - Barnard Yards або frontier salvage belt. Не турист із Землі. Старт: контракт і навичка. Зараз: незакритий людський слід.",
+     "audio": "Ти прийшов по роботу. Робота впізнала тебе.",
+     "in_game_wiki": "Мародер - не порожній турист. Рейс починається з професійного інтересу, salvage-навички й причини прийняти мертву претензію. Особистий мотив росте через докази, знайомі мітки й розуміння, що HECTON-8 належить тому самому жорсткому світу, який зробив таку роботу нормальною.",
+     "external_site": "Professional Motive дає мародеру agency без жорсткої біографічної клітки: спершу йде компетентність, особиста залученість приходить через докази."
+    },
+    "ar_SA": {
+     "title": "دافع مهني",
+     "scanner": "ملف المقاول: كفاءة salvage أولا. تصعيد شخصي بعد دليل مرتبط بBarnard.",
+     "field_note": "تصير المهمة شخصية حين تعرف لغتك.",
+     "terminal": "ملف marauder: الأصل Barnard Yards أو حزام salvage حدودي. ليس سائحا من الأرض. الدافع الأول: عقد ومهارة. الحالي: أثر بشري غير مغلق.",
+     "audio": "جئت للعمل. العمل تعرف عليك.",
+     "in_game_wiki": "المغير ليس سائحا فارغا. تبدأ الرحلة باهتمام مهني ومهارة salvage وسبب لقبول مطالبة ميتة. ينمو الدافع الشخصي عبر الأدلة والعلامات المألوفة وفهم أن HECTON-8 ينتمي إلى العالم القاسي نفسه الذي جعل هذا العمل عاديا.",
+     "external_site": "يمنح Professional Motive المغير قدرة فعل من دون إغلاق السيرة كثيرا: تأتي الكفاءة أولا، ثم يأتي الاستثمار الشخصي عبر الأدلة."
+    },
+    "id_ID": {
+     "title": "Motif Profesional",
+     "scanner": "Profil kontraktor: kompetensi salvage dulu. Eskalasi personal setelah bukti Barnard.",
+     "field_note": "Pekerjaan menjadi pribadi saat ia mengenali bahasamu.",
+     "terminal": "Dossier marauder: asal Barnard Yards atau frontier salvage belt. Bukan turis Earth. Motif awal: kontrak dan keahlian. Motif kini: jejak manusia belum selesai.",
+     "audio": "Kau datang untuk kerja. Kerja itu mengenalimu.",
+     "in_game_wiki": "Marauder bukan turis kosong. Perjalanan dimulai dengan minat profesional, keahlian salvage, dan alasan menerima klaim mati. Motif pribadi tumbuh melalui bukti, tanda yang dikenal, dan kesadaran bahwa HECTON-8 milik dunia keras yang sama yang membuat pekerjaan ini normal.",
+     "external_site": "Professional Motive memberi Marauder agensi tanpa mengunci biografi terlalu keras: kompetensi datang lebih dulu, keterlibatan pribadi datang lewat bukti."
+    },
+    "ko_KR": {
+     "title": "전문가 동기",
+     "scanner": "계약자 프로필: salvage 능력이 먼저. Barnard 증거 뒤 개인적 상승 감지.",
+     "field_note": "일은 네 언어를 알아볼 때 개인적이 된다.",
+     "terminal": "Marauder dossier: 출신은 Barnard Yards 또는 frontier salvage belt. Earth 관광객 아님. 초기 동기: 계약과 기술. 현재 동기: 미해결 인간 흔적.",
+     "audio": "일하러 왔다. 일이 너를 알아봤다.",
+     "in_game_wiki": "마로더는 빈 관광객이 아니다. 항로는 전문적 관심, salvage 기술, 죽은 청구를 받아들일 이유에서 시작된다. 개인적 동기는 증거, 익숙한 표식, 그리고 HECTON-8이 이 일을 정상으로 만든 같은 단단한 세계에 속한다는 깨달음으로 자란다.",
+     "external_site": "Professional Motive는 전기를 과하게 잠그지 않으면서 마로더에게 행위성을 준다. 능력이 먼저 오고, 개인적 투자는 증거를 통해 도착한다."
+    },
+    "he_IL": {
+     "title": "מניע מקצועי",
+     "scanner": "פרופיל קבלן: יכולת salvage קודם. הסלמה אישית אחרי ראיית Barnard.",
+     "field_note": "העבודה נעשית אישית כשהיא מכירה את השפה שלך.",
+     "terminal": "תיק marauder: מוצא Barnard Yards או חגורת salvage. לא תייר מכדור הארץ. מניע ראשון: חוזה ומיומנות. עכשיו: עקבה אנושית לא סגורה.",
+     "audio": "באת בשביל עבודה. העבודה זיהתה אותך.",
+     "in_game_wiki": "המראודר אינו תייר ריק. הריצה מתחילה מעניין מקצועי, מיומנות salvage וסיבה לקבל תביעה מתה. מניע אישי גדל דרך ראיות, סימנים מוכרים והבנה ש-HECTON-8 שייך לאותו עולם קשה שהפך עבודה כזו לרגילה.",
+     "external_site": "Professional Motive נותן למראודר פעולה בלי לנעול ביוגרפיה יתר על המידה: כשירות באה קודם, מעורבות אישית מגיעה דרך ראיות."
+    },
+    "pt_BR": {
+     "title": "Motivo profissional",
+     "scanner": "Perfil do contratado: competência salvage primeiro. Escalada pessoal após evidência Barnard.",
+     "field_note": "O trabalho vira pessoal quando fala sua língua.",
+     "terminal": "Dossiê marauder: origem Barnard Yards ou cinturão salvage. Não turista da Terra. Motivo inicial: contrato e técnica. Atual: rastro humano aberto.",
+     "audio": "Você veio pelo trabalho. O trabalho reconheceu você.",
+     "in_game_wiki": "O Marauder não é um turista vazio. A rota começa com interesse profissional, habilidade de salvage e uma razão para aceitar uma reivindicação morta. O motivo pessoal cresce por evidências, marcas familiares e a percepção de que HECTON-8 pertence ao mesmo mundo duro que tornou esse trabalho normal.",
+     "external_site": "Professional Motive dá agência ao Marauder sem travar demais a biografia: competência vem primeiro, investimento pessoal chega por evidências."
+    },
+    "nl_NL": {
+     "title": "Professioneel motief",
+     "scanner": "Contractantprofiel: eerst salvage-vakmanschap. Persoonlijke escalatie na Barnard-bewijs.",
+     "field_note": "Het werk wordt persoonlijk zodra het je taal kent.",
+     "terminal": "Marauder-dossier: herkomst Barnard Yards of frontier salvage belt. Geen aardtoerist. Startmotief: contract en kunde. Nu: onopgelost menselijk spoor.",
+     "audio": "Je kwam voor werk. Het werk herkende je.",
+     "in_game_wiki": "De Marauder is geen lege toerist. De run begint met professioneel belang, salvagevaardigheid en een reden om een dode claim aan te nemen. Persoonlijk motief groeit door bewijs, vertrouwde markeringen en het besef dat HECTON-8 bij dezelfde harde wereld hoort die dit werk normaal maakte.",
+     "external_site": "Professional Motive geeft de Marauder handelingsruimte zonder de biografie te strak vast te zetten: bekwaamheid komt eerst, persoonlijke investering komt via bewijs."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

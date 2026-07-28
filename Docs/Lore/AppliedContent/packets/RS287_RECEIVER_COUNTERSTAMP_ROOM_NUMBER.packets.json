@@ -1,269 +1,270 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER",
-  "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER",
+ "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P6805_RECEIVER_COUNTERSTAMP_ROOM_NUMBER",
+   "release_set_id": "RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER",
+   "article_id": "applied_lore.receiver_counterstamp_room_number",
+   "title_key": "LORE_RECEIVER_COUNTERSTAMP_ROOM_NUMBER_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Codex_Delivery_Map.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/SourceArticles/SA001_BLACK_KEEL_RECOVERY_WINDOW_AND_BATHYDROP_LOSS.md",
+    "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1411_RETURN_RIGHTS_QUARANTINE_HANDSHAKE_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1427_RECEIVER_BRAKING_DEBT_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1429_QUARANTINE_BERTH_CUSTODY_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P6804_BLANK_QUARANTINE_BERTH_RECEIPT.md",
+    ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
+    ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
+    ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P6805_RECEIVER_COUNTERSTAMP_ROOM_NUMBER",
-      "release_set_id": "RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER",
-      "article_id": "applied_lore.receiver_counterstamp_room_number",
-      "title_key": "LORE_RECEIVER_COUNTERSTAMP_ROOM_NUMBER_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Codex_Delivery_Map.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/SourceArticles/SA001_BLACK_KEEL_RECOVERY_WINDOW_AND_BATHYDROP_LOSS.md",
-        "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1411_RETURN_RIGHTS_QUARANTINE_HANDSHAKE_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1427_RECEIVER_BRAKING_DEBT_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1429_QUARANTINE_BERTH_CUSTODY_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P6804_BLANK_QUARANTINE_BERTH_RECEIPT.md",
-        ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
-        ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
-        ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.receiver_counterstamp_room_number",
-        "secondary": [
-          "unlock.first_quarantine_room_named",
-          "unlock.first_receiver_owner_visible",
-          "unlock.first_body_custody_counterseal",
-          "unlock.first_lift_allocation_switch"
-        ],
-        "poi_tags": [
-          "poi.receiver_counterstamp_room_number",
-          "poi.quarantine_room_number_plate",
-          "poi.medical_owner_counterseal",
-          "poi.public_ledger_receiver_strip",
-          "poi.black_keel_lift_allocation_switch"
-        ],
-        "biome_tags": [
-          "biome.carrier_link",
-          "biome.surface_relay",
-          "biome.photic_shelf",
-          "biome.claim_admin",
-          "biome.quarantine"
-        ],
-        "first_20_boundary": "Shows that filling a blank berth field creates receiver custody but not automatically freedom."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Suit Counterstamp Classifier",
-          "terminal": "Receiver Room Number Counterseal",
-          "audio": "Black Keel Lift Allocation Switch",
-          "in_game_wiki": "Recovered Receiver Counterstamp Note",
-          "external_site": "Public Site Receiver-Room Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "depth_band": "surface_to_photic_shelf",
-        "route_moment": "first_quarantine_room_named_after_blank_berth",
-        "truth_payload": "A receiver counterstamp with a room number breaks the blank berth state, but the room owner and custody class decide whether recovery becomes protection, quarantine hold or corporate capture.",
-        "player_question": "Which room number matters: the one that saves the body, or the one that owns it?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Receiver Counterstamp Room Number",
-          "scanner": "COUNTERSTAMP READ // Quarantine room number present. Verify body custody class; sample-only rooms do not clear living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth overwritten by owned custody. Lift allocation may proceed only under named room, owner and body class.",
-          "audio": "Room number written. Receiver owns the door. Confirm body custody before ascent burn.",
-          "in_game_wiki": "A receiver counterstamp is the moment a blank berth becomes a named door. It can make recovery harder to ignore, but it also names who owns the body after lift. Check the room class, medical owner and receiver strip before trusting the stamp.",
-          "external_site": "A longform receiver-room primer on the counterstamp that turns a blank quarantine berth into owned custody without making that custody safe.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/en_US_external_site.md",
-          "field_note": "A room number is a handle. Pull it carefully; some doors are cages.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Номер комнаты receiver counterstamp",
-          "scanner": "ЧТЕНИЕ COUNTERSTAMP // Quarantine room number присутствует. Проверь body custody class; sample-only rooms не очищают living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth перезаписан owned custody. Lift allocation возможен только при named room, owner и body class.",
-          "audio": "Room number записан. Receiver владеет дверью. Подтверди body custody до ascent burn.",
-          "in_game_wiki": "Receiver counterstamp это момент, когда blank berth становится named door. Он может сделать recovery труднее игнорировать, но он также называет того, кто владеет телом после lift. Проверь room class, medical owner и receiver strip, прежде чем доверять stamp.",
-          "external_site": "Большой primer о receiver room и counterstamp, который превращает пустой quarantine berth в owned custody, не делая эту custody безопасной.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/ru_RU_external_site.md",
-          "field_note": "Room number это ручка. Тяни осторожно: некоторые двери являются клетками.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Raumnummer des Receiver-Counterstamps",
-          "scanner": "COUNTERSTAMP-READ // Quarantine room number vorhanden. Body custody class prüfen; sample-only rooms klären keine living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth durch owned custody überschrieben. Lift allocation nur mit named room, owner und body class.",
-          "audio": "Room number geschrieben. Receiver besitzt die Tür. Body custody vor ascent burn bestätigen.",
-          "in_game_wiki": "Ein receiver counterstamp ist der Moment, in dem ein blank berth zu einer named door wird. Er kann recovery schwerer ignorierbar machen, benennt aber auch, wer den Körper nach dem lift besitzt. Prüfe room class, medical owner und receiver strip, bevor du dem stamp vertraust.",
-          "external_site": "Ein Longform-Primer über receiver room und den counterstamp, der einen leeren quarantine berth in owned custody verwandelt, ohne diese custody sicher zu machen.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/de_DE_external_site.md",
-          "field_note": "Eine room number ist ein Griff. Zieh vorsichtig; manche Türen sind Käfige.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Número de sala del counterstamp receiver",
-          "scanner": "LECTURA COUNTERSTAMP // Quarantine room number presente. Verifica body custody class; sample-only rooms no liberan living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth sobrescrito por owned custody. Lift allocation solo con named room, owner y body class.",
-          "audio": "Room number escrito. Receiver posee la puerta. Confirma body custody antes del ascent burn.",
-          "in_game_wiki": "Un receiver counterstamp es el momento en que un blank berth se vuelve named door. Puede hacer que recovery sea más difícil de ignorar, pero también nombra quién posee el cuerpo tras el lift. Revisa room class, medical owner y receiver strip antes de confiar en el stamp.",
-          "external_site": "Un primer longform sobre receiver room y el counterstamp que convierte un quarantine berth vacío en owned custody sin volverla segura.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/es_ES_external_site.md",
-          "field_note": "Un room number es un tirador. Tira con cuidado; algunas puertas son jaulas.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Numéro de salle du counterstamp receiver",
-          "scanner": "LECTURE COUNTERSTAMP // Quarantine room number présent. Vérifie body custody class; sample-only rooms ne valident pas living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth remplacé par owned custody. Lift allocation seulement avec named room, owner et body class.",
-          "audio": "Room number inscrit. Receiver possède la porte. Confirme body custody avant ascent burn.",
-          "in_game_wiki": "Un receiver counterstamp est le moment où un blank berth devient named door. Il peut rendre recovery plus difficile à ignorer, mais il nomme aussi qui possède le corps après le lift. Vérifie room class, medical owner et receiver strip avant de croire le stamp.",
-          "external_site": "Un primer longform sur receiver room et le counterstamp qui transforme un quarantine berth vide en owned custody sans rendre cette custody sûre.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/fr_FR_external_site.md",
-          "field_note": "Un room number est une poignée. Tire doucement; certaines portes sont des cages.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Numer sali z receiver counterstamp",
-          "scanner": "ODCZYT COUNTERSTAMP // Quarantine room number obecny. Sprawdź body custody class; sample-only rooms nie czyszczą living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth nadpisany przez owned custody. Lift allocation tylko przy named room, owner i body class.",
-          "audio": "Room number wpisany. Receiver posiada drzwi. Potwierdź body custody przed ascent burn.",
-          "in_game_wiki": "Receiver counterstamp to chwila, w której blank berth staje się named door. Może utrudnić ignorowanie recovery, ale także nazywa tego, kto posiada ciało po lift. Sprawdź room class, medical owner i receiver strip, zanim zaufasz stamp.",
-          "external_site": "Długi primer o receiver room i counterstamp, który zmienia pusty quarantine berth w owned custody, nie czyniąc jej bezpieczną.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/pl_PL_external_site.md",
-          "field_note": "Room number to uchwyt. Ciągnij ostrożnie; niektóre drzwi są klatkami.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Kamernummer van de receiver counterstamp",
-          "scanner": "COUNTERSTAMP-LEZING // Quarantine room number aanwezig. Controleer body custody class; sample-only rooms klaren geen living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth overschreven door owned custody. Lift allocation alleen met named room, owner en body class.",
-          "audio": "Room number geschreven. Receiver bezit de deur. Bevestig body custody voor ascent burn.",
-          "in_game_wiki": "Een receiver counterstamp is het moment waarop een blank berth een named door wordt. Het kan recovery moeilijker te negeren maken, maar noemt ook wie het lichaam na lift bezit. Controleer room class, medical owner en receiver strip voordat je de stamp vertrouwt.",
-          "external_site": "Een lange receiver-room primer over de counterstamp die een lege quarantine berth in owned custody verandert zonder die custody veilig te maken.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/nl_NL_external_site.md",
-          "field_note": "Een room number is een handgreep. Trek voorzichtig; sommige deuren zijn kooien.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Número da sala do receiver counterstamp",
-          "scanner": "LEITURA COUNTERSTAMP // Quarantine room number presente. Verifique body custody class; sample-only rooms não liberam living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth sobrescrito por owned custody. Lift allocation só com named room, owner e body class.",
-          "audio": "Room number escrito. Receiver possui a porta. Confirme body custody antes do ascent burn.",
-          "in_game_wiki": "Um receiver counterstamp é o momento em que um blank berth vira named door. Ele pode tornar recovery mais difícil de ignorar, mas também nomeia quem possui o corpo após o lift. Verifique room class, medical owner e receiver strip antes de confiar no stamp.",
-          "external_site": "Um primer longo sobre receiver room e o counterstamp que transforma um quarantine berth vazio em owned custody sem tornar essa custody segura.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/pt_BR_external_site.md",
-          "field_note": "Um room number é uma alça. Puxe com cuidado; algumas portas são jaulas.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Номер кімнати receiver counterstamp",
-          "scanner": "ЧИТАННЯ COUNTERSTAMP // Quarantine room number присутній. Перевір body custody class; sample-only rooms не очищують living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth перезаписано owned custody. Lift allocation можливий лише з named room, owner і body class.",
-          "audio": "Room number записано. Receiver володіє дверима. Підтвердь body custody перед ascent burn.",
-          "in_game_wiki": "Receiver counterstamp це мить, коли blank berth стає named door. Він може зробити recovery важче ігнорувати, але також називає того, хто володіє тілом після lift. Перевір room class, medical owner і receiver strip, перш ніж довіряти stamp.",
-          "external_site": "Великий primer про receiver room і counterstamp, який перетворює порожній quarantine berth на owned custody, не роблячи цю custody безпечною.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/uk_UA_external_site.md",
-          "field_note": "Room number це ручка. Тягни обережно: деякі двері є клітками.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Nomor ruang receiver counterstamp",
-          "scanner": "BACAAN COUNTERSTAMP // Quarantine room number ada. Periksa body custody class; sample-only rooms tidak membersihkan living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth ditimpa owned custody. Lift allocation hanya dengan named room, owner, dan body class.",
-          "audio": "Room number ditulis. Receiver memiliki pintu. Konfirmasi body custody sebelum ascent burn.",
-          "in_game_wiki": "Receiver counterstamp adalah saat blank berth menjadi named door. Itu dapat membuat recovery lebih sulit diabaikan, tetapi juga menamai siapa yang memiliki tubuh setelah lift. Periksa room class, medical owner, dan receiver strip sebelum mempercayai stamp.",
-          "external_site": "Primer panjang tentang receiver room dan counterstamp yang mengubah quarantine berth kosong menjadi owned custody tanpa membuat custody itu aman.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/id_ID_external_site.md",
-          "field_note": "Room number adalah pegangan. Tarik hati-hati; beberapa pintu adalah kandang.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "رقم غرفة receiver counterstamp",
-          "scanner": "قراءة COUNTERSTAMP // Quarantine room number موجود. تحقق من body custody class؛ sample-only rooms لا تصفي living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // تم استبدال blank berth بـ owned custody. Lift allocation فقط مع named room وowner وbody class.",
-          "audio": "Room number كتب. Receiver يملك الباب. أكد body custody قبل ascent burn.",
-          "in_game_wiki": "Receiver counterstamp هو اللحظة التي يتحول فيها blank berth إلى named door. يمكنه جعل recovery أصعب تجاهلا، لكنه يسمي أيضا من يملك الجسد بعد lift. افحص room class وmedical owner وreceiver strip قبل الثقة في stamp.",
-          "external_site": "Primer طويل عن receiver room وcounterstamp الذي يحول quarantine berth فارغا إلى owned custody من دون جعل تلك custody آمنة.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/ar_SA_external_site.md",
-          "field_note": "Room number مقبض. اسحبه بحذر؛ بعض الأبواب أقفاص.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "מספר חדר receiver counterstamp",
-          "scanner": "קריאת COUNTERSTAMP // quarantine room number קיים. בדוק body custody class; sample-only rooms אינם מנקים living recovery.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // blank berth נדרס על ידי owned custody. lift allocation רק עם named room, owner ו-body class.",
-          "audio": "room number נכתב. receiver מחזיק בדלת. אשר body custody לפני ascent burn.",
-          "in_game_wiki": "receiver counterstamp הוא הרגע שבו blank berth נעשה named door. הוא יכול להקשות על התעלמות מ-recovery, אבל גם קורא בשם למי שמחזיק בגוף אחרי lift. בדוק room class, medical owner ו-receiver strip לפני שתסמוך על stamp.",
-          "external_site": "Primer ארוך על receiver room ועל counterstamp שהופך quarantine berth ריק ל-owned custody בלי להפוך את ה-custody לבטוחה.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/he_IL_external_site.md",
-          "field_note": "room number הוא ידית. משוך בזהירות; חלק מהדלתות הן כלובים.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "receiver counterstamp の部屋番号",
-          "scanner": "COUNTERSTAMP READ // quarantine room number あり。body custody class 確認。sample-only rooms は living recovery を clear しない。",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // blank berth は owned custody で上書き。lift allocation は named room、owner、body class がある時だけ進む。",
-          "audio": "room number 記入済み。receiver が扉を所有。ascent burn 前に body custody を確認せよ。",
-          "in_game_wiki": "receiver counterstamp は blank berth が named door になる瞬間だ。recovery を無視しにくくするが、lift 後に body を所有する者の名前も書く。stamp を信じる前に room class、medical owner、receiver strip を確認する。",
-          "external_site": "空白 quarantine berth を owned custody に変えるが安全にはしない receiver room counterstamp についての長文 primer。",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/ja_JP_external_site.md",
-          "field_note": "room number は取っ手だ。慎重に引け。一部の扉は檻だ。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "receiver counterstamp 방 번호",
-          "scanner": "COUNTERSTAMP 판독 // quarantine room number 존재. body custody class 확인; sample-only rooms는 living recovery를 clear하지 않는다.",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // blank berth가 owned custody로 덮임. lift allocation은 named room, owner, body class가 있을 때만 진행.",
-          "audio": "room number 기록. receiver가 문을 소유. ascent burn 전에 body custody 확인.",
-          "in_game_wiki": "receiver counterstamp는 blank berth가 named door가 되는 순간이다. recovery를 무시하기 어렵게 만들지만, lift 뒤 body를 누가 소유하는지도 이름 붙인다. stamp를 믿기 전에 room class, medical owner, receiver strip을 확인하라.",
-          "external_site": "빈 quarantine berth를 owned custody로 바꾸지만 그 custody를 안전하게 만들지는 않는 receiver room counterstamp에 대한 장문 primer.",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/ko_KR_external_site.md",
-          "field_note": "room number는 손잡이다. 조심해서 당겨라. 어떤 문은 우리다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "receiver counterstamp 房间编号",
-          "scanner": "COUNTERSTAMP 读数 // quarantine room number 存在。确认 body custody class；sample-only rooms 不能清除 living recovery。",
-          "terminal": "RECEIVER ROOM COUNTERSEAL // blank berth 被 owned custody 覆写。只有 named room、owner 与 body class 存在时，lift allocation 才能推进。",
-          "audio": "room number 已写入。receiver 拥有这扇门。ascent burn 前确认 body custody。",
-          "in_game_wiki": "receiver counterstamp 是 blank berth 变成 named door 的瞬间。它能让 recovery 更难被忽视，但也会写明 lift 后谁拥有 body。相信 stamp 之前，先检查 room class、medical owner 与 receiver strip。",
-          "external_site": "一篇关于 receiver room counterstamp 的长文 primer：它能把空白 quarantine berth 变成 owned custody，却不会让这种 custody 自动安全。",
-          "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/zh_CN_external_site.md",
-          "field_note": "room number 是把手。小心拉动；有些门是笼子。",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.receiver_counterstamp_room_number",
+    "secondary": [
+     "unlock.first_quarantine_room_named",
+     "unlock.first_receiver_owner_visible",
+     "unlock.first_body_custody_counterseal",
+     "unlock.first_lift_allocation_switch"
+    ],
+    "poi_tags": [
+     "poi.receiver_counterstamp_room_number",
+     "poi.quarantine_room_number_plate",
+     "poi.medical_owner_counterseal",
+     "poi.public_ledger_receiver_strip",
+     "poi.black_keel_lift_allocation_switch"
+    ],
+    "biome_tags": [
+     "biome.carrier_link",
+     "biome.surface_relay",
+     "biome.photic_shelf",
+     "biome.claim_admin",
+     "biome.quarantine"
+    ],
+    "first_20_boundary": "Shows that filling a blank berth field creates receiver custody but not automatically freedom."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Suit Counterstamp Classifier",
+     "terminal": "Receiver Room Number Counterseal",
+     "audio": "Black Keel Lift Allocation Switch",
+     "in_game_wiki": "Recovered Receiver Counterstamp Note",
+     "external_site": "Public Site Receiver-Room Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "depth_band": "surface_to_photic_shelf",
+    "route_moment": "first_quarantine_room_named_after_blank_berth",
+    "truth_payload": "A receiver counterstamp with a room number breaks the blank berth state, but the room owner and custody class decide whether recovery becomes protection, quarantine hold or corporate capture.",
+    "player_question": "Which room number matters: the one that saves the body, or the one that owns it?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Receiver Counterstamp Room Number",
+     "scanner": "COUNTERSTAMP READ // Quarantine room number present. Verify body custody class; sample-only rooms do not clear living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth overwritten by owned custody. Lift allocation may proceed only under named room, owner and body class.",
+     "audio": "Room number written. Receiver owns the door. Confirm body custody before ascent burn.",
+     "in_game_wiki": "A receiver counterstamp is the moment a blank berth becomes a named door. It can make recovery harder to ignore, but it also names who owns the body after lift. Check the room class, medical owner and receiver strip before trusting the stamp.",
+     "external_site": "A longform receiver-room primer on the counterstamp that turns a blank quarantine berth into owned custody without making that custody safe.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/en_US_external_site.md",
+     "field_note": "A room number is a handle. Pull it carefully; some doors are cages.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Номер комнаты receiver counterstamp",
+     "scanner": "ЧТЕНИЕ COUNTERSTAMP // Quarantine room number присутствует. Проверь body custody class; sample-only rooms не очищают living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth перезаписан owned custody. Lift allocation возможен только при named room, owner и body class.",
+     "audio": "Room number записан. Receiver владеет дверью. Подтверди body custody до ascent burn.",
+     "in_game_wiki": "Receiver counterstamp это момент, когда blank berth становится named door. Он может сделать recovery труднее игнорировать, но он также называет того, кто владеет телом после lift. Проверь room class, medical owner и receiver strip, прежде чем доверять stamp.",
+     "external_site": "Большой primer о receiver room и counterstamp, который превращает пустой quarantine berth в owned custody, не делая эту custody безопасной.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/ru_RU_external_site.md",
+     "field_note": "Room number это ручка. Тяни осторожно: некоторые двери являются клетками.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Raumnummer des Receiver-Counterstamps",
+     "scanner": "COUNTERSTAMP-READ // Quarantine room number vorhanden. Body custody class prüfen; sample-only rooms klären keine living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth durch owned custody überschrieben. Lift allocation nur mit named room, owner und body class.",
+     "audio": "Room number geschrieben. Receiver besitzt die Tür. Body custody vor ascent burn bestätigen.",
+     "in_game_wiki": "Ein receiver counterstamp ist der Moment, in dem ein blank berth zu einer named door wird. Er kann recovery schwerer ignorierbar machen, benennt aber auch, wer den Körper nach dem lift besitzt. Prüfe room class, medical owner und receiver strip, bevor du dem stamp vertraust.",
+     "external_site": "Ein Longform-Primer über receiver room und den counterstamp, der einen leeren quarantine berth in owned custody verwandelt, ohne diese custody sicher zu machen.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/de_DE_external_site.md",
+     "field_note": "Eine room number ist ein Griff. Zieh vorsichtig; manche Türen sind Käfige.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Número de sala del counterstamp receiver",
+     "scanner": "LECTURA COUNTERSTAMP // Quarantine room number presente. Verifica body custody class; sample-only rooms no liberan living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth sobrescrito por owned custody. Lift allocation solo con named room, owner y body class.",
+     "audio": "Room number escrito. Receiver posee la puerta. Confirma body custody antes del ascent burn.",
+     "in_game_wiki": "Un receiver counterstamp es el momento en que un blank berth se vuelve named door. Puede hacer que recovery sea más difícil de ignorar, pero también nombra quién posee el cuerpo tras el lift. Revisa room class, medical owner y receiver strip antes de confiar en el stamp.",
+     "external_site": "Un primer longform sobre receiver room y el counterstamp que convierte un quarantine berth vacío en owned custody sin volverla segura.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/es_ES_external_site.md",
+     "field_note": "Un room number es un tirador. Tira con cuidado; algunas puertas son jaulas.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Numéro de salle du counterstamp receiver",
+     "scanner": "LECTURE COUNTERSTAMP // Quarantine room number présent. Vérifie body custody class; sample-only rooms ne valident pas living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth remplacé par owned custody. Lift allocation seulement avec named room, owner et body class.",
+     "audio": "Room number inscrit. Receiver possède la porte. Confirme body custody avant ascent burn.",
+     "in_game_wiki": "Un receiver counterstamp est le moment où un blank berth devient named door. Il peut rendre recovery plus difficile à ignorer, mais il nomme aussi qui possède le corps après le lift. Vérifie room class, medical owner et receiver strip avant de croire le stamp.",
+     "external_site": "Un primer longform sur receiver room et le counterstamp qui transforme un quarantine berth vide en owned custody sans rendre cette custody sûre.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/fr_FR_external_site.md",
+     "field_note": "Un room number est une poignée. Tire doucement; certaines portes sont des cages.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Numer sali z receiver counterstamp",
+     "scanner": "ODCZYT COUNTERSTAMP // Quarantine room number obecny. Sprawdź body custody class; sample-only rooms nie czyszczą living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth nadpisany przez owned custody. Lift allocation tylko przy named room, owner i body class.",
+     "audio": "Room number wpisany. Receiver posiada drzwi. Potwierdź body custody przed ascent burn.",
+     "in_game_wiki": "Receiver counterstamp to chwila, w której blank berth staje się named door. Może utrudnić ignorowanie recovery, ale także nazywa tego, kto posiada ciało po lift. Sprawdź room class, medical owner i receiver strip, zanim zaufasz stamp.",
+     "external_site": "Długi primer o receiver room i counterstamp, który zmienia pusty quarantine berth w owned custody, nie czyniąc jej bezpieczną.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/pl_PL_external_site.md",
+     "field_note": "Room number to uchwyt. Ciągnij ostrożnie; niektóre drzwi są klatkami.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Kamernummer van de receiver counterstamp",
+     "scanner": "COUNTERSTAMP-LEZING // Quarantine room number aanwezig. Controleer body custody class; sample-only rooms klaren geen living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth overschreven door owned custody. Lift allocation alleen met named room, owner en body class.",
+     "audio": "Room number geschreven. Receiver bezit de deur. Bevestig body custody voor ascent burn.",
+     "in_game_wiki": "Een receiver counterstamp is het moment waarop een blank berth een named door wordt. Het kan recovery moeilijker te negeren maken, maar noemt ook wie het lichaam na lift bezit. Controleer room class, medical owner en receiver strip voordat je de stamp vertrouwt.",
+     "external_site": "Een lange receiver-room primer over de counterstamp die een lege quarantine berth in owned custody verandert zonder die custody veilig te maken.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/nl_NL_external_site.md",
+     "field_note": "Een room number is een handgreep. Trek voorzichtig; sommige deuren zijn kooien.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Número da sala do receiver counterstamp",
+     "scanner": "LEITURA COUNTERSTAMP // Quarantine room number presente. Verifique body custody class; sample-only rooms não liberam living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth sobrescrito por owned custody. Lift allocation só com named room, owner e body class.",
+     "audio": "Room number escrito. Receiver possui a porta. Confirme body custody antes do ascent burn.",
+     "in_game_wiki": "Um receiver counterstamp é o momento em que um blank berth vira named door. Ele pode tornar recovery mais difícil de ignorar, mas também nomeia quem possui o corpo após o lift. Verifique room class, medical owner e receiver strip antes de confiar no stamp.",
+     "external_site": "Um primer longo sobre receiver room e o counterstamp que transforma um quarantine berth vazio em owned custody sem tornar essa custody segura.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/pt_BR_external_site.md",
+     "field_note": "Um room number é uma alça. Puxe com cuidado; algumas portas são jaulas.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Номер кімнати receiver counterstamp",
+     "scanner": "ЧИТАННЯ COUNTERSTAMP // Quarantine room number присутній. Перевір body custody class; sample-only rooms не очищують living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth перезаписано owned custody. Lift allocation можливий лише з named room, owner і body class.",
+     "audio": "Room number записано. Receiver володіє дверима. Підтвердь body custody перед ascent burn.",
+     "in_game_wiki": "Receiver counterstamp це мить, коли blank berth стає named door. Він може зробити recovery важче ігнорувати, але також називає того, хто володіє тілом після lift. Перевір room class, medical owner і receiver strip, перш ніж довіряти stamp.",
+     "external_site": "Великий primer про receiver room і counterstamp, який перетворює порожній quarantine berth на owned custody, не роблячи цю custody безпечною.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/uk_UA_external_site.md",
+     "field_note": "Room number це ручка. Тягни обережно: деякі двері є клітками.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Nomor ruang receiver counterstamp",
+     "scanner": "BACAAN COUNTERSTAMP // Quarantine room number ada. Periksa body custody class; sample-only rooms tidak membersihkan living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // Blank berth ditimpa owned custody. Lift allocation hanya dengan named room, owner, dan body class.",
+     "audio": "Room number ditulis. Receiver memiliki pintu. Konfirmasi body custody sebelum ascent burn.",
+     "in_game_wiki": "Receiver counterstamp adalah saat blank berth menjadi named door. Itu dapat membuat recovery lebih sulit diabaikan, tetapi juga menamai siapa yang memiliki tubuh setelah lift. Periksa room class, medical owner, dan receiver strip sebelum mempercayai stamp.",
+     "external_site": "Primer panjang tentang receiver room dan counterstamp yang mengubah quarantine berth kosong menjadi owned custody tanpa membuat custody itu aman.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/id_ID_external_site.md",
+     "field_note": "Room number adalah pegangan. Tarik hati-hati; beberapa pintu adalah kandang.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "رقم غرفة receiver counterstamp",
+     "scanner": "قراءة COUNTERSTAMP // Quarantine room number موجود. تحقق من body custody class؛ sample-only rooms لا تصفي living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // تم استبدال blank berth بـ owned custody. Lift allocation فقط مع named room وowner وbody class.",
+     "audio": "Room number كتب. Receiver يملك الباب. أكد body custody قبل ascent burn.",
+     "in_game_wiki": "Receiver counterstamp هو اللحظة التي يتحول فيها blank berth إلى named door. يمكنه جعل recovery أصعب تجاهلا، لكنه يسمي أيضا من يملك الجسد بعد lift. افحص room class وmedical owner وreceiver strip قبل الثقة في stamp.",
+     "external_site": "Primer طويل عن receiver room وcounterstamp الذي يحول quarantine berth فارغا إلى owned custody من دون جعل تلك custody آمنة.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/ar_SA_external_site.md",
+     "field_note": "Room number مقبض. اسحبه بحذر؛ بعض الأبواب أقفاص.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "מספר חדר receiver counterstamp",
+     "scanner": "קריאת COUNTERSTAMP // quarantine room number קיים. בדוק body custody class; sample-only rooms אינם מנקים living recovery.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // blank berth נדרס על ידי owned custody. lift allocation רק עם named room, owner ו-body class.",
+     "audio": "room number נכתב. receiver מחזיק בדלת. אשר body custody לפני ascent burn.",
+     "in_game_wiki": "receiver counterstamp הוא הרגע שבו blank berth נעשה named door. הוא יכול להקשות על התעלמות מ-recovery, אבל גם קורא בשם למי שמחזיק בגוף אחרי lift. בדוק room class, medical owner ו-receiver strip לפני שתסמוך על stamp.",
+     "external_site": "Primer ארוך על receiver room ועל counterstamp שהופך quarantine berth ריק ל-owned custody בלי להפוך את ה-custody לבטוחה.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/he_IL_external_site.md",
+     "field_note": "room number הוא ידית. משוך בזהירות; חלק מהדלתות הן כלובים.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "receiver counterstamp の部屋番号",
+     "scanner": "COUNTERSTAMP READ // quarantine room number あり。body custody class 確認。sample-only rooms は living recovery を clear しない。",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // blank berth は owned custody で上書き。lift allocation は named room、owner、body class がある時だけ進む。",
+     "audio": "room number 記入済み。receiver が扉を所有。ascent burn 前に body custody を確認せよ。",
+     "in_game_wiki": "receiver counterstamp は blank berth が named door になる瞬間だ。recovery を無視しにくくするが、lift 後に body を所有する者の名前も書く。stamp を信じる前に room class、medical owner、receiver strip を確認する。",
+     "external_site": "空白 quarantine berth を owned custody に変えるが安全にはしない receiver room counterstamp についての長文 primer。",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/ja_JP_external_site.md",
+     "field_note": "room number は取っ手だ。慎重に引け。一部の扉は檻だ。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "receiver counterstamp 방 번호",
+     "scanner": "COUNTERSTAMP 판독 // quarantine room number 존재. body custody class 확인; sample-only rooms는 living recovery를 clear하지 않는다.",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // blank berth가 owned custody로 덮임. lift allocation은 named room, owner, body class가 있을 때만 진행.",
+     "audio": "room number 기록. receiver가 문을 소유. ascent burn 전에 body custody 확인.",
+     "in_game_wiki": "receiver counterstamp는 blank berth가 named door가 되는 순간이다. recovery를 무시하기 어렵게 만들지만, lift 뒤 body를 누가 소유하는지도 이름 붙인다. stamp를 믿기 전에 room class, medical owner, receiver strip을 확인하라.",
+     "external_site": "빈 quarantine berth를 owned custody로 바꾸지만 그 custody를 안전하게 만들지는 않는 receiver room counterstamp에 대한 장문 primer.",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/ko_KR_external_site.md",
+     "field_note": "room number는 손잡이다. 조심해서 당겨라. 어떤 문은 우리다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "receiver counterstamp 房间编号",
+     "scanner": "COUNTERSTAMP 读数 // quarantine room number 存在。确认 body custody class；sample-only rooms 不能清除 living recovery。",
+     "terminal": "RECEIVER ROOM COUNTERSEAL // blank berth 被 owned custody 覆写。只有 named room、owner 与 body class 存在时，lift allocation 才能推进。",
+     "audio": "room number 已写入。receiver 拥有这扇门。ascent burn 前确认 body custody。",
+     "in_game_wiki": "receiver counterstamp 是 blank berth 变成 named door 的瞬间。它能让 recovery 更难被忽视，但也会写明 lift 后谁拥有 body。相信 stamp 之前，先检查 room class、medical owner 与 receiver strip。",
+     "external_site": "一篇关于 receiver room counterstamp 的长文 primer：它能把空白 quarantine berth 变成 owned custody，却不会让这种 custody 自动安全。",
+     "external_site_article_path": "articles/RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER/zh_CN_external_site.md",
+     "field_note": "room number 是把手。小心拉动；有些门是笼子。",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

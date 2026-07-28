@@ -1,1036 +1,1041 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
-  "status": "source_candidate_pending_importer_audit_route_card_bake_data_monolith_bake_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
+ "status": "source_candidate_pending_importer_audit_route_card_bake_data_monolith_bake_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P660_EMERGENCY_FLOAT_CRATE_INVENTORY",
+   "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
+   "article_id": "applied_lore.emergency_float_crate_inventory",
+   "title_key": "LORE_CRASH_SHELF_EMERGENCY_FLOAT_CRATE_INVENTORY_TITLE",
+   "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P660_EMERGENCY_FLOAT_CRATE_INVENTORY",
-      "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
-      "article_id": "applied_lore.emergency_float_crate_inventory",
-      "title_key": "LORE_CRASH_SHELF_EMERGENCY_FLOAT_CRATE_INVENTORY_TITLE",
-      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.emergency_float_crate_inventory",
-        "secondary": [
-          "unlock.first_float_crate_opened",
-          "unlock.first_battery_slab",
-          "unlock.first_emergency_foam"
-        ],
-        "poi_tags": [
-          "poi.emergency_float_crate",
-          "poi.bathy_drop_crash_trail",
-          "poi.first_repair_stock"
-        ],
-        "biome_tags": [
-          "biome.storm_shelf",
-          "biome.crash_shelf",
-          "biome.first_survival"
-        ],
-        "first_20_boundary": "Improves the first salvage decision after bathy-drop survival by naming which emergency crate contents create repair choices."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Emergency Crate Scan",
-          "terminal": "Drop Support Inventory",
-          "audio": "Marauder Salvage Bark",
-          "in_game_wiki": "PDA First Salvage Note",
-          "external_site": "Public Archive Crash Shelf Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "storm_shelf_crash_trail",
-        "route_moment": "first_emergency_crate_open",
-        "truth_payload": "The emergency float crate is a limited survival budget, not a loot box.",
-        "player_question": "Which crate item should become shelter, power or signal confidence first?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Emergency Float Crate Inventory",
-          "scanner": "FLOAT CRATE // Buoyant seal intact. Repair stock limited. Open near shelter route.",
-          "terminal": "DROP SUPPORT INVENTORY // Foam charge low; battery slab stable; mirror packed; stock label salt-damaged.",
-          "audio": "Do not empty the crate just because it opens. Make the first repair count.",
-          "in_game_wiki": "The emergency float crate is a limited survival budget. Use repair stock for pressure, first power and signal confidence before stripping comfort items.",
-          "external_site": "The emergency float crate is the first argument against panic. It contains enough to make one or two good decisions, not enough to erase the crash. A battery slab can wake a dead panel. Emergency foam can buy air time. The crate teaches scarcity before the inventory screen does.",
-          "field_note": "A full pocket and a leaking wall is still a bad trade."
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft ar_SA localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft ar_SA localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft ar_SA localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft ar_SA localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft ar_SA localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft de_DE localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft de_DE localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft de_DE localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft de_DE localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft de_DE localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft es_ES localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft es_ES localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft es_ES localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft es_ES localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft es_ES localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft fr_FR localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft fr_FR localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft fr_FR localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft fr_FR localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft fr_FR localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft he_IL localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft he_IL localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft he_IL localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft he_IL localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft he_IL localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft id_ID localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft id_ID localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft id_ID localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft id_ID localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft id_ID localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft ja_JP localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft ja_JP localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft ja_JP localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft ja_JP localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft ja_JP localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft ko_KR localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft ko_KR localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft ko_KR localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft ko_KR localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft ko_KR localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft nl_NL localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft nl_NL localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft nl_NL localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft nl_NL localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft nl_NL localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft pl_PL localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft pl_PL localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft pl_PL localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft pl_PL localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft pl_PL localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft pt_BR localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft pt_BR localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft pt_BR localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft pt_BR localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft pt_BR localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft ru_RU localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft ru_RU localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft ru_RU localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft ru_RU localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft ru_RU localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft uk_UA localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft uk_UA localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft uk_UA localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft uk_UA localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft uk_UA localization pending native pass. A full pocket does not fix a leaking wall."
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. Emergency Float Crate Inventory",
-          "scanner": "Draft zh_CN localization pending native pass. Float crate seal intact; repair stock limited.",
-          "terminal": "Draft zh_CN localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
-          "audio": "Draft zh_CN localization pending native pass. Make the first repair count.",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
-          "external_site": "Draft zh_CN localization pending native pass. The float crate teaches scarcity before inventory does.",
-          "field_note": "Draft zh_CN localization pending native pass. A full pocket does not fix a leaking wall."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.emergency_float_crate_inventory",
+    "secondary": [
+     "unlock.first_float_crate_opened",
+     "unlock.first_battery_slab",
+     "unlock.first_emergency_foam"
+    ],
+    "poi_tags": [
+     "poi.emergency_float_crate",
+     "poi.bathy_drop_crash_trail",
+     "poi.first_repair_stock"
+    ],
+    "biome_tags": [
+     "biome.storm_shelf",
+     "biome.crash_shelf",
+     "biome.first_survival"
+    ],
+    "first_20_boundary": "Improves the first salvage decision after bathy-drop survival by naming which emergency crate contents create repair choices."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Emergency Crate Scan",
+     "terminal": "Drop Support Inventory",
+     "audio": "Marauder Salvage Bark",
+     "in_game_wiki": "PDA First Salvage Note",
+     "external_site": "Public Archive Crash Shelf Primer",
+     "field_note": "Marauder Field Note"
     },
-    {
-      "packet_id": "P661_HEAT_SHIELD_TEETH_SALVAGE_TRAIL",
-      "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
-      "article_id": "applied_lore.heat_shield_teeth_salvage_trail",
-      "title_key": "LORE_CRASH_SHELF_HEAT_SHIELD_TEETH_SALVAGE_TRAIL_TITLE",
-      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.heat_shield_teeth_salvage_trail",
-        "secondary": [
-          "unlock.first_heat_shield_tooth_scan",
-          "unlock.first_crash_trail_marker",
-          "unlock.first_ablative_ceramic_stock"
-        ],
-        "poi_tags": [
-          "poi.heat_shield_teeth",
-          "poi.crash_debris_trail",
-          "poi.reef_embedded_ceramic"
-        ],
-        "biome_tags": [
-          "biome.storm_shelf",
-          "biome.crash_shelf",
-          "biome.first_salvage"
-        ],
-        "first_20_boundary": "Turns crash debris into a visible trail, insulation source and route-reading lesson."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Crash Debris Scan",
-          "terminal": "Drop Material Note",
-          "audio": "Marauder Trail Bark",
-          "in_game_wiki": "PDA Crash Route Note",
-          "external_site": "Public Archive Crash Shelf Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "storm_shelf_crash_trail",
-        "route_moment": "first_heat_shield_debris_scan",
-        "truth_payload": "Loose heat-shield teeth are route markers and salvage stock; intact shelter plating should not be stripped.",
-        "player_question": "Which debris is safe stock, and which debris still protects the shelter?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Heat Shield Teeth Salvage Trail",
-          "scanner": "HEAT-SHIELD TOOTH // Ablative ceramic. Good insulation, sharp edge, useful trail marker.",
-          "terminal": "DROP MATERIAL NOTE // Loose ceramic teeth mark descent shear. Do not strip pressure shell plating until shelter integrity is known.",
-          "audio": "White teeth in the reef mean the drop came apart this way. Follow the bite marks.",
-          "in_game_wiki": "Heat-shield teeth are loose ablative ceramic from the descent burn. They mark the crash path and provide insulation stock if the player does not strip shelter-critical plating.",
-          "external_site": "Heat-shield teeth are ugly, useful and honest. They show where the bathy-drop bled speed into water and reef. The pieces are good insulation, sharp enough to punish careless hands and bright enough to make a trail through storm churn.",
-          "field_note": "Loose teeth are stock. Teeth still holding your wall together are not."
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft ar_SA localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft ar_SA localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft ar_SA localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft ar_SA localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft ar_SA localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft de_DE localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft de_DE localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft de_DE localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft de_DE localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft de_DE localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft es_ES localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft es_ES localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft es_ES localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft es_ES localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft es_ES localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft fr_FR localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft fr_FR localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft fr_FR localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft fr_FR localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft fr_FR localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft he_IL localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft he_IL localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft he_IL localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft he_IL localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft he_IL localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft id_ID localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft id_ID localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft id_ID localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft id_ID localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft id_ID localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft ja_JP localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft ja_JP localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft ja_JP localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft ja_JP localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft ja_JP localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft ko_KR localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft ko_KR localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft ko_KR localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft ko_KR localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft ko_KR localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft nl_NL localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft nl_NL localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft nl_NL localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft nl_NL localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft nl_NL localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft pl_PL localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft pl_PL localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft pl_PL localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft pl_PL localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft pl_PL localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft pt_BR localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft pt_BR localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft pt_BR localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft pt_BR localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft pt_BR localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft ru_RU localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft ru_RU localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft ru_RU localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft ru_RU localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft ru_RU localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft uk_UA localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft uk_UA localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft uk_UA localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft uk_UA localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft uk_UA localization pending native pass. Loose teeth are stock; wall teeth are not."
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. Heat Shield Teeth Salvage Trail",
-          "scanner": "Draft zh_CN localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
-          "terminal": "Draft zh_CN localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
-          "audio": "Draft zh_CN localization pending native pass. Follow the white crash teeth.",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
-          "external_site": "Draft zh_CN localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
-          "field_note": "Draft zh_CN localization pending native pass. Loose teeth are stock; wall teeth are not."
-        }
-      }
+    "spoiler_tier": "0",
+    "depth_band": "storm_shelf_crash_trail",
+    "route_moment": "first_emergency_crate_open",
+    "truth_payload": "The emergency float crate is a limited survival budget, not a loot box.",
+    "player_question": "Which crate item should become shelter, power or signal confidence first?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Emergency Float Crate Inventory",
+     "scanner": "FLOAT CRATE // Buoyant seal intact. Repair stock limited. Open near shelter route.",
+     "terminal": "DROP SUPPORT INVENTORY // Foam charge low; battery slab stable; mirror packed; stock label salt-damaged.",
+     "audio": "Do not empty the crate just because it opens. Make the first repair count.",
+     "in_game_wiki": "The emergency float crate is a limited survival budget. Use repair stock for pressure, first power and signal confidence before stripping comfort items.",
+     "external_site": "The emergency float crate is the first argument against panic. It contains enough to make one or two good decisions, not enough to erase the crash. A battery slab can wake a dead panel. Emergency foam can buy air time. The crate teaches scarcity before the inventory screen does.",
+     "field_note": "A full pocket and a leaking wall is still a bad trade."
     },
-    {
-      "packet_id": "P662_BROKEN_UPLINK_CORE_FRACTURE",
-      "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
-      "article_id": "applied_lore.broken_uplink_core_fracture",
-      "title_key": "LORE_CRASH_SHELF_BROKEN_UPLINK_CORE_FRACTURE_TITLE",
-      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md",
-        "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.broken_uplink_core_fracture",
-        "secondary": [
-          "unlock.first_uplink_core_scan",
-          "unlock.first_black_keel_partial_handshake",
-          "unlock.first_relay_support_need"
-        ],
-        "poi_tags": [
-          "poi.broken_uplink_core",
-          "poi.fractured_antenna_bus",
-          "poi.partial_carrier_handshake"
-        ],
-        "biome_tags": [
-          "biome.storm_shelf",
-          "biome.carrier_link",
-          "biome.first_contact"
-        ],
-        "first_20_boundary": "Explains why Black Keel exists but cannot receive a clean rescue packet until repair and sky timing align."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Uplink Core Scan",
-          "terminal": "Drop Diagnostic",
-          "audio": "Marauder Contact Bark",
-          "in_game_wiki": "PDA Contact Repair Note",
-          "external_site": "Public Archive Crash Shelf Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "storm_shelf_drop_interior",
-        "route_moment": "first_failed_carrier_handshake",
-        "truth_payload": "Carrier contact is physically blocked by damage and route noise, not by narrative convenience.",
-        "player_question": "What repair chain makes one useful Black Keel packet possible?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Broken Uplink Core Fracture",
-          "scanner": "UPLINK CORE // Antenna bus fractured. Packet integrity below recovery threshold.",
-          "terminal": "DROP DIAGNOSTIC // Uplink core fracture detected; ascent package missing; carrier handshake partial; recovery threshold not met.",
-          "audio": "Black Keel heard a broken shape. Make it hear a sentence.",
-          "in_game_wiki": "The broken uplink core can form fragments, not recovery-grade packets. Repair contact path, power and relay support before spending a clean orbital window.",
-          "external_site": "The broken uplink core is the first reason the sky cannot simply solve the game. Black Keel is above HECTON-8, but the drop's antenna bus is cracked, the contact seat is salted and packet integrity never reaches recovery threshold.",
-          "field_note": "A reply that cannot carry coordinates is weather with a voice."
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft ar_SA localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft ar_SA localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft ar_SA localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft ar_SA localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft ar_SA localization pending native pass. A reply without coordinates is weather."
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft de_DE localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft de_DE localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft de_DE localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft de_DE localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft de_DE localization pending native pass. A reply without coordinates is weather."
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft es_ES localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft es_ES localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft es_ES localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft es_ES localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft es_ES localization pending native pass. A reply without coordinates is weather."
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft fr_FR localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft fr_FR localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft fr_FR localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft fr_FR localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft fr_FR localization pending native pass. A reply without coordinates is weather."
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft he_IL localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft he_IL localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft he_IL localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft he_IL localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft he_IL localization pending native pass. A reply without coordinates is weather."
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft id_ID localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft id_ID localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft id_ID localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft id_ID localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft id_ID localization pending native pass. A reply without coordinates is weather."
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft ja_JP localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft ja_JP localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft ja_JP localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft ja_JP localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft ja_JP localization pending native pass. A reply without coordinates is weather."
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft ko_KR localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft ko_KR localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft ko_KR localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft ko_KR localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft ko_KR localization pending native pass. A reply without coordinates is weather."
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft nl_NL localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft nl_NL localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft nl_NL localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft nl_NL localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft nl_NL localization pending native pass. A reply without coordinates is weather."
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft pl_PL localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft pl_PL localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft pl_PL localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft pl_PL localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft pl_PL localization pending native pass. A reply without coordinates is weather."
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft pt_BR localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft pt_BR localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft pt_BR localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft pt_BR localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft pt_BR localization pending native pass. A reply without coordinates is weather."
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft ru_RU localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft ru_RU localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft ru_RU localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft ru_RU localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft ru_RU localization pending native pass. A reply without coordinates is weather."
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft uk_UA localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft uk_UA localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft uk_UA localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft uk_UA localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft uk_UA localization pending native pass. A reply without coordinates is weather."
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. Broken Uplink Core Fracture",
-          "scanner": "Draft zh_CN localization pending native pass. Uplink core fractured; packet integrity low.",
-          "terminal": "Draft zh_CN localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
-          "audio": "Draft zh_CN localization pending native pass. Make Black Keel hear a sentence.",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. Repair contact, power and relay support before using an orbital window.",
-          "external_site": "Draft zh_CN localization pending native pass. The broken uplink turns carrier contact into a repair route.",
-          "field_note": "Draft zh_CN localization pending native pass. A reply without coordinates is weather."
-        }
-      }
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft ar_SA localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft ar_SA localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft ar_SA localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft ar_SA localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft ar_SA localization pending native pass. A full pocket does not fix a leaking wall."
     },
-    {
-      "packet_id": "P663_SHALLOW_SERVICE_BUOY_SALTED_RECEIVER",
-      "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
-      "article_id": "applied_lore.shallow_service_buoy_salted_receiver",
-      "title_key": "LORE_CRASH_SHELF_SHALLOW_SERVICE_BUOY_SALTED_RECEIVER_TITLE",
-      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md",
-        "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.shallow_service_buoy_salted_receiver",
-        "secondary": [
-          "unlock.first_service_buoy_scan",
-          "unlock.first_receiver_cleaning",
-          "unlock.first_ground_strap_repair"
-        ],
-        "poi_tags": [
-          "poi.shallow_service_buoy",
-          "poi.salted_receiver",
-          "poi.bent_relay_mast"
-        ],
-        "biome_tags": [
-          "biome.storm_shelf",
-          "biome.first_contact",
-          "biome.relay_window"
-        ],
-        "first_20_boundary": "Makes the shallow service buoy a repairable signal object and not environmental dressing."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Service Buoy Scan",
-          "terminal": "Service Band Note",
-          "audio": "Marauder Repair Bark",
-          "in_game_wiki": "PDA Buoy Repair Note",
-          "external_site": "Public Archive Crash Shelf Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "storm_shelf_relay_object",
-        "route_moment": "first_buoy_repair_before_clean_uplink",
-        "truth_payload": "Old infrastructure can pass weak pings after cleaning, grounding and alignment; it cannot create rescue by itself.",
-        "player_question": "What makes this buoy support one useful carrier packet?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Shallow Service Buoy Salted Receiver",
-          "scanner": "SERVICE BUOY // Receiver salted. Ground strap damaged. Weak ping possible after cleaning.",
-          "terminal": "SERVICE BAND // Receiver confidence degraded by salt ingress. Mast offset exceeds clean-window tolerance.",
-          "audio": "The buoy is not dead. It is dirty, bent and tired. Fix those in order.",
-          "in_game_wiki": "A salted shallow service buoy can boost weak carrier contact after cleaning, grounding and mast alignment. It cannot turn a bad orbital window into rescue.",
-          "external_site": "The shallow service buoy is old Deep Reach infrastructure doing one small job badly. Clean the contact, ground the line, wait for the window, then ask the sky for less than a miracle.",
-          "field_note": "Old infrastructure lies less than new contracts. It just fails louder."
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft ar_SA localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft ar_SA localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft ar_SA localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft ar_SA localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft ar_SA localization pending native pass. Old infrastructure fails louder."
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft de_DE localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft de_DE localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft de_DE localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft de_DE localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft de_DE localization pending native pass. Old infrastructure fails louder."
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft es_ES localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft es_ES localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft es_ES localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft es_ES localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft es_ES localization pending native pass. Old infrastructure fails louder."
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft fr_FR localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft fr_FR localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft fr_FR localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft fr_FR localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft fr_FR localization pending native pass. Old infrastructure fails louder."
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft he_IL localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft he_IL localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft he_IL localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft he_IL localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft he_IL localization pending native pass. Old infrastructure fails louder."
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft id_ID localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft id_ID localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft id_ID localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft id_ID localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft id_ID localization pending native pass. Old infrastructure fails louder."
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft ja_JP localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft ja_JP localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft ja_JP localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft ja_JP localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft ja_JP localization pending native pass. Old infrastructure fails louder."
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft ko_KR localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft ko_KR localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft ko_KR localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft ko_KR localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft ko_KR localization pending native pass. Old infrastructure fails louder."
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft nl_NL localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft nl_NL localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft nl_NL localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft nl_NL localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft nl_NL localization pending native pass. Old infrastructure fails louder."
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft pl_PL localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft pl_PL localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft pl_PL localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft pl_PL localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft pl_PL localization pending native pass. Old infrastructure fails louder."
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft pt_BR localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft pt_BR localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft pt_BR localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft pt_BR localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft pt_BR localization pending native pass. Old infrastructure fails louder."
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft ru_RU localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft ru_RU localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft ru_RU localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft ru_RU localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft ru_RU localization pending native pass. Old infrastructure fails louder."
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft uk_UA localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft uk_UA localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft uk_UA localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft uk_UA localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft uk_UA localization pending native pass. Old infrastructure fails louder."
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. Shallow Service Buoy Salted Receiver",
-          "scanner": "Draft zh_CN localization pending native pass. Service buoy receiver salted; weak ping possible.",
-          "terminal": "Draft zh_CN localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
-          "audio": "Draft zh_CN localization pending native pass. Clean, ground and align the buoy.",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. The service buoy can boost weak contact after repair.",
-          "external_site": "Draft zh_CN localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
-          "field_note": "Draft zh_CN localization pending native pass. Old infrastructure fails louder."
-        }
-      }
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft de_DE localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft de_DE localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft de_DE localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft de_DE localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft de_DE localization pending native pass. A full pocket does not fix a leaking wall."
     },
-    {
-      "packet_id": "P664_HALO_SARGASSUM_OXYGEN_LURE",
-      "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
-      "article_id": "applied_lore.halo_sargassum_oxygen_lure",
-      "title_key": "LORE_CRASH_SHELF_HALO_SARGASSUM_OXYGEN_LURE_TITLE",
-      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md",
-        "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.halo_sargassum_oxygen_lure",
-        "secondary": [
-          "unlock.first_halo_sargassum_scan",
-          "unlock.first_oxygen_bubble_cue",
-          "unlock.first_light_harvest_warning"
-        ],
-        "poi_tags": [
-          "poi.halo_sargassum_mat",
-          "poi.oxygen_bubble_edge",
-          "poi.first_reef_route"
-        ],
-        "biome_tags": [
-          "biome.photic_shelf",
-          "biome.storm_shelf",
-          "biome.first_ecology"
-        ],
-        "first_20_boundary": "Makes the first beautiful ecology useful as oxygen cue, bait and route signal without making the shallows horror-only."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Shallow Ecology Scan",
-          "terminal": "No Terminal Surface",
-          "audio": "Marauder Ecology Bark",
-          "in_game_wiki": "PDA Shallow Ecology Note",
-          "external_site": "Public Archive Photic Shelf Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "photic_shelf_0_80m",
-        "route_moment": "first_useful_bright_ecology_scan",
-        "truth_payload": "Shallow life helps the player before it scares them; intact ecology is more useful than dead stock.",
-        "player_question": "What does this beautiful organism tell the player about air, bait and current?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Halo Sargassum Oxygen Lure",
-          "scanner": "HALO SARGASSUM // Oxygen bubbles trapped in mat edge. Useful cue; avoid stripping whole patch.",
-          "terminal": "ECOLOGY NOTE // No terminal surface. Scanner and PDA route only until a future authored ecology table admits this packet.",
-          "audio": "Bright mat, bubbles on the lip. Good air nearby. Do not tear up the sign.",
-          "in_game_wiki": "Halo sargassum marks oxygen-rich shallow water and small-fauna traffic. Harvest lightly; intact mats remain better route cues than dead stock.",
-          "external_site": "Halo sargassum is a first kindness with teeth. The mat catches light, traps oxygen bubbles and attracts small life to its edge. A player can use it for emergency air cues, bait and current reading, but ripping it out blindly turns a useful patch into a rotten slick.",
-          "field_note": "The first pretty thing that saves you is still a thing you can ruin."
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft ar_SA localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft ar_SA localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft ar_SA localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft ar_SA localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft ar_SA localization pending native pass. Useful beauty can still be ruined."
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft de_DE localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft de_DE localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft de_DE localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft de_DE localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft de_DE localization pending native pass. Useful beauty can still be ruined."
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft es_ES localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft es_ES localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft es_ES localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft es_ES localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft es_ES localization pending native pass. Useful beauty can still be ruined."
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft fr_FR localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft fr_FR localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft fr_FR localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft fr_FR localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft fr_FR localization pending native pass. Useful beauty can still be ruined."
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft he_IL localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft he_IL localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft he_IL localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft he_IL localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft he_IL localization pending native pass. Useful beauty can still be ruined."
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft id_ID localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft id_ID localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft id_ID localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft id_ID localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft id_ID localization pending native pass. Useful beauty can still be ruined."
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft ja_JP localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft ja_JP localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft ja_JP localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft ja_JP localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft ja_JP localization pending native pass. Useful beauty can still be ruined."
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft ko_KR localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft ko_KR localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft ko_KR localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft ko_KR localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft ko_KR localization pending native pass. Useful beauty can still be ruined."
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft nl_NL localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft nl_NL localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft nl_NL localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft nl_NL localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft nl_NL localization pending native pass. Useful beauty can still be ruined."
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft pl_PL localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft pl_PL localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft pl_PL localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft pl_PL localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft pl_PL localization pending native pass. Useful beauty can still be ruined."
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft pt_BR localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft pt_BR localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft pt_BR localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft pt_BR localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft pt_BR localization pending native pass. Useful beauty can still be ruined."
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft ru_RU localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft ru_RU localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft ru_RU localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft ru_RU localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft ru_RU localization pending native pass. Useful beauty can still be ruined."
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft uk_UA localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft uk_UA localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft uk_UA localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft uk_UA localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft uk_UA localization pending native pass. Useful beauty can still be ruined."
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. Halo Sargassum Oxygen Lure",
-          "scanner": "Draft zh_CN localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
-          "terminal": "Draft zh_CN localization pending native pass. No terminal surface; scanner and PDA only.",
-          "audio": "Draft zh_CN localization pending native pass. Do not tear up the air sign.",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
-          "external_site": "Draft zh_CN localization pending native pass. Bright ecology can be survival information.",
-          "field_note": "Draft zh_CN localization pending native pass. Useful beauty can still be ruined."
-        }
-      }
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft es_ES localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft es_ES localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft es_ES localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft es_ES localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft es_ES localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft fr_FR localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft fr_FR localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft fr_FR localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft fr_FR localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft fr_FR localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft he_IL localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft he_IL localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft he_IL localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft he_IL localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft he_IL localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft id_ID localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft id_ID localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft id_ID localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft id_ID localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft id_ID localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft ja_JP localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft ja_JP localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft ja_JP localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft ja_JP localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft ja_JP localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft ko_KR localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft ko_KR localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft ko_KR localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft ko_KR localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft ko_KR localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft nl_NL localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft nl_NL localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft nl_NL localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft nl_NL localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft nl_NL localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft pl_PL localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft pl_PL localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft pl_PL localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft pl_PL localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft pl_PL localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft pt_BR localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft pt_BR localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft pt_BR localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft pt_BR localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft pt_BR localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft ru_RU localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft ru_RU localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft ru_RU localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft ru_RU localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft ru_RU localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft uk_UA localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft uk_UA localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft uk_UA localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft uk_UA localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft uk_UA localization pending native pass. A full pocket does not fix a leaking wall."
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. Emergency Float Crate Inventory",
+     "scanner": "Draft zh_CN localization pending native pass. Float crate seal intact; repair stock limited.",
+     "terminal": "Draft zh_CN localization pending native pass. Drop support inventory has low foam, stable battery and damaged label.",
+     "audio": "Draft zh_CN localization pending native pass. Make the first repair count.",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. The float crate is limited survival stock for pressure, power and signal.",
+     "external_site": "Draft zh_CN localization pending native pass. The float crate teaches scarcity before inventory does.",
+     "field_note": "Draft zh_CN localization pending native pass. A full pocket does not fix a leaking wall."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P661_HEAT_SHIELD_TEETH_SALVAGE_TRAIL",
+   "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
+   "article_id": "applied_lore.heat_shield_teeth_salvage_trail",
+   "title_key": "LORE_CRASH_SHELF_HEAT_SHIELD_TEETH_SALVAGE_TRAIL_TITLE",
+   "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
+   ],
+   "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.heat_shield_teeth_salvage_trail",
+    "secondary": [
+     "unlock.first_heat_shield_tooth_scan",
+     "unlock.first_crash_trail_marker",
+     "unlock.first_ablative_ceramic_stock"
+    ],
+    "poi_tags": [
+     "poi.heat_shield_teeth",
+     "poi.crash_debris_trail",
+     "poi.reef_embedded_ceramic"
+    ],
+    "biome_tags": [
+     "biome.storm_shelf",
+     "biome.crash_shelf",
+     "biome.first_salvage"
+    ],
+    "first_20_boundary": "Turns crash debris into a visible trail, insulation source and route-reading lesson."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Crash Debris Scan",
+     "terminal": "Drop Material Note",
+     "audio": "Marauder Trail Bark",
+     "in_game_wiki": "PDA Crash Route Note",
+     "external_site": "Public Archive Crash Shelf Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "storm_shelf_crash_trail",
+    "route_moment": "first_heat_shield_debris_scan",
+    "truth_payload": "Loose heat-shield teeth are route markers and salvage stock; intact shelter plating should not be stripped.",
+    "player_question": "Which debris is safe stock, and which debris still protects the shelter?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Heat Shield Teeth Salvage Trail",
+     "scanner": "HEAT-SHIELD TOOTH // Ablative ceramic. Good insulation, sharp edge, useful trail marker.",
+     "terminal": "DROP MATERIAL NOTE // Loose ceramic teeth mark descent shear. Do not strip pressure shell plating until shelter integrity is known.",
+     "audio": "White teeth in the reef mean the drop came apart this way. Follow the bite marks.",
+     "in_game_wiki": "Heat-shield teeth are loose ablative ceramic from the descent burn. They mark the crash path and provide insulation stock if the player does not strip shelter-critical plating.",
+     "external_site": "Heat-shield teeth are ugly, useful and honest. They show where the bathy-drop bled speed into water and reef. The pieces are good insulation, sharp enough to punish careless hands and bright enough to make a trail through storm churn.",
+     "field_note": "Loose teeth are stock. Teeth still holding your wall together are not."
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft ar_SA localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft ar_SA localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft ar_SA localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft ar_SA localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft ar_SA localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft de_DE localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft de_DE localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft de_DE localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft de_DE localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft de_DE localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft es_ES localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft es_ES localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft es_ES localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft es_ES localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft es_ES localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft fr_FR localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft fr_FR localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft fr_FR localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft fr_FR localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft fr_FR localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft he_IL localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft he_IL localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft he_IL localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft he_IL localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft he_IL localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft id_ID localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft id_ID localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft id_ID localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft id_ID localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft id_ID localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft ja_JP localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft ja_JP localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft ja_JP localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft ja_JP localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft ja_JP localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft ko_KR localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft ko_KR localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft ko_KR localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft ko_KR localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft ko_KR localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft nl_NL localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft nl_NL localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft nl_NL localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft nl_NL localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft nl_NL localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft pl_PL localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft pl_PL localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft pl_PL localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft pl_PL localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft pl_PL localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft pt_BR localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft pt_BR localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft pt_BR localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft pt_BR localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft pt_BR localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft ru_RU localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft ru_RU localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft ru_RU localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft ru_RU localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft ru_RU localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft uk_UA localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft uk_UA localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft uk_UA localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft uk_UA localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft uk_UA localization pending native pass. Loose teeth are stock; wall teeth are not."
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. Heat Shield Teeth Salvage Trail",
+     "scanner": "Draft zh_CN localization pending native pass. Heat-shield tooth: insulation stock and crash marker.",
+     "terminal": "Draft zh_CN localization pending native pass. Loose ceramic marks descent shear; do not strip shelter plating.",
+     "audio": "Draft zh_CN localization pending native pass. Follow the white crash teeth.",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. Heat-shield teeth mark the crash path and provide insulation stock.",
+     "external_site": "Draft zh_CN localization pending native pass. Heat-shield debris makes the crash route readable and useful.",
+     "field_note": "Draft zh_CN localization pending native pass. Loose teeth are stock; wall teeth are not."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P662_BROKEN_UPLINK_CORE_FRACTURE",
+   "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
+   "article_id": "applied_lore.broken_uplink_core_fracture",
+   "title_key": "LORE_CRASH_SHELF_BROKEN_UPLINK_CORE_FRACTURE_TITLE",
+   "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md",
+    "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
+   ],
+   "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.broken_uplink_core_fracture",
+    "secondary": [
+     "unlock.first_uplink_core_scan",
+     "unlock.first_black_keel_partial_handshake",
+     "unlock.first_relay_support_need"
+    ],
+    "poi_tags": [
+     "poi.broken_uplink_core",
+     "poi.fractured_antenna_bus",
+     "poi.partial_carrier_handshake"
+    ],
+    "biome_tags": [
+     "biome.storm_shelf",
+     "biome.carrier_link",
+     "biome.first_contact"
+    ],
+    "first_20_boundary": "Explains why Black Keel exists but cannot receive a clean rescue packet until repair and sky timing align."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Uplink Core Scan",
+     "terminal": "Drop Diagnostic",
+     "audio": "Marauder Contact Bark",
+     "in_game_wiki": "PDA Contact Repair Note",
+     "external_site": "Public Archive Crash Shelf Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "storm_shelf_drop_interior",
+    "route_moment": "first_failed_carrier_handshake",
+    "truth_payload": "Carrier contact is physically blocked by damage and route noise, not by narrative convenience.",
+    "player_question": "What repair chain makes one useful Black Keel packet possible?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Broken Uplink Core Fracture",
+     "scanner": "UPLINK CORE // Antenna bus fractured. Packet integrity below recovery threshold.",
+     "terminal": "DROP DIAGNOSTIC // Uplink core fracture detected; ascent package missing; carrier handshake partial; recovery threshold not met.",
+     "audio": "Black Keel heard a broken shape. Make it hear a sentence.",
+     "in_game_wiki": "The broken uplink core can form fragments, not recovery-grade packets. Repair contact path, power and relay support before spending a clean orbital window.",
+     "external_site": "The broken uplink core is the first reason the sky cannot simply solve the game. Black Keel is above HECTON-8, but the drop's antenna bus is cracked, the contact seat is salted and packet integrity never reaches recovery threshold.",
+     "field_note": "A reply that cannot carry coordinates is weather with a voice."
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft ar_SA localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft ar_SA localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft ar_SA localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft ar_SA localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft ar_SA localization pending native pass. A reply without coordinates is weather."
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft de_DE localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft de_DE localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft de_DE localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft de_DE localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft de_DE localization pending native pass. A reply without coordinates is weather."
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft es_ES localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft es_ES localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft es_ES localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft es_ES localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft es_ES localization pending native pass. A reply without coordinates is weather."
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft fr_FR localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft fr_FR localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft fr_FR localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft fr_FR localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft fr_FR localization pending native pass. A reply without coordinates is weather."
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft he_IL localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft he_IL localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft he_IL localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft he_IL localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft he_IL localization pending native pass. A reply without coordinates is weather."
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft id_ID localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft id_ID localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft id_ID localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft id_ID localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft id_ID localization pending native pass. A reply without coordinates is weather."
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft ja_JP localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft ja_JP localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft ja_JP localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft ja_JP localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft ja_JP localization pending native pass. A reply without coordinates is weather."
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft ko_KR localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft ko_KR localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft ko_KR localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft ko_KR localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft ko_KR localization pending native pass. A reply without coordinates is weather."
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft nl_NL localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft nl_NL localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft nl_NL localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft nl_NL localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft nl_NL localization pending native pass. A reply without coordinates is weather."
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft pl_PL localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft pl_PL localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft pl_PL localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft pl_PL localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft pl_PL localization pending native pass. A reply without coordinates is weather."
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft pt_BR localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft pt_BR localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft pt_BR localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft pt_BR localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft pt_BR localization pending native pass. A reply without coordinates is weather."
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft ru_RU localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft ru_RU localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft ru_RU localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft ru_RU localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft ru_RU localization pending native pass. A reply without coordinates is weather."
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft uk_UA localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft uk_UA localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft uk_UA localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft uk_UA localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft uk_UA localization pending native pass. A reply without coordinates is weather."
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. Broken Uplink Core Fracture",
+     "scanner": "Draft zh_CN localization pending native pass. Uplink core fractured; packet integrity low.",
+     "terminal": "Draft zh_CN localization pending native pass. Drop diagnostic reports fracture and partial carrier handshake.",
+     "audio": "Draft zh_CN localization pending native pass. Make Black Keel hear a sentence.",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. Repair contact, power and relay support before using an orbital window.",
+     "external_site": "Draft zh_CN localization pending native pass. The broken uplink turns carrier contact into a repair route.",
+     "field_note": "Draft zh_CN localization pending native pass. A reply without coordinates is weather."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P663_SHALLOW_SERVICE_BUOY_SALTED_RECEIVER",
+   "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
+   "article_id": "applied_lore.shallow_service_buoy_salted_receiver",
+   "title_key": "LORE_CRASH_SHELF_SHALLOW_SERVICE_BUOY_SALTED_RECEIVER_TITLE",
+   "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md",
+    "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
+   ],
+   "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.shallow_service_buoy_salted_receiver",
+    "secondary": [
+     "unlock.first_service_buoy_scan",
+     "unlock.first_receiver_cleaning",
+     "unlock.first_ground_strap_repair"
+    ],
+    "poi_tags": [
+     "poi.shallow_service_buoy",
+     "poi.salted_receiver",
+     "poi.bent_relay_mast"
+    ],
+    "biome_tags": [
+     "biome.storm_shelf",
+     "biome.first_contact",
+     "biome.relay_window"
+    ],
+    "first_20_boundary": "Makes the shallow service buoy a repairable signal object and not environmental dressing."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Service Buoy Scan",
+     "terminal": "Service Band Note",
+     "audio": "Marauder Repair Bark",
+     "in_game_wiki": "PDA Buoy Repair Note",
+     "external_site": "Public Archive Crash Shelf Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "storm_shelf_relay_object",
+    "route_moment": "first_buoy_repair_before_clean_uplink",
+    "truth_payload": "Old infrastructure can pass weak pings after cleaning, grounding and alignment; it cannot create rescue by itself.",
+    "player_question": "What makes this buoy support one useful carrier packet?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Shallow Service Buoy Salted Receiver",
+     "scanner": "SERVICE BUOY // Receiver salted. Ground strap damaged. Weak ping possible after cleaning.",
+     "terminal": "SERVICE BAND // Receiver confidence degraded by salt ingress. Mast offset exceeds clean-window tolerance.",
+     "audio": "The buoy is not dead. It is dirty, bent and tired. Fix those in order.",
+     "in_game_wiki": "A salted shallow service buoy can boost weak carrier contact after cleaning, grounding and mast alignment. It cannot turn a bad orbital window into rescue.",
+     "external_site": "The shallow service buoy is old Deep Reach infrastructure doing one small job badly. Clean the contact, ground the line, wait for the window, then ask the sky for less than a miracle.",
+     "field_note": "Old infrastructure lies less than new contracts. It just fails louder."
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft ar_SA localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft ar_SA localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft ar_SA localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft ar_SA localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft ar_SA localization pending native pass. Old infrastructure fails louder."
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft de_DE localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft de_DE localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft de_DE localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft de_DE localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft de_DE localization pending native pass. Old infrastructure fails louder."
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft es_ES localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft es_ES localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft es_ES localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft es_ES localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft es_ES localization pending native pass. Old infrastructure fails louder."
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft fr_FR localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft fr_FR localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft fr_FR localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft fr_FR localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft fr_FR localization pending native pass. Old infrastructure fails louder."
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft he_IL localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft he_IL localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft he_IL localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft he_IL localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft he_IL localization pending native pass. Old infrastructure fails louder."
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft id_ID localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft id_ID localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft id_ID localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft id_ID localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft id_ID localization pending native pass. Old infrastructure fails louder."
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft ja_JP localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft ja_JP localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft ja_JP localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft ja_JP localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft ja_JP localization pending native pass. Old infrastructure fails louder."
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft ko_KR localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft ko_KR localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft ko_KR localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft ko_KR localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft ko_KR localization pending native pass. Old infrastructure fails louder."
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft nl_NL localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft nl_NL localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft nl_NL localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft nl_NL localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft nl_NL localization pending native pass. Old infrastructure fails louder."
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft pl_PL localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft pl_PL localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft pl_PL localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft pl_PL localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft pl_PL localization pending native pass. Old infrastructure fails louder."
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft pt_BR localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft pt_BR localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft pt_BR localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft pt_BR localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft pt_BR localization pending native pass. Old infrastructure fails louder."
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft ru_RU localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft ru_RU localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft ru_RU localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft ru_RU localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft ru_RU localization pending native pass. Old infrastructure fails louder."
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft uk_UA localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft uk_UA localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft uk_UA localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft uk_UA localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft uk_UA localization pending native pass. Old infrastructure fails louder."
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. Shallow Service Buoy Salted Receiver",
+     "scanner": "Draft zh_CN localization pending native pass. Service buoy receiver salted; weak ping possible.",
+     "terminal": "Draft zh_CN localization pending native pass. Salt ingress and mast offset degrade receiver confidence.",
+     "audio": "Draft zh_CN localization pending native pass. Clean, ground and align the buoy.",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. The service buoy can boost weak contact after repair.",
+     "external_site": "Draft zh_CN localization pending native pass. Old infrastructure can help after physical repair, not by miracle.",
+     "field_note": "Draft zh_CN localization pending native pass. Old infrastructure fails louder."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P664_HALO_SARGASSUM_OXYGEN_LURE",
+   "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
+   "article_id": "applied_lore.halo_sargassum_oxygen_lure",
+   "title_key": "LORE_CRASH_SHELF_HALO_SARGASSUM_OXYGEN_LURE_TITLE",
+   "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md",
+    "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md"
+   ],
+   "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.halo_sargassum_oxygen_lure",
+    "secondary": [
+     "unlock.first_halo_sargassum_scan",
+     "unlock.first_oxygen_bubble_cue",
+     "unlock.first_light_harvest_warning"
+    ],
+    "poi_tags": [
+     "poi.halo_sargassum_mat",
+     "poi.oxygen_bubble_edge",
+     "poi.first_reef_route"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.storm_shelf",
+     "biome.first_ecology"
+    ],
+    "first_20_boundary": "Makes the first beautiful ecology useful as oxygen cue, bait and route signal without making the shallows horror-only."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Shallow Ecology Scan",
+     "terminal": "No Terminal Surface",
+     "audio": "Marauder Ecology Bark",
+     "in_game_wiki": "PDA Shallow Ecology Note",
+     "external_site": "Public Archive Photic Shelf Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "photic_shelf_0_80m",
+    "route_moment": "first_useful_bright_ecology_scan",
+    "truth_payload": "Shallow life helps the player before it scares them; intact ecology is more useful than dead stock.",
+    "player_question": "What does this beautiful organism tell the player about air, bait and current?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Halo Sargassum Oxygen Lure",
+     "scanner": "HALO SARGASSUM // Oxygen bubbles trapped in mat edge. Useful cue; avoid stripping whole patch.",
+     "terminal": "ECOLOGY NOTE // No terminal surface. Scanner and PDA route only until a future authored ecology table admits this packet.",
+     "audio": "Bright mat, bubbles on the lip. Good air nearby. Do not tear up the sign.",
+     "in_game_wiki": "Halo sargassum marks oxygen-rich shallow water and small-fauna traffic. Harvest lightly; intact mats remain better route cues than dead stock.",
+     "external_site": "Halo sargassum is a first kindness with teeth. The mat catches light, traps oxygen bubbles and attracts small life to its edge. A player can use it for emergency air cues, bait and current reading, but ripping it out blindly turns a useful patch into a rotten slick.",
+     "field_note": "The first pretty thing that saves you is still a thing you can ruin."
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft ar_SA localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft ar_SA localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft ar_SA localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft ar_SA localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft ar_SA localization pending native pass. Useful beauty can still be ruined."
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft de_DE localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft de_DE localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft de_DE localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft de_DE localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft de_DE localization pending native pass. Useful beauty can still be ruined."
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft es_ES localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft es_ES localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft es_ES localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft es_ES localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft es_ES localization pending native pass. Useful beauty can still be ruined."
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft fr_FR localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft fr_FR localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft fr_FR localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft fr_FR localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft fr_FR localization pending native pass. Useful beauty can still be ruined."
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft he_IL localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft he_IL localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft he_IL localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft he_IL localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft he_IL localization pending native pass. Useful beauty can still be ruined."
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft id_ID localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft id_ID localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft id_ID localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft id_ID localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft id_ID localization pending native pass. Useful beauty can still be ruined."
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft ja_JP localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft ja_JP localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft ja_JP localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft ja_JP localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft ja_JP localization pending native pass. Useful beauty can still be ruined."
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft ko_KR localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft ko_KR localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft ko_KR localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft ko_KR localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft ko_KR localization pending native pass. Useful beauty can still be ruined."
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft nl_NL localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft nl_NL localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft nl_NL localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft nl_NL localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft nl_NL localization pending native pass. Useful beauty can still be ruined."
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft pl_PL localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft pl_PL localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft pl_PL localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft pl_PL localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft pl_PL localization pending native pass. Useful beauty can still be ruined."
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft pt_BR localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft pt_BR localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft pt_BR localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft pt_BR localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft pt_BR localization pending native pass. Useful beauty can still be ruined."
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft ru_RU localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft ru_RU localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft ru_RU localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft ru_RU localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft ru_RU localization pending native pass. Useful beauty can still be ruined."
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft uk_UA localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft uk_UA localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft uk_UA localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft uk_UA localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft uk_UA localization pending native pass. Useful beauty can still be ruined."
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. Halo Sargassum Oxygen Lure",
+     "scanner": "Draft zh_CN localization pending native pass. Halo sargassum traps oxygen bubbles; harvest lightly.",
+     "terminal": "Draft zh_CN localization pending native pass. No terminal surface; scanner and PDA only.",
+     "audio": "Draft zh_CN localization pending native pass. Do not tear up the air sign.",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. Halo sargassum marks oxygen-rich shallows and small-fauna traffic.",
+     "external_site": "Draft zh_CN localization pending native pass. Bright ecology can be survival information.",
+     "field_note": "Draft zh_CN localization pending native pass. Useful beauty can still be ruined."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

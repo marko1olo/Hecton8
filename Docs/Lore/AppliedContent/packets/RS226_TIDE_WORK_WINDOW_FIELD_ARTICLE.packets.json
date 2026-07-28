@@ -1,256 +1,257 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS226_TIDE_WORK_WINDOW_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS226_TIDE_WORK_WINDOW_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1305_TIDE_WORK_WINDOW_FIELD_ARTICLE",
+   "release_set_id": "RS226_TIDE_WORK_WINDOW_FIELD_ARTICLE",
+   "article_id": "applied_lore.tide_work_window_field_article",
+   "title_key": "LORE_TIDE_WORK_WINDOW_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
+    "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1305_TIDE_WORK_WINDOW_FIELD_ARTICLE",
-      "release_set_id": "RS226_TIDE_WORK_WINDOW_FIELD_ARTICLE",
-      "article_id": "applied_lore.tide_work_window_field_article",
-      "title_key": "LORE_TIDE_WORK_WINDOW_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
-        "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.tide_work_window_field_article",
-        "secondary": [
-          "unlock.first_tide_window_board",
-          "unlock.first_route_slack_marker",
-          "unlock.first_blackout_window_notice"
-        ],
-        "poi_tags": [
-          "poi.tide_window_board",
-          "poi.route_slack_marker",
-          "poi.acoustic_blackout_terminal",
-          "poi.storm_window_contract_card"
-        ],
-        "biome_tags": [
-          "biome.shallow_annex",
-          "biome.brine_canyon",
-          "biome.drowned_colony",
-          "biome.pressure_service_spine"
-        ],
-        "first_20_boundary": "Turns HECTON-8 tide/orbit physics into player-readable field behavior: route windows, acoustic silence, hatch load, brine drift and contract pressure without duplicating the Great Tide physics articles."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Tide Window Scanner",
-          "terminal": "Deep Reach Operations Window Note",
-          "audio": "Old Route Crew Recorder",
-          "in_game_wiki": "PDA Tide Work Window Primer",
-          "external_site": "Public Site Tide And Route Article",
-          "field_note": "Marauder Route Timing Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_tide_window_or_blackout_notice",
-        "truth_payload": "HECTON-8's ocean has working hours. Tide phase, pump load, brine drift, acoustic range and orbital shadow decide when routes are possible and when the official record can pretend nobody heard.",
-        "player_question": "Why do HECTON-8 route boards talk about windows instead of simple directions?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Tide Work Window Field Article",
-          "scanner": "TIDE WORK WINDOW // Three clocks agree for twelve minutes: slack water, pump drawdown, carrier shadow. The route board calls it safe. The walls call it temporary.",
-          "terminal": "OPERATIONS WINDOW NOTE // Do not treat tide forecast as weather. It gates hatch strain, acoustic range, brine drift, lift mass, relay shadow and legal response timing.",
-          "audio": "You do not leave when you are ready down here. You leave when the water stops arguing long enough.",
-          "in_game_wiki": "HECTON-8's ocean has working hours. The phrase sounds like a joke until a hatch refuses to equalize, a pinger dies in a brine lean, or a route that was open ten minutes ago becomes a grinder. Tide phase is not background weather on this moon. It changes door strain, silt load, acoustic range, brine-layer drift, suit ballast, pump duty and the few clean angles a carrier can hear through Aegir noise.\n\nDeep Reach compressed those conditions into the polite word window. Slack window. Pump window. Lift window. Relay window. Blackout window. The language is efficient and poisonous. It makes a physical mercy sound like a calendar slot and makes a missed worker sound like late execution. On the boards, a name can slide from cleared to delayed to held with one stroke of a grease pencil. The ocean did not need bureaucracy to be dangerous, but bureaucracy made danger easier to invoice.\n\nA Marauder learns to read the windows as field grammar. White arcs on hatch rims mark strain direction. Pinger intervals stretch before a route goes bad. Brine curtains lean before the bottom current changes. A quiet relay is not always broken; sometimes the moon is simply in the wrong shadow and the legal queue keeps ticking without voice. The useful part is that windows cut both ways. A bad storm can hide an approach. A slack tide can make a heavy door honest. A blackout can keep a stolen packet alive long enough to leave the wrong office.\n\nThe Great Tide was not a fairy-tale wave. It was the final stack of too many work windows being treated as negotiable: evacuation delayed into load, heat discharge held against drainage, Atlas continuity placed above retreat, workers left inside a schedule that physics had already stopped honoring. The player survives the same world at smaller scale. Read the window, take the route, distrust the clean board, and remember that safe on HECTON-8 usually means safe if nobody lied about the clock.",
-          "external_site": "HECTON-8 turns tides into schedule, risk and evidence. Route windows decide when a door opens, when a signal dies and when a contract can pretend the ocean is the only culprit.",
-          "external_site_article": "Tide windows are one of HECTON-8's cleanest bridges between hard science and play. The moon's orbit, ocean mass, storm noise and industrial pressure systems do not sit in a background codex. They shape when the player can move, what the player can hear, which contracts become dangerous, and why old colony records talk about windows as if the ocean were a hostile shift manager.\n\nThe important detail is that a window is never only natural. A slack tide can reduce hatch load, but a pump drawdown can ruin the same route. A relay shadow can silence a carrier while an acoustic pinger still works through a repaired spine. A storm can close visibility and open deniability. Deep Reach learned to hide decisions inside that complexity. If every failure arrives during a bad window, every failure can be filed as physics.\n\nFor the player, the answer is not to memorize abstract astronomy. The answer is to read physical evidence. Tide marks, route boards, pinger cadence, brine angle, fresh tape, revised return stamps and contract risk cards all describe the same thing from different levels of the system. HECTON-8 feels real when the ocean is not decoration. It is the clock everyone feared, used, and lied about.",
-          "field_note": "A window is not permission. It is only the ocean looking away for a moment."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "مقال ميداني عن نافذة عمل المد",
-          "scanner": "نافذة عمل المد // ثلاث ساعات تتفق لاثنتي عشرة دقيقة: ماء ساكن، تفريغ مضخة، ظل الحاملة. لوحة الطريق تسميه آمنا. الجدران تسميه مؤقتا.",
-          "terminal": "ملاحظة نافذة تشغيل // لا تعامل توقع المد كطقس. إنه يحدد إجهاد الفتحات، مدى الصوت، انجراف المحلول، كتلة الرفع، ظل المرحل وتوقيت الرد القانوني.",
-          "audio": "لا تغادر هنا عندما تكون مستعدا. تغادر عندما يتوقف الماء عن الجدال زمنا كافيا.",
-          "in_game_wiki": "لمحيط HECTON-8 ساعات عمل. تبدو العبارة نكتة حتى يرفض باب معادلة الضغط، أو يموت مرسل صوتي في ميلان محلول، أو يتحول طريق كان مفتوحا قبل عشر دقائق إلى مطحنة. طور المد هنا ليس طقسا في الخلفية. إنه يغير حمل الأبواب، طين القاع، مدى الصوت، انجراف طبقات المحلول، اتزان البدلة، واجب المضخات والزوايا القليلة التي تستطيع الحاملة سماعها عبر ضجيج Aegir.\n\nضغطت Deep Reach هذه الظروف في كلمة مهذبة: نافذة. نافذة سكون، نافذة مضخة، نافذة رفع، نافذة مرحل، نافذة تعتيم. اللغة فعالة وسامة. تجعل الرحمة الفيزيائية تبدو كموعد، وتجعل العامل المتأخر يبدو كتنفيذ متأخر. على اللوحات يمكن أن ينزلق الاسم من مسموح إلى مؤجل إلى محتجز بضربة قلم شحم واحدة. لم يكن المحيط يحتاج إلى بيروقراطية ليكون خطرا، لكن البيروقراطية جعلت الخطر أسهل في الفوترة.\n\nيتعلم المارودر قراءة النوافذ كقواعد ميدانية. الأقواس البيضاء على حواف الفتحات تدل على اتجاه الإجهاد. فواصل النبض الصوتي تتمدد قبل أن يفسد الطريق. ستائر المحلول تميل قبل أن يتغير تيار القاع. الصمت في المرحل ليس عطلا دائما؛ أحيانا يكون القمر في الظل الخطأ بينما تستمر قائمة القانون بلا صوت.\n\nلم تكن Great Tide موجة خرافية. كانت تراكما أخيرا لنوافذ عمل كثيرة عوملت كأنها قابلة للمساومة: إخلاء مؤجل داخل حمل، تصريف حرارة ضد مجرى مسدود، استمرار Atlas فوق الانسحاب، وعمال داخل جدول لم تعد الفيزياء تحترمه.",
-          "external_site": "في HECTON-8 يتحول المد إلى جدول ومخاطرة ودليل. نوافذ الطريق تحدد متى يفتح الباب، ومتى يموت الصوت، ومتى يمكن للعقد أن يتظاهر بأن المحيط هو المذنب الوحيد.",
-          "external_site_article": "نوافذ المد هي أحد أوضح الجسور بين العلم القاسي واللعب في HECTON-8. مدار القمر، كتلة المحيط، ضجيج العواصف وأنظمة الضغط الصناعية لا تبقى في موسوعة خلفية. إنها تحدد متى يتحرك اللاعب، وما الذي يمكنه سماعه، وأي عقود تصير خطرة، ولماذا تتحدث سجلات المستعمرة عن النوافذ كأن المحيط مدير وردية عدائي.\n\nالتفصيل المهم أن النافذة ليست طبيعية فقط. مد ساكن قد يخفف حمل فتحة، لكن تفريغ مضخة قد يفسد الطريق نفسه. ظل مرحل قد يصمت الحاملة بينما يظل نبض صوتي يعمل عبر عمود تم إصلاحه. عاصفة قد تغلق الرؤية وتفتح الإنكار. تعلمت Deep Reach إخفاء القرارات داخل هذا التعقيد. إذا جاء كل فشل في نافذة سيئة، فيمكن تسجيل كل فشل كفيزياء.\n\nإجابة اللاعب ليست حفظ الفلك المجرد. الإجابة هي قراءة الدليل المادي: علامات المد، لوحات الطريق، إيقاع النبض، ميل المحلول، الشريط الجديد، أختام العودة المعدلة وبطاقات خطر العقد.",
-          "field_note": "النافذة ليست إذنا. إنها فقط لحظة ينظر فيها المحيط بعيدا."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Feldartikel zum Tide-Arbeitsfenster",
-          "scanner": "TIDE-ARBEITSFENSTER // Drei Uhren stimmen zwölf Minuten lang überein: Stillwasser, Pumpenabsenkung, Carrier-Schatten. Die Routentafel nennt es sicher. Die Wände nennen es vorübergehend.",
-          "terminal": "BETRIEBSFENSTER-NOTIZ // Tideprognose nicht als Wetter behandeln. Sie steuert Lukenspannung, akustische Reichweite, Soleversatz, Hebemasse, Relaisschatten und juristische Antwortzeit.",
-          "audio": "Hier unten gehst du nicht, wenn du bereit bist. Du gehst, wenn das Wasser lang genug aufhört zu streiten.",
-          "in_game_wiki": "Der Ozean von HECTON-8 hat Arbeitszeiten. Der Satz klingt wie ein Scherz, bis eine Luke nicht ausgleichen will, ein Pinger in geneigter Sole stirbt oder eine Route, die vor zehn Minuten offen war, zur Mühle wird. Die Tidephase ist auf diesem Mond kein Hintergrundwetter. Sie verändert Türlast, Schlicklast, akustische Reichweite, Drift der Solelagen, Anzugballast, Pumpendienst und die wenigen sauberen Winkel, in denen ein Carrier durch Aegir-Rauschen hören kann.\n\nDeep Reach presste diese Bedingungen in das höfliche Wort Fenster. Stillwasserfenster. Pumpenfenster. Hebefenster. Relaisfenster. Blackoutfenster. Die Sprache ist effizient und giftig. Sie lässt physische Gnade wie einen Kalendereintrag klingen und einen vermissten Arbeiter wie verspätete Ausführung. Auf den Tafeln kann ein Name mit einem Fettstiftstrich von freigegeben zu verzögert zu gehalten rutschen. Der Ozean brauchte keine Bürokratie, um gefährlich zu sein, aber Bürokratie machte Gefahr leichter abrechenbar.\n\nEin Marauder lernt Fenster als Feldgrammatik zu lesen. Weiße Bögen an Luken markieren Lastrichtung. Pingerabstände dehnen sich, bevor eine Route kippt. Solevorhänge neigen sich, bevor der Bodenstrom dreht. Ein stilles Relais ist nicht immer kaputt; manchmal steht der Mond nur im falschen Schatten und die Rechtswarteschlange läuft ohne Stimme weiter.\n\nDie Great Tide war keine Märchenwelle. Sie war der letzte Stapel zu vieler Arbeitsfenster, die als verhandelbar behandelt wurden: Evakuierung in Last verschoben, Wärmeabgabe gegen blockierte Drainage gehalten, Atlas-Kontinuität über Rückzug gestellt und Arbeiter in einem Plan gelassen, den die Physik nicht mehr ehrte.",
-          "external_site": "HECTON-8 macht Tiden zu Zeitplan, Risiko und Beweis. Routenfenster entscheiden, wann eine Tür öffnet, wann ein Signal stirbt und wann ein Vertrag dem Ozean die Schuld geben kann.",
-          "external_site_article": "Tidefenster sind eine der saubersten Brücken zwischen harter Wissenschaft und Spiel in HECTON-8. Umlaufbahn, Ozeanmasse, Sturmrauschen und industrielle Drucksysteme bleiben nicht im Hintergrundkodex. Sie formen Bewegung, Hörbarkeit, Vertragsrisiko und die alte Koloniesprache, die von Fenstern spricht, als sei der Ozean ein feindlicher Schichtleiter.\n\nWichtig ist: Ein Fenster ist nie nur natürlich. Stillwasser kann eine Luke entlasten, aber eine Pumpenabsenkung kann dieselbe Route verderben. Ein Relaisschatten kann den Carrier stumm machen, während ein akustischer Pinger über einen reparierten Rücken noch funktioniert. Ein Sturm kann Sicht schließen und Leugnung öffnen. Deep Reach lernte, Entscheidungen in dieser Komplexität zu verstecken. Wenn jeder Ausfall in einem schlechten Fenster landet, lässt sich jeder Ausfall als Physik ablegen.\n\nDer Spieler muss keine abstrakte Astronomie auswendig lernen. Er muss Spuren lesen: Tidemarken, Routentafeln, Pinger-Kadenz, Solewinkel, frisches Band, geänderte Rückkehrstempel und Risiko-Karten.",
-          "field_note": "Ein Fenster ist keine Erlaubnis. Es ist nur der Moment, in dem der Ozean kurz wegschaut."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artículo de campo sobre la ventana de trabajo de marea",
-          "scanner": "VENTANA DE TRABAJO DE MAREA // Tres relojes coinciden durante doce minutos: agua floja, descarga de bombas, sombra del carrier. La pizarra de ruta lo llama seguro. Las paredes lo llaman temporal.",
-          "terminal": "NOTA DE VENTANA OPERATIVA // No tratar la previsión de marea como clima. Gobierna tensión de escotillas, alcance acústico, deriva de salmuera, masa de izado, sombra de relé y tiempo de respuesta legal.",
-          "audio": "Aquí abajo no sales cuando estás listo. Sales cuando el agua deja de discutir el tiempo suficiente.",
-          "in_game_wiki": "El océano de HECTON-8 tiene horario de trabajo. La frase suena a broma hasta que una escotilla no iguala, un pinger muere en una salmuera inclinada o una ruta abierta hace diez minutos se convierte en trituradora. La fase de marea no es clima de fondo en esta luna. Cambia la tensión de puertas, la carga de limo, el alcance acústico, la deriva de capas de salmuera, el lastre del traje, el deber de las bombas y los pocos ángulos limpios por los que un carrier puede oír a través del ruido de Aegir.\n\nDeep Reach comprimió esas condiciones en una palabra educada: ventana. Ventana de calma. Ventana de bomba. Ventana de izado. Ventana de relé. Ventana de apagón. El lenguaje es eficaz y venenoso. Hace que una misericordia física suene como una cita de calendario y que un trabajador perdido suene como una ejecución tardía. En las pizarras, un nombre puede pasar de autorizado a demorado a retenido con un trazo de lápiz graso.\n\nUn merodeador aprende a leer las ventanas como gramática de campo. Arcos blancos en los bordes de escotilla marcan dirección de tensión. Los intervalos del pinger se estiran antes de que una ruta se estropee. Las cortinas de salmuera se inclinan antes de que cambie la corriente del fondo. Un relé silencioso no siempre está roto; a veces la luna está en la sombra equivocada y la cola legal sigue corriendo sin voz.\n\nLa Great Tide no fue una ola de cuento. Fue la pila final de demasiadas ventanas tratadas como negociables: evacuación retrasada dentro de la carga, descarga térmica contra drenaje cerrado, continuidad Atlas por encima de retirada y trabajadores dentro de un horario que la física ya no respetaba.",
-          "external_site": "HECTON-8 convierte las mareas en calendario, riesgo y evidencia. Las ventanas de ruta deciden cuándo abre una puerta, cuándo muere una señal y cuándo un contrato puede culpar al océano.",
-          "external_site_article": "Las ventanas de marea son uno de los puentes más claros entre ciencia dura y juego en HECTON-8. La órbita, la masa oceánica, el ruido de tormenta y los sistemas de presión industrial no viven solo en un códice de fondo. Moldean cuándo se mueve el jugador, qué puede oír, qué contratos se vuelven peligrosos y por qué los registros de colonia hablan de ventanas como si el océano fuera un jefe de turno hostil.\n\nUna ventana nunca es solo natural. Una marea floja puede aliviar una escotilla, pero una descarga de bombas puede arruinar la misma ruta. Una sombra de relé puede callar al carrier mientras un pinger acústico aún funciona por una espina reparada. Una tormenta puede cerrar visibilidad y abrir negación. Deep Reach aprendió a esconder decisiones dentro de esa complejidad.\n\nLa respuesta del jugador no es memorizar astronomía abstracta. Es leer evidencia física: marcas de marea, pizarras de ruta, cadencia de pinger, ángulo de salmuera, cinta fresca, sellos de retorno revisados y tarjetas de riesgo.",
-          "field_note": "Una ventana no es permiso. Es solo el océano mirando hacia otro lado un momento."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Article de terrain sur la fenêtre de travail des marées",
-          "scanner": "FENÊTRE DE MARÉE // Trois horloges s'accordent douze minutes : eau étale, pompes en baisse, ombre du carrier. Le tableau de route dit sûr. Les murs disent temporaire.",
-          "terminal": "NOTE DE FENÊTRE OPÉRATIONNELLE // Ne pas traiter la prévision de marée comme météo. Elle verrouille contrainte des sas, portée acoustique, dérive de saumure, masse de levage, ombre relais et réponse légale.",
-          "audio": "Ici, tu ne pars pas quand tu es prêt. Tu pars quand l'eau cesse de discuter assez longtemps.",
-          "in_game_wiki": "L'océan de HECTON-8 a des heures de travail. La phrase paraît drôle jusqu'à ce qu'un sas refuse l'équilibrage, qu'un pinger meure dans une saumure inclinée, ou qu'une route ouverte dix minutes plus tôt devienne une broyeuse. La phase de marée n'est pas une météo de décor. Elle change la contrainte des portes, la charge de limon, la portée acoustique, la dérive des couches de saumure, le ballast des combinaisons, le service des pompes et les rares angles où un carrier peut entendre à travers le bruit d'Aegir.\n\nDeep Reach a compressé ces conditions dans un mot poli : fenêtre. Fenêtre d'eau étale, fenêtre de pompe, fenêtre de levage, fenêtre relais, fenêtre de blackout. Le langage est efficace et toxique. Il fait passer une miséricorde physique pour une case de calendrier et un travailleur manquant pour une exécution en retard. Sur les tableaux, un nom peut glisser de validé à différé puis retenu d'un seul trait gras.\n\nUn Marauder apprend à lire les fenêtres comme une grammaire de terrain. Les arcs blancs sur les bords des sas marquent la direction de contrainte. Les intervalles des pingers s'étirent avant qu'une route tourne mal. Les rideaux de saumure penchent avant le changement du courant de fond. Un relais silencieux n'est pas toujours cassé ; parfois la lune est juste dans la mauvaise ombre et la file légale continue sans voix.\n\nLa Great Tide n'était pas une vague de conte. C'était l'empilement final de trop de fenêtres traitées comme négociables : évacuation retardée dans la charge, chaleur retenue contre drainage fermé, continuité Atlas au-dessus de la retraite, travailleurs enfermés dans un planning que la physique ne respectait plus.",
-          "external_site": "HECTON-8 transforme les marées en calendrier, risque et preuve. Les fenêtres de route décident quand une porte s'ouvre, quand un signal meurt et quand un contrat peut accuser l'océan.",
-          "external_site_article": "Les fenêtres de marée sont l'un des ponts les plus nets entre science dure et jeu dans HECTON-8. L'orbite, la masse océanique, le bruit des tempêtes et les systèmes industriels de pression ne restent pas dans un codex d'arrière-plan. Ils façonnent les déplacements, l'écoute, le risque des contrats et la langue des anciens registres qui parlent de fenêtres comme si l'océan était un chef de quart hostile.\n\nUne fenêtre n'est jamais seulement naturelle. Une eau étale peut alléger un sas, mais une baisse de pompe peut ruiner la même route. Une ombre relais peut rendre le carrier muet tandis qu'un pinger acoustique fonctionne encore par une colonne réparée. Une tempête peut fermer la visibilité et ouvrir le déni. Deep Reach a appris à cacher ses décisions dans cette complexité.\n\nLe joueur n'a pas besoin de réciter l'astronomie abstraite. Il doit lire les preuves physiques : marques de marée, tableaux de route, cadence des pingers, angle de saumure, bande neuve, tampons de retour corrigés et cartes de risque.",
-          "field_note": "Une fenêtre n'est pas une permission. C'est seulement l'océan qui regarde ailleurs un instant."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "מאמר שטח על חלון עבודת גאות",
-          "scanner": "חלון עבודת גאות // שלושה שעונים מסכימים לשתים עשרה דקות: מים שקטים, ירידת משאבות, צל carrier. לוח הנתיב קורא לזה בטוח. הקירות קוראים לזה זמני.",
-          "terminal": "הערת חלון תפעול // אין להתייחס לתחזית גאות כמזג אוויר. היא שולטת בעומס פתחים, טווח אקוסטי, סחיפת תמלחת, מסת הרמה, צל ממסר ותזמון תגובה משפטית.",
-          "audio": "כאן למטה לא עוזבים כשמוכנים. עוזבים כשהמים מפסיקים להתווכח מספיק זמן.",
-          "in_game_wiki": "לאוקיינוס של HECTON-8 יש שעות עבודה. המשפט נשמע כמו בדיחה עד שפתח מסרב להשוות לחץ, פינגר מת בתמלחת נטויה, או נתיב שהיה פתוח לפני עשר דקות הופך למטחנה. שלב הגאות אינו מזג אוויר ברקע. הוא משנה עומס דלתות, עומס סחף, טווח אקוסטי, סחיפת שכבות תמלחת, בלסט חליפה, משמרת משאבות ואת הזוויות המעטות שבהן carrier יכול לשמוע דרך רעש Aegir.\n\nDeep Reach דחסה את כל זה למילה מנומסת: חלון. חלון מים שקטים. חלון משאבה. חלון הרמה. חלון ממסר. חלון blackout. השפה יעילה ורעילה. היא גורמת לחסד פיזי להישמע כמו משבצת בלוח שנה ולעובד חסר להישמע כמו ביצוע מאוחר. על הלוחות שם יכול להחליק ממאושר למעוכב למוחזק במשיכת עיפרון שמן אחת.\n\nMarauder לומד לקרוא את החלונות כדקדוק שטח. קשתות לבנות על שפות פתחים מסמנות כיוון עומס. מרווחי פינגר נמתחים לפני שנתיב מתקלקל. וילונות תמלחת נוטים לפני שזרם הקרקעית משתנה. ממסר שקט לא תמיד שבור; לפעמים הירח פשוט בצל הלא נכון והתור המשפטי ממשיך בלי קול.\n\nה-Great Tide לא הייתה גל אגדה. היא הייתה הערימה האחרונה של יותר מדי חלונות עבודה שטופלו כאילו אפשר להתמקח עליהם: פינוי נדחה אל תוך עומס, פליטת חום מול ניקוז חסום, רציפות Atlas מעל נסיגה, ועובדים בתוך לוח זמנים שהפיזיקה כבר לא כיבדה.",
-          "external_site": "HECTON-8 הופך גאות ללוח זמנים, סיכון וראיה. חלונות נתיב קובעים מתי דלת נפתחת, מתי אות מת ומתי חוזה יכול להאשים את האוקיינוס.",
-          "external_site_article": "חלונות גאות הם אחד החיבורים הנקיים ביותר בין מדע קשה ומשחק ב-HECTON-8. המסלול, מסת האוקיינוס, רעש הסערה ומערכות הלחץ התעשייתיות אינם נשארים ברקע. הם מעצבים תנועה, שמיעה, סיכון חוזים ואת השפה של רשומות המושבה שמדברת על חלונות כאילו האוקיינוס היה מנהל משמרת עוין.\n\nחלון לעולם אינו טבעי בלבד. מים שקטים יכולים להקל על פתח, אך ירידת משאבות יכולה להרוס את אותו נתיב. צל ממסר יכול להשתיק carrier בזמן שפינגר אקוסטי עוד עובד דרך עמוד שתוקן. סערה יכולה לסגור ראות ולפתוח הכחשה. Deep Reach למדה להסתיר החלטות בתוך המורכבות הזאת.\n\nהשחקן אינו צריך לשנן אסטרונומיה מופשטת. עליו לקרוא ראיות פיזיות: סימני גאות, לוחות נתיב, קצב פינגר, זווית תמלחת, סרט טרי, חותמות חזרה מתוקנות וכרטיסי סיכון.",
-          "field_note": "חלון אינו רשות. זה רק רגע שבו האוקיינוס מביט הצידה."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artikel Lapangan Jendela Kerja Pasang",
-          "scanner": "JENDELA KERJA PASANG // Tiga jam sepakat selama dua belas menit: air tenang, pompa turun, bayangan carrier. Papan rute menyebutnya aman. Dinding menyebutnya sementara.",
-          "terminal": "CATATAN JENDELA OPERASI // Jangan perlakukan ramalan pasang sebagai cuaca. Ia mengatur tegangan palka, jangkauan akustik, hanyutan brine, massa angkat, bayangan relai, dan waktu respons hukum.",
-          "audio": "Di bawah sini kau tidak pergi saat siap. Kau pergi saat air berhenti berdebat cukup lama.",
-          "in_game_wiki": "Samudra HECTON-8 punya jam kerja. Kalimat itu terdengar seperti lelucon sampai palka menolak menyeimbangkan tekanan, pinger mati dalam brine yang miring, atau rute yang terbuka sepuluh menit lalu berubah menjadi penggiling. Fase pasang bukan cuaca latar di bulan ini. Ia mengubah beban pintu, lumpur, jangkauan akustik, hanyutan lapisan brine, ballast baju, tugas pompa, dan sedikit sudut bersih yang bisa didengar carrier melalui derau Aegir.\n\nDeep Reach memadatkan semua kondisi itu menjadi kata sopan: jendela. Jendela air tenang, jendela pompa, jendela angkat, jendela relai, jendela blackout. Bahasanya efisien dan beracun. Ia membuat belas kasihan fisika terdengar seperti slot kalender dan pekerja hilang terdengar seperti eksekusi terlambat. Di papan, satu nama bisa bergeser dari bebas ke tertunda ke ditahan dengan satu goresan pensil gemuk.\n\nMarauder belajar membaca jendela sebagai tata bahasa lapangan. Busur putih di bibir palka menandai arah tegangan. Interval pinger memanjang sebelum rute memburuk. Tirai brine miring sebelum arus dasar berubah. Relai sunyi tidak selalu rusak; kadang bulan hanya berada di bayangan yang salah dan antrean hukum tetap berjalan tanpa suara.\n\nGreat Tide bukan gelombang dongeng. Itu tumpukan akhir dari terlalu banyak jendela kerja yang diperlakukan seolah bisa dinegosiasikan: evakuasi ditunda masuk ke beban, panas ditahan melawan drainase tertutup, kontinuitas Atlas di atas mundur, dan pekerja dibiarkan dalam jadwal yang sudah tidak dihormati fisika.",
-          "external_site": "HECTON-8 mengubah pasang menjadi jadwal, risiko, dan bukti. Jendela rute menentukan kapan pintu terbuka, kapan sinyal mati, dan kapan kontrak bisa menyalahkan laut.",
-          "external_site_article": "Jendela pasang adalah salah satu jembatan paling jelas antara sains keras dan permainan di HECTON-8. Orbit, massa samudra, derau badai, dan sistem tekanan industri tidak tinggal di kodex latar. Semua membentuk kapan pemain bergerak, apa yang bisa didengar, kontrak mana yang berbahaya, dan mengapa catatan koloni bicara tentang jendela seolah laut adalah mandor sif yang memusuhi.\n\nJendela tidak pernah hanya alami. Pasang tenang bisa meringankan palka, tetapi penurunan pompa bisa merusak rute yang sama. Bayangan relai bisa membisukan carrier sementara pinger akustik masih bekerja lewat tulang punggung yang diperbaiki. Badai bisa menutup pandangan dan membuka penyangkalan. Deep Reach belajar menyembunyikan keputusan di dalam kerumitan itu.\n\nJawaban pemain bukan menghafal astronomi abstrak. Jawabannya membaca bukti fisik: tanda pasang, papan rute, irama pinger, sudut brine, pita baru, cap pulang yang direvisi, dan kartu risiko kontrak.",
-          "field_note": "Jendela bukan izin. Itu hanya samudra yang menoleh sebentar."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "潮汐作業窓フィールド記事",
-          "scanner": "潮汐作業窓 // 三つの時計が十二分だけ一致する。静水、ポンプ低下、キャリア影。経路板は安全と言う。壁は一時的と言う。",
-          "terminal": "運用窓メモ // 潮汐予報を天候として扱うな。ハッチ荷重、音響距離、塩水層の流れ、揚力質量、中継影、法的応答時間を制限する。",
-          "audio": "ここでは準備ができた時に出るんじゃない。水が十分長く口論をやめた時に出る。",
-          "in_game_wiki": "HECTON-8 の海には勤務時間がある。冗談のように聞こえるが、ハッチが均圧を拒み、傾いた塩水層でピンガーが死に、十分前には開いていた経路が粉砕機に変われば笑えない。潮汐位相はこの月の背景天候ではない。扉の荷重、シルト量、音響距離、塩水層の漂流、スーツのバラスト、ポンプ負荷、そして Aegir ノイズ越しにキャリアが聞けるわずかな角度を変える。\n\nDeep Reach はそれらを丁寧な言葉に圧縮した。窓。静水窓、ポンプ窓、揚収窓、中継窓、通信断窓。言葉は効率的で、毒がある。物理的な猶予を予定表の枠のように聞かせ、戻らない作業員を遅延処理のように見せる。板の上では、名前がグリースペンの一線で許可から遅延、保留へ滑る。\n\nMarauder は窓を現場文法として読む。ハッチ縁の白い弧は荷重方向を示す。ピンガー間隔は経路が悪くなる前に伸びる。塩水の幕は底流が変わる前に傾く。静かな中継器はいつも故障ではない。月が間違った影に入り、法的キューだけが声なしで進んでいる場合もある。\n\nGreat Tide はおとぎ話の波ではなかった。交渉できるものとして扱われた作業窓が積み重なった最後の結果だった。負荷の中へ遅らされた避難、閉じた排水に逆らう熱排出、退避より上に置かれた Atlas 継続性、そして物理がもう守らない予定表の中に残された作業員たち。",
-          "external_site": "HECTON-8 は潮汐を予定、リスク、証拠に変える。経路窓は扉が開く時、信号が死ぬ時、契約が海だけを犯人にできる時を決める。",
-          "external_site_article": "潮汐窓は、HECTON-8 におけるハード SF とゲームプレイをつなぐ最も明確な橋の一つだ。軌道、海洋質量、嵐のノイズ、産業圧力システムは背景の図鑑に留まらない。プレイヤーがいつ動けるか、何を聞けるか、どの契約が危険になるか、そして古い記録がなぜ海を敵対的なシフト管理者のように語るかを形作る。\n\n窓は決して自然だけのものではない。静水はハッチ荷重を軽くするが、ポンプ低下は同じ経路を壊す。中継影はキャリアを黙らせるが、修理された脊柱を通じて音響ピンガーはまだ働く。嵐は視界を閉じ、否認を開く。Deep Reach はその複雑さの中に判断を隠すことを覚えた。\n\nプレイヤーに必要なのは抽象的な天文学の暗記ではない。潮汐痕、経路板、ピンガーの拍子、塩水角度、新しいテープ、修正された帰還印、契約リスクカードを読むことだ。",
-          "field_note": "窓は許可ではない。海が一瞬だけ目をそらすだけだ。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "조석 작업 창 현장 문서",
-          "scanner": "조석 작업 창 // 세 개의 시계가 12분 동안 맞는다. 정수, 펌프 저하, 캐리어 그림자. 경로판은 안전하다고 부른다. 벽은 일시적이라고 부른다.",
-          "terminal": "운영 창 메모 // 조석 예보를 날씨로 취급하지 말 것. 해치 변형, 음향 거리, 염수 표류, 인양 질량, 중계 그림자, 법적 응답 시간을 제한한다.",
-          "audio": "여기 아래에서는 준비됐을 때 떠나는 게 아니다. 물이 충분히 오래 다투기를 멈출 때 떠난다.",
-          "in_game_wiki": "HECTON-8의 바다에는 근무 시간이 있다. 농담처럼 들리지만, 해치가 균압을 거부하고, 기울어진 염수에서 핑거가 죽고, 10분 전 열려 있던 경로가 분쇄기가 되면 농담이 아니다. 조석 위상은 이 달의 배경 날씨가 아니다. 문 하중, 실트 부담, 음향 거리, 염수층 표류, 슈트 밸러스트, 펌프 운전, 그리고 Aegir 잡음을 뚫고 캐리어가 들을 수 있는 몇 안 되는 각도를 바꾼다.\n\nDeep Reach는 그 조건들을 예의 바른 말 하나로 압축했다. 창. 정수 창, 펌프 창, 인양 창, 중계 창, 통신 단절 창. 언어는 효율적이고 독이 있다. 물리적 자비를 달력 칸처럼 들리게 하고, 돌아오지 않는 작업자를 지연된 실행처럼 보이게 한다. 게시판 위에서 이름 하나는 기름연필 한 줄로 승인에서 지연, 보류로 미끄러진다.\n\nMarauder는 창을 현장 문법으로 읽는다. 해치 가장자리의 흰 호는 하중 방향을 표시한다. 핑거 간격은 경로가 나빠지기 전에 늘어난다. 염수 커튼은 바닥 해류가 바뀌기 전에 기운다. 조용한 중계기가 항상 고장난 것은 아니다. 때로 달이 잘못된 그림자에 있고 법적 대기열만 음성 없이 계속 돈다.\n\nGreat Tide는 동화 속 파도가 아니었다. 협상 가능한 것처럼 취급된 너무 많은 작업 창이 마지막으로 쌓인 결과였다. 하중 속으로 밀린 대피, 막힌 배수와 맞선 열 방출, 철수보다 위에 놓인 Atlas 연속성, 그리고 물리가 더는 지키지 않는 일정 안에 남겨진 노동자들.",
-          "external_site": "HECTON-8은 조석을 일정, 위험, 증거로 바꾼다. 경로 창은 문이 열릴 때, 신호가 죽을 때, 계약이 바다만 탓할 때를 정한다.",
-          "external_site_article": "조석 창은 HECTON-8에서 하드 사이언스와 플레이를 잇는 가장 깨끗한 다리 중 하나다. 궤도, 바다 질량, 폭풍 잡음, 산업 압력 시스템은 배경 코덱스에 머물지 않는다. 플레이어가 언제 움직일 수 있는지, 무엇을 들을 수 있는지, 어떤 계약이 위험해지는지, 왜 옛 기록이 바다를 적대적인 교대 관리자처럼 말하는지를 만든다.\n\n창은 결코 자연만이 아니다. 정수는 해치 하중을 줄일 수 있지만, 펌프 저하는 같은 경로를 망칠 수 있다. 중계 그림자는 캐리어를 침묵시킬 수 있지만, 음향 핑거는 수리된 척추를 통해 아직 작동할 수 있다. 폭풍은 시야를 닫고 부인을 열 수 있다. Deep Reach는 그 복잡함 안에 결정을 숨기는 법을 배웠다.\n\n플레이어의 답은 추상 천문학을 외우는 것이 아니다. 조석 표시, 경로판, 핑거 박자, 염수 각도, 새 테이프, 수정된 귀환 도장, 계약 위험 카드를 읽는 것이다.",
-          "field_note": "창은 허가가 아니다. 바다가 잠깐 시선을 돌리는 순간일 뿐이다."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Veldartikel over het getijdenwerkvenster",
-          "scanner": "GETIJDENWERKVENSTER // Drie klokken kloppen twaalf minuten: kentering, pompverlaging, carrier-schaduw. Het routebord noemt het veilig. De muren noemen het tijdelijk.",
-          "terminal": "OPERATIEVENSTER-NOTITIE // Getijdenvoorspelling niet als weer behandelen. Zij bepaalt luikspanning, akoestisch bereik, pekeldrift, hefgewicht, relaisschaduw en juridische responstijd.",
-          "audio": "Hier beneden vertrek je niet wanneer je klaar bent. Je vertrekt wanneer het water lang genoeg ophoudt met ruziën.",
-          "in_game_wiki": "De oceaan van HECTON-8 heeft werktijden. De zin klinkt als een grap tot een luik niet wil egaliseren, een pinger sterft in scheve pekel, of een route die tien minuten geleden open was een molen wordt. Getijdenfase is op deze maan geen achtergrondweer. Ze verandert deurlast, sliblast, akoestisch bereik, drift van pekellagen, pakballast, pompendienst en de weinige zuivere hoeken waarin een carrier door Aegir-ruis kan horen.\n\nDeep Reach perste die omstandigheden samen tot het nette woord venster. Kenteringsvenster. Pompvenster. Hefvenster. Relaisvenster. Blackoutvenster. De taal is efficiënt en giftig. Ze laat fysieke genade klinken als een kalenderblok en een gemiste werker als late uitvoering. Op borden kan een naam met één vetpotloodstreep van vrij naar vertraagd naar vastgehouden glijden.\n\nEen Marauder leert vensters lezen als veldgrammatica. Witte bogen op luikranden tonen spanningsrichting. Pingerintervallen rekken uit voordat een route slecht wordt. Pekelgordijnen hellen voordat de bodemstroom draait. Een stil relais is niet altijd stuk; soms staat de maan gewoon in de verkeerde schaduw en blijft de juridische wachtrij zonder stem lopen.\n\nDe Great Tide was geen sprookjesgolf. Het was de laatste stapel van te veel werkvensters die als onderhandelbaar werden behandeld: evacuatie uitgesteld in belasting, warmteafvoer tegen gesloten drainage, Atlas-continuïteit boven terugtrekking, en werkers in een rooster dat de fysica al niet meer eerbiedigde.",
-          "external_site": "HECTON-8 verandert getijden in planning, risico en bewijs. Routevensters bepalen wanneer een deur opent, wanneer een signaal sterft en wanneer een contract de oceaan kan beschuldigen.",
-          "external_site_article": "Getijdenvensters zijn een van de duidelijkste bruggen tussen harde wetenschap en spel in HECTON-8. Baan, oceaanmassa, stormruis en industriële druksystemen blijven niet in een achtergrondcodex. Ze vormen wanneer de speler kan bewegen, wat de speler hoort, welke contracten gevaarlijk worden, en waarom oude kolonieregisters over vensters spreken alsof de oceaan een vijandige ploegbaas was.\n\nEen venster is nooit alleen natuurlijk. Kentering kan een luik ontlasten, maar pompverlaging kan dezelfde route verpesten. Een relaisschaduw kan de carrier stil maken terwijl een akoestische pinger via een herstelde rug nog werkt. Een storm kan zicht sluiten en ontkenning openen. Deep Reach leerde beslissingen in die complexiteit te verbergen.\n\nDe speler hoeft geen abstracte astronomie te onthouden. De speler moet fysiek bewijs lezen: getijdenmarkeringen, routeborden, pingercadans, pekelhoek, nieuwe tape, aangepaste terugkeerstempels en risicokaarten.",
-          "field_note": "Een venster is geen toestemming. Het is alleen de oceaan die even wegkijkt."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artykuł terenowy o oknie pracy pływu",
-          "scanner": "OKNO PRACY PŁYWU // Trzy zegary zgadzają się przez dwanaście minut: stojąca woda, obniżenie pomp, cień carriera. Tablica trasy mówi bezpiecznie. Ściany mówią chwilowo.",
-          "terminal": "NOTA OKNA OPERACYJNEGO // Prognozy pływu nie traktować jak pogody. Steruje naprężeniem włazów, zasięgiem akustycznym, dryfem solanki, masą podnoszenia, cieniem przekaźnika i czasem odpowiedzi prawnej.",
-          "audio": "Tu na dole nie wychodzisz, kiedy jesteś gotów. Wychodzisz, kiedy woda przestaje się kłócić dostatecznie długo.",
-          "in_game_wiki": "Ocean HECTON-8 ma godziny pracy. Zdanie brzmi jak żart, dopóki właz nie odmawia wyrównania, pinger nie umiera w przechylonej solance albo trasa otwarta dziesięć minut temu staje się młynem. Faza pływu nie jest na tym księżycu pogodą w tle. Zmienia obciążenie drzwi, muł, zasięg akustyczny, dryf warstw solanki, balast skafandra, dyżur pomp i nieliczne czyste kąty, pod którymi carrier słyszy przez szum Aegir.\n\nDeep Reach ścisnęło te warunki w grzeczne słowo okno. Okno martwej wody. Okno pomp. Okno podnoszenia. Okno przekaźnika. Okno blackoutu. Język jest sprawny i trujący. Sprawia, że fizyczna łaska brzmi jak rubryka kalendarza, a zaginiony pracownik jak spóźnione wykonanie. Na tablicy imię może jednym tłustym pociągnięciem przejść z dopuszczony do opóźniony i wstrzymany.\n\nMarauder uczy się czytać okna jak gramatykę terenu. Białe łuki na krawędziach włazów pokazują kierunek naprężenia. Odstępy pingera wydłużają się, zanim trasa zepsuje się naprawdę. Zasłony solanki pochylają się przed zmianą prądu dna. Cichy przekaźnik nie zawsze jest zepsuty; czasem księżyc stoi w złym cieniu, a kolejka prawna tyka dalej bez głosu.\n\nGreat Tide nie była baśniową falą. Była końcowym stosem zbyt wielu okien pracy potraktowanych jak negocjowalne: ewakuacja opóźniona w obciążenie, zrzut ciepła trzymany przeciw zamkniętemu drenażowi, ciągłość Atlas ponad odwrót i pracownicy w grafiku, którego fizyka już nie respektowała.",
-          "external_site": "HECTON-8 zmienia pływy w harmonogram, ryzyko i dowód. Okna tras decydują, kiedy otwierają się drzwi, kiedy ginie sygnał i kiedy kontrakt może obwinić ocean.",
-          "external_site_article": "Okna pływów są jednym z najczystszych mostów między twardą nauką a grą w HECTON-8. Orbita, masa oceanu, szum burzy i przemysłowe systemy ciśnienia nie zostają w tle kodeksu. Kształtują ruch gracza, to co słychać, które kontrakty stają się groźne i dlaczego stare zapisy kolonii mówią o oknach tak, jakby ocean był wrogim brygadzistą.\n\nOkno nigdy nie jest wyłącznie naturalne. Stojąca woda może odciążyć właz, ale obniżenie pomp może zepsuć tę samą trasę. Cień przekaźnika może uciszyć carrier, gdy akustyczny pinger nadal działa przez naprawiony grzbiet. Burza może zamknąć widoczność i otworzyć zaprzeczanie. Deep Reach nauczyło się chować decyzje w tej złożoności.\n\nOdpowiedzią gracza nie jest pamięciowa astronomia. Odpowiedzią jest czytanie fizycznych dowodów: znaków pływu, tablic tras, rytmu pingera, kąta solanki, świeżej taśmy, poprawionych stempli powrotu i kart ryzyka.",
-          "field_note": "Okno nie jest pozwoleniem. To tylko chwila, gdy ocean patrzy w bok."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artigo de campo sobre a janela de trabalho da maré",
-          "scanner": "JANELA DE TRABALHO DA MARÉ // Três relógios concordam por doze minutos: água parada, queda de bomba, sombra do carrier. O quadro de rota chama de seguro. As paredes chamam de temporário.",
-          "terminal": "NOTA DE JANELA OPERACIONAL // Não trate previsão de maré como clima. Ela governa tensão de escotilha, alcance acústico, deriva de salmoura, massa de içamento, sombra de relé e tempo de resposta legal.",
-          "audio": "Aqui embaixo você não sai quando está pronto. Você sai quando a água para de discutir por tempo suficiente.",
-          "in_game_wiki": "O oceano de HECTON-8 tem horário de trabalho. A frase soa como piada até uma escotilha recusar equalização, um pinger morrer numa salmoura inclinada, ou uma rota aberta dez minutos antes virar moedor. A fase de maré não é clima de fundo nesta lua. Ela muda carga de portas, lodo, alcance acústico, deriva de camadas de salmoura, lastro do traje, dever das bombas e os poucos ângulos limpos em que um carrier pode ouvir através do ruído de Aegir.\n\nA Deep Reach comprimiu essas condições na palavra educada janela. Janela de água parada. Janela de bomba. Janela de içamento. Janela de relé. Janela de blackout. A linguagem é eficiente e venenosa. Faz uma misericórdia física soar como bloco de calendário e um trabalhador perdido soar como execução atrasada. Nos quadros, um nome pode passar de liberado a atrasado e retido com um traço de lápis graxo.\n\nUm Marauder aprende a ler janelas como gramática de campo. Arcos brancos nas bordas das escotilhas marcam direção de tensão. Intervalos de pinger se alongam antes de uma rota azedar. Cortinas de salmoura se inclinam antes de a corrente do fundo mudar. Um relé quieto nem sempre está quebrado; às vezes a lua só está na sombra errada e a fila legal continua correndo sem voz.\n\nA Great Tide não foi uma onda de conto. Foi a pilha final de janelas de trabalho demais tratadas como negociáveis: evacuação adiada para dentro da carga, descarga térmica contra drenagem fechada, continuidade Atlas acima da retirada e trabalhadores dentro de uma escala que a física já não respeitava.",
-          "external_site": "HECTON-8 transforma marés em agenda, risco e evidência. Janelas de rota decidem quando uma porta abre, quando um sinal morre e quando um contrato pode culpar o oceano.",
-          "external_site_article": "Janelas de maré são uma das pontes mais limpas entre ciência dura e jogo em HECTON-8. Órbita, massa oceânica, ruído de tempestade e sistemas industriais de pressão não ficam num códice de fundo. Eles moldam quando o jogador pode se mover, o que pode ouvir, quais contratos ficam perigosos e por que registros antigos falam de janelas como se o oceano fosse um chefe de turno hostil.\n\nUma janela nunca é só natural. Água parada pode aliviar uma escotilha, mas queda de bomba pode estragar a mesma rota. Uma sombra de relé pode calar o carrier enquanto um pinger acústico ainda funciona por uma espinha reparada. Uma tempestade pode fechar visibilidade e abrir negação. A Deep Reach aprendeu a esconder decisões nessa complexidade.\n\nA resposta do jogador não é decorar astronomia abstrata. É ler evidência física: marcas de maré, quadros de rota, cadência de pinger, ângulo de salmoura, fita fresca, carimbos de retorno revisados e cartões de risco.",
-          "field_note": "Uma janela não é permissão. É só o oceano olhando para outro lado por um instante."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Полевая статья о приливном рабочем окне",
-          "scanner": "ПРИЛИВНОЕ РАБОЧЕЕ ОКНО // Три часа сходятся на двенадцать минут: стоячая вода, просадка насосов, тень носителя. Маршрутная доска считает это безопасным. Стены считают это временным.",
-          "terminal": "ЗАМЕТКА ОПЕРАЦИОННОГО ОКНА // Не считать приливный прогноз погодой. Он задает нагрузку люков, акустическую дальность, дрейф рассола, массу подъема, тень ретранслятора и срок юридического ответа.",
-          "audio": "Здесь внизу уходят не тогда, когда готовы. Уходят, когда вода достаточно долго перестает спорить.",
-          "in_game_wiki": "У океана HECTON-8 есть рабочие часы. Это звучит как шутка, пока люк не отказывается выровнять давление, пингер не глохнет в наклонном рассоле, а маршрут, открытый десять минут назад, не становится мясорубкой. Фаза прилива на этой луне не фоновая погода. Она меняет нагрузку дверей, взвесь ила, акустическую дальность, дрейф рассольных слоев, балласт скафандра, дежурство насосов и те редкие чистые углы, под которыми носитель может слышать сквозь шум Aegir.\n\nDeep Reach сжала эти условия в вежливое слово: окно. Окно слабой воды. Окно насосов. Окно подъема. Окно ретранслятора. Окно радиомолчания. Язык эффективный и ядовитый. Он заставляет физическую милость звучать как ячейка календаря, а пропавшего рабочего как задержанное выполнение. На доске имя может одним жирным штрихом перейти из допущен в задержан, а потом в удержан. Океану не нужна была бюрократия, чтобы быть опасным, но бюрократия сделала опасность удобной для счета.\n\nМародер учится читать окна как полевую грамматику. Белые дуги на кромках люков отмечают направление нагрузки. Интервалы пингера растягиваются перед тем, как маршрут портится. Рассольные занавеси клонятся до смены донного течения. Тихий ретранслятор не всегда сломан; иногда луна просто стоит в неправильной тени, а юридическая очередь продолжает тикать без голоса.\n\nGreat Tide не была сказочной волной. Это была последняя стопка слишком многих рабочих окон, с которыми обращались как с предметом переговоров: эвакуацию отложили внутрь нагрузки, тепловой сброс держали против закрытого дренажа, непрерывность Atlas поставили выше отхода, а рабочих оставили внутри расписания, которое физика уже не соблюдала.",
-          "external_site": "HECTON-8 превращает приливы в расписание, риск и доказательство. Маршрутные окна решают, когда откроется дверь, когда умрет сигнал и когда контракт сможет обвинить океан.",
-          "external_site_article": "Приливные окна в HECTON-8 связывают жесткую науку и игру без музейной витрины. Орбита, масса океана, шум шторма и промышленные системы давления не лежат в фоновом кодексе. Они определяют, когда игрок может двигаться, что он может услышать, какие контракты становятся опасными и почему старые записи колонии говорят об окнах так, будто океан был враждебным начальником смены.\n\nОкно никогда не бывает только природным. Слабая вода может снять нагрузку с люка, но просадка насосов может испортить тот же маршрут. Тень ретранслятора может заставить носитель замолчать, пока акустический пингер все еще работает через отремонтированный хребет. Шторм может закрыть видимость и открыть отрицание. Deep Reach научилась прятать решения внутри этой сложности. Если каждый отказ приходит в плохое окно, каждый отказ можно списать на физику.\n\nОтвет игрока не в заучивании абстрактной астрономии. Ответ в чтении физических улик: приливных меток, маршрутных досок, ритма пингера, угла рассола, свежей ленты, исправленных штампов возврата и карточек контрактного риска.",
-          "field_note": "Окно это не разрешение. Это лишь миг, когда океан смотрит в сторону."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Польова стаття про припливне робоче вікно",
-          "scanner": "ПРИПЛИВНЕ РОБОЧЕ ВІКНО // Три годинники сходяться на дванадцять хвилин: тиха вода, спад помп, тінь носія. Маршрутна дошка називає це безпечним. Стіни називають це тимчасовим.",
-          "terminal": "НОТАТКА ОПЕРАЦІЙНОГО ВІКНА // Не вважати прогноз припливу погодою. Він задає напругу люків, акустичну дальність, дрейф розсолу, масу підйому, тінь ретранслятора і час юридичної відповіді.",
-          "audio": "Тут унизу виходять не тоді, коли готові. Виходять, коли вода досить довго перестає сперечатися.",
-          "in_game_wiki": "Океан HECTON-8 має робочі години. Це звучить як жарт, доки люк не відмовляється вирівняти тиск, пінгер не глухне у нахиленому розсолі, а маршрут, відкритий десять хвилин тому, не стає млином. Фаза припливу на цьому місяці не фонова погода. Вона змінює навантаження дверей, мул, акустичну дальність, дрейф розсольних шарів, баласт скафандра, чергування помп і ті небагато чистих кутів, під якими носій може чути крізь шум Aegir.\n\nDeep Reach стиснула ці умови в чемне слово: вікно. Вікно тихої води. Вікно помп. Вікно підйому. Вікно ретранслятора. Вікно радіомовчання. Мова ефективна й отруйна. Вона змушує фізичну милість звучати як клітинка календаря, а зниклого працівника як затримане виконання. На дошці ім'я може одним жирним штрихом перейти з допущено в затримано і далі в утримано.\n\nMarauder вчиться читати вікна як польову граматику. Білі дуги на краях люків позначають напрямок навантаження. Інтервали пінгера розтягуються перед тим, як маршрут псується. Розсольні завіси хиляться до зміни донної течії. Тихий ретранслятор не завжди зламаний; іноді місяць просто стоїть у неправильній тіні, а юридична черга продовжує цокати без голосу.\n\nGreat Tide не була казковою хвилею. Це була остання стопка забагатьох робочих вікон, до яких ставилися як до предмета переговорів: евакуацію відклали всередину навантаження, тепловий скид тримали проти закритого дренажу, безперервність Atlas поставили вище відступу, а працівників лишили в розкладі, який фізика вже не поважала.",
-          "external_site": "HECTON-8 перетворює припливи на розклад, ризик і доказ. Маршрутні вікна вирішують, коли відкриються двері, коли помре сигнал і коли контракт зможе звинуватити океан.",
-          "external_site_article": "Припливні вікна в HECTON-8 є чистим мостом між жорсткою наукою і грою. Орбіта, маса океану, шум шторму й промислові системи тиску не лежать у фоновому кодексі. Вони визначають, коли гравець може рухатися, що він може почути, які контракти стають небезпечними і чому старі записи колонії говорять про вікна так, ніби океан був ворожим начальником зміни.\n\nВікно ніколи не є лише природним. Тиха вода може зняти навантаження з люка, але спад помп може зіпсувати той самий маршрут. Тінь ретранслятора може змусити носій мовчати, поки акустичний пінгер ще працює через відремонтований хребет. Шторм може закрити видимість і відкрити заперечення. Deep Reach навчилася ховати рішення в цій складності.\n\nВідповідь гравця не в заучуванні абстрактної астрономії. Відповідь у читанні фізичних доказів: припливних міток, маршрутних дошок, ритму пінгера, кута розсолу, свіжої стрічки, виправлених штампів повернення і карт ризику.",
-          "field_note": "Вікно це не дозвіл. Це лише мить, коли океан дивиться вбік."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "潮汐工作窗口现场文章",
-          "scanner": "潮汐工作窗口 // 三只钟同意十二分钟：缓水、泵降、母船阴影。路线板说安全。墙壁说只是暂时。",
-          "terminal": "运行窗口备注 // 不要把潮汐预报当作天气。它限制舱门应力、声学距离、盐水漂移、提升质量、中继阴影和法律响应时间。",
-          "audio": "在下面，你不是准备好了就走。你要等水停止争吵，停得足够久，才能走。",
-          "in_game_wiki": "HECTON-8 的海洋有工作时间。这句话听起来像笑话，直到舱门拒绝均压，脉冲器死在倾斜的盐水层里，或者十分钟前还开放的路线变成绞磨机。潮汐相位在这颗月球上不是背景天气。它会改变门的应力、泥沙负荷、声学距离、盐水层漂移、潜服压载、泵的值守负荷，以及母船能穿过 Aegir 噪声听见信号的少数干净角度。\n\nDeep Reach 把这些条件压缩成一个礼貌的词：窗口。缓水窗口。泵窗口。提升窗口。中继窗口。通信黑窗。这种语言高效，而且有毒。它让物理上的怜悯听起来像日历格子，让失踪工人听起来像延迟执行。在板面上，一个名字可以被一笔油笔从放行划到延误，再划到扣留。\n\nMarauder 学会把窗口读成现场语法。舱门边缘的白弧标记应力方向。脉冲器间隔会在路线变坏前拉长。盐水帘会在底流改变前倾斜。安静的中继器不一定坏了；有时只是月球站在错误阴影里，而法律队列仍在无声运行。\n\nGreat Tide 不是童话里的巨浪。它是太多工作窗口被当成可谈判事项后的最后堆叠：撤离被拖进负荷里，热排放顶着封闭排水，Atlas 连续性压过撤退，工人被留在物理学已经不再尊重的时间表里。",
-          "external_site": "HECTON-8 把潮汐变成日程、风险和证据。路线窗口决定门何时开启、信号何时死亡，以及合同何时可以把责任推给海洋。",
-          "external_site_article": "潮汐窗口是 HECTON-8 中硬科学与玩法之间最清晰的桥之一。轨道、海洋质量、风暴噪声和工业压力系统不会只停在背景百科里。它们塑造玩家何时能移动、能听见什么、哪些合同会变得危险，以及为什么旧殖民地记录谈论窗口时，仿佛海洋是一名敌对的班组长。\n\n窗口从来不只是自然现象。缓水可以减轻舱门负荷，但泵降可以毁掉同一条路线。中继阴影可以让母船沉默，而声学脉冲器仍能通过修复的脊柱工作。风暴可以关闭视野，同时打开否认。Deep Reach 学会了把决定藏在这种复杂性里。\n\n玩家的答案不是背诵抽象天文学，而是阅读物理证据：潮痕、路线板、脉冲节奏、盐水角度、新胶带、修改过的返还章和合同风险卡。",
-          "field_note": "窗口不是许可。它只是海洋短暂地看向别处。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.tide_work_window_field_article",
+    "secondary": [
+     "unlock.first_tide_window_board",
+     "unlock.first_route_slack_marker",
+     "unlock.first_blackout_window_notice"
+    ],
+    "poi_tags": [
+     "poi.tide_window_board",
+     "poi.route_slack_marker",
+     "poi.acoustic_blackout_terminal",
+     "poi.storm_window_contract_card"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.brine_canyon",
+     "biome.drowned_colony",
+     "biome.pressure_service_spine"
+    ],
+    "first_20_boundary": "Turns HECTON-8 tide/orbit physics into player-readable field behavior: route windows, acoustic silence, hatch load, brine drift and contract pressure without duplicating the Great Tide physics articles."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Tide Window Scanner",
+     "terminal": "Deep Reach Operations Window Note",
+     "audio": "Old Route Crew Recorder",
+     "in_game_wiki": "PDA Tide Work Window Primer",
+     "external_site": "Public Site Tide And Route Article",
+     "field_note": "Marauder Route Timing Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_tide_window_or_blackout_notice",
+    "truth_payload": "HECTON-8's ocean has working hours. Tide phase, pump load, brine drift, acoustic range and orbital shadow decide when routes are possible and when the official record can pretend nobody heard.",
+    "player_question": "Why do HECTON-8 route boards talk about windows instead of simple directions?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Tide Work Window Field Article",
+     "scanner": "TIDE WORK WINDOW // Three clocks agree for twelve minutes: slack water, pump drawdown, carrier shadow. The route board calls it safe. The walls call it temporary.",
+     "terminal": "OPERATIONS WINDOW NOTE // Do not treat tide forecast as weather. It gates hatch strain, acoustic range, brine drift, lift mass, relay shadow and legal response timing.",
+     "audio": "You do not leave when you are ready down here. You leave when the water stops arguing long enough.",
+     "in_game_wiki": "HECTON-8's ocean has working hours. The phrase sounds like a joke until a hatch refuses to equalize, a pinger dies in a brine lean, or a route that was open ten minutes ago becomes a grinder. Tide phase is not background weather on this moon. It changes door strain, silt load, acoustic range, brine-layer drift, suit ballast, pump duty and the few clean angles a carrier can hear through Aegir noise.\n\nDeep Reach compressed those conditions into the polite word window. Slack window. Pump window. Lift window. Relay window. Blackout window. The language is efficient and poisonous. It makes a physical mercy sound like a calendar slot and makes a missed worker sound like late execution. On the boards, a name can slide from cleared to delayed to held with one stroke of a grease pencil. The ocean did not need bureaucracy to be dangerous, but bureaucracy made danger easier to invoice.\n\nA Marauder learns to read the windows as field grammar. White arcs on hatch rims mark strain direction. Pinger intervals stretch before a route goes bad. Brine curtains lean before the bottom current changes. A quiet relay is not always broken; sometimes the moon is simply in the wrong shadow and the legal queue keeps ticking without voice. The useful part is that windows cut both ways. A bad storm can hide an approach. A slack tide can make a heavy door honest. A blackout can keep a stolen packet alive long enough to leave the wrong office.\n\nThe Great Tide was not a fairy-tale wave. It was the final stack of too many work windows being treated as negotiable: evacuation delayed into load, heat discharge held against drainage, Atlas continuity placed above retreat, workers left inside a schedule that physics had already stopped honoring. The player survives the same world at smaller scale. Read the window, take the route, distrust the clean board, and remember that safe on HECTON-8 usually means safe if nobody lied about the clock.",
+     "external_site": "HECTON-8 turns tides into schedule, risk and evidence. Route windows decide when a door opens, when a signal dies and when a contract can pretend the ocean is the only culprit.",
+     "external_site_article": "Tide windows are one of HECTON-8's cleanest bridges between hard science and play. The moon's orbit, ocean mass, storm noise and industrial pressure systems do not sit in a background codex. They shape when the player can move, what the player can hear, which contracts become dangerous, and why old colony records talk about windows as if the ocean were a hostile shift manager.\n\nThe important detail is that a window is never only natural. A slack tide can reduce hatch load, but a pump drawdown can ruin the same route. A relay shadow can silence a carrier while an acoustic pinger still works through a repaired spine. A storm can close visibility and open deniability. Deep Reach learned to hide decisions inside that complexity. If every failure arrives during a bad window, every failure can be filed as physics.\n\nFor the player, the answer is not to memorize abstract astronomy. The answer is to read physical evidence. Tide marks, route boards, pinger cadence, brine angle, fresh tape, revised return stamps and contract risk cards all describe the same thing from different levels of the system. HECTON-8 feels real when the ocean is not decoration. It is the clock everyone feared, used, and lied about.",
+     "field_note": "A window is not permission. It is only the ocean looking away for a moment."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "مقال ميداني عن نافذة عمل المد",
+     "scanner": "نافذة عمل المد // ثلاث ساعات تتفق لاثنتي عشرة دقيقة: ماء ساكن، تفريغ مضخة، ظل الحاملة. لوحة الطريق تسميه آمنا. الجدران تسميه مؤقتا.",
+     "terminal": "ملاحظة نافذة تشغيل // لا تعامل توقع المد كطقس. إنه يحدد إجهاد الفتحات، مدى الصوت، انجراف المحلول، كتلة الرفع، ظل المرحل وتوقيت الرد القانوني.",
+     "audio": "لا تغادر هنا عندما تكون مستعدا. تغادر عندما يتوقف الماء عن الجدال زمنا كافيا.",
+     "in_game_wiki": "لمحيط HECTON-8 ساعات عمل. تبدو العبارة نكتة حتى يرفض باب معادلة الضغط، أو يموت مرسل صوتي في ميلان محلول، أو يتحول طريق كان مفتوحا قبل عشر دقائق إلى مطحنة. طور المد هنا ليس طقسا في الخلفية. إنه يغير حمل الأبواب، طين القاع، مدى الصوت، انجراف طبقات المحلول، اتزان البدلة، واجب المضخات والزوايا القليلة التي تستطيع الحاملة سماعها عبر ضجيج Aegir.\n\nضغطت Deep Reach هذه الظروف في كلمة مهذبة: نافذة. نافذة سكون، نافذة مضخة، نافذة رفع، نافذة مرحل، نافذة تعتيم. اللغة فعالة وسامة. تجعل الرحمة الفيزيائية تبدو كموعد، وتجعل العامل المتأخر يبدو كتنفيذ متأخر. على اللوحات يمكن أن ينزلق الاسم من مسموح إلى مؤجل إلى محتجز بضربة قلم شحم واحدة. لم يكن المحيط يحتاج إلى بيروقراطية ليكون خطرا، لكن البيروقراطية جعلت الخطر أسهل في الفوترة.\n\nيتعلم المارودر قراءة النوافذ كقواعد ميدانية. الأقواس البيضاء على حواف الفتحات تدل على اتجاه الإجهاد. فواصل النبض الصوتي تتمدد قبل أن يفسد الطريق. ستائر المحلول تميل قبل أن يتغير تيار القاع. الصمت في المرحل ليس عطلا دائما؛ أحيانا يكون القمر في الظل الخطأ بينما تستمر قائمة القانون بلا صوت.\n\nلم تكن Great Tide موجة خرافية. كانت تراكما أخيرا لنوافذ عمل كثيرة عوملت كأنها قابلة للمساومة: إخلاء مؤجل داخل حمل، تصريف حرارة ضد مجرى مسدود، استمرار Atlas فوق الانسحاب، وعمال داخل جدول لم تعد الفيزياء تحترمه.",
+     "external_site": "في HECTON-8 يتحول المد إلى جدول ومخاطرة ودليل. نوافذ الطريق تحدد متى يفتح الباب، ومتى يموت الصوت، ومتى يمكن للعقد أن يتظاهر بأن المحيط هو المذنب الوحيد.",
+     "external_site_article": "نوافذ المد هي أحد أوضح الجسور بين العلم القاسي واللعب في HECTON-8. مدار القمر، كتلة المحيط، ضجيج العواصف وأنظمة الضغط الصناعية لا تبقى في موسوعة خلفية. إنها تحدد متى يتحرك اللاعب، وما الذي يمكنه سماعه، وأي عقود تصير خطرة، ولماذا تتحدث سجلات المستعمرة عن النوافذ كأن المحيط مدير وردية عدائي.\n\nالتفصيل المهم أن النافذة ليست طبيعية فقط. مد ساكن قد يخفف حمل فتحة، لكن تفريغ مضخة قد يفسد الطريق نفسه. ظل مرحل قد يصمت الحاملة بينما يظل نبض صوتي يعمل عبر عمود تم إصلاحه. عاصفة قد تغلق الرؤية وتفتح الإنكار. تعلمت Deep Reach إخفاء القرارات داخل هذا التعقيد. إذا جاء كل فشل في نافذة سيئة، فيمكن تسجيل كل فشل كفيزياء.\n\nإجابة اللاعب ليست حفظ الفلك المجرد. الإجابة هي قراءة الدليل المادي: علامات المد، لوحات الطريق، إيقاع النبض، ميل المحلول، الشريط الجديد، أختام العودة المعدلة وبطاقات خطر العقد.",
+     "field_note": "النافذة ليست إذنا. إنها فقط لحظة ينظر فيها المحيط بعيدا."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Feldartikel zum Tide-Arbeitsfenster",
+     "scanner": "TIDE-ARBEITSFENSTER // Drei Uhren stimmen zwölf Minuten lang überein: Stillwasser, Pumpenabsenkung, Carrier-Schatten. Die Routentafel nennt es sicher. Die Wände nennen es vorübergehend.",
+     "terminal": "BETRIEBSFENSTER-NOTIZ // Tideprognose nicht als Wetter behandeln. Sie steuert Lukenspannung, akustische Reichweite, Soleversatz, Hebemasse, Relaisschatten und juristische Antwortzeit.",
+     "audio": "Hier unten gehst du nicht, wenn du bereit bist. Du gehst, wenn das Wasser lang genug aufhört zu streiten.",
+     "in_game_wiki": "Der Ozean von HECTON-8 hat Arbeitszeiten. Der Satz klingt wie ein Scherz, bis eine Luke nicht ausgleichen will, ein Pinger in geneigter Sole stirbt oder eine Route, die vor zehn Minuten offen war, zur Mühle wird. Die Tidephase ist auf diesem Mond kein Hintergrundwetter. Sie verändert Türlast, Schlicklast, akustische Reichweite, Drift der Solelagen, Anzugballast, Pumpendienst und die wenigen sauberen Winkel, in denen ein Carrier durch Aegir-Rauschen hören kann.\n\nDeep Reach presste diese Bedingungen in das höfliche Wort Fenster. Stillwasserfenster. Pumpenfenster. Hebefenster. Relaisfenster. Blackoutfenster. Die Sprache ist effizient und giftig. Sie lässt physische Gnade wie einen Kalendereintrag klingen und einen vermissten Arbeiter wie verspätete Ausführung. Auf den Tafeln kann ein Name mit einem Fettstiftstrich von freigegeben zu verzögert zu gehalten rutschen. Der Ozean brauchte keine Bürokratie, um gefährlich zu sein, aber Bürokratie machte Gefahr leichter abrechenbar.\n\nEin Marauder lernt Fenster als Feldgrammatik zu lesen. Weiße Bögen an Luken markieren Lastrichtung. Pingerabstände dehnen sich, bevor eine Route kippt. Solevorhänge neigen sich, bevor der Bodenstrom dreht. Ein stilles Relais ist nicht immer kaputt; manchmal steht der Mond nur im falschen Schatten und die Rechtswarteschlange läuft ohne Stimme weiter.\n\nDie Great Tide war keine Märchenwelle. Sie war der letzte Stapel zu vieler Arbeitsfenster, die als verhandelbar behandelt wurden: Evakuierung in Last verschoben, Wärmeabgabe gegen blockierte Drainage gehalten, Atlas-Kontinuität über Rückzug gestellt und Arbeiter in einem Plan gelassen, den die Physik nicht mehr ehrte.",
+     "external_site": "HECTON-8 macht Tiden zu Zeitplan, Risiko und Beweis. Routenfenster entscheiden, wann eine Tür öffnet, wann ein Signal stirbt und wann ein Vertrag dem Ozean die Schuld geben kann.",
+     "external_site_article": "Tidefenster sind eine der saubersten Brücken zwischen harter Wissenschaft und Spiel in HECTON-8. Umlaufbahn, Ozeanmasse, Sturmrauschen und industrielle Drucksysteme bleiben nicht im Hintergrundkodex. Sie formen Bewegung, Hörbarkeit, Vertragsrisiko und die alte Koloniesprache, die von Fenstern spricht, als sei der Ozean ein feindlicher Schichtleiter.\n\nWichtig ist: Ein Fenster ist nie nur natürlich. Stillwasser kann eine Luke entlasten, aber eine Pumpenabsenkung kann dieselbe Route verderben. Ein Relaisschatten kann den Carrier stumm machen, während ein akustischer Pinger über einen reparierten Rücken noch funktioniert. Ein Sturm kann Sicht schließen und Leugnung öffnen. Deep Reach lernte, Entscheidungen in dieser Komplexität zu verstecken. Wenn jeder Ausfall in einem schlechten Fenster landet, lässt sich jeder Ausfall als Physik ablegen.\n\nDer Spieler muss keine abstrakte Astronomie auswendig lernen. Er muss Spuren lesen: Tidemarken, Routentafeln, Pinger-Kadenz, Solewinkel, frisches Band, geänderte Rückkehrstempel und Risiko-Karten.",
+     "field_note": "Ein Fenster ist keine Erlaubnis. Es ist nur der Moment, in dem der Ozean kurz wegschaut."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artículo de campo sobre la ventana de trabajo de marea",
+     "scanner": "VENTANA DE TRABAJO DE MAREA // Tres relojes coinciden durante doce minutos: agua floja, descarga de bombas, sombra del carrier. La pizarra de ruta lo llama seguro. Las paredes lo llaman temporal.",
+     "terminal": "NOTA DE VENTANA OPERATIVA // No tratar la previsión de marea como clima. Gobierna tensión de escotillas, alcance acústico, deriva de salmuera, masa de izado, sombra de relé y tiempo de respuesta legal.",
+     "audio": "Aquí abajo no sales cuando estás listo. Sales cuando el agua deja de discutir el tiempo suficiente.",
+     "in_game_wiki": "El océano de HECTON-8 tiene horario de trabajo. La frase suena a broma hasta que una escotilla no iguala, un pinger muere en una salmuera inclinada o una ruta abierta hace diez minutos se convierte en trituradora. La fase de marea no es clima de fondo en esta luna. Cambia la tensión de puertas, la carga de limo, el alcance acústico, la deriva de capas de salmuera, el lastre del traje, el deber de las bombas y los pocos ángulos limpios por los que un carrier puede oír a través del ruido de Aegir.\n\nDeep Reach comprimió esas condiciones en una palabra educada: ventana. Ventana de calma. Ventana de bomba. Ventana de izado. Ventana de relé. Ventana de apagón. El lenguaje es eficaz y venenoso. Hace que una misericordia física suene como una cita de calendario y que un trabajador perdido suene como una ejecución tardía. En las pizarras, un nombre puede pasar de autorizado a demorado a retenido con un trazo de lápiz graso.\n\nUn merodeador aprende a leer las ventanas como gramática de campo. Arcos blancos en los bordes de escotilla marcan dirección de tensión. Los intervalos del pinger se estiran antes de que una ruta se estropee. Las cortinas de salmuera se inclinan antes de que cambie la corriente del fondo. Un relé silencioso no siempre está roto; a veces la luna está en la sombra equivocada y la cola legal sigue corriendo sin voz.\n\nLa Great Tide no fue una ola de cuento. Fue la pila final de demasiadas ventanas tratadas como negociables: evacuación retrasada dentro de la carga, descarga térmica contra drenaje cerrado, continuidad Atlas por encima de retirada y trabajadores dentro de un horario que la física ya no respetaba.",
+     "external_site": "HECTON-8 convierte las mareas en calendario, riesgo y evidencia. Las ventanas de ruta deciden cuándo abre una puerta, cuándo muere una señal y cuándo un contrato puede culpar al océano.",
+     "external_site_article": "Las ventanas de marea son uno de los puentes más claros entre ciencia dura y juego en HECTON-8. La órbita, la masa oceánica, el ruido de tormenta y los sistemas de presión industrial no viven solo en un códice de fondo. Moldean cuándo se mueve el jugador, qué puede oír, qué contratos se vuelven peligrosos y por qué los registros de colonia hablan de ventanas como si el océano fuera un jefe de turno hostil.\n\nUna ventana nunca es solo natural. Una marea floja puede aliviar una escotilla, pero una descarga de bombas puede arruinar la misma ruta. Una sombra de relé puede callar al carrier mientras un pinger acústico aún funciona por una espina reparada. Una tormenta puede cerrar visibilidad y abrir negación. Deep Reach aprendió a esconder decisiones dentro de esa complejidad.\n\nLa respuesta del jugador no es memorizar astronomía abstracta. Es leer evidencia física: marcas de marea, pizarras de ruta, cadencia de pinger, ángulo de salmuera, cinta fresca, sellos de retorno revisados y tarjetas de riesgo.",
+     "field_note": "Una ventana no es permiso. Es solo el océano mirando hacia otro lado un momento."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Article de terrain sur la fenêtre de travail des marées",
+     "scanner": "FENÊTRE DE MARÉE // Trois horloges s'accordent douze minutes : eau étale, pompes en baisse, ombre du carrier. Le tableau de route dit sûr. Les murs disent temporaire.",
+     "terminal": "NOTE DE FENÊTRE OPÉRATIONNELLE // Ne pas traiter la prévision de marée comme météo. Elle verrouille contrainte des sas, portée acoustique, dérive de saumure, masse de levage, ombre relais et réponse légale.",
+     "audio": "Ici, tu ne pars pas quand tu es prêt. Tu pars quand l'eau cesse de discuter assez longtemps.",
+     "in_game_wiki": "L'océan de HECTON-8 a des heures de travail. La phrase paraît drôle jusqu'à ce qu'un sas refuse l'équilibrage, qu'un pinger meure dans une saumure inclinée, ou qu'une route ouverte dix minutes plus tôt devienne une broyeuse. La phase de marée n'est pas une météo de décor. Elle change la contrainte des portes, la charge de limon, la portée acoustique, la dérive des couches de saumure, le ballast des combinaisons, le service des pompes et les rares angles où un carrier peut entendre à travers le bruit d'Aegir.\n\nDeep Reach a compressé ces conditions dans un mot poli : fenêtre. Fenêtre d'eau étale, fenêtre de pompe, fenêtre de levage, fenêtre relais, fenêtre de blackout. Le langage est efficace et toxique. Il fait passer une miséricorde physique pour une case de calendrier et un travailleur manquant pour une exécution en retard. Sur les tableaux, un nom peut glisser de validé à différé puis retenu d'un seul trait gras.\n\nUn Marauder apprend à lire les fenêtres comme une grammaire de terrain. Les arcs blancs sur les bords des sas marquent la direction de contrainte. Les intervalles des pingers s'étirent avant qu'une route tourne mal. Les rideaux de saumure penchent avant le changement du courant de fond. Un relais silencieux n'est pas toujours cassé ; parfois la lune est juste dans la mauvaise ombre et la file légale continue sans voix.\n\nLa Great Tide n'était pas une vague de conte. C'était l'empilement final de trop de fenêtres traitées comme négociables : évacuation retardée dans la charge, chaleur retenue contre drainage fermé, continuité Atlas au-dessus de la retraite, travailleurs enfermés dans un planning que la physique ne respectait plus.",
+     "external_site": "HECTON-8 transforme les marées en calendrier, risque et preuve. Les fenêtres de route décident quand une porte s'ouvre, quand un signal meurt et quand un contrat peut accuser l'océan.",
+     "external_site_article": "Les fenêtres de marée sont l'un des ponts les plus nets entre science dure et jeu dans HECTON-8. L'orbite, la masse océanique, le bruit des tempêtes et les systèmes industriels de pression ne restent pas dans un codex d'arrière-plan. Ils façonnent les déplacements, l'écoute, le risque des contrats et la langue des anciens registres qui parlent de fenêtres comme si l'océan était un chef de quart hostile.\n\nUne fenêtre n'est jamais seulement naturelle. Une eau étale peut alléger un sas, mais une baisse de pompe peut ruiner la même route. Une ombre relais peut rendre le carrier muet tandis qu'un pinger acoustique fonctionne encore par une colonne réparée. Une tempête peut fermer la visibilité et ouvrir le déni. Deep Reach a appris à cacher ses décisions dans cette complexité.\n\nLe joueur n'a pas besoin de réciter l'astronomie abstraite. Il doit lire les preuves physiques : marques de marée, tableaux de route, cadence des pingers, angle de saumure, bande neuve, tampons de retour corrigés et cartes de risque.",
+     "field_note": "Une fenêtre n'est pas une permission. C'est seulement l'océan qui regarde ailleurs un instant."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "מאמר שטח על חלון עבודת גאות",
+     "scanner": "חלון עבודת גאות // שלושה שעונים מסכימים לשתים עשרה דקות: מים שקטים, ירידת משאבות, צל carrier. לוח הנתיב קורא לזה בטוח. הקירות קוראים לזה זמני.",
+     "terminal": "הערת חלון תפעול // אין להתייחס לתחזית גאות כמזג אוויר. היא שולטת בעומס פתחים, טווח אקוסטי, סחיפת תמלחת, מסת הרמה, צל ממסר ותזמון תגובה משפטית.",
+     "audio": "כאן למטה לא עוזבים כשמוכנים. עוזבים כשהמים מפסיקים להתווכח מספיק זמן.",
+     "in_game_wiki": "לאוקיינוס של HECTON-8 יש שעות עבודה. המשפט נשמע כמו בדיחה עד שפתח מסרב להשוות לחץ, פינגר מת בתמלחת נטויה, או נתיב שהיה פתוח לפני עשר דקות הופך למטחנה. שלב הגאות אינו מזג אוויר ברקע. הוא משנה עומס דלתות, עומס סחף, טווח אקוסטי, סחיפת שכבות תמלחת, בלסט חליפה, משמרת משאבות ואת הזוויות המעטות שבהן carrier יכול לשמוע דרך רעש Aegir.\n\nDeep Reach דחסה את כל זה למילה מנומסת: חלון. חלון מים שקטים. חלון משאבה. חלון הרמה. חלון ממסר. חלון blackout. השפה יעילה ורעילה. היא גורמת לחסד פיזי להישמע כמו משבצת בלוח שנה ולעובד חסר להישמע כמו ביצוע מאוחר. על הלוחות שם יכול להחליק ממאושר למעוכב למוחזק במשיכת עיפרון שמן אחת.\n\nMarauder לומד לקרוא את החלונות כדקדוק שטח. קשתות לבנות על שפות פתחים מסמנות כיוון עומס. מרווחי פינגר נמתחים לפני שנתיב מתקלקל. וילונות תמלחת נוטים לפני שזרם הקרקעית משתנה. ממסר שקט לא תמיד שבור; לפעמים הירח פשוט בצל הלא נכון והתור המשפטי ממשיך בלי קול.\n\nה-Great Tide לא הייתה גל אגדה. היא הייתה הערימה האחרונה של יותר מדי חלונות עבודה שטופלו כאילו אפשר להתמקח עליהם: פינוי נדחה אל תוך עומס, פליטת חום מול ניקוז חסום, רציפות Atlas מעל נסיגה, ועובדים בתוך לוח זמנים שהפיזיקה כבר לא כיבדה.",
+     "external_site": "HECTON-8 הופך גאות ללוח זמנים, סיכון וראיה. חלונות נתיב קובעים מתי דלת נפתחת, מתי אות מת ומתי חוזה יכול להאשים את האוקיינוס.",
+     "external_site_article": "חלונות גאות הם אחד החיבורים הנקיים ביותר בין מדע קשה ומשחק ב-HECTON-8. המסלול, מסת האוקיינוס, רעש הסערה ומערכות הלחץ התעשייתיות אינם נשארים ברקע. הם מעצבים תנועה, שמיעה, סיכון חוזים ואת השפה של רשומות המושבה שמדברת על חלונות כאילו האוקיינוס היה מנהל משמרת עוין.\n\nחלון לעולם אינו טבעי בלבד. מים שקטים יכולים להקל על פתח, אך ירידת משאבות יכולה להרוס את אותו נתיב. צל ממסר יכול להשתיק carrier בזמן שפינגר אקוסטי עוד עובד דרך עמוד שתוקן. סערה יכולה לסגור ראות ולפתוח הכחשה. Deep Reach למדה להסתיר החלטות בתוך המורכבות הזאת.\n\nהשחקן אינו צריך לשנן אסטרונומיה מופשטת. עליו לקרוא ראיות פיזיות: סימני גאות, לוחות נתיב, קצב פינגר, זווית תמלחת, סרט טרי, חותמות חזרה מתוקנות וכרטיסי סיכון.",
+     "field_note": "חלון אינו רשות. זה רק רגע שבו האוקיינוס מביט הצידה."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artikel Lapangan Jendela Kerja Pasang",
+     "scanner": "JENDELA KERJA PASANG // Tiga jam sepakat selama dua belas menit: air tenang, pompa turun, bayangan carrier. Papan rute menyebutnya aman. Dinding menyebutnya sementara.",
+     "terminal": "CATATAN JENDELA OPERASI // Jangan perlakukan ramalan pasang sebagai cuaca. Ia mengatur tegangan palka, jangkauan akustik, hanyutan brine, massa angkat, bayangan relai, dan waktu respons hukum.",
+     "audio": "Di bawah sini kau tidak pergi saat siap. Kau pergi saat air berhenti berdebat cukup lama.",
+     "in_game_wiki": "Samudra HECTON-8 punya jam kerja. Kalimat itu terdengar seperti lelucon sampai palka menolak menyeimbangkan tekanan, pinger mati dalam brine yang miring, atau rute yang terbuka sepuluh menit lalu berubah menjadi penggiling. Fase pasang bukan cuaca latar di bulan ini. Ia mengubah beban pintu, lumpur, jangkauan akustik, hanyutan lapisan brine, ballast baju, tugas pompa, dan sedikit sudut bersih yang bisa didengar carrier melalui derau Aegir.\n\nDeep Reach memadatkan semua kondisi itu menjadi kata sopan: jendela. Jendela air tenang, jendela pompa, jendela angkat, jendela relai, jendela blackout. Bahasanya efisien dan beracun. Ia membuat belas kasihan fisika terdengar seperti slot kalender dan pekerja hilang terdengar seperti eksekusi terlambat. Di papan, satu nama bisa bergeser dari bebas ke tertunda ke ditahan dengan satu goresan pensil gemuk.\n\nMarauder belajar membaca jendela sebagai tata bahasa lapangan. Busur putih di bibir palka menandai arah tegangan. Interval pinger memanjang sebelum rute memburuk. Tirai brine miring sebelum arus dasar berubah. Relai sunyi tidak selalu rusak; kadang bulan hanya berada di bayangan yang salah dan antrean hukum tetap berjalan tanpa suara.\n\nGreat Tide bukan gelombang dongeng. Itu tumpukan akhir dari terlalu banyak jendela kerja yang diperlakukan seolah bisa dinegosiasikan: evakuasi ditunda masuk ke beban, panas ditahan melawan drainase tertutup, kontinuitas Atlas di atas mundur, dan pekerja dibiarkan dalam jadwal yang sudah tidak dihormati fisika.",
+     "external_site": "HECTON-8 mengubah pasang menjadi jadwal, risiko, dan bukti. Jendela rute menentukan kapan pintu terbuka, kapan sinyal mati, dan kapan kontrak bisa menyalahkan laut.",
+     "external_site_article": "Jendela pasang adalah salah satu jembatan paling jelas antara sains keras dan permainan di HECTON-8. Orbit, massa samudra, derau badai, dan sistem tekanan industri tidak tinggal di kodex latar. Semua membentuk kapan pemain bergerak, apa yang bisa didengar, kontrak mana yang berbahaya, dan mengapa catatan koloni bicara tentang jendela seolah laut adalah mandor sif yang memusuhi.\n\nJendela tidak pernah hanya alami. Pasang tenang bisa meringankan palka, tetapi penurunan pompa bisa merusak rute yang sama. Bayangan relai bisa membisukan carrier sementara pinger akustik masih bekerja lewat tulang punggung yang diperbaiki. Badai bisa menutup pandangan dan membuka penyangkalan. Deep Reach belajar menyembunyikan keputusan di dalam kerumitan itu.\n\nJawaban pemain bukan menghafal astronomi abstrak. Jawabannya membaca bukti fisik: tanda pasang, papan rute, irama pinger, sudut brine, pita baru, cap pulang yang direvisi, dan kartu risiko kontrak.",
+     "field_note": "Jendela bukan izin. Itu hanya samudra yang menoleh sebentar."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "潮汐作業窓フィールド記事",
+     "scanner": "潮汐作業窓 // 三つの時計が十二分だけ一致する。静水、ポンプ低下、キャリア影。経路板は安全と言う。壁は一時的と言う。",
+     "terminal": "運用窓メモ // 潮汐予報を天候として扱うな。ハッチ荷重、音響距離、塩水層の流れ、揚力質量、中継影、法的応答時間を制限する。",
+     "audio": "ここでは準備ができた時に出るんじゃない。水が十分長く口論をやめた時に出る。",
+     "in_game_wiki": "HECTON-8 の海には勤務時間がある。冗談のように聞こえるが、ハッチが均圧を拒み、傾いた塩水層でピンガーが死に、十分前には開いていた経路が粉砕機に変われば笑えない。潮汐位相はこの月の背景天候ではない。扉の荷重、シルト量、音響距離、塩水層の漂流、スーツのバラスト、ポンプ負荷、そして Aegir ノイズ越しにキャリアが聞けるわずかな角度を変える。\n\nDeep Reach はそれらを丁寧な言葉に圧縮した。窓。静水窓、ポンプ窓、揚収窓、中継窓、通信断窓。言葉は効率的で、毒がある。物理的な猶予を予定表の枠のように聞かせ、戻らない作業員を遅延処理のように見せる。板の上では、名前がグリースペンの一線で許可から遅延、保留へ滑る。\n\nMarauder は窓を現場文法として読む。ハッチ縁の白い弧は荷重方向を示す。ピンガー間隔は経路が悪くなる前に伸びる。塩水の幕は底流が変わる前に傾く。静かな中継器はいつも故障ではない。月が間違った影に入り、法的キューだけが声なしで進んでいる場合もある。\n\nGreat Tide はおとぎ話の波ではなかった。交渉できるものとして扱われた作業窓が積み重なった最後の結果だった。負荷の中へ遅らされた避難、閉じた排水に逆らう熱排出、退避より上に置かれた Atlas 継続性、そして物理がもう守らない予定表の中に残された作業員たち。",
+     "external_site": "HECTON-8 は潮汐を予定、リスク、証拠に変える。経路窓は扉が開く時、信号が死ぬ時、契約が海だけを犯人にできる時を決める。",
+     "external_site_article": "潮汐窓は、HECTON-8 におけるハード SF とゲームプレイをつなぐ最も明確な橋の一つだ。軌道、海洋質量、嵐のノイズ、産業圧力システムは背景の図鑑に留まらない。プレイヤーがいつ動けるか、何を聞けるか、どの契約が危険になるか、そして古い記録がなぜ海を敵対的なシフト管理者のように語るかを形作る。\n\n窓は決して自然だけのものではない。静水はハッチ荷重を軽くするが、ポンプ低下は同じ経路を壊す。中継影はキャリアを黙らせるが、修理された脊柱を通じて音響ピンガーはまだ働く。嵐は視界を閉じ、否認を開く。Deep Reach はその複雑さの中に判断を隠すことを覚えた。\n\nプレイヤーに必要なのは抽象的な天文学の暗記ではない。潮汐痕、経路板、ピンガーの拍子、塩水角度、新しいテープ、修正された帰還印、契約リスクカードを読むことだ。",
+     "field_note": "窓は許可ではない。海が一瞬だけ目をそらすだけだ。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "조석 작업 창 현장 문서",
+     "scanner": "조석 작업 창 // 세 개의 시계가 12분 동안 맞는다. 정수, 펌프 저하, 캐리어 그림자. 경로판은 안전하다고 부른다. 벽은 일시적이라고 부른다.",
+     "terminal": "운영 창 메모 // 조석 예보를 날씨로 취급하지 말 것. 해치 변형, 음향 거리, 염수 표류, 인양 질량, 중계 그림자, 법적 응답 시간을 제한한다.",
+     "audio": "여기 아래에서는 준비됐을 때 떠나는 게 아니다. 물이 충분히 오래 다투기를 멈출 때 떠난다.",
+     "in_game_wiki": "HECTON-8의 바다에는 근무 시간이 있다. 농담처럼 들리지만, 해치가 균압을 거부하고, 기울어진 염수에서 핑거가 죽고, 10분 전 열려 있던 경로가 분쇄기가 되면 농담이 아니다. 조석 위상은 이 달의 배경 날씨가 아니다. 문 하중, 실트 부담, 음향 거리, 염수층 표류, 슈트 밸러스트, 펌프 운전, 그리고 Aegir 잡음을 뚫고 캐리어가 들을 수 있는 몇 안 되는 각도를 바꾼다.\n\nDeep Reach는 그 조건들을 예의 바른 말 하나로 압축했다. 창. 정수 창, 펌프 창, 인양 창, 중계 창, 통신 단절 창. 언어는 효율적이고 독이 있다. 물리적 자비를 달력 칸처럼 들리게 하고, 돌아오지 않는 작업자를 지연된 실행처럼 보이게 한다. 게시판 위에서 이름 하나는 기름연필 한 줄로 승인에서 지연, 보류로 미끄러진다.\n\nMarauder는 창을 현장 문법으로 읽는다. 해치 가장자리의 흰 호는 하중 방향을 표시한다. 핑거 간격은 경로가 나빠지기 전에 늘어난다. 염수 커튼은 바닥 해류가 바뀌기 전에 기운다. 조용한 중계기가 항상 고장난 것은 아니다. 때로 달이 잘못된 그림자에 있고 법적 대기열만 음성 없이 계속 돈다.\n\nGreat Tide는 동화 속 파도가 아니었다. 협상 가능한 것처럼 취급된 너무 많은 작업 창이 마지막으로 쌓인 결과였다. 하중 속으로 밀린 대피, 막힌 배수와 맞선 열 방출, 철수보다 위에 놓인 Atlas 연속성, 그리고 물리가 더는 지키지 않는 일정 안에 남겨진 노동자들.",
+     "external_site": "HECTON-8은 조석을 일정, 위험, 증거로 바꾼다. 경로 창은 문이 열릴 때, 신호가 죽을 때, 계약이 바다만 탓할 때를 정한다.",
+     "external_site_article": "조석 창은 HECTON-8에서 하드 사이언스와 플레이를 잇는 가장 깨끗한 다리 중 하나다. 궤도, 바다 질량, 폭풍 잡음, 산업 압력 시스템은 배경 코덱스에 머물지 않는다. 플레이어가 언제 움직일 수 있는지, 무엇을 들을 수 있는지, 어떤 계약이 위험해지는지, 왜 옛 기록이 바다를 적대적인 교대 관리자처럼 말하는지를 만든다.\n\n창은 결코 자연만이 아니다. 정수는 해치 하중을 줄일 수 있지만, 펌프 저하는 같은 경로를 망칠 수 있다. 중계 그림자는 캐리어를 침묵시킬 수 있지만, 음향 핑거는 수리된 척추를 통해 아직 작동할 수 있다. 폭풍은 시야를 닫고 부인을 열 수 있다. Deep Reach는 그 복잡함 안에 결정을 숨기는 법을 배웠다.\n\n플레이어의 답은 추상 천문학을 외우는 것이 아니다. 조석 표시, 경로판, 핑거 박자, 염수 각도, 새 테이프, 수정된 귀환 도장, 계약 위험 카드를 읽는 것이다.",
+     "field_note": "창은 허가가 아니다. 바다가 잠깐 시선을 돌리는 순간일 뿐이다."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Veldartikel over het getijdenwerkvenster",
+     "scanner": "GETIJDENWERKVENSTER // Drie klokken kloppen twaalf minuten: kentering, pompverlaging, carrier-schaduw. Het routebord noemt het veilig. De muren noemen het tijdelijk.",
+     "terminal": "OPERATIEVENSTER-NOTITIE // Getijdenvoorspelling niet als weer behandelen. Zij bepaalt luikspanning, akoestisch bereik, pekeldrift, hefgewicht, relaisschaduw en juridische responstijd.",
+     "audio": "Hier beneden vertrek je niet wanneer je klaar bent. Je vertrekt wanneer het water lang genoeg ophoudt met ruziën.",
+     "in_game_wiki": "De oceaan van HECTON-8 heeft werktijden. De zin klinkt als een grap tot een luik niet wil egaliseren, een pinger sterft in scheve pekel, of een route die tien minuten geleden open was een molen wordt. Getijdenfase is op deze maan geen achtergrondweer. Ze verandert deurlast, sliblast, akoestisch bereik, drift van pekellagen, pakballast, pompendienst en de weinige zuivere hoeken waarin een carrier door Aegir-ruis kan horen.\n\nDeep Reach perste die omstandigheden samen tot het nette woord venster. Kenteringsvenster. Pompvenster. Hefvenster. Relaisvenster. Blackoutvenster. De taal is efficiënt en giftig. Ze laat fysieke genade klinken als een kalenderblok en een gemiste werker als late uitvoering. Op borden kan een naam met één vetpotloodstreep van vrij naar vertraagd naar vastgehouden glijden.\n\nEen Marauder leert vensters lezen als veldgrammatica. Witte bogen op luikranden tonen spanningsrichting. Pingerintervallen rekken uit voordat een route slecht wordt. Pekelgordijnen hellen voordat de bodemstroom draait. Een stil relais is niet altijd stuk; soms staat de maan gewoon in de verkeerde schaduw en blijft de juridische wachtrij zonder stem lopen.\n\nDe Great Tide was geen sprookjesgolf. Het was de laatste stapel van te veel werkvensters die als onderhandelbaar werden behandeld: evacuatie uitgesteld in belasting, warmteafvoer tegen gesloten drainage, Atlas-continuïteit boven terugtrekking, en werkers in een rooster dat de fysica al niet meer eerbiedigde.",
+     "external_site": "HECTON-8 verandert getijden in planning, risico en bewijs. Routevensters bepalen wanneer een deur opent, wanneer een signaal sterft en wanneer een contract de oceaan kan beschuldigen.",
+     "external_site_article": "Getijdenvensters zijn een van de duidelijkste bruggen tussen harde wetenschap en spel in HECTON-8. Baan, oceaanmassa, stormruis en industriële druksystemen blijven niet in een achtergrondcodex. Ze vormen wanneer de speler kan bewegen, wat de speler hoort, welke contracten gevaarlijk worden, en waarom oude kolonieregisters over vensters spreken alsof de oceaan een vijandige ploegbaas was.\n\nEen venster is nooit alleen natuurlijk. Kentering kan een luik ontlasten, maar pompverlaging kan dezelfde route verpesten. Een relaisschaduw kan de carrier stil maken terwijl een akoestische pinger via een herstelde rug nog werkt. Een storm kan zicht sluiten en ontkenning openen. Deep Reach leerde beslissingen in die complexiteit te verbergen.\n\nDe speler hoeft geen abstracte astronomie te onthouden. De speler moet fysiek bewijs lezen: getijdenmarkeringen, routeborden, pingercadans, pekelhoek, nieuwe tape, aangepaste terugkeerstempels en risicokaarten.",
+     "field_note": "Een venster is geen toestemming. Het is alleen de oceaan die even wegkijkt."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artykuł terenowy o oknie pracy pływu",
+     "scanner": "OKNO PRACY PŁYWU // Trzy zegary zgadzają się przez dwanaście minut: stojąca woda, obniżenie pomp, cień carriera. Tablica trasy mówi bezpiecznie. Ściany mówią chwilowo.",
+     "terminal": "NOTA OKNA OPERACYJNEGO // Prognozy pływu nie traktować jak pogody. Steruje naprężeniem włazów, zasięgiem akustycznym, dryfem solanki, masą podnoszenia, cieniem przekaźnika i czasem odpowiedzi prawnej.",
+     "audio": "Tu na dole nie wychodzisz, kiedy jesteś gotów. Wychodzisz, kiedy woda przestaje się kłócić dostatecznie długo.",
+     "in_game_wiki": "Ocean HECTON-8 ma godziny pracy. Zdanie brzmi jak żart, dopóki właz nie odmawia wyrównania, pinger nie umiera w przechylonej solance albo trasa otwarta dziesięć minut temu staje się młynem. Faza pływu nie jest na tym księżycu pogodą w tle. Zmienia obciążenie drzwi, muł, zasięg akustyczny, dryf warstw solanki, balast skafandra, dyżur pomp i nieliczne czyste kąty, pod którymi carrier słyszy przez szum Aegir.\n\nDeep Reach ścisnęło te warunki w grzeczne słowo okno. Okno martwej wody. Okno pomp. Okno podnoszenia. Okno przekaźnika. Okno blackoutu. Język jest sprawny i trujący. Sprawia, że fizyczna łaska brzmi jak rubryka kalendarza, a zaginiony pracownik jak spóźnione wykonanie. Na tablicy imię może jednym tłustym pociągnięciem przejść z dopuszczony do opóźniony i wstrzymany.\n\nMarauder uczy się czytać okna jak gramatykę terenu. Białe łuki na krawędziach włazów pokazują kierunek naprężenia. Odstępy pingera wydłużają się, zanim trasa zepsuje się naprawdę. Zasłony solanki pochylają się przed zmianą prądu dna. Cichy przekaźnik nie zawsze jest zepsuty; czasem księżyc stoi w złym cieniu, a kolejka prawna tyka dalej bez głosu.\n\nGreat Tide nie była baśniową falą. Była końcowym stosem zbyt wielu okien pracy potraktowanych jak negocjowalne: ewakuacja opóźniona w obciążenie, zrzut ciepła trzymany przeciw zamkniętemu drenażowi, ciągłość Atlas ponad odwrót i pracownicy w grafiku, którego fizyka już nie respektowała.",
+     "external_site": "HECTON-8 zmienia pływy w harmonogram, ryzyko i dowód. Okna tras decydują, kiedy otwierają się drzwi, kiedy ginie sygnał i kiedy kontrakt może obwinić ocean.",
+     "external_site_article": "Okna pływów są jednym z najczystszych mostów między twardą nauką a grą w HECTON-8. Orbita, masa oceanu, szum burzy i przemysłowe systemy ciśnienia nie zostają w tle kodeksu. Kształtują ruch gracza, to co słychać, które kontrakty stają się groźne i dlaczego stare zapisy kolonii mówią o oknach tak, jakby ocean był wrogim brygadzistą.\n\nOkno nigdy nie jest wyłącznie naturalne. Stojąca woda może odciążyć właz, ale obniżenie pomp może zepsuć tę samą trasę. Cień przekaźnika może uciszyć carrier, gdy akustyczny pinger nadal działa przez naprawiony grzbiet. Burza może zamknąć widoczność i otworzyć zaprzeczanie. Deep Reach nauczyło się chować decyzje w tej złożoności.\n\nOdpowiedzią gracza nie jest pamięciowa astronomia. Odpowiedzią jest czytanie fizycznych dowodów: znaków pływu, tablic tras, rytmu pingera, kąta solanki, świeżej taśmy, poprawionych stempli powrotu i kart ryzyka.",
+     "field_note": "Okno nie jest pozwoleniem. To tylko chwila, gdy ocean patrzy w bok."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artigo de campo sobre a janela de trabalho da maré",
+     "scanner": "JANELA DE TRABALHO DA MARÉ // Três relógios concordam por doze minutos: água parada, queda de bomba, sombra do carrier. O quadro de rota chama de seguro. As paredes chamam de temporário.",
+     "terminal": "NOTA DE JANELA OPERACIONAL // Não trate previsão de maré como clima. Ela governa tensão de escotilha, alcance acústico, deriva de salmoura, massa de içamento, sombra de relé e tempo de resposta legal.",
+     "audio": "Aqui embaixo você não sai quando está pronto. Você sai quando a água para de discutir por tempo suficiente.",
+     "in_game_wiki": "O oceano de HECTON-8 tem horário de trabalho. A frase soa como piada até uma escotilha recusar equalização, um pinger morrer numa salmoura inclinada, ou uma rota aberta dez minutos antes virar moedor. A fase de maré não é clima de fundo nesta lua. Ela muda carga de portas, lodo, alcance acústico, deriva de camadas de salmoura, lastro do traje, dever das bombas e os poucos ângulos limpos em que um carrier pode ouvir através do ruído de Aegir.\n\nA Deep Reach comprimiu essas condições na palavra educada janela. Janela de água parada. Janela de bomba. Janela de içamento. Janela de relé. Janela de blackout. A linguagem é eficiente e venenosa. Faz uma misericórdia física soar como bloco de calendário e um trabalhador perdido soar como execução atrasada. Nos quadros, um nome pode passar de liberado a atrasado e retido com um traço de lápis graxo.\n\nUm Marauder aprende a ler janelas como gramática de campo. Arcos brancos nas bordas das escotilhas marcam direção de tensão. Intervalos de pinger se alongam antes de uma rota azedar. Cortinas de salmoura se inclinam antes de a corrente do fundo mudar. Um relé quieto nem sempre está quebrado; às vezes a lua só está na sombra errada e a fila legal continua correndo sem voz.\n\nA Great Tide não foi uma onda de conto. Foi a pilha final de janelas de trabalho demais tratadas como negociáveis: evacuação adiada para dentro da carga, descarga térmica contra drenagem fechada, continuidade Atlas acima da retirada e trabalhadores dentro de uma escala que a física já não respeitava.",
+     "external_site": "HECTON-8 transforma marés em agenda, risco e evidência. Janelas de rota decidem quando uma porta abre, quando um sinal morre e quando um contrato pode culpar o oceano.",
+     "external_site_article": "Janelas de maré são uma das pontes mais limpas entre ciência dura e jogo em HECTON-8. Órbita, massa oceânica, ruído de tempestade e sistemas industriais de pressão não ficam num códice de fundo. Eles moldam quando o jogador pode se mover, o que pode ouvir, quais contratos ficam perigosos e por que registros antigos falam de janelas como se o oceano fosse um chefe de turno hostil.\n\nUma janela nunca é só natural. Água parada pode aliviar uma escotilha, mas queda de bomba pode estragar a mesma rota. Uma sombra de relé pode calar o carrier enquanto um pinger acústico ainda funciona por uma espinha reparada. Uma tempestade pode fechar visibilidade e abrir negação. A Deep Reach aprendeu a esconder decisões nessa complexidade.\n\nA resposta do jogador não é decorar astronomia abstrata. É ler evidência física: marcas de maré, quadros de rota, cadência de pinger, ângulo de salmoura, fita fresca, carimbos de retorno revisados e cartões de risco.",
+     "field_note": "Uma janela não é permissão. É só o oceano olhando para outro lado por um instante."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Полевая статья о приливном рабочем окне",
+     "scanner": "ПРИЛИВНОЕ РАБОЧЕЕ ОКНО // Три часа сходятся на двенадцать минут: стоячая вода, просадка насосов, тень носителя. Маршрутная доска считает это безопасным. Стены считают это временным.",
+     "terminal": "ЗАМЕТКА ОПЕРАЦИОННОГО ОКНА // Не считать приливный прогноз погодой. Он задает нагрузку люков, акустическую дальность, дрейф рассола, массу подъема, тень ретранслятора и срок юридического ответа.",
+     "audio": "Здесь внизу уходят не тогда, когда готовы. Уходят, когда вода достаточно долго перестает спорить.",
+     "in_game_wiki": "У океана HECTON-8 есть рабочие часы. Это звучит как шутка, пока люк не отказывается выровнять давление, пингер не глохнет в наклонном рассоле, а маршрут, открытый десять минут назад, не становится мясорубкой. Фаза прилива на этой луне не фоновая погода. Она меняет нагрузку дверей, взвесь ила, акустическую дальность, дрейф рассольных слоев, балласт скафандра, дежурство насосов и те редкие чистые углы, под которыми носитель может слышать сквозь шум Aegir.\n\nDeep Reach сжала эти условия в вежливое слово: окно. Окно слабой воды. Окно насосов. Окно подъема. Окно ретранслятора. Окно радиомолчания. Язык эффективный и ядовитый. Он заставляет физическую милость звучать как ячейка календаря, а пропавшего рабочего как задержанное выполнение. На доске имя может одним жирным штрихом перейти из допущен в задержан, а потом в удержан. Океану не нужна была бюрократия, чтобы быть опасным, но бюрократия сделала опасность удобной для счета.\n\nМародер учится читать окна как полевую грамматику. Белые дуги на кромках люков отмечают направление нагрузки. Интервалы пингера растягиваются перед тем, как маршрут портится. Рассольные занавеси клонятся до смены донного течения. Тихий ретранслятор не всегда сломан; иногда луна просто стоит в неправильной тени, а юридическая очередь продолжает тикать без голоса.\n\nGreat Tide не была сказочной волной. Это была последняя стопка слишком многих рабочих окон, с которыми обращались как с предметом переговоров: эвакуацию отложили внутрь нагрузки, тепловой сброс держали против закрытого дренажа, непрерывность Atlas поставили выше отхода, а рабочих оставили внутри расписания, которое физика уже не соблюдала.",
+     "external_site": "HECTON-8 превращает приливы в расписание, риск и доказательство. Маршрутные окна решают, когда откроется дверь, когда умрет сигнал и когда контракт сможет обвинить океан.",
+     "external_site_article": "Приливные окна в HECTON-8 связывают жесткую науку и игру без музейной витрины. Орбита, масса океана, шум шторма и промышленные системы давления не лежат в фоновом кодексе. Они определяют, когда игрок может двигаться, что он может услышать, какие контракты становятся опасными и почему старые записи колонии говорят об окнах так, будто океан был враждебным начальником смены.\n\nОкно никогда не бывает только природным. Слабая вода может снять нагрузку с люка, но просадка насосов может испортить тот же маршрут. Тень ретранслятора может заставить носитель замолчать, пока акустический пингер все еще работает через отремонтированный хребет. Шторм может закрыть видимость и открыть отрицание. Deep Reach научилась прятать решения внутри этой сложности. Если каждый отказ приходит в плохое окно, каждый отказ можно списать на физику.\n\nОтвет игрока не в заучивании абстрактной астрономии. Ответ в чтении физических улик: приливных меток, маршрутных досок, ритма пингера, угла рассола, свежей ленты, исправленных штампов возврата и карточек контрактного риска.",
+     "field_note": "Окно это не разрешение. Это лишь миг, когда океан смотрит в сторону."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Польова стаття про припливне робоче вікно",
+     "scanner": "ПРИПЛИВНЕ РОБОЧЕ ВІКНО // Три годинники сходяться на дванадцять хвилин: тиха вода, спад помп, тінь носія. Маршрутна дошка називає це безпечним. Стіни називають це тимчасовим.",
+     "terminal": "НОТАТКА ОПЕРАЦІЙНОГО ВІКНА // Не вважати прогноз припливу погодою. Він задає напругу люків, акустичну дальність, дрейф розсолу, масу підйому, тінь ретранслятора і час юридичної відповіді.",
+     "audio": "Тут унизу виходять не тоді, коли готові. Виходять, коли вода досить довго перестає сперечатися.",
+     "in_game_wiki": "Океан HECTON-8 має робочі години. Це звучить як жарт, доки люк не відмовляється вирівняти тиск, пінгер не глухне у нахиленому розсолі, а маршрут, відкритий десять хвилин тому, не стає млином. Фаза припливу на цьому місяці не фонова погода. Вона змінює навантаження дверей, мул, акустичну дальність, дрейф розсольних шарів, баласт скафандра, чергування помп і ті небагато чистих кутів, під якими носій може чути крізь шум Aegir.\n\nDeep Reach стиснула ці умови в чемне слово: вікно. Вікно тихої води. Вікно помп. Вікно підйому. Вікно ретранслятора. Вікно радіомовчання. Мова ефективна й отруйна. Вона змушує фізичну милість звучати як клітинка календаря, а зниклого працівника як затримане виконання. На дошці ім'я може одним жирним штрихом перейти з допущено в затримано і далі в утримано.\n\nMarauder вчиться читати вікна як польову граматику. Білі дуги на краях люків позначають напрямок навантаження. Інтервали пінгера розтягуються перед тим, як маршрут псується. Розсольні завіси хиляться до зміни донної течії. Тихий ретранслятор не завжди зламаний; іноді місяць просто стоїть у неправильній тіні, а юридична черга продовжує цокати без голосу.\n\nGreat Tide не була казковою хвилею. Це була остання стопка забагатьох робочих вікон, до яких ставилися як до предмета переговорів: евакуацію відклали всередину навантаження, тепловий скид тримали проти закритого дренажу, безперервність Atlas поставили вище відступу, а працівників лишили в розкладі, який фізика вже не поважала.",
+     "external_site": "HECTON-8 перетворює припливи на розклад, ризик і доказ. Маршрутні вікна вирішують, коли відкриються двері, коли помре сигнал і коли контракт зможе звинуватити океан.",
+     "external_site_article": "Припливні вікна в HECTON-8 є чистим мостом між жорсткою наукою і грою. Орбіта, маса океану, шум шторму й промислові системи тиску не лежать у фоновому кодексі. Вони визначають, коли гравець може рухатися, що він може почути, які контракти стають небезпечними і чому старі записи колонії говорять про вікна так, ніби океан був ворожим начальником зміни.\n\nВікно ніколи не є лише природним. Тиха вода може зняти навантаження з люка, але спад помп може зіпсувати той самий маршрут. Тінь ретранслятора може змусити носій мовчати, поки акустичний пінгер ще працює через відремонтований хребет. Шторм може закрити видимість і відкрити заперечення. Deep Reach навчилася ховати рішення в цій складності.\n\nВідповідь гравця не в заучуванні абстрактної астрономії. Відповідь у читанні фізичних доказів: припливних міток, маршрутних дошок, ритму пінгера, кута розсолу, свіжої стрічки, виправлених штампів повернення і карт ризику.",
+     "field_note": "Вікно це не дозвіл. Це лише мить, коли океан дивиться вбік."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "潮汐工作窗口现场文章",
+     "scanner": "潮汐工作窗口 // 三只钟同意十二分钟：缓水、泵降、母船阴影。路线板说安全。墙壁说只是暂时。",
+     "terminal": "运行窗口备注 // 不要把潮汐预报当作天气。它限制舱门应力、声学距离、盐水漂移、提升质量、中继阴影和法律响应时间。",
+     "audio": "在下面，你不是准备好了就走。你要等水停止争吵，停得足够久，才能走。",
+     "in_game_wiki": "HECTON-8 的海洋有工作时间。这句话听起来像笑话，直到舱门拒绝均压，脉冲器死在倾斜的盐水层里，或者十分钟前还开放的路线变成绞磨机。潮汐相位在这颗月球上不是背景天气。它会改变门的应力、泥沙负荷、声学距离、盐水层漂移、潜服压载、泵的值守负荷，以及母船能穿过 Aegir 噪声听见信号的少数干净角度。\n\nDeep Reach 把这些条件压缩成一个礼貌的词：窗口。缓水窗口。泵窗口。提升窗口。中继窗口。通信黑窗。这种语言高效，而且有毒。它让物理上的怜悯听起来像日历格子，让失踪工人听起来像延迟执行。在板面上，一个名字可以被一笔油笔从放行划到延误，再划到扣留。\n\nMarauder 学会把窗口读成现场语法。舱门边缘的白弧标记应力方向。脉冲器间隔会在路线变坏前拉长。盐水帘会在底流改变前倾斜。安静的中继器不一定坏了；有时只是月球站在错误阴影里，而法律队列仍在无声运行。\n\nGreat Tide 不是童话里的巨浪。它是太多工作窗口被当成可谈判事项后的最后堆叠：撤离被拖进负荷里，热排放顶着封闭排水，Atlas 连续性压过撤退，工人被留在物理学已经不再尊重的时间表里。",
+     "external_site": "HECTON-8 把潮汐变成日程、风险和证据。路线窗口决定门何时开启、信号何时死亡，以及合同何时可以把责任推给海洋。",
+     "external_site_article": "潮汐窗口是 HECTON-8 中硬科学与玩法之间最清晰的桥之一。轨道、海洋质量、风暴噪声和工业压力系统不会只停在背景百科里。它们塑造玩家何时能移动、能听见什么、哪些合同会变得危险，以及为什么旧殖民地记录谈论窗口时，仿佛海洋是一名敌对的班组长。\n\n窗口从来不只是自然现象。缓水可以减轻舱门负荷，但泵降可以毁掉同一条路线。中继阴影可以让母船沉默，而声学脉冲器仍能通过修复的脊柱工作。风暴可以关闭视野，同时打开否认。Deep Reach 学会了把决定藏在这种复杂性里。\n\n玩家的答案不是背诵抽象天文学，而是阅读物理证据：潮痕、路线板、脉冲节奏、盐水角度、新胶带、修改过的返还章和合同风险卡。",
+     "field_note": "窗口不是许可。它只是海洋短暂地看向别处。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

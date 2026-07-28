@@ -1,11 +1,54 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS248_LEAK_RUST_BIOFILM_CHRONOLOGY_ARTICLE",
-  "title": "Leak Rust Biofilm Chronology Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS248_LEAK_RUST_BIOFILM_CHRONOLOGY_ARTICLE",
+ "title": "Leak Rust Biofilm Chronology Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1418_LEAK_RUST_BIOFILM_LEDGER",
+   "release_set_id": "RS248_LEAK_RUST_BIOFILM_CHRONOLOGY_ARTICLE",
+   "article_id": "applied_lore.leak_rust_biofilm_ledger",
+   "title_key": "LORE_LEAK_RUST_BIOFILM_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/WriterScenarioAgentPrompt.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,261 +56,219 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1418_LEAK_RUST_BIOFILM_LEDGER",
-      "release_set_id": "RS248_LEAK_RUST_BIOFILM_CHRONOLOGY_ARTICLE",
-      "article_id": "applied_lore.leak_rust_biofilm_ledger",
-      "title_key": "LORE_LEAK_RUST_BIOFILM_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/WriterScenarioAgentPrompt.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.leak_rust_biofilm_ledger",
-        "secondary": [
-          "unlock.first_leak_layer_scan",
-          "unlock.first_gasket_runoff_trace",
-          "unlock.first_false_accident_timeline"
-        ],
-        "poi_tags": [
-          "poi.leak_rust_biofilm_stain",
-          "poi.salt_bloom_gasket_lip",
-          "poi.oil_water_layer_crossing",
-          "poi.rust_under_bolt_row"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.service_corridor",
-          "biome.pressure_route"
-        ],
-        "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Leak Layer Scanner",
-          "terminal": "Old Colony Leak Chronology Readout",
-          "audio": "Marauder Stain Reading Instructor",
-          "in_game_wiki": "PDA Leak Chronology Field Guide",
-          "external_site": "Public Site Leak Chronology Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_leak_layer_scan_or_false_accident_timeline",
-        "truth_payload": "Leak stains are layered chronology: rust, salt, biofilm, oil and gasket runoff reveal slow failure and late operation.",
-        "player_question": "Which layer came after the accident was supposed to be over?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Leak Rust Biofilm Chronology Ledger",
-          "scanner": "LEAK TRACE // Rust below bolt row, green-brown biofilm smear, pale salt bloom at gasket lip. Oil-water stain crosses the mineral edge: the leak cycled after the first flood, not during one impact.",
-          "terminal": "LEAK CHRONOLOGY // Read layers in order. Rust forms where metal stayed wet and oxygen still arrived. Biofilm follows slow nutrient flow. Salt bloom marks evaporation or pressure breathing. A dark gasket runoff below clean paint means the seal failed before the panel tore.",
-          "audio": "A leak is a clock if nobody scrubbed it. The colony kept time in stains.",
-          "in_game_wiki": "Leak stains in HECTON-8 are not decorative grime. They are a layered clock. Rust, salt, biofilm, oil and gasket runoff do not appear at the same speed or for the same reason. Read together, they turn a wall from background surface into failure record.\n\nRust below a bolt row means water stayed there long enough for metal to answer. Green-brown biofilm means a slow feed: warm equipment, nutrient trace, human waste line, coolant residue or a seep through organic packing. Pale salt bloom means water migrated and dried or breathed through pressure cycles. A black smear under a gasket means the seal carried dirty water before the panel finally moved. If oil crosses over salt, the machine leaked after the brine dried. If salt crosses over oil, the water came later.\n\nThat chronology matters to a Marauder. A room with one violent scrape may be dangerous but simple. A room with layered leaks was alive for a while after it began failing. Someone kept pumping, wiping, cycling locks or routing power through a place already losing the argument. Those layers can point to hidden service routes, late repairs, bodies moved after evacuation, or evidence that an official accident report compressed weeks into one sentence.",
-          "external_site": "A field article on leak stains as chronology: rust, salt bloom, biofilm and gasket runoff reveal slow failure, late movement and false accident timelines.",
-          "external_site_article": "A good leak stain does not look dramatic at first. It looks like dirt. That is why it belongs in HECTON-8. The colony did not leave its truth in clean plaques. It left truth where water lingered, where bolts sweated, where seals breathed and where workers stopped having time to scrub.\n\nThe useful question is not \"what color is the stain?\" The useful question is \"which layer is on top?\" Rust beneath salt suggests an old wet seam that later dried or pressure-breathed. Salt beneath oil suggests a later machine leak across an already mineralized edge. Biofilm over paint means the surface stayed wet and fed. Clean paint inside a dirty streak can mean a late hand wipe, a removed label or a tool dragged through the slime.\n\nFor a Marauder, leak chronology can carry several jobs at once. It can make a path legible, warn about a weak seal, show that a room cycled after official shutdown, or mark a proof object worth preserving instead of grinding into salvage. The best version of this material is quiet: a wall that rewards careful reading with the fact that the ocean did not arrive in one honest wave.",
-          "field_note": "Fresh rust shouts. Old salt testifies."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал хронологии течи, ржавчины и биопленки",
-          "scanner": "СЛЕД ТЕЧИ // Ржавчина под рядом болтов, зелено-бурая биопленка, белая соль у губы прокладки. Масляно-водяное пятно пересекает минеральный край: течь циклилась после первого затопления, а не возникла от одного удара.",
-          "terminal": "ХРОНОЛОГИЯ ТЕЧИ // Читай слои по порядку. Ржавчина возникает там, где металл долго был мокрым и еще получал кислород. Биопленка идет за медленным питательным потоком. Соляной налет отмечает испарение или дыхание давления. Темный след прокладки под чистой краской значит, что уплотнение умерло раньше, чем панель порвало.",
-          "audio": "Течь - это часы, если ее не вытерли. Колония считала время пятнами.",
-          "in_game_wiki": "Пятна течи в HECTON-8 - не декоративная грязь. Это слоеные часы. Ржавчина, соль, биопленка, масло и сток с прокладки появляются с разной скоростью и по разным причинам. Если читать их вместе, стена перестает быть фоном и становится записью отказа.\n\nРжавчина под рядом болтов значит, что вода держалась там достаточно долго. Зелено-бурая биопленка говорит о медленном питании: теплом оборудовании, следе отходов, остатке охлаждающей жидкости или просачивании через органическую набивку. Белая соль значит, что вода мигрировала, высыхала или дышала через циклы давления. Черная полоса под прокладкой говорит, что грязная вода шла через уплотнение до того, как сдвинулась панель. Масло поверх соли - поздняя машинная течь. Соль поверх масла - вода пришла позже.\n\nДля мародера эта хронология важна. Комната с одним грубым ударом опасна, но проста. Комната со слоями течей жила некоторое время после начала отказа. Кто-то качал, вытирал, гонял шлюзы или тянул питание через место, которое уже проигрывало океану. Эти слои могут вывести к скрытому сервисному пути, позднему ремонту, переносу тел после эвакуации или доказательству, что официальный отчет сжал недели в одну фразу.",
-          "external_site": "Полевой материал о пятнах течи как хронологии: ржавчина, соль, биопленка и следы прокладок раскрывают медленный отказ, позднее движение и ложные сроки аварии.",
-          "external_site_article": "Хорошее пятно течи сначала не выглядит драматично. Оно похоже на грязь. Поэтому оно подходит HECTON-8. Колония оставила правду не на чистых табличках. Она оставила ее там, где вода задерживалась, болты потели, уплотнения дышали, а у рабочих уже не было времени вытирать.\n\nПолезный вопрос не в том, какого пятно цвета. Полезный вопрос - какой слой сверху. Ржавчина под солью говорит о старом мокром шве, который позже высох или дышал давлением. Соль под маслом говорит о поздней машинной течи по уже минерализованному краю. Биопленка поверх краски значит, что поверхность долго была влажной и питалась. Чистая краска внутри грязной полосы может быть следом поздней протирки, снятой метки или инструмента, протянутого через слизь.\n\nДля мародера такая хронология делает сразу несколько вещей. Она читает путь, предупреждает о слабом уплотнении, говорит, что комната работала после официального отключения, или отмечает доказательство, которое лучше сохранить, чем распилить на добычу. Лучший вариант такого материала тихий: стена, которая вознаграждает внимательное чтение пониманием, что океан пришел не одной честной волной.",
-          "field_note": "Свежая ржавчина кричит. Старая соль свидетельствует."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "漏水・錆・生膜の時系列台帳",
-          "scanner": "漏水痕 // ボルト列の下の錆、緑褐色の生膜、ガスケット縁の白い塩花。油水の染みが鉱物縁を横切る。これは一撃ではなく、初回浸水後も漏れが周期化した印だ。",
-          "terminal": "漏水時系列 // 層を順番に読む。錆は濡れた金属に酸素が届いた場所で育つ。生膜は遅い栄養流に従う。塩花は蒸発か圧力呼吸を示す。きれいな塗装の下に黒いガスケット流れがあれば、パネル破断前に封止が死んでいた。",
-          "audio": "拭かれていない漏れは時計だ。コロニーは染みで時を刻んだ。",
-          "in_game_wiki": "HECTON-8の漏水痕は汚れではなく、層になった時計だ。錆、塩、生膜、油、ガスケットから流れた黒い筋は、同じ速度でも同じ理由でも現れない。重ねて読むと、壁は背景ではなく失敗の記録になる。\n\nボルト下の錆は水が長く留まった証拠だ。緑褐色の生膜は、温かい機械、廃液、冷却液、または有機材を通った遅い流れを示す。白い塩は水が移動し、乾き、または圧力で呼吸した痕跡だ。塩の上に油があれば機械漏れは後だ。油の上に塩があれば水が後から来た。\n\n略奪者にとって、この順序は道具になる。層のある部屋は、壊れ始めたあともしばらく生きていた。誰かがポンプを動かし、拭き、ロックを回し、負けかけた場所へ電力を通していた。染みは隠れた保守路、遅い修理、避難後の移動、または公式報告が数週間を一文に縮めた証拠を示す。",
-          "external_site": "漏水痕を時系列として読む記事。錆、塩花、生膜、ガスケット流れが遅い失敗、遅い移動、偽の事故時刻を明かす。",
-          "external_site_article": "良い漏水痕は最初から劇的ではない。ただの汚れに見える。だからHECTON-8に合う。真実はきれいな標識ではなく、水が残り、ボルトが汗をかき、封止が呼吸し、作業者が拭く時間を失った場所に残る。\n\n大事なのは色ではなく、どの層が上にあるかだ。塩の下の錆は古い濡れた継ぎ目を示す。塩の上の油は後日の機械漏れだ。塗装上の生膜は表面が長く湿り、栄養を受けた証拠になる。汚れの中のきれいな筋は、遅い拭き取り、剥がされたラベル、または工具の跡かもしれない。\n\nこの素材は経路、危険な封止、公式停止後に動いた部屋、保存すべき証拠を同時に持てる。海は一度で正直に来たのではない。壁はそれを知っている。",
-          "field_note": "新しい錆は叫ぶ。古い塩は証言する。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "渗漏、锈蚀与生物膜时间账本",
-          "scanner": "渗漏痕 // 螺栓排下方的锈、绿褐色生物膜、密封唇边的白色盐花。油水污迹跨过矿物边缘：这不是一次撞击，而是第一次进水后仍在循环渗漏。",
-          "terminal": "渗漏时间线 // 按层读取。锈出现在金属长期潮湿且仍有氧气的地方。生物膜跟随缓慢营养流。盐花标记蒸发或压力呼吸。干净油漆下方有黑色密封流痕，说明密封先死，面板后撕裂。",
-          "audio": "没人擦掉的渗漏就是时钟。殖民地用污迹计时。",
-          "in_game_wiki": "HECTON-8的渗漏痕不是装饰性污垢，而是分层时钟。锈、盐、生物膜、油和密封流痕不会以同一速度、同一原因出现。把它们一起读，墙面就不再是背景，而是一次失败的记录。\n\n螺栓下的锈说明水在那里停留了足够久。绿褐色生物膜说明有缓慢供养：温热设备、废液痕迹、冷却液残留，或穿过有机填料的渗流。白色盐花说明水迁移、干燥或随压力周期呼吸。盐上有油，机器漏油更晚；油上有盐，水更晚到来。\n\n对拾荒者来说，顺序很重要。只有一道暴力刮痕的房间危险但简单。拥有多层渗漏的房间在开始失败后仍活了一段时间。有人继续抽水、擦拭、循环气闸或把电力送过已经输给海的地方。这些层能指向隐藏服务路线、后期维修、撤离后的移动，或官方报告把几周压成一句话的证据。",
-          "external_site": "把渗漏污迹当作时间线的现场文章：锈、盐花、生物膜和密封流痕揭示缓慢失效、后期移动与虚假的事故时间。",
-          "external_site_article": "好的渗漏痕一开始并不戏剧化。它看起来像脏东西。正因为如此，它属于HECTON-8。殖民地没有把真相留在干净铭牌上，而是留在水停留的地方、螺栓出汗的地方、密封件呼吸的地方、工人没有时间再擦拭的地方。\n\n有用的问题不是污迹是什么颜色，而是哪一层在上面。盐下的锈说明老湿缝。盐上的油说明后期机器泄漏。油上的盐说明水后来才来。油漆上的生物膜说明表面长期潮湿并得到供养。脏痕中的干净线可能是后期擦拭、标签被移除或工具拖过。\n\n在玩法里，渗漏时间线可以同时承担多件事：让路线可读，警告弱密封，说明房间在官方关闭后仍运转，或标记一个值得保存而不是切碎的证物。",
-          "field_note": "新锈在喊。旧盐在作证。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre chronologique des fuites, rouille et biofilm",
-          "scanner": "TRACE DE FUITE // Rouille sous rangée de boulons, biofilm brun-vert, fleur de sel au bord du joint. La tache huile-eau traverse le dépôt minéral : la fuite a cyclé après la première inondation, pas lors d'un seul impact.",
-          "terminal": "CHRONOLOGIE // Lire les couches dans l'ordre. La rouille vient d'un métal longtemps humide avec oxygène. Le biofilm suit un flux nutritif lent. Le sel marque évaporation ou respiration de pression. Une coulure noire de joint sous peinture propre indique que le joint a cédé avant le panneau.",
-          "audio": "Une fuite non essuyée est une horloge. La colonie comptait le temps en taches.",
-          "in_game_wiki": "Les traces de fuite de HECTON-8 ne sont pas de la crasse décorative. Ce sont des horloges en couches. Rouille, sel, biofilm, huile et coulures de joint n'apparaissent pas au même rythme. Lues ensemble, elles changent un mur de fond en registre de défaillance.\n\nLa rouille sous les boulons signifie que l'eau est restée. Le biofilm brun-vert indique un apport lent : chaleur d'équipement, déchets, refroidissement ou suintement à travers une garniture organique. Le sel blanc montre migration, séchage ou cycles de pression. L'huile sur le sel vient plus tard ; le sel sur l'huile vient après la machine.\n\nPour un Maraudeur, l'ordre compte. Une pièce avec une seule entaille violente est dangereuse mais simple. Une pièce avec des couches a vécu après son début de mort. Quelqu'un a pompé, essuyé, cyclé des sas ou routé du courant dans un lieu déjà en train de perdre.",
-          "external_site": "Article de terrain sur les traces de fuite comme chronologie : rouille, sel, biofilm et coulures de joint révèlent panne lente, mouvement tardif et faux calendrier.",
-          "external_site_article": "Une bonne tache de fuite n'a rien de spectaculaire. Elle ressemble à de la saleté. C'est pour cela qu'elle appartient à HECTON-8. La vérité n'est pas dans les plaques propres, mais là où l'eau a traîné, où les boulons ont sué, où les joints ont respiré.\n\nLa question utile n'est pas la couleur. C'est la couche supérieure. Rouille sous sel : ancienne couture humide. Sel sous huile : fuite mécanique tardive. Biofilm sur peinture : surface nourrie et humide longtemps. Peinture propre dans une traînée sale : essuyage tardif, étiquette retirée ou outil tiré dans la boue.\n\nCette chronologie rend une route lisible, avertit d'un joint faible, prouve qu'une salle a fonctionné après arrêt officiel ou marque un objet à préserver plutôt qu'à découper.",
-          "field_note": "La rouille fraîche crie. Le vieux sel témoigne."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro cronológico de fuga, óxido y biofilm",
-          "scanner": "RASTRO DE FUGA // Óxido bajo fila de pernos, biofilm verde pardo, flor de sal en el borde de la junta. La mancha de aceite y agua cruza el borde mineral: la fuga tuvo ciclos tras la primera inundación, no un único impacto.",
-          "terminal": "CRONOLOGÍA DE FUGA // Lee las capas en orden. El óxido nace donde el metal quedó húmedo y con oxígeno. El biofilm sigue flujo nutritivo lento. La sal marca evaporación o respiración de presión. Una escorrentía negra bajo pintura limpia indica que la junta falló antes del panel.",
-          "audio": "Una fuga sin limpiar es un reloj. La colonia contó el tiempo en manchas.",
-          "in_game_wiki": "Las manchas de fuga en HECTON-8 no son suciedad decorativa. Son relojes por capas. Óxido, sal, biofilm, aceite y escorrentía de junta aparecen a velocidades distintas. Leídas juntas, convierten una pared de fondo en registro de fallo.\n\nÓxido bajo pernos significa agua retenida durante tiempo. Biofilm verde pardo indica alimentación lenta: equipo caliente, residuos, refrigerante o filtración por empaquetado orgánico. Sal blanca significa migración, secado o ciclos de presión. Aceite sobre sal es fuga posterior; sal sobre aceite es agua posterior.\n\nPara un Merodeador, el orden importa. Una sala con un único golpe violento es peligrosa pero simple. Una sala con capas siguió viva después de empezar a morir. Alguien bombeó, limpió, cicló esclusas o llevó energía por un lugar que ya perdía contra el océano.",
-          "external_site": "Artículo de campo sobre manchas de fuga como cronología: óxido, sal, biofilm y marcas de junta revelan fallo lento, movimiento tardío y calendarios falsos.",
-          "external_site_article": "Una buena mancha de fuga no parece dramática. Parece suciedad. Por eso pertenece a HECTON-8. La verdad no quedó en placas limpias, sino donde el agua se demoró, los pernos sudaron, las juntas respiraron y los trabajadores dejaron de tener tiempo para limpiar.\n\nLa pregunta útil no es el color, sino qué capa está arriba. Óxido bajo sal: vieja costura húmeda. Sal bajo aceite: fuga mecánica posterior. Biofilm sobre pintura: superficie húmeda y alimentada. Pintura limpia dentro de una raya sucia: limpieza tardía, etiqueta retirada o herramienta arrastrada.\n\nEn juego, la cronología de fuga hace legible un camino, avisa de una junta débil, prueba que una sala funcionó tras el apagado oficial o marca un objeto que conviene conservar.",
-          "field_note": "El óxido nuevo grita. La sal vieja declara."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Chronikprotokoll für Leck, Rost und Biofilm",
-          "scanner": "LECKSPUR // Rost unter Bolzenreihe, grünbrauner Biofilm, helle Salzblüte an der Dichtungslippe. Öl-Wasser-Fleck kreuzt die Mineralkante: Das Leck zyklierte nach der ersten Flutung, nicht bei einem Einschlag.",
-          "terminal": "LECKCHRONIK // Schichten der Reihe nach lesen. Rost wächst, wo Metall nass blieb und Sauerstoff bekam. Biofilm folgt langsamem Nährstofffluss. Salz zeigt Trocknung oder Druckatmung. Schwarzer Dichtungsabfluss unter sauberer Farbe heißt: Die Dichtung starb vor dem Paneel.",
-          "audio": "Ein ungeputztes Leck ist eine Uhr. Die Kolonie zählte Zeit in Flecken.",
-          "in_game_wiki": "Leckflecken in HECTON-8 sind keine Deko. Sie sind geschichtete Uhren. Rost, Salz, Biofilm, Öl und Dichtungsschlieren entstehen nicht gleich schnell und nicht aus demselben Grund. Zusammen gelesen wird eine Wand zum Fehlerprotokoll.\n\nRost unter Bolzen bedeutet langes Wasser. Grünbrauner Biofilm zeigt langsame Nahrung: warme Maschine, Abfallspur, Kühlmittel oder Sickern durch organische Packung. Helles Salz bedeutet Wanderung, Trocknung oder Druckzyklen. Öl über Salz ist ein späteres Maschinenleck; Salz über Öl kam danach.\n\nFür Marauder zählt die Reihenfolge. Ein Raum mit einem brutalen Kratzer ist gefährlich, aber einfach. Ein Raum mit Schichten lebte nach Beginn des Versagens weiter. Jemand pumpte, wischte, schaltete Schleusen oder legte Strom durch einen Ort, der schon verlor.",
-          "external_site": "Feldartikel über Leckflecken als Chronik: Rost, Salzblüte, Biofilm und Dichtungsschlieren zeigen langsames Versagen, späte Bewegung und falsche Unfallzeiten.",
-          "external_site_article": "Ein guter Leckfleck sieht zunächst nicht dramatisch aus. Er sieht wie Schmutz aus. Genau deshalb gehört er zu HECTON-8. Wahrheit liegt nicht auf sauberen Schildern, sondern dort, wo Wasser blieb, Bolzen schwitzten und Dichtungen atmeten.\n\nDie nützliche Frage ist nicht die Farbe. Die nützliche Frage ist die oberste Schicht. Rost unter Salz: alte nasse Naht. Salz unter Öl: späteres Maschinenleck. Biofilm über Farbe: lange feuchte, genährte Oberfläche. Saubere Farbe in dunkler Spur: spätes Wischen, entfernte Markierung oder gezogenes Werkzeug.\n\nIm Spiel liest diese Chronik Wege, warnt vor schwachen Dichtungen, beweist Betrieb nach offizieller Abschaltung oder markiert ein Beweisstück, das nicht zerschnitten werden sollte.",
-          "field_note": "Frischer Rost schreit. Altes Salz sagt aus."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr chronologii przecieku, rdzy i biofilmu",
-          "scanner": "ŚLAD PRZECIEKU // Rdza pod rzędem śrub, zielonobrązowy biofilm, jasna sól przy wardze uszczelki. Plama oleju i wody przecina minerał: przeciek cyklował po pierwszym zalaniu, nie po jednym uderzeniu.",
-          "terminal": "CHRONOLOGIA // Czytaj warstwy po kolei. Rdza rośnie, gdzie metal długo był mokry i miał tlen. Biofilm idzie za wolnym pokarmem. Sól znaczy suszenie albo oddychanie ciśnieniem. Czarny spływ uszczelki pod czystą farbą znaczy, że uszczelka padła przed panelem.",
-          "audio": "Nieumyty przeciek jest zegarem. Kolonia mierzyła czas plamami.",
-          "in_game_wiki": "Plamy przecieku w HECTON-8 nie są dekoracyjnym brudem. To zegary w warstwach. Rdza, sól, biofilm, olej i spływy z uszczelek pojawiają się w różnym tempie. Razem zmieniają ścianę w rejestr awarii.\n\nRdza pod śrubami znaczy długie zaleganie wody. Zielonobrązowy biofilm mówi o wolnym zasilaniu: ciepłej maszynie, śladzie odpadów, chłodziwie albo przesączu przez organiczne uszczelnienie. Sól pokazuje migrację, schnięcie lub cykle ciśnienia. Olej na soli jest późniejszy; sól na oleju przyszła po nim.\n\nDla Marudera kolejność ma znaczenie. Sala z jednym ostrym zadrapaniem jest prosta. Sala z warstwami żyła po początku awarii. Ktoś pompował, wycierał, cyklował śluzy albo prowadził zasilanie przez miejsce, które już przegrywało.",
-          "external_site": "Artykuł o plamach przecieku jako chronologii: rdza, sól, biofilm i spływy uszczelek ujawniają powolną awarię, późny ruch i fałszywe terminy.",
-          "external_site_article": "Dobra plama przecieku nie wygląda dramatycznie. Wygląda jak brud. Dlatego pasuje do HECTON-8. Prawda nie została na czystych tablicach, lecz tam, gdzie woda zalegała, śruby pociły się, a uszczelki oddychały.\n\nPrzydatne pytanie nie brzmi: jaki to kolor. Brzmi: która warstwa jest na wierzchu. Rdza pod solą to stary mokry szew. Sól pod olejem to późny wyciek maszyny. Biofilm na farbie to długo karmiona wilgoć. Czysta farba w brudnym śladzie może być późnym wytarciem albo przeciągniętym narzędziem.\n\nW grze taka chronologia czyta ścieżkę, ostrzega o słabej uszczelce, dowodzi pracy po oficjalnym wyłączeniu albo wskazuje przedmiot dowodowy.",
-          "field_note": "Świeża rdza krzyczy. Stara sól zeznaje."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал хронології течі, іржі та біоплівки",
-          "scanner": "СЛІД ТЕЧІ // Іржа під рядом болтів, зелено-бура біоплівка, біла сіль на губі прокладки. Олійно-водяна пляма перетинає мінеральний край: теча циклилася після першого затоплення, а не від одного удару.",
-          "terminal": "ХРОНОЛОГІЯ ТЕЧІ // Читай шари по черзі. Іржа росте там, де метал довго був мокрим і мав кисень. Біоплівка йде за повільним живленням. Сіль показує висихання або дихання тиску. Чорний стік прокладки під чистою фарбою означає, що прокладка здалася раніше за панель.",
-          "audio": "Невитерта теча - це годинник. Колонія рахувала час плямами.",
-          "in_game_wiki": "Плями течі в HECTON-8 - не декоративний бруд. Це шаруваті годинники. Іржа, сіль, біоплівка, олія й стік із прокладки з'являються з різною швидкістю. Разом вони перетворюють стіну на запис відмови.\n\nІржа під болтами означає довгу присутність води. Зелено-бура біоплівка говорить про повільне живлення: тепле обладнання, відходи, охолоджувач або просочування через органічну набивку. Біла сіль означає міграцію, висихання чи цикли тиску. Олія поверх солі прийшла пізніше; сіль поверх олії прийшла після машини.\n\nДля мародера порядок важливий. Кімната з одним грубим ударом небезпечна, але проста. Кімната з шарами жила після початку відмови. Хтось качав, витирав, ганяв шлюзи або вів живлення через місце, яке вже програвало океану.",
-          "external_site": "Польова стаття про плями течі як хронологію: іржа, сіль, біоплівка й стоки прокладок показують повільну відмову, пізній рух і фальшиві строки аварії.",
-          "external_site_article": "Хороша пляма течі спершу не драматична. Вона схожа на бруд. Тому вона належить HECTON-8. Правда лишилася не на чистих табличках, а там, де вода стояла, болти пітніли, прокладки дихали, а робітники вже не мали часу витирати.\n\nКорисне питання не в кольорі. Корисне питання - який шар зверху. Іржа під сіллю - старий мокрий шов. Сіль під олією - пізня машинна теча. Біоплівка на фарбі - довго волога й підживлена поверхня. Чиста фарба в брудному сліді може бути пізнім витиранням або протягнутим інструментом.\n\nУ грі така хронологія читає шлях, попереджає про слабку прокладку, доводить роботу після офіційного вимкнення або позначає доказ, який не варто різати на здобич.",
-          "field_note": "Свіжа іржа кричить. Стара сіль свідчить."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل تسلسل التسرب والصدأ والغشاء الحيوي",
-          "scanner": "أثر تسرب // صدأ تحت صف البراغي، غشاء حيوي أخضر بني، ازهرار ملحي عند شفة الحشية. بقعة زيت وماء تعبر حافة معدنية: التسرب تكرر بعد الغمر الأول لا بسبب ضربة واحدة.",
-          "terminal": "تسلسل التسرب // اقرأ الطبقات بالترتيب. الصدأ ينمو حيث بقي المعدن رطبا ومعه أكسجين. الغشاء الحيوي يتبع تغذية بطيئة. الملح يدل على جفاف أو تنفس ضغط. سيلان أسود من الحشية تحت طلاء نظيف يعني أن الحشية فشلت قبل اللوح.",
-          "audio": "التسرب غير الممسوح ساعة. المستعمرة قاست الزمن بالبقع.",
-          "in_game_wiki": "بقع التسرب في HECTON-8 ليست وسخا للزينة. إنها ساعات ذات طبقات. الصدأ والملح والغشاء الحيوي والزيت وسيلان الحشية لا تظهر بالسرعة نفسها ولا للسبب نفسه. إذا قرئت معا، صار الجدار سجلا للفشل.\n\nالصدأ تحت البراغي يعني أن الماء بقي هناك طويلا. الغشاء الأخضر البني يعني تغذية بطيئة: آلة دافئة، أثر نفايات، مبرد، أو رشح عبر حشو عضوي. الملح الأبيض يعني انتقال ماء أو جفافا أو دورات ضغط. الزيت فوق الملح جاء لاحقا؛ الملح فوق الزيت جاء بعده الماء.\n\nبالنسبة للمغير، الترتيب مهم. غرفة فيها خدش عنيف واحد خطرة لكنها بسيطة. غرفة ذات طبقات عاشت بعد بداية فشلها. شخص ما ضخ ومسح وشغل غرف الضغط أو مرر الطاقة عبر مكان كان يخسر أمام البحر.",
-          "external_site": "مقال ميداني عن بقع التسرب كتسلسل زمني: الصدأ والملح والغشاء الحيوي وسيلان الحشيات تكشف فشلا بطيئا وحركة متأخرة وجدولا كاذبا.",
-          "external_site_article": "بقعة التسرب الجيدة لا تبدو درامية في البداية. تبدو كوسخ. لذلك تنتمي إلى HECTON-8. الحقيقة ليست على اللوحات النظيفة، بل حيث بقي الماء، وتعرقت البراغي، وتنفس الختم، ولم يعد لدى العمال وقت للمسح.\n\nالسؤال المفيد ليس لون البقعة. السؤال هو أي طبقة في الأعلى. صدأ تحت الملح يعني شقا قديما رطبا. ملح تحت الزيت يعني تسرب آلة لاحق. غشاء حيوي فوق الطلاء يعني سطحا رطبا ومغذى مدة طويلة. طلاء نظيف داخل أثر قذر قد يعني مسحا متأخرا أو أداة سحبت خلال الوحل.\n\nفي اللعب، تجعل هذه القراءة الطريق مفهوما، وتحذر من ختم ضعيف، وتثبت أن غرفة عملت بعد الإطفاء الرسمي، أو تحدد دليلا يستحق الحفظ.",
-          "field_note": "الصدأ الجديد يصرخ. الملح القديم يشهد."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Catatan Kronologi Bocor, Karat, dan Biofilm",
-          "scanner": "JEJAK BOCOR // Karat di bawah baris baut, biofilm hijau-cokelat, bunga garam pucat di bibir segel. Noda minyak-air menyeberangi tepi mineral: kebocoran berulang setelah banjir pertama, bukan satu benturan.",
-          "terminal": "KRONOLOGI BOCOR // Baca lapisan berurutan. Karat terbentuk saat logam lama basah dan masih mendapat oksigen. Biofilm mengikuti aliran nutrisi lambat. Garam menandai pengeringan atau napas tekanan. Aliran hitam dari segel di bawah cat bersih berarti segel mati sebelum panel robek.",
-          "audio": "Bocor yang tak diseka adalah jam. Koloni menghitung waktu dengan noda.",
-          "in_game_wiki": "Noda bocor HECTON-8 bukan kotoran hias. Itu jam berlapis. Karat, garam, biofilm, minyak, dan aliran segel muncul dengan kecepatan dan alasan berbeda. Jika dibaca bersama, dinding berubah menjadi catatan kegagalan.\n\nKarat di bawah baut berarti air tinggal cukup lama. Biofilm hijau-cokelat berarti aliran nutrisi lambat: alat hangat, limbah, pendingin, atau rembesan lewat isian organik. Garam pucat berarti air pindah, kering, atau bernapas lewat siklus tekanan. Minyak di atas garam datang lebih lambat; garam di atas minyak berarti air datang setelah mesin.\n\nBagi Perompak, urutan itu penting. Ruang dengan satu gores keras berbahaya tetapi sederhana. Ruang berlapis bocor tetap hidup setelah mulai gagal. Ada orang yang memompa, menyeka, memutar ruang udara, atau menyalurkan daya melalui tempat yang sudah kalah dari laut.",
-          "external_site": "Artikel lapangan tentang noda bocor sebagai kronologi: karat, garam, biofilm, dan aliran segel mengungkap kegagalan lambat, gerak terlambat, dan jadwal palsu.",
-          "external_site_article": "Noda bocor yang baik tidak tampak dramatis. Ia tampak seperti kotoran. Karena itu ia cocok untuk HECTON-8. Kebenaran tidak berada di pelat bersih, tetapi di tempat air tertahan, baut berkeringat, segel bernapas, dan pekerja tak punya waktu menyeka.\n\nPertanyaan berguna bukan warna noda. Pertanyaannya: lapisan mana di atas? Karat di bawah garam berarti sambungan lama yang basah. Garam di bawah minyak berarti kebocoran mesin yang lebih lambat. Biofilm di atas cat berarti permukaan lama basah dan diberi makan. Cat bersih dalam jejak kotor bisa berarti sapuan terlambat atau alat terseret.\n\nDalam permainan, kronologi bocor membaca jalur, memperingatkan segel lemah, membuktikan ruang bekerja setelah pemadaman resmi, atau menandai benda bukti yang sebaiknya tidak dipotong.",
-          "field_note": "Karat baru berteriak. Garam lama bersaksi."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "누수, 녹, 생물막 연대 장부",
-          "scanner": "누수 흔적 // 볼트열 아래 녹, 녹갈색 생물막, 밀봉 입술의 흰 소금꽃. 기름-물 얼룩이 광물 가장자리를 가른다. 한 번의 충격이 아니라 첫 침수 뒤 누수가 반복됐다는 뜻이다.",
-          "terminal": "누수 연대 // 층을 순서대로 읽어라. 녹은 금속이 오래 젖고 산소를 받은 곳에서 생긴다. 생물막은 느린 영양 흐름을 따른다. 소금꽃은 건조나 압력 호흡을 뜻한다. 깨끗한 도색 아래 검은 밀봉 흐름은 패널보다 밀봉이 먼저 죽었다는 뜻이다.",
-          "audio": "닦이지 않은 누수는 시계다. 식민지는 얼룩으로 시간을 셌다.",
-          "in_game_wiki": "HECTON-8의 누수 얼룩은 장식 오염이 아니다. 층을 가진 시계다. 녹, 소금, 생물막, 기름, 밀봉 흐름은 같은 속도와 이유로 생기지 않는다. 함께 읽으면 벽은 배경이 아니라 실패 기록이 된다.\n\n볼트 아래 녹은 물이 오래 머문 증거다. 녹갈색 생물막은 따뜻한 장비, 폐기물 흔적, 냉각수, 유기 충전재를 통한 느린 흐름을 말한다. 흰 소금은 물의 이동, 건조, 압력 주기를 남긴다. 소금 위 기름은 나중 기계 누수다. 기름 위 소금은 그 뒤에 온 물이다.\n\n약탈자에게 순서는 중요하다. 한 번의 거친 긁힘만 있는 방은 위험하지만 단순하다. 여러 층의 누수가 있는 방은 실패가 시작된 뒤에도 한동안 살아 있었다. 누군가 펌프를 돌리고, 닦고, 에어록을 순환시키고, 이미 지는 곳에 전력을 보냈다.",
-          "external_site": "누수 얼룩을 연대로 읽는 현장 글. 녹, 소금꽃, 생물막, 밀봉 흐름이 느린 실패와 늦은 이동, 거짓 사고 시간을 드러낸다.",
-          "external_site_article": "좋은 누수 얼룩은 처음에는 극적이지 않다. 그냥 더러움처럼 보인다. 그래서 HECTON-8에 맞는다. 진실은 깨끗한 명판이 아니라 물이 머물고, 볼트가 땀 흘리고, 밀봉이 숨 쉬던 곳에 남았다.\n\n쓸모 있는 질문은 색이 아니다. 어느 층이 위에 있는가다. 소금 아래 녹은 오래된 젖은 이음이다. 소금 아래 기름은 늦은 기계 누수다. 도색 위 생물막은 오래 젖고 먹이를 받은 표면이다. 더러운 줄 속 깨끗한 도색은 늦은 닦음이나 끌린 도구일 수 있다.\n\n게임에서 이 연대기는 길을 읽고, 약한 밀봉을 경고하고, 공식 정지 뒤에도 방이 작동했다는 증거가 되며, 잘라 버리지 말아야 할 증거물을 표시한다.",
-          "field_note": "새 녹은 소리친다. 오래된 소금은 증언한다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן כרונולוגיית דליפה, חלודה וביופילם",
-          "scanner": "עקבת דליפה // חלודה מתחת לשורת ברגים, ביופילם ירוק-חום, פריחת מלח בשפת האטם. כתם שמן-מים חוצה קצה מינרלי: הדליפה חזרה במחזורים אחרי ההצפה הראשונה, לא ממכה אחת.",
-          "terminal": "כרונולוגיית דליפה // קרא שכבות לפי סדר. חלודה נוצרת במקום שבו מתכת נשארה רטובה ועדיין קיבלה חמצן. ביופילם עוקב אחרי זרם מזין איטי. מלח מסמן ייבוש או נשימת לחץ. נזילה שחורה מאטם תחת צבע נקי אומרת שהאטם כשל לפני הלוח.",
-          "audio": "דליפה שלא נוקתה היא שעון. המושבה ספרה זמן בכתמים.",
-          "in_game_wiki": "כתמי דליפה ב-HECTON-8 אינם לכלוך קישוטי. הם שעון בשכבות. חלודה, מלח, ביופילם, שמן ונזילת אטם אינם נוצרים באותו קצב או מאותה סיבה. יחד הם הופכים קיר לרישום כשל.\n\nחלודה תחת ברגים אומרת שהמים נשארו שם זמן רב. ביופילם ירוק-חום אומר זרימה מזינה איטית: ציוד חם, פסולת, נוזל קירור או חלחול דרך מילוי אורגני. מלח בהיר אומר נדידת מים, ייבוש או מחזורי לחץ. שמן מעל מלח מאוחר יותר; מלח מעל שמן הגיע אחר כך.\n\nעבור בוזז, הסדר חשוב. חדר עם שריטה אלימה אחת מסוכן אך פשוט. חדר עם שכבות חי זמן מה אחרי שהתחיל להיכשל. מישהו שאב, ניגב, סובב מנעלי אוויר או העביר חשמל דרך מקום שכבר הפסיד לים.",
-          "external_site": "מאמר שטח על כתמי דליפה ככרונולוגיה: חלודה, מלח, ביופילם ונזילות אטם חושפים כשל איטי, תנועה מאוחרת ולוח זמנים שקרי.",
-          "external_site_article": "כתם דליפה טוב לא נראה דרמטי בתחילה. הוא נראה כמו לכלוך. לכן הוא שייך ל-HECTON-8. האמת אינה בלוחות נקיים, אלא במקום שבו מים נשארו, ברגים הזיעו, אטמים נשמו, ולעובדים כבר לא היה זמן לנגב.\n\nהשאלה השימושית אינה הצבע. השאלה היא איזו שכבה למעלה. חלודה תחת מלח היא תפר רטוב ישן. מלח תחת שמן הוא דליפת מכונה מאוחרת. ביופילם על צבע הוא משטח שנרטב וניזון זמן רב. צבע נקי בתוך פס מלוכלך עשוי להיות ניגוב מאוחר או כלי שנגרר.\n\nבמשחק כרונולוגיה כזו קוראת נתיב, מזהירה מאטם חלש, מוכיחה שחדר עבד אחרי כיבוי רשמי או מסמנת ראיה שכדאי לשמור.",
-          "field_note": "חלודה טרייה צועקת. מלח ישן מעיד."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro cronológico de vazamento, ferrugem e biofilme",
-          "scanner": "RASTRO DE VAZAMENTO // Ferrugem sob linha de parafusos, biofilme verde-marrom, flor de sal na borda da junta. Mancha de óleo e água cruza a borda mineral: o vazamento ciclou depois da primeira inundação, não veio de um impacto só.",
-          "terminal": "CRONOLOGIA DO VAZAMENTO // Leia as camadas em ordem. Ferrugem forma onde metal ficou úmido e ainda recebeu oxigênio. Biofilme segue fluxo nutritivo lento. Sal marca secagem ou respiração de pressão. Escorrimento preto da junta sob tinta limpa significa que a junta falhou antes do painel.",
-          "audio": "Vazamento sem limpeza é relógio. A colônia contou tempo por manchas.",
-          "in_game_wiki": "Manchas de vazamento em HECTON-8 não são sujeira decorativa. São relógios em camadas. Ferrugem, sal, biofilme, óleo e escorrimento de junta aparecem por razões e velocidades diferentes. Juntas, transformam parede de fundo em registro de falha.\n\nFerrugem sob parafusos significa água parada por tempo suficiente. Biofilme verde-marrom indica alimentação lenta: equipamento quente, resíduo, fluido de resfriamento ou infiltração por enchimento orgânico. Sal branco indica migração, secagem ou ciclos de pressão. Óleo sobre sal veio depois; sal sobre óleo veio depois da máquina.\n\nPara um Saqueador, a ordem importa. Sala com um arranhão violento é perigosa, mas simples. Sala com camadas viveu depois de começar a falhar. Alguém bombeou, limpou, ciclou câmaras ou levou energia por um lugar que já perdia para o oceano.",
-          "external_site": "Artigo de campo sobre manchas de vazamento como cronologia: ferrugem, sal, biofilme e junta revelam falha lenta, movimento tardio e horários falsos.",
-          "external_site_article": "Uma boa mancha de vazamento não parece dramática no começo. Parece sujeira. Por isso pertence a HECTON-8. A verdade não ficou em placas limpas, mas onde a água demorou, parafusos suaram, juntas respiraram e trabalhadores já não tinham tempo de limpar.\n\nA pergunta útil não é a cor. É qual camada está por cima. Ferrugem sob sal indica emenda úmida antiga. Sal sob óleo indica vazamento mecânico tardio. Biofilme sobre tinta indica superfície alimentada e úmida por muito tempo. Tinta limpa dentro de rastro sujo pode ser limpeza tardia ou ferramenta arrastada.\n\nEm jogo, essa cronologia lê caminhos, alerta sobre junta fraca, prova que uma sala funcionou após desligamento oficial ou marca um objeto de prova que não deve ser cortado.",
-          "field_note": "Ferrugem nova grita. Sal antigo testemunha."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Chronologielogboek voor lek, roest en biofilm",
-          "scanner": "LEKSPOOR // Roest onder boutenrij, groenbruine biofilm, bleke zoutbloei aan pakkingslip. Olie-water-vlek kruist de mineraalrand: het lek cyclusde na de eerste overstroming, niet door één klap.",
-          "terminal": "LEKCHRONOLOGIE // Lees lagen op volgorde. Roest vormt waar metaal lang nat bleef en zuurstof kreeg. Biofilm volgt trage voeding. Zout markeert droging of drukademhaling. Zwarte pakkingafvoer onder schone verf betekent dat de pakking eerder faalde dan het paneel.",
-          "audio": "Een lek dat niemand poetste is een klok. De kolonie telde tijd in vlekken.",
-          "in_game_wiki": "Lekvlekken in HECTON-8 zijn geen decoratieve viezigheid. Het zijn gelaagde klokken. Roest, zout, biofilm, olie en pakkingsporen verschijnen niet even snel en niet om dezelfde reden. Samen gelezen maken ze van een wand een faalregister.\n\nRoest onder bouten betekent langdurig water. Groenbruine biofilm betekent trage voeding: warme apparatuur, afvalspoor, koelmiddel of doorsijpeling door organische vulling. Wit zout betekent migratie, droging of drukcycli. Olie over zout kwam later; zout over olie kwam na de machine.\n\nVoor een Marauder telt volgorde. Een kamer met één harde kras is gevaarlijk maar simpel. Een kamer met lagen leefde door nadat zij begon te falen. Iemand pompte, veegde, cyclusde sluizen of leidde stroom door een plaats die al verloor van de oceaan.",
-          "external_site": "Veldartikel over lekvlekken als chronologie: roest, zoutbloei, biofilm en pakkingsporen tonen langzaam falen, late beweging en valse ongevalstijden.",
-          "external_site_article": "Een goede lekvlek ziet er eerst niet dramatisch uit. Ze lijkt vuil. Daarom hoort ze bij HECTON-8. Waarheid ligt niet op schone platen, maar waar water bleef hangen, bouten zweetten en pakkingen ademden.\n\nDe nuttige vraag is niet de kleur. De nuttige vraag is welke laag bovenop ligt. Roest onder zout: oude natte naad. Zout onder olie: later machinelek. Biofilm op verf: lang nat en gevoed oppervlak. Schone verf in een vuile streep kan late veeg of gesleept gereedschap zijn.\n\nIn speltermen leest deze chronologie paden, waarschuwt voor zwakke pakkingen, bewijst werking na officiële uitschakeling of markeert bewijs dat beter niet wordt versneden.",
-          "field_note": "Verse roest schreeuwt. Oud zout getuigt."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.leak_rust_biofilm_ledger",
+    "secondary": [
+     "unlock.first_leak_layer_scan",
+     "unlock.first_gasket_runoff_trace",
+     "unlock.first_false_accident_timeline"
+    ],
+    "poi_tags": [
+     "poi.leak_rust_biofilm_stain",
+     "poi.salt_bloom_gasket_lip",
+     "poi.oil_water_layer_crossing",
+     "poi.rust_under_bolt_row"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.service_corridor",
+     "biome.pressure_route"
+    ],
+    "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Leak Layer Scanner",
+     "terminal": "Old Colony Leak Chronology Readout",
+     "audio": "Marauder Stain Reading Instructor",
+     "in_game_wiki": "PDA Leak Chronology Field Guide",
+     "external_site": "Public Site Leak Chronology Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_leak_layer_scan_or_false_accident_timeline",
+    "truth_payload": "Leak stains are layered chronology: rust, salt, biofilm, oil and gasket runoff reveal slow failure and late operation.",
+    "player_question": "Which layer came after the accident was supposed to be over?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Leak Rust Biofilm Chronology Ledger",
+     "scanner": "LEAK TRACE // Rust below bolt row, green-brown biofilm smear, pale salt bloom at gasket lip. Oil-water stain crosses the mineral edge: the leak cycled after the first flood, not during one impact.",
+     "terminal": "LEAK CHRONOLOGY // Read layers in order. Rust forms where metal stayed wet and oxygen still arrived. Biofilm follows slow nutrient flow. Salt bloom marks evaporation or pressure breathing. A dark gasket runoff below clean paint means the seal failed before the panel tore.",
+     "audio": "A leak is a clock if nobody scrubbed it. The colony kept time in stains.",
+     "in_game_wiki": "Leak stains in HECTON-8 are not decorative grime. They are a layered clock. Rust, salt, biofilm, oil and gasket runoff do not appear at the same speed or for the same reason. Read together, they turn a wall from background surface into failure record.\n\nRust below a bolt row means water stayed there long enough for metal to answer. Green-brown biofilm means a slow feed: warm equipment, nutrient trace, human waste line, coolant residue or a seep through organic packing. Pale salt bloom means water migrated and dried or breathed through pressure cycles. A black smear under a gasket means the seal carried dirty water before the panel finally moved. If oil crosses over salt, the machine leaked after the brine dried. If salt crosses over oil, the water came later.\n\nThat chronology matters to a Marauder. A room with one violent scrape may be dangerous but simple. A room with layered leaks was alive for a while after it began failing. Someone kept pumping, wiping, cycling locks or routing power through a place already losing the argument. Those layers can point to hidden service routes, late repairs, bodies moved after evacuation, or evidence that an official accident report compressed weeks into one sentence.",
+     "external_site": "A field article on leak stains as chronology: rust, salt bloom, biofilm and gasket runoff reveal slow failure, late movement and false accident timelines.",
+     "external_site_article": "A good leak stain does not look dramatic at first. It looks like dirt. That is why it belongs in HECTON-8. The colony did not leave its truth in clean plaques. It left truth where water lingered, where bolts sweated, where seals breathed and where workers stopped having time to scrub.\n\nThe useful question is not \"what color is the stain?\" The useful question is \"which layer is on top?\" Rust beneath salt suggests an old wet seam that later dried or pressure-breathed. Salt beneath oil suggests a later machine leak across an already mineralized edge. Biofilm over paint means the surface stayed wet and fed. Clean paint inside a dirty streak can mean a late hand wipe, a removed label or a tool dragged through the slime.\n\nFor a Marauder, leak chronology can carry several jobs at once. It can make a path legible, warn about a weak seal, show that a room cycled after official shutdown, or mark a proof object worth preserving instead of grinding into salvage. The best version of this material is quiet: a wall that rewards careful reading with the fact that the ocean did not arrive in one honest wave.",
+     "field_note": "Fresh rust shouts. Old salt testifies."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал хронологии течи, ржавчины и биопленки",
+     "scanner": "СЛЕД ТЕЧИ // Ржавчина под рядом болтов, зелено-бурая биопленка, белая соль у губы прокладки. Масляно-водяное пятно пересекает минеральный край: течь циклилась после первого затопления, а не возникла от одного удара.",
+     "terminal": "ХРОНОЛОГИЯ ТЕЧИ // Читай слои по порядку. Ржавчина возникает там, где металл долго был мокрым и еще получал кислород. Биопленка идет за медленным питательным потоком. Соляной налет отмечает испарение или дыхание давления. Темный след прокладки под чистой краской значит, что уплотнение умерло раньше, чем панель порвало.",
+     "audio": "Течь - это часы, если ее не вытерли. Колония считала время пятнами.",
+     "in_game_wiki": "Пятна течи в HECTON-8 - не декоративная грязь. Это слоеные часы. Ржавчина, соль, биопленка, масло и сток с прокладки появляются с разной скоростью и по разным причинам. Если читать их вместе, стена перестает быть фоном и становится записью отказа.\n\nРжавчина под рядом болтов значит, что вода держалась там достаточно долго. Зелено-бурая биопленка говорит о медленном питании: теплом оборудовании, следе отходов, остатке охлаждающей жидкости или просачивании через органическую набивку. Белая соль значит, что вода мигрировала, высыхала или дышала через циклы давления. Черная полоса под прокладкой говорит, что грязная вода шла через уплотнение до того, как сдвинулась панель. Масло поверх соли - поздняя машинная течь. Соль поверх масла - вода пришла позже.\n\nДля мародера эта хронология важна. Комната с одним грубым ударом опасна, но проста. Комната со слоями течей жила некоторое время после начала отказа. Кто-то качал, вытирал, гонял шлюзы или тянул питание через место, которое уже проигрывало океану. Эти слои могут вывести к скрытому сервисному пути, позднему ремонту, переносу тел после эвакуации или доказательству, что официальный отчет сжал недели в одну фразу.",
+     "external_site": "Полевой материал о пятнах течи как хронологии: ржавчина, соль, биопленка и следы прокладок раскрывают медленный отказ, позднее движение и ложные сроки аварии.",
+     "external_site_article": "Хорошее пятно течи сначала не выглядит драматично. Оно похоже на грязь. Поэтому оно подходит HECTON-8. Колония оставила правду не на чистых табличках. Она оставила ее там, где вода задерживалась, болты потели, уплотнения дышали, а у рабочих уже не было времени вытирать.\n\nПолезный вопрос не в том, какого пятно цвета. Полезный вопрос - какой слой сверху. Ржавчина под солью говорит о старом мокром шве, который позже высох или дышал давлением. Соль под маслом говорит о поздней машинной течи по уже минерализованному краю. Биопленка поверх краски значит, что поверхность долго была влажной и питалась. Чистая краска внутри грязной полосы может быть следом поздней протирки, снятой метки или инструмента, протянутого через слизь.\n\nДля мародера такая хронология делает сразу несколько вещей. Она читает путь, предупреждает о слабом уплотнении, говорит, что комната работала после официального отключения, или отмечает доказательство, которое лучше сохранить, чем распилить на добычу. Лучший вариант такого материала тихий: стена, которая вознаграждает внимательное чтение пониманием, что океан пришел не одной честной волной.",
+     "field_note": "Свежая ржавчина кричит. Старая соль свидетельствует."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "漏水・錆・生膜の時系列台帳",
+     "scanner": "漏水痕 // ボルト列の下の錆、緑褐色の生膜、ガスケット縁の白い塩花。油水の染みが鉱物縁を横切る。これは一撃ではなく、初回浸水後も漏れが周期化した印だ。",
+     "terminal": "漏水時系列 // 層を順番に読む。錆は濡れた金属に酸素が届いた場所で育つ。生膜は遅い栄養流に従う。塩花は蒸発か圧力呼吸を示す。きれいな塗装の下に黒いガスケット流れがあれば、パネル破断前に封止が死んでいた。",
+     "audio": "拭かれていない漏れは時計だ。コロニーは染みで時を刻んだ。",
+     "in_game_wiki": "HECTON-8の漏水痕は汚れではなく、層になった時計だ。錆、塩、生膜、油、ガスケットから流れた黒い筋は、同じ速度でも同じ理由でも現れない。重ねて読むと、壁は背景ではなく失敗の記録になる。\n\nボルト下の錆は水が長く留まった証拠だ。緑褐色の生膜は、温かい機械、廃液、冷却液、または有機材を通った遅い流れを示す。白い塩は水が移動し、乾き、または圧力で呼吸した痕跡だ。塩の上に油があれば機械漏れは後だ。油の上に塩があれば水が後から来た。\n\n略奪者にとって、この順序は道具になる。層のある部屋は、壊れ始めたあともしばらく生きていた。誰かがポンプを動かし、拭き、ロックを回し、負けかけた場所へ電力を通していた。染みは隠れた保守路、遅い修理、避難後の移動、または公式報告が数週間を一文に縮めた証拠を示す。",
+     "external_site": "漏水痕を時系列として読む記事。錆、塩花、生膜、ガスケット流れが遅い失敗、遅い移動、偽の事故時刻を明かす。",
+     "external_site_article": "良い漏水痕は最初から劇的ではない。ただの汚れに見える。だからHECTON-8に合う。真実はきれいな標識ではなく、水が残り、ボルトが汗をかき、封止が呼吸し、作業者が拭く時間を失った場所に残る。\n\n大事なのは色ではなく、どの層が上にあるかだ。塩の下の錆は古い濡れた継ぎ目を示す。塩の上の油は後日の機械漏れだ。塗装上の生膜は表面が長く湿り、栄養を受けた証拠になる。汚れの中のきれいな筋は、遅い拭き取り、剥がされたラベル、または工具の跡かもしれない。\n\nこの素材は経路、危険な封止、公式停止後に動いた部屋、保存すべき証拠を同時に持てる。海は一度で正直に来たのではない。壁はそれを知っている。",
+     "field_note": "新しい錆は叫ぶ。古い塩は証言する。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "渗漏、锈蚀与生物膜时间账本",
+     "scanner": "渗漏痕 // 螺栓排下方的锈、绿褐色生物膜、密封唇边的白色盐花。油水污迹跨过矿物边缘：这不是一次撞击，而是第一次进水后仍在循环渗漏。",
+     "terminal": "渗漏时间线 // 按层读取。锈出现在金属长期潮湿且仍有氧气的地方。生物膜跟随缓慢营养流。盐花标记蒸发或压力呼吸。干净油漆下方有黑色密封流痕，说明密封先死，面板后撕裂。",
+     "audio": "没人擦掉的渗漏就是时钟。殖民地用污迹计时。",
+     "in_game_wiki": "HECTON-8的渗漏痕不是装饰性污垢，而是分层时钟。锈、盐、生物膜、油和密封流痕不会以同一速度、同一原因出现。把它们一起读，墙面就不再是背景，而是一次失败的记录。\n\n螺栓下的锈说明水在那里停留了足够久。绿褐色生物膜说明有缓慢供养：温热设备、废液痕迹、冷却液残留，或穿过有机填料的渗流。白色盐花说明水迁移、干燥或随压力周期呼吸。盐上有油，机器漏油更晚；油上有盐，水更晚到来。\n\n对拾荒者来说，顺序很重要。只有一道暴力刮痕的房间危险但简单。拥有多层渗漏的房间在开始失败后仍活了一段时间。有人继续抽水、擦拭、循环气闸或把电力送过已经输给海的地方。这些层能指向隐藏服务路线、后期维修、撤离后的移动，或官方报告把几周压成一句话的证据。",
+     "external_site": "把渗漏污迹当作时间线的现场文章：锈、盐花、生物膜和密封流痕揭示缓慢失效、后期移动与虚假的事故时间。",
+     "external_site_article": "好的渗漏痕一开始并不戏剧化。它看起来像脏东西。正因为如此，它属于HECTON-8。殖民地没有把真相留在干净铭牌上，而是留在水停留的地方、螺栓出汗的地方、密封件呼吸的地方、工人没有时间再擦拭的地方。\n\n有用的问题不是污迹是什么颜色，而是哪一层在上面。盐下的锈说明老湿缝。盐上的油说明后期机器泄漏。油上的盐说明水后来才来。油漆上的生物膜说明表面长期潮湿并得到供养。脏痕中的干净线可能是后期擦拭、标签被移除或工具拖过。\n\n在玩法里，渗漏时间线可以同时承担多件事：让路线可读，警告弱密封，说明房间在官方关闭后仍运转，或标记一个值得保存而不是切碎的证物。",
+     "field_note": "新锈在喊。旧盐在作证。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre chronologique des fuites, rouille et biofilm",
+     "scanner": "TRACE DE FUITE // Rouille sous rangée de boulons, biofilm brun-vert, fleur de sel au bord du joint. La tache huile-eau traverse le dépôt minéral : la fuite a cyclé après la première inondation, pas lors d'un seul impact.",
+     "terminal": "CHRONOLOGIE // Lire les couches dans l'ordre. La rouille vient d'un métal longtemps humide avec oxygène. Le biofilm suit un flux nutritif lent. Le sel marque évaporation ou respiration de pression. Une coulure noire de joint sous peinture propre indique que le joint a cédé avant le panneau.",
+     "audio": "Une fuite non essuyée est une horloge. La colonie comptait le temps en taches.",
+     "in_game_wiki": "Les traces de fuite de HECTON-8 ne sont pas de la crasse décorative. Ce sont des horloges en couches. Rouille, sel, biofilm, huile et coulures de joint n'apparaissent pas au même rythme. Lues ensemble, elles changent un mur de fond en registre de défaillance.\n\nLa rouille sous les boulons signifie que l'eau est restée. Le biofilm brun-vert indique un apport lent : chaleur d'équipement, déchets, refroidissement ou suintement à travers une garniture organique. Le sel blanc montre migration, séchage ou cycles de pression. L'huile sur le sel vient plus tard ; le sel sur l'huile vient après la machine.\n\nPour un Maraudeur, l'ordre compte. Une pièce avec une seule entaille violente est dangereuse mais simple. Une pièce avec des couches a vécu après son début de mort. Quelqu'un a pompé, essuyé, cyclé des sas ou routé du courant dans un lieu déjà en train de perdre.",
+     "external_site": "Article de terrain sur les traces de fuite comme chronologie : rouille, sel, biofilm et coulures de joint révèlent panne lente, mouvement tardif et faux calendrier.",
+     "external_site_article": "Une bonne tache de fuite n'a rien de spectaculaire. Elle ressemble à de la saleté. C'est pour cela qu'elle appartient à HECTON-8. La vérité n'est pas dans les plaques propres, mais là où l'eau a traîné, où les boulons ont sué, où les joints ont respiré.\n\nLa question utile n'est pas la couleur. C'est la couche supérieure. Rouille sous sel : ancienne couture humide. Sel sous huile : fuite mécanique tardive. Biofilm sur peinture : surface nourrie et humide longtemps. Peinture propre dans une traînée sale : essuyage tardif, étiquette retirée ou outil tiré dans la boue.\n\nCette chronologie rend une route lisible, avertit d'un joint faible, prouve qu'une salle a fonctionné après arrêt officiel ou marque un objet à préserver plutôt qu'à découper.",
+     "field_note": "La rouille fraîche crie. Le vieux sel témoigne."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro cronológico de fuga, óxido y biofilm",
+     "scanner": "RASTRO DE FUGA // Óxido bajo fila de pernos, biofilm verde pardo, flor de sal en el borde de la junta. La mancha de aceite y agua cruza el borde mineral: la fuga tuvo ciclos tras la primera inundación, no un único impacto.",
+     "terminal": "CRONOLOGÍA DE FUGA // Lee las capas en orden. El óxido nace donde el metal quedó húmedo y con oxígeno. El biofilm sigue flujo nutritivo lento. La sal marca evaporación o respiración de presión. Una escorrentía negra bajo pintura limpia indica que la junta falló antes del panel.",
+     "audio": "Una fuga sin limpiar es un reloj. La colonia contó el tiempo en manchas.",
+     "in_game_wiki": "Las manchas de fuga en HECTON-8 no son suciedad decorativa. Son relojes por capas. Óxido, sal, biofilm, aceite y escorrentía de junta aparecen a velocidades distintas. Leídas juntas, convierten una pared de fondo en registro de fallo.\n\nÓxido bajo pernos significa agua retenida durante tiempo. Biofilm verde pardo indica alimentación lenta: equipo caliente, residuos, refrigerante o filtración por empaquetado orgánico. Sal blanca significa migración, secado o ciclos de presión. Aceite sobre sal es fuga posterior; sal sobre aceite es agua posterior.\n\nPara un Merodeador, el orden importa. Una sala con un único golpe violento es peligrosa pero simple. Una sala con capas siguió viva después de empezar a morir. Alguien bombeó, limpió, cicló esclusas o llevó energía por un lugar que ya perdía contra el océano.",
+     "external_site": "Artículo de campo sobre manchas de fuga como cronología: óxido, sal, biofilm y marcas de junta revelan fallo lento, movimiento tardío y calendarios falsos.",
+     "external_site_article": "Una buena mancha de fuga no parece dramática. Parece suciedad. Por eso pertenece a HECTON-8. La verdad no quedó en placas limpias, sino donde el agua se demoró, los pernos sudaron, las juntas respiraron y los trabajadores dejaron de tener tiempo para limpiar.\n\nLa pregunta útil no es el color, sino qué capa está arriba. Óxido bajo sal: vieja costura húmeda. Sal bajo aceite: fuga mecánica posterior. Biofilm sobre pintura: superficie húmeda y alimentada. Pintura limpia dentro de una raya sucia: limpieza tardía, etiqueta retirada o herramienta arrastrada.\n\nEn juego, la cronología de fuga hace legible un camino, avisa de una junta débil, prueba que una sala funcionó tras el apagado oficial o marca un objeto que conviene conservar.",
+     "field_note": "El óxido nuevo grita. La sal vieja declara."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Chronikprotokoll für Leck, Rost und Biofilm",
+     "scanner": "LECKSPUR // Rost unter Bolzenreihe, grünbrauner Biofilm, helle Salzblüte an der Dichtungslippe. Öl-Wasser-Fleck kreuzt die Mineralkante: Das Leck zyklierte nach der ersten Flutung, nicht bei einem Einschlag.",
+     "terminal": "LECKCHRONIK // Schichten der Reihe nach lesen. Rost wächst, wo Metall nass blieb und Sauerstoff bekam. Biofilm folgt langsamem Nährstofffluss. Salz zeigt Trocknung oder Druckatmung. Schwarzer Dichtungsabfluss unter sauberer Farbe heißt: Die Dichtung starb vor dem Paneel.",
+     "audio": "Ein ungeputztes Leck ist eine Uhr. Die Kolonie zählte Zeit in Flecken.",
+     "in_game_wiki": "Leckflecken in HECTON-8 sind keine Deko. Sie sind geschichtete Uhren. Rost, Salz, Biofilm, Öl und Dichtungsschlieren entstehen nicht gleich schnell und nicht aus demselben Grund. Zusammen gelesen wird eine Wand zum Fehlerprotokoll.\n\nRost unter Bolzen bedeutet langes Wasser. Grünbrauner Biofilm zeigt langsame Nahrung: warme Maschine, Abfallspur, Kühlmittel oder Sickern durch organische Packung. Helles Salz bedeutet Wanderung, Trocknung oder Druckzyklen. Öl über Salz ist ein späteres Maschinenleck; Salz über Öl kam danach.\n\nFür Marauder zählt die Reihenfolge. Ein Raum mit einem brutalen Kratzer ist gefährlich, aber einfach. Ein Raum mit Schichten lebte nach Beginn des Versagens weiter. Jemand pumpte, wischte, schaltete Schleusen oder legte Strom durch einen Ort, der schon verlor.",
+     "external_site": "Feldartikel über Leckflecken als Chronik: Rost, Salzblüte, Biofilm und Dichtungsschlieren zeigen langsames Versagen, späte Bewegung und falsche Unfallzeiten.",
+     "external_site_article": "Ein guter Leckfleck sieht zunächst nicht dramatisch aus. Er sieht wie Schmutz aus. Genau deshalb gehört er zu HECTON-8. Wahrheit liegt nicht auf sauberen Schildern, sondern dort, wo Wasser blieb, Bolzen schwitzten und Dichtungen atmeten.\n\nDie nützliche Frage ist nicht die Farbe. Die nützliche Frage ist die oberste Schicht. Rost unter Salz: alte nasse Naht. Salz unter Öl: späteres Maschinenleck. Biofilm über Farbe: lange feuchte, genährte Oberfläche. Saubere Farbe in dunkler Spur: spätes Wischen, entfernte Markierung oder gezogenes Werkzeug.\n\nIm Spiel liest diese Chronik Wege, warnt vor schwachen Dichtungen, beweist Betrieb nach offizieller Abschaltung oder markiert ein Beweisstück, das nicht zerschnitten werden sollte.",
+     "field_note": "Frischer Rost schreit. Altes Salz sagt aus."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr chronologii przecieku, rdzy i biofilmu",
+     "scanner": "ŚLAD PRZECIEKU // Rdza pod rzędem śrub, zielonobrązowy biofilm, jasna sól przy wardze uszczelki. Plama oleju i wody przecina minerał: przeciek cyklował po pierwszym zalaniu, nie po jednym uderzeniu.",
+     "terminal": "CHRONOLOGIA // Czytaj warstwy po kolei. Rdza rośnie, gdzie metal długo był mokry i miał tlen. Biofilm idzie za wolnym pokarmem. Sól znaczy suszenie albo oddychanie ciśnieniem. Czarny spływ uszczelki pod czystą farbą znaczy, że uszczelka padła przed panelem.",
+     "audio": "Nieumyty przeciek jest zegarem. Kolonia mierzyła czas plamami.",
+     "in_game_wiki": "Plamy przecieku w HECTON-8 nie są dekoracyjnym brudem. To zegary w warstwach. Rdza, sól, biofilm, olej i spływy z uszczelek pojawiają się w różnym tempie. Razem zmieniają ścianę w rejestr awarii.\n\nRdza pod śrubami znaczy długie zaleganie wody. Zielonobrązowy biofilm mówi o wolnym zasilaniu: ciepłej maszynie, śladzie odpadów, chłodziwie albo przesączu przez organiczne uszczelnienie. Sól pokazuje migrację, schnięcie lub cykle ciśnienia. Olej na soli jest późniejszy; sól na oleju przyszła po nim.\n\nDla Marudera kolejność ma znaczenie. Sala z jednym ostrym zadrapaniem jest prosta. Sala z warstwami żyła po początku awarii. Ktoś pompował, wycierał, cyklował śluzy albo prowadził zasilanie przez miejsce, które już przegrywało.",
+     "external_site": "Artykuł o plamach przecieku jako chronologii: rdza, sól, biofilm i spływy uszczelek ujawniają powolną awarię, późny ruch i fałszywe terminy.",
+     "external_site_article": "Dobra plama przecieku nie wygląda dramatycznie. Wygląda jak brud. Dlatego pasuje do HECTON-8. Prawda nie została na czystych tablicach, lecz tam, gdzie woda zalegała, śruby pociły się, a uszczelki oddychały.\n\nPrzydatne pytanie nie brzmi: jaki to kolor. Brzmi: która warstwa jest na wierzchu. Rdza pod solą to stary mokry szew. Sól pod olejem to późny wyciek maszyny. Biofilm na farbie to długo karmiona wilgoć. Czysta farba w brudnym śladzie może być późnym wytarciem albo przeciągniętym narzędziem.\n\nW grze taka chronologia czyta ścieżkę, ostrzega o słabej uszczelce, dowodzi pracy po oficjalnym wyłączeniu albo wskazuje przedmiot dowodowy.",
+     "field_note": "Świeża rdza krzyczy. Stara sól zeznaje."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал хронології течі, іржі та біоплівки",
+     "scanner": "СЛІД ТЕЧІ // Іржа під рядом болтів, зелено-бура біоплівка, біла сіль на губі прокладки. Олійно-водяна пляма перетинає мінеральний край: теча циклилася після першого затоплення, а не від одного удару.",
+     "terminal": "ХРОНОЛОГІЯ ТЕЧІ // Читай шари по черзі. Іржа росте там, де метал довго був мокрим і мав кисень. Біоплівка йде за повільним живленням. Сіль показує висихання або дихання тиску. Чорний стік прокладки під чистою фарбою означає, що прокладка здалася раніше за панель.",
+     "audio": "Невитерта теча - це годинник. Колонія рахувала час плямами.",
+     "in_game_wiki": "Плями течі в HECTON-8 - не декоративний бруд. Це шаруваті годинники. Іржа, сіль, біоплівка, олія й стік із прокладки з'являються з різною швидкістю. Разом вони перетворюють стіну на запис відмови.\n\nІржа під болтами означає довгу присутність води. Зелено-бура біоплівка говорить про повільне живлення: тепле обладнання, відходи, охолоджувач або просочування через органічну набивку. Біла сіль означає міграцію, висихання чи цикли тиску. Олія поверх солі прийшла пізніше; сіль поверх олії прийшла після машини.\n\nДля мародера порядок важливий. Кімната з одним грубим ударом небезпечна, але проста. Кімната з шарами жила після початку відмови. Хтось качав, витирав, ганяв шлюзи або вів живлення через місце, яке вже програвало океану.",
+     "external_site": "Польова стаття про плями течі як хронологію: іржа, сіль, біоплівка й стоки прокладок показують повільну відмову, пізній рух і фальшиві строки аварії.",
+     "external_site_article": "Хороша пляма течі спершу не драматична. Вона схожа на бруд. Тому вона належить HECTON-8. Правда лишилася не на чистих табличках, а там, де вода стояла, болти пітніли, прокладки дихали, а робітники вже не мали часу витирати.\n\nКорисне питання не в кольорі. Корисне питання - який шар зверху. Іржа під сіллю - старий мокрий шов. Сіль під олією - пізня машинна теча. Біоплівка на фарбі - довго волога й підживлена поверхня. Чиста фарба в брудному сліді може бути пізнім витиранням або протягнутим інструментом.\n\nУ грі така хронологія читає шлях, попереджає про слабку прокладку, доводить роботу після офіційного вимкнення або позначає доказ, який не варто різати на здобич.",
+     "field_note": "Свіжа іржа кричить. Стара сіль свідчить."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل تسلسل التسرب والصدأ والغشاء الحيوي",
+     "scanner": "أثر تسرب // صدأ تحت صف البراغي، غشاء حيوي أخضر بني، ازهرار ملحي عند شفة الحشية. بقعة زيت وماء تعبر حافة معدنية: التسرب تكرر بعد الغمر الأول لا بسبب ضربة واحدة.",
+     "terminal": "تسلسل التسرب // اقرأ الطبقات بالترتيب. الصدأ ينمو حيث بقي المعدن رطبا ومعه أكسجين. الغشاء الحيوي يتبع تغذية بطيئة. الملح يدل على جفاف أو تنفس ضغط. سيلان أسود من الحشية تحت طلاء نظيف يعني أن الحشية فشلت قبل اللوح.",
+     "audio": "التسرب غير الممسوح ساعة. المستعمرة قاست الزمن بالبقع.",
+     "in_game_wiki": "بقع التسرب في HECTON-8 ليست وسخا للزينة. إنها ساعات ذات طبقات. الصدأ والملح والغشاء الحيوي والزيت وسيلان الحشية لا تظهر بالسرعة نفسها ولا للسبب نفسه. إذا قرئت معا، صار الجدار سجلا للفشل.\n\nالصدأ تحت البراغي يعني أن الماء بقي هناك طويلا. الغشاء الأخضر البني يعني تغذية بطيئة: آلة دافئة، أثر نفايات، مبرد، أو رشح عبر حشو عضوي. الملح الأبيض يعني انتقال ماء أو جفافا أو دورات ضغط. الزيت فوق الملح جاء لاحقا؛ الملح فوق الزيت جاء بعده الماء.\n\nبالنسبة للمغير، الترتيب مهم. غرفة فيها خدش عنيف واحد خطرة لكنها بسيطة. غرفة ذات طبقات عاشت بعد بداية فشلها. شخص ما ضخ ومسح وشغل غرف الضغط أو مرر الطاقة عبر مكان كان يخسر أمام البحر.",
+     "external_site": "مقال ميداني عن بقع التسرب كتسلسل زمني: الصدأ والملح والغشاء الحيوي وسيلان الحشيات تكشف فشلا بطيئا وحركة متأخرة وجدولا كاذبا.",
+     "external_site_article": "بقعة التسرب الجيدة لا تبدو درامية في البداية. تبدو كوسخ. لذلك تنتمي إلى HECTON-8. الحقيقة ليست على اللوحات النظيفة، بل حيث بقي الماء، وتعرقت البراغي، وتنفس الختم، ولم يعد لدى العمال وقت للمسح.\n\nالسؤال المفيد ليس لون البقعة. السؤال هو أي طبقة في الأعلى. صدأ تحت الملح يعني شقا قديما رطبا. ملح تحت الزيت يعني تسرب آلة لاحق. غشاء حيوي فوق الطلاء يعني سطحا رطبا ومغذى مدة طويلة. طلاء نظيف داخل أثر قذر قد يعني مسحا متأخرا أو أداة سحبت خلال الوحل.\n\nفي اللعب، تجعل هذه القراءة الطريق مفهوما، وتحذر من ختم ضعيف، وتثبت أن غرفة عملت بعد الإطفاء الرسمي، أو تحدد دليلا يستحق الحفظ.",
+     "field_note": "الصدأ الجديد يصرخ. الملح القديم يشهد."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Catatan Kronologi Bocor, Karat, dan Biofilm",
+     "scanner": "JEJAK BOCOR // Karat di bawah baris baut, biofilm hijau-cokelat, bunga garam pucat di bibir segel. Noda minyak-air menyeberangi tepi mineral: kebocoran berulang setelah banjir pertama, bukan satu benturan.",
+     "terminal": "KRONOLOGI BOCOR // Baca lapisan berurutan. Karat terbentuk saat logam lama basah dan masih mendapat oksigen. Biofilm mengikuti aliran nutrisi lambat. Garam menandai pengeringan atau napas tekanan. Aliran hitam dari segel di bawah cat bersih berarti segel mati sebelum panel robek.",
+     "audio": "Bocor yang tak diseka adalah jam. Koloni menghitung waktu dengan noda.",
+     "in_game_wiki": "Noda bocor HECTON-8 bukan kotoran hias. Itu jam berlapis. Karat, garam, biofilm, minyak, dan aliran segel muncul dengan kecepatan dan alasan berbeda. Jika dibaca bersama, dinding berubah menjadi catatan kegagalan.\n\nKarat di bawah baut berarti air tinggal cukup lama. Biofilm hijau-cokelat berarti aliran nutrisi lambat: alat hangat, limbah, pendingin, atau rembesan lewat isian organik. Garam pucat berarti air pindah, kering, atau bernapas lewat siklus tekanan. Minyak di atas garam datang lebih lambat; garam di atas minyak berarti air datang setelah mesin.\n\nBagi Perompak, urutan itu penting. Ruang dengan satu gores keras berbahaya tetapi sederhana. Ruang berlapis bocor tetap hidup setelah mulai gagal. Ada orang yang memompa, menyeka, memutar ruang udara, atau menyalurkan daya melalui tempat yang sudah kalah dari laut.",
+     "external_site": "Artikel lapangan tentang noda bocor sebagai kronologi: karat, garam, biofilm, dan aliran segel mengungkap kegagalan lambat, gerak terlambat, dan jadwal palsu.",
+     "external_site_article": "Noda bocor yang baik tidak tampak dramatis. Ia tampak seperti kotoran. Karena itu ia cocok untuk HECTON-8. Kebenaran tidak berada di pelat bersih, tetapi di tempat air tertahan, baut berkeringat, segel bernapas, dan pekerja tak punya waktu menyeka.\n\nPertanyaan berguna bukan warna noda. Pertanyaannya: lapisan mana di atas? Karat di bawah garam berarti sambungan lama yang basah. Garam di bawah minyak berarti kebocoran mesin yang lebih lambat. Biofilm di atas cat berarti permukaan lama basah dan diberi makan. Cat bersih dalam jejak kotor bisa berarti sapuan terlambat atau alat terseret.\n\nDalam permainan, kronologi bocor membaca jalur, memperingatkan segel lemah, membuktikan ruang bekerja setelah pemadaman resmi, atau menandai benda bukti yang sebaiknya tidak dipotong.",
+     "field_note": "Karat baru berteriak. Garam lama bersaksi."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "누수, 녹, 생물막 연대 장부",
+     "scanner": "누수 흔적 // 볼트열 아래 녹, 녹갈색 생물막, 밀봉 입술의 흰 소금꽃. 기름-물 얼룩이 광물 가장자리를 가른다. 한 번의 충격이 아니라 첫 침수 뒤 누수가 반복됐다는 뜻이다.",
+     "terminal": "누수 연대 // 층을 순서대로 읽어라. 녹은 금속이 오래 젖고 산소를 받은 곳에서 생긴다. 생물막은 느린 영양 흐름을 따른다. 소금꽃은 건조나 압력 호흡을 뜻한다. 깨끗한 도색 아래 검은 밀봉 흐름은 패널보다 밀봉이 먼저 죽었다는 뜻이다.",
+     "audio": "닦이지 않은 누수는 시계다. 식민지는 얼룩으로 시간을 셌다.",
+     "in_game_wiki": "HECTON-8의 누수 얼룩은 장식 오염이 아니다. 층을 가진 시계다. 녹, 소금, 생물막, 기름, 밀봉 흐름은 같은 속도와 이유로 생기지 않는다. 함께 읽으면 벽은 배경이 아니라 실패 기록이 된다.\n\n볼트 아래 녹은 물이 오래 머문 증거다. 녹갈색 생물막은 따뜻한 장비, 폐기물 흔적, 냉각수, 유기 충전재를 통한 느린 흐름을 말한다. 흰 소금은 물의 이동, 건조, 압력 주기를 남긴다. 소금 위 기름은 나중 기계 누수다. 기름 위 소금은 그 뒤에 온 물이다.\n\n약탈자에게 순서는 중요하다. 한 번의 거친 긁힘만 있는 방은 위험하지만 단순하다. 여러 층의 누수가 있는 방은 실패가 시작된 뒤에도 한동안 살아 있었다. 누군가 펌프를 돌리고, 닦고, 에어록을 순환시키고, 이미 지는 곳에 전력을 보냈다.",
+     "external_site": "누수 얼룩을 연대로 읽는 현장 글. 녹, 소금꽃, 생물막, 밀봉 흐름이 느린 실패와 늦은 이동, 거짓 사고 시간을 드러낸다.",
+     "external_site_article": "좋은 누수 얼룩은 처음에는 극적이지 않다. 그냥 더러움처럼 보인다. 그래서 HECTON-8에 맞는다. 진실은 깨끗한 명판이 아니라 물이 머물고, 볼트가 땀 흘리고, 밀봉이 숨 쉬던 곳에 남았다.\n\n쓸모 있는 질문은 색이 아니다. 어느 층이 위에 있는가다. 소금 아래 녹은 오래된 젖은 이음이다. 소금 아래 기름은 늦은 기계 누수다. 도색 위 생물막은 오래 젖고 먹이를 받은 표면이다. 더러운 줄 속 깨끗한 도색은 늦은 닦음이나 끌린 도구일 수 있다.\n\n게임에서 이 연대기는 길을 읽고, 약한 밀봉을 경고하고, 공식 정지 뒤에도 방이 작동했다는 증거가 되며, 잘라 버리지 말아야 할 증거물을 표시한다.",
+     "field_note": "새 녹은 소리친다. 오래된 소금은 증언한다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן כרונולוגיית דליפה, חלודה וביופילם",
+     "scanner": "עקבת דליפה // חלודה מתחת לשורת ברגים, ביופילם ירוק-חום, פריחת מלח בשפת האטם. כתם שמן-מים חוצה קצה מינרלי: הדליפה חזרה במחזורים אחרי ההצפה הראשונה, לא ממכה אחת.",
+     "terminal": "כרונולוגיית דליפה // קרא שכבות לפי סדר. חלודה נוצרת במקום שבו מתכת נשארה רטובה ועדיין קיבלה חמצן. ביופילם עוקב אחרי זרם מזין איטי. מלח מסמן ייבוש או נשימת לחץ. נזילה שחורה מאטם תחת צבע נקי אומרת שהאטם כשל לפני הלוח.",
+     "audio": "דליפה שלא נוקתה היא שעון. המושבה ספרה זמן בכתמים.",
+     "in_game_wiki": "כתמי דליפה ב-HECTON-8 אינם לכלוך קישוטי. הם שעון בשכבות. חלודה, מלח, ביופילם, שמן ונזילת אטם אינם נוצרים באותו קצב או מאותה סיבה. יחד הם הופכים קיר לרישום כשל.\n\nחלודה תחת ברגים אומרת שהמים נשארו שם זמן רב. ביופילם ירוק-חום אומר זרימה מזינה איטית: ציוד חם, פסולת, נוזל קירור או חלחול דרך מילוי אורגני. מלח בהיר אומר נדידת מים, ייבוש או מחזורי לחץ. שמן מעל מלח מאוחר יותר; מלח מעל שמן הגיע אחר כך.\n\nעבור בוזז, הסדר חשוב. חדר עם שריטה אלימה אחת מסוכן אך פשוט. חדר עם שכבות חי זמן מה אחרי שהתחיל להיכשל. מישהו שאב, ניגב, סובב מנעלי אוויר או העביר חשמל דרך מקום שכבר הפסיד לים.",
+     "external_site": "מאמר שטח על כתמי דליפה ככרונולוגיה: חלודה, מלח, ביופילם ונזילות אטם חושפים כשל איטי, תנועה מאוחרת ולוח זמנים שקרי.",
+     "external_site_article": "כתם דליפה טוב לא נראה דרמטי בתחילה. הוא נראה כמו לכלוך. לכן הוא שייך ל-HECTON-8. האמת אינה בלוחות נקיים, אלא במקום שבו מים נשארו, ברגים הזיעו, אטמים נשמו, ולעובדים כבר לא היה זמן לנגב.\n\nהשאלה השימושית אינה הצבע. השאלה היא איזו שכבה למעלה. חלודה תחת מלח היא תפר רטוב ישן. מלח תחת שמן הוא דליפת מכונה מאוחרת. ביופילם על צבע הוא משטח שנרטב וניזון זמן רב. צבע נקי בתוך פס מלוכלך עשוי להיות ניגוב מאוחר או כלי שנגרר.\n\nבמשחק כרונולוגיה כזו קוראת נתיב, מזהירה מאטם חלש, מוכיחה שחדר עבד אחרי כיבוי רשמי או מסמנת ראיה שכדאי לשמור.",
+     "field_note": "חלודה טרייה צועקת. מלח ישן מעיד."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro cronológico de vazamento, ferrugem e biofilme",
+     "scanner": "RASTRO DE VAZAMENTO // Ferrugem sob linha de parafusos, biofilme verde-marrom, flor de sal na borda da junta. Mancha de óleo e água cruza a borda mineral: o vazamento ciclou depois da primeira inundação, não veio de um impacto só.",
+     "terminal": "CRONOLOGIA DO VAZAMENTO // Leia as camadas em ordem. Ferrugem forma onde metal ficou úmido e ainda recebeu oxigênio. Biofilme segue fluxo nutritivo lento. Sal marca secagem ou respiração de pressão. Escorrimento preto da junta sob tinta limpa significa que a junta falhou antes do painel.",
+     "audio": "Vazamento sem limpeza é relógio. A colônia contou tempo por manchas.",
+     "in_game_wiki": "Manchas de vazamento em HECTON-8 não são sujeira decorativa. São relógios em camadas. Ferrugem, sal, biofilme, óleo e escorrimento de junta aparecem por razões e velocidades diferentes. Juntas, transformam parede de fundo em registro de falha.\n\nFerrugem sob parafusos significa água parada por tempo suficiente. Biofilme verde-marrom indica alimentação lenta: equipamento quente, resíduo, fluido de resfriamento ou infiltração por enchimento orgânico. Sal branco indica migração, secagem ou ciclos de pressão. Óleo sobre sal veio depois; sal sobre óleo veio depois da máquina.\n\nPara um Saqueador, a ordem importa. Sala com um arranhão violento é perigosa, mas simples. Sala com camadas viveu depois de começar a falhar. Alguém bombeou, limpou, ciclou câmaras ou levou energia por um lugar que já perdia para o oceano.",
+     "external_site": "Artigo de campo sobre manchas de vazamento como cronologia: ferrugem, sal, biofilme e junta revelam falha lenta, movimento tardio e horários falsos.",
+     "external_site_article": "Uma boa mancha de vazamento não parece dramática no começo. Parece sujeira. Por isso pertence a HECTON-8. A verdade não ficou em placas limpas, mas onde a água demorou, parafusos suaram, juntas respiraram e trabalhadores já não tinham tempo de limpar.\n\nA pergunta útil não é a cor. É qual camada está por cima. Ferrugem sob sal indica emenda úmida antiga. Sal sob óleo indica vazamento mecânico tardio. Biofilme sobre tinta indica superfície alimentada e úmida por muito tempo. Tinta limpa dentro de rastro sujo pode ser limpeza tardia ou ferramenta arrastada.\n\nEm jogo, essa cronologia lê caminhos, alerta sobre junta fraca, prova que uma sala funcionou após desligamento oficial ou marca um objeto de prova que não deve ser cortado.",
+     "field_note": "Ferrugem nova grita. Sal antigo testemunha."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Chronologielogboek voor lek, roest en biofilm",
+     "scanner": "LEKSPOOR // Roest onder boutenrij, groenbruine biofilm, bleke zoutbloei aan pakkingslip. Olie-water-vlek kruist de mineraalrand: het lek cyclusde na de eerste overstroming, niet door één klap.",
+     "terminal": "LEKCHRONOLOGIE // Lees lagen op volgorde. Roest vormt waar metaal lang nat bleef en zuurstof kreeg. Biofilm volgt trage voeding. Zout markeert droging of drukademhaling. Zwarte pakkingafvoer onder schone verf betekent dat de pakking eerder faalde dan het paneel.",
+     "audio": "Een lek dat niemand poetste is een klok. De kolonie telde tijd in vlekken.",
+     "in_game_wiki": "Lekvlekken in HECTON-8 zijn geen decoratieve viezigheid. Het zijn gelaagde klokken. Roest, zout, biofilm, olie en pakkingsporen verschijnen niet even snel en niet om dezelfde reden. Samen gelezen maken ze van een wand een faalregister.\n\nRoest onder bouten betekent langdurig water. Groenbruine biofilm betekent trage voeding: warme apparatuur, afvalspoor, koelmiddel of doorsijpeling door organische vulling. Wit zout betekent migratie, droging of drukcycli. Olie over zout kwam later; zout over olie kwam na de machine.\n\nVoor een Marauder telt volgorde. Een kamer met één harde kras is gevaarlijk maar simpel. Een kamer met lagen leefde door nadat zij begon te falen. Iemand pompte, veegde, cyclusde sluizen of leidde stroom door een plaats die al verloor van de oceaan.",
+     "external_site": "Veldartikel over lekvlekken als chronologie: roest, zoutbloei, biofilm en pakkingsporen tonen langzaam falen, late beweging en valse ongevalstijden.",
+     "external_site_article": "Een goede lekvlek ziet er eerst niet dramatisch uit. Ze lijkt vuil. Daarom hoort ze bij HECTON-8. Waarheid ligt niet op schone platen, maar waar water bleef hangen, bouten zweetten en pakkingen ademden.\n\nDe nuttige vraag is niet de kleur. De nuttige vraag is welke laag bovenop ligt. Roest onder zout: oude natte naad. Zout onder olie: later machinelek. Biofilm op verf: lang nat en gevoed oppervlak. Schone verf in een vuile streep kan late veeg of gesleept gereedschap zijn.\n\nIn speltermen leest deze chronologie paden, waarschuwt voor zwakke pakkingen, bewijst werking na officiële uitschakeling of markeert bewijs dat beter niet wordt versneden.",
+     "field_note": "Verse roest schreeuwt. Oud zout getuigt."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,270 +1,271 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS285_TONNE_WINDOW_BODY_LEDGER",
-  "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS285_TONNE_WINDOW_BODY_LEDGER",
+ "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P6803_TONNE_WINDOW_BODY_LEDGER",
+   "release_set_id": "RS285_TONNE_WINDOW_BODY_LEDGER",
+   "article_id": "applied_lore.tonne_window_body_ledger",
+   "title_key": "LORE_TONNE_WINDOW_BODY_LEDGER_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Codex_Delivery_Map.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/SourceArticles/SA001_BLACK_KEEL_RECOVERY_WINDOW_AND_BATHYDROP_LOSS.md",
+    "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P015_BLACK_KEEL_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P470_KEELMARK_TONNE_WINDOW_BRIDGE.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P6801_BLACK_KEEL_NEARLIGHT_WAKE.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P6802_AEGIR_SKY_WINDOW_MACHINE.md",
+    ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
+    ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
+    ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P6803_TONNE_WINDOW_BODY_LEDGER",
-      "release_set_id": "RS285_TONNE_WINDOW_BODY_LEDGER",
-      "article_id": "applied_lore.tonne_window_body_ledger",
-      "title_key": "LORE_TONNE_WINDOW_BODY_LEDGER_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Codex_Delivery_Map.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/SourceArticles/SA001_BLACK_KEEL_RECOVERY_WINDOW_AND_BATHYDROP_LOSS.md",
-        "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P015_BLACK_KEEL_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P470_KEELMARK_TONNE_WINDOW_BRIDGE.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P6801_BLACK_KEEL_NEARLIGHT_WAKE.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P6802_AEGIR_SKY_WINDOW_MACHINE.md",
-        ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
-        ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
-        ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.tonne_window_body_ledger",
-        "secondary": [
-          "unlock.first_tonne_window_lien",
-          "unlock.first_body_line_pending",
-          "unlock.first_quarantine_berth_blank",
-          "unlock.first_proof_priority_conflict"
-        ],
-        "poi_tags": [
-          "poi.keelmark_body_ledger",
-          "poi.bent_ascent_ring_mass_stencil",
-          "poi.blank_quarantine_berth_receipt",
-          "poi.operator_to_payload_suit_tag",
-          "poi.black_keel_window_timer"
-        ],
-        "biome_tags": [
-          "biome.carrier_link",
-          "biome.surface_relay",
-          "biome.photic_shelf",
-          "biome.shallow_annex",
-          "biome.publication"
-        ],
-        "first_20_boundary": "Explains why a living body does not automatically outrank proof, samples, salvage and quarantine in the same tonne-window."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Suit Mass-Line Classifier",
-          "terminal": "Keelmark Body Ledger Receipt",
-          "audio": "Black Keel Allocation Tone",
-          "in_game_wiki": "Recovered Keelmark Ledger Note",
-          "external_site": "Public Site Recovery Accounting Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "depth_band": "surface_to_photic_shelf",
-        "route_moment": "first_body_line_pending_after_tonne_window_receipt",
-        "truth_payload": "A tonne-window body ledger turns living body, proof, sample, salvage and witness tags into competing recovery mass lines; rescue becomes real only when receiver, quarantine, proof priority and lift allocation agree.",
-        "player_question": "Why can the route count a living body as cargo while proof leaves first?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "MASS LINE READ // Living body detected. Body recovery pending receiver, quarantine berth, proof priority and lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window active. Body, proof core, sample canister, salvage crate and witness tag currently share recovery mass pressure.",
-          "audio": "Allocation note: body line alive, not cleared. Keep proof sealed. Do not spend ascent hardware until receiver and quarantine agree.",
-          "in_game_wiki": "A tonne-window body ledger explains why a living Marauder does not automatically outrank every payload. Black Keel can hear a signal, price a body line and still hold recovery while proof, samples, salvage and quarantine fight for the same lift mass. Treat the ledger as evidence: receiver, contamination, proof priority and lift allocation must align before rescue is real.",
-          "external_site": "A longform recovery-accounting primer on the cruel difference between being heard, being counted and being physically accepted through a tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/en_US_external_site.md",
-          "field_note": "If the ledger calls you cargo, make it carry proof with the weight of a name.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "ЧТЕНИЕ MASS LINE // Живое тело обнаружено. Body recovery pending до receiver, quarantine berth, proof priority и lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // Активно 4.8 tonne-window. Body, proof core, sample canister, salvage crate и witness tag делят давление recovery mass.",
-          "audio": "Заметка allocation: body line жива, но не очищена. Держи proof sealed. Не трать ascent hardware, пока receiver и quarantine не согласуются.",
-          "in_game_wiki": "Tonne-window body ledger объясняет, почему живой Marauder не получает автоматический приоритет над каждым payload. Black Keel может услышать signal, оценить body line и все равно держать recovery, пока proof, samples, salvage и quarantine спорят за одну lift mass. Читай ledger как evidence: receiver, contamination, proof priority и lift allocation должны совпасть, прежде чем rescue станет реальным.",
-          "external_site": "Большой primer по recovery accounting: жесткая разница между тем, что тебя услышали, посчитали и физически приняли через tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/ru_RU_external_site.md",
-          "field_note": "Если ledger зовет тебя cargo, заставь его нести proof с весом имени.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "MASS-LINE-READ // Lebender Körper erkannt. Body recovery pending bis receiver, quarantine berth, proof priority und lift allocation zustimmen.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window aktiv. Body, proof core, sample canister, salvage crate und witness tag teilen recovery mass pressure.",
-          "audio": "Allocation note: body line alive, not cleared. Proof sealed halten. Kein ascent hardware ausgeben, bis receiver und quarantine zustimmen.",
-          "in_game_wiki": "Ein tonne-window body ledger erklärt, warum ein lebender Marauder nicht automatisch jeden payload überholt. Black Keel kann ein signal hören, eine body line bewerten und recovery trotzdem halten, während proof, samples, salvage und quarantine um dieselbe lift mass kämpfen. Lies das Ledger als evidence: receiver, contamination, proof priority und lift allocation müssen passen, bevor rescue real ist.",
-          "external_site": "Ein Longform-Primer über recovery accounting und den grausamen Unterschied zwischen gehört werden, gezählt werden und physisch durch ein tonne-window akzeptiert werden.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/de_DE_external_site.md",
-          "field_note": "Wenn das Ledger dich cargo nennt, zwing es, proof mit dem Gewicht eines Namens zu tragen.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "LECTURA MASS LINE // Cuerpo vivo detectado. Body recovery pendiente de receiver, quarantine berth, proof priority y lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window activo. Body, proof core, sample canister, salvage crate y witness tag comparten presión de recovery mass.",
-          "audio": "Nota de allocation: body line viva, no autorizada. Mantén proof sealed. No gastes ascent hardware hasta que receiver y quarantine coincidan.",
-          "in_game_wiki": "Un tonne-window body ledger explica por qué un Marauder vivo no supera automáticamente a todo payload. Black Keel puede oír una signal, valorar una body line y mantener recovery mientras proof, samples, salvage y quarantine pelean por la misma lift mass. Lee el ledger como evidence: receiver, contamination, proof priority y lift allocation deben alinearse antes de que rescue sea real.",
-          "external_site": "Un primer longform de recovery accounting sobre la cruel diferencia entre ser oído, ser contado y ser físicamente aceptado por un tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/es_ES_external_site.md",
-          "field_note": "Si el ledger te llama cargo, haz que lleve proof con el peso de un nombre.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "LECTURE MASS LINE // Corps vivant détecté. Body recovery en attente de receiver, quarantine berth, proof priority et lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window actif. Body, proof core, sample canister, salvage crate et witness tag partagent la pression de recovery mass.",
-          "audio": "Note allocation: body line vivante, non autorisée. Garde proof sealed. Ne dépense pas ascent hardware avant accord receiver et quarantine.",
-          "in_game_wiki": "Un tonne-window body ledger explique pourquoi un Marauder vivant ne dépasse pas automatiquement chaque payload. Black Keel peut entendre une signal, chiffrer une body line et garder recovery en attente pendant que proof, samples, salvage et quarantine se disputent la même lift mass. Lis le ledger comme evidence: receiver, contamination, proof priority et lift allocation doivent s'aligner avant que rescue soit réel.",
-          "external_site": "Un primer longform de recovery accounting sur la différence cruelle entre être entendu, être compté et être physiquement accepté par un tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/fr_FR_external_site.md",
-          "field_note": "Si le ledger t'appelle cargo, force-le à porter proof avec le poids d'un nom.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "ODCZYT MASS LINE // Żywe ciało wykryte. Body recovery pending do receiver, quarantine berth, proof priority i lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window aktywne. Body, proof core, sample canister, salvage crate i witness tag dzielą presję recovery mass.",
-          "audio": "Notatka allocation: body line żywa, nie cleared. Trzymaj proof sealed. Nie zużywaj ascent hardware, dopóki receiver i quarantine się nie zgodzą.",
-          "in_game_wiki": "Tonne-window body ledger wyjaśnia, dlaczego żywy Marauder nie przebija automatycznie każdego payload. Black Keel może usłyszeć signal, wycenić body line i nadal trzymać recovery, gdy proof, samples, salvage i quarantine walczą o tę samą lift mass. Czytaj ledger jako evidence: receiver, contamination, proof priority i lift allocation muszą się zgodzić, zanim rescue stanie się realne.",
-          "external_site": "Długi primer o recovery accounting i okrutnej różnicy między byciem usłyszanym, policzonym i fizycznie przyjętym przez tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/pl_PL_external_site.md",
-          "field_note": "Jeśli ledger nazywa cię cargo, każ mu nieść proof z ciężarem imienia.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "MASS-LINE-LEZING // Levend lichaam gedetecteerd. Body recovery pending op receiver, quarantine berth, proof priority en lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window actief. Body, proof core, sample canister, salvage crate en witness tag delen recovery mass pressure.",
-          "audio": "Allocation note: body line alive, not cleared. Houd proof sealed. Geen ascent hardware gebruiken tot receiver en quarantine akkoord zijn.",
-          "in_game_wiki": "Een tonne-window body ledger verklaart waarom een levende Marauder niet automatisch elk payload overtreft. Black Keel kan een signal horen, een body line prijzen en recovery toch vasthouden terwijl proof, samples, salvage en quarantine vechten om dezelfde lift mass. Lees het ledger als evidence: receiver, contamination, proof priority en lift allocation moeten kloppen voordat rescue echt is.",
-          "external_site": "Een lange recovery-accounting primer over het wrede verschil tussen gehoord worden, geteld worden en fysiek door een tonne-window geaccepteerd worden.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/nl_NL_external_site.md",
-          "field_note": "Als het ledger je cargo noemt, laat het proof dragen met het gewicht van een naam.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "LEITURA MASS LINE // Corpo vivo detectado. Body recovery pending até receiver, quarantine berth, proof priority e lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window ativo. Body, proof core, sample canister, salvage crate e witness tag dividem pressão de recovery mass.",
-          "audio": "Nota de allocation: body line viva, não liberada. Mantenha proof sealed. Não gaste ascent hardware até receiver e quarantine concordarem.",
-          "in_game_wiki": "Um tonne-window body ledger explica por que um Marauder vivo não supera automaticamente todo payload. Black Keel pode ouvir uma signal, precificar uma body line e ainda manter recovery enquanto proof, samples, salvage e quarantine disputam a mesma lift mass. Leia o ledger como evidence: receiver, contamination, proof priority e lift allocation precisam alinhar antes que rescue seja real.",
-          "external_site": "Um primer longo de recovery accounting sobre a diferença cruel entre ser ouvido, ser contado e ser fisicamente aceito por um tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/pt_BR_external_site.md",
-          "field_note": "Se o ledger chama você de cargo, faça-o carregar proof com o peso de um nome.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "ЧИТАННЯ MASS LINE // Живе тіло виявлено. Body recovery pending до receiver, quarantine berth, proof priority і lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // Активне 4.8 tonne-window. Body, proof core, sample canister, salvage crate і witness tag ділять тиск recovery mass.",
-          "audio": "Нотатка allocation: body line жива, але не cleared. Тримай proof sealed. Не витрачай ascent hardware, доки receiver і quarantine не погодяться.",
-          "in_game_wiki": "Tonne-window body ledger пояснює, чому живий Marauder не отримує автоматичний пріоритет над кожним payload. Black Keel може почути signal, оцінити body line і все одно тримати recovery, поки proof, samples, salvage і quarantine сперечаються за одну lift mass. Читай ledger як evidence: receiver, contamination, proof priority і lift allocation мають зійтися, перш ніж rescue стане реальним.",
-          "external_site": "Великий primer з recovery accounting про жорстоку різницю між тим, що тебе почули, порахували і фізично прийняли через tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/uk_UA_external_site.md",
-          "field_note": "Якщо ledger називає тебе cargo, змусь його нести proof з вагою імені.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "BACAAN MASS LINE // Tubuh hidup terdeteksi. Body recovery pending pada receiver, quarantine berth, proof priority, dan lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window aktif. Body, proof core, sample canister, salvage crate, dan witness tag berbagi tekanan recovery mass.",
-          "audio": "Catatan allocation: body line hidup, belum cleared. Jaga proof sealed. Jangan pakai ascent hardware sampai receiver dan quarantine sepakat.",
-          "in_game_wiki": "Tonne-window body ledger menjelaskan mengapa Marauder hidup tidak otomatis mengungguli setiap payload. Black Keel bisa mendengar signal, menilai body line, dan tetap menahan recovery saat proof, samples, salvage, dan quarantine berebut lift mass yang sama. Baca ledger sebagai evidence: receiver, contamination, proof priority, dan lift allocation harus selaras sebelum rescue menjadi nyata.",
-          "external_site": "Primer panjang tentang recovery accounting dan perbedaan kejam antara didengar, dihitung, dan diterima secara fisik melalui tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/id_ID_external_site.md",
-          "field_note": "Jika ledger menyebutmu cargo, paksa ia membawa proof dengan berat sebuah nama.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "سجل الجسد في tonne-window",
-          "scanner": "قراءة MASS LINE // تم رصد جسد حي. Body recovery pending حتى يتفق receiver وquarantine berth وproof priority وlift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window نشط. Body وproof core وsample canister وsalvage crate وwitness tag يتقاسمون ضغط recovery mass.",
-          "audio": "ملاحظة allocation: body line حية، غير مصرح بها. أبق proof sealed. لا تنفق ascent hardware حتى يتفق receiver وquarantine.",
-          "in_game_wiki": "يفسر tonne-window body ledger لماذا لا يتقدم Marauder حي تلقائيا على كل payload. يستطيع Black Keel سماع signal وتسعير body line ثم إبقاء recovery معلقة بينما يتنازع proof وsamples وsalvage وquarantine على lift mass نفسها. اقرأ ledger كـ evidence: يجب أن يتفق receiver وcontamination وproof priority وlift allocation قبل أن يصبح rescue حقيقيا.",
-          "external_site": "Primer طويل عن recovery accounting والفرق القاسي بين أن يسمعك أحد، وأن يتم عدك، وأن تقبل فيزيائيا عبر tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/ar_SA_external_site.md",
-          "field_note": "إذا سماك ledger cargo، فاجعله يحمل proof بوزن اسم.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "קריאת MASS LINE // גוף חי זוהה. Body recovery pending עד receiver, quarantine berth, proof priority ו-lift allocation.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window פעיל. Body, proof core, sample canister, salvage crate ו-witness tag חולקים לחץ recovery mass.",
-          "audio": "הערת allocation: body line חיה, לא cleared. שמור proof sealed. אל תוציא ascent hardware עד ש-receiver ו-quarantine יסכימו.",
-          "in_game_wiki": "Tonne-window body ledger מסביר מדוע Marauder חי אינו עוקף אוטומטית כל payload. Black Keel יכול לשמוע signal, לתמחר body line ועדיין להחזיק recovery בזמן ש-proof, samples, salvage ו-quarantine נאבקים על אותה lift mass. קרא את ledger כ-evidence: receiver, contamination, proof priority ו-lift allocation חייבים להתיישר לפני ש-rescue נעשה אמיתי.",
-          "external_site": "Primer ארוך על recovery accounting ועל ההבדל האכזרי בין להישמע, להיספר ולהתקבל פיזית דרך tonne-window.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/he_IL_external_site.md",
-          "field_note": "אם ה-ledger קורא לך cargo, הכריח אותו לשאת proof במשקל של שם.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "MASS LINE READ // 生体 body 検出。Body recovery は receiver、quarantine berth、proof priority、lift allocation 待ち。",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window active。Body、proof core、sample canister、salvage crate、witness tag が recovery mass pressure を共有。",
-          "audio": "Allocation note: body line alive, not cleared。proof sealed を保て。receiver と quarantine が一致するまで ascent hardware を使うな。",
-          "in_game_wiki": "tonne-window body ledger は、生きた Marauder がすべての payload を自動的に上回らない理由を示す。Black Keel は signal を聞き、body line を評価しても、proof、samples、salvage、quarantine が同じ lift mass を争う間 recovery を保留できる。ledger は evidence として読む。receiver、contamination、proof priority、lift allocation が揃うまで rescue は現実にならない。",
-          "external_site": "聞かれること、数えられること、tonne-window を通じて物理的に受理されることの残酷な差を扱う recovery accounting の長文 primer。",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/ja_JP_external_site.md",
-          "field_note": "ledger が君を cargo と呼ぶなら、名前の重さを持つ proof を運ばせろ。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "MASS LINE 판독 // 살아 있는 body 감지. Body recovery는 receiver, quarantine berth, proof priority, lift allocation 대기.",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window 활성. Body, proof core, sample canister, salvage crate, witness tag가 recovery mass pressure를 공유.",
-          "audio": "Allocation note: body line alive, not cleared. proof sealed 유지. receiver와 quarantine이 맞을 때까지 ascent hardware 사용 금지.",
-          "in_game_wiki": "tonne-window body ledger는 살아 있는 Marauder가 모든 payload보다 자동으로 우선하지 않는 이유를 설명한다. Black Keel은 signal을 듣고 body line을 가격화하면서도 proof, samples, salvage, quarantine이 같은 lift mass를 두고 다투는 동안 recovery를 보류할 수 있다. ledger를 evidence로 읽어라. receiver, contamination, proof priority, lift allocation이 맞아야 rescue가 현실이 된다.",
-          "external_site": "듣히는 것, 계산되는 것, tonne-window를 통해 물리적으로 수락되는 것 사이의 잔혹한 차이를 다루는 recovery accounting 장문 primer.",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/ko_KR_external_site.md",
-          "field_note": "ledger가 너를 cargo라 부르면, 이름의 무게를 가진 proof를 들게 만들어라.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Tonne-Window Body Ledger",
-          "scanner": "MASS LINE 读数 // 检测到活体 body。Body recovery 等待 receiver、quarantine berth、proof priority 与 lift allocation。",
-          "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window active。Body、proof core、sample canister、salvage crate 与 witness tag 共享 recovery mass pressure。",
-          "audio": "Allocation note：body line alive, not cleared。保持 proof sealed。receiver 与 quarantine 对齐前不要消耗 ascent hardware。",
-          "in_game_wiki": "tonne-window body ledger 解释为什么活着的 Marauder 不会自动优先于所有 payload。Black Keel 可以听见 signal、给 body line 定价，却仍能在 proof、samples、salvage 与 quarantine 争夺同一份 lift mass 时暂停 recovery。把 ledger 当作 evidence 阅读：receiver、contamination、proof priority 与 lift allocation 对齐之前，rescue 不会成真。",
-          "external_site": "一篇 recovery accounting 长文 primer，说明被听见、被计数、以及通过 tonne-window 被物理接收之间的残酷差异。",
-          "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/zh_CN_external_site.md",
-          "field_note": "如果 ledger 称你为 cargo，就让它承载一份有名字重量的 proof。",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.tonne_window_body_ledger",
+    "secondary": [
+     "unlock.first_tonne_window_lien",
+     "unlock.first_body_line_pending",
+     "unlock.first_quarantine_berth_blank",
+     "unlock.first_proof_priority_conflict"
+    ],
+    "poi_tags": [
+     "poi.keelmark_body_ledger",
+     "poi.bent_ascent_ring_mass_stencil",
+     "poi.blank_quarantine_berth_receipt",
+     "poi.operator_to_payload_suit_tag",
+     "poi.black_keel_window_timer"
+    ],
+    "biome_tags": [
+     "biome.carrier_link",
+     "biome.surface_relay",
+     "biome.photic_shelf",
+     "biome.shallow_annex",
+     "biome.publication"
+    ],
+    "first_20_boundary": "Explains why a living body does not automatically outrank proof, samples, salvage and quarantine in the same tonne-window."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Suit Mass-Line Classifier",
+     "terminal": "Keelmark Body Ledger Receipt",
+     "audio": "Black Keel Allocation Tone",
+     "in_game_wiki": "Recovered Keelmark Ledger Note",
+     "external_site": "Public Site Recovery Accounting Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "depth_band": "surface_to_photic_shelf",
+    "route_moment": "first_body_line_pending_after_tonne_window_receipt",
+    "truth_payload": "A tonne-window body ledger turns living body, proof, sample, salvage and witness tags into competing recovery mass lines; rescue becomes real only when receiver, quarantine, proof priority and lift allocation agree.",
+    "player_question": "Why can the route count a living body as cargo while proof leaves first?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "MASS LINE READ // Living body detected. Body recovery pending receiver, quarantine berth, proof priority and lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window active. Body, proof core, sample canister, salvage crate and witness tag currently share recovery mass pressure.",
+     "audio": "Allocation note: body line alive, not cleared. Keep proof sealed. Do not spend ascent hardware until receiver and quarantine agree.",
+     "in_game_wiki": "A tonne-window body ledger explains why a living Marauder does not automatically outrank every payload. Black Keel can hear a signal, price a body line and still hold recovery while proof, samples, salvage and quarantine fight for the same lift mass. Treat the ledger as evidence: receiver, contamination, proof priority and lift allocation must align before rescue is real.",
+     "external_site": "A longform recovery-accounting primer on the cruel difference between being heard, being counted and being physically accepted through a tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/en_US_external_site.md",
+     "field_note": "If the ledger calls you cargo, make it carry proof with the weight of a name.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "ЧТЕНИЕ MASS LINE // Живое тело обнаружено. Body recovery pending до receiver, quarantine berth, proof priority и lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // Активно 4.8 tonne-window. Body, proof core, sample canister, salvage crate и witness tag делят давление recovery mass.",
+     "audio": "Заметка allocation: body line жива, но не очищена. Держи proof sealed. Не трать ascent hardware, пока receiver и quarantine не согласуются.",
+     "in_game_wiki": "Tonne-window body ledger объясняет, почему живой Marauder не получает автоматический приоритет над каждым payload. Black Keel может услышать signal, оценить body line и все равно держать recovery, пока proof, samples, salvage и quarantine спорят за одну lift mass. Читай ledger как evidence: receiver, contamination, proof priority и lift allocation должны совпасть, прежде чем rescue станет реальным.",
+     "external_site": "Большой primer по recovery accounting: жесткая разница между тем, что тебя услышали, посчитали и физически приняли через tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/ru_RU_external_site.md",
+     "field_note": "Если ledger зовет тебя cargo, заставь его нести proof с весом имени.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "MASS-LINE-READ // Lebender Körper erkannt. Body recovery pending bis receiver, quarantine berth, proof priority und lift allocation zustimmen.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window aktiv. Body, proof core, sample canister, salvage crate und witness tag teilen recovery mass pressure.",
+     "audio": "Allocation note: body line alive, not cleared. Proof sealed halten. Kein ascent hardware ausgeben, bis receiver und quarantine zustimmen.",
+     "in_game_wiki": "Ein tonne-window body ledger erklärt, warum ein lebender Marauder nicht automatisch jeden payload überholt. Black Keel kann ein signal hören, eine body line bewerten und recovery trotzdem halten, während proof, samples, salvage und quarantine um dieselbe lift mass kämpfen. Lies das Ledger als evidence: receiver, contamination, proof priority und lift allocation müssen passen, bevor rescue real ist.",
+     "external_site": "Ein Longform-Primer über recovery accounting und den grausamen Unterschied zwischen gehört werden, gezählt werden und physisch durch ein tonne-window akzeptiert werden.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/de_DE_external_site.md",
+     "field_note": "Wenn das Ledger dich cargo nennt, zwing es, proof mit dem Gewicht eines Namens zu tragen.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "LECTURA MASS LINE // Cuerpo vivo detectado. Body recovery pendiente de receiver, quarantine berth, proof priority y lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window activo. Body, proof core, sample canister, salvage crate y witness tag comparten presión de recovery mass.",
+     "audio": "Nota de allocation: body line viva, no autorizada. Mantén proof sealed. No gastes ascent hardware hasta que receiver y quarantine coincidan.",
+     "in_game_wiki": "Un tonne-window body ledger explica por qué un Marauder vivo no supera automáticamente a todo payload. Black Keel puede oír una signal, valorar una body line y mantener recovery mientras proof, samples, salvage y quarantine pelean por la misma lift mass. Lee el ledger como evidence: receiver, contamination, proof priority y lift allocation deben alinearse antes de que rescue sea real.",
+     "external_site": "Un primer longform de recovery accounting sobre la cruel diferencia entre ser oído, ser contado y ser físicamente aceptado por un tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/es_ES_external_site.md",
+     "field_note": "Si el ledger te llama cargo, haz que lleve proof con el peso de un nombre.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "LECTURE MASS LINE // Corps vivant détecté. Body recovery en attente de receiver, quarantine berth, proof priority et lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window actif. Body, proof core, sample canister, salvage crate et witness tag partagent la pression de recovery mass.",
+     "audio": "Note allocation: body line vivante, non autorisée. Garde proof sealed. Ne dépense pas ascent hardware avant accord receiver et quarantine.",
+     "in_game_wiki": "Un tonne-window body ledger explique pourquoi un Marauder vivant ne dépasse pas automatiquement chaque payload. Black Keel peut entendre une signal, chiffrer une body line et garder recovery en attente pendant que proof, samples, salvage et quarantine se disputent la même lift mass. Lis le ledger comme evidence: receiver, contamination, proof priority et lift allocation doivent s'aligner avant que rescue soit réel.",
+     "external_site": "Un primer longform de recovery accounting sur la différence cruelle entre être entendu, être compté et être physiquement accepté par un tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/fr_FR_external_site.md",
+     "field_note": "Si le ledger t'appelle cargo, force-le à porter proof avec le poids d'un nom.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "ODCZYT MASS LINE // Żywe ciało wykryte. Body recovery pending do receiver, quarantine berth, proof priority i lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window aktywne. Body, proof core, sample canister, salvage crate i witness tag dzielą presję recovery mass.",
+     "audio": "Notatka allocation: body line żywa, nie cleared. Trzymaj proof sealed. Nie zużywaj ascent hardware, dopóki receiver i quarantine się nie zgodzą.",
+     "in_game_wiki": "Tonne-window body ledger wyjaśnia, dlaczego żywy Marauder nie przebija automatycznie każdego payload. Black Keel może usłyszeć signal, wycenić body line i nadal trzymać recovery, gdy proof, samples, salvage i quarantine walczą o tę samą lift mass. Czytaj ledger jako evidence: receiver, contamination, proof priority i lift allocation muszą się zgodzić, zanim rescue stanie się realne.",
+     "external_site": "Długi primer o recovery accounting i okrutnej różnicy między byciem usłyszanym, policzonym i fizycznie przyjętym przez tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/pl_PL_external_site.md",
+     "field_note": "Jeśli ledger nazywa cię cargo, każ mu nieść proof z ciężarem imienia.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "MASS-LINE-LEZING // Levend lichaam gedetecteerd. Body recovery pending op receiver, quarantine berth, proof priority en lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window actief. Body, proof core, sample canister, salvage crate en witness tag delen recovery mass pressure.",
+     "audio": "Allocation note: body line alive, not cleared. Houd proof sealed. Geen ascent hardware gebruiken tot receiver en quarantine akkoord zijn.",
+     "in_game_wiki": "Een tonne-window body ledger verklaart waarom een levende Marauder niet automatisch elk payload overtreft. Black Keel kan een signal horen, een body line prijzen en recovery toch vasthouden terwijl proof, samples, salvage en quarantine vechten om dezelfde lift mass. Lees het ledger als evidence: receiver, contamination, proof priority en lift allocation moeten kloppen voordat rescue echt is.",
+     "external_site": "Een lange recovery-accounting primer over het wrede verschil tussen gehoord worden, geteld worden en fysiek door een tonne-window geaccepteerd worden.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/nl_NL_external_site.md",
+     "field_note": "Als het ledger je cargo noemt, laat het proof dragen met het gewicht van een naam.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "LEITURA MASS LINE // Corpo vivo detectado. Body recovery pending até receiver, quarantine berth, proof priority e lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window ativo. Body, proof core, sample canister, salvage crate e witness tag dividem pressão de recovery mass.",
+     "audio": "Nota de allocation: body line viva, não liberada. Mantenha proof sealed. Não gaste ascent hardware até receiver e quarantine concordarem.",
+     "in_game_wiki": "Um tonne-window body ledger explica por que um Marauder vivo não supera automaticamente todo payload. Black Keel pode ouvir uma signal, precificar uma body line e ainda manter recovery enquanto proof, samples, salvage e quarantine disputam a mesma lift mass. Leia o ledger como evidence: receiver, contamination, proof priority e lift allocation precisam alinhar antes que rescue seja real.",
+     "external_site": "Um primer longo de recovery accounting sobre a diferença cruel entre ser ouvido, ser contado e ser fisicamente aceito por um tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/pt_BR_external_site.md",
+     "field_note": "Se o ledger chama você de cargo, faça-o carregar proof com o peso de um nome.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "ЧИТАННЯ MASS LINE // Живе тіло виявлено. Body recovery pending до receiver, quarantine berth, proof priority і lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // Активне 4.8 tonne-window. Body, proof core, sample canister, salvage crate і witness tag ділять тиск recovery mass.",
+     "audio": "Нотатка allocation: body line жива, але не cleared. Тримай proof sealed. Не витрачай ascent hardware, доки receiver і quarantine не погодяться.",
+     "in_game_wiki": "Tonne-window body ledger пояснює, чому живий Marauder не отримує автоматичний пріоритет над кожним payload. Black Keel може почути signal, оцінити body line і все одно тримати recovery, поки proof, samples, salvage і quarantine сперечаються за одну lift mass. Читай ledger як evidence: receiver, contamination, proof priority і lift allocation мають зійтися, перш ніж rescue стане реальним.",
+     "external_site": "Великий primer з recovery accounting про жорстоку різницю між тим, що тебе почули, порахували і фізично прийняли через tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/uk_UA_external_site.md",
+     "field_note": "Якщо ledger називає тебе cargo, змусь його нести proof з вагою імені.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "BACAAN MASS LINE // Tubuh hidup terdeteksi. Body recovery pending pada receiver, quarantine berth, proof priority, dan lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window aktif. Body, proof core, sample canister, salvage crate, dan witness tag berbagi tekanan recovery mass.",
+     "audio": "Catatan allocation: body line hidup, belum cleared. Jaga proof sealed. Jangan pakai ascent hardware sampai receiver dan quarantine sepakat.",
+     "in_game_wiki": "Tonne-window body ledger menjelaskan mengapa Marauder hidup tidak otomatis mengungguli setiap payload. Black Keel bisa mendengar signal, menilai body line, dan tetap menahan recovery saat proof, samples, salvage, dan quarantine berebut lift mass yang sama. Baca ledger sebagai evidence: receiver, contamination, proof priority, dan lift allocation harus selaras sebelum rescue menjadi nyata.",
+     "external_site": "Primer panjang tentang recovery accounting dan perbedaan kejam antara didengar, dihitung, dan diterima secara fisik melalui tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/id_ID_external_site.md",
+     "field_note": "Jika ledger menyebutmu cargo, paksa ia membawa proof dengan berat sebuah nama.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "سجل الجسد في tonne-window",
+     "scanner": "قراءة MASS LINE // تم رصد جسد حي. Body recovery pending حتى يتفق receiver وquarantine berth وproof priority وlift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window نشط. Body وproof core وsample canister وsalvage crate وwitness tag يتقاسمون ضغط recovery mass.",
+     "audio": "ملاحظة allocation: body line حية، غير مصرح بها. أبق proof sealed. لا تنفق ascent hardware حتى يتفق receiver وquarantine.",
+     "in_game_wiki": "يفسر tonne-window body ledger لماذا لا يتقدم Marauder حي تلقائيا على كل payload. يستطيع Black Keel سماع signal وتسعير body line ثم إبقاء recovery معلقة بينما يتنازع proof وsamples وsalvage وquarantine على lift mass نفسها. اقرأ ledger كـ evidence: يجب أن يتفق receiver وcontamination وproof priority وlift allocation قبل أن يصبح rescue حقيقيا.",
+     "external_site": "Primer طويل عن recovery accounting والفرق القاسي بين أن يسمعك أحد، وأن يتم عدك، وأن تقبل فيزيائيا عبر tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/ar_SA_external_site.md",
+     "field_note": "إذا سماك ledger cargo، فاجعله يحمل proof بوزن اسم.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "קריאת MASS LINE // גוף חי זוהה. Body recovery pending עד receiver, quarantine berth, proof priority ו-lift allocation.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window פעיל. Body, proof core, sample canister, salvage crate ו-witness tag חולקים לחץ recovery mass.",
+     "audio": "הערת allocation: body line חיה, לא cleared. שמור proof sealed. אל תוציא ascent hardware עד ש-receiver ו-quarantine יסכימו.",
+     "in_game_wiki": "Tonne-window body ledger מסביר מדוע Marauder חי אינו עוקף אוטומטית כל payload. Black Keel יכול לשמוע signal, לתמחר body line ועדיין להחזיק recovery בזמן ש-proof, samples, salvage ו-quarantine נאבקים על אותה lift mass. קרא את ledger כ-evidence: receiver, contamination, proof priority ו-lift allocation חייבים להתיישר לפני ש-rescue נעשה אמיתי.",
+     "external_site": "Primer ארוך על recovery accounting ועל ההבדל האכזרי בין להישמע, להיספר ולהתקבל פיזית דרך tonne-window.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/he_IL_external_site.md",
+     "field_note": "אם ה-ledger קורא לך cargo, הכריח אותו לשאת proof במשקל של שם.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "MASS LINE READ // 生体 body 検出。Body recovery は receiver、quarantine berth、proof priority、lift allocation 待ち。",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window active。Body、proof core、sample canister、salvage crate、witness tag が recovery mass pressure を共有。",
+     "audio": "Allocation note: body line alive, not cleared。proof sealed を保て。receiver と quarantine が一致するまで ascent hardware を使うな。",
+     "in_game_wiki": "tonne-window body ledger は、生きた Marauder がすべての payload を自動的に上回らない理由を示す。Black Keel は signal を聞き、body line を評価しても、proof、samples、salvage、quarantine が同じ lift mass を争う間 recovery を保留できる。ledger は evidence として読む。receiver、contamination、proof priority、lift allocation が揃うまで rescue は現実にならない。",
+     "external_site": "聞かれること、数えられること、tonne-window を通じて物理的に受理されることの残酷な差を扱う recovery accounting の長文 primer。",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/ja_JP_external_site.md",
+     "field_note": "ledger が君を cargo と呼ぶなら、名前の重さを持つ proof を運ばせろ。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "MASS LINE 판독 // 살아 있는 body 감지. Body recovery는 receiver, quarantine berth, proof priority, lift allocation 대기.",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window 활성. Body, proof core, sample canister, salvage crate, witness tag가 recovery mass pressure를 공유.",
+     "audio": "Allocation note: body line alive, not cleared. proof sealed 유지. receiver와 quarantine이 맞을 때까지 ascent hardware 사용 금지.",
+     "in_game_wiki": "tonne-window body ledger는 살아 있는 Marauder가 모든 payload보다 자동으로 우선하지 않는 이유를 설명한다. Black Keel은 signal을 듣고 body line을 가격화하면서도 proof, samples, salvage, quarantine이 같은 lift mass를 두고 다투는 동안 recovery를 보류할 수 있다. ledger를 evidence로 읽어라. receiver, contamination, proof priority, lift allocation이 맞아야 rescue가 현실이 된다.",
+     "external_site": "듣히는 것, 계산되는 것, tonne-window를 통해 물리적으로 수락되는 것 사이의 잔혹한 차이를 다루는 recovery accounting 장문 primer.",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/ko_KR_external_site.md",
+     "field_note": "ledger가 너를 cargo라 부르면, 이름의 무게를 가진 proof를 들게 만들어라.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Tonne-Window Body Ledger",
+     "scanner": "MASS LINE 读数 // 检测到活体 body。Body recovery 等待 receiver、quarantine berth、proof priority 与 lift allocation。",
+     "terminal": "KEELMARK BODY LEDGER // 4.8 tonne-window active。Body、proof core、sample canister、salvage crate 与 witness tag 共享 recovery mass pressure。",
+     "audio": "Allocation note：body line alive, not cleared。保持 proof sealed。receiver 与 quarantine 对齐前不要消耗 ascent hardware。",
+     "in_game_wiki": "tonne-window body ledger 解释为什么活着的 Marauder 不会自动优先于所有 payload。Black Keel 可以听见 signal、给 body line 定价，却仍能在 proof、samples、salvage 与 quarantine 争夺同一份 lift mass 时暂停 recovery。把 ledger 当作 evidence 阅读：receiver、contamination、proof priority 与 lift allocation 对齐之前，rescue 不会成真。",
+     "external_site": "一篇 recovery accounting 长文 primer，说明被听见、被计数、以及通过 tonne-window 被物理接收之间的残酷差异。",
+     "external_site_article_path": "articles/RS285_TONNE_WINDOW_BODY_LEDGER/zh_CN_external_site.md",
+     "field_note": "如果 ledger 称你为 cargo，就让它承载一份有名字重量的 proof。",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

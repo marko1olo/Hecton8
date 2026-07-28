@@ -1,257 +1,258 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
+   "release_set_id": "RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
+   "article_id": "applied_lore.ran_aegir_name_authority_ledger",
+   "title_key": "LORE_RAN_AEGIR_NAME_AUTHORITY_LEDGER_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/01_ASTRONOMY_AND_HISTORY_en_US.md",
+    "Docs/Lore/Grand_Library/25_ASTRONOMY_AND_THE_BLACK_KEEL_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
-      "release_set_id": "RS223_RAN_AEGIR_NAME_AUTHORITY_LEDGER",
-      "article_id": "applied_lore.ran_aegir_name_authority_ledger",
-      "title_key": "LORE_RAN_AEGIR_NAME_AUTHORITY_LEDGER_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/01_ASTRONOMY_AND_HISTORY_en_US.md",
-        "Docs/Lore/Grand_Library/25_ASTRONOMY_AND_THE_BLACK_KEEL_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "external_site_article",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.ran_aegir_name_authority_ledger",
-        "secondary": [
-          "unlock.first_ran_catalog_plate",
-          "unlock.first_aegir_claim_shorthand",
-          "unlock.first_ran_b_h8_insurance_key"
-        ],
-        "poi_tags": [
-          "poi.public_catalog_plate",
-          "poi.aegir_claim_map",
-          "poi.h8_insurance_nameplate",
-          "poi.black_keel_catalog_resolver"
-        ],
-        "biome_tags": [
-          "biome.shallow_annex",
-          "biome.route_archive",
-          "biome.surface_orbit_context"
-        ],
-        "first_20_boundary": "Teaches the early naming grammar as evidence: Ran is the star and route anchor, Aegir is the gas giant and claim umbrella, RAN-B:H8 is the insured moon key, and HECTON-8 is the lived field name."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Catalog Resolver",
-          "terminal": "Black Keel Name Authority Ledger",
-          "audio": "Black Keel Catalog Warning",
-          "in_game_wiki": "PDA Astronomy And Claim Primer",
-          "external_site": "Public Site Setting Primer",
-          "field_note": "Marauder Field Note",
-          "external_site_article": "Public Site Setting Primer"
-        },
-        "spoiler_tier": "0",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_ran_or_aegir_name_conflict",
-        "truth_payload": "Ran, Aegir, RAN-B:H8 and HECTON-8 are jurisdictional labels. A name change in a document can reveal whether the speaker is doing astronomy, ownership, insurance, custody or lived field testimony.",
-        "player_question": "Why do different terminals name the same place differently, and which name should the player trust?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Ran / Aegir Name Authority Ledger",
-          "scanner": "NAME AUTHORITY RESOLVED // Ran: host star and route anchor. Aegir: gas giant and claim umbrella. RAN-B:H8: insured moon key. HECTON-8: field name for the water, colony and lived damage. Preserve source label.",
-          "terminal": "CATALOG NORMALIZATION WARNING // Do not collapse worker-origin HECTON-8 testimony into AEGIR asset language without witness note. RAN-B:H8 may be used for insured moon record only. Ran references remain route-physics context.",
-          "audio": "Black Keel catalog resolver: When the name changes, the bill moved. Keep the old name until you know who benefits.",
-          "in_game_wiki": "HECTON-8 has too many names because too many offices wanted a clean way to own dirty water. Ran is the star. Use it when the document cares about light, routes, carrier delay or where a ship can actually point itself. Aegir is the gas giant. Use it when the speaker wants the moon to disappear into a larger claim system, a sky, a parent body, an asset group. RAN-B:H8 is the insured moon key, the name a ledger can sort without remembering who lived there. HECTON-8 is the field name, the one that sticks to wet ladders, hatch rims, route boards and old pressure doors.\n\n            The names are not interchangeable. They are fingerprints. A route office saying Ran is probably doing navigation. A Deep Reach memo saying Aegir is often protecting ownership at system scale. A Black Keel receipt saying RAN-B:H8 is turning the place into a billable object. A worker note saying HECTON-8 is not slang or sentiment. It is testimony from the level where the ocean killed people one compartment at a time.\n\n            Good evidence keeps the name it found. Normalizing names too early can destroy motive. A quarantine order that says Aegir asset may be hiding a local failure by widening the frame. A salvage quote that says RAN-B:H8 may be stripping memory so the moon can travel through insurance without grief attached. A scratched HECTON name on a panel may be more honest than a thousand clean catalog lines.\n\n            This is why the PDA preserves name conflicts instead of smoothing them. The conflict tells the player who was speaking, what they wanted counted, and what they wanted buried. The same ocean can be star route, gas-giant asset, insured moon, or home, depending on the column. The physical place does not change. The permitted crime does.\n\n            When in doubt, read the smallest name first. Big names make liability foggy. Small names bring the water back into the room.",
-          "external_site": "Ran, Aegir, RAN-B:H8 and HECTON-8 are not flavor variants. They are jurisdiction, scale and memory packed into names.",
-          "external_site_article": "HECTON-8's naming system is a quiet piece of worldbuilding with teeth. The game does not give the moon four names for texture alone. Each name belongs to a different authority and a different moral distance from the same drowned place.\n\n            Ran is astronomical language: star, route anchor, light delay, carrier timing. Aegir is claim language: the gas giant as parent body, public shorthand and corporate umbrella. RAN-B:H8 is insurance language: a sortable moon record that can be priced, transferred and litigated without keeping the colony's voice attached. HECTON-8 is lived language: the name used by workers, Marauders and field systems because it points to the actual doors, rooms, graves and pressure alarms.\n\n            Once the player learns that grammar, documents start to change shape. A company notice using Aegir may be zooming out to make a moon-scale failure look like system maintenance. A Black Keel receipt using RAN-B:H8 may be preparing the place for custody pricing. A field note using HECTON-8 may be preserving testimony before the catalog can wash it clean.\n\n            The rule is simple enough to be playable: names are evidence. Preserve them. Compare them. Ask who gets paid when the place is called one thing instead of another.",
-          "field_note": "If the water killed someone, call it HECTON-8 before the lawyers rinse it into Aegir."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل سلطة الأسماء Ran / Aegir",
-          "scanner": "سلطة الاسم محلولة // Ran: النجم المضيف ومرساة المسار. Aegir: العملاق الغازي ومظلة المطالبة. RAN-B:H8: مفتاح القمر المؤمن. HECTON-8: اسم ميداني للماء والمستعمرة والضرر المعاش. احفظ تسمية المصدر.",
-          "terminal": "تحذير تطبيع الكتالوج // لا تحول شهادة عامل أصلها HECTON-8 إلى لغة أصل AEGIR بلا ملاحظة شاهد. استخدم RAN-B:H8 لسجل القمر المؤمن فقط. مراجع Ran تبقى سياق فيزياء المسار.",
-          "audio": "محلل كتالوج Black Keel: عندما يتغير الاسم، تحركت الفاتورة. احتفظ بالاسم القديم حتى تعرف من يستفيد.",
-          "in_game_wiki": "لدى HECTON-8 أسماء كثيرة لأن مكاتب كثيرة أرادت طريقة نظيفة لامتلاك ماء قذر. Ran هو النجم. استعمله عندما يهتم المستند بالضوء أو المسارات أو تأخير الناقل. Aegir هو العملاق الغازي. يستعمله المتكلم عندما يريد إخفاء القمر داخل نظام مطالبة أكبر، داخل سماء أو جسم أب أو مجموعة أصول. RAN-B:H8 هو مفتاح القمر المؤمن، اسم يستطيع السجل فرزه من دون تذكر من عاش هناك. HECTON-8 هو الاسم الميداني، العالق بالسلالم المبتلة وحواف الفتحات ولوحات المسار وأبواب الضغط القديمة.\n\n            الأسماء ليست بدائل. إنها بصمات. مكتب مسار يقول Ran غالبا يفعل ملاحة. مذكرة Deep Reach تقول Aegir غالبا تحمي ملكية على مستوى النظام. إيصال Black Keel يقول RAN-B:H8 يحول المكان إلى كائن قابل للفوترة. ملاحظة عامل تقول HECTON-8 ليست عاطفة ولا عامية. إنها شهادة من المستوى الذي قتل فيه المحيط الناس حجرة بعد حجرة.\n\n            الدليل الجيد يحفظ الاسم كما وجده. تطبيع الأسماء مبكرا يمحو الدافع. أمر حجر يقول أصل Aegir قد يخفي فشلا محليا بتوسيع الإطار. عرض سلفج يقول RAN-B:H8 قد ينزع الذاكرة كي يعبر القمر التأمين بلا حزن. اسم HECTON مخدوش على لوحة قد يكون أصدق من ألف سطر كتالوج نظيف.\n\n            لذلك يحفظ الـPDA تعارضات الأسماء بدلا من تسويتها. التعارض يخبر اللاعب من كان يتكلم، وما الذي أراد عده، وما الذي أراد دفنه.",
-          "external_site": "Ran وAegir وRAN-B:H8 وHECTON-8 ليست بدائل نكهة. إنها اختصاص ومقياس وذاكرة داخل أسماء.",
-          "external_site_article": "نظام أسماء HECTON-8 قطعة هادئة من بناء العالم، لكنها حادة. اللعبة لا تعطي القمر أربعة أسماء للزينة. كل اسم يخص سلطة مختلفة ومسافة أخلاقية مختلفة عن المكان الغارق نفسه.\n\n            Ran لغة فلكية: نجم، مرساة مسار، تأخير ضوء، توقيت ناقل. Aegir لغة مطالبة: العملاق الغازي كجسم أب، اختصار عام ومظلة شركة. RAN-B:H8 لغة تأمين: سجل قمر قابل للفرز والتسعير والنقل والتقاضي من دون صوت المستعمرة. HECTON-8 لغة معاشة: الاسم الذي يستخدمه العمال والمارودر والأنظمة الميدانية لأنه يشير إلى الأبواب والغرف والقبور وإنذارات الضغط الحقيقية.\n\n            عندما يتعلم اللاعب هذه القواعد، تبدأ المستندات بتغيير شكلها. إشعار شركة يستخدم Aegir قد يبتعد بالكاميرا ليجعل فشل قمر كامل يبدو كصيانة نظام. إيصال Black Keel يستخدم RAN-B:H8 قد يجهز المكان لتسعير العهدة. ملاحظة ميدانية تستخدم HECTON-8 قد تحفظ شهادة قبل أن يغسلها الكتالوج.",
-          "field_note": "إذا قتل الماء أحدا، فسمه HECTON-8 قبل أن يغسله المحامون إلى Aegir."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran-/Aegir-Namenshoheitsregister",
-          "scanner": "NAMENSHOHEIT GELÖST // Ran: Wirtsstern und Routenanker. Aegir: Gasriese und Claim-Schirm. RAN-B:H8: versicherter Mondschlüssel. HECTON-8: Feldname für Wasser, Kolonie und erlebten Schaden. Quellbezeichnung erhalten.",
-          "terminal": "KATALOGNORMALISIERUNGSWARNUNG // Arbeiterzeugnis mit Ursprung HECTON-8 nicht ohne Zeugenvermerk in AEGIR-Assetsprache überführen. RAN-B:H8 nur für versicherten Monddatensatz. Ran bleibt Routenphysik.",
-          "audio": "Black-Keel-Kataloglöser: Wenn der Name wechselt, ist die Rechnung gewandert. Behalte den alten Namen, bis du weißt, wem es nutzt.",
-          "in_game_wiki": "HECTON-8 hat zu viele Namen, weil zu viele Büros eine saubere Methode wollten, schmutziges Wasser zu besitzen. Ran ist der Stern. Der Name gehört zu Licht, Routen, Trägerverzug und Navigation. Aegir ist der Gasriese. Der Name wird benutzt, wenn der Mond in einem größeren Claim-System, einem Himmel, einem Mutterkörper oder einer Assetgruppe verschwinden soll. RAN-B:H8 ist der versicherte Mondschlüssel, sortierbar ohne Erinnerung. HECTON-8 ist der Feldname, der an nassen Leitern, Lukenrändern, Routenbrettern und alten Drucktüren klebt.\n\n            Die Namen sind keine Varianten. Sie sind Fingerabdrücke. Ein Routenbüro mit Ran macht wahrscheinlich Navigation. Ein Deep-Reach-Memo mit Aegir schützt oft Eigentum auf Systemebene. Eine Black-Keel-Quittung mit RAN-B:H8 macht den Ort abrechenbar. Eine Arbeiternotiz mit HECTON-8 ist weder Slang noch Gefühl. Sie ist Zeugnis von der Ebene, auf der der Ozean Menschen Abteil für Abteil tötete.\n\n            Guter Beweis bewahrt den gefundenen Namen. Zu frühe Normalisierung löscht Motiv. Ein Quarantänebefehl mit Aegir-Asset kann lokales Versagen durch größeres Framing verstecken. Ein Salvage-Angebot mit RAN-B:H8 kann Gedächtnis entfernen, damit der Mond versichert durch die Bücher gleitet.\n\n            Darum glättet der PDA Namenskonflikte nicht. Der Konflikt zeigt, wer spricht, was gezählt werden sollte und was begraben werden sollte.",
-          "external_site": "Ran, Aegir, RAN-B:H8 und HECTON-8 sind keine Geschmacksvarianten. Sie tragen Zuständigkeit, Maßstab und Erinnerung.",
-          "external_site_article": "HECTON-8s Namenssystem ist leise, aber scharf. Der Mond hat nicht vier Namen für Farbe. Jeder Name gehört zu einer anderen Autorität und zu einer anderen moralischen Entfernung vom selben ertrunkenen Ort.\n\n            Ran ist astronomische Sprache: Stern, Routenanker, Lichtverzug, Trägerzeit. Aegir ist Claimsprache: Gasriese als Mutterkörper, öffentliche Kurzform und Firmenschirm. RAN-B:H8 ist Versicherungssprache: ein sortierbarer Monddatensatz, der bepreist und verhandelt werden kann, ohne die Stimme der Kolonie mitzunehmen. HECTON-8 ist gelebte Sprache: Türen, Räume, Gräber und Druckalarme.\n\n            Sobald der Spieler diese Grammatik lernt, verändern Dokumente ihre Form. Ein Firmenschreiben mit Aegir kann wegzoomen, bis ein Mondversagen wie Systemwartung aussieht. Eine Quittung mit RAN-B:H8 bereitet Verwahrungspreise vor. Eine Feldnotiz mit HECTON-8 bewahrt Zeugnis, bevor der Katalog es sauber wäscht.",
-          "field_note": "Wenn das Wasser jemanden getötet hat, nenn es HECTON-8, bevor Anwälte es zu Aegir auswaschen."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Autoridad de Nombres Ran / Aegir",
-          "scanner": "AUTORIDAD DE NOMBRE RESUELTA // Ran: estrella anfitriona y ancla de ruta. Aegir: gigante gaseoso y paraguas de reclamación. RAN-B:H8: clave lunar asegurada. HECTON-8: nombre de campo para agua, colonia y daño vivido. Conserva la etiqueta fuente.",
-          "terminal": "ADVERTENCIA DE NORMALIZACIÓN // No convierta testimonio obrero de origen HECTON-8 en lenguaje de activo AEGIR sin nota testigo. RAN-B:H8 solo para registro lunar asegurado. Ran queda como contexto de física de ruta.",
-          "audio": "Resolvedor Black Keel: cuando cambia el nombre, se movió la factura. Guarda el nombre viejo hasta saber a quién beneficia.",
-          "in_game_wiki": "HECTON-8 tiene demasiados nombres porque demasiadas oficinas querían una forma limpia de poseer agua sucia. Ran es la estrella. Úsalo cuando el documento hable de luz, rutas, retraso de portador o navegación. Aegir es el gigante gaseoso. Úsalo cuando alguien quiere que la luna desaparezca dentro de un sistema de reclamación mayor, un cielo, un cuerpo padre o un grupo de activos. RAN-B:H8 es la clave lunar asegurada, el nombre que un libro ordena sin recordar quién vivió allí. HECTON-8 es el nombre de campo, pegado a escaleras mojadas, bordes de escotilla, tableros de ruta y puertas de presión.\n\n            Los nombres no son intercambiables. Son huellas. Una oficina de ruta que dice Ran probablemente navega. Un memorando Deep Reach que dice Aegir suele proteger propiedad a escala de sistema. Un recibo Black Keel con RAN-B:H8 convierte el lugar en objeto facturable. Una nota obrera con HECTON-8 no es jerga ni nostalgia. Es testimonio desde el nivel donde el océano mató personas compartimento por compartimento.\n\n            La buena evidencia conserva el nombre encontrado. Normalizar demasiado pronto puede destruir motivo. Una orden de cuarentena que dice activo Aegir puede ocultar un fallo local ampliando el marco. Una cotización salvage que dice RAN-B:H8 puede quitar memoria para que la luna pase por seguros sin duelo.\n\n            Por eso la PDA conserva conflictos de nombres. El conflicto le dice al jugador quién hablaba, qué quería contar y qué quería enterrar.",
-          "external_site": "Ran, Aegir, RAN-B:H8 y HECTON-8 no son variantes de color. Son jurisdicción, escala y memoria metidas en nombres.",
-          "external_site_article": "El sistema de nombres de HECTON-8 es worldbuilding silencioso con dientes. La luna no tiene cuatro nombres por adorno. Cada nombre pertenece a una autoridad distinta y a una distancia moral distinta del mismo lugar ahogado.\n\n            Ran es lenguaje astronómico: estrella, ancla de ruta, retraso de luz, tiempo de portador. Aegir es lenguaje de reclamación: gigante como cuerpo padre, abreviatura pública y paraguas corporativo. RAN-B:H8 es lenguaje de seguro: registro ordenable, transferible y litigable sin llevar la voz de la colonia. HECTON-8 es lenguaje vivido: puertas, salas, tumbas y alarmas de presión.\n\n            Cuando el jugador aprende esa gramática, los documentos cambian de forma. Un aviso corporativo con Aegir puede alejar el encuadre hasta que una muerte lunar parezca mantenimiento de sistema. Un recibo con RAN-B:H8 prepara precio de custodia. Una nota de campo con HECTON-8 conserva testimonio antes de que el catálogo lo lave.",
-          "field_note": "Si el agua mató a alguien, llámalo HECTON-8 antes de que los abogados lo enjuaguen en Aegir."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre d'Autorité des Noms Ran / Aegir",
-          "scanner": "AUTORITÉ DE NOM RÉSOLUE // Ran : étoile hôte et ancre de route. Aegir : géante gazeuse et parapluie de réclamation. RAN-B:H8 : clé lunaire assurée. HECTON-8 : nom de terrain pour l'eau, la colonie et les dégâts vécus. Conserver l'étiquette source.",
-          "terminal": "AVERTISSEMENT DE NORMALISATION // Ne pas convertir un témoignage travailleur d'origine HECTON-8 en langage d'actif AEGIR sans note témoin. RAN-B:H8 réservé au registre lunaire assuré. Ran reste contexte de physique de route.",
-          "audio": "Résolveur Black Keel : quand le nom change, la facture a bougé. Gardez l'ancien nom jusqu'à savoir qui y gagne.",
-          "in_game_wiki": "HECTON-8 a trop de noms parce que trop de bureaux voulaient une manière propre de posséder de l'eau sale. Ran est l'étoile, utile quand un document parle de lumière, routes, retard porteur ou navigation. Aegir est la géante gazeuse, utile quand le locuteur veut faire disparaître la lune dans un système de réclamation plus large, un ciel, un corps parent ou un groupe d'actifs. RAN-B:H8 est la clé lunaire assurée, triable sans mémoire. HECTON-8 est le nom de terrain collé aux échelles mouillées, aux bords d'écoutille et aux portes pressurisées.\n\n            Les noms ne sont pas interchangeables. Ce sont des empreintes. Un bureau de route disant Ran fait probablement de la navigation. Un mémo Deep Reach disant Aegir protège souvent la propriété à l'échelle système. Un reçu Black Keel disant RAN-B:H8 transforme le lieu en objet facturable. Une note ouvrière disant HECTON-8 n'est ni argot ni sentiment. C'est un témoignage depuis le niveau où l'océan a tué compartiment par compartiment.\n\n            Une bonne preuve garde le nom trouvé. Normaliser trop tôt peut détruire le mobile. Un ordre de quarantaine disant actif Aegir peut cacher une faute locale en élargissant le cadre. Un devis salvage disant RAN-B:H8 peut retirer la mémoire pour que la lune traverse l'assurance sans deuil.\n\n            C'est pourquoi le PDA garde les conflits de noms. Le conflit indique qui parlait, ce qu'il voulait compter et ce qu'il voulait enterrer.",
-          "external_site": "Ran, Aegir, RAN-B:H8 et HECTON-8 ne sont pas des variantes de couleur. Ce sont juridiction, échelle et mémoire emballées dans des noms.",
-          "external_site_article": "Le système de noms de HECTON-8 est discret, mais mordant. La lune n'a pas quatre noms pour la texture. Chaque nom appartient à une autorité différente et à une distance morale différente du même lieu noyé.\n\n            Ran est le langage astronomique : étoile, ancre de route, délai lumineux, timing porteur. Aegir est le langage de réclamation : géante comme corps parent, raccourci public et parapluie corporatif. RAN-B:H8 est le langage d'assurance : registre lunaire triable, transférable et plaidable sans garder la voix de la colonie. HECTON-8 est le langage vécu : portes, pièces, tombes et alarmes de pression.\n\n            Quand le joueur apprend cette grammaire, les documents changent de forme. Un avis corporatif avec Aegir peut reculer jusqu'à faire passer une faute lunaire pour maintenance de système. Un reçu RAN-B:H8 prépare un prix de garde. Une note HECTON-8 conserve un témoignage avant que le catalogue le lave.",
-          "field_note": "Si l'eau a tué quelqu'un, appelez-la HECTON-8 avant que les juristes la rincent en Aegir."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן סמכות השמות Ran / Aegir",
-          "scanner": "סמכות שם נפתרה // Ran: כוכב מארח ועוגן נתיב. Aegir: ענק גז ומטריית תביעה. RAN-B:H8: מפתח ירח מבוטח. HECTON-8: שם שטח למים, למושבה ולנזק שנחווה. שמור את תווית המקור.",
-          "terminal": "אזהרת נרמול קטלוג // אין לכווץ עדות עובד שמקורה HECTON-8 לשפת נכס AEGIR ללא הערת עד. RAN-B:H8 לשימוש ברשומת ירח מבוטחת בלבד. אזכורי Ran נשארים הקשר פיזיקת נתיב.",
-          "audio": "פותר קטלוג Black Keel: כשהשם משתנה, החשבון זז. שמור את השם הישן עד שתדע מי מרוויח.",
-          "in_game_wiki": "ל-HECTON-8 יש יותר מדי שמות כי יותר מדי משרדים רצו דרך נקייה להחזיק במים מלוכלכים. Ran הוא הכוכב, השם למסמכים שעוסקים באור, נתיבים, עיכוב נשא או ניווט. Aegir הוא ענק הגז, השם למי שרוצה שהירח ייעלם בתוך מערכת תביעה גדולה יותר, שמיים, גוף אב או קבוצת נכסים. RAN-B:H8 הוא מפתח הירח המבוטח, שם שיומן יכול למיין בלי לזכור מי חי שם. HECTON-8 הוא שם השטח שנדבק לסולמות רטובים, לשפות פתחים ולדלתות לחץ ישנות.\n\n            השמות אינם חלופיים. הם טביעות אצבע. משרד נתיבים שאומר Ran כנראה עוסק בניווט. מזכר Deep Reach שאומר Aegir לעיתים קרובות מגן על בעלות בקנה מידה מערכתי. קבלת Black Keel שאומרת RAN-B:H8 הופכת את המקום לאובייקט לחיוב. הערת עובד שאומרת HECTON-8 איננה סלנג או רגש. זו עדות מהמפלס שבו האוקיינוס הרג אנשים תא אחר תא.\n\n            ראיה טובה שומרת את השם שמצאה. נרמול מוקדם מדי יכול להשמיד מניע. צו בידוד שאומר נכס Aegir עשוי להסתיר כשל מקומי באמצעות הרחבת המסגרת. הצעת סלווג' שאומרת RAN-B:H8 עשויה להסיר זיכרון כדי שהירח יעבור דרך ביטוח בלי אבל.\n\n            לכן ה-PDA שומר סכסוכי שמות במקום להחליק אותם. הסכסוך אומר לשחקן מי דיבר, מה רצו לספור ומה רצו לקבור.",
-          "external_site": "Ran, Aegir, RAN-B:H8 ו-HECTON-8 אינם גרסאות טעם. הם סמכות, קנה מידה וזיכרון ארוזים בשמות.",
-          "external_site_article": "מערכת השמות של HECTON-8 היא בניית עולם שקטה עם שיניים. לירח אין ארבעה שמות בשביל צבע. כל שם שייך לסמכות אחרת ולמרחק מוסרי אחר מאותו מקום שטבע.\n\n            Ran הוא שפת אסטרונומיה: כוכב, עוגן נתיב, עיכוב אור, תזמון נשא. Aegir הוא שפת תביעה: ענק כגוף אב, קיצור ציבורי ומטרייה תאגידית. RAN-B:H8 הוא שפת ביטוח: רשומת ירח שניתן למיין, להעביר ולתבוע בלי לשמור את קול המושבה. HECTON-8 הוא שפה חיה: דלתות, חדרים, קברים ואזעקות לחץ.\n\n            כשהשחקן לומד את הדקדוק הזה, מסמכים מתחילים לשנות צורה. הודעת חברה עם Aegir יכולה להתרחק עד שכשל של ירח נראה כמו תחזוקת מערכת. קבלת RAN-B:H8 מכינה מחיר משמורת. הערת שטח עם HECTON-8 משמרת עדות לפני שהקטלוג שוטף אותה.",
-          "field_note": "אם המים הרגו מישהו, קרא לזה HECTON-8 לפני שעורכי הדין שוטפים את זה ל-Aegir."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Buku Otoritas Nama Ran / Aegir",
-          "scanner": "OTORITAS NAMA DISELESAIKAN // Ran: bintang induk dan jangkar rute. Aegir: raksasa gas dan payung klaim. RAN-B:H8: kunci bulan berasuransi. HECTON-8: nama lapangan untuk air, koloni, dan kerusakan yang dialami. Pertahankan label sumber.",
-          "terminal": "PERINGATAN NORMALISASI KATALOG // Jangan ubah kesaksian pekerja asal HECTON-8 menjadi bahasa aset AEGIR tanpa catatan saksi. RAN-B:H8 hanya untuk catatan bulan berasuransi. Rujukan Ran tetap konteks fisika rute.",
-          "audio": "Resolver katalog Black Keel: saat nama berubah, tagihannya pindah. Simpan nama lama sampai kau tahu siapa yang diuntungkan.",
-          "in_game_wiki": "HECTON-8 punya terlalu banyak nama karena terlalu banyak kantor menginginkan cara bersih untuk memiliki air kotor. Ran adalah bintang, dipakai saat dokumen peduli pada cahaya, rute, jeda carrier, atau navigasi. Aegir adalah raksasa gas, dipakai saat pembicara ingin membuat bulan hilang ke dalam sistem klaim yang lebih besar, langit, badan induk, atau kelompok aset. RAN-B:H8 adalah kunci bulan berasuransi, nama yang bisa disortir tanpa mengingat siapa yang pernah hidup di sana. HECTON-8 adalah nama lapangan yang menempel pada tangga basah, bibir hatch, papan rute, dan pintu tekanan.\n\n            Nama-nama itu bukan sinonim. Mereka sidik jari. Kantor rute yang berkata Ran mungkin sedang bernavigasi. Memo Deep Reach yang berkata Aegir sering melindungi kepemilikan skala sistem. Tanda terima Black Keel yang berkata RAN-B:H8 mengubah tempat itu menjadi objek tertagih. Catatan pekerja yang berkata HECTON-8 bukan slang atau sentimental. Itu kesaksian dari level tempat samudra membunuh orang satu kompartemen demi satu.\n\n            Bukti yang baik mempertahankan nama yang ditemukannya. Normalisasi terlalu cepat bisa menghancurkan motif. Perintah karantina yang berkata aset Aegir mungkin menyembunyikan kegagalan lokal dengan memperbesar bingkai. Kutipan salvage yang berkata RAN-B:H8 bisa mencabut memori agar bulan melewati asuransi tanpa duka.\n\n            Karena itu PDA menjaga konflik nama. Konflik memberi tahu pemain siapa yang berbicara, apa yang ingin dihitung, dan apa yang ingin dikubur.",
-          "external_site": "Ran, Aegir, RAN-B:H8, dan HECTON-8 bukan varian rasa. Mereka adalah yurisdiksi, skala, dan memori yang dipadatkan menjadi nama.",
-          "external_site_article": "Sistem nama HECTON-8 adalah worldbuilding yang diam tetapi tajam. Bulan itu tidak punya empat nama untuk hiasan. Setiap nama milik otoritas berbeda dan jarak moral berbeda dari tempat tenggelam yang sama.\n\n            Ran adalah bahasa astronomi: bintang, jangkar rute, jeda cahaya, timing carrier. Aegir adalah bahasa klaim: raksasa sebagai badan induk, singkatan publik, dan payung korporat. RAN-B:H8 adalah bahasa asuransi: catatan bulan yang bisa disortir, dipindah, dan diperdebatkan tanpa membawa suara koloni. HECTON-8 adalah bahasa yang dijalani: pintu, ruangan, kubur, dan alarm tekanan.\n\n            Saat pemain mempelajari tata bahasa ini, dokumen berubah bentuk. Pemberitahuan perusahaan memakai Aegir bisa menjauhkan kamera sampai kegagalan bulan terlihat seperti pemeliharaan sistem. Tanda terima RAN-B:H8 menyiapkan harga custody. Catatan lapangan HECTON-8 menyimpan kesaksian sebelum katalog mencucinya.",
-          "field_note": "Kalau air membunuh seseorang, sebut HECTON-8 sebelum pengacara membilasnya menjadi Aegir."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran / Aegir名称権限台帳",
-          "scanner": "名称権限解決 // Ran: 主恒星、ルート基準。Aegir: ガス巨星、請求の傘。RAN-B:H8: 保険対象月キー。HECTON-8: 水、植民地、経験された損害の現場名。元ラベルを保持。",
-          "terminal": "カタログ正規化警告 // HECTON-8由来の労働者証言を証人注記なしでAEGIR資産語に潰すな。RAN-B:H8は保険対象月記録のみ。Ran参照はルート物理文脈として保持。",
-          "audio": "Black Keelカタログ解析: 名前が変わったなら、請求先が動いた。誰が得をするか分かるまで古い名を残せ。",
-          "in_game_wiki": "HECTON-8に名前が多すぎるのは、汚れた水をきれいに所有したい事務所が多すぎたからだ。Ranは恒星。光、航路、キャリア遅延、航法を扱う文書で使う。Aegirはガス巨星。月をより大きな請求システム、空、親天体、資産群の中に消したい話者が使う。RAN-B:H8は保険対象月のキーであり、そこに誰が住んだかを覚えずに台帳が並べられる名だ。HECTON-8は現場名で、濡れた梯子、ハッチ縁、ルート板、古い圧力扉に張り付いている。\n\n            名前は交換可能ではない。指紋だ。Ranと言うルート事務所はおそらく航法をしている。Aegirと言うDeep Reachメモは、たいていシステム規模の所有権を守っている。RAN-B:H8と言うBlack Keel受領は場所を請求可能な物体に変える。HECTON-8と言う労働者メモは俗語でも感傷でもない。海が区画ごとに人を殺した高さからの証言だ。\n\n            良い証拠は見つけた名前を保つ。早すぎる正規化は動機を壊す。Aegir資産と書かれた隔離命令は、枠を広げて局所的な失敗を隠しているかもしれない。RAN-B:H8と書かれたサルベージ見積もりは、月を悲しみなしで保険に通すため記憶を剥がしているかもしれない。\n\n            だからPDAは名前の衝突をならさず保存する。衝突は、誰が話し、何を数えたがり、何を埋めたがったかをプレイヤーに教える。",
-          "external_site": "Ran、Aegir、RAN-B:H8、HECTON-8は雰囲気違いの別名ではない。権限、尺度、記憶を名前に詰めたものだ。",
-          "external_site_article": "HECTON-8の名称体系は静かだが鋭いワールドビルドだ。月に四つの名があるのは飾りではない。それぞれの名は異なる権限と、同じ沈んだ場所への異なる道徳的距離を持つ。\n\n            Ranは天文学の言語だ。恒星、ルート基準、光遅延、キャリア時刻。Aegirは請求の言語だ。親天体としての巨星、公共略称、企業の傘。RAN-B:H8は保険の言語だ。植民地の声を残さず並べ、移し、訴えられる月記録。HECTON-8は生きられた言語だ。扉、部屋、墓、圧力警報。\n\n            プレイヤーがこの文法を覚えると、文書の形が変わる。Aegirを使う企業通知は、月の失敗をシステム保守に見せるまで視点を引くことがある。RAN-B:H8の受領は保管価格を準備する。HECTON-8の現場メモは、カタログが洗う前に証言を守る。",
-          "field_note": "水が誰かを殺したなら、弁護士がAegirに洗う前にHECTON-8と呼べ。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran / Aegir 명칭 권한 장부",
-          "scanner": "명칭 권한 해석 완료 // Ran: 주성 및 항로 기준. Aegir: 가스 거인 및 청구 우산. RAN-B:H8: 보험 위성 키. HECTON-8: 물, 식민지, 살아 겪은 피해의 현장명. 원본 라벨 보존.",
-          "terminal": "카탈로그 정규화 경고 // HECTON-8 기원 노동자 증언을 증인 주석 없이 AEGIR 자산 언어로 접지 말 것. RAN-B:H8은 보험 위성 기록에만 사용. Ran 참조는 항로 물리 맥락으로 유지.",
-          "audio": "Black Keel 카탈로그 해석기: 이름이 바뀌면 청구서가 움직인 것이다. 누가 이득인지 알 때까지 옛 이름을 남겨라.",
-          "in_game_wiki": "HECTON-8에 이름이 너무 많은 이유는 너무 많은 사무실이 더러운 물을 깨끗하게 소유하는 방법을 원했기 때문이다. Ran은 별이다. 빛, 항로, 운반 지연, 항법을 다루는 문서에서 쓴다. Aegir는 가스 거인이다. 말하는 사람이 위성을 더 큰 청구 시스템, 하늘, 모체, 자산 묶음 속으로 사라지게 하고 싶을 때 쓴다. RAN-B:H8은 보험 위성 키이며, 누가 살았는지 기억하지 않고도 장부가 정렬할 수 있는 이름이다. HECTON-8은 현장명이며 젖은 사다리, 해치 가장자리, 항로판, 오래된 압력문에 붙어 있다.\n\n            이름들은 서로 바꿔 쓸 수 없다. 지문이다. Ran이라고 하는 항로 사무실은 아마 항법을 하고 있다. Aegir라고 하는 Deep Reach 메모는 대개 시스템 규모 소유권을 보호한다. RAN-B:H8이라고 하는 Black Keel 영수증은 장소를 청구 가능한 물건으로 바꾼다. HECTON-8이라고 하는 노동자 메모는 속어나 감상이 아니다. 바다가 사람을 구획별로 죽인 높이에서 나온 증언이다.\n\n            좋은 증거는 발견한 이름을 보존한다. 너무 이른 정규화는 동기를 없앨 수 있다. Aegir 자산이라고 쓰인 검역 명령은 틀을 넓혀 지역 실패를 숨길 수 있다. RAN-B:H8이라고 쓰인 salvage 견적은 보험을 통과시키기 위해 기억을 떼어낼 수 있다.\n\n            그래서 PDA는 이름 충돌을 지우지 않고 보존한다. 충돌은 누가 말했는지, 무엇을 세고 싶었는지, 무엇을 묻고 싶었는지를 플레이어에게 알려준다.",
-          "external_site": "Ran, Aegir, RAN-B:H8, HECTON-8은 분위기용 별명이 아니다. 이름 안에 관할, 규모, 기억이 들어 있다.",
-          "external_site_article": "HECTON-8의 명명 체계는 조용하지만 날카로운 세계관이다. 위성에 네 이름이 있는 것은 장식이 아니다. 각 이름은 다른 권한과 같은 익사한 장소에 대한 다른 도덕적 거리에 속한다.\n\n            Ran은 천문 언어다. 별, 항로 기준, 빛 지연, 운반 시각. Aegir는 청구 언어다. 모체로서의 거인, 공용 약칭, 기업 우산. RAN-B:H8은 보험 언어다. 식민지의 목소리를 붙이지 않고 정렬, 이전, 소송할 수 있는 위성 기록. HECTON-8은 살아 겪은 언어다. 문, 방, 무덤, 압력 경보.\n\n            플레이어가 이 문법을 배우면 문서가 달라 보인다. Aegir를 쓰는 회사 공지는 위성 실패를 시스템 정비처럼 보이게 멀리 잡을 수 있다. RAN-B:H8 영수증은 보관 가격을 준비한다. HECTON-8 현장 메모는 카탈로그가 씻어내기 전에 증언을 보존한다.",
-          "field_note": "물이 누군가를 죽였다면, 변호사들이 Aegir로 씻기 전에 HECTON-8이라고 불러라."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran / Aegir Naamautoriteitsregister",
-          "scanner": "NAAMAUTORITEIT OPGELOST // Ran: gastster en routeanker. Aegir: gasreus en claimparaplu. RAN-B:H8: verzekerde maansleutel. HECTON-8: veldnaam voor water, kolonie en geleefde schade. Bronlabel bewaren.",
-          "terminal": "CATALOGUSNORMALISATIEWAARSCHUWING // Worker-getuigenis met HECTON-8-oorsprong niet zonder getuigennoot tot AEGIR-assettaal samenklappen. RAN-B:H8 alleen voor verzekerd maanrecord. Ran blijft routefysica-context.",
-          "audio": "Black Keel-catalogusresolver: Als de naam verandert, is de rekening verplaatst. Bewaar de oude naam tot je weet wie wint.",
-          "in_game_wiki": "HECTON-8 heeft te veel namen omdat te veel kantoren een schone manier wilden om vuil water te bezitten. Ran is de ster, voor documenten over licht, routes, carrierdelay of navigatie. Aegir is de gasreus, gebruikt wanneer de maan moet verdwijnen in een groter claimsysteem, een hemel, een ouderlichaam of een assetgroep. RAN-B:H8 is de verzekerde maansleutel, sorteerbaar zonder te onthouden wie er leefde. HECTON-8 is de veldnaam, vast aan natte ladders, hatchranden, routeborden en oude drukdeuren.\n\n            De namen zijn geen synoniemen. Het zijn vingerafdrukken. Een routekantoor dat Ran zegt doet waarschijnlijk navigatie. Een Deep Reach-memo met Aegir beschermt vaak eigendom op systeemschaal. Een Black Keel-bon met RAN-B:H8 maakt de plek factureerbaar. Een workernotitie met HECTON-8 is geen slang of sentiment. Het is getuigenis vanaf het niveau waar de oceaan mensen compartiment voor compartiment doodde.\n\n            Goed bewijs bewaart de gevonden naam. Te vroeg normaliseren kan motief vernietigen. Een quarantaineorder met Aegir asset kan lokaal falen verbergen door het kader te vergroten. Een salvageofferte met RAN-B:H8 kan geheugen weghalen zodat de maan zonder rouw door verzekering gaat.\n\n            Daarom bewaart de PDA naamconflicten. Het conflict vertelt wie sprak, wat geteld moest worden en wat begraven moest blijven.",
-          "external_site": "Ran, Aegir, RAN-B:H8 en HECTON-8 zijn geen smaakvarianten. Het zijn jurisdictie, schaal en geheugen in namen.",
-          "external_site_article": "Het naamsysteem van HECTON-8 is stil wereldbouwen met tanden. De maan heeft niet vier namen voor sfeer. Elke naam hoort bij een andere autoriteit en een andere morele afstand tot dezelfde verdronken plek.\n\n            Ran is astronomietaal: ster, routeanker, lichtvertraging, carriertiming. Aegir is claimtaal: reus als ouderlichaam, publieke afkorting en bedrijfsparaplu. RAN-B:H8 is verzekeringstaal: een sorteerbaar maanrecord dat kan worden verhandeld zonder kolonystem mee te dragen. HECTON-8 is geleefde taal: deuren, kamers, graven en drukalarmen.\n\n            Zodra de speler deze grammatica leert, veranderen documenten van vorm. Een bedrijfsbericht met Aegir kan uitzoomen tot maanfalen systeemondehoud lijkt. Een RAN-B:H8-bon bereidt custodyprijs voor. Een HECTON-8-veldnotitie bewaart getuigenis voordat de catalogus het schoonwast.",
-          "field_note": "Als het water iemand doodde, noem het HECTON-8 voordat juristen het in Aegir uitspoelen."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr Władzy Nazw Ran / Aegir",
-          "scanner": "WŁADZA NAZW ROZWIĄZANA // Ran: gwiazda macierzysta i kotwica trasy. Aegir: gazowy olbrzym i parasol roszczeń. RAN-B:H8: ubezpieczony klucz księżyca. HECTON-8: nazwa polowa dla wody, kolonii i przeżytej szkody. Zachowaj etykietę źródła.",
-          "terminal": "OSTRZEŻENIE NORMALIZACJI KATALOGU // Nie składać świadectwa pracownika pochodzenia HECTON-8 do języka aktywa AEGIR bez noty świadka. RAN-B:H8 tylko dla ubezpieczonego rekordu księżyca. Odniesienia Ran zostają kontekstem fizyki trasy.",
-          "audio": "Resolver katalogu Black Keel: gdy nazwa się zmienia, rachunek się przesunął. Zostaw starą nazwę, aż wiesz, kto zyskuje.",
-          "in_game_wiki": "HECTON-8 ma za dużo nazw, bo za dużo biur chciało czystego sposobu posiadania brudnej wody. Ran to gwiazda, używana w dokumentach o świetle, trasach, opóźnieniu nośnika i nawigacji. Aegir to gazowy olbrzym, używany, gdy mówca chce ukryć księżyc w większym systemie roszczeń, niebie, ciele macierzystym albo grupie aktywów. RAN-B:H8 to ubezpieczony klucz księżyca, nazwa sortowalna bez pamięci. HECTON-8 to nazwa polowa, przyklejona do mokrych drabin, krawędzi włazów, tablic tras i starych drzwi ciśnieniowych.\n\n            Nazwy nie są zamienne. Są odciskami palców. Biuro trasy mówiące Ran prawdopodobnie nawiguję. Memo Deep Reach mówiące Aegir często chroni własność w skali systemu. Potwierdzenie Black Keel z RAN-B:H8 zmienia miejsce w obiekt rozliczeniowy. Notatka pracownika z HECTON-8 nie jest slangiem ani sentymentem. Jest świadectwem z poziomu, na którym ocean zabijał ludzi komora po komorze.\n\n            Dobry dowód zachowuje nazwę, którą znalazł. Zbyt wczesna normalizacja może zniszczyć motyw. Nakaz kwarantanny z aktywem Aegir może ukrywać lokalną awarię przez poszerzenie kadru. Wycena salvage z RAN-B:H8 może zdjąć pamięć, by księżyc przeszedł przez ubezpieczenie bez żałoby.\n\n            Dlatego PDA zachowuje konflikty nazw. Konflikt mówi graczowi, kto mówił, co chciał policzyć i co chciał pogrzebać.",
-          "external_site": "Ran, Aegir, RAN-B:H8 i HECTON-8 nie są wariantami smaku. To jurysdykcja, skala i pamięć upchnięte w nazwach.",
-          "external_site_article": "System nazw HECTON-8 to ciche budowanie świata z zębami. Księżyc nie ma czterech nazw dla koloru. Każda należy do innej władzy i innego dystansu moralnego wobec tego samego zatopionego miejsca.\n\n            Ran to język astronomii: gwiazda, kotwica trasy, opóźnienie światła, czas nośnika. Aegir to język roszczeń: olbrzym jako ciało macierzyste, publiczny skrót i parasol korporacji. RAN-B:H8 to język ubezpieczenia: sortowalny rekord księżyca, który można przenieść i spierać bez głosu kolonii. HECTON-8 to język przeżyty: drzwi, pokoje, groby i alarmy ciśnienia.\n\n            Gdy gracz nauczy się tej gramatyki, dokumenty zmieniają kształt. Komunikat firmy z Aegir może oddalić kadr, aż awaria księżyca wygląda jak konserwacja systemu. Potwierdzenie RAN-B:H8 przygotowuje cenę pieczy. Notatka HECTON-8 zachowuje świadectwo, zanim katalog je wypierze.",
-          "field_note": "Jeśli woda kogoś zabiła, nazwij to HECTON-8, zanim prawnicy wypłuczą to w Aegir."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Livro de Autoridade de Nomes Ran / Aegir",
-          "scanner": "AUTORIDADE DE NOME RESOLVIDA // Ran: estrela hospedeira e âncora de rota. Aegir: gigante gasoso e guarda-chuva de reivindicação. RAN-B:H8: chave lunar segurada. HECTON-8: nome de campo para a água, a colônia e o dano vivido. Preserve o rótulo fonte.",
-          "terminal": "ALERTA DE NORMALIZAÇÃO DE CATÁLOGO // Não reduza testemunho de trabalhador com origem HECTON-8 a linguagem de ativo AEGIR sem nota de testemunha. RAN-B:H8 só para registro lunar segurado. Referências Ran permanecem contexto de física de rota.",
-          "audio": "Resolvedor de catálogo Black Keel: quando o nome muda, a fatura se moveu. Guarde o nome antigo até saber quem ganha.",
-          "in_game_wiki": "HECTON-8 tem nomes demais porque escritórios demais queriam um jeito limpo de possuir água suja. Ran é a estrela, usada quando o documento fala de luz, rotas, atraso de carrier ou navegação. Aegir é o gigante gasoso, usado quando alguém quer fazer a lua sumir dentro de um sistema de reivindicação maior, um céu, um corpo pai ou um grupo de ativos. RAN-B:H8 é a chave lunar segurada, nome que um livro ordena sem lembrar quem viveu ali. HECTON-8 é o nome de campo, grudado em escadas molhadas, bordas de escotilha, quadros de rota e portas de pressão antigas.\n\n            Os nomes não são intercambiáveis. São impressões digitais. Um escritório de rota dizendo Ran provavelmente faz navegação. Um memorando Deep Reach dizendo Aegir muitas vezes protege propriedade em escala de sistema. Um recibo Black Keel com RAN-B:H8 transforma o lugar em objeto faturável. Uma nota de trabalhador dizendo HECTON-8 não é gíria nem sentimento. É testemunho do nível onde o oceano matou pessoas compartimento por compartimento.\n\n            Boa evidência preserva o nome que encontrou. Normalizar cedo demais pode destruir motivo. Uma ordem de quarentena dizendo ativo Aegir pode esconder falha local ao ampliar o enquadramento. Uma cotação salvage dizendo RAN-B:H8 pode arrancar memória para a lua atravessar seguro sem luto.\n\n            Por isso o PDA preserva conflitos de nome. O conflito diz ao jogador quem estava falando, o que queria contar e o que queria enterrar.",
-          "external_site": "Ran, Aegir, RAN-B:H8 e HECTON-8 não são variações de sabor. São jurisdição, escala e memória empacotadas em nomes.",
-          "external_site_article": "O sistema de nomes de HECTON-8 é worldbuilding quieto com dentes. A lua não tem quatro nomes por decoração. Cada nome pertence a uma autoridade diferente e a uma distância moral diferente do mesmo lugar afogado.\n\n            Ran é linguagem astronômica: estrela, âncora de rota, atraso de luz, tempo de carrier. Aegir é linguagem de reivindicação: gigante como corpo pai, abreviação pública e guarda-chuva corporativo. RAN-B:H8 é linguagem de seguro: registro lunar ordenável, transferível e litigável sem levar a voz da colônia junto. HECTON-8 é linguagem vivida: portas, salas, túmulos e alarmes de pressão.\n\n            Quando o jogador aprende essa gramática, documentos mudam de forma. Um aviso corporativo com Aegir pode afastar a câmera até uma falha lunar parecer manutenção de sistema. Um recibo RAN-B:H8 prepara preço de custódia. Uma nota de campo HECTON-8 preserva testemunho antes que o catálogo lave tudo.",
-          "field_note": "Se a água matou alguém, chame de HECTON-8 antes que advogados enxaguem isso em Aegir."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Реестр полномочий имен Ran / Aegir",
-          "scanner": "ПОЛНОМОЧИЕ ИМЕНИ РАЗОБРАНО // Ran: звезда-хозяин и якорь маршрута. Aegir: газовый гигант и зонтик претензии. RAN-B:H8: застрахованный ключ луны. HECTON-8: полевое имя воды, колонии и прожитого ущерба. Сохраняйте исходную метку.",
-          "terminal": "ПРЕДУПРЕЖДЕНИЕ НОРМАЛИЗАЦИИ КАТАЛОГА // Не сворачивать рабочее свидетельство происхождения HECTON-8 в язык актива AEGIR без свидетельской пометки. RAN-B:H8 использовать только для застрахованной записи луны. Ссылки Ran остаются контекстом физики маршрута.",
-          "audio": "Разборщик каталога Black Keel: когда имя меняется, счет переехал. Держи старое имя, пока не поймешь, кому это выгодно.",
-          "in_game_wiki": "У HECTON-8 слишком много имен, потому что слишком много офисов хотели чистый способ владеть грязной водой. Ran - звезда. Это имя нужно там, где документ говорит о свете, маршрутах, задержке носителя или навигации. Aegir - газовый гигант. Его используют, когда говорящий хочет растворить луну в более крупной системе претензий, в небе, родительском теле или группе активов. RAN-B:H8 - застрахованный ключ луны, имя, которое реестр сортирует, не вспоминая, кто там жил. HECTON-8 - полевое имя, прилипшее к мокрым лестницам, кромкам люков, маршрутным доскам и старым гермодверям.\n\n            Имена не взаимозаменяемы. Это отпечатки пальцев. Маршрутный офис, говорящий Ran, скорее всего занимается навигацией. Мемо Deep Reach, говорящее Aegir, часто защищает собственность в масштабе системы. Квитанция Black Keel с RAN-B:H8 превращает место в оплачиваемый объект. Рабочая заметка с HECTON-8 - не сленг и не сентимент. Это свидетельство с уровня, где океан убивал людей отсек за отсеком.\n\n            Хорошая улика сохраняет имя, с которым была найдена. Слишком ранняя нормализация может уничтожить мотив. Карантинный приказ с формулировкой актив Aegir может прятать локальный провал, расширяя рамку. Сальважная смета с RAN-B:H8 может снять память, чтобы луна прошла через страховку без горя.\n\n            Поэтому PDA сохраняет конфликт имен, а не сглаживает его. Конфликт говорит игроку, кто говорил, что хотел посчитать и что хотел похоронить.",
-          "external_site": "Ran, Aegir, RAN-B:H8 и HECTON-8 - не варианты вкуса. Это юрисдикция, масштаб и память, упакованные в имена.",
-          "external_site_article": "Система имен HECTON-8 - тихое миростроение с зубами. У луны четыре имени не ради окраски. Каждое имя принадлежит другой власти и другой моральной дистанции до одного и того же утонувшего места.\n\n            Ran - язык астрономии: звезда, якорь маршрута, световая задержка, тайминг носителя. Aegir - язык претензии: гигант как родительское тело, публичное сокращение и корпоративный зонтик. RAN-B:H8 - язык страхования: сортируемая запись луны, которую можно передать и оспаривать, не сохраняя голос колонии. HECTON-8 - прожитый язык: двери, комнаты, могилы и сигналы давления.\n\n            Когда игрок усваивает эту грамматику, документы меняют форму. Корпоративное уведомление с Aegir может отъехать так далеко, что провал луны выглядит обслуживанием системы. Квитанция RAN-B:H8 готовит цену опеки. Полевая заметка HECTON-8 сохраняет свидетельство до того, как каталог его отмоет.",
-          "field_note": "Если вода кого-то убила, назови это HECTON-8 до того, как юристы отмоют имя в Aegir."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Реєстр повноважень назв Ran / Aegir",
-          "scanner": "ПОВНОВАЖЕННЯ НАЗВИ РОЗІБРАНО // Ran: зірка-господар і якір маршруту. Aegir: газовий гігант і парасоля претензії. RAN-B:H8: застрахований ключ місяця. HECTON-8: польова назва води, колонії і прожитої шкоди. Зберігайте вихідну мітку.",
-          "terminal": "ПОПЕРЕДЖЕННЯ НОРМАЛІЗАЦІЇ КАТАЛОГУ // Не згортати робоче свідчення походження HECTON-8 у мову активу AEGIR без свідчої нотатки. RAN-B:H8 лише для застрахованого запису місяця. Посилання Ran лишаються контекстом фізики маршруту.",
-          "audio": "Розв'язувач каталогу Black Keel: коли назва змінюється, рахунок переїхав. Тримай стару назву, доки не знаєш, кому це вигідно.",
-          "in_game_wiki": "У HECTON-8 забагато назв, бо забагато офісів хотіли чистий спосіб володіти брудною водою. Ran - зірка. Ця назва потрібна, коли документ говорить про світло, маршрути, затримку носія або навігацію. Aegir - газовий гігант. Його використовують, коли мовець хоче розчинити місяць у більшій системі претензій, у небі, батьківському тілі або групі активів. RAN-B:H8 - застрахований ключ місяця, назва, яку реєстр сортує, не пам'ятаючи, хто там жив. HECTON-8 - польова назва, що липне до мокрих драбин, країв люків, маршрутних дощок і старих гермодверей.\n\n            Назви не взаємозамінні. Це відбитки пальців. Маршрутний офіс, що каже Ran, найімовірніше займається навігацією. Мемо Deep Reach, що каже Aegir, часто захищає власність у масштабі системи. Квитанція Black Keel з RAN-B:H8 перетворює місце на оплачуваний об'єкт. Робоча нотатка з HECTON-8 - не сленг і не сентимент. Це свідчення з рівня, де океан убивав людей відсік за відсіком.\n\n            Добрий доказ зберігає назву, з якою його знайшли. Занадто рання нормалізація може знищити мотив. Карантинний наказ із формулюванням актив Aegir може ховати локальний провал, розширюючи рамку. Сальважний кошторис із RAN-B:H8 може зняти пам'ять, щоб місяць пройшов крізь страхування без жалю.\n\n            Тому PDA зберігає конфлікти назв, а не згладжує їх. Конфлікт каже гравцеві, хто говорив, що хотів порахувати і що хотів поховати.",
-          "external_site": "Ran, Aegir, RAN-B:H8 і HECTON-8 - не варіанти смаку. Це юрисдикція, масштаб і пам'ять, запаковані в назви.",
-          "external_site_article": "Система назв HECTON-8 - тихе світобудування із зубами. У місяця чотири назви не для барви. Кожна назва належить іншій владі й іншій моральній відстані до одного й того самого потонулого місця.\n\n            Ran - мова астрономії: зірка, якір маршруту, світлова затримка, таймінг носія. Aegir - мова претензії: гігант як батьківське тіло, публічне скорочення і корпоративна парасоля. RAN-B:H8 - мова страхування: сортований запис місяця, який можна передати й оскаржувати, не зберігаючи голос колонії. HECTON-8 - прожита мова: двері, кімнати, могили й сигнали тиску.\n\n            Коли гравець засвоює цю граматику, документи змінюють форму. Корпоративне повідомлення з Aegir може від'їхати так далеко, що провал місяця виглядає обслуговуванням системи. Квитанція RAN-B:H8 готує ціну опіки. Польова нотатка HECTON-8 зберігає свідчення до того, як каталог його відмиє.",
-          "field_note": "Якщо вода когось убила, назви це HECTON-8 до того, як юристи відмиють назву в Aegir."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran / Aegir名称权限账册",
-          "scanner": "名称权限已解析 // Ran：主恒星与路线锚点。Aegir：气态巨行星与索赔伞。RAN-B:H8：投保月球键。HECTON-8：水域、殖民地与亲历损害的现场名。保留来源标签。",
-          "terminal": "目录规范化警告 // 不得在没有见证注记时，把来源为HECTON-8的工人证言压成AEGIR资产语言。RAN-B:H8仅用于投保月球记录。Ran引用保留为路线物理语境。",
-          "audio": "Black Keel目录解析器：名字改变时，账单已经移动。在知道谁受益前，保留旧名字。",
-          "in_game_wiki": "HECTON-8名字太多，是因为太多办公室想用干净办法拥有肮脏的水。Ran是恒星。文件谈光、航线、载波延迟或导航时使用它。Aegir是气态巨行星。说话者想让月球消失进更大的索赔系统、天空、母体或资产组时使用它。RAN-B:H8是投保月球键，是账册可以排序却不必记得谁曾住在那里的名字。HECTON-8是现场名，粘在湿梯、舱口边、路线板和旧压力门上。\n\n            这些名字不可互换。它们是指纹。说Ran的路线办公室大概率在做导航。说Aegir的Deep Reach备忘录常在保护系统尺度的所有权。写RAN-B:H8的Black Keel回执把这个地方变成可收费对象。写HECTON-8的工人笔记不是俚语也不是感伤。它是来自海洋逐舱杀人的高度的证言。\n\n            好证据会保留发现时的名字。过早规范化会毁掉动机。写Aegir资产的隔离命令，可能通过扩大框架来隐藏本地失败。写RAN-B:H8的打捞报价，可能是在剥掉记忆，好让月球不带哀悼地穿过保险。\n\n            所以PDA保存名称冲突，而不是抹平它。冲突会告诉玩家是谁在说话、他们想计算什么、又想埋掉什么。",
-          "external_site": "Ran、Aegir、RAN-B:H8和HECTON-8不是风味别名。它们把管辖权、尺度和记忆压进名字里。",
-          "external_site_article": "HECTON-8的命名系统很安静，但带着牙齿。月球有四个名字不是为了装饰。每个名字属于不同权力，也代表它与同一个淹没地点之间不同的道德距离。\n\n            Ran是天文学语言：恒星、路线锚点、光延迟、载波时刻。Aegir是索赔语言：作为母体的巨行星、公共简称、企业伞。RAN-B:H8是保险语言：一个可排序、可转移、可诉讼的月球记录，不必携带殖民地的声音。HECTON-8是被生活过的语言：门、房间、坟墓和压力警报。\n\n            玩家学会这种语法后，文件会改变形状。使用Aegir的公司通知，可能把视角拉远到让一整个月球的失败看起来像系统维护。RAN-B:H8回执在准备托管价格。HECTON-8现场笔记在目录把证言洗干净前保存它。",
-          "field_note": "如果水杀了人，在律师把它洗成Aegir之前，先叫它HECTON-8。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "external_site_article",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.ran_aegir_name_authority_ledger",
+    "secondary": [
+     "unlock.first_ran_catalog_plate",
+     "unlock.first_aegir_claim_shorthand",
+     "unlock.first_ran_b_h8_insurance_key"
+    ],
+    "poi_tags": [
+     "poi.public_catalog_plate",
+     "poi.aegir_claim_map",
+     "poi.h8_insurance_nameplate",
+     "poi.black_keel_catalog_resolver"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.route_archive",
+     "biome.surface_orbit_context"
+    ],
+    "first_20_boundary": "Teaches the early naming grammar as evidence: Ran is the star and route anchor, Aegir is the gas giant and claim umbrella, RAN-B:H8 is the insured moon key, and HECTON-8 is the lived field name."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Catalog Resolver",
+     "terminal": "Black Keel Name Authority Ledger",
+     "audio": "Black Keel Catalog Warning",
+     "in_game_wiki": "PDA Astronomy And Claim Primer",
+     "external_site": "Public Site Setting Primer",
+     "field_note": "Marauder Field Note",
+     "external_site_article": "Public Site Setting Primer"
+    },
+    "spoiler_tier": "0",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_ran_or_aegir_name_conflict",
+    "truth_payload": "Ran, Aegir, RAN-B:H8 and HECTON-8 are jurisdictional labels. A name change in a document can reveal whether the speaker is doing astronomy, ownership, insurance, custody or lived field testimony.",
+    "player_question": "Why do different terminals name the same place differently, and which name should the player trust?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Ran / Aegir Name Authority Ledger",
+     "scanner": "NAME AUTHORITY RESOLVED // Ran: host star and route anchor. Aegir: gas giant and claim umbrella. RAN-B:H8: insured moon key. HECTON-8: field name for the water, colony and lived damage. Preserve source label.",
+     "terminal": "CATALOG NORMALIZATION WARNING // Do not collapse worker-origin HECTON-8 testimony into AEGIR asset language without witness note. RAN-B:H8 may be used for insured moon record only. Ran references remain route-physics context.",
+     "audio": "Black Keel catalog resolver: When the name changes, the bill moved. Keep the old name until you know who benefits.",
+     "in_game_wiki": "HECTON-8 has too many names because too many offices wanted a clean way to own dirty water. Ran is the star. Use it when the document cares about light, routes, carrier delay or where a ship can actually point itself. Aegir is the gas giant. Use it when the speaker wants the moon to disappear into a larger claim system, a sky, a parent body, an asset group. RAN-B:H8 is the insured moon key, the name a ledger can sort without remembering who lived there. HECTON-8 is the field name, the one that sticks to wet ladders, hatch rims, route boards and old pressure doors.\n\n            The names are not interchangeable. They are fingerprints. A route office saying Ran is probably doing navigation. A Deep Reach memo saying Aegir is often protecting ownership at system scale. A Black Keel receipt saying RAN-B:H8 is turning the place into a billable object. A worker note saying HECTON-8 is not slang or sentiment. It is testimony from the level where the ocean killed people one compartment at a time.\n\n            Good evidence keeps the name it found. Normalizing names too early can destroy motive. A quarantine order that says Aegir asset may be hiding a local failure by widening the frame. A salvage quote that says RAN-B:H8 may be stripping memory so the moon can travel through insurance without grief attached. A scratched HECTON name on a panel may be more honest than a thousand clean catalog lines.\n\n            This is why the PDA preserves name conflicts instead of smoothing them. The conflict tells the player who was speaking, what they wanted counted, and what they wanted buried. The same ocean can be star route, gas-giant asset, insured moon, or home, depending on the column. The physical place does not change. The permitted crime does.\n\n            When in doubt, read the smallest name first. Big names make liability foggy. Small names bring the water back into the room.",
+     "external_site": "Ran, Aegir, RAN-B:H8 and HECTON-8 are not flavor variants. They are jurisdiction, scale and memory packed into names.",
+     "external_site_article": "HECTON-8's naming system is a quiet piece of worldbuilding with teeth. The game does not give the moon four names for texture alone. Each name belongs to a different authority and a different moral distance from the same drowned place.\n\n            Ran is astronomical language: star, route anchor, light delay, carrier timing. Aegir is claim language: the gas giant as parent body, public shorthand and corporate umbrella. RAN-B:H8 is insurance language: a sortable moon record that can be priced, transferred and litigated without keeping the colony's voice attached. HECTON-8 is lived language: the name used by workers, Marauders and field systems because it points to the actual doors, rooms, graves and pressure alarms.\n\n            Once the player learns that grammar, documents start to change shape. A company notice using Aegir may be zooming out to make a moon-scale failure look like system maintenance. A Black Keel receipt using RAN-B:H8 may be preparing the place for custody pricing. A field note using HECTON-8 may be preserving testimony before the catalog can wash it clean.\n\n            The rule is simple enough to be playable: names are evidence. Preserve them. Compare them. Ask who gets paid when the place is called one thing instead of another.",
+     "field_note": "If the water killed someone, call it HECTON-8 before the lawyers rinse it into Aegir."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل سلطة الأسماء Ran / Aegir",
+     "scanner": "سلطة الاسم محلولة // Ran: النجم المضيف ومرساة المسار. Aegir: العملاق الغازي ومظلة المطالبة. RAN-B:H8: مفتاح القمر المؤمن. HECTON-8: اسم ميداني للماء والمستعمرة والضرر المعاش. احفظ تسمية المصدر.",
+     "terminal": "تحذير تطبيع الكتالوج // لا تحول شهادة عامل أصلها HECTON-8 إلى لغة أصل AEGIR بلا ملاحظة شاهد. استخدم RAN-B:H8 لسجل القمر المؤمن فقط. مراجع Ran تبقى سياق فيزياء المسار.",
+     "audio": "محلل كتالوج Black Keel: عندما يتغير الاسم، تحركت الفاتورة. احتفظ بالاسم القديم حتى تعرف من يستفيد.",
+     "in_game_wiki": "لدى HECTON-8 أسماء كثيرة لأن مكاتب كثيرة أرادت طريقة نظيفة لامتلاك ماء قذر. Ran هو النجم. استعمله عندما يهتم المستند بالضوء أو المسارات أو تأخير الناقل. Aegir هو العملاق الغازي. يستعمله المتكلم عندما يريد إخفاء القمر داخل نظام مطالبة أكبر، داخل سماء أو جسم أب أو مجموعة أصول. RAN-B:H8 هو مفتاح القمر المؤمن، اسم يستطيع السجل فرزه من دون تذكر من عاش هناك. HECTON-8 هو الاسم الميداني، العالق بالسلالم المبتلة وحواف الفتحات ولوحات المسار وأبواب الضغط القديمة.\n\n            الأسماء ليست بدائل. إنها بصمات. مكتب مسار يقول Ran غالبا يفعل ملاحة. مذكرة Deep Reach تقول Aegir غالبا تحمي ملكية على مستوى النظام. إيصال Black Keel يقول RAN-B:H8 يحول المكان إلى كائن قابل للفوترة. ملاحظة عامل تقول HECTON-8 ليست عاطفة ولا عامية. إنها شهادة من المستوى الذي قتل فيه المحيط الناس حجرة بعد حجرة.\n\n            الدليل الجيد يحفظ الاسم كما وجده. تطبيع الأسماء مبكرا يمحو الدافع. أمر حجر يقول أصل Aegir قد يخفي فشلا محليا بتوسيع الإطار. عرض سلفج يقول RAN-B:H8 قد ينزع الذاكرة كي يعبر القمر التأمين بلا حزن. اسم HECTON مخدوش على لوحة قد يكون أصدق من ألف سطر كتالوج نظيف.\n\n            لذلك يحفظ الـPDA تعارضات الأسماء بدلا من تسويتها. التعارض يخبر اللاعب من كان يتكلم، وما الذي أراد عده، وما الذي أراد دفنه.",
+     "external_site": "Ran وAegir وRAN-B:H8 وHECTON-8 ليست بدائل نكهة. إنها اختصاص ومقياس وذاكرة داخل أسماء.",
+     "external_site_article": "نظام أسماء HECTON-8 قطعة هادئة من بناء العالم، لكنها حادة. اللعبة لا تعطي القمر أربعة أسماء للزينة. كل اسم يخص سلطة مختلفة ومسافة أخلاقية مختلفة عن المكان الغارق نفسه.\n\n            Ran لغة فلكية: نجم، مرساة مسار، تأخير ضوء، توقيت ناقل. Aegir لغة مطالبة: العملاق الغازي كجسم أب، اختصار عام ومظلة شركة. RAN-B:H8 لغة تأمين: سجل قمر قابل للفرز والتسعير والنقل والتقاضي من دون صوت المستعمرة. HECTON-8 لغة معاشة: الاسم الذي يستخدمه العمال والمارودر والأنظمة الميدانية لأنه يشير إلى الأبواب والغرف والقبور وإنذارات الضغط الحقيقية.\n\n            عندما يتعلم اللاعب هذه القواعد، تبدأ المستندات بتغيير شكلها. إشعار شركة يستخدم Aegir قد يبتعد بالكاميرا ليجعل فشل قمر كامل يبدو كصيانة نظام. إيصال Black Keel يستخدم RAN-B:H8 قد يجهز المكان لتسعير العهدة. ملاحظة ميدانية تستخدم HECTON-8 قد تحفظ شهادة قبل أن يغسلها الكتالوج.",
+     "field_note": "إذا قتل الماء أحدا، فسمه HECTON-8 قبل أن يغسله المحامون إلى Aegir."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran-/Aegir-Namenshoheitsregister",
+     "scanner": "NAMENSHOHEIT GELÖST // Ran: Wirtsstern und Routenanker. Aegir: Gasriese und Claim-Schirm. RAN-B:H8: versicherter Mondschlüssel. HECTON-8: Feldname für Wasser, Kolonie und erlebten Schaden. Quellbezeichnung erhalten.",
+     "terminal": "KATALOGNORMALISIERUNGSWARNUNG // Arbeiterzeugnis mit Ursprung HECTON-8 nicht ohne Zeugenvermerk in AEGIR-Assetsprache überführen. RAN-B:H8 nur für versicherten Monddatensatz. Ran bleibt Routenphysik.",
+     "audio": "Black-Keel-Kataloglöser: Wenn der Name wechselt, ist die Rechnung gewandert. Behalte den alten Namen, bis du weißt, wem es nutzt.",
+     "in_game_wiki": "HECTON-8 hat zu viele Namen, weil zu viele Büros eine saubere Methode wollten, schmutziges Wasser zu besitzen. Ran ist der Stern. Der Name gehört zu Licht, Routen, Trägerverzug und Navigation. Aegir ist der Gasriese. Der Name wird benutzt, wenn der Mond in einem größeren Claim-System, einem Himmel, einem Mutterkörper oder einer Assetgruppe verschwinden soll. RAN-B:H8 ist der versicherte Mondschlüssel, sortierbar ohne Erinnerung. HECTON-8 ist der Feldname, der an nassen Leitern, Lukenrändern, Routenbrettern und alten Drucktüren klebt.\n\n            Die Namen sind keine Varianten. Sie sind Fingerabdrücke. Ein Routenbüro mit Ran macht wahrscheinlich Navigation. Ein Deep-Reach-Memo mit Aegir schützt oft Eigentum auf Systemebene. Eine Black-Keel-Quittung mit RAN-B:H8 macht den Ort abrechenbar. Eine Arbeiternotiz mit HECTON-8 ist weder Slang noch Gefühl. Sie ist Zeugnis von der Ebene, auf der der Ozean Menschen Abteil für Abteil tötete.\n\n            Guter Beweis bewahrt den gefundenen Namen. Zu frühe Normalisierung löscht Motiv. Ein Quarantänebefehl mit Aegir-Asset kann lokales Versagen durch größeres Framing verstecken. Ein Salvage-Angebot mit RAN-B:H8 kann Gedächtnis entfernen, damit der Mond versichert durch die Bücher gleitet.\n\n            Darum glättet der PDA Namenskonflikte nicht. Der Konflikt zeigt, wer spricht, was gezählt werden sollte und was begraben werden sollte.",
+     "external_site": "Ran, Aegir, RAN-B:H8 und HECTON-8 sind keine Geschmacksvarianten. Sie tragen Zuständigkeit, Maßstab und Erinnerung.",
+     "external_site_article": "HECTON-8s Namenssystem ist leise, aber scharf. Der Mond hat nicht vier Namen für Farbe. Jeder Name gehört zu einer anderen Autorität und zu einer anderen moralischen Entfernung vom selben ertrunkenen Ort.\n\n            Ran ist astronomische Sprache: Stern, Routenanker, Lichtverzug, Trägerzeit. Aegir ist Claimsprache: Gasriese als Mutterkörper, öffentliche Kurzform und Firmenschirm. RAN-B:H8 ist Versicherungssprache: ein sortierbarer Monddatensatz, der bepreist und verhandelt werden kann, ohne die Stimme der Kolonie mitzunehmen. HECTON-8 ist gelebte Sprache: Türen, Räume, Gräber und Druckalarme.\n\n            Sobald der Spieler diese Grammatik lernt, verändern Dokumente ihre Form. Ein Firmenschreiben mit Aegir kann wegzoomen, bis ein Mondversagen wie Systemwartung aussieht. Eine Quittung mit RAN-B:H8 bereitet Verwahrungspreise vor. Eine Feldnotiz mit HECTON-8 bewahrt Zeugnis, bevor der Katalog es sauber wäscht.",
+     "field_note": "Wenn das Wasser jemanden getötet hat, nenn es HECTON-8, bevor Anwälte es zu Aegir auswaschen."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Autoridad de Nombres Ran / Aegir",
+     "scanner": "AUTORIDAD DE NOMBRE RESUELTA // Ran: estrella anfitriona y ancla de ruta. Aegir: gigante gaseoso y paraguas de reclamación. RAN-B:H8: clave lunar asegurada. HECTON-8: nombre de campo para agua, colonia y daño vivido. Conserva la etiqueta fuente.",
+     "terminal": "ADVERTENCIA DE NORMALIZACIÓN // No convierta testimonio obrero de origen HECTON-8 en lenguaje de activo AEGIR sin nota testigo. RAN-B:H8 solo para registro lunar asegurado. Ran queda como contexto de física de ruta.",
+     "audio": "Resolvedor Black Keel: cuando cambia el nombre, se movió la factura. Guarda el nombre viejo hasta saber a quién beneficia.",
+     "in_game_wiki": "HECTON-8 tiene demasiados nombres porque demasiadas oficinas querían una forma limpia de poseer agua sucia. Ran es la estrella. Úsalo cuando el documento hable de luz, rutas, retraso de portador o navegación. Aegir es el gigante gaseoso. Úsalo cuando alguien quiere que la luna desaparezca dentro de un sistema de reclamación mayor, un cielo, un cuerpo padre o un grupo de activos. RAN-B:H8 es la clave lunar asegurada, el nombre que un libro ordena sin recordar quién vivió allí. HECTON-8 es el nombre de campo, pegado a escaleras mojadas, bordes de escotilla, tableros de ruta y puertas de presión.\n\n            Los nombres no son intercambiables. Son huellas. Una oficina de ruta que dice Ran probablemente navega. Un memorando Deep Reach que dice Aegir suele proteger propiedad a escala de sistema. Un recibo Black Keel con RAN-B:H8 convierte el lugar en objeto facturable. Una nota obrera con HECTON-8 no es jerga ni nostalgia. Es testimonio desde el nivel donde el océano mató personas compartimento por compartimento.\n\n            La buena evidencia conserva el nombre encontrado. Normalizar demasiado pronto puede destruir motivo. Una orden de cuarentena que dice activo Aegir puede ocultar un fallo local ampliando el marco. Una cotización salvage que dice RAN-B:H8 puede quitar memoria para que la luna pase por seguros sin duelo.\n\n            Por eso la PDA conserva conflictos de nombres. El conflicto le dice al jugador quién hablaba, qué quería contar y qué quería enterrar.",
+     "external_site": "Ran, Aegir, RAN-B:H8 y HECTON-8 no son variantes de color. Son jurisdicción, escala y memoria metidas en nombres.",
+     "external_site_article": "El sistema de nombres de HECTON-8 es worldbuilding silencioso con dientes. La luna no tiene cuatro nombres por adorno. Cada nombre pertenece a una autoridad distinta y a una distancia moral distinta del mismo lugar ahogado.\n\n            Ran es lenguaje astronómico: estrella, ancla de ruta, retraso de luz, tiempo de portador. Aegir es lenguaje de reclamación: gigante como cuerpo padre, abreviatura pública y paraguas corporativo. RAN-B:H8 es lenguaje de seguro: registro ordenable, transferible y litigable sin llevar la voz de la colonia. HECTON-8 es lenguaje vivido: puertas, salas, tumbas y alarmas de presión.\n\n            Cuando el jugador aprende esa gramática, los documentos cambian de forma. Un aviso corporativo con Aegir puede alejar el encuadre hasta que una muerte lunar parezca mantenimiento de sistema. Un recibo con RAN-B:H8 prepara precio de custodia. Una nota de campo con HECTON-8 conserva testimonio antes de que el catálogo lo lave.",
+     "field_note": "Si el agua mató a alguien, llámalo HECTON-8 antes de que los abogados lo enjuaguen en Aegir."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre d'Autorité des Noms Ran / Aegir",
+     "scanner": "AUTORITÉ DE NOM RÉSOLUE // Ran : étoile hôte et ancre de route. Aegir : géante gazeuse et parapluie de réclamation. RAN-B:H8 : clé lunaire assurée. HECTON-8 : nom de terrain pour l'eau, la colonie et les dégâts vécus. Conserver l'étiquette source.",
+     "terminal": "AVERTISSEMENT DE NORMALISATION // Ne pas convertir un témoignage travailleur d'origine HECTON-8 en langage d'actif AEGIR sans note témoin. RAN-B:H8 réservé au registre lunaire assuré. Ran reste contexte de physique de route.",
+     "audio": "Résolveur Black Keel : quand le nom change, la facture a bougé. Gardez l'ancien nom jusqu'à savoir qui y gagne.",
+     "in_game_wiki": "HECTON-8 a trop de noms parce que trop de bureaux voulaient une manière propre de posséder de l'eau sale. Ran est l'étoile, utile quand un document parle de lumière, routes, retard porteur ou navigation. Aegir est la géante gazeuse, utile quand le locuteur veut faire disparaître la lune dans un système de réclamation plus large, un ciel, un corps parent ou un groupe d'actifs. RAN-B:H8 est la clé lunaire assurée, triable sans mémoire. HECTON-8 est le nom de terrain collé aux échelles mouillées, aux bords d'écoutille et aux portes pressurisées.\n\n            Les noms ne sont pas interchangeables. Ce sont des empreintes. Un bureau de route disant Ran fait probablement de la navigation. Un mémo Deep Reach disant Aegir protège souvent la propriété à l'échelle système. Un reçu Black Keel disant RAN-B:H8 transforme le lieu en objet facturable. Une note ouvrière disant HECTON-8 n'est ni argot ni sentiment. C'est un témoignage depuis le niveau où l'océan a tué compartiment par compartiment.\n\n            Une bonne preuve garde le nom trouvé. Normaliser trop tôt peut détruire le mobile. Un ordre de quarantaine disant actif Aegir peut cacher une faute locale en élargissant le cadre. Un devis salvage disant RAN-B:H8 peut retirer la mémoire pour que la lune traverse l'assurance sans deuil.\n\n            C'est pourquoi le PDA garde les conflits de noms. Le conflit indique qui parlait, ce qu'il voulait compter et ce qu'il voulait enterrer.",
+     "external_site": "Ran, Aegir, RAN-B:H8 et HECTON-8 ne sont pas des variantes de couleur. Ce sont juridiction, échelle et mémoire emballées dans des noms.",
+     "external_site_article": "Le système de noms de HECTON-8 est discret, mais mordant. La lune n'a pas quatre noms pour la texture. Chaque nom appartient à une autorité différente et à une distance morale différente du même lieu noyé.\n\n            Ran est le langage astronomique : étoile, ancre de route, délai lumineux, timing porteur. Aegir est le langage de réclamation : géante comme corps parent, raccourci public et parapluie corporatif. RAN-B:H8 est le langage d'assurance : registre lunaire triable, transférable et plaidable sans garder la voix de la colonie. HECTON-8 est le langage vécu : portes, pièces, tombes et alarmes de pression.\n\n            Quand le joueur apprend cette grammaire, les documents changent de forme. Un avis corporatif avec Aegir peut reculer jusqu'à faire passer une faute lunaire pour maintenance de système. Un reçu RAN-B:H8 prépare un prix de garde. Une note HECTON-8 conserve un témoignage avant que le catalogue le lave.",
+     "field_note": "Si l'eau a tué quelqu'un, appelez-la HECTON-8 avant que les juristes la rincent en Aegir."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן סמכות השמות Ran / Aegir",
+     "scanner": "סמכות שם נפתרה // Ran: כוכב מארח ועוגן נתיב. Aegir: ענק גז ומטריית תביעה. RAN-B:H8: מפתח ירח מבוטח. HECTON-8: שם שטח למים, למושבה ולנזק שנחווה. שמור את תווית המקור.",
+     "terminal": "אזהרת נרמול קטלוג // אין לכווץ עדות עובד שמקורה HECTON-8 לשפת נכס AEGIR ללא הערת עד. RAN-B:H8 לשימוש ברשומת ירח מבוטחת בלבד. אזכורי Ran נשארים הקשר פיזיקת נתיב.",
+     "audio": "פותר קטלוג Black Keel: כשהשם משתנה, החשבון זז. שמור את השם הישן עד שתדע מי מרוויח.",
+     "in_game_wiki": "ל-HECTON-8 יש יותר מדי שמות כי יותר מדי משרדים רצו דרך נקייה להחזיק במים מלוכלכים. Ran הוא הכוכב, השם למסמכים שעוסקים באור, נתיבים, עיכוב נשא או ניווט. Aegir הוא ענק הגז, השם למי שרוצה שהירח ייעלם בתוך מערכת תביעה גדולה יותר, שמיים, גוף אב או קבוצת נכסים. RAN-B:H8 הוא מפתח הירח המבוטח, שם שיומן יכול למיין בלי לזכור מי חי שם. HECTON-8 הוא שם השטח שנדבק לסולמות רטובים, לשפות פתחים ולדלתות לחץ ישנות.\n\n            השמות אינם חלופיים. הם טביעות אצבע. משרד נתיבים שאומר Ran כנראה עוסק בניווט. מזכר Deep Reach שאומר Aegir לעיתים קרובות מגן על בעלות בקנה מידה מערכתי. קבלת Black Keel שאומרת RAN-B:H8 הופכת את המקום לאובייקט לחיוב. הערת עובד שאומרת HECTON-8 איננה סלנג או רגש. זו עדות מהמפלס שבו האוקיינוס הרג אנשים תא אחר תא.\n\n            ראיה טובה שומרת את השם שמצאה. נרמול מוקדם מדי יכול להשמיד מניע. צו בידוד שאומר נכס Aegir עשוי להסתיר כשל מקומי באמצעות הרחבת המסגרת. הצעת סלווג' שאומרת RAN-B:H8 עשויה להסיר זיכרון כדי שהירח יעבור דרך ביטוח בלי אבל.\n\n            לכן ה-PDA שומר סכסוכי שמות במקום להחליק אותם. הסכסוך אומר לשחקן מי דיבר, מה רצו לספור ומה רצו לקבור.",
+     "external_site": "Ran, Aegir, RAN-B:H8 ו-HECTON-8 אינם גרסאות טעם. הם סמכות, קנה מידה וזיכרון ארוזים בשמות.",
+     "external_site_article": "מערכת השמות של HECTON-8 היא בניית עולם שקטה עם שיניים. לירח אין ארבעה שמות בשביל צבע. כל שם שייך לסמכות אחרת ולמרחק מוסרי אחר מאותו מקום שטבע.\n\n            Ran הוא שפת אסטרונומיה: כוכב, עוגן נתיב, עיכוב אור, תזמון נשא. Aegir הוא שפת תביעה: ענק כגוף אב, קיצור ציבורי ומטרייה תאגידית. RAN-B:H8 הוא שפת ביטוח: רשומת ירח שניתן למיין, להעביר ולתבוע בלי לשמור את קול המושבה. HECTON-8 הוא שפה חיה: דלתות, חדרים, קברים ואזעקות לחץ.\n\n            כשהשחקן לומד את הדקדוק הזה, מסמכים מתחילים לשנות צורה. הודעת חברה עם Aegir יכולה להתרחק עד שכשל של ירח נראה כמו תחזוקת מערכת. קבלת RAN-B:H8 מכינה מחיר משמורת. הערת שטח עם HECTON-8 משמרת עדות לפני שהקטלוג שוטף אותה.",
+     "field_note": "אם המים הרגו מישהו, קרא לזה HECTON-8 לפני שעורכי הדין שוטפים את זה ל-Aegir."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Buku Otoritas Nama Ran / Aegir",
+     "scanner": "OTORITAS NAMA DISELESAIKAN // Ran: bintang induk dan jangkar rute. Aegir: raksasa gas dan payung klaim. RAN-B:H8: kunci bulan berasuransi. HECTON-8: nama lapangan untuk air, koloni, dan kerusakan yang dialami. Pertahankan label sumber.",
+     "terminal": "PERINGATAN NORMALISASI KATALOG // Jangan ubah kesaksian pekerja asal HECTON-8 menjadi bahasa aset AEGIR tanpa catatan saksi. RAN-B:H8 hanya untuk catatan bulan berasuransi. Rujukan Ran tetap konteks fisika rute.",
+     "audio": "Resolver katalog Black Keel: saat nama berubah, tagihannya pindah. Simpan nama lama sampai kau tahu siapa yang diuntungkan.",
+     "in_game_wiki": "HECTON-8 punya terlalu banyak nama karena terlalu banyak kantor menginginkan cara bersih untuk memiliki air kotor. Ran adalah bintang, dipakai saat dokumen peduli pada cahaya, rute, jeda carrier, atau navigasi. Aegir adalah raksasa gas, dipakai saat pembicara ingin membuat bulan hilang ke dalam sistem klaim yang lebih besar, langit, badan induk, atau kelompok aset. RAN-B:H8 adalah kunci bulan berasuransi, nama yang bisa disortir tanpa mengingat siapa yang pernah hidup di sana. HECTON-8 adalah nama lapangan yang menempel pada tangga basah, bibir hatch, papan rute, dan pintu tekanan.\n\n            Nama-nama itu bukan sinonim. Mereka sidik jari. Kantor rute yang berkata Ran mungkin sedang bernavigasi. Memo Deep Reach yang berkata Aegir sering melindungi kepemilikan skala sistem. Tanda terima Black Keel yang berkata RAN-B:H8 mengubah tempat itu menjadi objek tertagih. Catatan pekerja yang berkata HECTON-8 bukan slang atau sentimental. Itu kesaksian dari level tempat samudra membunuh orang satu kompartemen demi satu.\n\n            Bukti yang baik mempertahankan nama yang ditemukannya. Normalisasi terlalu cepat bisa menghancurkan motif. Perintah karantina yang berkata aset Aegir mungkin menyembunyikan kegagalan lokal dengan memperbesar bingkai. Kutipan salvage yang berkata RAN-B:H8 bisa mencabut memori agar bulan melewati asuransi tanpa duka.\n\n            Karena itu PDA menjaga konflik nama. Konflik memberi tahu pemain siapa yang berbicara, apa yang ingin dihitung, dan apa yang ingin dikubur.",
+     "external_site": "Ran, Aegir, RAN-B:H8, dan HECTON-8 bukan varian rasa. Mereka adalah yurisdiksi, skala, dan memori yang dipadatkan menjadi nama.",
+     "external_site_article": "Sistem nama HECTON-8 adalah worldbuilding yang diam tetapi tajam. Bulan itu tidak punya empat nama untuk hiasan. Setiap nama milik otoritas berbeda dan jarak moral berbeda dari tempat tenggelam yang sama.\n\n            Ran adalah bahasa astronomi: bintang, jangkar rute, jeda cahaya, timing carrier. Aegir adalah bahasa klaim: raksasa sebagai badan induk, singkatan publik, dan payung korporat. RAN-B:H8 adalah bahasa asuransi: catatan bulan yang bisa disortir, dipindah, dan diperdebatkan tanpa membawa suara koloni. HECTON-8 adalah bahasa yang dijalani: pintu, ruangan, kubur, dan alarm tekanan.\n\n            Saat pemain mempelajari tata bahasa ini, dokumen berubah bentuk. Pemberitahuan perusahaan memakai Aegir bisa menjauhkan kamera sampai kegagalan bulan terlihat seperti pemeliharaan sistem. Tanda terima RAN-B:H8 menyiapkan harga custody. Catatan lapangan HECTON-8 menyimpan kesaksian sebelum katalog mencucinya.",
+     "field_note": "Kalau air membunuh seseorang, sebut HECTON-8 sebelum pengacara membilasnya menjadi Aegir."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran / Aegir名称権限台帳",
+     "scanner": "名称権限解決 // Ran: 主恒星、ルート基準。Aegir: ガス巨星、請求の傘。RAN-B:H8: 保険対象月キー。HECTON-8: 水、植民地、経験された損害の現場名。元ラベルを保持。",
+     "terminal": "カタログ正規化警告 // HECTON-8由来の労働者証言を証人注記なしでAEGIR資産語に潰すな。RAN-B:H8は保険対象月記録のみ。Ran参照はルート物理文脈として保持。",
+     "audio": "Black Keelカタログ解析: 名前が変わったなら、請求先が動いた。誰が得をするか分かるまで古い名を残せ。",
+     "in_game_wiki": "HECTON-8に名前が多すぎるのは、汚れた水をきれいに所有したい事務所が多すぎたからだ。Ranは恒星。光、航路、キャリア遅延、航法を扱う文書で使う。Aegirはガス巨星。月をより大きな請求システム、空、親天体、資産群の中に消したい話者が使う。RAN-B:H8は保険対象月のキーであり、そこに誰が住んだかを覚えずに台帳が並べられる名だ。HECTON-8は現場名で、濡れた梯子、ハッチ縁、ルート板、古い圧力扉に張り付いている。\n\n            名前は交換可能ではない。指紋だ。Ranと言うルート事務所はおそらく航法をしている。Aegirと言うDeep Reachメモは、たいていシステム規模の所有権を守っている。RAN-B:H8と言うBlack Keel受領は場所を請求可能な物体に変える。HECTON-8と言う労働者メモは俗語でも感傷でもない。海が区画ごとに人を殺した高さからの証言だ。\n\n            良い証拠は見つけた名前を保つ。早すぎる正規化は動機を壊す。Aegir資産と書かれた隔離命令は、枠を広げて局所的な失敗を隠しているかもしれない。RAN-B:H8と書かれたサルベージ見積もりは、月を悲しみなしで保険に通すため記憶を剥がしているかもしれない。\n\n            だからPDAは名前の衝突をならさず保存する。衝突は、誰が話し、何を数えたがり、何を埋めたがったかをプレイヤーに教える。",
+     "external_site": "Ran、Aegir、RAN-B:H8、HECTON-8は雰囲気違いの別名ではない。権限、尺度、記憶を名前に詰めたものだ。",
+     "external_site_article": "HECTON-8の名称体系は静かだが鋭いワールドビルドだ。月に四つの名があるのは飾りではない。それぞれの名は異なる権限と、同じ沈んだ場所への異なる道徳的距離を持つ。\n\n            Ranは天文学の言語だ。恒星、ルート基準、光遅延、キャリア時刻。Aegirは請求の言語だ。親天体としての巨星、公共略称、企業の傘。RAN-B:H8は保険の言語だ。植民地の声を残さず並べ、移し、訴えられる月記録。HECTON-8は生きられた言語だ。扉、部屋、墓、圧力警報。\n\n            プレイヤーがこの文法を覚えると、文書の形が変わる。Aegirを使う企業通知は、月の失敗をシステム保守に見せるまで視点を引くことがある。RAN-B:H8の受領は保管価格を準備する。HECTON-8の現場メモは、カタログが洗う前に証言を守る。",
+     "field_note": "水が誰かを殺したなら、弁護士がAegirに洗う前にHECTON-8と呼べ。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran / Aegir 명칭 권한 장부",
+     "scanner": "명칭 권한 해석 완료 // Ran: 주성 및 항로 기준. Aegir: 가스 거인 및 청구 우산. RAN-B:H8: 보험 위성 키. HECTON-8: 물, 식민지, 살아 겪은 피해의 현장명. 원본 라벨 보존.",
+     "terminal": "카탈로그 정규화 경고 // HECTON-8 기원 노동자 증언을 증인 주석 없이 AEGIR 자산 언어로 접지 말 것. RAN-B:H8은 보험 위성 기록에만 사용. Ran 참조는 항로 물리 맥락으로 유지.",
+     "audio": "Black Keel 카탈로그 해석기: 이름이 바뀌면 청구서가 움직인 것이다. 누가 이득인지 알 때까지 옛 이름을 남겨라.",
+     "in_game_wiki": "HECTON-8에 이름이 너무 많은 이유는 너무 많은 사무실이 더러운 물을 깨끗하게 소유하는 방법을 원했기 때문이다. Ran은 별이다. 빛, 항로, 운반 지연, 항법을 다루는 문서에서 쓴다. Aegir는 가스 거인이다. 말하는 사람이 위성을 더 큰 청구 시스템, 하늘, 모체, 자산 묶음 속으로 사라지게 하고 싶을 때 쓴다. RAN-B:H8은 보험 위성 키이며, 누가 살았는지 기억하지 않고도 장부가 정렬할 수 있는 이름이다. HECTON-8은 현장명이며 젖은 사다리, 해치 가장자리, 항로판, 오래된 압력문에 붙어 있다.\n\n            이름들은 서로 바꿔 쓸 수 없다. 지문이다. Ran이라고 하는 항로 사무실은 아마 항법을 하고 있다. Aegir라고 하는 Deep Reach 메모는 대개 시스템 규모 소유권을 보호한다. RAN-B:H8이라고 하는 Black Keel 영수증은 장소를 청구 가능한 물건으로 바꾼다. HECTON-8이라고 하는 노동자 메모는 속어나 감상이 아니다. 바다가 사람을 구획별로 죽인 높이에서 나온 증언이다.\n\n            좋은 증거는 발견한 이름을 보존한다. 너무 이른 정규화는 동기를 없앨 수 있다. Aegir 자산이라고 쓰인 검역 명령은 틀을 넓혀 지역 실패를 숨길 수 있다. RAN-B:H8이라고 쓰인 salvage 견적은 보험을 통과시키기 위해 기억을 떼어낼 수 있다.\n\n            그래서 PDA는 이름 충돌을 지우지 않고 보존한다. 충돌은 누가 말했는지, 무엇을 세고 싶었는지, 무엇을 묻고 싶었는지를 플레이어에게 알려준다.",
+     "external_site": "Ran, Aegir, RAN-B:H8, HECTON-8은 분위기용 별명이 아니다. 이름 안에 관할, 규모, 기억이 들어 있다.",
+     "external_site_article": "HECTON-8의 명명 체계는 조용하지만 날카로운 세계관이다. 위성에 네 이름이 있는 것은 장식이 아니다. 각 이름은 다른 권한과 같은 익사한 장소에 대한 다른 도덕적 거리에 속한다.\n\n            Ran은 천문 언어다. 별, 항로 기준, 빛 지연, 운반 시각. Aegir는 청구 언어다. 모체로서의 거인, 공용 약칭, 기업 우산. RAN-B:H8은 보험 언어다. 식민지의 목소리를 붙이지 않고 정렬, 이전, 소송할 수 있는 위성 기록. HECTON-8은 살아 겪은 언어다. 문, 방, 무덤, 압력 경보.\n\n            플레이어가 이 문법을 배우면 문서가 달라 보인다. Aegir를 쓰는 회사 공지는 위성 실패를 시스템 정비처럼 보이게 멀리 잡을 수 있다. RAN-B:H8 영수증은 보관 가격을 준비한다. HECTON-8 현장 메모는 카탈로그가 씻어내기 전에 증언을 보존한다.",
+     "field_note": "물이 누군가를 죽였다면, 변호사들이 Aegir로 씻기 전에 HECTON-8이라고 불러라."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran / Aegir Naamautoriteitsregister",
+     "scanner": "NAAMAUTORITEIT OPGELOST // Ran: gastster en routeanker. Aegir: gasreus en claimparaplu. RAN-B:H8: verzekerde maansleutel. HECTON-8: veldnaam voor water, kolonie en geleefde schade. Bronlabel bewaren.",
+     "terminal": "CATALOGUSNORMALISATIEWAARSCHUWING // Worker-getuigenis met HECTON-8-oorsprong niet zonder getuigennoot tot AEGIR-assettaal samenklappen. RAN-B:H8 alleen voor verzekerd maanrecord. Ran blijft routefysica-context.",
+     "audio": "Black Keel-catalogusresolver: Als de naam verandert, is de rekening verplaatst. Bewaar de oude naam tot je weet wie wint.",
+     "in_game_wiki": "HECTON-8 heeft te veel namen omdat te veel kantoren een schone manier wilden om vuil water te bezitten. Ran is de ster, voor documenten over licht, routes, carrierdelay of navigatie. Aegir is de gasreus, gebruikt wanneer de maan moet verdwijnen in een groter claimsysteem, een hemel, een ouderlichaam of een assetgroep. RAN-B:H8 is de verzekerde maansleutel, sorteerbaar zonder te onthouden wie er leefde. HECTON-8 is de veldnaam, vast aan natte ladders, hatchranden, routeborden en oude drukdeuren.\n\n            De namen zijn geen synoniemen. Het zijn vingerafdrukken. Een routekantoor dat Ran zegt doet waarschijnlijk navigatie. Een Deep Reach-memo met Aegir beschermt vaak eigendom op systeemschaal. Een Black Keel-bon met RAN-B:H8 maakt de plek factureerbaar. Een workernotitie met HECTON-8 is geen slang of sentiment. Het is getuigenis vanaf het niveau waar de oceaan mensen compartiment voor compartiment doodde.\n\n            Goed bewijs bewaart de gevonden naam. Te vroeg normaliseren kan motief vernietigen. Een quarantaineorder met Aegir asset kan lokaal falen verbergen door het kader te vergroten. Een salvageofferte met RAN-B:H8 kan geheugen weghalen zodat de maan zonder rouw door verzekering gaat.\n\n            Daarom bewaart de PDA naamconflicten. Het conflict vertelt wie sprak, wat geteld moest worden en wat begraven moest blijven.",
+     "external_site": "Ran, Aegir, RAN-B:H8 en HECTON-8 zijn geen smaakvarianten. Het zijn jurisdictie, schaal en geheugen in namen.",
+     "external_site_article": "Het naamsysteem van HECTON-8 is stil wereldbouwen met tanden. De maan heeft niet vier namen voor sfeer. Elke naam hoort bij een andere autoriteit en een andere morele afstand tot dezelfde verdronken plek.\n\n            Ran is astronomietaal: ster, routeanker, lichtvertraging, carriertiming. Aegir is claimtaal: reus als ouderlichaam, publieke afkorting en bedrijfsparaplu. RAN-B:H8 is verzekeringstaal: een sorteerbaar maanrecord dat kan worden verhandeld zonder kolonystem mee te dragen. HECTON-8 is geleefde taal: deuren, kamers, graven en drukalarmen.\n\n            Zodra de speler deze grammatica leert, veranderen documenten van vorm. Een bedrijfsbericht met Aegir kan uitzoomen tot maanfalen systeemondehoud lijkt. Een RAN-B:H8-bon bereidt custodyprijs voor. Een HECTON-8-veldnotitie bewaart getuigenis voordat de catalogus het schoonwast.",
+     "field_note": "Als het water iemand doodde, noem het HECTON-8 voordat juristen het in Aegir uitspoelen."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr Władzy Nazw Ran / Aegir",
+     "scanner": "WŁADZA NAZW ROZWIĄZANA // Ran: gwiazda macierzysta i kotwica trasy. Aegir: gazowy olbrzym i parasol roszczeń. RAN-B:H8: ubezpieczony klucz księżyca. HECTON-8: nazwa polowa dla wody, kolonii i przeżytej szkody. Zachowaj etykietę źródła.",
+     "terminal": "OSTRZEŻENIE NORMALIZACJI KATALOGU // Nie składać świadectwa pracownika pochodzenia HECTON-8 do języka aktywa AEGIR bez noty świadka. RAN-B:H8 tylko dla ubezpieczonego rekordu księżyca. Odniesienia Ran zostają kontekstem fizyki trasy.",
+     "audio": "Resolver katalogu Black Keel: gdy nazwa się zmienia, rachunek się przesunął. Zostaw starą nazwę, aż wiesz, kto zyskuje.",
+     "in_game_wiki": "HECTON-8 ma za dużo nazw, bo za dużo biur chciało czystego sposobu posiadania brudnej wody. Ran to gwiazda, używana w dokumentach o świetle, trasach, opóźnieniu nośnika i nawigacji. Aegir to gazowy olbrzym, używany, gdy mówca chce ukryć księżyc w większym systemie roszczeń, niebie, ciele macierzystym albo grupie aktywów. RAN-B:H8 to ubezpieczony klucz księżyca, nazwa sortowalna bez pamięci. HECTON-8 to nazwa polowa, przyklejona do mokrych drabin, krawędzi włazów, tablic tras i starych drzwi ciśnieniowych.\n\n            Nazwy nie są zamienne. Są odciskami palców. Biuro trasy mówiące Ran prawdopodobnie nawiguję. Memo Deep Reach mówiące Aegir często chroni własność w skali systemu. Potwierdzenie Black Keel z RAN-B:H8 zmienia miejsce w obiekt rozliczeniowy. Notatka pracownika z HECTON-8 nie jest slangiem ani sentymentem. Jest świadectwem z poziomu, na którym ocean zabijał ludzi komora po komorze.\n\n            Dobry dowód zachowuje nazwę, którą znalazł. Zbyt wczesna normalizacja może zniszczyć motyw. Nakaz kwarantanny z aktywem Aegir może ukrywać lokalną awarię przez poszerzenie kadru. Wycena salvage z RAN-B:H8 może zdjąć pamięć, by księżyc przeszedł przez ubezpieczenie bez żałoby.\n\n            Dlatego PDA zachowuje konflikty nazw. Konflikt mówi graczowi, kto mówił, co chciał policzyć i co chciał pogrzebać.",
+     "external_site": "Ran, Aegir, RAN-B:H8 i HECTON-8 nie są wariantami smaku. To jurysdykcja, skala i pamięć upchnięte w nazwach.",
+     "external_site_article": "System nazw HECTON-8 to ciche budowanie świata z zębami. Księżyc nie ma czterech nazw dla koloru. Każda należy do innej władzy i innego dystansu moralnego wobec tego samego zatopionego miejsca.\n\n            Ran to język astronomii: gwiazda, kotwica trasy, opóźnienie światła, czas nośnika. Aegir to język roszczeń: olbrzym jako ciało macierzyste, publiczny skrót i parasol korporacji. RAN-B:H8 to język ubezpieczenia: sortowalny rekord księżyca, który można przenieść i spierać bez głosu kolonii. HECTON-8 to język przeżyty: drzwi, pokoje, groby i alarmy ciśnienia.\n\n            Gdy gracz nauczy się tej gramatyki, dokumenty zmieniają kształt. Komunikat firmy z Aegir może oddalić kadr, aż awaria księżyca wygląda jak konserwacja systemu. Potwierdzenie RAN-B:H8 przygotowuje cenę pieczy. Notatka HECTON-8 zachowuje świadectwo, zanim katalog je wypierze.",
+     "field_note": "Jeśli woda kogoś zabiła, nazwij to HECTON-8, zanim prawnicy wypłuczą to w Aegir."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Livro de Autoridade de Nomes Ran / Aegir",
+     "scanner": "AUTORIDADE DE NOME RESOLVIDA // Ran: estrela hospedeira e âncora de rota. Aegir: gigante gasoso e guarda-chuva de reivindicação. RAN-B:H8: chave lunar segurada. HECTON-8: nome de campo para a água, a colônia e o dano vivido. Preserve o rótulo fonte.",
+     "terminal": "ALERTA DE NORMALIZAÇÃO DE CATÁLOGO // Não reduza testemunho de trabalhador com origem HECTON-8 a linguagem de ativo AEGIR sem nota de testemunha. RAN-B:H8 só para registro lunar segurado. Referências Ran permanecem contexto de física de rota.",
+     "audio": "Resolvedor de catálogo Black Keel: quando o nome muda, a fatura se moveu. Guarde o nome antigo até saber quem ganha.",
+     "in_game_wiki": "HECTON-8 tem nomes demais porque escritórios demais queriam um jeito limpo de possuir água suja. Ran é a estrela, usada quando o documento fala de luz, rotas, atraso de carrier ou navegação. Aegir é o gigante gasoso, usado quando alguém quer fazer a lua sumir dentro de um sistema de reivindicação maior, um céu, um corpo pai ou um grupo de ativos. RAN-B:H8 é a chave lunar segurada, nome que um livro ordena sem lembrar quem viveu ali. HECTON-8 é o nome de campo, grudado em escadas molhadas, bordas de escotilha, quadros de rota e portas de pressão antigas.\n\n            Os nomes não são intercambiáveis. São impressões digitais. Um escritório de rota dizendo Ran provavelmente faz navegação. Um memorando Deep Reach dizendo Aegir muitas vezes protege propriedade em escala de sistema. Um recibo Black Keel com RAN-B:H8 transforma o lugar em objeto faturável. Uma nota de trabalhador dizendo HECTON-8 não é gíria nem sentimento. É testemunho do nível onde o oceano matou pessoas compartimento por compartimento.\n\n            Boa evidência preserva o nome que encontrou. Normalizar cedo demais pode destruir motivo. Uma ordem de quarentena dizendo ativo Aegir pode esconder falha local ao ampliar o enquadramento. Uma cotação salvage dizendo RAN-B:H8 pode arrancar memória para a lua atravessar seguro sem luto.\n\n            Por isso o PDA preserva conflitos de nome. O conflito diz ao jogador quem estava falando, o que queria contar e o que queria enterrar.",
+     "external_site": "Ran, Aegir, RAN-B:H8 e HECTON-8 não são variações de sabor. São jurisdição, escala e memória empacotadas em nomes.",
+     "external_site_article": "O sistema de nomes de HECTON-8 é worldbuilding quieto com dentes. A lua não tem quatro nomes por decoração. Cada nome pertence a uma autoridade diferente e a uma distância moral diferente do mesmo lugar afogado.\n\n            Ran é linguagem astronômica: estrela, âncora de rota, atraso de luz, tempo de carrier. Aegir é linguagem de reivindicação: gigante como corpo pai, abreviação pública e guarda-chuva corporativo. RAN-B:H8 é linguagem de seguro: registro lunar ordenável, transferível e litigável sem levar a voz da colônia junto. HECTON-8 é linguagem vivida: portas, salas, túmulos e alarmes de pressão.\n\n            Quando o jogador aprende essa gramática, documentos mudam de forma. Um aviso corporativo com Aegir pode afastar a câmera até uma falha lunar parecer manutenção de sistema. Um recibo RAN-B:H8 prepara preço de custódia. Uma nota de campo HECTON-8 preserva testemunho antes que o catálogo lave tudo.",
+     "field_note": "Se a água matou alguém, chame de HECTON-8 antes que advogados enxaguem isso em Aegir."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Реестр полномочий имен Ran / Aegir",
+     "scanner": "ПОЛНОМОЧИЕ ИМЕНИ РАЗОБРАНО // Ran: звезда-хозяин и якорь маршрута. Aegir: газовый гигант и зонтик претензии. RAN-B:H8: застрахованный ключ луны. HECTON-8: полевое имя воды, колонии и прожитого ущерба. Сохраняйте исходную метку.",
+     "terminal": "ПРЕДУПРЕЖДЕНИЕ НОРМАЛИЗАЦИИ КАТАЛОГА // Не сворачивать рабочее свидетельство происхождения HECTON-8 в язык актива AEGIR без свидетельской пометки. RAN-B:H8 использовать только для застрахованной записи луны. Ссылки Ran остаются контекстом физики маршрута.",
+     "audio": "Разборщик каталога Black Keel: когда имя меняется, счет переехал. Держи старое имя, пока не поймешь, кому это выгодно.",
+     "in_game_wiki": "У HECTON-8 слишком много имен, потому что слишком много офисов хотели чистый способ владеть грязной водой. Ran - звезда. Это имя нужно там, где документ говорит о свете, маршрутах, задержке носителя или навигации. Aegir - газовый гигант. Его используют, когда говорящий хочет растворить луну в более крупной системе претензий, в небе, родительском теле или группе активов. RAN-B:H8 - застрахованный ключ луны, имя, которое реестр сортирует, не вспоминая, кто там жил. HECTON-8 - полевое имя, прилипшее к мокрым лестницам, кромкам люков, маршрутным доскам и старым гермодверям.\n\n            Имена не взаимозаменяемы. Это отпечатки пальцев. Маршрутный офис, говорящий Ran, скорее всего занимается навигацией. Мемо Deep Reach, говорящее Aegir, часто защищает собственность в масштабе системы. Квитанция Black Keel с RAN-B:H8 превращает место в оплачиваемый объект. Рабочая заметка с HECTON-8 - не сленг и не сентимент. Это свидетельство с уровня, где океан убивал людей отсек за отсеком.\n\n            Хорошая улика сохраняет имя, с которым была найдена. Слишком ранняя нормализация может уничтожить мотив. Карантинный приказ с формулировкой актив Aegir может прятать локальный провал, расширяя рамку. Сальважная смета с RAN-B:H8 может снять память, чтобы луна прошла через страховку без горя.\n\n            Поэтому PDA сохраняет конфликт имен, а не сглаживает его. Конфликт говорит игроку, кто говорил, что хотел посчитать и что хотел похоронить.",
+     "external_site": "Ran, Aegir, RAN-B:H8 и HECTON-8 - не варианты вкуса. Это юрисдикция, масштаб и память, упакованные в имена.",
+     "external_site_article": "Система имен HECTON-8 - тихое миростроение с зубами. У луны четыре имени не ради окраски. Каждое имя принадлежит другой власти и другой моральной дистанции до одного и того же утонувшего места.\n\n            Ran - язык астрономии: звезда, якорь маршрута, световая задержка, тайминг носителя. Aegir - язык претензии: гигант как родительское тело, публичное сокращение и корпоративный зонтик. RAN-B:H8 - язык страхования: сортируемая запись луны, которую можно передать и оспаривать, не сохраняя голос колонии. HECTON-8 - прожитый язык: двери, комнаты, могилы и сигналы давления.\n\n            Когда игрок усваивает эту грамматику, документы меняют форму. Корпоративное уведомление с Aegir может отъехать так далеко, что провал луны выглядит обслуживанием системы. Квитанция RAN-B:H8 готовит цену опеки. Полевая заметка HECTON-8 сохраняет свидетельство до того, как каталог его отмоет.",
+     "field_note": "Если вода кого-то убила, назови это HECTON-8 до того, как юристы отмоют имя в Aegir."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Реєстр повноважень назв Ran / Aegir",
+     "scanner": "ПОВНОВАЖЕННЯ НАЗВИ РОЗІБРАНО // Ran: зірка-господар і якір маршруту. Aegir: газовий гігант і парасоля претензії. RAN-B:H8: застрахований ключ місяця. HECTON-8: польова назва води, колонії і прожитої шкоди. Зберігайте вихідну мітку.",
+     "terminal": "ПОПЕРЕДЖЕННЯ НОРМАЛІЗАЦІЇ КАТАЛОГУ // Не згортати робоче свідчення походження HECTON-8 у мову активу AEGIR без свідчої нотатки. RAN-B:H8 лише для застрахованого запису місяця. Посилання Ran лишаються контекстом фізики маршруту.",
+     "audio": "Розв'язувач каталогу Black Keel: коли назва змінюється, рахунок переїхав. Тримай стару назву, доки не знаєш, кому це вигідно.",
+     "in_game_wiki": "У HECTON-8 забагато назв, бо забагато офісів хотіли чистий спосіб володіти брудною водою. Ran - зірка. Ця назва потрібна, коли документ говорить про світло, маршрути, затримку носія або навігацію. Aegir - газовий гігант. Його використовують, коли мовець хоче розчинити місяць у більшій системі претензій, у небі, батьківському тілі або групі активів. RAN-B:H8 - застрахований ключ місяця, назва, яку реєстр сортує, не пам'ятаючи, хто там жив. HECTON-8 - польова назва, що липне до мокрих драбин, країв люків, маршрутних дощок і старих гермодверей.\n\n            Назви не взаємозамінні. Це відбитки пальців. Маршрутний офіс, що каже Ran, найімовірніше займається навігацією. Мемо Deep Reach, що каже Aegir, часто захищає власність у масштабі системи. Квитанція Black Keel з RAN-B:H8 перетворює місце на оплачуваний об'єкт. Робоча нотатка з HECTON-8 - не сленг і не сентимент. Це свідчення з рівня, де океан убивав людей відсік за відсіком.\n\n            Добрий доказ зберігає назву, з якою його знайшли. Занадто рання нормалізація може знищити мотив. Карантинний наказ із формулюванням актив Aegir може ховати локальний провал, розширюючи рамку. Сальважний кошторис із RAN-B:H8 може зняти пам'ять, щоб місяць пройшов крізь страхування без жалю.\n\n            Тому PDA зберігає конфлікти назв, а не згладжує їх. Конфлікт каже гравцеві, хто говорив, що хотів порахувати і що хотів поховати.",
+     "external_site": "Ran, Aegir, RAN-B:H8 і HECTON-8 - не варіанти смаку. Це юрисдикція, масштаб і пам'ять, запаковані в назви.",
+     "external_site_article": "Система назв HECTON-8 - тихе світобудування із зубами. У місяця чотири назви не для барви. Кожна назва належить іншій владі й іншій моральній відстані до одного й того самого потонулого місця.\n\n            Ran - мова астрономії: зірка, якір маршруту, світлова затримка, таймінг носія. Aegir - мова претензії: гігант як батьківське тіло, публічне скорочення і корпоративна парасоля. RAN-B:H8 - мова страхування: сортований запис місяця, який можна передати й оскаржувати, не зберігаючи голос колонії. HECTON-8 - прожита мова: двері, кімнати, могили й сигнали тиску.\n\n            Коли гравець засвоює цю граматику, документи змінюють форму. Корпоративне повідомлення з Aegir може від'їхати так далеко, що провал місяця виглядає обслуговуванням системи. Квитанція RAN-B:H8 готує ціну опіки. Польова нотатка HECTON-8 зберігає свідчення до того, як каталог його відмиє.",
+     "field_note": "Якщо вода когось убила, назви це HECTON-8 до того, як юристи відмиють назву в Aegir."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran / Aegir名称权限账册",
+     "scanner": "名称权限已解析 // Ran：主恒星与路线锚点。Aegir：气态巨行星与索赔伞。RAN-B:H8：投保月球键。HECTON-8：水域、殖民地与亲历损害的现场名。保留来源标签。",
+     "terminal": "目录规范化警告 // 不得在没有见证注记时，把来源为HECTON-8的工人证言压成AEGIR资产语言。RAN-B:H8仅用于投保月球记录。Ran引用保留为路线物理语境。",
+     "audio": "Black Keel目录解析器：名字改变时，账单已经移动。在知道谁受益前，保留旧名字。",
+     "in_game_wiki": "HECTON-8名字太多，是因为太多办公室想用干净办法拥有肮脏的水。Ran是恒星。文件谈光、航线、载波延迟或导航时使用它。Aegir是气态巨行星。说话者想让月球消失进更大的索赔系统、天空、母体或资产组时使用它。RAN-B:H8是投保月球键，是账册可以排序却不必记得谁曾住在那里的名字。HECTON-8是现场名，粘在湿梯、舱口边、路线板和旧压力门上。\n\n            这些名字不可互换。它们是指纹。说Ran的路线办公室大概率在做导航。说Aegir的Deep Reach备忘录常在保护系统尺度的所有权。写RAN-B:H8的Black Keel回执把这个地方变成可收费对象。写HECTON-8的工人笔记不是俚语也不是感伤。它是来自海洋逐舱杀人的高度的证言。\n\n            好证据会保留发现时的名字。过早规范化会毁掉动机。写Aegir资产的隔离命令，可能通过扩大框架来隐藏本地失败。写RAN-B:H8的打捞报价，可能是在剥掉记忆，好让月球不带哀悼地穿过保险。\n\n            所以PDA保存名称冲突，而不是抹平它。冲突会告诉玩家是谁在说话、他们想计算什么、又想埋掉什么。",
+     "external_site": "Ran、Aegir、RAN-B:H8和HECTON-8不是风味别名。它们把管辖权、尺度和记忆压进名字里。",
+     "external_site_article": "HECTON-8的命名系统很安静，但带着牙齿。月球有四个名字不是为了装饰。每个名字属于不同权力，也代表它与同一个淹没地点之间不同的道德距离。\n\n            Ran是天文学语言：恒星、路线锚点、光延迟、载波时刻。Aegir是索赔语言：作为母体的巨行星、公共简称、企业伞。RAN-B:H8是保险语言：一个可排序、可转移、可诉讼的月球记录，不必携带殖民地的声音。HECTON-8是被生活过的语言：门、房间、坟墓和压力警报。\n\n            玩家学会这种语法后，文件会改变形状。使用Aegir的公司通知，可能把视角拉远到让一整个月球的失败看起来像系统维护。RAN-B:H8回执在准备托管价格。HECTON-8现场笔记在目录把证言洗干净前保存它。",
+     "field_note": "如果水杀了人，在律师把它洗成Aegir之前，先叫它HECTON-8。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P426_BLUE_DEBT_CUSTODY_GRADE_RECEIPT",
-      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
-      "article_id": "applied_lore.blue_debt_custody_grade_receipt",
-      "title_key": "applied_lore.blue_debt_custody_grade_receipt.title",
-      "unlock": {
-        "primary": "unlock.blue_debt_custody_grade_receipt",
-        "poi_tags": [
-          "poi.blue_debt_receipt",
-          "poi.custody_grade_tag",
-          "poi.pressure_history_stamp"
-        ],
-        "biome_tags": [
-          "biome.brine_canyon",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Blue Debt Custody Grade Receipt",
-          "scanner": "Blue debt receipt: value tied to custody chain, pressure history and contamination. Mass alone is low-grade.",
-          "terminal": "SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "Weigh the seal record before the sample. A heavy dirty lot can cost more than it pays."
-        },
-        "ru_RU": {
-          "title": "Квитанция custody-grade Blue Debt",
-          "scanner": "Resource artifact: blue debt оценивается custody chain, pressure history и contamination, а не только массой.",
-          "terminal": "SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag и claimant signature определяют grade.",
-          "audio": "Дорогая часть - не минерал. Дорогая часть - доказать, где он был.",
-          "in_game_wiki": "Blue debt работает как salvage slang для Xenon-Omega-bearing pressure substrate, но payout зависит от custody proof.",
-          "external_site": "Ресурсы HECTON-8 - не generic loot. Их ценность зависит от pressure history, containment и legal receiver.",
-          "field_note": "Для scanner receipt, contract payout tease и resource wiki."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "JA LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "JA LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "JA LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "JA LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "JA LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "JA LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "ZH LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "ZH LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "ZH LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "ZH LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "ZH LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "ZH LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "FR LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "FR LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "FR LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "FR LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "FR LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "FR LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "ES LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "ES LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "ES LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "ES LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "ES LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "ES LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "DE LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "DE LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "DE LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "DE LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "DE LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "DE LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "PL LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "PL LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "PL LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "PL LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "PL LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "PL LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "UK LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "UK LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "UK LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "UK LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "UK LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "UK LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "AR LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "AR LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "AR LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "AR LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "AR LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "AR LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "ID LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "ID LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "ID LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "ID LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "ID LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "ID LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "KO LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "KO LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "KO LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "KO LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "KO LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "KO LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "HE LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "HE LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "HE LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "HE LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "HE LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "HE LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "PT LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "PT LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "PT LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "PT LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "PT LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "PT LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Blue Debt Custody Grade Receipt",
-          "scanner": "NL LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
-          "terminal": "NL LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
-          "audio": "NL LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
-          "in_game_wiki": "NL LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
-          "external_site": "NL LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
-          "field_note": "NL LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P426_BLUE_DEBT_CUSTODY_GRADE_RECEIPT",
+   "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+   "article_id": "applied_lore.blue_debt_custody_grade_receipt",
+   "title_key": "applied_lore.blue_debt_custody_grade_receipt.title",
+   "unlock": {
+    "primary": "unlock.blue_debt_custody_grade_receipt",
+    "poi_tags": [
+     "poi.blue_debt_receipt",
+     "poi.custody_grade_tag",
+     "poi.pressure_history_stamp"
+    ],
+    "biome_tags": [
+     "biome.brine_canyon",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Blue Debt Custody Grade Receipt",
+     "scanner": "Blue debt receipt: value tied to custody chain, pressure history and contamination. Mass alone is low-grade.",
+     "terminal": "SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "Weigh the seal record before the sample. A heavy dirty lot can cost more than it pays."
     },
-    {
-      "packet_id": "P427_PRESSURE_GLASS_FIELD_CERTIFICATE",
-      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
-      "article_id": "applied_lore.pressure_glass_field_certificate",
-      "title_key": "applied_lore.pressure_glass_field_certificate.title",
-      "unlock": {
-        "primary": "unlock.pressure_glass_field_certificate",
-        "poi_tags": [
-          "poi.pressure_glass_certificate",
-          "poi.sealant_feedstock_tag",
-          "poi.clamp_ring_test_card"
-        ],
-        "biome_tags": [
-          "biome.drowned_crust",
-          "biome.vent_forge"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Pressure Glass Field Certificate",
-          "scanner": "Pressure glass certificate: usable as salvage, sealant feedstock or escape proof if fracture state passes.",
-          "terminal": "CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "A clear pane is not a safe pane. Stamp the crack map before the cutter touches it."
-        },
-        "ru_RU": {
-          "title": "Полевой сертификат pressure glass",
-          "scanner": "Field certificate: pressure glass может быть salvage, sealant feedstock или escape-chain proof в зависимости от fracture state.",
-          "terminal": "CERT: microfracture count, salt intrusion, vent anneal mark и clamp-ring compatibility решают, полезна деталь или только продаваема.",
-          "audio": "Чистый осколок стоит меньше, чем осколок, доказавший что держал.",
-          "in_game_wiki": "Pressure glass - одновременно ресурс и инженерная память затопленных pressure boundaries колонии.",
-          "external_site": "Ремонтные материалы HECTON-8 несут историю: один shard может продать claim или починить ascent seal.",
-          "field_note": "Для scanner, fabrication UI copy и fieldguide article."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "JA LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "JA LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "JA LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "JA LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "JA LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "JA LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "ZH LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "ZH LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "ZH LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "ZH LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "ZH LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "ZH LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "FR LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "FR LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "FR LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "FR LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "FR LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "FR LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "ES LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "ES LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "ES LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "ES LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "ES LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "ES LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "DE LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "DE LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "DE LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "DE LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "DE LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "DE LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "PL LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "PL LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "PL LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "PL LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "PL LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "PL LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "UK LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "UK LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "UK LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "UK LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "UK LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "UK LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "AR LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "AR LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "AR LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "AR LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "AR LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "AR LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "ID LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "ID LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "ID LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "ID LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "ID LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "ID LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "KO LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "KO LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "KO LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "KO LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "KO LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "KO LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "HE LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "HE LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "HE LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "HE LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "HE LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "HE LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "PT LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "PT LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "PT LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "PT LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "PT LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "PT LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Pressure Glass Field Certificate",
-          "scanner": "NL LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
-          "terminal": "NL LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
-          "audio": "NL LOC HOLD: A clean shard is worth less than a shard that proves it held.",
-          "in_game_wiki": "NL LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
-          "external_site": "NL LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
-          "field_note": "NL LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
-        }
-      }
+    "ru_RU": {
+     "title": "Квитанция custody-grade Blue Debt",
+     "scanner": "Resource artifact: blue debt оценивается custody chain, pressure history и contamination, а не только массой.",
+     "terminal": "SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag и claimant signature определяют grade.",
+     "audio": "Дорогая часть - не минерал. Дорогая часть - доказать, где он был.",
+     "in_game_wiki": "Blue debt работает как salvage slang для Xenon-Omega-bearing pressure substrate, но payout зависит от custody proof.",
+     "external_site": "Ресурсы HECTON-8 - не generic loot. Их ценность зависит от pressure history, containment и legal receiver.",
+     "field_note": "Для scanner receipt, contract payout tease и resource wiki."
     },
-    {
-      "packet_id": "P428_BRINE_SALT_PROCESS_LOT_CARD",
-      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
-      "article_id": "applied_lore.brine_salt_process_lot_card",
-      "title_key": "applied_lore.brine_salt_process_lot_card.title",
-      "unlock": {
-        "primary": "unlock.brine_salt_process_lot_card",
-        "poi_tags": [
-          "poi.brine_lot_card",
-          "poi.density_ladder_sample",
-          "poi.pump_cycle_stamp"
-        ],
-        "biome_tags": [
-          "biome.brine_canyon",
-          "biome.process_chemistry"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Brine Salt Process Lot Card",
-          "scanner": "Brine salt lot: density origin, vent exposure and filtration risk logged. Corrosion hazard likely.",
-          "terminal": "LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "Keep brine lots off clean fittings. One bad bag can eat a clamp overnight."
-        },
-        "ru_RU": {
-          "title": "Процессная lot-карта brine salt",
-          "scanner": "Process lot: brine salts несут density-ladder origin, vent exposure и filtration risk.",
-          "terminal": "LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload и Atlas-filter contact логируются до recipe use.",
-          "audio": "Соль - запись маршрута. Пробуешь на вкус - читаешь неправильно.",
-          "in_game_wiki": "Brine materials связывают geology, survival chemistry и colony process infrastructure.",
-          "external_site": "Brine canyons - не декорация; это движущиеся process layers, меняющие навигацию и ценность материалов.",
-          "field_note": "Для brine canyon scanner cards и resource article."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "JA LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "JA LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "JA LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "JA LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "JA LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "JA LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "ZH LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "ZH LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "ZH LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "ZH LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "ZH LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "ZH LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "FR LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "FR LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "FR LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "FR LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "FR LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "FR LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "ES LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "ES LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "ES LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "ES LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "ES LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "ES LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "DE LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "DE LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "DE LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "DE LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "DE LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "DE LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "PL LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "PL LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "PL LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "PL LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "PL LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "PL LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "UK LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "UK LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "UK LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "UK LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "UK LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "UK LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "AR LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "AR LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "AR LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "AR LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "AR LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "AR LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "ID LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "ID LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "ID LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "ID LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "ID LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "ID LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "KO LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "KO LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "KO LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "KO LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "KO LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "KO LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "HE LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "HE LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "HE LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "HE LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "HE LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "HE LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "PT LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "PT LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "PT LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "PT LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "PT LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "PT LOC HOLD: Use for brine canyon scanner cards and resource article."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Brine Salt Process Lot Card",
-          "scanner": "NL LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
-          "terminal": "NL LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
-          "audio": "NL LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
-          "in_game_wiki": "NL LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
-          "external_site": "NL LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
-          "field_note": "NL LOC HOLD: Use for brine canyon scanner cards and resource article."
-        }
-      }
+    "ja_JP": {
+     "title": "JA LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "JA LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "JA LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "JA LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "JA LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "JA LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "JA LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
     },
-    {
-      "packet_id": "P429_ATLAS_LATTICE_CONTAMINATION_TAG",
-      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
-      "article_id": "applied_lore.atlas_lattice_contamination_tag",
-      "title_key": "applied_lore.atlas_lattice_contamination_tag.title",
-      "unlock": {
-        "primary": "unlock.atlas_lattice_contamination_tag",
-        "poi_tags": [
-          "poi.atlas_lattice_tag",
-          "poi.contaminated_sample_case",
-          "poi.false_clean_receipt"
-        ],
-        "biome_tags": [
-          "biome.atlas_repair_network",
-          "biome.deep_ecology"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Atlas Lattice Contamination Tag",
-          "scanner": "Atlas-lattice contamination tag: custody risk and ecology risk elevated. Keep sample isolated.",
-          "terminal": "TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "If the tag lists lattice contact, do not put it near food water, filter shell, or payout samples."
-        },
-        "ru_RU": {
-          "title": "Тэг загрязнения Atlas lattice",
-          "scanner": "Contamination tag: Atlas-repair lattice меняет custody, ecology risk и interpretation концовок.",
-          "terminal": "TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant и false-clean sample states - не один grade.",
-          "audio": "Если Atlas этого касался, квитанция - еще и warning label.",
-          "in_game_wiki": "Atlas contamination не делает материал магическим. Она помечает sample как часть сломанной repair network.",
-          "external_site": "Глубинная экономика становится нестабильной, потому что repaired life, metal и evidence уже нельзя чисто разделить.",
-          "field_note": "Для contaminated sample scanner, ecology wiki и ending payload flags."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "JA LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "JA LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "JA LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "JA LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "JA LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "JA LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "ZH LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "ZH LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "ZH LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "ZH LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "ZH LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "ZH LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "FR LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "FR LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "FR LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "FR LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "FR LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "FR LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "ES LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "ES LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "ES LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "ES LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "ES LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "ES LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "DE LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "DE LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "DE LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "DE LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "DE LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "DE LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "PL LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "PL LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "PL LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "PL LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "PL LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "PL LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "UK LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "UK LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "UK LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "UK LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "UK LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "UK LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "AR LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "AR LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "AR LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "AR LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "AR LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "AR LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "ID LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "ID LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "ID LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "ID LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "ID LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "ID LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "KO LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "KO LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "KO LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "KO LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "KO LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "KO LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "HE LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "HE LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "HE LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "HE LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "HE LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "HE LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "PT LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "PT LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "PT LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "PT LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "PT LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "PT LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Atlas Lattice Contamination Tag",
-          "scanner": "NL LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
-          "terminal": "NL LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
-          "audio": "NL LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
-          "in_game_wiki": "NL LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
-          "external_site": "NL LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
-          "field_note": "NL LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
-        }
-      }
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "ZH LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "ZH LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "ZH LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "ZH LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "ZH LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "ZH LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
     },
-    {
-      "packet_id": "P430_BLACK_KEEL_PAYOUT_MASS_LEDGER",
-      "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
-      "article_id": "applied_lore.black_keel_payout_mass_ledger",
-      "title_key": "applied_lore.black_keel_payout_mass_ledger.title",
-      "unlock": {
-        "primary": "unlock.black_keel_payout_mass_ledger",
-        "poi_tags": [
-          "poi.black_keel_mass_ledger",
-          "poi.payout_conversion_note",
-          "poi.material_exit_receipt"
-        ],
-        "biome_tags": [
-          "biome.claim_admin",
-          "biome.black_keel_orbit"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Black Keel Payout Mass Ledger",
-          "scanner": "Black Keel payout ledger: mass, custody, receiver risk and evidence suppression priced separately.",
-          "terminal": "LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "The ledger can pay you and still steal the story.",
-          "in_game_wiki": "The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "Carrier math is not your math. A clean witness hash can weigh more than a full crate."
-        },
-        "ru_RU": {
-          "title": "Mass-ledger выплат Black Keel",
-          "scanner": "Payout ledger: Black Keel отдельно считает mass, custody, receiver risk и evidence suppression.",
-          "terminal": "LEDGER: recoverable mass не равна payout. Transfer window, contamination, legal receiver и player debt превращают mass в consequence.",
-          "audio": "Ledger может заплатить тебе и все равно украсть историю.",
-          "in_game_wiki": "Payout mass ledger - мост к material endings: выгодные выходы могут сохранить debt logic и потерять truth authority.",
-          "external_site": "Salvage-экономика HECTON-8 разделяет получение выплаты и понимание того, что именно ты продал.",
-          "field_note": "Для contract board, false exit records и spoiler-gated ending pages."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "JA LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "JA LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "JA LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "JA LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "JA LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "JA LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "ZH LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "ZH LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "ZH LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "ZH LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "ZH LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "ZH LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "FR LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "FR LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "FR LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "FR LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "FR LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "FR LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "ES LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "ES LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "ES LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "ES LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "ES LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "ES LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "DE LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "DE LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "DE LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "DE LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "DE LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "DE LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "PL LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "PL LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "PL LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "PL LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "PL LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "PL LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "UK LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "UK LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "UK LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "UK LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "UK LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "UK LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "AR LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "AR LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "AR LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "AR LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "AR LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "AR LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "ID LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "ID LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "ID LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "ID LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "ID LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "ID LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "KO LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "KO LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "KO LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "KO LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "KO LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "KO LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "HE LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "HE LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "HE LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "HE LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "HE LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "HE LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "PT LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "PT LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "PT LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "PT LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "PT LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "PT LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Black Keel Payout Mass Ledger",
-          "scanner": "NL LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
-          "terminal": "NL LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
-          "audio": "NL LOC HOLD: The ledger can pay you and still steal the story.",
-          "in_game_wiki": "NL LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
-          "external_site": "NL LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
-          "field_note": "NL LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "FR LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "FR LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "FR LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "FR LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "FR LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "FR LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "ES LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "ES LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "ES LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "ES LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "ES LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "ES LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "DE LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "DE LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "DE LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "DE LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "DE LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "DE LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "PL LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "PL LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "PL LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "PL LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "PL LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "PL LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "UK LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "UK LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "UK LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "UK LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "UK LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "UK LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "AR LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "AR LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "AR LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "AR LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "AR LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "AR LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "ID LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "ID LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "ID LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "ID LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "ID LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "ID LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "KO LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "KO LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "KO LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "KO LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "KO LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "KO LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "HE LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "HE LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "HE LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "HE LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "HE LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "HE LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "PT LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "PT LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "PT LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "PT LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "PT LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "PT LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Blue Debt Custody Grade Receipt",
+     "scanner": "NL LOC HOLD: Resource artifact: blue debt is graded by custody chain, pressure history and contamination, not only mass.",
+     "terminal": "NL LOC HOLD: SAMPLE RECEIPT: seal history, pressure glass state, brine origin, Atlas-lattice contamination flag and claimant signature determine grade.",
+     "audio": "NL LOC HOLD: The expensive part is not the mineral. It is proving where it has been.",
+     "in_game_wiki": "NL LOC HOLD: Blue debt works as salvage slang for Xenon-Omega-bearing pressure substrate, but payout depends on custody proof.",
+     "external_site": "NL LOC HOLD: HECTON-8 resources are not generic loot. Their value depends on pressure history, containment and legal receiver.",
+     "field_note": "NL LOC HOLD: Use for scanner receipt, contract payout tease and resource wiki."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P427_PRESSURE_GLASS_FIELD_CERTIFICATE",
+   "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+   "article_id": "applied_lore.pressure_glass_field_certificate",
+   "title_key": "applied_lore.pressure_glass_field_certificate.title",
+   "unlock": {
+    "primary": "unlock.pressure_glass_field_certificate",
+    "poi_tags": [
+     "poi.pressure_glass_certificate",
+     "poi.sealant_feedstock_tag",
+     "poi.clamp_ring_test_card"
+    ],
+    "biome_tags": [
+     "biome.drowned_crust",
+     "biome.vent_forge"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Pressure Glass Field Certificate",
+     "scanner": "Pressure glass certificate: usable as salvage, sealant feedstock or escape proof if fracture state passes.",
+     "terminal": "CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "A clear pane is not a safe pane. Stamp the crack map before the cutter touches it."
+    },
+    "ru_RU": {
+     "title": "Полевой сертификат pressure glass",
+     "scanner": "Field certificate: pressure glass может быть salvage, sealant feedstock или escape-chain proof в зависимости от fracture state.",
+     "terminal": "CERT: microfracture count, salt intrusion, vent anneal mark и clamp-ring compatibility решают, полезна деталь или только продаваема.",
+     "audio": "Чистый осколок стоит меньше, чем осколок, доказавший что держал.",
+     "in_game_wiki": "Pressure glass - одновременно ресурс и инженерная память затопленных pressure boundaries колонии.",
+     "external_site": "Ремонтные материалы HECTON-8 несут историю: один shard может продать claim или починить ascent seal.",
+     "field_note": "Для scanner, fabrication UI copy и fieldguide article."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "JA LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "JA LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "JA LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "JA LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "JA LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "JA LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "ZH LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "ZH LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "ZH LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "ZH LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "ZH LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "ZH LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "FR LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "FR LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "FR LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "FR LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "FR LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "FR LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "ES LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "ES LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "ES LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "ES LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "ES LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "ES LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "DE LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "DE LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "DE LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "DE LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "DE LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "DE LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "PL LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "PL LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "PL LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "PL LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "PL LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "PL LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "UK LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "UK LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "UK LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "UK LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "UK LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "UK LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "AR LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "AR LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "AR LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "AR LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "AR LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "AR LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "ID LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "ID LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "ID LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "ID LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "ID LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "ID LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "KO LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "KO LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "KO LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "KO LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "KO LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "KO LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "HE LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "HE LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "HE LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "HE LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "HE LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "HE LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "PT LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "PT LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "PT LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "PT LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "PT LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "PT LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Pressure Glass Field Certificate",
+     "scanner": "NL LOC HOLD: Field certificate: pressure glass can be salvage, sealant feedstock or escape-chain proof depending on fracture state.",
+     "terminal": "NL LOC HOLD: CERT: microfracture count, salt intrusion, vent anneal mark and clamp-ring compatibility decide whether this piece is useful or sellable.",
+     "audio": "NL LOC HOLD: A clean shard is worth less than a shard that proves it held.",
+     "in_game_wiki": "NL LOC HOLD: Pressure glass is both a resource and an engineering memory of the colony's flooded pressure boundaries.",
+     "external_site": "NL LOC HOLD: Repair materials on HECTON-8 carry history: the same shard can sell a claim or fix an ascent seal.",
+     "field_note": "NL LOC HOLD: Use for scanner, fabrication UI copy and fieldguide article."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P428_BRINE_SALT_PROCESS_LOT_CARD",
+   "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+   "article_id": "applied_lore.brine_salt_process_lot_card",
+   "title_key": "applied_lore.brine_salt_process_lot_card.title",
+   "unlock": {
+    "primary": "unlock.brine_salt_process_lot_card",
+    "poi_tags": [
+     "poi.brine_lot_card",
+     "poi.density_ladder_sample",
+     "poi.pump_cycle_stamp"
+    ],
+    "biome_tags": [
+     "biome.brine_canyon",
+     "biome.process_chemistry"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Brine Salt Process Lot Card",
+     "scanner": "Brine salt lot: density origin, vent exposure and filtration risk logged. Corrosion hazard likely.",
+     "terminal": "LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "Keep brine lots off clean fittings. One bad bag can eat a clamp overnight."
+    },
+    "ru_RU": {
+     "title": "Процессная lot-карта brine salt",
+     "scanner": "Process lot: brine salts несут density-ladder origin, vent exposure и filtration risk.",
+     "terminal": "LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload и Atlas-filter contact логируются до recipe use.",
+     "audio": "Соль - запись маршрута. Пробуешь на вкус - читаешь неправильно.",
+     "in_game_wiki": "Brine materials связывают geology, survival chemistry и colony process infrastructure.",
+     "external_site": "Brine canyons - не декорация; это движущиеся process layers, меняющие навигацию и ценность материалов.",
+     "field_note": "Для brine canyon scanner cards и resource article."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "JA LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "JA LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "JA LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "JA LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "JA LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "JA LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "ZH LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "ZH LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "ZH LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "ZH LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "ZH LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "ZH LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "FR LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "FR LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "FR LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "FR LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "FR LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "FR LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "ES LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "ES LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "ES LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "ES LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "ES LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "ES LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "DE LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "DE LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "DE LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "DE LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "DE LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "DE LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "PL LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "PL LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "PL LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "PL LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "PL LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "PL LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "UK LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "UK LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "UK LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "UK LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "UK LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "UK LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "AR LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "AR LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "AR LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "AR LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "AR LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "AR LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "ID LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "ID LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "ID LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "ID LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "ID LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "ID LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "KO LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "KO LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "KO LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "KO LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "KO LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "KO LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "HE LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "HE LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "HE LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "HE LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "HE LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "HE LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "PT LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "PT LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "PT LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "PT LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "PT LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "PT LOC HOLD: Use for brine canyon scanner cards and resource article."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Brine Salt Process Lot Card",
+     "scanner": "NL LOC HOLD: Process lot: brine salts carry density-ladder origin, vent exposure and filtration risk.",
+     "terminal": "NL LOC HOLD: LOT CARD: canyon layer, pump cycle, iodine load, metallic taste warning, bioload and Atlas-filter contact must be logged before recipe use.",
+     "audio": "NL LOC HOLD: The salt is a route record. Taste it and you are reading the wrong way.",
+     "in_game_wiki": "NL LOC HOLD: Brine materials connect geology, survival chemistry and colony process infrastructure.",
+     "external_site": "NL LOC HOLD: Brine canyons are not scenery; they are moving process layers that change navigation and material value.",
+     "field_note": "NL LOC HOLD: Use for brine canyon scanner cards and resource article."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P429_ATLAS_LATTICE_CONTAMINATION_TAG",
+   "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+   "article_id": "applied_lore.atlas_lattice_contamination_tag",
+   "title_key": "applied_lore.atlas_lattice_contamination_tag.title",
+   "unlock": {
+    "primary": "unlock.atlas_lattice_contamination_tag",
+    "poi_tags": [
+     "poi.atlas_lattice_tag",
+     "poi.contaminated_sample_case",
+     "poi.false_clean_receipt"
+    ],
+    "biome_tags": [
+     "biome.atlas_repair_network",
+     "biome.deep_ecology"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Atlas Lattice Contamination Tag",
+     "scanner": "Atlas-lattice contamination tag: custody risk and ecology risk elevated. Keep sample isolated.",
+     "terminal": "TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "If the tag lists lattice contact, do not put it near food water, filter shell, or payout samples."
+    },
+    "ru_RU": {
+     "title": "Тэг загрязнения Atlas lattice",
+     "scanner": "Contamination tag: Atlas-repair lattice меняет custody, ecology risk и interpretation концовок.",
+     "terminal": "TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant и false-clean sample states - не один grade.",
+     "audio": "Если Atlas этого касался, квитанция - еще и warning label.",
+     "in_game_wiki": "Atlas contamination не делает материал магическим. Она помечает sample как часть сломанной repair network.",
+     "external_site": "Глубинная экономика становится нестабильной, потому что repaired life, metal и evidence уже нельзя чисто разделить.",
+     "field_note": "Для contaminated sample scanner, ecology wiki и ending payload flags."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "JA LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "JA LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "JA LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "JA LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "JA LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "JA LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "ZH LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "ZH LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "ZH LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "ZH LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "ZH LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "ZH LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "FR LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "FR LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "FR LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "FR LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "FR LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "FR LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "ES LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "ES LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "ES LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "ES LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "ES LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "ES LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "DE LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "DE LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "DE LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "DE LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "DE LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "DE LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "PL LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "PL LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "PL LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "PL LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "PL LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "PL LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "UK LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "UK LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "UK LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "UK LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "UK LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "UK LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "AR LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "AR LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "AR LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "AR LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "AR LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "AR LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "ID LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "ID LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "ID LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "ID LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "ID LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "ID LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "KO LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "KO LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "KO LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "KO LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "KO LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "KO LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "HE LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "HE LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "HE LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "HE LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "HE LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "HE LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "PT LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "PT LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "PT LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "PT LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "PT LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "PT LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Atlas Lattice Contamination Tag",
+     "scanner": "NL LOC HOLD: Contamination tag: Atlas-repair lattice changes custody, ecology risk and ending interpretation.",
+     "terminal": "NL LOC HOLD: TAG: conductive biofilm, sensor-tagged fauna contact, drone sealant and false-clean sample states are not the same grade.",
+     "audio": "NL LOC HOLD: If Atlas touched it, the receipt is also a warning label.",
+     "in_game_wiki": "NL LOC HOLD: Atlas contamination does not make material magical. It marks the sample as part of a broken repair network.",
+     "external_site": "NL LOC HOLD: The deeper economy becomes unstable because repaired life, metal and evidence are no longer cleanly separable.",
+     "field_note": "NL LOC HOLD: Use for contaminated sample scanner, ecology wiki and ending payload flags."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P430_BLACK_KEEL_PAYOUT_MASS_LEDGER",
+   "release_set_id": "RS086_RESOURCE_ECONOMY_ARTIFACTS",
+   "article_id": "applied_lore.black_keel_payout_mass_ledger",
+   "title_key": "applied_lore.black_keel_payout_mass_ledger.title",
+   "unlock": {
+    "primary": "unlock.black_keel_payout_mass_ledger",
+    "poi_tags": [
+     "poi.black_keel_mass_ledger",
+     "poi.payout_conversion_note",
+     "poi.material_exit_receipt"
+    ],
+    "biome_tags": [
+     "biome.claim_admin",
+     "biome.black_keel_orbit"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Black Keel Payout Mass Ledger",
+     "scanner": "Black Keel payout ledger: mass, custody, receiver risk and evidence suppression priced separately.",
+     "terminal": "LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "The ledger can pay you and still steal the story.",
+     "in_game_wiki": "The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "Carrier math is not your math. A clean witness hash can weigh more than a full crate."
+    },
+    "ru_RU": {
+     "title": "Mass-ledger выплат Black Keel",
+     "scanner": "Payout ledger: Black Keel отдельно считает mass, custody, receiver risk и evidence suppression.",
+     "terminal": "LEDGER: recoverable mass не равна payout. Transfer window, contamination, legal receiver и player debt превращают mass в consequence.",
+     "audio": "Ledger может заплатить тебе и все равно украсть историю.",
+     "in_game_wiki": "Payout mass ledger - мост к material endings: выгодные выходы могут сохранить debt logic и потерять truth authority.",
+     "external_site": "Salvage-экономика HECTON-8 разделяет получение выплаты и понимание того, что именно ты продал.",
+     "field_note": "Для contract board, false exit records и spoiler-gated ending pages."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "JA LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "JA LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "JA LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "JA LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "JA LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "JA LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "ZH LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "ZH LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "ZH LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "ZH LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "ZH LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "ZH LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "FR LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "FR LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "FR LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "FR LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "FR LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "FR LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "ES LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "ES LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "ES LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "ES LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "ES LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "ES LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "DE LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "DE LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "DE LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "DE LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "DE LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "DE LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "PL LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "PL LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "PL LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "PL LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "PL LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "PL LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "UK LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "UK LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "UK LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "UK LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "UK LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "UK LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "AR LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "AR LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "AR LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "AR LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "AR LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "AR LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "ID LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "ID LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "ID LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "ID LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "ID LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "ID LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "KO LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "KO LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "KO LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "KO LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "KO LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "KO LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "HE LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "HE LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "HE LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "HE LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "HE LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "HE LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "PT LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "PT LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "PT LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "PT LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "PT LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "PT LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Black Keel Payout Mass Ledger",
+     "scanner": "NL LOC HOLD: Payout ledger: Black Keel values mass, custody, receiver risk and evidence suppression separately.",
+     "terminal": "NL LOC HOLD: LEDGER: recoverable mass is not equal to payout. Transfer window, contamination, legal receiver and player debt convert mass into consequence.",
+     "audio": "NL LOC HOLD: The ledger can pay you and still steal the story.",
+     "in_game_wiki": "NL LOC HOLD: The payout mass ledger is the material-ending bridge: profitable exits can preserve debt logic while losing truth authority.",
+     "external_site": "NL LOC HOLD: HECTON-8's salvage economy separates getting paid from understanding what you sold.",
+     "field_note": "NL LOC HOLD: Use for contract board, false exit records and spoiler-gated ending pages."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

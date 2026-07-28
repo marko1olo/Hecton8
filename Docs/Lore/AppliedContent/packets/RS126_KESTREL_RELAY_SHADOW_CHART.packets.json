@@ -1,228 +1,229 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS126_KESTREL_RELAY_SHADOW_CHART",
-  "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS126_KESTREL_RELAY_SHADOW_CHART",
+ "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P622_KESTREL_RELAY_SHADOW_CHART",
+   "release_set_id": "RS126_KESTREL_RELAY_SHADOW_CHART",
+   "article_id": "applied_lore.kestrel_relay_shadow_chart",
+   "title_key": "LORE_KESTREL_RELAY_SHADOW_CHART_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Ships_Transit_Game_Texture.md",
+    "PROJECT_BIBLES.md",
+    ".agents-skills/celestial.md",
+    ".agents-skills/world.md",
+    ".agents-skills/writing.md",
+    ".agents-skills/localization.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P622_KESTREL_RELAY_SHADOW_CHART",
-      "release_set_id": "RS126_KESTREL_RELAY_SHADOW_CHART",
-      "article_id": "applied_lore.kestrel_relay_shadow_chart",
-      "title_key": "LORE_KESTREL_RELAY_SHADOW_CHART_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Ships_Transit_Game_Texture.md",
-        "PROJECT_BIBLES.md",
-        ".agents-skills/celestial.md",
-        ".agents-skills/world.md",
-        ".agents-skills/writing.md",
-        ".agents-skills/localization.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.kestrel_relay_shadow_chart",
-        "secondary": [
-          "unlock.first_black_keel_window_clock",
-          "unlock.aegir_recovery_window_geometry",
-          "unlock.low_band_acoustic_relay_queue"
-        ],
-        "poi_tags": [
-          "poi.kestrel_relay_shadow_chart",
-          "poi.black_keel_window_clock",
-          "poi.acoustic_relay_spine",
-          "poi.storm_ceiling_beacon"
-        ],
-        "biome_tags": [
-          "biome.photic_shelf",
-          "biome.surface_relay",
-          "biome.storm_ceiling",
-          "biome.carrier_link"
-        ],
-        "first_20_boundary": "After the first carrier reply or a failed uplink, this packet explains why Aegir sky geometry causes bursty communication without implying FTL, instant rescue, or a dead Black Keel."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Relay Forecast",
-          "terminal": "Aegir Relay Table",
-          "audio": "Black Keel Relay",
-          "in_game_wiki": "Recovered Shadow Chart",
-          "external_site": "Field Archive Longform",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "depth_band": "surface_to_photic_shelf",
-        "route_moment": "first_failed_uplink_after_black_keel_contact",
-        "truth_payload": "Kestrel relay shadow breaks Aegir communication into burst windows; signal failure can be geometry, not abandonment.",
-        "player_question": "Why does the sky answer in fragments instead of keeping a clean line to Black Keel?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Kestrel Relay Shadow Chart",
-          "scanner": "RELAY SHADOW // Kestrel is crossing the Aegir lane. Uplink quality falls in teeth, not a smooth fade. Store burst packets until the charged rim opens.",
-          "terminal": "AEGIR RELAY FORECAST // Kestrel occultation plus Aegir magnetic noise forms a shadow comb. Low-band acoustic relay may queue ascent data, but verification waits for a clean carrier edge.",
-          "audio": "Black Keel relay: your sky is not empty; it is blocked. Hold packets for the bright edge after Kestrel clears.",
-          "in_game_wiki": "A recovered relay-shadow chart turns Aegir's moons into working machinery. Kestrel does not only block light; it cuts the useful carrier lane into noisy teeth. During shadow, Black Keel may receive fragments, stale timestamps or nothing at all.",
-          "external_site": "On HECTON-8, the sky is not background. Kestrel's passage across the Aegir lane throws a relay shadow through the same geometry Black Keel needs for packets, carrier timing and recovery math. The signal does not fade like a lamp being dimmed. It breaks into a comb: bright edges, noisy slots, stale returns and short bursts that arrive with enough checksum to prove someone listened, but not enough continuity to approve a lift. The ocean below makes the problem worse. Water eats power, storms bend surface timing, and Aegir's charged environment turns clean sky into a moving legal and physical hazard. A failed uplink is therefore not proof of abandonment. It may be the moon crossing the only piece of sky that could carry you.",
-          "field_note": "Do not curse the relay when shadow hits. Curse the moon. A packet that dies in the center can clear on the edge."
-        },
-        "ru_RU": {
-          "title": "Карта тени реле Kestrel",
-          "scanner": "ТЕНЬ РЕЛЕ // Kestrel пересекает линию Aegir. Качество восходящего канала падает зубцами, а не плавным затуханием. Держи пакеты-всплески до открытия заряженной кромки.",
-          "terminal": "ПРОГНОЗ РЕЛЕ AEGIR // Покрытие Kestrel вместе с магнитным шумом Aegir формирует теневую гребёнку. Низкочастотное акустическое реле может поставить данные подъёма в очередь, но проверка ждёт чистой кромки носителя.",
-          "audio": "Ретранслятор Black Keel: твоё небо не пустое, оно перекрыто. Держи пакеты до светлой кромки после выхода Kestrel.",
-          "in_game_wiki": "Найденная карта тени реле превращает луны Aegir в рабочую машину маршрута. Kestrel не просто закрывает свет; он режет полезную линию к носителю на шумные зубцы. Во время тени Black Keel может получить фрагменты, устаревшие метки времени или вообще ничего.",
-          "external_site": "На HECTON-8 небо не фон. Проход Kestrel через линию Aegir бросает тень реле в ту же геометрию, которая нужна Black Keel для пакетов, расчёта времени носителя и эвакуационной математики. Сигнал не гаснет как лампа на регуляторе яркости. Он ломается в гребёнку: светлые кромки, шумные щели, запоздалые ответы и короткие всплески, где контрольной суммы хватает доказать, что кто-то слушал, но не хватает непрерывности разрешить подъём. Океан снизу делает проблему хуже. Вода съедает мощность, штормы сбивают поверхностные часы, а заряженная среда Aegir превращает чистое небо в движущуюся юридическую и физическую опасность. Неудачный восходящий канал поэтому не доказывает, что тебя бросили. Возможно, луна пересекает единственный кусок неба, который мог бы тебя вынести.",
-          "field_note": "Не ругай реле, когда приходит тень. Ругай луну. Пакет, умерший в центре, может пройти по кромке."
-        },
-        "ja_JP": {
-          "title": "Kestrelリレー影図",
-          "scanner": "リレー影 // KestrelがAegirレーンを横切っている。アップリンク品質は滑らかに落ちず、歯のように欠ける。荷電した縁が開くまでバーストパケットを保持。",
-          "terminal": "AEGIRリレー予報 // Kestrel掩蔽とAegir磁気ノイズが影の櫛を作る。低帯域音響リレーは上昇データをキューに入れられるが、検証は清浄な母船エッジを待つ。",
-          "audio": "Black Keel中継: 空は空いていない。塞がれている。Kestrelが抜けた後の明るい縁までパケットを保持しろ。",
-          "in_game_wiki": "回収されたリレー影図は、Aegirの月を稼働する機械として見せる。Kestrelは光を遮るだけではない。有用な母船レーンをノイズの歯に刻む。影の間、Black Keelは断片、古いタイムスタンプ、あるいは何も受け取れないことがある。",
-          "external_site": "HECTON-8では、空は背景ではない。KestrelがAegirレーンを通過すると、Black Keelがパケット、母船タイミング、回収計算に必要とする同じ幾何へリレー影が落ちる。信号はランプのように滑らかに暗くならない。櫛に割れる。明るい縁、ノイズの溝、古い戻り、そして誰かが聞いた証拠になる程度のチェックサムはあるが、リフト承認に必要な連続性はない短いバーストだ。下の海は問題を悪化させる。水は電力を食い、嵐は表面タイミングを曲げ、Aegirの荷電環境は清浄な空を移動する法的かつ物理的危険に変える。アップリンク失敗は見捨てられた証拠ではない。あなたを運べる唯一の空を、月が横切っているだけかもしれない。",
-          "field_note": "影が来た時にリレーを呪うな。月を呪え。中心で死ぬパケットも、縁では通ることがある。"
-        },
-        "zh_CN": {
-          "title": "Kestrel 中继阴影图",
-          "scanner": "中继阴影 // Kestrel 正穿过 Aegir 通道。上行质量按齿状坠落，不是平滑衰减。保存突发数据包，等带电边缘打开。",
-          "terminal": "AEGIR 中继预报 // Kestrel 掩星叠加 Aegir 磁噪会形成阴影梳。低频声学中继可排队上升数据，但验证要等干净的航母边缘。",
-          "audio": "Black Keel 中继：你的天空不是空的，是被挡住了。等 Kestrel 清出后的亮边，再保留数据包发送。",
-          "in_game_wiki": "回收的中继阴影图把 Aegir 的卫星变成正在工作的航线机器。Kestrel 不只是遮光；它把可用的航母通道切成嘈杂的齿。阴影期间，Black Keel 可能收到碎片、过期时间戳，或什么也收不到。",
-          "external_site": "在 HECTON-8，天空不是背景。Kestrel 穿过 Aegir 通道时，会把中继阴影投进 Black Keel 用于数据包、航母计时和回收计算的同一套几何。信号不会像调暗的灯那样平滑减弱。它会断成一把梳子：明亮边缘、噪声槽、过期回波，以及短促突发。那些突发的校验和足以证明有人听见，却没有足够连续性批准升运。下方的海洋让问题更糟。水吞掉功率，风暴扭曲表面计时，Aegir 的带电环境把清空变成移动的法律和物理危险。因此，上行失败不证明你被抛弃。也许只是那颗卫星正穿过唯一能带走你的那片天空。",
-          "field_note": "阴影落下时别骂中继，骂那颗卫星。中心死掉的数据包，到了边缘可能就能通过。"
-        },
-        "fr_FR": {
-          "title": "Carte d'ombre relais de Kestrel",
-          "scanner": "OMBRE RELAIS // Kestrel traverse la voie d'Aegir. La qualité de la liaison montante tombe en dents, pas en fondu régulier. Stockez les paquets en rafale jusqu'à l'ouverture du bord chargé.",
-          "terminal": "PRÉVISION RELAIS AEGIR // L'occultation de Kestrel et le bruit magnétique d'Aegir forment un peigne d'ombre. Le relais acoustique basse bande peut mettre les données d'ascension en file, mais la vérification attend un bord de transporteur propre.",
-          "audio": "Relais Black Keel : votre ciel n'est pas vide, il est bloqué. Gardez les paquets pour le bord lumineux après le dégagement de Kestrel.",
-          "in_game_wiki": "Une carte d'ombre relais récupérée transforme les lunes d'Aegir en machines de route. Kestrel ne bloque pas seulement la lumière ; il découpe la voie utile du transporteur en dents bruyantes. Dans l'ombre, Black Keel peut recevoir des fragments, des horodatages périmés ou rien du tout.",
-          "external_site": "Sur HECTON-8, le ciel n'est pas un décor. Le passage de Kestrel sur la voie d'Aegir projette une ombre relais dans la même géométrie dont Black Keel a besoin pour les paquets, le calendrier du transporteur et le calcul de récupération. Le signal ne baisse pas comme une lampe que l'on réduit. Il casse en peigne : bords lumineux, fentes bruyantes, retours périmés et courtes rafales avec assez de somme de contrôle pour prouver que quelqu'un a écouté, mais pas assez de continuité pour autoriser un levage. L'océan en dessous aggrave tout. L'eau mange la puissance, les tempêtes tordent l'horloge de surface, et l'environnement chargé d'Aegir transforme un ciel propre en danger juridique et physique mobile. Une liaison montante ratée ne prouve donc pas l'abandon. La lune traverse peut-être le seul morceau de ciel capable de vous porter.",
-          "field_note": "Ne maudissez pas le relais quand l'ombre tombe. Maudissez la lune. Un paquet mort au centre peut passer sur le bord."
-        },
-        "es_ES": {
-          "title": "Carta de sombra de relé Kestrel",
-          "scanner": "SOMBRA DE RELÉ // Kestrel cruza el carril de Aegir. La calidad del enlace ascendente cae en dientes, no en un fundido suave. Guarda paquetes de ráfaga hasta que se abra el borde cargado.",
-          "terminal": "PRONÓSTICO DE RELÉ AEGIR // La ocultación de Kestrel más el ruido magnético de Aegir forma un peine de sombra. El relé acústico de baja banda puede encolar datos de ascenso, pero la verificación espera un borde limpio de portador.",
-          "audio": "Relé Black Keel: tu cielo no está vacío; está bloqueado. Retén paquetes para el borde brillante después de que Kestrel despeje.",
-          "in_game_wiki": "Una carta de sombra de relé recuperada convierte las lunas de Aegir en maquinaria de ruta. Kestrel no solo bloquea luz; corta el carril útil del portador en dientes ruidosos. Durante la sombra, Black Keel puede recibir fragmentos, marcas de tiempo caducadas o nada.",
-          "external_site": "En HECTON-8, el cielo no es fondo. El paso de Kestrel por el carril de Aegir proyecta una sombra de relé sobre la misma geometría que Black Keel necesita para paquetes, tiempo de portador y cálculo de recuperación. La señal no se desvanece como una lámpara bajando de intensidad. Se rompe en un peine: bordes brillantes, ranuras ruidosas, retornos caducados y ráfagas cortas con suma de verificación suficiente para probar que alguien escuchó, pero sin continuidad suficiente para aprobar un izado. El océano debajo empeora el problema. El agua devora potencia, las tormentas doblan el reloj de superficie, y el entorno cargado de Aegir convierte un cielo limpio en peligro legal y físico móvil. Un enlace ascendente fallido no prueba abandono. Tal vez la luna cruza el único trozo de cielo que podía llevarte.",
-          "field_note": "No maldigas el relé cuando cae la sombra. Maldice la luna. Un paquete que muere en el centro puede pasar por el borde."
-        },
-        "de_DE": {
-          "title": "Kestrel-Relaisschattenkarte",
-          "scanner": "RELAISSCHATTEN // Kestrel kreuzt die Aegir-Bahn. Uplink-Qualität fällt zahnförmig, nicht als sanftes Ausblenden. Burst-Pakete halten, bis der geladene Rand öffnet.",
-          "terminal": "AEGIR RELAISVORHERSAGE // Kestrel-Bedeckung plus Aegirs Magnetrauschen bildet einen Schattenkamm. Niederband-Akustikrelais kann Aufstiegsdaten einreihen, aber Verifikation wartet auf eine saubere Trägerkante.",
-          "audio": "Black-Keel-Relais: Dein Himmel ist nicht leer; er ist blockiert. Halte Pakete für die helle Kante nach Kestrels Freigang.",
-          "in_game_wiki": "Eine geborgene Relaisschattenkarte macht Aegirs Monde zu arbeitender Routenmechanik. Kestrel blockiert nicht nur Licht; er schneidet die nutzbare Trägerbahn in rauschende Zähne. Im Schatten kann Black Keel Fragmente, alte Zeitstempel oder gar nichts empfangen.",
-          "external_site": "Auf HECTON-8 ist der Himmel kein Hintergrund. Kestrels Passage über die Aegir-Bahn wirft einen Relaisschatten in dieselbe Geometrie, die Black Keel für Pakete, Trägertiming und Bergungsmathematik braucht. Das Signal verblasst nicht wie eine gedimmte Lampe. Es bricht in einen Kamm: helle Ränder, rauschende Schlitze, veraltete Rückläufe und kurze Bursts mit genug Prüfsumme, um zu beweisen, dass jemand zuhörte, aber nicht genug Kontinuität für eine Hebegenehmigung. Der Ozean darunter verschlimmert alles. Wasser frisst Leistung, Stürme verbiegen Oberflächentiming, und Aegirs geladene Umgebung macht klaren Himmel zu einer beweglichen rechtlichen und physischen Gefahr. Ein gescheiterter Uplink beweist daher keine Aufgabe. Vielleicht kreuzt der Mond gerade das einzige Stück Himmel, das dich tragen könnte.",
-          "field_note": "Verfluche nicht das Relais, wenn der Schatten kommt. Verfluche den Mond. Ein Paket, das im Zentrum stirbt, kann am Rand durchkommen."
-        },
-        "pl_PL": {
-          "title": "Mapa cienia przekaźnika Kestrel",
-          "scanner": "CIEŃ PRZEKAŹNIKA // Kestrel przecina pas Aegir. Jakość uplinku spada zębami, nie gładkim zanikiem. Przechowaj pakiety impulsowe, aż otworzy się naładowana krawędź.",
-          "terminal": "PROGNOZA PRZEKAŹNIKA AEGIR // Okultacja Kestrel i szum magnetyczny Aegir tworzą grzebień cienia. Niskopasmowy przekaźnik akustyczny może kolejkować dane wznoszenia, ale weryfikacja czeka na czystą krawędź nośnika.",
-          "audio": "Przekaźnik Black Keel: twoje niebo nie jest puste; jest zablokowane. Trzymaj pakiety na jasną krawędź po zejściu Kestrel.",
-          "in_game_wiki": "Odzyskana mapa cienia przekaźnika zamienia księżyce Aegir w działającą maszynerię trasy. Kestrel nie tylko zasłania światło; tnie użyteczny pas nośnika na szumiące zęby. W cieniu Black Keel może odebrać fragmenty, stare znaczniki czasu albo nic.",
-          "external_site": "Na HECTON-8 niebo nie jest tłem. Przejście Kestrel przez pas Aegir rzuca cień przekaźnika w tę samą geometrię, której Black Keel potrzebuje do pakietów, czasu nośnika i obliczeń odzysku. Sygnał nie gaśnie jak przyciemniana lampa. Łamie się w grzebień: jasne krawędzie, szumiące szczeliny, przestarzałe powroty i krótkie impulsy z sumą kontrolną wystarczającą, by udowodnić, że ktoś słuchał, ale bez ciągłości potrzebnej do zgody na podniesienie. Ocean poniżej pogarsza problem. Woda zjada moc, burze zginają czas powierzchni, a naładowane środowisko Aegir zmienia czyste niebo w ruchome zagrożenie prawne i fizyczne. Nieudany uplink nie dowodzi więc porzucenia. Być może księżyc przecina jedyny kawałek nieba, który mógł cię ponieść.",
-          "field_note": "Nie przeklinaj przekaźnika, gdy spada cień. Przeklinaj księżyc. Pakiet martwy w środku może przejść na krawędzi."
-        },
-        "uk_UA": {
-          "title": "Карта тіні реле Kestrel",
-          "scanner": "ТІНЬ РЕЛЕ // Kestrel перетинає смугу Aegir. Якість висхідного каналу падає зубцями, а не плавним згасанням. Тримай пакети-спалахи до відкриття зарядженої крайки.",
-          "terminal": "ПРОГНОЗ РЕЛЕ AEGIR // Покриття Kestrel разом із магнітним шумом Aegir формує тіньову гребінку. Низькосмугове акустичне реле може поставити дані підйому в чергу, але перевірка чекає чистої крайки носія.",
-          "audio": "Ретранслятор Black Keel: твоє небо не порожнє, воно перекрите. Тримай пакети до світлої крайки після виходу Kestrel.",
-          "in_game_wiki": "Знайдена карта тіні реле перетворює місяці Aegir на робочу машину маршруту. Kestrel не просто закриває світло; він ріже корисну лінію до носія на шумні зубці. У тіні Black Keel може отримати фрагменти, застарілі мітки часу або взагалі нічого.",
-          "external_site": "На HECTON-8 небо не є фоном. Прохід Kestrel через смугу Aegir кидає тінь реле в ту саму геометрію, яка потрібна Black Keel для пакетів, розрахунку часу носія і математики евакуації. Сигнал не згасає як лампа на регуляторі яскравості. Він ламається в гребінку: світлі крайки, шумні щілини, запізнілі відповіді і короткі спалахи, де контрольної суми достатньо, щоб довести, що хтось слухав, але без безперервності для дозволу на підйом. Океан знизу погіршує проблему. Вода з'їдає потужність, шторми гнуть поверхневий годинник, а заряджене середовище Aegir перетворює чисте небо на рухому юридичну і фізичну небезпеку. Невдалий висхідний канал тому не доводить, що тебе покинули. Можливо, місяць перетинає єдиний шматок неба, який міг би тебе винести.",
-          "field_note": "Не лай реле, коли приходить тінь. Лай місяць. Пакет, що вмер у центрі, може пройти по крайці."
-        },
-        "ar_SA": {
-          "title": "خريطة ظل مرحل Kestrel",
-          "scanner": "ظل المرحل // يعبر Kestrel مسار Aegir. جودة uplink تهبط كأسنان لا كتلاشي ناعم. خزّن حزم الدفق حتى تنفتح الحافة المشحونة.",
-          "terminal": "توقع مرحل AEGIR // حجب Kestrel مع الضجيج المغناطيسي في Aegir يصنع مشط ظل. يمكن للمرحل الصوتي منخفض النطاق أن يضع بيانات الصعود في الطابور، لكن التحقق ينتظر حافة حامل نظيفة.",
-          "audio": "مرحل Black Keel: سماؤك ليست فارغة؛ إنها محجوبة. احتفظ بالحزم للحافة المضيئة بعد أن يزول Kestrel.",
-          "in_game_wiki": "خريطة ظل المرحل المستعادة تحول أقمار Aegir إلى آلة مسار عاملة. Kestrel لا يحجب الضوء فقط؛ إنه يقطع مسار الحامل المفيد إلى أسنان مشوشة. أثناء الظل قد يتلقى Black Keel شظايا أو طوابع زمنية قديمة أو لا شيء.",
-          "external_site": "في HECTON-8 السماء ليست خلفية. عبور Kestrel لمسار Aegir يرمي ظل مرحل داخل الهندسة نفسها التي يحتاجها Black Keel للحزم وتوقيت الحامل وحساب الاستعادة. الإشارة لا تخفت مثل مصباح يهبط ضوؤه. إنها تنكسر إلى مشط: حواف مضيئة، فتحات مشوشة، عوائد قديمة، ودفقات قصيرة تكفي فيها checksum لإثبات أن أحداً سمع، لكنها لا تكفي للاستمرارية المطلوبة للموافقة على الرفع. المحيط في الأسفل يزيد المشكلة. الماء يلتهم الطاقة، والعواصف تثني توقيت السطح، وبيئة Aegir المشحونة تحول السماء النظيفة إلى خطر قانوني وفيزيائي متحرك. لذلك لا يثبت فشل uplink أنك تُركت. ربما يعبر القمر القطعة الوحيدة من السماء القادرة على حملك.",
-          "field_note": "لا تلعن المرحل عندما يسقط الظل. العن القمر. الحزمة التي تموت في الوسط قد تعبر من الحافة."
-        },
-        "id_ID": {
-          "title": "Peta Bayang Relai Kestrel",
-          "scanner": "BAYANG RELAI // Kestrel sedang melintasi jalur Aegir. Kualitas tautan naik jatuh seperti gigi, bukan pudar mulus. Simpan paket burst sampai tepi bermuatan terbuka.",
-          "terminal": "PRAKIRAAN RELAI AEGIR // Okultasi Kestrel ditambah noise magnetik Aegir membentuk sisir bayang. Relai akustik pita rendah dapat mengantrekan data naik, tetapi verifikasi menunggu tepi pengangkut yang bersih.",
-          "audio": "Relai Black Keel: langitmu tidak kosong; ia tertutup. Tahan paket untuk tepi terang setelah Kestrel lewat.",
-          "in_game_wiki": "Peta bayang relai yang ditemukan mengubah bulan-bulan Aegir menjadi mesin rute yang bekerja. Kestrel bukan hanya memblokir cahaya; ia memotong jalur pengangkut yang berguna menjadi gigi bising. Saat bayang, Black Keel mungkin menerima fragmen, cap waktu basi, atau tidak menerima apa pun.",
-          "external_site": "Di HECTON-8, langit bukan latar. Lintasan Kestrel melintasi jalur Aegir melempar bayang relai ke geometri yang sama yang dibutuhkan Black Keel untuk paket, waktu pengangkut, dan hitungan pemulihan. Sinyal tidak memudar seperti lampu diredupkan. Ia pecah menjadi sisir: tepi terang, celah bising, balasan basi, dan burst pendek dengan checksum cukup untuk membuktikan ada yang mendengar, tetapi tanpa kontinuitas cukup untuk menyetujui pengangkatan. Laut di bawah memperburuk masalah. Air memakan daya, badai membengkokkan jam permukaan, dan lingkungan bermuatan Aegir mengubah langit bersih menjadi bahaya hukum dan fisik yang bergerak. Kegagalan tautan naik karena itu bukan bukti ditinggalkan. Mungkin bulan sedang melintasi satu-satunya bagian langit yang bisa membawamu.",
-          "field_note": "Jangan kutuk relai saat bayang datang. Kutuk bulannya. Paket yang mati di tengah bisa lewat di tepi."
-        },
-        "ko_KR": {
-          "title": "Kestrel 중계 그림자 도표",
-          "scanner": "중계 그림자 // Kestrel이 Aegir 차선을 가로지른다. 업링크 품질은 매끄럽게 줄지 않고 이빨처럼 떨어진다. 대전된 가장자리가 열릴 때까지 버스트 패킷을 보관하라.",
-          "terminal": "AEGIR 중계 예보 // Kestrel 엄폐와 Aegir 자기 잡음이 그림자 빗을 만든다. 저대역 음향 중계는 상승 데이터를 대기열에 넣을 수 있지만, 검증은 깨끗한 운반선 가장자리를 기다린다.",
-          "audio": "Black Keel 중계: 네 하늘은 비어 있지 않다. 막혀 있다. Kestrel이 지난 뒤 밝은 가장자리까지 패킷을 붙들어라.",
-          "in_game_wiki": "회수된 중계 그림자 도표는 Aegir의 달들을 작동하는 항로 기계로 바꿔 보인다. Kestrel은 빛만 막지 않는다. 유용한 운반선 차선을 잡음 섞인 이빨로 자른다. 그림자 동안 Black Keel은 조각, 오래된 타임스탬프, 혹은 아무것도 받지 못할 수 있다.",
-          "external_site": "HECTON-8에서 하늘은 배경이 아니다. Kestrel이 Aegir 차선을 지나가면 Black Keel이 패킷, 운반선 타이밍, 회수 계산에 필요한 같은 기하에 중계 그림자를 던진다. 신호는 조광된 램프처럼 부드럽게 사라지지 않는다. 빗처럼 부서진다. 밝은 가장자리, 시끄러운 틈, 오래된 반환, 그리고 누군가 들었다는 것을 증명할 만큼의 체크섬은 있지만 인양 승인을 내릴 연속성은 없는 짧은 버스트다. 아래의 바다는 문제를 더 악화시킨다. 물은 전력을 먹고, 폭풍은 표면 타이밍을 휘게 하며, Aegir의 대전 환경은 깨끗한 하늘을 움직이는 법적, 물리적 위험으로 바꾼다. 그러므로 업링크 실패는 버림받았다는 증거가 아니다. 달이 너를 실어 나를 수 있는 유일한 하늘 조각을 지나가고 있을지도 모른다.",
-          "field_note": "그림자가 닥칠 때 중계를 저주하지 마라. 달을 저주해라. 중심에서 죽은 패킷도 가장자리에서는 통과할 수 있다."
-        },
-        "he_IL": {
-          "title": "תרשים צל הממסר של Kestrel",
-          "scanner": "צל ממסר // Kestrel חוצה את נתיב Aegir. איכות uplink נופלת בשיניים, לא בדעיכה חלקה. שמור חבילות burst עד שהשפה הטעונה נפתחת.",
-          "terminal": "תחזית ממסר AEGIR // הסתרת Kestrel יחד עם רעש מגנטי של Aegir יוצרת מסרק צל. ממסר אקוסטי נמוך-פס יכול לתור נתוני עלייה, אבל האימות ממתין לשפת נשא נקייה.",
-          "audio": "ממסר Black Keel: השמיים שלך אינם ריקים; הם חסומים. החזק חבילות לשפה הבהירה אחרי ש-Kestrel מתפנה.",
-          "in_game_wiki": "תרשים צל ממסר שנמצא הופך את ירחי Aegir למכונת נתיב עובדת. Kestrel לא רק חוסם אור; הוא חותך את נתיב הנשא השימושי לשיניים רועשות. בזמן צל, Black Keel עשוי לקבל שברים, חותמות זמן ישנות או כלום.",
-          "external_site": "ב-HECTON-8 השמיים אינם רקע. מעבר Kestrel דרך נתיב Aegir מטיל צל ממסר על אותה גאומטריה ש-Black Keel צריך לחבילות, לתזמון נשא ולחישוב חילוץ. האות אינו דועך כמו מנורה שמעמעמים. הוא נשבר למסרק: שפות בהירות, חריצים רועשים, החזרות ישנות ופרצי מידע קצרים עם checksum שמספיק להוכיח שמישהו הקשיב, אך לא מספיק רצף כדי לאשר הרמה. האוקיינוס למטה מחמיר את הבעיה. מים אוכלים כוח, סערות מכופפות תזמון פני שטח, והסביבה הטעונה של Aegir הופכת שמיים נקיים לסכנה משפטית ופיזית נעה. לכן uplink כושל אינו הוכחה לנטישה. ייתכן שהירח חוצה את פיסת השמיים היחידה שיכלה לשאת אותך.",
-          "field_note": "אל תקלל את הממסר כשהצל מגיע. קלל את הירח. חבילה שמתה במרכז יכולה לעבור בשפה."
-        },
-        "pt_BR": {
-          "title": "Mapa de sombra do relé Kestrel",
-          "scanner": "SOMBRA DE RELÉ // Kestrel cruza a faixa de Aegir. A qualidade do uplink cai em dentes, não em desvanecimento suave. Guarde pacotes de rajada até a borda carregada abrir.",
-          "terminal": "PREVISÃO DE RELÉ AEGIR // Ocultação de Kestrel com ruído magnético de Aegir forma um pente de sombra. O relé acústico de baixa banda pode enfileirar dados de ascensão, mas a verificação espera uma borda limpa do cargueiro.",
-          "audio": "Relé Black Keel: seu céu não está vazio; está bloqueado. Segure pacotes para a borda clara depois que Kestrel sair.",
-          "in_game_wiki": "Um mapa de sombra de relé recuperado transforma as luas de Aegir em maquinaria de rota. Kestrel não bloqueia só luz; ele corta a faixa útil do cargueiro em dentes ruidosos. Durante a sombra, Black Keel pode receber fragmentos, carimbos de tempo vencidos ou nada.",
-          "external_site": "Em HECTON-8, o céu não é pano de fundo. A passagem de Kestrel pela faixa de Aegir lança uma sombra de relé na mesma geometria que Black Keel precisa para pacotes, tempo do cargueiro e cálculo de recuperação. O sinal não some como uma lâmpada sendo diminuída. Ele se quebra em um pente: bordas claras, fendas ruidosas, retornos vencidos e rajadas curtas com soma de verificação suficiente para provar que alguém escutou, mas sem continuidade suficiente para aprovar içamento. O oceano abaixo piora o problema. A água come potência, tempestades dobram o relógio de superfície, e o ambiente carregado de Aegir transforma céu limpo em perigo legal e físico móvel. Um enlace ascendente falho, portanto, não prova abandono. Talvez a lua esteja cruzando o único pedaço de céu capaz de carregar você.",
-          "field_note": "Não amaldiçoe o relé quando a sombra cai. Amaldiçoe a lua. Um pacote que morre no centro pode passar pela borda."
-        },
-        "nl_NL": {
-          "title": "Kestrel-relaisschaduwkaart",
-          "scanner": "RELAISSCHADUW // Kestrel kruist de Aegir-baan. Uplinkkwaliteit valt in tanden, niet in een vloeiende fade. Bewaar burstpakketten tot de geladen rand opent.",
-          "terminal": "AEGIR RELAISVOORSPELLING // Kestrel-occultatie plus Aegirs magnetische ruis vormt een schaduwkam. Laagbandig akoestisch relais kan opstijgdata in de wachtrij zetten, maar verificatie wacht op een schone dragerrand.",
-          "audio": "Black Keel-relais: je hemel is niet leeg; hij is geblokkeerd. Houd pakketten vast voor de heldere rand nadat Kestrel vrij komt.",
-          "in_game_wiki": "Een geborgen relaisschaduwkaart maakt van Aegirs manen werkende routemachines. Kestrel blokkeert niet alleen licht; hij snijdt de bruikbare dragerbaan in ruisende tanden. Tijdens schaduw kan Black Keel fragmenten, verlopen tijdstempels of helemaal niets ontvangen.",
-          "external_site": "Op HECTON-8 is de hemel geen achtergrond. Kestrels passage over de Aegir-baan werpt een relaisschaduw door dezelfde geometrie die Black Keel nodig heeft voor pakketten, dragertiming en bergingsberekening. Het signaal vervaagt niet als een lamp die wordt gedimd. Het breekt in een kam: heldere randen, ruisende sleuven, verlopen terugmeldingen en korte bursts met genoeg controlesom om te bewijzen dat iemand luisterde, maar te weinig continuïteit voor hijstoestemming. De oceaan eronder maakt het erger. Water eet vermogen, stormen buigen de oppervlakteklok, en Aegirs geladen omgeving verandert heldere hemel in een bewegend juridisch en fysiek gevaar. Een mislukte uplink bewijst dus geen verlating. Misschien kruist de maan net het enige stuk hemel dat jou kon dragen.",
-          "field_note": "Vervloek het relais niet wanneer de schaduw valt. Vervloek de maan. Een pakket dat in het midden sterft, kan aan de rand doorkomen."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.kestrel_relay_shadow_chart",
+    "secondary": [
+     "unlock.first_black_keel_window_clock",
+     "unlock.aegir_recovery_window_geometry",
+     "unlock.low_band_acoustic_relay_queue"
+    ],
+    "poi_tags": [
+     "poi.kestrel_relay_shadow_chart",
+     "poi.black_keel_window_clock",
+     "poi.acoustic_relay_spine",
+     "poi.storm_ceiling_beacon"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.surface_relay",
+     "biome.storm_ceiling",
+     "biome.carrier_link"
+    ],
+    "first_20_boundary": "After the first carrier reply or a failed uplink, this packet explains why Aegir sky geometry causes bursty communication without implying FTL, instant rescue, or a dead Black Keel."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Relay Forecast",
+     "terminal": "Aegir Relay Table",
+     "audio": "Black Keel Relay",
+     "in_game_wiki": "Recovered Shadow Chart",
+     "external_site": "Field Archive Longform",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "depth_band": "surface_to_photic_shelf",
+    "route_moment": "first_failed_uplink_after_black_keel_contact",
+    "truth_payload": "Kestrel relay shadow breaks Aegir communication into burst windows; signal failure can be geometry, not abandonment.",
+    "player_question": "Why does the sky answer in fragments instead of keeping a clean line to Black Keel?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Kestrel Relay Shadow Chart",
+     "scanner": "RELAY SHADOW // Kestrel is crossing the Aegir lane. Uplink quality falls in teeth, not a smooth fade. Store burst packets until the charged rim opens.",
+     "terminal": "AEGIR RELAY FORECAST // Kestrel occultation plus Aegir magnetic noise forms a shadow comb. Low-band acoustic relay may queue ascent data, but verification waits for a clean carrier edge.",
+     "audio": "Black Keel relay: your sky is not empty; it is blocked. Hold packets for the bright edge after Kestrel clears.",
+     "in_game_wiki": "A recovered relay-shadow chart turns Aegir's moons into working machinery. Kestrel does not only block light; it cuts the useful carrier lane into noisy teeth. During shadow, Black Keel may receive fragments, stale timestamps or nothing at all.",
+     "external_site": "On HECTON-8, the sky is not background. Kestrel's passage across the Aegir lane throws a relay shadow through the same geometry Black Keel needs for packets, carrier timing and recovery math. The signal does not fade like a lamp being dimmed. It breaks into a comb: bright edges, noisy slots, stale returns and short bursts that arrive with enough checksum to prove someone listened, but not enough continuity to approve a lift. The ocean below makes the problem worse. Water eats power, storms bend surface timing, and Aegir's charged environment turns clean sky into a moving legal and physical hazard. A failed uplink is therefore not proof of abandonment. It may be the moon crossing the only piece of sky that could carry you.",
+     "field_note": "Do not curse the relay when shadow hits. Curse the moon. A packet that dies in the center can clear on the edge."
+    },
+    "ru_RU": {
+     "title": "Карта тени реле Kestrel",
+     "scanner": "ТЕНЬ РЕЛЕ // Kestrel пересекает линию Aegir. Качество восходящего канала падает зубцами, а не плавным затуханием. Держи пакеты-всплески до открытия заряженной кромки.",
+     "terminal": "ПРОГНОЗ РЕЛЕ AEGIR // Покрытие Kestrel вместе с магнитным шумом Aegir формирует теневую гребёнку. Низкочастотное акустическое реле может поставить данные подъёма в очередь, но проверка ждёт чистой кромки носителя.",
+     "audio": "Ретранслятор Black Keel: твоё небо не пустое, оно перекрыто. Держи пакеты до светлой кромки после выхода Kestrel.",
+     "in_game_wiki": "Найденная карта тени реле превращает луны Aegir в рабочую машину маршрута. Kestrel не просто закрывает свет; он режет полезную линию к носителю на шумные зубцы. Во время тени Black Keel может получить фрагменты, устаревшие метки времени или вообще ничего.",
+     "external_site": "На HECTON-8 небо не фон. Проход Kestrel через линию Aegir бросает тень реле в ту же геометрию, которая нужна Black Keel для пакетов, расчёта времени носителя и эвакуационной математики. Сигнал не гаснет как лампа на регуляторе яркости. Он ломается в гребёнку: светлые кромки, шумные щели, запоздалые ответы и короткие всплески, где контрольной суммы хватает доказать, что кто-то слушал, но не хватает непрерывности разрешить подъём. Океан снизу делает проблему хуже. Вода съедает мощность, штормы сбивают поверхностные часы, а заряженная среда Aegir превращает чистое небо в движущуюся юридическую и физическую опасность. Неудачный восходящий канал поэтому не доказывает, что тебя бросили. Возможно, луна пересекает единственный кусок неба, который мог бы тебя вынести.",
+     "field_note": "Не ругай реле, когда приходит тень. Ругай луну. Пакет, умерший в центре, может пройти по кромке."
+    },
+    "ja_JP": {
+     "title": "Kestrelリレー影図",
+     "scanner": "リレー影 // KestrelがAegirレーンを横切っている。アップリンク品質は滑らかに落ちず、歯のように欠ける。荷電した縁が開くまでバーストパケットを保持。",
+     "terminal": "AEGIRリレー予報 // Kestrel掩蔽とAegir磁気ノイズが影の櫛を作る。低帯域音響リレーは上昇データをキューに入れられるが、検証は清浄な母船エッジを待つ。",
+     "audio": "Black Keel中継: 空は空いていない。塞がれている。Kestrelが抜けた後の明るい縁までパケットを保持しろ。",
+     "in_game_wiki": "回収されたリレー影図は、Aegirの月を稼働する機械として見せる。Kestrelは光を遮るだけではない。有用な母船レーンをノイズの歯に刻む。影の間、Black Keelは断片、古いタイムスタンプ、あるいは何も受け取れないことがある。",
+     "external_site": "HECTON-8では、空は背景ではない。KestrelがAegirレーンを通過すると、Black Keelがパケット、母船タイミング、回収計算に必要とする同じ幾何へリレー影が落ちる。信号はランプのように滑らかに暗くならない。櫛に割れる。明るい縁、ノイズの溝、古い戻り、そして誰かが聞いた証拠になる程度のチェックサムはあるが、リフト承認に必要な連続性はない短いバーストだ。下の海は問題を悪化させる。水は電力を食い、嵐は表面タイミングを曲げ、Aegirの荷電環境は清浄な空を移動する法的かつ物理的危険に変える。アップリンク失敗は見捨てられた証拠ではない。あなたを運べる唯一の空を、月が横切っているだけかもしれない。",
+     "field_note": "影が来た時にリレーを呪うな。月を呪え。中心で死ぬパケットも、縁では通ることがある。"
+    },
+    "zh_CN": {
+     "title": "Kestrel 中继阴影图",
+     "scanner": "中继阴影 // Kestrel 正穿过 Aegir 通道。上行质量按齿状坠落，不是平滑衰减。保存突发数据包，等带电边缘打开。",
+     "terminal": "AEGIR 中继预报 // Kestrel 掩星叠加 Aegir 磁噪会形成阴影梳。低频声学中继可排队上升数据，但验证要等干净的航母边缘。",
+     "audio": "Black Keel 中继：你的天空不是空的，是被挡住了。等 Kestrel 清出后的亮边，再保留数据包发送。",
+     "in_game_wiki": "回收的中继阴影图把 Aegir 的卫星变成正在工作的航线机器。Kestrel 不只是遮光；它把可用的航母通道切成嘈杂的齿。阴影期间，Black Keel 可能收到碎片、过期时间戳，或什么也收不到。",
+     "external_site": "在 HECTON-8，天空不是背景。Kestrel 穿过 Aegir 通道时，会把中继阴影投进 Black Keel 用于数据包、航母计时和回收计算的同一套几何。信号不会像调暗的灯那样平滑减弱。它会断成一把梳子：明亮边缘、噪声槽、过期回波，以及短促突发。那些突发的校验和足以证明有人听见，却没有足够连续性批准升运。下方的海洋让问题更糟。水吞掉功率，风暴扭曲表面计时，Aegir 的带电环境把清空变成移动的法律和物理危险。因此，上行失败不证明你被抛弃。也许只是那颗卫星正穿过唯一能带走你的那片天空。",
+     "field_note": "阴影落下时别骂中继，骂那颗卫星。中心死掉的数据包，到了边缘可能就能通过。"
+    },
+    "fr_FR": {
+     "title": "Carte d'ombre relais de Kestrel",
+     "scanner": "OMBRE RELAIS // Kestrel traverse la voie d'Aegir. La qualité de la liaison montante tombe en dents, pas en fondu régulier. Stockez les paquets en rafale jusqu'à l'ouverture du bord chargé.",
+     "terminal": "PRÉVISION RELAIS AEGIR // L'occultation de Kestrel et le bruit magnétique d'Aegir forment un peigne d'ombre. Le relais acoustique basse bande peut mettre les données d'ascension en file, mais la vérification attend un bord de transporteur propre.",
+     "audio": "Relais Black Keel : votre ciel n'est pas vide, il est bloqué. Gardez les paquets pour le bord lumineux après le dégagement de Kestrel.",
+     "in_game_wiki": "Une carte d'ombre relais récupérée transforme les lunes d'Aegir en machines de route. Kestrel ne bloque pas seulement la lumière ; il découpe la voie utile du transporteur en dents bruyantes. Dans l'ombre, Black Keel peut recevoir des fragments, des horodatages périmés ou rien du tout.",
+     "external_site": "Sur HECTON-8, le ciel n'est pas un décor. Le passage de Kestrel sur la voie d'Aegir projette une ombre relais dans la même géométrie dont Black Keel a besoin pour les paquets, le calendrier du transporteur et le calcul de récupération. Le signal ne baisse pas comme une lampe que l'on réduit. Il casse en peigne : bords lumineux, fentes bruyantes, retours périmés et courtes rafales avec assez de somme de contrôle pour prouver que quelqu'un a écouté, mais pas assez de continuité pour autoriser un levage. L'océan en dessous aggrave tout. L'eau mange la puissance, les tempêtes tordent l'horloge de surface, et l'environnement chargé d'Aegir transforme un ciel propre en danger juridique et physique mobile. Une liaison montante ratée ne prouve donc pas l'abandon. La lune traverse peut-être le seul morceau de ciel capable de vous porter.",
+     "field_note": "Ne maudissez pas le relais quand l'ombre tombe. Maudissez la lune. Un paquet mort au centre peut passer sur le bord."
+    },
+    "es_ES": {
+     "title": "Carta de sombra de relé Kestrel",
+     "scanner": "SOMBRA DE RELÉ // Kestrel cruza el carril de Aegir. La calidad del enlace ascendente cae en dientes, no en un fundido suave. Guarda paquetes de ráfaga hasta que se abra el borde cargado.",
+     "terminal": "PRONÓSTICO DE RELÉ AEGIR // La ocultación de Kestrel más el ruido magnético de Aegir forma un peine de sombra. El relé acústico de baja banda puede encolar datos de ascenso, pero la verificación espera un borde limpio de portador.",
+     "audio": "Relé Black Keel: tu cielo no está vacío; está bloqueado. Retén paquetes para el borde brillante después de que Kestrel despeje.",
+     "in_game_wiki": "Una carta de sombra de relé recuperada convierte las lunas de Aegir en maquinaria de ruta. Kestrel no solo bloquea luz; corta el carril útil del portador en dientes ruidosos. Durante la sombra, Black Keel puede recibir fragmentos, marcas de tiempo caducadas o nada.",
+     "external_site": "En HECTON-8, el cielo no es fondo. El paso de Kestrel por el carril de Aegir proyecta una sombra de relé sobre la misma geometría que Black Keel necesita para paquetes, tiempo de portador y cálculo de recuperación. La señal no se desvanece como una lámpara bajando de intensidad. Se rompe en un peine: bordes brillantes, ranuras ruidosas, retornos caducados y ráfagas cortas con suma de verificación suficiente para probar que alguien escuchó, pero sin continuidad suficiente para aprobar un izado. El océano debajo empeora el problema. El agua devora potencia, las tormentas doblan el reloj de superficie, y el entorno cargado de Aegir convierte un cielo limpio en peligro legal y físico móvil. Un enlace ascendente fallido no prueba abandono. Tal vez la luna cruza el único trozo de cielo que podía llevarte.",
+     "field_note": "No maldigas el relé cuando cae la sombra. Maldice la luna. Un paquete que muere en el centro puede pasar por el borde."
+    },
+    "de_DE": {
+     "title": "Kestrel-Relaisschattenkarte",
+     "scanner": "RELAISSCHATTEN // Kestrel kreuzt die Aegir-Bahn. Uplink-Qualität fällt zahnförmig, nicht als sanftes Ausblenden. Burst-Pakete halten, bis der geladene Rand öffnet.",
+     "terminal": "AEGIR RELAISVORHERSAGE // Kestrel-Bedeckung plus Aegirs Magnetrauschen bildet einen Schattenkamm. Niederband-Akustikrelais kann Aufstiegsdaten einreihen, aber Verifikation wartet auf eine saubere Trägerkante.",
+     "audio": "Black-Keel-Relais: Dein Himmel ist nicht leer; er ist blockiert. Halte Pakete für die helle Kante nach Kestrels Freigang.",
+     "in_game_wiki": "Eine geborgene Relaisschattenkarte macht Aegirs Monde zu arbeitender Routenmechanik. Kestrel blockiert nicht nur Licht; er schneidet die nutzbare Trägerbahn in rauschende Zähne. Im Schatten kann Black Keel Fragmente, alte Zeitstempel oder gar nichts empfangen.",
+     "external_site": "Auf HECTON-8 ist der Himmel kein Hintergrund. Kestrels Passage über die Aegir-Bahn wirft einen Relaisschatten in dieselbe Geometrie, die Black Keel für Pakete, Trägertiming und Bergungsmathematik braucht. Das Signal verblasst nicht wie eine gedimmte Lampe. Es bricht in einen Kamm: helle Ränder, rauschende Schlitze, veraltete Rückläufe und kurze Bursts mit genug Prüfsumme, um zu beweisen, dass jemand zuhörte, aber nicht genug Kontinuität für eine Hebegenehmigung. Der Ozean darunter verschlimmert alles. Wasser frisst Leistung, Stürme verbiegen Oberflächentiming, und Aegirs geladene Umgebung macht klaren Himmel zu einer beweglichen rechtlichen und physischen Gefahr. Ein gescheiterter Uplink beweist daher keine Aufgabe. Vielleicht kreuzt der Mond gerade das einzige Stück Himmel, das dich tragen könnte.",
+     "field_note": "Verfluche nicht das Relais, wenn der Schatten kommt. Verfluche den Mond. Ein Paket, das im Zentrum stirbt, kann am Rand durchkommen."
+    },
+    "pl_PL": {
+     "title": "Mapa cienia przekaźnika Kestrel",
+     "scanner": "CIEŃ PRZEKAŹNIKA // Kestrel przecina pas Aegir. Jakość uplinku spada zębami, nie gładkim zanikiem. Przechowaj pakiety impulsowe, aż otworzy się naładowana krawędź.",
+     "terminal": "PROGNOZA PRZEKAŹNIKA AEGIR // Okultacja Kestrel i szum magnetyczny Aegir tworzą grzebień cienia. Niskopasmowy przekaźnik akustyczny może kolejkować dane wznoszenia, ale weryfikacja czeka na czystą krawędź nośnika.",
+     "audio": "Przekaźnik Black Keel: twoje niebo nie jest puste; jest zablokowane. Trzymaj pakiety na jasną krawędź po zejściu Kestrel.",
+     "in_game_wiki": "Odzyskana mapa cienia przekaźnika zamienia księżyce Aegir w działającą maszynerię trasy. Kestrel nie tylko zasłania światło; tnie użyteczny pas nośnika na szumiące zęby. W cieniu Black Keel może odebrać fragmenty, stare znaczniki czasu albo nic.",
+     "external_site": "Na HECTON-8 niebo nie jest tłem. Przejście Kestrel przez pas Aegir rzuca cień przekaźnika w tę samą geometrię, której Black Keel potrzebuje do pakietów, czasu nośnika i obliczeń odzysku. Sygnał nie gaśnie jak przyciemniana lampa. Łamie się w grzebień: jasne krawędzie, szumiące szczeliny, przestarzałe powroty i krótkie impulsy z sumą kontrolną wystarczającą, by udowodnić, że ktoś słuchał, ale bez ciągłości potrzebnej do zgody na podniesienie. Ocean poniżej pogarsza problem. Woda zjada moc, burze zginają czas powierzchni, a naładowane środowisko Aegir zmienia czyste niebo w ruchome zagrożenie prawne i fizyczne. Nieudany uplink nie dowodzi więc porzucenia. Być może księżyc przecina jedyny kawałek nieba, który mógł cię ponieść.",
+     "field_note": "Nie przeklinaj przekaźnika, gdy spada cień. Przeklinaj księżyc. Pakiet martwy w środku może przejść na krawędzi."
+    },
+    "uk_UA": {
+     "title": "Карта тіні реле Kestrel",
+     "scanner": "ТІНЬ РЕЛЕ // Kestrel перетинає смугу Aegir. Якість висхідного каналу падає зубцями, а не плавним згасанням. Тримай пакети-спалахи до відкриття зарядженої крайки.",
+     "terminal": "ПРОГНОЗ РЕЛЕ AEGIR // Покриття Kestrel разом із магнітним шумом Aegir формує тіньову гребінку. Низькосмугове акустичне реле може поставити дані підйому в чергу, але перевірка чекає чистої крайки носія.",
+     "audio": "Ретранслятор Black Keel: твоє небо не порожнє, воно перекрите. Тримай пакети до світлої крайки після виходу Kestrel.",
+     "in_game_wiki": "Знайдена карта тіні реле перетворює місяці Aegir на робочу машину маршруту. Kestrel не просто закриває світло; він ріже корисну лінію до носія на шумні зубці. У тіні Black Keel може отримати фрагменти, застарілі мітки часу або взагалі нічого.",
+     "external_site": "На HECTON-8 небо не є фоном. Прохід Kestrel через смугу Aegir кидає тінь реле в ту саму геометрію, яка потрібна Black Keel для пакетів, розрахунку часу носія і математики евакуації. Сигнал не згасає як лампа на регуляторі яскравості. Він ламається в гребінку: світлі крайки, шумні щілини, запізнілі відповіді і короткі спалахи, де контрольної суми достатньо, щоб довести, що хтось слухав, але без безперервності для дозволу на підйом. Океан знизу погіршує проблему. Вода з'їдає потужність, шторми гнуть поверхневий годинник, а заряджене середовище Aegir перетворює чисте небо на рухому юридичну і фізичну небезпеку. Невдалий висхідний канал тому не доводить, що тебе покинули. Можливо, місяць перетинає єдиний шматок неба, який міг би тебе винести.",
+     "field_note": "Не лай реле, коли приходить тінь. Лай місяць. Пакет, що вмер у центрі, може пройти по крайці."
+    },
+    "ar_SA": {
+     "title": "خريطة ظل مرحل Kestrel",
+     "scanner": "ظل المرحل // يعبر Kestrel مسار Aegir. جودة uplink تهبط كأسنان لا كتلاشي ناعم. خزّن حزم الدفق حتى تنفتح الحافة المشحونة.",
+     "terminal": "توقع مرحل AEGIR // حجب Kestrel مع الضجيج المغناطيسي في Aegir يصنع مشط ظل. يمكن للمرحل الصوتي منخفض النطاق أن يضع بيانات الصعود في الطابور، لكن التحقق ينتظر حافة حامل نظيفة.",
+     "audio": "مرحل Black Keel: سماؤك ليست فارغة؛ إنها محجوبة. احتفظ بالحزم للحافة المضيئة بعد أن يزول Kestrel.",
+     "in_game_wiki": "خريطة ظل المرحل المستعادة تحول أقمار Aegir إلى آلة مسار عاملة. Kestrel لا يحجب الضوء فقط؛ إنه يقطع مسار الحامل المفيد إلى أسنان مشوشة. أثناء الظل قد يتلقى Black Keel شظايا أو طوابع زمنية قديمة أو لا شيء.",
+     "external_site": "في HECTON-8 السماء ليست خلفية. عبور Kestrel لمسار Aegir يرمي ظل مرحل داخل الهندسة نفسها التي يحتاجها Black Keel للحزم وتوقيت الحامل وحساب الاستعادة. الإشارة لا تخفت مثل مصباح يهبط ضوؤه. إنها تنكسر إلى مشط: حواف مضيئة، فتحات مشوشة، عوائد قديمة، ودفقات قصيرة تكفي فيها checksum لإثبات أن أحداً سمع، لكنها لا تكفي للاستمرارية المطلوبة للموافقة على الرفع. المحيط في الأسفل يزيد المشكلة. الماء يلتهم الطاقة، والعواصف تثني توقيت السطح، وبيئة Aegir المشحونة تحول السماء النظيفة إلى خطر قانوني وفيزيائي متحرك. لذلك لا يثبت فشل uplink أنك تُركت. ربما يعبر القمر القطعة الوحيدة من السماء القادرة على حملك.",
+     "field_note": "لا تلعن المرحل عندما يسقط الظل. العن القمر. الحزمة التي تموت في الوسط قد تعبر من الحافة."
+    },
+    "id_ID": {
+     "title": "Peta Bayang Relai Kestrel",
+     "scanner": "BAYANG RELAI // Kestrel sedang melintasi jalur Aegir. Kualitas tautan naik jatuh seperti gigi, bukan pudar mulus. Simpan paket burst sampai tepi bermuatan terbuka.",
+     "terminal": "PRAKIRAAN RELAI AEGIR // Okultasi Kestrel ditambah noise magnetik Aegir membentuk sisir bayang. Relai akustik pita rendah dapat mengantrekan data naik, tetapi verifikasi menunggu tepi pengangkut yang bersih.",
+     "audio": "Relai Black Keel: langitmu tidak kosong; ia tertutup. Tahan paket untuk tepi terang setelah Kestrel lewat.",
+     "in_game_wiki": "Peta bayang relai yang ditemukan mengubah bulan-bulan Aegir menjadi mesin rute yang bekerja. Kestrel bukan hanya memblokir cahaya; ia memotong jalur pengangkut yang berguna menjadi gigi bising. Saat bayang, Black Keel mungkin menerima fragmen, cap waktu basi, atau tidak menerima apa pun.",
+     "external_site": "Di HECTON-8, langit bukan latar. Lintasan Kestrel melintasi jalur Aegir melempar bayang relai ke geometri yang sama yang dibutuhkan Black Keel untuk paket, waktu pengangkut, dan hitungan pemulihan. Sinyal tidak memudar seperti lampu diredupkan. Ia pecah menjadi sisir: tepi terang, celah bising, balasan basi, dan burst pendek dengan checksum cukup untuk membuktikan ada yang mendengar, tetapi tanpa kontinuitas cukup untuk menyetujui pengangkatan. Laut di bawah memperburuk masalah. Air memakan daya, badai membengkokkan jam permukaan, dan lingkungan bermuatan Aegir mengubah langit bersih menjadi bahaya hukum dan fisik yang bergerak. Kegagalan tautan naik karena itu bukan bukti ditinggalkan. Mungkin bulan sedang melintasi satu-satunya bagian langit yang bisa membawamu.",
+     "field_note": "Jangan kutuk relai saat bayang datang. Kutuk bulannya. Paket yang mati di tengah bisa lewat di tepi."
+    },
+    "ko_KR": {
+     "title": "Kestrel 중계 그림자 도표",
+     "scanner": "중계 그림자 // Kestrel이 Aegir 차선을 가로지른다. 업링크 품질은 매끄럽게 줄지 않고 이빨처럼 떨어진다. 대전된 가장자리가 열릴 때까지 버스트 패킷을 보관하라.",
+     "terminal": "AEGIR 중계 예보 // Kestrel 엄폐와 Aegir 자기 잡음이 그림자 빗을 만든다. 저대역 음향 중계는 상승 데이터를 대기열에 넣을 수 있지만, 검증은 깨끗한 운반선 가장자리를 기다린다.",
+     "audio": "Black Keel 중계: 네 하늘은 비어 있지 않다. 막혀 있다. Kestrel이 지난 뒤 밝은 가장자리까지 패킷을 붙들어라.",
+     "in_game_wiki": "회수된 중계 그림자 도표는 Aegir의 달들을 작동하는 항로 기계로 바꿔 보인다. Kestrel은 빛만 막지 않는다. 유용한 운반선 차선을 잡음 섞인 이빨로 자른다. 그림자 동안 Black Keel은 조각, 오래된 타임스탬프, 혹은 아무것도 받지 못할 수 있다.",
+     "external_site": "HECTON-8에서 하늘은 배경이 아니다. Kestrel이 Aegir 차선을 지나가면 Black Keel이 패킷, 운반선 타이밍, 회수 계산에 필요한 같은 기하에 중계 그림자를 던진다. 신호는 조광된 램프처럼 부드럽게 사라지지 않는다. 빗처럼 부서진다. 밝은 가장자리, 시끄러운 틈, 오래된 반환, 그리고 누군가 들었다는 것을 증명할 만큼의 체크섬은 있지만 인양 승인을 내릴 연속성은 없는 짧은 버스트다. 아래의 바다는 문제를 더 악화시킨다. 물은 전력을 먹고, 폭풍은 표면 타이밍을 휘게 하며, Aegir의 대전 환경은 깨끗한 하늘을 움직이는 법적, 물리적 위험으로 바꾼다. 그러므로 업링크 실패는 버림받았다는 증거가 아니다. 달이 너를 실어 나를 수 있는 유일한 하늘 조각을 지나가고 있을지도 모른다.",
+     "field_note": "그림자가 닥칠 때 중계를 저주하지 마라. 달을 저주해라. 중심에서 죽은 패킷도 가장자리에서는 통과할 수 있다."
+    },
+    "he_IL": {
+     "title": "תרשים צל הממסר של Kestrel",
+     "scanner": "צל ממסר // Kestrel חוצה את נתיב Aegir. איכות uplink נופלת בשיניים, לא בדעיכה חלקה. שמור חבילות burst עד שהשפה הטעונה נפתחת.",
+     "terminal": "תחזית ממסר AEGIR // הסתרת Kestrel יחד עם רעש מגנטי של Aegir יוצרת מסרק צל. ממסר אקוסטי נמוך-פס יכול לתור נתוני עלייה, אבל האימות ממתין לשפת נשא נקייה.",
+     "audio": "ממסר Black Keel: השמיים שלך אינם ריקים; הם חסומים. החזק חבילות לשפה הבהירה אחרי ש-Kestrel מתפנה.",
+     "in_game_wiki": "תרשים צל ממסר שנמצא הופך את ירחי Aegir למכונת נתיב עובדת. Kestrel לא רק חוסם אור; הוא חותך את נתיב הנשא השימושי לשיניים רועשות. בזמן צל, Black Keel עשוי לקבל שברים, חותמות זמן ישנות או כלום.",
+     "external_site": "ב-HECTON-8 השמיים אינם רקע. מעבר Kestrel דרך נתיב Aegir מטיל צל ממסר על אותה גאומטריה ש-Black Keel צריך לחבילות, לתזמון נשא ולחישוב חילוץ. האות אינו דועך כמו מנורה שמעמעמים. הוא נשבר למסרק: שפות בהירות, חריצים רועשים, החזרות ישנות ופרצי מידע קצרים עם checksum שמספיק להוכיח שמישהו הקשיב, אך לא מספיק רצף כדי לאשר הרמה. האוקיינוס למטה מחמיר את הבעיה. מים אוכלים כוח, סערות מכופפות תזמון פני שטח, והסביבה הטעונה של Aegir הופכת שמיים נקיים לסכנה משפטית ופיזית נעה. לכן uplink כושל אינו הוכחה לנטישה. ייתכן שהירח חוצה את פיסת השמיים היחידה שיכלה לשאת אותך.",
+     "field_note": "אל תקלל את הממסר כשהצל מגיע. קלל את הירח. חבילה שמתה במרכז יכולה לעבור בשפה."
+    },
+    "pt_BR": {
+     "title": "Mapa de sombra do relé Kestrel",
+     "scanner": "SOMBRA DE RELÉ // Kestrel cruza a faixa de Aegir. A qualidade do uplink cai em dentes, não em desvanecimento suave. Guarde pacotes de rajada até a borda carregada abrir.",
+     "terminal": "PREVISÃO DE RELÉ AEGIR // Ocultação de Kestrel com ruído magnético de Aegir forma um pente de sombra. O relé acústico de baixa banda pode enfileirar dados de ascensão, mas a verificação espera uma borda limpa do cargueiro.",
+     "audio": "Relé Black Keel: seu céu não está vazio; está bloqueado. Segure pacotes para a borda clara depois que Kestrel sair.",
+     "in_game_wiki": "Um mapa de sombra de relé recuperado transforma as luas de Aegir em maquinaria de rota. Kestrel não bloqueia só luz; ele corta a faixa útil do cargueiro em dentes ruidosos. Durante a sombra, Black Keel pode receber fragmentos, carimbos de tempo vencidos ou nada.",
+     "external_site": "Em HECTON-8, o céu não é pano de fundo. A passagem de Kestrel pela faixa de Aegir lança uma sombra de relé na mesma geometria que Black Keel precisa para pacotes, tempo do cargueiro e cálculo de recuperação. O sinal não some como uma lâmpada sendo diminuída. Ele se quebra em um pente: bordas claras, fendas ruidosas, retornos vencidos e rajadas curtas com soma de verificação suficiente para provar que alguém escutou, mas sem continuidade suficiente para aprovar içamento. O oceano abaixo piora o problema. A água come potência, tempestades dobram o relógio de superfície, e o ambiente carregado de Aegir transforma céu limpo em perigo legal e físico móvel. Um enlace ascendente falho, portanto, não prova abandono. Talvez a lua esteja cruzando o único pedaço de céu capaz de carregar você.",
+     "field_note": "Não amaldiçoe o relé quando a sombra cai. Amaldiçoe a lua. Um pacote que morre no centro pode passar pela borda."
+    },
+    "nl_NL": {
+     "title": "Kestrel-relaisschaduwkaart",
+     "scanner": "RELAISSCHADUW // Kestrel kruist de Aegir-baan. Uplinkkwaliteit valt in tanden, niet in een vloeiende fade. Bewaar burstpakketten tot de geladen rand opent.",
+     "terminal": "AEGIR RELAISVOORSPELLING // Kestrel-occultatie plus Aegirs magnetische ruis vormt een schaduwkam. Laagbandig akoestisch relais kan opstijgdata in de wachtrij zetten, maar verificatie wacht op een schone dragerrand.",
+     "audio": "Black Keel-relais: je hemel is niet leeg; hij is geblokkeerd. Houd pakketten vast voor de heldere rand nadat Kestrel vrij komt.",
+     "in_game_wiki": "Een geborgen relaisschaduwkaart maakt van Aegirs manen werkende routemachines. Kestrel blokkeert niet alleen licht; hij snijdt de bruikbare dragerbaan in ruisende tanden. Tijdens schaduw kan Black Keel fragmenten, verlopen tijdstempels of helemaal niets ontvangen.",
+     "external_site": "Op HECTON-8 is de hemel geen achtergrond. Kestrels passage over de Aegir-baan werpt een relaisschaduw door dezelfde geometrie die Black Keel nodig heeft voor pakketten, dragertiming en bergingsberekening. Het signaal vervaagt niet als een lamp die wordt gedimd. Het breekt in een kam: heldere randen, ruisende sleuven, verlopen terugmeldingen en korte bursts met genoeg controlesom om te bewijzen dat iemand luisterde, maar te weinig continuïteit voor hijstoestemming. De oceaan eronder maakt het erger. Water eet vermogen, stormen buigen de oppervlakteklok, en Aegirs geladen omgeving verandert heldere hemel in een bewegend juridisch en fysiek gevaar. Een mislukte uplink bewijst dus geen verlating. Misschien kruist de maan net het enige stuk hemel dat jou kon dragen.",
+     "field_note": "Vervloek het relais niet wanneer de schaduw valt. Vervloek de maan. Een pakket dat in het midden sterft, kan aan de rand doorkomen."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,254 +1,255 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS202_AEGIR_MOON_LADDER_ORBITAL_HAZARDS",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS202_AEGIR_MOON_LADDER_ORBITAL_HAZARDS",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1095_AEGIR_MOON_LADDER_ORBITAL_HAZARDS",
+   "release_set_id": "RS202_AEGIR_MOON_LADDER_ORBITAL_HAZARDS",
+   "article_id": "applied_lore.aegir_moon_ladder_orbital_hazards",
+   "title_key": "LORE_AEGIR_MOON_LADDER_ORBITAL_HAZARDS_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_en_US.md",
+    "Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1095_AEGIR_MOON_LADDER_ORBITAL_HAZARDS",
-      "release_set_id": "RS202_AEGIR_MOON_LADDER_ORBITAL_HAZARDS",
-      "article_id": "applied_lore.aegir_moon_ladder_orbital_hazards",
-      "title_key": "LORE_AEGIR_MOON_LADDER_ORBITAL_HAZARDS_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_en_US.md",
-        "Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.aegir_moon_ladder_orbital_hazards",
-        "secondary": [
-          "unlock.first_orbital_hazard_table",
-          "unlock.first_black_keel_recovery_window",
-          "unlock.first_route_shadow_warning"
-        ],
-        "poi_tags": [
-          "poi.orbital_hazard_table",
-          "poi.relay_window_console",
-          "poi.black_keel_link"
-        ],
-        "biome_tags": [
-          "biome.storm_shelf",
-          "biome.crash_shelf",
-          "biome.orbital_window"
-        ],
-        "first_20_boundary": "Makes sky failure legible before the player mistakes every failed rescue for ocean-only isolation."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Orbital Hazard Scanner Overlay",
-          "terminal": "Black Keel Recovery Window Terminal",
-          "audio": "Automated Celestial Registry",
-          "in_game_wiki": "PDA Orbital Hazard Field Guide",
-          "external_site": "Public Site Aegir System Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_recovery_window_denied",
-        "truth_payload": "Rescue from HECTON-8 fails through sky geometry, orbital weather, delayed custody, legal windows and Black Keel mass accounting as much as through ocean pressure.",
-        "player_question": "Why can Black Keel confirm delivery but not rescue?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Aegir Moon Ladder",
-          "scanner": "ORBITAL HAZARD // Window unstable. Skarn surge, Vela shutter, Kestrel occlusion and HECTON storm plume can break recovery geometry.",
-          "terminal": "RECOVERY WINDOW NOTE // Black Keel requires signal custody, clean payload hash, quarantine handshake and recoverable tonne-window before body lift. Bright sky is not rescue clearance.",
-          "audio": "The sky did not fail empty. It failed on schedule: moon, shutter, surge, ledger, mass.",
-          "in_game_wiki": "Aegir's moon ladder is not a sky decoration. Ran is the star, Aegir is the giant, and HECTON-8 is one ocean moon inside a moving chain of moons, relays, storms, custody checks and insured mass windows.\n\nSkarn can flood antennas with charged noise. Vela can shutter relays with ice dust. Kestrel can block a line of sight at the worst minute. HECTON can throw storm plume through a clean ascent corridor. Black Keel can receive your packet and still refuse lift if the window, quarantine handshake or mass class fails.",
-          "external_site": "Aegir explains why rescue from HECTON-8 can be visible, confirmed and still denied: the sky is a traffic machine, not a promise.",
-          "external_site_article": "The Aegir moon ladder is the first hard correction to the player's instinct that rescue only has to beat the ocean. HECTON-8 sits under a busy giant, not under an empty sky. Ran supplies the light, Aegir supplies gravity, radiation, debris weather and transfer timing, and the moons turn the space above the water into a moving lock.\n\nThe ladder's names matter because each rung breaks a different kind of certainty. Skarn makes clean electronics intermittent. Vela scatters optical and carrier links. Claw preserves old route logic that machines still obey. Lumen proves packets moved without proving they were handled justly. Thorne carries quarantine suspicion. Anvil leaves cargo law in salvage hardware. Kestrel compresses windows by simply standing in the wrong place. HECTON supplies the water, pressure and storm plume. Mute proves that dead routes can still exist on paper.\n\nBlack Keel is therefore not a heroic mother ship. It is a claim-tender inside that geometry. To lift a body it needs signal custody, a clean payload hash, quarantine handshake, guidance confidence and a tonne-window that insurance will accept. A bright sky can be useless. A true signal can arrive too late. The ladder makes isolation physical, legal and astronomical at the same time.",
-          "field_note": "When recovery fails, read the sky warning before blaming the pinger."
-        },
-        "ru_RU": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Лунная лестница Aegir",
-          "scanner": "ОРБИТАЛЬНАЯ ОПАСНОСТЬ // Окно нестабильно. Всплеск Skarn, шторка Vela, перекрытие Kestrel и штормовой плюм HECTON могут сломать геометрию возврата.",
-          "terminal": "ЗАМЕТКА ОКНА ВОЗВРАТА // Black Keel требует опеку сигнала, чистый payload hash, карантинное рукопожатие и поднимаемое тоннажное окно перед подъемом тела. Светлое небо не является разрешением на спасение.",
-          "audio": "Небо отказало не пустотой. Оно отказало по расписанию: луна, шторка, всплеск, реестр, масса.",
-          "in_game_wiki": "Лунная лестница Aegir - не украшение неба. Ran - звезда, Aegir - гигант, а HECTON-8 - одна океаническая луна внутри движущейся цепи лун, ретрансляторов, штормов, проверок опеки и застрахованных окон массы.\n\nSkarn может залить антенны заряженным шумом. Vela может закрыть ретрансляторы ледяной пылью. Kestrel может перекрыть линию видимости в худшую минуту. HECTON может бросить штормовой плюм через чистый коридор подъема. Black Keel может принять пакет и все равно отказать в подъеме, если окно, карантинное рукопожатие или класс массы провалены.",
-          "external_site": "Aegir объясняет, почему спасение с HECTON-8 может быть видимым, подтвержденным и все равно отказанным: небо здесь машина трафика, а не обещание.",
-          "external_site_article": "Лунная лестница Aegir - первый жесткий ответ на привычную мысль игрока: будто спасению надо победить только океан. HECTON-8 находится под занятым гигантом, а не под пустым небом. Ran дает свет, Aegir дает гравитацию, радиацию, мусорную погоду и время перелетов, а луны превращают пространство над водой в движущийся замок.\n\nНазвания ступеней важны, потому что каждая ломает другой вид уверенности. Skarn делает чистую электронику прерывистой. Vela рассеивает оптику и carrier-связь. Claw хранит старую маршрутную логику, которой машины все еще подчиняются. Lumen доказывает, что пакет прошел маршрут, но не доказывает честное обращение с ним. Thorne несет карантинное подозрение. Anvil оставляет грузовое право на salvage-железе. Kestrel сжимает окна, просто встав не там. HECTON дает воду, давление и штормовой плюм. Mute доказывает, что мертвые маршруты могут существовать на бумаге.\n\nBlack Keel поэтому не героический материнский корабль. Это claim-tender внутри такой геометрии. Чтобы поднять тело, ему нужны опека сигнала, чистый payload hash, карантинное рукопожатие, уверенность наведения и тоннажное окно, которое примет страховка. Светлое небо может быть бесполезным. Истинный сигнал может прийти слишком поздно. Лестница делает изоляцию физической, юридической и астрономической одновременно.",
-          "field_note": "Если возврат сорвался, сначала прочитай предупреждение неба, потом обвиняй pinger."
-        },
-        "ja_JP": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Aegirの月梯子",
-          "scanner": "軌道危険 // 窓は不安定。Skarnサージ、Velaシャッター、Kestrel遮蔽、HECTON嵐プルームが回収幾何を壊す可能性がある。",
-          "terminal": "回収窓メモ // Black Keelは身体引き上げ前に信号保管、清浄なpayload hash、隔離ハンドシェイク、回収可能トン窓を要求する。明るい空は救助許可ではない。",
-          "audio": "空は空白で失敗したのではない。月、シャッター、サージ、台帳、質量の予定どおりに失敗した。",
-          "in_game_wiki": "Aegirの月梯子は空の飾りではない。Ranは恒星、Aegirは巨星、HECTON-8は月、リレー、嵐、保管確認、保険付き質量窓の連鎖に入った海洋月である。\n\nSkarnはアンテナを荷電ノイズであふれさせる。Velaは氷塵でリレーを閉じる。Kestrelは最悪の瞬間に視線を遮る。HECTONは清浄な上昇回廊へ嵐プルームを投げ込む。Black Keelはパケットを受け取っても、窓、隔離ハンドシェイク、質量クラスが落ちれば引き上げを拒む。",
-          "external_site": "Aegirは、HECTON-8の救助が見えて、確認され、それでも拒否される理由を示す。空は交通機械であって約束ではない。",
-          "external_site_article": "Aegirの月梯子は、救助が海だけに勝てばよいという直感を最初に壊す。HECTON-8の上にあるのは空いた空ではなく、混雑した巨星圏である。Ranは光を与え、Aegirは重力、放射線、デブリ天候、移送時刻を与え、月たちは水面上の空間を動く錠前に変える。\n\n各段の名前は、別々の確実性を破壊する。Skarnは正常な電子機器を断続的にする。Velaは光学とcarrierリンクを散乱させる。Clawは機械がまだ従う古い航路論理を残す。Lumenはパケットの通過を証明しても公正な扱いを証明しない。Thorneは隔離の疑いを運ぶ。Anvilはsalvageハードに貨物法を残す。Kestrelは間違った場所に立つだけで窓を圧縮する。HECTONは水、圧力、嵐プルームを与える。Muteは死んだ航路が紙の上で生きることを示す。\n\nだからBlack Keelは英雄的な母船ではない。これはその幾何の中のclaim-tenderである。身体を引き上げるには、信号保管、清浄なpayload hash、隔離ハンドシェイク、誘導信頼度、保険が認めるトン窓が必要だ。明るい空は役に立たないことがある。真の信号も遅すぎれば無力だ。月梯子は孤立を物理、法、天文の三つで同時に成立させる。",
-          "field_note": "回収が失敗したら、pingerを責める前に空の警告を読め。"
-        },
-        "zh_CN": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Aegir月梯",
-          "scanner": "轨道危险 // 窗口不稳定。Skarn涌动、Vela遮帘、Kestrel遮挡和HECTON风暴羽流都可能破坏回收几何。",
-          "terminal": "回收窗口记录 // Black Keel在吊起人体前需要信号保管、干净payload hash、隔离握手和可回收吨位窗口。明亮天空不是救援许可。",
-          "audio": "天空不是因空无而失败。它按计划失败：月亮、遮帘、涌动、账本、质量。",
-          "in_game_wiki": "Aegir月梯不是天空装饰。Ran是恒星，Aegir是巨行星，HECTON-8是在卫星、 relay、风暴、保管检查和承保质量窗口链条中的一颗海洋月球。\n\nSkarn会用带电噪声淹没天线。Vela会用冰尘遮住relay。Kestrel会在最糟的分钟挡住视线。HECTON会把风暴羽流甩进干净的上升走廊。Black Keel能收到你的数据包，但如果窗口、隔离握手或质量等级失败，它仍会拒绝吊起。",
-          "external_site": "Aegir说明为什么HECTON-8救援可以可见、已确认，却仍被拒绝：天空是一台交通机器，不是一句承诺。",
-          "external_site_article": "Aegir月梯首先纠正玩家的本能：救援不是只要战胜海洋。HECTON-8上方不是空旷天空，而是繁忙的巨行星空间。Ran提供光，Aegir提供重力、辐射、碎片天气和转移时刻，卫星们把水面上方的空间变成一把移动的锁。\n\n每一级名字都破坏一种确定性。Skarn让正常电子设备变得断续。Vela散射光学和carrier链路。Claw保留旧航线逻辑，机器仍会服从。Lumen能证明数据包经过了正确路线，却不能证明它被公平处理。Thorne携带隔离嫌疑。Anvil把货运法律留在salvage硬件上。Kestrel只要站错位置就能压缩窗口。HECTON提供水、压力和风暴羽流。Mute证明死路线仍可在纸面存在。\n\n所以Black Keel不是英雄母舰。它是这种几何里的claim-tender。要吊起一个身体，它需要信号保管、干净payload hash、隔离握手、制导可信度，以及保险愿意接受的吨位窗口。明亮天空可能毫无用处。真实信号也可能来得太晚。月梯让孤立同时成为物理、法律和天文学事实。",
-          "field_note": "回收失败时，先读天空警告，再责怪pinger。"
-        },
-        "fr_FR": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Échelle lunaire d'Aegir",
-          "scanner": "DANGER ORBITAL // Fenêtre instable. Sursaut Skarn, volet Vela, occultation Kestrel et panache de tempête HECTON peuvent briser la géométrie de récupération.",
-          "terminal": "NOTE DE FENÊTRE DE RÉCUPÉRATION // Black Keel exige garde du signal, payload hash propre, handshake de quarantaine et fenêtre de tonnage récupérable avant levage du corps. Un ciel clair n'est pas une autorisation de secours.",
-          "audio": "Le ciel n'a pas échoué par vide. Il a échoué selon l'horaire : lune, volet, sursaut, registre, masse.",
-          "in_game_wiki": "L'échelle lunaire d'Aegir n'est pas une décoration du ciel. Ran est l'étoile, Aegir le géant, et HECTON-8 une lune océanique dans une chaîne mouvante de lunes, relais, tempêtes, contrôles de garde et fenêtres de masse assurée.\n\nSkarn peut noyer les antennes de bruit chargé. Vela peut fermer les relais avec de la poussière de glace. Kestrel peut couper la ligne de vue au pire instant. HECTON peut jeter un panache de tempête dans un couloir d'ascension propre. Black Keel peut recevoir votre paquet et refuser quand même le levage si la fenêtre, le handshake de quarantaine ou la classe de masse échoue.",
-          "external_site": "Aegir explique pourquoi un secours depuis HECTON-8 peut être visible, confirmé puis refusé : le ciel est une machine de trafic, pas une promesse.",
-          "external_site_article": "L'échelle lunaire d'Aegir corrige d'abord l'instinct du joueur : un sauvetage n'a pas seulement à vaincre l'océan. HECTON-8 se trouve sous un géant occupé, pas sous un ciel vide. Ran donne la lumière, Aegir impose gravité, radiation, météo de débris et temps de transfert, et les lunes changent l'espace au-dessus de l'eau en verrou mobile.\n\nChaque barreau casse une certitude différente. Skarn rend l'électronique propre intermittente. Vela disperse optiques et liaisons carrier. Claw conserve une vieille logique de route que les machines respectent encore. Lumen prouve le passage d'un paquet sans prouver son traitement juste. Thorne transporte le soupçon de quarantaine. Anvil laisse le droit cargo sur le matériel de salvage. Kestrel comprime les fenêtres en se tenant simplement au mauvais endroit. HECTON fournit l'eau, la pression et le panache de tempête. Mute prouve qu'une route morte peut vivre sur papier.\n\nBlack Keel n'est donc pas un vaisseau mère héroïque. C'est un claim-tender dans cette géométrie. Pour lever un corps, il faut garde du signal, payload hash propre, handshake de quarantaine, confiance de guidage et fenêtre de tonnage acceptable par l'assurance. Un ciel clair peut ne servir à rien. Un signal vrai peut arriver trop tard. L'échelle rend l'isolement physique, légal et astronomique à la fois.",
-          "field_note": "Quand la récupération échoue, lis l'alerte du ciel avant d'accuser le pinger."
-        },
-        "es_ES": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Escalera lunar de Aegir",
-          "scanner": "PELIGRO ORBITAL // Ventana inestable. Oleada Skarn, persiana Vela, ocultación Kestrel y penacho de tormenta HECTON pueden romper la geometría de recuperación.",
-          "terminal": "NOTA DE VENTANA DE RECUPERACIÓN // Black Keel exige custodia de señal, payload hash limpio, handshake de cuarentena y ventana de tonelaje recuperable antes de izar un cuerpo. Cielo brillante no es permiso de rescate.",
-          "audio": "El cielo no falló por vacío. Falló según horario: luna, persiana, oleada, libro mayor, masa.",
-          "in_game_wiki": "La escalera lunar de Aegir no es decoración del cielo. Ran es la estrella, Aegir el gigante, y HECTON-8 una luna oceánica dentro de una cadena móvil de lunas, relés, tormentas, controles de custodia y ventanas de masa asegurada.\n\nSkarn puede inundar antenas con ruido cargado. Vela puede cerrar relés con polvo de hielo. Kestrel puede bloquear la línea de visión en el peor minuto. HECTON puede lanzar un penacho de tormenta por un corredor de ascenso limpio. Black Keel puede recibir tu paquete y aun así negar el izado si fallan la ventana, el handshake de cuarentena o la clase de masa.",
-          "external_site": "Aegir explica por qué el rescate de HECTON-8 puede ser visible, confirmado y aun así negado: el cielo es una máquina de tráfico, no una promesa.",
-          "external_site_article": "La escalera lunar de Aegir corrige primero el instinto del jugador: el rescate no sólo debe vencer al océano. HECTON-8 está bajo un gigante ocupado, no bajo un cielo vacío. Ran da la luz, Aegir impone gravedad, radiación, clima de restos y tiempos de transferencia, y las lunas convierten el espacio sobre el agua en una cerradura móvil.\n\nCada peldaño rompe una certeza distinta. Skarn vuelve intermitente la electrónica limpia. Vela dispersa ópticas y enlaces carrier. Claw conserva lógica vieja de ruta que las máquinas aún obedecen. Lumen prueba que un paquete viajó sin probar que fue tratado con justicia. Thorne lleva sospecha de cuarentena. Anvil deja ley de carga en el hardware de salvage. Kestrel comprime ventanas con sólo estar en el lugar equivocado. HECTON aporta agua, presión y penacho de tormenta. Mute demuestra que una ruta muerta puede vivir en papel.\n\nBlack Keel no es, por tanto, una nave madre heroica. Es un claim-tender dentro de esa geometría. Para izar un cuerpo necesita custodia de señal, payload hash limpio, handshake de cuarentena, confianza de guiado y una ventana de toneladas aceptada por el seguro. Un cielo claro puede no servir. Una señal verdadera puede llegar tarde. La escalera vuelve el aislamiento físico, legal y astronómico a la vez.",
-          "field_note": "Cuando falle la recuperación, lee la advertencia del cielo antes de culpar al pinger."
-        },
-        "de_DE": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Aegir-Mondleiter",
-          "scanner": "ORBITALE GEFAHR // Fenster instabil. Skarn-Surge, Vela-Shutter, Kestrel-Verdeckung und HECTON-Sturmfahne können Bergungsgeometrie brechen.",
-          "terminal": "BERGUNGSFENSTER-NOTIZ // Black Keel verlangt Signalverwahrung, sauberen payload hash, Quarantäne-Handshake und bergbares Tonnenfenster vor Körperlift. Heller Himmel ist keine Rettungsfreigabe.",
-          "audio": "Der Himmel scheiterte nicht an Leere. Er scheiterte nach Plan: Mond, Shutter, Surge, Ledger, Masse.",
-          "in_game_wiki": "Aegirs Mondleiter ist keine Himmelsdekoration. Ran ist der Stern, Aegir der Riese, und HECTON-8 ein Ozeanmond in einer beweglichen Kette aus Monden, Relais, Stürmen, Verwahrungsprüfungen und versicherten Massefenstern.\n\nSkarn kann Antennen mit geladenem Rauschen fluten. Vela kann Relais mit Eisstaub verschließen. Kestrel kann im schlimmsten Moment die Sichtlinie blockieren. HECTON kann eine Sturmfahne durch einen sauberen Aufstiegskorridor werfen. Black Keel kann dein Paket empfangen und den Lift trotzdem verweigern, wenn Fenster, Quarantäne-Handshake oder Masseklasse scheitern.",
-          "external_site": "Aegir erklärt, warum HECTON-8-Rettung sichtbar, bestätigt und trotzdem verweigert sein kann: Der Himmel ist eine Verkehrsmaschine, kein Versprechen.",
-          "external_site_article": "Die Aegir-Mondleiter korrigiert zuerst den Instinkt des Spielers: Rettung muss nicht nur den Ozean schlagen. HECTON-8 liegt unter einem beschäftigten Riesen, nicht unter leerem Himmel. Ran liefert Licht, Aegir liefert Gravitation, Strahlung, Trümmerwetter und Transferzeiten, und die Monde machen den Raum über dem Wasser zu einem beweglichen Schloss.\n\nJede Stufe bricht eine andere Sicherheit. Skarn macht saubere Elektronik intermittierend. Vela streut Optik und carrier-Verbindungen. Claw bewahrt alte Routenlogik, der Maschinen noch gehorchen. Lumen beweist Paketdurchlauf, aber keine gerechte Behandlung. Thorne trägt Quarantäneverdacht. Anvil hinterlässt Frachtrecht auf salvage-Hardware. Kestrel komprimiert Fenster, indem es nur falsch steht. HECTON liefert Wasser, Druck und Sturmfahne. Mute zeigt, dass tote Routen auf Papier weiterleben können.\n\nBlack Keel ist daher kein heroisches Mutterschiff. Es ist ein claim-tender in dieser Geometrie. Für einen Körperlift braucht es Signalverwahrung, sauberen payload hash, Quarantäne-Handshake, Führungsvertrauen und ein Tonnenfenster, das Versicherung akzeptiert. Heller Himmel kann nutzlos sein. Ein wahres Signal kann zu spät kommen. Die Leiter macht Isolation zugleich physisch, rechtlich und astronomisch.",
-          "field_note": "Wenn Bergung scheitert, lies die Himmelswarnung, bevor du den pinger beschuldigst."
-        },
-        "pl_PL": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Księżycowa drabina Aegira",
-          "scanner": "ZAGROŻENIE ORBITALNE // Okno niestabilne. Skok Skarn, zasłona Vela, okluzja Kestrel i pióropusz burzy HECTON mogą złamać geometrię odzysku.",
-          "terminal": "NOTATKA OKNA ODZYSKU // Black Keel wymaga kustodii sygnału, czystego payload hash, handshake kwarantanny i odzyskiwalnego okna tonażu przed podniesieniem ciała. Jasne niebo nie jest zgodą na ratunek.",
-          "audio": "Niebo nie zawiodło pustką. Zawiodło według rozkładu: księżyc, zasłona, skok, rejestr, masa.",
-          "in_game_wiki": "Księżycowa drabina Aegira nie jest ozdobą nieba. Ran to gwiazda, Aegir to olbrzym, a HECTON-8 jest oceanicznym księżycem w ruchomym łańcuchu księżyców, przekaźników, burz, kontroli kustodii i ubezpieczonych okien masy.\n\nSkarn może zalać anteny naładowanym szumem. Vela może zamknąć przekaźniki pyłem lodowym. Kestrel może zasłonić linię widzenia w najgorszej minucie. HECTON może rzucić pióropusz burzy przez czysty korytarz wznoszenia. Black Keel może odebrać pakiet i nadal odmówić podniesienia, jeśli okno, handshake kwarantanny albo klasa masy zawiodą.",
-          "external_site": "Aegir wyjaśnia, czemu ratunek z HECTON-8 może być widoczny, potwierdzony i nadal odrzucony: niebo jest maszyną ruchu, nie obietnicą.",
-          "external_site_article": "Księżycowa drabina Aegira najpierw prostuje odruch gracza: ratunek nie musi pokonać tylko oceanu. HECTON-8 leży pod zajętym olbrzymem, a nie pod pustym niebem. Ran daje światło, Aegir narzuca grawitację, promieniowanie, pogodę odłamków i czasy transferu, a księżyce zmieniają przestrzeń nad wodą w ruchomy zamek.\n\nKażdy szczebel łamie inną pewność. Skarn czyni czystą elektronikę przerywaną. Vela rozprasza optykę i łącza carrier. Claw zachowuje starą logikę tras, której maszyny wciąż słuchają. Lumen dowodzi przejścia pakietu, ale nie uczciwego traktowania. Thorne niesie podejrzenie kwarantanny. Anvil zostawia prawo ładunku na sprzęcie salvage. Kestrel ściska okna, po prostu stojąc w złym miejscu. HECTON daje wodę, ciśnienie i pióropusz burzy. Mute dowodzi, że martwa trasa może żyć na papierze.\n\nBlack Keel nie jest więc heroicznym statkiem-matką. To claim-tender w tej geometrii. Do podniesienia ciała potrzebuje kustodii sygnału, czystego payload hash, handshake kwarantanny, zaufania prowadzenia i okna tonażu uznanego przez ubezpieczenie. Jasne niebo może być bezużyteczne. Prawdziwy sygnał może nadejść za późno. Drabina czyni izolację fizyczną, prawną i astronomiczną naraz.",
-          "field_note": "Gdy odzysk zawodzi, przeczytaj ostrzeżenie z nieba, zanim obwinisz pinger."
-        },
-        "uk_UA": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Місячна драбина Aegir",
-          "scanner": "ОРБІТАЛЬНА НЕБЕЗПЕКА // Вікно нестабільне. Сплеск Skarn, шторка Vela, перекриття Kestrel і штормовий плюм HECTON можуть зламати геометрію повернення.",
-          "terminal": "НОТАТКА ВІКНА ПОВЕРНЕННЯ // Black Keel вимагає опіку сигналу, чистий payload hash, карантинне рукостискання і підйомне тоннажне вікно перед підйомом тіла. Ясне небо не є дозволом на порятунок.",
-          "audio": "Небо відмовило не порожнечею. Воно відмовило за розкладом: місяць, шторка, сплеск, реєстр, маса.",
-          "in_game_wiki": "Місячна драбина Aegir - не оздоба неба. Ran - зоря, Aegir - гігант, а HECTON-8 - океанічний місяць у рухомому ланцюгу місяців, ретрансляторів, штормів, перевірок опіки й застрахованих вікон маси.\n\nSkarn може залити антени зарядженим шумом. Vela може закрити ретранслятори крижаним пилом. Kestrel може перекрити лінію видимості в найгіршу хвилину. HECTON може кинути штормовий плюм через чистий коридор підйому. Black Keel може прийняти пакет і все одно відмовити в підйомі, якщо вікно, карантинне рукостискання або клас маси провалені.",
-          "external_site": "Aegir пояснює, чому порятунок з HECTON-8 може бути видимим, підтвердженим і все одно відхиленим: небо тут машина трафіку, а не обіцянка.",
-          "external_site_article": "Місячна драбина Aegir першою ламає інстинкт гравця: порятунку треба перемогти не лише океан. HECTON-8 лежить під зайнятим гігантом, а не під порожнім небом. Ran дає світло, Aegir дає гравітацію, радіацію, сміттєву погоду й часи переходу, а місяці перетворюють простір над водою на рухомий замок.\n\nКожна сходинка руйнує інший вид певності. Skarn робить справну електроніку переривчастою. Vela розсіює оптику й carrier-зв'язок. Claw зберігає стару маршрутну логіку, якій машини досі коряться. Lumen доводить, що пакет пройшов шлях, але не доводить чесного поводження. Thorne несе карантинну підозру. Anvil залишає вантажне право на salvage-залізі. Kestrel стискає вікна, просто ставши не там. HECTON дає воду, тиск і штормовий плюм. Mute доводить, що мертві маршрути можуть жити на папері.\n\nBlack Keel тому не героїчний материнський корабель. Це claim-tender всередині цієї геометрії. Щоб підняти тіло, йому потрібні опіка сигналу, чистий payload hash, карантинне рукостискання, довіра наведення і тоннажне вікно, яке прийме страхування. Ясне небо може бути марним. Правдивий сигнал може прийти запізно. Драбина робить ізоляцію фізичною, юридичною й астрономічною водночас.",
-          "field_note": "Коли повернення зривається, спершу прочитай попередження неба, потім звинувачуй pinger."
-        },
-        "ar_SA": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "سلم أقمار Aegir",
-          "scanner": "خطر مداري // النافذة غير مستقرة. طفرة Skarn، وستارة Vela، وحجب Kestrel، وريشة عاصفة HECTON قد تكسر هندسة الاسترداد.",
-          "terminal": "ملاحظة نافذة الاسترداد // يتطلب Black Keel حيازة الإشارة، وpayload hash نظيفا، ومصافحة حجر صحي، ونافذة حمولة قابلة للاسترداد قبل رفع الجسد. السماء الساطعة ليست تصريح إنقاذ.",
-          "audio": "لم تفشل السماء لأنها فارغة. فشلت حسب الجدول: قمر، ستارة، طفرة، سجل، كتلة.",
-          "in_game_wiki": "سلم أقمار Aegir ليس زينة في السماء. Ran هو النجم، وAegir هو العملاق، وHECTON-8 قمر محيطي داخل سلسلة متحركة من أقمار ومرحلات وعواصف وفحوص حيازة ونوافذ كتلة مؤمنة.\n\nيمكن أن يغرق Skarn الهوائيات بضجيج مشحون. يمكن أن تغلق Vela المرحلات بغبار الجليد. يمكن أن يحجب Kestrel خط الرؤية في أسوأ دقيقة. يمكن أن يرمي HECTON ريشة عاصفة عبر ممر صعود نظيف. قد يستلم Black Keel حزمتك ويرفض الرفع إذا فشلت النافذة أو مصافحة الحجر أو فئة الكتلة.",
-          "external_site": "يوضح Aegir لماذا قد يكون إنقاذ HECTON-8 مرئيا ومؤكدا ثم مرفوضا: السماء آلة مرور وليست وعدا.",
-          "external_site_article": "سلم أقمار Aegir يصحح أول غريزة عند اللاعب: الإنقاذ لا يحتاج إلى هزيمة المحيط وحده. HECTON-8 يقع تحت عملاق مزدحم، لا تحت سماء فارغة. Ran يعطي الضوء، وAegir يفرض الجاذبية والإشعاع وطقس الحطام وأوقات النقل، والأقمار تحول الفضاء فوق الماء إلى قفل متحرك.\n\nكل درجة تكسر يقينا مختلفا. Skarn يجعل الإلكترونيات النظيفة متقطعة. Vela يبعثر البصريات وروابط carrier. Claw يحفظ منطق طرق قديم ما زالت الآلات تطيعه. Lumen يثبت أن الحزمة مرت، لا أنها عوملت بعدل. Thorne يحمل شبهة الحجر. Anvil يترك قانون الشحن على عتاد salvage. Kestrel يضغط النوافذ بمجرد وقوفه في المكان الخطأ. HECTON يعطي الماء والضغط وريشة العاصفة. Mute يثبت أن الطريق الميت قد يعيش على الورق.\n\nلذلك ليس Black Keel سفينة أم بطولية. إنه claim-tender داخل هذه الهندسة. لرفع جسد يحتاج إلى حيازة إشارة، وpayload hash نظيف، ومصافحة حجر، وثقة توجيه، ونافذة حمولة تقبلها شركة التأمين. قد تكون السماء الصافية بلا فائدة. وقد تصل الإشارة الصادقة متأخرة. السلم يجعل العزلة فيزيائية وقانونية وفلكية معا.",
-          "field_note": "عندما يفشل الاسترداد، اقرأ تحذير السماء قبل لوم pinger."
-        },
-        "id_ID": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Tangga Bulan Aegir",
-          "scanner": "BAHAYA ORBITAL // Jendela tidak stabil. Lonjakan Skarn, tirai Vela, oklusi Kestrel, dan plume badai HECTON dapat merusak geometri pemulihan.",
-          "terminal": "CATATAN JENDELA PEMULIHAN // Black Keel membutuhkan kustodi sinyal, payload hash bersih, handshake karantina, dan jendela tonase yang dapat dipulihkan sebelum mengangkat tubuh. Langit terang bukan izin penyelamatan.",
-          "audio": "Langit tidak gagal karena kosong. Ia gagal sesuai jadwal: bulan, tirai, lonjakan, buku besar, massa.",
-          "in_game_wiki": "Tangga bulan Aegir bukan hiasan langit. Ran adalah bintang, Aegir adalah raksasa, dan HECTON-8 adalah bulan samudra dalam rantai bergerak berisi bulan, relai, badai, pemeriksaan kustodi, dan jendela massa diasuransikan.\n\nSkarn dapat membanjiri antena dengan derau bermuatan. Vela dapat menutup relai dengan debu es. Kestrel dapat memblokir garis pandang pada menit terburuk. HECTON dapat melempar plume badai melalui koridor naik yang bersih. Black Keel dapat menerima paketmu dan tetap menolak angkat jika jendela, handshake karantina, atau kelas massa gagal.",
-          "external_site": "Aegir menjelaskan mengapa penyelamatan HECTON-8 bisa terlihat, dikonfirmasi, lalu tetap ditolak: langit adalah mesin lalu lintas, bukan janji.",
-          "external_site_article": "Tangga bulan Aegir adalah koreksi pertama terhadap naluri pemain bahwa penyelamatan hanya perlu mengalahkan samudra. HECTON-8 berada di bawah raksasa yang sibuk, bukan langit kosong. Ran memberi cahaya, Aegir memberi gravitasi, radiasi, cuaca puing, dan waktu transfer, sementara bulan-bulan mengubah ruang di atas air menjadi kunci bergerak.\n\nSetiap anak tangga mematahkan kepastian yang berbeda. Skarn membuat elektronik bersih menjadi terputus-putus. Vela menyebarkan optik dan tautan carrier. Claw menyimpan logika rute lama yang masih dipatuhi mesin. Lumen membuktikan paket lewat, bukan bahwa paket diperlakukan adil. Thorne membawa kecurigaan karantina. Anvil meninggalkan hukum kargo pada perangkat salvage. Kestrel menekan jendela hanya dengan berdiri di tempat salah. HECTON memberi air, tekanan, dan plume badai. Mute membuktikan rute mati bisa hidup di atas kertas.\n\nBlack Keel karena itu bukan kapal induk heroik. Ia claim-tender dalam geometri itu. Untuk mengangkat tubuh, ia membutuhkan kustodi sinyal, payload hash bersih, handshake karantina, keyakinan pandu, dan jendela tonase yang diterima asuransi. Langit cerah bisa tidak berguna. Sinyal benar bisa datang terlambat. Tangga itu membuat isolasi fisik, legal, dan astronomis sekaligus.",
-          "field_note": "Saat pemulihan gagal, baca peringatan langit sebelum menyalahkan pinger."
-        },
-        "ko_KR": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Aegir 달 사다리",
-          "scanner": "궤도 위험 // 창이 불안정하다. Skarn 서지, Vela 셔터, Kestrel 가림, HECTON 폭풍 플룸이 회수 기하를 깨뜨릴 수 있다.",
-          "terminal": "회수 창 메모 // Black Keel은 몸체 인양 전에 신호 보관, 깨끗한 payload hash, 격리 핸드셰이크, 회수 가능한 톤수 창을 요구한다. 밝은 하늘은 구조 허가가 아니다.",
-          "audio": "하늘은 비어서 실패한 것이 아니다. 달, 셔터, 서지, 장부, 질량의 일정대로 실패했다.",
-          "in_game_wiki": "Aegir의 달 사다리는 하늘 장식이 아니다. Ran은 항성, Aegir는 거대 행성, HECTON-8은 달, 중계기, 폭풍, 보관권 검사, 보험 질량 창의 움직이는 사슬 안에 있는 바다 달이다.\n\nSkarn은 안테나를 대전 잡음으로 범람시킬 수 있다. Vela는 얼음 먼지로 중계기를 닫을 수 있다. Kestrel은 최악의 순간 시야선을 막을 수 있다. HECTON은 깨끗한 상승 회랑에 폭풍 플룸을 던질 수 있다. Black Keel은 네 패킷을 받고도 창, 격리 핸드셰이크, 질량 등급이 실패하면 인양을 거부할 수 있다.",
-          "external_site": "Aegir는 HECTON-8 구조가 보이고 확인되어도 거부될 수 있는 이유를 설명한다. 하늘은 약속이 아니라 교통 기계다.",
-          "external_site_article": "Aegir 달 사다리는 구조가 바다만 이기면 된다는 플레이어의 본능을 먼저 고친다. HECTON-8 위에는 빈 하늘이 아니라 바쁜 거대 행성권이 있다. Ran은 빛을 주고, Aegir는 중력, 방사선, 잔해 날씨, 전이 시각을 주며, 달들은 물 위의 공간을 움직이는 자물쇠로 만든다.\n\n각 단은 서로 다른 확실성을 깬다. Skarn은 정상 전자장비를 간헐적으로 만든다. Vela는 광학과 carrier 링크를 흩뜨린다. Claw는 기계가 아직 따르는 낡은 항로 논리를 보존한다. Lumen은 패킷 통과를 증명하지만 공정한 취급은 증명하지 않는다. Thorne은 격리 의심을 운반한다. Anvil은 salvage 장비에 화물법을 남긴다. Kestrel은 잘못된 자리에 서기만 해도 창을 압축한다. HECTON은 물, 압력, 폭풍 플룸을 준다. Mute는 죽은 항로도 서류 위에서 살 수 있음을 증명한다.\n\n따라서 Black Keel은 영웅적인 모선이 아니다. 이 기하 안의 claim-tender다. 몸을 들어 올리려면 신호 보관, 깨끗한 payload hash, 격리 핸드셰이크, 유도 신뢰도, 보험이 받아들이는 톤수 창이 필요하다. 밝은 하늘은 쓸모없을 수 있다. 참된 신호도 너무 늦게 올 수 있다. 사다리는 고립을 물리적, 법적, 천문학적으로 동시에 만든다.",
-          "field_note": "회수가 실패하면 pinger를 탓하기 전에 하늘 경고를 읽어라."
-        },
-        "he_IL": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "סולם הירחים של Aegir",
-          "scanner": "סכנה מסלולית // חלון לא יציב. נחשול Skarn, תריס Vela, הסתרת Kestrel ופלומת סערה HECTON יכולים לשבור גאומטריית שחזור.",
-          "terminal": "הערת חלון שחזור // Black Keel דורש משמורת אות, payload hash נקי, לחיצת יד הסגר וחלון טון בר שחזור לפני הרמת גוף. שמים בהירים אינם אישור חילוץ.",
-          "audio": "השמים לא כשלו מריקנות. הם כשלו לפי לוח: ירח, תריס, נחשול, פנקס, מסה.",
-          "in_game_wiki": "סולם הירחים של Aegir אינו קישוט שמים. Ran הוא הכוכב, Aegir הוא הענק, ו-HECTON-8 הוא ירח אוקייני בתוך שרשרת נעה של ירחים, ממסרים, סופות, בדיקות משמורת וחלונות מסה מבוטחים.\n\nSkarn יכול להציף אנטנות ברעש טעון. Vela יכולה לסגור ממסרים באבק קרח. Kestrel יכול לחסום קו ראייה בדקה הגרועה ביותר. HECTON יכול לזרוק פלומת סערה דרך מסדרון עלייה נקי. Black Keel יכול לקבל את החבילה שלך ועדיין לסרב להרמה אם החלון, לחיצת יד ההסגר או מחלקת המסה נכשלו.",
-          "external_site": "Aegir מסביר מדוע חילוץ מ-HECTON-8 יכול להיות נראה, מאושר ועדיין מסורב: השמים הם מכונת תנועה, לא הבטחה.",
-          "external_site_article": "סולם הירחים של Aegir הוא התיקון הראשון לאינסטינקט של השחקן שחילוץ צריך לנצח רק את האוקיינוס. HECTON-8 נמצא מתחת לענק עמוס, לא מתחת לשמים ריקים. Ran נותן אור, Aegir נותן כבידה, קרינה, מזג אוויר של פסולת וזמני מעבר, והירחים הופכים את החלל מעל המים למנעול נע.\n\nכל שלב שובר ודאות אחרת. Skarn הופך אלקטרוניקה נקייה למקוטעת. Vela מפזרת אופטיקה וקישורי carrier. Claw שומר היגיון נתיב ישן שמכונות עדיין מצייתות לו. Lumen מוכיח שחבילה עברה, לא שטופלה בצדק. Thorne נושא חשד הסגר. Anvil משאיר חוק מטען על חומרת salvage. Kestrel דוחס חלונות רק בכך שהוא עומד במקום הלא נכון. HECTON נותן מים, לחץ ופלומת סערה. Mute מוכיח שנתיב מת יכול לחיות על נייר.\n\nלכן Black Keel אינו ספינת אם גיבורה. הוא claim-tender בתוך הגאומטריה הזאת. כדי להרים גוף דרושים משמורת אות, payload hash נקי, לחיצת יד הסגר, אמון ניווט וחלון טון שהביטוח יקבל. שמים בהירים יכולים להיות חסרי תועלת. אות אמיתי יכול להגיע מאוחר מדי. הסולם הופך בידוד לפיזי, משפטי ואסטרונומי בעת ובעונה אחת.",
-          "field_note": "כששחזור נכשל, קרא את אזהרת השמים לפני שאתה מאשים את ה-pinger."
-        },
-        "pt_BR": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Escada Lunar de Aegir",
-          "scanner": "PERIGO ORBITAL // Janela instável. Surto Skarn, cortina Vela, oclusão Kestrel e pluma de tempestade HECTON podem quebrar a geometria de recuperação.",
-          "terminal": "NOTA DE JANELA DE RECUPERAÇÃO // Black Keel exige custódia de sinal, payload hash limpo, handshake de quarentena e janela de tonelagem recuperável antes de erguer corpo. Céu claro não é autorização de resgate.",
-          "audio": "O céu não falhou por vazio. Falhou no cronograma: lua, cortina, surto, livro-razão, massa.",
-          "in_game_wiki": "A escada lunar de Aegir não é decoração do céu. Ran é a estrela, Aegir é o gigante, e HECTON-8 é uma lua oceânica em uma cadeia móvel de luas, relés, tempestades, checagens de custódia e janelas de massa segurada.\n\nSkarn pode inundar antenas com ruído carregado. Vela pode fechar relés com poeira de gelo. Kestrel pode bloquear a linha de visão no pior minuto. HECTON pode lançar uma pluma de tempestade por um corredor de subida limpo. Black Keel pode receber seu pacote e ainda negar o içamento se a janela, o handshake de quarentena ou a classe de massa falhar.",
-          "external_site": "Aegir explica por que o resgate de HECTON-8 pode ser visível, confirmado e ainda negado: o céu é uma máquina de tráfego, não uma promessa.",
-          "external_site_article": "A escada lunar de Aegir é a primeira correção ao instinto do jogador de que o resgate só precisa vencer o oceano. HECTON-8 fica sob um gigante ocupado, não sob um céu vazio. Ran dá luz, Aegir impõe gravidade, radiação, clima de detritos e tempos de transferência, e as luas transformam o espaço sobre a água em uma fechadura móvel.\n\nCada degrau quebra uma certeza diferente. Skarn torna intermitente a eletrônica limpa. Vela dispersa óptica e links carrier. Claw preserva lógica antiga de rota que máquinas ainda obedecem. Lumen prova que um pacote passou, não que foi tratado com justiça. Thorne carrega suspeita de quarentena. Anvil deixa lei de carga no hardware de salvage. Kestrel comprime janelas só por ficar no lugar errado. HECTON dá água, pressão e pluma de tempestade. Mute prova que uma rota morta pode viver no papel.\n\nBlack Keel, portanto, não é uma nave-mãe heroica. É um claim-tender dentro dessa geometria. Para erguer um corpo, precisa de custódia de sinal, payload hash limpo, handshake de quarentena, confiança de guiagem e janela de tonelagem aceita pelo seguro. Céu claro pode ser inútil. Um sinal verdadeiro pode chegar tarde demais. A escada torna o isolamento físico, legal e astronômico ao mesmo tempo.",
-          "field_note": "Quando a recuperação falhar, leia o aviso do céu antes de culpar o pinger."
-        },
-        "nl_NL": {
-          "localization_status": "source_draft_pending_native_review",
-          "title": "Aegir Maanladder",
-          "scanner": "ORBITAAL GEVAAR // Venster instabiel. Skarn-surge, Vela-shutter, Kestrel-occlusie en HECTON-stormpluim kunnen recoverygeometrie breken.",
-          "terminal": "RECOVERYVENSTER NOTITIE // Black Keel vereist signaalbewaring, schone payload hash, quarantaine-handshake en herstelbaar tonnagevenster voor lichaamslift. Heldere hemel is geen reddingsvrijgave.",
-          "audio": "De hemel faalde niet door leegte. Hij faalde op schema: maan, shutter, surge, grootboek, massa.",
-          "in_game_wiki": "Aegirs maanladder is geen hemelversiering. Ran is de ster, Aegir de reus, en HECTON-8 een oceaanmaan in een bewegende keten van manen, relais, stormen, bewaringscontroles en verzekerde massavensters.\n\nSkarn kan antennes met geladen ruis overspoelen. Vela kan relais sluiten met ijsstof. Kestrel kan op het slechtste moment de zichtlijn blokkeren. HECTON kan een stormpluim door een schoon opstijgpad werpen. Black Keel kan je pakket ontvangen en toch lift weigeren als venster, quarantaine-handshake of massaklasse faalt.",
-          "external_site": "Aegir verklaart waarom redding vanaf HECTON-8 zichtbaar, bevestigd en toch geweigerd kan zijn: de hemel is een verkeersmachine, geen belofte.",
-          "external_site_article": "De Aegir maanladder corrigeert eerst het instinct van de speler dat redding alleen de oceaan hoeft te verslaan. HECTON-8 ligt onder een drukke reus, niet onder een lege hemel. Ran geeft licht, Aegir geeft zwaartekracht, straling, puinweer en transfertijden, en de manen veranderen de ruimte boven het water in een bewegend slot.\n\nElke sport breekt een ander soort zekerheid. Skarn maakt schone elektronica haperend. Vela verstrooit optiek en carrier-links. Claw bewaart oude routelogica die machines nog volgen. Lumen bewijst dat een pakket passeerde, niet dat het eerlijk werd behandeld. Thorne draagt quarantaineverdenking. Anvil laat vrachtrecht achter op salvage-hardware. Kestrel perst vensters samen door gewoon verkeerd te staan. HECTON levert water, druk en stormpluim. Mute bewijst dat een dode route op papier kan leven.\n\nBlack Keel is daarom geen heroisch moederschip. Het is een claim-tender in die geometrie. Om een lichaam te tillen heeft het signaalbewaring, schone payload hash, quarantaine-handshake, geleidingsvertrouwen en een door verzekering geaccepteerd tonnagevenster nodig. Heldere hemel kan nutteloos zijn. Een waar signaal kan te laat komen. De ladder maakt isolatie tegelijk fysiek, juridisch en astronomisch.",
-          "field_note": "Als recovery faalt, lees de hemelwaarschuwing voordat je de pinger de schuld geeft."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.aegir_moon_ladder_orbital_hazards",
+    "secondary": [
+     "unlock.first_orbital_hazard_table",
+     "unlock.first_black_keel_recovery_window",
+     "unlock.first_route_shadow_warning"
+    ],
+    "poi_tags": [
+     "poi.orbital_hazard_table",
+     "poi.relay_window_console",
+     "poi.black_keel_link"
+    ],
+    "biome_tags": [
+     "biome.storm_shelf",
+     "biome.crash_shelf",
+     "biome.orbital_window"
+    ],
+    "first_20_boundary": "Makes sky failure legible before the player mistakes every failed rescue for ocean-only isolation."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Orbital Hazard Scanner Overlay",
+     "terminal": "Black Keel Recovery Window Terminal",
+     "audio": "Automated Celestial Registry",
+     "in_game_wiki": "PDA Orbital Hazard Field Guide",
+     "external_site": "Public Site Aegir System Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_recovery_window_denied",
+    "truth_payload": "Rescue from HECTON-8 fails through sky geometry, orbital weather, delayed custody, legal windows and Black Keel mass accounting as much as through ocean pressure.",
+    "player_question": "Why can Black Keel confirm delivery but not rescue?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Aegir Moon Ladder",
+     "scanner": "ORBITAL HAZARD // Window unstable. Skarn surge, Vela shutter, Kestrel occlusion and HECTON storm plume can break recovery geometry.",
+     "terminal": "RECOVERY WINDOW NOTE // Black Keel requires signal custody, clean payload hash, quarantine handshake and recoverable tonne-window before body lift. Bright sky is not rescue clearance.",
+     "audio": "The sky did not fail empty. It failed on schedule: moon, shutter, surge, ledger, mass.",
+     "in_game_wiki": "Aegir's moon ladder is not a sky decoration. Ran is the star, Aegir is the giant, and HECTON-8 is one ocean moon inside a moving chain of moons, relays, storms, custody checks and insured mass windows.\n\nSkarn can flood antennas with charged noise. Vela can shutter relays with ice dust. Kestrel can block a line of sight at the worst minute. HECTON can throw storm plume through a clean ascent corridor. Black Keel can receive your packet and still refuse lift if the window, quarantine handshake or mass class fails.",
+     "external_site": "Aegir explains why rescue from HECTON-8 can be visible, confirmed and still denied: the sky is a traffic machine, not a promise.",
+     "external_site_article": "The Aegir moon ladder is the first hard correction to the player's instinct that rescue only has to beat the ocean. HECTON-8 sits under a busy giant, not under an empty sky. Ran supplies the light, Aegir supplies gravity, radiation, debris weather and transfer timing, and the moons turn the space above the water into a moving lock.\n\nThe ladder's names matter because each rung breaks a different kind of certainty. Skarn makes clean electronics intermittent. Vela scatters optical and carrier links. Claw preserves old route logic that machines still obey. Lumen proves packets moved without proving they were handled justly. Thorne carries quarantine suspicion. Anvil leaves cargo law in salvage hardware. Kestrel compresses windows by simply standing in the wrong place. HECTON supplies the water, pressure and storm plume. Mute proves that dead routes can still exist on paper.\n\nBlack Keel is therefore not a heroic mother ship. It is a claim-tender inside that geometry. To lift a body it needs signal custody, a clean payload hash, quarantine handshake, guidance confidence and a tonne-window that insurance will accept. A bright sky can be useless. A true signal can arrive too late. The ladder makes isolation physical, legal and astronomical at the same time.",
+     "field_note": "When recovery fails, read the sky warning before blaming the pinger."
+    },
+    "ru_RU": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Лунная лестница Aegir",
+     "scanner": "ОРБИТАЛЬНАЯ ОПАСНОСТЬ // Окно нестабильно. Всплеск Skarn, шторка Vela, перекрытие Kestrel и штормовой плюм HECTON могут сломать геометрию возврата.",
+     "terminal": "ЗАМЕТКА ОКНА ВОЗВРАТА // Black Keel требует опеку сигнала, чистый payload hash, карантинное рукопожатие и поднимаемое тоннажное окно перед подъемом тела. Светлое небо не является разрешением на спасение.",
+     "audio": "Небо отказало не пустотой. Оно отказало по расписанию: луна, шторка, всплеск, реестр, масса.",
+     "in_game_wiki": "Лунная лестница Aegir - не украшение неба. Ran - звезда, Aegir - гигант, а HECTON-8 - одна океаническая луна внутри движущейся цепи лун, ретрансляторов, штормов, проверок опеки и застрахованных окон массы.\n\nSkarn может залить антенны заряженным шумом. Vela может закрыть ретрансляторы ледяной пылью. Kestrel может перекрыть линию видимости в худшую минуту. HECTON может бросить штормовой плюм через чистый коридор подъема. Black Keel может принять пакет и все равно отказать в подъеме, если окно, карантинное рукопожатие или класс массы провалены.",
+     "external_site": "Aegir объясняет, почему спасение с HECTON-8 может быть видимым, подтвержденным и все равно отказанным: небо здесь машина трафика, а не обещание.",
+     "external_site_article": "Лунная лестница Aegir - первый жесткий ответ на привычную мысль игрока: будто спасению надо победить только океан. HECTON-8 находится под занятым гигантом, а не под пустым небом. Ran дает свет, Aegir дает гравитацию, радиацию, мусорную погоду и время перелетов, а луны превращают пространство над водой в движущийся замок.\n\nНазвания ступеней важны, потому что каждая ломает другой вид уверенности. Skarn делает чистую электронику прерывистой. Vela рассеивает оптику и carrier-связь. Claw хранит старую маршрутную логику, которой машины все еще подчиняются. Lumen доказывает, что пакет прошел маршрут, но не доказывает честное обращение с ним. Thorne несет карантинное подозрение. Anvil оставляет грузовое право на salvage-железе. Kestrel сжимает окна, просто встав не там. HECTON дает воду, давление и штормовой плюм. Mute доказывает, что мертвые маршруты могут существовать на бумаге.\n\nBlack Keel поэтому не героический материнский корабль. Это claim-tender внутри такой геометрии. Чтобы поднять тело, ему нужны опека сигнала, чистый payload hash, карантинное рукопожатие, уверенность наведения и тоннажное окно, которое примет страховка. Светлое небо может быть бесполезным. Истинный сигнал может прийти слишком поздно. Лестница делает изоляцию физической, юридической и астрономической одновременно.",
+     "field_note": "Если возврат сорвался, сначала прочитай предупреждение неба, потом обвиняй pinger."
+    },
+    "ja_JP": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Aegirの月梯子",
+     "scanner": "軌道危険 // 窓は不安定。Skarnサージ、Velaシャッター、Kestrel遮蔽、HECTON嵐プルームが回収幾何を壊す可能性がある。",
+     "terminal": "回収窓メモ // Black Keelは身体引き上げ前に信号保管、清浄なpayload hash、隔離ハンドシェイク、回収可能トン窓を要求する。明るい空は救助許可ではない。",
+     "audio": "空は空白で失敗したのではない。月、シャッター、サージ、台帳、質量の予定どおりに失敗した。",
+     "in_game_wiki": "Aegirの月梯子は空の飾りではない。Ranは恒星、Aegirは巨星、HECTON-8は月、リレー、嵐、保管確認、保険付き質量窓の連鎖に入った海洋月である。\n\nSkarnはアンテナを荷電ノイズであふれさせる。Velaは氷塵でリレーを閉じる。Kestrelは最悪の瞬間に視線を遮る。HECTONは清浄な上昇回廊へ嵐プルームを投げ込む。Black Keelはパケットを受け取っても、窓、隔離ハンドシェイク、質量クラスが落ちれば引き上げを拒む。",
+     "external_site": "Aegirは、HECTON-8の救助が見えて、確認され、それでも拒否される理由を示す。空は交通機械であって約束ではない。",
+     "external_site_article": "Aegirの月梯子は、救助が海だけに勝てばよいという直感を最初に壊す。HECTON-8の上にあるのは空いた空ではなく、混雑した巨星圏である。Ranは光を与え、Aegirは重力、放射線、デブリ天候、移送時刻を与え、月たちは水面上の空間を動く錠前に変える。\n\n各段の名前は、別々の確実性を破壊する。Skarnは正常な電子機器を断続的にする。Velaは光学とcarrierリンクを散乱させる。Clawは機械がまだ従う古い航路論理を残す。Lumenはパケットの通過を証明しても公正な扱いを証明しない。Thorneは隔離の疑いを運ぶ。Anvilはsalvageハードに貨物法を残す。Kestrelは間違った場所に立つだけで窓を圧縮する。HECTONは水、圧力、嵐プルームを与える。Muteは死んだ航路が紙の上で生きることを示す。\n\nだからBlack Keelは英雄的な母船ではない。これはその幾何の中のclaim-tenderである。身体を引き上げるには、信号保管、清浄なpayload hash、隔離ハンドシェイク、誘導信頼度、保険が認めるトン窓が必要だ。明るい空は役に立たないことがある。真の信号も遅すぎれば無力だ。月梯子は孤立を物理、法、天文の三つで同時に成立させる。",
+     "field_note": "回収が失敗したら、pingerを責める前に空の警告を読め。"
+    },
+    "zh_CN": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Aegir月梯",
+     "scanner": "轨道危险 // 窗口不稳定。Skarn涌动、Vela遮帘、Kestrel遮挡和HECTON风暴羽流都可能破坏回收几何。",
+     "terminal": "回收窗口记录 // Black Keel在吊起人体前需要信号保管、干净payload hash、隔离握手和可回收吨位窗口。明亮天空不是救援许可。",
+     "audio": "天空不是因空无而失败。它按计划失败：月亮、遮帘、涌动、账本、质量。",
+     "in_game_wiki": "Aegir月梯不是天空装饰。Ran是恒星，Aegir是巨行星，HECTON-8是在卫星、 relay、风暴、保管检查和承保质量窗口链条中的一颗海洋月球。\n\nSkarn会用带电噪声淹没天线。Vela会用冰尘遮住relay。Kestrel会在最糟的分钟挡住视线。HECTON会把风暴羽流甩进干净的上升走廊。Black Keel能收到你的数据包，但如果窗口、隔离握手或质量等级失败，它仍会拒绝吊起。",
+     "external_site": "Aegir说明为什么HECTON-8救援可以可见、已确认，却仍被拒绝：天空是一台交通机器，不是一句承诺。",
+     "external_site_article": "Aegir月梯首先纠正玩家的本能：救援不是只要战胜海洋。HECTON-8上方不是空旷天空，而是繁忙的巨行星空间。Ran提供光，Aegir提供重力、辐射、碎片天气和转移时刻，卫星们把水面上方的空间变成一把移动的锁。\n\n每一级名字都破坏一种确定性。Skarn让正常电子设备变得断续。Vela散射光学和carrier链路。Claw保留旧航线逻辑，机器仍会服从。Lumen能证明数据包经过了正确路线，却不能证明它被公平处理。Thorne携带隔离嫌疑。Anvil把货运法律留在salvage硬件上。Kestrel只要站错位置就能压缩窗口。HECTON提供水、压力和风暴羽流。Mute证明死路线仍可在纸面存在。\n\n所以Black Keel不是英雄母舰。它是这种几何里的claim-tender。要吊起一个身体，它需要信号保管、干净payload hash、隔离握手、制导可信度，以及保险愿意接受的吨位窗口。明亮天空可能毫无用处。真实信号也可能来得太晚。月梯让孤立同时成为物理、法律和天文学事实。",
+     "field_note": "回收失败时，先读天空警告，再责怪pinger。"
+    },
+    "fr_FR": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Échelle lunaire d'Aegir",
+     "scanner": "DANGER ORBITAL // Fenêtre instable. Sursaut Skarn, volet Vela, occultation Kestrel et panache de tempête HECTON peuvent briser la géométrie de récupération.",
+     "terminal": "NOTE DE FENÊTRE DE RÉCUPÉRATION // Black Keel exige garde du signal, payload hash propre, handshake de quarantaine et fenêtre de tonnage récupérable avant levage du corps. Un ciel clair n'est pas une autorisation de secours.",
+     "audio": "Le ciel n'a pas échoué par vide. Il a échoué selon l'horaire : lune, volet, sursaut, registre, masse.",
+     "in_game_wiki": "L'échelle lunaire d'Aegir n'est pas une décoration du ciel. Ran est l'étoile, Aegir le géant, et HECTON-8 une lune océanique dans une chaîne mouvante de lunes, relais, tempêtes, contrôles de garde et fenêtres de masse assurée.\n\nSkarn peut noyer les antennes de bruit chargé. Vela peut fermer les relais avec de la poussière de glace. Kestrel peut couper la ligne de vue au pire instant. HECTON peut jeter un panache de tempête dans un couloir d'ascension propre. Black Keel peut recevoir votre paquet et refuser quand même le levage si la fenêtre, le handshake de quarantaine ou la classe de masse échoue.",
+     "external_site": "Aegir explique pourquoi un secours depuis HECTON-8 peut être visible, confirmé puis refusé : le ciel est une machine de trafic, pas une promesse.",
+     "external_site_article": "L'échelle lunaire d'Aegir corrige d'abord l'instinct du joueur : un sauvetage n'a pas seulement à vaincre l'océan. HECTON-8 se trouve sous un géant occupé, pas sous un ciel vide. Ran donne la lumière, Aegir impose gravité, radiation, météo de débris et temps de transfert, et les lunes changent l'espace au-dessus de l'eau en verrou mobile.\n\nChaque barreau casse une certitude différente. Skarn rend l'électronique propre intermittente. Vela disperse optiques et liaisons carrier. Claw conserve une vieille logique de route que les machines respectent encore. Lumen prouve le passage d'un paquet sans prouver son traitement juste. Thorne transporte le soupçon de quarantaine. Anvil laisse le droit cargo sur le matériel de salvage. Kestrel comprime les fenêtres en se tenant simplement au mauvais endroit. HECTON fournit l'eau, la pression et le panache de tempête. Mute prouve qu'une route morte peut vivre sur papier.\n\nBlack Keel n'est donc pas un vaisseau mère héroïque. C'est un claim-tender dans cette géométrie. Pour lever un corps, il faut garde du signal, payload hash propre, handshake de quarantaine, confiance de guidage et fenêtre de tonnage acceptable par l'assurance. Un ciel clair peut ne servir à rien. Un signal vrai peut arriver trop tard. L'échelle rend l'isolement physique, légal et astronomique à la fois.",
+     "field_note": "Quand la récupération échoue, lis l'alerte du ciel avant d'accuser le pinger."
+    },
+    "es_ES": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Escalera lunar de Aegir",
+     "scanner": "PELIGRO ORBITAL // Ventana inestable. Oleada Skarn, persiana Vela, ocultación Kestrel y penacho de tormenta HECTON pueden romper la geometría de recuperación.",
+     "terminal": "NOTA DE VENTANA DE RECUPERACIÓN // Black Keel exige custodia de señal, payload hash limpio, handshake de cuarentena y ventana de tonelaje recuperable antes de izar un cuerpo. Cielo brillante no es permiso de rescate.",
+     "audio": "El cielo no falló por vacío. Falló según horario: luna, persiana, oleada, libro mayor, masa.",
+     "in_game_wiki": "La escalera lunar de Aegir no es decoración del cielo. Ran es la estrella, Aegir el gigante, y HECTON-8 una luna oceánica dentro de una cadena móvil de lunas, relés, tormentas, controles de custodia y ventanas de masa asegurada.\n\nSkarn puede inundar antenas con ruido cargado. Vela puede cerrar relés con polvo de hielo. Kestrel puede bloquear la línea de visión en el peor minuto. HECTON puede lanzar un penacho de tormenta por un corredor de ascenso limpio. Black Keel puede recibir tu paquete y aun así negar el izado si fallan la ventana, el handshake de cuarentena o la clase de masa.",
+     "external_site": "Aegir explica por qué el rescate de HECTON-8 puede ser visible, confirmado y aun así negado: el cielo es una máquina de tráfico, no una promesa.",
+     "external_site_article": "La escalera lunar de Aegir corrige primero el instinto del jugador: el rescate no sólo debe vencer al océano. HECTON-8 está bajo un gigante ocupado, no bajo un cielo vacío. Ran da la luz, Aegir impone gravedad, radiación, clima de restos y tiempos de transferencia, y las lunas convierten el espacio sobre el agua en una cerradura móvil.\n\nCada peldaño rompe una certeza distinta. Skarn vuelve intermitente la electrónica limpia. Vela dispersa ópticas y enlaces carrier. Claw conserva lógica vieja de ruta que las máquinas aún obedecen. Lumen prueba que un paquete viajó sin probar que fue tratado con justicia. Thorne lleva sospecha de cuarentena. Anvil deja ley de carga en el hardware de salvage. Kestrel comprime ventanas con sólo estar en el lugar equivocado. HECTON aporta agua, presión y penacho de tormenta. Mute demuestra que una ruta muerta puede vivir en papel.\n\nBlack Keel no es, por tanto, una nave madre heroica. Es un claim-tender dentro de esa geometría. Para izar un cuerpo necesita custodia de señal, payload hash limpio, handshake de cuarentena, confianza de guiado y una ventana de toneladas aceptada por el seguro. Un cielo claro puede no servir. Una señal verdadera puede llegar tarde. La escalera vuelve el aislamiento físico, legal y astronómico a la vez.",
+     "field_note": "Cuando falle la recuperación, lee la advertencia del cielo antes de culpar al pinger."
+    },
+    "de_DE": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Aegir-Mondleiter",
+     "scanner": "ORBITALE GEFAHR // Fenster instabil. Skarn-Surge, Vela-Shutter, Kestrel-Verdeckung und HECTON-Sturmfahne können Bergungsgeometrie brechen.",
+     "terminal": "BERGUNGSFENSTER-NOTIZ // Black Keel verlangt Signalverwahrung, sauberen payload hash, Quarantäne-Handshake und bergbares Tonnenfenster vor Körperlift. Heller Himmel ist keine Rettungsfreigabe.",
+     "audio": "Der Himmel scheiterte nicht an Leere. Er scheiterte nach Plan: Mond, Shutter, Surge, Ledger, Masse.",
+     "in_game_wiki": "Aegirs Mondleiter ist keine Himmelsdekoration. Ran ist der Stern, Aegir der Riese, und HECTON-8 ein Ozeanmond in einer beweglichen Kette aus Monden, Relais, Stürmen, Verwahrungsprüfungen und versicherten Massefenstern.\n\nSkarn kann Antennen mit geladenem Rauschen fluten. Vela kann Relais mit Eisstaub verschließen. Kestrel kann im schlimmsten Moment die Sichtlinie blockieren. HECTON kann eine Sturmfahne durch einen sauberen Aufstiegskorridor werfen. Black Keel kann dein Paket empfangen und den Lift trotzdem verweigern, wenn Fenster, Quarantäne-Handshake oder Masseklasse scheitern.",
+     "external_site": "Aegir erklärt, warum HECTON-8-Rettung sichtbar, bestätigt und trotzdem verweigert sein kann: Der Himmel ist eine Verkehrsmaschine, kein Versprechen.",
+     "external_site_article": "Die Aegir-Mondleiter korrigiert zuerst den Instinkt des Spielers: Rettung muss nicht nur den Ozean schlagen. HECTON-8 liegt unter einem beschäftigten Riesen, nicht unter leerem Himmel. Ran liefert Licht, Aegir liefert Gravitation, Strahlung, Trümmerwetter und Transferzeiten, und die Monde machen den Raum über dem Wasser zu einem beweglichen Schloss.\n\nJede Stufe bricht eine andere Sicherheit. Skarn macht saubere Elektronik intermittierend. Vela streut Optik und carrier-Verbindungen. Claw bewahrt alte Routenlogik, der Maschinen noch gehorchen. Lumen beweist Paketdurchlauf, aber keine gerechte Behandlung. Thorne trägt Quarantäneverdacht. Anvil hinterlässt Frachtrecht auf salvage-Hardware. Kestrel komprimiert Fenster, indem es nur falsch steht. HECTON liefert Wasser, Druck und Sturmfahne. Mute zeigt, dass tote Routen auf Papier weiterleben können.\n\nBlack Keel ist daher kein heroisches Mutterschiff. Es ist ein claim-tender in dieser Geometrie. Für einen Körperlift braucht es Signalverwahrung, sauberen payload hash, Quarantäne-Handshake, Führungsvertrauen und ein Tonnenfenster, das Versicherung akzeptiert. Heller Himmel kann nutzlos sein. Ein wahres Signal kann zu spät kommen. Die Leiter macht Isolation zugleich physisch, rechtlich und astronomisch.",
+     "field_note": "Wenn Bergung scheitert, lies die Himmelswarnung, bevor du den pinger beschuldigst."
+    },
+    "pl_PL": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Księżycowa drabina Aegira",
+     "scanner": "ZAGROŻENIE ORBITALNE // Okno niestabilne. Skok Skarn, zasłona Vela, okluzja Kestrel i pióropusz burzy HECTON mogą złamać geometrię odzysku.",
+     "terminal": "NOTATKA OKNA ODZYSKU // Black Keel wymaga kustodii sygnału, czystego payload hash, handshake kwarantanny i odzyskiwalnego okna tonażu przed podniesieniem ciała. Jasne niebo nie jest zgodą na ratunek.",
+     "audio": "Niebo nie zawiodło pustką. Zawiodło według rozkładu: księżyc, zasłona, skok, rejestr, masa.",
+     "in_game_wiki": "Księżycowa drabina Aegira nie jest ozdobą nieba. Ran to gwiazda, Aegir to olbrzym, a HECTON-8 jest oceanicznym księżycem w ruchomym łańcuchu księżyców, przekaźników, burz, kontroli kustodii i ubezpieczonych okien masy.\n\nSkarn może zalać anteny naładowanym szumem. Vela może zamknąć przekaźniki pyłem lodowym. Kestrel może zasłonić linię widzenia w najgorszej minucie. HECTON może rzucić pióropusz burzy przez czysty korytarz wznoszenia. Black Keel może odebrać pakiet i nadal odmówić podniesienia, jeśli okno, handshake kwarantanny albo klasa masy zawiodą.",
+     "external_site": "Aegir wyjaśnia, czemu ratunek z HECTON-8 może być widoczny, potwierdzony i nadal odrzucony: niebo jest maszyną ruchu, nie obietnicą.",
+     "external_site_article": "Księżycowa drabina Aegira najpierw prostuje odruch gracza: ratunek nie musi pokonać tylko oceanu. HECTON-8 leży pod zajętym olbrzymem, a nie pod pustym niebem. Ran daje światło, Aegir narzuca grawitację, promieniowanie, pogodę odłamków i czasy transferu, a księżyce zmieniają przestrzeń nad wodą w ruchomy zamek.\n\nKażdy szczebel łamie inną pewność. Skarn czyni czystą elektronikę przerywaną. Vela rozprasza optykę i łącza carrier. Claw zachowuje starą logikę tras, której maszyny wciąż słuchają. Lumen dowodzi przejścia pakietu, ale nie uczciwego traktowania. Thorne niesie podejrzenie kwarantanny. Anvil zostawia prawo ładunku na sprzęcie salvage. Kestrel ściska okna, po prostu stojąc w złym miejscu. HECTON daje wodę, ciśnienie i pióropusz burzy. Mute dowodzi, że martwa trasa może żyć na papierze.\n\nBlack Keel nie jest więc heroicznym statkiem-matką. To claim-tender w tej geometrii. Do podniesienia ciała potrzebuje kustodii sygnału, czystego payload hash, handshake kwarantanny, zaufania prowadzenia i okna tonażu uznanego przez ubezpieczenie. Jasne niebo może być bezużyteczne. Prawdziwy sygnał może nadejść za późno. Drabina czyni izolację fizyczną, prawną i astronomiczną naraz.",
+     "field_note": "Gdy odzysk zawodzi, przeczytaj ostrzeżenie z nieba, zanim obwinisz pinger."
+    },
+    "uk_UA": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Місячна драбина Aegir",
+     "scanner": "ОРБІТАЛЬНА НЕБЕЗПЕКА // Вікно нестабільне. Сплеск Skarn, шторка Vela, перекриття Kestrel і штормовий плюм HECTON можуть зламати геометрію повернення.",
+     "terminal": "НОТАТКА ВІКНА ПОВЕРНЕННЯ // Black Keel вимагає опіку сигналу, чистий payload hash, карантинне рукостискання і підйомне тоннажне вікно перед підйомом тіла. Ясне небо не є дозволом на порятунок.",
+     "audio": "Небо відмовило не порожнечею. Воно відмовило за розкладом: місяць, шторка, сплеск, реєстр, маса.",
+     "in_game_wiki": "Місячна драбина Aegir - не оздоба неба. Ran - зоря, Aegir - гігант, а HECTON-8 - океанічний місяць у рухомому ланцюгу місяців, ретрансляторів, штормів, перевірок опіки й застрахованих вікон маси.\n\nSkarn може залити антени зарядженим шумом. Vela може закрити ретранслятори крижаним пилом. Kestrel може перекрити лінію видимості в найгіршу хвилину. HECTON може кинути штормовий плюм через чистий коридор підйому. Black Keel може прийняти пакет і все одно відмовити в підйомі, якщо вікно, карантинне рукостискання або клас маси провалені.",
+     "external_site": "Aegir пояснює, чому порятунок з HECTON-8 може бути видимим, підтвердженим і все одно відхиленим: небо тут машина трафіку, а не обіцянка.",
+     "external_site_article": "Місячна драбина Aegir першою ламає інстинкт гравця: порятунку треба перемогти не лише океан. HECTON-8 лежить під зайнятим гігантом, а не під порожнім небом. Ran дає світло, Aegir дає гравітацію, радіацію, сміттєву погоду й часи переходу, а місяці перетворюють простір над водою на рухомий замок.\n\nКожна сходинка руйнує інший вид певності. Skarn робить справну електроніку переривчастою. Vela розсіює оптику й carrier-зв'язок. Claw зберігає стару маршрутну логіку, якій машини досі коряться. Lumen доводить, що пакет пройшов шлях, але не доводить чесного поводження. Thorne несе карантинну підозру. Anvil залишає вантажне право на salvage-залізі. Kestrel стискає вікна, просто ставши не там. HECTON дає воду, тиск і штормовий плюм. Mute доводить, що мертві маршрути можуть жити на папері.\n\nBlack Keel тому не героїчний материнський корабель. Це claim-tender всередині цієї геометрії. Щоб підняти тіло, йому потрібні опіка сигналу, чистий payload hash, карантинне рукостискання, довіра наведення і тоннажне вікно, яке прийме страхування. Ясне небо може бути марним. Правдивий сигнал може прийти запізно. Драбина робить ізоляцію фізичною, юридичною й астрономічною водночас.",
+     "field_note": "Коли повернення зривається, спершу прочитай попередження неба, потім звинувачуй pinger."
+    },
+    "ar_SA": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "سلم أقمار Aegir",
+     "scanner": "خطر مداري // النافذة غير مستقرة. طفرة Skarn، وستارة Vela، وحجب Kestrel، وريشة عاصفة HECTON قد تكسر هندسة الاسترداد.",
+     "terminal": "ملاحظة نافذة الاسترداد // يتطلب Black Keel حيازة الإشارة، وpayload hash نظيفا، ومصافحة حجر صحي، ونافذة حمولة قابلة للاسترداد قبل رفع الجسد. السماء الساطعة ليست تصريح إنقاذ.",
+     "audio": "لم تفشل السماء لأنها فارغة. فشلت حسب الجدول: قمر، ستارة، طفرة، سجل، كتلة.",
+     "in_game_wiki": "سلم أقمار Aegir ليس زينة في السماء. Ran هو النجم، وAegir هو العملاق، وHECTON-8 قمر محيطي داخل سلسلة متحركة من أقمار ومرحلات وعواصف وفحوص حيازة ونوافذ كتلة مؤمنة.\n\nيمكن أن يغرق Skarn الهوائيات بضجيج مشحون. يمكن أن تغلق Vela المرحلات بغبار الجليد. يمكن أن يحجب Kestrel خط الرؤية في أسوأ دقيقة. يمكن أن يرمي HECTON ريشة عاصفة عبر ممر صعود نظيف. قد يستلم Black Keel حزمتك ويرفض الرفع إذا فشلت النافذة أو مصافحة الحجر أو فئة الكتلة.",
+     "external_site": "يوضح Aegir لماذا قد يكون إنقاذ HECTON-8 مرئيا ومؤكدا ثم مرفوضا: السماء آلة مرور وليست وعدا.",
+     "external_site_article": "سلم أقمار Aegir يصحح أول غريزة عند اللاعب: الإنقاذ لا يحتاج إلى هزيمة المحيط وحده. HECTON-8 يقع تحت عملاق مزدحم، لا تحت سماء فارغة. Ran يعطي الضوء، وAegir يفرض الجاذبية والإشعاع وطقس الحطام وأوقات النقل، والأقمار تحول الفضاء فوق الماء إلى قفل متحرك.\n\nكل درجة تكسر يقينا مختلفا. Skarn يجعل الإلكترونيات النظيفة متقطعة. Vela يبعثر البصريات وروابط carrier. Claw يحفظ منطق طرق قديم ما زالت الآلات تطيعه. Lumen يثبت أن الحزمة مرت، لا أنها عوملت بعدل. Thorne يحمل شبهة الحجر. Anvil يترك قانون الشحن على عتاد salvage. Kestrel يضغط النوافذ بمجرد وقوفه في المكان الخطأ. HECTON يعطي الماء والضغط وريشة العاصفة. Mute يثبت أن الطريق الميت قد يعيش على الورق.\n\nلذلك ليس Black Keel سفينة أم بطولية. إنه claim-tender داخل هذه الهندسة. لرفع جسد يحتاج إلى حيازة إشارة، وpayload hash نظيف، ومصافحة حجر، وثقة توجيه، ونافذة حمولة تقبلها شركة التأمين. قد تكون السماء الصافية بلا فائدة. وقد تصل الإشارة الصادقة متأخرة. السلم يجعل العزلة فيزيائية وقانونية وفلكية معا.",
+     "field_note": "عندما يفشل الاسترداد، اقرأ تحذير السماء قبل لوم pinger."
+    },
+    "id_ID": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Tangga Bulan Aegir",
+     "scanner": "BAHAYA ORBITAL // Jendela tidak stabil. Lonjakan Skarn, tirai Vela, oklusi Kestrel, dan plume badai HECTON dapat merusak geometri pemulihan.",
+     "terminal": "CATATAN JENDELA PEMULIHAN // Black Keel membutuhkan kustodi sinyal, payload hash bersih, handshake karantina, dan jendela tonase yang dapat dipulihkan sebelum mengangkat tubuh. Langit terang bukan izin penyelamatan.",
+     "audio": "Langit tidak gagal karena kosong. Ia gagal sesuai jadwal: bulan, tirai, lonjakan, buku besar, massa.",
+     "in_game_wiki": "Tangga bulan Aegir bukan hiasan langit. Ran adalah bintang, Aegir adalah raksasa, dan HECTON-8 adalah bulan samudra dalam rantai bergerak berisi bulan, relai, badai, pemeriksaan kustodi, dan jendela massa diasuransikan.\n\nSkarn dapat membanjiri antena dengan derau bermuatan. Vela dapat menutup relai dengan debu es. Kestrel dapat memblokir garis pandang pada menit terburuk. HECTON dapat melempar plume badai melalui koridor naik yang bersih. Black Keel dapat menerima paketmu dan tetap menolak angkat jika jendela, handshake karantina, atau kelas massa gagal.",
+     "external_site": "Aegir menjelaskan mengapa penyelamatan HECTON-8 bisa terlihat, dikonfirmasi, lalu tetap ditolak: langit adalah mesin lalu lintas, bukan janji.",
+     "external_site_article": "Tangga bulan Aegir adalah koreksi pertama terhadap naluri pemain bahwa penyelamatan hanya perlu mengalahkan samudra. HECTON-8 berada di bawah raksasa yang sibuk, bukan langit kosong. Ran memberi cahaya, Aegir memberi gravitasi, radiasi, cuaca puing, dan waktu transfer, sementara bulan-bulan mengubah ruang di atas air menjadi kunci bergerak.\n\nSetiap anak tangga mematahkan kepastian yang berbeda. Skarn membuat elektronik bersih menjadi terputus-putus. Vela menyebarkan optik dan tautan carrier. Claw menyimpan logika rute lama yang masih dipatuhi mesin. Lumen membuktikan paket lewat, bukan bahwa paket diperlakukan adil. Thorne membawa kecurigaan karantina. Anvil meninggalkan hukum kargo pada perangkat salvage. Kestrel menekan jendela hanya dengan berdiri di tempat salah. HECTON memberi air, tekanan, dan plume badai. Mute membuktikan rute mati bisa hidup di atas kertas.\n\nBlack Keel karena itu bukan kapal induk heroik. Ia claim-tender dalam geometri itu. Untuk mengangkat tubuh, ia membutuhkan kustodi sinyal, payload hash bersih, handshake karantina, keyakinan pandu, dan jendela tonase yang diterima asuransi. Langit cerah bisa tidak berguna. Sinyal benar bisa datang terlambat. Tangga itu membuat isolasi fisik, legal, dan astronomis sekaligus.",
+     "field_note": "Saat pemulihan gagal, baca peringatan langit sebelum menyalahkan pinger."
+    },
+    "ko_KR": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Aegir 달 사다리",
+     "scanner": "궤도 위험 // 창이 불안정하다. Skarn 서지, Vela 셔터, Kestrel 가림, HECTON 폭풍 플룸이 회수 기하를 깨뜨릴 수 있다.",
+     "terminal": "회수 창 메모 // Black Keel은 몸체 인양 전에 신호 보관, 깨끗한 payload hash, 격리 핸드셰이크, 회수 가능한 톤수 창을 요구한다. 밝은 하늘은 구조 허가가 아니다.",
+     "audio": "하늘은 비어서 실패한 것이 아니다. 달, 셔터, 서지, 장부, 질량의 일정대로 실패했다.",
+     "in_game_wiki": "Aegir의 달 사다리는 하늘 장식이 아니다. Ran은 항성, Aegir는 거대 행성, HECTON-8은 달, 중계기, 폭풍, 보관권 검사, 보험 질량 창의 움직이는 사슬 안에 있는 바다 달이다.\n\nSkarn은 안테나를 대전 잡음으로 범람시킬 수 있다. Vela는 얼음 먼지로 중계기를 닫을 수 있다. Kestrel은 최악의 순간 시야선을 막을 수 있다. HECTON은 깨끗한 상승 회랑에 폭풍 플룸을 던질 수 있다. Black Keel은 네 패킷을 받고도 창, 격리 핸드셰이크, 질량 등급이 실패하면 인양을 거부할 수 있다.",
+     "external_site": "Aegir는 HECTON-8 구조가 보이고 확인되어도 거부될 수 있는 이유를 설명한다. 하늘은 약속이 아니라 교통 기계다.",
+     "external_site_article": "Aegir 달 사다리는 구조가 바다만 이기면 된다는 플레이어의 본능을 먼저 고친다. HECTON-8 위에는 빈 하늘이 아니라 바쁜 거대 행성권이 있다. Ran은 빛을 주고, Aegir는 중력, 방사선, 잔해 날씨, 전이 시각을 주며, 달들은 물 위의 공간을 움직이는 자물쇠로 만든다.\n\n각 단은 서로 다른 확실성을 깬다. Skarn은 정상 전자장비를 간헐적으로 만든다. Vela는 광학과 carrier 링크를 흩뜨린다. Claw는 기계가 아직 따르는 낡은 항로 논리를 보존한다. Lumen은 패킷 통과를 증명하지만 공정한 취급은 증명하지 않는다. Thorne은 격리 의심을 운반한다. Anvil은 salvage 장비에 화물법을 남긴다. Kestrel은 잘못된 자리에 서기만 해도 창을 압축한다. HECTON은 물, 압력, 폭풍 플룸을 준다. Mute는 죽은 항로도 서류 위에서 살 수 있음을 증명한다.\n\n따라서 Black Keel은 영웅적인 모선이 아니다. 이 기하 안의 claim-tender다. 몸을 들어 올리려면 신호 보관, 깨끗한 payload hash, 격리 핸드셰이크, 유도 신뢰도, 보험이 받아들이는 톤수 창이 필요하다. 밝은 하늘은 쓸모없을 수 있다. 참된 신호도 너무 늦게 올 수 있다. 사다리는 고립을 물리적, 법적, 천문학적으로 동시에 만든다.",
+     "field_note": "회수가 실패하면 pinger를 탓하기 전에 하늘 경고를 읽어라."
+    },
+    "he_IL": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "סולם הירחים של Aegir",
+     "scanner": "סכנה מסלולית // חלון לא יציב. נחשול Skarn, תריס Vela, הסתרת Kestrel ופלומת סערה HECTON יכולים לשבור גאומטריית שחזור.",
+     "terminal": "הערת חלון שחזור // Black Keel דורש משמורת אות, payload hash נקי, לחיצת יד הסגר וחלון טון בר שחזור לפני הרמת גוף. שמים בהירים אינם אישור חילוץ.",
+     "audio": "השמים לא כשלו מריקנות. הם כשלו לפי לוח: ירח, תריס, נחשול, פנקס, מסה.",
+     "in_game_wiki": "סולם הירחים של Aegir אינו קישוט שמים. Ran הוא הכוכב, Aegir הוא הענק, ו-HECTON-8 הוא ירח אוקייני בתוך שרשרת נעה של ירחים, ממסרים, סופות, בדיקות משמורת וחלונות מסה מבוטחים.\n\nSkarn יכול להציף אנטנות ברעש טעון. Vela יכולה לסגור ממסרים באבק קרח. Kestrel יכול לחסום קו ראייה בדקה הגרועה ביותר. HECTON יכול לזרוק פלומת סערה דרך מסדרון עלייה נקי. Black Keel יכול לקבל את החבילה שלך ועדיין לסרב להרמה אם החלון, לחיצת יד ההסגר או מחלקת המסה נכשלו.",
+     "external_site": "Aegir מסביר מדוע חילוץ מ-HECTON-8 יכול להיות נראה, מאושר ועדיין מסורב: השמים הם מכונת תנועה, לא הבטחה.",
+     "external_site_article": "סולם הירחים של Aegir הוא התיקון הראשון לאינסטינקט של השחקן שחילוץ צריך לנצח רק את האוקיינוס. HECTON-8 נמצא מתחת לענק עמוס, לא מתחת לשמים ריקים. Ran נותן אור, Aegir נותן כבידה, קרינה, מזג אוויר של פסולת וזמני מעבר, והירחים הופכים את החלל מעל המים למנעול נע.\n\nכל שלב שובר ודאות אחרת. Skarn הופך אלקטרוניקה נקייה למקוטעת. Vela מפזרת אופטיקה וקישורי carrier. Claw שומר היגיון נתיב ישן שמכונות עדיין מצייתות לו. Lumen מוכיח שחבילה עברה, לא שטופלה בצדק. Thorne נושא חשד הסגר. Anvil משאיר חוק מטען על חומרת salvage. Kestrel דוחס חלונות רק בכך שהוא עומד במקום הלא נכון. HECTON נותן מים, לחץ ופלומת סערה. Mute מוכיח שנתיב מת יכול לחיות על נייר.\n\nלכן Black Keel אינו ספינת אם גיבורה. הוא claim-tender בתוך הגאומטריה הזאת. כדי להרים גוף דרושים משמורת אות, payload hash נקי, לחיצת יד הסגר, אמון ניווט וחלון טון שהביטוח יקבל. שמים בהירים יכולים להיות חסרי תועלת. אות אמיתי יכול להגיע מאוחר מדי. הסולם הופך בידוד לפיזי, משפטי ואסטרונומי בעת ובעונה אחת.",
+     "field_note": "כששחזור נכשל, קרא את אזהרת השמים לפני שאתה מאשים את ה-pinger."
+    },
+    "pt_BR": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Escada Lunar de Aegir",
+     "scanner": "PERIGO ORBITAL // Janela instável. Surto Skarn, cortina Vela, oclusão Kestrel e pluma de tempestade HECTON podem quebrar a geometria de recuperação.",
+     "terminal": "NOTA DE JANELA DE RECUPERAÇÃO // Black Keel exige custódia de sinal, payload hash limpo, handshake de quarentena e janela de tonelagem recuperável antes de erguer corpo. Céu claro não é autorização de resgate.",
+     "audio": "O céu não falhou por vazio. Falhou no cronograma: lua, cortina, surto, livro-razão, massa.",
+     "in_game_wiki": "A escada lunar de Aegir não é decoração do céu. Ran é a estrela, Aegir é o gigante, e HECTON-8 é uma lua oceânica em uma cadeia móvel de luas, relés, tempestades, checagens de custódia e janelas de massa segurada.\n\nSkarn pode inundar antenas com ruído carregado. Vela pode fechar relés com poeira de gelo. Kestrel pode bloquear a linha de visão no pior minuto. HECTON pode lançar uma pluma de tempestade por um corredor de subida limpo. Black Keel pode receber seu pacote e ainda negar o içamento se a janela, o handshake de quarentena ou a classe de massa falhar.",
+     "external_site": "Aegir explica por que o resgate de HECTON-8 pode ser visível, confirmado e ainda negado: o céu é uma máquina de tráfego, não uma promessa.",
+     "external_site_article": "A escada lunar de Aegir é a primeira correção ao instinto do jogador de que o resgate só precisa vencer o oceano. HECTON-8 fica sob um gigante ocupado, não sob um céu vazio. Ran dá luz, Aegir impõe gravidade, radiação, clima de detritos e tempos de transferência, e as luas transformam o espaço sobre a água em uma fechadura móvel.\n\nCada degrau quebra uma certeza diferente. Skarn torna intermitente a eletrônica limpa. Vela dispersa óptica e links carrier. Claw preserva lógica antiga de rota que máquinas ainda obedecem. Lumen prova que um pacote passou, não que foi tratado com justiça. Thorne carrega suspeita de quarentena. Anvil deixa lei de carga no hardware de salvage. Kestrel comprime janelas só por ficar no lugar errado. HECTON dá água, pressão e pluma de tempestade. Mute prova que uma rota morta pode viver no papel.\n\nBlack Keel, portanto, não é uma nave-mãe heroica. É um claim-tender dentro dessa geometria. Para erguer um corpo, precisa de custódia de sinal, payload hash limpo, handshake de quarentena, confiança de guiagem e janela de tonelagem aceita pelo seguro. Céu claro pode ser inútil. Um sinal verdadeiro pode chegar tarde demais. A escada torna o isolamento físico, legal e astronômico ao mesmo tempo.",
+     "field_note": "Quando a recuperação falhar, leia o aviso do céu antes de culpar o pinger."
+    },
+    "nl_NL": {
+     "localization_status": "source_draft_pending_native_review",
+     "title": "Aegir Maanladder",
+     "scanner": "ORBITAAL GEVAAR // Venster instabiel. Skarn-surge, Vela-shutter, Kestrel-occlusie en HECTON-stormpluim kunnen recoverygeometrie breken.",
+     "terminal": "RECOVERYVENSTER NOTITIE // Black Keel vereist signaalbewaring, schone payload hash, quarantaine-handshake en herstelbaar tonnagevenster voor lichaamslift. Heldere hemel is geen reddingsvrijgave.",
+     "audio": "De hemel faalde niet door leegte. Hij faalde op schema: maan, shutter, surge, grootboek, massa.",
+     "in_game_wiki": "Aegirs maanladder is geen hemelversiering. Ran is de ster, Aegir de reus, en HECTON-8 een oceaanmaan in een bewegende keten van manen, relais, stormen, bewaringscontroles en verzekerde massavensters.\n\nSkarn kan antennes met geladen ruis overspoelen. Vela kan relais sluiten met ijsstof. Kestrel kan op het slechtste moment de zichtlijn blokkeren. HECTON kan een stormpluim door een schoon opstijgpad werpen. Black Keel kan je pakket ontvangen en toch lift weigeren als venster, quarantaine-handshake of massaklasse faalt.",
+     "external_site": "Aegir verklaart waarom redding vanaf HECTON-8 zichtbaar, bevestigd en toch geweigerd kan zijn: de hemel is een verkeersmachine, geen belofte.",
+     "external_site_article": "De Aegir maanladder corrigeert eerst het instinct van de speler dat redding alleen de oceaan hoeft te verslaan. HECTON-8 ligt onder een drukke reus, niet onder een lege hemel. Ran geeft licht, Aegir geeft zwaartekracht, straling, puinweer en transfertijden, en de manen veranderen de ruimte boven het water in een bewegend slot.\n\nElke sport breekt een ander soort zekerheid. Skarn maakt schone elektronica haperend. Vela verstrooit optiek en carrier-links. Claw bewaart oude routelogica die machines nog volgen. Lumen bewijst dat een pakket passeerde, niet dat het eerlijk werd behandeld. Thorne draagt quarantaineverdenking. Anvil laat vrachtrecht achter op salvage-hardware. Kestrel perst vensters samen door gewoon verkeerd te staan. HECTON levert water, druk en stormpluim. Mute bewijst dat een dode route op papier kan leven.\n\nBlack Keel is daarom geen heroisch moederschip. Het is een claim-tender in die geometrie. Om een lichaam te tillen heeft het signaalbewaring, schone payload hash, quarantaine-handshake, geleidingsvertrouwen en een door verzekering geaccepteerd tonnagevenster nodig. Heldere hemel kan nutteloos zijn. Een waar signaal kan te laat komen. De ladder maakt isolatie tegelijk fysiek, juridisch en astronomisch.",
+     "field_note": "Als recovery faalt, lees de hemelwaarschuwing voordat je de pinger de schuld geeft."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,257 +1,258 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS235_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS235_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1314_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE",
+   "release_set_id": "RS235_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE",
+   "article_id": "applied_lore.cable_jacket_repair_wrap_field_article",
+   "title_key": "LORE_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
+    "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1314_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE",
-      "release_set_id": "RS235_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE",
-      "article_id": "applied_lore.cable_jacket_repair_wrap_field_article",
-      "title_key": "LORE_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
-        "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.cable_jacket_repair_wrap_field_article",
-        "secondary": [
-          "unlock.first_repair_wrapped_cable",
-          "unlock.first_salt_crystal_wrap_seam",
-          "unlock.first_clamp_pressure_mark"
-        ],
-        "poi_tags": [
-          "poi.cable_jacket_repair_wrap",
-          "poi.gray_repair_tape_band",
-          "poi.salt_crystal_wrap_seam",
-          "poi.clamp_pressure_mark",
-          "poi.tether_repair_patch"
-        ],
-        "biome_tags": [
-          "biome.old_colony_service_run",
-          "biome.pressure_corridor",
-          "biome.capsule_tether_route",
-          "biome.flooded_utility_chase"
-        ],
-        "first_20_boundary": "Makes cable jackets, hoses and tethers readable as human repair history: wrap direction, seam salt, clamp scars, wet ridges and false-safe insulation."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Cable Surface Scanner",
-          "terminal": "Deep Reach Field Maintenance Note",
-          "audio": "Old Utility Chase Recorder",
-          "in_game_wiki": "PDA Cable Repair Primer",
-          "external_site": "Public Site Cable Repair Article",
-          "field_note": "Marauder Cable Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_repair_wrapped_cable_or_tether_patch",
-        "truth_payload": "Cable repair wrap records emergency maintenance: wrap direction, overlap lips, salt crystals and clamp marks show whether a line carried power, air, signal, or only the story of a failed repair.",
-        "player_question": "Is the cable still doing work, or is the neat repair wrap only hiding the place where the ocean already entered?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Cable Jacket Repair Wrap Field Article",
-          "scanner": "CABLE REPAIR WRAP // Black waterproof jacket, gray pressure tape, diagonal fiber underlayer, salt crystals in seams, scratched wet ridges and clamp-pressure marks. The overlap lip points toward the last human repair.",
-          "terminal": "FIELD MAINTENANCE // Record wrap direction before moving the line. A neat repair band can still be a failed conductor. Salt under the overlap means water followed the jacket, not the wall.",
-          "audio": "The tape is where the cable admits somebody could not wait for a replacement.",
-          "in_game_wiki": "Cable jacket repair wrap is the smallest kind of human confession in a drowned station. It is not biology, not Atlas sealant and not decorative hazard striping. It is black waterproof rubber, gray pressure tape, diagonal fiber showing through a torn edge, salt caught in seams, scratched wet ridges and clamp marks where someone squeezed the line hard enough to keep working.\n\nA wrapped cable tells the player what official diagrams cannot. The direction of the overlap says which end a technician trusted. White crystals under the lip mean water traveled along the jacket before it dried. A clamp mark crossing the wrap says the line was tied down after the patch, not before it. Smooth tape with no salt may be recent. Wrinkled tape with a dark wet trough may be holding a leak rather than sealing it. A spiral that changes pitch near a hatch usually means the worker ran out of time, not tape.\n\nFor gameplay, the wrap is a practical reading surface. A repair band on a cable run can lead to a bypass panel, oxygen hose, powered relay, dead pinger or hidden crawlspace. It can also warn the player away from a shock path or a false-safe diagnostic. If the line is still under load, the wet ridge may warm slightly and collect different growth. If the line is dead, the seam becomes a salt beard and shell grit trap. Cutting before scanning can turn a route clue into loose rubber.\n\nThe important distinction is that human wrap comes before the living repair network. Conductive biofilm may later colonize the crack. Atlas biofiber may later decide the wound wants closing. The gray tape still marks the first decision: a worker saw a failing line, had no replacement, and chose to make the bad part last one more shift. That is better than a generic cable texture. It is labor pressure made visible.\n\nDeep Reach loved clean route maps. Cables in those maps are straight, colored and certain. HECTON-8 cables are none of those things. They bend around flooded lockers, pass through concrete holes that were never on the drawing, disappear under shell grit, and reappear with repair tape where the official maintenance window had already closed. A line with three different wrap batches is a timeline. A line with a perfect new band in an abandoned corridor is a question.\n\nMarauder rule: read the wrap before trusting the current. Follow the overlap. Check which side of the seam grows salt. Look for clamp scars, tape pitch changes and places where the rubber jacket shines from repeated handling. The cable may still feed the thing you need. It may also be the only honest record of who came back after the room was supposed to be empty.",
-          "external_site": "Cable repair wrap turns small service lines into readable history: tape direction, salt under overlaps, clamp scars and wet ridges reveal emergency repairs, late returns and false-safe diagnostics.",
-          "external_site_article": "Cable jacket repair wrap is one of HECTON-8's strongest small-scale evidence surfaces. It is ordinary material under extraordinary pressure: black waterproof rubber, gray pressure tape, exposed fiber, salt seams, clamp scars and scratched wet ridges.\n\nIn gameplay, a wrap band can guide the player toward a bypass, oxygen route, relay, crawlspace or hazard. The key is physical reading. Salt under the overlap means water followed the line. A polished clamp scar means the cable stayed in service after repair. A changed tape pitch near a hatch means the repair was hurried. A clean new band in a supposedly abandoned corridor can prove someone returned.\n\nThe wrap also separates human maintenance from Atlas repair ecology. Biofilm and living sealant may arrive later, but the tape records the first human compromise: no replacement part, no clean schedule, one more shift to survive. That makes a cable run feel like evidence instead of background clutter.",
-          "field_note": "Fresh tape lies flat. Old tape grows a white seam where water kept trying to enter."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "مقالة ميدانية عن لفافة إصلاح غلاف الكابل",
-          "scanner": "لفافة إصلاح كابل // غلاف مطاطي أسود مقاوم للماء، شريط ضغط رمادي، طبقة ألياف مائلة ظاهرة، بلورات ملح في الشقوق، نتوءات رطبة مخدوشة وآثار مشابك. شفة التراكب تشير إلى آخر إصلاح بشري.",
-          "terminal": "صيانة ميدانية // سجّل اتجاه اللف قبل تحريك الخط. شريط مرتب قد يخفي موصلا فاشلا. الملح تحت التراكب يعني أن الماء اتبع الغلاف لا الجدار.",
-          "audio": "الشريط هو الموضع الذي يعترف فيه الكابل بأن أحدا لم يستطع انتظار بديل.",
-          "in_game_wiki": "لفافة إصلاح غلاف الكابل اعتراف بشري صغير داخل محطة غارقة. ليست أحياء، وليست مانع تسرب من Atlas، وليست زخرفة تحذير. إنها مطاط أسود مقاوم للماء، وشريط ضغط رمادي، وألياف مائلة تظهر من حافة ممزقة، وملح عالق في الشقوق، ونتوءات رطبة مخدوشة، وآثار مشابك ضغطها عامل كي يستمر الخط في العمل.\n\nالكابل الملفوف يخبر اللاعب بما لا تقوله المخططات الرسمية. اتجاه التراكب يبين أي طرف وثق به الفني. البلورات البيضاء تحت الشفة تعني أن الماء سار على طول الغلاف قبل أن يجف. أثر المشبك فوق اللف يعني أن الخط ثُبت بعد الإصلاح. الشريط الناعم بلا ملح قد يكون حديثا، أما الشريط المجعد ذو مجرى رطب داكن فقد يمسك تسربا بدلا من إغلاقه.\n\nفي اللعب تصبح اللفافة سطح قراءة عملي. قد تقود إلى لوحة تجاوز أو خرطوم أكسجين أو مرحل يعمل أو منارة صوتية ميتة أو ممر ضيق مخفي. وقد تحذر من مسار صدمة أو تشخيص كاذب بالسلامة. إذا كان الخط لا يزال تحت حمل، فقد يدفأ النتوء الرطب قليلا وتختلف عليه النموات. وإذا مات الخط صار الشق لحية ملح ومصيدة رمل صدفي.\n\nالفرق المهم أن هذا إصلاح بشري قبل شبكة الإصلاح الحية. قد تستعمره لاحقا طبقة موصلة أو ألياف Atlas، لكن الشريط الرمادي يحفظ القرار الأول: عامل رأى خطا يفشل، ولم يملك بديلا، فجعله يصمد وردية أخرى.\n\nقاعدة المغير: اقرأ اللف قبل الوثوق بالتيار. اتبع التراكب، وانظر أي جانب من الشق يجمع الملح، وابحث عن ندوب المشابك وتغير خطوة الشريط. قد يغذي الكابل الشيء الذي تحتاجه، وقد يكون السجل الصادق الوحيد لمن عاد بعد أن كان المكان يفترض أن يكون فارغا.",
-          "external_site": "لفافة إصلاح الكابل تجعل خطوط الخدمة الصغيرة تاريخا مقروءا: اتجاه الشريط، الملح تحت التراكب، ندوب المشابك والنتوءات الرطبة تكشف الإصلاحات العاجلة والعودة المتأخرة والتشخيص الكاذب.",
-          "external_site_article": "لفافة إصلاح غلاف الكابل سطح دليل صغير لكنه قوي في HECTON-8. المادة عادية تحت ضغط غير عادي: مطاط مقاوم للماء، شريط رمادي، ألياف مكشوفة، شقوق ملح، ندوب مشابك ونتوءات رطبة مخدوشة.\n\nفي اللعب يمكن لشريط ملفوف أن يقود إلى تجاوز أو مسار أكسجين أو مرحل أو خطر. الملح تحت التراكب يعني أن الماء اتبع الخط. أثر المشبك المصقول يعني أن الكابل بقي في الخدمة بعد الإصلاح. تغير خطوة اللف قرب فتحة يعني أن الإصلاح كان على عجل.\n\nكما تفصل اللفافة صيانة البشر عن بيئة إصلاح Atlas. قد تأتي البيوفيلم والمانعات الحية لاحقا، لكن الشريط يسجل أول مساومة بشرية: لا قطعة بديلة، لا جدول نظيف، وردية أخرى يجب النجاة منها.",
-          "field_note": "الشريط الجديد مستو. الشريط القديم ينبت خطا أبيض حيث ظل الماء يحاول الدخول."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Feldartikel: Kabelmantel-Reparaturwicklung",
-          "scanner": "KABEL-REPARATURWICKLUNG // Schwarzer wasserdichter Mantel, graues Druckband, diagonale Faserlage, Salz in Nähten, nasse Kratzrippen und Klemmspuren. Die Überlapplippe zeigt zur letzten menschlichen Reparatur.",
-          "terminal": "FELDWARTUNG // Wickelrichtung vor dem Bewegen der Leitung erfassen. Ein ordentliches Band kann trotzdem einen versagten Leiter verbergen. Salz unter der Überlappung heißt: Wasser folgte dem Mantel, nicht der Wand.",
-          "audio": "Das Band ist die Stelle, an der das Kabel zugibt, dass niemand auf Ersatz warten konnte.",
-          "in_game_wiki": "Kabelmantel-Reparaturwicklung ist die kleinste menschliche Beichte in einer ertrunkenen Station. Sie ist keine Biologie, kein Atlas-Dichtstoff und keine Warnstreifen-Dekoration. Sie besteht aus schwarzem wasserdichtem Gummi, grauem Druckband, schräger Faserlage an gerissenen Kanten, Salz in Nähten, nassen Kratzrippen und Klemmspuren, wo jemand die Leitung hart genug festzog, damit sie weiter arbeitete.\n\nEin gewickeltes Kabel erzählt, was offizielle Pläne nicht zeigen. Die Überlapprichtung sagt, welchem Ende der Techniker vertraute. Weiße Kristalle unter der Lippe bedeuten, dass Wasser am Mantel entlanglief. Eine Klemmspur über dem Band heißt, dass die Leitung nach der Reparatur wieder festgelegt wurde. Glattes Band ohne Salz kann frisch sein. Faltiges Band mit dunkler Rinne hält vielleicht ein Leck, statt es zu schließen.\n\nFür das Spiel ist die Wicklung eine Lesefläche. Sie kann zu Bypass, Sauerstoffschlauch, Relais, totem Pinger oder Kriechraum führen. Sie kann auch vor Stromschlag oder falscher Diagnose warnen. Unter Last wird eine nasse Rippe etwas wärmer und sammelt anderes Wachstum. Ist die Leitung tot, wird die Naht zu Salzbart und Schalengrit-Falle.\n\nWichtig ist die Reihenfolge. Menschliche Wicklung kommt vor dem lebenden Reparaturnetz. Biofilm kann später den Riss besiedeln, Atlas-Faser kann später schließen wollen. Das graue Band bewahrt die erste Entscheidung: keine Ersatzleitung, kein sauberes Fenster, noch eine Schicht überstehen.\n\nDeep Reach liebte saubere Routenpläne. Auf ihnen sind Kabel gerade und sicher. HECTON-8-Kabel biegen um geflutete Spinde, verschwinden unter Schalensand und tauchen mit Reparaturband wieder auf, wo das Wartungsfenster längst geschlossen war. Drei verschiedene Bandchargen sind eine Zeitlinie. Ein perfektes neues Band im leeren Flur ist eine Frage.",
-          "external_site": "Kabel-Reparaturwicklung macht kleine Leitungen lesbar: Bandrichtung, Salz unter Überlappungen, Klemmnarben und nasse Rippen zeigen Notreparaturen, späte Rückkehr und falsche Sicherheitsdiagnosen.",
-          "external_site_article": "Kabelmantel-Reparaturwicklung ist eine starke kleine Beweisfläche in HECTON-8. Gewöhnliches Material steht unter ungewöhnlichem Druck: wasserdichtes Gummi, graues Band, freiliegende Faser, Salznaht, Klemmspur und nasse Kratzrippe.\n\nIm Spiel kann ein Band zu Bypass, Sauerstoffroute, Relais, Kriechraum oder Gefahr führen. Salz unter der Überlappung bedeutet Wasserweg. Eine polierte Klemmnarbe bedeutet Nutzung nach der Reparatur. Geänderter Wickelabstand an einer Luke bedeutet Eile.\n\nDie Wicklung trennt menschliche Wartung von Atlas-Ökologie. Biofilm und lebender Dichtstoff können später kommen, doch das Band hält den ersten Kompromiss fest: kein Ersatzteil, kein sauberes Zeitfenster, noch eine Schicht Überleben.",
-          "field_note": "Frisches Band liegt glatt. Altes Band bekommt eine weiße Naht, wo Wasser immer wieder hinein wollte."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artículo de campo sobre envoltura de reparación de funda de cable",
-          "scanner": "ENVOLTURA DE REPARACIÓN // Funda negra impermeable, cinta gris de presión, fibra diagonal bajo el corte, cristales de sal en juntas, crestas húmedas rayadas y marcas de abrazadera. El solape apunta al último arreglo humano.",
-          "terminal": "MANTENIMIENTO DE CAMPO // Registrar dirección de la envoltura antes de mover la línea. Una banda ordenada puede ocultar un conductor muerto. Sal bajo el solape: el agua siguió la funda, no la pared.",
-          "audio": "La cinta es donde el cable admite que nadie pudo esperar un repuesto.",
-          "in_game_wiki": "La envoltura de reparación de funda de cable es una confesión humana pequeña dentro de una estación ahogada. No es biología, ni sellante de Atlas, ni decoración de peligro. Es goma negra impermeable, cinta gris de presión, una capa de fibra diagonal asomando por un borde roto, sal en las juntas, crestas mojadas con rayas y marcas de abrazadera donde alguien apretó la línea para que siguiera trabajando.\n\nUn cable envuelto cuenta lo que los diagramas oficiales no pueden. La dirección del solape indica qué extremo confiaba el técnico. Cristales blancos bajo el labio significan que el agua viajó por la funda. Una marca de abrazadera sobre la cinta dice que la línea fue sujeta después del parche. La cinta lisa sin sal puede ser reciente. La cinta arrugada con un canal oscuro puede estar conteniendo una fuga, no sellándola.\n\nEn juego, la envoltura es una superficie de lectura. Puede llevar a una placa de desvío, una manguera de oxígeno, un relé con energía, un pinger muerto o un paso oculto. También puede advertir de descarga o de diagnóstico falsamente seguro. Si la línea aún carga, la cresta mojada se calienta un poco y junta otro crecimiento. Si está muerta, la costura se vuelve barba de sal.\n\nLa distinción importa: la envoltura humana viene antes de la red viva de reparación. La biopelícula conductora puede colonizar la grieta después. La biofibra de Atlas puede intentar cerrarla. La cinta gris marca la primera decisión: una línea fallaba, no había repuesto y alguien eligió darle un turno más.\n\nRegla de saqueador: lee la envoltura antes de confiar en la corriente. Sigue el solape, mira qué lado acumula sal, busca cicatrices de abrazadera y cambios de paso. El cable puede alimentar lo que necesitas o ser el único registro honesto de quién volvió cuando el cuarto debía estar vacío.",
-          "external_site": "La envoltura de reparación convierte líneas pequeñas en historia legible: dirección de cinta, sal bajo solapes, marcas de abrazadera y crestas húmedas revelan arreglos de emergencia y diagnósticos falsos.",
-          "external_site_article": "La reparación de funda de cable es una de las mejores superficies pequeñas de evidencia en HECTON-8. Material ordinario bajo presión extrema: goma impermeable, cinta gris, fibra expuesta, costuras de sal y marcas de abrazadera.\n\nEn juego, una banda puede guiar hacia desvío, oxígeno, relé, paso estrecho o peligro. La lectura física importa: sal bajo el solape, abrazadera pulida, cambio de paso cerca de una escotilla, cinta nueva donde no debería haber nadie.\n\nTambién separa mantenimiento humano de ecología de Atlas. La biopelícula puede llegar después, pero la cinta conserva el primer compromiso: sin repuesto, sin horario limpio, sobrevivir otro turno.",
-          "field_note": "La cinta fresca queda plana. La vieja cría una costura blanca donde el agua siguió intentando entrar."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Article de terrain sur gaine de câble réparée",
-          "scanner": "RÉPARATION DE GAINE // Gaine noire étanche, ruban gris de pression, sous-couche fibreuse diagonale, cristaux de sel dans les joints, arêtes humides rayées et marques de serre-câble. Le chevauchement pointe vers la dernière réparation humaine.",
-          "terminal": "MAINTENANCE TERRAIN // Noter le sens d'enroulement avant de déplacer la ligne. Une bande propre peut cacher un conducteur mort. Du sel sous le chevauchement signifie que l'eau a suivi la gaine.",
-          "audio": "Le ruban est l'endroit où le câble avoue que personne ne pouvait attendre une pièce neuve.",
-          "in_game_wiki": "La gaine de câble réparée est une petite confession humaine dans une station noyée. Ce n'est ni biologie, ni mastic Atlas, ni décor de sécurité. C'est du caoutchouc noir étanche, du ruban gris de pression, une fibre diagonale visible au bord d'une déchirure, du sel pris dans les joints, des reliefs humides rayés et des traces de serrage laissées par quelqu'un qui voulait que la ligne tienne encore.\n\nUn câble enroulé raconte ce que les plans officiels ne disent pas. Le sens du chevauchement montre l'extrémité à laquelle le technicien faisait confiance. Les cristaux blancs sous la lèvre indiquent que l'eau a suivi la gaine. Une marque de collier sur le ruban prouve que la ligne a été immobilisée après la réparation. Un ruban lisse sans sel peut être récent. Un ruban froissé avec une rigole sombre retient peut-être une fuite au lieu de la fermer.\n\nEn jeu, l'enroulement devient une surface lisible. Il peut mener à un panneau de dérivation, un tuyau d'oxygène, un relais alimenté, un pinger mort ou un passage caché. Il peut aussi prévenir d'une décharge ou d'un diagnostic faussement sûr. Sous charge, une arête humide chauffe un peu et change la croissance autour d'elle. Ligne morte, le joint devient barbe de sel.\n\nLa différence est essentielle: l'enroulement humain précède le réseau de réparation vivant. Un biofilm conducteur peut venir plus tard. Une biofibre Atlas peut décider de refermer la plaie. Le ruban gris garde la première décision: pas de pièce, pas de fenêtre propre, une équipe devait tenir un quart de plus.\n\nRègle de maraudeur: lis l'enroulement avant de faire confiance au courant. Suis le chevauchement, regarde où le sel se forme, cherche les cicatrices de collier et les changements de pas. Le câble nourrit peut-être ce dont tu as besoin, ou garde seulement la trace honnête de ceux qui sont revenus.",
-          "external_site": "La réparation de gaine rend les petites lignes de service lisibles: sens du ruban, sel sous les chevauchements, traces de serrage et arêtes humides révèlent réparations d'urgence et faux diagnostics.",
-          "external_site_article": "La gaine de câble réparée est une forte surface de preuve à petite échelle dans HECTON-8. Le matériau est ordinaire, la pression ne l'est pas: caoutchouc étanche, ruban gris, fibre exposée, sel, traces de serrage et reliefs humides.\n\nEn jeu, une bande peut mener vers une dérivation, une route d'oxygène, un relais, un passage ou un danger. La lecture physique compte: sel sous le chevauchement, collier poli, pas d'enroulement changé près d'une trappe, ruban neuf dans un couloir censé être vide.\n\nElle sépare aussi maintenance humaine et écologie Atlas. Le vivant peut coloniser plus tard; le ruban garde le premier compromis humain.",
-          "field_note": "Le ruban neuf reste plat. L'ancien fait une couture blanche là où l'eau insistait."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "מאמר שטח על עטיפת תיקון למעטפת כבל",
-          "scanner": "עטיפת תיקון כבל // מעטפת גומי שחורה אטומה, סרט לחץ אפור, שכבת סיבים אלכסונית, גבישי מלח בתפרים, רכסים רטובים שרוטים וסימני מהדק. שפת החפיפה מצביעה על התיקון האנושי האחרון.",
-          "terminal": "תחזוקת שטח // לתעד את כיוון העטיפה לפני הזזת הקו. פס מסודר עדיין יכול להסתיר מוליך כושל. מלח מתחת לחפיפה אומר שהמים עקבו אחרי המעטפת.",
-          "audio": "הסרט הוא המקום שבו הכבל מודה שלא היה זמן לחכות לחלופה.",
-          "in_game_wiki": "עטיפת תיקון למעטפת כבל היא הודאה אנושית קטנה בתחנה שטבעה. זו אינה ביולוגיה, לא איטום של Atlas ולא פס אזהרה דקורטיבי. זה גומי שחור אטום למים, סרט לחץ אפור, סיבי חיזוק אלכסוניים שנראים בקצה קרוע, מלח בתפרים, רכסים רטובים שרוטים וסימני מהדק במקום שבו מישהו לחץ את הקו כדי שימשיך לעבוד.\n\nכבל עטוף מספר מה שהשרטוטים הרשמיים אינם מראים. כיוון החפיפה אומר לאיזה קצה הטכנאי האמין. גבישים לבנים מתחת לשפה אומרים שהמים נעו לאורך המעטפת. סימן מהדק מעל הסרט אומר שהקו נקשר אחרי התיקון. סרט חלק בלי מלח יכול להיות חדש. סרט מקומט עם תעלה רטובה כהה אולי מחזיק דליפה במקום לאטום אותה.\n\nבמשחק, העטיפה היא משטח קריאה. היא יכולה להוביל ללוח מעקף, צינור חמצן, ממסר פעיל, פינגר מת או מעבר מוסתר. היא יכולה גם להזהיר ממסלול שוק או מאבחון בטוח מדי ושקרי. אם הקו עדיין בעומס, הרכס הרטוב מתחמם מעט ומושך צמיחה אחרת. אם הוא מת, התפר נהיה זקן מלח.\n\nההבדל חשוב: עטיפה אנושית באה לפני רשת התיקון החיה. ביופילם מוליך יכול לבוא אחר כך. סיב Atlas יכול להחליט לסגור את הפצע. הסרט האפור שומר את ההחלטה הראשונה: אין חלק חלופי, אין חלון תיקון נקי, צריך לשרוד עוד משמרת.",
-          "external_site": "עטיפת תיקון כבל הופכת קווי שירות קטנים להיסטוריה קריאה: כיוון סרט, מלח בחפיפות, צלקות מהדק ורכסים רטובים חושפים תיקוני חירום ואבחון שווא.",
-          "external_site_article": "עטיפת תיקון למעטפת כבל היא משטח ראיות קטן וחזק ב-HECTON-8. החומר רגיל, הלחץ לא: גומי אטום, סרט אפור, סיבים חשופים, תפרי מלח, סימני מהדק ורכסים רטובים.\n\nבמשחק פס עטיפה יכול להוביל למעקף, חמצן, ממסר, מעבר צר או סכנה. הקריאה פיזית: מלח מתחת לחפיפה, מהדק מלוטש, שינוי בצעד העטיפה ליד פתח, סרט חדש במקום שאמור להיות נטוש.\n\nהעטיפה גם מפרידה בין תחזוקה אנושית לבין אקולוגיית התיקון של Atlas. החיים יכולים לבוא אחר כך; הסרט מתעד את הפשרה האנושית הראשונה.",
-          "field_note": "סרט חדש שוכב שטוח. סרט ישן מגדל תפר לבן במקום שבו מים ניסו להיכנס."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artikel Lapangan Bungkus Perbaikan Jaket Kabel",
-          "scanner": "BUNGKUS PERBAIKAN KABEL // Jaket karet hitam kedap air, pita tekanan abu-abu, lapisan serat diagonal, kristal garam di sambungan, rusuk basah tergores dan bekas jepit. Bibir tumpang tindih menunjuk ke perbaikan manusia terakhir.",
-          "terminal": "PERAWATAN LAPANGAN // Catat arah bungkus sebelum memindahkan jalur. Pita rapi masih bisa menyembunyikan konduktor mati. Garam di bawah tumpang tindih berarti air mengikuti jaket.",
-          "audio": "Pita itu tempat kabel mengaku bahwa seseorang tidak bisa menunggu pengganti.",
-          "in_game_wiki": "Bungkus perbaikan jaket kabel adalah pengakuan manusia kecil di stasiun yang tenggelam. Ini bukan biologi, bukan sealant Atlas, dan bukan garis bahaya dekoratif. Ini karet hitam kedap air, pita tekanan abu-abu, serat diagonal yang terlihat dari tepi robek, garam di sambungan, rusuk basah tergores, dan bekas jepit tempat seseorang menekan jalur agar tetap bekerja.\n\nKabel yang dibungkus memberi tahu hal yang tidak muncul di diagram resmi. Arah tumpang tindih menunjukkan ujung mana yang dipercaya teknisi. Kristal putih di bawah bibir berarti air berjalan di sepanjang jaket. Bekas jepit melintasi pita berarti jalur diikat setelah perbaikan. Pita halus tanpa garam mungkin baru. Pita kusut dengan alur basah gelap mungkin menahan kebocoran, bukan menutupnya.\n\nUntuk gameplay, bungkus adalah permukaan yang bisa dibaca. Ia dapat menuntun ke panel pintas, selang oksigen, relai bertenaga, pinger mati, atau celah tersembunyi. Ia juga bisa memperingatkan jalur sengatan atau diagnosis palsu yang terlihat aman. Jika jalur masih memikul beban, rusuk basah dapat sedikit hangat dan menarik pertumbuhan berbeda. Jika mati, sambungannya menjadi janggut garam.\n\nPerbedaannya penting: bungkus manusia datang sebelum jaringan perbaikan hidup. Biofilm konduktif bisa datang nanti. Biofiber Atlas bisa mencoba menutup luka itu. Pita abu-abu menyimpan keputusan pertama: tidak ada suku cadang, tidak ada jadwal bersih, satu sif lagi harus bertahan.",
-          "external_site": "Bungkus perbaikan kabel mengubah jalur servis kecil menjadi sejarah yang bisa dibaca: arah pita, garam di tumpang tindih, bekas jepit, dan rusuk basah mengungkap perbaikan darurat.",
-          "external_site_article": "Bungkus perbaikan jaket kabel adalah permukaan bukti kecil yang kuat di HECTON-8. Bahannya biasa, tekanannya tidak: karet kedap air, pita abu-abu, serat terbuka, garam di sambungan, bekas jepit dan rusuk basah.\n\nDalam permainan, satu pita dapat membawa pemain ke pintas, oksigen, relai, ruang merayap, atau bahaya. Baca fisiknya: garam di bawah tumpang tindih, bekas jepit yang mengilap, perubahan jarak lilit dekat palka, pita baru di koridor kosong.\n\nBungkus ini memisahkan perawatan manusia dari ekologi perbaikan Atlas. Kehidupan bisa datang belakangan; pita mencatat kompromi manusia pertama.",
-          "field_note": "Pita baru rata. Pita lama menumbuhkan garis putih di tempat air terus mencoba masuk."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "ケーブルジャケット補修巻き現地記事",
-          "scanner": "ケーブル補修巻き // 黒い防水ジャケット、灰色の耐圧テープ、斜め繊維層、継ぎ目の塩結晶、傷ついた濡れリブ、クランプ圧痕。重ね口は最後の人間の補修方向を示す。",
-          "terminal": "現場保守 // 線を動かす前に巻き方向を記録。整った補修帯でも導体は死んでいることがある。重ね口の塩は、水が壁ではなくジャケットを伝った証拠。",
-          "audio": "テープは、誰かが交換品を待てなかったことをケーブルが認める場所だ。",
-          "in_game_wiki": "ケーブルジャケットの補修巻きは、沈んだ施設に残る小さな人間の告白である。生物ではなく、Atlasのシール材でもなく、飾りの警告線でもない。黒い防水ゴム、灰色の耐圧テープ、破れ端から見える斜め繊維、継ぎ目に詰まった塩、濡れて傷ついたリブ、そして作業を続けるために締め付けられたクランプ痕だ。\n\n巻かれたケーブルは、公式図面が語れないことを語る。重ね方向は技術者が信じた端を示す。白い結晶が重ね口の下にあれば、水はジャケットを伝っていた。テープを横切るクランプ痕は、補修後もその線が固定され使われた証拠。塩のない滑らかなテープは新しいかもしれない。暗い濡れ溝を持つしわのあるテープは、漏れを止めたのではなく抱えているだけかもしれない。\n\nゲーム上、補修巻きは読める表面になる。迂回盤、酸素ホース、通電リレー、死んだピンガー、隠し通路へ導くことがある。感電経路や安全に見える誤診断を警告することもある。線がまだ負荷を持つなら、濡れたリブはわずかに温まり、違う成長を集める。死んだ線なら継ぎ目は塩のひげになる。\n\n重要なのは順序だ。人間の補修巻きは、生きた修復網より前にある。導電性バイオフィルムは後から割れ目に住む。Atlasのバイオファイバーは後から閉じようとする。灰色のテープは最初の判断を残す。替え部品がない。清潔な予定もない。それでももう一勤務だけ持たせる。",
-          "external_site": "ケーブル補修巻きは小さなサービス線を読める履歴に変える。テープ方向、重ね下の塩、クランプ痕、濡れリブが緊急補修と安全誤診断を示す。",
-          "external_site_article": "ケーブルジャケット補修巻きは、HECTON-8で強い小規模証拠面になる。材料は普通だが圧力は普通ではない。防水ゴム、灰色テープ、露出繊維、塩の継ぎ目、クランプ痕、濡れた傷が読む対象になる。\n\nゲームでは、一つの巻き帯が迂回、酸素経路、リレー、狭い通路、危険へ導く。重ね口の塩、磨かれたクランプ痕、ハッチ近くの巻き間隔変化、無人のはずの廊下の新しいテープが手がかりだ。\n\nこの巻きは人間の保守とAtlas修復生態を分ける。生きた膜は後から来る。テープは最初の妥協を記録している。",
-          "field_note": "新しいテープは平らに寝る。古いテープは、水が入りたがった場所に白い継ぎ目を育てる。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "케이블 재킷 수리 랩 현장 글",
-          "scanner": "케이블 수리 랩 // 검은 방수 재킷, 회색 압력 테이프, 사선 섬유 밑층, 이음새의 소금 결정, 긁힌 젖은 릿지와 클램프 압흔. 겹침 입술은 마지막 인간 수리 방향을 가리킨다.",
-          "terminal": "현장 정비 // 선을 옮기기 전 감은 방향을 기록할 것. 깔끔한 수리 띠도 죽은 도체를 숨길 수 있다. 겹침 아래 소금은 물이 벽이 아니라 재킷을 따라갔다는 뜻이다.",
-          "audio": "테이프는 누군가가 교체품을 기다릴 수 없었다고 케이블이 인정하는 자리다.",
-          "in_game_wiki": "케이블 재킷 수리 랩은 물에 잠긴 시설에 남은 가장 작은 인간의 고백이다. 생물도 아니고 Atlas 실란트도 아니며 장식용 위험 표시도 아니다. 검은 방수 고무, 회색 압력 테이프, 찢긴 가장자리에서 보이는 사선 섬유, 이음새에 낀 소금, 긁힌 젖은 릿지, 그리고 선을 계속 쓰기 위해 누군가가 조인 클램프 자국이다.\n\n감긴 케이블은 공식 도면이 말하지 못하는 것을 말한다. 겹침 방향은 기술자가 어느 끝을 믿었는지 보여준다. 입술 아래 흰 결정은 물이 재킷을 따라 흘렀다는 뜻이다. 테이프를 가로지르는 클램프 자국은 수리 뒤에도 선이 고정되어 쓰였다는 뜻이다. 소금 없는 매끈한 테이프는 최근 것일 수 있다. 어두운 젖은 홈이 있는 주름진 테이프는 누수를 막은 것이 아니라 붙잡고 있을 수 있다.\n\n게임에서 랩은 읽을 수 있는 표면이다. 우회 패널, 산소 호스, 살아 있는 릴레이, 죽은 핑어, 숨은 크롤 공간으로 이어질 수 있다. 감전 경로나 거짓 안전 진단을 경고하기도 한다. 선이 아직 부하를 받으면 젖은 릿지가 조금 따뜻해지고 다른 성장물이 붙는다. 죽은 선이면 이음새는 소금 수염이 된다.\n\n중요한 차이는 순서다. 인간의 랩은 살아 있는 수리망보다 먼저 온다. 전도성 바이오필름은 나중에 균열에 자리 잡을 수 있다. Atlas 바이오섬유가 나중에 상처를 닫으려 할 수 있다. 회색 테이프는 첫 결정을 남긴다. 교체 부품은 없고, 정비 시간도 없고, 한 교대만 더 버텨야 했다.",
-          "external_site": "케이블 수리 랩은 작은 서비스 선을 읽을 수 있는 기록으로 만든다. 테이프 방향, 겹침 아래 소금, 클램프 흉터와 젖은 릿지가 긴급 수리와 거짓 진단을 보여준다.",
-          "external_site_article": "케이블 재킷 수리 랩은 HECTON-8의 강한 소규모 증거 표면이다. 평범한 재료가 비정상적인 압력 아래 놓인다. 방수 고무, 회색 테이프, 노출 섬유, 소금 이음새, 클램프 자국, 젖은 긁힘이 모두 단서가 된다.\n\n게임에서는 한 띠가 우회로, 산소, 릴레이, 좁은 통로 또는 위험으로 이어질 수 있다. 겹침 아래 소금, 닳은 클램프 자국, 해치 근처의 감김 간격 변화, 비어 있어야 할 복도의 새 테이프를 읽는다.\n\n이 랩은 인간 정비와 Atlas 수리 생태를 갈라 놓는다. 살아 있는 막은 나중에 온다. 테이프는 첫 인간 타협을 기록한다.",
-          "field_note": "새 테이프는 평평하다. 오래된 테이프는 물이 들어오려던 곳에 흰 이음새를 만든다."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Veldartikel over reparatiewikkel van kabelmantel",
-          "scanner": "KABELREPARATIEWIKKEL // Zwarte waterdichte mantel, grijze druktape, diagonale vezellaag, zoutkristallen in naden, natte gekraste ribbels en klemsporen. De overlaplip wijst naar de laatste menselijke reparatie.",
-          "terminal": "VELDONDERHOUD // Noteer wikkelrichting voor de lijn wordt verplaatst. Een nette band kan nog steeds een dode geleider verbergen. Zout onder de overlap betekent dat water de mantel volgde.",
-          "audio": "De tape is waar de kabel toegeeft dat niemand op vervanging kon wachten.",
-          "in_game_wiki": "Reparatiewikkel van een kabelmantel is een kleine menselijke bekentenis in een verdronken station. Het is geen biologie, geen Atlas-kit en geen decoratieve gevarenstreep. Het is zwart waterdicht rubber, grijze druktape, een diagonale vezellaag langs een gescheurde rand, zout in naden, natte gekraste ribbels en klemsporen waar iemand de lijn hard genoeg vastzette om verder te werken.\n\nEen gewikkelde kabel vertelt wat officiële schema's niet vertellen. De richting van de overlap zegt welk uiteinde de technicus vertrouwde. Witte kristallen onder de lip betekenen dat water langs de mantel liep. Een klemspoor over de tape zegt dat de lijn na de reparatie werd vastgezet. Gladde tape zonder zout kan recent zijn. Gerimpelde tape met een donkere natte geul houdt misschien een lek vast in plaats van het te sluiten.\n\nVoor gameplay is de wikkel een leesbaar oppervlak. Hij kan leiden naar een bypasspaneel, zuurstofslang, relais, dode pinger of verborgen kruipruimte. Hij kan ook waarschuwen voor schokgevaar of valse veilige diagnostiek. Onder belasting wordt een natte ribbel iets warmer en verzamelt andere groei. Een dode lijn krijgt een zoutbaard in de naad.\n\nHet belangrijke verschil is volgorde. Menselijke wikkel komt voor het levende reparatienetwerk. Conductieve biofilm kan later de scheur koloniseren. Atlas-biofiber kan later willen sluiten. De grijze tape bewaart de eerste keuze: geen onderdeel, geen schoon onderhoudsvenster, nog een dienst overleven.",
-          "external_site": "Kabelreparatiewikkel maakt kleine servicelijnen leesbaar: taperichting, zout onder overlap, klemsporen en natte ribbels tonen noodreparaties, late terugkeer en valse veiligheid.",
-          "external_site_article": "Reparatiewikkel van kabelmantel is een sterke kleine bewijslaag in HECTON-8. Gewoon materiaal staat onder ongewone druk: waterdicht rubber, grijze tape, blootliggende vezel, zoutnaden, klemsporen en natte krassen.\n\nIn gameplay kan een band naar bypass, zuurstofroute, relais, kruipruimte of gevaar leiden. De fysieke lezing telt: zout onder overlap, gepolijst klemspoor, veranderde wikkelafstand bij een luik, nieuwe tape in een lege gang.\n\nDe wikkel scheidt menselijk onderhoud van Atlas-ecologie. Leven kan later komen; de tape bewaart het eerste menselijke compromis.",
-          "field_note": "Verse tape ligt vlak. Oude tape krijgt een witte naad waar water bleef proberen binnen te komen."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artykuł terenowy o opasce naprawczej płaszcza kabla",
-          "scanner": "OPASKA NAPRAWCZA KABLA // Czarny wodoodporny płaszcz, szara taśma ciśnieniowa, ukośna warstwa włókna, kryształy soli w szwach, mokre porysowane żebra i ślady zacisków. Krawędź zakładki pokazuje ostatnią ludzką naprawę.",
-          "terminal": "OBSŁUGA TERENOWA // Zapisać kierunek owinięcia przed przeniesieniem linii. Równa taśma może nadal kryć martwy przewód. Sól pod zakładką oznacza, że woda szła po płaszczu.",
-          "audio": "Taśma jest miejscem, w którym kabel przyznaje, że nikt nie mógł czekać na zamiennik.",
-          "in_game_wiki": "Opaska naprawcza płaszcza kabla to małe ludzkie wyznanie w zatopionej stacji. To nie biologia, nie uszczelniacz Atlas i nie dekoracyjny pasek ostrzegawczy. To czarna wodoodporna guma, szara taśma ciśnieniowa, ukośne włókno widoczne przy rozdartej krawędzi, sól w szwach, mokre porysowane żebra i ślady zacisków, którymi ktoś docisnął linię, żeby pracowała dalej.\n\nOwinięty kabel mówi to, czego nie pokażą oficjalne schematy. Kierunek zakładki zdradza koniec, któremu technik ufał. Białe kryształy pod krawędzią znaczą, że woda wędrowała po płaszczu. Ślad zacisku przez taśmę mówi, że linia została unieruchomiona po naprawie. Gładka taśma bez soli może być świeża. Pomarszczona taśma z ciemnym mokrym rowkiem może trzymać wyciek, a nie go zamykać.\n\nW grze opaska jest powierzchnią do czytania. Może prowadzić do panelu obejścia, węża tlenowego, zasilanego przekaźnika, martwego pingera albo ukrytego przejścia. Może też ostrzec przed porażeniem lub fałszywie bezpieczną diagnostyką. Jeśli linia nadal ma obciążenie, mokre żebro lekko się grzeje i zbiera inny nalot. Martwa linia robi z szwu brodę soli.\n\nWażna jest kolejność. Ludzka opaska jest starsza niż żywa sieć naprawcza. Przewodzący biofilm może przyjść później. Biofiber Atlas może później chcieć zamknąć ranę. Szara taśma zapisuje pierwszą decyzję: brak części, brak czystego okna serwisowego, trzeba przetrwać jeszcze jedną zmianę.",
-          "external_site": "Opaska naprawcza kabla czyni małe linie serwisowe czytelną historią: kierunek taśmy, sól pod zakładką, ślady zacisków i mokre żebra pokazują naprawy awaryjne i fałszywe bezpieczeństwo.",
-          "external_site_article": "Opaska naprawcza płaszcza kabla to silna mała powierzchnia dowodowa w HECTON-8. Zwykły materiał działa pod niezwykłym ciśnieniem: wodoodporna guma, szara taśma, odkryte włókno, sól w szwie, ślady zacisków i mokre rysy.\n\nW rozgrywce jedna opaska może prowadzić do obejścia, tlenu, przekaźnika, przejścia albo zagrożenia. Liczy się fizyczny odczyt: sól pod zakładką, wypolerowany zacisk, zmiana odstępu przy włazie, nowa taśma w pustym korytarzu.\n\nOpaska oddziela ludzką obsługę od ekologii naprawczej Atlas. Żywe warstwy mogą przyjść później; taśma trzyma pierwszy kompromis człowieka.",
-          "field_note": "Świeża taśma leży płasko. Stara robi biały szew tam, gdzie woda ciągle próbowała wejść."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artigo de campo sobre envoltório de reparo de capa de cabo",
-          "scanner": "ENVOLTÓRIO DE REPARO // Capa preta impermeável, fita cinza de pressão, subcamada de fibra diagonal, cristais de sal nas emendas, nervuras úmidas arranhadas e marcas de braçadeira. A aba de sobreposição aponta para o último reparo humano.",
-          "terminal": "MANUTENÇÃO DE CAMPO // Registrar a direção do envoltório antes de mover a linha. Uma faixa limpa ainda pode esconder um condutor morto. Sal sob a sobreposição significa que a água seguiu a capa.",
-          "audio": "A fita é onde o cabo admite que alguém não pôde esperar por reposição.",
-          "in_game_wiki": "O envoltório de reparo da capa de cabo é uma pequena confissão humana numa estação afogada. Não é biologia, não é selante de Atlas e não é faixa de perigo decorativa. É borracha preta impermeável, fita cinza de pressão, fibra diagonal aparecendo numa borda rasgada, sal preso nas emendas, nervuras úmidas arranhadas e marcas de braçadeira onde alguém apertou a linha para ela continuar trabalhando.\n\nUm cabo envolvido conta o que diagramas oficiais não mostram. A direção da sobreposição indica qual ponta o técnico confiava. Cristais brancos sob a aba significam que a água correu pela capa. Marca de braçadeira atravessando a fita diz que a linha foi presa depois do remendo. Fita lisa sem sal pode ser recente. Fita enrugada com calha úmida escura pode estar segurando um vazamento, não vedando.\n\nNo jogo, o envoltório é uma superfície de leitura. Pode levar a painel de desvio, mangueira de oxigênio, relé energizado, pinger morto ou passagem escondida. Também pode alertar sobre choque ou diagnóstico falsamente seguro. Se a linha ainda carrega carga, a nervura úmida esquenta um pouco e junta outro crescimento. Se morreu, a emenda vira barba de sal.\n\nA distinção importa: envoltório humano vem antes da rede viva de reparo. Biofilme condutor pode colonizar a rachadura depois. Biofibra Atlas pode tentar fechar a ferida. A fita cinza guarda a primeira decisão: sem peça, sem janela limpa, mais um turno para sobreviver.",
-          "external_site": "O envoltório de reparo transforma linhas de serviço em história legível: direção da fita, sal sob sobreposição, marcas de braçadeira e nervuras úmidas revelam reparos emergenciais.",
-          "external_site_article": "O envoltório de reparo de capa de cabo é uma das melhores superfícies pequenas de evidência em HECTON-8. O material é comum sob pressão incomum: borracha impermeável, fita cinza, fibra exposta, costuras de sal, marcas de braçadeira e nervuras úmidas.\n\nNa jogabilidade, uma faixa pode guiar até desvio, oxigênio, relé, passagem ou perigo. A leitura é física: sal sob a sobreposição, braçadeira polida, mudança de passo perto de escotilha, fita nova em corredor abandonado.\n\nO envoltório separa manutenção humana da ecologia de reparo Atlas. O vivo pode chegar depois; a fita registra o primeiro compromisso humano.",
-          "field_note": "Fita fresca fica plana. Fita velha cria uma costura branca onde a água insistiu em entrar."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Полевая статья о ремонтной обмотке кабельной рубашки",
-          "scanner": "РЕМОНТНАЯ ОБМОТКА КАБЕЛЯ // Черная водостойкая рубашка, серая напорная лента, диагональный волоконный подслой, кристаллы соли в швах, мокрые исцарапанные гребни и следы зажимов. Кромка нахлеста показывает последний человеческий ремонт.",
-          "terminal": "ПОЛЕВОЕ ОБСЛУЖИВАНИЕ // До перемещения линии записать направление обмотки. Ровная лента все еще может скрывать мертвый проводник. Соль под нахлестом значит, что вода шла по рубашке, а не по стене.",
-          "audio": "Лента - место, где кабель признает, что кто-то не мог ждать замену.",
-          "in_game_wiki": "Ремонтная обмотка кабельной рубашки - самое маленькое человеческое признание в утонувшей станции. Это не биология, не герметик Atlas и не декоративная аварийная полоска. Это черная водостойкая резина, серая напорная лента, диагональное волокно на рваном краю, соль в швах, мокрые исцарапанные гребни и следы зажимов там, где кто-то сжал линию достаточно сильно, чтобы она продолжала работать.\n\nОбмотанный кабель рассказывает то, чего нет в официальных схемах. Направление нахлеста показывает, какому концу техник доверял. Белые кристаллы под кромкой значат, что вода шла вдоль рубашки. След зажима поверх ленты говорит, что линию закрепили уже после ремонта. Гладкая лента без соли может быть свежей. Сморщенная лента с темным мокрым желобком может не закрывать течь, а держать ее.\n\nДля игры обмотка становится читаемой поверхностью. Она может вести к панели обхода, кислородному шлангу, запитанному реле, мертвому пингеру или скрытому лазу. Она же может предупредить о пути удара током или о ложно безопасной диагностике. Если линия еще под нагрузкой, мокрый гребень чуть теплеет и собирает другой налет. Если линия мертва, шов превращается в соляную бороду.\n\nВажна последовательность: человеческая обмотка появилась до живой ремонтной сети. Проводящая биопленка может позже заселить трещину. Биоволокно Atlas может позже решить, что рану надо закрыть. Серая лента держит первое решение: кабель умирал, замены не было, и кто-то выбрал протянуть еще одну смену.\n\nDeep Reach любила чистые маршрутные схемы. На них кабели прямые, цветные и уверенные. Кабели HECTON-8 обходят затопленные шкафы, уходят под ракушечный песок и возвращаются с ремонтной лентой там, где окно обслуживания уже закрылось. Линия с тремя партиями ленты - это хронология. Идеально новая обмотка в пустом коридоре - вопрос.\n\nПравило мародера: читай обмотку до того, как доверяешь току. Следи за нахлестом. Смотри, с какой стороны шва растет соль. Ищи следы зажимов, смену шага ленты и места, где резина блестит от рук. Кабель может все еще питать нужную тебе вещь. А может быть единственной честной записью о том, кто вернулся после официальной пустоты.",
-          "external_site": "Ремонтная обмотка превращает мелкие сервисные линии в читаемую историю: направление ленты, соль под нахлестом, следы зажимов и мокрые гребни показывают аварийные ремонты, поздние возвращения и ложную безопасность.",
-          "external_site_article": "Ремонтная обмотка кабельной рубашки - одна из самых сильных малых поверхностей доказательства на HECTON-8. Материал обычный, давление нет: водостойкая резина, серая лента, открытое волокно, соляные швы, следы зажимов и мокрые царапины.\n\nВ игре одна обмотка может привести к обходу, кислороду, реле, лазу или угрозе. Физическое чтение важно: соль под нахлестом, отполированный след зажима, смена шага у люка, новая лента в коридоре, который должен быть пуст.\n\nОбмотка отделяет человеческое обслуживание от ремонтной экологии Atlas. Живой слой может прийти позже; лента фиксирует первый человеческий компромисс.",
-          "field_note": "Свежая лента лежит ровно. Старая растит белый шов там, где вода все еще пыталась войти."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Польова стаття про ремонтну обмотку кабельної оболонки",
-          "scanner": "РЕМОНТНА ОБМОТКА КАБЕЛЮ // Чорна водостійка оболонка, сіра напірна стрічка, діагональний волоконний підшар, кристали солі в швах, мокрі подряпані гребені та сліди затискачів. Край нахлисту показує останній людський ремонт.",
-          "terminal": "ПОЛЬОВЕ ОБСЛУГОВУВАННЯ // До переміщення лінії записати напрям обмотки. Рівна стрічка все ще може ховати мертвий провідник. Сіль під нахлистом означає, що вода йшла оболонкою.",
-          "audio": "Стрічка - місце, де кабель визнає, що хтось не міг чекати заміни.",
-          "in_game_wiki": "Ремонтна обмотка кабельної оболонки - найменше людське зізнання в затонулій станції. Це не біологія, не герметик Atlas і не декоративна аварійна смуга. Це чорна водостійка гума, сіра напірна стрічка, діагональне волокно на рваному краї, сіль у швах, мокрі подряпані гребені та сліди затискачів там, де хтось стиснув лінію, щоб вона працювала далі.\n\nОбмотаний кабель розповідає те, чого немає в офіційних схемах. Напрям нахлисту показує, якому кінцю технік довіряв. Білі кристали під краєм означають, що вода йшла вздовж оболонки. Слід затискача поверх стрічки каже, що лінію закріпили вже після ремонту. Гладка стрічка без солі може бути свіжою. Зморщена стрічка з темним мокрим жолобком може не закривати течу, а тримати її.\n\nДля гри обмотка стає читаною поверхнею. Вона може вести до панелі обходу, кисневого шланга, живленого реле, мертвого пінгера або прихованого лазу. Вона ж може попередити про удар струмом чи хибно безпечну діагностику. Якщо лінія ще під навантаженням, мокрий гребінь трохи теплішає і збирає інший наліт. Якщо лінія мертва, шов стає соляною бородою.\n\nВажлива послідовність: людська обмотка з'явилася до живої ремонтної мережі. Провідна біоплівка може пізніше заселити тріщину. Біоволокно Atlas може пізніше вирішити, що рану треба закрити. Сіра стрічка тримає перше рішення: кабель помирав, заміни не було, і хтось обрав протягнути ще одну зміну.",
-          "external_site": "Ремонтна обмотка робить малі сервісні лінії читаною історією: напрям стрічки, сіль під нахлистом, сліди затискачів і мокрі гребені показують аварійні ремонти та хибну безпеку.",
-          "external_site_article": "Ремонтна обмотка кабельної оболонки - сильна мала поверхня доказу на HECTON-8. Матеріал звичайний, тиск ні: водостійка гума, сіра стрічка, відкрите волокно, соляні шви, сліди затискачів і мокрі подряпини.\n\nУ грі одна обмотка може вести до обходу, кисню, реле, лазу або загрози. Фізичне читання важливе: сіль під нахлистом, відполірований слід затискача, зміна кроку біля люка, нова стрічка в порожньому коридорі.\n\nОбмотка відділяє людське обслуговування від ремонтної екології Atlas. Живий шар може прийти пізніше; стрічка фіксує перший людський компроміс.",
-          "field_note": "Свіжа стрічка лежить рівно. Стара ростить білий шов там, де вода все ще намагалася зайти."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "电缆外皮修补缠带野外条目",
-          "scanner": "电缆修补缠带 // 黑色防水外皮，灰色耐压胶带，斜向纤维底层，缝内盐晶，潮湿刮痕脊和夹具压痕。重叠边指向最后一次人工修补。",
-          "terminal": "现场维护 // 移动线路前记录缠绕方向。整齐修补带仍可能藏着失效导体。重叠下的盐说明水沿外皮走，而不是沿墙走。",
-          "audio": "胶带，是电缆承认有人等不到替换件的地方。",
-          "in_game_wiki": "电缆外皮修补缠带，是沉没站点里最小的人类供词。它不是生物，不是 Atlas 密封剂，也不是装饰性警戒条。它是黑色防水橡胶、灰色耐压胶带、从撕裂边缘露出的斜向纤维、缝里的盐、带刮痕的潮湿脊，以及某人为了让线路继续工作而用力压下的夹具印。\n\n被缠过的电缆会说出官方图纸没有的东西。重叠方向显示技术员信任哪一端。边缘下的白色晶体说明水曾沿外皮流动。跨过胶带的夹具印说明线路是在修补后才被重新固定。没有盐的平滑胶带可能很新。带黑色湿槽的皱胶带可能只是在托住渗漏，而不是封住它。\n\n玩法上，缠带是可读表面。它可以引向旁通面板、氧气软管、带电继电器、失效声标或隐藏爬行空间。它也能警告电击路径或虚假的安全诊断。线路仍有负载时，潮湿脊会略微升温并吸引不同生长物。线路已死时，缝会变成盐须。\n\n关键在顺序。人工缠带早于活体修复网络。导电生物膜可以后来占据裂口。Atlas 生物纤维可以后来决定关闭这处伤口。灰色胶带保存最初的决定：电缆正在失效，没有替换件，有人选择让它再撑一个班次。\n\nDeep Reach 喜欢干净路线图。图上的电缆笔直、有颜色、确定。HECTON-8 的电缆会绕过被淹柜体，消失在贝砂下，又在官方维护窗口关闭后的地方带着修补胶带重新出现。三种批次胶带就是一条时间线。废弃走廊里的全新缠带就是问题本身。",
-          "external_site": "电缆修补缠带把小型服务线变成可读历史：胶带方向、重叠下的盐、夹具痕和潮湿脊会暴露紧急维修、晚期返回和虚假安全诊断。",
-          "external_site_article": "电缆外皮修补缠带是 HECTON-8 上强力的小尺度证据表面。材料普通，压力不普通：防水橡胶、灰色胶带、外露纤维、盐缝、夹具印和潮湿刮痕都能被阅读。\n\n玩法上，一段缠带可以把玩家引向旁通、氧气线路、继电器、狭窄通道或危险。物理痕迹最重要：重叠下的盐、被磨亮的夹具印、舱口附近变化的缠绕间距、空走廊里不该出现的新胶带。\n\n缠带也把人类维护和 Atlas 修复生态分开。活体层可以后来出现；胶带记录了最初的人类妥协。",
-          "field_note": "新胶带平贴着。旧胶带会在水反复想进入的地方长出白色缝线。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.cable_jacket_repair_wrap_field_article",
+    "secondary": [
+     "unlock.first_repair_wrapped_cable",
+     "unlock.first_salt_crystal_wrap_seam",
+     "unlock.first_clamp_pressure_mark"
+    ],
+    "poi_tags": [
+     "poi.cable_jacket_repair_wrap",
+     "poi.gray_repair_tape_band",
+     "poi.salt_crystal_wrap_seam",
+     "poi.clamp_pressure_mark",
+     "poi.tether_repair_patch"
+    ],
+    "biome_tags": [
+     "biome.old_colony_service_run",
+     "biome.pressure_corridor",
+     "biome.capsule_tether_route",
+     "biome.flooded_utility_chase"
+    ],
+    "first_20_boundary": "Makes cable jackets, hoses and tethers readable as human repair history: wrap direction, seam salt, clamp scars, wet ridges and false-safe insulation."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Cable Surface Scanner",
+     "terminal": "Deep Reach Field Maintenance Note",
+     "audio": "Old Utility Chase Recorder",
+     "in_game_wiki": "PDA Cable Repair Primer",
+     "external_site": "Public Site Cable Repair Article",
+     "field_note": "Marauder Cable Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_repair_wrapped_cable_or_tether_patch",
+    "truth_payload": "Cable repair wrap records emergency maintenance: wrap direction, overlap lips, salt crystals and clamp marks show whether a line carried power, air, signal, or only the story of a failed repair.",
+    "player_question": "Is the cable still doing work, or is the neat repair wrap only hiding the place where the ocean already entered?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Cable Jacket Repair Wrap Field Article",
+     "scanner": "CABLE REPAIR WRAP // Black waterproof jacket, gray pressure tape, diagonal fiber underlayer, salt crystals in seams, scratched wet ridges and clamp-pressure marks. The overlap lip points toward the last human repair.",
+     "terminal": "FIELD MAINTENANCE // Record wrap direction before moving the line. A neat repair band can still be a failed conductor. Salt under the overlap means water followed the jacket, not the wall.",
+     "audio": "The tape is where the cable admits somebody could not wait for a replacement.",
+     "in_game_wiki": "Cable jacket repair wrap is the smallest kind of human confession in a drowned station. It is not biology, not Atlas sealant and not decorative hazard striping. It is black waterproof rubber, gray pressure tape, diagonal fiber showing through a torn edge, salt caught in seams, scratched wet ridges and clamp marks where someone squeezed the line hard enough to keep working.\n\nA wrapped cable tells the player what official diagrams cannot. The direction of the overlap says which end a technician trusted. White crystals under the lip mean water traveled along the jacket before it dried. A clamp mark crossing the wrap says the line was tied down after the patch, not before it. Smooth tape with no salt may be recent. Wrinkled tape with a dark wet trough may be holding a leak rather than sealing it. A spiral that changes pitch near a hatch usually means the worker ran out of time, not tape.\n\nFor gameplay, the wrap is a practical reading surface. A repair band on a cable run can lead to a bypass panel, oxygen hose, powered relay, dead pinger or hidden crawlspace. It can also warn the player away from a shock path or a false-safe diagnostic. If the line is still under load, the wet ridge may warm slightly and collect different growth. If the line is dead, the seam becomes a salt beard and shell grit trap. Cutting before scanning can turn a route clue into loose rubber.\n\nThe important distinction is that human wrap comes before the living repair network. Conductive biofilm may later colonize the crack. Atlas biofiber may later decide the wound wants closing. The gray tape still marks the first decision: a worker saw a failing line, had no replacement, and chose to make the bad part last one more shift. That is better than a generic cable texture. It is labor pressure made visible.\n\nDeep Reach loved clean route maps. Cables in those maps are straight, colored and certain. HECTON-8 cables are none of those things. They bend around flooded lockers, pass through concrete holes that were never on the drawing, disappear under shell grit, and reappear with repair tape where the official maintenance window had already closed. A line with three different wrap batches is a timeline. A line with a perfect new band in an abandoned corridor is a question.\n\nMarauder rule: read the wrap before trusting the current. Follow the overlap. Check which side of the seam grows salt. Look for clamp scars, tape pitch changes and places where the rubber jacket shines from repeated handling. The cable may still feed the thing you need. It may also be the only honest record of who came back after the room was supposed to be empty.",
+     "external_site": "Cable repair wrap turns small service lines into readable history: tape direction, salt under overlaps, clamp scars and wet ridges reveal emergency repairs, late returns and false-safe diagnostics.",
+     "external_site_article": "Cable jacket repair wrap is one of HECTON-8's strongest small-scale evidence surfaces. It is ordinary material under extraordinary pressure: black waterproof rubber, gray pressure tape, exposed fiber, salt seams, clamp scars and scratched wet ridges.\n\nIn gameplay, a wrap band can guide the player toward a bypass, oxygen route, relay, crawlspace or hazard. The key is physical reading. Salt under the overlap means water followed the line. A polished clamp scar means the cable stayed in service after repair. A changed tape pitch near a hatch means the repair was hurried. A clean new band in a supposedly abandoned corridor can prove someone returned.\n\nThe wrap also separates human maintenance from Atlas repair ecology. Biofilm and living sealant may arrive later, but the tape records the first human compromise: no replacement part, no clean schedule, one more shift to survive. That makes a cable run feel like evidence instead of background clutter.",
+     "field_note": "Fresh tape lies flat. Old tape grows a white seam where water kept trying to enter."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "مقالة ميدانية عن لفافة إصلاح غلاف الكابل",
+     "scanner": "لفافة إصلاح كابل // غلاف مطاطي أسود مقاوم للماء، شريط ضغط رمادي، طبقة ألياف مائلة ظاهرة، بلورات ملح في الشقوق، نتوءات رطبة مخدوشة وآثار مشابك. شفة التراكب تشير إلى آخر إصلاح بشري.",
+     "terminal": "صيانة ميدانية // سجّل اتجاه اللف قبل تحريك الخط. شريط مرتب قد يخفي موصلا فاشلا. الملح تحت التراكب يعني أن الماء اتبع الغلاف لا الجدار.",
+     "audio": "الشريط هو الموضع الذي يعترف فيه الكابل بأن أحدا لم يستطع انتظار بديل.",
+     "in_game_wiki": "لفافة إصلاح غلاف الكابل اعتراف بشري صغير داخل محطة غارقة. ليست أحياء، وليست مانع تسرب من Atlas، وليست زخرفة تحذير. إنها مطاط أسود مقاوم للماء، وشريط ضغط رمادي، وألياف مائلة تظهر من حافة ممزقة، وملح عالق في الشقوق، ونتوءات رطبة مخدوشة، وآثار مشابك ضغطها عامل كي يستمر الخط في العمل.\n\nالكابل الملفوف يخبر اللاعب بما لا تقوله المخططات الرسمية. اتجاه التراكب يبين أي طرف وثق به الفني. البلورات البيضاء تحت الشفة تعني أن الماء سار على طول الغلاف قبل أن يجف. أثر المشبك فوق اللف يعني أن الخط ثُبت بعد الإصلاح. الشريط الناعم بلا ملح قد يكون حديثا، أما الشريط المجعد ذو مجرى رطب داكن فقد يمسك تسربا بدلا من إغلاقه.\n\nفي اللعب تصبح اللفافة سطح قراءة عملي. قد تقود إلى لوحة تجاوز أو خرطوم أكسجين أو مرحل يعمل أو منارة صوتية ميتة أو ممر ضيق مخفي. وقد تحذر من مسار صدمة أو تشخيص كاذب بالسلامة. إذا كان الخط لا يزال تحت حمل، فقد يدفأ النتوء الرطب قليلا وتختلف عليه النموات. وإذا مات الخط صار الشق لحية ملح ومصيدة رمل صدفي.\n\nالفرق المهم أن هذا إصلاح بشري قبل شبكة الإصلاح الحية. قد تستعمره لاحقا طبقة موصلة أو ألياف Atlas، لكن الشريط الرمادي يحفظ القرار الأول: عامل رأى خطا يفشل، ولم يملك بديلا، فجعله يصمد وردية أخرى.\n\nقاعدة المغير: اقرأ اللف قبل الوثوق بالتيار. اتبع التراكب، وانظر أي جانب من الشق يجمع الملح، وابحث عن ندوب المشابك وتغير خطوة الشريط. قد يغذي الكابل الشيء الذي تحتاجه، وقد يكون السجل الصادق الوحيد لمن عاد بعد أن كان المكان يفترض أن يكون فارغا.",
+     "external_site": "لفافة إصلاح الكابل تجعل خطوط الخدمة الصغيرة تاريخا مقروءا: اتجاه الشريط، الملح تحت التراكب، ندوب المشابك والنتوءات الرطبة تكشف الإصلاحات العاجلة والعودة المتأخرة والتشخيص الكاذب.",
+     "external_site_article": "لفافة إصلاح غلاف الكابل سطح دليل صغير لكنه قوي في HECTON-8. المادة عادية تحت ضغط غير عادي: مطاط مقاوم للماء، شريط رمادي، ألياف مكشوفة، شقوق ملح، ندوب مشابك ونتوءات رطبة مخدوشة.\n\nفي اللعب يمكن لشريط ملفوف أن يقود إلى تجاوز أو مسار أكسجين أو مرحل أو خطر. الملح تحت التراكب يعني أن الماء اتبع الخط. أثر المشبك المصقول يعني أن الكابل بقي في الخدمة بعد الإصلاح. تغير خطوة اللف قرب فتحة يعني أن الإصلاح كان على عجل.\n\nكما تفصل اللفافة صيانة البشر عن بيئة إصلاح Atlas. قد تأتي البيوفيلم والمانعات الحية لاحقا، لكن الشريط يسجل أول مساومة بشرية: لا قطعة بديلة، لا جدول نظيف، وردية أخرى يجب النجاة منها.",
+     "field_note": "الشريط الجديد مستو. الشريط القديم ينبت خطا أبيض حيث ظل الماء يحاول الدخول."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Feldartikel: Kabelmantel-Reparaturwicklung",
+     "scanner": "KABEL-REPARATURWICKLUNG // Schwarzer wasserdichter Mantel, graues Druckband, diagonale Faserlage, Salz in Nähten, nasse Kratzrippen und Klemmspuren. Die Überlapplippe zeigt zur letzten menschlichen Reparatur.",
+     "terminal": "FELDWARTUNG // Wickelrichtung vor dem Bewegen der Leitung erfassen. Ein ordentliches Band kann trotzdem einen versagten Leiter verbergen. Salz unter der Überlappung heißt: Wasser folgte dem Mantel, nicht der Wand.",
+     "audio": "Das Band ist die Stelle, an der das Kabel zugibt, dass niemand auf Ersatz warten konnte.",
+     "in_game_wiki": "Kabelmantel-Reparaturwicklung ist die kleinste menschliche Beichte in einer ertrunkenen Station. Sie ist keine Biologie, kein Atlas-Dichtstoff und keine Warnstreifen-Dekoration. Sie besteht aus schwarzem wasserdichtem Gummi, grauem Druckband, schräger Faserlage an gerissenen Kanten, Salz in Nähten, nassen Kratzrippen und Klemmspuren, wo jemand die Leitung hart genug festzog, damit sie weiter arbeitete.\n\nEin gewickeltes Kabel erzählt, was offizielle Pläne nicht zeigen. Die Überlapprichtung sagt, welchem Ende der Techniker vertraute. Weiße Kristalle unter der Lippe bedeuten, dass Wasser am Mantel entlanglief. Eine Klemmspur über dem Band heißt, dass die Leitung nach der Reparatur wieder festgelegt wurde. Glattes Band ohne Salz kann frisch sein. Faltiges Band mit dunkler Rinne hält vielleicht ein Leck, statt es zu schließen.\n\nFür das Spiel ist die Wicklung eine Lesefläche. Sie kann zu Bypass, Sauerstoffschlauch, Relais, totem Pinger oder Kriechraum führen. Sie kann auch vor Stromschlag oder falscher Diagnose warnen. Unter Last wird eine nasse Rippe etwas wärmer und sammelt anderes Wachstum. Ist die Leitung tot, wird die Naht zu Salzbart und Schalengrit-Falle.\n\nWichtig ist die Reihenfolge. Menschliche Wicklung kommt vor dem lebenden Reparaturnetz. Biofilm kann später den Riss besiedeln, Atlas-Faser kann später schließen wollen. Das graue Band bewahrt die erste Entscheidung: keine Ersatzleitung, kein sauberes Fenster, noch eine Schicht überstehen.\n\nDeep Reach liebte saubere Routenpläne. Auf ihnen sind Kabel gerade und sicher. HECTON-8-Kabel biegen um geflutete Spinde, verschwinden unter Schalensand und tauchen mit Reparaturband wieder auf, wo das Wartungsfenster längst geschlossen war. Drei verschiedene Bandchargen sind eine Zeitlinie. Ein perfektes neues Band im leeren Flur ist eine Frage.",
+     "external_site": "Kabel-Reparaturwicklung macht kleine Leitungen lesbar: Bandrichtung, Salz unter Überlappungen, Klemmnarben und nasse Rippen zeigen Notreparaturen, späte Rückkehr und falsche Sicherheitsdiagnosen.",
+     "external_site_article": "Kabelmantel-Reparaturwicklung ist eine starke kleine Beweisfläche in HECTON-8. Gewöhnliches Material steht unter ungewöhnlichem Druck: wasserdichtes Gummi, graues Band, freiliegende Faser, Salznaht, Klemmspur und nasse Kratzrippe.\n\nIm Spiel kann ein Band zu Bypass, Sauerstoffroute, Relais, Kriechraum oder Gefahr führen. Salz unter der Überlappung bedeutet Wasserweg. Eine polierte Klemmnarbe bedeutet Nutzung nach der Reparatur. Geänderter Wickelabstand an einer Luke bedeutet Eile.\n\nDie Wicklung trennt menschliche Wartung von Atlas-Ökologie. Biofilm und lebender Dichtstoff können später kommen, doch das Band hält den ersten Kompromiss fest: kein Ersatzteil, kein sauberes Zeitfenster, noch eine Schicht Überleben.",
+     "field_note": "Frisches Band liegt glatt. Altes Band bekommt eine weiße Naht, wo Wasser immer wieder hinein wollte."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artículo de campo sobre envoltura de reparación de funda de cable",
+     "scanner": "ENVOLTURA DE REPARACIÓN // Funda negra impermeable, cinta gris de presión, fibra diagonal bajo el corte, cristales de sal en juntas, crestas húmedas rayadas y marcas de abrazadera. El solape apunta al último arreglo humano.",
+     "terminal": "MANTENIMIENTO DE CAMPO // Registrar dirección de la envoltura antes de mover la línea. Una banda ordenada puede ocultar un conductor muerto. Sal bajo el solape: el agua siguió la funda, no la pared.",
+     "audio": "La cinta es donde el cable admite que nadie pudo esperar un repuesto.",
+     "in_game_wiki": "La envoltura de reparación de funda de cable es una confesión humana pequeña dentro de una estación ahogada. No es biología, ni sellante de Atlas, ni decoración de peligro. Es goma negra impermeable, cinta gris de presión, una capa de fibra diagonal asomando por un borde roto, sal en las juntas, crestas mojadas con rayas y marcas de abrazadera donde alguien apretó la línea para que siguiera trabajando.\n\nUn cable envuelto cuenta lo que los diagramas oficiales no pueden. La dirección del solape indica qué extremo confiaba el técnico. Cristales blancos bajo el labio significan que el agua viajó por la funda. Una marca de abrazadera sobre la cinta dice que la línea fue sujeta después del parche. La cinta lisa sin sal puede ser reciente. La cinta arrugada con un canal oscuro puede estar conteniendo una fuga, no sellándola.\n\nEn juego, la envoltura es una superficie de lectura. Puede llevar a una placa de desvío, una manguera de oxígeno, un relé con energía, un pinger muerto o un paso oculto. También puede advertir de descarga o de diagnóstico falsamente seguro. Si la línea aún carga, la cresta mojada se calienta un poco y junta otro crecimiento. Si está muerta, la costura se vuelve barba de sal.\n\nLa distinción importa: la envoltura humana viene antes de la red viva de reparación. La biopelícula conductora puede colonizar la grieta después. La biofibra de Atlas puede intentar cerrarla. La cinta gris marca la primera decisión: una línea fallaba, no había repuesto y alguien eligió darle un turno más.\n\nRegla de saqueador: lee la envoltura antes de confiar en la corriente. Sigue el solape, mira qué lado acumula sal, busca cicatrices de abrazadera y cambios de paso. El cable puede alimentar lo que necesitas o ser el único registro honesto de quién volvió cuando el cuarto debía estar vacío.",
+     "external_site": "La envoltura de reparación convierte líneas pequeñas en historia legible: dirección de cinta, sal bajo solapes, marcas de abrazadera y crestas húmedas revelan arreglos de emergencia y diagnósticos falsos.",
+     "external_site_article": "La reparación de funda de cable es una de las mejores superficies pequeñas de evidencia en HECTON-8. Material ordinario bajo presión extrema: goma impermeable, cinta gris, fibra expuesta, costuras de sal y marcas de abrazadera.\n\nEn juego, una banda puede guiar hacia desvío, oxígeno, relé, paso estrecho o peligro. La lectura física importa: sal bajo el solape, abrazadera pulida, cambio de paso cerca de una escotilla, cinta nueva donde no debería haber nadie.\n\nTambién separa mantenimiento humano de ecología de Atlas. La biopelícula puede llegar después, pero la cinta conserva el primer compromiso: sin repuesto, sin horario limpio, sobrevivir otro turno.",
+     "field_note": "La cinta fresca queda plana. La vieja cría una costura blanca donde el agua siguió intentando entrar."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Article de terrain sur gaine de câble réparée",
+     "scanner": "RÉPARATION DE GAINE // Gaine noire étanche, ruban gris de pression, sous-couche fibreuse diagonale, cristaux de sel dans les joints, arêtes humides rayées et marques de serre-câble. Le chevauchement pointe vers la dernière réparation humaine.",
+     "terminal": "MAINTENANCE TERRAIN // Noter le sens d'enroulement avant de déplacer la ligne. Une bande propre peut cacher un conducteur mort. Du sel sous le chevauchement signifie que l'eau a suivi la gaine.",
+     "audio": "Le ruban est l'endroit où le câble avoue que personne ne pouvait attendre une pièce neuve.",
+     "in_game_wiki": "La gaine de câble réparée est une petite confession humaine dans une station noyée. Ce n'est ni biologie, ni mastic Atlas, ni décor de sécurité. C'est du caoutchouc noir étanche, du ruban gris de pression, une fibre diagonale visible au bord d'une déchirure, du sel pris dans les joints, des reliefs humides rayés et des traces de serrage laissées par quelqu'un qui voulait que la ligne tienne encore.\n\nUn câble enroulé raconte ce que les plans officiels ne disent pas. Le sens du chevauchement montre l'extrémité à laquelle le technicien faisait confiance. Les cristaux blancs sous la lèvre indiquent que l'eau a suivi la gaine. Une marque de collier sur le ruban prouve que la ligne a été immobilisée après la réparation. Un ruban lisse sans sel peut être récent. Un ruban froissé avec une rigole sombre retient peut-être une fuite au lieu de la fermer.\n\nEn jeu, l'enroulement devient une surface lisible. Il peut mener à un panneau de dérivation, un tuyau d'oxygène, un relais alimenté, un pinger mort ou un passage caché. Il peut aussi prévenir d'une décharge ou d'un diagnostic faussement sûr. Sous charge, une arête humide chauffe un peu et change la croissance autour d'elle. Ligne morte, le joint devient barbe de sel.\n\nLa différence est essentielle: l'enroulement humain précède le réseau de réparation vivant. Un biofilm conducteur peut venir plus tard. Une biofibre Atlas peut décider de refermer la plaie. Le ruban gris garde la première décision: pas de pièce, pas de fenêtre propre, une équipe devait tenir un quart de plus.\n\nRègle de maraudeur: lis l'enroulement avant de faire confiance au courant. Suis le chevauchement, regarde où le sel se forme, cherche les cicatrices de collier et les changements de pas. Le câble nourrit peut-être ce dont tu as besoin, ou garde seulement la trace honnête de ceux qui sont revenus.",
+     "external_site": "La réparation de gaine rend les petites lignes de service lisibles: sens du ruban, sel sous les chevauchements, traces de serrage et arêtes humides révèlent réparations d'urgence et faux diagnostics.",
+     "external_site_article": "La gaine de câble réparée est une forte surface de preuve à petite échelle dans HECTON-8. Le matériau est ordinaire, la pression ne l'est pas: caoutchouc étanche, ruban gris, fibre exposée, sel, traces de serrage et reliefs humides.\n\nEn jeu, une bande peut mener vers une dérivation, une route d'oxygène, un relais, un passage ou un danger. La lecture physique compte: sel sous le chevauchement, collier poli, pas d'enroulement changé près d'une trappe, ruban neuf dans un couloir censé être vide.\n\nElle sépare aussi maintenance humaine et écologie Atlas. Le vivant peut coloniser plus tard; le ruban garde le premier compromis humain.",
+     "field_note": "Le ruban neuf reste plat. L'ancien fait une couture blanche là où l'eau insistait."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "מאמר שטח על עטיפת תיקון למעטפת כבל",
+     "scanner": "עטיפת תיקון כבל // מעטפת גומי שחורה אטומה, סרט לחץ אפור, שכבת סיבים אלכסונית, גבישי מלח בתפרים, רכסים רטובים שרוטים וסימני מהדק. שפת החפיפה מצביעה על התיקון האנושי האחרון.",
+     "terminal": "תחזוקת שטח // לתעד את כיוון העטיפה לפני הזזת הקו. פס מסודר עדיין יכול להסתיר מוליך כושל. מלח מתחת לחפיפה אומר שהמים עקבו אחרי המעטפת.",
+     "audio": "הסרט הוא המקום שבו הכבל מודה שלא היה זמן לחכות לחלופה.",
+     "in_game_wiki": "עטיפת תיקון למעטפת כבל היא הודאה אנושית קטנה בתחנה שטבעה. זו אינה ביולוגיה, לא איטום של Atlas ולא פס אזהרה דקורטיבי. זה גומי שחור אטום למים, סרט לחץ אפור, סיבי חיזוק אלכסוניים שנראים בקצה קרוע, מלח בתפרים, רכסים רטובים שרוטים וסימני מהדק במקום שבו מישהו לחץ את הקו כדי שימשיך לעבוד.\n\nכבל עטוף מספר מה שהשרטוטים הרשמיים אינם מראים. כיוון החפיפה אומר לאיזה קצה הטכנאי האמין. גבישים לבנים מתחת לשפה אומרים שהמים נעו לאורך המעטפת. סימן מהדק מעל הסרט אומר שהקו נקשר אחרי התיקון. סרט חלק בלי מלח יכול להיות חדש. סרט מקומט עם תעלה רטובה כהה אולי מחזיק דליפה במקום לאטום אותה.\n\nבמשחק, העטיפה היא משטח קריאה. היא יכולה להוביל ללוח מעקף, צינור חמצן, ממסר פעיל, פינגר מת או מעבר מוסתר. היא יכולה גם להזהיר ממסלול שוק או מאבחון בטוח מדי ושקרי. אם הקו עדיין בעומס, הרכס הרטוב מתחמם מעט ומושך צמיחה אחרת. אם הוא מת, התפר נהיה זקן מלח.\n\nההבדל חשוב: עטיפה אנושית באה לפני רשת התיקון החיה. ביופילם מוליך יכול לבוא אחר כך. סיב Atlas יכול להחליט לסגור את הפצע. הסרט האפור שומר את ההחלטה הראשונה: אין חלק חלופי, אין חלון תיקון נקי, צריך לשרוד עוד משמרת.",
+     "external_site": "עטיפת תיקון כבל הופכת קווי שירות קטנים להיסטוריה קריאה: כיוון סרט, מלח בחפיפות, צלקות מהדק ורכסים רטובים חושפים תיקוני חירום ואבחון שווא.",
+     "external_site_article": "עטיפת תיקון למעטפת כבל היא משטח ראיות קטן וחזק ב-HECTON-8. החומר רגיל, הלחץ לא: גומי אטום, סרט אפור, סיבים חשופים, תפרי מלח, סימני מהדק ורכסים רטובים.\n\nבמשחק פס עטיפה יכול להוביל למעקף, חמצן, ממסר, מעבר צר או סכנה. הקריאה פיזית: מלח מתחת לחפיפה, מהדק מלוטש, שינוי בצעד העטיפה ליד פתח, סרט חדש במקום שאמור להיות נטוש.\n\nהעטיפה גם מפרידה בין תחזוקה אנושית לבין אקולוגיית התיקון של Atlas. החיים יכולים לבוא אחר כך; הסרט מתעד את הפשרה האנושית הראשונה.",
+     "field_note": "סרט חדש שוכב שטוח. סרט ישן מגדל תפר לבן במקום שבו מים ניסו להיכנס."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artikel Lapangan Bungkus Perbaikan Jaket Kabel",
+     "scanner": "BUNGKUS PERBAIKAN KABEL // Jaket karet hitam kedap air, pita tekanan abu-abu, lapisan serat diagonal, kristal garam di sambungan, rusuk basah tergores dan bekas jepit. Bibir tumpang tindih menunjuk ke perbaikan manusia terakhir.",
+     "terminal": "PERAWATAN LAPANGAN // Catat arah bungkus sebelum memindahkan jalur. Pita rapi masih bisa menyembunyikan konduktor mati. Garam di bawah tumpang tindih berarti air mengikuti jaket.",
+     "audio": "Pita itu tempat kabel mengaku bahwa seseorang tidak bisa menunggu pengganti.",
+     "in_game_wiki": "Bungkus perbaikan jaket kabel adalah pengakuan manusia kecil di stasiun yang tenggelam. Ini bukan biologi, bukan sealant Atlas, dan bukan garis bahaya dekoratif. Ini karet hitam kedap air, pita tekanan abu-abu, serat diagonal yang terlihat dari tepi robek, garam di sambungan, rusuk basah tergores, dan bekas jepit tempat seseorang menekan jalur agar tetap bekerja.\n\nKabel yang dibungkus memberi tahu hal yang tidak muncul di diagram resmi. Arah tumpang tindih menunjukkan ujung mana yang dipercaya teknisi. Kristal putih di bawah bibir berarti air berjalan di sepanjang jaket. Bekas jepit melintasi pita berarti jalur diikat setelah perbaikan. Pita halus tanpa garam mungkin baru. Pita kusut dengan alur basah gelap mungkin menahan kebocoran, bukan menutupnya.\n\nUntuk gameplay, bungkus adalah permukaan yang bisa dibaca. Ia dapat menuntun ke panel pintas, selang oksigen, relai bertenaga, pinger mati, atau celah tersembunyi. Ia juga bisa memperingatkan jalur sengatan atau diagnosis palsu yang terlihat aman. Jika jalur masih memikul beban, rusuk basah dapat sedikit hangat dan menarik pertumbuhan berbeda. Jika mati, sambungannya menjadi janggut garam.\n\nPerbedaannya penting: bungkus manusia datang sebelum jaringan perbaikan hidup. Biofilm konduktif bisa datang nanti. Biofiber Atlas bisa mencoba menutup luka itu. Pita abu-abu menyimpan keputusan pertama: tidak ada suku cadang, tidak ada jadwal bersih, satu sif lagi harus bertahan.",
+     "external_site": "Bungkus perbaikan kabel mengubah jalur servis kecil menjadi sejarah yang bisa dibaca: arah pita, garam di tumpang tindih, bekas jepit, dan rusuk basah mengungkap perbaikan darurat.",
+     "external_site_article": "Bungkus perbaikan jaket kabel adalah permukaan bukti kecil yang kuat di HECTON-8. Bahannya biasa, tekanannya tidak: karet kedap air, pita abu-abu, serat terbuka, garam di sambungan, bekas jepit dan rusuk basah.\n\nDalam permainan, satu pita dapat membawa pemain ke pintas, oksigen, relai, ruang merayap, atau bahaya. Baca fisiknya: garam di bawah tumpang tindih, bekas jepit yang mengilap, perubahan jarak lilit dekat palka, pita baru di koridor kosong.\n\nBungkus ini memisahkan perawatan manusia dari ekologi perbaikan Atlas. Kehidupan bisa datang belakangan; pita mencatat kompromi manusia pertama.",
+     "field_note": "Pita baru rata. Pita lama menumbuhkan garis putih di tempat air terus mencoba masuk."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "ケーブルジャケット補修巻き現地記事",
+     "scanner": "ケーブル補修巻き // 黒い防水ジャケット、灰色の耐圧テープ、斜め繊維層、継ぎ目の塩結晶、傷ついた濡れリブ、クランプ圧痕。重ね口は最後の人間の補修方向を示す。",
+     "terminal": "現場保守 // 線を動かす前に巻き方向を記録。整った補修帯でも導体は死んでいることがある。重ね口の塩は、水が壁ではなくジャケットを伝った証拠。",
+     "audio": "テープは、誰かが交換品を待てなかったことをケーブルが認める場所だ。",
+     "in_game_wiki": "ケーブルジャケットの補修巻きは、沈んだ施設に残る小さな人間の告白である。生物ではなく、Atlasのシール材でもなく、飾りの警告線でもない。黒い防水ゴム、灰色の耐圧テープ、破れ端から見える斜め繊維、継ぎ目に詰まった塩、濡れて傷ついたリブ、そして作業を続けるために締め付けられたクランプ痕だ。\n\n巻かれたケーブルは、公式図面が語れないことを語る。重ね方向は技術者が信じた端を示す。白い結晶が重ね口の下にあれば、水はジャケットを伝っていた。テープを横切るクランプ痕は、補修後もその線が固定され使われた証拠。塩のない滑らかなテープは新しいかもしれない。暗い濡れ溝を持つしわのあるテープは、漏れを止めたのではなく抱えているだけかもしれない。\n\nゲーム上、補修巻きは読める表面になる。迂回盤、酸素ホース、通電リレー、死んだピンガー、隠し通路へ導くことがある。感電経路や安全に見える誤診断を警告することもある。線がまだ負荷を持つなら、濡れたリブはわずかに温まり、違う成長を集める。死んだ線なら継ぎ目は塩のひげになる。\n\n重要なのは順序だ。人間の補修巻きは、生きた修復網より前にある。導電性バイオフィルムは後から割れ目に住む。Atlasのバイオファイバーは後から閉じようとする。灰色のテープは最初の判断を残す。替え部品がない。清潔な予定もない。それでももう一勤務だけ持たせる。",
+     "external_site": "ケーブル補修巻きは小さなサービス線を読める履歴に変える。テープ方向、重ね下の塩、クランプ痕、濡れリブが緊急補修と安全誤診断を示す。",
+     "external_site_article": "ケーブルジャケット補修巻きは、HECTON-8で強い小規模証拠面になる。材料は普通だが圧力は普通ではない。防水ゴム、灰色テープ、露出繊維、塩の継ぎ目、クランプ痕、濡れた傷が読む対象になる。\n\nゲームでは、一つの巻き帯が迂回、酸素経路、リレー、狭い通路、危険へ導く。重ね口の塩、磨かれたクランプ痕、ハッチ近くの巻き間隔変化、無人のはずの廊下の新しいテープが手がかりだ。\n\nこの巻きは人間の保守とAtlas修復生態を分ける。生きた膜は後から来る。テープは最初の妥協を記録している。",
+     "field_note": "新しいテープは平らに寝る。古いテープは、水が入りたがった場所に白い継ぎ目を育てる。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "케이블 재킷 수리 랩 현장 글",
+     "scanner": "케이블 수리 랩 // 검은 방수 재킷, 회색 압력 테이프, 사선 섬유 밑층, 이음새의 소금 결정, 긁힌 젖은 릿지와 클램프 압흔. 겹침 입술은 마지막 인간 수리 방향을 가리킨다.",
+     "terminal": "현장 정비 // 선을 옮기기 전 감은 방향을 기록할 것. 깔끔한 수리 띠도 죽은 도체를 숨길 수 있다. 겹침 아래 소금은 물이 벽이 아니라 재킷을 따라갔다는 뜻이다.",
+     "audio": "테이프는 누군가가 교체품을 기다릴 수 없었다고 케이블이 인정하는 자리다.",
+     "in_game_wiki": "케이블 재킷 수리 랩은 물에 잠긴 시설에 남은 가장 작은 인간의 고백이다. 생물도 아니고 Atlas 실란트도 아니며 장식용 위험 표시도 아니다. 검은 방수 고무, 회색 압력 테이프, 찢긴 가장자리에서 보이는 사선 섬유, 이음새에 낀 소금, 긁힌 젖은 릿지, 그리고 선을 계속 쓰기 위해 누군가가 조인 클램프 자국이다.\n\n감긴 케이블은 공식 도면이 말하지 못하는 것을 말한다. 겹침 방향은 기술자가 어느 끝을 믿었는지 보여준다. 입술 아래 흰 결정은 물이 재킷을 따라 흘렀다는 뜻이다. 테이프를 가로지르는 클램프 자국은 수리 뒤에도 선이 고정되어 쓰였다는 뜻이다. 소금 없는 매끈한 테이프는 최근 것일 수 있다. 어두운 젖은 홈이 있는 주름진 테이프는 누수를 막은 것이 아니라 붙잡고 있을 수 있다.\n\n게임에서 랩은 읽을 수 있는 표면이다. 우회 패널, 산소 호스, 살아 있는 릴레이, 죽은 핑어, 숨은 크롤 공간으로 이어질 수 있다. 감전 경로나 거짓 안전 진단을 경고하기도 한다. 선이 아직 부하를 받으면 젖은 릿지가 조금 따뜻해지고 다른 성장물이 붙는다. 죽은 선이면 이음새는 소금 수염이 된다.\n\n중요한 차이는 순서다. 인간의 랩은 살아 있는 수리망보다 먼저 온다. 전도성 바이오필름은 나중에 균열에 자리 잡을 수 있다. Atlas 바이오섬유가 나중에 상처를 닫으려 할 수 있다. 회색 테이프는 첫 결정을 남긴다. 교체 부품은 없고, 정비 시간도 없고, 한 교대만 더 버텨야 했다.",
+     "external_site": "케이블 수리 랩은 작은 서비스 선을 읽을 수 있는 기록으로 만든다. 테이프 방향, 겹침 아래 소금, 클램프 흉터와 젖은 릿지가 긴급 수리와 거짓 진단을 보여준다.",
+     "external_site_article": "케이블 재킷 수리 랩은 HECTON-8의 강한 소규모 증거 표면이다. 평범한 재료가 비정상적인 압력 아래 놓인다. 방수 고무, 회색 테이프, 노출 섬유, 소금 이음새, 클램프 자국, 젖은 긁힘이 모두 단서가 된다.\n\n게임에서는 한 띠가 우회로, 산소, 릴레이, 좁은 통로 또는 위험으로 이어질 수 있다. 겹침 아래 소금, 닳은 클램프 자국, 해치 근처의 감김 간격 변화, 비어 있어야 할 복도의 새 테이프를 읽는다.\n\n이 랩은 인간 정비와 Atlas 수리 생태를 갈라 놓는다. 살아 있는 막은 나중에 온다. 테이프는 첫 인간 타협을 기록한다.",
+     "field_note": "새 테이프는 평평하다. 오래된 테이프는 물이 들어오려던 곳에 흰 이음새를 만든다."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Veldartikel over reparatiewikkel van kabelmantel",
+     "scanner": "KABELREPARATIEWIKKEL // Zwarte waterdichte mantel, grijze druktape, diagonale vezellaag, zoutkristallen in naden, natte gekraste ribbels en klemsporen. De overlaplip wijst naar de laatste menselijke reparatie.",
+     "terminal": "VELDONDERHOUD // Noteer wikkelrichting voor de lijn wordt verplaatst. Een nette band kan nog steeds een dode geleider verbergen. Zout onder de overlap betekent dat water de mantel volgde.",
+     "audio": "De tape is waar de kabel toegeeft dat niemand op vervanging kon wachten.",
+     "in_game_wiki": "Reparatiewikkel van een kabelmantel is een kleine menselijke bekentenis in een verdronken station. Het is geen biologie, geen Atlas-kit en geen decoratieve gevarenstreep. Het is zwart waterdicht rubber, grijze druktape, een diagonale vezellaag langs een gescheurde rand, zout in naden, natte gekraste ribbels en klemsporen waar iemand de lijn hard genoeg vastzette om verder te werken.\n\nEen gewikkelde kabel vertelt wat officiële schema's niet vertellen. De richting van de overlap zegt welk uiteinde de technicus vertrouwde. Witte kristallen onder de lip betekenen dat water langs de mantel liep. Een klemspoor over de tape zegt dat de lijn na de reparatie werd vastgezet. Gladde tape zonder zout kan recent zijn. Gerimpelde tape met een donkere natte geul houdt misschien een lek vast in plaats van het te sluiten.\n\nVoor gameplay is de wikkel een leesbaar oppervlak. Hij kan leiden naar een bypasspaneel, zuurstofslang, relais, dode pinger of verborgen kruipruimte. Hij kan ook waarschuwen voor schokgevaar of valse veilige diagnostiek. Onder belasting wordt een natte ribbel iets warmer en verzamelt andere groei. Een dode lijn krijgt een zoutbaard in de naad.\n\nHet belangrijke verschil is volgorde. Menselijke wikkel komt voor het levende reparatienetwerk. Conductieve biofilm kan later de scheur koloniseren. Atlas-biofiber kan later willen sluiten. De grijze tape bewaart de eerste keuze: geen onderdeel, geen schoon onderhoudsvenster, nog een dienst overleven.",
+     "external_site": "Kabelreparatiewikkel maakt kleine servicelijnen leesbaar: taperichting, zout onder overlap, klemsporen en natte ribbels tonen noodreparaties, late terugkeer en valse veiligheid.",
+     "external_site_article": "Reparatiewikkel van kabelmantel is een sterke kleine bewijslaag in HECTON-8. Gewoon materiaal staat onder ongewone druk: waterdicht rubber, grijze tape, blootliggende vezel, zoutnaden, klemsporen en natte krassen.\n\nIn gameplay kan een band naar bypass, zuurstofroute, relais, kruipruimte of gevaar leiden. De fysieke lezing telt: zout onder overlap, gepolijst klemspoor, veranderde wikkelafstand bij een luik, nieuwe tape in een lege gang.\n\nDe wikkel scheidt menselijk onderhoud van Atlas-ecologie. Leven kan later komen; de tape bewaart het eerste menselijke compromis.",
+     "field_note": "Verse tape ligt vlak. Oude tape krijgt een witte naad waar water bleef proberen binnen te komen."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artykuł terenowy o opasce naprawczej płaszcza kabla",
+     "scanner": "OPASKA NAPRAWCZA KABLA // Czarny wodoodporny płaszcz, szara taśma ciśnieniowa, ukośna warstwa włókna, kryształy soli w szwach, mokre porysowane żebra i ślady zacisków. Krawędź zakładki pokazuje ostatnią ludzką naprawę.",
+     "terminal": "OBSŁUGA TERENOWA // Zapisać kierunek owinięcia przed przeniesieniem linii. Równa taśma może nadal kryć martwy przewód. Sól pod zakładką oznacza, że woda szła po płaszczu.",
+     "audio": "Taśma jest miejscem, w którym kabel przyznaje, że nikt nie mógł czekać na zamiennik.",
+     "in_game_wiki": "Opaska naprawcza płaszcza kabla to małe ludzkie wyznanie w zatopionej stacji. To nie biologia, nie uszczelniacz Atlas i nie dekoracyjny pasek ostrzegawczy. To czarna wodoodporna guma, szara taśma ciśnieniowa, ukośne włókno widoczne przy rozdartej krawędzi, sól w szwach, mokre porysowane żebra i ślady zacisków, którymi ktoś docisnął linię, żeby pracowała dalej.\n\nOwinięty kabel mówi to, czego nie pokażą oficjalne schematy. Kierunek zakładki zdradza koniec, któremu technik ufał. Białe kryształy pod krawędzią znaczą, że woda wędrowała po płaszczu. Ślad zacisku przez taśmę mówi, że linia została unieruchomiona po naprawie. Gładka taśma bez soli może być świeża. Pomarszczona taśma z ciemnym mokrym rowkiem może trzymać wyciek, a nie go zamykać.\n\nW grze opaska jest powierzchnią do czytania. Może prowadzić do panelu obejścia, węża tlenowego, zasilanego przekaźnika, martwego pingera albo ukrytego przejścia. Może też ostrzec przed porażeniem lub fałszywie bezpieczną diagnostyką. Jeśli linia nadal ma obciążenie, mokre żebro lekko się grzeje i zbiera inny nalot. Martwa linia robi z szwu brodę soli.\n\nWażna jest kolejność. Ludzka opaska jest starsza niż żywa sieć naprawcza. Przewodzący biofilm może przyjść później. Biofiber Atlas może później chcieć zamknąć ranę. Szara taśma zapisuje pierwszą decyzję: brak części, brak czystego okna serwisowego, trzeba przetrwać jeszcze jedną zmianę.",
+     "external_site": "Opaska naprawcza kabla czyni małe linie serwisowe czytelną historią: kierunek taśmy, sól pod zakładką, ślady zacisków i mokre żebra pokazują naprawy awaryjne i fałszywe bezpieczeństwo.",
+     "external_site_article": "Opaska naprawcza płaszcza kabla to silna mała powierzchnia dowodowa w HECTON-8. Zwykły materiał działa pod niezwykłym ciśnieniem: wodoodporna guma, szara taśma, odkryte włókno, sól w szwie, ślady zacisków i mokre rysy.\n\nW rozgrywce jedna opaska może prowadzić do obejścia, tlenu, przekaźnika, przejścia albo zagrożenia. Liczy się fizyczny odczyt: sól pod zakładką, wypolerowany zacisk, zmiana odstępu przy włazie, nowa taśma w pustym korytarzu.\n\nOpaska oddziela ludzką obsługę od ekologii naprawczej Atlas. Żywe warstwy mogą przyjść później; taśma trzyma pierwszy kompromis człowieka.",
+     "field_note": "Świeża taśma leży płasko. Stara robi biały szew tam, gdzie woda ciągle próbowała wejść."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artigo de campo sobre envoltório de reparo de capa de cabo",
+     "scanner": "ENVOLTÓRIO DE REPARO // Capa preta impermeável, fita cinza de pressão, subcamada de fibra diagonal, cristais de sal nas emendas, nervuras úmidas arranhadas e marcas de braçadeira. A aba de sobreposição aponta para o último reparo humano.",
+     "terminal": "MANUTENÇÃO DE CAMPO // Registrar a direção do envoltório antes de mover a linha. Uma faixa limpa ainda pode esconder um condutor morto. Sal sob a sobreposição significa que a água seguiu a capa.",
+     "audio": "A fita é onde o cabo admite que alguém não pôde esperar por reposição.",
+     "in_game_wiki": "O envoltório de reparo da capa de cabo é uma pequena confissão humana numa estação afogada. Não é biologia, não é selante de Atlas e não é faixa de perigo decorativa. É borracha preta impermeável, fita cinza de pressão, fibra diagonal aparecendo numa borda rasgada, sal preso nas emendas, nervuras úmidas arranhadas e marcas de braçadeira onde alguém apertou a linha para ela continuar trabalhando.\n\nUm cabo envolvido conta o que diagramas oficiais não mostram. A direção da sobreposição indica qual ponta o técnico confiava. Cristais brancos sob a aba significam que a água correu pela capa. Marca de braçadeira atravessando a fita diz que a linha foi presa depois do remendo. Fita lisa sem sal pode ser recente. Fita enrugada com calha úmida escura pode estar segurando um vazamento, não vedando.\n\nNo jogo, o envoltório é uma superfície de leitura. Pode levar a painel de desvio, mangueira de oxigênio, relé energizado, pinger morto ou passagem escondida. Também pode alertar sobre choque ou diagnóstico falsamente seguro. Se a linha ainda carrega carga, a nervura úmida esquenta um pouco e junta outro crescimento. Se morreu, a emenda vira barba de sal.\n\nA distinção importa: envoltório humano vem antes da rede viva de reparo. Biofilme condutor pode colonizar a rachadura depois. Biofibra Atlas pode tentar fechar a ferida. A fita cinza guarda a primeira decisão: sem peça, sem janela limpa, mais um turno para sobreviver.",
+     "external_site": "O envoltório de reparo transforma linhas de serviço em história legível: direção da fita, sal sob sobreposição, marcas de braçadeira e nervuras úmidas revelam reparos emergenciais.",
+     "external_site_article": "O envoltório de reparo de capa de cabo é uma das melhores superfícies pequenas de evidência em HECTON-8. O material é comum sob pressão incomum: borracha impermeável, fita cinza, fibra exposta, costuras de sal, marcas de braçadeira e nervuras úmidas.\n\nNa jogabilidade, uma faixa pode guiar até desvio, oxigênio, relé, passagem ou perigo. A leitura é física: sal sob a sobreposição, braçadeira polida, mudança de passo perto de escotilha, fita nova em corredor abandonado.\n\nO envoltório separa manutenção humana da ecologia de reparo Atlas. O vivo pode chegar depois; a fita registra o primeiro compromisso humano.",
+     "field_note": "Fita fresca fica plana. Fita velha cria uma costura branca onde a água insistiu em entrar."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Полевая статья о ремонтной обмотке кабельной рубашки",
+     "scanner": "РЕМОНТНАЯ ОБМОТКА КАБЕЛЯ // Черная водостойкая рубашка, серая напорная лента, диагональный волоконный подслой, кристаллы соли в швах, мокрые исцарапанные гребни и следы зажимов. Кромка нахлеста показывает последний человеческий ремонт.",
+     "terminal": "ПОЛЕВОЕ ОБСЛУЖИВАНИЕ // До перемещения линии записать направление обмотки. Ровная лента все еще может скрывать мертвый проводник. Соль под нахлестом значит, что вода шла по рубашке, а не по стене.",
+     "audio": "Лента - место, где кабель признает, что кто-то не мог ждать замену.",
+     "in_game_wiki": "Ремонтная обмотка кабельной рубашки - самое маленькое человеческое признание в утонувшей станции. Это не биология, не герметик Atlas и не декоративная аварийная полоска. Это черная водостойкая резина, серая напорная лента, диагональное волокно на рваном краю, соль в швах, мокрые исцарапанные гребни и следы зажимов там, где кто-то сжал линию достаточно сильно, чтобы она продолжала работать.\n\nОбмотанный кабель рассказывает то, чего нет в официальных схемах. Направление нахлеста показывает, какому концу техник доверял. Белые кристаллы под кромкой значат, что вода шла вдоль рубашки. След зажима поверх ленты говорит, что линию закрепили уже после ремонта. Гладкая лента без соли может быть свежей. Сморщенная лента с темным мокрым желобком может не закрывать течь, а держать ее.\n\nДля игры обмотка становится читаемой поверхностью. Она может вести к панели обхода, кислородному шлангу, запитанному реле, мертвому пингеру или скрытому лазу. Она же может предупредить о пути удара током или о ложно безопасной диагностике. Если линия еще под нагрузкой, мокрый гребень чуть теплеет и собирает другой налет. Если линия мертва, шов превращается в соляную бороду.\n\nВажна последовательность: человеческая обмотка появилась до живой ремонтной сети. Проводящая биопленка может позже заселить трещину. Биоволокно Atlas может позже решить, что рану надо закрыть. Серая лента держит первое решение: кабель умирал, замены не было, и кто-то выбрал протянуть еще одну смену.\n\nDeep Reach любила чистые маршрутные схемы. На них кабели прямые, цветные и уверенные. Кабели HECTON-8 обходят затопленные шкафы, уходят под ракушечный песок и возвращаются с ремонтной лентой там, где окно обслуживания уже закрылось. Линия с тремя партиями ленты - это хронология. Идеально новая обмотка в пустом коридоре - вопрос.\n\nПравило мародера: читай обмотку до того, как доверяешь току. Следи за нахлестом. Смотри, с какой стороны шва растет соль. Ищи следы зажимов, смену шага ленты и места, где резина блестит от рук. Кабель может все еще питать нужную тебе вещь. А может быть единственной честной записью о том, кто вернулся после официальной пустоты.",
+     "external_site": "Ремонтная обмотка превращает мелкие сервисные линии в читаемую историю: направление ленты, соль под нахлестом, следы зажимов и мокрые гребни показывают аварийные ремонты, поздние возвращения и ложную безопасность.",
+     "external_site_article": "Ремонтная обмотка кабельной рубашки - одна из самых сильных малых поверхностей доказательства на HECTON-8. Материал обычный, давление нет: водостойкая резина, серая лента, открытое волокно, соляные швы, следы зажимов и мокрые царапины.\n\nВ игре одна обмотка может привести к обходу, кислороду, реле, лазу или угрозе. Физическое чтение важно: соль под нахлестом, отполированный след зажима, смена шага у люка, новая лента в коридоре, который должен быть пуст.\n\nОбмотка отделяет человеческое обслуживание от ремонтной экологии Atlas. Живой слой может прийти позже; лента фиксирует первый человеческий компромисс.",
+     "field_note": "Свежая лента лежит ровно. Старая растит белый шов там, где вода все еще пыталась войти."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Польова стаття про ремонтну обмотку кабельної оболонки",
+     "scanner": "РЕМОНТНА ОБМОТКА КАБЕЛЮ // Чорна водостійка оболонка, сіра напірна стрічка, діагональний волоконний підшар, кристали солі в швах, мокрі подряпані гребені та сліди затискачів. Край нахлисту показує останній людський ремонт.",
+     "terminal": "ПОЛЬОВЕ ОБСЛУГОВУВАННЯ // До переміщення лінії записати напрям обмотки. Рівна стрічка все ще може ховати мертвий провідник. Сіль під нахлистом означає, що вода йшла оболонкою.",
+     "audio": "Стрічка - місце, де кабель визнає, що хтось не міг чекати заміни.",
+     "in_game_wiki": "Ремонтна обмотка кабельної оболонки - найменше людське зізнання в затонулій станції. Це не біологія, не герметик Atlas і не декоративна аварійна смуга. Це чорна водостійка гума, сіра напірна стрічка, діагональне волокно на рваному краї, сіль у швах, мокрі подряпані гребені та сліди затискачів там, де хтось стиснув лінію, щоб вона працювала далі.\n\nОбмотаний кабель розповідає те, чого немає в офіційних схемах. Напрям нахлисту показує, якому кінцю технік довіряв. Білі кристали під краєм означають, що вода йшла вздовж оболонки. Слід затискача поверх стрічки каже, що лінію закріпили вже після ремонту. Гладка стрічка без солі може бути свіжою. Зморщена стрічка з темним мокрим жолобком може не закривати течу, а тримати її.\n\nДля гри обмотка стає читаною поверхнею. Вона може вести до панелі обходу, кисневого шланга, живленого реле, мертвого пінгера або прихованого лазу. Вона ж може попередити про удар струмом чи хибно безпечну діагностику. Якщо лінія ще під навантаженням, мокрий гребінь трохи теплішає і збирає інший наліт. Якщо лінія мертва, шов стає соляною бородою.\n\nВажлива послідовність: людська обмотка з'явилася до живої ремонтної мережі. Провідна біоплівка може пізніше заселити тріщину. Біоволокно Atlas може пізніше вирішити, що рану треба закрити. Сіра стрічка тримає перше рішення: кабель помирав, заміни не було, і хтось обрав протягнути ще одну зміну.",
+     "external_site": "Ремонтна обмотка робить малі сервісні лінії читаною історією: напрям стрічки, сіль під нахлистом, сліди затискачів і мокрі гребені показують аварійні ремонти та хибну безпеку.",
+     "external_site_article": "Ремонтна обмотка кабельної оболонки - сильна мала поверхня доказу на HECTON-8. Матеріал звичайний, тиск ні: водостійка гума, сіра стрічка, відкрите волокно, соляні шви, сліди затискачів і мокрі подряпини.\n\nУ грі одна обмотка може вести до обходу, кисню, реле, лазу або загрози. Фізичне читання важливе: сіль під нахлистом, відполірований слід затискача, зміна кроку біля люка, нова стрічка в порожньому коридорі.\n\nОбмотка відділяє людське обслуговування від ремонтної екології Atlas. Живий шар може прийти пізніше; стрічка фіксує перший людський компроміс.",
+     "field_note": "Свіжа стрічка лежить рівно. Стара ростить білий шов там, де вода все ще намагалася зайти."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "电缆外皮修补缠带野外条目",
+     "scanner": "电缆修补缠带 // 黑色防水外皮，灰色耐压胶带，斜向纤维底层，缝内盐晶，潮湿刮痕脊和夹具压痕。重叠边指向最后一次人工修补。",
+     "terminal": "现场维护 // 移动线路前记录缠绕方向。整齐修补带仍可能藏着失效导体。重叠下的盐说明水沿外皮走，而不是沿墙走。",
+     "audio": "胶带，是电缆承认有人等不到替换件的地方。",
+     "in_game_wiki": "电缆外皮修补缠带，是沉没站点里最小的人类供词。它不是生物，不是 Atlas 密封剂，也不是装饰性警戒条。它是黑色防水橡胶、灰色耐压胶带、从撕裂边缘露出的斜向纤维、缝里的盐、带刮痕的潮湿脊，以及某人为了让线路继续工作而用力压下的夹具印。\n\n被缠过的电缆会说出官方图纸没有的东西。重叠方向显示技术员信任哪一端。边缘下的白色晶体说明水曾沿外皮流动。跨过胶带的夹具印说明线路是在修补后才被重新固定。没有盐的平滑胶带可能很新。带黑色湿槽的皱胶带可能只是在托住渗漏，而不是封住它。\n\n玩法上，缠带是可读表面。它可以引向旁通面板、氧气软管、带电继电器、失效声标或隐藏爬行空间。它也能警告电击路径或虚假的安全诊断。线路仍有负载时，潮湿脊会略微升温并吸引不同生长物。线路已死时，缝会变成盐须。\n\n关键在顺序。人工缠带早于活体修复网络。导电生物膜可以后来占据裂口。Atlas 生物纤维可以后来决定关闭这处伤口。灰色胶带保存最初的决定：电缆正在失效，没有替换件，有人选择让它再撑一个班次。\n\nDeep Reach 喜欢干净路线图。图上的电缆笔直、有颜色、确定。HECTON-8 的电缆会绕过被淹柜体，消失在贝砂下，又在官方维护窗口关闭后的地方带着修补胶带重新出现。三种批次胶带就是一条时间线。废弃走廊里的全新缠带就是问题本身。",
+     "external_site": "电缆修补缠带把小型服务线变成可读历史：胶带方向、重叠下的盐、夹具痕和潮湿脊会暴露紧急维修、晚期返回和虚假安全诊断。",
+     "external_site_article": "电缆外皮修补缠带是 HECTON-8 上强力的小尺度证据表面。材料普通，压力不普通：防水橡胶、灰色胶带、外露纤维、盐缝、夹具印和潮湿刮痕都能被阅读。\n\n玩法上，一段缠带可以把玩家引向旁通、氧气线路、继电器、狭窄通道或危险。物理痕迹最重要：重叠下的盐、被磨亮的夹具印、舱口附近变化的缠绕间距、空走廊里不该出现的新胶带。\n\n缠带也把人类维护和 Atlas 修复生态分开。活体层可以后来出现；胶带记录了最初的人类妥协。",
+     "field_note": "新胶带平贴着。旧胶带会在水反复想进入的地方长出白色缝线。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

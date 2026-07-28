@@ -1,11 +1,56 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS261_QUARANTINE_BERTH_CUSTODY_ARTICLE",
-  "title": "Quarantine Berth Custody Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS261_QUARANTINE_BERTH_CUSTODY_ARTICLE",
+ "title": "Quarantine Berth Custody Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1429_QUARANTINE_BERTH_CUSTODY_LEDGER",
+   "release_set_id": "RS261_QUARANTINE_BERTH_CUSTODY_ARTICLE",
+   "article_id": "applied_lore.quarantine_berth_custody_ledger",
+   "title_key": "LORE_QUARANTINE_BERTH_CUSTODY_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
+    "Docs/Lore/AppliedContent/packets/RS252_MASS_CUSTODY_TONNE_WINDOW_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS259_RECEIVER_BRAKING_DEBT_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS260_EVIDENCE_BEFORE_BREATH_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,264 +58,220 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1429_QUARANTINE_BERTH_CUSTODY_LEDGER",
-      "release_set_id": "RS261_QUARANTINE_BERTH_CUSTODY_ARTICLE",
-      "article_id": "applied_lore.quarantine_berth_custody_ledger",
-      "title_key": "LORE_QUARANTINE_BERTH_CUSTODY_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
-        "Docs/Lore/AppliedContent/packets/RS252_MASS_CUSTODY_TONNE_WINDOW_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS259_RECEIVER_BRAKING_DEBT_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS260_EVIDENCE_BEFORE_BREATH_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.quarantine_berth_custody_ledger",
-        "secondary": [
-          "unlock.first_breathing_mass_not_packet",
-          "unlock.first_return_queue_medical_hold",
-          "unlock.first_receiver_liability_gap"
-        ],
-        "poi_tags": [
-          "poi.quarantine_berth_receipt",
-          "poi.medical_custody_seal",
-          "poi.return_queue_hold_card",
-          "poi.living_mass_exception_tag"
-        ],
-        "biome_tags": [
-          "biome.claim_admin",
-          "biome.pressure_base_interior",
-          "biome.carrier_link",
-          "biome.old_colony_ruins"
-        ],
-        "first_20_boundary": "Explains the first answered-signal disappointment: proof can be acknowledged by relay custody, but a living body needs a named quarantine berth, medical custodian, receiver liability and lift mass before rescue becomes a route."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Quarantine Berth Receipt Scanner",
-          "terminal": "Return Custody Hold Terminal",
-          "audio": "Old Receiver Clerk Rule",
-          "in_game_wiki": "PDA Living Mass Custody Primer",
-          "external_site": "Public Site Quarantine Berth Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_acknowledged_signal_without_rescue_question",
-        "truth_payload": "A receiver can acknowledge proof without accepting a person. Living return mass needs a named quarantine berth, medical custodian, receiver liability, lift reservation and braking margin before the route treats survival as cargo it must catch.",
-        "player_question": "If my signal was accepted, why am I still not on a rescue list?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Quarantine Berth Receipt",
-          "scanner": "Ceramic berth receipt. One corner heat-warped. Fields still readable: body mass, exposure band, pathogen hold, med owner, receiver berth, lift exception. Packet accepted. Person pending.",
-          "terminal": "RETURN CUSTODY HOLD QBR-22\nEvidence chain: acknowledged\nLiving-mass transfer: suspended\nMissing assignments: quarantine berth; medical custodian; receiver liability; ascent lift\nInstruction: do not convert packet acknowledgement into extraction order.",
-          "audio": "Proof received. Berth blank. Keep the wrist seal on.",
-          "in_game_wiki": "A quarantine berth receipt is a room claim, not a comfort note. The card names air, filters, waste handling, med locks, custody cameras, chain seals and the office that owns the liability line. A survivor coming out of a sealed ocean site arrives as living mass with exposure, injury, contamination risk, debt and evidence still attached.\n\nThe hard field is receiver berth. Distress hash, sample receipt and Black Keel acknowledgement can all be valid while that line stays empty. Empty means no room has accepted the body. Filled means somebody has committed air, filters, staff time, legal risk and lift mass. The receipt is useful because it separates a message being heard from a person being taken in.",
-          "external_site": "A quarantine berth receipt separates acknowledgement from recovery: proof can be accepted while the living operator remains pending until a berth, med owner, liability line and lift slot are assigned.",
-          "external_site_article": "## Quarantine Berth Receipt QBR-22\n\nThe card is ceramic because paper rots in the rooms where it matters. QBR-22 lists body mass, pressure exposure, pathogen hold, med owner, receiver berth and lift exception. The packet line is stamped accepted. The person line is still pending.\n\nThat split is the point of the artifact. A route can receive evidence without receiving a body. Evidence needs a seal, clock and hash. A breathing operator needs air volume, decompression care, waste handling, quarantine authority, legal ownership and a berth that somebody is willing to lock for days or weeks.\n\nThe receipt can protect a station from contamination. It can also give a company time to rename a survivor as claimant property, witness inventory or unresolved exposure. The useful read is simple: if med owner and berth are blank, rescue language is still paperwork. If those fields are filled, somebody has started spending power on keeping the body alive.",
-          "field_note": "If the berth line is blank, the call is real and the rescue is not."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал карантинной койки и custody",
-          "scanner": "КВИТАНЦИЯ КАРАНТИННОЙ КОЙКИ // Керамическая custody-карта, один угол повело от жара. Поля: масса тела, давление, патогенный hold, медицинский владелец, приемная койка, lift exception. Пакет принят. Человек ожидает.",
-          "terminal": "RETURN CUSTODY HOLD // Доказательный пакет подтвержден. Перенос живой массы остановлен, пока не назначены карантинная койка, медицинский custodian, ответственность приемника и подъем. Не превращать подтверждение в приказ на эвакуацию.",
-          "audio": "Клерк может принять твое доказательство двумя пальцами. Чтобы принять тебя, нужны комната, врач, юрист и тот, кто подпишется под счетом.",
-          "in_game_wiki": "Карантинная койка - не кровать в человеческом смысле. Это юридическая комната с воздухом, фильтрами, отходами, медицинскими шлюзами, камерами custody, печатями цепочки доказательств и именем в строке ответственности. Когда выживший выходит из запечатанного океанского клейма, приемник сначала принимает не спасенного человека. Он принимает биологический объект: травмированный, зараженный, загрязненный, должный, юридически опасный и все еще несущий доказательства, которые кто-то хочет похоронить.\n\nПоэтому первый чистый ответ от Black Keel может звучать жестоко. Реле может подтвердить distress hash. Luyten может сохранить custody пакета. Брокер может оценить образцы еще до того, как игрок увидит открытое небо. Но ни одна из этих квитанций не резервирует койку. Живое тело не просто тяжелее пакета; оно меняет владельца ответственности. Кто дышит тем же воздухом? Кто лечит декомпрессию? Кто не даст Deep Reach назвать выжившего собственностью claim? Кто платит, если койка заперта на месяц?\n\nСтарые работники маршрутов называли такие журналы милосердием с тарифной колонкой. Это несправедливо и точно одновременно. Койка существует потому, что ранние спасения убивали станции, когда заражение считали моральной мелочью. Но именно здесь компании научились замедлять помощь, пока язык не станет выгоден им. Для игрока этот журнал - читаемое давление: пустая строка койки означает театр спасения; заполненные поля custodian и liability означают, что кто-то уже тратит реальную мощность на жизнь, а не на бумагу.",
-          "external_site": "Журнал карантинной койки объясняет, почему HECTON-8 могут услышать раньше, чем кого-то вывезут. Доказательство летит пакетом. Живому выжившему нужны воздух, медицина, liability и приемник, готовый владеть переносом.",
-          "external_site_article": "HECTON-8 остается правдоподобно одинокой, потому что подтверждение отделено от спасения. Цивилизация вокруг Aegir не невежественна и не бессильна. Она может принять доказательный пакет, оценить образец, ответить на distress hash и все равно не перевезти живое тело, потому что тело - другой класс обязательства.\n\nЖурнал карантинной койки делает эту разницу физической. Он называет комнату, медицинского владельца, hold загрязнения, ответственность приемника, lift exception и тормозной запас, без которых выживший не становится грузом, который маршрут обязан поймать. Без этих полей сообщение может быть честным и все равно бесполезным для эвакуации.\n\nЭто не должно делать мир тупым. Он должен ощущаться промышленным. На HECTON-8 спасение - не синяя лампа, прилетевшая потому, что сюжету нужна милость. Это дорогой перенос из океана, claim-law и корпоративных доказательств в воздух, которым владеет кто-то другой. Игрок может использовать эту правду: пакеты создают давление, но заполненные custody-поля создают рычаг.",
-          "field_note": "Если строка койки пустая, звонок настоящий, а спасение - нет."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "隔離バース custody 台帳",
-          "scanner": "隔離バース受領票 // 片隅が熱で反ったセラミック custody カード。項目: 体重、圧力曝露、病原体保留、医療所有者、受入バース、lift exception。パケット受理。人物は保留。",
-          "terminal": "RETURN CUSTODY HOLD // 証拠パケットは承認済み。隔離バース、医療 custodian、受信側 liability、上昇リフトが割り当てられるまで living-mass transfer は停止。承認を回収命令に変換するな。",
-          "audio": "証拠なら事務員が二本の指で受け取れる。君を受け取るには、部屋と医師と弁護士と、請求書を背負う誰かが要る。",
-          "in_game_wiki": "隔離バースは感傷的な意味でのベッドではない。空気、フィルター、廃棄物処理、医療ロック、custody カメラ、証拠連鎖シール、そして liability 行の名前を持つ法的な部屋だ。封鎖された海洋 claim から生存者が出る時、受信側は最初から救助された人間を受け入れるわけではない。負傷し、感染し、汚染され、負債を抱え、法的に危険で、さらに誰かが埋めたい証拠を運ぶ生物学的対象を受け入れる。\n\nだから Black Keel からの最初の明瞭な返答は痛い。リレーは distress hash を承認できる。Luyten は packet custody を保存できる。ブローカーは、プレイヤーが空を見る前にサンプルに値を付けられる。だがそのどれもバースを予約しない。生きた身体はパケットより重いだけではない。責任の所有者を変える。誰が同じ空気を吸うのか。誰が減圧傷を診るのか。誰が Deep Reach に生存者を claim property と呼ばせないのか。バースが一か月閉じた時、誰が払うのか。\n\n古い航路労働者はこの台帳を、料金欄のある慈悲と呼んだ。不公平で、正確でもある。初期の救助は汚染を道徳の些事として扱い、ステーションを殺した。だからバースは必要になった。同時に企業はここで、言葉が自分たちに有利になるまで助けを遅らせる術を覚えた。プレイヤーにとって台帳は読める圧力だ。バース欄が空なら救助語は芝居であり、custodian と liability が埋まっていれば誰かが紙ではなく生存に実力を使い始めたことになる。",
-          "external_site": "隔離バース custody 台帳は、HECTON-8 が聞かれても回収されない理由を説明する。証拠はパケットとして進む。生存者には空気、医療、liability、転送を所有する受信側が必要だ。",
-          "external_site_article": "HECTON-8 の孤立が成立するのは、承認と救助が別物だからだ。Aegir 周辺の文明は無知でも無力でもない。証拠パケットを受け取り、サンプルに値を付け、distress hash に返答しても、生きた身体を動かせないことがある。身体は別種の義務だからだ。\n\n隔離バース custody 台帳は、その違いを物理的に示す。部屋、医療所有者、汚染保留、受信側 liability、lift exception、braking margin を指定して初めて、生存者は航路が捕まえるべき cargo になる。欄がなければ、メッセージは正直でも回収には役に立たない。\n\nこれは世界を愚かに見せるためではない。産業として感じさせるためだ。HECTON-8 の救助は、物語の慈悲で飛んでくる青い光ではない。海、claim law、企業証拠から、他人が管理する空気へ移す高価な転送である。パケットは圧力を作る。埋まった custody 欄は、交渉力を作る。",
-          "field_note": "バース欄が空なら、呼び出しは本物でも救助は本物ではない。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "隔离舱位 custody 账册",
-          "scanner": "隔离舱位收据 // 陶瓷 custody 卡，一角被热弯曲。字段：身体质量、压力暴露、病原 hold、医疗负责人、接收舱位、lift exception。数据包已接受。人员待定。",
-          "terminal": "RETURN CUSTODY HOLD // 证据包已确认。活体质量转移暂停，直到隔离舱位、医疗 custodian、接收方 liability 和上升升力被分配。不得把确认转换为撤离命令。",
-          "audio": "收下你的证据，职员用两根手指就够。收下你本人，需要房间、医生、律师，以及愿意认账的人。",
-          "in_game_wiki": "隔离舱位不是温情意义上的床。它是一间法律房间，拥有空气、过滤器、废物处理、医疗闸锁、custody 摄像头、证据链封条，以及 liability 栏里的名字。当幸存者离开一个封闭海洋 claim 时，接收方首先接收的不是被拯救的人，而是一个可能受伤、感染、污染、负债、具有法律危险，并仍携带某些势力想埋掉的证据的生物对象。\n\n这就是为什么 Black Keel 的第一个清晰回应会让人难受。中继可以确认 distress hash。Luyten 可以保存 packet custody。经纪人可以在玩家看见天空之前给样本定价。但这些收据都不会预留舱位。活体身体不只是比数据包更重；它会改变责任归属。谁和它呼吸同一份空气？谁治疗减压伤？谁阻止 Deep Reach 把幸存者归类为 claim property？如果舱位被锁一个月，谁付款？\n\n老航路工人把这种账册叫作带有收费栏的仁慈。这既不公平，也很准确。早期救援把污染当成道德细节，结果杀死了空间站，所以舱位必须存在。但企业也在这里学会了拖延帮助，直到语言对自己有利。对玩家来说，这本账册是一种可读压力：舱位栏空着，救援措辞就是表演；custodian 和 liability 字段填上，说明有人已经开始把真实能源花在生存上，而不是花在纸面上。",
-          "external_site": "隔离舱位 custody 账册解释了为什么 HECTON-8 能被听见，却不能立刻把人接走。证据以数据包旅行。活着的幸存者需要空气、医疗、liability，以及愿意拥有这次转移的接收方。",
-          "external_site_article": "HECTON-8 的孤立可信，是因为确认和救援被分开。Aegir 周围的文明并不无知，也并非无力。它可以接收证据包，给样本定价，回复 distress hash，却仍然无法移动一个活体身体，因为身体是另一类义务。\n\n隔离舱位 custody 账册把这种差别变成实体。它列出房间、医疗负责人、污染 hold、接收方 liability、lift exception 和 braking margin。只有这些字段存在，幸存者才会成为航路必须接住的 cargo。没有这些字段，消息可以真实，却仍然无法用于撤离。\n\n这不是为了让世界显得愚蠢，而是让它显得工业化。在 HECTON-8，救援不是剧情需要慈悲时出现的蓝光，而是把一个人从海洋、claim law 和公司证据，转移到他人控制的空气中的昂贵过程。数据包制造压力；填写完毕的 custody 字段制造筹码。",
-          "field_note": "舱位栏空着时，呼叫是真的，救援不是。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre de custody de couchette de quarantaine",
-          "scanner": "RECU DE COUCHETTE QUARANTAINE // Carte ceramic custody, un coin tordu par la chaleur. Champs: masse du corps, exposition pression, hold pathogene, proprietaire medical, couchette receptrice, lift exception. Paquet accepte. Personne en attente.",
-          "terminal": "RETURN CUSTODY HOLD // Paquet de preuve reconnu. Transfert de masse vivante suspendu jusqu'a attribution d'une couchette de quarantaine, d'un custodian medical, d'une liability receptrice et d'un lift de remontee. Ne pas transformer reconnaissance en ordre d'extraction.",
-          "audio": "Un commis peut recevoir ta preuve avec deux doigts. Te recevoir toi demande une salle, un medecin, un avocat et quelqu'un qui accepte la facture.",
-          "in_game_wiki": "Une couchette de quarantaine n'est pas un lit au sens tendre. C'est une salle juridique avec air, filtres, traitement des dechets, verrous medicaux, cameras de custody, sceaux de chaine de preuve et un nom sur la ligne de liability. Quand un survivant sort d'un claim oceanique scelle, le recepteur n'accepte pas d'abord une personne sauvee. Il accepte un objet biologique qui peut etre blesse, infecte, contamine, endette, dangereux juridiquement et encore porteur de preuves que d'autres veulent enterrer.\n\nC'est pourquoi la premiere reponse nette de Black Keel peut faire mal. Le relais peut reconnaitre un distress hash. Luyten peut conserver la packet custody. Un courtier peut donner un prix aux echantillons avant que le joueur voie le ciel ouvert. Aucune de ces quittances ne reserve une couchette. Un corps vivant n'est pas seulement plus lourd qu'un paquet; il change le proprietaire de la responsabilite. Qui respire le meme air? Qui traite la decompression? Qui empeche Deep Reach de classer le survivant comme claim property? Qui paie si la couchette reste fermee un mois?\n\nLes anciens ouvriers de route appelaient ces registres une misericorde avec colonne tarifaire. C'est injuste et exact. La couchette existe parce que les premiers sauvetages ont tue des stations quand les navires traitaient la contamination comme un detail moral. C'est aussi l'endroit ou les compagnies ont appris a ralentir l'aide jusqu'a ce que le langage les favorise. Pour le joueur, le registre est une pression lisible: si la ligne de couchette est vide, le vocabulaire de sauvetage est du theatre; si custodian et liability sont remplis, quelqu'un depense enfin de la puissance reelle pour la survie.",
-          "external_site": "Le registre de custody de couchette de quarantaine explique pourquoi HECTON-8 peut etre entendu avant qu'une personne soit recuperee. La preuve voyage comme paquet. Un survivant vivant exige air, medecine, liability et recepteur pret a posseder le transfert.",
-          "external_site_article": "L'isolement de HECTON-8 tient parce que reconnaissance et sauvetage sont separes. La civilisation autour d'Aegir n'est ni ignorante ni impuissante. Elle peut recevoir une preuve, evaluer un echantillon, repondre a un distress hash et pourtant ne pas deplacer un corps vivant, car ce corps est une autre classe d'obligation.\n\nLe registre de custody de couchette de quarantaine rend cette difference physique. Il nomme la salle, le proprietaire medical, le hold de contamination, la liability receptrice, la lift exception et la marge de freinage necessaires avant qu'un survivant devienne un cargo que la route doit attraper. Sans ces champs, un message peut etre honnete et inutile pour l'extraction.\n\nCe n'est pas fait pour rendre le monde stupide. Il doit sembler industriel. Sur HECTON-8, le sauvetage n'est pas une lumiere bleue qui arrive parce que le recit veut de la pitie. C'est un transfert couteux depuis l'ocean, la claim law et les preuves d'entreprise vers un air controle par quelqu'un d'autre. Les paquets creent de la pression; les champs custody remplis creent du levier.",
-          "field_note": "Si la ligne de couchette est vide, l'appel est vrai et le sauvetage ne l'est pas."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de custodia de litera de cuarentena",
-          "scanner": "RECIBO DE LITERA DE CUARENTENA // Tarjeta ceramica de custody, una esquina deformada por calor. Campos: masa corporal, exposicion a presion, hold patogeno, dueno medico, litera receptora, lift exception. Paquete aceptado. Persona pendiente.",
-          "terminal": "RETURN CUSTODY HOLD // Paquete de prueba reconocido. Transferencia de masa viva suspendida hasta asignar litera de cuarentena, custodian medico, liability del receptor y ascenso. No convertir reconocimiento en orden de extraccion.",
-          "audio": "Un oficinista puede recibir tu prueba con dos dedos. Recibirte a ti exige una sala, un medico, un abogado y alguien dispuesto a poseer la factura.",
-          "in_game_wiki": "Una litera de cuarentena no es una cama en sentido sentimental. Es una sala legal con aire, filtros, gestion de residuos, cierres medicos, camaras de custody, sellos de cadena de evidencia y un nombre en la linea de liability. Cuando un superviviente sale de un claim oceanico sellado, el receptor no acepta primero a una persona rescatada. Acepta un objeto biologico que puede estar herido, infectado, contaminado, endeudado, ser legalmente peligroso y seguir cargando pruebas que otros quieren enterrar.\n\nPor eso la primera respuesta limpia de Black Keel puede doler. El rele puede reconocer un distress hash. Luyten puede preservar la packet custody. Un intermediario puede valorar muestras antes de que el jugador vea cielo abierto. Ninguno de esos recibos reserva una litera. Un cuerpo vivo no solo pesa mas que un paquete; cambia la propiedad de la responsabilidad. Quien respira el mismo aire? Quien trata la lesion por descompresion? Quien impide que Deep Reach clasifique al superviviente como claim property? Quien paga si la litera queda bloqueada un mes?\n\nLos viejos trabajadores de ruta llamaban a estos registros misericordia con columna de tarifas. Es injusto y exacto. La litera existe porque los primeros rescates mataron estaciones cuando las naves fingieron que la contaminacion era un detalle moral. Tambien es donde las companias aprendieron a retrasar la ayuda hasta que el lenguaje les favorecia. Para el jugador, el registro es presion legible: si la linea de litera esta vacia, el lenguaje de rescate es teatro; si custodian y liability estan completos, alguien ha empezado a gastar potencia real en supervivencia.",
-          "external_site": "El registro de custodia de litera de cuarentena explica por que HECTON-8 puede ser oido antes de que alguien sea recuperado. La prueba viaja como paquete. Un superviviente vivo necesita aire, medicina, liability y un receptor dispuesto a poseer la transferencia.",
-          "external_site_article": "HECTON-8 mantiene creible su aislamiento separando reconocimiento y rescate. La civilizacion alrededor de Aegir no es ignorante ni impotente. Puede recibir pruebas, tasar muestras, responder a un distress hash y aun asi no mover un cuerpo vivo, porque el cuerpo es otra clase de obligacion.\n\nEl registro de custodia de litera de cuarentena vuelve fisica esa diferencia. Nombra la sala, el dueno medico, el hold de contaminacion, la liability del receptor, la lift exception y el margen de frenado necesarios antes de que un superviviente se convierta en carga que la ruta debe atrapar. Sin esos campos, un mensaje puede ser honesto e inutil para extraccion.\n\nNo busca que el mundo parezca estupido. Debe parecer industrial. En HECTON-8, rescatar no es una luz azul que llega porque la historia necesita piedad. Es una transferencia cara desde oceano, claim law y pruebas corporativas hacia aire controlado por otro. Los paquetes crean presion; los campos custody llenos crean palanca.",
-          "field_note": "Si la linea de litera esta vacia, la llamada es real y el rescate no."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Quarantänekojen-Custody-Ledger",
-          "scanner": "QUARANTÄNEKOJEN-BELEG // Keramische Custody-Karte, eine Ecke hitzeverzogen. Felder: Körpermasse, Druckexposition, Pathogen-Hold, medizinischer Owner, Empfängerkoje, lift exception. Paket akzeptiert. Person ausstehend.",
-          "terminal": "RETURN CUSTODY HOLD // Beweispaket bestätigt. Living-mass transfer ausgesetzt, bis Quarantänekoje, medizinischer custodian, Receiver liability und Aufstiegslift zugewiesen sind. Bestätigung nicht in Extraktionsbefehl umwandeln.",
-          "audio": "Ein Clerk kann deinen Beweis mit zwei Fingern annehmen. Dich anzunehmen braucht einen Raum, einen Arzt, einen Anwalt und jemanden, der die Rechnung besitzt.",
-          "in_game_wiki": "Eine Quarantänekoje ist kein Bett im weichen Sinn. Sie ist ein juristischer Raum mit Luft, Filtern, Abfallführung, medizinischen Schleusen, Custody-Kameras, Beweisketten-Siegeln und einem Namen in der liability-Zeile. Wenn ein Überlebender einen versiegelten Ozean-claim verlässt, akzeptiert der Receiver zuerst keine gerettete Person. Er akzeptiert ein biologisches Objekt, das verletzt, infiziert, kontaminiert, verschuldet, rechtlich gefährlich sein kann und noch Beweise trägt, die andere begraben wollen.\n\nDarum kann die erste saubere Antwort von Black Keel wehtun. Das Relais kann einen distress hash bestätigen. Luyten kann packet custody erhalten. Ein Broker kann Proben bewerten, bevor der Spieler offenen Himmel sieht. Keiner dieser Belege reserviert eine Koje. Ein lebender Körper ist nicht nur schwerer als ein Paket; er verschiebt Verantwortung. Wer atmet dieselbe Luft? Wer behandelt die Dekompressionsverletzung? Wer hindert Deep Reach daran, den Überlebenden als claim property einzustufen? Wer zahlt, wenn die Koje einen Monat gesperrt bleibt?\n\nAlte Routenarbeiter nannten diese Ledger Gnade mit Tarifspalte. Das ist unfair und genau. Die Koje existiert, weil frühe Rettungen Stationen töteten, als Schiffe Kontamination als moralisches Detail behandelten. Sie ist auch der Ort, an dem Firmen lernten, Hilfe zu bremsen, bis die Sprache ihnen passte. Für den Spieler ist das Ledger lesbarer Druck: Ist die Kojenzeile leer, ist Rettungssprache Theater; sind custodian und liability gefüllt, gibt jemand reale Leistung für Überleben aus.",
-          "external_site": "Das Quarantänekojen-Custody-Ledger erklärt, warum HECTON-8 gehört werden kann, bevor jemand geborgen wird. Beweis reist als Paket. Ein lebender Überlebender braucht Luft, Medizin, liability und einen Receiver, der den Transfer besitzt.",
-          "external_site_article": "HECTON-8 bleibt glaubwürdig isoliert, weil Bestätigung und Rettung getrennt sind. Die Zivilisation um Aegir ist weder unwissend noch machtlos. Sie kann ein Beweispaket empfangen, Proben bepreisen, auf einen distress hash antworten und trotzdem keinen lebenden Körper bewegen, denn der Körper ist eine andere Klasse von Verpflichtung.\n\nDas Quarantänekojen-Custody-Ledger macht diesen Unterschied physisch. Es nennt Raum, medizinischen Owner, Kontaminations-Hold, Receiver liability, lift exception und Bremsmarge, bevor ein Überlebender zu cargo wird, den die Route fangen muss. Ohne diese Felder kann eine Nachricht ehrlich und für Extraktion trotzdem nutzlos sein.\n\nDas soll die Welt nicht dumm wirken lassen. Sie soll industriell wirken. Auf HECTON-8 ist Rettung kein blaues Licht, das erscheint, weil die Geschichte Mitleid braucht. Sie ist ein teurer Transfer aus Ozean, claim law und Konzernbeweis in Luft, die jemand anderes kontrolliert. Pakete erzeugen Druck; gefüllte custody-Felder erzeugen Hebel.",
-          "field_note": "Ist die Kojenzeile leer, ist der Ruf echt und die Rettung nicht."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr custody koi kwarantanny",
-          "scanner": "POKWITOWANIE KOI KWARANTANNY // Ceramiczna karta custody, jeden róg wygięty od ciepła. Pola: masa ciała, ekspozycja ciśnieniowa, pathogen hold, właściciel medyczny, koja odbiorcy, lift exception. Pakiet przyjęty. Osoba czeka.",
-          "terminal": "RETURN CUSTODY HOLD // Pakiet dowodowy potwierdzony. Transfer żywej masy wstrzymany do przydziału koi kwarantanny, medycznego custodian, liability odbiorcy i windy wynoszącej. Nie zamieniać potwierdzenia w rozkaz ewakuacji.",
-          "audio": "Dowód urzędnik przyjmie dwoma palcami. Ciebie przyjmuje pokój, lekarz, prawnik i ktoś gotów posiadać rachunek.",
-          "in_game_wiki": "Koja kwarantanny nie jest łóżkiem w czułym sensie. To prawny pokój z powietrzem, filtrami, obsługą odpadów, zamkami medycznymi, kamerami custody, pieczęciami łańcucha dowodowego i nazwiskiem w wierszu liability. Gdy ocalały opuszcza zapieczętowany oceaniczny claim, odbiorca nie przyjmuje najpierw uratowanej osoby. Przyjmuje obiekt biologiczny, który może być ranny, zakażony, skażony, zadłużony, prawnie niebezpieczny i nadal niosący dowody, które ktoś chce pogrzebać.\n\nDlatego pierwsza czysta odpowiedź Black Keel może boleć. Przekaźnik może uznać distress hash. Luyten może zachować packet custody. Broker może wycenić próbki, zanim gracz zobaczy otwarte niebo. Żadne z tych pokwitowań nie rezerwuje koi. Żywe ciało nie jest tylko cięższe niż pakiet; zmienia właściciela odpowiedzialności. Kto oddycha tym samym powietrzem? Kto leczy uraz dekompresyjny? Kto nie pozwoli Deep Reach nazwać ocalałego claim property? Kto płaci, gdy koja jest zamknięta miesiąc?\n\nStarzy robotnicy tras nazywali takie rejestry miłosierdziem z kolumną taryf. To niesprawiedliwe i trafne. Koja istnieje, bo wczesne ratunki zabijały stacje, gdy statki udawały, że skażenie to detal moralny. To także miejsce, gdzie firmy nauczyły się zwalniać pomoc, aż język zacznie im sprzyjać. Dla gracza rejestr jest czytelną presją: pusta linia koi oznacza teatr ratunku; wypełnione pola custodian i liability znaczą, że ktoś zaczął wydawać realną moc na przetrwanie.",
-          "external_site": "Rejestr custody koi kwarantanny wyjaśnia, dlaczego HECTON-8 można usłyszeć, zanim kogokolwiek da się odzyskać. Dowód podróżuje jako pakiet. Żywy ocalały potrzebuje powietrza, medycyny, liability i odbiorcy gotowego posiadać transfer.",
-          "external_site_article": "Izolacja HECTON-8 działa, bo potwierdzenie i ratunek są rozdzielone. Cywilizacja wokół Aegir nie jest ani głupia, ani bezsilna. Może przyjąć dowód, wycenić próbkę, odpowiedzieć na distress hash i nadal nie ruszyć żywego ciała, bo ciało jest inną klasą zobowiązania.\n\nRejestr custody koi kwarantanny nadaje tej różnicy formę fizyczną. Wskazuje pokój, właściciela medycznego, hold skażenia, liability odbiorcy, lift exception i margines hamowania potrzebne, zanim ocalały stanie się cargo, które trasa musi złapać. Bez tych pól wiadomość może być uczciwa i bezużyteczna dla ewakuacji.\n\nTo nie ma czynić świata głupim. Ma czynić go przemysłowym. Na HECTON-8 ratunek nie jest niebieskim światłem, które przybywa, bo fabuła potrzebuje litości. To drogi transfer z oceanu, claim law i korporacyjnych dowodów do powietrza kontrolowanego przez kogoś innego. Pakiety tworzą presję; wypełnione pola custody tworzą dźwignię.",
-          "field_note": "Jeśli linia koi jest pusta, wezwanie jest prawdziwe, a ratunek nie."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал custody карантинної койки",
-          "scanner": "КВИТАНЦІЯ КАРАНТИННОЇ КОЙКИ // Керамічна custody-карта, один кут повело від тепла. Поля: маса тіла, тисковий вплив, pathogen hold, медичний власник, приймальна койка, lift exception. Пакет прийнято. Людина очікує.",
-          "terminal": "RETURN CUSTODY HOLD // Доказовий пакет підтверджено. Перенесення живої маси призупинене, доки не призначено карантинну койку, медичного custodian, liability приймача і підйом. Не перетворювати підтвердження на наказ евакуації.",
-          "audio": "Доказ клерк прийме двома пальцями. Тебе приймають кімната, лікар, юрист і хтось, хто готовий володіти рахунком.",
-          "in_game_wiki": "Карантинна койка - не ліжко у теплому сенсі. Це юридична кімната з повітрям, фільтрами, відходами, медичними шлюзами, custody-камерами, печатками ланцюга доказів і ім'ям у рядку liability. Коли вцілілий виходить із запечатаного океанського claim, приймач спершу не приймає врятовану людину. Він приймає біологічний об'єкт, який може бути травмований, заражений, забруднений, борговий, юридично небезпечний і все ще нести докази, які хтось хоче поховати.\n\nСаме тому перша чиста відповідь Black Keel може боліти. Реле може підтвердити distress hash. Luyten може зберегти packet custody. Брокер може оцінити зразки до того, як гравець побачить відкрите небо. Але жодна з цих квитанцій не резервує койку. Живе тіло не просто важче за пакет; воно змінює власника відповідальності. Хто дихає тим самим повітрям? Хто лікує декомпресійну травму? Хто не дасть Deep Reach назвати вцілілого claim property? Хто платить, якщо койка замкнена місяць?\n\nСтарі працівники маршрутів називали такі журнали милосердям із тарифною колонкою. Це несправедливо і точно. Койка існує, бо ранні порятунки вбивали станції, коли кораблі вдавали, що забруднення - моральна дрібниця. Також саме тут компанії навчилися гальмувати допомогу, доки мова не стане вигідною їм. Для гравця журнал є читабельним тиском: порожній рядок койки означає театр порятунку; заповнені custodian і liability означають, що хтось витрачає реальну потужність на виживання.",
-          "external_site": "Журнал custody карантинної койки пояснює, чому HECTON-8 можуть почути раніше, ніж когось повернуть. Доказ рухається пакетом. Живому вцілілому потрібні повітря, медицина, liability і приймач, готовий володіти перенесенням.",
-          "external_site_article": "Ізоляція HECTON-8 правдоподібна, бо підтвердження і порятунок розділені. Цивілізація довкола Aegir не є ні неосвіченою, ні безсилою. Вона може прийняти доказовий пакет, оцінити зразок, відповісти на distress hash і все одно не пересунути живе тіло, бо тіло - інший клас зобов'язання.\n\nЖурнал custody карантинної койки робить цю різницю фізичною. Він називає кімнату, медичного власника, hold забруднення, liability приймача, lift exception і гальмівний запас, потрібні до того, як вцілілий стане cargo, який маршрут мусить упіймати. Без цих полів повідомлення може бути чесним і марним для евакуації.\n\nЦе не повинно робити світ дурним. Він має відчуватися промисловим. На HECTON-8 порятунок - не синє світло, що прилітає, бо історії потрібна милість. Це дорогий transfer з океану, claim law і корпоративних доказів у повітря, яким керує хтось інший. Пакети створюють тиск; заповнені custody-поля створюють важіль.",
-          "field_note": "Якщо рядок койки порожній, виклик справжній, а порятунок ні."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل custody لسرير الحجر",
-          "scanner": "إيصال سرير الحجر // بطاقة custody خزفية، زاوية منها ملتوية بالحرارة. الحقول: كتلة الجسد، تعرض الضغط، pathogen hold، المالك الطبي، سرير الاستقبال، lift exception. الحزمة مقبولة. الشخص معلق.",
-          "terminal": "RETURN CUSTODY HOLD // تم تأكيد حزمة الدليل. نقل الكتلة الحية معلق حتى تخصيص سرير حجر، و custodian طبي، و liability للمستقبل، ورفع صعود. لا تحول التأكيد إلى أمر استخراج.",
-          "audio": "يمكن للكاتب أن يستلم دليلك بإصبعين. استلامك أنت يحتاج غرفة وطبيبا ومحاميا وشخصا يملك الفاتورة.",
-          "in_game_wiki": "سرير الحجر ليس سريرا بمعنى عاطفي. إنه غرفة قانونية فيها هواء ومرشحات ومعالجة نفايات وأقفال طبية وكاميرات custody وأختام لسلسلة الدليل واسم في سطر liability. عندما يخرج ناج من claim محيطي مغلق، لا يقبل المستقبل أولا إنسانا منقذا. إنه يقبل جسما بيولوجيا قد يكون مصابا أو ملوثا أو حاملا لعدوى أو دينا أو خطرا قانونيا، وما زال يحمل دليلا يريد آخرون دفنه.\n\nلذلك يمكن أن يكون أول جواب واضح من Black Keel مؤلما. يمكن للمرحل أن يؤكد distress hash. يمكن لـ Luyten أن يحفظ packet custody. يمكن للوسيط أن يسعر العينات قبل أن يرى اللاعب السماء المفتوحة. لا يحجز أي من هذه الإيصالات سريرا. الجسد الحي ليس أثقل من الحزمة فقط؛ إنه يغير مالك المسؤولية. من يتنفس الهواء نفسه؟ من يعالج إصابة تخفيف الضغط؟ من يمنع Deep Reach من تصنيف الناجي كـ claim property؟ من يدفع إذا بقي السرير مغلقا شهرا؟\n\nكان عمال الطرق القدامى يسمون هذه السجلات رحمة لها عمود تعرفة. هذا غير عادل ودقيق. السرير موجود لأن عمليات الإنقاذ الأولى قتلت محطات عندما تعاملت السفن مع التلوث كأنه تفصيل أخلاقي. وهو أيضا المكان الذي تعلمت فيه الشركات إبطاء المساعدة حتى تخدمها اللغة. بالنسبة إلى اللاعب، السجل ضغط مقروء: إذا كان سطر السرير فارغا، فكلام الإنقاذ مسرح؛ وإذا امتلأت حقول custodian و liability، فقد بدأ شخص ما ينفق طاقة حقيقية على البقاء.",
-          "external_site": "يفسر سجل custody لسرير الحجر لماذا يمكن سماع HECTON-8 قبل استعادة أي شخص. الدليل يسافر كحزمة. الناجي الحي يحتاج هواء وطبابة و liability ومستقبلا يقبل امتلاك النقل.",
-          "external_site_article": "تبقى عزلة HECTON-8 مقنعة لأن الإقرار مفصول عن الإنقاذ. الحضارة حول Aegir ليست جاهلة ولا عاجزة. يمكنها استقبال حزمة دليل، وتسعير عينة، والرد على distress hash، ومع ذلك لا تحرك جسدا حيا، لأن الجسد فئة أخرى من الالتزام.\n\nيجعل سجل custody لسرير الحجر هذا الفرق ماديا. إنه يسمي الغرفة والمالك الطبي و hold التلوث و liability المستقبل و lift exception وهامش الكبح اللازمة قبل أن يصبح الناجي cargo يجب على الطريق التقاطه. بلا هذه الحقول يمكن للرسالة أن تكون صادقة وغير مفيدة للاستخراج.\n\nليس الهدف أن يبدو العالم غبيا. يجب أن يبدو صناعيا. في HECTON-8، الإنقاذ ليس ضوءا أزرق يصل لأن القصة تحتاج رحمة. إنه نقل مكلف من المحيط و claim law ودليل الشركات إلى هواء يتحكم به شخص آخر. الحزم تصنع ضغطا؛ وحقول custody الممتلئة تصنع نفوذا.",
-          "field_note": "إذا كان سطر السرير فارغا، فالنداء حقيقي والإنقاذ ليس كذلك."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Buku Custody Ranjang Karantina",
-          "scanner": "TANDA TERIMA RANJANG KARANTINA // Kartu custody keramik, satu sudut melengkung oleh panas. Kolom: massa tubuh, paparan tekanan, pathogen hold, pemilik medis, ranjang penerima, lift exception. Paket diterima. Orang tertunda.",
-          "terminal": "RETURN CUSTODY HOLD // Paket bukti diakui. Transfer massa hidup ditahan sampai ranjang karantina, custodian medis, liability penerima, dan lift naik ditetapkan. Jangan ubah pengakuan menjadi perintah ekstraksi.",
-          "audio": "Petugas bisa menerima buktimu dengan dua jari. Menerimamu butuh ruang, dokter, pengacara, dan orang yang mau memiliki tagihan.",
-          "in_game_wiki": "Ranjang karantina bukan tempat tidur dalam arti lembut. Itu ruang legal dengan udara, filter, pengelolaan limbah, kunci medis, kamera custody, segel rantai bukti, dan nama pada baris liability. Saat penyintas keluar dari claim laut yang disegel, penerima tidak pertama-tama menerima orang yang diselamatkan. Ia menerima objek biologis yang mungkin cedera, terinfeksi, terkontaminasi, berutang, berbahaya secara hukum, dan masih membawa bukti yang ingin dikubur pihak lain.\n\nItu sebabnya jawaban bersih pertama dari Black Keel bisa menyakitkan. Relay dapat mengakui distress hash. Luyten dapat menjaga packet custody. Broker dapat memberi harga pada sampel sebelum pemain melihat langit terbuka. Tidak ada tanda terima itu yang memesan ranjang. Tubuh hidup bukan hanya lebih berat dari paket; ia mengubah pemilik tanggung jawab. Siapa bernapas di udara yang sama? Siapa merawat cedera dekompresi? Siapa mencegah Deep Reach menyebut penyintas sebagai claim property? Siapa membayar jika ranjang terkunci sebulan?\n\nPekerja rute lama menyebut buku seperti ini belas kasihan dengan kolom tarif. Itu tidak adil dan tepat. Ranjang ada karena penyelamatan awal membunuh stasiun ketika kapal berpura-pura kontaminasi hanya detail moral. Itu juga tempat perusahaan belajar memperlambat bantuan sampai bahasa menguntungkan mereka. Bagi pemain, buku ini tekanan yang bisa dibaca: bila baris ranjang kosong, bahasa penyelamatan hanya teater; bila custodian dan liability terisi, seseorang mulai menghabiskan daya nyata untuk bertahan hidup.",
-          "external_site": "Buku custody ranjang karantina menjelaskan mengapa HECTON-8 dapat didengar sebelum seseorang dipulihkan. Bukti bergerak sebagai paket. Penyintas hidup butuh udara, medis, liability, dan penerima yang mau memiliki transfer.",
-          "external_site_article": "Isolasi HECTON-8 terasa masuk akal karena pengakuan dipisahkan dari penyelamatan. Peradaban di sekitar Aegir tidak bodoh dan tidak tak berdaya. Ia dapat menerima bukti, menilai sampel, menjawab distress hash, dan tetap gagal memindahkan tubuh hidup karena tubuh adalah kelas kewajiban lain.\n\nBuku custody ranjang karantina membuat perbedaan itu fisik. Ia menyebut ruang, pemilik medis, contamination hold, liability penerima, lift exception, dan margin pengereman yang dibutuhkan sebelum penyintas menjadi cargo yang harus ditangkap rute. Tanpa kolom itu, pesan bisa jujur dan tetap tidak berguna untuk ekstraksi.\n\nIni bukan untuk membuat dunia tampak bodoh. Dunia harus terasa industrial. Di HECTON-8, penyelamatan bukan cahaya biru yang datang karena cerita butuh belas kasihan. Itu transfer mahal dari laut, claim law, dan bukti korporat menuju udara yang dikendalikan orang lain. Paket menciptakan tekanan; kolom custody yang terisi menciptakan daya tawar.",
-          "field_note": "Jika baris ranjang kosong, panggilan itu nyata dan penyelamatan tidak."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "검역 침상 custody 장부",
-          "scanner": "검역 침상 영수증 // 한쪽 모서리가 열로 휘어진 세라믹 custody 카드. 항목: 신체 질량, 압력 노출, 병원체 hold, 의료 소유자, 수신 침상, lift exception. 패킷 수락. 사람 보류.",
-          "terminal": "RETURN CUSTODY HOLD // 증거 패킷 확인됨. 검역 침상, 의료 custodian, 수신자 liability, 상승 리프트가 배정될 때까지 생체 질량 이송 정지. 확인을 추출 명령으로 변환하지 말 것.",
-          "audio": "서류 직원은 네 증거를 두 손가락으로 받을 수 있다. 너를 받으려면 방, 의사, 변호사, 그리고 청구서를 떠안을 사람이 필요하다.",
-          "in_game_wiki": "검역 침상은 감상적인 의미의 침대가 아니다. 공기, 필터, 폐기물 처리, 의료 잠금, custody 카메라, 증거 연쇄 봉인, liability 줄의 이름을 가진 법적 방이다. 생존자가 봉인된 해양 claim 을 떠날 때 수신자는 먼저 구조된 사람을 받지 않는다. 다쳤고, 감염됐고, 오염됐고, 빚졌고, 법적으로 위험할 수 있으며, 누군가 묻어버리고 싶은 증거를 아직 지닌 생물학적 물체를 받는다.\n\n그래서 Black Keel 의 첫 명확한 답장은 아플 수 있다. 릴레이는 distress hash 를 승인할 수 있다. Luyten 은 packet custody 를 보존할 수 있다. 브로커는 플레이어가 열린 하늘을 보기 전에 샘플 가격을 매길 수 있다. 그러나 그 영수증 중 어느 것도 침상을 예약하지 않는다. 살아 있는 몸은 패킷보다 무거울 뿐 아니라 책임의 소유자를 바꾼다. 누가 같은 공기를 마시는가? 누가 감압 손상을 치료하는가? 누가 Deep Reach 가 생존자를 claim property 라 부르지 못하게 하는가? 침상이 한 달 동안 잠기면 누가 지불하는가?\n\n오래된 항로 노동자들은 이런 장부를 요금 열이 붙은 자비라고 불렀다. 부당하지만 정확하다. 초기 구조가 오염을 도덕적 세부사항으로 취급하다가 정거장을 죽였기 때문에 침상이 존재한다. 그리고 기업들은 여기서 언어가 자신들에게 유리해질 때까지 도움을 늦추는 법을 배웠다. 플레이어에게 장부는 읽을 수 있는 압박이다. 침상 줄이 비어 있으면 구조 언어는 연극이다. custodian 과 liability 가 채워지면 누군가 종이가 아니라 생존에 실제 전력을 쓰기 시작한 것이다.",
-          "external_site": "검역 침상 custody 장부는 HECTON-8 이 들릴 수 있어도 사람이 바로 회수되지 않는 이유를 설명한다. 증거는 패킷으로 이동한다. 살아 있는 생존자에게는 공기, 의료, liability, 그리고 이송을 소유할 수신자가 필요하다.",
-          "external_site_article": "HECTON-8 의 고립은 승인과 구조가 분리되어 있기 때문에 설득력을 가진다. Aegir 주변 문명은 무지하지도 무력하지도 않다. 증거 패킷을 받고, 샘플 가격을 매기고, distress hash 에 답하고도 살아 있는 몸을 옮기지 못할 수 있다. 몸은 다른 등급의 의무이기 때문이다.\n\n검역 침상 custody 장부는 그 차이를 물리적으로 만든다. 방, 의료 소유자, 오염 hold, 수신자 liability, lift exception, 제동 여유를 명시해야 생존자가 항로가 붙잡아야 할 cargo 가 된다. 이 항목이 없으면 메시지는 정직해도 추출에는 쓸모없을 수 있다.\n\n이는 세계를 어리석게 보이게 하려는 것이 아니다. 산업적으로 느끼게 하려는 것이다. HECTON-8 에서 구조는 이야기가 자비를 필요로 해서 도착하는 파란 빛이 아니다. 바다, claim law, 기업 증거에서 다른 사람이 통제하는 공기로 옮기는 비싼 이송이다. 패킷은 압박을 만든다. 채워진 custody 항목은 협상력을 만든다.",
-          "field_note": "침상 줄이 비어 있으면 호출은 진짜지만 구조는 아니다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן custody של מיטת בידוד",
-          "scanner": "קבלת מיטת בידוד // כרטיס custody קרמי, פינה אחת עקומה מחום. שדות: מסת גוף, חשיפת לחץ, pathogen hold, בעלים רפואי, מיטת מקלט, lift exception. מנה התקבלה. אדם בהמתנה.",
-          "terminal": "RETURN CUSTODY HOLD // מנת ראיה אושרה. העברת מסה חיה מושהית עד הקצאת מיטת בידוד, custodian רפואי, liability של המקבל ומעלית עלייה. אין להמיר אישור לפקודת חילוץ.",
-          "audio": "פקיד יכול לקבל את הראיה שלך בשתי אצבעות. לקבל אותך דורש חדר, רופא, עורך דין ומישהו שמוכן להחזיק בחשבון.",
-          "in_game_wiki": "מיטת בידוד אינה מיטה במובן הרך. זה חדר משפטי עם אוויר, מסננים, טיפול בפסולת, מנעולים רפואיים, מצלמות custody, חותמות שרשרת ראיות ושם בשורת liability. כששורד יוצא מ-claim אוקייני חתום, המקבל אינו מקבל קודם אדם שניצל. הוא מקבל עצם ביולוגי שעשוי להיות פצוע, נגוע, מזוהם, חייב, מסוכן משפטית, ועדיין נושא ראיות שמישהו רוצה לקבור.\n\nלכן התשובה הנקייה הראשונה מ-Black Keel יכולה לכאוב. ממסר יכול לאשר distress hash. Luyten יכול לשמר packet custody. מתווך יכול לתמחר דגימות לפני שהשחקן רואה שמיים פתוחים. אף אחת מן הקבלות הללו אינה שומרת מיטה. גוף חי אינו רק כבד ממנה; הוא משנה את בעל האחריות. מי נושם את אותו אוויר? מי מטפל בפגיעת הדקומפרסיה? מי מונע מ-Deep Reach לסווג את השורד כ-claim property? מי משלם אם המיטה נעולה חודש?\n\nעובדי נתיב ותיקים קראו ליומנים האלה רחמים עם עמודת תעריף. זה לא הוגן וזה מדויק. המיטה קיימת מפני שחילוצים מוקדמים הרגו תחנות כשספינות העמידו פנים שזיהום הוא פרט מוסרי. זה גם המקום שבו חברות למדו להאט עזרה עד שהשפה משרתת אותן. עבור השחקן, היומן הוא לחץ קריא: אם שורת המיטה ריקה, שפת החילוץ היא תיאטרון; אם custodian ו-liability מלאים, מישהו התחיל להוציא כוח אמיתי על הישרדות.",
-          "external_site": "יומן custody של מיטת בידוד מסביר מדוע אפשר לשמוע את HECTON-8 לפני שאפשר להשיב אדם. ראיה נעה כמנה. שורד חי צריך אוויר, רפואה, liability ומקבל שמוכן להחזיק בהעברה.",
-          "external_site_article": "הבידוד של HECTON-8 אמין מפני שאישור וחילוץ נפרדים. הציוויליזציה סביב Aegir אינה בורה ואינה חסרת כוח. היא יכולה לקבל מנת ראיה, לתמחר דגימה, לענות ל-distress hash ועדיין לא להזיז גוף חי, כי גוף הוא מחלקה אחרת של התחייבות.\n\nיומן custody של מיטת בידוד הופך את ההבדל הזה לפיזי. הוא מציין חדר, בעלים רפואי, hold זיהום, liability של המקבל, lift exception ומרווח בלימה לפני שהשורד נעשה cargo שהנתיב חייב לתפוס. בלי השדות האלה, הודעה יכולה להיות אמיתית ועדיין חסרת תועלת לחילוץ.\n\nהמטרה אינה לגרום לעולם להיראות טיפש. עליו להרגיש תעשייתי. ב-HECTON-8 חילוץ אינו אור כחול שמגיע כי הסיפור צריך רחמים. זה מעבר יקר מן האוקיינוס, claim law וראיות תאגידיות אל אוויר שמישהו אחר שולט בו. מנות יוצרות לחץ; שדות custody מלאים יוצרים מנוף.",
-          "field_note": "אם שורת המיטה ריקה, הקריאה אמיתית והחילוץ לא."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de custody de leito de quarentena",
-          "scanner": "RECIBO DE LEITO DE QUARENTENA // Cartão cerâmico de custody, uma ponta empenada por calor. Campos: massa corporal, exposição à pressão, pathogen hold, dono médico, leito receptor, lift exception. Pacote aceito. Pessoa pendente.",
-          "terminal": "RETURN CUSTODY HOLD // Pacote de prova reconhecido. Transferência de massa viva suspensa até atribuir leito de quarentena, custodian médico, liability do receptor e subida. Não converter reconhecimento em ordem de extração.",
-          "audio": "Um escriturário recebe sua prova com dois dedos. Receber você exige sala, médico, advogado e alguém disposto a assumir a conta.",
-          "in_game_wiki": "Um leito de quarentena não é cama no sentido sentimental. É uma sala jurídica com ar, filtros, tratamento de resíduos, travas médicas, câmeras de custody, selos de cadeia de prova e um nome na linha de liability. Quando um sobrevivente sai de um claim oceânico selado, o receptor não aceita primeiro uma pessoa resgatada. Aceita um objeto biológico que pode estar ferido, infectado, contaminado, endividado, legalmente perigoso e ainda carregando provas que outros querem enterrar.\n\nPor isso a primeira resposta limpa da Black Keel pode doer. O relé pode reconhecer um distress hash. Luyten pode preservar packet custody. Um corretor pode precificar amostras antes de o jogador ver céu aberto. Nenhum desses recibos reserva um leito. Um corpo vivo não é só mais pesado que um pacote; ele muda o dono da responsabilidade. Quem respira o mesmo ar? Quem trata a lesão de descompressão? Quem impede a Deep Reach de classificar o sobrevivente como claim property? Quem paga se o leito ficar travado por um mês?\n\nVelhos trabalhadores de rota chamavam esses registros de misericórdia com coluna de tarifa. É injusto e exato. O leito existe porque resgates iniciais mataram estações quando naves fingiram que contaminação era detalhe moral. Também é onde empresas aprenderam a atrasar ajuda até que a linguagem as favorecesse. Para o jogador, o registro é pressão legível: se a linha do leito está vazia, a linguagem de resgate é teatro; se custodian e liability estão preenchidos, alguém começou a gastar potência real em sobrevivência.",
-          "external_site": "O registro de custody de leito de quarentena explica por que HECTON-8 pode ser ouvido antes de alguém ser recuperado. Prova viaja como pacote. Um sobrevivente vivo precisa de ar, medicina, liability e receptor disposto a possuir a transferência.",
-          "external_site_article": "O isolamento de HECTON-8 é crível porque reconhecimento e resgate são separados. A civilização ao redor de Aegir não é ignorante nem impotente. Ela pode receber um pacote de prova, precificar uma amostra, responder a um distress hash e ainda assim não mover um corpo vivo, porque o corpo é outra classe de obrigação.\n\nO registro de custody de leito de quarentena torna essa diferença física. Ele nomeia a sala, o dono médico, o contamination hold, a liability do receptor, a lift exception e a margem de frenagem necessárias antes que um sobrevivente vire cargo que a rota precisa capturar. Sem esses campos, uma mensagem pode ser honesta e inútil para extração.\n\nIsso não é para fazer o mundo parecer burro. É para fazê-lo parecer industrial. Em HECTON-8, resgate não é uma luz azul que chega porque a história precisa de misericórdia. É uma transferência cara do oceano, da claim law e das provas corporativas para ar controlado por outra pessoa. Pacotes criam pressão; campos custody preenchidos criam alavanca.",
-          "field_note": "Se a linha do leito está vazia, a chamada é real e o resgate não."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Quarantainebed-custody-log",
-          "scanner": "QUARANTAINEBED-BON // Keramische custody-kaart, een hoek krom door hitte. Velden: lichaamsmassa, drukblootstelling, pathogen hold, medische eigenaar, ontvangend bed, lift exception. Pakket geaccepteerd. Persoon wacht.",
-          "terminal": "RETURN CUSTODY HOLD // Bewijspakket erkend. Overdracht van levende massa opgeschort tot quarantainebed, medische custodian, receiver liability en opstijglift zijn toegewezen. Erkenning niet omzetten in extractiebevel.",
-          "audio": "Een klerk kan je bewijs met twee vingers ontvangen. Jou ontvangen vraagt een kamer, een arts, een advocaat en iemand die de rekening wil bezitten.",
-          "in_game_wiki": "Een quarantainebed is geen bed in sentimentele zin. Het is een juridische kamer met lucht, filters, afvalverwerking, medische sluizen, custody-camera's, zegels voor bewijsketen en een naam op de liability-regel. Wanneer een overlevende een verzegelde oceaan-claim verlaat, accepteert de ontvanger niet eerst een geredde persoon. Hij accepteert een biologisch object dat gewond, besmet, verontreinigd, schuldig en juridisch gevaarlijk kan zijn, en nog steeds bewijs draagt dat anderen willen begraven.\n\nDaarom kan het eerste heldere antwoord van Black Keel pijn doen. Het relais kan een distress hash erkennen. Luyten kan packet custody bewaren. Een broker kan monsters waarderen voordat de speler open lucht ziet. Geen van die bonnen reserveert een bed. Een levend lichaam is niet alleen zwaarder dan een pakket; het verandert wie verantwoordelijkheid bezit. Wie ademt dezelfde lucht? Wie behandelt de decompressiewond? Wie voorkomt dat Deep Reach de overlevende als claim property classificeert? Wie betaalt als het bed een maand gesloten blijft?\n\nOude routewerkers noemden deze logs genade met een tariefkolom. Dat is oneerlijk en precies. Het bed bestaat omdat vroege reddingen stations doodden toen schepen deden alsof besmetting een moreel detail was. Het is ook waar bedrijven leerden hulp te vertragen tot de taal hen diende. Voor de speler is de log leesbare druk: als de bedregel leeg is, is reddingstaal theater; als custodian en liability ingevuld zijn, besteedt iemand echte kracht aan overleven.",
-          "external_site": "De quarantainebed-custody-log verklaart waarom HECTON-8 gehoord kan worden voordat iemand wordt teruggehaald. Bewijs reist als pakket. Een levende overlevende heeft lucht, geneeskunde, liability en een ontvanger nodig die de overdracht bezit.",
-          "external_site_article": "HECTON-8 blijft geloofwaardig geisoleerd omdat erkenning en redding gescheiden zijn. De beschaving rond Aegir is niet onwetend en niet machteloos. Ze kan bewijs ontvangen, monsters prijzen, antwoorden op een distress hash en toch geen levend lichaam verplaatsen, omdat dat lichaam een andere klasse verplichting is.\n\nDe quarantainebed-custody-log maakt dat verschil fysiek. Hij benoemt kamer, medische eigenaar, contamination hold, receiver liability, lift exception en remmarge voordat een overlevende cargo wordt dat de route moet vangen. Zonder die velden kan een bericht eerlijk zijn en toch nutteloos voor extractie.\n\nDit is niet bedoeld om de wereld dom te laten lijken. Hij moet industrieel voelen. Op HECTON-8 is redding geen blauw licht dat arriveert omdat het verhaal medelijden nodig heeft. Het is een dure overdracht uit oceaan, claim law en bedrijfsbewijs naar lucht die iemand anders beheerst. Pakketten maken druk; ingevulde custody-velden maken hefboom.",
-          "field_note": "Als de bedregel leeg is, is de oproep echt en de redding niet."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.quarantine_berth_custody_ledger",
+    "secondary": [
+     "unlock.first_breathing_mass_not_packet",
+     "unlock.first_return_queue_medical_hold",
+     "unlock.first_receiver_liability_gap"
+    ],
+    "poi_tags": [
+     "poi.quarantine_berth_receipt",
+     "poi.medical_custody_seal",
+     "poi.return_queue_hold_card",
+     "poi.living_mass_exception_tag"
+    ],
+    "biome_tags": [
+     "biome.claim_admin",
+     "biome.pressure_base_interior",
+     "biome.carrier_link",
+     "biome.old_colony_ruins"
+    ],
+    "first_20_boundary": "Explains the first answered-signal disappointment: proof can be acknowledged by relay custody, but a living body needs a named quarantine berth, medical custodian, receiver liability and lift mass before rescue becomes a route."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Quarantine Berth Receipt Scanner",
+     "terminal": "Return Custody Hold Terminal",
+     "audio": "Old Receiver Clerk Rule",
+     "in_game_wiki": "PDA Living Mass Custody Primer",
+     "external_site": "Public Site Quarantine Berth Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_acknowledged_signal_without_rescue_question",
+    "truth_payload": "A receiver can acknowledge proof without accepting a person. Living return mass needs a named quarantine berth, medical custodian, receiver liability, lift reservation and braking margin before the route treats survival as cargo it must catch.",
+    "player_question": "If my signal was accepted, why am I still not on a rescue list?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Quarantine Berth Receipt",
+     "scanner": "Ceramic berth receipt. One corner heat-warped. Fields still readable: body mass, exposure band, pathogen hold, med owner, receiver berth, lift exception. Packet accepted. Person pending.",
+     "terminal": "RETURN CUSTODY HOLD QBR-22\nEvidence chain: acknowledged\nLiving-mass transfer: suspended\nMissing assignments: quarantine berth; medical custodian; receiver liability; ascent lift\nInstruction: do not convert packet acknowledgement into extraction order.",
+     "audio": "Proof received. Berth blank. Keep the wrist seal on.",
+     "in_game_wiki": "A quarantine berth receipt is a room claim, not a comfort note. The card names air, filters, waste handling, med locks, custody cameras, chain seals and the office that owns the liability line. A survivor coming out of a sealed ocean site arrives as living mass with exposure, injury, contamination risk, debt and evidence still attached.\n\nThe hard field is receiver berth. Distress hash, sample receipt and Black Keel acknowledgement can all be valid while that line stays empty. Empty means no room has accepted the body. Filled means somebody has committed air, filters, staff time, legal risk and lift mass. The receipt is useful because it separates a message being heard from a person being taken in.",
+     "external_site": "A quarantine berth receipt separates acknowledgement from recovery: proof can be accepted while the living operator remains pending until a berth, med owner, liability line and lift slot are assigned.",
+     "external_site_article": "## Quarantine Berth Receipt QBR-22\n\nThe card is ceramic because paper rots in the rooms where it matters. QBR-22 lists body mass, pressure exposure, pathogen hold, med owner, receiver berth and lift exception. The packet line is stamped accepted. The person line is still pending.\n\nThat split is the point of the artifact. A route can receive evidence without receiving a body. Evidence needs a seal, clock and hash. A breathing operator needs air volume, decompression care, waste handling, quarantine authority, legal ownership and a berth that somebody is willing to lock for days or weeks.\n\nThe receipt can protect a station from contamination. It can also give a company time to rename a survivor as claimant property, witness inventory or unresolved exposure. The useful read is simple: if med owner and berth are blank, rescue language is still paperwork. If those fields are filled, somebody has started spending power on keeping the body alive.",
+     "field_note": "If the berth line is blank, the call is real and the rescue is not."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал карантинной койки и custody",
+     "scanner": "КВИТАНЦИЯ КАРАНТИННОЙ КОЙКИ // Керамическая custody-карта, один угол повело от жара. Поля: масса тела, давление, патогенный hold, медицинский владелец, приемная койка, lift exception. Пакет принят. Человек ожидает.",
+     "terminal": "RETURN CUSTODY HOLD // Доказательный пакет подтвержден. Перенос живой массы остановлен, пока не назначены карантинная койка, медицинский custodian, ответственность приемника и подъем. Не превращать подтверждение в приказ на эвакуацию.",
+     "audio": "Клерк может принять твое доказательство двумя пальцами. Чтобы принять тебя, нужны комната, врач, юрист и тот, кто подпишется под счетом.",
+     "in_game_wiki": "Карантинная койка - не кровать в человеческом смысле. Это юридическая комната с воздухом, фильтрами, отходами, медицинскими шлюзами, камерами custody, печатями цепочки доказательств и именем в строке ответственности. Когда выживший выходит из запечатанного океанского клейма, приемник сначала принимает не спасенного человека. Он принимает биологический объект: травмированный, зараженный, загрязненный, должный, юридически опасный и все еще несущий доказательства, которые кто-то хочет похоронить.\n\nПоэтому первый чистый ответ от Black Keel может звучать жестоко. Реле может подтвердить distress hash. Luyten может сохранить custody пакета. Брокер может оценить образцы еще до того, как игрок увидит открытое небо. Но ни одна из этих квитанций не резервирует койку. Живое тело не просто тяжелее пакета; оно меняет владельца ответственности. Кто дышит тем же воздухом? Кто лечит декомпрессию? Кто не даст Deep Reach назвать выжившего собственностью claim? Кто платит, если койка заперта на месяц?\n\nСтарые работники маршрутов называли такие журналы милосердием с тарифной колонкой. Это несправедливо и точно одновременно. Койка существует потому, что ранние спасения убивали станции, когда заражение считали моральной мелочью. Но именно здесь компании научились замедлять помощь, пока язык не станет выгоден им. Для игрока этот журнал - читаемое давление: пустая строка койки означает театр спасения; заполненные поля custodian и liability означают, что кто-то уже тратит реальную мощность на жизнь, а не на бумагу.",
+     "external_site": "Журнал карантинной койки объясняет, почему HECTON-8 могут услышать раньше, чем кого-то вывезут. Доказательство летит пакетом. Живому выжившему нужны воздух, медицина, liability и приемник, готовый владеть переносом.",
+     "external_site_article": "HECTON-8 остается правдоподобно одинокой, потому что подтверждение отделено от спасения. Цивилизация вокруг Aegir не невежественна и не бессильна. Она может принять доказательный пакет, оценить образец, ответить на distress hash и все равно не перевезти живое тело, потому что тело - другой класс обязательства.\n\nЖурнал карантинной койки делает эту разницу физической. Он называет комнату, медицинского владельца, hold загрязнения, ответственность приемника, lift exception и тормозной запас, без которых выживший не становится грузом, который маршрут обязан поймать. Без этих полей сообщение может быть честным и все равно бесполезным для эвакуации.\n\nЭто не должно делать мир тупым. Он должен ощущаться промышленным. На HECTON-8 спасение - не синяя лампа, прилетевшая потому, что сюжету нужна милость. Это дорогой перенос из океана, claim-law и корпоративных доказательств в воздух, которым владеет кто-то другой. Игрок может использовать эту правду: пакеты создают давление, но заполненные custody-поля создают рычаг.",
+     "field_note": "Если строка койки пустая, звонок настоящий, а спасение - нет."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "隔離バース custody 台帳",
+     "scanner": "隔離バース受領票 // 片隅が熱で反ったセラミック custody カード。項目: 体重、圧力曝露、病原体保留、医療所有者、受入バース、lift exception。パケット受理。人物は保留。",
+     "terminal": "RETURN CUSTODY HOLD // 証拠パケットは承認済み。隔離バース、医療 custodian、受信側 liability、上昇リフトが割り当てられるまで living-mass transfer は停止。承認を回収命令に変換するな。",
+     "audio": "証拠なら事務員が二本の指で受け取れる。君を受け取るには、部屋と医師と弁護士と、請求書を背負う誰かが要る。",
+     "in_game_wiki": "隔離バースは感傷的な意味でのベッドではない。空気、フィルター、廃棄物処理、医療ロック、custody カメラ、証拠連鎖シール、そして liability 行の名前を持つ法的な部屋だ。封鎖された海洋 claim から生存者が出る時、受信側は最初から救助された人間を受け入れるわけではない。負傷し、感染し、汚染され、負債を抱え、法的に危険で、さらに誰かが埋めたい証拠を運ぶ生物学的対象を受け入れる。\n\nだから Black Keel からの最初の明瞭な返答は痛い。リレーは distress hash を承認できる。Luyten は packet custody を保存できる。ブローカーは、プレイヤーが空を見る前にサンプルに値を付けられる。だがそのどれもバースを予約しない。生きた身体はパケットより重いだけではない。責任の所有者を変える。誰が同じ空気を吸うのか。誰が減圧傷を診るのか。誰が Deep Reach に生存者を claim property と呼ばせないのか。バースが一か月閉じた時、誰が払うのか。\n\n古い航路労働者はこの台帳を、料金欄のある慈悲と呼んだ。不公平で、正確でもある。初期の救助は汚染を道徳の些事として扱い、ステーションを殺した。だからバースは必要になった。同時に企業はここで、言葉が自分たちに有利になるまで助けを遅らせる術を覚えた。プレイヤーにとって台帳は読める圧力だ。バース欄が空なら救助語は芝居であり、custodian と liability が埋まっていれば誰かが紙ではなく生存に実力を使い始めたことになる。",
+     "external_site": "隔離バース custody 台帳は、HECTON-8 が聞かれても回収されない理由を説明する。証拠はパケットとして進む。生存者には空気、医療、liability、転送を所有する受信側が必要だ。",
+     "external_site_article": "HECTON-8 の孤立が成立するのは、承認と救助が別物だからだ。Aegir 周辺の文明は無知でも無力でもない。証拠パケットを受け取り、サンプルに値を付け、distress hash に返答しても、生きた身体を動かせないことがある。身体は別種の義務だからだ。\n\n隔離バース custody 台帳は、その違いを物理的に示す。部屋、医療所有者、汚染保留、受信側 liability、lift exception、braking margin を指定して初めて、生存者は航路が捕まえるべき cargo になる。欄がなければ、メッセージは正直でも回収には役に立たない。\n\nこれは世界を愚かに見せるためではない。産業として感じさせるためだ。HECTON-8 の救助は、物語の慈悲で飛んでくる青い光ではない。海、claim law、企業証拠から、他人が管理する空気へ移す高価な転送である。パケットは圧力を作る。埋まった custody 欄は、交渉力を作る。",
+     "field_note": "バース欄が空なら、呼び出しは本物でも救助は本物ではない。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "隔离舱位 custody 账册",
+     "scanner": "隔离舱位收据 // 陶瓷 custody 卡，一角被热弯曲。字段：身体质量、压力暴露、病原 hold、医疗负责人、接收舱位、lift exception。数据包已接受。人员待定。",
+     "terminal": "RETURN CUSTODY HOLD // 证据包已确认。活体质量转移暂停，直到隔离舱位、医疗 custodian、接收方 liability 和上升升力被分配。不得把确认转换为撤离命令。",
+     "audio": "收下你的证据，职员用两根手指就够。收下你本人，需要房间、医生、律师，以及愿意认账的人。",
+     "in_game_wiki": "隔离舱位不是温情意义上的床。它是一间法律房间，拥有空气、过滤器、废物处理、医疗闸锁、custody 摄像头、证据链封条，以及 liability 栏里的名字。当幸存者离开一个封闭海洋 claim 时，接收方首先接收的不是被拯救的人，而是一个可能受伤、感染、污染、负债、具有法律危险，并仍携带某些势力想埋掉的证据的生物对象。\n\n这就是为什么 Black Keel 的第一个清晰回应会让人难受。中继可以确认 distress hash。Luyten 可以保存 packet custody。经纪人可以在玩家看见天空之前给样本定价。但这些收据都不会预留舱位。活体身体不只是比数据包更重；它会改变责任归属。谁和它呼吸同一份空气？谁治疗减压伤？谁阻止 Deep Reach 把幸存者归类为 claim property？如果舱位被锁一个月，谁付款？\n\n老航路工人把这种账册叫作带有收费栏的仁慈。这既不公平，也很准确。早期救援把污染当成道德细节，结果杀死了空间站，所以舱位必须存在。但企业也在这里学会了拖延帮助，直到语言对自己有利。对玩家来说，这本账册是一种可读压力：舱位栏空着，救援措辞就是表演；custodian 和 liability 字段填上，说明有人已经开始把真实能源花在生存上，而不是花在纸面上。",
+     "external_site": "隔离舱位 custody 账册解释了为什么 HECTON-8 能被听见，却不能立刻把人接走。证据以数据包旅行。活着的幸存者需要空气、医疗、liability，以及愿意拥有这次转移的接收方。",
+     "external_site_article": "HECTON-8 的孤立可信，是因为确认和救援被分开。Aegir 周围的文明并不无知，也并非无力。它可以接收证据包，给样本定价，回复 distress hash，却仍然无法移动一个活体身体，因为身体是另一类义务。\n\n隔离舱位 custody 账册把这种差别变成实体。它列出房间、医疗负责人、污染 hold、接收方 liability、lift exception 和 braking margin。只有这些字段存在，幸存者才会成为航路必须接住的 cargo。没有这些字段，消息可以真实，却仍然无法用于撤离。\n\n这不是为了让世界显得愚蠢，而是让它显得工业化。在 HECTON-8，救援不是剧情需要慈悲时出现的蓝光，而是把一个人从海洋、claim law 和公司证据，转移到他人控制的空气中的昂贵过程。数据包制造压力；填写完毕的 custody 字段制造筹码。",
+     "field_note": "舱位栏空着时，呼叫是真的，救援不是。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre de custody de couchette de quarantaine",
+     "scanner": "RECU DE COUCHETTE QUARANTAINE // Carte ceramic custody, un coin tordu par la chaleur. Champs: masse du corps, exposition pression, hold pathogene, proprietaire medical, couchette receptrice, lift exception. Paquet accepte. Personne en attente.",
+     "terminal": "RETURN CUSTODY HOLD // Paquet de preuve reconnu. Transfert de masse vivante suspendu jusqu'a attribution d'une couchette de quarantaine, d'un custodian medical, d'une liability receptrice et d'un lift de remontee. Ne pas transformer reconnaissance en ordre d'extraction.",
+     "audio": "Un commis peut recevoir ta preuve avec deux doigts. Te recevoir toi demande une salle, un medecin, un avocat et quelqu'un qui accepte la facture.",
+     "in_game_wiki": "Une couchette de quarantaine n'est pas un lit au sens tendre. C'est une salle juridique avec air, filtres, traitement des dechets, verrous medicaux, cameras de custody, sceaux de chaine de preuve et un nom sur la ligne de liability. Quand un survivant sort d'un claim oceanique scelle, le recepteur n'accepte pas d'abord une personne sauvee. Il accepte un objet biologique qui peut etre blesse, infecte, contamine, endette, dangereux juridiquement et encore porteur de preuves que d'autres veulent enterrer.\n\nC'est pourquoi la premiere reponse nette de Black Keel peut faire mal. Le relais peut reconnaitre un distress hash. Luyten peut conserver la packet custody. Un courtier peut donner un prix aux echantillons avant que le joueur voie le ciel ouvert. Aucune de ces quittances ne reserve une couchette. Un corps vivant n'est pas seulement plus lourd qu'un paquet; il change le proprietaire de la responsabilite. Qui respire le meme air? Qui traite la decompression? Qui empeche Deep Reach de classer le survivant comme claim property? Qui paie si la couchette reste fermee un mois?\n\nLes anciens ouvriers de route appelaient ces registres une misericorde avec colonne tarifaire. C'est injuste et exact. La couchette existe parce que les premiers sauvetages ont tue des stations quand les navires traitaient la contamination comme un detail moral. C'est aussi l'endroit ou les compagnies ont appris a ralentir l'aide jusqu'a ce que le langage les favorise. Pour le joueur, le registre est une pression lisible: si la ligne de couchette est vide, le vocabulaire de sauvetage est du theatre; si custodian et liability sont remplis, quelqu'un depense enfin de la puissance reelle pour la survie.",
+     "external_site": "Le registre de custody de couchette de quarantaine explique pourquoi HECTON-8 peut etre entendu avant qu'une personne soit recuperee. La preuve voyage comme paquet. Un survivant vivant exige air, medecine, liability et recepteur pret a posseder le transfert.",
+     "external_site_article": "L'isolement de HECTON-8 tient parce que reconnaissance et sauvetage sont separes. La civilisation autour d'Aegir n'est ni ignorante ni impuissante. Elle peut recevoir une preuve, evaluer un echantillon, repondre a un distress hash et pourtant ne pas deplacer un corps vivant, car ce corps est une autre classe d'obligation.\n\nLe registre de custody de couchette de quarantaine rend cette difference physique. Il nomme la salle, le proprietaire medical, le hold de contamination, la liability receptrice, la lift exception et la marge de freinage necessaires avant qu'un survivant devienne un cargo que la route doit attraper. Sans ces champs, un message peut etre honnete et inutile pour l'extraction.\n\nCe n'est pas fait pour rendre le monde stupide. Il doit sembler industriel. Sur HECTON-8, le sauvetage n'est pas une lumiere bleue qui arrive parce que le recit veut de la pitie. C'est un transfert couteux depuis l'ocean, la claim law et les preuves d'entreprise vers un air controle par quelqu'un d'autre. Les paquets creent de la pression; les champs custody remplis creent du levier.",
+     "field_note": "Si la ligne de couchette est vide, l'appel est vrai et le sauvetage ne l'est pas."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de custodia de litera de cuarentena",
+     "scanner": "RECIBO DE LITERA DE CUARENTENA // Tarjeta ceramica de custody, una esquina deformada por calor. Campos: masa corporal, exposicion a presion, hold patogeno, dueno medico, litera receptora, lift exception. Paquete aceptado. Persona pendiente.",
+     "terminal": "RETURN CUSTODY HOLD // Paquete de prueba reconocido. Transferencia de masa viva suspendida hasta asignar litera de cuarentena, custodian medico, liability del receptor y ascenso. No convertir reconocimiento en orden de extraccion.",
+     "audio": "Un oficinista puede recibir tu prueba con dos dedos. Recibirte a ti exige una sala, un medico, un abogado y alguien dispuesto a poseer la factura.",
+     "in_game_wiki": "Una litera de cuarentena no es una cama en sentido sentimental. Es una sala legal con aire, filtros, gestion de residuos, cierres medicos, camaras de custody, sellos de cadena de evidencia y un nombre en la linea de liability. Cuando un superviviente sale de un claim oceanico sellado, el receptor no acepta primero a una persona rescatada. Acepta un objeto biologico que puede estar herido, infectado, contaminado, endeudado, ser legalmente peligroso y seguir cargando pruebas que otros quieren enterrar.\n\nPor eso la primera respuesta limpia de Black Keel puede doler. El rele puede reconocer un distress hash. Luyten puede preservar la packet custody. Un intermediario puede valorar muestras antes de que el jugador vea cielo abierto. Ninguno de esos recibos reserva una litera. Un cuerpo vivo no solo pesa mas que un paquete; cambia la propiedad de la responsabilidad. Quien respira el mismo aire? Quien trata la lesion por descompresion? Quien impide que Deep Reach clasifique al superviviente como claim property? Quien paga si la litera queda bloqueada un mes?\n\nLos viejos trabajadores de ruta llamaban a estos registros misericordia con columna de tarifas. Es injusto y exacto. La litera existe porque los primeros rescates mataron estaciones cuando las naves fingieron que la contaminacion era un detalle moral. Tambien es donde las companias aprendieron a retrasar la ayuda hasta que el lenguaje les favorecia. Para el jugador, el registro es presion legible: si la linea de litera esta vacia, el lenguaje de rescate es teatro; si custodian y liability estan completos, alguien ha empezado a gastar potencia real en supervivencia.",
+     "external_site": "El registro de custodia de litera de cuarentena explica por que HECTON-8 puede ser oido antes de que alguien sea recuperado. La prueba viaja como paquete. Un superviviente vivo necesita aire, medicina, liability y un receptor dispuesto a poseer la transferencia.",
+     "external_site_article": "HECTON-8 mantiene creible su aislamiento separando reconocimiento y rescate. La civilizacion alrededor de Aegir no es ignorante ni impotente. Puede recibir pruebas, tasar muestras, responder a un distress hash y aun asi no mover un cuerpo vivo, porque el cuerpo es otra clase de obligacion.\n\nEl registro de custodia de litera de cuarentena vuelve fisica esa diferencia. Nombra la sala, el dueno medico, el hold de contaminacion, la liability del receptor, la lift exception y el margen de frenado necesarios antes de que un superviviente se convierta en carga que la ruta debe atrapar. Sin esos campos, un mensaje puede ser honesto e inutil para extraccion.\n\nNo busca que el mundo parezca estupido. Debe parecer industrial. En HECTON-8, rescatar no es una luz azul que llega porque la historia necesita piedad. Es una transferencia cara desde oceano, claim law y pruebas corporativas hacia aire controlado por otro. Los paquetes crean presion; los campos custody llenos crean palanca.",
+     "field_note": "Si la linea de litera esta vacia, la llamada es real y el rescate no."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Quarantänekojen-Custody-Ledger",
+     "scanner": "QUARANTÄNEKOJEN-BELEG // Keramische Custody-Karte, eine Ecke hitzeverzogen. Felder: Körpermasse, Druckexposition, Pathogen-Hold, medizinischer Owner, Empfängerkoje, lift exception. Paket akzeptiert. Person ausstehend.",
+     "terminal": "RETURN CUSTODY HOLD // Beweispaket bestätigt. Living-mass transfer ausgesetzt, bis Quarantänekoje, medizinischer custodian, Receiver liability und Aufstiegslift zugewiesen sind. Bestätigung nicht in Extraktionsbefehl umwandeln.",
+     "audio": "Ein Clerk kann deinen Beweis mit zwei Fingern annehmen. Dich anzunehmen braucht einen Raum, einen Arzt, einen Anwalt und jemanden, der die Rechnung besitzt.",
+     "in_game_wiki": "Eine Quarantänekoje ist kein Bett im weichen Sinn. Sie ist ein juristischer Raum mit Luft, Filtern, Abfallführung, medizinischen Schleusen, Custody-Kameras, Beweisketten-Siegeln und einem Namen in der liability-Zeile. Wenn ein Überlebender einen versiegelten Ozean-claim verlässt, akzeptiert der Receiver zuerst keine gerettete Person. Er akzeptiert ein biologisches Objekt, das verletzt, infiziert, kontaminiert, verschuldet, rechtlich gefährlich sein kann und noch Beweise trägt, die andere begraben wollen.\n\nDarum kann die erste saubere Antwort von Black Keel wehtun. Das Relais kann einen distress hash bestätigen. Luyten kann packet custody erhalten. Ein Broker kann Proben bewerten, bevor der Spieler offenen Himmel sieht. Keiner dieser Belege reserviert eine Koje. Ein lebender Körper ist nicht nur schwerer als ein Paket; er verschiebt Verantwortung. Wer atmet dieselbe Luft? Wer behandelt die Dekompressionsverletzung? Wer hindert Deep Reach daran, den Überlebenden als claim property einzustufen? Wer zahlt, wenn die Koje einen Monat gesperrt bleibt?\n\nAlte Routenarbeiter nannten diese Ledger Gnade mit Tarifspalte. Das ist unfair und genau. Die Koje existiert, weil frühe Rettungen Stationen töteten, als Schiffe Kontamination als moralisches Detail behandelten. Sie ist auch der Ort, an dem Firmen lernten, Hilfe zu bremsen, bis die Sprache ihnen passte. Für den Spieler ist das Ledger lesbarer Druck: Ist die Kojenzeile leer, ist Rettungssprache Theater; sind custodian und liability gefüllt, gibt jemand reale Leistung für Überleben aus.",
+     "external_site": "Das Quarantänekojen-Custody-Ledger erklärt, warum HECTON-8 gehört werden kann, bevor jemand geborgen wird. Beweis reist als Paket. Ein lebender Überlebender braucht Luft, Medizin, liability und einen Receiver, der den Transfer besitzt.",
+     "external_site_article": "HECTON-8 bleibt glaubwürdig isoliert, weil Bestätigung und Rettung getrennt sind. Die Zivilisation um Aegir ist weder unwissend noch machtlos. Sie kann ein Beweispaket empfangen, Proben bepreisen, auf einen distress hash antworten und trotzdem keinen lebenden Körper bewegen, denn der Körper ist eine andere Klasse von Verpflichtung.\n\nDas Quarantänekojen-Custody-Ledger macht diesen Unterschied physisch. Es nennt Raum, medizinischen Owner, Kontaminations-Hold, Receiver liability, lift exception und Bremsmarge, bevor ein Überlebender zu cargo wird, den die Route fangen muss. Ohne diese Felder kann eine Nachricht ehrlich und für Extraktion trotzdem nutzlos sein.\n\nDas soll die Welt nicht dumm wirken lassen. Sie soll industriell wirken. Auf HECTON-8 ist Rettung kein blaues Licht, das erscheint, weil die Geschichte Mitleid braucht. Sie ist ein teurer Transfer aus Ozean, claim law und Konzernbeweis in Luft, die jemand anderes kontrolliert. Pakete erzeugen Druck; gefüllte custody-Felder erzeugen Hebel.",
+     "field_note": "Ist die Kojenzeile leer, ist der Ruf echt und die Rettung nicht."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr custody koi kwarantanny",
+     "scanner": "POKWITOWANIE KOI KWARANTANNY // Ceramiczna karta custody, jeden róg wygięty od ciepła. Pola: masa ciała, ekspozycja ciśnieniowa, pathogen hold, właściciel medyczny, koja odbiorcy, lift exception. Pakiet przyjęty. Osoba czeka.",
+     "terminal": "RETURN CUSTODY HOLD // Pakiet dowodowy potwierdzony. Transfer żywej masy wstrzymany do przydziału koi kwarantanny, medycznego custodian, liability odbiorcy i windy wynoszącej. Nie zamieniać potwierdzenia w rozkaz ewakuacji.",
+     "audio": "Dowód urzędnik przyjmie dwoma palcami. Ciebie przyjmuje pokój, lekarz, prawnik i ktoś gotów posiadać rachunek.",
+     "in_game_wiki": "Koja kwarantanny nie jest łóżkiem w czułym sensie. To prawny pokój z powietrzem, filtrami, obsługą odpadów, zamkami medycznymi, kamerami custody, pieczęciami łańcucha dowodowego i nazwiskiem w wierszu liability. Gdy ocalały opuszcza zapieczętowany oceaniczny claim, odbiorca nie przyjmuje najpierw uratowanej osoby. Przyjmuje obiekt biologiczny, który może być ranny, zakażony, skażony, zadłużony, prawnie niebezpieczny i nadal niosący dowody, które ktoś chce pogrzebać.\n\nDlatego pierwsza czysta odpowiedź Black Keel może boleć. Przekaźnik może uznać distress hash. Luyten może zachować packet custody. Broker może wycenić próbki, zanim gracz zobaczy otwarte niebo. Żadne z tych pokwitowań nie rezerwuje koi. Żywe ciało nie jest tylko cięższe niż pakiet; zmienia właściciela odpowiedzialności. Kto oddycha tym samym powietrzem? Kto leczy uraz dekompresyjny? Kto nie pozwoli Deep Reach nazwać ocalałego claim property? Kto płaci, gdy koja jest zamknięta miesiąc?\n\nStarzy robotnicy tras nazywali takie rejestry miłosierdziem z kolumną taryf. To niesprawiedliwe i trafne. Koja istnieje, bo wczesne ratunki zabijały stacje, gdy statki udawały, że skażenie to detal moralny. To także miejsce, gdzie firmy nauczyły się zwalniać pomoc, aż język zacznie im sprzyjać. Dla gracza rejestr jest czytelną presją: pusta linia koi oznacza teatr ratunku; wypełnione pola custodian i liability znaczą, że ktoś zaczął wydawać realną moc na przetrwanie.",
+     "external_site": "Rejestr custody koi kwarantanny wyjaśnia, dlaczego HECTON-8 można usłyszeć, zanim kogokolwiek da się odzyskać. Dowód podróżuje jako pakiet. Żywy ocalały potrzebuje powietrza, medycyny, liability i odbiorcy gotowego posiadać transfer.",
+     "external_site_article": "Izolacja HECTON-8 działa, bo potwierdzenie i ratunek są rozdzielone. Cywilizacja wokół Aegir nie jest ani głupia, ani bezsilna. Może przyjąć dowód, wycenić próbkę, odpowiedzieć na distress hash i nadal nie ruszyć żywego ciała, bo ciało jest inną klasą zobowiązania.\n\nRejestr custody koi kwarantanny nadaje tej różnicy formę fizyczną. Wskazuje pokój, właściciela medycznego, hold skażenia, liability odbiorcy, lift exception i margines hamowania potrzebne, zanim ocalały stanie się cargo, które trasa musi złapać. Bez tych pól wiadomość może być uczciwa i bezużyteczna dla ewakuacji.\n\nTo nie ma czynić świata głupim. Ma czynić go przemysłowym. Na HECTON-8 ratunek nie jest niebieskim światłem, które przybywa, bo fabuła potrzebuje litości. To drogi transfer z oceanu, claim law i korporacyjnych dowodów do powietrza kontrolowanego przez kogoś innego. Pakiety tworzą presję; wypełnione pola custody tworzą dźwignię.",
+     "field_note": "Jeśli linia koi jest pusta, wezwanie jest prawdziwe, a ratunek nie."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал custody карантинної койки",
+     "scanner": "КВИТАНЦІЯ КАРАНТИННОЇ КОЙКИ // Керамічна custody-карта, один кут повело від тепла. Поля: маса тіла, тисковий вплив, pathogen hold, медичний власник, приймальна койка, lift exception. Пакет прийнято. Людина очікує.",
+     "terminal": "RETURN CUSTODY HOLD // Доказовий пакет підтверджено. Перенесення живої маси призупинене, доки не призначено карантинну койку, медичного custodian, liability приймача і підйом. Не перетворювати підтвердження на наказ евакуації.",
+     "audio": "Доказ клерк прийме двома пальцями. Тебе приймають кімната, лікар, юрист і хтось, хто готовий володіти рахунком.",
+     "in_game_wiki": "Карантинна койка - не ліжко у теплому сенсі. Це юридична кімната з повітрям, фільтрами, відходами, медичними шлюзами, custody-камерами, печатками ланцюга доказів і ім'ям у рядку liability. Коли вцілілий виходить із запечатаного океанського claim, приймач спершу не приймає врятовану людину. Він приймає біологічний об'єкт, який може бути травмований, заражений, забруднений, борговий, юридично небезпечний і все ще нести докази, які хтось хоче поховати.\n\nСаме тому перша чиста відповідь Black Keel може боліти. Реле може підтвердити distress hash. Luyten може зберегти packet custody. Брокер може оцінити зразки до того, як гравець побачить відкрите небо. Але жодна з цих квитанцій не резервує койку. Живе тіло не просто важче за пакет; воно змінює власника відповідальності. Хто дихає тим самим повітрям? Хто лікує декомпресійну травму? Хто не дасть Deep Reach назвати вцілілого claim property? Хто платить, якщо койка замкнена місяць?\n\nСтарі працівники маршрутів називали такі журнали милосердям із тарифною колонкою. Це несправедливо і точно. Койка існує, бо ранні порятунки вбивали станції, коли кораблі вдавали, що забруднення - моральна дрібниця. Також саме тут компанії навчилися гальмувати допомогу, доки мова не стане вигідною їм. Для гравця журнал є читабельним тиском: порожній рядок койки означає театр порятунку; заповнені custodian і liability означають, що хтось витрачає реальну потужність на виживання.",
+     "external_site": "Журнал custody карантинної койки пояснює, чому HECTON-8 можуть почути раніше, ніж когось повернуть. Доказ рухається пакетом. Живому вцілілому потрібні повітря, медицина, liability і приймач, готовий володіти перенесенням.",
+     "external_site_article": "Ізоляція HECTON-8 правдоподібна, бо підтвердження і порятунок розділені. Цивілізація довкола Aegir не є ні неосвіченою, ні безсилою. Вона може прийняти доказовий пакет, оцінити зразок, відповісти на distress hash і все одно не пересунути живе тіло, бо тіло - інший клас зобов'язання.\n\nЖурнал custody карантинної койки робить цю різницю фізичною. Він називає кімнату, медичного власника, hold забруднення, liability приймача, lift exception і гальмівний запас, потрібні до того, як вцілілий стане cargo, який маршрут мусить упіймати. Без цих полів повідомлення може бути чесним і марним для евакуації.\n\nЦе не повинно робити світ дурним. Він має відчуватися промисловим. На HECTON-8 порятунок - не синє світло, що прилітає, бо історії потрібна милість. Це дорогий transfer з океану, claim law і корпоративних доказів у повітря, яким керує хтось інший. Пакети створюють тиск; заповнені custody-поля створюють важіль.",
+     "field_note": "Якщо рядок койки порожній, виклик справжній, а порятунок ні."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل custody لسرير الحجر",
+     "scanner": "إيصال سرير الحجر // بطاقة custody خزفية، زاوية منها ملتوية بالحرارة. الحقول: كتلة الجسد، تعرض الضغط، pathogen hold، المالك الطبي، سرير الاستقبال، lift exception. الحزمة مقبولة. الشخص معلق.",
+     "terminal": "RETURN CUSTODY HOLD // تم تأكيد حزمة الدليل. نقل الكتلة الحية معلق حتى تخصيص سرير حجر، و custodian طبي، و liability للمستقبل، ورفع صعود. لا تحول التأكيد إلى أمر استخراج.",
+     "audio": "يمكن للكاتب أن يستلم دليلك بإصبعين. استلامك أنت يحتاج غرفة وطبيبا ومحاميا وشخصا يملك الفاتورة.",
+     "in_game_wiki": "سرير الحجر ليس سريرا بمعنى عاطفي. إنه غرفة قانونية فيها هواء ومرشحات ومعالجة نفايات وأقفال طبية وكاميرات custody وأختام لسلسلة الدليل واسم في سطر liability. عندما يخرج ناج من claim محيطي مغلق، لا يقبل المستقبل أولا إنسانا منقذا. إنه يقبل جسما بيولوجيا قد يكون مصابا أو ملوثا أو حاملا لعدوى أو دينا أو خطرا قانونيا، وما زال يحمل دليلا يريد آخرون دفنه.\n\nلذلك يمكن أن يكون أول جواب واضح من Black Keel مؤلما. يمكن للمرحل أن يؤكد distress hash. يمكن لـ Luyten أن يحفظ packet custody. يمكن للوسيط أن يسعر العينات قبل أن يرى اللاعب السماء المفتوحة. لا يحجز أي من هذه الإيصالات سريرا. الجسد الحي ليس أثقل من الحزمة فقط؛ إنه يغير مالك المسؤولية. من يتنفس الهواء نفسه؟ من يعالج إصابة تخفيف الضغط؟ من يمنع Deep Reach من تصنيف الناجي كـ claim property؟ من يدفع إذا بقي السرير مغلقا شهرا؟\n\nكان عمال الطرق القدامى يسمون هذه السجلات رحمة لها عمود تعرفة. هذا غير عادل ودقيق. السرير موجود لأن عمليات الإنقاذ الأولى قتلت محطات عندما تعاملت السفن مع التلوث كأنه تفصيل أخلاقي. وهو أيضا المكان الذي تعلمت فيه الشركات إبطاء المساعدة حتى تخدمها اللغة. بالنسبة إلى اللاعب، السجل ضغط مقروء: إذا كان سطر السرير فارغا، فكلام الإنقاذ مسرح؛ وإذا امتلأت حقول custodian و liability، فقد بدأ شخص ما ينفق طاقة حقيقية على البقاء.",
+     "external_site": "يفسر سجل custody لسرير الحجر لماذا يمكن سماع HECTON-8 قبل استعادة أي شخص. الدليل يسافر كحزمة. الناجي الحي يحتاج هواء وطبابة و liability ومستقبلا يقبل امتلاك النقل.",
+     "external_site_article": "تبقى عزلة HECTON-8 مقنعة لأن الإقرار مفصول عن الإنقاذ. الحضارة حول Aegir ليست جاهلة ولا عاجزة. يمكنها استقبال حزمة دليل، وتسعير عينة، والرد على distress hash، ومع ذلك لا تحرك جسدا حيا، لأن الجسد فئة أخرى من الالتزام.\n\nيجعل سجل custody لسرير الحجر هذا الفرق ماديا. إنه يسمي الغرفة والمالك الطبي و hold التلوث و liability المستقبل و lift exception وهامش الكبح اللازمة قبل أن يصبح الناجي cargo يجب على الطريق التقاطه. بلا هذه الحقول يمكن للرسالة أن تكون صادقة وغير مفيدة للاستخراج.\n\nليس الهدف أن يبدو العالم غبيا. يجب أن يبدو صناعيا. في HECTON-8، الإنقاذ ليس ضوءا أزرق يصل لأن القصة تحتاج رحمة. إنه نقل مكلف من المحيط و claim law ودليل الشركات إلى هواء يتحكم به شخص آخر. الحزم تصنع ضغطا؛ وحقول custody الممتلئة تصنع نفوذا.",
+     "field_note": "إذا كان سطر السرير فارغا، فالنداء حقيقي والإنقاذ ليس كذلك."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Buku Custody Ranjang Karantina",
+     "scanner": "TANDA TERIMA RANJANG KARANTINA // Kartu custody keramik, satu sudut melengkung oleh panas. Kolom: massa tubuh, paparan tekanan, pathogen hold, pemilik medis, ranjang penerima, lift exception. Paket diterima. Orang tertunda.",
+     "terminal": "RETURN CUSTODY HOLD // Paket bukti diakui. Transfer massa hidup ditahan sampai ranjang karantina, custodian medis, liability penerima, dan lift naik ditetapkan. Jangan ubah pengakuan menjadi perintah ekstraksi.",
+     "audio": "Petugas bisa menerima buktimu dengan dua jari. Menerimamu butuh ruang, dokter, pengacara, dan orang yang mau memiliki tagihan.",
+     "in_game_wiki": "Ranjang karantina bukan tempat tidur dalam arti lembut. Itu ruang legal dengan udara, filter, pengelolaan limbah, kunci medis, kamera custody, segel rantai bukti, dan nama pada baris liability. Saat penyintas keluar dari claim laut yang disegel, penerima tidak pertama-tama menerima orang yang diselamatkan. Ia menerima objek biologis yang mungkin cedera, terinfeksi, terkontaminasi, berutang, berbahaya secara hukum, dan masih membawa bukti yang ingin dikubur pihak lain.\n\nItu sebabnya jawaban bersih pertama dari Black Keel bisa menyakitkan. Relay dapat mengakui distress hash. Luyten dapat menjaga packet custody. Broker dapat memberi harga pada sampel sebelum pemain melihat langit terbuka. Tidak ada tanda terima itu yang memesan ranjang. Tubuh hidup bukan hanya lebih berat dari paket; ia mengubah pemilik tanggung jawab. Siapa bernapas di udara yang sama? Siapa merawat cedera dekompresi? Siapa mencegah Deep Reach menyebut penyintas sebagai claim property? Siapa membayar jika ranjang terkunci sebulan?\n\nPekerja rute lama menyebut buku seperti ini belas kasihan dengan kolom tarif. Itu tidak adil dan tepat. Ranjang ada karena penyelamatan awal membunuh stasiun ketika kapal berpura-pura kontaminasi hanya detail moral. Itu juga tempat perusahaan belajar memperlambat bantuan sampai bahasa menguntungkan mereka. Bagi pemain, buku ini tekanan yang bisa dibaca: bila baris ranjang kosong, bahasa penyelamatan hanya teater; bila custodian dan liability terisi, seseorang mulai menghabiskan daya nyata untuk bertahan hidup.",
+     "external_site": "Buku custody ranjang karantina menjelaskan mengapa HECTON-8 dapat didengar sebelum seseorang dipulihkan. Bukti bergerak sebagai paket. Penyintas hidup butuh udara, medis, liability, dan penerima yang mau memiliki transfer.",
+     "external_site_article": "Isolasi HECTON-8 terasa masuk akal karena pengakuan dipisahkan dari penyelamatan. Peradaban di sekitar Aegir tidak bodoh dan tidak tak berdaya. Ia dapat menerima bukti, menilai sampel, menjawab distress hash, dan tetap gagal memindahkan tubuh hidup karena tubuh adalah kelas kewajiban lain.\n\nBuku custody ranjang karantina membuat perbedaan itu fisik. Ia menyebut ruang, pemilik medis, contamination hold, liability penerima, lift exception, dan margin pengereman yang dibutuhkan sebelum penyintas menjadi cargo yang harus ditangkap rute. Tanpa kolom itu, pesan bisa jujur dan tetap tidak berguna untuk ekstraksi.\n\nIni bukan untuk membuat dunia tampak bodoh. Dunia harus terasa industrial. Di HECTON-8, penyelamatan bukan cahaya biru yang datang karena cerita butuh belas kasihan. Itu transfer mahal dari laut, claim law, dan bukti korporat menuju udara yang dikendalikan orang lain. Paket menciptakan tekanan; kolom custody yang terisi menciptakan daya tawar.",
+     "field_note": "Jika baris ranjang kosong, panggilan itu nyata dan penyelamatan tidak."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "검역 침상 custody 장부",
+     "scanner": "검역 침상 영수증 // 한쪽 모서리가 열로 휘어진 세라믹 custody 카드. 항목: 신체 질량, 압력 노출, 병원체 hold, 의료 소유자, 수신 침상, lift exception. 패킷 수락. 사람 보류.",
+     "terminal": "RETURN CUSTODY HOLD // 증거 패킷 확인됨. 검역 침상, 의료 custodian, 수신자 liability, 상승 리프트가 배정될 때까지 생체 질량 이송 정지. 확인을 추출 명령으로 변환하지 말 것.",
+     "audio": "서류 직원은 네 증거를 두 손가락으로 받을 수 있다. 너를 받으려면 방, 의사, 변호사, 그리고 청구서를 떠안을 사람이 필요하다.",
+     "in_game_wiki": "검역 침상은 감상적인 의미의 침대가 아니다. 공기, 필터, 폐기물 처리, 의료 잠금, custody 카메라, 증거 연쇄 봉인, liability 줄의 이름을 가진 법적 방이다. 생존자가 봉인된 해양 claim 을 떠날 때 수신자는 먼저 구조된 사람을 받지 않는다. 다쳤고, 감염됐고, 오염됐고, 빚졌고, 법적으로 위험할 수 있으며, 누군가 묻어버리고 싶은 증거를 아직 지닌 생물학적 물체를 받는다.\n\n그래서 Black Keel 의 첫 명확한 답장은 아플 수 있다. 릴레이는 distress hash 를 승인할 수 있다. Luyten 은 packet custody 를 보존할 수 있다. 브로커는 플레이어가 열린 하늘을 보기 전에 샘플 가격을 매길 수 있다. 그러나 그 영수증 중 어느 것도 침상을 예약하지 않는다. 살아 있는 몸은 패킷보다 무거울 뿐 아니라 책임의 소유자를 바꾼다. 누가 같은 공기를 마시는가? 누가 감압 손상을 치료하는가? 누가 Deep Reach 가 생존자를 claim property 라 부르지 못하게 하는가? 침상이 한 달 동안 잠기면 누가 지불하는가?\n\n오래된 항로 노동자들은 이런 장부를 요금 열이 붙은 자비라고 불렀다. 부당하지만 정확하다. 초기 구조가 오염을 도덕적 세부사항으로 취급하다가 정거장을 죽였기 때문에 침상이 존재한다. 그리고 기업들은 여기서 언어가 자신들에게 유리해질 때까지 도움을 늦추는 법을 배웠다. 플레이어에게 장부는 읽을 수 있는 압박이다. 침상 줄이 비어 있으면 구조 언어는 연극이다. custodian 과 liability 가 채워지면 누군가 종이가 아니라 생존에 실제 전력을 쓰기 시작한 것이다.",
+     "external_site": "검역 침상 custody 장부는 HECTON-8 이 들릴 수 있어도 사람이 바로 회수되지 않는 이유를 설명한다. 증거는 패킷으로 이동한다. 살아 있는 생존자에게는 공기, 의료, liability, 그리고 이송을 소유할 수신자가 필요하다.",
+     "external_site_article": "HECTON-8 의 고립은 승인과 구조가 분리되어 있기 때문에 설득력을 가진다. Aegir 주변 문명은 무지하지도 무력하지도 않다. 증거 패킷을 받고, 샘플 가격을 매기고, distress hash 에 답하고도 살아 있는 몸을 옮기지 못할 수 있다. 몸은 다른 등급의 의무이기 때문이다.\n\n검역 침상 custody 장부는 그 차이를 물리적으로 만든다. 방, 의료 소유자, 오염 hold, 수신자 liability, lift exception, 제동 여유를 명시해야 생존자가 항로가 붙잡아야 할 cargo 가 된다. 이 항목이 없으면 메시지는 정직해도 추출에는 쓸모없을 수 있다.\n\n이는 세계를 어리석게 보이게 하려는 것이 아니다. 산업적으로 느끼게 하려는 것이다. HECTON-8 에서 구조는 이야기가 자비를 필요로 해서 도착하는 파란 빛이 아니다. 바다, claim law, 기업 증거에서 다른 사람이 통제하는 공기로 옮기는 비싼 이송이다. 패킷은 압박을 만든다. 채워진 custody 항목은 협상력을 만든다.",
+     "field_note": "침상 줄이 비어 있으면 호출은 진짜지만 구조는 아니다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן custody של מיטת בידוד",
+     "scanner": "קבלת מיטת בידוד // כרטיס custody קרמי, פינה אחת עקומה מחום. שדות: מסת גוף, חשיפת לחץ, pathogen hold, בעלים רפואי, מיטת מקלט, lift exception. מנה התקבלה. אדם בהמתנה.",
+     "terminal": "RETURN CUSTODY HOLD // מנת ראיה אושרה. העברת מסה חיה מושהית עד הקצאת מיטת בידוד, custodian רפואי, liability של המקבל ומעלית עלייה. אין להמיר אישור לפקודת חילוץ.",
+     "audio": "פקיד יכול לקבל את הראיה שלך בשתי אצבעות. לקבל אותך דורש חדר, רופא, עורך דין ומישהו שמוכן להחזיק בחשבון.",
+     "in_game_wiki": "מיטת בידוד אינה מיטה במובן הרך. זה חדר משפטי עם אוויר, מסננים, טיפול בפסולת, מנעולים רפואיים, מצלמות custody, חותמות שרשרת ראיות ושם בשורת liability. כששורד יוצא מ-claim אוקייני חתום, המקבל אינו מקבל קודם אדם שניצל. הוא מקבל עצם ביולוגי שעשוי להיות פצוע, נגוע, מזוהם, חייב, מסוכן משפטית, ועדיין נושא ראיות שמישהו רוצה לקבור.\n\nלכן התשובה הנקייה הראשונה מ-Black Keel יכולה לכאוב. ממסר יכול לאשר distress hash. Luyten יכול לשמר packet custody. מתווך יכול לתמחר דגימות לפני שהשחקן רואה שמיים פתוחים. אף אחת מן הקבלות הללו אינה שומרת מיטה. גוף חי אינו רק כבד ממנה; הוא משנה את בעל האחריות. מי נושם את אותו אוויר? מי מטפל בפגיעת הדקומפרסיה? מי מונע מ-Deep Reach לסווג את השורד כ-claim property? מי משלם אם המיטה נעולה חודש?\n\nעובדי נתיב ותיקים קראו ליומנים האלה רחמים עם עמודת תעריף. זה לא הוגן וזה מדויק. המיטה קיימת מפני שחילוצים מוקדמים הרגו תחנות כשספינות העמידו פנים שזיהום הוא פרט מוסרי. זה גם המקום שבו חברות למדו להאט עזרה עד שהשפה משרתת אותן. עבור השחקן, היומן הוא לחץ קריא: אם שורת המיטה ריקה, שפת החילוץ היא תיאטרון; אם custodian ו-liability מלאים, מישהו התחיל להוציא כוח אמיתי על הישרדות.",
+     "external_site": "יומן custody של מיטת בידוד מסביר מדוע אפשר לשמוע את HECTON-8 לפני שאפשר להשיב אדם. ראיה נעה כמנה. שורד חי צריך אוויר, רפואה, liability ומקבל שמוכן להחזיק בהעברה.",
+     "external_site_article": "הבידוד של HECTON-8 אמין מפני שאישור וחילוץ נפרדים. הציוויליזציה סביב Aegir אינה בורה ואינה חסרת כוח. היא יכולה לקבל מנת ראיה, לתמחר דגימה, לענות ל-distress hash ועדיין לא להזיז גוף חי, כי גוף הוא מחלקה אחרת של התחייבות.\n\nיומן custody של מיטת בידוד הופך את ההבדל הזה לפיזי. הוא מציין חדר, בעלים רפואי, hold זיהום, liability של המקבל, lift exception ומרווח בלימה לפני שהשורד נעשה cargo שהנתיב חייב לתפוס. בלי השדות האלה, הודעה יכולה להיות אמיתית ועדיין חסרת תועלת לחילוץ.\n\nהמטרה אינה לגרום לעולם להיראות טיפש. עליו להרגיש תעשייתי. ב-HECTON-8 חילוץ אינו אור כחול שמגיע כי הסיפור צריך רחמים. זה מעבר יקר מן האוקיינוס, claim law וראיות תאגידיות אל אוויר שמישהו אחר שולט בו. מנות יוצרות לחץ; שדות custody מלאים יוצרים מנוף.",
+     "field_note": "אם שורת המיטה ריקה, הקריאה אמיתית והחילוץ לא."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de custody de leito de quarentena",
+     "scanner": "RECIBO DE LEITO DE QUARENTENA // Cartão cerâmico de custody, uma ponta empenada por calor. Campos: massa corporal, exposição à pressão, pathogen hold, dono médico, leito receptor, lift exception. Pacote aceito. Pessoa pendente.",
+     "terminal": "RETURN CUSTODY HOLD // Pacote de prova reconhecido. Transferência de massa viva suspensa até atribuir leito de quarentena, custodian médico, liability do receptor e subida. Não converter reconhecimento em ordem de extração.",
+     "audio": "Um escriturário recebe sua prova com dois dedos. Receber você exige sala, médico, advogado e alguém disposto a assumir a conta.",
+     "in_game_wiki": "Um leito de quarentena não é cama no sentido sentimental. É uma sala jurídica com ar, filtros, tratamento de resíduos, travas médicas, câmeras de custody, selos de cadeia de prova e um nome na linha de liability. Quando um sobrevivente sai de um claim oceânico selado, o receptor não aceita primeiro uma pessoa resgatada. Aceita um objeto biológico que pode estar ferido, infectado, contaminado, endividado, legalmente perigoso e ainda carregando provas que outros querem enterrar.\n\nPor isso a primeira resposta limpa da Black Keel pode doer. O relé pode reconhecer um distress hash. Luyten pode preservar packet custody. Um corretor pode precificar amostras antes de o jogador ver céu aberto. Nenhum desses recibos reserva um leito. Um corpo vivo não é só mais pesado que um pacote; ele muda o dono da responsabilidade. Quem respira o mesmo ar? Quem trata a lesão de descompressão? Quem impede a Deep Reach de classificar o sobrevivente como claim property? Quem paga se o leito ficar travado por um mês?\n\nVelhos trabalhadores de rota chamavam esses registros de misericórdia com coluna de tarifa. É injusto e exato. O leito existe porque resgates iniciais mataram estações quando naves fingiram que contaminação era detalhe moral. Também é onde empresas aprenderam a atrasar ajuda até que a linguagem as favorecesse. Para o jogador, o registro é pressão legível: se a linha do leito está vazia, a linguagem de resgate é teatro; se custodian e liability estão preenchidos, alguém começou a gastar potência real em sobrevivência.",
+     "external_site": "O registro de custody de leito de quarentena explica por que HECTON-8 pode ser ouvido antes de alguém ser recuperado. Prova viaja como pacote. Um sobrevivente vivo precisa de ar, medicina, liability e receptor disposto a possuir a transferência.",
+     "external_site_article": "O isolamento de HECTON-8 é crível porque reconhecimento e resgate são separados. A civilização ao redor de Aegir não é ignorante nem impotente. Ela pode receber um pacote de prova, precificar uma amostra, responder a um distress hash e ainda assim não mover um corpo vivo, porque o corpo é outra classe de obrigação.\n\nO registro de custody de leito de quarentena torna essa diferença física. Ele nomeia a sala, o dono médico, o contamination hold, a liability do receptor, a lift exception e a margem de frenagem necessárias antes que um sobrevivente vire cargo que a rota precisa capturar. Sem esses campos, uma mensagem pode ser honesta e inútil para extração.\n\nIsso não é para fazer o mundo parecer burro. É para fazê-lo parecer industrial. Em HECTON-8, resgate não é uma luz azul que chega porque a história precisa de misericórdia. É uma transferência cara do oceano, da claim law e das provas corporativas para ar controlado por outra pessoa. Pacotes criam pressão; campos custody preenchidos criam alavanca.",
+     "field_note": "Se a linha do leito está vazia, a chamada é real e o resgate não."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Quarantainebed-custody-log",
+     "scanner": "QUARANTAINEBED-BON // Keramische custody-kaart, een hoek krom door hitte. Velden: lichaamsmassa, drukblootstelling, pathogen hold, medische eigenaar, ontvangend bed, lift exception. Pakket geaccepteerd. Persoon wacht.",
+     "terminal": "RETURN CUSTODY HOLD // Bewijspakket erkend. Overdracht van levende massa opgeschort tot quarantainebed, medische custodian, receiver liability en opstijglift zijn toegewezen. Erkenning niet omzetten in extractiebevel.",
+     "audio": "Een klerk kan je bewijs met twee vingers ontvangen. Jou ontvangen vraagt een kamer, een arts, een advocaat en iemand die de rekening wil bezitten.",
+     "in_game_wiki": "Een quarantainebed is geen bed in sentimentele zin. Het is een juridische kamer met lucht, filters, afvalverwerking, medische sluizen, custody-camera's, zegels voor bewijsketen en een naam op de liability-regel. Wanneer een overlevende een verzegelde oceaan-claim verlaat, accepteert de ontvanger niet eerst een geredde persoon. Hij accepteert een biologisch object dat gewond, besmet, verontreinigd, schuldig en juridisch gevaarlijk kan zijn, en nog steeds bewijs draagt dat anderen willen begraven.\n\nDaarom kan het eerste heldere antwoord van Black Keel pijn doen. Het relais kan een distress hash erkennen. Luyten kan packet custody bewaren. Een broker kan monsters waarderen voordat de speler open lucht ziet. Geen van die bonnen reserveert een bed. Een levend lichaam is niet alleen zwaarder dan een pakket; het verandert wie verantwoordelijkheid bezit. Wie ademt dezelfde lucht? Wie behandelt de decompressiewond? Wie voorkomt dat Deep Reach de overlevende als claim property classificeert? Wie betaalt als het bed een maand gesloten blijft?\n\nOude routewerkers noemden deze logs genade met een tariefkolom. Dat is oneerlijk en precies. Het bed bestaat omdat vroege reddingen stations doodden toen schepen deden alsof besmetting een moreel detail was. Het is ook waar bedrijven leerden hulp te vertragen tot de taal hen diende. Voor de speler is de log leesbare druk: als de bedregel leeg is, is reddingstaal theater; als custodian en liability ingevuld zijn, besteedt iemand echte kracht aan overleven.",
+     "external_site": "De quarantainebed-custody-log verklaart waarom HECTON-8 gehoord kan worden voordat iemand wordt teruggehaald. Bewijs reist als pakket. Een levende overlevende heeft lucht, geneeskunde, liability en een ontvanger nodig die de overdracht bezit.",
+     "external_site_article": "HECTON-8 blijft geloofwaardig geisoleerd omdat erkenning en redding gescheiden zijn. De beschaving rond Aegir is niet onwetend en niet machteloos. Ze kan bewijs ontvangen, monsters prijzen, antwoorden op een distress hash en toch geen levend lichaam verplaatsen, omdat dat lichaam een andere klasse verplichting is.\n\nDe quarantainebed-custody-log maakt dat verschil fysiek. Hij benoemt kamer, medische eigenaar, contamination hold, receiver liability, lift exception en remmarge voordat een overlevende cargo wordt dat de route moet vangen. Zonder die velden kan een bericht eerlijk zijn en toch nutteloos voor extractie.\n\nDit is niet bedoeld om de wereld dom te laten lijken. Hij moet industrieel voelen. Op HECTON-8 is redding geen blauw licht dat arriveert omdat het verhaal medelijden nodig heeft. Het is een dure overdracht uit oceaan, claim law en bedrijfsbewijs naar lucht die iemand anders beheerst. Pakketten maken druk; ingevulde custody-velden maken hefboom.",
+     "field_note": "Als de bedregel leeg is, is de oproep echt en de redding niet."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,229 +1,230 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS125_AEGIR_RECOVERY_WINDOW_GEOMETRY",
-  "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS125_AEGIR_RECOVERY_WINDOW_GEOMETRY",
+ "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P621_AEGIR_RECOVERY_WINDOW_GEOMETRY",
+   "release_set_id": "RS125_AEGIR_RECOVERY_WINDOW_GEOMETRY",
+   "article_id": "applied_lore.aegir_recovery_window_geometry",
+   "title_key": "LORE_AEGIR_RECOVERY_WINDOW_GEOMETRY_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Humanity_2190_Game_Texture.md",
+    "Docs/Lore/Ships_Transit_Game_Texture.md",
+    "PROJECT_BIBLES.md",
+    ".agents-skills/celestial.md",
+    ".agents-skills/world.md",
+    ".agents-skills/writing.md",
+    ".agents-skills/localization.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P621_AEGIR_RECOVERY_WINDOW_GEOMETRY",
-      "release_set_id": "RS125_AEGIR_RECOVERY_WINDOW_GEOMETRY",
-      "article_id": "applied_lore.aegir_recovery_window_geometry",
-      "title_key": "LORE_AEGIR_RECOVERY_WINDOW_GEOMETRY_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Humanity_2190_Game_Texture.md",
-        "Docs/Lore/Ships_Transit_Game_Texture.md",
-        "PROJECT_BIBLES.md",
-        ".agents-skills/celestial.md",
-        ".agents-skills/world.md",
-        ".agents-skills/writing.md",
-        ".agents-skills/localization.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.aegir_recovery_window_geometry",
-        "secondary": [
-          "unlock.first_black_keel_window_clock",
-          "unlock.kestrel_relay_shadow_chart",
-          "unlock.ascent_package_mass_line"
-        ],
-        "poi_tags": [
-          "poi.black_keel_window_clock",
-          "poi.aegir_relay_shadow_chart",
-          "poi.bathydrop_guidance_core",
-          "poi.keelmark_recovery_notice"
-        ],
-        "biome_tags": [
-          "biome.photic_shelf",
-          "biome.surface_relay",
-          "biome.carrier_link",
-          "biome.storm_ceiling"
-        ],
-        "first_20_boundary": "After first Black Keel contact, this packet explains why receiving a signal is not physical recovery and turns orbit, weather, relay shadow, quarantine and tonne-window mass into readable first-route stakes."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Window Clock",
-          "terminal": "Keelmark Recovery Notice",
-          "audio": "Black Keel Relay",
-          "in_game_wiki": "Recovered Route Chart",
-          "external_site": "Field Archive Longform",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "depth_band": "surface_to_photic_shelf",
-        "route_moment": "first_black_keel_contact_after_guidance_core_scan",
-        "truth_payload": "Black Keel can receive packets in a pass before it can legally or physically recover a body.",
-        "player_question": "Why did the carrier answer without lifting the player out?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Aegir Recovery Window Geometry",
-          "scanner": "WINDOW CLOCK // Black Keel can receive a packet this pass. Body recovery still needs ascent hardware, quarantine handshake, Kestrel shadow clearance, and an accepted tonne-window mass line.",
-          "terminal": "KEELMARK RECOVERY NOTICE // Signal receipt is not lift approval. Align carrier phase, storm ceiling, relay shadow, quarantine clearance, ascent package state, and accepted payload mass before requesting recovery.",
-          "audio": "Black Keel relay: packet received. Body not in this window. Keep the ascent package sealed, keep the proof tagged, and do not spend air celebrating a number.",
-          "in_game_wiki": "A recovered Aegir window chart explains why Black Keel contact is not rescue. A signal can fit through one pass while a body, ascent capsule, quarantine claim, evidence packet and payload mass fail the same geometry. The first repair only earns a place on the clock.",
-          "external_site": "Aegir recovery is a schedule before it is a rescue. Black Keel can hear a packet through a narrow relay pass and still refuse the body because the route has not cleared carrier phase, storm ceiling, Kestrel relay shadow, quarantine state, ascent package seal and accepted tonne-window mass. HECTON-8 makes that delay physical. The ocean holds the descent hardware below pressure, the sky breaks clean line-of-sight with weather and charged noise, and the carrier treats every kilogram as part of a claim ledger. The first answer from orbit is therefore not mercy. It is proof that one part of the machine aligned for a few minutes. Survival means making the rest of the machine agree before the next window closes.",
-          "field_note": "If the carrier answers, do not spend the air celebrating. A reply is geometry plus accounting. Rescue starts when the window, seal, payload and body all fit the same line."
-        },
-        "ru_RU": {
-          "title": "Геометрия окна эвакуации в Aegir",
-          "scanner": "ЧАСЫ ОКНА // Black Keel может принять пакет на этом проходе. Для эвакуации тела всё ещё нужны подъёмное железо, карантинное согласование, выход из тени реле Kestrel и принятая строка массы tonne-window.",
-          "terminal": "УВЕДОМЛЕНИЕ KEELMARK ОБ ЭВАКУАЦИИ // Приём сигнала не является разрешением на подъём. Перед запросом эвакуации сведи фазу носителя, потолок шторма, тень реле, карантинный допуск, состояние подъёмного пакета и принятую массу груза.",
-          "audio": "Ретранслятор Black Keel: пакет принят. Тело не попадает в это окно. Держи подъёмный пакет запечатанным, доказательства помеченными, и не трать воздух на радость из-за числа.",
-          "in_game_wiki": "Найденная карта окна Aegir объясняет, почему контакт с Black Keel не равен спасению. Сигнал может пройти в один проход, а тело, подъёмная капсула, карантинная претензия, пакет доказательств и масса груза не попадут в ту же геометрию. Первый ремонт только ставит тебя на часы.",
-          "external_site": "Эвакуация в Aegir сначала расписание и только потом спасение. Black Keel может услышать пакет в узком проходе реле и всё равно отказать телу, потому что маршрут не очистил фазу носителя, потолок шторма, тень реле Kestrel, карантинное состояние, пломбу подъёмного пакета и принятую массу tonne-window. HECTON-8 делает эту задержку физической. Океан держит спусковое железо под давлением, небо ломает прямую видимость погодой и заряженным шумом, а носитель считает каждый килограмм частью реестра претензий. Первый ответ с орбиты поэтому не милость. Это доказательство, что одна часть машины сошлась на несколько минут. Выжить значит заставить остальную машину согласиться до закрытия следующего окна.",
-          "field_note": "Если носитель ответил, не трать воздух на праздник. Ответ это геометрия плюс бухгалтерия. Спасение начинается, когда окно, пломба, груз и тело помещаются в одну строку."
-        },
-        "ja_JP": {
-          "title": "Aegir回収ウィンドウの幾何",
-          "scanner": "ウィンドウ時計 // この通過でBlack Keelはパケットを受信できる。身体回収にはまだ上昇装備、検疫ハンドシェイク、Kestrelリレー影の解除、承認済みtonne-window質量行が要る。",
-          "terminal": "KEELMARK回収通知 // 信号受信はリフト承認ではない。回収要求の前に、母船位相、嵐の天井、リレー影、検疫許可、上昇パッケージ状態、承認済みペイロード質量を合わせること。",
-          "audio": "Black Keel中継: パケット受信。身体はこのウィンドウに入らない。上昇パッケージを封印したまま、証拠タグを維持し、数字ひとつで空気を使って喜ぶな。",
-          "in_game_wiki": "回収されたAegirウィンドウ図は、Black Keelとの接触が救助ではない理由を示す。信号は一つの通過に収まっても、身体、上昇カプセル、検疫請求、証拠パケット、ペイロード質量が同じ幾何に収まらないことがある。最初の修理で得られるのは時計に載る権利だけだ。",
-          "external_site": "Aegirの回収は、救助である前に予定表である。Black Keelは狭いリレー通過でパケットを聞けても、母船位相、嵐の天井、Kestrelリレー影、検疫状態、上昇パッケージ封印、承認済みtonne-window質量がそろわなければ身体を拒む。HECTON-8ではその遅延が物理になる。海は降下装備を圧力下に縛り、空は天候と荷電ノイズで直線視界を壊し、母船はあらゆるキログラムを請求台帳の一部として扱う。だから軌道からの最初の返答は慈悲ではない。機械の一部が数分だけそろった証拠である。生き延びるには、次のウィンドウが閉じる前に残りの機械も同意させる必要がある。",
-          "field_note": "母船が応答しても、空気を祝いに使うな。返答は幾何と会計だ。救助は、ウィンドウ、封印、ペイロード、身体が同じ線に入った時に始まる。"
-        },
-        "zh_CN": {
-          "title": "Aegir 回收窗口几何",
-          "scanner": "窗口时钟 // Black Keel 本轮可接收数据包。人员回收仍需上升硬件、隔离握手、Kestrel 中继阴影放行，以及已接受的 tonne-window 质量行。",
-          "terminal": "KEELMARK 回收通知 // 信号已收不等于批准升运。请求回收前，必须对齐航母相位、风暴顶限、中继阴影、隔离许可、上升包状态和已接受载荷质量。",
-          "audio": "Black Keel 中继：数据包已接收。身体不在本窗口内。保持上升包封存，保持证据带标签，不要为一个数字浪费空气庆祝。",
-          "in_game_wiki": "回收的 Aegir 窗口图解释了为什么联系到 Black Keel 并不等于获救。信号可以穿过一次通行，但身体、上升舱、隔离索赔、证据包和载荷质量未必能落入同一套几何。第一次修理只让你进入时钟。",
-          "external_site": "Aegir 的回收首先是时间表，其次才是救援。Black Keel 可以在狭窄中继通行中听到数据包，却仍然拒绝回收身体，因为航线尚未通过航母相位、风暴顶限、Kestrel 中继阴影、隔离状态、上升包封签和已接受 tonne-window 质量。HECTON-8 让这种延迟变成物理事实。海洋把降落硬件压在深压之下，天空用天气和带电噪声打断直线视距，而航母把每一公斤都记入索赔账本。来自轨道的第一次回应因此不是仁慈。它只是证明机器的一部分在几分钟内对齐。活下去意味着在下一个窗口关闭前，让机器的其余部分也同意。",
-          "field_note": "航母回应了也别把空气花在庆祝上。回应是几何加账目。窗口、封签、载荷和身体进入同一条线时，救援才开始。"
-        },
-        "fr_FR": {
-          "title": "Géométrie de fenêtre de récupération d'Aegir",
-          "scanner": "HORLOGE DE FENÊTRE // Black Keel peut recevoir un paquet sur ce passage. La récupération du corps exige encore matériel d'ascension, accord de quarantaine, sortie de l'ombre relais de Kestrel et ligne de masse tonne-window acceptée.",
-          "terminal": "AVIS DE RÉCUPÉRATION KEELMARK // La réception du signal n'est pas une autorisation de levage. Alignez phase du transporteur, plafond de tempête, ombre relais, autorisation de quarantaine, état du paquet d'ascension et masse de charge acceptée avant demande.",
-          "audio": "Relais Black Keel : paquet reçu. Corps hors de cette fenêtre. Gardez le paquet d'ascension scellé, les preuves étiquetées, et ne dépensez pas d'air pour célébrer un nombre.",
-          "in_game_wiki": "Une carte de fenêtre d'Aegir récupérée explique pourquoi le contact avec Black Keel n'est pas un sauvetage. Un signal peut passer dans un passage alors qu'un corps, une capsule d'ascension, une demande de quarantaine, un paquet de preuves et une masse de charge échouent dans la même géométrie. La première réparation ne donne qu'une place sur l'horloge.",
-          "external_site": "La récupération d'Aegir est un calendrier avant d'être un sauvetage. Black Keel peut entendre un paquet dans un passage relais étroit et refuser encore le corps, parce que la route n'a pas validé la phase du transporteur, le plafond de tempête, l'ombre relais de Kestrel, l'état de quarantaine, le sceau du paquet d'ascension et la masse tonne-window acceptée. HECTON-8 rend ce délai physique. L'océan retient le matériel de descente sous pression, le ciel brise la ligne de visée avec météo et bruit chargé, et le transporteur inscrit chaque kilogramme au registre des réclamations. La première réponse orbitale n'est donc pas une grâce. C'est la preuve qu'une partie de la machine s'est alignée quelques minutes. Survivre consiste à faire accepter le reste avant la fermeture de la fenêtre suivante.",
-          "field_note": "Si le transporteur répond, ne gaspillez pas l'air à fêter ça. Une réponse, c'est géométrie plus comptabilité. Le sauvetage commence quand fenêtre, sceau, charge et corps tiennent sur la même ligne."
-        },
-        "es_ES": {
-          "title": "Geometría de ventana de recuperación de Aegir",
-          "scanner": "RELOJ DE VENTANA // Black Keel puede recibir un paquete en esta pasada. La recuperación del cuerpo aún requiere hardware de ascenso, acuerdo de cuarentena, despeje de sombra de relé Kestrel y una línea de masa tonne-window aceptada.",
-          "terminal": "AVISO DE RECUPERACIÓN KEELMARK // Recibir señal no es aprobar el izado. Alinea fase del portador, techo de tormenta, sombra de relé, autorización de cuarentena, estado del paquete de ascenso y masa de carga aceptada antes de solicitar recuperación.",
-          "audio": "Relé Black Keel: paquete recibido. Cuerpo fuera de esta ventana. Mantén sellado el paquete de ascenso, conserva las pruebas etiquetadas y no gastes aire celebrando un número.",
-          "in_game_wiki": "Una carta de ventana de Aegir recuperada explica por qué contactar con Black Keel no es rescate. Una señal puede caber por una pasada mientras un cuerpo, cápsula de ascenso, reclamación de cuarentena, paquete de pruebas y masa de carga no caben en la misma geometría. La primera reparación solo gana un sitio en el reloj.",
-          "external_site": "La recuperación en Aegir es un horario antes de ser un rescate. Black Keel puede oír un paquete por una pasada de relé estrecha y aun así rechazar el cuerpo, porque la ruta no ha despejado fase del portador, techo de tormenta, sombra de relé Kestrel, estado de cuarentena, sello del paquete de ascenso y masa tonne-window aceptada. HECTON-8 vuelve física esa demora. El océano sujeta el hardware de descenso bajo presión, el cielo rompe la línea de visión con clima y ruido cargado, y el portador trata cada kilogramo como parte de un libro de reclamaciones. La primera respuesta orbital no es piedad. Es prueba de que una parte de la máquina se alineó durante minutos. Sobrevivir es hacer que el resto acepte antes de que cierre la siguiente ventana.",
-          "field_note": "Si el portador responde, no gastes aire celebrándolo. Una respuesta es geometría más contabilidad. El rescate empieza cuando ventana, sello, carga y cuerpo caben en la misma línea."
-        },
-        "de_DE": {
-          "title": "Aegir-Bergungsfenster-Geometrie",
-          "scanner": "FENSTERUHR // Black Keel kann in diesem Pass ein Paket empfangen. Körperbergung braucht weiter Aufstiegshardware, Quarantäne-Handshake, Freigabe aus Kestrels Relaisschatten und eine akzeptierte tonne-window-Massenzeile.",
-          "terminal": "KEELMARK BERGUNGSHINWEIS // Signalempfang ist keine Hebegenehmigung. Trägerphase, Sturmdecke, Relaisschatten, Quarantänefreigabe, Zustand des Aufstiegspakets und akzeptierte Nutzlastmasse vor der Bergungsanfrage abgleichen.",
-          "audio": "Black-Keel-Relais: Paket empfangen. Körper nicht in diesem Fenster. Aufstiegspaket versiegelt halten, Beweise getaggt halten und keine Luft für die Freude über eine Zahl verbrauchen.",
-          "in_game_wiki": "Eine geborgene Aegir-Fensterkarte erklärt, warum Black-Keel-Kontakt keine Rettung ist. Ein Signal kann durch einen Pass passen, während Körper, Aufstiegskapsel, Quarantäneanspruch, Beweispaket und Nutzlastmasse an derselben Geometrie scheitern. Die erste Reparatur bringt nur einen Platz auf der Uhr.",
-          "external_site": "Aegir-Bergung ist zuerst ein Zeitplan und erst danach Rettung. Black Keel kann ein Paket durch einen engen Relaispass hören und den Körper trotzdem ablehnen, weil Trägerphase, Sturmdecke, Kestrels Relaisschatten, Quarantänestatus, Siegel des Aufstiegspakets und akzeptierte tonne-window-Masse noch nicht frei sind. HECTON-8 macht diese Verzögerung physisch. Der Ozean hält Abstieghardware unter Druck, der Himmel bricht Sichtlinien mit Wetter und geladenem Rauschen, und der Träger verbucht jedes Kilogramm im Anspruchsledger. Die erste Antwort aus dem Orbit ist deshalb keine Gnade. Sie beweist nur, dass ein Teil der Maschine sich für Minuten ausgerichtet hat. Überleben heißt, den Rest vor dem nächsten Fensterschluss zur Zustimmung zu bringen.",
-          "field_note": "Wenn der Träger antwortet, verbrauche keine Luft zum Feiern. Eine Antwort ist Geometrie plus Buchhaltung. Rettung beginnt, wenn Fenster, Siegel, Nutzlast und Körper in dieselbe Zeile passen."
-        },
-        "pl_PL": {
-          "title": "Geometria okna odzysku w Aegir",
-          "scanner": "ZEGAR OKNA // Black Keel może odebrać pakiet w tym przelocie. Odzysk ciała nadal wymaga sprzętu wznoszenia, uzgodnienia kwarantanny, wyjścia z cienia przekaźnika Kestrel i zaakceptowanej linii masy tonne-window.",
-          "terminal": "KOMUNIKAT ODZYSKU KEELMARK // Odbiór sygnału nie jest zgodą na podniesienie. Przed żądaniem odzysku zgraj fazę nośnika, pułap burzy, cień przekaźnika, zgodę kwarantanny, stan pakietu wznoszenia i przyjętą masę ładunku.",
-          "audio": "Przekaźnik Black Keel: pakiet odebrany. Ciało poza tym oknem. Trzymaj pakiet wznoszenia zaplombowany, dowody oznaczone i nie zużywaj powietrza na świętowanie liczby.",
-          "in_game_wiki": "Odzyskana mapa okna Aegir wyjaśnia, czemu kontakt z Black Keel nie jest ratunkiem. Sygnał może zmieścić się w jednym przelocie, gdy ciało, kapsuła wznoszenia, roszczenie kwarantanny, pakiet dowodowy i masa ładunku nie mieszczą się w tej samej geometrii. Pierwsza naprawa daje tylko miejsce na zegarze.",
-          "external_site": "Odzysk w Aegir jest najpierw harmonogramem, a dopiero potem ratunkiem. Black Keel może usłyszeć pakiet przez wąski przelot przekaźnika i nadal odmówić ciała, bo trasa nie oczyściła fazy nośnika, pułapu burzy, cienia przekaźnika Kestrel, stanu kwarantanny, plomby pakietu wznoszenia i zaakceptowanej masy tonne-window. HECTON-8 czyni tę zwłokę fizyczną. Ocean trzyma sprzęt zejścia pod ciśnieniem, niebo rwie widoczność pogodą i naładowanym szumem, a nośnik zapisuje każdy kilogram w rejestrze roszczeń. Pierwsza odpowiedź z orbity nie jest więc łaską. To dowód, że jedna część maszyny zgrała się na kilka minut. Przetrwanie oznacza zmuszenie reszty maszyny do zgody przed zamknięciem następnego okna.",
-          "field_note": "Jeśli nośnik odpowie, nie zużywaj powietrza na świętowanie. Odpowiedź to geometria plus księgowość. Ratunek zaczyna się, gdy okno, plomba, ładunek i ciało mieszczą się w tej samej linii."
-        },
-        "uk_UA": {
-          "title": "Геометрія вікна евакуації в Aegir",
-          "scanner": "ГОДИННИК ВІКНА // Black Keel може прийняти пакет під час цього проходу. Для евакуації тіла ще потрібні підйомне обладнання, карантинне узгодження, вихід із тіні реле Kestrel і прийнятий рядок маси tonne-window.",
-          "terminal": "ПОВІДОМЛЕННЯ KEELMARK ПРО ЕВАКУАЦІЮ // Отримання сигналу не є дозволом на підйом. Перед запитом евакуації узгодь фазу носія, стелю шторму, тінь реле, карантинний допуск, стан підйомного пакета і прийняту масу вантажу.",
-          "audio": "Ретранслятор Black Keel: пакет прийнято. Тіло не входить у це вікно. Тримай підйомний пакет запечатаним, докази позначеними і не витрачай повітря на святкування числа.",
-          "in_game_wiki": "Знайдена карта вікна Aegir пояснює, чому контакт із Black Keel не є порятунком. Сигнал може пройти в один прохід, а тіло, підйомна капсула, карантинна претензія, пакет доказів і маса вантажу можуть не потрапити в ту саму геометрію. Перший ремонт лише дає місце на годиннику.",
-          "external_site": "Евакуація в Aegir спершу є розкладом, а вже потім порятунком. Black Keel може почути пакет у вузькому проході реле і все одно відмовити тілу, бо маршрут не очистив фазу носія, стелю шторму, тінь реле Kestrel, карантинний стан, пломбу підйомного пакета і прийняту масу tonne-window. HECTON-8 робить цю затримку фізичною. Океан тримає спускове обладнання під тиском, небо ламає пряму видимість погодою і зарядженим шумом, а носій вносить кожен кілограм до реєстру претензій. Перша відповідь з орбіти тому не милість. Це доказ, що одна частина машини зійшлася на кілька хвилин. Вижити означає змусити решту машини погодитися до закриття наступного вікна.",
-          "field_note": "Якщо носій відповів, не витрачай повітря на святкування. Відповідь це геометрія плюс бухгалтерія. Порятунок починається, коли вікно, пломба, вантаж і тіло входять в один рядок."
-        },
-        "ar_SA": {
-          "title": "هندسة نافذة الاستعادة في Aegir",
-          "scanner": "ساعة النافذة // يستطيع Black Keel استقبال حزمة في هذا المرور. استعادة الجسد ما زالت تحتاج عتاد الصعود، ومصافحة الحجر، وخروجاً من ظل مرحل Kestrel، وسطر كتلة tonne-window مقبول.",
-          "terminal": "إشعار استعادة KEELMARK // استقبال الإشارة ليس موافقة على الرفع. طابق طور الحامل، وسقف العاصفة، وظل المرحل، وتصريح الحجر، وحالة حزمة الصعود، وكتلة الحمولة المقبولة قبل طلب الاستعادة.",
-          "audio": "مرحل Black Keel: تم استلام الحزمة. الجسد خارج هذه النافذة. أبق حزمة الصعود مختومة، وأبق الأدلة موسومة، ولا تهدر الهواء احتفالاً برقم.",
-          "in_game_wiki": "تشرح خريطة نافذة Aegir المستعادة لماذا لا يعني الاتصال مع Black Keel إنقاذاً. قد تعبر الإشارة في مرور واحد بينما يفشل الجسد، وكبسولة الصعود، ومطالبة الحجر، وحزمة الأدلة، وكتلة الحمولة في دخول الهندسة نفسها. أول إصلاح يمنحك مكاناً على الساعة فقط.",
-          "external_site": "الاستعادة في Aegir جدول قبل أن تكون إنقاذاً. يستطيع Black Keel سماع حزمة عبر مرور مرحل ضيق ثم يرفض الجسد، لأن المسار لم يستوفِ بعد طور الحامل، وسقف العاصفة، وظل مرحل Kestrel، وحالة الحجر، وختم حزمة الصعود، وكتلة tonne-window المقبولة. يجعل HECTON-8 هذا التأخير مادياً. المحيط يحبس عتاد الهبوط تحت الضغط، والسماء تكسر خط الرؤية بالطقس والضجيج المشحون، والحامل يحسب كل كيلوغرام داخل دفتر المطالبات. لذلك فإن أول رد من المدار ليس رحمة. إنه دليل على أن جزءاً واحداً من الآلة اصطف لبضع دقائق. البقاء يعني جعل بقية الآلة توافق قبل أن تغلق النافذة التالية.",
-          "field_note": "إذا أجاب الحامل، فلا تهدر الهواء في الاحتفال. الرد هندسة مع محاسبة. يبدأ الإنقاذ عندما تدخل النافذة والختم والحمولة والجسد في السطر نفسه."
-        },
-        "id_ID": {
-          "title": "Geometri Jendela Pemulihan Aegir",
-          "scanner": "JAM JENDELA // Black Keel bisa menerima paket pada lintasan ini. Pemulihan tubuh masih butuh perangkat naik, handshake karantina, pelepasan bayang relai Kestrel, dan baris massa tonne-window yang diterima.",
-          "terminal": "PEMBERITAHUAN PEMULIHAN KEELMARK // Penerimaan sinyal bukan izin angkat. Selaraskan fase pengangkut, batas badai, bayang relai, izin karantina, status paket naik, dan massa muatan yang diterima sebelum meminta pemulihan.",
-          "audio": "Relai Black Keel: paket diterima. Tubuh tidak masuk jendela ini. Jaga paket naik tetap tersegel, bukti tetap bertag, dan jangan menghabiskan udara untuk merayakan angka.",
-          "in_game_wiki": "Peta jendela Aegir yang ditemukan menjelaskan mengapa kontak Black Keel bukan penyelamatan. Sinyal bisa lewat dalam satu lintasan sementara tubuh, kapsul naik, klaim karantina, paket bukti, dan massa muatan gagal masuk geometri yang sama. Perbaikan pertama hanya memberi tempat di jam.",
-          "external_site": "Pemulihan Aegir adalah jadwal sebelum menjadi penyelamatan. Black Keel dapat mendengar paket melalui lintasan relai sempit tetapi tetap menolak tubuh, karena rute belum membersihkan fase pengangkut, batas badai, bayang relai Kestrel, status karantina, segel paket naik, dan massa tonne-window yang diterima. HECTON-8 membuat jeda itu fisik. Laut menahan perangkat turun di bawah tekanan, langit mematahkan garis pandang dengan cuaca dan noise bermuatan, dan pengangkut memperlakukan setiap kilogram sebagai bagian dari buku klaim. Jawaban pertama dari orbit karena itu bukan belas kasih. Itu bukti bahwa satu bagian mesin selaras selama beberapa menit. Bertahan berarti membuat sisa mesin setuju sebelum jendela berikutnya tertutup.",
-          "field_note": "Jika pengangkut menjawab, jangan habiskan udara untuk merayakan. Balasan adalah geometri plus akuntansi. Penyelamatan dimulai ketika jendela, segel, muatan, dan tubuh masuk baris yang sama."
-        },
-        "ko_KR": {
-          "title": "Aegir 회수 창 기하",
-          "scanner": "창 시계 // 이번 통과에서 Black Keel은 패킷을 받을 수 있다. 신체 회수에는 여전히 상승 장비, 검역 핸드셰이크, Kestrel 중계 그림자 해제, 승인된 tonne-window 질량 줄이 필요하다.",
-          "terminal": "KEELMARK 회수 통지 // 신호 수신은 인양 승인과 다르다. 회수 요청 전 운반선 위상, 폭풍 상한, 중계 그림자, 검역 승인, 상승 패키지 상태, 승인된 적재 질량을 맞춰라.",
-          "audio": "Black Keel 중계: 패킷 수신. 신체는 이 창에 없다. 상승 패키지는 봉인된 채로, 증거는 태그된 채로 유지하고, 숫자 하나에 공기를 써서 기뻐하지 마라.",
-          "in_game_wiki": "회수된 Aegir 창 도표는 Black Keel 접촉이 구조가 아닌 이유를 설명한다. 신호는 한 통과에 들어맞을 수 있지만 신체, 상승 캡슐, 검역 청구, 증거 패킷, 적재 질량은 같은 기하에 실패할 수 있다. 첫 수리는 시계 위의 자리만 얻는다.",
-          "external_site": "Aegir 회수는 구조이기 전에 일정표다. Black Keel은 좁은 중계 통과에서 패킷을 들을 수 있지만, 운반선 위상, 폭풍 상한, Kestrel 중계 그림자, 검역 상태, 상승 패키지 봉인, 승인된 tonne-window 질량이 해소되지 않으면 신체를 거부한다. HECTON-8은 그 지연을 물리적으로 만든다. 바다는 하강 장비를 압력 아래 묶고, 하늘은 날씨와 대전된 잡음으로 직선 시야를 끊으며, 운반선은 모든 킬로그램을 청구 장부의 일부로 취급한다. 그래서 궤도에서 온 첫 응답은 자비가 아니다. 기계의 한 부분이 몇 분 동안 맞았다는 증거일 뿐이다. 살아남으려면 다음 창이 닫히기 전에 나머지 기계도 동의하게 만들어야 한다.",
-          "field_note": "운반선이 답해도 공기를 축하에 쓰지 마라. 응답은 기하와 회계다. 구조는 창, 봉인, 적재물, 신체가 같은 줄에 들어갈 때 시작된다."
-        },
-        "he_IL": {
-          "title": "גאומטריית חלון החילוץ של Aegir",
-          "scanner": "שעון חלון // Black Keel יכול לקבל חבילה במעבר הזה. חילוץ גוף עדיין דורש חומרת עלייה, לחיצת יד הסגר, שחרור מצל ממסר Kestrel, ושורת מסה tonne-window מאושרת.",
-          "terminal": "הודעת חילוץ KEELMARK // קבלת אות אינה אישור הרמה. יש ליישר מופע נשא, תקרת סערה, צל ממסר, אישור הסגר, מצב חבילת עלייה ומסת מטען מאושרת לפני בקשת חילוץ.",
-          "audio": "ממסר Black Keel: החבילה התקבלה. הגוף לא בתוך החלון הזה. השאר את חבילת העלייה חתומה, את הראיות מתויגות, ואל תבזבז אוויר על חגיגת מספר.",
-          "in_game_wiki": "תרשים חלון Aegir שנמצא מסביר מדוע קשר עם Black Keel אינו חילוץ. אות יכול לעבור במעבר אחד, בזמן שגוף, קפסולת עלייה, תביעת הסגר, חבילת ראיות ומסת מטען נכשלים באותה גאומטריה. התיקון הראשון רק מקנה מקום על השעון.",
-          "external_site": "חילוץ ב-Aegir הוא לוח זמנים לפני שהוא הצלה. Black Keel יכול לשמוע חבילה דרך מעבר ממסר צר ועדיין לסרב לגוף, משום שהנתיב לא ניקה מופע נשא, תקרת סערה, צל ממסר Kestrel, מצב הסגר, חותם חבילת עלייה ומסת tonne-window מאושרת. HECTON-8 הופך את העיכוב הזה לפיזי. האוקיינוס מחזיק את חומרת הירידה תחת לחץ, השמיים שוברים קו ראייה במזג אוויר וברעש טעון, והנשא מתייחס לכל קילוגרם כחלק מספר התביעות. לכן התשובה הראשונה מהמסלול אינה רחמים. היא הוכחה שחלק אחד של המכונה הסתדר לכמה דקות. הישרדות פירושה לגרום לשאר המכונה להסכים לפני שהחלון הבא נסגר.",
-          "field_note": "אם הנשא עונה, אל תבזבז אוויר על חגיגה. תשובה היא גאומטריה ועוד חשבונאות. חילוץ מתחיל כאשר החלון, החותם, המטען והגוף נכנסים לאותה שורה."
-        },
-        "pt_BR": {
-          "title": "Geometria da janela de recuperação de Aegir",
-          "scanner": "RELÓGIO DE JANELA // Black Keel pode receber um pacote nesta passagem. A recuperação do corpo ainda exige hardware de ascensão, handshake de quarentena, liberação da sombra do relé Kestrel e uma linha de massa tonne-window aceita.",
-          "terminal": "AVISO DE RECUPERAÇÃO KEELMARK // Receber sinal não aprova içamento. Alinhe fase do cargueiro, teto de tempestade, sombra de relé, liberação de quarentena, estado do pacote de ascensão e massa de carga aceita antes de solicitar recuperação.",
-          "audio": "Relé Black Keel: pacote recebido. Corpo fora desta janela. Mantenha o pacote de ascensão lacrado, a prova marcada e não gaste ar comemorando um número.",
-          "in_game_wiki": "Um mapa de janela de Aegir recuperado explica por que contato com Black Keel não é resgate. Um sinal pode caber em uma passagem enquanto corpo, cápsula de ascensão, reclamação de quarentena, pacote de prova e massa de carga falham na mesma geometria. O primeiro reparo só ganha um lugar no relógio.",
-          "external_site": "Recuperação em Aegir é cronograma antes de ser resgate. Black Keel pode ouvir um pacote por uma passagem estreita de relé e ainda recusar o corpo, porque a rota não liberou fase do cargueiro, teto de tempestade, sombra do relé Kestrel, estado de quarentena, lacre do pacote de ascensão e massa tonne-window aceita. HECTON-8 torna esse atraso físico. O oceano prende o hardware de descida sob pressão, o céu quebra a linha de visada com clima e ruído carregado, e o cargueiro trata cada quilograma como parte de um livro de reclamações. A primeira resposta orbital, portanto, não é misericórdia. É prova de que uma parte da máquina se alinhou por alguns minutos. Sobreviver é fazer o resto da máquina concordar antes que a próxima janela feche.",
-          "field_note": "Se o cargueiro responder, não gaste ar comemorando. Uma resposta é geometria mais contabilidade. O resgate começa quando janela, lacre, carga e corpo cabem na mesma linha."
-        },
-        "nl_NL": {
-          "title": "Geometrie van het Aegir-bergingsvenster",
-          "scanner": "VENSTERKLOK // Black Keel kan in deze passage een pakket ontvangen. Lichaamsberging vereist nog opstijghardware, quarantaine-handshake, vrijgave uit de Kestrel-relaisschaduw en een geaccepteerde tonne-window-massaregel.",
-          "terminal": "KEELMARK BERGINGSBERICHT // Signaalontvangst is geen hijstoestemming. Stem dragerfase, stormplafond, relaisschaduw, quarantainevrijgave, status van het opstijgpakket en geaccepteerde laadmassa af voordat berging wordt aangevraagd.",
-          "audio": "Black Keel-relais: pakket ontvangen. Lichaam niet in dit venster. Houd het opstijgpakket verzegeld, het bewijs getagd, en verspil geen lucht aan het vieren van een getal.",
-          "in_game_wiki": "Een geborgen Aegir-vensterkaart verklaart waarom contact met Black Keel geen redding is. Een signaal kan door één passage passen terwijl lichaam, opstijgcapsule, quarantaineclaim, bewijspakket en laadmassa dezelfde geometrie niet halen. De eerste reparatie levert alleen een plek op de klok op.",
-          "external_site": "Berging in Aegir is eerst een schema en pas daarna redding. Black Keel kan een pakket horen via een smalle relaispassage en het lichaam toch weigeren, omdat de route dragerfase, stormplafond, Kestrel-relaisschaduw, quarantainestatus, zegel van het opstijgpakket en geaccepteerde tonne-window-massa nog niet heeft vrijgegeven. HECTON-8 maakt die vertraging fysiek. De oceaan houdt daalhardware onder druk, de hemel breekt zichtlijnen met weer en geladen ruis, en de drager behandelt elke kilo als onderdeel van een claimregister. Het eerste antwoord uit de baan is daarom geen genade. Het bewijst alleen dat één deel van de machine enkele minuten klopte. Overleven betekent de rest van de machine laten instemmen voordat het volgende venster sluit.",
-          "field_note": "Als de drager antwoordt, verspil dan geen lucht aan feest. Een antwoord is geometrie plus boekhouding. Redding begint wanneer venster, zegel, lading en lichaam in dezelfde regel passen."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.aegir_recovery_window_geometry",
+    "secondary": [
+     "unlock.first_black_keel_window_clock",
+     "unlock.kestrel_relay_shadow_chart",
+     "unlock.ascent_package_mass_line"
+    ],
+    "poi_tags": [
+     "poi.black_keel_window_clock",
+     "poi.aegir_relay_shadow_chart",
+     "poi.bathydrop_guidance_core",
+     "poi.keelmark_recovery_notice"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.surface_relay",
+     "biome.carrier_link",
+     "biome.storm_ceiling"
+    ],
+    "first_20_boundary": "After first Black Keel contact, this packet explains why receiving a signal is not physical recovery and turns orbit, weather, relay shadow, quarantine and tonne-window mass into readable first-route stakes."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Window Clock",
+     "terminal": "Keelmark Recovery Notice",
+     "audio": "Black Keel Relay",
+     "in_game_wiki": "Recovered Route Chart",
+     "external_site": "Field Archive Longform",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "depth_band": "surface_to_photic_shelf",
+    "route_moment": "first_black_keel_contact_after_guidance_core_scan",
+    "truth_payload": "Black Keel can receive packets in a pass before it can legally or physically recover a body.",
+    "player_question": "Why did the carrier answer without lifting the player out?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Aegir Recovery Window Geometry",
+     "scanner": "WINDOW CLOCK // Black Keel can receive a packet this pass. Body recovery still needs ascent hardware, quarantine handshake, Kestrel shadow clearance, and an accepted tonne-window mass line.",
+     "terminal": "KEELMARK RECOVERY NOTICE // Signal receipt is not lift approval. Align carrier phase, storm ceiling, relay shadow, quarantine clearance, ascent package state, and accepted payload mass before requesting recovery.",
+     "audio": "Black Keel relay: packet received. Body not in this window. Keep the ascent package sealed, keep the proof tagged, and do not spend air celebrating a number.",
+     "in_game_wiki": "A recovered Aegir window chart explains why Black Keel contact is not rescue. A signal can fit through one pass while a body, ascent capsule, quarantine claim, evidence packet and payload mass fail the same geometry. The first repair only earns a place on the clock.",
+     "external_site": "Aegir recovery is a schedule before it is a rescue. Black Keel can hear a packet through a narrow relay pass and still refuse the body because the route has not cleared carrier phase, storm ceiling, Kestrel relay shadow, quarantine state, ascent package seal and accepted tonne-window mass. HECTON-8 makes that delay physical. The ocean holds the descent hardware below pressure, the sky breaks clean line-of-sight with weather and charged noise, and the carrier treats every kilogram as part of a claim ledger. The first answer from orbit is therefore not mercy. It is proof that one part of the machine aligned for a few minutes. Survival means making the rest of the machine agree before the next window closes.",
+     "field_note": "If the carrier answers, do not spend the air celebrating. A reply is geometry plus accounting. Rescue starts when the window, seal, payload and body all fit the same line."
+    },
+    "ru_RU": {
+     "title": "Геометрия окна эвакуации в Aegir",
+     "scanner": "ЧАСЫ ОКНА // Black Keel может принять пакет на этом проходе. Для эвакуации тела всё ещё нужны подъёмное железо, карантинное согласование, выход из тени реле Kestrel и принятая строка массы tonne-window.",
+     "terminal": "УВЕДОМЛЕНИЕ KEELMARK ОБ ЭВАКУАЦИИ // Приём сигнала не является разрешением на подъём. Перед запросом эвакуации сведи фазу носителя, потолок шторма, тень реле, карантинный допуск, состояние подъёмного пакета и принятую массу груза.",
+     "audio": "Ретранслятор Black Keel: пакет принят. Тело не попадает в это окно. Держи подъёмный пакет запечатанным, доказательства помеченными, и не трать воздух на радость из-за числа.",
+     "in_game_wiki": "Найденная карта окна Aegir объясняет, почему контакт с Black Keel не равен спасению. Сигнал может пройти в один проход, а тело, подъёмная капсула, карантинная претензия, пакет доказательств и масса груза не попадут в ту же геометрию. Первый ремонт только ставит тебя на часы.",
+     "external_site": "Эвакуация в Aegir сначала расписание и только потом спасение. Black Keel может услышать пакет в узком проходе реле и всё равно отказать телу, потому что маршрут не очистил фазу носителя, потолок шторма, тень реле Kestrel, карантинное состояние, пломбу подъёмного пакета и принятую массу tonne-window. HECTON-8 делает эту задержку физической. Океан держит спусковое железо под давлением, небо ломает прямую видимость погодой и заряженным шумом, а носитель считает каждый килограмм частью реестра претензий. Первый ответ с орбиты поэтому не милость. Это доказательство, что одна часть машины сошлась на несколько минут. Выжить значит заставить остальную машину согласиться до закрытия следующего окна.",
+     "field_note": "Если носитель ответил, не трать воздух на праздник. Ответ это геометрия плюс бухгалтерия. Спасение начинается, когда окно, пломба, груз и тело помещаются в одну строку."
+    },
+    "ja_JP": {
+     "title": "Aegir回収ウィンドウの幾何",
+     "scanner": "ウィンドウ時計 // この通過でBlack Keelはパケットを受信できる。身体回収にはまだ上昇装備、検疫ハンドシェイク、Kestrelリレー影の解除、承認済みtonne-window質量行が要る。",
+     "terminal": "KEELMARK回収通知 // 信号受信はリフト承認ではない。回収要求の前に、母船位相、嵐の天井、リレー影、検疫許可、上昇パッケージ状態、承認済みペイロード質量を合わせること。",
+     "audio": "Black Keel中継: パケット受信。身体はこのウィンドウに入らない。上昇パッケージを封印したまま、証拠タグを維持し、数字ひとつで空気を使って喜ぶな。",
+     "in_game_wiki": "回収されたAegirウィンドウ図は、Black Keelとの接触が救助ではない理由を示す。信号は一つの通過に収まっても、身体、上昇カプセル、検疫請求、証拠パケット、ペイロード質量が同じ幾何に収まらないことがある。最初の修理で得られるのは時計に載る権利だけだ。",
+     "external_site": "Aegirの回収は、救助である前に予定表である。Black Keelは狭いリレー通過でパケットを聞けても、母船位相、嵐の天井、Kestrelリレー影、検疫状態、上昇パッケージ封印、承認済みtonne-window質量がそろわなければ身体を拒む。HECTON-8ではその遅延が物理になる。海は降下装備を圧力下に縛り、空は天候と荷電ノイズで直線視界を壊し、母船はあらゆるキログラムを請求台帳の一部として扱う。だから軌道からの最初の返答は慈悲ではない。機械の一部が数分だけそろった証拠である。生き延びるには、次のウィンドウが閉じる前に残りの機械も同意させる必要がある。",
+     "field_note": "母船が応答しても、空気を祝いに使うな。返答は幾何と会計だ。救助は、ウィンドウ、封印、ペイロード、身体が同じ線に入った時に始まる。"
+    },
+    "zh_CN": {
+     "title": "Aegir 回收窗口几何",
+     "scanner": "窗口时钟 // Black Keel 本轮可接收数据包。人员回收仍需上升硬件、隔离握手、Kestrel 中继阴影放行，以及已接受的 tonne-window 质量行。",
+     "terminal": "KEELMARK 回收通知 // 信号已收不等于批准升运。请求回收前，必须对齐航母相位、风暴顶限、中继阴影、隔离许可、上升包状态和已接受载荷质量。",
+     "audio": "Black Keel 中继：数据包已接收。身体不在本窗口内。保持上升包封存，保持证据带标签，不要为一个数字浪费空气庆祝。",
+     "in_game_wiki": "回收的 Aegir 窗口图解释了为什么联系到 Black Keel 并不等于获救。信号可以穿过一次通行，但身体、上升舱、隔离索赔、证据包和载荷质量未必能落入同一套几何。第一次修理只让你进入时钟。",
+     "external_site": "Aegir 的回收首先是时间表，其次才是救援。Black Keel 可以在狭窄中继通行中听到数据包，却仍然拒绝回收身体，因为航线尚未通过航母相位、风暴顶限、Kestrel 中继阴影、隔离状态、上升包封签和已接受 tonne-window 质量。HECTON-8 让这种延迟变成物理事实。海洋把降落硬件压在深压之下，天空用天气和带电噪声打断直线视距，而航母把每一公斤都记入索赔账本。来自轨道的第一次回应因此不是仁慈。它只是证明机器的一部分在几分钟内对齐。活下去意味着在下一个窗口关闭前，让机器的其余部分也同意。",
+     "field_note": "航母回应了也别把空气花在庆祝上。回应是几何加账目。窗口、封签、载荷和身体进入同一条线时，救援才开始。"
+    },
+    "fr_FR": {
+     "title": "Géométrie de fenêtre de récupération d'Aegir",
+     "scanner": "HORLOGE DE FENÊTRE // Black Keel peut recevoir un paquet sur ce passage. La récupération du corps exige encore matériel d'ascension, accord de quarantaine, sortie de l'ombre relais de Kestrel et ligne de masse tonne-window acceptée.",
+     "terminal": "AVIS DE RÉCUPÉRATION KEELMARK // La réception du signal n'est pas une autorisation de levage. Alignez phase du transporteur, plafond de tempête, ombre relais, autorisation de quarantaine, état du paquet d'ascension et masse de charge acceptée avant demande.",
+     "audio": "Relais Black Keel : paquet reçu. Corps hors de cette fenêtre. Gardez le paquet d'ascension scellé, les preuves étiquetées, et ne dépensez pas d'air pour célébrer un nombre.",
+     "in_game_wiki": "Une carte de fenêtre d'Aegir récupérée explique pourquoi le contact avec Black Keel n'est pas un sauvetage. Un signal peut passer dans un passage alors qu'un corps, une capsule d'ascension, une demande de quarantaine, un paquet de preuves et une masse de charge échouent dans la même géométrie. La première réparation ne donne qu'une place sur l'horloge.",
+     "external_site": "La récupération d'Aegir est un calendrier avant d'être un sauvetage. Black Keel peut entendre un paquet dans un passage relais étroit et refuser encore le corps, parce que la route n'a pas validé la phase du transporteur, le plafond de tempête, l'ombre relais de Kestrel, l'état de quarantaine, le sceau du paquet d'ascension et la masse tonne-window acceptée. HECTON-8 rend ce délai physique. L'océan retient le matériel de descente sous pression, le ciel brise la ligne de visée avec météo et bruit chargé, et le transporteur inscrit chaque kilogramme au registre des réclamations. La première réponse orbitale n'est donc pas une grâce. C'est la preuve qu'une partie de la machine s'est alignée quelques minutes. Survivre consiste à faire accepter le reste avant la fermeture de la fenêtre suivante.",
+     "field_note": "Si le transporteur répond, ne gaspillez pas l'air à fêter ça. Une réponse, c'est géométrie plus comptabilité. Le sauvetage commence quand fenêtre, sceau, charge et corps tiennent sur la même ligne."
+    },
+    "es_ES": {
+     "title": "Geometría de ventana de recuperación de Aegir",
+     "scanner": "RELOJ DE VENTANA // Black Keel puede recibir un paquete en esta pasada. La recuperación del cuerpo aún requiere hardware de ascenso, acuerdo de cuarentena, despeje de sombra de relé Kestrel y una línea de masa tonne-window aceptada.",
+     "terminal": "AVISO DE RECUPERACIÓN KEELMARK // Recibir señal no es aprobar el izado. Alinea fase del portador, techo de tormenta, sombra de relé, autorización de cuarentena, estado del paquete de ascenso y masa de carga aceptada antes de solicitar recuperación.",
+     "audio": "Relé Black Keel: paquete recibido. Cuerpo fuera de esta ventana. Mantén sellado el paquete de ascenso, conserva las pruebas etiquetadas y no gastes aire celebrando un número.",
+     "in_game_wiki": "Una carta de ventana de Aegir recuperada explica por qué contactar con Black Keel no es rescate. Una señal puede caber por una pasada mientras un cuerpo, cápsula de ascenso, reclamación de cuarentena, paquete de pruebas y masa de carga no caben en la misma geometría. La primera reparación solo gana un sitio en el reloj.",
+     "external_site": "La recuperación en Aegir es un horario antes de ser un rescate. Black Keel puede oír un paquete por una pasada de relé estrecha y aun así rechazar el cuerpo, porque la ruta no ha despejado fase del portador, techo de tormenta, sombra de relé Kestrel, estado de cuarentena, sello del paquete de ascenso y masa tonne-window aceptada. HECTON-8 vuelve física esa demora. El océano sujeta el hardware de descenso bajo presión, el cielo rompe la línea de visión con clima y ruido cargado, y el portador trata cada kilogramo como parte de un libro de reclamaciones. La primera respuesta orbital no es piedad. Es prueba de que una parte de la máquina se alineó durante minutos. Sobrevivir es hacer que el resto acepte antes de que cierre la siguiente ventana.",
+     "field_note": "Si el portador responde, no gastes aire celebrándolo. Una respuesta es geometría más contabilidad. El rescate empieza cuando ventana, sello, carga y cuerpo caben en la misma línea."
+    },
+    "de_DE": {
+     "title": "Aegir-Bergungsfenster-Geometrie",
+     "scanner": "FENSTERUHR // Black Keel kann in diesem Pass ein Paket empfangen. Körperbergung braucht weiter Aufstiegshardware, Quarantäne-Handshake, Freigabe aus Kestrels Relaisschatten und eine akzeptierte tonne-window-Massenzeile.",
+     "terminal": "KEELMARK BERGUNGSHINWEIS // Signalempfang ist keine Hebegenehmigung. Trägerphase, Sturmdecke, Relaisschatten, Quarantänefreigabe, Zustand des Aufstiegspakets und akzeptierte Nutzlastmasse vor der Bergungsanfrage abgleichen.",
+     "audio": "Black-Keel-Relais: Paket empfangen. Körper nicht in diesem Fenster. Aufstiegspaket versiegelt halten, Beweise getaggt halten und keine Luft für die Freude über eine Zahl verbrauchen.",
+     "in_game_wiki": "Eine geborgene Aegir-Fensterkarte erklärt, warum Black-Keel-Kontakt keine Rettung ist. Ein Signal kann durch einen Pass passen, während Körper, Aufstiegskapsel, Quarantäneanspruch, Beweispaket und Nutzlastmasse an derselben Geometrie scheitern. Die erste Reparatur bringt nur einen Platz auf der Uhr.",
+     "external_site": "Aegir-Bergung ist zuerst ein Zeitplan und erst danach Rettung. Black Keel kann ein Paket durch einen engen Relaispass hören und den Körper trotzdem ablehnen, weil Trägerphase, Sturmdecke, Kestrels Relaisschatten, Quarantänestatus, Siegel des Aufstiegspakets und akzeptierte tonne-window-Masse noch nicht frei sind. HECTON-8 macht diese Verzögerung physisch. Der Ozean hält Abstieghardware unter Druck, der Himmel bricht Sichtlinien mit Wetter und geladenem Rauschen, und der Träger verbucht jedes Kilogramm im Anspruchsledger. Die erste Antwort aus dem Orbit ist deshalb keine Gnade. Sie beweist nur, dass ein Teil der Maschine sich für Minuten ausgerichtet hat. Überleben heißt, den Rest vor dem nächsten Fensterschluss zur Zustimmung zu bringen.",
+     "field_note": "Wenn der Träger antwortet, verbrauche keine Luft zum Feiern. Eine Antwort ist Geometrie plus Buchhaltung. Rettung beginnt, wenn Fenster, Siegel, Nutzlast und Körper in dieselbe Zeile passen."
+    },
+    "pl_PL": {
+     "title": "Geometria okna odzysku w Aegir",
+     "scanner": "ZEGAR OKNA // Black Keel może odebrać pakiet w tym przelocie. Odzysk ciała nadal wymaga sprzętu wznoszenia, uzgodnienia kwarantanny, wyjścia z cienia przekaźnika Kestrel i zaakceptowanej linii masy tonne-window.",
+     "terminal": "KOMUNIKAT ODZYSKU KEELMARK // Odbiór sygnału nie jest zgodą na podniesienie. Przed żądaniem odzysku zgraj fazę nośnika, pułap burzy, cień przekaźnika, zgodę kwarantanny, stan pakietu wznoszenia i przyjętą masę ładunku.",
+     "audio": "Przekaźnik Black Keel: pakiet odebrany. Ciało poza tym oknem. Trzymaj pakiet wznoszenia zaplombowany, dowody oznaczone i nie zużywaj powietrza na świętowanie liczby.",
+     "in_game_wiki": "Odzyskana mapa okna Aegir wyjaśnia, czemu kontakt z Black Keel nie jest ratunkiem. Sygnał może zmieścić się w jednym przelocie, gdy ciało, kapsuła wznoszenia, roszczenie kwarantanny, pakiet dowodowy i masa ładunku nie mieszczą się w tej samej geometrii. Pierwsza naprawa daje tylko miejsce na zegarze.",
+     "external_site": "Odzysk w Aegir jest najpierw harmonogramem, a dopiero potem ratunkiem. Black Keel może usłyszeć pakiet przez wąski przelot przekaźnika i nadal odmówić ciała, bo trasa nie oczyściła fazy nośnika, pułapu burzy, cienia przekaźnika Kestrel, stanu kwarantanny, plomby pakietu wznoszenia i zaakceptowanej masy tonne-window. HECTON-8 czyni tę zwłokę fizyczną. Ocean trzyma sprzęt zejścia pod ciśnieniem, niebo rwie widoczność pogodą i naładowanym szumem, a nośnik zapisuje każdy kilogram w rejestrze roszczeń. Pierwsza odpowiedź z orbity nie jest więc łaską. To dowód, że jedna część maszyny zgrała się na kilka minut. Przetrwanie oznacza zmuszenie reszty maszyny do zgody przed zamknięciem następnego okna.",
+     "field_note": "Jeśli nośnik odpowie, nie zużywaj powietrza na świętowanie. Odpowiedź to geometria plus księgowość. Ratunek zaczyna się, gdy okno, plomba, ładunek i ciało mieszczą się w tej samej linii."
+    },
+    "uk_UA": {
+     "title": "Геометрія вікна евакуації в Aegir",
+     "scanner": "ГОДИННИК ВІКНА // Black Keel може прийняти пакет під час цього проходу. Для евакуації тіла ще потрібні підйомне обладнання, карантинне узгодження, вихід із тіні реле Kestrel і прийнятий рядок маси tonne-window.",
+     "terminal": "ПОВІДОМЛЕННЯ KEELMARK ПРО ЕВАКУАЦІЮ // Отримання сигналу не є дозволом на підйом. Перед запитом евакуації узгодь фазу носія, стелю шторму, тінь реле, карантинний допуск, стан підйомного пакета і прийняту масу вантажу.",
+     "audio": "Ретранслятор Black Keel: пакет прийнято. Тіло не входить у це вікно. Тримай підйомний пакет запечатаним, докази позначеними і не витрачай повітря на святкування числа.",
+     "in_game_wiki": "Знайдена карта вікна Aegir пояснює, чому контакт із Black Keel не є порятунком. Сигнал може пройти в один прохід, а тіло, підйомна капсула, карантинна претензія, пакет доказів і маса вантажу можуть не потрапити в ту саму геометрію. Перший ремонт лише дає місце на годиннику.",
+     "external_site": "Евакуація в Aegir спершу є розкладом, а вже потім порятунком. Black Keel може почути пакет у вузькому проході реле і все одно відмовити тілу, бо маршрут не очистив фазу носія, стелю шторму, тінь реле Kestrel, карантинний стан, пломбу підйомного пакета і прийняту масу tonne-window. HECTON-8 робить цю затримку фізичною. Океан тримає спускове обладнання під тиском, небо ламає пряму видимість погодою і зарядженим шумом, а носій вносить кожен кілограм до реєстру претензій. Перша відповідь з орбіти тому не милість. Це доказ, що одна частина машини зійшлася на кілька хвилин. Вижити означає змусити решту машини погодитися до закриття наступного вікна.",
+     "field_note": "Якщо носій відповів, не витрачай повітря на святкування. Відповідь це геометрія плюс бухгалтерія. Порятунок починається, коли вікно, пломба, вантаж і тіло входять в один рядок."
+    },
+    "ar_SA": {
+     "title": "هندسة نافذة الاستعادة في Aegir",
+     "scanner": "ساعة النافذة // يستطيع Black Keel استقبال حزمة في هذا المرور. استعادة الجسد ما زالت تحتاج عتاد الصعود، ومصافحة الحجر، وخروجاً من ظل مرحل Kestrel، وسطر كتلة tonne-window مقبول.",
+     "terminal": "إشعار استعادة KEELMARK // استقبال الإشارة ليس موافقة على الرفع. طابق طور الحامل، وسقف العاصفة، وظل المرحل، وتصريح الحجر، وحالة حزمة الصعود، وكتلة الحمولة المقبولة قبل طلب الاستعادة.",
+     "audio": "مرحل Black Keel: تم استلام الحزمة. الجسد خارج هذه النافذة. أبق حزمة الصعود مختومة، وأبق الأدلة موسومة، ولا تهدر الهواء احتفالاً برقم.",
+     "in_game_wiki": "تشرح خريطة نافذة Aegir المستعادة لماذا لا يعني الاتصال مع Black Keel إنقاذاً. قد تعبر الإشارة في مرور واحد بينما يفشل الجسد، وكبسولة الصعود، ومطالبة الحجر، وحزمة الأدلة، وكتلة الحمولة في دخول الهندسة نفسها. أول إصلاح يمنحك مكاناً على الساعة فقط.",
+     "external_site": "الاستعادة في Aegir جدول قبل أن تكون إنقاذاً. يستطيع Black Keel سماع حزمة عبر مرور مرحل ضيق ثم يرفض الجسد، لأن المسار لم يستوفِ بعد طور الحامل، وسقف العاصفة، وظل مرحل Kestrel، وحالة الحجر، وختم حزمة الصعود، وكتلة tonne-window المقبولة. يجعل HECTON-8 هذا التأخير مادياً. المحيط يحبس عتاد الهبوط تحت الضغط، والسماء تكسر خط الرؤية بالطقس والضجيج المشحون، والحامل يحسب كل كيلوغرام داخل دفتر المطالبات. لذلك فإن أول رد من المدار ليس رحمة. إنه دليل على أن جزءاً واحداً من الآلة اصطف لبضع دقائق. البقاء يعني جعل بقية الآلة توافق قبل أن تغلق النافذة التالية.",
+     "field_note": "إذا أجاب الحامل، فلا تهدر الهواء في الاحتفال. الرد هندسة مع محاسبة. يبدأ الإنقاذ عندما تدخل النافذة والختم والحمولة والجسد في السطر نفسه."
+    },
+    "id_ID": {
+     "title": "Geometri Jendela Pemulihan Aegir",
+     "scanner": "JAM JENDELA // Black Keel bisa menerima paket pada lintasan ini. Pemulihan tubuh masih butuh perangkat naik, handshake karantina, pelepasan bayang relai Kestrel, dan baris massa tonne-window yang diterima.",
+     "terminal": "PEMBERITAHUAN PEMULIHAN KEELMARK // Penerimaan sinyal bukan izin angkat. Selaraskan fase pengangkut, batas badai, bayang relai, izin karantina, status paket naik, dan massa muatan yang diterima sebelum meminta pemulihan.",
+     "audio": "Relai Black Keel: paket diterima. Tubuh tidak masuk jendela ini. Jaga paket naik tetap tersegel, bukti tetap bertag, dan jangan menghabiskan udara untuk merayakan angka.",
+     "in_game_wiki": "Peta jendela Aegir yang ditemukan menjelaskan mengapa kontak Black Keel bukan penyelamatan. Sinyal bisa lewat dalam satu lintasan sementara tubuh, kapsul naik, klaim karantina, paket bukti, dan massa muatan gagal masuk geometri yang sama. Perbaikan pertama hanya memberi tempat di jam.",
+     "external_site": "Pemulihan Aegir adalah jadwal sebelum menjadi penyelamatan. Black Keel dapat mendengar paket melalui lintasan relai sempit tetapi tetap menolak tubuh, karena rute belum membersihkan fase pengangkut, batas badai, bayang relai Kestrel, status karantina, segel paket naik, dan massa tonne-window yang diterima. HECTON-8 membuat jeda itu fisik. Laut menahan perangkat turun di bawah tekanan, langit mematahkan garis pandang dengan cuaca dan noise bermuatan, dan pengangkut memperlakukan setiap kilogram sebagai bagian dari buku klaim. Jawaban pertama dari orbit karena itu bukan belas kasih. Itu bukti bahwa satu bagian mesin selaras selama beberapa menit. Bertahan berarti membuat sisa mesin setuju sebelum jendela berikutnya tertutup.",
+     "field_note": "Jika pengangkut menjawab, jangan habiskan udara untuk merayakan. Balasan adalah geometri plus akuntansi. Penyelamatan dimulai ketika jendela, segel, muatan, dan tubuh masuk baris yang sama."
+    },
+    "ko_KR": {
+     "title": "Aegir 회수 창 기하",
+     "scanner": "창 시계 // 이번 통과에서 Black Keel은 패킷을 받을 수 있다. 신체 회수에는 여전히 상승 장비, 검역 핸드셰이크, Kestrel 중계 그림자 해제, 승인된 tonne-window 질량 줄이 필요하다.",
+     "terminal": "KEELMARK 회수 통지 // 신호 수신은 인양 승인과 다르다. 회수 요청 전 운반선 위상, 폭풍 상한, 중계 그림자, 검역 승인, 상승 패키지 상태, 승인된 적재 질량을 맞춰라.",
+     "audio": "Black Keel 중계: 패킷 수신. 신체는 이 창에 없다. 상승 패키지는 봉인된 채로, 증거는 태그된 채로 유지하고, 숫자 하나에 공기를 써서 기뻐하지 마라.",
+     "in_game_wiki": "회수된 Aegir 창 도표는 Black Keel 접촉이 구조가 아닌 이유를 설명한다. 신호는 한 통과에 들어맞을 수 있지만 신체, 상승 캡슐, 검역 청구, 증거 패킷, 적재 질량은 같은 기하에 실패할 수 있다. 첫 수리는 시계 위의 자리만 얻는다.",
+     "external_site": "Aegir 회수는 구조이기 전에 일정표다. Black Keel은 좁은 중계 통과에서 패킷을 들을 수 있지만, 운반선 위상, 폭풍 상한, Kestrel 중계 그림자, 검역 상태, 상승 패키지 봉인, 승인된 tonne-window 질량이 해소되지 않으면 신체를 거부한다. HECTON-8은 그 지연을 물리적으로 만든다. 바다는 하강 장비를 압력 아래 묶고, 하늘은 날씨와 대전된 잡음으로 직선 시야를 끊으며, 운반선은 모든 킬로그램을 청구 장부의 일부로 취급한다. 그래서 궤도에서 온 첫 응답은 자비가 아니다. 기계의 한 부분이 몇 분 동안 맞았다는 증거일 뿐이다. 살아남으려면 다음 창이 닫히기 전에 나머지 기계도 동의하게 만들어야 한다.",
+     "field_note": "운반선이 답해도 공기를 축하에 쓰지 마라. 응답은 기하와 회계다. 구조는 창, 봉인, 적재물, 신체가 같은 줄에 들어갈 때 시작된다."
+    },
+    "he_IL": {
+     "title": "גאומטריית חלון החילוץ של Aegir",
+     "scanner": "שעון חלון // Black Keel יכול לקבל חבילה במעבר הזה. חילוץ גוף עדיין דורש חומרת עלייה, לחיצת יד הסגר, שחרור מצל ממסר Kestrel, ושורת מסה tonne-window מאושרת.",
+     "terminal": "הודעת חילוץ KEELMARK // קבלת אות אינה אישור הרמה. יש ליישר מופע נשא, תקרת סערה, צל ממסר, אישור הסגר, מצב חבילת עלייה ומסת מטען מאושרת לפני בקשת חילוץ.",
+     "audio": "ממסר Black Keel: החבילה התקבלה. הגוף לא בתוך החלון הזה. השאר את חבילת העלייה חתומה, את הראיות מתויגות, ואל תבזבז אוויר על חגיגת מספר.",
+     "in_game_wiki": "תרשים חלון Aegir שנמצא מסביר מדוע קשר עם Black Keel אינו חילוץ. אות יכול לעבור במעבר אחד, בזמן שגוף, קפסולת עלייה, תביעת הסגר, חבילת ראיות ומסת מטען נכשלים באותה גאומטריה. התיקון הראשון רק מקנה מקום על השעון.",
+     "external_site": "חילוץ ב-Aegir הוא לוח זמנים לפני שהוא הצלה. Black Keel יכול לשמוע חבילה דרך מעבר ממסר צר ועדיין לסרב לגוף, משום שהנתיב לא ניקה מופע נשא, תקרת סערה, צל ממסר Kestrel, מצב הסגר, חותם חבילת עלייה ומסת tonne-window מאושרת. HECTON-8 הופך את העיכוב הזה לפיזי. האוקיינוס מחזיק את חומרת הירידה תחת לחץ, השמיים שוברים קו ראייה במזג אוויר וברעש טעון, והנשא מתייחס לכל קילוגרם כחלק מספר התביעות. לכן התשובה הראשונה מהמסלול אינה רחמים. היא הוכחה שחלק אחד של המכונה הסתדר לכמה דקות. הישרדות פירושה לגרום לשאר המכונה להסכים לפני שהחלון הבא נסגר.",
+     "field_note": "אם הנשא עונה, אל תבזבז אוויר על חגיגה. תשובה היא גאומטריה ועוד חשבונאות. חילוץ מתחיל כאשר החלון, החותם, המטען והגוף נכנסים לאותה שורה."
+    },
+    "pt_BR": {
+     "title": "Geometria da janela de recuperação de Aegir",
+     "scanner": "RELÓGIO DE JANELA // Black Keel pode receber um pacote nesta passagem. A recuperação do corpo ainda exige hardware de ascensão, handshake de quarentena, liberação da sombra do relé Kestrel e uma linha de massa tonne-window aceita.",
+     "terminal": "AVISO DE RECUPERAÇÃO KEELMARK // Receber sinal não aprova içamento. Alinhe fase do cargueiro, teto de tempestade, sombra de relé, liberação de quarentena, estado do pacote de ascensão e massa de carga aceita antes de solicitar recuperação.",
+     "audio": "Relé Black Keel: pacote recebido. Corpo fora desta janela. Mantenha o pacote de ascensão lacrado, a prova marcada e não gaste ar comemorando um número.",
+     "in_game_wiki": "Um mapa de janela de Aegir recuperado explica por que contato com Black Keel não é resgate. Um sinal pode caber em uma passagem enquanto corpo, cápsula de ascensão, reclamação de quarentena, pacote de prova e massa de carga falham na mesma geometria. O primeiro reparo só ganha um lugar no relógio.",
+     "external_site": "Recuperação em Aegir é cronograma antes de ser resgate. Black Keel pode ouvir um pacote por uma passagem estreita de relé e ainda recusar o corpo, porque a rota não liberou fase do cargueiro, teto de tempestade, sombra do relé Kestrel, estado de quarentena, lacre do pacote de ascensão e massa tonne-window aceita. HECTON-8 torna esse atraso físico. O oceano prende o hardware de descida sob pressão, o céu quebra a linha de visada com clima e ruído carregado, e o cargueiro trata cada quilograma como parte de um livro de reclamações. A primeira resposta orbital, portanto, não é misericórdia. É prova de que uma parte da máquina se alinhou por alguns minutos. Sobreviver é fazer o resto da máquina concordar antes que a próxima janela feche.",
+     "field_note": "Se o cargueiro responder, não gaste ar comemorando. Uma resposta é geometria mais contabilidade. O resgate começa quando janela, lacre, carga e corpo cabem na mesma linha."
+    },
+    "nl_NL": {
+     "title": "Geometrie van het Aegir-bergingsvenster",
+     "scanner": "VENSTERKLOK // Black Keel kan in deze passage een pakket ontvangen. Lichaamsberging vereist nog opstijghardware, quarantaine-handshake, vrijgave uit de Kestrel-relaisschaduw en een geaccepteerde tonne-window-massaregel.",
+     "terminal": "KEELMARK BERGINGSBERICHT // Signaalontvangst is geen hijstoestemming. Stem dragerfase, stormplafond, relaisschaduw, quarantainevrijgave, status van het opstijgpakket en geaccepteerde laadmassa af voordat berging wordt aangevraagd.",
+     "audio": "Black Keel-relais: pakket ontvangen. Lichaam niet in dit venster. Houd het opstijgpakket verzegeld, het bewijs getagd, en verspil geen lucht aan het vieren van een getal.",
+     "in_game_wiki": "Een geborgen Aegir-vensterkaart verklaart waarom contact met Black Keel geen redding is. Een signaal kan door één passage passen terwijl lichaam, opstijgcapsule, quarantaineclaim, bewijspakket en laadmassa dezelfde geometrie niet halen. De eerste reparatie levert alleen een plek op de klok op.",
+     "external_site": "Berging in Aegir is eerst een schema en pas daarna redding. Black Keel kan een pakket horen via een smalle relaispassage en het lichaam toch weigeren, omdat de route dragerfase, stormplafond, Kestrel-relaisschaduw, quarantainestatus, zegel van het opstijgpakket en geaccepteerde tonne-window-massa nog niet heeft vrijgegeven. HECTON-8 maakt die vertraging fysiek. De oceaan houdt daalhardware onder druk, de hemel breekt zichtlijnen met weer en geladen ruis, en de drager behandelt elke kilo als onderdeel van een claimregister. Het eerste antwoord uit de baan is daarom geen genade. Het bewijst alleen dat één deel van de machine enkele minuten klopte. Overleven betekent de rest van de machine laten instemmen voordat het volgende venster sluit.",
+     "field_note": "Als de drager antwoordt, verspil dan geen lucht aan feest. Een antwoord is geometrie plus boekhouding. Redding begint wanneer venster, zegel, lading en lichaam in dezelfde regel passen."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

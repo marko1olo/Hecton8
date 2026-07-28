@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P306_PDA_CODEX_STATE_PROOF_CARD",
-      "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
-      "article_id": "applied_lore.pda_codex_state_proof_card",
-      "title_key": "applied_lore.pda_codex_state_proof_card.title",
-      "unlock": {
-        "primary": "unlock.pda_codex_state_proof_card",
-        "poi_tags": [
-          "poi.pda_codex_state_card",
-          "poi.unlock_tier_strip",
-          "poi.packet_hash_label"
-        ],
-        "biome_tags": [
-          "biome.ui",
-          "biome.dossier"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "PDA Evidence State",
-          "scanner": "Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: PDA Evidence State",
-          "scanner": "RU LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "RU LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "RU LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "RU LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "RU LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "RU LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: PDA Evidence State",
-          "scanner": "JA LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "JA LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "JA LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "JA LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "JA LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "JA LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: PDA Evidence State",
-          "scanner": "ZH LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "ZH LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "ZH LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "ZH LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "ZH LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "ZH LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: PDA Evidence State",
-          "scanner": "FR LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "FR LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "FR LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "FR LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "FR LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "FR LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: PDA Evidence State",
-          "scanner": "ES LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "ES LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "ES LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "ES LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "ES LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "ES LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: PDA Evidence State",
-          "scanner": "DE LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "DE LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "DE LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "DE LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "DE LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "DE LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: PDA Evidence State",
-          "scanner": "PL LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "PL LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "PL LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "PL LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "PL LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "PL LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: PDA Evidence State",
-          "scanner": "UK LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "UK LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "UK LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "UK LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "UK LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "UK LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: PDA Evidence State",
-          "scanner": "AR LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "AR LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "AR LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "AR LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "AR LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "AR LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: PDA Evidence State",
-          "scanner": "ID LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "ID LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "ID LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "ID LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "ID LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "ID LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: PDA Evidence State",
-          "scanner": "KO LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "KO LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "KO LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "KO LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "KO LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "KO LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: PDA Evidence State",
-          "scanner": "HE LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "HE LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "HE LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "HE LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "HE LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "HE LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: PDA Evidence State",
-          "scanner": "PT LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "PT LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "PT LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "PT LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "PT LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "PT LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: PDA Evidence State",
-          "scanner": "NL LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
-          "terminal": "NL LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
-          "audio": "NL LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
-          "in_game_wiki": "NL LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
-          "external_site": "NL LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
-          "field_note": "NL LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P306_PDA_CODEX_STATE_PROOF_CARD",
+   "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
+   "article_id": "applied_lore.pda_codex_state_proof_card",
+   "title_key": "applied_lore.pda_codex_state_proof_card.title",
+   "unlock": {
+    "primary": "unlock.pda_codex_state_proof_card",
+    "poi_tags": [
+     "poi.pda_codex_state_card",
+     "poi.unlock_tier_strip",
+     "poi.packet_hash_label"
+    ],
+    "biome_tags": [
+     "biome.ui",
+     "biome.dossier"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "PDA Evidence State",
+     "scanner": "Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "Bind codex rows to baked packet hashes and device-tested layout before release."
     },
-    {
-      "packet_id": "P307_SCANNER_STAGE_BINDING_PROOF_CARD",
-      "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
-      "article_id": "applied_lore.scanner_stage_binding_proof_card",
-      "title_key": "applied_lore.scanner_stage_binding_proof_card.title",
-      "unlock": {
-        "primary": "unlock.scanner_stage_binding_proof_card",
-        "poi_tags": [
-          "poi.scanner_stage_card",
-          "poi.scan_percent_strip",
-          "poi.evidence_escalation_marker"
-        ],
-        "biome_tags": [
-          "biome.scanner",
-          "biome.evidence"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Scanner Stage Binding",
-          "scanner": "Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Scanner Stage Binding",
-          "scanner": "RU LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "RU LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "RU LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "RU LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "RU LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "RU LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Scanner Stage Binding",
-          "scanner": "JA LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "JA LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "JA LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "JA LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "JA LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "JA LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Scanner Stage Binding",
-          "scanner": "ZH LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "ZH LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "ZH LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "ZH LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "ZH LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "ZH LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Scanner Stage Binding",
-          "scanner": "FR LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "FR LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "FR LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "FR LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "FR LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "FR LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Scanner Stage Binding",
-          "scanner": "ES LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "ES LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "ES LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "ES LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "ES LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "ES LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Scanner Stage Binding",
-          "scanner": "DE LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "DE LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "DE LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "DE LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "DE LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "DE LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Scanner Stage Binding",
-          "scanner": "PL LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "PL LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "PL LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "PL LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "PL LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "PL LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Scanner Stage Binding",
-          "scanner": "UK LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "UK LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "UK LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "UK LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "UK LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "UK LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Scanner Stage Binding",
-          "scanner": "AR LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "AR LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "AR LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "AR LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "AR LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "AR LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Scanner Stage Binding",
-          "scanner": "ID LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "ID LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "ID LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "ID LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "ID LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "ID LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Scanner Stage Binding",
-          "scanner": "KO LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "KO LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "KO LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "KO LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "KO LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "KO LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Scanner Stage Binding",
-          "scanner": "HE LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "HE LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "HE LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "HE LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "HE LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "HE LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Scanner Stage Binding",
-          "scanner": "PT LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "PT LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "PT LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "PT LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "PT LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "PT LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Scanner Stage Binding",
-          "scanner": "NL LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
-          "terminal": "NL LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
-          "audio": "NL LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
-          "in_game_wiki": "NL LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
-          "external_site": "NL LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
-          "field_note": "NL LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: PDA Evidence State",
+     "scanner": "RU LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "RU LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "RU LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "RU LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "RU LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "RU LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
     },
-    {
-      "packet_id": "P308_TERMINAL_SLOT_PROOF_CARD",
-      "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
-      "article_id": "applied_lore.terminal_slot_proof_card",
-      "title_key": "applied_lore.terminal_slot_proof_card.title",
-      "unlock": {
-        "primary": "unlock.terminal_slot_proof_card",
-        "poi_tags": [
-          "poi.terminal_slot_proof_card",
-          "poi.baked_string_pool_label",
-          "poi.operator_surface_limit"
-        ],
-        "biome_tags": [
-          "biome.terminal",
-          "biome.localization"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Terminal Slot Chain",
-          "scanner": "Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Terminal Slot Chain",
-          "scanner": "RU LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "RU LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "RU LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "RU LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "RU LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "RU LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Terminal Slot Chain",
-          "scanner": "JA LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "JA LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "JA LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "JP LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "JA LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "JP LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Terminal Slot Chain",
-          "scanner": "ZH LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "ZH LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "ZH LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "CN LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "ZH LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "CN LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Terminal Slot Chain",
-          "scanner": "FR LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "FR LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "FR LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "FR LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "FR LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "FR LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Terminal Slot Chain",
-          "scanner": "ES LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "ES LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "ES LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "ES LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "ES LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "ES LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Terminal Slot Chain",
-          "scanner": "DE LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "DE LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "DE LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "DE LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "DE LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "DE LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Terminal Slot Chain",
-          "scanner": "PL LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "PL LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "PL LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "PL LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "PL LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "PL LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Terminal Slot Chain",
-          "scanner": "UK LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "UK LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "UK LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "UA LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "UK LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "UA LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Terminal Slot Chain",
-          "scanner": "AR LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "AR LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "AR LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "AR LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "AR LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "AR LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Terminal Slot Chain",
-          "scanner": "ID LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "ID LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "ID LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "ID LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "ID LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "ID LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Terminal Slot Chain",
-          "scanner": "KO LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "KO LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "KO LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "KO LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "KO LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "KO LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Terminal Slot Chain",
-          "scanner": "HE LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "HE LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "HE LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "HE LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "HE LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "HE LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Terminal Slot Chain",
-          "scanner": "PT LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "PT LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "PT LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "PT LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "PT LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "PT LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Terminal Slot Chain",
-          "scanner": "NL LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
-          "terminal": "NL LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
-          "audio": "NL LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
-          "in_game_wiki": "NL LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
-          "external_site": "NL LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
-          "field_note": "NL LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
-        }
-      }
+    "ja_JP": {
+     "title": "JA LOC HOLD: PDA Evidence State",
+     "scanner": "JA LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "JA LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "JA LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "JA LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "JA LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "JA LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
     },
-    {
-      "packet_id": "P309_DOSSIER_ENDING_RECORD_PROOF_CARD",
-      "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
-      "article_id": "applied_lore.dossier_ending_record_proof_card",
-      "title_key": "applied_lore.dossier_ending_record_proof_card.title",
-      "unlock": {
-        "primary": "unlock.dossier_ending_record_proof_card",
-        "poi_tags": [
-          "poi.dossier_ending_record_card",
-          "poi.receiver_authority_badge",
-          "poi.unresolved_cost_line"
-        ],
-        "biome_tags": [
-          "biome.dossier",
-          "biome.ending"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Dossier Ending Record",
-          "scanner": "Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Dossier Ending Record",
-          "scanner": "RU LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "RU LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "RU LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "RU LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "RU LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "RU LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Dossier Ending Record",
-          "scanner": "JA LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "JA LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "JA LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "JA LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "JA LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "JA LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Dossier Ending Record",
-          "scanner": "ZH LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "ZH LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "ZH LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "ZH LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "ZH LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "ZH LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Dossier Ending Record",
-          "scanner": "FR LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "FR LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "FR LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "FR LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "FR LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "FR LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Dossier Ending Record",
-          "scanner": "ES LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "ES LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "ES LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "ES LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "ES LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "ES LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Dossier Ending Record",
-          "scanner": "DE LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "DE LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "DE LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "DE LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "DE LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "DE LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Dossier Ending Record",
-          "scanner": "PL LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "PL LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "PL LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "PL LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "PL LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "PL LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Dossier Ending Record",
-          "scanner": "UK LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "UK LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "UK LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "UK LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "UK LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "UK LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Dossier Ending Record",
-          "scanner": "AR LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "AR LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "AR LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "AR LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "AR LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "AR LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Dossier Ending Record",
-          "scanner": "ID LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "ID LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "ID LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "ID LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "ID LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "ID LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Dossier Ending Record",
-          "scanner": "KO LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "KO LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "KO LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "KO LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "KO LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "KO LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Dossier Ending Record",
-          "scanner": "HE LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "HE LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "HE LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "HE LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "HE LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "HE LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Dossier Ending Record",
-          "scanner": "PT LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "PT LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "PT LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "PT LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "PT LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "PT LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Dossier Ending Record",
-          "scanner": "NL LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
-          "terminal": "NL LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
-          "audio": "NL LOC HOLD: Knowledge survives the route. Equipment does not.",
-          "in_game_wiki": "NL LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
-          "external_site": "NL LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
-          "field_note": "NL LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
-        }
-      }
+    "zh_CN": {
+     "title": "ZH LOC HOLD: PDA Evidence State",
+     "scanner": "ZH LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "ZH LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "ZH LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "ZH LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "ZH LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "ZH LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
     },
-    {
-      "packet_id": "P310_LOCALIZED_OVERFLOW_PROOF_CARD",
-      "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
-      "article_id": "applied_lore.localized_overflow_proof_card",
-      "title_key": "applied_lore.localized_overflow_proof_card.title",
-      "unlock": {
-        "primary": "unlock.localized_overflow_proof_card",
-        "poi_tags": [
-          "poi.localized_overflow_card",
-          "poi.rtl_sample_panel",
-          "poi.cjk_subtitle_timing_strip"
-        ],
-        "biome_tags": [
-          "biome.localization",
-          "biome.ui"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Localization Fit Record",
-          "scanner": "Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Localization Fit Record",
-          "scanner": "RU LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "RU LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "RU LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "RU LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "RU LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "RU LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Localization Fit Record",
-          "scanner": "JA LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "JA LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "JA LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "JA LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "JA LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "JA LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Localization Fit Record",
-          "scanner": "ZH LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "ZH LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "ZH LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "ZH LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "ZH LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "ZH LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Localization Fit Record",
-          "scanner": "FR LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "FR LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "FR LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "FR LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "FR LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "FR LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Localization Fit Record",
-          "scanner": "ES LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "ES LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "ES LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "ES LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "ES LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "ES LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Localization Fit Record",
-          "scanner": "DE LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "DE LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "DE LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "DE LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "DE LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "DE LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Localization Fit Record",
-          "scanner": "PL LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "PL LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "PL LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "PL LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "PL LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "PL LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Localization Fit Record",
-          "scanner": "UK LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "UK LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "UK LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "UK LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "UK LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "UK LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Localization Fit Record",
-          "scanner": "AR LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "AR LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "AR LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "AR LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "AR LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "AR LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Localization Fit Record",
-          "scanner": "ID LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "ID LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "ID LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "ID LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "ID LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "ID LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Localization Fit Record",
-          "scanner": "KO LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "KO LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "KO LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "KO LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "KO LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "KO LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Localization Fit Record",
-          "scanner": "HE LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "HE LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "HE LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "HE LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "HE LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "HE LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Localization Fit Record",
-          "scanner": "PT LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "PT LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "PT LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "PT LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "PT LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "PT LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Localization Fit Record",
-          "scanner": "NL LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
-          "terminal": "NL LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
-          "audio": "NL LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
-          "in_game_wiki": "NL LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
-          "external_site": "NL LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
-          "field_note": "NL LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: PDA Evidence State",
+     "scanner": "FR LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "FR LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "FR LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "FR LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "FR LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "FR LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: PDA Evidence State",
+     "scanner": "ES LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "ES LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "ES LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "ES LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "ES LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "ES LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: PDA Evidence State",
+     "scanner": "DE LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "DE LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "DE LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "DE LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "DE LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "DE LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: PDA Evidence State",
+     "scanner": "PL LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "PL LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "PL LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "PL LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "PL LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "PL LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: PDA Evidence State",
+     "scanner": "UK LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "UK LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "UK LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "UK LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "UK LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "UK LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: PDA Evidence State",
+     "scanner": "AR LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "AR LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "AR LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "AR LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "AR LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "AR LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: PDA Evidence State",
+     "scanner": "ID LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "ID LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "ID LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "ID LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "ID LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "ID LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: PDA Evidence State",
+     "scanner": "KO LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "KO LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "KO LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "KO LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "KO LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "KO LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: PDA Evidence State",
+     "scanner": "HE LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "HE LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "HE LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "HE LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "HE LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "HE LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: PDA Evidence State",
+     "scanner": "PT LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "PT LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "PT LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "PT LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "PT LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "PT LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: PDA Evidence State",
+     "scanner": "NL LOC HOLD: Recovered PDA entry: hint, fragment, evidence, synthesis, ending record.",
+     "terminal": "NL LOC HOLD: PDA entries open only when a matching scan, terminal hash, or route warning has been found on the body of the site.",
+     "audio": "NL LOC HOLD: The PDA does not explain the world first. It waits for a receipt.",
+     "in_game_wiki": "NL LOC HOLD: The codex records each unlocked entry with its evidence source, packet hash, and current warning state so the player can trace why it appeared.",
+     "external_site": "NL LOC HOLD: HECTON-8's encyclopedia is designed to follow discovery. It keeps spoilers behind evidence and makes every revealed fact traceable.",
+     "field_note": "NL LOC HOLD: Bind codex rows to baked packet hashes and device-tested layout before release."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P307_SCANNER_STAGE_BINDING_PROOF_CARD",
+   "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
+   "article_id": "applied_lore.scanner_stage_binding_proof_card",
+   "title_key": "applied_lore.scanner_stage_binding_proof_card.title",
+   "unlock": {
+    "primary": "unlock.scanner_stage_binding_proof_card",
+    "poi_tags": [
+     "poi.scanner_stage_card",
+     "poi.scan_percent_strip",
+     "poi.evidence_escalation_marker"
+    ],
+    "biome_tags": [
+     "biome.scanner",
+     "biome.evidence"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Scanner Stage Binding",
+     "scanner": "Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Scanner Stage Binding",
+     "scanner": "RU LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "RU LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "RU LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "RU LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "RU LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "RU LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Scanner Stage Binding",
+     "scanner": "JA LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "JA LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "JA LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "JA LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "JA LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "JA LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Scanner Stage Binding",
+     "scanner": "ZH LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "ZH LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "ZH LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "ZH LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "ZH LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "ZH LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Scanner Stage Binding",
+     "scanner": "FR LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "FR LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "FR LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "FR LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "FR LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "FR LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Scanner Stage Binding",
+     "scanner": "ES LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "ES LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "ES LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "ES LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "ES LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "ES LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Scanner Stage Binding",
+     "scanner": "DE LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "DE LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "DE LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "DE LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "DE LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "DE LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Scanner Stage Binding",
+     "scanner": "PL LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "PL LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "PL LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "PL LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "PL LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "PL LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Scanner Stage Binding",
+     "scanner": "UK LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "UK LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "UK LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "UK LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "UK LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "UK LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Scanner Stage Binding",
+     "scanner": "AR LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "AR LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "AR LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "AR LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "AR LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "AR LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Scanner Stage Binding",
+     "scanner": "ID LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "ID LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "ID LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "ID LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "ID LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "ID LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Scanner Stage Binding",
+     "scanner": "KO LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "KO LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "KO LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "KO LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "KO LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "KO LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Scanner Stage Binding",
+     "scanner": "HE LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "HE LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "HE LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "HE LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "HE LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "HE LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Scanner Stage Binding",
+     "scanner": "PT LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "PT LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "PT LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "PT LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "PT LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "PT LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Scanner Stage Binding",
+     "scanner": "NL LOC HOLD: Scanner stage: contact, partial contour, material read, behavior read, full dossier.",
+     "terminal": "NL LOC HOLD: Scanner descriptions escalate with measured contact: shape, composition, movement, habitat, and threat behavior.",
+     "audio": "NL LOC HOLD: A scan should sound like a diver found something, not like a lecturer arrived.",
+     "in_game_wiki": "NL LOC HOLD: Every scanner entry is tied to a physical stage of discovery. The first pass can be uncertain; later passes add hard readings and observed behavior.",
+     "external_site": "NL LOC HOLD: Scanner writing should feel like field instrumentation: brief, specific, and earned by getting close enough to risk the read.",
+     "field_note": "NL LOC HOLD: Keep scanner strings bound to scan percent, biome context, and evidence markers."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P308_TERMINAL_SLOT_PROOF_CARD",
+   "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
+   "article_id": "applied_lore.terminal_slot_proof_card",
+   "title_key": "applied_lore.terminal_slot_proof_card.title",
+   "unlock": {
+    "primary": "unlock.terminal_slot_proof_card",
+    "poi_tags": [
+     "poi.terminal_slot_proof_card",
+     "poi.baked_string_pool_label",
+     "poi.operator_surface_limit"
+    ],
+    "biome_tags": [
+     "biome.terminal",
+     "biome.localization"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Terminal Slot Chain",
+     "scanner": "Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Terminal Slot Chain",
+     "scanner": "RU LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "RU LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "RU LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "RU LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "RU LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "RU LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Terminal Slot Chain",
+     "scanner": "JA LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "JA LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "JA LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "JP LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "JA LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "JP LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Terminal Slot Chain",
+     "scanner": "ZH LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "ZH LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "ZH LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "CN LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "ZH LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "CN LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Terminal Slot Chain",
+     "scanner": "FR LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "FR LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "FR LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "FR LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "FR LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "FR LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Terminal Slot Chain",
+     "scanner": "ES LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "ES LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "ES LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "ES LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "ES LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "ES LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Terminal Slot Chain",
+     "scanner": "DE LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "DE LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "DE LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "DE LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "DE LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "DE LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Terminal Slot Chain",
+     "scanner": "PL LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "PL LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "PL LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "PL LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "PL LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "PL LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Terminal Slot Chain",
+     "scanner": "UK LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "UK LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "UK LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "UA LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "UK LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "UA LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Terminal Slot Chain",
+     "scanner": "AR LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "AR LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "AR LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "AR LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "AR LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "AR LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Terminal Slot Chain",
+     "scanner": "ID LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "ID LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "ID LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "ID LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "ID LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "ID LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Terminal Slot Chain",
+     "scanner": "KO LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "KO LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "KO LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "KO LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "KO LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "KO LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Terminal Slot Chain",
+     "scanner": "HE LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "HE LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "HE LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "HE LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "HE LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "HE LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Terminal Slot Chain",
+     "scanner": "PT LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "PT LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "PT LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "PT LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "PT LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "PT LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Terminal Slot Chain",
+     "scanner": "NL LOC HOLD: Local terminal slots detected: order log, maintenance note, safety line, redacted operator remark.",
+     "terminal": "NL LOC HOLD: Terminals carry short operational records from the place they stand in. They do not dump history outside that slot.",
+     "audio": "NL LOC HOLD: A station terminal remembers what the crew typed there, not a distant narrator's explanation.",
+     "in_game_wiki": "NL LOC HOLD: Terminal text is constrained by preserved slots and local operator context. A pump room gives work orders; a control room gives authority and failure records.",
+     "external_site": "NL LOC HOLD: Terminal copy is short, physical, and local. It should read like a preserved system message or human note found in its original place.",
+     "field_note": "NL LOC HOLD: Terminal rows bind to authored slot IDs, preserved text rows, and POI context."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P309_DOSSIER_ENDING_RECORD_PROOF_CARD",
+   "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
+   "article_id": "applied_lore.dossier_ending_record_proof_card",
+   "title_key": "applied_lore.dossier_ending_record_proof_card.title",
+   "unlock": {
+    "primary": "unlock.dossier_ending_record_proof_card",
+    "poi_tags": [
+     "poi.dossier_ending_record_card",
+     "poi.receiver_authority_badge",
+     "poi.unresolved_cost_line"
+    ],
+    "biome_tags": [
+     "biome.dossier",
+     "biome.ending"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Dossier Ending Record",
+     "scanner": "Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Dossier Ending Record",
+     "scanner": "RU LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "RU LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "RU LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "RU LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "RU LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "RU LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Dossier Ending Record",
+     "scanner": "JA LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "JA LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "JA LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "JA LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "JA LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "JA LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Dossier Ending Record",
+     "scanner": "ZH LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "ZH LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "ZH LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "ZH LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "ZH LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "ZH LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Dossier Ending Record",
+     "scanner": "FR LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "FR LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "FR LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "FR LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "FR LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "FR LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Dossier Ending Record",
+     "scanner": "ES LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "ES LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "ES LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "ES LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "ES LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "ES LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Dossier Ending Record",
+     "scanner": "DE LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "DE LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "DE LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "DE LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "DE LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "DE LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Dossier Ending Record",
+     "scanner": "PL LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "PL LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "PL LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "PL LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "PL LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "PL LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Dossier Ending Record",
+     "scanner": "UK LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "UK LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "UK LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "UK LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "UK LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "UK LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Dossier Ending Record",
+     "scanner": "AR LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "AR LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "AR LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "AR LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "AR LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "AR LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Dossier Ending Record",
+     "scanner": "ID LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "ID LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "ID LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "ID LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "ID LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "ID LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Dossier Ending Record",
+     "scanner": "KO LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "KO LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "KO LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "KO LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "KO LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "KO LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Dossier Ending Record",
+     "scanner": "HE LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "HE LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "HE LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "HE LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "HE LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "HE LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Dossier Ending Record",
+     "scanner": "PT LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "PT LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "PT LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "PT LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "PT LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "PT LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Dossier Ending Record",
+     "scanner": "NL LOC HOLD: Dossier record: route warnings, unresolved costs, receiver authority, ending trace.",
+     "terminal": "NL LOC HOLD: The dossier keeps what the survivor learned. It does not carry oxygen, tools, ore, or creature ownership between campaigns.",
+     "audio": "NL LOC HOLD: Knowledge survives the route. Equipment does not.",
+     "in_game_wiki": "NL LOC HOLD: Ending records preserve interpretation, warnings, and unresolved liabilities while each new run resets world truth and gear.",
+     "external_site": "NL LOC HOLD: The dossier is the memory layer for campaigns: evidence, consequences, and route readings remain legible without becoming player power.",
+     "field_note": "NL LOC HOLD: Keep dossier persistence limited to knowledge records, route warnings, and ending evidence."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P310_LOCALIZED_OVERFLOW_PROOF_CARD",
+   "release_set_id": "RS062_RUNTIME_UI_PROOF_BACKLOG",
+   "article_id": "applied_lore.localized_overflow_proof_card",
+   "title_key": "applied_lore.localized_overflow_proof_card.title",
+   "unlock": {
+    "primary": "unlock.localized_overflow_proof_card",
+    "poi_tags": [
+     "poi.localized_overflow_card",
+     "poi.rtl_sample_panel",
+     "poi.cjk_subtitle_timing_strip"
+    ],
+    "biome_tags": [
+     "biome.localization",
+     "biome.ui"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Localization Fit Record",
+     "scanner": "Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Localization Fit Record",
+     "scanner": "RU LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "RU LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "RU LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "RU LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "RU LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "RU LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Localization Fit Record",
+     "scanner": "JA LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "JA LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "JA LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "JA LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "JA LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "JA LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Localization Fit Record",
+     "scanner": "ZH LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "ZH LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "ZH LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "ZH LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "ZH LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "ZH LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Localization Fit Record",
+     "scanner": "FR LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "FR LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "FR LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "FR LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "FR LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "FR LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Localization Fit Record",
+     "scanner": "ES LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "ES LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "ES LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "ES LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "ES LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "ES LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Localization Fit Record",
+     "scanner": "DE LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "DE LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "DE LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "DE LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "DE LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "DE LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Localization Fit Record",
+     "scanner": "PL LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "PL LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "PL LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "PL LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "PL LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "PL LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Localization Fit Record",
+     "scanner": "UK LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "UK LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "UK LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "UK LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "UK LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "UK LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Localization Fit Record",
+     "scanner": "AR LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "AR LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "AR LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "AR LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "AR LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "AR LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Localization Fit Record",
+     "scanner": "ID LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "ID LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "ID LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "ID LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "ID LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "ID LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Localization Fit Record",
+     "scanner": "KO LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "KO LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "KO LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "KO LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "KO LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "KO LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Localization Fit Record",
+     "scanner": "HE LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "HE LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "HE LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "HE LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "HE LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "HE LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Localization Fit Record",
+     "scanner": "PT LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "PT LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "PT LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "PT LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "PT LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "PT LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Localization Fit Record",
+     "scanner": "NL LOC HOLD: Text fit check: Latin, Cyrillic, CJK, RTL, subtitles, narrow PDA panels.",
+     "terminal": "NL LOC HOLD: A translation is not accepted until it fits the actual interface, font stack, subtitle timing, and right-to-left reading path.",
+     "audio": "NL LOC HOLD: A line is not localized because it exists in a table. It is localized when it can be read in motion.",
+     "in_game_wiki": "NL LOC HOLD: Localization records separate draft multilingual coverage from release text. Native review, overflow, CJK density, RTL order, and subtitle timing all have to pass.",
+     "external_site": "NL LOC HOLD: HECTON-8 ships language support only after the copy survives the real interface surfaces it will occupy: PDA, scanner, terminal, subtitles, and web.",
+     "field_note": "NL LOC HOLD: Track locale status separately from packet identity; language review must not alter saves or route authority."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

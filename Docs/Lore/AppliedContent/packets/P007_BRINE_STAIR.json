@@ -1,224 +1,180 @@
 {
-  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
-  "packet_id": "P007_BRINE_STAIR",
-  "article_id": "hecton8.brine_stair",
-  "title_key": "LORE_P007_BRINE_STAIR_TITLE",
-  "status": "production_facing_draft_pending_native_localization",
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "packet_id": "P007_BRINE_STAIR",
+ "article_id": "hecton8.brine_stair",
+ "title_key": "LORE_P007_BRINE_STAIR_TITLE",
+ "status": "production_facing_draft_pending_native_localization",
+ "surfaces": [
+  "scanner",
+  "in_game_wiki",
+  "terminal",
+  "audio_subtitle",
+  "external_site",
+  "image_brief"
+ ],
+ "unlock": {
+  "primary": "unlock.first_brine_layer_route",
+  "poi_tags": [
+   "poi.brine_curtain",
+   "poi.ballast_station",
+   "poi.vent_chimney"
   ],
-  "unlock": {
-    "primary": "unlock.first_brine_layer_route",
-    "poi_tags": [
-      "poi.brine_curtain",
-      "poi.ballast_station",
-      "poi.vent_chimney"
-    ],
-    "biome_tags": [
-      "biome.brine_stairs",
-      "biome.thermal_field"
-    ]
+  "biome_tags": [
+   "biome.brine_stairs",
+   "biome.thermal_field"
+  ]
+ },
+ "localized": {
+  "en_US": {
+   "title": "Brine Stair",
+   "scanner": "High-density brine layer. Sonar bends at the boundary; ballast response delayed. Thermal plume rising through stepped shear.",
+   "field_note": "Hull rating tells you when metal gives up. Brine tells you when you treated the ocean as flat.",
+   "terminal": "THERMAL TAP ALIGNED. DENSITY STEP MAPPED. SUBSTRATE GROWTH ABOVE FORECAST. ATLAS ROUTE REQUEST DEFERRED BY OPERATIONS.",
+   "audio": "There is a staircase down here. It is made of salt, heat, and patience.",
+   "in_game_wiki": "Brine stairs form where dense salt water, vent heat, and slow basin flow stack into sharp boundaries. To a careless pilot they are invisible walls: buoyancy shifts late, sonar bends, lights smear, and a descent can become a slide. To a careful pilot they are routes. A submersible can ride one layer, punch through another, hide under a curtain, or use thermal lift to cross a gap that open water would make impossible. The layers also preserve wreckage and biological traces with cruel patience. Bodies, tool crates, sample caskets, and old drones can sit in the same unmixed step for years. The Brine Stair teaches a central rule of HECTON-8: depth is negotiated with the ocean's structure, not conquered by hull strength alone.",
+   "external_site": "The Brine Stair makes HECTON-8's geology playable: salt layers, heat, sonar refraction, and ballast timing become a route into deeper industrial ruins.",
+   "external_site_article": "The Brine Stair is where HECTON-8 stops being a simple descent and becomes a machine made of water. Dense brine does not mix cleanly with the layers above it. It sits in shelves, curtains, and slow rivers along the seafloor, bending sonar and changing buoyancy at the worst possible moment. That danger gives the player a new kind of literacy. A stronger hull helps, but reading the water matters more: where heat lifts, where salt drops, where a boundary can be ridden like a road, and where a careless ballast change will pin a craft under an invisible ceiling. The lore value is just as important. Brine stairs preserve what the colony tried to lose. They hold old route markers, pressure caskets, dead drones, chemical traces, and sometimes bodies in layers that have not mixed for decades. Every step downward can become navigation, archaeology, and accusation at the same time."
   },
-  "localized": {
-    "en_US": {
-      "title": "Brine Stair",
-      "scanner": "High-density brine layer. Sonar bends at the boundary; ballast response delayed. Thermal plume rising through stepped shear.",
-      "field_note": "Hull rating tells you when metal gives up. Brine tells you when you treated the ocean as flat.",
-      "terminal": "THERMAL TAP ALIGNED. DENSITY STEP MAPPED. SUBSTRATE GROWTH ABOVE FORECAST. ATLAS ROUTE REQUEST DEFERRED BY OPERATIONS.",
-      "audio": "There is a staircase down here. It is made of salt, heat, and patience.",
-      "in_game_wiki": "Brine stairs form where dense salt water, vent heat, and slow basin flow stack into sharp boundaries. To a careless pilot they are invisible walls: buoyancy shifts late, sonar bends, lights smear, and a descent can become a slide. To a careful pilot they are routes. A submersible can ride one layer, punch through another, hide under a curtain, or use thermal lift to cross a gap that open water would make impossible. The layers also preserve wreckage and biological traces with cruel patience. Bodies, tool crates, sample caskets, and old drones can sit in the same unmixed step for years. The Brine Stair teaches a central rule of HECTON-8: depth is negotiated with the ocean's structure, not conquered by hull strength alone.",
-      "external_site": "The Brine Stair makes HECTON-8's geology playable: salt layers, heat, sonar refraction, and ballast timing become a route into deeper industrial ruins.",
-      "external_site_article": "The Brine Stair is where HECTON-8 stops being a simple descent and becomes a machine made of water. Dense brine does not mix cleanly with the layers above it. It sits in shelves, curtains, and slow rivers along the seafloor, bending sonar and changing buoyancy at the worst possible moment. That danger gives the player a new kind of literacy. A stronger hull helps, but reading the water matters more: where heat lifts, where salt drops, where a boundary can be ridden like a road, and where a careless ballast change will pin a craft under an invisible ceiling. The lore value is just as important. Brine stairs preserve what the colony tried to lose. They hold old route markers, pressure caskets, dead drones, chemical traces, and sometimes bodies in layers that have not mixed for decades. Every step downward can become navigation, archaeology, and accusation at the same time.",
-      "scanner": "High-density brine layer. Sonar bends at the boundary; ballast response delayed. Thermal plume rising through stepped shear.",
-      "terminal": "THERMAL TAP ALIGNED. DENSITY STEP MAPPED. SUBSTRATE GROWTH ABOVE FORECAST. ATLAS ROUTE REQUEST DEFERRED BY OPERATIONS.",
-      "audio": "There is a staircase down here. It is made of salt, heat, and patience."
-    },
-    "ar_SA": {
-      "title": "درج المحلول الملحي",
-      "scanner": "طبقة محلول ملحي عالية الكثافة. ينحني السونار عند الحد؛ استجابة الاتزان متأخرة. عمود حراري يصعد عبر قص متدرج.",
-      "field_note": "تصنيف الهيكل يخبرك متى يستسلم المعدن. المحلول الملحي يخبرك متى عاملت المحيط كسطح مسطح.",
-      "terminal": "تم ضبط مأخذ الحرارة. تم رسم درجة الكثافة. نمو الركيزة فوق التوقع. طلب مسار Atlas مؤجل من العمليات.",
-      "audio": "هناك درج في الأسفل. مصنوع من الملح والحرارة والصبر.",
-      "in_game_wiki": "تتكون سلالم المحلول الملحي عندما تتراكم مياه مالحة كثيفة وحرارة فتحات وتدفق أحواض بطيء في حدود حادة. للطيار المهمل هي جدران غير مرئية: تتأخر الطفو، وينحني السونار، وتتمدد الأضواء، وقد يتحول الهبوط إلى انزلاق. للطيار الحذر هي طرق. يمكن للغواصة أن تركب طبقة، وتخترق أخرى، وتختبئ تحت ستار، أو تستخدم الرفع الحراري لعبور فجوة يجعلها الماء المفتوح مستحيلة. تحفظ الطبقات أيضا الحطام والآثار الحيوية بصبر قاس. قد تبقى الجثث وصناديق الأدوات وحاويات العينات والدرونات القديمة في الدرجة نفسها غير المختلطة لسنوات. درج المحلول الملحي يعلم قاعدة مركزية في HECTON-8: العمق يفاوض عبر بنية المحيط، ولا يُهزم بقوة الهيكل وحدها.",
-      "external_site": "يجعل درج المحلول الملحي جيولوجيا HECTON-8 قابلة للعب: طبقات الملح والحرارة وانكسار السونار وتوقيت الاتزان تصبح طريقا إلى الخرائب الصناعية الأعمق.",
-      "external_site_article": "درج المحلول الملحي هو المكان الذي يتوقف فيه HECTON-8 عن كونه هبوطا بسيطا ويصبح آلة من الماء. المحلول الملحي الكثيف لا يختلط بسهولة مع الطبقات فوقه. يجلس في رفوف وستائر وأنهار بطيئة على قاع البحر، ينحني معه السونار وتتغير الطفو في أسوأ لحظة. هذا الخطر يمنح اللاعب معرفة جديدة. الهيكل الأقوى يساعد، لكن قراءة الماء أهم: أين ترفع الحرارة، وأين يسقط الملح، وأين يمكن ركوب الحد كطريق، وأين سيحبس تغيير اتزان مهمل المركبة تحت سقف غير مرئي. قيمة اللور لا تقل أهمية. سلالم المحلول تحفظ ما حاولت المستعمرة أن تفقده. تحتفظ بعلامات طرق قديمة، وحاويات ضغط، ودرونات ميتة، وآثار كيميائية، وأحيانا أجسادا في طبقات لم تختلط منذ عقود. كل درجة إلى الأسفل يمكن أن تصبح ملاحة وآثارا واتهاما في الوقت نفسه.",
-      "scanner": "طبقة محلول ملحي عالية الكثافة. ينحني السونار عند الحد؛ استجابة الاتزان متأخرة. عمود حراري يصعد عبر قص متدرج.",
-      "terminal": "تم ضبط مأخذ الحرارة. تم رسم درجة الكثافة. نمو الركيزة فوق التوقع. طلب مسار Atlas مؤجل من العمليات.",
-      "audio": "هناك درج في الأسفل. مصنوع من الملح والحرارة والصبر."
-    },
-    "de_DE": {
-      "title": "Sole-Treppe",
-      "scanner": "Hochdichte Sole-Schicht. Sonar beugt sich an der Grenze; Ballastreaktion verzögert. Thermische Fahne steigt durch gestufte Scherung.",
-      "field_note": "Die Rumpfklasse sagt dir, wann Metall aufgibt. Sole sagt dir, wann du den Ozean für flach gehalten hast.",
-      "terminal": "THERMALZAPFEN AUSGERICHTET. DICHTESTUFE KARTIERT. SUBSTRATWACHSTUM ÜBER PROGNOSE. ATLAS-ROUTENANFRAGE DURCH BETRIEB VERSCHOBEN.",
-      "audio": "Hier unten gibt es eine Treppe. Sie besteht aus Salz, Hitze und Geduld.",
-      "in_game_wiki": "Sole-Treppen entstehen dort, wo dichtes Salzwasser, Schlotwärme und langsame Beckenströmung scharfe Grenzen stapeln. Für unvorsichtige Piloten sind sie unsichtbare Wände: Auftrieb reagiert spät, Sonar beugt sich, Lichter verschmieren, und ein Abstieg kann zur Rutschbahn werden. Für vorsichtige Piloten sind sie Routen. Ein Tauchboot kann auf einer Schicht reiten, durch eine andere stoßen, unter einem Vorhang verschwinden oder thermischen Auftrieb nutzen, um eine Lücke zu queren, die offenes Wasser unmöglich machen würde. Die Schichten konservieren außerdem Wrackteile und biologische Spuren mit grausamer Geduld. Körper, Werkzeugkisten, Probenkassetten und alte Drohnen können jahrelang in derselben unvermischten Stufe liegen. Die Sole-Treppe lehrt eine zentrale Regel von HECTON-8: Tiefe wird mit der Struktur des Ozeans verhandelt, nicht allein durch Rumpfstärke erobert.",
-      "external_site": "Die Sole-Treppe macht HECTON-8s Geologie spielbar: Salzschichten, Hitze, Sonarbrechung und Ballasttiming werden zur Route in tiefere Industrieruinen.",
-      "external_site_article": "Die Sole-Treppe ist der Punkt, an dem HECTON-8 kein einfacher Abstieg mehr ist, sondern eine Maschine aus Wasser. Dichte Sole mischt sich nicht sauber mit den Schichten darüber. Sie liegt in Schelfen, Vorhängen und langsamen Flüssen am Meeresboden, beugt Sonar und verändert Auftrieb im ungünstigsten Moment. Diese Gefahr gibt dem Spieler eine neue Lesefähigkeit. Ein stärkerer Rumpf hilft, aber das Wasser zu lesen zählt mehr: wo Hitze hebt, wo Salz fällt, wo eine Grenze wie eine Straße geritten werden kann, und wo eine sorglose Ballaständerung ein Fahrzeug unter einer unsichtbaren Decke festsetzt. Der Lore-Wert ist ebenso wichtig. Sole-Treppen bewahren, was die Kolonie verlieren wollte. Sie halten alte Routenmarker, Druckkassetten, tote Drohnen, chemische Spuren und manchmal Körper in Schichten, die sich seit Jahrzehnten nicht gemischt haben. Jede Stufe nach unten kann zugleich Navigation, Archäologie und Anklage sein.",
-      "scanner": "Hochdichte Sole-Schicht. Sonar beugt sich an der Grenze; Ballastreaktion verzögert. Thermische Fahne steigt durch gestufte Scherung.",
-      "terminal": "THERMALZAPFEN AUSGERICHTET. DICHTESTUFE KARTIERT. SUBSTRATWACHSTUM ÜBER PROGNOSE. ATLAS-ROUTENANFRAGE DURCH BETRIEB VERSCHOBEN.",
-      "audio": "Hier unten gibt es eine Treppe. Sie besteht aus Salz, Hitze und Geduld."
-    },
-    "es_ES": {
-      "title": "Escalera de salmuera",
-      "scanner": "Capa de salmuera de alta densidad. El sonar se dobla en el límite; la respuesta de lastre llega tarde. Pluma térmica sube por cizalla escalonada.",
-      "field_note": "La clase del casco te dice cuándo cede el metal. La salmuera te dice cuándo trataste el océano como plano.",
-      "terminal": "TOMA TÉRMICA ALINEADA. ESCALÓN DE DENSIDAD MAPEADO. CRECIMIENTO DE SUSTRATO SOBRE PREVISIÓN. SOLICITUD DE RUTA ATLAS DIFERIDA POR OPERACIONES.",
-      "audio": "Hay una escalera aquí abajo. Está hecha de sal, calor y paciencia.",
-      "in_game_wiki": "Las escaleras de salmuera se forman donde el agua salada densa, el calor de los respiraderos y el flujo lento de cuenca se apilan en límites duros. Para un piloto descuidado son paredes invisibles: la flotabilidad responde tarde, el sonar se dobla, las luces se embarran y un descenso puede volverse deslizamiento. Para un piloto cuidadoso son rutas. Un sumergible puede cabalgar una capa, atravesar otra, esconderse bajo una cortina o usar elevación térmica para cruzar una brecha que el agua abierta haría imposible. Las capas también preservan restos y trazas biológicas con paciencia cruel. Cuerpos, cajas de herramientas, cofres de muestra y drones viejos pueden permanecer años en el mismo escalón sin mezclarse. La Escalera de salmuera enseña una regla central de HECTON-8: la profundidad se negocia con la estructura del océano, no se conquista solo con fuerza de casco.",
-      "external_site": "La Escalera de salmuera vuelve jugable la geología de HECTON-8: capas de sal, calor, refracción de sonar y timing de lastre forman una ruta hacia ruinas industriales más profundas.",
-      "external_site_article": "La Escalera de salmuera es donde HECTON-8 deja de ser un descenso simple y se vuelve una máquina hecha de agua. La salmuera densa no se mezcla limpiamente con las capas superiores. Se asienta en repisas, cortinas y ríos lentos por el fondo marino, doblando el sonar y cambiando la flotabilidad en el peor momento. Ese peligro da al jugador una nueva alfabetización. Un casco más fuerte ayuda, pero leer el agua importa más: dónde el calor eleva, dónde la sal hunde, dónde un límite puede cabalgarse como una carretera y dónde un cambio descuidado de lastre clavará la nave bajo un techo invisible. El valor de lore es igual de importante. Las escaleras de salmuera preservan lo que la colonia intentó perder. Guardan marcadores de ruta viejos, cofres de presión, drones muertos, trazas químicas y a veces cuerpos en capas que no se han mezclado durante décadas. Cada escalón hacia abajo puede ser navegación, arqueología y acusación al mismo tiempo.",
-      "scanner": "Capa de salmuera de alta densidad. El sonar se dobla en el límite; la respuesta de lastre llega tarde. Pluma térmica sube por cizalla escalonada.",
-      "terminal": "TOMA TÉRMICA ALINEADA. ESCALÓN DE DENSIDAD MAPEADO. CRECIMIENTO DE SUSTRATO SOBRE PREVISIÓN. SOLICITUD DE RUTA ATLAS DIFERIDA POR OPERACIONES.",
-      "audio": "Hay una escalera aquí abajo. Está hecha de sal, calor y paciencia."
-    },
-    "fr_FR": {
-      "title": "Escalier de saumure",
-      "scanner": "Couche de saumure haute densité. Le sonar se courbe à la limite ; réponse du ballast retardée. Panache thermique montant à travers un cisaillement en marches.",
-      "field_note": "La classe de coque te dit quand le métal cède. La saumure te dit quand tu as traité l'océan comme une surface plate.",
-      "terminal": "PRISE THERMIQUE ALIGNÉE. MARCHE DE DENSITÉ CARTOGRAPHIÉE. CROISSANCE DU SUBSTRAT AU-DESSUS DES PRÉVISIONS. DEMANDE DE ROUTE ATLAS REPORTÉE PAR OPÉRATIONS.",
-      "audio": "Il y a un escalier ici-dessous. Il est fait de sel, de chaleur et de patience.",
-      "in_game_wiki": "Les escaliers de saumure se forment quand l'eau salée dense, la chaleur des évents et les flux lents de bassin s'empilent en limites nettes. Pour un pilote négligent, ce sont des murs invisibles : la flottabilité répond tard, le sonar se courbe, les lumières bavent, et une descente peut devenir une glissade. Pour un pilote attentif, ce sont des routes. Un submersible peut longer une couche, percer une autre, se cacher sous un rideau ou utiliser la portance thermique pour franchir un vide que l'eau ouverte rendrait impossible. Les couches préservent aussi les épaves et traces biologiques avec une patience cruelle. Corps, caisses d'outils, coffres d'échantillons et vieux drones peuvent rester des années dans la même marche non mélangée. L'Escalier de saumure enseigne une règle centrale de HECTON-8 : la profondeur se négocie avec la structure de l'océan, elle ne se conquiert pas par la seule résistance de coque.",
-      "external_site": "L'Escalier de saumure rend la géologie de HECTON-8 jouable : couches de sel, chaleur, réfraction sonar et timing de ballast ouvrent une route vers des ruines industrielles plus profondes.",
-      "external_site_article": "L'Escalier de saumure est le moment où HECTON-8 cesse d'être une simple descente et devient une machine faite d'eau. La saumure dense ne se mélange pas proprement avec les couches au-dessus. Elle repose en plateaux, rideaux et rivières lentes au fond, courbant le sonar et changeant la flottabilité au pire moment. Ce danger donne au joueur une nouvelle lecture. Une coque plus forte aide, mais lire l'eau compte davantage : où la chaleur soulève, où le sel descend, où une limite peut être suivie comme une route, et où un changement de ballast négligent plaquera l'engin sous un plafond invisible. La valeur de lore est aussi importante. Les escaliers de saumure préservent ce que la colonie a tenté de perdre. Ils gardent anciens marqueurs de route, coffres de pression, drones morts, traces chimiques et parfois corps dans des couches qui ne se sont pas mélangées depuis des décennies. Chaque marche vers le bas peut devenir navigation, archéologie et accusation en même temps.",
-      "scanner": "Couche de saumure haute densité. Le sonar se courbe à la limite ; réponse du ballast retardée. Panache thermique montant à travers un cisaillement en marches.",
-      "terminal": "PRISE THERMIQUE ALIGNÉE. MARCHE DE DENSITÉ CARTOGRAPHIÉE. CROISSANCE DU SUBSTRAT AU-DESSUS DES PRÉVISIONS. DEMANDE DE ROUTE ATLAS REPORTÉE PAR OPÉRATIONS.",
-      "audio": "Il y a un escalier ici-dessous. Il est fait de sel, de chaleur et de patience."
-    },
-    "he_IL": {
-      "title": "מדרגת תמלחת",
-      "scanner": "שכבת תמלחת בצפיפות גבוהה. הסונאר מתעקם בגבול; תגובת הבלסט מאחרת. עמוד חום עולה דרך גזירה מדורגת.",
-      "field_note": "דירוג גוף אומר לך מתי מתכת נכנעת. תמלחת אומרת לך מתי התייחסת לאוקיינוס כשטוח.",
-      "terminal": "ברז תרמי יושר. מדרגת צפיפות מופתה. צמיחת מצע מעל תחזית. בקשת נתיב Atlas נדחתה בידי תפעול.",
-      "audio": "יש כאן למטה מדרגות. הן עשויות ממלח, חום וסבלנות.",
-      "in_game_wiki": "מדרגות תמלחת נוצרות כאשר מים מלוחים צפופים, חום פתחים וזרימת אגן איטית נערמים לגבולות חדים. לטייס חסר זהירות הן קירות בלתי נראים: הציפה מגיבה מאוחר, הסונאר מתעקם, אורות נמרחים, וירידה עלולה להפוך להחלקה. לטייס זהיר הן נתיבים. צוללת יכולה לרכוב על שכבה, לפרוץ דרך אחרת, להסתתר תחת וילון או להשתמש בעילוי תרמי כדי לחצות פער שמים פתוחים היו הופכים לבלתי אפשרי. השכבות גם משמרות הריסות ועקבות ביולוגיים בסבלנות אכזרית. גופות, ארגזי כלים, קופסאות דגימות ורחפנים ישנים יכולים לשבת באותה מדרגה לא מעורבת שנים. מדרגת התמלחת מלמדת כלל מרכזי של HECTON-8: עומק מנהלים מול מבנה האוקיינוס, ולא כובשים בכוח גוף בלבד.",
-      "external_site": "מדרגת התמלחת הופכת את הגאולוגיה של HECTON-8 למשחקית: שכבות מלח, חום, שבירת סונאר ותזמון בלסט יוצרים נתיב אל חורבות תעשייתיות עמוקות יותר.",
-      "external_site_article": "מדרגת התמלחת היא המקום שבו HECTON-8 מפסיק להיות ירידה פשוטה והופך למכונה עשויה מים. תמלחת צפופה אינה מתערבבת נקי עם השכבות שמעליה. היא יושבת במדפים, וילונות ונהרות איטיים לאורך קרקעית הים, מעקמת סונאר ומשנה ציפה ברגע הגרוע ביותר. הסכנה הזאת נותנת לשחקן אוריינות חדשה. גוף חזק יותר עוזר, אבל קריאת המים חשובה יותר: איפה חום מרים, איפה מלח מוריד, איפה אפשר לרכוב על גבול כמו על דרך, ואיפה שינוי בלסט רשלני יצמיד כלי תחת תקרה בלתי נראית. ערך הלור חשוב באותה מידה. מדרגות תמלחת משמרות את מה שהמושבה ניסתה לאבד. הן מחזיקות סמני נתיב ישנים, קופסאות לחץ, רחפנים מתים, עקבות כימיים ולעיתים גופות בשכבות שלא התערבבו עשורים. כל מדרגה למטה יכולה להפוך לניווט, ארכיאולוגיה והאשמה יחד.",
-      "scanner": "שכבת תמלחת בצפיפות גבוהה. הסונאר מתעקם בגבול; תגובת הבלסט מאחרת. עמוד חום עולה דרך גזירה מדורגת.",
-      "terminal": "ברז תרמי יושר. מדרגת צפיפות מופתה. צמיחת מצע מעל תחזית. בקשת נתיב Atlas נדחתה בידי תפעול.",
-      "audio": "יש כאן למטה מדרגות. הן עשויות ממלח, חום וסבלנות."
-    },
-    "id_ID": {
-      "title": "Tangga Brine",
-      "scanner": "Lapisan brine berkepadatan tinggi. Sonar membelok di batas; respons ballast terlambat. Pluma termal naik melalui geser bertingkat.",
-      "field_note": "Rating lambung memberi tahu kapan logam menyerah. Brine memberi tahu kapan kamu memperlakukan samudra sebagai datar.",
-      "terminal": "THERMAL TAP SELARAS. TANGGA KEPADATAN DIPETAKAN. PERTUMBUHAN SUBSTRAT DI ATAS PRAKIRAAN. PERMINTAAN RUTE ATLAS DITUNDA OPERASI.",
-      "audio": "Ada tangga di bawah sini. Terbuat dari garam, panas, dan kesabaran.",
-      "in_game_wiki": "Tangga brine terbentuk ketika air garam padat, panas ventilasi, dan aliran cekungan lambat menumpuk menjadi batas tajam. Bagi pilot ceroboh, itu dinding tak terlihat: daya apung terlambat berubah, sonar membelok, lampu melebar, dan penurunan bisa menjadi seluncuran. Bagi pilot hati-hati, itu rute. Submersible dapat menunggangi satu lapisan, menembus lapisan lain, bersembunyi di bawah tirai, atau memakai angkat termal untuk melintasi celah yang mustahil di air terbuka. Lapisan itu juga mengawetkan rongsokan dan jejak biologis dengan kesabaran kejam. Tubuh, peti alat, peti sampel, dan drone tua dapat duduk di anak tangga yang sama tanpa tercampur selama bertahun-tahun. Tangga Brine mengajarkan aturan pusat HECTON-8: kedalaman dinegosiasikan dengan struktur samudra, bukan ditaklukkan oleh kekuatan lambung saja.",
-      "external_site": "Tangga Brine membuat geologi HECTON-8 bisa dimainkan: lapisan garam, panas, refraksi sonar, dan timing ballast menjadi rute menuju reruntuhan industri yang lebih dalam.",
-      "external_site_article": "Tangga Brine adalah tempat HECTON-8 berhenti menjadi penurunan sederhana dan menjadi mesin dari air. Brine padat tidak bercampur rapi dengan lapisan di atasnya. Ia duduk sebagai paparan, tirai, dan sungai lambat di dasar laut, membelokkan sonar dan mengubah daya apung pada momen terburuk. Bahaya itu memberi pemain literasi baru. Lambung lebih kuat membantu, tetapi membaca air lebih penting: di mana panas mengangkat, di mana garam menjatuhkan, di mana batas bisa ditunggangi seperti jalan, dan di mana perubahan ballast ceroboh akan menjepit kendaraan di bawah langit-langit tak terlihat. Nilai lore-nya sama penting. Tangga brine mengawetkan apa yang koloni coba hilangkan. Ia menyimpan penanda rute lama, peti tekanan, drone mati, jejak kimia, dan kadang tubuh di lapisan yang tidak bercampur selama dekade. Setiap anak tangga turun dapat menjadi navigasi, arkeologi, dan tuduhan sekaligus.",
-      "scanner": "Lapisan brine berkepadatan tinggi. Sonar membelok di batas; respons ballast terlambat. Pluma termal naik melalui geser bertingkat.",
-      "terminal": "THERMAL TAP SELARAS. TANGGA KEPADATAN DIPETAKAN. PERTUMBUHAN SUBSTRAT DI ATAS PRAKIRAAN. PERMINTAAN RUTE ATLAS DITUNDA OPERASI.",
-      "audio": "Ada tangga di bawah sini. Terbuat dari garam, panas, dan kesabaran."
-    },
-    "ja_JP": {
-      "title": "ブライン階段",
-      "scanner": "高密度ブライン層。境界でソナーが曲がる。バラスト応答が遅延。段状せん断を通って熱プルームが上昇している。",
-      "field_note": "船殻等級は金属がいつ諦めるかを教える。ブラインは、あなたが海を平面として扱った時を教える。",
-      "terminal": "熱タップ整列。密度段マッピング完了。基質成長は予測超過。Atlas経路要求は運用側で延期。",
-      "audio": "ここには階段がある。塩と熱と忍耐でできた階段だ。",
-      "in_game_wiki": "ブライン階段は、濃い塩水、噴出口の熱、遅い盆地流が鋭い境界として重なった場所にできる。不注意な操縦者には見えない壁だ。浮力の変化は遅れ、ソナーは曲がり、光はにじみ、降下は滑落になる。注意深い操縦者には経路になる。潜水艇は一つの層に乗り、別の層を抜け、カーテンの下に隠れ、熱上昇を使って開水域では不可能な隙間を渡れる。層は残骸と生物痕跡も残酷な忍耐で保存する。遺体、工具箱、試料カスケット、古いドローンが、何年も混ざらない同じ段に座り続けることがある。ブライン階段はHECTON-8の中心規則を教える。深度は海の構造と交渉するもので、船殻の強さだけで征服するものではない。",
-      "external_site": "ブライン階段はHECTON-8の地質をプレイ可能にする。塩層、熱、ソナー屈折、バラストのタイミングが、より深い産業遺構への経路になる。",
-      "external_site_article": "ブライン階段は、HECTON-8が単純な下降であることをやめ、水でできた機械になる場所だ。濃いブラインは上の層ときれいには混ざらない。海底に棚、カーテン、遅い川として横たわり、ソナーを曲げ、最悪の瞬間に浮力を変える。その危険がプレイヤーに新しい読解力を与える。強い船殻は助けになるが、水を読むことのほうが重要だ。どこで熱が持ち上げ、どこで塩が落とし、どの境界を道のように乗れるか、どの不注意なバラスト変更が艇を見えない天井の下に縫い止めるか。ロア上の価値も大きい。ブライン階段は、植民地が失おうとしたものを保存する。古い経路標識、圧力カスケット、死んだドローン、化学痕跡、ときには何十年も混ざらなかった層の中の遺体を保つ。下への一段一段が、同時に航法、考古学、告発になる。",
-      "scanner": "高密度ブライン層。境界でソナーが曲がる。バラスト応答が遅延。段状せん断を通って熱プルームが上昇している。",
-      "terminal": "熱タップ整列。密度段マッピング完了。基質成長は予測超過。Atlas経路要求は運用側で延期。",
-      "audio": "ここには階段がある。塩と熱と忍耐でできた階段だ。"
-    },
-    "ko_KR": {
-      "title": "염수 계단",
-      "scanner": "고밀도 염수층. 경계에서 소나가 휘며, 밸러스트 반응이 늦다. 열 플룸이 계단식 전단을 통해 상승 중.",
-      "field_note": "선체 등급은 금속이 언제 포기하는지 알려 준다. 염수는 네가 바다를 평평하게 대했을 때를 알려 준다.",
-      "terminal": "열 탭 정렬. 밀도 계단 매핑. 기질 성장 예측 초과. Atlas 경로 요청은 운영 측에서 보류.",
-      "audio": "여기 아래에는 계단이 있다. 소금과 열과 인내로 된 계단이다.",
-      "in_game_wiki": "염수 계단은 짙은 소금물, 분출구 열, 느린 분지 흐름이 날카로운 경계로 쌓이는 곳에서 만들어진다. 부주의한 조종사에게는 보이지 않는 벽이다. 부력은 늦게 바뀌고, 소나는 휘고, 빛은 번지며, 하강은 미끄러짐이 될 수 있다. 조심스러운 조종사에게는 경로다. 잠수정은 한 층을 타고, 다른 층을 뚫고, 커튼 아래 숨고, 열 상승을 써서 열린 물에서는 불가능한 틈을 건널 수 있다. 그 층들은 잔해와 생물 흔적도 잔혹한 인내로 보존한다. 몸, 공구 상자, 샘플 캐스킷, 오래된 드론이 몇 년 동안 섞이지 않은 같은 계단에 머물 수 있다. 염수 계단은 HECTON-8의 중심 규칙을 가르친다. 깊이는 선체 강도만으로 정복하는 것이 아니라 바다 구조와 협상하는 것이다.",
-      "external_site": "염수 계단은 HECTON-8의 지질을 플레이 가능한 것으로 만든다. 소금층, 열, 소나 굴절, 밸러스트 타이밍이 더 깊은 산업 폐허로 가는 경로가 된다.",
-      "external_site_article": "염수 계단은 HECTON-8이 단순한 하강을 멈추고 물로 된 기계가 되는 곳이다. 짙은 염수는 위쪽 층과 깨끗하게 섞이지 않는다. 해저를 따라 선반, 커튼, 느린 강으로 앉아 소나를 휘게 하고 최악의 순간에 부력을 바꾼다. 그 위험은 플레이어에게 새로운 문해력을 준다. 더 강한 선체는 도움이 되지만, 물을 읽는 것이 더 중요하다. 어디에서 열이 들어 올리고, 어디에서 소금이 떨어뜨리며, 어떤 경계를 길처럼 탈 수 있고, 어떤 부주의한 밸러스트 변화가 보이지 않는 천장 아래 craft를 고정할지 알아야 한다. 로어 가치도 중요하다. 염수 계단은 식민지가 잃으려 했던 것을 보존한다. 오래된 경로 표식, 압력 캐스킷, 죽은 드론, 화학 흔적, 때로는 수십 년 동안 섞이지 않은 층 속의 몸을 붙든다. 아래로 내려가는 모든 계단은 동시에 항법, 고고학, 고발이 될 수 있다.",
-      "scanner": "고밀도 염수층. 경계에서 소나가 휘며, 밸러스트 반응이 늦다. 열 플룸이 계단식 전단을 통해 상승 중.",
-      "terminal": "열 탭 정렬. 밀도 계단 매핑. 기질 성장 예측 초과. Atlas 경로 요청은 운영 측에서 보류.",
-      "audio": "여기 아래에는 계단이 있다. 소금과 열과 인내로 된 계단이다."
-    },
-    "nl_NL": {
-      "title": "Pekeltrap",
-      "scanner": "Pekellaag met hoge dichtheid. Sonar buigt aan de grens; ballastrespons vertraagd. Thermische pluim stijgt door getrapte schuiving.",
-      "field_note": "De rompklasse zegt wanneer metaal opgeeft. Pekel zegt wanneer jij de oceaan als vlak behandelde.",
-      "terminal": "THERMISCHE TAP UITGELIJND. DICHTHEIDSTREDE IN KAART. SUBSTRAATGROEI BOVEN PROGNOSE. ATLAS-ROUTEVERZOEK DOOR OPERATIONS UITGESTELD.",
-      "audio": "Hier beneden is een trap. Hij is gemaakt van zout, hitte en geduld.",
-      "in_game_wiki": "Pekeltrappen vormen zich waar dicht zout water, venthitte en langzame bekkenstroming scherpe grenzen stapelen. Voor een slordige piloot zijn het onzichtbare muren: drijfvermogen reageert laat, sonar buigt, lichten smeren uit en een afdaling kan een glijbaan worden. Voor een zorgvuldige piloot zijn het routes. Een submersible kan één laag berijden, door een andere slaan, zich onder een gordijn verbergen of thermische lift gebruiken om een kloof over te steken die open water onmogelijk zou maken. De lagen bewaren ook wrakstukken en biologische sporen met wrede geduldigheid. Lichamen, gereedschapskisten, monstercaskets en oude drones kunnen jarenlang in dezelfde onvermengde trede liggen. De Pekeltrap leert een kernregel van HECTON-8: diepte wordt onderhandeld met de structuur van de oceaan, niet alleen veroverd door rompsterkte.",
-      "external_site": "De Pekeltrap maakt HECTON-8s geologie speelbaar: zoutlagen, hitte, sonarbreking en ballasttiming worden een route naar diepere industriële ruïnes.",
-      "external_site_article": "De Pekeltrap is waar HECTON-8 ophoudt een simpele afdaling te zijn en een machine van water wordt. Dichte pekel mengt niet netjes met de lagen erboven. Ze ligt in plateaus, gordijnen en trage rivieren langs de zeebodem, buigt sonar en verandert drijfvermogen op het slechtst mogelijke moment. Dat gevaar geeft de speler een nieuwe geletterdheid. Een sterkere romp helpt, maar het water lezen telt meer: waar hitte tilt, waar zout daalt, waar een grens als weg kan worden bereden, en waar een slordige ballastwijziging een vaartuig onder een onzichtbaar plafond vastzet. De lorewaarde is even belangrijk. Pekeltrappen bewaren wat de kolonie probeerde kwijt te raken. Ze houden oude routemarkers, drukcaskets, dode drones, chemische sporen en soms lichamen vast in lagen die decennia niet gemengd hebben. Elke trede omlaag kan tegelijk navigatie, archeologie en aanklacht worden.",
-      "scanner": "Pekellaag met hoge dichtheid. Sonar buigt aan de grens; ballastrespons vertraagd. Thermische pluim stijgt door getrapte schuiving.",
-      "terminal": "THERMISCHE TAP UITGELIJND. DICHTHEIDSTREDE IN KAART. SUBSTRAATGROEI BOVEN PROGNOSE. ATLAS-ROUTEVERZOEK DOOR OPERATIONS UITGESTELD.",
-      "audio": "Hier beneden is een trap. Hij is gemaakt van zout, hitte en geduld."
-    },
-    "pl_PL": {
-      "title": "Schody solankowe",
-      "scanner": "Warstwa solanki o wysokiej gęstości. Sonar ugina się na granicy; reakcja balastu opóźniona. Pióropusz cieplny wznosi się przez schodkowe ścinanie.",
-      "field_note": "Klasa kadłuba mówi, kiedy metal się podda. Solanka mówi, kiedy potraktowałeś ocean jak płaski.",
-      "terminal": "UJĘCIE TERMICZNE WYRÓWNANE. STOPIEŃ GĘSTOŚCI ZMAPOWANY. WZROST SUBSTRATU POWYŻEJ PROGNOZY. ŻĄDANIE TRASY ATLAS ODROCZONE PRZEZ OPERATIONS.",
-      "audio": "Tu na dole są schody. Zrobione z soli, ciepła i cierpliwości.",
-      "in_game_wiki": "Schody solankowe powstają tam, gdzie gęsta słona woda, ciepło kominów i wolny przepływ basenu układają się w ostre granice. Dla nieuważnego pilota to niewidzialne ściany: wypór reaguje późno, sonar się ugina, światła rozmazują, a zejście może stać się poślizgiem. Dla uważnego pilota to trasy. Pojazd podwodny może jechać jedną warstwą, przebić inną, ukryć się pod kurtyną albo użyć nośności cieplnej, by przekroczyć lukę, której otwarta woda nie pozwoliłaby pokonać. Warstwy zachowują też wraki i ślady biologiczne z okrutną cierpliwością. Ciała, skrzynie narzędzi, kasety próbek i stare drony mogą latami leżeć w tym samym niezmieszanym stopniu. Schody solankowe uczą centralnej zasady HECTON-8: głębokość negocjuje się ze strukturą oceanu, a nie zdobywa samą siłą kadłuba.",
-      "external_site": "Schody solankowe czynią geologię HECTON-8 grywalną: warstwy soli, ciepło, załamanie sonaru i timing balastu stają się trasą do głębszych ruin przemysłowych.",
-      "external_site_article": "Schody solankowe to miejsce, gdzie HECTON-8 przestaje być prostym zejściem i staje się maszyną z wody. Gęsta solanka nie miesza się czysto z warstwami nad sobą. Leży w półkach, kurtynach i wolnych rzekach na dnie, ugina sonar i zmienia wypór w najgorszym momencie. To zagrożenie daje graczowi nową umiejętność czytania. Mocniejszy kadłub pomaga, ale czytanie wody liczy się bardziej: gdzie ciepło unosi, gdzie sól opada, gdzie granicą można jechać jak drogą, i gdzie nieostrożna zmiana balastu przyciśnie pojazd pod niewidzialnym sufitem. Wartość lore jest równie ważna. Schody solankowe zachowują to, co kolonia próbowała zgubić. Trzymają stare znaczniki tras, kasety ciśnieniowe, martwe drony, ślady chemiczne i czasem ciała w warstwach, które nie mieszały się od dekad. Każdy stopień w dół może być jednocześnie nawigacją, archeologią i oskarżeniem.",
-      "scanner": "Warstwa solanki o wysokiej gęstości. Sonar ugina się na granicy; reakcja balastu opóźniona. Pióropusz cieplny wznosi się przez schodkowe ścinanie.",
-      "terminal": "UJĘCIE TERMICZNE WYRÓWNANE. STOPIEŃ GĘSTOŚCI ZMAPOWANY. WZROST SUBSTRATU POWYŻEJ PROGNOZY. ŻĄDANIE TRASY ATLAS ODROCZONE PRZEZ OPERATIONS.",
-      "audio": "Tu na dole są schody. Zrobione z soli, ciepła i cierpliwości."
-    },
-    "pt_BR": {
-      "title": "Escada de salmoura",
-      "scanner": "Camada de salmoura de alta densidade. O sonar curva na fronteira; resposta de lastro atrasada. Pluma térmica subindo por cisalhamento em degraus.",
-      "field_note": "A classe do casco diz quando o metal desiste. A salmoura diz quando você tratou o oceano como plano.",
-      "terminal": "TOMADA TÉRMICA ALINHADA. DEGRAU DE DENSIDADE MAPEADO. CRESCIMENTO DE SUBSTRATO ACIMA DA PREVISÃO. PEDIDO DE ROTA ATLAS ADIADO POR OPERATIONS.",
-      "audio": "Existe uma escada aqui embaixo. Ela é feita de sal, calor e paciência.",
-      "in_game_wiki": "Escadas de salmoura se formam onde água salgada densa, calor de respiradouros e fluxo lento de bacia se empilham em fronteiras nítidas. Para um piloto descuidado, são paredes invisíveis: a flutuabilidade responde tarde, o sonar curva, luzes borram, e uma descida pode virar escorregão. Para um piloto cuidadoso, são rotas. Um submersível pode montar uma camada, atravessar outra, esconder-se sob uma cortina ou usar elevação térmica para cruzar uma lacuna que a água aberta tornaria impossível. As camadas também preservam destroços e traços biológicos com paciência cruel. Corpos, caixas de ferramentas, cofres de amostra e drones antigos podem ficar anos no mesmo degrau sem mistura. A Escada de salmoura ensina uma regra central de HECTON-8: profundidade se negocia com a estrutura do oceano, não se conquista apenas com força de casco.",
-      "external_site": "A Escada de salmoura torna a geologia de HECTON-8 jogável: camadas de sal, calor, refração de sonar e timing de lastro viram rota para ruínas industriais mais profundas.",
-      "external_site_article": "A Escada de salmoura é onde HECTON-8 deixa de ser uma descida simples e vira uma máquina feita de água. Salmoura densa não se mistura bem com as camadas acima. Ela fica em prateleiras, cortinas e rios lentos pelo fundo do mar, curvando o sonar e mudando a flutuabilidade no pior momento. Esse perigo dá ao jogador uma nova alfabetização. Um casco mais forte ajuda, mas ler a água importa mais: onde o calor levanta, onde o sal afunda, onde uma fronteira pode ser montada como estrada e onde uma mudança descuidada de lastro prenderá a nave sob um teto invisível. O valor de lore é igualmente importante. Escadas de salmoura preservam o que a colônia tentou perder. Elas guardam marcadores de rota antigos, cofres de pressão, drones mortos, traços químicos e às vezes corpos em camadas que não se misturam há décadas. Cada degrau para baixo pode virar navegação, arqueologia e acusação ao mesmo tempo.",
-      "scanner": "Camada de salmoura de alta densidade. O sonar curva na fronteira; resposta de lastro atrasada. Pluma térmica subindo por cisalhamento em degraus.",
-      "terminal": "TOMADA TÉRMICA ALINHADA. DEGRAU DE DENSIDADE MAPEADO. CRESCIMENTO DE SUBSTRATO ACIMA DA PREVISÃO. PEDIDO DE ROTA ATLAS ADIADO POR OPERATIONS.",
-      "audio": "Existe uma escada aqui embaixo. Ela é feita de sal, calor e paciência."
-    },
-    "ru_RU": {
-      "title": "Рассольная лестница",
-      "scanner": "Высокоплотный слой рассола. Сонар изгибается на границе; балласт отвечает с задержкой. Тепловой шлейф поднимается через ступенчатый сдвиг.",
-      "field_note": "Класс корпуса говорит, когда сдаст металл. Рассол говорит, когда ты обращался с океаном как с плоскостью.",
-      "terminal": "ТЕРМАЛЬНЫЙ ОТВОД ВЫРОВНЕН. СТУПЕНЬ ПЛОТНОСТИ НАНЕСЕНА. РОСТ СУБСТРАТА ВЫШЕ ПРОГНОЗА. ЗАПРОС МАРШРУТА ATLAS ОТЛОЖЕН ОПЕРАЦИЯМИ.",
-      "audio": "Тут внизу есть лестница. Она сделана из соли, тепла и терпения.",
-      "in_game_wiki": "Рассольные лестницы возникают там, где плотная соленая вода, тепло жерл и медленное течение бассейна складываются в резкие границы. Для небрежного пилота это невидимые стены: плавучесть меняется поздно, сонар изгибается, свет размазывается, а спуск может стать соскальзыванием. Для внимательного пилота это маршруты. Батискаф может ехать по одному слою, пробить другой, спрятаться под завесой или использовать тепловой подъем, чтобы пересечь разрыв, невозможный в открытой воде. Слои также сохраняют обломки и биологические следы с жестоким терпением. Тела, ящики инструментов, кассеты образцов и старые дроны могут годами лежать в одной и той же несмешанной ступени. Рассольная лестница учит центральному правилу HECTON-8: с глубиной договариваются через структуру океана, а не побеждают ее одной прочностью корпуса.",
-      "external_site": "Рассольная лестница делает геологию HECTON-8 игровой: солевые слои, тепло, преломление сонара и тайминг балласта становятся путем к более глубоким промышленным руинам.",
-      "external_site_article": "Рассольная лестница — место, где HECTON-8 перестает быть простым спуском и становится машиной из воды. Плотный рассол не смешивается чисто со слоями выше. Он лежит полками, завесами и медленными реками по дну, изгибая сонар и меняя плавучесть в худший момент. Эта опасность дает игроку новую грамотность. Более прочный корпус помогает, но важнее читать воду: где тепло поднимает, где соль тянет вниз, где границу можно использовать как дорогу, а где небрежная смена балласта прижмет аппарат под невидимым потолком. Лор-ценность такая же важная. Рассольные лестницы сохраняют то, что колония пыталась потерять. Они держат старые маркеры маршрутов, кассеты давления, мертвые дроны, химические следы и иногда тела в слоях, которые не смешивались десятилетиями. Каждая ступень вниз может стать навигацией, археологией и обвинением одновременно.",
-      "scanner": "Высокоплотный слой рассола. Сонар изгибается на границе; балласт отвечает с задержкой. Тепловой шлейф поднимается через ступенчатый сдвиг.",
-      "terminal": "ТЕРМАЛЬНЫЙ ОТВОД ВЫРОВНЕН. СТУПЕНЬ ПЛОТНОСТИ НАНЕСЕНА. РОСТ СУБСТРАТА ВЫШЕ ПРОГНОЗА. ЗАПРОС МАРШРУТА ATLAS ОТЛОЖЕН ОПЕРАЦИЯМИ.",
-      "audio": "Тут внизу есть лестница. Она сделана из соли, тепла и терпения."
-    },
-    "uk_UA": {
-      "title": "Розсільні сходи",
-      "scanner": "Високощільний шар розсолу. Сонар згинається на межі; баласт відповідає із затримкою. Тепловий шлейф підіймається крізь ступінчастий зсув.",
-      "field_note": "Клас корпусу каже, коли здасть метал. Розсіл каже, коли ти поводився з океаном як із площиною.",
-      "terminal": "ТЕРМАЛЬНИЙ ВІДВІД ВИРІВНЯНО. СХОДИНКУ ЩІЛЬНОСТІ НАНЕСЕНО. РІСТ СУБСТРАТУ ВИЩИЙ ЗА ПРОГНОЗ. ЗАПИТ МАРШРУТУ ATLAS ВІДКЛАДЕНО ОПЕРАЦІЯМИ.",
-      "audio": "Тут унизу є сходи. Вони зроблені із солі, тепла й терпіння.",
-      "in_game_wiki": "Розсільні сходи виникають там, де щільна солона вода, тепло жерл і повільна течія басейну складаються в різкі межі. Для необережного пілота це невидимі стіни: плавучість змінюється пізно, сонар згинається, світло розмазується, а спуск може стати зісковзуванням. Для уважного пілота це маршрути. Батискаф може їхати одним шаром, пробити інший, сховатися під завісою або використати тепловий підйом, щоб перетнути розрив, неможливий у відкритій воді. Шари також зберігають уламки й біологічні сліди з жорстоким терпінням. Тіла, ящики інструментів, касети зразків і старі дрони можуть роками лежати в одній і тій самій незмішаній сходинці. Розсільні сходи вчать центрального правила HECTON-8: з глибиною домовляються через структуру океану, а не перемагають її лише міцністю корпусу.",
-      "external_site": "Розсільні сходи роблять геологію HECTON-8 ігровою: соляні шари, тепло, заломлення сонара й таймінг баласту стають шляхом до глибших промислових руїн.",
-      "external_site_article": "Розсільні сходи — місце, де HECTON-8 перестає бути простим спуском і стає машиною з води. Щільний розсіл не змішується чисто з шарами вище. Він лежить полицями, завісами й повільними річками по дну, згинаючи сонар і змінюючи плавучість у найгірший момент. Ця небезпека дає гравцеві нову грамотність. Міцніший корпус допомагає, але важливіше читати воду: де тепло підіймає, де сіль тягне вниз, де межу можна використати як дорогу, а де необережна зміна баласту притисне апарат під невидимою стелею. Лор-цінність така ж важлива. Розсільні сходи зберігають те, що колонія намагалася втратити. Вони тримають старі маркери маршрутів, касети тиску, мертві дрони, хімічні сліди й іноді тіла в шарах, що не змішувалися десятиліттями. Кожна сходинка вниз може стати навігацією, археологією й обвинуваченням одночасно.",
-      "scanner": "Високощільний шар розсолу. Сонар згинається на межі; баласт відповідає із затримкою. Тепловий шлейф підіймається крізь ступінчастий зсув.",
-      "terminal": "ТЕРМАЛЬНИЙ ВІДВІД ВИРІВНЯНО. СХОДИНКУ ЩІЛЬНОСТІ НАНЕСЕНО. РІСТ СУБСТРАТУ ВИЩИЙ ЗА ПРОГНОЗ. ЗАПИТ МАРШРУТУ ATLAS ВІДКЛАДЕНО ОПЕРАЦІЯМИ.",
-      "audio": "Тут унизу є сходи. Вони зроблені із солі, тепла й терпіння."
-    },
-    "zh_CN": {
-      "title": "盐水阶梯",
-      "scanner": "高密度盐水层。声呐在边界弯折；压载响应延迟。热羽流正穿过阶梯式剪切上升。",
-      "field_note": "船壳等级告诉你金属何时屈服。盐水告诉你何时把海洋当成了平面。",
-      "terminal": "热能取口已对齐。密度阶已测绘。基质生长高于预测。ATLAS路线请求被运营推迟。",
-      "audio": "下面有一条阶梯。它由盐、热和耐心组成。",
-      "in_game_wiki": "盐水阶梯形成于高密度盐水、喷口热量和缓慢盆地流叠成清晰边界的地方。对粗心驾驶员来说，它们是看不见的墙：浮力反应滞后，声呐弯折，灯光涂抹，下降可能变成滑落。对谨慎驾驶员来说，它们是路线。潜航器可以骑在一层上，刺穿另一层，藏在帘幕下，或利用热升力跨过开放水域不可能跨过的缺口。这些层还以残酷的耐心保存残骸和生物痕迹。尸体、工具箱、样本匣和旧无人机可以多年停在同一个未混合阶层中。盐水阶梯教会HECTON-8的一条核心规则：深度要与海洋结构协商，而不是只靠船壳强度征服。",
-      "external_site": "盐水阶梯让HECTON-8的地质变得可游玩：盐层、热量、声呐折射和压载时机成为通往更深工业废墟的路线。",
-      "external_site_article": "盐水阶梯是HECTON-8不再只是简单下潜、而变成水造机器的地方。高密度盐水不会与上方层次干净混合。它沿海底形成架层、帘幕和缓慢河流，在最糟的时刻弯折声呐并改变浮力。这种危险给玩家一种新的识读能力。更强的船壳有帮助，但读懂水更重要：哪里热量上抬，哪里盐分下沉，哪条边界可以像道路一样骑行，哪里一次粗心的压载变化会把艇钉在看不见的天花板下。它的 lore 价值同样重要。盐水阶梯保存殖民地试图丢失的东西。它们留住旧路线标记、压力匣、死无人机、化学痕迹，有时还有几十年未混合层里的尸体。每向下一阶，都可能同时成为导航、考古和控诉。",
-      "scanner": "高密度盐水层。声呐在边界弯折；压载响应延迟。热羽流正穿过阶梯式剪切上升。",
-      "terminal": "热能取口已对齐。密度阶已测绘。基质生长高于预测。ATLAS路线请求被运营推迟。",
-      "audio": "下面有一条阶梯。它由盐、热和耐心组成。"
-    }
+  "ar_SA": {
+   "title": "درج المحلول الملحي",
+   "scanner": "طبقة محلول ملحي عالية الكثافة. ينحني السونار عند الحد؛ استجابة الاتزان متأخرة. عمود حراري يصعد عبر قص متدرج.",
+   "field_note": "تصنيف الهيكل يخبرك متى يستسلم المعدن. المحلول الملحي يخبرك متى عاملت المحيط كسطح مسطح.",
+   "terminal": "تم ضبط مأخذ الحرارة. تم رسم درجة الكثافة. نمو الركيزة فوق التوقع. طلب مسار Atlas مؤجل من العمليات.",
+   "audio": "هناك درج في الأسفل. مصنوع من الملح والحرارة والصبر.",
+   "in_game_wiki": "تتكون سلالم المحلول الملحي عندما تتراكم مياه مالحة كثيفة وحرارة فتحات وتدفق أحواض بطيء في حدود حادة. للطيار المهمل هي جدران غير مرئية: تتأخر الطفو، وينحني السونار، وتتمدد الأضواء، وقد يتحول الهبوط إلى انزلاق. للطيار الحذر هي طرق. يمكن للغواصة أن تركب طبقة، وتخترق أخرى، وتختبئ تحت ستار، أو تستخدم الرفع الحراري لعبور فجوة يجعلها الماء المفتوح مستحيلة. تحفظ الطبقات أيضا الحطام والآثار الحيوية بصبر قاس. قد تبقى الجثث وصناديق الأدوات وحاويات العينات والدرونات القديمة في الدرجة نفسها غير المختلطة لسنوات. درج المحلول الملحي يعلم قاعدة مركزية في HECTON-8: العمق يفاوض عبر بنية المحيط، ولا يُهزم بقوة الهيكل وحدها.",
+   "external_site": "يجعل درج المحلول الملحي جيولوجيا HECTON-8 قابلة للعب: طبقات الملح والحرارة وانكسار السونار وتوقيت الاتزان تصبح طريقا إلى الخرائب الصناعية الأعمق.",
+   "external_site_article": "درج المحلول الملحي هو المكان الذي يتوقف فيه HECTON-8 عن كونه هبوطا بسيطا ويصبح آلة من الماء. المحلول الملحي الكثيف لا يختلط بسهولة مع الطبقات فوقه. يجلس في رفوف وستائر وأنهار بطيئة على قاع البحر، ينحني معه السونار وتتغير الطفو في أسوأ لحظة. هذا الخطر يمنح اللاعب معرفة جديدة. الهيكل الأقوى يساعد، لكن قراءة الماء أهم: أين ترفع الحرارة، وأين يسقط الملح، وأين يمكن ركوب الحد كطريق، وأين سيحبس تغيير اتزان مهمل المركبة تحت سقف غير مرئي. قيمة اللور لا تقل أهمية. سلالم المحلول تحفظ ما حاولت المستعمرة أن تفقده. تحتفظ بعلامات طرق قديمة، وحاويات ضغط، ودرونات ميتة، وآثار كيميائية، وأحيانا أجسادا في طبقات لم تختلط منذ عقود. كل درجة إلى الأسفل يمكن أن تصبح ملاحة وآثارا واتهاما في الوقت نفسه."
+  },
+  "de_DE": {
+   "title": "Sole-Treppe",
+   "scanner": "Hochdichte Sole-Schicht. Sonar beugt sich an der Grenze; Ballastreaktion verzögert. Thermische Fahne steigt durch gestufte Scherung.",
+   "field_note": "Die Rumpfklasse sagt dir, wann Metall aufgibt. Sole sagt dir, wann du den Ozean für flach gehalten hast.",
+   "terminal": "THERMALZAPFEN AUSGERICHTET. DICHTESTUFE KARTIERT. SUBSTRATWACHSTUM ÜBER PROGNOSE. ATLAS-ROUTENANFRAGE DURCH BETRIEB VERSCHOBEN.",
+   "audio": "Hier unten gibt es eine Treppe. Sie besteht aus Salz, Hitze und Geduld.",
+   "in_game_wiki": "Sole-Treppen entstehen dort, wo dichtes Salzwasser, Schlotwärme und langsame Beckenströmung scharfe Grenzen stapeln. Für unvorsichtige Piloten sind sie unsichtbare Wände: Auftrieb reagiert spät, Sonar beugt sich, Lichter verschmieren, und ein Abstieg kann zur Rutschbahn werden. Für vorsichtige Piloten sind sie Routen. Ein Tauchboot kann auf einer Schicht reiten, durch eine andere stoßen, unter einem Vorhang verschwinden oder thermischen Auftrieb nutzen, um eine Lücke zu queren, die offenes Wasser unmöglich machen würde. Die Schichten konservieren außerdem Wrackteile und biologische Spuren mit grausamer Geduld. Körper, Werkzeugkisten, Probenkassetten und alte Drohnen können jahrelang in derselben unvermischten Stufe liegen. Die Sole-Treppe lehrt eine zentrale Regel von HECTON-8: Tiefe wird mit der Struktur des Ozeans verhandelt, nicht allein durch Rumpfstärke erobert.",
+   "external_site": "Die Sole-Treppe macht HECTON-8s Geologie spielbar: Salzschichten, Hitze, Sonarbrechung und Ballasttiming werden zur Route in tiefere Industrieruinen.",
+   "external_site_article": "Die Sole-Treppe ist der Punkt, an dem HECTON-8 kein einfacher Abstieg mehr ist, sondern eine Maschine aus Wasser. Dichte Sole mischt sich nicht sauber mit den Schichten darüber. Sie liegt in Schelfen, Vorhängen und langsamen Flüssen am Meeresboden, beugt Sonar und verändert Auftrieb im ungünstigsten Moment. Diese Gefahr gibt dem Spieler eine neue Lesefähigkeit. Ein stärkerer Rumpf hilft, aber das Wasser zu lesen zählt mehr: wo Hitze hebt, wo Salz fällt, wo eine Grenze wie eine Straße geritten werden kann, und wo eine sorglose Ballaständerung ein Fahrzeug unter einer unsichtbaren Decke festsetzt. Der Lore-Wert ist ebenso wichtig. Sole-Treppen bewahren, was die Kolonie verlieren wollte. Sie halten alte Routenmarker, Druckkassetten, tote Drohnen, chemische Spuren und manchmal Körper in Schichten, die sich seit Jahrzehnten nicht gemischt haben. Jede Stufe nach unten kann zugleich Navigation, Archäologie und Anklage sein."
+  },
+  "es_ES": {
+   "title": "Escalera de salmuera",
+   "scanner": "Capa de salmuera de alta densidad. El sonar se dobla en el límite; la respuesta de lastre llega tarde. Pluma térmica sube por cizalla escalonada.",
+   "field_note": "La clase del casco te dice cuándo cede el metal. La salmuera te dice cuándo trataste el océano como plano.",
+   "terminal": "TOMA TÉRMICA ALINEADA. ESCALÓN DE DENSIDAD MAPEADO. CRECIMIENTO DE SUSTRATO SOBRE PREVISIÓN. SOLICITUD DE RUTA ATLAS DIFERIDA POR OPERACIONES.",
+   "audio": "Hay una escalera aquí abajo. Está hecha de sal, calor y paciencia.",
+   "in_game_wiki": "Las escaleras de salmuera se forman donde el agua salada densa, el calor de los respiraderos y el flujo lento de cuenca se apilan en límites duros. Para un piloto descuidado son paredes invisibles: la flotabilidad responde tarde, el sonar se dobla, las luces se embarran y un descenso puede volverse deslizamiento. Para un piloto cuidadoso son rutas. Un sumergible puede cabalgar una capa, atravesar otra, esconderse bajo una cortina o usar elevación térmica para cruzar una brecha que el agua abierta haría imposible. Las capas también preservan restos y trazas biológicas con paciencia cruel. Cuerpos, cajas de herramientas, cofres de muestra y drones viejos pueden permanecer años en el mismo escalón sin mezclarse. La Escalera de salmuera enseña una regla central de HECTON-8: la profundidad se negocia con la estructura del océano, no se conquista solo con fuerza de casco.",
+   "external_site": "La Escalera de salmuera vuelve jugable la geología de HECTON-8: capas de sal, calor, refracción de sonar y timing de lastre forman una ruta hacia ruinas industriales más profundas.",
+   "external_site_article": "La Escalera de salmuera es donde HECTON-8 deja de ser un descenso simple y se vuelve una máquina hecha de agua. La salmuera densa no se mezcla limpiamente con las capas superiores. Se asienta en repisas, cortinas y ríos lentos por el fondo marino, doblando el sonar y cambiando la flotabilidad en el peor momento. Ese peligro da al jugador una nueva alfabetización. Un casco más fuerte ayuda, pero leer el agua importa más: dónde el calor eleva, dónde la sal hunde, dónde un límite puede cabalgarse como una carretera y dónde un cambio descuidado de lastre clavará la nave bajo un techo invisible. El valor de lore es igual de importante. Las escaleras de salmuera preservan lo que la colonia intentó perder. Guardan marcadores de ruta viejos, cofres de presión, drones muertos, trazas químicas y a veces cuerpos en capas que no se han mezclado durante décadas. Cada escalón hacia abajo puede ser navegación, arqueología y acusación al mismo tiempo."
+  },
+  "fr_FR": {
+   "title": "Escalier de saumure",
+   "scanner": "Couche de saumure haute densité. Le sonar se courbe à la limite ; réponse du ballast retardée. Panache thermique montant à travers un cisaillement en marches.",
+   "field_note": "La classe de coque te dit quand le métal cède. La saumure te dit quand tu as traité l'océan comme une surface plate.",
+   "terminal": "PRISE THERMIQUE ALIGNÉE. MARCHE DE DENSITÉ CARTOGRAPHIÉE. CROISSANCE DU SUBSTRAT AU-DESSUS DES PRÉVISIONS. DEMANDE DE ROUTE ATLAS REPORTÉE PAR OPÉRATIONS.",
+   "audio": "Il y a un escalier ici-dessous. Il est fait de sel, de chaleur et de patience.",
+   "in_game_wiki": "Les escaliers de saumure se forment quand l'eau salée dense, la chaleur des évents et les flux lents de bassin s'empilent en limites nettes. Pour un pilote négligent, ce sont des murs invisibles : la flottabilité répond tard, le sonar se courbe, les lumières bavent, et une descente peut devenir une glissade. Pour un pilote attentif, ce sont des routes. Un submersible peut longer une couche, percer une autre, se cacher sous un rideau ou utiliser la portance thermique pour franchir un vide que l'eau ouverte rendrait impossible. Les couches préservent aussi les épaves et traces biologiques avec une patience cruelle. Corps, caisses d'outils, coffres d'échantillons et vieux drones peuvent rester des années dans la même marche non mélangée. L'Escalier de saumure enseigne une règle centrale de HECTON-8 : la profondeur se négocie avec la structure de l'océan, elle ne se conquiert pas par la seule résistance de coque.",
+   "external_site": "L'Escalier de saumure rend la géologie de HECTON-8 jouable : couches de sel, chaleur, réfraction sonar et timing de ballast ouvrent une route vers des ruines industrielles plus profondes.",
+   "external_site_article": "L'Escalier de saumure est le moment où HECTON-8 cesse d'être une simple descente et devient une machine faite d'eau. La saumure dense ne se mélange pas proprement avec les couches au-dessus. Elle repose en plateaux, rideaux et rivières lentes au fond, courbant le sonar et changeant la flottabilité au pire moment. Ce danger donne au joueur une nouvelle lecture. Une coque plus forte aide, mais lire l'eau compte davantage : où la chaleur soulève, où le sel descend, où une limite peut être suivie comme une route, et où un changement de ballast négligent plaquera l'engin sous un plafond invisible. La valeur de lore est aussi importante. Les escaliers de saumure préservent ce que la colonie a tenté de perdre. Ils gardent anciens marqueurs de route, coffres de pression, drones morts, traces chimiques et parfois corps dans des couches qui ne se sont pas mélangées depuis des décennies. Chaque marche vers le bas peut devenir navigation, archéologie et accusation en même temps."
+  },
+  "he_IL": {
+   "title": "מדרגת תמלחת",
+   "scanner": "שכבת תמלחת בצפיפות גבוהה. הסונאר מתעקם בגבול; תגובת הבלסט מאחרת. עמוד חום עולה דרך גזירה מדורגת.",
+   "field_note": "דירוג גוף אומר לך מתי מתכת נכנעת. תמלחת אומרת לך מתי התייחסת לאוקיינוס כשטוח.",
+   "terminal": "ברז תרמי יושר. מדרגת צפיפות מופתה. צמיחת מצע מעל תחזית. בקשת נתיב Atlas נדחתה בידי תפעול.",
+   "audio": "יש כאן למטה מדרגות. הן עשויות ממלח, חום וסבלנות.",
+   "in_game_wiki": "מדרגות תמלחת נוצרות כאשר מים מלוחים צפופים, חום פתחים וזרימת אגן איטית נערמים לגבולות חדים. לטייס חסר זהירות הן קירות בלתי נראים: הציפה מגיבה מאוחר, הסונאר מתעקם, אורות נמרחים, וירידה עלולה להפוך להחלקה. לטייס זהיר הן נתיבים. צוללת יכולה לרכוב על שכבה, לפרוץ דרך אחרת, להסתתר תחת וילון או להשתמש בעילוי תרמי כדי לחצות פער שמים פתוחים היו הופכים לבלתי אפשרי. השכבות גם משמרות הריסות ועקבות ביולוגיים בסבלנות אכזרית. גופות, ארגזי כלים, קופסאות דגימות ורחפנים ישנים יכולים לשבת באותה מדרגה לא מעורבת שנים. מדרגת התמלחת מלמדת כלל מרכזי של HECTON-8: עומק מנהלים מול מבנה האוקיינוס, ולא כובשים בכוח גוף בלבד.",
+   "external_site": "מדרגת התמלחת הופכת את הגאולוגיה של HECTON-8 למשחקית: שכבות מלח, חום, שבירת סונאר ותזמון בלסט יוצרים נתיב אל חורבות תעשייתיות עמוקות יותר.",
+   "external_site_article": "מדרגת התמלחת היא המקום שבו HECTON-8 מפסיק להיות ירידה פשוטה והופך למכונה עשויה מים. תמלחת צפופה אינה מתערבבת נקי עם השכבות שמעליה. היא יושבת במדפים, וילונות ונהרות איטיים לאורך קרקעית הים, מעקמת סונאר ומשנה ציפה ברגע הגרוע ביותר. הסכנה הזאת נותנת לשחקן אוריינות חדשה. גוף חזק יותר עוזר, אבל קריאת המים חשובה יותר: איפה חום מרים, איפה מלח מוריד, איפה אפשר לרכוב על גבול כמו על דרך, ואיפה שינוי בלסט רשלני יצמיד כלי תחת תקרה בלתי נראית. ערך הלור חשוב באותה מידה. מדרגות תמלחת משמרות את מה שהמושבה ניסתה לאבד. הן מחזיקות סמני נתיב ישנים, קופסאות לחץ, רחפנים מתים, עקבות כימיים ולעיתים גופות בשכבות שלא התערבבו עשורים. כל מדרגה למטה יכולה להפוך לניווט, ארכיאולוגיה והאשמה יחד."
+  },
+  "id_ID": {
+   "title": "Tangga Brine",
+   "scanner": "Lapisan brine berkepadatan tinggi. Sonar membelok di batas; respons ballast terlambat. Pluma termal naik melalui geser bertingkat.",
+   "field_note": "Rating lambung memberi tahu kapan logam menyerah. Brine memberi tahu kapan kamu memperlakukan samudra sebagai datar.",
+   "terminal": "THERMAL TAP SELARAS. TANGGA KEPADATAN DIPETAKAN. PERTUMBUHAN SUBSTRAT DI ATAS PRAKIRAAN. PERMINTAAN RUTE ATLAS DITUNDA OPERASI.",
+   "audio": "Ada tangga di bawah sini. Terbuat dari garam, panas, dan kesabaran.",
+   "in_game_wiki": "Tangga brine terbentuk ketika air garam padat, panas ventilasi, dan aliran cekungan lambat menumpuk menjadi batas tajam. Bagi pilot ceroboh, itu dinding tak terlihat: daya apung terlambat berubah, sonar membelok, lampu melebar, dan penurunan bisa menjadi seluncuran. Bagi pilot hati-hati, itu rute. Submersible dapat menunggangi satu lapisan, menembus lapisan lain, bersembunyi di bawah tirai, atau memakai angkat termal untuk melintasi celah yang mustahil di air terbuka. Lapisan itu juga mengawetkan rongsokan dan jejak biologis dengan kesabaran kejam. Tubuh, peti alat, peti sampel, dan drone tua dapat duduk di anak tangga yang sama tanpa tercampur selama bertahun-tahun. Tangga Brine mengajarkan aturan pusat HECTON-8: kedalaman dinegosiasikan dengan struktur samudra, bukan ditaklukkan oleh kekuatan lambung saja.",
+   "external_site": "Tangga Brine membuat geologi HECTON-8 bisa dimainkan: lapisan garam, panas, refraksi sonar, dan timing ballast menjadi rute menuju reruntuhan industri yang lebih dalam.",
+   "external_site_article": "Tangga Brine adalah tempat HECTON-8 berhenti menjadi penurunan sederhana dan menjadi mesin dari air. Brine padat tidak bercampur rapi dengan lapisan di atasnya. Ia duduk sebagai paparan, tirai, dan sungai lambat di dasar laut, membelokkan sonar dan mengubah daya apung pada momen terburuk. Bahaya itu memberi pemain literasi baru. Lambung lebih kuat membantu, tetapi membaca air lebih penting: di mana panas mengangkat, di mana garam menjatuhkan, di mana batas bisa ditunggangi seperti jalan, dan di mana perubahan ballast ceroboh akan menjepit kendaraan di bawah langit-langit tak terlihat. Nilai lore-nya sama penting. Tangga brine mengawetkan apa yang koloni coba hilangkan. Ia menyimpan penanda rute lama, peti tekanan, drone mati, jejak kimia, dan kadang tubuh di lapisan yang tidak bercampur selama dekade. Setiap anak tangga turun dapat menjadi navigasi, arkeologi, dan tuduhan sekaligus."
+  },
+  "ja_JP": {
+   "title": "ブライン階段",
+   "scanner": "高密度ブライン層。境界でソナーが曲がる。バラスト応答が遅延。段状せん断を通って熱プルームが上昇している。",
+   "field_note": "船殻等級は金属がいつ諦めるかを教える。ブラインは、あなたが海を平面として扱った時を教える。",
+   "terminal": "熱タップ整列。密度段マッピング完了。基質成長は予測超過。Atlas経路要求は運用側で延期。",
+   "audio": "ここには階段がある。塩と熱と忍耐でできた階段だ。",
+   "in_game_wiki": "ブライン階段は、濃い塩水、噴出口の熱、遅い盆地流が鋭い境界として重なった場所にできる。不注意な操縦者には見えない壁だ。浮力の変化は遅れ、ソナーは曲がり、光はにじみ、降下は滑落になる。注意深い操縦者には経路になる。潜水艇は一つの層に乗り、別の層を抜け、カーテンの下に隠れ、熱上昇を使って開水域では不可能な隙間を渡れる。層は残骸と生物痕跡も残酷な忍耐で保存する。遺体、工具箱、試料カスケット、古いドローンが、何年も混ざらない同じ段に座り続けることがある。ブライン階段はHECTON-8の中心規則を教える。深度は海の構造と交渉するもので、船殻の強さだけで征服するものではない。",
+   "external_site": "ブライン階段はHECTON-8の地質をプレイ可能にする。塩層、熱、ソナー屈折、バラストのタイミングが、より深い産業遺構への経路になる。",
+   "external_site_article": "ブライン階段は、HECTON-8が単純な下降であることをやめ、水でできた機械になる場所だ。濃いブラインは上の層ときれいには混ざらない。海底に棚、カーテン、遅い川として横たわり、ソナーを曲げ、最悪の瞬間に浮力を変える。その危険がプレイヤーに新しい読解力を与える。強い船殻は助けになるが、水を読むことのほうが重要だ。どこで熱が持ち上げ、どこで塩が落とし、どの境界を道のように乗れるか、どの不注意なバラスト変更が艇を見えない天井の下に縫い止めるか。ロア上の価値も大きい。ブライン階段は、植民地が失おうとしたものを保存する。古い経路標識、圧力カスケット、死んだドローン、化学痕跡、ときには何十年も混ざらなかった層の中の遺体を保つ。下への一段一段が、同時に航法、考古学、告発になる。"
+  },
+  "ko_KR": {
+   "title": "염수 계단",
+   "scanner": "고밀도 염수층. 경계에서 소나가 휘며, 밸러스트 반응이 늦다. 열 플룸이 계단식 전단을 통해 상승 중.",
+   "field_note": "선체 등급은 금속이 언제 포기하는지 알려 준다. 염수는 네가 바다를 평평하게 대했을 때를 알려 준다.",
+   "terminal": "열 탭 정렬. 밀도 계단 매핑. 기질 성장 예측 초과. Atlas 경로 요청은 운영 측에서 보류.",
+   "audio": "여기 아래에는 계단이 있다. 소금과 열과 인내로 된 계단이다.",
+   "in_game_wiki": "염수 계단은 짙은 소금물, 분출구 열, 느린 분지 흐름이 날카로운 경계로 쌓이는 곳에서 만들어진다. 부주의한 조종사에게는 보이지 않는 벽이다. 부력은 늦게 바뀌고, 소나는 휘고, 빛은 번지며, 하강은 미끄러짐이 될 수 있다. 조심스러운 조종사에게는 경로다. 잠수정은 한 층을 타고, 다른 층을 뚫고, 커튼 아래 숨고, 열 상승을 써서 열린 물에서는 불가능한 틈을 건널 수 있다. 그 층들은 잔해와 생물 흔적도 잔혹한 인내로 보존한다. 몸, 공구 상자, 샘플 캐스킷, 오래된 드론이 몇 년 동안 섞이지 않은 같은 계단에 머물 수 있다. 염수 계단은 HECTON-8의 중심 규칙을 가르친다. 깊이는 선체 강도만으로 정복하는 것이 아니라 바다 구조와 협상하는 것이다.",
+   "external_site": "염수 계단은 HECTON-8의 지질을 플레이 가능한 것으로 만든다. 소금층, 열, 소나 굴절, 밸러스트 타이밍이 더 깊은 산업 폐허로 가는 경로가 된다.",
+   "external_site_article": "염수 계단은 HECTON-8이 단순한 하강을 멈추고 물로 된 기계가 되는 곳이다. 짙은 염수는 위쪽 층과 깨끗하게 섞이지 않는다. 해저를 따라 선반, 커튼, 느린 강으로 앉아 소나를 휘게 하고 최악의 순간에 부력을 바꾼다. 그 위험은 플레이어에게 새로운 문해력을 준다. 더 강한 선체는 도움이 되지만, 물을 읽는 것이 더 중요하다. 어디에서 열이 들어 올리고, 어디에서 소금이 떨어뜨리며, 어떤 경계를 길처럼 탈 수 있고, 어떤 부주의한 밸러스트 변화가 보이지 않는 천장 아래 craft를 고정할지 알아야 한다. 로어 가치도 중요하다. 염수 계단은 식민지가 잃으려 했던 것을 보존한다. 오래된 경로 표식, 압력 캐스킷, 죽은 드론, 화학 흔적, 때로는 수십 년 동안 섞이지 않은 층 속의 몸을 붙든다. 아래로 내려가는 모든 계단은 동시에 항법, 고고학, 고발이 될 수 있다."
+  },
+  "nl_NL": {
+   "title": "Pekeltrap",
+   "scanner": "Pekellaag met hoge dichtheid. Sonar buigt aan de grens; ballastrespons vertraagd. Thermische pluim stijgt door getrapte schuiving.",
+   "field_note": "De rompklasse zegt wanneer metaal opgeeft. Pekel zegt wanneer jij de oceaan als vlak behandelde.",
+   "terminal": "THERMISCHE TAP UITGELIJND. DICHTHEIDSTREDE IN KAART. SUBSTRAATGROEI BOVEN PROGNOSE. ATLAS-ROUTEVERZOEK DOOR OPERATIONS UITGESTELD.",
+   "audio": "Hier beneden is een trap. Hij is gemaakt van zout, hitte en geduld.",
+   "in_game_wiki": "Pekeltrappen vormen zich waar dicht zout water, venthitte en langzame bekkenstroming scherpe grenzen stapelen. Voor een slordige piloot zijn het onzichtbare muren: drijfvermogen reageert laat, sonar buigt, lichten smeren uit en een afdaling kan een glijbaan worden. Voor een zorgvuldige piloot zijn het routes. Een submersible kan één laag berijden, door een andere slaan, zich onder een gordijn verbergen of thermische lift gebruiken om een kloof over te steken die open water onmogelijk zou maken. De lagen bewaren ook wrakstukken en biologische sporen met wrede geduldigheid. Lichamen, gereedschapskisten, monstercaskets en oude drones kunnen jarenlang in dezelfde onvermengde trede liggen. De Pekeltrap leert een kernregel van HECTON-8: diepte wordt onderhandeld met de structuur van de oceaan, niet alleen veroverd door rompsterkte.",
+   "external_site": "De Pekeltrap maakt HECTON-8s geologie speelbaar: zoutlagen, hitte, sonarbreking en ballasttiming worden een route naar diepere industriële ruïnes.",
+   "external_site_article": "De Pekeltrap is waar HECTON-8 ophoudt een simpele afdaling te zijn en een machine van water wordt. Dichte pekel mengt niet netjes met de lagen erboven. Ze ligt in plateaus, gordijnen en trage rivieren langs de zeebodem, buigt sonar en verandert drijfvermogen op het slechtst mogelijke moment. Dat gevaar geeft de speler een nieuwe geletterdheid. Een sterkere romp helpt, maar het water lezen telt meer: waar hitte tilt, waar zout daalt, waar een grens als weg kan worden bereden, en waar een slordige ballastwijziging een vaartuig onder een onzichtbaar plafond vastzet. De lorewaarde is even belangrijk. Pekeltrappen bewaren wat de kolonie probeerde kwijt te raken. Ze houden oude routemarkers, drukcaskets, dode drones, chemische sporen en soms lichamen vast in lagen die decennia niet gemengd hebben. Elke trede omlaag kan tegelijk navigatie, archeologie en aanklacht worden."
+  },
+  "pl_PL": {
+   "title": "Schody solankowe",
+   "scanner": "Warstwa solanki o wysokiej gęstości. Sonar ugina się na granicy; reakcja balastu opóźniona. Pióropusz cieplny wznosi się przez schodkowe ścinanie.",
+   "field_note": "Klasa kadłuba mówi, kiedy metal się podda. Solanka mówi, kiedy potraktowałeś ocean jak płaski.",
+   "terminal": "UJĘCIE TERMICZNE WYRÓWNANE. STOPIEŃ GĘSTOŚCI ZMAPOWANY. WZROST SUBSTRATU POWYŻEJ PROGNOZY. ŻĄDANIE TRASY ATLAS ODROCZONE PRZEZ OPERATIONS.",
+   "audio": "Tu na dole są schody. Zrobione z soli, ciepła i cierpliwości.",
+   "in_game_wiki": "Schody solankowe powstają tam, gdzie gęsta słona woda, ciepło kominów i wolny przepływ basenu układają się w ostre granice. Dla nieuważnego pilota to niewidzialne ściany: wypór reaguje późno, sonar się ugina, światła rozmazują, a zejście może stać się poślizgiem. Dla uważnego pilota to trasy. Pojazd podwodny może jechać jedną warstwą, przebić inną, ukryć się pod kurtyną albo użyć nośności cieplnej, by przekroczyć lukę, której otwarta woda nie pozwoliłaby pokonać. Warstwy zachowują też wraki i ślady biologiczne z okrutną cierpliwością. Ciała, skrzynie narzędzi, kasety próbek i stare drony mogą latami leżeć w tym samym niezmieszanym stopniu. Schody solankowe uczą centralnej zasady HECTON-8: głębokość negocjuje się ze strukturą oceanu, a nie zdobywa samą siłą kadłuba.",
+   "external_site": "Schody solankowe czynią geologię HECTON-8 grywalną: warstwy soli, ciepło, załamanie sonaru i timing balastu stają się trasą do głębszych ruin przemysłowych.",
+   "external_site_article": "Schody solankowe to miejsce, gdzie HECTON-8 przestaje być prostym zejściem i staje się maszyną z wody. Gęsta solanka nie miesza się czysto z warstwami nad sobą. Leży w półkach, kurtynach i wolnych rzekach na dnie, ugina sonar i zmienia wypór w najgorszym momencie. To zagrożenie daje graczowi nową umiejętność czytania. Mocniejszy kadłub pomaga, ale czytanie wody liczy się bardziej: gdzie ciepło unosi, gdzie sól opada, gdzie granicą można jechać jak drogą, i gdzie nieostrożna zmiana balastu przyciśnie pojazd pod niewidzialnym sufitem. Wartość lore jest równie ważna. Schody solankowe zachowują to, co kolonia próbowała zgubić. Trzymają stare znaczniki tras, kasety ciśnieniowe, martwe drony, ślady chemiczne i czasem ciała w warstwach, które nie mieszały się od dekad. Każdy stopień w dół może być jednocześnie nawigacją, archeologią i oskarżeniem."
+  },
+  "pt_BR": {
+   "title": "Escada de salmoura",
+   "scanner": "Camada de salmoura de alta densidade. O sonar curva na fronteira; resposta de lastro atrasada. Pluma térmica subindo por cisalhamento em degraus.",
+   "field_note": "A classe do casco diz quando o metal desiste. A salmoura diz quando você tratou o oceano como plano.",
+   "terminal": "TOMADA TÉRMICA ALINHADA. DEGRAU DE DENSIDADE MAPEADO. CRESCIMENTO DE SUBSTRATO ACIMA DA PREVISÃO. PEDIDO DE ROTA ATLAS ADIADO POR OPERATIONS.",
+   "audio": "Existe uma escada aqui embaixo. Ela é feita de sal, calor e paciência.",
+   "in_game_wiki": "Escadas de salmoura se formam onde água salgada densa, calor de respiradouros e fluxo lento de bacia se empilham em fronteiras nítidas. Para um piloto descuidado, são paredes invisíveis: a flutuabilidade responde tarde, o sonar curva, luzes borram, e uma descida pode virar escorregão. Para um piloto cuidadoso, são rotas. Um submersível pode montar uma camada, atravessar outra, esconder-se sob uma cortina ou usar elevação térmica para cruzar uma lacuna que a água aberta tornaria impossível. As camadas também preservam destroços e traços biológicos com paciência cruel. Corpos, caixas de ferramentas, cofres de amostra e drones antigos podem ficar anos no mesmo degrau sem mistura. A Escada de salmoura ensina uma regra central de HECTON-8: profundidade se negocia com a estrutura do oceano, não se conquista apenas com força de casco.",
+   "external_site": "A Escada de salmoura torna a geologia de HECTON-8 jogável: camadas de sal, calor, refração de sonar e timing de lastro viram rota para ruínas industriais mais profundas.",
+   "external_site_article": "A Escada de salmoura é onde HECTON-8 deixa de ser uma descida simples e vira uma máquina feita de água. Salmoura densa não se mistura bem com as camadas acima. Ela fica em prateleiras, cortinas e rios lentos pelo fundo do mar, curvando o sonar e mudando a flutuabilidade no pior momento. Esse perigo dá ao jogador uma nova alfabetização. Um casco mais forte ajuda, mas ler a água importa mais: onde o calor levanta, onde o sal afunda, onde uma fronteira pode ser montada como estrada e onde uma mudança descuidada de lastro prenderá a nave sob um teto invisível. O valor de lore é igualmente importante. Escadas de salmoura preservam o que a colônia tentou perder. Elas guardam marcadores de rota antigos, cofres de pressão, drones mortos, traços químicos e às vezes corpos em camadas que não se misturam há décadas. Cada degrau para baixo pode virar navegação, arqueologia e acusação ao mesmo tempo."
+  },
+  "ru_RU": {
+   "title": "Рассольная лестница",
+   "scanner": "Высокоплотный слой рассола. Сонар изгибается на границе; балласт отвечает с задержкой. Тепловой шлейф поднимается через ступенчатый сдвиг.",
+   "field_note": "Класс корпуса говорит, когда сдаст металл. Рассол говорит, когда ты обращался с океаном как с плоскостью.",
+   "terminal": "ТЕРМАЛЬНЫЙ ОТВОД ВЫРОВНЕН. СТУПЕНЬ ПЛОТНОСТИ НАНЕСЕНА. РОСТ СУБСТРАТА ВЫШЕ ПРОГНОЗА. ЗАПРОС МАРШРУТА ATLAS ОТЛОЖЕН ОПЕРАЦИЯМИ.",
+   "audio": "Тут внизу есть лестница. Она сделана из соли, тепла и терпения.",
+   "in_game_wiki": "Рассольные лестницы возникают там, где плотная соленая вода, тепло жерл и медленное течение бассейна складываются в резкие границы. Для небрежного пилота это невидимые стены: плавучесть меняется поздно, сонар изгибается, свет размазывается, а спуск может стать соскальзыванием. Для внимательного пилота это маршруты. Батискаф может ехать по одному слою, пробить другой, спрятаться под завесой или использовать тепловой подъем, чтобы пересечь разрыв, невозможный в открытой воде. Слои также сохраняют обломки и биологические следы с жестоким терпением. Тела, ящики инструментов, кассеты образцов и старые дроны могут годами лежать в одной и той же несмешанной ступени. Рассольная лестница учит центральному правилу HECTON-8: с глубиной договариваются через структуру океана, а не побеждают ее одной прочностью корпуса.",
+   "external_site": "Рассольная лестница делает геологию HECTON-8 игровой: солевые слои, тепло, преломление сонара и тайминг балласта становятся путем к более глубоким промышленным руинам.",
+   "external_site_article": "Рассольная лестница — место, где HECTON-8 перестает быть простым спуском и становится машиной из воды. Плотный рассол не смешивается чисто со слоями выше. Он лежит полками, завесами и медленными реками по дну, изгибая сонар и меняя плавучесть в худший момент. Эта опасность дает игроку новую грамотность. Более прочный корпус помогает, но важнее читать воду: где тепло поднимает, где соль тянет вниз, где границу можно использовать как дорогу, а где небрежная смена балласта прижмет аппарат под невидимым потолком. Лор-ценность такая же важная. Рассольные лестницы сохраняют то, что колония пыталась потерять. Они держат старые маркеры маршрутов, кассеты давления, мертвые дроны, химические следы и иногда тела в слоях, которые не смешивались десятилетиями. Каждая ступень вниз может стать навигацией, археологией и обвинением одновременно."
+  },
+  "uk_UA": {
+   "title": "Розсільні сходи",
+   "scanner": "Високощільний шар розсолу. Сонар згинається на межі; баласт відповідає із затримкою. Тепловий шлейф підіймається крізь ступінчастий зсув.",
+   "field_note": "Клас корпусу каже, коли здасть метал. Розсіл каже, коли ти поводився з океаном як із площиною.",
+   "terminal": "ТЕРМАЛЬНИЙ ВІДВІД ВИРІВНЯНО. СХОДИНКУ ЩІЛЬНОСТІ НАНЕСЕНО. РІСТ СУБСТРАТУ ВИЩИЙ ЗА ПРОГНОЗ. ЗАПИТ МАРШРУТУ ATLAS ВІДКЛАДЕНО ОПЕРАЦІЯМИ.",
+   "audio": "Тут унизу є сходи. Вони зроблені із солі, тепла й терпіння.",
+   "in_game_wiki": "Розсільні сходи виникають там, де щільна солона вода, тепло жерл і повільна течія басейну складаються в різкі межі. Для необережного пілота це невидимі стіни: плавучість змінюється пізно, сонар згинається, світло розмазується, а спуск може стати зісковзуванням. Для уважного пілота це маршрути. Батискаф може їхати одним шаром, пробити інший, сховатися під завісою або використати тепловий підйом, щоб перетнути розрив, неможливий у відкритій воді. Шари також зберігають уламки й біологічні сліди з жорстоким терпінням. Тіла, ящики інструментів, касети зразків і старі дрони можуть роками лежати в одній і тій самій незмішаній сходинці. Розсільні сходи вчать центрального правила HECTON-8: з глибиною домовляються через структуру океану, а не перемагають її лише міцністю корпусу.",
+   "external_site": "Розсільні сходи роблять геологію HECTON-8 ігровою: соляні шари, тепло, заломлення сонара й таймінг баласту стають шляхом до глибших промислових руїн.",
+   "external_site_article": "Розсільні сходи — місце, де HECTON-8 перестає бути простим спуском і стає машиною з води. Щільний розсіл не змішується чисто з шарами вище. Він лежить полицями, завісами й повільними річками по дну, згинаючи сонар і змінюючи плавучість у найгірший момент. Ця небезпека дає гравцеві нову грамотність. Міцніший корпус допомагає, але важливіше читати воду: де тепло підіймає, де сіль тягне вниз, де межу можна використати як дорогу, а де необережна зміна баласту притисне апарат під невидимою стелею. Лор-цінність така ж важлива. Розсільні сходи зберігають те, що колонія намагалася втратити. Вони тримають старі маркери маршрутів, касети тиску, мертві дрони, хімічні сліди й іноді тіла в шарах, що не змішувалися десятиліттями. Кожна сходинка вниз може стати навігацією, археологією й обвинуваченням одночасно."
+  },
+  "zh_CN": {
+   "title": "盐水阶梯",
+   "scanner": "高密度盐水层。声呐在边界弯折；压载响应延迟。热羽流正穿过阶梯式剪切上升。",
+   "field_note": "船壳等级告诉你金属何时屈服。盐水告诉你何时把海洋当成了平面。",
+   "terminal": "热能取口已对齐。密度阶已测绘。基质生长高于预测。ATLAS路线请求被运营推迟。",
+   "audio": "下面有一条阶梯。它由盐、热和耐心组成。",
+   "in_game_wiki": "盐水阶梯形成于高密度盐水、喷口热量和缓慢盆地流叠成清晰边界的地方。对粗心驾驶员来说，它们是看不见的墙：浮力反应滞后，声呐弯折，灯光涂抹，下降可能变成滑落。对谨慎驾驶员来说，它们是路线。潜航器可以骑在一层上，刺穿另一层，藏在帘幕下，或利用热升力跨过开放水域不可能跨过的缺口。这些层还以残酷的耐心保存残骸和生物痕迹。尸体、工具箱、样本匣和旧无人机可以多年停在同一个未混合阶层中。盐水阶梯教会HECTON-8的一条核心规则：深度要与海洋结构协商，而不是只靠船壳强度征服。",
+   "external_site": "盐水阶梯让HECTON-8的地质变得可游玩：盐层、热量、声呐折射和压载时机成为通往更深工业废墟的路线。",
+   "external_site_article": "盐水阶梯是HECTON-8不再只是简单下潜、而变成水造机器的地方。高密度盐水不会与上方层次干净混合。它沿海底形成架层、帘幕和缓慢河流，在最糟的时刻弯折声呐并改变浮力。这种危险给玩家一种新的识读能力。更强的船壳有帮助，但读懂水更重要：哪里热量上抬，哪里盐分下沉，哪条边界可以像道路一样骑行，哪里一次粗心的压载变化会把艇钉在看不见的天花板下。它的 lore 价值同样重要。盐水阶梯保存殖民地试图丢失的东西。它们留住旧路线标记、压力匣、死无人机、化学痕迹，有时还有几十年未混合层里的尸体。每向下一阶，都可能同时成为导航、考古和控诉。"
   }
+ },
+ "content_class": "in_world_artifact"
 }

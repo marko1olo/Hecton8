@@ -1,11 +1,54 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS245_PRESSURE_HULL_RIB_AND_GASKET_ARTICLE",
-  "title": "Pressure Hull Rib And Gasket Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS245_PRESSURE_HULL_RIB_AND_GASKET_ARTICLE",
+ "title": "Pressure Hull Rib And Gasket Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1415_PRESSURE_HULL_RIB_GASKET_LEDGER",
+   "release_set_id": "RS245_PRESSURE_HULL_RIB_AND_GASKET_ARTICLE",
+   "article_id": "applied_lore.pressure_hull_rib_gasket_ledger",
+   "title_key": "LORE_PRESSURE_HULL_RIB_GASKET_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/WriterScenarioAgentPrompt.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,261 +56,219 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1415_PRESSURE_HULL_RIB_GASKET_LEDGER",
-      "release_set_id": "RS245_PRESSURE_HULL_RIB_AND_GASKET_ARTICLE",
-      "article_id": "applied_lore.pressure_hull_rib_gasket_ledger",
-      "title_key": "LORE_PRESSURE_HULL_RIB_GASKET_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/WriterScenarioAgentPrompt.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.pressure_hull_rib_gasket_ledger",
-        "secondary": [
-          "unlock.first_pressure_hull_scan",
-          "unlock.first_gasket_channel_trace",
-          "unlock.first_safe_module_entry"
-        ],
-        "poi_tags": [
-          "poi.pressure_hull_rib_row",
-          "poi.gasket_channel_trace",
-          "poi.service_latch_orange_corner",
-          "poi.salt_streak_low_seam"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.industrial_shelf",
-          "biome.pressure_route"
-        ],
-        "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Pressure Hull Scanner",
-          "terminal": "Old Colony Exterior Hull Readout",
-          "audio": "Marauder Entry Instructor",
-          "in_game_wiki": "PDA Pressure Hull Field Guide",
-          "external_site": "Public Site Pressure Hull Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_pressure_hull_scan_or_safe_module_entry",
-        "truth_payload": "Pressure hull ribs, gasket channels, salt streaks and bolt rows reveal module integrity, leak history, service access and unsafe cuts.",
-        "player_question": "Which part of the hull still holds the ocean back?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Pressure Hull Rib And Gasket Ledger",
-          "scanner": "PRESSURE HULL // Off-white outer plate, graphite rib, compressed black gasket. Salt streaks run from seam lows, not from random weather. Bolt rows still aligned: module moved, but did not peel open.",
-          "terminal": "EXTERIOR HULL READ // Rib spacing shows a pressure module, not decorative wreckage. Intact gasket channel means the room may still hold a dry pocket. Orange paint at a rib corner marks service access; do not cut through the rib before checking latch side.",
-          "audio": "A pressure rib is not trim. It is the part of the room still arguing with the ocean.",
-          "in_game_wiki": "A HECTON-8 pressure hull is readable from the outside if the player stops treating it like generic metal. The off-white plates are only the skin. The dark ribs show where pressure load was meant to travel. The gasket channels tell where modules kissed and where water was supposed to stop. Salt streaks reveal the low points of long leaks. Orange safety paint usually sits near a service action, not at random.\n\nThat grammar changes salvage. A straight bolt row means a module shifted as one body; the room behind it may be crushed but still coherent. A torn gasket with pale salt bloom means water entered slowly and may have preserved tags, tools and paper in pockets. A rib bent inward means pressure won from outside. A rib bent outward means something inside vented or exploded. Cutting the wrong rib can turn a stable wreck into moving scrap.\n\nDeep Reach liked clean module diagrams. The sea writes better revisions. It shows which ribs were overburdened, which repairs used wrong gasket stock, which hatches were opened after the official evacuation window, and which rooms were patched by workers who expected to come back. For a Marauder, hull reading is not flavor. It is the difference between a safe entry, a dead pocket and a claimable proof object.",
-          "external_site": "A practical article on pressure hull ribs, gasket channels and salt streaks: how exterior base materials reveal room integrity, service access and dangerous cuts.",
-          "external_site_article": "Pressure hulls on HECTON-8 are ugly because they are honest. Their job was not to look like spacecraft. Their job was to keep a working room from becoming ocean. That means every strip of material has a job: the plate spreads load, the rib carries it, the gasket stops water migration, the latch side tells you where a human expected to open the thing under stress.\n\nThe best hull reading begins with stains. Salt grows under low seams. Black-green biofilm follows slow leaks. Rust at a bolt row is less important than whether the row stayed straight. A straight row means the module suffered as a unit; a staggered row means the frame tore. Gasket material squeezed out of a channel means compression happened before flooding. Missing gasket with clean metal means later salvage or deliberate opening.\n\nThis is where the lore earns its space in the game. A player can look at a base exterior and make decisions: enter through the latch side, avoid a rib that still carries load, cut a plate that is already isolated, or preserve a gasket trace because it proves a door was opened after the public timeline says nobody returned. The same material can be loot, shelter, hazard and evidence. HECTON-8 is strongest when those meanings sit on the same object.\n\nThe ocean has not made the colony mysterious by adding symbols. It has made the colony legible by removing comfort. Paint goes. Logos go. Excuses go. Ribs, salt, gaskets and bent bolts remain.",
-          "field_note": "Read the rib before the plate. The plate lies prettier."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал ребер и прокладок напорного корпуса",
-          "scanner": "НАПОРНЫЙ КОРПУС // Белая внешняя плита, графитовое ребро, сжатая черная прокладка. Соляные потеки идут из нижних швов, а не из случайной погоды. Ряды болтов ровные: модуль сместился, но не раскрылся.",
-          "terminal": "ЧТЕНИЕ ВНЕШНЕГО КОРПУСА // Шаг ребер показывает напорный модуль, не декоративные обломки. Целый канал прокладки значит, что внутри может быть сухой карман. Оранжевая краска у угла ребра помечает сервисный доступ; не режь ребро до проверки стороны защелки.",
-          "audio": "Напорное ребро - не отделка. Это часть комнаты, которая все еще спорит с океаном.",
-          "in_game_wiki": "Напорный корпус HECTON-8 читается снаружи, если перестать видеть в нем просто металл. Белые плиты - только кожа. Темные ребра показывают, куда должен был уходить груз давления. Каналы прокладок показывают, где модули сцеплялись и где вода должна была остановиться. Соль выдает нижние точки долгих течей. Оранжевая сервисная краска обычно стоит рядом с действием, а не случайно.\n\nЭто меняет разбор. Ровный ряд болтов значит, что модуль сдвинулся единым телом; комната за ним может быть смята, но все еще цельна. Рваная прокладка с белой солью значит медленную воду и, возможно, сохраненные метки, инструменты и бумагу в карманах. Ребро, согнутое внутрь, говорит, что давление выиграло снаружи. Ребро, выгнутое наружу, говорит, что внутри что-то стравило или взорвалось. Неправильный рез превращает устойчивый отсек в движущийся лом.\n\nDeep Reach любил чистые схемы модулей. Море пишет правки честнее: какие ребра перегрузили, где поставили чужую прокладку, какие люки открывали после официального окна эвакуации, какие комнаты латали люди, ожидавшие вернуться. Для мародера чтение корпуса - не декорация. Это разница между безопасным входом, мертвым карманом и доказательством, которое можно предъявить.",
-          "external_site": "Практическая статья о ребрах напорного корпуса, каналах прокладок и соляных потеках: как внешний материал базы показывает целостность комнаты, сервисный доступ и опасные резы.",
-          "external_site_article": "Напорные корпуса HECTON-8 некрасивы, потому что честны. Они не должны были выглядеть как корабль мечты. Они должны были не дать рабочей комнате стать океаном. Поэтому каждая полоса материала работает: плита распределяет нагрузку, ребро несет ее, прокладка останавливает миграцию воды, сторона защелки показывает, где человек рассчитывал открыть дверь под стрессом.\n\nЛучшее чтение начинается с пятен. Соль растет под нижними швами. Черно-зеленый биофильм идет по медленным течам. Ржавчина у болтов менее важна, чем то, остался ли ряд прямым. Прямой ряд значит, что модуль страдал как единое тело; ступенчатый ряд значит, что раму порвало. Выдавленная прокладка говорит о сжатии до затопления. Чистый металл без прокладки - о позднем разборе или намеренном открытии.\n\nВ игре это дает решения. Игрок может входить со стороны защелки, не резать ребро, которое еще держит нагрузку, резать уже изолированную плиту или сохранить след прокладки как доказательство, что дверь открывали после публичной эвакуации. Один материал становится добычей, укрытием, опасностью и уликой.\n\nОкеан не сделал колонию загадочной символами. Он сделал ее читаемой, сняв комфорт. Краска ушла. Логотипы ушли. Отговорки ушли. Остались ребра, соль, прокладки и гнутые болты.",
-          "field_note": "Сначала читай ребро, потом плиту. Плита врет красивее."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "耐圧リブとガスケット台帳",
-          "scanner": "耐圧外殻 // 白い外板、黒鉛色のリブ、押し潰された黒いガスケット。塩筋は低い継ぎ目から落ちる。ボルト列が直線なら、モジュールは一体で動いたが開いてはいない。",
-          "terminal": "外殻読取 // リブ間隔は飾りではなく耐圧モジュールを示す。ガスケット溝が生きていれば、奥に乾いた空間が残ることがある。リブ角の橙塗装は保守口の合図だ。切断前にラッチ側を確認する。",
-          "audio": "耐圧リブは飾りではない。海とまだ議論している部屋の骨だ。",
-          "in_game_wiki": "HECTON-8の耐圧外殻は、ただの金属板ではない。白い外板は皮膚にすぎず、黒いリブが圧力を逃がす骨格になる。ガスケット溝は水を止める境界で、塩筋は長い漏れの低い道筋を残す。橙の塗装は飾りではなく、手が入る場所を示す。\n\nまっすぐなボルト列は、部屋が一体のまま動いた印だ。裂けたガスケットと白い塩は、ゆっくり水が入った記録になる。内側へ曲がったリブは外圧の勝利、外側へ膨らんだリブは内部の排気や破裂を語る。平らな板だけを見て切ると、静かな残骸が動く鉄屑に変わる。\n\nDeep Reachの図面はきれいだった。海底の外殻はもっと正直だ。過負荷のリブ、規格違いの補修材、避難後に開いたハッチ、戻るつもりで貼られた応急パッチまで残している。略奪者にとって外殻読取は知識ではなく、生存手順だ。",
-          "external_site": "耐圧リブ、ガスケット溝、塩筋を読む実用記事。外殻材料が部屋の健全性、保守口、危険な切断線を示す。",
-          "external_site_article": "HECTON-8の耐圧外殻は醜い。だから信用できる。宇宙船らしく見せるためではなく、作業室を海にしないために作られた。外板は荷重を広げ、リブはそれを受け、ガスケットは水の移動を止め、ラッチ側は人間が緊急時に開ける位置を残す。\n\n読むべき最初の文字は汚れだ。塩は低い継ぎ目に育つ。黒緑の生膜は遅い漏れを追う。ボルトの錆より、列が直線を保ったかどうかが重要になる。直線ならモジュールは一体として耐えた。段差があればフレームは裂けた。押し出されたガスケットは浸水前の圧縮を示し、きれいな金属の空溝は後日の開放を示す。\n\nひとつの外殻は、戦利品、避難場所、危険物、証拠を同時に持つ。読む者は入口を選び、荷重を残すリブを避け、切るべき板を探し、公式記録と違う開閉の痕跡を保存できる。",
-          "field_note": "板より先にリブを読め。板はきれいに嘘をつく。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "压力壳肋条与密封圈账本",
-          "scanner": "压力壳 // 白色外板、石墨色肋条、被压缩的黑色密封圈。盐痕从低缝流下。螺栓排仍然笔直：模块整体移动，但没有剥开。",
-          "terminal": "外壳读取 // 肋距说明这是耐压模块，不是装饰残骸。完整密封槽意味着内部可能仍有干燥口袋。肋角的橙色漆标记服务入口；切割前先确认锁扣侧。",
-          "audio": "压力肋不是装饰。它是房间仍在和海争辩的部分。",
-          "in_game_wiki": "HECTON-8的压力壳从外侧就能读懂，只要不把它当成普通铁皮。白色外板只是皮肤，深色肋条才是压力载荷的路径。密封槽说明模块在哪里接合，水本应在哪里停住。盐痕指向长期渗漏的最低点。橙色安全漆通常靠近一个可操作的位置。\n\n这会改变拆解方式。螺栓排笔直，说明模块作为一个整体移动；后面的房间也许被压坏，但结构还连贯。撕裂的密封圈和白色盐花说明水进入得很慢，里面可能还保存着标签、工具和纸张。向内弯的肋条说明外压赢了，向外鼓的肋条说明内部曾经排气或爆开。\n\nDeep Reach喜欢干净的模块图。海水留下的修订更可靠：哪根肋条过载，哪处用了错误规格的密封材料，哪些舱门在官方撤离窗口之后又被打开。对拾荒者来说，读壳不是背景知识，而是决定入口、切割线和证据价值的动作。",
-          "external_site": "一篇关于压力壳肋条、密封槽和盐痕的实用文章：外部材料如何揭示房间完整性、服务入口和危险切割线。",
-          "external_site_article": "HECTON-8的压力壳不好看，因为它们诚实。它们不是为了像飞船，而是为了让工作房间不要变成海。每一条材料都有职责：外板分散载荷，肋条承受载荷，密封圈阻止水迁移，锁扣侧告诉你人在压力下原本打算从哪里打开。\n\n最好的读壳从污渍开始。盐在低缝下生长。黑绿色生物膜沿着慢漏扩散。螺栓旁的锈不如螺栓排是否仍直重要。直排表示模块整体受难；错位表示框架被撕开。被挤出的密封材料说明浸水前曾经受压。空槽里干净的金属说明后期拆解或有意开启。\n\n这让环境信息变成玩法。玩家可以选择锁扣侧进入，避开仍在承载的肋条，切开已经孤立的外板，或保留密封痕迹作为官方时间线被破坏的证据。海没有给殖民地增加谜语，它只是剥掉涂装、标志和借口，留下肋条、盐和弯曲的螺栓。",
-          "field_note": "先读肋条，再读外板。外板更会骗人。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre des nervures et joints de coque pressurisée",
-          "scanner": "COQUE SOUS PRESSION // Plaque extérieure blanche, nervure graphite, joint noir comprimé. Les coulures de sel partent des coutures basses. La rangée de boulons reste droite : le module a bougé sans s'ouvrir.",
-          "terminal": "LECTURE DE COQUE // L'espacement des nervures indique un module pressurisé, pas un décor de ruine. Un canal de joint intact peut cacher une poche sèche. La peinture orange près d'une nervure marque un accès de service ; vérifier le côté verrou avant de couper.",
-          "audio": "Une nervure n'est pas un décor. C'est la partie de la pièce qui discute encore avec l'océan.",
-          "in_game_wiki": "Une coque pressurisée de HECTON-8 se lit de l'extérieur. La plaque blanche n'est que la peau. Les nervures sombres montrent le chemin de la charge. Les canaux de joint disent où les modules se serraient et où l'eau devait s'arrêter. Les coulures de sel tracent les fuites longues. L'orange de sécurité se trouve près d'un geste humain, rarement au hasard.\n\nCette lecture change la récupération. Une rangée de boulons droite signifie que le module a souffert comme un seul corps. Un joint arraché avec sel pâle signifie une entrée d'eau lente, donc parfois des étiquettes, outils ou papiers encore lisibles. Une nervure pliée vers l'intérieur montre la victoire de la pression extérieure ; une nervure bombée vers l'extérieur parle d'une décharge interne.\n\nDeep Reach aimait les plans propres. La mer corrige mieux. Elle montre les nervures surchargées, les mauvais joints de réparation, les sas ouverts après la fenêtre officielle d'évacuation. Pour un Maraudeur, lire la coque n'est pas une ambiance : c'est choisir entre entrée sûre, poche morte et preuve revendiquable.",
-          "external_site": "Article pratique sur les nervures, canaux de joint et coulures de sel : comment la coque révèle l'intégrité d'une pièce, l'accès de service et les coupes dangereuses.",
-          "external_site_article": "Les coques pressurisées de HECTON-8 sont laides parce qu'elles sont franches. Elles n'avaient pas à ressembler à des vaisseaux. Elles devaient empêcher une salle de travail de devenir océan. La plaque répartit la charge, la nervure la porte, le joint bloque la migration de l'eau, et le côté verrou conserve l'intention d'ouverture humaine.\n\nLa première lecture commence par les taches. Le sel grandit sous les coutures basses. Le biofilm noir-vert suit les fuites lentes. La rouille près d'un boulon compte moins que la rectitude de la rangée. Une rangée droite signale un module encore cohérent ; une rangée en escalier signale une ossature rompue. Un joint expulsé raconte une compression avant l'inondation.\n\nDans le jeu, ce matériau donne des décisions. Entrer par le côté verrou, éviter une nervure encore porteuse, couper une plaque isolée, ou conserver la trace d'un joint comme preuve qu'une porte fut ouverte après l'évacuation publique. Le même objet devient butin, abri, danger et témoignage.",
-          "field_note": "Lis la nervure avant la plaque. La plaque ment plus proprement."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de nervios y juntas del casco de presión",
-          "scanner": "CASCO DE PRESIÓN // Placa exterior blanca, nervio grafito, junta negra comprimida. La sal baja desde costuras bajas. La fila de pernos sigue recta: el módulo se movió, pero no se abrió.",
-          "terminal": "LECTURA DE CASCO // La separación de nervios indica módulo de presión, no restos decorativos. Un canal de junta intacto puede guardar un bolsillo seco. La pintura naranja junto al nervio marca acceso de servicio; revisa el lado del cierre antes de cortar.",
-          "audio": "Un nervio de presión no es adorno. Es la parte de la sala que aún discute con el océano.",
-          "in_game_wiki": "Un casco de presión de HECTON-8 puede leerse desde fuera. Las placas blancas son piel; los nervios oscuros marcan por dónde viaja la carga. Los canales de junta indican dónde se unían los módulos y dónde debía detenerse el agua. Las líneas de sal revelan los puntos bajos de fugas antiguas. La pintura naranja suele estar cerca de una acción de mantenimiento.\n\nEsa gramática cambia el saqueo. Una fila recta de pernos significa que el módulo se desplazó como un cuerpo entero; la sala detrás puede estar aplastada, pero aún coherente. Una junta rota con sal pálida apunta a entrada lenta de agua y a objetos conservados en bolsas secas. Un nervio doblado hacia dentro habla de presión exterior. Uno abombado hacia fuera habla de descarga interna.\n\nDeep Reach prefería diagramas limpios. El mar deja revisiones mejores: qué nervios se sobrecargaron, qué reparación usó una junta incorrecta, qué escotillas se abrieron tras la ventana oficial de evacuación. Para un Merodeador, leer casco no es color narrativo: es entrada segura, bolsillo muerto o prueba aprovechable.",
-          "external_site": "Artículo práctico sobre nervios de casco, canales de junta y líneas de sal: cómo el exterior revela integridad de sala, acceso de servicio y cortes peligrosos.",
-          "external_site_article": "Los cascos de presión de HECTON-8 son feos porque son sinceros. No fueron diseñados para parecer naves elegantes. Su trabajo era impedir que una sala de trabajo se convirtiera en océano. La placa reparte carga, el nervio la sostiene, la junta detiene el agua y el lado del cierre conserva la intención humana.\n\nLa lectura empieza por las manchas. La sal crece bajo costuras bajas. El biofilm negro verdoso sigue fugas lentas. El óxido en un perno importa menos que la fila completa: recta significa módulo coherente; escalonada significa marco roto. Una junta expulsada indica compresión antes de inundación. Un canal limpio sin junta apunta a apertura posterior.\n\nEn juego, ese material permite decisiones: entrar por el cierre, no cortar un nervio portante, abrir una placa ya aislada o guardar una huella de junta como prueba contra la versión oficial. El océano no añadió símbolos; quitó comodidad y dejó nervios, sal y pernos torcidos.",
-          "field_note": "Lee el nervio antes que la placa. La placa miente con mejor acabado."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Protokoll für Druckrippen und Dichtungen",
-          "scanner": "DRUCKHÜLLE // Weiße Außenplatte, graphitfarbene Rippe, gepresste schwarze Dichtung. Salz läuft aus tiefen Nähten. Die Bolzenreihe bleibt gerade: Das Modul wanderte, ohne aufzureißen.",
-          "terminal": "HÜLLENLESUNG // Der Rippenabstand zeigt ein Druckmodul, keinen Zierrand. Ein intakter Dichtungskanal kann eine trockene Tasche bedeuten. Orange Farbe an der Rippe markiert Servicezugang; vor dem Schnitt die Verriegelungsseite prüfen.",
-          "audio": "Eine Druckrippe ist kein Zierstreifen. Sie ist der Teil des Raums, der noch mit dem Ozean streitet.",
-          "in_game_wiki": "Eine HECTON-8-Druckhülle lässt sich von außen lesen. Die weißen Platten sind nur Haut. Dunkle Rippen zeigen, wohin die Drucklast wandern sollte. Dichtungskanäle zeigen die Grenzen zwischen Modulen. Salzspuren markieren tiefe Stellen alter Lecks. Orange Servicefarbe sitzt selten zufällig.\n\nDiese Grammatik verändert Bergung. Eine gerade Bolzenreihe bedeutet, dass das Modul als Körper verschoben wurde; der Raum dahinter kann zerquetscht, aber noch zusammenhängend sein. Eine gerissene Dichtung mit heller Salzblüte deutet auf langsames Eindringen und mögliche trockene Reste. Nach innen gebogene Rippen erzählen von Außendruck; nach außen gebogene von innerer Entlüftung oder Explosion.\n\nDeep Reach mochte saubere Diagramme. Der Meeresboden schreibt bessere Korrekturen: überlastete Rippen, falsches Dichtungsmaterial, nach der offiziellen Evakuierung geöffnete Luken. Für Marauder ist Hüllenlesen kein Schmucktext, sondern der Unterschied zwischen sicherem Eintritt, toter Tasche und verwertbarem Beweis.",
-          "external_site": "Praktischer Artikel über Druckrippen, Dichtungskanäle und Salzspuren: Wie Außenmaterial Raumzustand, Servicezugang und gefährliche Schnitte zeigt.",
-          "external_site_article": "Druckhüllen auf HECTON-8 sind hässlich, weil sie ehrlich sind. Sie sollten nicht wie Raumschiffe aussehen, sondern verhindern, dass ein Arbeitsraum zum Ozean wird. Platte, Rippe, Dichtung und Verriegelungsseite haben je eine klare Aufgabe.\n\nDie beste Lesung beginnt bei Flecken. Salz wächst unter tiefen Nähten. Schwarzgrüner Biofilm folgt langsamen Lecks. Rost an einzelnen Bolzen zählt weniger als die Linie der ganzen Reihe. Gerade heißt: Das Modul blieb als Körper zusammen. Versetzt heißt: Der Rahmen riss. Herausgepresste Dichtung erzählt von Kompression vor der Flutung.\n\nIm Spiel wird daraus Entscheidung. Der Spieler kann den Einstieg wählen, tragende Rippen meiden, isolierte Platten schneiden oder eine Dichtungsspur als Beweis sichern. Ein einziges Material wird Beute, Schutz, Gefahr und Akte zugleich.",
-          "field_note": "Lies die Rippe vor der Platte. Die Platte lügt schöner."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr żeber i uszczelek kadłuba ciśnieniowego",
-          "scanner": "KADŁUB CIŚNIENIOWY // Biała płyta zewnętrzna, grafitowe żebro, ściśnięta czarna uszczelka. Sól płynie z niskich szwów. Rząd śrub prosty: moduł przesunął się, ale nie otworzył.",
-          "terminal": "ODCZYT KADŁUBA // Rozstaw żeber oznacza moduł ciśnieniowy, nie ozdobny złom. Cały kanał uszczelki może kryć suchą kieszeń. Pomarańcz przy żebrze wskazuje dostęp serwisowy; przed cięciem sprawdź stronę zatrzasku.",
-          "audio": "Żebro ciśnieniowe to nie ozdoba. To część pokoju wciąż kłócąca się z oceanem.",
-          "in_game_wiki": "Kadłub ciśnieniowy HECTON-8 da się czytać z zewnątrz. Białe płyty są tylko skórą. Ciemne żebra pokazują drogę obciążenia. Kanały uszczelek mówią, gdzie moduły się stykały i gdzie woda miała się zatrzymać. Sól wskazuje dolne punkty długich przecieków.\n\nProsty rząd śrub oznacza, że moduł przesunął się jako całość; sala za nim może być zgnieciona, ale wciąż spójna. Rozerwana uszczelka z jasną solą wskazuje powolne zalewanie i możliwe zachowane etykiety lub narzędzia. Żebro wgięte do środka to zwycięstwo ciśnienia zewnętrznego. Żebro wygięte na zewnątrz mówi o wypuszczeniu lub wybuchu od środka.\n\nDeep Reach lubił czyste schematy. Morze zostawia lepsze poprawki: przeciążone żebra, złe materiały naprawcze, włazy otwarte po oficjalnej ewakuacji. Dla Marudera to nie ciekawostka, lecz sposób wyboru wejścia, cięcia i dowodu.",
-          "external_site": "Praktyczny artykuł o żebrach, kanałach uszczelek i śladach soli: jak zewnętrzny materiał ujawnia stan pomieszczeń, serwis i ryzykowne cięcia.",
-          "external_site_article": "Kadłuby ciśnieniowe HECTON-8 są brzydkie, bo są szczere. Miały zatrzymać ocean poza roboczym pokojem. Płyta rozkłada nacisk, żebro go niesie, uszczelka blokuje wodę, a strona zatrzasku pokazuje, gdzie człowiek spodziewał się otworzyć moduł.\n\nCzytanie zaczyna się od plam. Sól rośnie pod niskimi szwami. Czarny biofilm idzie za wolnym przeciekiem. Rdza przy śrubie jest mniej ważna niż to, czy cały rząd pozostał prosty. Prosty rząd mówi o spójnym module; schodkowy o rozerwanej ramie.\n\nW praktyce gracz może wejść od zatrzasku, ominąć żebro nośne, ciąć odizolowaną płytę albo zachować ślad uszczelki jako dowód. Ocean nie dodał tajnych znaków. Zdjął farbę, logo i wymówki.",
-          "field_note": "Najpierw czytaj żebro. Płyta kłamie czyściej."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал ребер і прокладок напірного корпусу",
-          "scanner": "НАПІРНИЙ КОРПУС // Біла зовнішня плита, графітове ребро, стиснута чорна прокладка. Сіль тече з нижніх швів. Ряд болтів рівний: модуль зсунувся, але не розкрився.",
-          "terminal": "ЧИТАННЯ КОРПУСУ // Крок ребер показує напірний модуль, а не декоративні уламки. Цілий канал прокладки може означати суху кишеню. Помаранчева фарба біля ребра позначає сервісний доступ; перед різом перевір бік защіпки.",
-          "audio": "Напірне ребро не декор. Це частина кімнати, що ще сперечається з океаном.",
-          "in_game_wiki": "Напірний корпус HECTON-8 читається ззовні. Білі плити - лише шкіра. Темні ребра показують шлях навантаження. Канали прокладок показують межі модулів і місця, де вода мала зупинитися. Соляні потоки видають нижні точки давніх теч.\n\nРівний ряд болтів означає, що модуль зсунувся одним тілом; кімната за ним може бути розчавлена, але ще зв'язна. Рвана прокладка з білою сіллю означає повільне входження води й можливі збережені речі. Ребро, зігнуте всередину, говорить про перемогу зовнішнього тиску. Ребро, вигнуте назовні, говорить про внутрішній скид або вибух.\n\nDeep Reach любив чисті схеми. Море лишає чесніші правки: перевантажені ребра, чужі прокладки, люки, відкриті після офіційної евакуації. Для мародера це не довідка, а спосіб вибрати вхід, різ і доказ.",
-          "external_site": "Практична стаття про ребра корпусу, канали прокладок і соляні сліди: як зовнішній матеріал показує цілісність кімнати, сервісний доступ і небезпечні різи.",
-          "external_site_article": "Напірні корпуси HECTON-8 негарні, бо чесні. Вони не мали виглядати як мрія про космос. Вони мали не дати робочій кімнаті стати океаном. Плита розподіляє навантаження, ребро його несе, прокладка зупиняє воду, бік защіпки зберігає людський задум.\n\nЧитання починається з плям. Сіль росте під нижніми швами. Чорно-зелений біофільм іде за повільними течами. Іржа біля болта менш важлива, ніж прямота всього ряду. Прямий ряд означає цілісний модуль; ступінчастий - порвану раму.\n\nУ грі це дає рішення: увійти з боку защіпки, не різати несуче ребро, відкрити ізольовану плиту або зберегти слід прокладки як доказ. Океан не додав символів. Він зняв комфорт і залишив ребра, сіль та гнуті болти.",
-          "field_note": "Спершу читай ребро. Плита бреше красивіше."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل أضلاع الهيكل وحشيات الضغط",
-          "scanner": "هيكل ضغط // صفيحة خارجية بيضاء، ضلع غرافيتي، حشية سوداء مضغوطة. خطوط الملح تنزل من الشقوق المنخفضة. صف البراغي مستقيم: تحركت الوحدة جسدا واحدا ولم تنفتح.",
-          "terminal": "قراءة الهيكل // تباعد الأضلاع يدل على وحدة ضغط لا حطام مزخرف. قناة الحشية السليمة قد تعني جيبا جافا. الطلاء البرتقالي قرب الضلع يحدد منفذ خدمة؛ افحص جهة المزلاج قبل القطع.",
-          "audio": "ضلع الضغط ليس زينة. إنه جزء الغرفة الذي ما زال يجادل المحيط.",
-          "in_game_wiki": "يمكن قراءة هيكل الضغط في HECTON-8 من الخارج. الصفائح البيضاء جلد فقط، أما الأضلاع الداكنة فهي طريق حمل الضغط. قنوات الحشيات تحدد حدود الوحدات والمكان الذي كان يجب أن تتوقف عنده المياه. خطوط الملح تكشف أدنى مسارات التسرب الطويل.\n\nصف براغ مستقيم يعني أن الوحدة تحركت كجسم واحد. حشية ممزقة مع ازهرار ملحي فاتح تعني دخول ماء بطيئا وربما بقاء علامات وأدوات وورق في جيوب جافة. ضلع منحن للداخل يعني أن الضغط الخارجي غلب. ضلع بارز للخارج يعني تنفيسا أو انفجارا من الداخل.\n\nDeep Reach أحب المخططات النظيفة. البحر يترك مراجعات أصدق: أضلاعا زائدة الحمل، حشيات إصلاح خاطئة، فتحات فتحت بعد نافذة الإخلاء الرسمية. بالنسبة للمغير، قراءة الهيكل ليست خلفية، بل اختيار مدخل وقطع ودليل.",
-          "external_site": "مقال عملي عن أضلاع هيكل الضغط وقنوات الحشيات وخطوط الملح: كيف يكشف السطح الخارجي سلامة الغرفة ومنفذ الخدمة وخطوط القطع الخطرة.",
-          "external_site_article": "هياكل الضغط في HECTON-8 قبيحة لأنها صادقة. لم تصنع لتبدو كسفينة أنيقة، بل لكي تمنع غرفة عمل من أن تصبح محيطا. الصفيحة توزع الحمل، والضلع يحمله، والحشية توقف هجرة الماء، وجهة المزلاج تحفظ نية الإنسان عند الفتح.\n\nتبدأ القراءة الجيدة من البقع. الملح ينمو تحت الشقوق المنخفضة. الغشاء الأسود الأخضر يتبع التسرب البطيء. صدأ برغي واحد أقل أهمية من استقامة الصف كله. الصف المستقيم يعني وحدة متماسكة؛ الصف المتدرج يعني إطارا ممزقا.\n\nفي اللعب يصبح ذلك قرارا: ادخل من جهة المزلاج، تجنب ضلع الحمل، اقطع صفيحة معزولة، أو احفظ أثر الحشية كدليل ضد الرواية الرسمية. البحر لم يضف رموزا؛ لقد نزع الطلاء والشعارات والأعذار.",
-          "field_note": "اقرأ الضلع قبل الصفيحة. الصفيحة تكذب بأناقة أكبر."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Catatan Rib dan Segel Lambung Tekanan",
-          "scanner": "LAMBUNG TEKANAN // Pelat luar putih, rib grafit, segel hitam terkompresi. Garam turun dari sambungan rendah. Baris baut lurus: modul bergeser sebagai satu tubuh, belum terbuka.",
-          "terminal": "BACAAN LAMBUNG // Jarak rib menunjukkan modul tekanan, bukan puing hias. Kanal segel utuh bisa berarti kantong kering. Cat oranye dekat rib menandai akses servis; periksa sisi pengunci sebelum memotong.",
-          "audio": "Rib tekanan bukan trim. Itu bagian ruangan yang masih berdebat dengan laut.",
-          "in_game_wiki": "Lambung tekanan HECTON-8 dapat dibaca dari luar. Pelat putih hanyalah kulit. Rib gelap menunjukkan jalur beban tekanan. Kanal segel menunjukkan batas modul dan tempat air seharusnya berhenti. Garis garam mengungkap titik rendah kebocoran lama.\n\nBaris baut yang lurus berarti modul bergerak sebagai satu badan; ruangan di baliknya mungkin remuk, tetapi masih koheren. Segel robek dengan garam pucat menunjukkan air masuk perlahan dan mungkin menyisakan label, alat, atau kertas di kantong kering. Rib melengkung ke dalam berarti tekanan luar menang; rib menonjol ke luar berarti pelepasan dari dalam.\n\nDeep Reach menyukai diagram bersih. Laut menulis revisi yang lebih jujur: rib yang kelebihan beban, bahan segel yang salah, palka yang dibuka setelah evakuasi resmi. Bagi Perompak, membaca lambung adalah cara memilih pintu, garis potong, dan bukti.",
-          "external_site": "Artikel praktis tentang rib lambung, kanal segel, dan garis garam: bagaimana material luar menunjukkan integritas ruang, akses servis, dan potongan berbahaya.",
-          "external_site_article": "Lambung tekanan HECTON-8 buruk rupa karena jujur. Tugasnya bukan tampak seperti kapal angkasa, tetapi menjaga ruang kerja agar tidak menjadi laut. Pelat menyebar beban, rib menahannya, segel menghentikan air, dan sisi pengunci menunjukkan niat manusia saat membuka.\n\nPembacaan terbaik dimulai dari noda. Garam tumbuh di bawah sambungan rendah. Biofilm hitam hijau mengikuti kebocoran lambat. Karat pada satu baut kurang penting daripada kelurusan seluruh baris. Baris lurus berarti modul tetap utuh; baris bertangga berarti rangka robek.\n\nDalam permainan, ini menjadi keputusan: masuk dari sisi pengunci, hindari rib penahan beban, potong pelat yang sudah terisolasi, atau simpan jejak segel sebagai bukti. Laut tidak menambahkan simbol; ia menghapus kenyamanan dan menyisakan rib, garam, dan baut bengkok.",
-          "field_note": "Baca rib sebelum pelat. Pelat berbohong lebih rapi."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "압력 선체 리브와 밀봉재 장부",
-          "scanner": "압력 선체 // 흰 외판, 흑연색 리브, 눌린 검은 밀봉재. 소금 줄기는 낮은 이음에서 흐른다. 볼트열이 곧으면 모듈은 한 몸으로 움직였고 아직 열리지 않았다.",
-          "terminal": "선체 판독 // 리브 간격은 장식 잔해가 아니라 압력 모듈을 뜻한다. 밀봉 홈이 온전하면 건조 포켓이 남을 수 있다. 리브 옆 주황 도색은 정비 접근부다. 절단 전 잠금쪽을 확인하라.",
-          "audio": "압력 리브는 장식이 아니다. 아직 바다와 다투는 방의 일부다.",
-          "in_game_wiki": "HECTON-8의 압력 선체는 바깥에서 읽을 수 있다. 흰 외판은 피부일 뿐이다. 어두운 리브는 압력 하중의 길을 보여 준다. 밀봉 홈은 모듈의 경계와 물이 멈춰야 했던 선을 남긴다. 소금 줄기는 오래된 누수의 낮은 길을 표시한다.\n\n곧은 볼트열은 모듈이 한 몸으로 밀렸다는 뜻이다. 흰 소금이 핀 찢어진 밀봉재는 느린 침수를 말하고, 그 안에는 표식이나 공구가 남을 수 있다. 안쪽으로 휜 리브는 외압의 승리다. 바깥으로 부푼 리브는 내부 배출이나 폭발을 말한다.\n\nDeep Reach는 깨끗한 도면을 좋아했다. 바다는 더 정직한 수정을 남긴다. 과부하 리브, 잘못된 보수 밀봉재, 공식 대피 이후 열린 해치를 기록한다. 약탈자에게 선체 판독은 배경 설명이 아니라 입구와 절단선과 증거를 고르는 기술이다.",
-          "external_site": "압력 선체 리브, 밀봉 홈, 소금 줄기를 읽는 현장 글. 외부 재료가 방의 무결성, 정비 접근, 위험한 절단선을 드러낸다.",
-          "external_site_article": "HECTON-8의 압력 선체는 못생겼기 때문에 정직하다. 우주선처럼 보이기 위한 물건이 아니라 작업실을 바다로 만들지 않기 위한 물건이었다. 외판은 하중을 퍼뜨리고, 리브는 버티고, 밀봉재는 물을 막고, 잠금쪽은 사람이 열려고 했던 위치를 남긴다.\n\n좋은 판독은 얼룩에서 시작한다. 소금은 낮은 이음 아래에서 자란다. 검푸른 생물막은 느린 누수를 따라간다. 볼트 하나의 녹보다 줄 전체가 곧은지가 더 중요하다. 곧으면 모듈은 한 몸으로 버텼고, 어긋나면 프레임이 찢어졌다.\n\n플레이어는 여기서 행동을 고른다. 잠금쪽으로 들어가고, 아직 하중을 받는 리브를 피하고, 고립된 판을 자르며, 공식 기록과 다른 개방 흔적을 증거로 보존한다. 바다는 상징을 더하지 않았다. 페인트와 변명을 벗겨 냈다.",
-          "field_note": "판보다 리브를 먼저 읽어라. 판은 더 예쁘게 거짓말한다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן צלעות ואטמי מעטפת לחץ",
-          "scanner": "מעטפת לחץ // לוח חיצוני לבן, צלע גרפיט, אטם שחור דחוס. מלח זורם מתפרים נמוכים. שורת ברגים ישרה: המודול זז כגוף אחד ולא נפתח.",
-          "terminal": "קריאת מעטפת // מרווח צלעות מציין מודול לחץ ולא שבר קישוטי. תעלת אטם שלמה עשויה להחזיק כיס יבש. צבע כתום ליד צלע מסמן גישת שירות; בדוק את צד הנעילה לפני חיתוך.",
-          "audio": "צלע לחץ אינה קישוט. היא חלק מהחדר שעוד מתווכח עם הים.",
-          "in_game_wiki": "מעטפת לחץ ב-HECTON-8 ניתנת לקריאה מבחוץ. הלוחות הלבנים הם רק עור. הצלעות הכהות מראות את מסלול העומס. תעלות האטם מציינות את גבולות המודולים ואת הקו שבו המים היו אמורים לעצור. פסי מלח חושפים נקודות נמוכות של דליפה ארוכה.\n\nשורת ברגים ישרה אומרת שהמודול זז כגוף אחד; החדר מאחור אולי מעוך, אך עדיין שלם. אטם קרוע עם מלח בהיר מספר על כניסת מים איטית ועל אפשרות לסימנים וכלים שמורים. צלע כפופה פנימה היא ניצחון הלחץ החיצוני. צלע בולטת החוצה מספרת על שחרור או פיצוץ מבפנים.\n\nDeep Reach אהבה תרשימים נקיים. הים משאיר תיקונים אמינים יותר: צלעות עמוסות מדי, חומרי אטימה שגויים, פתחים שנפתחו אחרי חלון הפינוי הרשמי. עבור בוזז, קריאת מעטפת היא בחירת כניסה, קו חיתוך וראיה.",
-          "external_site": "מאמר שטח על צלעות מעטפת, תעלות אטם ופסי מלח: כיצד החומר החיצוני חושף שלמות חדר, גישת שירות וחיתוכים מסוכנים.",
-          "external_site_article": "מעטפות הלחץ של HECTON-8 מכוערות מפני שהן כנות. הן לא נבנו להיראות כמו חללית נוצצת, אלא כדי למנוע מחדר עבודה להפוך לים. הלוח מפזר עומס, הצלע נושאת אותו, האטם עוצר מים, וצד הנעילה משמר כוונת פתיחה אנושית.\n\nהקריאה מתחילה בכתמים. מלח גדל תחת תפרים נמוכים. ביופילם שחור-ירוק עוקב אחרי דליפה איטית. חלודה ליד בורג בודד חשובה פחות מיושר כל השורה. שורה ישרה פירושה מודול מלוכד; שורה מדורגת פירושה מסגרת קרועה.\n\nבמשחק זה הופך להחלטה: להיכנס מצד הנעילה, להימנע מצלע נושאת, לחתוך לוח מבודד או לשמור סימן אטם כראיה נגד הגרסה הרשמית. הים לא הוסיף סמלים; הוא הסיר צבע, לוגואים ותירוצים.",
-          "field_note": "קרא את הצלע לפני הלוח. הלוח משקר יפה יותר."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de nervuras e juntas do casco de pressão",
-          "scanner": "CASCO DE PRESSÃO // Placa externa branca, nervura grafite, junta preta comprimida. O sal escorre de emendas baixas. Linha de parafusos reta: o módulo se moveu como corpo único, mas não abriu.",
-          "terminal": "LEITURA DE CASCO // O espaço entre nervuras indica módulo pressurizado, não sucata decorativa. Canal de junta intacto pode guardar um bolso seco. Tinta laranja perto da nervura marca acesso de serviço; confira o lado da trava antes de cortar.",
-          "audio": "Nervura de pressão não é acabamento. É a parte da sala que ainda discute com o oceano.",
-          "in_game_wiki": "Um casco de pressão de HECTON-8 pode ser lido por fora. As placas brancas são só pele. As nervuras escuras mostram o caminho da carga. Os canais de junta marcam onde os módulos se encontravam e onde a água deveria parar. O sal revela pontos baixos de vazamentos longos.\n\nUma linha reta de parafusos significa que o módulo se deslocou como um corpo só. Uma junta rasgada com flor de sal aponta entrada lenta de água e talvez etiquetas, ferramentas ou papel preservados. Nervura dobrada para dentro mostra pressão externa vencendo. Nervura empurrada para fora fala de alívio ou explosão interna.\n\nA Deep Reach gostava de diagramas limpos. O mar deixa revisões melhores: nervuras sobrecarregadas, junta errada em reparo, escotilhas abertas depois da evacuação oficial. Para um Saqueador, ler casco é escolher entrada, corte e prova.",
-          "external_site": "Artigo prático sobre nervuras, canais de junta e marcas de sal: como o exterior revela integridade de sala, acesso de serviço e cortes perigosos.",
-          "external_site_article": "Cascos de pressão em HECTON-8 são feios porque são honestos. Não foram feitos para parecer naves elegantes, e sim para impedir que uma sala de trabalho virasse oceano. A placa distribui carga, a nervura carrega, a junta bloqueia água, e o lado da trava mostra onde alguém esperava abrir sob tensão.\n\nA melhor leitura começa nas manchas. Sal cresce sob emendas baixas. Biofilme preto-esverdeado segue vazamentos lentos. Ferrugem em um parafuso importa menos que a linha inteira continuar reta. Reta significa módulo coerente; desalinhada significa armação rasgada.\n\nNo jogo, isso vira decisão: entrar pelo lado da trava, evitar nervura portante, cortar uma placa isolada ou preservar rastro de junta como prova. O oceano não adicionou símbolos. Ele removeu tinta, logotipos e desculpas.",
-          "field_note": "Leia a nervura antes da placa. A placa mente com acabamento melhor."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Logboek voor drukribben en pakkingen",
-          "scanner": "DRUKHUID // Witte buitenplaat, grafietrib, samengedrukte zwarte pakking. Zout loopt uit lage naden. De boutenrij blijft recht: de module verschoof als geheel, maar scheurde niet open.",
-          "terminal": "HUIDLEZING // Ribafstand toont een drukmodule, geen decoratief wrakdeel. Een intact pakkingskanaal kan een droge pocket betekenen. Oranje verf bij de rib markeert service-toegang; controleer de sluitzijde voor het snijden.",
-          "audio": "Een drukrib is geen sierstrip. Het is het deel van de kamer dat nog met de oceaan onderhandelt.",
-          "in_game_wiki": "Een HECTON-8-drukhuid is van buiten te lezen. De witte platen zijn alleen huid. Donkere ribben tonen de weg van de druklast. Pakkingskanalen tonen waar modules elkaar raakten en waar water moest stoppen. Zoutsporen verraden lage punten van langdurige lekken.\n\nEen rechte boutenrij betekent dat de module als één lichaam bewoog; de kamer erachter kan geplet zijn, maar nog samenhangend. Een gescheurde pakking met witte zoutbloei wijst op traag binnendringen en mogelijk bewaarde labels of gereedschap. Een naar binnen gebogen rib betekent buitendruk. Een naar buiten gebogen rib betekent interne ontluchting of explosie.\n\nDeep Reach hield van nette schema's. De zee laat betere correcties achter: overbelaste ribben, verkeerde pakking bij reparatie, luiken die na de officiële evacuatie open gingen. Voor een Marauder is huidlezen geen sfeer, maar keuze van toegang, snijlijn en bewijs.",
-          "external_site": "Praktisch artikel over drukribben, pakkingskanalen en zoutsporen: hoe buitenmateriaal kamerintegriteit, service-toegang en gevaarlijke sneden toont.",
-          "external_site_article": "Drukhuiden op HECTON-8 zijn lelijk omdat ze eerlijk zijn. Ze hoefden niet op ruimteschepen te lijken; ze moesten voorkomen dat een werkruimte oceaan werd. De plaat spreidt last, de rib draagt, de pakking stopt water, en de sluitzijde bewaart menselijke bedoeling.\n\nGoed lezen begint bij vlekken. Zout groeit onder lage naden. Zwartgroene biofilm volgt trage lekken. Roest bij één bout is minder belangrijk dan een rechte rij. Recht betekent samenhangende module; verspringend betekent gescheurd frame. Uitgeperste pakking vertelt compressie vóór overstroming.\n\nIn speltermen geeft dit beslissingen: via de sluitzijde binnenkomen, een dragende rib vermijden, een geïsoleerde plaat snijden of een pakkingspoor bewaren als bewijs. De oceaan voegde geen symbolen toe. Hij verwijderde verf, logo's en excuses.",
-          "field_note": "Lees de rib vóór de plaat. De plaat liegt netter."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.pressure_hull_rib_gasket_ledger",
+    "secondary": [
+     "unlock.first_pressure_hull_scan",
+     "unlock.first_gasket_channel_trace",
+     "unlock.first_safe_module_entry"
+    ],
+    "poi_tags": [
+     "poi.pressure_hull_rib_row",
+     "poi.gasket_channel_trace",
+     "poi.service_latch_orange_corner",
+     "poi.salt_streak_low_seam"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.industrial_shelf",
+     "biome.pressure_route"
+    ],
+    "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Pressure Hull Scanner",
+     "terminal": "Old Colony Exterior Hull Readout",
+     "audio": "Marauder Entry Instructor",
+     "in_game_wiki": "PDA Pressure Hull Field Guide",
+     "external_site": "Public Site Pressure Hull Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_pressure_hull_scan_or_safe_module_entry",
+    "truth_payload": "Pressure hull ribs, gasket channels, salt streaks and bolt rows reveal module integrity, leak history, service access and unsafe cuts.",
+    "player_question": "Which part of the hull still holds the ocean back?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Pressure Hull Rib And Gasket Ledger",
+     "scanner": "PRESSURE HULL // Off-white outer plate, graphite rib, compressed black gasket. Salt streaks run from seam lows, not from random weather. Bolt rows still aligned: module moved, but did not peel open.",
+     "terminal": "EXTERIOR HULL READ // Rib spacing shows a pressure module, not decorative wreckage. Intact gasket channel means the room may still hold a dry pocket. Orange paint at a rib corner marks service access; do not cut through the rib before checking latch side.",
+     "audio": "A pressure rib is not trim. It is the part of the room still arguing with the ocean.",
+     "in_game_wiki": "A HECTON-8 pressure hull is readable from the outside if the player stops treating it like generic metal. The off-white plates are only the skin. The dark ribs show where pressure load was meant to travel. The gasket channels tell where modules kissed and where water was supposed to stop. Salt streaks reveal the low points of long leaks. Orange safety paint usually sits near a service action, not at random.\n\nThat grammar changes salvage. A straight bolt row means a module shifted as one body; the room behind it may be crushed but still coherent. A torn gasket with pale salt bloom means water entered slowly and may have preserved tags, tools and paper in pockets. A rib bent inward means pressure won from outside. A rib bent outward means something inside vented or exploded. Cutting the wrong rib can turn a stable wreck into moving scrap.\n\nDeep Reach liked clean module diagrams. The sea writes better revisions. It shows which ribs were overburdened, which repairs used wrong gasket stock, which hatches were opened after the official evacuation window, and which rooms were patched by workers who expected to come back. For a Marauder, hull reading is not flavor. It is the difference between a safe entry, a dead pocket and a claimable proof object.",
+     "external_site": "A practical article on pressure hull ribs, gasket channels and salt streaks: how exterior base materials reveal room integrity, service access and dangerous cuts.",
+     "external_site_article": "Pressure hulls on HECTON-8 are ugly because they are honest. Their job was not to look like spacecraft. Their job was to keep a working room from becoming ocean. That means every strip of material has a job: the plate spreads load, the rib carries it, the gasket stops water migration, the latch side tells you where a human expected to open the thing under stress.\n\nThe best hull reading begins with stains. Salt grows under low seams. Black-green biofilm follows slow leaks. Rust at a bolt row is less important than whether the row stayed straight. A straight row means the module suffered as a unit; a staggered row means the frame tore. Gasket material squeezed out of a channel means compression happened before flooding. Missing gasket with clean metal means later salvage or deliberate opening.\n\nThis is where the lore earns its space in the game. A player can look at a base exterior and make decisions: enter through the latch side, avoid a rib that still carries load, cut a plate that is already isolated, or preserve a gasket trace because it proves a door was opened after the public timeline says nobody returned. The same material can be loot, shelter, hazard and evidence. HECTON-8 is strongest when those meanings sit on the same object.\n\nThe ocean has not made the colony mysterious by adding symbols. It has made the colony legible by removing comfort. Paint goes. Logos go. Excuses go. Ribs, salt, gaskets and bent bolts remain.",
+     "field_note": "Read the rib before the plate. The plate lies prettier."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал ребер и прокладок напорного корпуса",
+     "scanner": "НАПОРНЫЙ КОРПУС // Белая внешняя плита, графитовое ребро, сжатая черная прокладка. Соляные потеки идут из нижних швов, а не из случайной погоды. Ряды болтов ровные: модуль сместился, но не раскрылся.",
+     "terminal": "ЧТЕНИЕ ВНЕШНЕГО КОРПУСА // Шаг ребер показывает напорный модуль, не декоративные обломки. Целый канал прокладки значит, что внутри может быть сухой карман. Оранжевая краска у угла ребра помечает сервисный доступ; не режь ребро до проверки стороны защелки.",
+     "audio": "Напорное ребро - не отделка. Это часть комнаты, которая все еще спорит с океаном.",
+     "in_game_wiki": "Напорный корпус HECTON-8 читается снаружи, если перестать видеть в нем просто металл. Белые плиты - только кожа. Темные ребра показывают, куда должен был уходить груз давления. Каналы прокладок показывают, где модули сцеплялись и где вода должна была остановиться. Соль выдает нижние точки долгих течей. Оранжевая сервисная краска обычно стоит рядом с действием, а не случайно.\n\nЭто меняет разбор. Ровный ряд болтов значит, что модуль сдвинулся единым телом; комната за ним может быть смята, но все еще цельна. Рваная прокладка с белой солью значит медленную воду и, возможно, сохраненные метки, инструменты и бумагу в карманах. Ребро, согнутое внутрь, говорит, что давление выиграло снаружи. Ребро, выгнутое наружу, говорит, что внутри что-то стравило или взорвалось. Неправильный рез превращает устойчивый отсек в движущийся лом.\n\nDeep Reach любил чистые схемы модулей. Море пишет правки честнее: какие ребра перегрузили, где поставили чужую прокладку, какие люки открывали после официального окна эвакуации, какие комнаты латали люди, ожидавшие вернуться. Для мародера чтение корпуса - не декорация. Это разница между безопасным входом, мертвым карманом и доказательством, которое можно предъявить.",
+     "external_site": "Практическая статья о ребрах напорного корпуса, каналах прокладок и соляных потеках: как внешний материал базы показывает целостность комнаты, сервисный доступ и опасные резы.",
+     "external_site_article": "Напорные корпуса HECTON-8 некрасивы, потому что честны. Они не должны были выглядеть как корабль мечты. Они должны были не дать рабочей комнате стать океаном. Поэтому каждая полоса материала работает: плита распределяет нагрузку, ребро несет ее, прокладка останавливает миграцию воды, сторона защелки показывает, где человек рассчитывал открыть дверь под стрессом.\n\nЛучшее чтение начинается с пятен. Соль растет под нижними швами. Черно-зеленый биофильм идет по медленным течам. Ржавчина у болтов менее важна, чем то, остался ли ряд прямым. Прямой ряд значит, что модуль страдал как единое тело; ступенчатый ряд значит, что раму порвало. Выдавленная прокладка говорит о сжатии до затопления. Чистый металл без прокладки - о позднем разборе или намеренном открытии.\n\nВ игре это дает решения. Игрок может входить со стороны защелки, не резать ребро, которое еще держит нагрузку, резать уже изолированную плиту или сохранить след прокладки как доказательство, что дверь открывали после публичной эвакуации. Один материал становится добычей, укрытием, опасностью и уликой.\n\nОкеан не сделал колонию загадочной символами. Он сделал ее читаемой, сняв комфорт. Краска ушла. Логотипы ушли. Отговорки ушли. Остались ребра, соль, прокладки и гнутые болты.",
+     "field_note": "Сначала читай ребро, потом плиту. Плита врет красивее."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "耐圧リブとガスケット台帳",
+     "scanner": "耐圧外殻 // 白い外板、黒鉛色のリブ、押し潰された黒いガスケット。塩筋は低い継ぎ目から落ちる。ボルト列が直線なら、モジュールは一体で動いたが開いてはいない。",
+     "terminal": "外殻読取 // リブ間隔は飾りではなく耐圧モジュールを示す。ガスケット溝が生きていれば、奥に乾いた空間が残ることがある。リブ角の橙塗装は保守口の合図だ。切断前にラッチ側を確認する。",
+     "audio": "耐圧リブは飾りではない。海とまだ議論している部屋の骨だ。",
+     "in_game_wiki": "HECTON-8の耐圧外殻は、ただの金属板ではない。白い外板は皮膚にすぎず、黒いリブが圧力を逃がす骨格になる。ガスケット溝は水を止める境界で、塩筋は長い漏れの低い道筋を残す。橙の塗装は飾りではなく、手が入る場所を示す。\n\nまっすぐなボルト列は、部屋が一体のまま動いた印だ。裂けたガスケットと白い塩は、ゆっくり水が入った記録になる。内側へ曲がったリブは外圧の勝利、外側へ膨らんだリブは内部の排気や破裂を語る。平らな板だけを見て切ると、静かな残骸が動く鉄屑に変わる。\n\nDeep Reachの図面はきれいだった。海底の外殻はもっと正直だ。過負荷のリブ、規格違いの補修材、避難後に開いたハッチ、戻るつもりで貼られた応急パッチまで残している。略奪者にとって外殻読取は知識ではなく、生存手順だ。",
+     "external_site": "耐圧リブ、ガスケット溝、塩筋を読む実用記事。外殻材料が部屋の健全性、保守口、危険な切断線を示す。",
+     "external_site_article": "HECTON-8の耐圧外殻は醜い。だから信用できる。宇宙船らしく見せるためではなく、作業室を海にしないために作られた。外板は荷重を広げ、リブはそれを受け、ガスケットは水の移動を止め、ラッチ側は人間が緊急時に開ける位置を残す。\n\n読むべき最初の文字は汚れだ。塩は低い継ぎ目に育つ。黒緑の生膜は遅い漏れを追う。ボルトの錆より、列が直線を保ったかどうかが重要になる。直線ならモジュールは一体として耐えた。段差があればフレームは裂けた。押し出されたガスケットは浸水前の圧縮を示し、きれいな金属の空溝は後日の開放を示す。\n\nひとつの外殻は、戦利品、避難場所、危険物、証拠を同時に持つ。読む者は入口を選び、荷重を残すリブを避け、切るべき板を探し、公式記録と違う開閉の痕跡を保存できる。",
+     "field_note": "板より先にリブを読め。板はきれいに嘘をつく。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "压力壳肋条与密封圈账本",
+     "scanner": "压力壳 // 白色外板、石墨色肋条、被压缩的黑色密封圈。盐痕从低缝流下。螺栓排仍然笔直：模块整体移动，但没有剥开。",
+     "terminal": "外壳读取 // 肋距说明这是耐压模块，不是装饰残骸。完整密封槽意味着内部可能仍有干燥口袋。肋角的橙色漆标记服务入口；切割前先确认锁扣侧。",
+     "audio": "压力肋不是装饰。它是房间仍在和海争辩的部分。",
+     "in_game_wiki": "HECTON-8的压力壳从外侧就能读懂，只要不把它当成普通铁皮。白色外板只是皮肤，深色肋条才是压力载荷的路径。密封槽说明模块在哪里接合，水本应在哪里停住。盐痕指向长期渗漏的最低点。橙色安全漆通常靠近一个可操作的位置。\n\n这会改变拆解方式。螺栓排笔直，说明模块作为一个整体移动；后面的房间也许被压坏，但结构还连贯。撕裂的密封圈和白色盐花说明水进入得很慢，里面可能还保存着标签、工具和纸张。向内弯的肋条说明外压赢了，向外鼓的肋条说明内部曾经排气或爆开。\n\nDeep Reach喜欢干净的模块图。海水留下的修订更可靠：哪根肋条过载，哪处用了错误规格的密封材料，哪些舱门在官方撤离窗口之后又被打开。对拾荒者来说，读壳不是背景知识，而是决定入口、切割线和证据价值的动作。",
+     "external_site": "一篇关于压力壳肋条、密封槽和盐痕的实用文章：外部材料如何揭示房间完整性、服务入口和危险切割线。",
+     "external_site_article": "HECTON-8的压力壳不好看，因为它们诚实。它们不是为了像飞船，而是为了让工作房间不要变成海。每一条材料都有职责：外板分散载荷，肋条承受载荷，密封圈阻止水迁移，锁扣侧告诉你人在压力下原本打算从哪里打开。\n\n最好的读壳从污渍开始。盐在低缝下生长。黑绿色生物膜沿着慢漏扩散。螺栓旁的锈不如螺栓排是否仍直重要。直排表示模块整体受难；错位表示框架被撕开。被挤出的密封材料说明浸水前曾经受压。空槽里干净的金属说明后期拆解或有意开启。\n\n这让环境信息变成玩法。玩家可以选择锁扣侧进入，避开仍在承载的肋条，切开已经孤立的外板，或保留密封痕迹作为官方时间线被破坏的证据。海没有给殖民地增加谜语，它只是剥掉涂装、标志和借口，留下肋条、盐和弯曲的螺栓。",
+     "field_note": "先读肋条，再读外板。外板更会骗人。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre des nervures et joints de coque pressurisée",
+     "scanner": "COQUE SOUS PRESSION // Plaque extérieure blanche, nervure graphite, joint noir comprimé. Les coulures de sel partent des coutures basses. La rangée de boulons reste droite : le module a bougé sans s'ouvrir.",
+     "terminal": "LECTURE DE COQUE // L'espacement des nervures indique un module pressurisé, pas un décor de ruine. Un canal de joint intact peut cacher une poche sèche. La peinture orange près d'une nervure marque un accès de service ; vérifier le côté verrou avant de couper.",
+     "audio": "Une nervure n'est pas un décor. C'est la partie de la pièce qui discute encore avec l'océan.",
+     "in_game_wiki": "Une coque pressurisée de HECTON-8 se lit de l'extérieur. La plaque blanche n'est que la peau. Les nervures sombres montrent le chemin de la charge. Les canaux de joint disent où les modules se serraient et où l'eau devait s'arrêter. Les coulures de sel tracent les fuites longues. L'orange de sécurité se trouve près d'un geste humain, rarement au hasard.\n\nCette lecture change la récupération. Une rangée de boulons droite signifie que le module a souffert comme un seul corps. Un joint arraché avec sel pâle signifie une entrée d'eau lente, donc parfois des étiquettes, outils ou papiers encore lisibles. Une nervure pliée vers l'intérieur montre la victoire de la pression extérieure ; une nervure bombée vers l'extérieur parle d'une décharge interne.\n\nDeep Reach aimait les plans propres. La mer corrige mieux. Elle montre les nervures surchargées, les mauvais joints de réparation, les sas ouverts après la fenêtre officielle d'évacuation. Pour un Maraudeur, lire la coque n'est pas une ambiance : c'est choisir entre entrée sûre, poche morte et preuve revendiquable.",
+     "external_site": "Article pratique sur les nervures, canaux de joint et coulures de sel : comment la coque révèle l'intégrité d'une pièce, l'accès de service et les coupes dangereuses.",
+     "external_site_article": "Les coques pressurisées de HECTON-8 sont laides parce qu'elles sont franches. Elles n'avaient pas à ressembler à des vaisseaux. Elles devaient empêcher une salle de travail de devenir océan. La plaque répartit la charge, la nervure la porte, le joint bloque la migration de l'eau, et le côté verrou conserve l'intention d'ouverture humaine.\n\nLa première lecture commence par les taches. Le sel grandit sous les coutures basses. Le biofilm noir-vert suit les fuites lentes. La rouille près d'un boulon compte moins que la rectitude de la rangée. Une rangée droite signale un module encore cohérent ; une rangée en escalier signale une ossature rompue. Un joint expulsé raconte une compression avant l'inondation.\n\nDans le jeu, ce matériau donne des décisions. Entrer par le côté verrou, éviter une nervure encore porteuse, couper une plaque isolée, ou conserver la trace d'un joint comme preuve qu'une porte fut ouverte après l'évacuation publique. Le même objet devient butin, abri, danger et témoignage.",
+     "field_note": "Lis la nervure avant la plaque. La plaque ment plus proprement."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de nervios y juntas del casco de presión",
+     "scanner": "CASCO DE PRESIÓN // Placa exterior blanca, nervio grafito, junta negra comprimida. La sal baja desde costuras bajas. La fila de pernos sigue recta: el módulo se movió, pero no se abrió.",
+     "terminal": "LECTURA DE CASCO // La separación de nervios indica módulo de presión, no restos decorativos. Un canal de junta intacto puede guardar un bolsillo seco. La pintura naranja junto al nervio marca acceso de servicio; revisa el lado del cierre antes de cortar.",
+     "audio": "Un nervio de presión no es adorno. Es la parte de la sala que aún discute con el océano.",
+     "in_game_wiki": "Un casco de presión de HECTON-8 puede leerse desde fuera. Las placas blancas son piel; los nervios oscuros marcan por dónde viaja la carga. Los canales de junta indican dónde se unían los módulos y dónde debía detenerse el agua. Las líneas de sal revelan los puntos bajos de fugas antiguas. La pintura naranja suele estar cerca de una acción de mantenimiento.\n\nEsa gramática cambia el saqueo. Una fila recta de pernos significa que el módulo se desplazó como un cuerpo entero; la sala detrás puede estar aplastada, pero aún coherente. Una junta rota con sal pálida apunta a entrada lenta de agua y a objetos conservados en bolsas secas. Un nervio doblado hacia dentro habla de presión exterior. Uno abombado hacia fuera habla de descarga interna.\n\nDeep Reach prefería diagramas limpios. El mar deja revisiones mejores: qué nervios se sobrecargaron, qué reparación usó una junta incorrecta, qué escotillas se abrieron tras la ventana oficial de evacuación. Para un Merodeador, leer casco no es color narrativo: es entrada segura, bolsillo muerto o prueba aprovechable.",
+     "external_site": "Artículo práctico sobre nervios de casco, canales de junta y líneas de sal: cómo el exterior revela integridad de sala, acceso de servicio y cortes peligrosos.",
+     "external_site_article": "Los cascos de presión de HECTON-8 son feos porque son sinceros. No fueron diseñados para parecer naves elegantes. Su trabajo era impedir que una sala de trabajo se convirtiera en océano. La placa reparte carga, el nervio la sostiene, la junta detiene el agua y el lado del cierre conserva la intención humana.\n\nLa lectura empieza por las manchas. La sal crece bajo costuras bajas. El biofilm negro verdoso sigue fugas lentas. El óxido en un perno importa menos que la fila completa: recta significa módulo coherente; escalonada significa marco roto. Una junta expulsada indica compresión antes de inundación. Un canal limpio sin junta apunta a apertura posterior.\n\nEn juego, ese material permite decisiones: entrar por el cierre, no cortar un nervio portante, abrir una placa ya aislada o guardar una huella de junta como prueba contra la versión oficial. El océano no añadió símbolos; quitó comodidad y dejó nervios, sal y pernos torcidos.",
+     "field_note": "Lee el nervio antes que la placa. La placa miente con mejor acabado."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Protokoll für Druckrippen und Dichtungen",
+     "scanner": "DRUCKHÜLLE // Weiße Außenplatte, graphitfarbene Rippe, gepresste schwarze Dichtung. Salz läuft aus tiefen Nähten. Die Bolzenreihe bleibt gerade: Das Modul wanderte, ohne aufzureißen.",
+     "terminal": "HÜLLENLESUNG // Der Rippenabstand zeigt ein Druckmodul, keinen Zierrand. Ein intakter Dichtungskanal kann eine trockene Tasche bedeuten. Orange Farbe an der Rippe markiert Servicezugang; vor dem Schnitt die Verriegelungsseite prüfen.",
+     "audio": "Eine Druckrippe ist kein Zierstreifen. Sie ist der Teil des Raums, der noch mit dem Ozean streitet.",
+     "in_game_wiki": "Eine HECTON-8-Druckhülle lässt sich von außen lesen. Die weißen Platten sind nur Haut. Dunkle Rippen zeigen, wohin die Drucklast wandern sollte. Dichtungskanäle zeigen die Grenzen zwischen Modulen. Salzspuren markieren tiefe Stellen alter Lecks. Orange Servicefarbe sitzt selten zufällig.\n\nDiese Grammatik verändert Bergung. Eine gerade Bolzenreihe bedeutet, dass das Modul als Körper verschoben wurde; der Raum dahinter kann zerquetscht, aber noch zusammenhängend sein. Eine gerissene Dichtung mit heller Salzblüte deutet auf langsames Eindringen und mögliche trockene Reste. Nach innen gebogene Rippen erzählen von Außendruck; nach außen gebogene von innerer Entlüftung oder Explosion.\n\nDeep Reach mochte saubere Diagramme. Der Meeresboden schreibt bessere Korrekturen: überlastete Rippen, falsches Dichtungsmaterial, nach der offiziellen Evakuierung geöffnete Luken. Für Marauder ist Hüllenlesen kein Schmucktext, sondern der Unterschied zwischen sicherem Eintritt, toter Tasche und verwertbarem Beweis.",
+     "external_site": "Praktischer Artikel über Druckrippen, Dichtungskanäle und Salzspuren: Wie Außenmaterial Raumzustand, Servicezugang und gefährliche Schnitte zeigt.",
+     "external_site_article": "Druckhüllen auf HECTON-8 sind hässlich, weil sie ehrlich sind. Sie sollten nicht wie Raumschiffe aussehen, sondern verhindern, dass ein Arbeitsraum zum Ozean wird. Platte, Rippe, Dichtung und Verriegelungsseite haben je eine klare Aufgabe.\n\nDie beste Lesung beginnt bei Flecken. Salz wächst unter tiefen Nähten. Schwarzgrüner Biofilm folgt langsamen Lecks. Rost an einzelnen Bolzen zählt weniger als die Linie der ganzen Reihe. Gerade heißt: Das Modul blieb als Körper zusammen. Versetzt heißt: Der Rahmen riss. Herausgepresste Dichtung erzählt von Kompression vor der Flutung.\n\nIm Spiel wird daraus Entscheidung. Der Spieler kann den Einstieg wählen, tragende Rippen meiden, isolierte Platten schneiden oder eine Dichtungsspur als Beweis sichern. Ein einziges Material wird Beute, Schutz, Gefahr und Akte zugleich.",
+     "field_note": "Lies die Rippe vor der Platte. Die Platte lügt schöner."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr żeber i uszczelek kadłuba ciśnieniowego",
+     "scanner": "KADŁUB CIŚNIENIOWY // Biała płyta zewnętrzna, grafitowe żebro, ściśnięta czarna uszczelka. Sól płynie z niskich szwów. Rząd śrub prosty: moduł przesunął się, ale nie otworzył.",
+     "terminal": "ODCZYT KADŁUBA // Rozstaw żeber oznacza moduł ciśnieniowy, nie ozdobny złom. Cały kanał uszczelki może kryć suchą kieszeń. Pomarańcz przy żebrze wskazuje dostęp serwisowy; przed cięciem sprawdź stronę zatrzasku.",
+     "audio": "Żebro ciśnieniowe to nie ozdoba. To część pokoju wciąż kłócąca się z oceanem.",
+     "in_game_wiki": "Kadłub ciśnieniowy HECTON-8 da się czytać z zewnątrz. Białe płyty są tylko skórą. Ciemne żebra pokazują drogę obciążenia. Kanały uszczelek mówią, gdzie moduły się stykały i gdzie woda miała się zatrzymać. Sól wskazuje dolne punkty długich przecieków.\n\nProsty rząd śrub oznacza, że moduł przesunął się jako całość; sala za nim może być zgnieciona, ale wciąż spójna. Rozerwana uszczelka z jasną solą wskazuje powolne zalewanie i możliwe zachowane etykiety lub narzędzia. Żebro wgięte do środka to zwycięstwo ciśnienia zewnętrznego. Żebro wygięte na zewnątrz mówi o wypuszczeniu lub wybuchu od środka.\n\nDeep Reach lubił czyste schematy. Morze zostawia lepsze poprawki: przeciążone żebra, złe materiały naprawcze, włazy otwarte po oficjalnej ewakuacji. Dla Marudera to nie ciekawostka, lecz sposób wyboru wejścia, cięcia i dowodu.",
+     "external_site": "Praktyczny artykuł o żebrach, kanałach uszczelek i śladach soli: jak zewnętrzny materiał ujawnia stan pomieszczeń, serwis i ryzykowne cięcia.",
+     "external_site_article": "Kadłuby ciśnieniowe HECTON-8 są brzydkie, bo są szczere. Miały zatrzymać ocean poza roboczym pokojem. Płyta rozkłada nacisk, żebro go niesie, uszczelka blokuje wodę, a strona zatrzasku pokazuje, gdzie człowiek spodziewał się otworzyć moduł.\n\nCzytanie zaczyna się od plam. Sól rośnie pod niskimi szwami. Czarny biofilm idzie za wolnym przeciekiem. Rdza przy śrubie jest mniej ważna niż to, czy cały rząd pozostał prosty. Prosty rząd mówi o spójnym module; schodkowy o rozerwanej ramie.\n\nW praktyce gracz może wejść od zatrzasku, ominąć żebro nośne, ciąć odizolowaną płytę albo zachować ślad uszczelki jako dowód. Ocean nie dodał tajnych znaków. Zdjął farbę, logo i wymówki.",
+     "field_note": "Najpierw czytaj żebro. Płyta kłamie czyściej."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал ребер і прокладок напірного корпусу",
+     "scanner": "НАПІРНИЙ КОРПУС // Біла зовнішня плита, графітове ребро, стиснута чорна прокладка. Сіль тече з нижніх швів. Ряд болтів рівний: модуль зсунувся, але не розкрився.",
+     "terminal": "ЧИТАННЯ КОРПУСУ // Крок ребер показує напірний модуль, а не декоративні уламки. Цілий канал прокладки може означати суху кишеню. Помаранчева фарба біля ребра позначає сервісний доступ; перед різом перевір бік защіпки.",
+     "audio": "Напірне ребро не декор. Це частина кімнати, що ще сперечається з океаном.",
+     "in_game_wiki": "Напірний корпус HECTON-8 читається ззовні. Білі плити - лише шкіра. Темні ребра показують шлях навантаження. Канали прокладок показують межі модулів і місця, де вода мала зупинитися. Соляні потоки видають нижні точки давніх теч.\n\nРівний ряд болтів означає, що модуль зсунувся одним тілом; кімната за ним може бути розчавлена, але ще зв'язна. Рвана прокладка з білою сіллю означає повільне входження води й можливі збережені речі. Ребро, зігнуте всередину, говорить про перемогу зовнішнього тиску. Ребро, вигнуте назовні, говорить про внутрішній скид або вибух.\n\nDeep Reach любив чисті схеми. Море лишає чесніші правки: перевантажені ребра, чужі прокладки, люки, відкриті після офіційної евакуації. Для мародера це не довідка, а спосіб вибрати вхід, різ і доказ.",
+     "external_site": "Практична стаття про ребра корпусу, канали прокладок і соляні сліди: як зовнішній матеріал показує цілісність кімнати, сервісний доступ і небезпечні різи.",
+     "external_site_article": "Напірні корпуси HECTON-8 негарні, бо чесні. Вони не мали виглядати як мрія про космос. Вони мали не дати робочій кімнаті стати океаном. Плита розподіляє навантаження, ребро його несе, прокладка зупиняє воду, бік защіпки зберігає людський задум.\n\nЧитання починається з плям. Сіль росте під нижніми швами. Чорно-зелений біофільм іде за повільними течами. Іржа біля болта менш важлива, ніж прямота всього ряду. Прямий ряд означає цілісний модуль; ступінчастий - порвану раму.\n\nУ грі це дає рішення: увійти з боку защіпки, не різати несуче ребро, відкрити ізольовану плиту або зберегти слід прокладки як доказ. Океан не додав символів. Він зняв комфорт і залишив ребра, сіль та гнуті болти.",
+     "field_note": "Спершу читай ребро. Плита бреше красивіше."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل أضلاع الهيكل وحشيات الضغط",
+     "scanner": "هيكل ضغط // صفيحة خارجية بيضاء، ضلع غرافيتي، حشية سوداء مضغوطة. خطوط الملح تنزل من الشقوق المنخفضة. صف البراغي مستقيم: تحركت الوحدة جسدا واحدا ولم تنفتح.",
+     "terminal": "قراءة الهيكل // تباعد الأضلاع يدل على وحدة ضغط لا حطام مزخرف. قناة الحشية السليمة قد تعني جيبا جافا. الطلاء البرتقالي قرب الضلع يحدد منفذ خدمة؛ افحص جهة المزلاج قبل القطع.",
+     "audio": "ضلع الضغط ليس زينة. إنه جزء الغرفة الذي ما زال يجادل المحيط.",
+     "in_game_wiki": "يمكن قراءة هيكل الضغط في HECTON-8 من الخارج. الصفائح البيضاء جلد فقط، أما الأضلاع الداكنة فهي طريق حمل الضغط. قنوات الحشيات تحدد حدود الوحدات والمكان الذي كان يجب أن تتوقف عنده المياه. خطوط الملح تكشف أدنى مسارات التسرب الطويل.\n\nصف براغ مستقيم يعني أن الوحدة تحركت كجسم واحد. حشية ممزقة مع ازهرار ملحي فاتح تعني دخول ماء بطيئا وربما بقاء علامات وأدوات وورق في جيوب جافة. ضلع منحن للداخل يعني أن الضغط الخارجي غلب. ضلع بارز للخارج يعني تنفيسا أو انفجارا من الداخل.\n\nDeep Reach أحب المخططات النظيفة. البحر يترك مراجعات أصدق: أضلاعا زائدة الحمل، حشيات إصلاح خاطئة، فتحات فتحت بعد نافذة الإخلاء الرسمية. بالنسبة للمغير، قراءة الهيكل ليست خلفية، بل اختيار مدخل وقطع ودليل.",
+     "external_site": "مقال عملي عن أضلاع هيكل الضغط وقنوات الحشيات وخطوط الملح: كيف يكشف السطح الخارجي سلامة الغرفة ومنفذ الخدمة وخطوط القطع الخطرة.",
+     "external_site_article": "هياكل الضغط في HECTON-8 قبيحة لأنها صادقة. لم تصنع لتبدو كسفينة أنيقة، بل لكي تمنع غرفة عمل من أن تصبح محيطا. الصفيحة توزع الحمل، والضلع يحمله، والحشية توقف هجرة الماء، وجهة المزلاج تحفظ نية الإنسان عند الفتح.\n\nتبدأ القراءة الجيدة من البقع. الملح ينمو تحت الشقوق المنخفضة. الغشاء الأسود الأخضر يتبع التسرب البطيء. صدأ برغي واحد أقل أهمية من استقامة الصف كله. الصف المستقيم يعني وحدة متماسكة؛ الصف المتدرج يعني إطارا ممزقا.\n\nفي اللعب يصبح ذلك قرارا: ادخل من جهة المزلاج، تجنب ضلع الحمل، اقطع صفيحة معزولة، أو احفظ أثر الحشية كدليل ضد الرواية الرسمية. البحر لم يضف رموزا؛ لقد نزع الطلاء والشعارات والأعذار.",
+     "field_note": "اقرأ الضلع قبل الصفيحة. الصفيحة تكذب بأناقة أكبر."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Catatan Rib dan Segel Lambung Tekanan",
+     "scanner": "LAMBUNG TEKANAN // Pelat luar putih, rib grafit, segel hitam terkompresi. Garam turun dari sambungan rendah. Baris baut lurus: modul bergeser sebagai satu tubuh, belum terbuka.",
+     "terminal": "BACAAN LAMBUNG // Jarak rib menunjukkan modul tekanan, bukan puing hias. Kanal segel utuh bisa berarti kantong kering. Cat oranye dekat rib menandai akses servis; periksa sisi pengunci sebelum memotong.",
+     "audio": "Rib tekanan bukan trim. Itu bagian ruangan yang masih berdebat dengan laut.",
+     "in_game_wiki": "Lambung tekanan HECTON-8 dapat dibaca dari luar. Pelat putih hanyalah kulit. Rib gelap menunjukkan jalur beban tekanan. Kanal segel menunjukkan batas modul dan tempat air seharusnya berhenti. Garis garam mengungkap titik rendah kebocoran lama.\n\nBaris baut yang lurus berarti modul bergerak sebagai satu badan; ruangan di baliknya mungkin remuk, tetapi masih koheren. Segel robek dengan garam pucat menunjukkan air masuk perlahan dan mungkin menyisakan label, alat, atau kertas di kantong kering. Rib melengkung ke dalam berarti tekanan luar menang; rib menonjol ke luar berarti pelepasan dari dalam.\n\nDeep Reach menyukai diagram bersih. Laut menulis revisi yang lebih jujur: rib yang kelebihan beban, bahan segel yang salah, palka yang dibuka setelah evakuasi resmi. Bagi Perompak, membaca lambung adalah cara memilih pintu, garis potong, dan bukti.",
+     "external_site": "Artikel praktis tentang rib lambung, kanal segel, dan garis garam: bagaimana material luar menunjukkan integritas ruang, akses servis, dan potongan berbahaya.",
+     "external_site_article": "Lambung tekanan HECTON-8 buruk rupa karena jujur. Tugasnya bukan tampak seperti kapal angkasa, tetapi menjaga ruang kerja agar tidak menjadi laut. Pelat menyebar beban, rib menahannya, segel menghentikan air, dan sisi pengunci menunjukkan niat manusia saat membuka.\n\nPembacaan terbaik dimulai dari noda. Garam tumbuh di bawah sambungan rendah. Biofilm hitam hijau mengikuti kebocoran lambat. Karat pada satu baut kurang penting daripada kelurusan seluruh baris. Baris lurus berarti modul tetap utuh; baris bertangga berarti rangka robek.\n\nDalam permainan, ini menjadi keputusan: masuk dari sisi pengunci, hindari rib penahan beban, potong pelat yang sudah terisolasi, atau simpan jejak segel sebagai bukti. Laut tidak menambahkan simbol; ia menghapus kenyamanan dan menyisakan rib, garam, dan baut bengkok.",
+     "field_note": "Baca rib sebelum pelat. Pelat berbohong lebih rapi."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "압력 선체 리브와 밀봉재 장부",
+     "scanner": "압력 선체 // 흰 외판, 흑연색 리브, 눌린 검은 밀봉재. 소금 줄기는 낮은 이음에서 흐른다. 볼트열이 곧으면 모듈은 한 몸으로 움직였고 아직 열리지 않았다.",
+     "terminal": "선체 판독 // 리브 간격은 장식 잔해가 아니라 압력 모듈을 뜻한다. 밀봉 홈이 온전하면 건조 포켓이 남을 수 있다. 리브 옆 주황 도색은 정비 접근부다. 절단 전 잠금쪽을 확인하라.",
+     "audio": "압력 리브는 장식이 아니다. 아직 바다와 다투는 방의 일부다.",
+     "in_game_wiki": "HECTON-8의 압력 선체는 바깥에서 읽을 수 있다. 흰 외판은 피부일 뿐이다. 어두운 리브는 압력 하중의 길을 보여 준다. 밀봉 홈은 모듈의 경계와 물이 멈춰야 했던 선을 남긴다. 소금 줄기는 오래된 누수의 낮은 길을 표시한다.\n\n곧은 볼트열은 모듈이 한 몸으로 밀렸다는 뜻이다. 흰 소금이 핀 찢어진 밀봉재는 느린 침수를 말하고, 그 안에는 표식이나 공구가 남을 수 있다. 안쪽으로 휜 리브는 외압의 승리다. 바깥으로 부푼 리브는 내부 배출이나 폭발을 말한다.\n\nDeep Reach는 깨끗한 도면을 좋아했다. 바다는 더 정직한 수정을 남긴다. 과부하 리브, 잘못된 보수 밀봉재, 공식 대피 이후 열린 해치를 기록한다. 약탈자에게 선체 판독은 배경 설명이 아니라 입구와 절단선과 증거를 고르는 기술이다.",
+     "external_site": "압력 선체 리브, 밀봉 홈, 소금 줄기를 읽는 현장 글. 외부 재료가 방의 무결성, 정비 접근, 위험한 절단선을 드러낸다.",
+     "external_site_article": "HECTON-8의 압력 선체는 못생겼기 때문에 정직하다. 우주선처럼 보이기 위한 물건이 아니라 작업실을 바다로 만들지 않기 위한 물건이었다. 외판은 하중을 퍼뜨리고, 리브는 버티고, 밀봉재는 물을 막고, 잠금쪽은 사람이 열려고 했던 위치를 남긴다.\n\n좋은 판독은 얼룩에서 시작한다. 소금은 낮은 이음 아래에서 자란다. 검푸른 생물막은 느린 누수를 따라간다. 볼트 하나의 녹보다 줄 전체가 곧은지가 더 중요하다. 곧으면 모듈은 한 몸으로 버텼고, 어긋나면 프레임이 찢어졌다.\n\n플레이어는 여기서 행동을 고른다. 잠금쪽으로 들어가고, 아직 하중을 받는 리브를 피하고, 고립된 판을 자르며, 공식 기록과 다른 개방 흔적을 증거로 보존한다. 바다는 상징을 더하지 않았다. 페인트와 변명을 벗겨 냈다.",
+     "field_note": "판보다 리브를 먼저 읽어라. 판은 더 예쁘게 거짓말한다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן צלעות ואטמי מעטפת לחץ",
+     "scanner": "מעטפת לחץ // לוח חיצוני לבן, צלע גרפיט, אטם שחור דחוס. מלח זורם מתפרים נמוכים. שורת ברגים ישרה: המודול זז כגוף אחד ולא נפתח.",
+     "terminal": "קריאת מעטפת // מרווח צלעות מציין מודול לחץ ולא שבר קישוטי. תעלת אטם שלמה עשויה להחזיק כיס יבש. צבע כתום ליד צלע מסמן גישת שירות; בדוק את צד הנעילה לפני חיתוך.",
+     "audio": "צלע לחץ אינה קישוט. היא חלק מהחדר שעוד מתווכח עם הים.",
+     "in_game_wiki": "מעטפת לחץ ב-HECTON-8 ניתנת לקריאה מבחוץ. הלוחות הלבנים הם רק עור. הצלעות הכהות מראות את מסלול העומס. תעלות האטם מציינות את גבולות המודולים ואת הקו שבו המים היו אמורים לעצור. פסי מלח חושפים נקודות נמוכות של דליפה ארוכה.\n\nשורת ברגים ישרה אומרת שהמודול זז כגוף אחד; החדר מאחור אולי מעוך, אך עדיין שלם. אטם קרוע עם מלח בהיר מספר על כניסת מים איטית ועל אפשרות לסימנים וכלים שמורים. צלע כפופה פנימה היא ניצחון הלחץ החיצוני. צלע בולטת החוצה מספרת על שחרור או פיצוץ מבפנים.\n\nDeep Reach אהבה תרשימים נקיים. הים משאיר תיקונים אמינים יותר: צלעות עמוסות מדי, חומרי אטימה שגויים, פתחים שנפתחו אחרי חלון הפינוי הרשמי. עבור בוזז, קריאת מעטפת היא בחירת כניסה, קו חיתוך וראיה.",
+     "external_site": "מאמר שטח על צלעות מעטפת, תעלות אטם ופסי מלח: כיצד החומר החיצוני חושף שלמות חדר, גישת שירות וחיתוכים מסוכנים.",
+     "external_site_article": "מעטפות הלחץ של HECTON-8 מכוערות מפני שהן כנות. הן לא נבנו להיראות כמו חללית נוצצת, אלא כדי למנוע מחדר עבודה להפוך לים. הלוח מפזר עומס, הצלע נושאת אותו, האטם עוצר מים, וצד הנעילה משמר כוונת פתיחה אנושית.\n\nהקריאה מתחילה בכתמים. מלח גדל תחת תפרים נמוכים. ביופילם שחור-ירוק עוקב אחרי דליפה איטית. חלודה ליד בורג בודד חשובה פחות מיושר כל השורה. שורה ישרה פירושה מודול מלוכד; שורה מדורגת פירושה מסגרת קרועה.\n\nבמשחק זה הופך להחלטה: להיכנס מצד הנעילה, להימנע מצלע נושאת, לחתוך לוח מבודד או לשמור סימן אטם כראיה נגד הגרסה הרשמית. הים לא הוסיף סמלים; הוא הסיר צבע, לוגואים ותירוצים.",
+     "field_note": "קרא את הצלע לפני הלוח. הלוח משקר יפה יותר."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de nervuras e juntas do casco de pressão",
+     "scanner": "CASCO DE PRESSÃO // Placa externa branca, nervura grafite, junta preta comprimida. O sal escorre de emendas baixas. Linha de parafusos reta: o módulo se moveu como corpo único, mas não abriu.",
+     "terminal": "LEITURA DE CASCO // O espaço entre nervuras indica módulo pressurizado, não sucata decorativa. Canal de junta intacto pode guardar um bolso seco. Tinta laranja perto da nervura marca acesso de serviço; confira o lado da trava antes de cortar.",
+     "audio": "Nervura de pressão não é acabamento. É a parte da sala que ainda discute com o oceano.",
+     "in_game_wiki": "Um casco de pressão de HECTON-8 pode ser lido por fora. As placas brancas são só pele. As nervuras escuras mostram o caminho da carga. Os canais de junta marcam onde os módulos se encontravam e onde a água deveria parar. O sal revela pontos baixos de vazamentos longos.\n\nUma linha reta de parafusos significa que o módulo se deslocou como um corpo só. Uma junta rasgada com flor de sal aponta entrada lenta de água e talvez etiquetas, ferramentas ou papel preservados. Nervura dobrada para dentro mostra pressão externa vencendo. Nervura empurrada para fora fala de alívio ou explosão interna.\n\nA Deep Reach gostava de diagramas limpos. O mar deixa revisões melhores: nervuras sobrecarregadas, junta errada em reparo, escotilhas abertas depois da evacuação oficial. Para um Saqueador, ler casco é escolher entrada, corte e prova.",
+     "external_site": "Artigo prático sobre nervuras, canais de junta e marcas de sal: como o exterior revela integridade de sala, acesso de serviço e cortes perigosos.",
+     "external_site_article": "Cascos de pressão em HECTON-8 são feios porque são honestos. Não foram feitos para parecer naves elegantes, e sim para impedir que uma sala de trabalho virasse oceano. A placa distribui carga, a nervura carrega, a junta bloqueia água, e o lado da trava mostra onde alguém esperava abrir sob tensão.\n\nA melhor leitura começa nas manchas. Sal cresce sob emendas baixas. Biofilme preto-esverdeado segue vazamentos lentos. Ferrugem em um parafuso importa menos que a linha inteira continuar reta. Reta significa módulo coerente; desalinhada significa armação rasgada.\n\nNo jogo, isso vira decisão: entrar pelo lado da trava, evitar nervura portante, cortar uma placa isolada ou preservar rastro de junta como prova. O oceano não adicionou símbolos. Ele removeu tinta, logotipos e desculpas.",
+     "field_note": "Leia a nervura antes da placa. A placa mente com acabamento melhor."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Logboek voor drukribben en pakkingen",
+     "scanner": "DRUKHUID // Witte buitenplaat, grafietrib, samengedrukte zwarte pakking. Zout loopt uit lage naden. De boutenrij blijft recht: de module verschoof als geheel, maar scheurde niet open.",
+     "terminal": "HUIDLEZING // Ribafstand toont een drukmodule, geen decoratief wrakdeel. Een intact pakkingskanaal kan een droge pocket betekenen. Oranje verf bij de rib markeert service-toegang; controleer de sluitzijde voor het snijden.",
+     "audio": "Een drukrib is geen sierstrip. Het is het deel van de kamer dat nog met de oceaan onderhandelt.",
+     "in_game_wiki": "Een HECTON-8-drukhuid is van buiten te lezen. De witte platen zijn alleen huid. Donkere ribben tonen de weg van de druklast. Pakkingskanalen tonen waar modules elkaar raakten en waar water moest stoppen. Zoutsporen verraden lage punten van langdurige lekken.\n\nEen rechte boutenrij betekent dat de module als één lichaam bewoog; de kamer erachter kan geplet zijn, maar nog samenhangend. Een gescheurde pakking met witte zoutbloei wijst op traag binnendringen en mogelijk bewaarde labels of gereedschap. Een naar binnen gebogen rib betekent buitendruk. Een naar buiten gebogen rib betekent interne ontluchting of explosie.\n\nDeep Reach hield van nette schema's. De zee laat betere correcties achter: overbelaste ribben, verkeerde pakking bij reparatie, luiken die na de officiële evacuatie open gingen. Voor een Marauder is huidlezen geen sfeer, maar keuze van toegang, snijlijn en bewijs.",
+     "external_site": "Praktisch artikel over drukribben, pakkingskanalen en zoutsporen: hoe buitenmateriaal kamerintegriteit, service-toegang en gevaarlijke sneden toont.",
+     "external_site_article": "Drukhuiden op HECTON-8 zijn lelijk omdat ze eerlijk zijn. Ze hoefden niet op ruimteschepen te lijken; ze moesten voorkomen dat een werkruimte oceaan werd. De plaat spreidt last, de rib draagt, de pakking stopt water, en de sluitzijde bewaart menselijke bedoeling.\n\nGoed lezen begint bij vlekken. Zout groeit onder lage naden. Zwartgroene biofilm volgt trage lekken. Roest bij één bout is minder belangrijk dan een rechte rij. Recht betekent samenhangende module; verspringend betekent gescheurd frame. Uitgeperste pakking vertelt compressie vóór overstroming.\n\nIn speltermen geeft dit beslissingen: via de sluitzijde binnenkomen, een dragende rib vermijden, een geïsoleerde plaat snijden of een pakkingspoor bewaren als bewijs. De oceaan voegde geen symbolen toe. Hij verwijderde verf, logo's en excuses.",
+     "field_note": "Lees de rib vóór de plaat. De plaat liegt netter."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,286 +1,287 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS294_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS294_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1342_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE",
+   "release_set_id": "RS294_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE",
+   "article_id": "applied_lore.scrubber_cartridge_serial_mismatch_field_article",
+   "title_key": "LORE_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/AppliedContent/production_packets/P860_AIR_SCRUBBER_CARTRIDGE_DUST.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1205_SCRUBBER_CARTRIDGE_FINGER_SWEEP.production.md",
+    "Docs/Lore/AppliedContent/packets/RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1342_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE",
-      "release_set_id": "RS294_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE",
-      "article_id": "applied_lore.scrubber_cartridge_serial_mismatch_field_article",
-      "title_key": "LORE_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/AppliedContent/production_packets/P860_AIR_SCRUBBER_CARTRIDGE_DUST.production.md",
-        "Docs/Lore/AppliedContent/production_packets/P1205_SCRUBBER_CARTRIDGE_FINGER_SWEEP.production.md",
-        "Docs/Lore/AppliedContent/packets/RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.scrubber_cartridge_serial_mismatch_field_article",
-        "secondary": [
-          "unlock.first_scrubber_cartridge_serial_mismatch",
-          "unlock.first_oxygen_ledger_cutoff_claim_hold",
-          "unlock.first_suit_reserve_delta_mismatch"
-        ],
-        "poi_tags": [
-          "poi.scrubber_serial_mismatch",
-          "poi.scrubber_cartridge_plate",
-          "poi.slot_latch_salt",
-          "poi.refill_sleeve",
-          "poi.cartridge_throat_brine",
-          "poi.oxygen_ledger_cutoff",
-          "poi.suit_reserve_delta",
-          "poi.claim_restock_note",
-          "poi.claim_hold_field"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.life_support",
-          "biome.service_bay",
-          "biome.claim_admin",
-          "biome.evidence_custody"
-        ],
-        "depth_band_m": "0-4200"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Life-Support Cartridge QA Note",
-          "audio": "Recovered Service Bay Clip",
-          "in_game_wiki": "PDA Forensic Object Article",
-          "external_site": "Public Lore Atlas Evidence Note",
-          "field_note": "Marauder Field Note"
-        },
-        "source_brief": {
-          "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
-          "spoiler_level": "1",
-          "speaker_source": "PDA scanner, life-support QA note, service bay clip, Marauder annotation, public lore atlas",
-          "audience": "after oxygen ledger cutoff and suit reserve delta evidence; public atlas under early-evidence spoiler boundary",
-          "date_era": "2190 recovery reading of 2147 cartridge plate, oxygen ledger and claim restock artifacts",
-          "location_depth_route": "life-support service bay, scrubber slot, oxygen ledger strip, claim restock cache",
-          "unlock_context": "after oxygen ledger cutoff claim hold and suit reserve delta mismatch",
-          "evidence_object": "scrubber cartridge plate, slot latch salt, refill sleeve, cartridge throat brine, oxygen cutoff row and claim restock note",
-          "source_knows": "physical cartridge serial can disagree with refill sleeve and oxygen ledger; salt under latch can predate later restock paperwork",
-          "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
-          "truth_pressure": "Cartridge serial mismatch binds physical life-support hardware to later claim restock language without naming final culprit.",
-          "design_use": "extend oxygen ledger evidence chain through physical scrubber cartridge custody and restock ambiguity"
-        },
-        "spoiler_boundary": {
-          "tier": 1,
-          "allowed_reveals": [
-            "scrubber cartridge serial can disagree with ledger/restock sleeve",
-            "salt under latch can predate clean replacement packaging",
-            "restock paperwork can arrive after life-support failure"
-          ],
-          "blocked_reveals": [
-            "final culprit",
-            "hidden transcript sentence",
-            "ending payload identity"
-          ]
-        }
-      },
-      "localized": {
-        "en_US": {
-          "title": "Scrubber Cartridge Serial Mismatch",
-          "scanner": "SCRUBBER SERIAL MISMATCH // Cartridge plate does not match the oxygen ledger row. Salt under the latch predates the clean refill sleeve.",
-          "terminal": "SCRUBBER SERIAL QA // Compare plate serial, slot latch salt, refill sleeve, cartridge throat brine, oxygen cutoff row, suit reserve delta and claim restock note. Clean packaging is not a live-air record.",
-          "audio": "Sleeve is clean. Latch salt is old. That cartridge was logged after the room went bad.",
-          "in_game_wiki": "A scrubber cartridge serial mismatch starts with the small plate fixed to the cartridge body, not the sleeve someone can replace at a desk. In a drowned service bay, that plate can sit under a lip of salt, a latch scar or a stain inside the fill throat. If the plate disagrees with the oxygen ledger or the refill sleeve, read the body first.\n\nThe cartridge sits between air and paperwork. It scrubs the room load; the ledger counts its service window; the slot latch shows which body sat in the frame; the refill sleeve says what stores claimed to issue. Those records should move together. A brine line under the latch can be older than a clean sleeve, and that order changes the reading.\n\nDeep Reach did not need to fake chemistry to make trouble. A later sleeve could make a bay look restocked, keep a claim desk note open or push a cutoff row away from the room that failed. The serial plate cannot name the person who touched it. It can narrow the window where someone handled the cartridge after the air account stopped behaving like support.\n\nField handling is slow because the evidence is low and wet. Do not pull the cartridge before recording the plate, latch salt, sleeve seam, throat brine and ledger row. Bag the sleeve separately. Mark which side of the latch held salt. A clean wrapper does not repair a bad room. A serial mismatch shows where replacement language crossed physical support.",
-          "external_site": "A scrubber cartridge serial mismatch is the gap between the plate bolted into the air train and the number a desk later wanted to file.",
-          "external_site_article": "The easiest part to replace is the wrapper. A clean refill sleeve looks useful in a photograph, especially after a service bay has been under brine long enough to dull everything else. The plate on the cartridge body is harder to move without leaving a mark.\n\nRoom air on HECTON-8 was administered through serials. A cartridge number tied the physical scrubber, the slot latch, the oxygen ledger, the store issue row and the claim restock note into one narrow chain. When those numbers split, the question is no longer whether the bay looked serviced. The question is which record arrived late.\n\nBrine makes the timing visible. Salt under a latch, a mineral line behind the sleeve lip or a stained throat can sit below the newer paper trail. If the clean sleeve carries one serial and the plate carries another, the replacement may have happened after the room stopped supporting air.\n\nThis does not solve the death or name the final desk owner. It leaves a handled chain: plate, latch, sleeve, throat, ledger. Read it with the oxygen ledger cutoff and suit reserve delta before trusting any restock note.",
-          "field_note": "Read the plate, not the wrapper. Salt under the latch beats a clean sleeve.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Несовпадение серийного номера картриджа скруббера",
-          "scanner": "НЕСОВПАДЕНИЕ СЕРИИ СКРУББЕРА // Табличка картриджа не совпадает со строкой кислородного журнала. Соль под защелкой старше чистого рукава дозаправки.",
-          "terminal": "QA СЕРИИ СКРУББЕРА // Сверить серийник таблички, соль защелки, рукав дозаправки, рассол в горловине картриджа, строку отсечки кислорода, дельту резерва костюма и заметку restock claim. Чистая упаковка не является записью живого воздуха.",
-          "audio": "Рукав чистый. Соль под защелкой старая. Этот картридж внесли в журнал уже после того, как комната испортилась.",
-          "in_game_wiki": "Несовпадение серийного номера картриджа скруббера начинается с маленькой таблички на корпусе, а не с рукава, который можно заменить на столе. В затопленном сервисном отсеке табличка может уйти под соляную кромку, шрам защелки или пятно внутри заправочной горловины. Если табличка спорит с кислородным журналом или рукавом дозаправки, сначала читать корпус.\n\nКартридж стоит между воздухом и бумагами. Он берет нагрузку комнаты; журнал считает его сервисное окно; защелка показывает, какой корпус сидел в раме; рукав дозаправки говорит, что склад якобы выдал. Эти записи должны двигаться вместе. Соляная линия под защелкой может быть старше чистого рукава, и этот порядок меняет чтение.\n\nDeep Reach не нужно подделывать химию, чтобы устроить проблему. Поздний рукав мог сделать отсек похожим на обслуженный, оставить открытой заметку claim desk или отодвинуть строку отсечки от комнаты, которая уже отказала. Серийная табличка не называет человека, который ее трогал. Она сужает окно, где кто-то работал с картриджем после того, как воздушный счет перестал быть поддержкой.\n\nВ поле работа идет медленно, потому что улика низко и мокро. Не вытаскивай картридж, пока не сняты табличка, соль защелки, шов рукава, рассол в горловине и строка журнала. Рукав упаковывать отдельно. Отметить, с какой стороны защелки держалась соль. Чистая обертка не чинит плохую комнату. Несовпадение серийника показывает, где язык замены пересек физическую поддержку.",
-          "external_site": "Несовпадение серийника скруббера — это зазор между табличкой, прикрученной к воздушной линии, и номером, который стол позднее хотел подшить.",
-          "external_site_article": "Проще всего заменить обертку. Чистый рукав дозаправки хорошо выглядит на снимке, особенно после того как сервисный отсек достаточно долго лежал в рассоле и все остальное поблекло. Табличку на корпусе труднее сдвинуть без следа.\n\nВоздух комнат HECTON-8 велся по серийным номерам. Номер картриджа связывал физический скруббер, защелку слота, кислородный журнал, складскую выдачу и заметку claim restock в одну узкую цепочку. Когда номера расходятся, вопрос уже не в том, выглядел ли отсек обслуженным. Вопрос в том, какая запись пришла поздно.\n\nРассол делает время видимым. Соль под защелкой, минеральная линия за губой рукава или пятно в горловине могут лежать ниже более новой бумажной цепочки. Если чистый рукав несет один серийник, а табличка другой, замена могла случиться уже после того, как комната перестала держать воздух.\n\nЭто не решает смерть и не называет последний стол. Зато остается предметная цепочка: табличка, защелка, рукав, горловина, журнал. Читать ее нужно вместе с отсечкой кислородного журнала и дельтой резерва костюма, прежде чем верить любой заметке restock.",
-          "field_note": "Читай табличку, а не обертку. Соль под защелкой сильнее чистого рукава.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Невідповідність серійного номера картриджа скрубера",
-          "scanner": "НЕВІДПОВІДНІСТЬ СЕРІЇ СКРУБЕРА // Табличка картриджа не збігається з рядком кисневого журналу. Сіль під защіпкою старіша за чистий рукав дозаправлення.",
-          "terminal": "QA СЕРІЇ СКРУБЕРА // Звірити серійник таблички, сіль защіпки, рукав дозаправлення, розсіл у горловині картриджа, рядок відсічення кисню, дельту резерву костюма й нотатку restock claim. Чиста упаковка не є записом живого повітря.",
-          "audio": "Рукав чистий. Сіль під защіпкою стара. Цей картридж внесли до журналу вже після того, як кімната зіпсувалася.",
-          "in_game_wiki": "Невідповідність серійного номера картриджа скрубера починається з малої таблички на корпусі, а не з рукава, який можна замінити за столом. У затопленому сервісному відсіку табличка може сидіти під соляною крайкою, шрамом защіпки або плямою всередині заправної горловини. Якщо табличка сперечається з кисневим журналом чи рукавом дозаправлення, спершу читати корпус.\n\nКартридж стоїть між повітрям і паперами. Він бере навантаження кімнати; журнал рахує його сервісне вікно; защіпка показує, який корпус сидів у рамі; рукав дозаправлення каже, що склад нібито видав. Ці записи мають рухатися разом. Соляна лінія під защіпкою може бути старішою за чистий рукав, і цей порядок змінює читання.\n\nDeep Reach не мусила підробляти хімію, щоб створити проблему. Пізній рукав міг зробити відсік схожим на обслужений, залишити відкритою нотатку claim desk або відсунути рядок відсічення від кімнати, що вже відмовила. Серійна табличка не називає людину, яка її торкалася. Вона звужує вікно, де хтось працював із картриджем після того, як повітряний рахунок перестав бути підтримкою.\n\nУ полі робота повільна, бо доказ низько й мокрий. Не витягай картридж, доки не зняті табличка, сіль защіпки, шов рукава, розсіл у горловині й рядок журналу. Рукав пакувати окремо. Позначити, з якого боку защіпки трималася сіль. Чиста обгортка не ремонтує погану кімнату. Невідповідність серійника показує, де мова заміни перетнула фізичну підтримку.",
-          "external_site": "Невідповідність серійника скрубера — це зазор між табличкою, прикрученою до повітряної лінії, і номером, який стіл пізніше хотів підшити.",
-          "external_site_article": "Найлегше замінити обгортку. Чистий рукав дозаправлення добре виглядає на фото, особливо після того, як сервісний відсік достатньо довго лежав у розсолі й усе інше потьмяніло. Табличку на корпусі важче зрушити без сліду.\n\nПовітря кімнат HECTON-8 велося за серійними номерами. Номер картриджа зв'язував фізичний скрубер, защіпку слота, кисневий журнал, складську видачу й нотатку claim restock в один вузький ланцюг. Коли номери розходяться, питання вже не в тому, чи виглядав відсік обслуженим. Питання в тому, який запис прийшов пізно.\n\nРозсіл робить час видимим. Сіль під защіпкою, мінеральна лінія за губою рукава або пляма в горловині можуть лежати нижче новішого паперового сліду. Якщо чистий рукав несе один серійник, а табличка інший, заміна могла статися після того, як кімната перестала тримати повітря.\n\nЦе не розв'язує смерть і не називає останній стіл. Зате лишається предметний ланцюг: табличка, защіпка, рукав, горловина, журнал. Його треба читати з відсіченням кисневого журналу й дельтою резерву костюма, перш ніж вірити будь-якій нотатці restock.",
-          "field_note": "Читай табличку, а не обгортку. Сіль під защіпкою сильніша за чистий рукав.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Seriennummernfehler an der Scrubber-Kartusche",
-          "scanner": "SCRUBBER-SERIENFEHLER // Kartuschenplatte passt nicht zur Sauerstoffbuchzeile. Salz unter dem Riegel ist älter als die saubere Nachfüllhülle.",
-          "terminal": "QA SCRUBBER-SERIE // Plattennummer, Riegelsalz, Nachfüllhülle, Sole im Kartuschenhals, Sauerstoffschnitt, Anzugreserve-Delta und Claim-Restock-Notiz vergleichen. Saubere Verpackung ist kein Luftnachweis.",
-          "audio": "Die Hülle ist sauber. Das Riegelsalz ist alt. Diese Kartusche wurde eingetragen, nachdem der Raum schon schlecht war.",
-          "in_game_wiki": "Ein Seriennummernfehler an der Scrubber-Kartusche beginnt mit der kleinen Platte am Kartuschenkörper, nicht mit der Hülle, die jemand am Schreibtisch ersetzen kann. In einer ertrunkenen Servicebucht kann diese Platte unter Salzlippe, Riegelnarbe oder Fleck im Füllhals liegen. Wenn die Platte dem Sauerstoffbuch oder der Nachfüllhülle widerspricht, lies zuerst den Körper.\n\nDie Kartusche steht zwischen Luft und Papier. Sie scrubbt die Raumlast; das Buch zählt ihr Servicefenster; der Riegel zeigt, welcher Körper im Rahmen saß; die Nachfüllhülle sagt, was das Lager angeblich ausgab. Diese Aufzeichnungen sollten zusammenlaufen. Eine Solelinie unter dem Riegel kann älter sein als eine saubere Hülle, und diese Reihenfolge ändert die Lesart.\n\nDeep Reach musste keine Chemie fälschen, um Ärger zu machen. Eine spätere Hülle konnte eine Bucht wieder bestückt aussehen lassen, eine Claim-Desk-Notiz offen halten oder eine Schnittzeile vom ausgefallenen Raum wegschieben. Die Serienplatte nennt keine Hand. Sie verengt das Zeitfenster, in dem jemand die Kartusche nach dem Versagen des Luftkontos angefasst hat.\n\nFeldarbeit ist langsam, weil der Beweis tief und nass sitzt. Zieh die Kartusche nicht, bevor Platte, Riegelsalz, Hüllennaht, Halssole und Buchzeile erfasst sind. Die Hülle separat eintüten. Markiere, auf welcher Riegelseite Salz hielt. Eine saubere Hülle repariert keinen schlechten Raum. Ein Serienfehler zeigt, wo Ersatzsprache über physische Unterstützung läuft.",
-          "external_site": "Der Serienfehler am Scrubber ist die Lücke zwischen der Platte in der Luftleitung und der Nummer, die ein Desk später ablegen wollte.",
-          "external_site_article": "Am leichtesten ersetzt man die Hülle. Eine saubere Nachfüllhülle sieht auf einem Foto nützlich aus, besonders wenn die Servicebucht lange genug in Sole lag, um alles andere stumpf zu machen. Die Platte am Kartuschenkörper lässt sich schwerer bewegen, ohne Spuren zu lassen.\n\nRaumluft auf HECTON-8 wurde über Serien geführt. Eine Kartuschennummer verband den physischen Scrubber, den Slot-Riegel, das Sauerstoffbuch, die Lagerausgabe und die Claim-Restock-Notiz zu einer schmalen Kette. Wenn diese Nummern splitten, geht es nicht mehr darum, ob die Bucht gewartet aussah. Es geht darum, welcher Datensatz zu spät kam.\n\nSole macht Timing sichtbar. Salz unter einem Riegel, eine Mineralspur hinter der Hüllenlippe oder ein gefärbter Hals können unter der jüngeren Papierkette sitzen. Trägt die saubere Hülle eine Nummer und die Platte eine andere, kann der Ersatz nach dem Ende der Raumluftunterstützung passiert sein.\n\nDas löst den Tod nicht und nennt keinen letzten Desk. Es gibt dem Leser ein handhabbares Objekt: Platte, Riegel, Hülle, Hals, Buch. Lies es mit Sauerstoffbuch-Schnitt und Anzugreserve-Delta, bevor du irgendeiner Restock-Notiz glaubst.",
-          "field_note": "Lies die Platte, nicht die Hülle. Salz unter dem Riegel schlägt eine saubere Hülle.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Discrepancia del Número de Serie del Cartucho del Scrubber",
-          "scanner": "DISCREPANCIA DE SERIE DEL SCRUBBER // La placa del cartucho no coincide con la fila del registro de oxígeno. La sal bajo el pestillo es anterior a la funda limpia de recambio.",
-          "terminal": "QA SERIE SCRUBBER // Comparar serie de placa, sal del pestillo, funda de recambio, salmuera en la garganta del cartucho, fila de corte de oxígeno, delta de reserva del traje y nota de restock claim. Un envoltorio limpio no registra aire vivo.",
-          "audio": "La funda está limpia. La sal del pestillo es vieja. Registraron ese cartucho después de que la sala fallara.",
-          "in_game_wiki": "La discrepancia de serie de un cartucho del scrubber empieza en la placa pequeña fijada al cuerpo, no en la funda que alguien puede sustituir en una mesa. En una bahía de servicio ahogada, esa placa puede quedar bajo un labio de sal, una cicatriz del pestillo o una mancha dentro de la garganta de llenado. Si la placa contradice el registro de oxígeno o la funda de recambio, lee primero el cuerpo.\n\nEl cartucho vive entre el aire y el papeleo. Limpia la carga de la sala; el registro cuenta su ventana de servicio; el pestillo muestra qué cuerpo ocupó el marco; la funda dice qué afirmó emitir almacén. Esos registros deberían moverse juntos. Una línea de salmuera bajo el pestillo puede ser más antigua que una funda limpia, y ese orden cambia la lectura.\n\nDeep Reach no necesitaba falsificar química para causar daño. Una funda tardía podía hacer que la bahía pareciera reabastecida, mantener abierta una nota de claim desk o empujar una fila de corte lejos de la sala que falló. La placa de serie no nombra a quien la tocó. Estrecha la ventana en la que alguien manipuló el cartucho después de que la cuenta de aire dejó de actuar como soporte.\n\nEl manejo en campo es lento porque la prueba está baja y mojada. No extraigas el cartucho antes de registrar placa, sal del pestillo, costura de funda, salmuera de garganta y fila del registro. Embolsa la funda por separado. Marca qué lado del pestillo retenía sal. Un envoltorio limpio no arregla una sala mala. Una discrepancia de serie muestra dónde el lenguaje de reemplazo cruzó el soporte físico.",
-          "external_site": "La discrepancia de serie del scrubber es la distancia entre la placa atornillada a la línea de aire y el número que una mesa quiso archivar después.",
-          "external_site_article": "Lo más fácil de cambiar es el envoltorio. Una funda de recambio limpia parece útil en una fotografía, sobre todo después de que la bahía haya pasado suficiente tiempo bajo salmuera para apagar todo lo demás. La placa del cuerpo del cartucho es más difícil de mover sin dejar marca.\n\nEl aire de sala en HECTON-8 se administraba por series. Un número de cartucho unía scrubber físico, pestillo de ranura, registro de oxígeno, fila de emisión de almacén y nota de restock claim en una cadena estrecha. Cuando esos números se separan, la pregunta deja de ser si la bahía parecía atendida. La pregunta es qué registro llegó tarde.\n\nLa salmuera vuelve visible el momento. Sal bajo un pestillo, una línea mineral detrás del labio de la funda o una garganta manchada pueden quedar por debajo del rastro de papel más nuevo. Si la funda limpia lleva una serie y la placa otra, el reemplazo pudo ocurrir después de que la sala dejara de sostener aire.\n\nEsto no resuelve la muerte ni nombra la última mesa. Deja un objeto manejable: placa, pestillo, funda, garganta, registro. Léelo con el corte del registro de oxígeno y el delta de reserva del traje antes de confiar en cualquier nota de restock.",
-          "field_note": "Lee la placa, no el envoltorio. La sal bajo el pestillo pesa más que una funda limpia.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Discordance de Série de Cartouche de Scrubber",
-          "scanner": "DISCORDANCE SÉRIE SCRUBBER // La plaque de cartouche ne correspond pas à la ligne du registre d'oxygène. Le sel sous le loquet est antérieur à la gaine de recharge propre.",
-          "terminal": "QA SÉRIE SCRUBBER // Comparer série de plaque, sel de loquet, gaine de recharge, saumure dans la gorge de cartouche, ligne de coupure oxygène, écart de réserve de combinaison et note restock claim. Un emballage propre n'est pas un relevé d'air vivant.",
-          "audio": "La gaine est propre. Le sel du loquet est ancien. Cette cartouche a été inscrite après que la salle a tourné mauvais.",
-          "in_game_wiki": "Une discordance de série de cartouche de scrubber commence par la petite plaque fixée au corps de la cartouche, pas par la gaine qu'un bureau peut remplacer. Dans une baie de service noyée, cette plaque peut rester sous une lèvre de sel, une marque de loquet ou une tache dans la gorge de remplissage. Si la plaque contredit le registre d'oxygène ou la gaine de recharge, lis d'abord le corps.\n\nLa cartouche se trouve entre l'air et les papiers. Elle traite la charge de la salle; le registre compte sa fenêtre de service; le loquet indique quel corps était dans le cadre; la gaine de recharge dit ce que le stock prétend avoir délivré. Ces relevés devraient avancer ensemble. Une ligne de saumure sous le loquet peut être plus ancienne qu'une gaine propre, et cet ordre change la lecture.\n\nDeep Reach n'avait pas besoin de truquer la chimie pour créer le problème. Une gaine tardive pouvait donner à la baie l'air d'être réapprovisionnée, garder une note de claim desk ouverte ou éloigner une ligne de coupure de la salle qui avait échoué. La plaque de série ne nomme pas la main. Elle resserre la fenêtre où quelqu'un a manipulé la cartouche après que le compte d'air a cessé d'être un support.\n\nLe traitement sur site est lent, parce que la preuve est basse et mouillée. Ne retire pas la cartouche avant d'avoir relevé la plaque, le sel du loquet, la couture de gaine, la saumure de gorge et la ligne du registre. Emballe la gaine à part. Marque le côté du loquet qui retenait le sel. Un emballage propre ne répare pas une mauvaise salle. Une discordance de série montre où le langage du remplacement a traversé le support physique.",
-          "external_site": "La discordance de série du scrubber est l'écart entre la plaque boulonnée dans la ligne d'air et le numéro qu'un bureau a voulu classer plus tard.",
-          "external_site_article": "La pièce la plus facile à remplacer est l'enveloppe. Une gaine de recharge propre paraît utile sur une photo, surtout après une longue immersion de la baie dans la saumure. La plaque sur le corps de la cartouche se déplace plus difficilement sans laisser de marque.\n\nL'air des salles de HECTON-8 passait par des numéros de série. Un numéro de cartouche liait le scrubber physique, le loquet de slot, le registre d'oxygène, la ligne de sortie du stock et la note restock claim dans une chaîne étroite. Quand ces numéros se séparent, la question n'est plus de savoir si la baie semblait entretenue. La question est de savoir quel relevé est arrivé tard.\n\nLa saumure rend le temps lisible. Du sel sous un loquet, une ligne minérale derrière la lèvre de gaine ou une gorge tachée peuvent se trouver sous une trace papier plus récente. Si la gaine propre porte une série et la plaque une autre, le remplacement peut avoir eu lieu après l'arrêt du support d'air.\n\nCela ne résout pas la mort et ne désigne pas le dernier bureau. Il reste une chaîne d'objets: plaque, loquet, gaine, gorge, registre. Lis-la avec la coupure du registre d'oxygène et l'écart de réserve de combinaison avant de croire une note de restock.",
-          "field_note": "Lis la plaque, pas l'emballage. Le sel sous le loquet vaut plus qu'une gaine propre.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Niezgodność Numeru Seryjnego Wkładu Scrubbera",
-          "scanner": "NIEZGODNOŚĆ SERII SCRUBBERA // Tabliczka wkładu nie pasuje do wiersza księgi tlenu. Sól pod zatrzaskiem jest starsza niż czysta osłona uzupełnienia.",
-          "terminal": "QA SERII SCRUBBERA // Porównać numer tabliczki, sól zatrzasku, osłonę uzupełnienia, solankę w gardzieli wkładu, wiersz odcięcia tlenu, deltę rezerwy skafandra i notę restock claim. Czyste opakowanie nie jest zapisem żywego powietrza.",
-          "audio": "Osłona czysta. Sól przy zatrzasku stara. Ten wkład wpisano po tym, jak sala już zawiodła.",
-          "in_game_wiki": "Niezgodność numeru seryjnego wkładu scrubbera zaczyna się od małej tabliczki na korpusie, nie od osłony, którą można wymienić przy biurku. W zalanej zatoce serwisowej tabliczka może siedzieć pod rantem soli, blizną zatrzasku albo plamą w gardzieli napełniania. Jeśli tabliczka kłóci się z księgą tlenu albo osłoną uzupełnienia, najpierw czytaj korpus.\n\nWkład stoi między powietrzem a papierami. Oczyszcza obciążenie sali; księga liczy jego okno pracy; zatrzask pokazuje, który korpus siedział w ramie; osłona mówi, co magazyn twierdził, że wydał. Te zapisy powinny iść razem. Linia solanki pod zatrzaskiem może być starsza niż czysta osłona, a ta kolejność zmienia odczyt.\n\nDeep Reach nie musiała fałszować chemii, żeby narobić szkód. Późna osłona mogła sprawić, że zatoka wyglądała na uzupełnioną, zostawić otwartą notę claim desk albo odsunąć wiersz odcięcia od sali, która padła. Tabliczka seryjna nie wskazuje osoby, która jej dotykała. Zawęża okno, w którym ktoś obsługiwał wkład po tym, jak rachunek powietrza przestał być wsparciem.\n\nObsługa w terenie jest powolna, bo dowód leży nisko i mokro. Nie wyciągaj wkładu przed zapisaniem tabliczki, soli zatrzasku, szwu osłony, solanki w gardzieli i wiersza księgi. Osłonę zapakuj osobno. Zaznacz, po której stronie zatrzasku trzymała się sól. Czyste opakowanie nie naprawia złej sali. Niezgodność serii pokazuje, gdzie język wymiany przeciął fizyczne wsparcie.",
-          "external_site": "Niezgodność serii scrubbera to luka między tabliczką przykręconą do linii powietrza a numerem, który biurko później chciało wpiąć do akt.",
-          "external_site_article": "Najłatwiej wymienić opakowanie. Czysta osłona uzupełnienia wygląda dobrze na zdjęciu, zwłaszcza po tym, jak zatoka serwisowa długo leżała w solance i wszystko inne zmatowiało. Tabliczkę na korpusie wkładu trudniej przesunąć bez śladu.\n\nPowietrze w salach HECTON-8 prowadzono numerami seryjnymi. Numer wkładu łączył fizyczny scrubber, zatrzask slotu, księgę tlenu, wiersz wydania magazynu i notę restock claim w jeden wąski łańcuch. Gdy numery się rozchodzą, pytanie nie brzmi, czy zatoka wyglądała na obsłużoną. Pytanie brzmi, który zapis przyszedł za późno.\n\nSolanka pokazuje czas. Sól pod zatrzaskiem, mineralna linia za rantem osłony albo zabarwiona gardziel mogą leżeć pod nowszą ścieżką papieru. Jeśli czysta osłona niesie jedną serię, a tabliczka drugą, wymiana mogła nastąpić po tym, jak sala przestała podtrzymywać powietrze.\n\nTo nie rozwiązuje śmierci i nie nazywa ostatniego biurka. Zostawia czytelnikowi przedmiotowy łańcuch: tabliczka, zatrzask, osłona, gardziel, księga. Czytaj go z odcięciem księgi tlenu i deltą rezerwy skafandra, zanim uwierzysz dowolnej nocie restock.",
-          "field_note": "Czytaj tabliczkę, nie opakowanie. Sól pod zatrzaskiem bije czystą osłonę.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Incompatibilidade de Série do Cartucho do Scrubber",
-          "scanner": "INCOMPATIBILIDADE DE SÉRIE DO SCRUBBER // Placa do cartucho não bate com a linha do livro de oxigênio. Sal sob a trava é mais antigo que a capa limpa de recarga.",
-          "terminal": "QA SÉRIE DO SCRUBBER // Compare série da placa, sal da trava, capa de recarga, salmoura na garganta do cartucho, linha de corte de oxigênio, delta de reserva do traje e nota restock claim. Embalagem limpa não é registro de ar vivo.",
-          "audio": "A capa está limpa. O sal da trava é velho. Esse cartucho foi lançado depois que a sala ficou ruim.",
-          "in_game_wiki": "Uma incompatibilidade de série do cartucho do scrubber começa na plaquinha fixada ao corpo do cartucho, não na capa que alguém pode trocar numa mesa. Numa baía de serviço afogada, a placa pode ficar sob uma borda de sal, uma marca de trava ou uma mancha dentro da garganta de enchimento. Se a placa discorda do livro de oxigênio ou da capa de recarga, leia o corpo primeiro.\n\nO cartucho fica entre ar e papelada. Ele limpa a carga da sala; o livro conta sua janela de serviço; a trava mostra qual corpo ficou no quadro; a capa de recarga diz o que o almoxarifado afirmou emitir. Esses registros deveriam andar juntos. Uma linha de salmoura sob a trava pode ser mais velha que uma capa limpa, e essa ordem muda a leitura.\n\nA Deep Reach não precisava falsificar química para causar problema. Uma capa tardia podia fazer a baía parecer reabastecida, manter uma nota de claim desk aberta ou empurrar uma linha de corte para longe da sala que falhou. A placa de série não nomeia quem tocou nela. Ela estreita a janela em que alguém manuseou o cartucho depois que a conta de ar deixou de se comportar como suporte.\n\nO manejo em campo é lento porque a prova está baixa e molhada. Não puxe o cartucho antes de registrar placa, sal da trava, costura da capa, salmoura da garganta e linha do livro. Ensacar a capa separadamente. Marcar qual lado da trava segurou sal. Uma embalagem limpa não conserta uma sala ruim. Uma incompatibilidade de série mostra onde a linguagem de substituição cruzou o suporte físico.",
-          "external_site": "A incompatibilidade de série do scrubber é a lacuna entre a placa parafusada na linha de ar e o número que uma mesa quis arquivar depois.",
-          "external_site_article": "A parte mais fácil de trocar é a embalagem. Uma capa de recarga limpa fica útil numa foto, especialmente depois que a baía de serviço passou tempo suficiente em salmoura para apagar todo o resto. A placa no corpo do cartucho é mais difícil de mover sem deixar marca.\n\nO ar das salas em HECTON-8 era administrado por séries. Um número de cartucho amarrava scrubber físico, trava do slot, livro de oxigênio, linha de emissão do almoxarifado e nota restock claim numa cadeia estreita. Quando esses números se separam, a pergunta deixa de ser se a baía parecia atendida. A pergunta é qual registro chegou tarde.\n\nA salmoura deixa o tempo visível. Sal sob uma trava, linha mineral atrás da borda da capa ou garganta manchada podem ficar abaixo da trilha de papel mais nova. Se a capa limpa carrega uma série e a placa outra, a troca pode ter acontecido depois que a sala parou de sustentar ar.\n\nIsso não resolve a morte nem nomeia a última mesa. Deixa um objeto manuseável: placa, trava, capa, garganta, livro. Leia com o corte do livro de oxigênio e a delta de reserva do traje antes de confiar em qualquer nota de restock.",
-          "field_note": "Leia a placa, não a embalagem. Sal sob a trava vence capa limpa.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Seriemismatch van Scrubberpatroon",
-          "scanner": "SCRUBBER SERIEMISMATCH // Patroonplaat komt niet overeen met de zuurstofregisterregel. Zout onder de grendel is ouder dan de schone bijvulhoes.",
-          "terminal": "QA SCRUBBERSERIE // Vergelijk plaatserie, grendelzout, bijvulhoes, pekel in patroonhals, zuurstofafsnede, pakreserve-delta en restock-claimnotitie. Schone verpakking is geen levendeluchtregistratie.",
-          "audio": "De hoes is schoon. Het grendelzout is oud. Dat patroon werd gelogd nadat de kamer al slecht was.",
-          "in_game_wiki": "Een seriemismatch van een scrubberpatroon begint bij het kleine plaatje op het patroonlichaam, niet bij de hoes die iemand aan een desk kan vervangen. In een verdronken servicebaai kan dat plaatje onder een zoutrand, grendellitteken of vlek in de vulhals zitten. Als de plaat botst met het zuurstofregister of de bijvulhoes, lees eerst het lichaam.\n\nHet patroon zit tussen lucht en papierwerk. Het scrubt de kamerlast; het register telt zijn servicevenster; de slotgrendel toont welk lichaam in het frame zat; de bijvulhoes zegt wat opslag beweerde uit te geven. Die registraties moeten samen bewegen. Een pekellijn onder de grendel kan ouder zijn dan een schone hoes, en die volgorde verandert de lezing.\n\nDeep Reach hoefde geen chemie te vervalsen om schade te maken. Een late hoes kon de baai bevoorraad laten lijken, een claim desk-notitie open houden of een afsnederegel wegduwen van de kamer die faalde. De serieplaat noemt geen hand. Ze vernauwt het venster waarin iemand het patroon hanteerde nadat de luchtrekening niet meer als steun werkte.\n\nVeldbehandeling is traag omdat het bewijs laag en nat zit. Trek het patroon niet voor plaat, grendelzout, hoesnaad, halspekel en registerregel zijn vastgelegd. Zak de hoes apart. Markeer aan welke kant van de grendel zout zat. Een schone wikkel repareert geen slechte kamer. Een seriemismatch toont waar vervangingstaal fysieke steun kruiste.",
-          "external_site": "De scrubber-seriemismatch is de kloof tussen de plaat in de luchtlijn en het nummer dat een desk later wilde archiveren.",
-          "external_site_article": "Het makkelijkste onderdeel om te vervangen is de wikkel. Een schone bijvulhoes oogt bruikbaar op een foto, zeker nadat de servicebaai lang genoeg in pekel lag om de rest dof te maken. De plaat op het patroonlichaam verplaats je moeilijker zonder spoor.\n\nKamerlucht op HECTON-8 werd per serie beheerd. Een patroonnummer verbond fysieke scrubber, slotgrendel, zuurstofregister, opslaguitgifte en restock-claimnotitie in een smalle keten. Als die nummers splitsen, is de vraag niet meer of de baai onderhouden leek. De vraag is welk record laat binnenkwam.\n\nPekel maakt timing zichtbaar. Zout onder een grendel, een mineraallijn achter de hoeslip of een gevlekte hals kunnen onder het nieuwere papierspoor liggen. Draagt de schone hoes één serie en de plaat een andere, dan kan vervanging na het einde van kamersteun zijn gebeurd.\n\nDit lost de dood niet op en noemt geen laatste desk. Het geeft een hanteerbaar object: plaat, grendel, hoes, hals, register. Lees het met de zuurstofafsnede en pakreserve-delta voordat je een restocknotitie vertrouwt.",
-          "field_note": "Lees de plaat, niet de wikkel. Zout onder de grendel wint van een schone hoes.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Ketidakcocokan Seri Kartrid Scrubber",
-          "scanner": "SERI SCRUBBER TIDAK COCOK // Pelat kartrid tidak sesuai dengan baris buku oksigen. Garam di bawah kait lebih tua daripada selubung isi ulang yang bersih.",
-          "terminal": "QA SERI SCRUBBER // Cocokkan seri pelat, garam kait, selubung isi ulang, air garam di leher kartrid, baris pemutusan oksigen, delta cadangan baju, dan catatan restock claim. Kemasan bersih bukan catatan udara hidup.",
-          "audio": "Selubungnya bersih. Garam kaitnya tua. Kartrid itu dicatat setelah ruangan sudah rusak.",
-          "in_game_wiki": "Ketidakcocokan seri kartrid scrubber dimulai dari pelat kecil di tubuh kartrid, bukan dari selubung yang bisa diganti orang di meja. Di bay servis yang tenggelam, pelat itu bisa tertutup bibir garam, bekas kait, atau noda di dalam leher pengisian. Jika pelat bertentangan dengan buku oksigen atau selubung isi ulang, baca tubuhnya dulu.\n\nKartrid berada di antara udara dan berkas. Ia membersihkan beban ruangan; buku menghitung jendela servisnya; kait slot menunjukkan tubuh mana yang duduk di rangka; selubung isi ulang mengatakan apa yang diklaim gudang telah dikeluarkan. Catatan-catatan itu seharusnya bergerak bersama. Garis air garam di bawah kait bisa lebih tua dari selubung bersih, dan urutan itu mengubah bacaan.\n\nDeep Reach tidak perlu memalsukan kimia untuk membuat masalah. Selubung yang datang terlambat bisa membuat bay terlihat sudah diisi ulang, menjaga catatan claim desk tetap terbuka, atau mendorong baris pemutusan menjauh dari ruangan yang gagal. Pelat seri tidak menyebut tangan yang menyentuhnya. Ia mempersempit jendela saat seseorang menangani kartrid setelah akun udara berhenti menjadi dukungan.\n\nPenanganan lapangan lambat karena buktinya rendah dan basah. Jangan tarik kartrid sebelum merekam pelat, garam kait, jahitan selubung, air garam leher, dan baris buku. Kantongi selubung terpisah. Tandai sisi kait yang menahan garam. Pembungkus bersih tidak memperbaiki ruangan buruk. Ketidakcocokan seri menunjukkan tempat bahasa penggantian melintasi dukungan fisik.",
-          "external_site": "Ketidakcocokan seri scrubber adalah celah antara pelat yang terpasang di jalur udara dan nomor yang kemudian ingin diarsipkan meja.",
-          "external_site_article": "Bagian paling mudah diganti adalah pembungkus. Selubung isi ulang yang bersih terlihat berguna dalam foto, terutama setelah bay servis terendam air garam cukup lama hingga semua yang lain kusam. Pelat pada tubuh kartrid lebih sulit dipindahkan tanpa bekas.\n\nUdara ruangan di HECTON-8 dikelola melalui seri. Nomor kartrid mengikat scrubber fisik, kait slot, buku oksigen, baris pengeluaran gudang, dan catatan restock claim ke satu rantai sempit. Saat nomor-nomor itu pecah, pertanyaannya bukan lagi apakah bay tampak diservis. Pertanyaannya catatan mana yang datang terlambat.\n\nAir garam membuat waktu terlihat. Garam di bawah kait, garis mineral di balik bibir selubung, atau leher yang ternoda bisa duduk di bawah jejak kertas yang lebih baru. Jika selubung bersih membawa satu seri dan pelat membawa seri lain, penggantian mungkin terjadi setelah ruangan berhenti mendukung udara.\n\nIni tidak menyelesaikan kematian dan tidak menyebut meja terakhir. Ia memberi rantai benda yang bisa dipegang: pelat, kait, selubung, leher, buku. Baca bersama pemutusan buku oksigen dan delta cadangan baju sebelum mempercayai catatan restock.",
-          "field_note": "Baca pelatnya, bukan pembungkusnya. Garam di bawah kait mengalahkan selubung bersih.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "スクラバー・カートリッジのシリアル不一致",
-          "scanner": "スクラバーシリアル不一致 // カートリッジ本体プレートが酸素台帳行と一致しない。ラッチ下の塩は清潔な補充スリーブより古い。",
-          "terminal": "スクラバーシリアルQA // プレート番号、ラッチ塩、補充スリーブ、カートリッジ喉部の塩水、酸素遮断行、スーツ予備差分、claim restockメモを照合。清潔な包装は生きた空気の記録ではない。",
-          "audio": "スリーブは清潔。ラッチの塩は古い。そのカートリッジは、部屋が駄目になった後で記録された。",
-          "in_game_wiki": "スクラバー・カートリッジのシリアル不一致は、机で替えられるスリーブではなく、本体に固定された小さなプレートから始まる。水没したサービスベイでは、そのプレートが塩の縁、ラッチの傷、充填喉部の染みの下に残ることがある。プレートが酸素台帳や補充スリーブと食い違うなら、まず本体を読む。\n\nカートリッジは空気と書類の間にある。部屋の負荷を処理し、台帳は稼働窓を数え、スロットラッチはどの本体が枠に入っていたかを示し、補充スリーブは倉庫が出したと主張する物を示す。本来それらは一緒に動く。ラッチ下の塩水線が清潔なスリーブより古い場合、その順序が読みを変える。\n\nDeep Reachは問題を作るために化学を偽る必要はなかった。遅れて来たスリーブだけで、ベイを補充済みに見せ、claim deskメモを開いたままにし、故障した部屋から遮断行を遠ざけることができる。シリアルプレートは触った人物を名指ししない。だが空気勘定が支援として機能しなくなった後、誰かがカートリッジを扱った時間幅を狭める。\n\n現場処理は遅くなる。証拠が低く濡れているからだ。プレート、ラッチ塩、スリーブ継ぎ目、喉部の塩水、台帳行を記録する前にカートリッジを抜かない。スリーブは別袋にする。ラッチのどちら側に塩が残っていたかを印す。清潔な包みは悪い部屋を直さない。シリアル不一致は、交換という言葉が物理的な支援を越えた場所を示す。",
-          "external_site": "スクラバーのシリアル不一致は、空気ラインに固定されたプレートと、後から机が綴じたがった番号との隙間だ。",
-          "external_site_article": "一番替えやすいのは包みだ。補充スリーブが清潔なら写真では役に立つ物に見える。サービスベイが長く塩水に沈み、他の物が鈍った後ならなおさらだ。本体プレートは、跡を残さず動かしにくい。\n\nHECTON-8の部屋の空気はシリアルで管理されていた。カートリッジ番号は、物理スクラバー、スロットラッチ、酸素台帳、倉庫の払い出し行、restock claimメモを細い鎖に結ぶ。番号が割れた時、問題はベイが整備済みに見えたかではない。どの記録が遅れて来たかだ。\n\n塩水は時間を見えるようにする。ラッチ下の塩、スリーブ縁の裏にある鉱物線、染みた喉部は、新しい紙の痕跡の下に残る。清潔なスリーブが一つの番号を持ち、プレートが別の番号を持つなら、交換は部屋が空気を支えなくなった後かもしれない。\n\nこれは死を解決しないし、最後の机も名指ししない。残るのは扱える物の鎖だ。プレート、ラッチ、スリーブ、喉部、台帳。restockメモを信じる前に、酸素台帳の遮断とスーツ予備差分と一緒に読む。",
-          "field_note": "包みではなくプレートを読め。ラッチ下の塩は清潔なスリーブより強い。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "스크러버 카트리지 일련번호 불일치",
-          "scanner": "스크러버 일련번호 불일치 // 카트리지 플레이트가 산소 장부 행과 맞지 않는다. 래치 아래 소금은 깨끗한 재충전 슬리브보다 오래됐다.",
-          "terminal": "스크러버 일련 QA // 플레이트 번호, 래치 소금, 재충전 슬리브, 카트리지 목의 염수, 산소 절단 행, 슈트 예비량 델타, claim restock 메모를 대조. 깨끗한 포장은 살아 있는 공기 기록이 아니다.",
-          "audio": "슬리브는 깨끗해. 래치 소금은 오래됐어. 그 카트리지는 방이 망가진 뒤에 기록됐어.",
-          "in_game_wiki": "스크러버 카트리지 일련번호 불일치는 책상에서 갈 수 있는 슬리브가 아니라, 카트리지 몸체에 고정된 작은 플레이트에서 시작된다. 물에 잠긴 서비스 베이에서는 그 플레이트가 소금 가장자리, 래치 흉터, 충전 목 안의 얼룩 아래에 있을 수 있다. 플레이트가 산소 장부나 재충전 슬리브와 어긋난다면 몸체를 먼저 읽는다.\n\n카트리지는 공기와 서류 사이에 있다. 방의 부하를 처리하고, 장부는 서비스 창을 세고, 슬롯 래치는 어떤 몸체가 프레임에 있었는지 보여 주고, 재충전 슬리브는 창고가 무엇을 냈다고 주장하는지 적는다. 이 기록들은 함께 움직여야 한다. 래치 아래 염수선이 깨끗한 슬리브보다 오래됐을 수 있고, 그 순서가 판독을 바꾼다.\n\nDeep Reach는 문제를 만들려고 화학을 위조할 필요가 없었다. 늦게 온 슬리브 하나로 베이를 재보급된 것처럼 보이게 하고, claim desk 메모를 열어 두고, 실패한 방에서 절단 행을 밀어낼 수 있다. 일련 플레이트는 만진 사람을 부르지 않는다. 대신 공기 계정이 지원처럼 작동하지 않게 된 뒤 누군가 카트리지를 다룬 시간을 좁힌다.\n\n현장 처리는 느리다. 증거가 낮고 젖어 있기 때문이다. 플레이트, 래치 소금, 슬리브 이음, 목의 염수, 장부 행을 기록하기 전에는 카트리지를 빼지 않는다. 슬리브는 따로 봉한다. 래치 어느 쪽에 소금이 남았는지 표시한다. 깨끗한 포장은 나쁜 방을 고치지 않는다. 일련번호 불일치는 교체라는 말이 물리적 지원을 넘어간 곳을 보여 준다.",
-          "external_site": "스크러버 일련번호 불일치는 공기 라인에 고정된 플레이트와 나중에 데스크가 파일에 넣고 싶어 한 번호 사이의 틈이다.",
-          "external_site_article": "가장 바꾸기 쉬운 것은 포장이다. 깨끗한 재충전 슬리브는 사진에서 쓸 만해 보인다. 서비스 베이가 염수에 오래 잠겨 나머지가 다 흐려졌다면 더 그렇다. 카트리지 몸체의 플레이트는 흔적 없이 움직이기 어렵다.\n\nHECTON-8의 방 공기는 일련번호로 관리됐다. 카트리지 번호는 물리적 스크러버, 슬롯 래치, 산소 장부, 창고 출고 행, restock claim 메모를 좁은 사슬로 묶었다. 번호가 갈라지면 베이가 정비된 것처럼 보였는지가 문제가 아니다. 어느 기록이 늦게 왔는지가 문제다.\n\n염수는 시간을 보이게 한다. 래치 아래 소금, 슬리브 입술 뒤의 광물선, 얼룩진 목은 더 새 종이 흔적 아래에 남을 수 있다. 깨끗한 슬리브가 한 번호를 갖고 플레이트가 다른 번호를 갖는다면, 교체는 방이 공기를 지탱하지 못한 뒤에 일어났을 수 있다.\n\n이것은 죽음을 풀지 않고 마지막 데스크도 부르지 않는다. 대신 손댈 수 있는 물체 사슬을 남긴다. 플레이트, 래치, 슬리브, 목, 장부. restock 메모를 믿기 전에 산소 장부 절단과 슈트 예비량 델타와 함께 읽는다.",
-          "field_note": "포장이 아니라 플레이트를 읽어라. 래치 아래 소금이 깨끗한 슬리브보다 세다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "洗涤器滤芯序列号不符",
-          "scanner": "洗涤器序列号不符 // 滤芯铭牌与氧气账本行不一致。锁扣下的盐早于干净的补充套。",
-          "terminal": "洗涤器序列 QA // 对照铭牌序号、锁扣盐迹、补充套、滤芯喉部卤水、氧气截断行、潜服储备差值和 restock claim 备注。干净包装不是活空气记录。",
-          "audio": "套是干净的。锁扣盐是旧的。那支滤芯是在房间坏掉之后才入账的。",
-          "in_game_wiki": "洗涤器滤芯序列号不符，先看固定在滤芯本体上的小铭牌，不看桌面上随时能换的套。淹没的服务舱里，铭牌可能压在盐边、锁扣伤痕或注入口内侧污痕下面。如果铭牌和氧气账本、补充套不一致，先读本体。\n\n滤芯夹在空气和文书之间。它处理房间负荷；账本计算它的服务窗口；槽位锁扣显示哪个本体坐进框架；补充套说明仓储声称发出了什么。这些记录本该同步。锁扣下的卤水线可能比干净补充套更早，这个顺序会改变读法。\n\nDeep Reach 不需要伪造化学就能制造麻烦。后来套上的补充套可以让服务舱看起来已经补给，保留 claim desk 备注，或把截断行从已经失效的房间旁推开。序列铭牌不会点出触碰者。它能缩小一个时间窗：空气账户不再像支援那样运作之后，有人处理过这支滤芯。\n\n现场处理要慢，因为证据低而湿。在记录铭牌、锁扣盐迹、补充套接缝、喉部卤水和账本行之前，不要拔出滤芯。补充套单独装袋。标记锁扣哪一侧挂盐。干净包装修不好坏房间。序列号不符说明替换话术越过了物理支援。",
-          "external_site": "洗涤器序列号不符，是空气线上的铭牌和某个桌面后来想归档的号码之间的缝。",
-          "external_site_article": "最容易换的是包装。干净的补充套在照片里很有用，尤其是服务舱泡在卤水里够久、别的东西都发暗之后。滤芯本体的铭牌更难无痕移动。\n\nHECTON-8 的房间空气按序列号管理。一个滤芯号把物理洗涤器、槽位锁扣、氧气账本、仓储发放行和 restock claim 备注系进一条窄链。号码分开时，问题不再是服务舱看起来有没有维护。问题是哪份记录来晚了。\n\n卤水让时间可见。锁扣下的盐、补充套唇边后的矿物线、被染色的喉部，都可能压在更新的纸面痕迹下面。如果干净补充套带一个序号，铭牌带另一个，替换可能发生在房间停止支撑空气之后。\n\n这不能解决死亡，也不指名最后的桌面。它留下可处理的物件链：铭牌、锁扣、补充套、喉部、账本。相信任何 restock 备注之前，先和氧气账本截断、潜服储备差值一起读。",
-          "field_note": "读铭牌，别读包装。锁扣下的盐比干净补充套硬。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "عدم تطابق رقم خرطوشة المرشح",
-          "scanner": "عدم تطابق رقم المرشح // لوحة الخرطوشة لا تطابق صف سجل الأكسجين. الملح تحت المزلاج أقدم من غلاف إعادة التعبئة النظيف.",
-          "terminal": "فحص رقم المرشح // قارن رقم اللوحة، ملح المزلاج، غلاف إعادة التعبئة، محلول الملح في عنق الخرطوشة، صف قطع الأكسجين، فرق احتياطي البدلة وملاحظة restock claim. الغلاف النظيف ليس سجل هواء حي.",
-          "audio": "الغلاف نظيف. ملح المزلاج قديم. سُجلت تلك الخرطوشة بعد أن فسدت الغرفة.",
-          "in_game_wiki": "يبدأ عدم تطابق رقم خرطوشة المرشح من اللوحة الصغيرة المثبتة على جسم الخرطوشة، لا من الغلاف الذي يمكن لشخص استبداله عند مكتب. في حجرة خدمة غارقة، قد تجلس اللوحة تحت حافة ملح أو أثر مزلاج أو بقعة داخل عنق التعبئة. إذا خالفت اللوحة سجل الأكسجين أو غلاف إعادة التعبئة، فاقرأ الجسم أولاً.\n\nتقف الخرطوشة بين الهواء والورق. هي تعالج حمل الغرفة؛ السجل يحسب نافذة خدمتها؛ مزلاج الفتحة يبين أي جسم جلس في الإطار؛ وغلاف إعادة التعبئة يقول ما ادعى المخزن أنه أصدره. كان يجب أن تتحرك هذه السجلات معاً. قد يكون خط المحلول الملحي تحت المزلاج أقدم من غلاف نظيف، وهذا الترتيب يغير القراءة.\n\nلم تكن Deep Reach بحاجة إلى تزوير الكيمياء لصناعة المشكلة. غلاف متأخر يمكن أن يجعل الحجرة تبدو معاد تزويدها، أو يبقي ملاحظة claim desk مفتوحة، أو يدفع صف القطع بعيداً عن الغرفة التي فشلت. لوحة الرقم لا تسمي اليد التي لمستها. لكنها تضيق النافذة التي عالج فيها شخص الخرطوشة بعد أن توقف حساب الهواء عن كونه دعماً.\n\nالمعالجة الميدانية بطيئة لأن الدليل منخفض ومبتل. لا تسحب الخرطوشة قبل تسجيل اللوحة وملح المزلاج ودرزة الغلاف ومحلول العنق وصف السجل. ضع الغلاف في كيس منفصل. علم أي جانب من المزلاج حمل الملح. غلاف نظيف لا يصلح غرفة سيئة. عدم تطابق الرقم يبين أين عبرت لغة الاستبدال الدعم الفيزيائي.",
-          "external_site": "عدم تطابق رقم المرشح هو الفجوة بين اللوحة المثبتة في خط الهواء والرقم الذي أراد مكتب لاحقاً حفظه.",
-          "external_site_article": "أسهل جزء للاستبدال هو الغلاف. غلاف إعادة التعبئة النظيف يبدو مفيداً في الصورة، خاصة بعد أن تبقى حجرة الخدمة في المحلول الملحي مدة تكفي لإخماد كل شيء آخر. لوحة جسم الخرطوشة أصعب في النقل من دون أثر.\n\nكان هواء غرف HECTON-8 يدار بالأرقام التسلسلية. رقم خرطوشة واحد ربط المرشح الفعلي ومزلاج الفتحة وسجل الأكسجين وصف إصدار المخزن وملاحظة restock claim في سلسلة ضيقة. عندما تنفصل هذه الأرقام، لا يعود السؤال هل بدت الحجرة مخدومة. السؤال هو أي سجل وصل متأخراً.\n\nالمحلول الملحي يجعل التوقيت مرئياً. ملح تحت مزلاج، أو خط معدني خلف شفة الغلاف، أو عنق ملطخ، يمكن أن يجلس تحت أثر ورقي أحدث. إذا حمل الغلاف النظيف رقماً وحملت اللوحة رقماً آخر، فقد يكون الاستبدال حدث بعد أن توقفت الغرفة عن دعم الهواء.\n\nهذا لا يحل الموت ولا يسمي المكتب الأخير. لكنه يعطي القارئ سلسلة أشياء ممسوكة: لوحة، مزلاج، غلاف، عنق، سجل. اقرأها مع قطع سجل الأكسجين وفرق احتياطي البدلة قبل الوثوق بأي ملاحظة restock.",
-          "field_note": "اقرأ اللوحة، لا الغلاف. الملح تحت المزلاج أقوى من غلاف نظيف.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "אי-התאמת מספר סידורי של מחסנית סקרבר",
-          "scanner": "אי-התאמת סדרת סקרבר // לוחית המחסנית אינה תואמת לשורת יומן החמצן. המלח מתחת לתפס ישן יותר משרוול המילוי הנקי.",
-          "terminal": "בדיקת סדרת סקרבר // להשוות מספר לוחית, מלח תפס, שרוול מילוי, תמלחת בצוואר המחסנית, שורת חיתוך חמצן, דלתא עתודת חליפה והערת restock claim. אריזה נקייה אינה רישום של אוויר חי.",
-          "audio": "השרוול נקי. מלח התפס ישן. המחסנית הזאת נרשמה אחרי שהחדר כבר התקלקל.",
-          "in_game_wiki": "אי-התאמת מספר סידורי של מחסנית סקרבר מתחילה בלוחית הקטנה שמקובעת לגוף המחסנית, לא בשרוול שמישהו יכול להחליף ליד שולחן. במפרץ שירות שטבע, הלוחית יכולה לשבת מתחת לשפת מלח, צלקת תפס או כתם בתוך צוואר המילוי. אם הלוחית מתנגשת עם יומן החמצן או שרוול המילוי, קוראים קודם את הגוף.\n\nהמחסנית עומדת בין אוויר לניירת. היא מטפלת בעומס החדר; היומן סופר את חלון השירות שלה; תפס החריץ מראה איזה גוף ישב במסגרת; שרוול המילוי אומר מה המחסן טען שהוציא. הרשומות האלה היו אמורות לזוז יחד. קו תמלחת מתחת לתפס יכול להיות ישן יותר משרוול נקי, והסדר הזה משנה את הקריאה.\n\nDeep Reach לא הייתה צריכה לזייף כימיה כדי ליצור בעיה. שרוול מאוחר יכול לגרום למפרץ להיראות ממולא, להשאיר הערת claim desk פתוחה, או לדחוף שורת חיתוך הרחק מהחדר שכשל. לוחית הסדרה לא אומרת מי נגע בה. היא מצמצמת את החלון שבו מישהו טיפל במחסנית אחרי שחשבון האוויר הפסיק להתנהג כתמיכה.\n\nטיפול שטח איטי כי הראיה נמוכה ורטובה. לא לשלוף את המחסנית לפני רישום הלוחית, מלח התפס, תפר השרוול, תמלחת הצוואר ושורת היומן. את השרוול לארוז בנפרד. לסמן באיזה צד של התפס נשאר מלח. אריזה נקייה לא מתקנת חדר רע. אי-התאמת סדרה מראה איפה שפת ההחלפה חצתה תמיכה פיזית.",
-          "external_site": "אי-התאמת סדרת הסקרבר היא הפער בין הלוחית שמוברגת לקו האוויר לבין המספר ששולחן רצה לתייק אחר כך.",
-          "external_site_article": "החלק שקל ביותר להחליף הוא העטיפה. שרוול מילוי נקי נראה שימושי בתצלום, במיוחד אחרי שמפרץ שירות שכב מספיק זמן בתמלחת וכל השאר התעמעם. את הלוחית שעל גוף המחסנית קשה יותר להזיז בלי סימן.\n\nאוויר החדרים ב-HECTON-8 נוהל דרך מספרים סידוריים. מספר מחסנית קשר את הסקרבר הפיזי, תפס החריץ, יומן החמצן, שורת הוצאת המחסן והערת restock claim לשרשרת צרה אחת. כשהמספרים נפרדים, השאלה כבר אינה אם המפרץ נראה מטופל. השאלה היא איזו רשומה הגיעה מאוחר.\n\nתמלחת הופכת זמן לגלוי. מלח מתחת לתפס, קו מינרלי מאחורי שפת השרוול או צוואר מוכתם יכולים לשבת מתחת לעקבות נייר חדשות יותר. אם השרוול הנקי נושא סדרה אחת והלוחית סדרה אחרת, ההחלפה יכלה לקרות אחרי שהחדר הפסיק לתמוך באוויר.\n\nזה לא פותר את המוות ולא מצביע על השולחן האחרון. זה משאיר שרשרת חפצים: לוחית, תפס, שרוול, צוואר, יומן. לקרוא אותה עם חיתוך יומן החמצן ודלתא עתודת החליפה לפני שמאמינים לכל הערת restock.",
-          "field_note": "קרא את הלוחית, לא את העטיפה. מלח מתחת לתפס גובר על שרוול נקי.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.scrubber_cartridge_serial_mismatch_field_article",
+    "secondary": [
+     "unlock.first_scrubber_cartridge_serial_mismatch",
+     "unlock.first_oxygen_ledger_cutoff_claim_hold",
+     "unlock.first_suit_reserve_delta_mismatch"
+    ],
+    "poi_tags": [
+     "poi.scrubber_serial_mismatch",
+     "poi.scrubber_cartridge_plate",
+     "poi.slot_latch_salt",
+     "poi.refill_sleeve",
+     "poi.cartridge_throat_brine",
+     "poi.oxygen_ledger_cutoff",
+     "poi.suit_reserve_delta",
+     "poi.claim_restock_note",
+     "poi.claim_hold_field"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.life_support",
+     "biome.service_bay",
+     "biome.claim_admin",
+     "biome.evidence_custody"
+    ],
+    "depth_band_m": "0-4200"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Life-Support Cartridge QA Note",
+     "audio": "Recovered Service Bay Clip",
+     "in_game_wiki": "PDA Forensic Object Article",
+     "external_site": "Public Lore Atlas Evidence Note",
+     "field_note": "Marauder Field Note"
+    },
+    "source_brief": {
+     "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
+     "spoiler_level": "1",
+     "speaker_source": "PDA scanner, life-support QA note, service bay clip, Marauder annotation, public lore atlas",
+     "audience": "after oxygen ledger cutoff and suit reserve delta evidence; public atlas under early-evidence spoiler boundary",
+     "date_era": "2190 recovery reading of 2147 cartridge plate, oxygen ledger and claim restock artifacts",
+     "location_depth_route": "life-support service bay, scrubber slot, oxygen ledger strip, claim restock cache",
+     "unlock_context": "after oxygen ledger cutoff claim hold and suit reserve delta mismatch",
+     "evidence_object": "scrubber cartridge plate, slot latch salt, refill sleeve, cartridge throat brine, oxygen cutoff row and claim restock note",
+     "source_knows": "physical cartridge serial can disagree with refill sleeve and oxygen ledger; salt under latch can predate later restock paperwork",
+     "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
+     "truth_pressure": "Cartridge serial mismatch binds physical life-support hardware to later claim restock language without naming final culprit.",
+     "design_use": "extend oxygen ledger evidence chain through physical scrubber cartridge custody and restock ambiguity"
+    },
+    "spoiler_boundary": {
+     "tier": 1,
+     "allowed_reveals": [
+      "scrubber cartridge serial can disagree with ledger/restock sleeve",
+      "salt under latch can predate clean replacement packaging",
+      "restock paperwork can arrive after life-support failure"
+     ],
+     "blocked_reveals": [
+      "final culprit",
+      "hidden transcript sentence",
+      "ending payload identity"
+     ]
     }
-  ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Scrubber Cartridge Serial Mismatch",
+     "scanner": "SCRUBBER SERIAL MISMATCH // Cartridge plate does not match the oxygen ledger row. Salt under the latch predates the clean refill sleeve.",
+     "terminal": "SCRUBBER SERIAL QA // Compare plate serial, slot latch salt, refill sleeve, cartridge throat brine, oxygen cutoff row, suit reserve delta and claim restock note. Clean packaging is not a live-air record.",
+     "audio": "Sleeve is clean. Latch salt is old. That cartridge was logged after the room went bad.",
+     "in_game_wiki": "A scrubber cartridge serial mismatch starts with the small plate fixed to the cartridge body, not the sleeve someone can replace at a desk. In a drowned service bay, that plate can sit under a lip of salt, a latch scar or a stain inside the fill throat. If the plate disagrees with the oxygen ledger or the refill sleeve, read the body first.\n\nThe cartridge sits between air and paperwork. It scrubs the room load; the ledger counts its service window; the slot latch shows which body sat in the frame; the refill sleeve says what stores claimed to issue. Those records should move together. A brine line under the latch can be older than a clean sleeve, and that order changes the reading.\n\nDeep Reach did not need to fake chemistry to make trouble. A later sleeve could make a bay look restocked, keep a claim desk note open or push a cutoff row away from the room that failed. The serial plate cannot name the person who touched it. It can narrow the window where someone handled the cartridge after the air account stopped behaving like support.\n\nField handling is slow because the evidence is low and wet. Do not pull the cartridge before recording the plate, latch salt, sleeve seam, throat brine and ledger row. Bag the sleeve separately. Mark which side of the latch held salt. A clean wrapper does not repair a bad room. A serial mismatch shows where replacement language crossed physical support.",
+     "external_site": "A scrubber cartridge serial mismatch is the gap between the plate bolted into the air train and the number a desk later wanted to file.",
+     "external_site_article": "The easiest part to replace is the wrapper. A clean refill sleeve looks useful in a photograph, especially after a service bay has been under brine long enough to dull everything else. The plate on the cartridge body is harder to move without leaving a mark.\n\nRoom air on HECTON-8 was administered through serials. A cartridge number tied the physical scrubber, the slot latch, the oxygen ledger, the store issue row and the claim restock note into one narrow chain. When those numbers split, the question is no longer whether the bay looked serviced. The question is which record arrived late.\n\nBrine makes the timing visible. Salt under a latch, a mineral line behind the sleeve lip or a stained throat can sit below the newer paper trail. If the clean sleeve carries one serial and the plate carries another, the replacement may have happened after the room stopped supporting air.\n\nThis does not solve the death or name the final desk owner. It leaves a handled chain: plate, latch, sleeve, throat, ledger. Read it with the oxygen ledger cutoff and suit reserve delta before trusting any restock note.",
+     "field_note": "Read the plate, not the wrapper. Salt under the latch beats a clean sleeve.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Несовпадение серийного номера картриджа скруббера",
+     "scanner": "НЕСОВПАДЕНИЕ СЕРИИ СКРУББЕРА // Табличка картриджа не совпадает со строкой кислородного журнала. Соль под защелкой старше чистого рукава дозаправки.",
+     "terminal": "QA СЕРИИ СКРУББЕРА // Сверить серийник таблички, соль защелки, рукав дозаправки, рассол в горловине картриджа, строку отсечки кислорода, дельту резерва костюма и заметку restock claim. Чистая упаковка не является записью живого воздуха.",
+     "audio": "Рукав чистый. Соль под защелкой старая. Этот картридж внесли в журнал уже после того, как комната испортилась.",
+     "in_game_wiki": "Несовпадение серийного номера картриджа скруббера начинается с маленькой таблички на корпусе, а не с рукава, который можно заменить на столе. В затопленном сервисном отсеке табличка может уйти под соляную кромку, шрам защелки или пятно внутри заправочной горловины. Если табличка спорит с кислородным журналом или рукавом дозаправки, сначала читать корпус.\n\nКартридж стоит между воздухом и бумагами. Он берет нагрузку комнаты; журнал считает его сервисное окно; защелка показывает, какой корпус сидел в раме; рукав дозаправки говорит, что склад якобы выдал. Эти записи должны двигаться вместе. Соляная линия под защелкой может быть старше чистого рукава, и этот порядок меняет чтение.\n\nDeep Reach не нужно подделывать химию, чтобы устроить проблему. Поздний рукав мог сделать отсек похожим на обслуженный, оставить открытой заметку claim desk или отодвинуть строку отсечки от комнаты, которая уже отказала. Серийная табличка не называет человека, который ее трогал. Она сужает окно, где кто-то работал с картриджем после того, как воздушный счет перестал быть поддержкой.\n\nВ поле работа идет медленно, потому что улика низко и мокро. Не вытаскивай картридж, пока не сняты табличка, соль защелки, шов рукава, рассол в горловине и строка журнала. Рукав упаковывать отдельно. Отметить, с какой стороны защелки держалась соль. Чистая обертка не чинит плохую комнату. Несовпадение серийника показывает, где язык замены пересек физическую поддержку.",
+     "external_site": "Несовпадение серийника скруббера — это зазор между табличкой, прикрученной к воздушной линии, и номером, который стол позднее хотел подшить.",
+     "external_site_article": "Проще всего заменить обертку. Чистый рукав дозаправки хорошо выглядит на снимке, особенно после того как сервисный отсек достаточно долго лежал в рассоле и все остальное поблекло. Табличку на корпусе труднее сдвинуть без следа.\n\nВоздух комнат HECTON-8 велся по серийным номерам. Номер картриджа связывал физический скруббер, защелку слота, кислородный журнал, складскую выдачу и заметку claim restock в одну узкую цепочку. Когда номера расходятся, вопрос уже не в том, выглядел ли отсек обслуженным. Вопрос в том, какая запись пришла поздно.\n\nРассол делает время видимым. Соль под защелкой, минеральная линия за губой рукава или пятно в горловине могут лежать ниже более новой бумажной цепочки. Если чистый рукав несет один серийник, а табличка другой, замена могла случиться уже после того, как комната перестала держать воздух.\n\nЭто не решает смерть и не называет последний стол. Зато остается предметная цепочка: табличка, защелка, рукав, горловина, журнал. Читать ее нужно вместе с отсечкой кислородного журнала и дельтой резерва костюма, прежде чем верить любой заметке restock.",
+     "field_note": "Читай табличку, а не обертку. Соль под защелкой сильнее чистого рукава.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Невідповідність серійного номера картриджа скрубера",
+     "scanner": "НЕВІДПОВІДНІСТЬ СЕРІЇ СКРУБЕРА // Табличка картриджа не збігається з рядком кисневого журналу. Сіль під защіпкою старіша за чистий рукав дозаправлення.",
+     "terminal": "QA СЕРІЇ СКРУБЕРА // Звірити серійник таблички, сіль защіпки, рукав дозаправлення, розсіл у горловині картриджа, рядок відсічення кисню, дельту резерву костюма й нотатку restock claim. Чиста упаковка не є записом живого повітря.",
+     "audio": "Рукав чистий. Сіль під защіпкою стара. Цей картридж внесли до журналу вже після того, як кімната зіпсувалася.",
+     "in_game_wiki": "Невідповідність серійного номера картриджа скрубера починається з малої таблички на корпусі, а не з рукава, який можна замінити за столом. У затопленому сервісному відсіку табличка може сидіти під соляною крайкою, шрамом защіпки або плямою всередині заправної горловини. Якщо табличка сперечається з кисневим журналом чи рукавом дозаправлення, спершу читати корпус.\n\nКартридж стоїть між повітрям і паперами. Він бере навантаження кімнати; журнал рахує його сервісне вікно; защіпка показує, який корпус сидів у рамі; рукав дозаправлення каже, що склад нібито видав. Ці записи мають рухатися разом. Соляна лінія під защіпкою може бути старішою за чистий рукав, і цей порядок змінює читання.\n\nDeep Reach не мусила підробляти хімію, щоб створити проблему. Пізній рукав міг зробити відсік схожим на обслужений, залишити відкритою нотатку claim desk або відсунути рядок відсічення від кімнати, що вже відмовила. Серійна табличка не називає людину, яка її торкалася. Вона звужує вікно, де хтось працював із картриджем після того, як повітряний рахунок перестав бути підтримкою.\n\nУ полі робота повільна, бо доказ низько й мокрий. Не витягай картридж, доки не зняті табличка, сіль защіпки, шов рукава, розсіл у горловині й рядок журналу. Рукав пакувати окремо. Позначити, з якого боку защіпки трималася сіль. Чиста обгортка не ремонтує погану кімнату. Невідповідність серійника показує, де мова заміни перетнула фізичну підтримку.",
+     "external_site": "Невідповідність серійника скрубера — це зазор між табличкою, прикрученою до повітряної лінії, і номером, який стіл пізніше хотів підшити.",
+     "external_site_article": "Найлегше замінити обгортку. Чистий рукав дозаправлення добре виглядає на фото, особливо після того, як сервісний відсік достатньо довго лежав у розсолі й усе інше потьмяніло. Табличку на корпусі важче зрушити без сліду.\n\nПовітря кімнат HECTON-8 велося за серійними номерами. Номер картриджа зв'язував фізичний скрубер, защіпку слота, кисневий журнал, складську видачу й нотатку claim restock в один вузький ланцюг. Коли номери розходяться, питання вже не в тому, чи виглядав відсік обслуженим. Питання в тому, який запис прийшов пізно.\n\nРозсіл робить час видимим. Сіль під защіпкою, мінеральна лінія за губою рукава або пляма в горловині можуть лежати нижче новішого паперового сліду. Якщо чистий рукав несе один серійник, а табличка інший, заміна могла статися після того, як кімната перестала тримати повітря.\n\nЦе не розв'язує смерть і не називає останній стіл. Зате лишається предметний ланцюг: табличка, защіпка, рукав, горловина, журнал. Його треба читати з відсіченням кисневого журналу й дельтою резерву костюма, перш ніж вірити будь-якій нотатці restock.",
+     "field_note": "Читай табличку, а не обгортку. Сіль під защіпкою сильніша за чистий рукав.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Seriennummernfehler an der Scrubber-Kartusche",
+     "scanner": "SCRUBBER-SERIENFEHLER // Kartuschenplatte passt nicht zur Sauerstoffbuchzeile. Salz unter dem Riegel ist älter als die saubere Nachfüllhülle.",
+     "terminal": "QA SCRUBBER-SERIE // Plattennummer, Riegelsalz, Nachfüllhülle, Sole im Kartuschenhals, Sauerstoffschnitt, Anzugreserve-Delta und Claim-Restock-Notiz vergleichen. Saubere Verpackung ist kein Luftnachweis.",
+     "audio": "Die Hülle ist sauber. Das Riegelsalz ist alt. Diese Kartusche wurde eingetragen, nachdem der Raum schon schlecht war.",
+     "in_game_wiki": "Ein Seriennummernfehler an der Scrubber-Kartusche beginnt mit der kleinen Platte am Kartuschenkörper, nicht mit der Hülle, die jemand am Schreibtisch ersetzen kann. In einer ertrunkenen Servicebucht kann diese Platte unter Salzlippe, Riegelnarbe oder Fleck im Füllhals liegen. Wenn die Platte dem Sauerstoffbuch oder der Nachfüllhülle widerspricht, lies zuerst den Körper.\n\nDie Kartusche steht zwischen Luft und Papier. Sie scrubbt die Raumlast; das Buch zählt ihr Servicefenster; der Riegel zeigt, welcher Körper im Rahmen saß; die Nachfüllhülle sagt, was das Lager angeblich ausgab. Diese Aufzeichnungen sollten zusammenlaufen. Eine Solelinie unter dem Riegel kann älter sein als eine saubere Hülle, und diese Reihenfolge ändert die Lesart.\n\nDeep Reach musste keine Chemie fälschen, um Ärger zu machen. Eine spätere Hülle konnte eine Bucht wieder bestückt aussehen lassen, eine Claim-Desk-Notiz offen halten oder eine Schnittzeile vom ausgefallenen Raum wegschieben. Die Serienplatte nennt keine Hand. Sie verengt das Zeitfenster, in dem jemand die Kartusche nach dem Versagen des Luftkontos angefasst hat.\n\nFeldarbeit ist langsam, weil der Beweis tief und nass sitzt. Zieh die Kartusche nicht, bevor Platte, Riegelsalz, Hüllennaht, Halssole und Buchzeile erfasst sind. Die Hülle separat eintüten. Markiere, auf welcher Riegelseite Salz hielt. Eine saubere Hülle repariert keinen schlechten Raum. Ein Serienfehler zeigt, wo Ersatzsprache über physische Unterstützung läuft.",
+     "external_site": "Der Serienfehler am Scrubber ist die Lücke zwischen der Platte in der Luftleitung und der Nummer, die ein Desk später ablegen wollte.",
+     "external_site_article": "Am leichtesten ersetzt man die Hülle. Eine saubere Nachfüllhülle sieht auf einem Foto nützlich aus, besonders wenn die Servicebucht lange genug in Sole lag, um alles andere stumpf zu machen. Die Platte am Kartuschenkörper lässt sich schwerer bewegen, ohne Spuren zu lassen.\n\nRaumluft auf HECTON-8 wurde über Serien geführt. Eine Kartuschennummer verband den physischen Scrubber, den Slot-Riegel, das Sauerstoffbuch, die Lagerausgabe und die Claim-Restock-Notiz zu einer schmalen Kette. Wenn diese Nummern splitten, geht es nicht mehr darum, ob die Bucht gewartet aussah. Es geht darum, welcher Datensatz zu spät kam.\n\nSole macht Timing sichtbar. Salz unter einem Riegel, eine Mineralspur hinter der Hüllenlippe oder ein gefärbter Hals können unter der jüngeren Papierkette sitzen. Trägt die saubere Hülle eine Nummer und die Platte eine andere, kann der Ersatz nach dem Ende der Raumluftunterstützung passiert sein.\n\nDas löst den Tod nicht und nennt keinen letzten Desk. Es gibt dem Leser ein handhabbares Objekt: Platte, Riegel, Hülle, Hals, Buch. Lies es mit Sauerstoffbuch-Schnitt und Anzugreserve-Delta, bevor du irgendeiner Restock-Notiz glaubst.",
+     "field_note": "Lies die Platte, nicht die Hülle. Salz unter dem Riegel schlägt eine saubere Hülle.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Discrepancia del Número de Serie del Cartucho del Scrubber",
+     "scanner": "DISCREPANCIA DE SERIE DEL SCRUBBER // La placa del cartucho no coincide con la fila del registro de oxígeno. La sal bajo el pestillo es anterior a la funda limpia de recambio.",
+     "terminal": "QA SERIE SCRUBBER // Comparar serie de placa, sal del pestillo, funda de recambio, salmuera en la garganta del cartucho, fila de corte de oxígeno, delta de reserva del traje y nota de restock claim. Un envoltorio limpio no registra aire vivo.",
+     "audio": "La funda está limpia. La sal del pestillo es vieja. Registraron ese cartucho después de que la sala fallara.",
+     "in_game_wiki": "La discrepancia de serie de un cartucho del scrubber empieza en la placa pequeña fijada al cuerpo, no en la funda que alguien puede sustituir en una mesa. En una bahía de servicio ahogada, esa placa puede quedar bajo un labio de sal, una cicatriz del pestillo o una mancha dentro de la garganta de llenado. Si la placa contradice el registro de oxígeno o la funda de recambio, lee primero el cuerpo.\n\nEl cartucho vive entre el aire y el papeleo. Limpia la carga de la sala; el registro cuenta su ventana de servicio; el pestillo muestra qué cuerpo ocupó el marco; la funda dice qué afirmó emitir almacén. Esos registros deberían moverse juntos. Una línea de salmuera bajo el pestillo puede ser más antigua que una funda limpia, y ese orden cambia la lectura.\n\nDeep Reach no necesitaba falsificar química para causar daño. Una funda tardía podía hacer que la bahía pareciera reabastecida, mantener abierta una nota de claim desk o empujar una fila de corte lejos de la sala que falló. La placa de serie no nombra a quien la tocó. Estrecha la ventana en la que alguien manipuló el cartucho después de que la cuenta de aire dejó de actuar como soporte.\n\nEl manejo en campo es lento porque la prueba está baja y mojada. No extraigas el cartucho antes de registrar placa, sal del pestillo, costura de funda, salmuera de garganta y fila del registro. Embolsa la funda por separado. Marca qué lado del pestillo retenía sal. Un envoltorio limpio no arregla una sala mala. Una discrepancia de serie muestra dónde el lenguaje de reemplazo cruzó el soporte físico.",
+     "external_site": "La discrepancia de serie del scrubber es la distancia entre la placa atornillada a la línea de aire y el número que una mesa quiso archivar después.",
+     "external_site_article": "Lo más fácil de cambiar es el envoltorio. Una funda de recambio limpia parece útil en una fotografía, sobre todo después de que la bahía haya pasado suficiente tiempo bajo salmuera para apagar todo lo demás. La placa del cuerpo del cartucho es más difícil de mover sin dejar marca.\n\nEl aire de sala en HECTON-8 se administraba por series. Un número de cartucho unía scrubber físico, pestillo de ranura, registro de oxígeno, fila de emisión de almacén y nota de restock claim en una cadena estrecha. Cuando esos números se separan, la pregunta deja de ser si la bahía parecía atendida. La pregunta es qué registro llegó tarde.\n\nLa salmuera vuelve visible el momento. Sal bajo un pestillo, una línea mineral detrás del labio de la funda o una garganta manchada pueden quedar por debajo del rastro de papel más nuevo. Si la funda limpia lleva una serie y la placa otra, el reemplazo pudo ocurrir después de que la sala dejara de sostener aire.\n\nEsto no resuelve la muerte ni nombra la última mesa. Deja un objeto manejable: placa, pestillo, funda, garganta, registro. Léelo con el corte del registro de oxígeno y el delta de reserva del traje antes de confiar en cualquier nota de restock.",
+     "field_note": "Lee la placa, no el envoltorio. La sal bajo el pestillo pesa más que una funda limpia.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Discordance de Série de Cartouche de Scrubber",
+     "scanner": "DISCORDANCE SÉRIE SCRUBBER // La plaque de cartouche ne correspond pas à la ligne du registre d'oxygène. Le sel sous le loquet est antérieur à la gaine de recharge propre.",
+     "terminal": "QA SÉRIE SCRUBBER // Comparer série de plaque, sel de loquet, gaine de recharge, saumure dans la gorge de cartouche, ligne de coupure oxygène, écart de réserve de combinaison et note restock claim. Un emballage propre n'est pas un relevé d'air vivant.",
+     "audio": "La gaine est propre. Le sel du loquet est ancien. Cette cartouche a été inscrite après que la salle a tourné mauvais.",
+     "in_game_wiki": "Une discordance de série de cartouche de scrubber commence par la petite plaque fixée au corps de la cartouche, pas par la gaine qu'un bureau peut remplacer. Dans une baie de service noyée, cette plaque peut rester sous une lèvre de sel, une marque de loquet ou une tache dans la gorge de remplissage. Si la plaque contredit le registre d'oxygène ou la gaine de recharge, lis d'abord le corps.\n\nLa cartouche se trouve entre l'air et les papiers. Elle traite la charge de la salle; le registre compte sa fenêtre de service; le loquet indique quel corps était dans le cadre; la gaine de recharge dit ce que le stock prétend avoir délivré. Ces relevés devraient avancer ensemble. Une ligne de saumure sous le loquet peut être plus ancienne qu'une gaine propre, et cet ordre change la lecture.\n\nDeep Reach n'avait pas besoin de truquer la chimie pour créer le problème. Une gaine tardive pouvait donner à la baie l'air d'être réapprovisionnée, garder une note de claim desk ouverte ou éloigner une ligne de coupure de la salle qui avait échoué. La plaque de série ne nomme pas la main. Elle resserre la fenêtre où quelqu'un a manipulé la cartouche après que le compte d'air a cessé d'être un support.\n\nLe traitement sur site est lent, parce que la preuve est basse et mouillée. Ne retire pas la cartouche avant d'avoir relevé la plaque, le sel du loquet, la couture de gaine, la saumure de gorge et la ligne du registre. Emballe la gaine à part. Marque le côté du loquet qui retenait le sel. Un emballage propre ne répare pas une mauvaise salle. Une discordance de série montre où le langage du remplacement a traversé le support physique.",
+     "external_site": "La discordance de série du scrubber est l'écart entre la plaque boulonnée dans la ligne d'air et le numéro qu'un bureau a voulu classer plus tard.",
+     "external_site_article": "La pièce la plus facile à remplacer est l'enveloppe. Une gaine de recharge propre paraît utile sur une photo, surtout après une longue immersion de la baie dans la saumure. La plaque sur le corps de la cartouche se déplace plus difficilement sans laisser de marque.\n\nL'air des salles de HECTON-8 passait par des numéros de série. Un numéro de cartouche liait le scrubber physique, le loquet de slot, le registre d'oxygène, la ligne de sortie du stock et la note restock claim dans une chaîne étroite. Quand ces numéros se séparent, la question n'est plus de savoir si la baie semblait entretenue. La question est de savoir quel relevé est arrivé tard.\n\nLa saumure rend le temps lisible. Du sel sous un loquet, une ligne minérale derrière la lèvre de gaine ou une gorge tachée peuvent se trouver sous une trace papier plus récente. Si la gaine propre porte une série et la plaque une autre, le remplacement peut avoir eu lieu après l'arrêt du support d'air.\n\nCela ne résout pas la mort et ne désigne pas le dernier bureau. Il reste une chaîne d'objets: plaque, loquet, gaine, gorge, registre. Lis-la avec la coupure du registre d'oxygène et l'écart de réserve de combinaison avant de croire une note de restock.",
+     "field_note": "Lis la plaque, pas l'emballage. Le sel sous le loquet vaut plus qu'une gaine propre.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Niezgodność Numeru Seryjnego Wkładu Scrubbera",
+     "scanner": "NIEZGODNOŚĆ SERII SCRUBBERA // Tabliczka wkładu nie pasuje do wiersza księgi tlenu. Sól pod zatrzaskiem jest starsza niż czysta osłona uzupełnienia.",
+     "terminal": "QA SERII SCRUBBERA // Porównać numer tabliczki, sól zatrzasku, osłonę uzupełnienia, solankę w gardzieli wkładu, wiersz odcięcia tlenu, deltę rezerwy skafandra i notę restock claim. Czyste opakowanie nie jest zapisem żywego powietrza.",
+     "audio": "Osłona czysta. Sól przy zatrzasku stara. Ten wkład wpisano po tym, jak sala już zawiodła.",
+     "in_game_wiki": "Niezgodność numeru seryjnego wkładu scrubbera zaczyna się od małej tabliczki na korpusie, nie od osłony, którą można wymienić przy biurku. W zalanej zatoce serwisowej tabliczka może siedzieć pod rantem soli, blizną zatrzasku albo plamą w gardzieli napełniania. Jeśli tabliczka kłóci się z księgą tlenu albo osłoną uzupełnienia, najpierw czytaj korpus.\n\nWkład stoi między powietrzem a papierami. Oczyszcza obciążenie sali; księga liczy jego okno pracy; zatrzask pokazuje, który korpus siedział w ramie; osłona mówi, co magazyn twierdził, że wydał. Te zapisy powinny iść razem. Linia solanki pod zatrzaskiem może być starsza niż czysta osłona, a ta kolejność zmienia odczyt.\n\nDeep Reach nie musiała fałszować chemii, żeby narobić szkód. Późna osłona mogła sprawić, że zatoka wyglądała na uzupełnioną, zostawić otwartą notę claim desk albo odsunąć wiersz odcięcia od sali, która padła. Tabliczka seryjna nie wskazuje osoby, która jej dotykała. Zawęża okno, w którym ktoś obsługiwał wkład po tym, jak rachunek powietrza przestał być wsparciem.\n\nObsługa w terenie jest powolna, bo dowód leży nisko i mokro. Nie wyciągaj wkładu przed zapisaniem tabliczki, soli zatrzasku, szwu osłony, solanki w gardzieli i wiersza księgi. Osłonę zapakuj osobno. Zaznacz, po której stronie zatrzasku trzymała się sól. Czyste opakowanie nie naprawia złej sali. Niezgodność serii pokazuje, gdzie język wymiany przeciął fizyczne wsparcie.",
+     "external_site": "Niezgodność serii scrubbera to luka między tabliczką przykręconą do linii powietrza a numerem, który biurko później chciało wpiąć do akt.",
+     "external_site_article": "Najłatwiej wymienić opakowanie. Czysta osłona uzupełnienia wygląda dobrze na zdjęciu, zwłaszcza po tym, jak zatoka serwisowa długo leżała w solance i wszystko inne zmatowiało. Tabliczkę na korpusie wkładu trudniej przesunąć bez śladu.\n\nPowietrze w salach HECTON-8 prowadzono numerami seryjnymi. Numer wkładu łączył fizyczny scrubber, zatrzask slotu, księgę tlenu, wiersz wydania magazynu i notę restock claim w jeden wąski łańcuch. Gdy numery się rozchodzą, pytanie nie brzmi, czy zatoka wyglądała na obsłużoną. Pytanie brzmi, który zapis przyszedł za późno.\n\nSolanka pokazuje czas. Sól pod zatrzaskiem, mineralna linia za rantem osłony albo zabarwiona gardziel mogą leżeć pod nowszą ścieżką papieru. Jeśli czysta osłona niesie jedną serię, a tabliczka drugą, wymiana mogła nastąpić po tym, jak sala przestała podtrzymywać powietrze.\n\nTo nie rozwiązuje śmierci i nie nazywa ostatniego biurka. Zostawia czytelnikowi przedmiotowy łańcuch: tabliczka, zatrzask, osłona, gardziel, księga. Czytaj go z odcięciem księgi tlenu i deltą rezerwy skafandra, zanim uwierzysz dowolnej nocie restock.",
+     "field_note": "Czytaj tabliczkę, nie opakowanie. Sól pod zatrzaskiem bije czystą osłonę.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Incompatibilidade de Série do Cartucho do Scrubber",
+     "scanner": "INCOMPATIBILIDADE DE SÉRIE DO SCRUBBER // Placa do cartucho não bate com a linha do livro de oxigênio. Sal sob a trava é mais antigo que a capa limpa de recarga.",
+     "terminal": "QA SÉRIE DO SCRUBBER // Compare série da placa, sal da trava, capa de recarga, salmoura na garganta do cartucho, linha de corte de oxigênio, delta de reserva do traje e nota restock claim. Embalagem limpa não é registro de ar vivo.",
+     "audio": "A capa está limpa. O sal da trava é velho. Esse cartucho foi lançado depois que a sala ficou ruim.",
+     "in_game_wiki": "Uma incompatibilidade de série do cartucho do scrubber começa na plaquinha fixada ao corpo do cartucho, não na capa que alguém pode trocar numa mesa. Numa baía de serviço afogada, a placa pode ficar sob uma borda de sal, uma marca de trava ou uma mancha dentro da garganta de enchimento. Se a placa discorda do livro de oxigênio ou da capa de recarga, leia o corpo primeiro.\n\nO cartucho fica entre ar e papelada. Ele limpa a carga da sala; o livro conta sua janela de serviço; a trava mostra qual corpo ficou no quadro; a capa de recarga diz o que o almoxarifado afirmou emitir. Esses registros deveriam andar juntos. Uma linha de salmoura sob a trava pode ser mais velha que uma capa limpa, e essa ordem muda a leitura.\n\nA Deep Reach não precisava falsificar química para causar problema. Uma capa tardia podia fazer a baía parecer reabastecida, manter uma nota de claim desk aberta ou empurrar uma linha de corte para longe da sala que falhou. A placa de série não nomeia quem tocou nela. Ela estreita a janela em que alguém manuseou o cartucho depois que a conta de ar deixou de se comportar como suporte.\n\nO manejo em campo é lento porque a prova está baixa e molhada. Não puxe o cartucho antes de registrar placa, sal da trava, costura da capa, salmoura da garganta e linha do livro. Ensacar a capa separadamente. Marcar qual lado da trava segurou sal. Uma embalagem limpa não conserta uma sala ruim. Uma incompatibilidade de série mostra onde a linguagem de substituição cruzou o suporte físico.",
+     "external_site": "A incompatibilidade de série do scrubber é a lacuna entre a placa parafusada na linha de ar e o número que uma mesa quis arquivar depois.",
+     "external_site_article": "A parte mais fácil de trocar é a embalagem. Uma capa de recarga limpa fica útil numa foto, especialmente depois que a baía de serviço passou tempo suficiente em salmoura para apagar todo o resto. A placa no corpo do cartucho é mais difícil de mover sem deixar marca.\n\nO ar das salas em HECTON-8 era administrado por séries. Um número de cartucho amarrava scrubber físico, trava do slot, livro de oxigênio, linha de emissão do almoxarifado e nota restock claim numa cadeia estreita. Quando esses números se separam, a pergunta deixa de ser se a baía parecia atendida. A pergunta é qual registro chegou tarde.\n\nA salmoura deixa o tempo visível. Sal sob uma trava, linha mineral atrás da borda da capa ou garganta manchada podem ficar abaixo da trilha de papel mais nova. Se a capa limpa carrega uma série e a placa outra, a troca pode ter acontecido depois que a sala parou de sustentar ar.\n\nIsso não resolve a morte nem nomeia a última mesa. Deixa um objeto manuseável: placa, trava, capa, garganta, livro. Leia com o corte do livro de oxigênio e a delta de reserva do traje antes de confiar em qualquer nota de restock.",
+     "field_note": "Leia a placa, não a embalagem. Sal sob a trava vence capa limpa.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Seriemismatch van Scrubberpatroon",
+     "scanner": "SCRUBBER SERIEMISMATCH // Patroonplaat komt niet overeen met de zuurstofregisterregel. Zout onder de grendel is ouder dan de schone bijvulhoes.",
+     "terminal": "QA SCRUBBERSERIE // Vergelijk plaatserie, grendelzout, bijvulhoes, pekel in patroonhals, zuurstofafsnede, pakreserve-delta en restock-claimnotitie. Schone verpakking is geen levendeluchtregistratie.",
+     "audio": "De hoes is schoon. Het grendelzout is oud. Dat patroon werd gelogd nadat de kamer al slecht was.",
+     "in_game_wiki": "Een seriemismatch van een scrubberpatroon begint bij het kleine plaatje op het patroonlichaam, niet bij de hoes die iemand aan een desk kan vervangen. In een verdronken servicebaai kan dat plaatje onder een zoutrand, grendellitteken of vlek in de vulhals zitten. Als de plaat botst met het zuurstofregister of de bijvulhoes, lees eerst het lichaam.\n\nHet patroon zit tussen lucht en papierwerk. Het scrubt de kamerlast; het register telt zijn servicevenster; de slotgrendel toont welk lichaam in het frame zat; de bijvulhoes zegt wat opslag beweerde uit te geven. Die registraties moeten samen bewegen. Een pekellijn onder de grendel kan ouder zijn dan een schone hoes, en die volgorde verandert de lezing.\n\nDeep Reach hoefde geen chemie te vervalsen om schade te maken. Een late hoes kon de baai bevoorraad laten lijken, een claim desk-notitie open houden of een afsnederegel wegduwen van de kamer die faalde. De serieplaat noemt geen hand. Ze vernauwt het venster waarin iemand het patroon hanteerde nadat de luchtrekening niet meer als steun werkte.\n\nVeldbehandeling is traag omdat het bewijs laag en nat zit. Trek het patroon niet voor plaat, grendelzout, hoesnaad, halspekel en registerregel zijn vastgelegd. Zak de hoes apart. Markeer aan welke kant van de grendel zout zat. Een schone wikkel repareert geen slechte kamer. Een seriemismatch toont waar vervangingstaal fysieke steun kruiste.",
+     "external_site": "De scrubber-seriemismatch is de kloof tussen de plaat in de luchtlijn en het nummer dat een desk later wilde archiveren.",
+     "external_site_article": "Het makkelijkste onderdeel om te vervangen is de wikkel. Een schone bijvulhoes oogt bruikbaar op een foto, zeker nadat de servicebaai lang genoeg in pekel lag om de rest dof te maken. De plaat op het patroonlichaam verplaats je moeilijker zonder spoor.\n\nKamerlucht op HECTON-8 werd per serie beheerd. Een patroonnummer verbond fysieke scrubber, slotgrendel, zuurstofregister, opslaguitgifte en restock-claimnotitie in een smalle keten. Als die nummers splitsen, is de vraag niet meer of de baai onderhouden leek. De vraag is welk record laat binnenkwam.\n\nPekel maakt timing zichtbaar. Zout onder een grendel, een mineraallijn achter de hoeslip of een gevlekte hals kunnen onder het nieuwere papierspoor liggen. Draagt de schone hoes één serie en de plaat een andere, dan kan vervanging na het einde van kamersteun zijn gebeurd.\n\nDit lost de dood niet op en noemt geen laatste desk. Het geeft een hanteerbaar object: plaat, grendel, hoes, hals, register. Lees het met de zuurstofafsnede en pakreserve-delta voordat je een restocknotitie vertrouwt.",
+     "field_note": "Lees de plaat, niet de wikkel. Zout onder de grendel wint van een schone hoes.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Ketidakcocokan Seri Kartrid Scrubber",
+     "scanner": "SERI SCRUBBER TIDAK COCOK // Pelat kartrid tidak sesuai dengan baris buku oksigen. Garam di bawah kait lebih tua daripada selubung isi ulang yang bersih.",
+     "terminal": "QA SERI SCRUBBER // Cocokkan seri pelat, garam kait, selubung isi ulang, air garam di leher kartrid, baris pemutusan oksigen, delta cadangan baju, dan catatan restock claim. Kemasan bersih bukan catatan udara hidup.",
+     "audio": "Selubungnya bersih. Garam kaitnya tua. Kartrid itu dicatat setelah ruangan sudah rusak.",
+     "in_game_wiki": "Ketidakcocokan seri kartrid scrubber dimulai dari pelat kecil di tubuh kartrid, bukan dari selubung yang bisa diganti orang di meja. Di bay servis yang tenggelam, pelat itu bisa tertutup bibir garam, bekas kait, atau noda di dalam leher pengisian. Jika pelat bertentangan dengan buku oksigen atau selubung isi ulang, baca tubuhnya dulu.\n\nKartrid berada di antara udara dan berkas. Ia membersihkan beban ruangan; buku menghitung jendela servisnya; kait slot menunjukkan tubuh mana yang duduk di rangka; selubung isi ulang mengatakan apa yang diklaim gudang telah dikeluarkan. Catatan-catatan itu seharusnya bergerak bersama. Garis air garam di bawah kait bisa lebih tua dari selubung bersih, dan urutan itu mengubah bacaan.\n\nDeep Reach tidak perlu memalsukan kimia untuk membuat masalah. Selubung yang datang terlambat bisa membuat bay terlihat sudah diisi ulang, menjaga catatan claim desk tetap terbuka, atau mendorong baris pemutusan menjauh dari ruangan yang gagal. Pelat seri tidak menyebut tangan yang menyentuhnya. Ia mempersempit jendela saat seseorang menangani kartrid setelah akun udara berhenti menjadi dukungan.\n\nPenanganan lapangan lambat karena buktinya rendah dan basah. Jangan tarik kartrid sebelum merekam pelat, garam kait, jahitan selubung, air garam leher, dan baris buku. Kantongi selubung terpisah. Tandai sisi kait yang menahan garam. Pembungkus bersih tidak memperbaiki ruangan buruk. Ketidakcocokan seri menunjukkan tempat bahasa penggantian melintasi dukungan fisik.",
+     "external_site": "Ketidakcocokan seri scrubber adalah celah antara pelat yang terpasang di jalur udara dan nomor yang kemudian ingin diarsipkan meja.",
+     "external_site_article": "Bagian paling mudah diganti adalah pembungkus. Selubung isi ulang yang bersih terlihat berguna dalam foto, terutama setelah bay servis terendam air garam cukup lama hingga semua yang lain kusam. Pelat pada tubuh kartrid lebih sulit dipindahkan tanpa bekas.\n\nUdara ruangan di HECTON-8 dikelola melalui seri. Nomor kartrid mengikat scrubber fisik, kait slot, buku oksigen, baris pengeluaran gudang, dan catatan restock claim ke satu rantai sempit. Saat nomor-nomor itu pecah, pertanyaannya bukan lagi apakah bay tampak diservis. Pertanyaannya catatan mana yang datang terlambat.\n\nAir garam membuat waktu terlihat. Garam di bawah kait, garis mineral di balik bibir selubung, atau leher yang ternoda bisa duduk di bawah jejak kertas yang lebih baru. Jika selubung bersih membawa satu seri dan pelat membawa seri lain, penggantian mungkin terjadi setelah ruangan berhenti mendukung udara.\n\nIni tidak menyelesaikan kematian dan tidak menyebut meja terakhir. Ia memberi rantai benda yang bisa dipegang: pelat, kait, selubung, leher, buku. Baca bersama pemutusan buku oksigen dan delta cadangan baju sebelum mempercayai catatan restock.",
+     "field_note": "Baca pelatnya, bukan pembungkusnya. Garam di bawah kait mengalahkan selubung bersih.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "スクラバー・カートリッジのシリアル不一致",
+     "scanner": "スクラバーシリアル不一致 // カートリッジ本体プレートが酸素台帳行と一致しない。ラッチ下の塩は清潔な補充スリーブより古い。",
+     "terminal": "スクラバーシリアルQA // プレート番号、ラッチ塩、補充スリーブ、カートリッジ喉部の塩水、酸素遮断行、スーツ予備差分、claim restockメモを照合。清潔な包装は生きた空気の記録ではない。",
+     "audio": "スリーブは清潔。ラッチの塩は古い。そのカートリッジは、部屋が駄目になった後で記録された。",
+     "in_game_wiki": "スクラバー・カートリッジのシリアル不一致は、机で替えられるスリーブではなく、本体に固定された小さなプレートから始まる。水没したサービスベイでは、そのプレートが塩の縁、ラッチの傷、充填喉部の染みの下に残ることがある。プレートが酸素台帳や補充スリーブと食い違うなら、まず本体を読む。\n\nカートリッジは空気と書類の間にある。部屋の負荷を処理し、台帳は稼働窓を数え、スロットラッチはどの本体が枠に入っていたかを示し、補充スリーブは倉庫が出したと主張する物を示す。本来それらは一緒に動く。ラッチ下の塩水線が清潔なスリーブより古い場合、その順序が読みを変える。\n\nDeep Reachは問題を作るために化学を偽る必要はなかった。遅れて来たスリーブだけで、ベイを補充済みに見せ、claim deskメモを開いたままにし、故障した部屋から遮断行を遠ざけることができる。シリアルプレートは触った人物を名指ししない。だが空気勘定が支援として機能しなくなった後、誰かがカートリッジを扱った時間幅を狭める。\n\n現場処理は遅くなる。証拠が低く濡れているからだ。プレート、ラッチ塩、スリーブ継ぎ目、喉部の塩水、台帳行を記録する前にカートリッジを抜かない。スリーブは別袋にする。ラッチのどちら側に塩が残っていたかを印す。清潔な包みは悪い部屋を直さない。シリアル不一致は、交換という言葉が物理的な支援を越えた場所を示す。",
+     "external_site": "スクラバーのシリアル不一致は、空気ラインに固定されたプレートと、後から机が綴じたがった番号との隙間だ。",
+     "external_site_article": "一番替えやすいのは包みだ。補充スリーブが清潔なら写真では役に立つ物に見える。サービスベイが長く塩水に沈み、他の物が鈍った後ならなおさらだ。本体プレートは、跡を残さず動かしにくい。\n\nHECTON-8の部屋の空気はシリアルで管理されていた。カートリッジ番号は、物理スクラバー、スロットラッチ、酸素台帳、倉庫の払い出し行、restock claimメモを細い鎖に結ぶ。番号が割れた時、問題はベイが整備済みに見えたかではない。どの記録が遅れて来たかだ。\n\n塩水は時間を見えるようにする。ラッチ下の塩、スリーブ縁の裏にある鉱物線、染みた喉部は、新しい紙の痕跡の下に残る。清潔なスリーブが一つの番号を持ち、プレートが別の番号を持つなら、交換は部屋が空気を支えなくなった後かもしれない。\n\nこれは死を解決しないし、最後の机も名指ししない。残るのは扱える物の鎖だ。プレート、ラッチ、スリーブ、喉部、台帳。restockメモを信じる前に、酸素台帳の遮断とスーツ予備差分と一緒に読む。",
+     "field_note": "包みではなくプレートを読め。ラッチ下の塩は清潔なスリーブより強い。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "스크러버 카트리지 일련번호 불일치",
+     "scanner": "스크러버 일련번호 불일치 // 카트리지 플레이트가 산소 장부 행과 맞지 않는다. 래치 아래 소금은 깨끗한 재충전 슬리브보다 오래됐다.",
+     "terminal": "스크러버 일련 QA // 플레이트 번호, 래치 소금, 재충전 슬리브, 카트리지 목의 염수, 산소 절단 행, 슈트 예비량 델타, claim restock 메모를 대조. 깨끗한 포장은 살아 있는 공기 기록이 아니다.",
+     "audio": "슬리브는 깨끗해. 래치 소금은 오래됐어. 그 카트리지는 방이 망가진 뒤에 기록됐어.",
+     "in_game_wiki": "스크러버 카트리지 일련번호 불일치는 책상에서 갈 수 있는 슬리브가 아니라, 카트리지 몸체에 고정된 작은 플레이트에서 시작된다. 물에 잠긴 서비스 베이에서는 그 플레이트가 소금 가장자리, 래치 흉터, 충전 목 안의 얼룩 아래에 있을 수 있다. 플레이트가 산소 장부나 재충전 슬리브와 어긋난다면 몸체를 먼저 읽는다.\n\n카트리지는 공기와 서류 사이에 있다. 방의 부하를 처리하고, 장부는 서비스 창을 세고, 슬롯 래치는 어떤 몸체가 프레임에 있었는지 보여 주고, 재충전 슬리브는 창고가 무엇을 냈다고 주장하는지 적는다. 이 기록들은 함께 움직여야 한다. 래치 아래 염수선이 깨끗한 슬리브보다 오래됐을 수 있고, 그 순서가 판독을 바꾼다.\n\nDeep Reach는 문제를 만들려고 화학을 위조할 필요가 없었다. 늦게 온 슬리브 하나로 베이를 재보급된 것처럼 보이게 하고, claim desk 메모를 열어 두고, 실패한 방에서 절단 행을 밀어낼 수 있다. 일련 플레이트는 만진 사람을 부르지 않는다. 대신 공기 계정이 지원처럼 작동하지 않게 된 뒤 누군가 카트리지를 다룬 시간을 좁힌다.\n\n현장 처리는 느리다. 증거가 낮고 젖어 있기 때문이다. 플레이트, 래치 소금, 슬리브 이음, 목의 염수, 장부 행을 기록하기 전에는 카트리지를 빼지 않는다. 슬리브는 따로 봉한다. 래치 어느 쪽에 소금이 남았는지 표시한다. 깨끗한 포장은 나쁜 방을 고치지 않는다. 일련번호 불일치는 교체라는 말이 물리적 지원을 넘어간 곳을 보여 준다.",
+     "external_site": "스크러버 일련번호 불일치는 공기 라인에 고정된 플레이트와 나중에 데스크가 파일에 넣고 싶어 한 번호 사이의 틈이다.",
+     "external_site_article": "가장 바꾸기 쉬운 것은 포장이다. 깨끗한 재충전 슬리브는 사진에서 쓸 만해 보인다. 서비스 베이가 염수에 오래 잠겨 나머지가 다 흐려졌다면 더 그렇다. 카트리지 몸체의 플레이트는 흔적 없이 움직이기 어렵다.\n\nHECTON-8의 방 공기는 일련번호로 관리됐다. 카트리지 번호는 물리적 스크러버, 슬롯 래치, 산소 장부, 창고 출고 행, restock claim 메모를 좁은 사슬로 묶었다. 번호가 갈라지면 베이가 정비된 것처럼 보였는지가 문제가 아니다. 어느 기록이 늦게 왔는지가 문제다.\n\n염수는 시간을 보이게 한다. 래치 아래 소금, 슬리브 입술 뒤의 광물선, 얼룩진 목은 더 새 종이 흔적 아래에 남을 수 있다. 깨끗한 슬리브가 한 번호를 갖고 플레이트가 다른 번호를 갖는다면, 교체는 방이 공기를 지탱하지 못한 뒤에 일어났을 수 있다.\n\n이것은 죽음을 풀지 않고 마지막 데스크도 부르지 않는다. 대신 손댈 수 있는 물체 사슬을 남긴다. 플레이트, 래치, 슬리브, 목, 장부. restock 메모를 믿기 전에 산소 장부 절단과 슈트 예비량 델타와 함께 읽는다.",
+     "field_note": "포장이 아니라 플레이트를 읽어라. 래치 아래 소금이 깨끗한 슬리브보다 세다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "洗涤器滤芯序列号不符",
+     "scanner": "洗涤器序列号不符 // 滤芯铭牌与氧气账本行不一致。锁扣下的盐早于干净的补充套。",
+     "terminal": "洗涤器序列 QA // 对照铭牌序号、锁扣盐迹、补充套、滤芯喉部卤水、氧气截断行、潜服储备差值和 restock claim 备注。干净包装不是活空气记录。",
+     "audio": "套是干净的。锁扣盐是旧的。那支滤芯是在房间坏掉之后才入账的。",
+     "in_game_wiki": "洗涤器滤芯序列号不符，先看固定在滤芯本体上的小铭牌，不看桌面上随时能换的套。淹没的服务舱里，铭牌可能压在盐边、锁扣伤痕或注入口内侧污痕下面。如果铭牌和氧气账本、补充套不一致，先读本体。\n\n滤芯夹在空气和文书之间。它处理房间负荷；账本计算它的服务窗口；槽位锁扣显示哪个本体坐进框架；补充套说明仓储声称发出了什么。这些记录本该同步。锁扣下的卤水线可能比干净补充套更早，这个顺序会改变读法。\n\nDeep Reach 不需要伪造化学就能制造麻烦。后来套上的补充套可以让服务舱看起来已经补给，保留 claim desk 备注，或把截断行从已经失效的房间旁推开。序列铭牌不会点出触碰者。它能缩小一个时间窗：空气账户不再像支援那样运作之后，有人处理过这支滤芯。\n\n现场处理要慢，因为证据低而湿。在记录铭牌、锁扣盐迹、补充套接缝、喉部卤水和账本行之前，不要拔出滤芯。补充套单独装袋。标记锁扣哪一侧挂盐。干净包装修不好坏房间。序列号不符说明替换话术越过了物理支援。",
+     "external_site": "洗涤器序列号不符，是空气线上的铭牌和某个桌面后来想归档的号码之间的缝。",
+     "external_site_article": "最容易换的是包装。干净的补充套在照片里很有用，尤其是服务舱泡在卤水里够久、别的东西都发暗之后。滤芯本体的铭牌更难无痕移动。\n\nHECTON-8 的房间空气按序列号管理。一个滤芯号把物理洗涤器、槽位锁扣、氧气账本、仓储发放行和 restock claim 备注系进一条窄链。号码分开时，问题不再是服务舱看起来有没有维护。问题是哪份记录来晚了。\n\n卤水让时间可见。锁扣下的盐、补充套唇边后的矿物线、被染色的喉部，都可能压在更新的纸面痕迹下面。如果干净补充套带一个序号，铭牌带另一个，替换可能发生在房间停止支撑空气之后。\n\n这不能解决死亡，也不指名最后的桌面。它留下可处理的物件链：铭牌、锁扣、补充套、喉部、账本。相信任何 restock 备注之前，先和氧气账本截断、潜服储备差值一起读。",
+     "field_note": "读铭牌，别读包装。锁扣下的盐比干净补充套硬。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "عدم تطابق رقم خرطوشة المرشح",
+     "scanner": "عدم تطابق رقم المرشح // لوحة الخرطوشة لا تطابق صف سجل الأكسجين. الملح تحت المزلاج أقدم من غلاف إعادة التعبئة النظيف.",
+     "terminal": "فحص رقم المرشح // قارن رقم اللوحة، ملح المزلاج، غلاف إعادة التعبئة، محلول الملح في عنق الخرطوشة، صف قطع الأكسجين، فرق احتياطي البدلة وملاحظة restock claim. الغلاف النظيف ليس سجل هواء حي.",
+     "audio": "الغلاف نظيف. ملح المزلاج قديم. سُجلت تلك الخرطوشة بعد أن فسدت الغرفة.",
+     "in_game_wiki": "يبدأ عدم تطابق رقم خرطوشة المرشح من اللوحة الصغيرة المثبتة على جسم الخرطوشة، لا من الغلاف الذي يمكن لشخص استبداله عند مكتب. في حجرة خدمة غارقة، قد تجلس اللوحة تحت حافة ملح أو أثر مزلاج أو بقعة داخل عنق التعبئة. إذا خالفت اللوحة سجل الأكسجين أو غلاف إعادة التعبئة، فاقرأ الجسم أولاً.\n\nتقف الخرطوشة بين الهواء والورق. هي تعالج حمل الغرفة؛ السجل يحسب نافذة خدمتها؛ مزلاج الفتحة يبين أي جسم جلس في الإطار؛ وغلاف إعادة التعبئة يقول ما ادعى المخزن أنه أصدره. كان يجب أن تتحرك هذه السجلات معاً. قد يكون خط المحلول الملحي تحت المزلاج أقدم من غلاف نظيف، وهذا الترتيب يغير القراءة.\n\nلم تكن Deep Reach بحاجة إلى تزوير الكيمياء لصناعة المشكلة. غلاف متأخر يمكن أن يجعل الحجرة تبدو معاد تزويدها، أو يبقي ملاحظة claim desk مفتوحة، أو يدفع صف القطع بعيداً عن الغرفة التي فشلت. لوحة الرقم لا تسمي اليد التي لمستها. لكنها تضيق النافذة التي عالج فيها شخص الخرطوشة بعد أن توقف حساب الهواء عن كونه دعماً.\n\nالمعالجة الميدانية بطيئة لأن الدليل منخفض ومبتل. لا تسحب الخرطوشة قبل تسجيل اللوحة وملح المزلاج ودرزة الغلاف ومحلول العنق وصف السجل. ضع الغلاف في كيس منفصل. علم أي جانب من المزلاج حمل الملح. غلاف نظيف لا يصلح غرفة سيئة. عدم تطابق الرقم يبين أين عبرت لغة الاستبدال الدعم الفيزيائي.",
+     "external_site": "عدم تطابق رقم المرشح هو الفجوة بين اللوحة المثبتة في خط الهواء والرقم الذي أراد مكتب لاحقاً حفظه.",
+     "external_site_article": "أسهل جزء للاستبدال هو الغلاف. غلاف إعادة التعبئة النظيف يبدو مفيداً في الصورة، خاصة بعد أن تبقى حجرة الخدمة في المحلول الملحي مدة تكفي لإخماد كل شيء آخر. لوحة جسم الخرطوشة أصعب في النقل من دون أثر.\n\nكان هواء غرف HECTON-8 يدار بالأرقام التسلسلية. رقم خرطوشة واحد ربط المرشح الفعلي ومزلاج الفتحة وسجل الأكسجين وصف إصدار المخزن وملاحظة restock claim في سلسلة ضيقة. عندما تنفصل هذه الأرقام، لا يعود السؤال هل بدت الحجرة مخدومة. السؤال هو أي سجل وصل متأخراً.\n\nالمحلول الملحي يجعل التوقيت مرئياً. ملح تحت مزلاج، أو خط معدني خلف شفة الغلاف، أو عنق ملطخ، يمكن أن يجلس تحت أثر ورقي أحدث. إذا حمل الغلاف النظيف رقماً وحملت اللوحة رقماً آخر، فقد يكون الاستبدال حدث بعد أن توقفت الغرفة عن دعم الهواء.\n\nهذا لا يحل الموت ولا يسمي المكتب الأخير. لكنه يعطي القارئ سلسلة أشياء ممسوكة: لوحة، مزلاج، غلاف، عنق، سجل. اقرأها مع قطع سجل الأكسجين وفرق احتياطي البدلة قبل الوثوق بأي ملاحظة restock.",
+     "field_note": "اقرأ اللوحة، لا الغلاف. الملح تحت المزلاج أقوى من غلاف نظيف.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "אי-התאמת מספר סידורי של מחסנית סקרבר",
+     "scanner": "אי-התאמת סדרת סקרבר // לוחית המחסנית אינה תואמת לשורת יומן החמצן. המלח מתחת לתפס ישן יותר משרוול המילוי הנקי.",
+     "terminal": "בדיקת סדרת סקרבר // להשוות מספר לוחית, מלח תפס, שרוול מילוי, תמלחת בצוואר המחסנית, שורת חיתוך חמצן, דלתא עתודת חליפה והערת restock claim. אריזה נקייה אינה רישום של אוויר חי.",
+     "audio": "השרוול נקי. מלח התפס ישן. המחסנית הזאת נרשמה אחרי שהחדר כבר התקלקל.",
+     "in_game_wiki": "אי-התאמת מספר סידורי של מחסנית סקרבר מתחילה בלוחית הקטנה שמקובעת לגוף המחסנית, לא בשרוול שמישהו יכול להחליף ליד שולחן. במפרץ שירות שטבע, הלוחית יכולה לשבת מתחת לשפת מלח, צלקת תפס או כתם בתוך צוואר המילוי. אם הלוחית מתנגשת עם יומן החמצן או שרוול המילוי, קוראים קודם את הגוף.\n\nהמחסנית עומדת בין אוויר לניירת. היא מטפלת בעומס החדר; היומן סופר את חלון השירות שלה; תפס החריץ מראה איזה גוף ישב במסגרת; שרוול המילוי אומר מה המחסן טען שהוציא. הרשומות האלה היו אמורות לזוז יחד. קו תמלחת מתחת לתפס יכול להיות ישן יותר משרוול נקי, והסדר הזה משנה את הקריאה.\n\nDeep Reach לא הייתה צריכה לזייף כימיה כדי ליצור בעיה. שרוול מאוחר יכול לגרום למפרץ להיראות ממולא, להשאיר הערת claim desk פתוחה, או לדחוף שורת חיתוך הרחק מהחדר שכשל. לוחית הסדרה לא אומרת מי נגע בה. היא מצמצמת את החלון שבו מישהו טיפל במחסנית אחרי שחשבון האוויר הפסיק להתנהג כתמיכה.\n\nטיפול שטח איטי כי הראיה נמוכה ורטובה. לא לשלוף את המחסנית לפני רישום הלוחית, מלח התפס, תפר השרוול, תמלחת הצוואר ושורת היומן. את השרוול לארוז בנפרד. לסמן באיזה צד של התפס נשאר מלח. אריזה נקייה לא מתקנת חדר רע. אי-התאמת סדרה מראה איפה שפת ההחלפה חצתה תמיכה פיזית.",
+     "external_site": "אי-התאמת סדרת הסקרבר היא הפער בין הלוחית שמוברגת לקו האוויר לבין המספר ששולחן רצה לתייק אחר כך.",
+     "external_site_article": "החלק שקל ביותר להחליף הוא העטיפה. שרוול מילוי נקי נראה שימושי בתצלום, במיוחד אחרי שמפרץ שירות שכב מספיק זמן בתמלחת וכל השאר התעמעם. את הלוחית שעל גוף המחסנית קשה יותר להזיז בלי סימן.\n\nאוויר החדרים ב-HECTON-8 נוהל דרך מספרים סידוריים. מספר מחסנית קשר את הסקרבר הפיזי, תפס החריץ, יומן החמצן, שורת הוצאת המחסן והערת restock claim לשרשרת צרה אחת. כשהמספרים נפרדים, השאלה כבר אינה אם המפרץ נראה מטופל. השאלה היא איזו רשומה הגיעה מאוחר.\n\nתמלחת הופכת זמן לגלוי. מלח מתחת לתפס, קו מינרלי מאחורי שפת השרוול או צוואר מוכתם יכולים לשבת מתחת לעקבות נייר חדשות יותר. אם השרוול הנקי נושא סדרה אחת והלוחית סדרה אחרת, ההחלפה יכלה לקרות אחרי שהחדר הפסיק לתמוך באוויר.\n\nזה לא פותר את המוות ולא מצביע על השולחן האחרון. זה משאיר שרשרת חפצים: לוחית, תפס, שרוול, צוואר, יומן. לקרוא אותה עם חיתוך יומן החמצן ודלתא עתודת החליפה לפני שמאמינים לכל הערת restock.",
+     "field_note": "קרא את הלוחית, לא את העטיפה. מלח מתחת לתפס גובר על שרוול נקי.",
+     "localization_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

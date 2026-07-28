@@ -1,284 +1,285 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1340_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE",
+   "release_set_id": "RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE",
+   "article_id": "applied_lore.oxygen_ledger_cutoff_claim_hold_field_article",
+   "title_key": "LORE_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/AppliedContent/packets/RS273_ROUTE_PERMISSION_STAMP_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS288_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS289_PACKET_NOTARY_MASK_EDGE_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1340_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE",
-      "release_set_id": "RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE",
-      "article_id": "applied_lore.oxygen_ledger_cutoff_claim_hold_field_article",
-      "title_key": "LORE_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/AppliedContent/packets/RS273_ROUTE_PERMISSION_STAMP_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS288_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS289_PACKET_NOTARY_MASK_EDGE_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS290_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS291_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.oxygen_ledger_cutoff_claim_hold_field_article",
-        "secondary": [
-          "unlock.first_oxygen_ledger_cutoff_claim_hold",
-          "unlock.first_missing_return_mark_claim_conversion",
-          "unlock.first_route_permission_stamp_overlap"
-        ],
-        "poi_tags": [
-          "poi.oxygen_ledger_cutoff",
-          "poi.scrubber_cutoff_row",
-          "poi.claim_hold_field",
-          "poi.suit_reserve_delta",
-          "poi.route_permission_stamp",
-          "poi.missing_return_mark",
-          "poi.claim_desk_exception",
-          "poi.packet_notary_footer"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.claim_admin",
-          "biome.evidence_custody",
-          "biome.route_desk"
-        ],
-        "depth_band_m": "0-4200"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Life-Support Ledger QA Note",
-          "audio": "Recovered Claim Desk Clip",
-          "in_game_wiki": "PDA Forensic Object Article",
-          "external_site": "Public Lore Atlas Evidence Note",
-          "field_note": "Marauder Field Note"
-        },
-        "source_brief": {
-          "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
-          "spoiler_level": "1",
-          "speaker_source": "PDA scanner, life-support ledger QA note, claim desk clip, Marauder annotation, public lore atlas",
-          "audience": "after route permission, missing return and packet notary evidence; public atlas under early-evidence spoiler boundary",
-          "date_era": "2190 recovery reading of 2147 life-support ledger and claim desk artifacts",
-          "location_depth_route": "oxygen ledger strip, pressure-room support panel, route desk cache, drowned colony claim path",
-          "unlock_context": "after missing return mark claim conversion and route permission stamp overlap",
-          "evidence_object": "oxygen ledger cutoff row, scrubber cartridge serial, suit reserve delta and later claim hold field",
-          "source_knows": "oxygen row stopped before route closure, return mark can remain blank, claim hold can keep active route status after life-support cutoff",
-          "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
-          "truth_pressure": "Life-support cutoff fixes the air limit that later route and claim paperwork must cross.",
-          "design_use": "bind oxygen ledger cutoff to claim hold without revealing final culprit"
-        },
-        "spoiler_boundary": {
-          "tier": 1,
-          "allowed_reveals": [
-            "oxygen ledger can stop before route closure",
-            "claim hold can outlive the life-support limit",
-            "active route status and supported breath can disagree"
-          ],
-          "blocked_reveals": [
-            "final culprit",
-            "hidden transcript sentence",
-            "ending payload identity"
-          ]
-        }
-      },
-      "localized": {
-        "en_US": {
-          "title": "Oxygen Ledger Cutoff Claim Hold",
-          "scanner": "OXYGEN LEDGER CUTOFF // Scrubber row stops before route return closure. Claim hold keeps the worker active after the room stopped supporting breath.",
-          "terminal": "OXYGEN LEDGER QA // Compare scrubber cutoff, suit reserve delta, compressor handoff, route return field and claim hold. Oxygen stop is a life-support limit, not a route closure.",
-          "audio": "The scrubber row is dead before the route closes. Claim desk kept the name active.",
-          "in_game_wiki": "An oxygen ledger is a life-support account. It records scrubber cartridge time, suit reserve delta, room pump handoff, compressor feed and cutoff authority. When that row stops, the room has stopped supporting breath. It does not prove the exact second of death; it fixes the last point where the room still accepted an air load.\n\nA claim hold becomes suspect when it outlives the oxygen row. Route desk can leave a worker active, and claim desk can hold recovery authority, but neither field can add air back to the room. If oxygen stopped first and the return mark stays blank, the active worker state is paperwork over a closed body path.\n\nThe useful contradiction sits across four things: scrubber cutoff, suit tag presence, route permission stamp and later claim exception. If the route remains open after the ledger cutoff, Deep Reach can bill delay, retain salvage authority or reclassify the carrier as recoverable mass while avoiding a clean loss closure.\n\nField handling is narrow. Preserve the ledger strip before rinsing brine. Photograph the cutoff row, cartridge serial, suit reserve delta and any hand stamp crossing salt. Do not let claim status overwrite the life-support limit.",
-          "external_site": "An oxygen ledger cutoff fixes where the room stopped supporting breath. If claim hold continues past that row, Deep Reach kept the worker active in paperwork after the air account ended.",
-          "external_site_article": "The oxygen ledger is one of the least theatrical records on Aegir: a row of numbers, cartridge IDs, cutoff ticks and handoff fields. That is why it matters. It cannot explain motive. It can show when a room stopped paying for air.\n\nWhen the ledger cuts off before route closure, two owners disagree. Life support places the worker outside supported breath. Route and claim handling keep the worker assigned, pending, recoverable or billable. The second statement is administrative. The first one is mechanical.\n\nClaim hold turns that disagreement into leverage. Pending recovery keeps authority attached to the route; unresolved mass keeps property language open; equipment contamination makes delay chargeable. No single field announces a crime. The sequence makes a bad choice visible.\n\nPair the row with missing return mark, packet notary mask edge and transcript damage band. The oxygen row does not name the culprit. It fixes the hard limit that later paperwork had to step over.",
-          "field_note": "If oxygen stopped first, the open route is paperwork, not breath.",
-          "localization_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "قطع سجل الأكسجين وتعليق المطالبة",
-          "scanner": "قطع سجل الأكسجين // يتوقف صف المرشح قبل إغلاق عودة المسار. يبقي claim hold العامل نشطاً بعد أن توقفت الغرفة عن دعم التنفس.",
-          "terminal": "فحص سجل الأكسجين // قارن قطع المرشح، فرق احتياطي البدلة، تسليم الضاغط، خانة العودة وclaim hold. توقف الأكسجين حد دعم حياة، وليس إغلاق مسار.",
-          "audio": "صف المرشح ميت قبل إغلاق المسار. أبقى claim desk الاسم نشطاً.",
-          "in_game_wiki": "سجل الأكسجين حساب دعم حياة. يسجل زمن خرطوشة المرشح، فرق احتياطي البدلة، تسليم مضخة الغرفة، تغذية الضاغط وسلطة القطع. عندما يتوقف ذلك الصف، تكون الغرفة قد توقفت عن دعم التنفس. لا يثبت ثانية الوفاة؛ يثبت آخر نقطة قبلت فيها الغرفة حمل هواء.\n\nيصبح claim hold مشبوهاً عندما يعيش بعد صف الأكسجين. يمكن لمكتب المسار أن يترك العامل نشطاً، ويمكن لـ claim desk أن يمسك سلطة الاسترداد، لكن لا خانة منهما تضيف هواء إلى الغرفة. إذا توقف الأكسجين أولاً وبقيت علامة العودة فارغة، فحالة العامل النشطة تصبح ورقاً فوق مسار جسد مغلق.\n\nالتناقض المفيد يقع بين أربعة أشياء: قطع المرشح، وجود وسم البدلة، ختم إذن المسار، واستثناء claim لاحق. إذا بقي المسار مفتوحاً بعد قطع السجل، تستطيع Deep Reach احتساب التأخير، أو إبقاء سلطة salvage، أو إعادة تصنيف الحامل ككتلة قابلة للاسترداد مع تجنب إغلاق خسارة نظيف.\n\nالتعامل الميداني محدود. احفظ شريط السجل قبل شطف الملح. صور صف القطع، رقم خرطوشة المرشح، فرق احتياطي البدلة وأي ختم يدوي يعبر الملح. لا تدع حالة claim تمحو حد دعم الحياة.",
-          "external_site": "قطع سجل الأكسجين يحدد موضع توقف الغرفة عن دعم التنفس. إذا استمر claim hold بعد ذلك الصف، فقد أبقت Deep Reach العامل نشطاً في الورق بعد انتهاء حساب الهواء.",
-          "external_site_article": "سجل الأكسجين من أقل سجلات Aegir تمثيلاً للدراما: صف أرقام، معرفات خرطوشة، علامات قطع وحقول تسليم. لهذا يهم. لا يشرح الدافع. يستطيع أن يبين متى توقفت غرفة عن دفع ثمن الهواء.\n\nعندما ينقطع السجل قبل إغلاق المسار، يختلف مالكان. دعم الحياة يضع العامل خارج التنفس المدعوم. معالجة المسار وclaim تبقي العامل معيناً أو معلقاً أو قابلاً للاسترداد أو للفوترة. الجملة الثانية إدارية. الأولى ميكانيكية.\n\nيحول claim hold هذا الاختلاف إلى ضغط. الاسترداد المعلق يبقي السلطة مربوطة بالمسار؛ الكتلة غير المحسومة تبقي لغة الملكية مفتوحة؛ تلوث المعدات يجعل التأخير قابلاً للفوترة. لا تعلن خانة واحدة جريمة. التسلسل يجعل الاختيار السيئ مرئياً.\n\nاقرن الصف بعلامة العودة المفقودة، حافة قناع packet notary وشريط تلف التفريغ. صف الأكسجين لا يسمي الفاعل. يثبت الحد الصلب الذي اضطر الورق اللاحق إلى تجاوزه.",
-          "field_note": "إذا توقف الأكسجين أولاً، فالمسار المفتوح ورق لا هواء.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Sauerstoffbuch-Schnitt und Claim-Hold",
-          "scanner": "SAUERSTOFFBUCH-SCHNITT // Scrubber-Zeile endet vor der Rückkehrschließung der Route. Claim hold hält den Arbeiter aktiv, nachdem der Raum keine Atemluft mehr liefert.",
-          "terminal": "QA SAUERSTOFFBUCH // Scrubber-Schnitt, Anzugreserve-Delta, Kompressorübergabe, Rückkehrfeld und claim hold vergleichen. Sauerstoffstopp ist eine Lebenserhaltungsgrenze, keine Routenschließung.",
-          "audio": "Die Scrubber-Zeile ist tot, bevor die Route schließt. Claim desk hielt den Namen aktiv.",
-          "in_game_wiki": "Ein Sauerstoffbuch ist ein Lebenserhaltungskonto. Es führt Scrubber-Kartuschenzeit, Anzugreserve-Delta, Pumpenübergabe des Raums, Kompressorzufuhr und Abschaltbefugnis. Wenn diese Zeile endet, unterstützt der Raum keine Atemluft mehr. Sie beweist nicht die Todessekunde; sie fixiert den letzten Punkt, an dem der Raum noch Luftlast annahm.\n\nEin claim hold wird verdächtig, wenn er die Sauerstoffzeile überlebt. Die Routenstelle kann einen Arbeiter aktiv lassen, und claim desk kann Bergungsbefugnis halten, aber kein Feld bringt Luft in den Raum zurück. Wenn Sauerstoff zuerst stoppt und die Rückkehrmarke leer bleibt, liegt der aktive Arbeiterstatus als Papier über einem geschlossenen Körperpfad.\n\nDer brauchbare Widerspruch liegt auf vier Objekten: Scrubber-Schnitt, vorhandener Anzugtag, Routengenehmigungsstempel und spätere claim-Ausnahme. Bleibt die Route nach dem Buchschnitt offen, kann Deep Reach Verzögerung berechnen, salvage-Befugnis halten oder den Träger als bergbare Masse einstufen, ohne einen sauberen Verlust zu schließen.\n\nDie Feldbehandlung ist eng. Den Buchstreifen vor dem Abspülen der Sole sichern. Schnittzeile, Kartuschenseriennummer, Anzugreserve-Delta und jeden Handstempel über Salz fotografieren. Claim-Status darf die Lebenserhaltungsgrenze nicht überschreiben.",
-          "external_site": "Ein Sauerstoffbuch-Schnitt fixiert, wo der Raum keine Atemluft mehr unterstützte. Läuft claim hold über diese Zeile hinaus, hielt Deep Reach den Arbeiter auf Papier aktiv, nachdem das Luftkonto beendet war.",
-          "external_site_article": "Das Sauerstoffbuch gehört zu den unspektakulärsten Akten auf Aegir: Zahlen, Kartuschen-IDs, Abschalttakte und Übergabefelder. Genau deshalb zählt es. Es erklärt kein Motiv. Es zeigt, wann ein Raum aufgehört hat, für Luft zu zahlen.\n\nWenn das Buch vor der Routenschließung abreißt, widersprechen sich zwei Besitzer. Lebenserhaltung setzt den Arbeiter außerhalb unterstützter Atemluft. Routen- und claim-Bearbeitung halten ihn zugewiesen, ausstehend, bergbar oder abrechenbar. Die zweite Aussage ist Verwaltung. Die erste ist Mechanik.\n\nClaim hold macht aus diesem Widerspruch Druckmittel. Ausstehende Bergung hält Befugnis an der Route; ungelöste Masse hält Eigentumssprache offen; kontaminierte Ausrüstung macht Verzögerung abrechenbar. Kein einzelnes Feld ruft Verbrechen aus. Die Reihenfolge macht die billige Entscheidung sichtbar.\n\nDie Zeile gehört neben fehlende Rückkehrmarke, packet-notary-Maskenkante und Transkript-Schadensband. Die Sauerstoffzeile nennt keinen Täter. Sie setzt die harte Grenze, über die spätere Papiere steigen mussten.",
-          "field_note": "Wenn Sauerstoff zuerst stoppt, ist die offene Route Papier, keine Atemluft.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Corte del registro de oxígeno y retención de reclamación",
-          "scanner": "CORTE DEL REGISTRO DE OXÍGENO // La fila del depurador se detiene antes del cierre de retorno de la ruta. Claim hold mantiene activo al trabajador después de que la sala dejara de sostener la respiración.",
-          "terminal": "QA REGISTRO DE OXÍGENO // Comparar corte del depurador, delta de reserva del traje, traspaso del compresor, campo de retorno y claim hold. Parada de oxígeno es límite de soporte vital, no cierre de ruta.",
-          "audio": "La fila del depurador muere antes de cerrar la ruta. Claim desk mantuvo el nombre activo.",
-          "in_game_wiki": "Un registro de oxígeno es una cuenta de soporte vital. Anota tiempo de cartucho del depurador, delta de reserva del traje, traspaso de bomba de sala, alimentación del compresor y autoridad de corte. Cuando esa fila se detiene, la sala ha dejado de sostener la respiración. No prueba el segundo exacto de la muerte; fija el último punto en que la sala aún aceptaba carga de aire.\n\nUn claim hold se vuelve sospechoso cuando sobrevive a la fila de oxígeno. Route desk puede dejar activo a un trabajador, y claim desk puede retener autoridad de recuperación, pero ningún campo devuelve aire a la sala. Si el oxígeno se detuvo primero y la marca de retorno queda vacía, el estado activo del trabajador es papel sobre un recorrido corporal cerrado.\n\nLa contradicción útil cruza cuatro cosas: corte del depurador, presencia de etiqueta del traje, sello de permiso de ruta y excepción de claim posterior. Si la ruta queda abierta después del corte del registro, Deep Reach puede facturar demora, retener autoridad de salvage o reclasificar el soporte como masa recuperable sin cerrar una pérdida limpia.\n\nEl manejo de campo es estricto. Conserva la tira del registro antes de enjuagar salmuera. Fotografía la fila de corte, el número de cartucho, el delta de reserva del traje y cualquier sello manual que cruce sal. No dejes que el estado de claim sustituya el límite de soporte vital.",
-          "external_site": "Un corte del registro de oxígeno fija dónde la sala dejó de sostener la respiración. Si claim hold continúa más allá de esa fila, Deep Reach mantuvo activo al trabajador en papeles después de terminar la cuenta de aire.",
-          "external_site_article": "El registro de oxígeno es uno de los documentos menos teatrales de Aegir: una fila de números, IDs de cartucho, marcas de corte y campos de traspaso. Por eso importa. No explica el motivo. Puede mostrar cuándo una sala dejó de pagar aire.\n\nCuando el registro se corta antes del cierre de ruta, dos propietarios discrepan. Soporte vital coloca al trabajador fuera de respiración asistida. Gestión de ruta y claim lo mantiene asignado, pendiente, recuperable o facturable. La segunda declaración es administrativa. La primera es mecánica.\n\nClaim hold convierte esa discrepancia en palanca. Recuperación pendiente mantiene autoridad unida a la ruta; masa sin resolver mantiene abierto el lenguaje de propiedad; contaminación de equipo vuelve facturable la demora. Ningún campo aislado anuncia un delito. La secuencia deja visible una mala elección.\n\nLa fila se lee junto a la marca de retorno ausente, el borde de máscara packet notary y la banda dañada de la transcripción. La fila de oxígeno no nombra culpable. Fija el límite duro que el papeleo posterior tuvo que cruzar.",
-          "field_note": "Si el oxígeno se detuvo primero, la ruta abierta es papel, no respiración.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Coupure du registre d’oxygène et maintien de claim",
-          "scanner": "COUPURE DU REGISTRE D’OXYGÈNE // La ligne du scrubber s’arrête avant la clôture de retour de route. Le claim hold garde l’ouvrier actif après l’arrêt du soutien respiratoire de la salle.",
-          "terminal": "QA REGISTRE OXYGÈNE // Comparer coupure scrubber, delta de réserve de combinaison, relais compresseur, champ retour et claim hold. L’arrêt d’oxygène est une limite de survie, pas une clôture de route.",
-          "audio": "La ligne scrubber est morte avant la clôture de route. Claim desk a gardé le nom actif.",
-          "in_game_wiki": "Un registre d’oxygène est un compte de survie. Il relève le temps de cartouche scrubber, le delta de réserve de combinaison, le relais de pompe de salle, l’alimentation compresseur et l’autorité de coupure. Quand cette ligne s’arrête, la salle ne soutient plus la respiration. Elle ne prouve pas la seconde exacte du décès; elle fixe le dernier point où la salle acceptait encore une charge d’air.\n\nUn claim hold devient suspect quand il survit à la ligne d’oxygène. Le route desk peut laisser un ouvrier actif, et le claim desk peut retenir l’autorité de récupération, mais aucun champ ne remet de l’air dans la salle. Si l’oxygène s’arrête d’abord et que la marque de retour reste vide, l’état actif de l’ouvrier est du papier posé sur un trajet corporel fermé.\n\nLa contradiction utile traverse quatre éléments: coupure scrubber, présence de tag de combinaison, tampon d’autorisation de route et exception claim plus tardive. Si la route reste ouverte après la coupure du registre, Deep Reach peut facturer du retard, retenir l’autorité salvage ou reclasser le support en masse récupérable sans clôturer proprement une perte.\n\nLa manipulation terrain reste étroite. Préserver la bande du registre avant rinçage de saumure. Photographier la ligne de coupure, le numéro de cartouche, le delta de réserve de combinaison et tout tampon manuel traversant le sel. Le statut claim ne doit pas effacer la limite de survie.",
-          "external_site": "Une coupure du registre d’oxygène fixe l’endroit où la salle a cessé de soutenir la respiration. Si le claim hold continue au-delà de cette ligne, Deep Reach a gardé l’ouvrier actif dans les papiers après la fin du compte d’air.",
-          "external_site_article": "Le registre d’oxygène fait partie des archives les moins théâtrales d’Aegir: une ligne de chiffres, d’IDs de cartouche, de ticks de coupure et de champs de relais. C’est pour cela qu’il compte. Il n’explique pas le motif. Il montre quand une salle a cessé de payer l’air.\n\nQuand le registre coupe avant la clôture de route, deux propriétaires se contredisent. La survie place l’ouvrier hors respiration soutenue. La gestion route et claim le garde affecté, en attente, récupérable ou facturable. La seconde affirmation est administrative. La première est mécanique.\n\nLe claim hold transforme cet écart en levier. Récupération en attente garde l’autorité attachée à la route; masse non résolue garde le langage de propriété ouvert; équipement contaminé rend le retard facturable. Aucun champ seul n’annonce un crime. La séquence rend visible un mauvais choix.\n\nLa ligne doit être rapprochée de la marque de retour absente, du bord de masque packet notary et de la bande endommagée de transcription. La ligne d’oxygène ne nomme pas le coupable. Elle fixe la limite dure que les papiers suivants ont dû franchir.",
-          "field_note": "Si l’oxygène s’est arrêté d’abord, la route ouverte est du papier, pas de l’air.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "חיתוך יומן חמצן והחזקת claim",
-          "scanner": "חיתוך יומן חמצן // שורת הסקרבר נעצרת לפני סגירת חזרת המסלול. claim hold משאיר את העובד פעיל אחרי שהחדר הפסיק לתמוך בנשימה.",
-          "terminal": "בדיקת יומן חמצן // להשוות חיתוך סקרבר, דלתא עתודת חליפה, מסירת מדחס, שדה חזרה ו-claim hold. עצירת חמצן היא גבול תמיכת חיים, לא סגירת מסלול.",
-          "audio": "שורת הסקרבר מתה לפני שהמסלול נסגר. claim desk השאיר את השם פעיל.",
-          "in_game_wiki": "יומן חמצן הוא חשבון תמיכת חיים. הוא רושם זמן מחסנית סקרבר, דלתא עתודת חליפה, מסירת משאבת חדר, הזנת מדחס וסמכות חיתוך. כשהשורה הזאת נעצרת, החדר הפסיק לתמוך בנשימה. היא לא מוכיחה את שניית המוות; היא קובעת את הנקודה האחרונה שבה החדר עוד קיבל עומס אוויר.\n\nclaim hold נעשה חשוד כשהוא נמשך מעבר לשורת החמצן. route desk יכול להשאיר עובד פעיל, ו-claim desk יכול להחזיק סמכות חילוץ, אבל אף שדה לא מחזיר אוויר לחדר. אם החמצן עצר קודם וסימון החזרה נשאר ריק, מצב העובד הפעיל הוא נייר מעל נתיב גוף שכבר נסגר.\n\nהסתירה השימושית יושבת על ארבעה דברים: חיתוך סקרבר, נוכחות תג חליפה, חותמת הרשאת מסלול וחריג claim מאוחר יותר. אם המסלול נשאר פתוח אחרי חיתוך היומן, Deep Reach יכולה לחייב עיכוב, לשמור סמכות salvage או לסווג מחדש את הנשא כמסה ניתנת לחילוץ בלי לסגור אובדן נקי.\n\nהטיפול בשטח צר. לשמר את רצועת היומן לפני שטיפת מי מלח. לצלם את שורת החיתוך, מספר המחסנית, דלתא עתודת החליפה וכל חותמת יד שחוצה מלח. סטטוס claim לא רשאי לדרוס את גבול תמיכת החיים.",
-          "external_site": "חיתוך יומן חמצן קובע איפה החדר הפסיק לתמוך בנשימה. אם claim hold ממשיך מעבר לשורה הזאת, Deep Reach שמרה את העובד פעיל בניירת אחרי שחשבון האוויר נגמר.",
-          "external_site_article": "יומן החמצן הוא אחד מהרישומים הכי לא תיאטרליים ב-Aegir: שורת מספרים, מזהי מחסנית, סימוני חיתוך ושדות מסירה. לכן הוא חשוב. הוא לא מסביר מניע. הוא מראה מתי חדר הפסיק לשלם על אוויר.\n\nכשהיומן נחתך לפני סגירת המסלול, שני בעלים סותרים זה את זה. תמיכת החיים מציבה את העובד מחוץ לנשימה נתמכת. טיפול route ו-claim משאיר אותו משויך, ממתין, ניתן לחילוץ או לחיוב. המשפט השני מנהלי. הראשון מכני.\n\nclaim hold הופך את הפער למנוף. חילוץ ממתין משאיר סמכות מחוברת למסלול; מסה לא פתורה משאירה שפת רכוש פתוחה; זיהום ציוד הופך עיכוב לחיוב. אף שדה יחיד לא מכריז על פשע. הרצף מציג בחירה רעה.\n\nצריך להצמיד את השורה לסימון החזרה החסר, לשפת מסכת packet notary ולרצועת נזק התמלול. שורת החמצן לא נותנת שם לאשם. היא קובעת את הגבול הקשיח שהניירת המאוחרת נאלצה לעבור.",
-          "field_note": "אם החמצן עצר קודם, המסלול הפתוח הוא ניירת, לא נשימה.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Potongan Buku Oksigen dan Penahanan Klaim",
-          "scanner": "POTONGAN BUKU OKSIGEN // Baris scrubber berhenti sebelum penutupan rute pulang. Claim hold menjaga pekerja tetap aktif setelah ruang berhenti menopang napas.",
-          "terminal": "QA BUKU OKSIGEN // Bandingkan potongan scrubber, delta cadangan baju, serah-terima kompresor, kolom kembali dan claim hold. Oksigen berhenti adalah batas dukungan hidup, bukan penutupan rute.",
-          "audio": "Baris scrubber sudah mati sebelum rute ditutup. Claim desk menjaga nama itu tetap aktif.",
-          "in_game_wiki": "Buku oksigen adalah akun dukungan hidup. Isinya waktu kartrid scrubber, delta cadangan baju, serah-terima pompa ruang, suplai kompresor dan wewenang pemotongan. Saat baris itu berhenti, ruang berhenti menopang napas. Itu tidak membuktikan detik kematian; itu menetapkan titik terakhir saat ruang masih menerima beban udara.\n\nClaim hold menjadi mencurigakan saat melewati baris oksigen. Route desk dapat membiarkan pekerja aktif, dan claim desk dapat menahan wewenang pemulihan, tetapi tidak ada kolom yang dapat mengembalikan udara ke ruang. Jika oksigen berhenti lebih dulu dan tanda kembali tetap kosong, status pekerja aktif adalah kertas di atas jalur tubuh yang sudah tertutup.\n\nKontradiksi yang berguna berada di empat benda: potongan scrubber, tag baju yang masih ada, stempel izin rute dan pengecualian claim yang datang kemudian. Jika rute tetap terbuka setelah potongan buku, Deep Reach dapat menagih keterlambatan, menahan wewenang salvage atau menggolongkan pembawa sebagai massa yang dapat dipulihkan tanpa menutup kerugian secara bersih.\n\nPenanganan lapangan harus sempit. Simpan strip buku sebelum membilas air garam. Foto baris potongan, nomor kartrid, delta cadangan baju dan stempel tangan yang melintasi garam. Jangan biarkan status claim menimpa batas dukungan hidup.",
-          "external_site": "Potongan buku oksigen menetapkan tempat ruang berhenti menopang napas. Jika claim hold berlanjut melewati baris itu, Deep Reach menjaga pekerja aktif di dokumen setelah akun udara selesai.",
-          "external_site_article": "Buku oksigen adalah salah satu catatan Aegir yang paling datar: baris angka, ID kartrid, tanda potong dan kolom serah-terima. Karena itu catatan ini penting. Ia tidak menjelaskan motif. Ia menunjukkan kapan ruang berhenti membayar udara.\n\nSaat buku terpotong sebelum penutupan rute, dua pemilik data tidak cocok. Dukungan hidup menempatkan pekerja di luar napas yang didukung. Penanganan rute dan claim membuat pekerja tetap ditugaskan, tertunda, dapat dipulihkan atau dapat ditagih. Pernyataan kedua administratif. Yang pertama mekanis.\n\nClaim hold mengubah selisih itu menjadi tekanan. Pemulihan tertunda menjaga wewenang melekat pada rute; massa belum selesai menjaga bahasa properti tetap terbuka; kontaminasi peralatan membuat keterlambatan dapat ditagih. Tidak ada satu kolom yang mengumumkan kejahatan. Urutannya membuat pilihan buruk terlihat.\n\nPasangkan baris ini dengan tanda kembali yang hilang, tepi masker packet notary dan pita kerusakan transkrip. Baris oksigen tidak menyebut pelaku. Ia menetapkan batas keras yang harus dilangkahi dokumen berikutnya.",
-          "field_note": "Jika oksigen berhenti lebih dulu, rute terbuka itu kertas, bukan napas.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "酸素台帳カットオフとクレーム保留",
-          "scanner": "酸素台帳カットオフ // スクラバー行はルート帰還閉鎖より前で停止。claim hold は、部屋が呼吸を支えなくなった後も作業員を有効扱いにしている。",
-          "terminal": "酸素台帳QA // スクラバー停止、スーツ予備差分、コンプレッサー引き渡し、帰還欄、claim hold を照合。酸素停止は生命維持の限界であり、ルート閉鎖ではない。",
-          "audio": "スクラバー行はルート閉鎖より先に死んでいる。claim desk が名前を有効のままにした。",
-          "in_game_wiki": "酸素台帳は生命維持の会計記録だ。スクラバーカートリッジの時間、スーツ予備差分、部屋ポンプの引き渡し、コンプレッサー供給、停止権限を記録する。その行が止まった時点で、部屋は呼吸を支えていない。死亡の秒までは示さないが、部屋がまだ空気負荷を受け入れていた最後の点を固定する。\n\nclaim hold が酸素行より長く残ると疑わしい。route desk は作業員を有効扱いにでき、claim desk は回収権限を保持できる。だがどの欄も部屋に空気を戻せない。酸素が先に止まり、帰還印が空欄なら、有効な作業員状態は閉じた身体経路の上に置かれた書類でしかない。\n\n使える矛盾は四つの物にまたがる。スクラバー停止、残ったスーツタグ、ルート許可印、後から入った claim 例外。台帳停止後もルートが開いたままなら、Deep Reach は遅延を請求し、salvage 権限を保持し、担体を回収可能質量として再分類できる。清算済みの損失にはしない。\n\n現場処理は絞る。塩水を洗う前に台帳ストリップを保全する。停止行、カートリッジ番号、スーツ予備差分、塩をまたぐ手押し印を撮影する。claim 状態で生命維持の限界を上書きしてはならない。",
-          "external_site": "酸素台帳のカットオフは、部屋が呼吸を支えなくなった点を固定する。その行を越えて claim hold が続くなら、Deep Reach は空気会計の終了後も作業員を書類上で有効にしていた。",
-          "external_site_article": "酸素台帳は Aegir で最も地味な記録の一つだ。数字、カートリッジID、停止ティック、引き渡し欄が並ぶ。その地味さが重要になる。動機は説明しない。部屋がいつ空気への支払いを止めたかは示せる。\n\n台帳がルート閉鎖より前に切れると、二つの所有者が食い違う。生命維持は作業員を支援呼吸の外に置く。ルート処理と claim 処理は、作業員を割当中、保留中、回収可能、請求可能に残す。後者は管理上の記述だ。前者は機械の記録だ。\n\nclaim hold はその食い違いを圧力に変える。回収保留は権限をルートに結びつけたままにする。未解決の質量は所有物の言葉を開いたままにする。汚染機材は遅延を請求対象にする。単独の欄は犯罪を告げない。順序が悪い選択を見せる。\n\nこの行は、欠けた帰還印、packet notary マスク端、転写損傷帯と合わせて読む。酸素行は犯人を名指ししない。後の書類が踏み越えた硬い限界を固定する。",
-          "field_note": "酸素が先に止まったなら、開いたルートは書類であって呼吸ではない。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "산소 장부 절단과 클레임 보류",
-          "scanner": "산소 장부 절단 // 스크러버 행이 경로 귀환 폐쇄보다 먼저 멈춘다. claim hold는 방이 호흡을 더는 지원하지 않은 뒤에도 작업자를 활성 상태로 둔다.",
-          "terminal": "산소 장부 QA // 스크러버 절단, 슈트 예비량 델타, 압축기 인계, 귀환 칸, claim hold를 대조한다. 산소 정지는 생명유지 한계이지 경로 폐쇄가 아니다.",
-          "audio": "스크러버 행은 경로가 닫히기 전에 죽어 있다. claim desk가 이름을 활성으로 뒀다.",
-          "in_game_wiki": "산소 장부는 생명유지 계정이다. 스크러버 카트리지 시간, 슈트 예비량 델타, 방 펌프 인계, 압축기 공급, 차단 권한을 기록한다. 그 행이 멈추면 방은 호흡을 지원하지 않는다. 정확한 사망 초를 증명하지는 않는다. 방이 아직 공기 부하를 받아들인 마지막 지점을 고정한다.\n\nclaim hold가 산소 행보다 오래 남으면 의심 대상이 된다. route desk는 작업자를 활성으로 둘 수 있고, claim desk는 회수 권한을 붙잡을 수 있다. 하지만 어떤 칸도 방에 공기를 되돌리지 못한다. 산소가 먼저 멈추고 귀환 표식이 비어 있으면, 활성 작업자 상태는 닫힌 신체 경로 위의 서류다.\n\n쓸 수 있는 모순은 네 가지에 걸쳐 있다. 스크러버 절단, 남은 슈트 태그, 경로 허가 스탬프, 뒤의 claim 예외다. 장부 절단 뒤에도 경로가 열려 있으면 Deep Reach는 지연을 청구하고, salvage 권한을 보유하고, 매체를 회수 가능 질량으로 재분류할 수 있다. 닫힌 손실 처리는 피한다.\n\n현장 처리는 좁게 간다. 염수를 씻기 전에 장부 스트립을 보존한다. 절단 행, 카트리지 일련번호, 슈트 예비량 델타, 소금 위를 가로지르는 손도장을 촬영한다. claim 상태가 생명유지 한계를 덮게 두지 않는다.",
-          "external_site": "산소 장부 절단은 방이 호흡 지원을 멈춘 지점을 고정한다. 그 행을 지나 claim hold가 계속되면 Deep Reach는 공기 계정이 끝난 뒤에도 작업자를 서류상 활성으로 둔 것이다.",
-          "external_site_article": "산소 장부는 Aegir에서 가장 극적이지 않은 기록 중 하나다. 숫자, 카트리지 ID, 차단 틱, 인계 칸이 이어진다. 그래서 중요하다. 동기를 설명하지는 못한다. 방이 언제 공기 비용을 멈췄는지는 보여준다.\n\n장부가 경로 폐쇄보다 먼저 끊기면 두 소유자가 맞지 않는다. 생명유지는 작업자를 지원 호흡 밖에 둔다. 경로와 claim 처리는 작업자를 배정됨, 대기, 회수 가능, 청구 가능 상태로 남긴다. 두 번째 문장은 행정이다. 첫 번째는 기계 기록이다.\n\nclaim hold는 그 차이를 압박 수단으로 바꾼다. 회수 대기는 권한을 경로에 붙여 둔다. 미해결 질량은 재산 언어를 열어 둔다. 장비 오염은 지연을 청구 가능하게 만든다. 한 칸만으로 범죄가 드러나지는 않는다. 순서가 나쁜 선택을 보이게 한다.\n\n이 행은 누락된 귀환 표식, packet notary 마스크 가장자리, 전사 손상 띠와 함께 맞춘다. 산소 행은 범인을 지목하지 않는다. 뒤의 서류가 넘어선 단단한 한계를 고정한다.",
-          "field_note": "산소가 먼저 멈췄다면 열린 경로는 서류지, 숨이 아니다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Zuurstofregistersnede en claim hold",
-          "scanner": "ZUURSTOFREGISTER-SNEDE // Scrubberregel stopt vóór de terugkeersluiting van de route. Claim hold houdt de werker actief nadat de kamer geen ademlucht meer ondersteunt.",
-          "terminal": "QA ZUURSTOFREGISTER // Vergelijk scrubbersnede, pakreserve-delta, compressoroverdracht, terugkeerveld en claim hold. Zuurstofstop is een levensondersteuningsgrens, geen routesluiting.",
-          "audio": "De scrubberregel is dood vóór de route sluit. Claim desk hield de naam actief.",
-          "in_game_wiki": "Een zuurstofregister is een levensondersteuningsrekening. Het noteert scrubberpatroontijd, pakreserve-delta, pompovername van de kamer, compressorvoeding en snijbevoegdheid. Als die regel stopt, ondersteunt de kamer geen ademlucht meer. De exacte sterfseconde staat er niet in; de laatste plek waar de kamer nog luchtlast accepteerde wel.\n\nEen claim hold wordt verdacht als hij langer leeft dan de zuurstofregel. Route desk kan een werker actief laten, en claim desk kan bergingsbevoegdheid vasthouden, maar geen veld pompt lucht terug de kamer in. Als zuurstof eerst stopte en de terugkeermarkering leeg bleef, ligt actieve werkerstatus als papier boven een gesloten lichaamspad.\n\nDe bruikbare tegenspraak ligt over vier dingen: scrubbersnede, aanwezige paktag, routetoestemmingsstempel en latere claim-uitzondering. Blijft de route open na de registersnede, dan kan Deep Reach vertraging factureren, salvage-bevoegdheid houden of de drager als bergbare massa herclassificeren zonder schoon verlies te sluiten.\n\nVeldbehandeling is smal. Bewaar de registerstrip vóór pekelspoeling. Fotografeer snederegel, patroons serienummer, pakreserve-delta en elke handstempel die over zout loopt. Laat claimstatus de levensondersteuningsgrens niet overschrijven.",
-          "external_site": "Een zuurstofregistersnede legt vast waar de kamer stopte met ademlucht ondersteunen. Loopt claim hold voorbij die regel, dan hield Deep Reach de werker op papier actief nadat de luchtrekening eindigde.",
-          "external_site_article": "Het zuurstofregister is een van de minst theatrale dossiers op Aegir: nummers, patroon-ID's, snijticks en overdrachtsvelden. Daarom telt het. Het verklaart geen motief. Het toont wanneer een kamer stopte met betalen voor lucht.\n\nAls het register vóór routesluiting afbreekt, spreken twee eigenaren elkaar tegen. Levensondersteuning plaatst de werker buiten ondersteunde adem. Route- en claimafhandeling houden de werker toegewezen, wachtend, bergbaar of factureerbaar. De tweede uitspraak is administratie. De eerste is mechaniek.\n\nClaim hold maakt van dat verschil hefboom. Wachtende berging houdt bevoegdheid aan de route; onopgeloste massa houdt eigendomstaal open; besmette uitrusting maakt vertraging factureerbaar. Geen enkel veld roept misdaad. De volgorde maakt een slechte keuze zichtbaar.\n\nLeg de regel naast ontbrekende terugkeermarkering, packet notary-maskerrand en transcript-schadeband. De zuurstofregel noemt geen schuldige. Hij legt de harde grens vast waar latere papieren overheen moesten.",
-          "field_note": "Als zuurstof eerst stopte, is de open route papier, geen adem.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Odcięcie księgi tlenu i blokada claim",
-          "scanner": "ODCIĘCIE KSIĘGI TLENU // Wiersz scrubbera kończy się przed zamknięciem powrotu trasy. Claim hold utrzymuje pracownika jako aktywnego po tym, jak pomieszczenie przestało podtrzymywać oddech.",
-          "terminal": "QA KSIĘGI TLENU // Porównać odcięcie scrubbera, deltę rezerwy skafandra, przekazanie kompresora, pole powrotu i claim hold. Stop tlenu to granica podtrzymania życia, nie zamknięcie trasy.",
-          "audio": "Wiersz scrubbera jest martwy, zanim trasa się zamyka. Claim desk utrzymał nazwisko aktywne.",
-          "in_game_wiki": "Księga tlenu jest rachunkiem podtrzymania życia. Zapisuje czas wkładu scrubbera, deltę rezerwy skafandra, przekazanie pompy pomieszczenia, zasilanie kompresora i uprawnienie do odcięcia. Kiedy ten wiersz się kończy, pomieszczenie przestaje podtrzymywać oddech. Nie dowodzi dokładnej sekundy śmierci; wyznacza ostatni punkt, w którym pomieszczenie przyjmowało jeszcze obciążenie powietrzem.\n\nClaim hold staje się podejrzany, gdy żyje dłużej niż wiersz tlenu. Route desk może zostawić pracownika aktywnego, a claim desk może trzymać uprawnienie do odzysku, ale żadne pole nie doda powietrza do pomieszczenia. Jeśli tlen zatrzymał się pierwszy, a znak powrotu został pusty, aktywny status pracownika jest papierem nad zamkniętą ścieżką ciała.\n\nUżyteczna sprzeczność leży na czterech rzeczach: odcięciu scrubbera, obecności taga skafandra, stemplu zgody na trasę i późniejszym wyjątku claim. Jeśli trasa zostaje otwarta po odcięciu księgi, Deep Reach może naliczać opóźnienie, trzymać uprawnienie salvage albo przeklasyfikować nośnik jako masę do odzysku bez czystego zamknięcia straty.\n\nObsługa terenowa jest wąska. Zabezpieczyć pasek księgi przed płukaniem solanki. Sfotografować wiersz odcięcia, numer wkładu, deltę rezerwy skafandra i każdy ręczny stempel przechodzący przez sól. Status claim nie może nadpisać granicy podtrzymania życia.",
-          "external_site": "Odcięcie księgi tlenu ustala, gdzie pomieszczenie przestało podtrzymywać oddech. Jeśli claim hold trwa za tym wierszem, Deep Reach utrzymała pracownika aktywnego w papierach po zakończeniu rachunku powietrza.",
-          "external_site_article": "Księga tlenu należy do najmniej teatralnych zapisów Aegir: wiersz liczb, identyfikatory wkładu, tiki odcięcia i pola przekazania. Dlatego ma znaczenie. Nie tłumaczy motywu. Pokazuje, kiedy pomieszczenie przestało płacić za powietrze.\n\nGdy księga urywa się przed zamknięciem trasy, dwóch właścicieli danych mówi co innego. Podtrzymanie życia umieszcza pracownika poza wspieranym oddechem. Obsługa trasy i claim zostawia go jako przydzielonego, oczekującego, odzyskiwalnego albo fakturowalnego. Drugie zdanie jest administracyjne. Pierwsze jest mechaniczne.\n\nClaim hold robi z tej różnicy dźwignię. Oczekujący odzysk trzyma uprawnienie przy trasie; nierozstrzygnięta masa trzyma otwarty język własności; skażony sprzęt pozwala naliczać opóźnienie. Żadne pojedyncze pole nie ogłasza przestępstwa. Sekwencja pokazuje zły wybór.\n\nWiersz trzeba zestawić z brakującym znakiem powrotu, krawędzią maski packet notary i pasem uszkodzenia transkryptu. Wiersz tlenu nie wskazuje winnego. Wyznacza twardą granicę, którą późniejsze papiery musiały przekroczyć.",
-          "field_note": "Jeśli tlen zatrzymał się pierwszy, otwarta trasa jest papierem, nie oddechem.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Corte do Livro de Oxigênio e Retenção de Claim",
-          "scanner": "CORTE DO LIVRO DE OXIGÊNIO // Linha do scrubber para antes do fechamento de retorno da rota. Claim hold mantém o trabalhador ativo depois que a sala deixou de sustentar respiração.",
-          "terminal": "QA LIVRO DE OXIGÊNIO // Compare corte do scrubber, delta de reserva do traje, handoff do compressor, campo de retorno e claim hold. Parada de oxigênio é limite de suporte de vida, não fechamento de rota.",
-          "audio": "A linha do scrubber morreu antes da rota fechar. Claim desk manteve o nome ativo.",
-          "in_game_wiki": "Um livro de oxigênio é uma conta de suporte de vida. Registra tempo de cartucho do scrubber, delta de reserva do traje, handoff da bomba da sala, alimentação do compressor e autoridade de corte. Quando essa linha para, a sala deixou de sustentar respiração. Não prova o segundo exato da morte; fixa o último ponto em que a sala ainda aceitava carga de ar.\n\nUm claim hold fica suspeito quando passa da linha de oxigênio. Route desk pode deixar um trabalhador ativo, e claim desk pode reter autoridade de recuperação, mas nenhum campo devolve ar à sala. Se o oxigênio parou primeiro e a marca de retorno ficou vazia, o estado ativo do trabalhador é papel sobre um caminho corporal fechado.\n\nA contradição útil cruza quatro coisas: corte do scrubber, presença de tag de traje, carimbo de permissão de rota e exceção claim posterior. Se a rota continua aberta depois do corte do livro, a Deep Reach pode cobrar atraso, reter autoridade de salvage ou reclassificar o suporte como massa recuperável sem fechar uma perda limpa.\n\nO manejo em campo é estreito. Preserve a tira do livro antes de enxaguar salmoura. Fotografe a linha de corte, número de cartucho, delta de reserva do traje e qualquer carimbo manual cruzando sal. Não deixe status claim sobrescrever o limite de suporte de vida.",
-          "external_site": "Um corte do livro de oxigênio fixa onde a sala deixou de sustentar respiração. Se claim hold continua além dessa linha, a Deep Reach manteve o trabalhador ativo no papel depois que a conta de ar terminou.",
-          "external_site_article": "O livro de oxigênio é um dos registros menos teatrais de Aegir: uma linha de números, IDs de cartucho, ticks de corte e campos de handoff. Por isso ele importa. Não explica motivo. Mostra quando uma sala deixou de pagar por ar.\n\nQuando o livro corta antes do fechamento de rota, dois donos discordam. Suporte de vida coloca o trabalhador fora da respiração sustentada. Tratamento de rota e claim mantém o trabalhador designado, pendente, recuperável ou faturável. A segunda declaração é administrativa. A primeira é mecânica.\n\nClaim hold transforma essa diferença em pressão. Recuperação pendente mantém autoridade presa à rota; massa não resolvida mantém linguagem de propriedade aberta; contaminação de equipamento torna atraso faturável. Nenhum campo sozinho anuncia crime. A sequência deixa a má escolha visível.\n\nLeia a linha junto da marca de retorno ausente, borda da máscara packet notary e faixa de dano da transcrição. A linha de oxigênio não nomeia culpado. Fixa o limite duro que a papelada posterior teve de atravessar.",
-          "field_note": "Se o oxigênio parou primeiro, a rota aberta é papel, não respiração.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Отсечка кислородного журнала и удержание претензии",
-          "scanner": "ОТСЕЧКА КИСЛОРОДНОГО ЖУРНАЛА // Строка скруббера обрывается до закрытия возврата по маршруту. Claim hold держит работника активным после того, как комната перестала поддерживать дыхание.",
-          "terminal": "QA КИСЛОРОДНОГО ЖУРНАЛА // Сверить отсечку скруббера, дельту резерва костюма, передачу компрессора, поле возврата и claim hold. Остановка кислорода — предел жизнеобеспечения, а не закрытие маршрута.",
-          "audio": "Строка скруббера умерла раньше закрытия маршрута. Claim desk оставил имя активным.",
-          "in_game_wiki": "Кислородный журнал — это счет жизнеобеспечения. В нем идут время картриджа скруббера, дельта резерва костюма, передача насоса комнаты, питание компрессора и право отсечки. Когда эта строка останавливается, комната больше не поддерживает дыхание. Она не доказывает точную секунду смерти; она фиксирует последнюю точку, где комната еще принимала воздушную нагрузку.\n\nClaim hold становится подозрительным, когда живет дольше кислородной строки. Route desk может оставить работника активным, а claim desk может удерживать право извлечения, но ни одно поле не вернет воздух в комнату. Если кислород остановился первым, а отметка возврата осталась пустой, активный статус работника — это бумага поверх уже закрытого телесного следа.\n\nРабочее противоречие лежит на четырех вещах: отсечка скруббера, наличие метки костюма, штамп разрешения маршрута и более позднее исключение claim. Если маршрут остается открытым после отсечки журнала, Deep Reach может выставлять задержку к оплате, удерживать право salvage или переклассифицировать носитель как массу к извлечению, не закрывая потерю чисто.\n\nВ поле действовать узко. Сохрани ленту журнала до промывки рассола. Сними строку отсечки, номер картриджа, дельту резерва костюма и любой ручной штамп, идущий через соль. Не давай статусу claim переписать предел жизнеобеспечения.",
-          "external_site": "Отсечка кислородного журнала фиксирует место, где комната перестала поддерживать дыхание. Если claim hold продолжается дальше этой строки, Deep Reach держала работника активным в бумагах уже после закрытия счета воздуха.",
-          "external_site_article": "Кислородный журнал — один из самых сухих документов на Aegir: строка чисел, ID картриджей, такты отсечки и поля передачи. Поэтому он важен. Он не объясняет мотив. Он показывает, когда комната перестала платить за воздух.\n\nКогда журнал обрывается до закрытия маршрута, спорят два владельца данных. Жизнеобеспечение ставит работника вне поддерживаемого дыхания. Маршрутная и претензионная обработка держит его назначенным, ожидающим, извлекаемым или оплачиваемым. Второе утверждение административное. Первое механическое.\n\nClaim hold превращает этот разрыв в рычаг. Ожидающее извлечение держит полномочие привязанным к маршруту; неразрешенная масса оставляет язык собственности открытым; загрязнение оборудования делает задержку оплачиваемой. Ни одно поле само по себе не объявляет преступление. Последовательность показывает плохой выбор.\n\nЭту строку нужно читать вместе с отсутствующей отметкой возврата, краем маски packet notary и полосой повреждения расшифровки. Кислородная строка не называет виновного. Она фиксирует жесткий предел, через который поздним бумагам пришлось переступить.",
-          "field_note": "Если кислород остановился первым, открытый маршрут — это бумага, а не дыхание.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Відсічення кисневого журналу й утримання претензії",
-          "scanner": "ВІДСІЧЕННЯ КИСНЕВОГО ЖУРНАЛУ // Рядок скрубера зупиняється до закриття повернення маршруту. Claim hold тримає працівника активним після того, як кімната перестала підтримувати дихання.",
-          "terminal": "QA КИСНЕВОГО ЖУРНАЛУ // Звірити відсічення скрубера, дельту резерву костюма, передачу компресора, поле повернення й claim hold. Зупинка кисню — межа життєзабезпечення, не закриття маршруту.",
-          "audio": "Рядок скрубера мертвий ще до закриття маршруту. Claim desk лишив ім'я активним.",
-          "in_game_wiki": "Кисневий журнал — це рахунок життєзабезпечення. У ньому записані час картриджа скрубера, дельта резерву костюма, передача помпи кімнати, живлення компресора й право відсічення. Коли цей рядок зупиняється, кімната вже не підтримує дихання. Він не доводить точну секунду смерті; він фіксує останню точку, де кімната ще приймала повітряне навантаження.\n\nClaim hold стає підозрілим, коли живе довше за кисневий рядок. Route desk може лишити працівника активним, а claim desk може тримати право вилучення, але жодне поле не поверне повітря в кімнату. Якщо кисень зупинився першим, а позначка повернення лишилася порожньою, активний статус працівника — це папір поверх уже закритого тілесного сліду.\n\nКорисна суперечність лежить на чотирьох речах: відсічення скрубера, наявність мітки костюма, штамп дозволу маршруту й пізніший виняток claim. Якщо маршрут лишається відкритим після відсічення журналу, Deep Reach може виставляти затримку до оплати, тримати право salvage або перекласифікувати носій як масу для вилучення, не закриваючи втрату чисто.\n\nУ полі діяти вузько. Збережи стрічку журналу до промивання розсолу. Зніми рядок відсічення, номер картриджа, дельту резерву костюма й будь-який ручний штамп, що проходить через сіль. Не дай статусу claim переписати межу життєзабезпечення.",
-          "external_site": "Відсічення кисневого журналу фіксує місце, де кімната перестала підтримувати дихання. Якщо claim hold триває далі цього рядка, Deep Reach тримала працівника активним у паперах уже після завершення рахунку повітря.",
-          "external_site_article": "Кисневий журнал — один із найсухіших записів на Aegir: рядок чисел, ID картриджів, такти відсічення й поля передачі. Тому він важить. Він не пояснює мотив. Він показує, коли кімната перестала платити за повітря.\n\nКоли журнал обривається до закриття маршруту, два власники даних дають різні відповіді. Життєзабезпечення ставить працівника поза підтримуваним диханням. Обробка route і claim тримає його призначеним, очікуваним, вилучним або оплачуваним. Друге твердження адміністративне. Перше механічне.\n\nClaim hold робить із цього розриву важіль. Очікуване вилучення тримає повноваження прив'язаним до маршруту; нерозв'язана маса лишає мову власності відкритою; забруднення обладнання робить затримку оплачуваною. Жодне поле окремо не оголошує злочин. Послідовність показує поганий вибір.\n\nЦей рядок треба звіряти з відсутньою позначкою повернення, краєм маски packet notary і смугою пошкодження розшифрування. Кисневий рядок не називає винного. Він фіксує жорстку межу, через яку пізніші папери мусили переступити.",
-          "field_note": "Якщо кисень зупинився першим, відкритий маршрут — це папір, не дихання.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "氧气账本截断与索赔保留",
-          "scanner": "氧气账本截断 // 洗涤器行在路线返程关闭前停止。claim hold 在房间停止支撑呼吸后仍让工人保持激活。",
-          "terminal": "氧气账本 QA // 对照洗涤器截断、潜服储备差值、压缩机交接、返程字段和 claim hold。氧气停止是生命支持边界，不是路线关闭。",
-          "audio": "洗涤器行在路线关闭前就死了。claim desk 让这个名字继续激活。",
-          "in_game_wiki": "氧气账本是生命支持账。它记录洗涤器滤芯时间、潜服储备差值、房间泵交接、压缩机供给和截断权限。当这一行停止时，房间已经停止支撑呼吸。它不能证明死亡的准确秒数；它固定的是房间最后一次接受空气负载的位置。\n\nclaim hold 比氧气行活得更久时就可疑。route desk 可以让工人保持激活，claim desk 可以扣住回收权限，但没有任何字段能把空气送回房间。如果氧气先停，而返程标记仍为空，激活的工人状态就是压在已关闭身体路径上的文件。\n\n有用的矛盾落在四件东西上：洗涤器截断、潜服标签存在、路线许可章，以及后来加入的 claim 例外。如果账本截断后路线仍然打开，Deep Reach 可以收取延误费用、保留 salvage 权限，或把载体重新归类为可回收质量，同时避开干净的损失关闭。\n\n现场处理范围很窄。冲洗卤水前先保留账本条。拍下截断行、滤芯序号、潜服储备差值，以及任何跨过盐迹的手盖章。不要让 claim 状态覆盖生命支持边界。",
-          "external_site": "氧气账本截断固定了房间停止支撑呼吸的位置。如果 claim hold 越过这一行继续存在，Deep Reach 就是在空气账结束后仍把工人留作文件上的激活状态。",
-          "external_site_article": "氧气账本是 Aegir 上最不戏剧化的记录之一：一行数字、滤芯 ID、截断刻度和交接字段。正因为如此，它很重要。它不能解释动机。它能显示房间什么时候停止为空气付账。\n\n账本在路线关闭前截断时，两个所有者给出不同状态。生命支持把工人放在受支撑呼吸之外。路线和 claim 处理则把工人留为已分派、待处理、可回收或可计费。后者是行政状态。前者是机械记录。\n\nclaim hold 把这种差异变成压力。待回收让权限继续挂在路线下；未解决质量让财产用语保持开放；设备污染让延误可以计费。单个字段不会宣布犯罪。顺序让错误选择显出来。\n\n这行记录要和缺失的返程标记、packet notary 遮盖边缘、转写损坏带一起核对。氧气行不点名责任人。它固定了后来文件必须跨过去的硬边界。",
-          "field_note": "如果氧气先停，打开的路线是文件，不是呼吸。",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.oxygen_ledger_cutoff_claim_hold_field_article",
+    "secondary": [
+     "unlock.first_oxygen_ledger_cutoff_claim_hold",
+     "unlock.first_missing_return_mark_claim_conversion",
+     "unlock.first_route_permission_stamp_overlap"
+    ],
+    "poi_tags": [
+     "poi.oxygen_ledger_cutoff",
+     "poi.scrubber_cutoff_row",
+     "poi.claim_hold_field",
+     "poi.suit_reserve_delta",
+     "poi.route_permission_stamp",
+     "poi.missing_return_mark",
+     "poi.claim_desk_exception",
+     "poi.packet_notary_footer"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.claim_admin",
+     "biome.evidence_custody",
+     "biome.route_desk"
+    ],
+    "depth_band_m": "0-4200"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Life-Support Ledger QA Note",
+     "audio": "Recovered Claim Desk Clip",
+     "in_game_wiki": "PDA Forensic Object Article",
+     "external_site": "Public Lore Atlas Evidence Note",
+     "field_note": "Marauder Field Note"
+    },
+    "source_brief": {
+     "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
+     "spoiler_level": "1",
+     "speaker_source": "PDA scanner, life-support ledger QA note, claim desk clip, Marauder annotation, public lore atlas",
+     "audience": "after route permission, missing return and packet notary evidence; public atlas under early-evidence spoiler boundary",
+     "date_era": "2190 recovery reading of 2147 life-support ledger and claim desk artifacts",
+     "location_depth_route": "oxygen ledger strip, pressure-room support panel, route desk cache, drowned colony claim path",
+     "unlock_context": "after missing return mark claim conversion and route permission stamp overlap",
+     "evidence_object": "oxygen ledger cutoff row, scrubber cartridge serial, suit reserve delta and later claim hold field",
+     "source_knows": "oxygen row stopped before route closure, return mark can remain blank, claim hold can keep active route status after life-support cutoff",
+     "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
+     "truth_pressure": "Life-support cutoff fixes the air limit that later route and claim paperwork must cross.",
+     "design_use": "bind oxygen ledger cutoff to claim hold without revealing final culprit"
+    },
+    "spoiler_boundary": {
+     "tier": 1,
+     "allowed_reveals": [
+      "oxygen ledger can stop before route closure",
+      "claim hold can outlive the life-support limit",
+      "active route status and supported breath can disagree"
+     ],
+     "blocked_reveals": [
+      "final culprit",
+      "hidden transcript sentence",
+      "ending payload identity"
+     ]
     }
-  ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Oxygen Ledger Cutoff Claim Hold",
+     "scanner": "OXYGEN LEDGER CUTOFF // Scrubber row stops before route return closure. Claim hold keeps the worker active after the room stopped supporting breath.",
+     "terminal": "OXYGEN LEDGER QA // Compare scrubber cutoff, suit reserve delta, compressor handoff, route return field and claim hold. Oxygen stop is a life-support limit, not a route closure.",
+     "audio": "The scrubber row is dead before the route closes. Claim desk kept the name active.",
+     "in_game_wiki": "An oxygen ledger is a life-support account. It records scrubber cartridge time, suit reserve delta, room pump handoff, compressor feed and cutoff authority. When that row stops, the room has stopped supporting breath. It does not prove the exact second of death; it fixes the last point where the room still accepted an air load.\n\nA claim hold becomes suspect when it outlives the oxygen row. Route desk can leave a worker active, and claim desk can hold recovery authority, but neither field can add air back to the room. If oxygen stopped first and the return mark stays blank, the active worker state is paperwork over a closed body path.\n\nThe useful contradiction sits across four things: scrubber cutoff, suit tag presence, route permission stamp and later claim exception. If the route remains open after the ledger cutoff, Deep Reach can bill delay, retain salvage authority or reclassify the carrier as recoverable mass while avoiding a clean loss closure.\n\nField handling is narrow. Preserve the ledger strip before rinsing brine. Photograph the cutoff row, cartridge serial, suit reserve delta and any hand stamp crossing salt. Do not let claim status overwrite the life-support limit.",
+     "external_site": "An oxygen ledger cutoff fixes where the room stopped supporting breath. If claim hold continues past that row, Deep Reach kept the worker active in paperwork after the air account ended.",
+     "external_site_article": "The oxygen ledger is one of the least theatrical records on Aegir: a row of numbers, cartridge IDs, cutoff ticks and handoff fields. That is why it matters. It cannot explain motive. It can show when a room stopped paying for air.\n\nWhen the ledger cuts off before route closure, two owners disagree. Life support places the worker outside supported breath. Route and claim handling keep the worker assigned, pending, recoverable or billable. The second statement is administrative. The first one is mechanical.\n\nClaim hold turns that disagreement into leverage. Pending recovery keeps authority attached to the route; unresolved mass keeps property language open; equipment contamination makes delay chargeable. No single field announces a crime. The sequence makes a bad choice visible.\n\nPair the row with missing return mark, packet notary mask edge and transcript damage band. The oxygen row does not name the culprit. It fixes the hard limit that later paperwork had to step over.",
+     "field_note": "If oxygen stopped first, the open route is paperwork, not breath.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "قطع سجل الأكسجين وتعليق المطالبة",
+     "scanner": "قطع سجل الأكسجين // يتوقف صف المرشح قبل إغلاق عودة المسار. يبقي claim hold العامل نشطاً بعد أن توقفت الغرفة عن دعم التنفس.",
+     "terminal": "فحص سجل الأكسجين // قارن قطع المرشح، فرق احتياطي البدلة، تسليم الضاغط، خانة العودة وclaim hold. توقف الأكسجين حد دعم حياة، وليس إغلاق مسار.",
+     "audio": "صف المرشح ميت قبل إغلاق المسار. أبقى claim desk الاسم نشطاً.",
+     "in_game_wiki": "سجل الأكسجين حساب دعم حياة. يسجل زمن خرطوشة المرشح، فرق احتياطي البدلة، تسليم مضخة الغرفة، تغذية الضاغط وسلطة القطع. عندما يتوقف ذلك الصف، تكون الغرفة قد توقفت عن دعم التنفس. لا يثبت ثانية الوفاة؛ يثبت آخر نقطة قبلت فيها الغرفة حمل هواء.\n\nيصبح claim hold مشبوهاً عندما يعيش بعد صف الأكسجين. يمكن لمكتب المسار أن يترك العامل نشطاً، ويمكن لـ claim desk أن يمسك سلطة الاسترداد، لكن لا خانة منهما تضيف هواء إلى الغرفة. إذا توقف الأكسجين أولاً وبقيت علامة العودة فارغة، فحالة العامل النشطة تصبح ورقاً فوق مسار جسد مغلق.\n\nالتناقض المفيد يقع بين أربعة أشياء: قطع المرشح، وجود وسم البدلة، ختم إذن المسار، واستثناء claim لاحق. إذا بقي المسار مفتوحاً بعد قطع السجل، تستطيع Deep Reach احتساب التأخير، أو إبقاء سلطة salvage، أو إعادة تصنيف الحامل ككتلة قابلة للاسترداد مع تجنب إغلاق خسارة نظيف.\n\nالتعامل الميداني محدود. احفظ شريط السجل قبل شطف الملح. صور صف القطع، رقم خرطوشة المرشح، فرق احتياطي البدلة وأي ختم يدوي يعبر الملح. لا تدع حالة claim تمحو حد دعم الحياة.",
+     "external_site": "قطع سجل الأكسجين يحدد موضع توقف الغرفة عن دعم التنفس. إذا استمر claim hold بعد ذلك الصف، فقد أبقت Deep Reach العامل نشطاً في الورق بعد انتهاء حساب الهواء.",
+     "external_site_article": "سجل الأكسجين من أقل سجلات Aegir تمثيلاً للدراما: صف أرقام، معرفات خرطوشة، علامات قطع وحقول تسليم. لهذا يهم. لا يشرح الدافع. يستطيع أن يبين متى توقفت غرفة عن دفع ثمن الهواء.\n\nعندما ينقطع السجل قبل إغلاق المسار، يختلف مالكان. دعم الحياة يضع العامل خارج التنفس المدعوم. معالجة المسار وclaim تبقي العامل معيناً أو معلقاً أو قابلاً للاسترداد أو للفوترة. الجملة الثانية إدارية. الأولى ميكانيكية.\n\nيحول claim hold هذا الاختلاف إلى ضغط. الاسترداد المعلق يبقي السلطة مربوطة بالمسار؛ الكتلة غير المحسومة تبقي لغة الملكية مفتوحة؛ تلوث المعدات يجعل التأخير قابلاً للفوترة. لا تعلن خانة واحدة جريمة. التسلسل يجعل الاختيار السيئ مرئياً.\n\nاقرن الصف بعلامة العودة المفقودة، حافة قناع packet notary وشريط تلف التفريغ. صف الأكسجين لا يسمي الفاعل. يثبت الحد الصلب الذي اضطر الورق اللاحق إلى تجاوزه.",
+     "field_note": "إذا توقف الأكسجين أولاً، فالمسار المفتوح ورق لا هواء.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Sauerstoffbuch-Schnitt und Claim-Hold",
+     "scanner": "SAUERSTOFFBUCH-SCHNITT // Scrubber-Zeile endet vor der Rückkehrschließung der Route. Claim hold hält den Arbeiter aktiv, nachdem der Raum keine Atemluft mehr liefert.",
+     "terminal": "QA SAUERSTOFFBUCH // Scrubber-Schnitt, Anzugreserve-Delta, Kompressorübergabe, Rückkehrfeld und claim hold vergleichen. Sauerstoffstopp ist eine Lebenserhaltungsgrenze, keine Routenschließung.",
+     "audio": "Die Scrubber-Zeile ist tot, bevor die Route schließt. Claim desk hielt den Namen aktiv.",
+     "in_game_wiki": "Ein Sauerstoffbuch ist ein Lebenserhaltungskonto. Es führt Scrubber-Kartuschenzeit, Anzugreserve-Delta, Pumpenübergabe des Raums, Kompressorzufuhr und Abschaltbefugnis. Wenn diese Zeile endet, unterstützt der Raum keine Atemluft mehr. Sie beweist nicht die Todessekunde; sie fixiert den letzten Punkt, an dem der Raum noch Luftlast annahm.\n\nEin claim hold wird verdächtig, wenn er die Sauerstoffzeile überlebt. Die Routenstelle kann einen Arbeiter aktiv lassen, und claim desk kann Bergungsbefugnis halten, aber kein Feld bringt Luft in den Raum zurück. Wenn Sauerstoff zuerst stoppt und die Rückkehrmarke leer bleibt, liegt der aktive Arbeiterstatus als Papier über einem geschlossenen Körperpfad.\n\nDer brauchbare Widerspruch liegt auf vier Objekten: Scrubber-Schnitt, vorhandener Anzugtag, Routengenehmigungsstempel und spätere claim-Ausnahme. Bleibt die Route nach dem Buchschnitt offen, kann Deep Reach Verzögerung berechnen, salvage-Befugnis halten oder den Träger als bergbare Masse einstufen, ohne einen sauberen Verlust zu schließen.\n\nDie Feldbehandlung ist eng. Den Buchstreifen vor dem Abspülen der Sole sichern. Schnittzeile, Kartuschenseriennummer, Anzugreserve-Delta und jeden Handstempel über Salz fotografieren. Claim-Status darf die Lebenserhaltungsgrenze nicht überschreiben.",
+     "external_site": "Ein Sauerstoffbuch-Schnitt fixiert, wo der Raum keine Atemluft mehr unterstützte. Läuft claim hold über diese Zeile hinaus, hielt Deep Reach den Arbeiter auf Papier aktiv, nachdem das Luftkonto beendet war.",
+     "external_site_article": "Das Sauerstoffbuch gehört zu den unspektakulärsten Akten auf Aegir: Zahlen, Kartuschen-IDs, Abschalttakte und Übergabefelder. Genau deshalb zählt es. Es erklärt kein Motiv. Es zeigt, wann ein Raum aufgehört hat, für Luft zu zahlen.\n\nWenn das Buch vor der Routenschließung abreißt, widersprechen sich zwei Besitzer. Lebenserhaltung setzt den Arbeiter außerhalb unterstützter Atemluft. Routen- und claim-Bearbeitung halten ihn zugewiesen, ausstehend, bergbar oder abrechenbar. Die zweite Aussage ist Verwaltung. Die erste ist Mechanik.\n\nClaim hold macht aus diesem Widerspruch Druckmittel. Ausstehende Bergung hält Befugnis an der Route; ungelöste Masse hält Eigentumssprache offen; kontaminierte Ausrüstung macht Verzögerung abrechenbar. Kein einzelnes Feld ruft Verbrechen aus. Die Reihenfolge macht die billige Entscheidung sichtbar.\n\nDie Zeile gehört neben fehlende Rückkehrmarke, packet-notary-Maskenkante und Transkript-Schadensband. Die Sauerstoffzeile nennt keinen Täter. Sie setzt die harte Grenze, über die spätere Papiere steigen mussten.",
+     "field_note": "Wenn Sauerstoff zuerst stoppt, ist die offene Route Papier, keine Atemluft.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Corte del registro de oxígeno y retención de reclamación",
+     "scanner": "CORTE DEL REGISTRO DE OXÍGENO // La fila del depurador se detiene antes del cierre de retorno de la ruta. Claim hold mantiene activo al trabajador después de que la sala dejara de sostener la respiración.",
+     "terminal": "QA REGISTRO DE OXÍGENO // Comparar corte del depurador, delta de reserva del traje, traspaso del compresor, campo de retorno y claim hold. Parada de oxígeno es límite de soporte vital, no cierre de ruta.",
+     "audio": "La fila del depurador muere antes de cerrar la ruta. Claim desk mantuvo el nombre activo.",
+     "in_game_wiki": "Un registro de oxígeno es una cuenta de soporte vital. Anota tiempo de cartucho del depurador, delta de reserva del traje, traspaso de bomba de sala, alimentación del compresor y autoridad de corte. Cuando esa fila se detiene, la sala ha dejado de sostener la respiración. No prueba el segundo exacto de la muerte; fija el último punto en que la sala aún aceptaba carga de aire.\n\nUn claim hold se vuelve sospechoso cuando sobrevive a la fila de oxígeno. Route desk puede dejar activo a un trabajador, y claim desk puede retener autoridad de recuperación, pero ningún campo devuelve aire a la sala. Si el oxígeno se detuvo primero y la marca de retorno queda vacía, el estado activo del trabajador es papel sobre un recorrido corporal cerrado.\n\nLa contradicción útil cruza cuatro cosas: corte del depurador, presencia de etiqueta del traje, sello de permiso de ruta y excepción de claim posterior. Si la ruta queda abierta después del corte del registro, Deep Reach puede facturar demora, retener autoridad de salvage o reclasificar el soporte como masa recuperable sin cerrar una pérdida limpia.\n\nEl manejo de campo es estricto. Conserva la tira del registro antes de enjuagar salmuera. Fotografía la fila de corte, el número de cartucho, el delta de reserva del traje y cualquier sello manual que cruce sal. No dejes que el estado de claim sustituya el límite de soporte vital.",
+     "external_site": "Un corte del registro de oxígeno fija dónde la sala dejó de sostener la respiración. Si claim hold continúa más allá de esa fila, Deep Reach mantuvo activo al trabajador en papeles después de terminar la cuenta de aire.",
+     "external_site_article": "El registro de oxígeno es uno de los documentos menos teatrales de Aegir: una fila de números, IDs de cartucho, marcas de corte y campos de traspaso. Por eso importa. No explica el motivo. Puede mostrar cuándo una sala dejó de pagar aire.\n\nCuando el registro se corta antes del cierre de ruta, dos propietarios discrepan. Soporte vital coloca al trabajador fuera de respiración asistida. Gestión de ruta y claim lo mantiene asignado, pendiente, recuperable o facturable. La segunda declaración es administrativa. La primera es mecánica.\n\nClaim hold convierte esa discrepancia en palanca. Recuperación pendiente mantiene autoridad unida a la ruta; masa sin resolver mantiene abierto el lenguaje de propiedad; contaminación de equipo vuelve facturable la demora. Ningún campo aislado anuncia un delito. La secuencia deja visible una mala elección.\n\nLa fila se lee junto a la marca de retorno ausente, el borde de máscara packet notary y la banda dañada de la transcripción. La fila de oxígeno no nombra culpable. Fija el límite duro que el papeleo posterior tuvo que cruzar.",
+     "field_note": "Si el oxígeno se detuvo primero, la ruta abierta es papel, no respiración.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Coupure du registre d’oxygène et maintien de claim",
+     "scanner": "COUPURE DU REGISTRE D’OXYGÈNE // La ligne du scrubber s’arrête avant la clôture de retour de route. Le claim hold garde l’ouvrier actif après l’arrêt du soutien respiratoire de la salle.",
+     "terminal": "QA REGISTRE OXYGÈNE // Comparer coupure scrubber, delta de réserve de combinaison, relais compresseur, champ retour et claim hold. L’arrêt d’oxygène est une limite de survie, pas une clôture de route.",
+     "audio": "La ligne scrubber est morte avant la clôture de route. Claim desk a gardé le nom actif.",
+     "in_game_wiki": "Un registre d’oxygène est un compte de survie. Il relève le temps de cartouche scrubber, le delta de réserve de combinaison, le relais de pompe de salle, l’alimentation compresseur et l’autorité de coupure. Quand cette ligne s’arrête, la salle ne soutient plus la respiration. Elle ne prouve pas la seconde exacte du décès; elle fixe le dernier point où la salle acceptait encore une charge d’air.\n\nUn claim hold devient suspect quand il survit à la ligne d’oxygène. Le route desk peut laisser un ouvrier actif, et le claim desk peut retenir l’autorité de récupération, mais aucun champ ne remet de l’air dans la salle. Si l’oxygène s’arrête d’abord et que la marque de retour reste vide, l’état actif de l’ouvrier est du papier posé sur un trajet corporel fermé.\n\nLa contradiction utile traverse quatre éléments: coupure scrubber, présence de tag de combinaison, tampon d’autorisation de route et exception claim plus tardive. Si la route reste ouverte après la coupure du registre, Deep Reach peut facturer du retard, retenir l’autorité salvage ou reclasser le support en masse récupérable sans clôturer proprement une perte.\n\nLa manipulation terrain reste étroite. Préserver la bande du registre avant rinçage de saumure. Photographier la ligne de coupure, le numéro de cartouche, le delta de réserve de combinaison et tout tampon manuel traversant le sel. Le statut claim ne doit pas effacer la limite de survie.",
+     "external_site": "Une coupure du registre d’oxygène fixe l’endroit où la salle a cessé de soutenir la respiration. Si le claim hold continue au-delà de cette ligne, Deep Reach a gardé l’ouvrier actif dans les papiers après la fin du compte d’air.",
+     "external_site_article": "Le registre d’oxygène fait partie des archives les moins théâtrales d’Aegir: une ligne de chiffres, d’IDs de cartouche, de ticks de coupure et de champs de relais. C’est pour cela qu’il compte. Il n’explique pas le motif. Il montre quand une salle a cessé de payer l’air.\n\nQuand le registre coupe avant la clôture de route, deux propriétaires se contredisent. La survie place l’ouvrier hors respiration soutenue. La gestion route et claim le garde affecté, en attente, récupérable ou facturable. La seconde affirmation est administrative. La première est mécanique.\n\nLe claim hold transforme cet écart en levier. Récupération en attente garde l’autorité attachée à la route; masse non résolue garde le langage de propriété ouvert; équipement contaminé rend le retard facturable. Aucun champ seul n’annonce un crime. La séquence rend visible un mauvais choix.\n\nLa ligne doit être rapprochée de la marque de retour absente, du bord de masque packet notary et de la bande endommagée de transcription. La ligne d’oxygène ne nomme pas le coupable. Elle fixe la limite dure que les papiers suivants ont dû franchir.",
+     "field_note": "Si l’oxygène s’est arrêté d’abord, la route ouverte est du papier, pas de l’air.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "חיתוך יומן חמצן והחזקת claim",
+     "scanner": "חיתוך יומן חמצן // שורת הסקרבר נעצרת לפני סגירת חזרת המסלול. claim hold משאיר את העובד פעיל אחרי שהחדר הפסיק לתמוך בנשימה.",
+     "terminal": "בדיקת יומן חמצן // להשוות חיתוך סקרבר, דלתא עתודת חליפה, מסירת מדחס, שדה חזרה ו-claim hold. עצירת חמצן היא גבול תמיכת חיים, לא סגירת מסלול.",
+     "audio": "שורת הסקרבר מתה לפני שהמסלול נסגר. claim desk השאיר את השם פעיל.",
+     "in_game_wiki": "יומן חמצן הוא חשבון תמיכת חיים. הוא רושם זמן מחסנית סקרבר, דלתא עתודת חליפה, מסירת משאבת חדר, הזנת מדחס וסמכות חיתוך. כשהשורה הזאת נעצרת, החדר הפסיק לתמוך בנשימה. היא לא מוכיחה את שניית המוות; היא קובעת את הנקודה האחרונה שבה החדר עוד קיבל עומס אוויר.\n\nclaim hold נעשה חשוד כשהוא נמשך מעבר לשורת החמצן. route desk יכול להשאיר עובד פעיל, ו-claim desk יכול להחזיק סמכות חילוץ, אבל אף שדה לא מחזיר אוויר לחדר. אם החמצן עצר קודם וסימון החזרה נשאר ריק, מצב העובד הפעיל הוא נייר מעל נתיב גוף שכבר נסגר.\n\nהסתירה השימושית יושבת על ארבעה דברים: חיתוך סקרבר, נוכחות תג חליפה, חותמת הרשאת מסלול וחריג claim מאוחר יותר. אם המסלול נשאר פתוח אחרי חיתוך היומן, Deep Reach יכולה לחייב עיכוב, לשמור סמכות salvage או לסווג מחדש את הנשא כמסה ניתנת לחילוץ בלי לסגור אובדן נקי.\n\nהטיפול בשטח צר. לשמר את רצועת היומן לפני שטיפת מי מלח. לצלם את שורת החיתוך, מספר המחסנית, דלתא עתודת החליפה וכל חותמת יד שחוצה מלח. סטטוס claim לא רשאי לדרוס את גבול תמיכת החיים.",
+     "external_site": "חיתוך יומן חמצן קובע איפה החדר הפסיק לתמוך בנשימה. אם claim hold ממשיך מעבר לשורה הזאת, Deep Reach שמרה את העובד פעיל בניירת אחרי שחשבון האוויר נגמר.",
+     "external_site_article": "יומן החמצן הוא אחד מהרישומים הכי לא תיאטרליים ב-Aegir: שורת מספרים, מזהי מחסנית, סימוני חיתוך ושדות מסירה. לכן הוא חשוב. הוא לא מסביר מניע. הוא מראה מתי חדר הפסיק לשלם על אוויר.\n\nכשהיומן נחתך לפני סגירת המסלול, שני בעלים סותרים זה את זה. תמיכת החיים מציבה את העובד מחוץ לנשימה נתמכת. טיפול route ו-claim משאיר אותו משויך, ממתין, ניתן לחילוץ או לחיוב. המשפט השני מנהלי. הראשון מכני.\n\nclaim hold הופך את הפער למנוף. חילוץ ממתין משאיר סמכות מחוברת למסלול; מסה לא פתורה משאירה שפת רכוש פתוחה; זיהום ציוד הופך עיכוב לחיוב. אף שדה יחיד לא מכריז על פשע. הרצף מציג בחירה רעה.\n\nצריך להצמיד את השורה לסימון החזרה החסר, לשפת מסכת packet notary ולרצועת נזק התמלול. שורת החמצן לא נותנת שם לאשם. היא קובעת את הגבול הקשיח שהניירת המאוחרת נאלצה לעבור.",
+     "field_note": "אם החמצן עצר קודם, המסלול הפתוח הוא ניירת, לא נשימה.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Potongan Buku Oksigen dan Penahanan Klaim",
+     "scanner": "POTONGAN BUKU OKSIGEN // Baris scrubber berhenti sebelum penutupan rute pulang. Claim hold menjaga pekerja tetap aktif setelah ruang berhenti menopang napas.",
+     "terminal": "QA BUKU OKSIGEN // Bandingkan potongan scrubber, delta cadangan baju, serah-terima kompresor, kolom kembali dan claim hold. Oksigen berhenti adalah batas dukungan hidup, bukan penutupan rute.",
+     "audio": "Baris scrubber sudah mati sebelum rute ditutup. Claim desk menjaga nama itu tetap aktif.",
+     "in_game_wiki": "Buku oksigen adalah akun dukungan hidup. Isinya waktu kartrid scrubber, delta cadangan baju, serah-terima pompa ruang, suplai kompresor dan wewenang pemotongan. Saat baris itu berhenti, ruang berhenti menopang napas. Itu tidak membuktikan detik kematian; itu menetapkan titik terakhir saat ruang masih menerima beban udara.\n\nClaim hold menjadi mencurigakan saat melewati baris oksigen. Route desk dapat membiarkan pekerja aktif, dan claim desk dapat menahan wewenang pemulihan, tetapi tidak ada kolom yang dapat mengembalikan udara ke ruang. Jika oksigen berhenti lebih dulu dan tanda kembali tetap kosong, status pekerja aktif adalah kertas di atas jalur tubuh yang sudah tertutup.\n\nKontradiksi yang berguna berada di empat benda: potongan scrubber, tag baju yang masih ada, stempel izin rute dan pengecualian claim yang datang kemudian. Jika rute tetap terbuka setelah potongan buku, Deep Reach dapat menagih keterlambatan, menahan wewenang salvage atau menggolongkan pembawa sebagai massa yang dapat dipulihkan tanpa menutup kerugian secara bersih.\n\nPenanganan lapangan harus sempit. Simpan strip buku sebelum membilas air garam. Foto baris potongan, nomor kartrid, delta cadangan baju dan stempel tangan yang melintasi garam. Jangan biarkan status claim menimpa batas dukungan hidup.",
+     "external_site": "Potongan buku oksigen menetapkan tempat ruang berhenti menopang napas. Jika claim hold berlanjut melewati baris itu, Deep Reach menjaga pekerja aktif di dokumen setelah akun udara selesai.",
+     "external_site_article": "Buku oksigen adalah salah satu catatan Aegir yang paling datar: baris angka, ID kartrid, tanda potong dan kolom serah-terima. Karena itu catatan ini penting. Ia tidak menjelaskan motif. Ia menunjukkan kapan ruang berhenti membayar udara.\n\nSaat buku terpotong sebelum penutupan rute, dua pemilik data tidak cocok. Dukungan hidup menempatkan pekerja di luar napas yang didukung. Penanganan rute dan claim membuat pekerja tetap ditugaskan, tertunda, dapat dipulihkan atau dapat ditagih. Pernyataan kedua administratif. Yang pertama mekanis.\n\nClaim hold mengubah selisih itu menjadi tekanan. Pemulihan tertunda menjaga wewenang melekat pada rute; massa belum selesai menjaga bahasa properti tetap terbuka; kontaminasi peralatan membuat keterlambatan dapat ditagih. Tidak ada satu kolom yang mengumumkan kejahatan. Urutannya membuat pilihan buruk terlihat.\n\nPasangkan baris ini dengan tanda kembali yang hilang, tepi masker packet notary dan pita kerusakan transkrip. Baris oksigen tidak menyebut pelaku. Ia menetapkan batas keras yang harus dilangkahi dokumen berikutnya.",
+     "field_note": "Jika oksigen berhenti lebih dulu, rute terbuka itu kertas, bukan napas.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "酸素台帳カットオフとクレーム保留",
+     "scanner": "酸素台帳カットオフ // スクラバー行はルート帰還閉鎖より前で停止。claim hold は、部屋が呼吸を支えなくなった後も作業員を有効扱いにしている。",
+     "terminal": "酸素台帳QA // スクラバー停止、スーツ予備差分、コンプレッサー引き渡し、帰還欄、claim hold を照合。酸素停止は生命維持の限界であり、ルート閉鎖ではない。",
+     "audio": "スクラバー行はルート閉鎖より先に死んでいる。claim desk が名前を有効のままにした。",
+     "in_game_wiki": "酸素台帳は生命維持の会計記録だ。スクラバーカートリッジの時間、スーツ予備差分、部屋ポンプの引き渡し、コンプレッサー供給、停止権限を記録する。その行が止まった時点で、部屋は呼吸を支えていない。死亡の秒までは示さないが、部屋がまだ空気負荷を受け入れていた最後の点を固定する。\n\nclaim hold が酸素行より長く残ると疑わしい。route desk は作業員を有効扱いにでき、claim desk は回収権限を保持できる。だがどの欄も部屋に空気を戻せない。酸素が先に止まり、帰還印が空欄なら、有効な作業員状態は閉じた身体経路の上に置かれた書類でしかない。\n\n使える矛盾は四つの物にまたがる。スクラバー停止、残ったスーツタグ、ルート許可印、後から入った claim 例外。台帳停止後もルートが開いたままなら、Deep Reach は遅延を請求し、salvage 権限を保持し、担体を回収可能質量として再分類できる。清算済みの損失にはしない。\n\n現場処理は絞る。塩水を洗う前に台帳ストリップを保全する。停止行、カートリッジ番号、スーツ予備差分、塩をまたぐ手押し印を撮影する。claim 状態で生命維持の限界を上書きしてはならない。",
+     "external_site": "酸素台帳のカットオフは、部屋が呼吸を支えなくなった点を固定する。その行を越えて claim hold が続くなら、Deep Reach は空気会計の終了後も作業員を書類上で有効にしていた。",
+     "external_site_article": "酸素台帳は Aegir で最も地味な記録の一つだ。数字、カートリッジID、停止ティック、引き渡し欄が並ぶ。その地味さが重要になる。動機は説明しない。部屋がいつ空気への支払いを止めたかは示せる。\n\n台帳がルート閉鎖より前に切れると、二つの所有者が食い違う。生命維持は作業員を支援呼吸の外に置く。ルート処理と claim 処理は、作業員を割当中、保留中、回収可能、請求可能に残す。後者は管理上の記述だ。前者は機械の記録だ。\n\nclaim hold はその食い違いを圧力に変える。回収保留は権限をルートに結びつけたままにする。未解決の質量は所有物の言葉を開いたままにする。汚染機材は遅延を請求対象にする。単独の欄は犯罪を告げない。順序が悪い選択を見せる。\n\nこの行は、欠けた帰還印、packet notary マスク端、転写損傷帯と合わせて読む。酸素行は犯人を名指ししない。後の書類が踏み越えた硬い限界を固定する。",
+     "field_note": "酸素が先に止まったなら、開いたルートは書類であって呼吸ではない。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "산소 장부 절단과 클레임 보류",
+     "scanner": "산소 장부 절단 // 스크러버 행이 경로 귀환 폐쇄보다 먼저 멈춘다. claim hold는 방이 호흡을 더는 지원하지 않은 뒤에도 작업자를 활성 상태로 둔다.",
+     "terminal": "산소 장부 QA // 스크러버 절단, 슈트 예비량 델타, 압축기 인계, 귀환 칸, claim hold를 대조한다. 산소 정지는 생명유지 한계이지 경로 폐쇄가 아니다.",
+     "audio": "스크러버 행은 경로가 닫히기 전에 죽어 있다. claim desk가 이름을 활성으로 뒀다.",
+     "in_game_wiki": "산소 장부는 생명유지 계정이다. 스크러버 카트리지 시간, 슈트 예비량 델타, 방 펌프 인계, 압축기 공급, 차단 권한을 기록한다. 그 행이 멈추면 방은 호흡을 지원하지 않는다. 정확한 사망 초를 증명하지는 않는다. 방이 아직 공기 부하를 받아들인 마지막 지점을 고정한다.\n\nclaim hold가 산소 행보다 오래 남으면 의심 대상이 된다. route desk는 작업자를 활성으로 둘 수 있고, claim desk는 회수 권한을 붙잡을 수 있다. 하지만 어떤 칸도 방에 공기를 되돌리지 못한다. 산소가 먼저 멈추고 귀환 표식이 비어 있으면, 활성 작업자 상태는 닫힌 신체 경로 위의 서류다.\n\n쓸 수 있는 모순은 네 가지에 걸쳐 있다. 스크러버 절단, 남은 슈트 태그, 경로 허가 스탬프, 뒤의 claim 예외다. 장부 절단 뒤에도 경로가 열려 있으면 Deep Reach는 지연을 청구하고, salvage 권한을 보유하고, 매체를 회수 가능 질량으로 재분류할 수 있다. 닫힌 손실 처리는 피한다.\n\n현장 처리는 좁게 간다. 염수를 씻기 전에 장부 스트립을 보존한다. 절단 행, 카트리지 일련번호, 슈트 예비량 델타, 소금 위를 가로지르는 손도장을 촬영한다. claim 상태가 생명유지 한계를 덮게 두지 않는다.",
+     "external_site": "산소 장부 절단은 방이 호흡 지원을 멈춘 지점을 고정한다. 그 행을 지나 claim hold가 계속되면 Deep Reach는 공기 계정이 끝난 뒤에도 작업자를 서류상 활성으로 둔 것이다.",
+     "external_site_article": "산소 장부는 Aegir에서 가장 극적이지 않은 기록 중 하나다. 숫자, 카트리지 ID, 차단 틱, 인계 칸이 이어진다. 그래서 중요하다. 동기를 설명하지는 못한다. 방이 언제 공기 비용을 멈췄는지는 보여준다.\n\n장부가 경로 폐쇄보다 먼저 끊기면 두 소유자가 맞지 않는다. 생명유지는 작업자를 지원 호흡 밖에 둔다. 경로와 claim 처리는 작업자를 배정됨, 대기, 회수 가능, 청구 가능 상태로 남긴다. 두 번째 문장은 행정이다. 첫 번째는 기계 기록이다.\n\nclaim hold는 그 차이를 압박 수단으로 바꾼다. 회수 대기는 권한을 경로에 붙여 둔다. 미해결 질량은 재산 언어를 열어 둔다. 장비 오염은 지연을 청구 가능하게 만든다. 한 칸만으로 범죄가 드러나지는 않는다. 순서가 나쁜 선택을 보이게 한다.\n\n이 행은 누락된 귀환 표식, packet notary 마스크 가장자리, 전사 손상 띠와 함께 맞춘다. 산소 행은 범인을 지목하지 않는다. 뒤의 서류가 넘어선 단단한 한계를 고정한다.",
+     "field_note": "산소가 먼저 멈췄다면 열린 경로는 서류지, 숨이 아니다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Zuurstofregistersnede en claim hold",
+     "scanner": "ZUURSTOFREGISTER-SNEDE // Scrubberregel stopt vóór de terugkeersluiting van de route. Claim hold houdt de werker actief nadat de kamer geen ademlucht meer ondersteunt.",
+     "terminal": "QA ZUURSTOFREGISTER // Vergelijk scrubbersnede, pakreserve-delta, compressoroverdracht, terugkeerveld en claim hold. Zuurstofstop is een levensondersteuningsgrens, geen routesluiting.",
+     "audio": "De scrubberregel is dood vóór de route sluit. Claim desk hield de naam actief.",
+     "in_game_wiki": "Een zuurstofregister is een levensondersteuningsrekening. Het noteert scrubberpatroontijd, pakreserve-delta, pompovername van de kamer, compressorvoeding en snijbevoegdheid. Als die regel stopt, ondersteunt de kamer geen ademlucht meer. De exacte sterfseconde staat er niet in; de laatste plek waar de kamer nog luchtlast accepteerde wel.\n\nEen claim hold wordt verdacht als hij langer leeft dan de zuurstofregel. Route desk kan een werker actief laten, en claim desk kan bergingsbevoegdheid vasthouden, maar geen veld pompt lucht terug de kamer in. Als zuurstof eerst stopte en de terugkeermarkering leeg bleef, ligt actieve werkerstatus als papier boven een gesloten lichaamspad.\n\nDe bruikbare tegenspraak ligt over vier dingen: scrubbersnede, aanwezige paktag, routetoestemmingsstempel en latere claim-uitzondering. Blijft de route open na de registersnede, dan kan Deep Reach vertraging factureren, salvage-bevoegdheid houden of de drager als bergbare massa herclassificeren zonder schoon verlies te sluiten.\n\nVeldbehandeling is smal. Bewaar de registerstrip vóór pekelspoeling. Fotografeer snederegel, patroons serienummer, pakreserve-delta en elke handstempel die over zout loopt. Laat claimstatus de levensondersteuningsgrens niet overschrijven.",
+     "external_site": "Een zuurstofregistersnede legt vast waar de kamer stopte met ademlucht ondersteunen. Loopt claim hold voorbij die regel, dan hield Deep Reach de werker op papier actief nadat de luchtrekening eindigde.",
+     "external_site_article": "Het zuurstofregister is een van de minst theatrale dossiers op Aegir: nummers, patroon-ID's, snijticks en overdrachtsvelden. Daarom telt het. Het verklaart geen motief. Het toont wanneer een kamer stopte met betalen voor lucht.\n\nAls het register vóór routesluiting afbreekt, spreken twee eigenaren elkaar tegen. Levensondersteuning plaatst de werker buiten ondersteunde adem. Route- en claimafhandeling houden de werker toegewezen, wachtend, bergbaar of factureerbaar. De tweede uitspraak is administratie. De eerste is mechaniek.\n\nClaim hold maakt van dat verschil hefboom. Wachtende berging houdt bevoegdheid aan de route; onopgeloste massa houdt eigendomstaal open; besmette uitrusting maakt vertraging factureerbaar. Geen enkel veld roept misdaad. De volgorde maakt een slechte keuze zichtbaar.\n\nLeg de regel naast ontbrekende terugkeermarkering, packet notary-maskerrand en transcript-schadeband. De zuurstofregel noemt geen schuldige. Hij legt de harde grens vast waar latere papieren overheen moesten.",
+     "field_note": "Als zuurstof eerst stopte, is de open route papier, geen adem.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Odcięcie księgi tlenu i blokada claim",
+     "scanner": "ODCIĘCIE KSIĘGI TLENU // Wiersz scrubbera kończy się przed zamknięciem powrotu trasy. Claim hold utrzymuje pracownika jako aktywnego po tym, jak pomieszczenie przestało podtrzymywać oddech.",
+     "terminal": "QA KSIĘGI TLENU // Porównać odcięcie scrubbera, deltę rezerwy skafandra, przekazanie kompresora, pole powrotu i claim hold. Stop tlenu to granica podtrzymania życia, nie zamknięcie trasy.",
+     "audio": "Wiersz scrubbera jest martwy, zanim trasa się zamyka. Claim desk utrzymał nazwisko aktywne.",
+     "in_game_wiki": "Księga tlenu jest rachunkiem podtrzymania życia. Zapisuje czas wkładu scrubbera, deltę rezerwy skafandra, przekazanie pompy pomieszczenia, zasilanie kompresora i uprawnienie do odcięcia. Kiedy ten wiersz się kończy, pomieszczenie przestaje podtrzymywać oddech. Nie dowodzi dokładnej sekundy śmierci; wyznacza ostatni punkt, w którym pomieszczenie przyjmowało jeszcze obciążenie powietrzem.\n\nClaim hold staje się podejrzany, gdy żyje dłużej niż wiersz tlenu. Route desk może zostawić pracownika aktywnego, a claim desk może trzymać uprawnienie do odzysku, ale żadne pole nie doda powietrza do pomieszczenia. Jeśli tlen zatrzymał się pierwszy, a znak powrotu został pusty, aktywny status pracownika jest papierem nad zamkniętą ścieżką ciała.\n\nUżyteczna sprzeczność leży na czterech rzeczach: odcięciu scrubbera, obecności taga skafandra, stemplu zgody na trasę i późniejszym wyjątku claim. Jeśli trasa zostaje otwarta po odcięciu księgi, Deep Reach może naliczać opóźnienie, trzymać uprawnienie salvage albo przeklasyfikować nośnik jako masę do odzysku bez czystego zamknięcia straty.\n\nObsługa terenowa jest wąska. Zabezpieczyć pasek księgi przed płukaniem solanki. Sfotografować wiersz odcięcia, numer wkładu, deltę rezerwy skafandra i każdy ręczny stempel przechodzący przez sól. Status claim nie może nadpisać granicy podtrzymania życia.",
+     "external_site": "Odcięcie księgi tlenu ustala, gdzie pomieszczenie przestało podtrzymywać oddech. Jeśli claim hold trwa za tym wierszem, Deep Reach utrzymała pracownika aktywnego w papierach po zakończeniu rachunku powietrza.",
+     "external_site_article": "Księga tlenu należy do najmniej teatralnych zapisów Aegir: wiersz liczb, identyfikatory wkładu, tiki odcięcia i pola przekazania. Dlatego ma znaczenie. Nie tłumaczy motywu. Pokazuje, kiedy pomieszczenie przestało płacić za powietrze.\n\nGdy księga urywa się przed zamknięciem trasy, dwóch właścicieli danych mówi co innego. Podtrzymanie życia umieszcza pracownika poza wspieranym oddechem. Obsługa trasy i claim zostawia go jako przydzielonego, oczekującego, odzyskiwalnego albo fakturowalnego. Drugie zdanie jest administracyjne. Pierwsze jest mechaniczne.\n\nClaim hold robi z tej różnicy dźwignię. Oczekujący odzysk trzyma uprawnienie przy trasie; nierozstrzygnięta masa trzyma otwarty język własności; skażony sprzęt pozwala naliczać opóźnienie. Żadne pojedyncze pole nie ogłasza przestępstwa. Sekwencja pokazuje zły wybór.\n\nWiersz trzeba zestawić z brakującym znakiem powrotu, krawędzią maski packet notary i pasem uszkodzenia transkryptu. Wiersz tlenu nie wskazuje winnego. Wyznacza twardą granicę, którą późniejsze papiery musiały przekroczyć.",
+     "field_note": "Jeśli tlen zatrzymał się pierwszy, otwarta trasa jest papierem, nie oddechem.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Corte do Livro de Oxigênio e Retenção de Claim",
+     "scanner": "CORTE DO LIVRO DE OXIGÊNIO // Linha do scrubber para antes do fechamento de retorno da rota. Claim hold mantém o trabalhador ativo depois que a sala deixou de sustentar respiração.",
+     "terminal": "QA LIVRO DE OXIGÊNIO // Compare corte do scrubber, delta de reserva do traje, handoff do compressor, campo de retorno e claim hold. Parada de oxigênio é limite de suporte de vida, não fechamento de rota.",
+     "audio": "A linha do scrubber morreu antes da rota fechar. Claim desk manteve o nome ativo.",
+     "in_game_wiki": "Um livro de oxigênio é uma conta de suporte de vida. Registra tempo de cartucho do scrubber, delta de reserva do traje, handoff da bomba da sala, alimentação do compressor e autoridade de corte. Quando essa linha para, a sala deixou de sustentar respiração. Não prova o segundo exato da morte; fixa o último ponto em que a sala ainda aceitava carga de ar.\n\nUm claim hold fica suspeito quando passa da linha de oxigênio. Route desk pode deixar um trabalhador ativo, e claim desk pode reter autoridade de recuperação, mas nenhum campo devolve ar à sala. Se o oxigênio parou primeiro e a marca de retorno ficou vazia, o estado ativo do trabalhador é papel sobre um caminho corporal fechado.\n\nA contradição útil cruza quatro coisas: corte do scrubber, presença de tag de traje, carimbo de permissão de rota e exceção claim posterior. Se a rota continua aberta depois do corte do livro, a Deep Reach pode cobrar atraso, reter autoridade de salvage ou reclassificar o suporte como massa recuperável sem fechar uma perda limpa.\n\nO manejo em campo é estreito. Preserve a tira do livro antes de enxaguar salmoura. Fotografe a linha de corte, número de cartucho, delta de reserva do traje e qualquer carimbo manual cruzando sal. Não deixe status claim sobrescrever o limite de suporte de vida.",
+     "external_site": "Um corte do livro de oxigênio fixa onde a sala deixou de sustentar respiração. Se claim hold continua além dessa linha, a Deep Reach manteve o trabalhador ativo no papel depois que a conta de ar terminou.",
+     "external_site_article": "O livro de oxigênio é um dos registros menos teatrais de Aegir: uma linha de números, IDs de cartucho, ticks de corte e campos de handoff. Por isso ele importa. Não explica motivo. Mostra quando uma sala deixou de pagar por ar.\n\nQuando o livro corta antes do fechamento de rota, dois donos discordam. Suporte de vida coloca o trabalhador fora da respiração sustentada. Tratamento de rota e claim mantém o trabalhador designado, pendente, recuperável ou faturável. A segunda declaração é administrativa. A primeira é mecânica.\n\nClaim hold transforma essa diferença em pressão. Recuperação pendente mantém autoridade presa à rota; massa não resolvida mantém linguagem de propriedade aberta; contaminação de equipamento torna atraso faturável. Nenhum campo sozinho anuncia crime. A sequência deixa a má escolha visível.\n\nLeia a linha junto da marca de retorno ausente, borda da máscara packet notary e faixa de dano da transcrição. A linha de oxigênio não nomeia culpado. Fixa o limite duro que a papelada posterior teve de atravessar.",
+     "field_note": "Se o oxigênio parou primeiro, a rota aberta é papel, não respiração.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Отсечка кислородного журнала и удержание претензии",
+     "scanner": "ОТСЕЧКА КИСЛОРОДНОГО ЖУРНАЛА // Строка скруббера обрывается до закрытия возврата по маршруту. Claim hold держит работника активным после того, как комната перестала поддерживать дыхание.",
+     "terminal": "QA КИСЛОРОДНОГО ЖУРНАЛА // Сверить отсечку скруббера, дельту резерва костюма, передачу компрессора, поле возврата и claim hold. Остановка кислорода — предел жизнеобеспечения, а не закрытие маршрута.",
+     "audio": "Строка скруббера умерла раньше закрытия маршрута. Claim desk оставил имя активным.",
+     "in_game_wiki": "Кислородный журнал — это счет жизнеобеспечения. В нем идут время картриджа скруббера, дельта резерва костюма, передача насоса комнаты, питание компрессора и право отсечки. Когда эта строка останавливается, комната больше не поддерживает дыхание. Она не доказывает точную секунду смерти; она фиксирует последнюю точку, где комната еще принимала воздушную нагрузку.\n\nClaim hold становится подозрительным, когда живет дольше кислородной строки. Route desk может оставить работника активным, а claim desk может удерживать право извлечения, но ни одно поле не вернет воздух в комнату. Если кислород остановился первым, а отметка возврата осталась пустой, активный статус работника — это бумага поверх уже закрытого телесного следа.\n\nРабочее противоречие лежит на четырех вещах: отсечка скруббера, наличие метки костюма, штамп разрешения маршрута и более позднее исключение claim. Если маршрут остается открытым после отсечки журнала, Deep Reach может выставлять задержку к оплате, удерживать право salvage или переклассифицировать носитель как массу к извлечению, не закрывая потерю чисто.\n\nВ поле действовать узко. Сохрани ленту журнала до промывки рассола. Сними строку отсечки, номер картриджа, дельту резерва костюма и любой ручной штамп, идущий через соль. Не давай статусу claim переписать предел жизнеобеспечения.",
+     "external_site": "Отсечка кислородного журнала фиксирует место, где комната перестала поддерживать дыхание. Если claim hold продолжается дальше этой строки, Deep Reach держала работника активным в бумагах уже после закрытия счета воздуха.",
+     "external_site_article": "Кислородный журнал — один из самых сухих документов на Aegir: строка чисел, ID картриджей, такты отсечки и поля передачи. Поэтому он важен. Он не объясняет мотив. Он показывает, когда комната перестала платить за воздух.\n\nКогда журнал обрывается до закрытия маршрута, спорят два владельца данных. Жизнеобеспечение ставит работника вне поддерживаемого дыхания. Маршрутная и претензионная обработка держит его назначенным, ожидающим, извлекаемым или оплачиваемым. Второе утверждение административное. Первое механическое.\n\nClaim hold превращает этот разрыв в рычаг. Ожидающее извлечение держит полномочие привязанным к маршруту; неразрешенная масса оставляет язык собственности открытым; загрязнение оборудования делает задержку оплачиваемой. Ни одно поле само по себе не объявляет преступление. Последовательность показывает плохой выбор.\n\nЭту строку нужно читать вместе с отсутствующей отметкой возврата, краем маски packet notary и полосой повреждения расшифровки. Кислородная строка не называет виновного. Она фиксирует жесткий предел, через который поздним бумагам пришлось переступить.",
+     "field_note": "Если кислород остановился первым, открытый маршрут — это бумага, а не дыхание.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Відсічення кисневого журналу й утримання претензії",
+     "scanner": "ВІДСІЧЕННЯ КИСНЕВОГО ЖУРНАЛУ // Рядок скрубера зупиняється до закриття повернення маршруту. Claim hold тримає працівника активним після того, як кімната перестала підтримувати дихання.",
+     "terminal": "QA КИСНЕВОГО ЖУРНАЛУ // Звірити відсічення скрубера, дельту резерву костюма, передачу компресора, поле повернення й claim hold. Зупинка кисню — межа життєзабезпечення, не закриття маршруту.",
+     "audio": "Рядок скрубера мертвий ще до закриття маршруту. Claim desk лишив ім'я активним.",
+     "in_game_wiki": "Кисневий журнал — це рахунок життєзабезпечення. У ньому записані час картриджа скрубера, дельта резерву костюма, передача помпи кімнати, живлення компресора й право відсічення. Коли цей рядок зупиняється, кімната вже не підтримує дихання. Він не доводить точну секунду смерті; він фіксує останню точку, де кімната ще приймала повітряне навантаження.\n\nClaim hold стає підозрілим, коли живе довше за кисневий рядок. Route desk може лишити працівника активним, а claim desk може тримати право вилучення, але жодне поле не поверне повітря в кімнату. Якщо кисень зупинився першим, а позначка повернення лишилася порожньою, активний статус працівника — це папір поверх уже закритого тілесного сліду.\n\nКорисна суперечність лежить на чотирьох речах: відсічення скрубера, наявність мітки костюма, штамп дозволу маршруту й пізніший виняток claim. Якщо маршрут лишається відкритим після відсічення журналу, Deep Reach може виставляти затримку до оплати, тримати право salvage або перекласифікувати носій як масу для вилучення, не закриваючи втрату чисто.\n\nУ полі діяти вузько. Збережи стрічку журналу до промивання розсолу. Зніми рядок відсічення, номер картриджа, дельту резерву костюма й будь-який ручний штамп, що проходить через сіль. Не дай статусу claim переписати межу життєзабезпечення.",
+     "external_site": "Відсічення кисневого журналу фіксує місце, де кімната перестала підтримувати дихання. Якщо claim hold триває далі цього рядка, Deep Reach тримала працівника активним у паперах уже після завершення рахунку повітря.",
+     "external_site_article": "Кисневий журнал — один із найсухіших записів на Aegir: рядок чисел, ID картриджів, такти відсічення й поля передачі. Тому він важить. Він не пояснює мотив. Він показує, коли кімната перестала платити за повітря.\n\nКоли журнал обривається до закриття маршруту, два власники даних дають різні відповіді. Життєзабезпечення ставить працівника поза підтримуваним диханням. Обробка route і claim тримає його призначеним, очікуваним, вилучним або оплачуваним. Друге твердження адміністративне. Перше механічне.\n\nClaim hold робить із цього розриву важіль. Очікуване вилучення тримає повноваження прив'язаним до маршруту; нерозв'язана маса лишає мову власності відкритою; забруднення обладнання робить затримку оплачуваною. Жодне поле окремо не оголошує злочин. Послідовність показує поганий вибір.\n\nЦей рядок треба звіряти з відсутньою позначкою повернення, краєм маски packet notary і смугою пошкодження розшифрування. Кисневий рядок не називає винного. Він фіксує жорстку межу, через яку пізніші папери мусили переступити.",
+     "field_note": "Якщо кисень зупинився першим, відкритий маршрут — це папір, не дихання.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "氧气账本截断与索赔保留",
+     "scanner": "氧气账本截断 // 洗涤器行在路线返程关闭前停止。claim hold 在房间停止支撑呼吸后仍让工人保持激活。",
+     "terminal": "氧气账本 QA // 对照洗涤器截断、潜服储备差值、压缩机交接、返程字段和 claim hold。氧气停止是生命支持边界，不是路线关闭。",
+     "audio": "洗涤器行在路线关闭前就死了。claim desk 让这个名字继续激活。",
+     "in_game_wiki": "氧气账本是生命支持账。它记录洗涤器滤芯时间、潜服储备差值、房间泵交接、压缩机供给和截断权限。当这一行停止时，房间已经停止支撑呼吸。它不能证明死亡的准确秒数；它固定的是房间最后一次接受空气负载的位置。\n\nclaim hold 比氧气行活得更久时就可疑。route desk 可以让工人保持激活，claim desk 可以扣住回收权限，但没有任何字段能把空气送回房间。如果氧气先停，而返程标记仍为空，激活的工人状态就是压在已关闭身体路径上的文件。\n\n有用的矛盾落在四件东西上：洗涤器截断、潜服标签存在、路线许可章，以及后来加入的 claim 例外。如果账本截断后路线仍然打开，Deep Reach 可以收取延误费用、保留 salvage 权限，或把载体重新归类为可回收质量，同时避开干净的损失关闭。\n\n现场处理范围很窄。冲洗卤水前先保留账本条。拍下截断行、滤芯序号、潜服储备差值，以及任何跨过盐迹的手盖章。不要让 claim 状态覆盖生命支持边界。",
+     "external_site": "氧气账本截断固定了房间停止支撑呼吸的位置。如果 claim hold 越过这一行继续存在，Deep Reach 就是在空气账结束后仍把工人留作文件上的激活状态。",
+     "external_site_article": "氧气账本是 Aegir 上最不戏剧化的记录之一：一行数字、滤芯 ID、截断刻度和交接字段。正因为如此，它很重要。它不能解释动机。它能显示房间什么时候停止为空气付账。\n\n账本在路线关闭前截断时，两个所有者给出不同状态。生命支持把工人放在受支撑呼吸之外。路线和 claim 处理则把工人留为已分派、待处理、可回收或可计费。后者是行政状态。前者是机械记录。\n\nclaim hold 把这种差异变成压力。待回收让权限继续挂在路线下；未解决质量让财产用语保持开放；设备污染让延误可以计费。单个字段不会宣布犯罪。顺序让错误选择显出来。\n\n这行记录要和缺失的返程标记、packet notary 遮盖边缘、转写损坏带一起核对。氧气行不点名责任人。它固定了后来文件必须跨过去的硬边界。",
+     "field_note": "如果氧气先停，打开的路线是文件，不是呼吸。",
+     "localization_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

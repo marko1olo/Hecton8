@@ -1,246 +1,247 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS282_CARRIER_WINDOW_AUDIO_CUE",
-  "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS282_CARRIER_WINDOW_AUDIO_CUE",
+ "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P6800_CARRIER_WINDOW_AUDIO_CUE",
+   "release_set_id": "RS282_CARRIER_WINDOW_AUDIO_CUE",
+   "article_id": "applied_lore.carrier_window_audio_cue",
+   "title_key": "LORE_CARRIER_WINDOW_AUDIO_CUE_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/AppliedContent/in_game_wiki/en_US/P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL.md",
+    "Docs/Lore/AppliedContent/in_game_wiki/en_US/P621_AEGIR_RECOVERY_WINDOW_GEOMETRY.md",
+    "Docs/Lore/AppliedContent/in_game_wiki/en_US/P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md",
+    ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
+    ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P6800_CARRIER_WINDOW_AUDIO_CUE",
-      "release_set_id": "RS282_CARRIER_WINDOW_AUDIO_CUE",
-      "article_id": "applied_lore.carrier_window_audio_cue",
-      "title_key": "LORE_CARRIER_WINDOW_AUDIO_CUE_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/AppliedContent/in_game_wiki/en_US/P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL.md",
-        "Docs/Lore/AppliedContent/in_game_wiki/en_US/P621_AEGIR_RECOVERY_WINDOW_GEOMETRY.md",
-        "Docs/Lore/AppliedContent/in_game_wiki/en_US/P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md",
-        ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
-        ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.carrier_window_audio_cue",
-        "secondary": [
-          "unlock.first_black_keel_receipt_chime",
-          "unlock.first_recovery_lane_closed_tone",
-          "unlock.first_p63_window_clock"
-        ],
-        "poi_tags": [
-          "poi.black_keel_window_clock",
-          "poi.p63_relay_board",
-          "poi.carrier_packet_buffer",
-          "poi.bathydrop_carrier_link_panel",
-          "poi.speaker_grille"
-        ],
-        "biome_tags": [
-          "biome.surface_relay",
-          "biome.carrier_link",
-          "biome.photic_shelf",
-          "biome.storm_ceiling"
-        ],
-        "first_20_boundary": "Separates audio acknowledgement from rescue promise during the first Black Keel contact."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Suit Audio Classifier",
-          "terminal": "Black Keel Relay Scheduler",
-          "audio": "Black Keel Relay",
-          "in_game_wiki": "Recovered Audio State Note",
-          "external_site": "Field Archive Audio Cue",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "surface_to_photic_shelf",
-        "route_moment": "first_carrier_window_chime_after_packet_receipt",
-        "truth_payload": "Black Keel audio acknowledgement confirms packet receipt only; the low closure tone means recovery lane is still closed.",
-        "player_question": "Why did the ship chime if it still will not lift me out?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Carrier Window Audio Cue",
-          "scanner": "CARRIER WINDOW TONE // Two high chimes mean packet receipt only. Low third tone marks recovery lane closed; log the window before moving.",
-          "terminal": "BLACK KEEL AUDIO STATE // Two high chimes accepted packet receipt. One low closure tone means recovery lane remains closed by ascent package, quarantine handshake, carrier geometry or tonne-window allocation. Audio acknowledgement does not allocate lift mass.",
-          "audio": "Black Keel relay: Packet received. Recovery lane closed. Log the window. Do not ascend on tone.",
-          "in_game_wiki": "The carrier-window tone is not a rescue promise. Two high chimes mean Black Keel heard a packet. The low third tone means the recovery lane is still closed by hardware, quarantine, geometry or tonne-window allocation. Treat the sound as a timestamp and route mark before touching ascent hardware.",
-          "external_site": "Black Keel can sound close while remaining unavailable. The carrier-window cue separates packet receipt from recovery clearance: a pair of high chimes confirms that a message entered the queue, while the low closure tone keeps body, proof and salvage underwater until the window, seal, payload and legal line agree.",
-          "field_note": "Two bright notes are a receipt. The ugly note is the bill saying your body still does not fit the window.",
-          "localization_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "إشارة صوت نافذة الناقل",
-          "scanner": "نغمة نافذة الناقل // نغمتان عاليتان تعنيان استلام الحزمة فقط. النغمة الثالثة المنخفضة تعني أن مسار الاسترداد مغلق؛ سجّل النافذة قبل الحركة.",
-          "terminal": "حالة صوت BLACK KEEL // نغمتان عاليتان تؤكدان استلام الحزمة. نغمة إغلاق منخفضة تعني أن مسار الاسترداد ما زال مغلقا بسبب حزمة الصعود أو مصافحة الحجر أو هندسة الناقل أو تخصيص tonne-window. الإقرار الصوتي لا يخصص كتلة رفع.",
-          "audio": "مرحل Black Keel: تم استلام الحزمة. مسار الاسترداد مغلق. سجّل النافذة. لا تصعد اعتمادا على النغمة.",
-          "in_game_wiki": "نغمة نافذة الناقل ليست وعدا بالإنقاذ. النغمتان العاليتان تعنيان أن Black Keel سمع الحزمة. النغمة الثالثة المنخفضة تعني أن مسار الاسترداد ما زال مغلقا بسبب العتاد أو الحجر أو الهندسة أو تخصيص tonne-window. عامل الصوت كطابع وقت وعلامة مسار قبل لمس عتاد الصعود.",
-          "external_site": "قد يبدو Black Keel قريبا بينما يبقى غير متاح. تفصل إشارة نافذة الناقل بين استلام الحزمة وتصريح الاسترداد: نغمتان عاليتان تثبتان دخول الرسالة إلى الطابور، بينما تبقي نغمة الإغلاق المنخفضة الجسد والدليل والإنقاذ تحت الماء حتى تتفق النافذة والختم والحمولة والخط القانوني.",
-          "field_note": "نغمتان ساطعتان هما إيصال. النغمة القبيحة هي الفاتورة التي تقول إن جسدك لا يزال خارج النافذة.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Audiozeichen des Carrier-Fensters",
-          "scanner": "CARRIER-FENSTERTON // Zwei hohe Töne bedeuten nur Paketempfang. Der tiefe dritte Ton markiert die geschlossene Bergungsspur; Fenster vor Bewegung protokollieren.",
-          "terminal": "BLACK-KEEL-AUDIOSTATUS // Zwei hohe Töne bestätigen den Paketempfang. Ein tiefer Schlusston bedeutet, dass die Bergungsspur durch Aufstiegspaket, Quarantäne-Handshake, Carrier-Geometrie oder tonne-window-Zuteilung geschlossen bleibt. Akustische Bestätigung weist keine Hebemasse zu.",
-          "audio": "Black-Keel-Relais: Paket empfangen. Bergungsspur geschlossen. Fenster protokollieren. Nicht nach Ton aufsteigen.",
-          "in_game_wiki": "Der Carrier-Fensterton ist kein Rettungsversprechen. Zwei hohe Töne bedeuten, dass Black Keel ein Paket gehört hat. Der tiefe dritte Ton bedeutet, dass die Bergungsspur durch Hardware, Quarantäne, Geometrie oder tonne-window-Zuteilung geschlossen bleibt. Behandle den Klang als Zeitstempel und Routenmarke, bevor du Aufstiegshardware berührst.",
-          "external_site": "Black Keel kann nah klingen und trotzdem unerreichbar bleiben. Das Carrier-Fensterzeichen trennt Paketempfang von Bergungsfreigabe: Zwei hohe Töne bestätigen, dass eine Nachricht in die Warteschlange gelangt ist, während der tiefe Schlusston Körper, Beweis und Salvage unter Wasser hält, bis Fenster, Siegel, Nutzlast und Rechtslinie übereinstimmen.",
-          "field_note": "Zwei helle Töne sind eine Quittung. Der hässliche Ton ist die Rechnung, die sagt, dass dein Körper noch nicht ins Fenster passt.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Señal de audio de ventana del carrier",
-          "scanner": "TONO DE VENTANA DEL CARRIER // Dos tonos agudos solo indican recepción del paquete. El tercer tono grave marca la vía de recuperación cerrada; registra la ventana antes de moverte.",
-          "terminal": "ESTADO DE AUDIO BLACK KEEL // Dos tonos agudos aceptaron la recepción del paquete. Un tono grave de cierre significa que la vía de recuperación sigue cerrada por paquete de ascenso, handshake de cuarentena, geometría del carrier o asignación tonne-window. El acuse sonoro no asigna masa de izado.",
-          "audio": "Relé Black Keel: paquete recibido. Vía de recuperación cerrada. Registra la ventana. No asciendas por el tono.",
-          "in_game_wiki": "El tono de ventana del carrier no es una promesa de rescate. Dos tonos agudos significan que Black Keel oyó un paquete. El tercer tono grave significa que la vía de recuperación sigue cerrada por hardware, cuarentena, geometría o asignación tonne-window. Trata el sonido como marca de tiempo y ruta antes de tocar hardware de ascenso.",
-          "external_site": "Black Keel puede sonar cerca y seguir no disponible. La señal de ventana del carrier separa recepción de paquete y autorización de recuperación: dos tonos agudos confirman que un mensaje entró en la cola, mientras el tono grave de cierre mantiene cuerpo, prueba y salvamento bajo el agua hasta que ventana, sello, carga y línea legal coincidan.",
-          "field_note": "Dos notas claras son un recibo. La nota fea es la factura que dice que tu cuerpo aún no cabe en la ventana.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Signal audio de fenêtre carrier",
-          "scanner": "TON DE FENÊTRE CARRIER // Deux sons aigus indiquent seulement la réception du paquet. Le troisième son grave marque la voie de récupération fermée; consigne la fenêtre avant de bouger.",
-          "terminal": "ÉTAT AUDIO BLACK KEEL // Deux sons aigus confirment la réception du paquet. Un son grave de fermeture signifie que la voie de récupération reste fermée par le paquet d'ascension, la poignée de quarantaine, la géométrie carrier ou l'allocation tonne-window. L'accusé audio n'alloue aucune masse de levage.",
-          "audio": "Relais Black Keel: paquet reçu. Voie de récupération fermée. Consigne la fenêtre. Ne monte pas sur un ton.",
-          "in_game_wiki": "Le ton de fenêtre carrier n'est pas une promesse de sauvetage. Deux sons aigus signifient que Black Keel a entendu un paquet. Le troisième son grave signifie que la voie de récupération reste fermée par le matériel, la quarantaine, la géométrie ou l'allocation tonne-window. Traite le son comme un horodatage et une marque de route avant de toucher au matériel d'ascension.",
-          "external_site": "Black Keel peut sembler proche tout en restant indisponible. Le signal de fenêtre carrier sépare réception de paquet et autorisation de récupération: deux sons aigus confirment qu'un message est entré dans la file, tandis que le son grave de fermeture garde corps, preuve et salvage sous l'eau jusqu'à ce que fenêtre, scellé, charge utile et ligne légale concordent.",
-          "field_note": "Deux notes claires sont un reçu. La note laide est la facture qui dit que ton corps ne rentre pas encore dans la fenêtre.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "אות שמע לחלון המוביל",
-          "scanner": "צליל חלון המוביל // שני צלילים גבוהים מציינים רק קבלת חבילה. הצליל השלישי הנמוך מסמן שנתיב החילוץ סגור; רשום את החלון לפני תנועה.",
-          "terminal": "מצב שמע BLACK KEEL // שני צלילים גבוהים אישרו קבלת חבילה. צליל סגירה נמוך אחד אומר שנתיב החילוץ עדיין סגור בגלל חבילת עלייה, לחיצת יד הסגר, גאומטריית מוביל או הקצאת tonne-window. אישור שמע אינו מקצה מסת הרמה.",
-          "audio": "ממסר Black Keel: החבילה התקבלה. נתיב החילוץ סגור. רשום את החלון. אל תעלה לפי צליל.",
-          "in_game_wiki": "צליל חלון המוביל אינו הבטחת חילוץ. שני צלילים גבוהים אומרים ש-Black Keel שמע חבילה. הצליל השלישי הנמוך אומר שנתיב החילוץ עדיין סגור בגלל חומרה, הסגר, גאומטריה או הקצאת tonne-window. התייחס לצליל כחותמת זמן וסימון נתיב לפני נגיעה בחומרת העלייה.",
-          "external_site": "Black Keel יכול להישמע קרוב ועדיין לא להיות זמין. אות חלון המוביל מפריד בין קבלת חבילה לבין אישור חילוץ: זוג צלילים גבוהים מאשר שהודעה נכנסה לתור, בזמן שצליל הסגירה הנמוך משאיר גוף, הוכחה ושלל מתחת למים עד שהחלון, החותם, המטען והקו המשפטי מסכימים.",
-          "field_note": "שתי נימות בהירות הן קבלה. הנימה המכוערת היא החשבון שאומר שהגוף שלך עדיין לא נכנס לחלון.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Isyarat audio jendela carrier",
-          "scanner": "NADA JENDELA CARRIER // Dua bunyi tinggi hanya berarti paket diterima. Nada ketiga yang rendah menandai jalur pemulihan tertutup; catat jendelanya sebelum bergerak.",
-          "terminal": "STATUS AUDIO BLACK KEEL // Dua bunyi tinggi menerima tanda paket masuk. Satu nada penutup rendah berarti jalur pemulihan tetap tertutup oleh paket naik, handshake karantina, geometri carrier, atau alokasi tonne-window. Pengakuan audio tidak mengalokasikan massa angkat.",
-          "audio": "Relai Black Keel: paket diterima. Jalur pemulihan tertutup. Catat jendela. Jangan naik karena nada.",
-          "in_game_wiki": "Nada jendela carrier bukan janji penyelamatan. Dua bunyi tinggi berarti Black Keel mendengar sebuah paket. Nada ketiga yang rendah berarti jalur pemulihan masih tertutup oleh perangkat keras, karantina, geometri, atau alokasi tonne-window. Perlakukan suara sebagai cap waktu dan tanda rute sebelum menyentuh perangkat naik.",
-          "external_site": "Black Keel bisa terdengar dekat tetapi tetap tidak tersedia. Isyarat jendela carrier memisahkan penerimaan paket dari izin pemulihan: sepasang bunyi tinggi mengonfirmasi pesan masuk antrean, sedangkan nada penutup rendah menahan tubuh, bukti, dan salvage di bawah air sampai jendela, segel, muatan, dan garis hukum setuju.",
-          "field_note": "Dua nada terang adalah tanda terima. Nada jelek itu tagihan yang bilang tubuhmu masih belum muat di jendela.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "キャリア窓音声キュー",
-          "scanner": "CARRIER WINDOW TONE // 高いチャイム2回はパケット受信のみを示す。低い3音目は回収レーン閉鎖を示す。移動前に窓を記録。",
-          "terminal": "BLACK KEEL AUDIO STATE // 高いチャイム2回でパケット受信は受理された。低い閉鎖音1回は、上昇パッケージ、検疫ハンドシェイク、キャリア幾何、またはtonne-window割当のため回収レーンが閉じたままであることを示す。音声確認は揚収質量を割り当てない。",
-          "audio": "Black Keel中継: パケット受信。回収レーン閉鎖。窓を記録。音だけで上昇するな。",
-          "in_game_wiki": "キャリア窓の音は救助の約束ではない。高いチャイム2回はBlack Keelがパケットを聞いたことを示す。低い3音目は、ハードウェア、検疫、幾何、またはtonne-window割当のため回収レーンがまだ閉じていることを示す。上昇ハードウェアに触れる前に、その音を時刻印とルート標識として扱う。",
-          "external_site": "Black Keelは近く聞こえても利用不能なままであり得る。キャリア窓キューはパケット受信と回収許可を分ける。高いチャイム2回はメッセージが待ち行列に入ったことを確認し、低い閉鎖音は窓、封印、ペイロード、法的ラインが一致するまで身体、証拠、サルベージを水中に留める。",
-          "field_note": "明るい2音は受領書だ。嫌な音は、まだ身体が窓に入らないという請求書だ。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "캐리어 창 오디오 신호",
-          "scanner": "CARRIER WINDOW TONE // 높은 차임 두 번은 패킷 수신만 뜻한다. 낮은 세 번째 음은 회수 레인이 닫혔다는 표시다. 움직이기 전에 창을 기록하라.",
-          "terminal": "BLACK KEEL 오디오 상태 // 높은 차임 두 번은 패킷 수신을 승인했다. 낮은 폐쇄음 한 번은 상승 패키지, 검역 핸드셰이크, 캐리어 기하, 또는 tonne-window 할당 때문에 회수 레인이 계속 닫혔다는 뜻이다. 오디오 확인은 인양 질량을 배정하지 않는다.",
-          "audio": "Black Keel 중계: 패킷 수신. 회수 레인 폐쇄. 창을 기록하라. 소리만 듣고 상승하지 마라.",
-          "in_game_wiki": "캐리어 창 소리는 구조 약속이 아니다. 높은 차임 두 번은 Black Keel이 패킷을 들었다는 뜻이다. 낮은 세 번째 음은 하드웨어, 검역, 기하, 또는 tonne-window 할당 때문에 회수 레인이 아직 닫혀 있다는 뜻이다. 상승 하드웨어를 만지기 전에 그 소리를 시간표와 경로 표식으로 다뤄라.",
-          "external_site": "Black Keel은 가까이 들리면서도 여전히 이용 불가능할 수 있다. 캐리어 창 신호는 패킷 수신과 회수 허가를 분리한다. 높은 차임 두 번은 메시지가 대기열에 들어갔음을 확인하고, 낮은 폐쇄음은 창, 봉인, 적재물, 법적 선이 맞을 때까지 몸과 증거와 회수를 물속에 붙잡아 둔다.",
-          "field_note": "밝은 두 음은 영수증이다. 못생긴 음은 네 몸이 아직 창에 맞지 않는다는 청구서다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Audioteken van het carriervenster",
-          "scanner": "CARRIER-VENSTERTOON // Twee hoge tonen betekenen alleen pakketontvangst. De lage derde toon markeert een gesloten bergingsbaan; noteer het venster voordat je beweegt.",
-          "terminal": "BLACK KEEL AUDIOSTATUS // Twee hoge tonen bevestigen pakketontvangst. Eén lage sluittoon betekent dat de bergingsbaan gesloten blijft door opstijgpakket, quarantaine-handshake, carriergeometrie of tonne-window-toewijzing. Audio-erkenning wijst geen hijsmassa toe.",
-          "audio": "Black Keel-relais: pakket ontvangen. Bergingsbaan gesloten. Noteer het venster. Stijg niet op basis van de toon.",
-          "in_game_wiki": "De toon van het carriervenster is geen reddingsbelofte. Twee hoge tonen betekenen dat Black Keel een pakket hoorde. De lage derde toon betekent dat de bergingsbaan nog gesloten is door hardware, quarantaine, geometrie of tonne-window-toewijzing. Behandel het geluid als tijdstempel en routemarkering voordat je opstijghardware aanraakt.",
-          "external_site": "Black Keel kan dichtbij klinken terwijl het onbeschikbaar blijft. Het carriervensterteken scheidt pakketontvangst van bergingsvrijgave: twee hoge tonen bevestigen dat een bericht in de wachtrij kwam, terwijl de lage sluittoon lichaam, bewijs en salvage onder water houdt tot venster, verzegeling, lading en juridische lijn overeenkomen.",
-          "field_note": "Twee heldere tonen zijn een ontvangstbewijs. De lelijke toon is de rekening die zegt dat je lichaam nog niet in het venster past.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Sygnał audio okna carriera",
-          "scanner": "TON OKNA CARRIERA // Dwa wysokie dźwięki oznaczają tylko odbiór pakietu. Niski trzeci ton oznacza zamkniętą ścieżkę odzysku; zapisz okno przed ruchem.",
-          "terminal": "STAN AUDIO BLACK KEEL // Dwa wysokie dźwięki przyjęły odbiór pakietu. Jeden niski ton zamknięcia oznacza, że ścieżka odzysku pozostaje zamknięta przez pakiet wznoszenia, handshake kwarantanny, geometrię carriera albo przydział tonne-window. Potwierdzenie audio nie przydziela masy podnoszenia.",
-          "audio": "Przekaźnik Black Keel: pakiet odebrany. Ścieżka odzysku zamknięta. Zapisz okno. Nie wynurzaj się na podstawie tonu.",
-          "in_game_wiki": "Ton okna carriera nie jest obietnicą ratunku. Dwa wysokie dźwięki oznaczają, że Black Keel usłyszał pakiet. Niski trzeci ton oznacza, że ścieżka odzysku nadal jest zamknięta przez sprzęt, kwarantannę, geometrię albo przydział tonne-window. Traktuj dźwięk jak znacznik czasu i trasy przed dotknięciem sprzętu wznoszenia.",
-          "external_site": "Black Keel może brzmieć blisko i nadal być niedostępny. Sygnał okna carriera oddziela odbiór pakietu od zgody na odzysk: para wysokich dźwięków potwierdza wejście wiadomości do kolejki, a niski ton zamknięcia trzyma ciało, dowód i salvage pod wodą, aż okno, plomba, ładunek i linia prawna się zgodzą.",
-          "field_note": "Dwie jasne nuty to pokwitowanie. Brzydka nuta to rachunek mówiący, że twoje ciało wciąż nie mieści się w oknie.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Sinal de áudio da janela do carrier",
-          "scanner": "TOM DA JANELA DO CARRIER // Dois tons agudos indicam apenas recebimento do pacote. O terceiro tom grave marca a via de recuperação fechada; registre a janela antes de se mover.",
-          "terminal": "ESTADO DE ÁUDIO BLACK KEEL // Dois tons agudos aceitaram o recebimento do pacote. Um tom grave de fechamento significa que a via de recuperação segue fechada por pacote de ascensão, handshake de quarentena, geometria do carrier ou alocação tonne-window. O reconhecimento sonoro não aloca massa de içamento.",
-          "audio": "Relé Black Keel: pacote recebido. Via de recuperação fechada. Registre a janela. Não suba pelo tom.",
-          "in_game_wiki": "O tom da janela do carrier não é promessa de resgate. Dois tons agudos significam que Black Keel ouviu um pacote. O terceiro tom grave significa que a via de recuperação ainda está fechada por hardware, quarentena, geometria ou alocação tonne-window. Trate o som como carimbo de tempo e marca de rota antes de tocar no hardware de ascensão.",
-          "external_site": "Black Keel pode soar perto e continuar indisponível. O sinal da janela do carrier separa recebimento de pacote de liberação de recuperação: dois tons agudos confirmam que uma mensagem entrou na fila, enquanto o tom grave de fechamento mantém corpo, prova e salvage debaixo d'água até janela, lacre, carga e linha legal concordarem.",
-          "field_note": "Duas notas claras são recibo. A nota feia é a conta dizendo que seu corpo ainda não cabe na janela.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Звуковой сигнал окна Carrier",
-          "scanner": "ТОН ОКНА CARRIER // Два высоких сигнала означают только прием пакета. Низкий третий тон отмечает закрытую линию эвакуации; запиши окно перед движением.",
-          "terminal": "АУДИОСОСТОЯНИЕ BLACK KEEL // Два высоких сигнала подтвердили прием пакета. Один низкий тон закрытия означает, что линия эвакуации остается закрытой из-за подъемного пакета, карантинного согласования, геометрии carrier или распределения tonne-window. Звуковое подтверждение не выделяет массу подъема.",
-          "audio": "Ретранслятор Black Keel: пакет принят. Линия эвакуации закрыта. Запиши окно. Не поднимайся по тону.",
-          "in_game_wiki": "Тон окна carrier не является обещанием спасения. Два высоких сигнала означают, что Black Keel услышал пакет. Низкий третий тон означает, что линия эвакуации все еще закрыта из-за оборудования, карантина, геометрии или распределения tonne-window. Считай звук отметкой времени и маршрута перед работой с подъемным оборудованием.",
-          "external_site": "Black Keel может звучать близко и все равно оставаться недоступным. Сигнал окна carrier отделяет прием пакета от разрешения на эвакуацию: пара высоких сигналов подтверждает вход сообщения в очередь, а низкий тон закрытия удерживает тело, доказательство и salvage под водой, пока окно, пломба, груз и юридическая линия не совпадут.",
-          "field_note": "Два светлых сигнала это квитанция. Гадкий звук это счет, где написано, что твое тело все еще не помещается в окно.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Звуковий сигнал вікна Carrier",
-          "scanner": "ТОН ВІКНА CARRIER // Два високі сигнали означають лише прийом пакета. Низький третій тон позначає закриту лінію повернення; запиши вікно перед рухом.",
-          "terminal": "АУДІОСТАН BLACK KEEL // Два високі сигнали підтвердили прийом пакета. Один низький тон закриття означає, що лінія повернення лишається закритою через підйомний пакет, карантинне узгодження, геометрію carrier або розподіл tonne-window. Звукове підтвердження не виділяє масу підйому.",
-          "audio": "Ретранслятор Black Keel: пакет прийнято. Лінію повернення закрито. Запиши вікно. Не піднімайся за тоном.",
-          "in_game_wiki": "Тон вікна carrier не є обіцянкою порятунку. Два високі сигнали означають, що Black Keel почув пакет. Низький третій тон означає, що лінія повернення ще закрита через обладнання, карантин, геометрію або розподіл tonne-window. Сприймай звук як часову і маршрутну позначку перед роботою з підйомним обладнанням.",
-          "external_site": "Black Keel може звучати близько й усе одно лишатися недоступним. Сигнал вікна carrier відокремлює прийом пакета від дозволу на повернення: пара високих сигналів підтверджує вхід повідомлення в чергу, а низький тон закриття тримає тіло, доказ і salvage під водою, доки вікно, пломба, вантаж і юридична лінія не збіжаться.",
-          "field_note": "Два ясні сигнали це квитанція. Огидний звук це рахунок, де написано, що твоє тіло досі не влазить у вікно.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Carrier 窗口音频提示",
-          "scanner": "CARRIER WINDOW TONE // 两声高提示只表示数据包已收到。第三声低音表示回收通道关闭；移动前记录窗口。",
-          "terminal": "BLACK KEEL 音频状态 // 两声高提示确认数据包已接收。一声低沉关闭音表示回收通道仍因上升包、隔离握手、carrier 几何或 tonne-window 分配而关闭。音频确认不会分配起吊质量。",
-          "audio": "Black Keel 中继：数据包已接收。回收通道关闭。记录窗口。不要凭音调上升。",
-          "in_game_wiki": "Carrier 窗口音不是救援承诺。两声高提示表示 Black Keel 听到了一个数据包。第三声低音表示回收通道仍因硬件、隔离、几何或 tonne-window 分配而关闭。触碰上升硬件前，把声音当作时间戳和路线标记。",
-          "external_site": "Black Keel 可以听起来很近，却仍然不可用。Carrier 窗口提示把数据包接收和回收许可分开：两声高提示确认消息进入队列，而低沉关闭音把身体、证据和 salvage 留在水下，直到窗口、封签、载荷和法律线路一致。",
-          "field_note": "两声明亮的音是收据。难听的那一声是账单，说明你的身体仍装不进窗口。",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.carrier_window_audio_cue",
+    "secondary": [
+     "unlock.first_black_keel_receipt_chime",
+     "unlock.first_recovery_lane_closed_tone",
+     "unlock.first_p63_window_clock"
+    ],
+    "poi_tags": [
+     "poi.black_keel_window_clock",
+     "poi.p63_relay_board",
+     "poi.carrier_packet_buffer",
+     "poi.bathydrop_carrier_link_panel",
+     "poi.speaker_grille"
+    ],
+    "biome_tags": [
+     "biome.surface_relay",
+     "biome.carrier_link",
+     "biome.photic_shelf",
+     "biome.storm_ceiling"
+    ],
+    "first_20_boundary": "Separates audio acknowledgement from rescue promise during the first Black Keel contact."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Suit Audio Classifier",
+     "terminal": "Black Keel Relay Scheduler",
+     "audio": "Black Keel Relay",
+     "in_game_wiki": "Recovered Audio State Note",
+     "external_site": "Field Archive Audio Cue",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "surface_to_photic_shelf",
+    "route_moment": "first_carrier_window_chime_after_packet_receipt",
+    "truth_payload": "Black Keel audio acknowledgement confirms packet receipt only; the low closure tone means recovery lane is still closed.",
+    "player_question": "Why did the ship chime if it still will not lift me out?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Carrier Window Audio Cue",
+     "scanner": "CARRIER WINDOW TONE // Two high chimes mean packet receipt only. Low third tone marks recovery lane closed; log the window before moving.",
+     "terminal": "BLACK KEEL AUDIO STATE // Two high chimes accepted packet receipt. One low closure tone means recovery lane remains closed by ascent package, quarantine handshake, carrier geometry or tonne-window allocation. Audio acknowledgement does not allocate lift mass.",
+     "audio": "Black Keel relay: Packet received. Recovery lane closed. Log the window. Do not ascend on tone.",
+     "in_game_wiki": "The carrier-window tone is not a rescue promise. Two high chimes mean Black Keel heard a packet. The low third tone means the recovery lane is still closed by hardware, quarantine, geometry or tonne-window allocation. Treat the sound as a timestamp and route mark before touching ascent hardware.",
+     "external_site": "Black Keel can sound close while remaining unavailable. The carrier-window cue separates packet receipt from recovery clearance: a pair of high chimes confirms that a message entered the queue, while the low closure tone keeps body, proof and salvage underwater until the window, seal, payload and legal line agree.",
+     "field_note": "Two bright notes are a receipt. The ugly note is the bill saying your body still does not fit the window.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "إشارة صوت نافذة الناقل",
+     "scanner": "نغمة نافذة الناقل // نغمتان عاليتان تعنيان استلام الحزمة فقط. النغمة الثالثة المنخفضة تعني أن مسار الاسترداد مغلق؛ سجّل النافذة قبل الحركة.",
+     "terminal": "حالة صوت BLACK KEEL // نغمتان عاليتان تؤكدان استلام الحزمة. نغمة إغلاق منخفضة تعني أن مسار الاسترداد ما زال مغلقا بسبب حزمة الصعود أو مصافحة الحجر أو هندسة الناقل أو تخصيص tonne-window. الإقرار الصوتي لا يخصص كتلة رفع.",
+     "audio": "مرحل Black Keel: تم استلام الحزمة. مسار الاسترداد مغلق. سجّل النافذة. لا تصعد اعتمادا على النغمة.",
+     "in_game_wiki": "نغمة نافذة الناقل ليست وعدا بالإنقاذ. النغمتان العاليتان تعنيان أن Black Keel سمع الحزمة. النغمة الثالثة المنخفضة تعني أن مسار الاسترداد ما زال مغلقا بسبب العتاد أو الحجر أو الهندسة أو تخصيص tonne-window. عامل الصوت كطابع وقت وعلامة مسار قبل لمس عتاد الصعود.",
+     "external_site": "قد يبدو Black Keel قريبا بينما يبقى غير متاح. تفصل إشارة نافذة الناقل بين استلام الحزمة وتصريح الاسترداد: نغمتان عاليتان تثبتان دخول الرسالة إلى الطابور، بينما تبقي نغمة الإغلاق المنخفضة الجسد والدليل والإنقاذ تحت الماء حتى تتفق النافذة والختم والحمولة والخط القانوني.",
+     "field_note": "نغمتان ساطعتان هما إيصال. النغمة القبيحة هي الفاتورة التي تقول إن جسدك لا يزال خارج النافذة.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Audiozeichen des Carrier-Fensters",
+     "scanner": "CARRIER-FENSTERTON // Zwei hohe Töne bedeuten nur Paketempfang. Der tiefe dritte Ton markiert die geschlossene Bergungsspur; Fenster vor Bewegung protokollieren.",
+     "terminal": "BLACK-KEEL-AUDIOSTATUS // Zwei hohe Töne bestätigen den Paketempfang. Ein tiefer Schlusston bedeutet, dass die Bergungsspur durch Aufstiegspaket, Quarantäne-Handshake, Carrier-Geometrie oder tonne-window-Zuteilung geschlossen bleibt. Akustische Bestätigung weist keine Hebemasse zu.",
+     "audio": "Black-Keel-Relais: Paket empfangen. Bergungsspur geschlossen. Fenster protokollieren. Nicht nach Ton aufsteigen.",
+     "in_game_wiki": "Der Carrier-Fensterton ist kein Rettungsversprechen. Zwei hohe Töne bedeuten, dass Black Keel ein Paket gehört hat. Der tiefe dritte Ton bedeutet, dass die Bergungsspur durch Hardware, Quarantäne, Geometrie oder tonne-window-Zuteilung geschlossen bleibt. Behandle den Klang als Zeitstempel und Routenmarke, bevor du Aufstiegshardware berührst.",
+     "external_site": "Black Keel kann nah klingen und trotzdem unerreichbar bleiben. Das Carrier-Fensterzeichen trennt Paketempfang von Bergungsfreigabe: Zwei hohe Töne bestätigen, dass eine Nachricht in die Warteschlange gelangt ist, während der tiefe Schlusston Körper, Beweis und Salvage unter Wasser hält, bis Fenster, Siegel, Nutzlast und Rechtslinie übereinstimmen.",
+     "field_note": "Zwei helle Töne sind eine Quittung. Der hässliche Ton ist die Rechnung, die sagt, dass dein Körper noch nicht ins Fenster passt.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Señal de audio de ventana del carrier",
+     "scanner": "TONO DE VENTANA DEL CARRIER // Dos tonos agudos solo indican recepción del paquete. El tercer tono grave marca la vía de recuperación cerrada; registra la ventana antes de moverte.",
+     "terminal": "ESTADO DE AUDIO BLACK KEEL // Dos tonos agudos aceptaron la recepción del paquete. Un tono grave de cierre significa que la vía de recuperación sigue cerrada por paquete de ascenso, handshake de cuarentena, geometría del carrier o asignación tonne-window. El acuse sonoro no asigna masa de izado.",
+     "audio": "Relé Black Keel: paquete recibido. Vía de recuperación cerrada. Registra la ventana. No asciendas por el tono.",
+     "in_game_wiki": "El tono de ventana del carrier no es una promesa de rescate. Dos tonos agudos significan que Black Keel oyó un paquete. El tercer tono grave significa que la vía de recuperación sigue cerrada por hardware, cuarentena, geometría o asignación tonne-window. Trata el sonido como marca de tiempo y ruta antes de tocar hardware de ascenso.",
+     "external_site": "Black Keel puede sonar cerca y seguir no disponible. La señal de ventana del carrier separa recepción de paquete y autorización de recuperación: dos tonos agudos confirman que un mensaje entró en la cola, mientras el tono grave de cierre mantiene cuerpo, prueba y salvamento bajo el agua hasta que ventana, sello, carga y línea legal coincidan.",
+     "field_note": "Dos notas claras son un recibo. La nota fea es la factura que dice que tu cuerpo aún no cabe en la ventana.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Signal audio de fenêtre carrier",
+     "scanner": "TON DE FENÊTRE CARRIER // Deux sons aigus indiquent seulement la réception du paquet. Le troisième son grave marque la voie de récupération fermée; consigne la fenêtre avant de bouger.",
+     "terminal": "ÉTAT AUDIO BLACK KEEL // Deux sons aigus confirment la réception du paquet. Un son grave de fermeture signifie que la voie de récupération reste fermée par le paquet d'ascension, la poignée de quarantaine, la géométrie carrier ou l'allocation tonne-window. L'accusé audio n'alloue aucune masse de levage.",
+     "audio": "Relais Black Keel: paquet reçu. Voie de récupération fermée. Consigne la fenêtre. Ne monte pas sur un ton.",
+     "in_game_wiki": "Le ton de fenêtre carrier n'est pas une promesse de sauvetage. Deux sons aigus signifient que Black Keel a entendu un paquet. Le troisième son grave signifie que la voie de récupération reste fermée par le matériel, la quarantaine, la géométrie ou l'allocation tonne-window. Traite le son comme un horodatage et une marque de route avant de toucher au matériel d'ascension.",
+     "external_site": "Black Keel peut sembler proche tout en restant indisponible. Le signal de fenêtre carrier sépare réception de paquet et autorisation de récupération: deux sons aigus confirment qu'un message est entré dans la file, tandis que le son grave de fermeture garde corps, preuve et salvage sous l'eau jusqu'à ce que fenêtre, scellé, charge utile et ligne légale concordent.",
+     "field_note": "Deux notes claires sont un reçu. La note laide est la facture qui dit que ton corps ne rentre pas encore dans la fenêtre.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "אות שמע לחלון המוביל",
+     "scanner": "צליל חלון המוביל // שני צלילים גבוהים מציינים רק קבלת חבילה. הצליל השלישי הנמוך מסמן שנתיב החילוץ סגור; רשום את החלון לפני תנועה.",
+     "terminal": "מצב שמע BLACK KEEL // שני צלילים גבוהים אישרו קבלת חבילה. צליל סגירה נמוך אחד אומר שנתיב החילוץ עדיין סגור בגלל חבילת עלייה, לחיצת יד הסגר, גאומטריית מוביל או הקצאת tonne-window. אישור שמע אינו מקצה מסת הרמה.",
+     "audio": "ממסר Black Keel: החבילה התקבלה. נתיב החילוץ סגור. רשום את החלון. אל תעלה לפי צליל.",
+     "in_game_wiki": "צליל חלון המוביל אינו הבטחת חילוץ. שני צלילים גבוהים אומרים ש-Black Keel שמע חבילה. הצליל השלישי הנמוך אומר שנתיב החילוץ עדיין סגור בגלל חומרה, הסגר, גאומטריה או הקצאת tonne-window. התייחס לצליל כחותמת זמן וסימון נתיב לפני נגיעה בחומרת העלייה.",
+     "external_site": "Black Keel יכול להישמע קרוב ועדיין לא להיות זמין. אות חלון המוביל מפריד בין קבלת חבילה לבין אישור חילוץ: זוג צלילים גבוהים מאשר שהודעה נכנסה לתור, בזמן שצליל הסגירה הנמוך משאיר גוף, הוכחה ושלל מתחת למים עד שהחלון, החותם, המטען והקו המשפטי מסכימים.",
+     "field_note": "שתי נימות בהירות הן קבלה. הנימה המכוערת היא החשבון שאומר שהגוף שלך עדיין לא נכנס לחלון.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Isyarat audio jendela carrier",
+     "scanner": "NADA JENDELA CARRIER // Dua bunyi tinggi hanya berarti paket diterima. Nada ketiga yang rendah menandai jalur pemulihan tertutup; catat jendelanya sebelum bergerak.",
+     "terminal": "STATUS AUDIO BLACK KEEL // Dua bunyi tinggi menerima tanda paket masuk. Satu nada penutup rendah berarti jalur pemulihan tetap tertutup oleh paket naik, handshake karantina, geometri carrier, atau alokasi tonne-window. Pengakuan audio tidak mengalokasikan massa angkat.",
+     "audio": "Relai Black Keel: paket diterima. Jalur pemulihan tertutup. Catat jendela. Jangan naik karena nada.",
+     "in_game_wiki": "Nada jendela carrier bukan janji penyelamatan. Dua bunyi tinggi berarti Black Keel mendengar sebuah paket. Nada ketiga yang rendah berarti jalur pemulihan masih tertutup oleh perangkat keras, karantina, geometri, atau alokasi tonne-window. Perlakukan suara sebagai cap waktu dan tanda rute sebelum menyentuh perangkat naik.",
+     "external_site": "Black Keel bisa terdengar dekat tetapi tetap tidak tersedia. Isyarat jendela carrier memisahkan penerimaan paket dari izin pemulihan: sepasang bunyi tinggi mengonfirmasi pesan masuk antrean, sedangkan nada penutup rendah menahan tubuh, bukti, dan salvage di bawah air sampai jendela, segel, muatan, dan garis hukum setuju.",
+     "field_note": "Dua nada terang adalah tanda terima. Nada jelek itu tagihan yang bilang tubuhmu masih belum muat di jendela.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "キャリア窓音声キュー",
+     "scanner": "CARRIER WINDOW TONE // 高いチャイム2回はパケット受信のみを示す。低い3音目は回収レーン閉鎖を示す。移動前に窓を記録。",
+     "terminal": "BLACK KEEL AUDIO STATE // 高いチャイム2回でパケット受信は受理された。低い閉鎖音1回は、上昇パッケージ、検疫ハンドシェイク、キャリア幾何、またはtonne-window割当のため回収レーンが閉じたままであることを示す。音声確認は揚収質量を割り当てない。",
+     "audio": "Black Keel中継: パケット受信。回収レーン閉鎖。窓を記録。音だけで上昇するな。",
+     "in_game_wiki": "キャリア窓の音は救助の約束ではない。高いチャイム2回はBlack Keelがパケットを聞いたことを示す。低い3音目は、ハードウェア、検疫、幾何、またはtonne-window割当のため回収レーンがまだ閉じていることを示す。上昇ハードウェアに触れる前に、その音を時刻印とルート標識として扱う。",
+     "external_site": "Black Keelは近く聞こえても利用不能なままであり得る。キャリア窓キューはパケット受信と回収許可を分ける。高いチャイム2回はメッセージが待ち行列に入ったことを確認し、低い閉鎖音は窓、封印、ペイロード、法的ラインが一致するまで身体、証拠、サルベージを水中に留める。",
+     "field_note": "明るい2音は受領書だ。嫌な音は、まだ身体が窓に入らないという請求書だ。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "캐리어 창 오디오 신호",
+     "scanner": "CARRIER WINDOW TONE // 높은 차임 두 번은 패킷 수신만 뜻한다. 낮은 세 번째 음은 회수 레인이 닫혔다는 표시다. 움직이기 전에 창을 기록하라.",
+     "terminal": "BLACK KEEL 오디오 상태 // 높은 차임 두 번은 패킷 수신을 승인했다. 낮은 폐쇄음 한 번은 상승 패키지, 검역 핸드셰이크, 캐리어 기하, 또는 tonne-window 할당 때문에 회수 레인이 계속 닫혔다는 뜻이다. 오디오 확인은 인양 질량을 배정하지 않는다.",
+     "audio": "Black Keel 중계: 패킷 수신. 회수 레인 폐쇄. 창을 기록하라. 소리만 듣고 상승하지 마라.",
+     "in_game_wiki": "캐리어 창 소리는 구조 약속이 아니다. 높은 차임 두 번은 Black Keel이 패킷을 들었다는 뜻이다. 낮은 세 번째 음은 하드웨어, 검역, 기하, 또는 tonne-window 할당 때문에 회수 레인이 아직 닫혀 있다는 뜻이다. 상승 하드웨어를 만지기 전에 그 소리를 시간표와 경로 표식으로 다뤄라.",
+     "external_site": "Black Keel은 가까이 들리면서도 여전히 이용 불가능할 수 있다. 캐리어 창 신호는 패킷 수신과 회수 허가를 분리한다. 높은 차임 두 번은 메시지가 대기열에 들어갔음을 확인하고, 낮은 폐쇄음은 창, 봉인, 적재물, 법적 선이 맞을 때까지 몸과 증거와 회수를 물속에 붙잡아 둔다.",
+     "field_note": "밝은 두 음은 영수증이다. 못생긴 음은 네 몸이 아직 창에 맞지 않는다는 청구서다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Audioteken van het carriervenster",
+     "scanner": "CARRIER-VENSTERTOON // Twee hoge tonen betekenen alleen pakketontvangst. De lage derde toon markeert een gesloten bergingsbaan; noteer het venster voordat je beweegt.",
+     "terminal": "BLACK KEEL AUDIOSTATUS // Twee hoge tonen bevestigen pakketontvangst. Eén lage sluittoon betekent dat de bergingsbaan gesloten blijft door opstijgpakket, quarantaine-handshake, carriergeometrie of tonne-window-toewijzing. Audio-erkenning wijst geen hijsmassa toe.",
+     "audio": "Black Keel-relais: pakket ontvangen. Bergingsbaan gesloten. Noteer het venster. Stijg niet op basis van de toon.",
+     "in_game_wiki": "De toon van het carriervenster is geen reddingsbelofte. Twee hoge tonen betekenen dat Black Keel een pakket hoorde. De lage derde toon betekent dat de bergingsbaan nog gesloten is door hardware, quarantaine, geometrie of tonne-window-toewijzing. Behandel het geluid als tijdstempel en routemarkering voordat je opstijghardware aanraakt.",
+     "external_site": "Black Keel kan dichtbij klinken terwijl het onbeschikbaar blijft. Het carriervensterteken scheidt pakketontvangst van bergingsvrijgave: twee hoge tonen bevestigen dat een bericht in de wachtrij kwam, terwijl de lage sluittoon lichaam, bewijs en salvage onder water houdt tot venster, verzegeling, lading en juridische lijn overeenkomen.",
+     "field_note": "Twee heldere tonen zijn een ontvangstbewijs. De lelijke toon is de rekening die zegt dat je lichaam nog niet in het venster past.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Sygnał audio okna carriera",
+     "scanner": "TON OKNA CARRIERA // Dwa wysokie dźwięki oznaczają tylko odbiór pakietu. Niski trzeci ton oznacza zamkniętą ścieżkę odzysku; zapisz okno przed ruchem.",
+     "terminal": "STAN AUDIO BLACK KEEL // Dwa wysokie dźwięki przyjęły odbiór pakietu. Jeden niski ton zamknięcia oznacza, że ścieżka odzysku pozostaje zamknięta przez pakiet wznoszenia, handshake kwarantanny, geometrię carriera albo przydział tonne-window. Potwierdzenie audio nie przydziela masy podnoszenia.",
+     "audio": "Przekaźnik Black Keel: pakiet odebrany. Ścieżka odzysku zamknięta. Zapisz okno. Nie wynurzaj się na podstawie tonu.",
+     "in_game_wiki": "Ton okna carriera nie jest obietnicą ratunku. Dwa wysokie dźwięki oznaczają, że Black Keel usłyszał pakiet. Niski trzeci ton oznacza, że ścieżka odzysku nadal jest zamknięta przez sprzęt, kwarantannę, geometrię albo przydział tonne-window. Traktuj dźwięk jak znacznik czasu i trasy przed dotknięciem sprzętu wznoszenia.",
+     "external_site": "Black Keel może brzmieć blisko i nadal być niedostępny. Sygnał okna carriera oddziela odbiór pakietu od zgody na odzysk: para wysokich dźwięków potwierdza wejście wiadomości do kolejki, a niski ton zamknięcia trzyma ciało, dowód i salvage pod wodą, aż okno, plomba, ładunek i linia prawna się zgodzą.",
+     "field_note": "Dwie jasne nuty to pokwitowanie. Brzydka nuta to rachunek mówiący, że twoje ciało wciąż nie mieści się w oknie.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Sinal de áudio da janela do carrier",
+     "scanner": "TOM DA JANELA DO CARRIER // Dois tons agudos indicam apenas recebimento do pacote. O terceiro tom grave marca a via de recuperação fechada; registre a janela antes de se mover.",
+     "terminal": "ESTADO DE ÁUDIO BLACK KEEL // Dois tons agudos aceitaram o recebimento do pacote. Um tom grave de fechamento significa que a via de recuperação segue fechada por pacote de ascensão, handshake de quarentena, geometria do carrier ou alocação tonne-window. O reconhecimento sonoro não aloca massa de içamento.",
+     "audio": "Relé Black Keel: pacote recebido. Via de recuperação fechada. Registre a janela. Não suba pelo tom.",
+     "in_game_wiki": "O tom da janela do carrier não é promessa de resgate. Dois tons agudos significam que Black Keel ouviu um pacote. O terceiro tom grave significa que a via de recuperação ainda está fechada por hardware, quarentena, geometria ou alocação tonne-window. Trate o som como carimbo de tempo e marca de rota antes de tocar no hardware de ascensão.",
+     "external_site": "Black Keel pode soar perto e continuar indisponível. O sinal da janela do carrier separa recebimento de pacote de liberação de recuperação: dois tons agudos confirmam que uma mensagem entrou na fila, enquanto o tom grave de fechamento mantém corpo, prova e salvage debaixo d'água até janela, lacre, carga e linha legal concordarem.",
+     "field_note": "Duas notas claras são recibo. A nota feia é a conta dizendo que seu corpo ainda não cabe na janela.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Звуковой сигнал окна Carrier",
+     "scanner": "ТОН ОКНА CARRIER // Два высоких сигнала означают только прием пакета. Низкий третий тон отмечает закрытую линию эвакуации; запиши окно перед движением.",
+     "terminal": "АУДИОСОСТОЯНИЕ BLACK KEEL // Два высоких сигнала подтвердили прием пакета. Один низкий тон закрытия означает, что линия эвакуации остается закрытой из-за подъемного пакета, карантинного согласования, геометрии carrier или распределения tonne-window. Звуковое подтверждение не выделяет массу подъема.",
+     "audio": "Ретранслятор Black Keel: пакет принят. Линия эвакуации закрыта. Запиши окно. Не поднимайся по тону.",
+     "in_game_wiki": "Тон окна carrier не является обещанием спасения. Два высоких сигнала означают, что Black Keel услышал пакет. Низкий третий тон означает, что линия эвакуации все еще закрыта из-за оборудования, карантина, геометрии или распределения tonne-window. Считай звук отметкой времени и маршрута перед работой с подъемным оборудованием.",
+     "external_site": "Black Keel может звучать близко и все равно оставаться недоступным. Сигнал окна carrier отделяет прием пакета от разрешения на эвакуацию: пара высоких сигналов подтверждает вход сообщения в очередь, а низкий тон закрытия удерживает тело, доказательство и salvage под водой, пока окно, пломба, груз и юридическая линия не совпадут.",
+     "field_note": "Два светлых сигнала это квитанция. Гадкий звук это счет, где написано, что твое тело все еще не помещается в окно.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Звуковий сигнал вікна Carrier",
+     "scanner": "ТОН ВІКНА CARRIER // Два високі сигнали означають лише прийом пакета. Низький третій тон позначає закриту лінію повернення; запиши вікно перед рухом.",
+     "terminal": "АУДІОСТАН BLACK KEEL // Два високі сигнали підтвердили прийом пакета. Один низький тон закриття означає, що лінія повернення лишається закритою через підйомний пакет, карантинне узгодження, геометрію carrier або розподіл tonne-window. Звукове підтвердження не виділяє масу підйому.",
+     "audio": "Ретранслятор Black Keel: пакет прийнято. Лінію повернення закрито. Запиши вікно. Не піднімайся за тоном.",
+     "in_game_wiki": "Тон вікна carrier не є обіцянкою порятунку. Два високі сигнали означають, що Black Keel почув пакет. Низький третій тон означає, що лінія повернення ще закрита через обладнання, карантин, геометрію або розподіл tonne-window. Сприймай звук як часову і маршрутну позначку перед роботою з підйомним обладнанням.",
+     "external_site": "Black Keel може звучати близько й усе одно лишатися недоступним. Сигнал вікна carrier відокремлює прийом пакета від дозволу на повернення: пара високих сигналів підтверджує вхід повідомлення в чергу, а низький тон закриття тримає тіло, доказ і salvage під водою, доки вікно, пломба, вантаж і юридична лінія не збіжаться.",
+     "field_note": "Два ясні сигнали це квитанція. Огидний звук це рахунок, де написано, що твоє тіло досі не влазить у вікно.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Carrier 窗口音频提示",
+     "scanner": "CARRIER WINDOW TONE // 两声高提示只表示数据包已收到。第三声低音表示回收通道关闭；移动前记录窗口。",
+     "terminal": "BLACK KEEL 音频状态 // 两声高提示确认数据包已接收。一声低沉关闭音表示回收通道仍因上升包、隔离握手、carrier 几何或 tonne-window 分配而关闭。音频确认不会分配起吊质量。",
+     "audio": "Black Keel 中继：数据包已接收。回收通道关闭。记录窗口。不要凭音调上升。",
+     "in_game_wiki": "Carrier 窗口音不是救援承诺。两声高提示表示 Black Keel 听到了一个数据包。第三声低音表示回收通道仍因硬件、隔离、几何或 tonne-window 分配而关闭。触碰上升硬件前，把声音当作时间戳和路线标记。",
+     "external_site": "Black Keel 可以听起来很近，却仍然不可用。Carrier 窗口提示把数据包接收和回收许可分开：两声高提示确认消息进入队列，而低沉关闭音把身体、证据和 salvage 留在水下，直到窗口、封签、载荷和法律线路一致。",
+     "field_note": "两声明亮的音是收据。难听的那一声是账单，说明你的身体仍装不进窗口。",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS028_REPLAY_CONTRACT_DOSSIER_RULES",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P136_DOSSIER_RUMOR_UNLOCKS",
-      "article_id": "replay.dossier_rumor_unlocks",
-      "title_key": "applied_lore.dossier_rumor_unlocks.title",
-      "unlock": {
-        "primary": "unlock.dossier_rumor_unlocks",
-        "poi_tags": [
-          "poi.marauder_dossier_terminal",
-          "poi.rumor_family_tag",
-          "poi.ending_record_card"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.relay_archive",
-          "biome.photic_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Dossier Rumor Memory",
-          "scanner": "DOSSIER MEMORY // Rumors, warnings, contract context and ending records persist. Hull, oxygen, tools, cargo and the map do not.",
-          "terminal": "PERSISTENCE RULE: dossier may keep rumor families, evidence categories, ending flags and route warnings across campaigns. It must not carry equipment, resources, seed geography, or truth ownership.",
-          "audio": "The file remembers what your hands cannot carry.",
-          "in_game_wiki": "The Marauder dossier is not a storage locker. It is the part of the job that survives a failed claim: names half heard over relay, contract clauses that smelled wrong, ending categories already exposed, warnings bought with somebody else's last minutes. A new run should begin with better suspicion, not a better submarine.",
-          "external_site": "Dossier Rumor Memory makes replay knowledge diegetic: the record preserves suspicion and consequence without handing the next run a stronger body.",
-          "field_note": "Let knowledge persist. Let pressure remain."
-        },
-        "ru_RU": {
-          "title": "Память слухов в досье",
-          "scanner": "ПАМЯТЬ ДОСЬЕ // Слухи, предупреждения, контекст контрактов и записи концовок сохраняются. Корпус, кислород, инструменты, груз и карта - нет.",
-          "terminal": "ПРАВИЛО СОХРАНЕНИЯ: досье может переносить семьи слухов, категории улик, флаги концовок и маршрутные предупреждения между кампаниями. Оно не переносит оборудование, ресурсы, географию seed или право владеть правдой.",
-          "audio": "Файл помнит то, что руки не могут унести.",
-          "in_game_wiki": "Досье Marauder - не складской ящик. Это та часть работы, которая переживает сорванный claim: имена, услышанные обрывком по реле, пункты договора, от которых пахло неправильно, уже раскрытые категории концовок, предупреждения, купленные чужими последними минутами. Новый заход должен начинаться с более острого подозрения, а не с лучшей подлодки.",
-          "external_site": "Память слухов в досье делает replay-знание частью мира: запись хранит подозрение и последствия, но не выдает следующему заходу более сильное тело.",
-          "field_note": "Пусть знание живет. Пусть давление остается."
-        },
-        "ja_JP": {
-          "title": "ドシエの噂記憶",
-          "scanner": "DOSSIER MEMORY // 噂、警告、契約文脈、エンディング記録は残る。船体、酸素、工具、貨物、地図は残らない。",
-          "terminal": "永続化規則: ドシエはキャンペーンを越えて噂系統、証拠分類、エンディングフラグ、航路警告を保持できる。装備、資源、seed地形、真実の所有権は持ち越さない。",
-          "audio": "そのファイルは、手で運べないものを覚えている。",
-          "in_game_wiki": "Marauderのドシエは保管箱ではない。失敗した請求のあとにも残る仕事の一部だ。リレー越しに半分だけ聞いた名前、嫌な匂いのする契約条項、すでに暴いた結末の分類、誰かの最後の数分で買った警告。新しい周回は、より良い潜水艇ではなく、より鋭い疑いから始まるべきだ。",
-          "external_site": "ドシエの噂記憶はリプレイ知識を世界内の記録にする。疑念と結果は残すが、次の周回に強い肉体は渡さない。",
-          "field_note": "知識は残していい。圧力は残せ。"
-        },
-        "zh_CN": {
-          "title": "档案传闻记忆",
-          "scanner": "档案记忆 // 传闻、警告、合约背景和结局记录会保留。船壳、氧气、工具、货物和地图不会。",
-          "terminal": "持久化规则：档案可以跨战役保留传闻族、证据类别、结局标记和路线警告。它不得保留装备、资源、seed 地形或对真相的所有权。",
-          "audio": "文件记得双手带不走的东西。",
-          "in_game_wiki": "Marauder 档案不是储物箱。它是失败 claim 之后仍会留下的工作部分：中继里听到一半的名字，闻起来不对的合约条款，已经暴露的结局类别，用别人最后几分钟买来的警告。新的开局应该带来更敏锐的怀疑，而不是更好的潜艇。",
-          "external_site": "档案传闻记忆把重玩知识变成世界内记录：它保存怀疑和后果，但不把更强的身体交给下一轮。",
-          "field_note": "让知识留下。让压力继续。"
-        },
-        "fr_FR": {
-          "title": "Mémoire de rumeurs du dossier",
-          "scanner": "MÉMOIRE DOSSIER // Rumeurs, avertissements, contexte contractuel et fins restent. Coque, oxygène, outils, cargaison et carte ne restent pas.",
-          "terminal": "RÈGLE DE PERSISTANCE : le dossier peut garder familles de rumeurs, catégories de preuve, marqueurs de fin et avertissements de route entre campagnes. Il ne transporte ni équipement, ni ressources, ni géographie du seed, ni propriété de la vérité.",
-          "audio": "Le fichier se souvient de ce que tes mains ne peuvent pas porter.",
-          "in_game_wiki": "Le dossier Marauder n'est pas un coffre. C'est la part du travail qui survit à une réclamation ratée : noms entendus à moitié sur relais, clauses de contrat qui sentaient mauvais, familles de fins déjà exposées, avertissements payés par les dernières minutes de quelqu'un d'autre. Une nouvelle partie doit commencer avec de meilleurs soupçons, pas avec un meilleur sous-marin.",
-          "external_site": "La mémoire de rumeurs du dossier rend le savoir de replay diégétique : le registre garde soupçon et conséquence sans donner un corps plus fort à la tentative suivante.",
-          "field_note": "Que le savoir persiste. Que la pression reste."
-        },
-        "es_ES": {
-          "title": "Memoria de rumores del dosier",
-          "scanner": "MEMORIA DEL DOSIER // Persisten rumores, avisos, contexto contractual y registros de finales. No persisten casco, oxígeno, herramientas, carga ni mapa.",
-          "terminal": "REGLA DE PERSISTENCIA: el dosier puede conservar familias de rumores, categorías de evidencia, marcas de final y avisos de ruta entre campañas. No debe llevar equipo, recursos, geografía de seed ni propiedad de la verdad.",
-          "audio": "El archivo recuerda lo que tus manos no pueden cargar.",
-          "in_game_wiki": "El dosier Marauder no es un almacén. Es la parte del trabajo que sobrevive a un claim fallido: nombres oídos a medias por relé, cláusulas de contrato que olían mal, familias de finales ya expuestas, advertencias pagadas con los últimos minutos de otra persona. Una nueva partida debe empezar con mejor sospecha, no con un submarino mejor.",
-          "external_site": "La memoria de rumores del dosier vuelve diegético el conocimiento de replay: conserva sospecha y consecuencia sin entregar un cuerpo más fuerte al siguiente intento.",
-          "field_note": "Que persista el conocimiento. Que permanezca la presión."
-        },
-        "de_DE": {
-          "title": "Gerüchterinnerung des Dossiers",
-          "scanner": "DOSSIER-GEDÄCHTNIS // Gerüchte, Warnungen, Vertragskontext und Endaufzeichnungen bleiben. Rumpf, Sauerstoff, Werkzeuge, Fracht und Karte nicht.",
-          "terminal": "PERSISTENZREGEL: Das Dossier darf Gerüchtefamilien, Beweiskategorien, Endmarken und Routenwarnungen kampagnenübergreifend behalten. Es darf keine Ausrüstung, Ressourcen, Seed-Geografie oder Wahrheitsbesitz übertragen.",
-          "audio": "Die Akte erinnert, was deine Hände nicht tragen können.",
-          "in_game_wiki": "Das Marauder-Dossier ist kein Lagerfach. Es ist der Teil der Arbeit, der einen gescheiterten Claim überlebt: Namen, halb über Relais gehört, Vertragsklauseln mit falschem Geruch, bereits freigelegte Endfamilien, Warnungen, bezahlt mit den letzten Minuten anderer Leute. Ein neuer Lauf soll mit schärferem Verdacht beginnen, nicht mit einem besseren U-Boot.",
-          "external_site": "Die Gerüchterinnerung des Dossiers macht Replay-Wissen diegetisch: Der Eintrag bewahrt Verdacht und Folgen, ohne dem nächsten Lauf einen stärkeren Körper zu geben.",
-          "field_note": "Wissen darf bleiben. Druck muss bleiben."
-        },
-        "pl_PL": {
-          "title": "Pamięć plotek w dossier",
-          "scanner": "PAMIĘĆ DOSSIER // Plotki, ostrzeżenia, kontekst kontraktu i zapisy zakończeń trwają. Kadłub, tlen, narzędzia, ładunek i mapa nie.",
-          "terminal": "REGUŁA TRWAŁOŚCI: dossier może przenosić rodziny plotek, kategorie dowodów, znaczniki zakończeń i ostrzeżenia tras między kampaniami. Nie przenosi sprzętu, zasobów, geografii seed ani prawa do prawdy.",
-          "audio": "Akta pamiętają to, czego ręce nie uniosą.",
-          "in_game_wiki": "Dossier Maraudera nie jest skrytką. To część pracy, która przeżywa nieudany claim: imiona usłyszane półsłówkiem przez przekaźnik, klauzule kontraktu o złym zapachu, już odsłonięte rodziny zakończeń, ostrzeżenia kupione czyimiś ostatnimi minutami. Nowe podejście powinno zaczynać się od lepszej podejrzliwości, nie od lepszej łodzi.",
-          "external_site": "Pamięć plotek w dossier czyni wiedzę z replayu częścią świata: zapis przechowuje podejrzenia i skutki, ale nie daje następnej próbie silniejszego ciała.",
-          "field_note": "Niech wiedza zostanie. Niech ciśnienie zostanie."
-        },
-        "uk_UA": {
-          "title": "Пам'ять чуток у досьє",
-          "scanner": "ПАМ'ЯТЬ ДОСЬЄ // Чутки, попередження, контекст контрактів і записи кінцівок зберігаються. Корпус, кисень, інструменти, вантаж і карта - ні.",
-          "terminal": "ПРАВИЛО ЗБЕРЕЖЕННЯ: досьє може переносити родини чуток, категорії доказів, позначки кінцівок і маршрутні попередження між кампаніями. Воно не переносить обладнання, ресурси, географію seed або право володіти правдою.",
-          "audio": "Файл пам'ятає те, чого руки не можуть понести.",
-          "in_game_wiki": "Досьє Marauder - не складська шафа. Це та частина роботи, що переживає провалений claim: імена, почуті уривком через реле, пункти договору з неправильним запахом, уже викриті родини кінцівок, попередження, куплені чужими останніми хвилинами. Новий захід має починатися з гострішої підозри, а не з кращого підводного човна.",
-          "external_site": "Пам'ять чуток у досьє робить replay-знання частиною світу: запис береже підозру й наслідки, але не дає наступному заходу сильнішого тіла.",
-          "field_note": "Нехай знання триває. Нехай тиск лишається."
-        },
-        "ar_SA": {
-          "title": "ذاكرة الشائعات في الملف",
-          "scanner": "ذاكرة الملف // الشائعات والتحذيرات وسياق العقود وسجلات النهايات تبقى. الهيكل والأكسجين والأدوات والحمولة والخريطة لا تبقى.",
-          "terminal": "قاعدة الاستمرار: يمكن للملف أن يحتفظ بعائلات الشائعات وفئات الأدلة وعلامات النهايات وتحذيرات المسار بين الحملات. لا يحمل معدات أو موارد أو جغرافيا seed أو ملكية الحقيقة.",
-          "audio": "الملف يتذكر ما لا تستطيع يداك حمله.",
-          "in_game_wiki": "ملف Marauder ليس صندوق تخزين. إنه الجزء من العمل الذي ينجو بعد claim فاشل: أسماء سُمعت نصف سماع عبر المرحل، بنود عقد كانت رائحتها خاطئة، عائلات نهايات كُشفت من قبل، وتحذيرات دُفعت ثمنها من الدقائق الأخيرة لشخص آخر. يجب أن يبدأ التشغيل الجديد بشك أفضل، لا بغواصة أفضل.",
-          "external_site": "ذاكرة الشائعات في الملف تجعل معرفة replay جزءا من العالم: السجل يحفظ الشك والعواقب من دون أن يمنح المحاولة التالية جسدا أقوى.",
-          "field_note": "ليستمر العلم. وليبق الضغط."
-        },
-        "id_ID": {
-          "title": "Memori Rumor Dossier",
-          "scanner": "MEMORI DOSSIER // Rumor, peringatan, konteks kontrak, dan catatan akhir bertahan. Lambung, oksigen, alat, kargo, dan peta tidak.",
-          "terminal": "ATURAN PERSISTENSI: dossier boleh menyimpan keluarga rumor, kategori bukti, penanda akhir, dan peringatan rute lintas kampanye. Ia tidak membawa alat, sumber daya, geografi seed, atau kepemilikan kebenaran.",
-          "audio": "Berkas itu mengingat apa yang tak bisa dibawa tanganmu.",
-          "in_game_wiki": "Dossier Marauder bukan loker penyimpanan. Itu bagian pekerjaan yang selamat dari claim gagal: nama yang terdengar separuh lewat relay, klausul kontrak yang terasa salah, keluarga akhir yang sudah terbuka, peringatan yang dibayar dengan menit terakhir orang lain. Run baru harus mulai dengan kecurigaan lebih tajam, bukan kapal selam lebih baik.",
-          "external_site": "Memori Rumor Dossier membuat pengetahuan replay menjadi diegetik: catatan menyimpan curiga dan akibat tanpa memberi tubuh lebih kuat pada percobaan berikutnya.",
-          "field_note": "Biarkan pengetahuan bertahan. Biarkan tekanan tetap ada."
-        },
-        "ko_KR": {
-          "title": "도시어 소문 기억",
-          "scanner": "도시어 기억 // 소문, 경고, 계약 맥락, 엔딩 기록은 남는다. 선체, 산소, 도구, 화물, 지도는 남지 않는다.",
-          "terminal": "지속 규칙: 도시어는 캠페인 사이에서 소문 계열, 증거 분류, 엔딩 플래그, 경로 경고를 보존할 수 있다. 장비, 자원, seed 지형, 진실 소유권은 옮기지 않는다.",
-          "audio": "파일은 손으로 들고 갈 수 없는 것을 기억한다.",
-          "in_game_wiki": "Marauder 도시어는 보관함이 아니다. 실패한 claim 뒤에도 살아남는 일의 일부다. 중계 너머로 반쯤 들은 이름, 수상한 냄새가 나는 계약 조항, 이미 드러낸 엔딩 계열, 누군가의 마지막 몇 분으로 산 경고. 새 run은 더 나은 잠수정이 아니라 더 날카로운 의심으로 시작해야 한다.",
-          "external_site": "도시어 소문 기억은 replay 지식을 세계 안 기록으로 만든다. 의심과 결과는 보존하지만 다음 run에 더 강한 몸을 주지 않는다.",
-          "field_note": "지식은 남겨라. 압력은 그대로 둬라."
-        },
-        "he_IL": {
-          "title": "זיכרון שמועות בתיק",
-          "scanner": "זיכרון תיק // שמועות, אזהרות, הקשר חוזי ורשומות סיום נשארים. גוף, חמצן, כלים, מטען ומפה לא.",
-          "terminal": "כלל התמדה: התיק רשאי לשמור משפחות שמועות, קטגוריות ראיה, סימוני סיום ואזהרות מסלול בין קמפיינים. הוא לא נושא ציוד, משאבים, גיאוגרפיית seed או בעלות על אמת.",
-          "audio": "הקובץ זוכר את מה שהידיים לא יכולות לשאת.",
-          "in_game_wiki": "תיק Marauder אינו ארון אחסון. הוא החלק בעבודה ששורד claim כושל: שמות שנשמעו רק בחצי דרך ממסר, סעיפי חוזה שהריחו לא נכון, משפחות סיום שכבר נחשפו, אזהרות שנקנו בדקות האחרונות של מישהו אחר. ריצה חדשה צריכה להתחיל בחשד טוב יותר, לא בצוללת טובה יותר.",
-          "external_site": "זיכרון השמועות בתיק הופך ידע replay לרשומה בתוך העולם: הוא שומר חשד ותוצאה בלי לתת לגוף הבא כוח רב יותר.",
-          "field_note": "שהידע יישאר. שהלחץ יישאר."
-        },
-        "pt_BR": {
-          "title": "Memória de rumores do dossiê",
-          "scanner": "MEMÓRIA DO DOSSIÊ // Rumores, avisos, contexto contratual e registros de finais persistem. Casco, oxigênio, ferramentas, carga e mapa não.",
-          "terminal": "REGRA DE PERSISTÊNCIA: o dossiê pode guardar famílias de rumores, categorias de evidência, marcas de finais e avisos de rota entre campanhas. Não carrega equipamento, recursos, geografia de seed nem posse da verdade.",
-          "audio": "O arquivo lembra o que suas mãos não conseguem levar.",
-          "in_game_wiki": "O dossiê Marauder não é um depósito. É a parte do trabalho que sobrevive a um claim fracassado: nomes ouvidos pela metade no relé, cláusulas de contrato com cheiro errado, famílias de finais já expostas, avisos comprados com os últimos minutos de outra pessoa. Uma nova tentativa deve começar com suspeita melhor, não com um submarino melhor.",
-          "external_site": "A memória de rumores do dossiê torna o conhecimento de replay diegético: o registro preserva suspeita e consequência sem entregar um corpo mais forte à próxima tentativa.",
-          "field_note": "Deixe o conhecimento persistir. Deixe a pressão ficar."
-        },
-        "nl_NL": {
-          "title": "Geruchtengeheugen van het dossier",
-          "scanner": "DOSSIERGEHEUGEN // Geruchten, waarschuwingen, contractcontext en eindrecords blijven. Romp, zuurstof, gereedschap, lading en kaart niet.",
-          "terminal": "PERSISTENTIEREGEL: het dossier mag geruchtenfamilies, bewijscategorieën, eindmarkeringen en routewaarschuwingen tussen campagnes bewaren. Het draagt geen uitrusting, middelen, seed-geografie of eigendom van waarheid over.",
-          "audio": "Het dossier onthoudt wat je handen niet kunnen dragen.",
-          "in_game_wiki": "Het Marauder-dossier is geen opslagkast. Het is het deel van het werk dat een mislukte claim overleeft: namen half gehoord via relais, contractclausules die verkeerd roken, al blootgelegde eindfamilies, waarschuwingen betaald met iemands laatste minuten. Een nieuwe run moet beginnen met betere argwaan, niet met een betere onderzeeër.",
-          "external_site": "Het geruchtengeheugen van het dossier maakt replay-kennis diegetisch: de registratie bewaart argwaan en gevolg zonder de volgende run een sterker lichaam te geven.",
-          "field_note": "Laat kennis blijven. Laat druk blijven."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS028_REPLAY_CONTRACT_DOSSIER_RULES",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P136_DOSSIER_RUMOR_UNLOCKS",
+   "article_id": "replay.dossier_rumor_unlocks",
+   "title_key": "applied_lore.dossier_rumor_unlocks.title",
+   "unlock": {
+    "primary": "unlock.dossier_rumor_unlocks",
+    "poi_tags": [
+     "poi.marauder_dossier_terminal",
+     "poi.rumor_family_tag",
+     "poi.ending_record_card"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.relay_archive",
+     "biome.photic_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Dossier Rumor Memory",
+     "scanner": "DOSSIER MEMORY // Rumors, warnings, contract context and ending records persist. Hull, oxygen, tools, cargo and the map do not.",
+     "terminal": "PERSISTENCE RULE: dossier may keep rumor families, evidence categories, ending flags and route warnings across campaigns. It must not carry equipment, resources, seed geography, or truth ownership.",
+     "audio": "The file remembers what your hands cannot carry.",
+     "in_game_wiki": "The Marauder dossier is not a storage locker. It is the part of the job that survives a failed claim: names half heard over relay, contract clauses that smelled wrong, ending categories already exposed, warnings bought with somebody else's last minutes. A new run should begin with better suspicion, not a better submarine.",
+     "external_site": "Dossier Rumor Memory makes replay knowledge diegetic: the record preserves suspicion and consequence without handing the next run a stronger body.",
+     "field_note": "Let knowledge persist. Let pressure remain."
     },
-    {
-      "packet_id": "P137_RISKIER_CONTRACT_SEEDS",
-      "article_id": "replay.riskier_contract_seeds",
-      "title_key": "applied_lore.riskier_contract_seeds.title",
-      "unlock": {
-        "primary": "unlock.riskier_contract_seeds",
-        "poi_tags": [
-          "poi.high_risk_contract_board",
-          "poi.storm_window_selector",
-          "poi.deep_claim_bonus_clause"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.photic_shelf",
-          "biome.industrial_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Riskier Contract Seeds",
-          "scanner": "CONTRACT SEED // Worse window, deeper first target, stricter custody, rarer sample, larger lien relief. No inherited power.",
-          "terminal": "SEED OPTION: increase payout by accepting worse orbital timing, deeper initial objectives, harsher evidence custody, rarer resource proof or tighter return accounting. Equipment power and inventory still reset.",
-          "audio": "The board pays more when it expects less of you to return.",
-          "in_game_wiki": "Riskier contracts are how the dossier tempts an experienced Marauder without breaking survival. The board can offer better lien relief for a worse window, an early descent below comfort depth, a sample that must stay sealed, or evidence custody strict enough to make every shortcut expensive. The player chooses pressure, not inherited strength.",
-          "external_site": "Riskier Contract Seeds make replayability economic and procedural: the contract changes what the ocean demands, not what the player gets to carry.",
-          "field_note": "Replay should ask for greed, courage, or stupidity. Not grind."
-        },
-        "ru_RU": {
-          "title": "Более рискованные seed контрактов",
-          "scanner": "SEED КОНТРАКТА // Худшее окно, более глубокая первая цель, строже хранение улик, более редкий образец, больше списание lien. Наследуемой силы нет.",
-          "terminal": "ОПЦИЯ SEED: увеличить выплату, приняв худшее орбитальное окно, более глубокие стартовые цели, жесткое хранение улик, редкое ресурсное доказательство или tighter учет возврата. Сила оборудования и инвентарь всё равно сбрасываются.",
-          "audio": "Доска платит больше, когда меньше ждёт тебя обратно.",
-          "in_game_wiki": "Рискованные контракты - способ досье соблазнить опытного Marauder, не ломая survival. Доска может предложить лучшее списание lien за плохое окно, ранний спуск ниже комфортной глубины, образец, который нельзя вскрывать, или хранение улик настолько строгое, что каждый shortcut становится дорогим. Игрок выбирает давление, а не унаследованную силу.",
-          "external_site": "Более рискованные seed контрактов делают replay экономическим и процедурным: меняется требование океана, а не то, что игроку разрешено нести.",
-          "field_note": "Replay должен спрашивать жадность, смелость или глупость. Не grind."
-        },
-        "ja_JP": {
-          "title": "より危険な契約seed",
-          "scanner": "契約SEED // 悪い窓、深い初期目標、厳格な証拠保管、希少な試料、大きい債務軽減。継承パワーなし。",
-          "terminal": "SEED選択: 悪い軌道タイミング、深い初期目的、厳しい証拠保管、希少資源の証明、きつい帰還会計を受け入れることで支払いを増やす。装備性能と所持品はリセットされる。",
-          "audio": "戻る期待が低いほど、掲示板は多く払う。",
-          "in_game_wiki": "危険な契約は、サバイバルを壊さずに経験済みのMarauderを誘惑する方法だ。掲示板は悪い窓、快適深度を越える早期降下、封印したままの試料、近道のすべてを高くつかせる証拠保管条件と引き換えに、より大きな債務軽減を提示できる。プレイヤーが選ぶのは圧力であって、継承された強さではない。",
-          "external_site": "より危険な契約seedはリプレイ性を経済と手順で作る。海の要求が変わるだけで、持ち込める力は変わらない。",
-          "field_note": "リプレイが問うべきは欲、勇気、愚かさだ。作業量ではない。"
-        },
-        "zh_CN": {
-          "title": "更高风险的合约 seed",
-          "scanner": "合约 SEED // 更差窗口，更深首目标，更严证据保管，更稀有样本，更高 lien 减免。没有继承力量。",
-          "terminal": "SEED 选项：接受更差轨道时机、更深初始目标、更严证据保管、更稀有资源证明或更紧返航账目，以换取更高报酬。装备强度和库存仍会重置。",
-          "audio": "委员会越不指望你回来，付得越多。",
-          "in_game_wiki": "高风险合约是在不破坏生存压力的情况下诱惑老练 Marauder 的方式。委员会可以用更高 lien 减免换取糟糕窗口、早期下潜到舒适深度以下、必须保持封存的样本，或严苛到让每个捷径都昂贵的证据保管。玩家选择的是压力，不是继承来的强度。",
-          "external_site": "更高风险的合约 seed 让重玩来自经济和流程：改变的是海洋的要求，而不是玩家能带走的东西。",
-          "field_note": "重玩应该询问贪婪、勇气或愚蠢。不是刷。"
-        },
-        "fr_FR": {
-          "title": "Seeds de contrats plus risqués",
-          "scanner": "SEED CONTRAT // Fenêtre pire, première cible plus profonde, garde plus stricte, échantillon plus rare, allègement de lien plus fort. Aucun pouvoir hérité.",
-          "terminal": "OPTION SEED : augmenter le paiement en acceptant un mauvais timing orbital, des objectifs initiaux plus profonds, une garde des preuves plus dure, une preuve de ressource rare ou un compte retour plus serré. Puissance d'équipement et inventaire se réinitialisent.",
-          "audio": "Le tableau paie plus quand il s'attend moins à ton retour.",
-          "in_game_wiki": "Les contrats risqués sont la manière dont le dossier tente un Marauder expérimenté sans casser la survie. Le tableau peut offrir un meilleur allègement de lien contre une mauvaise fenêtre, une descente précoce sous la profondeur confortable, un échantillon à garder scellé ou une garde des preuves si stricte que chaque raccourci coûte cher. Le joueur choisit la pression, pas une force héritée.",
-          "external_site": "Les seeds de contrats plus risqués rendent le replay économique et procédural : le contrat change ce que l'océan exige, pas ce que le joueur porte.",
-          "field_note": "Le replay doit demander avidité, courage ou bêtise. Pas du grind."
-        },
-        "es_ES": {
-          "title": "Seeds de contrato más arriesgados",
-          "scanner": "SEED DE CONTRATO // Peor ventana, primer objetivo más profundo, custodia más estricta, muestra más rara, mayor alivio de lien. Sin poder heredado.",
-          "terminal": "OPCIÓN SEED: aumentar pago aceptando peor sincronía orbital, objetivos iniciales más profundos, custodia de evidencia más dura, prueba de recurso raro o contabilidad de retorno más estrecha. Poder de equipo e inventario se reinician.",
-          "audio": "El tablero paga más cuando espera menos de tu regreso.",
-          "in_game_wiki": "Los contratos arriesgados son la forma en que el dosier tienta a un Marauder experto sin romper la supervivencia. El tablero puede ofrecer mejor alivio de lien por una mala ventana, un descenso temprano bajo la profundidad cómoda, una muestra que debe seguir sellada o una custodia de evidencia tan estricta que cada atajo sale caro. El jugador elige presión, no fuerza heredada.",
-          "external_site": "Los seeds de contrato más arriesgados hacen que el replay sea económico y procedimental: cambia lo que exige el océano, no lo que el jugador carga.",
-          "field_note": "El replay debe pedir codicia, valor o estupidez. No farmeo."
-        },
-        "de_DE": {
-          "title": "Riskantere Vertrags-Seeds",
-          "scanner": "VERTRAGS-SEED // Schlechteres Fenster, tieferes Erstziel, strengere Verwahrung, seltenere Probe, größere Pfandentlastung. Keine geerbte Macht.",
-          "terminal": "SEED-OPTION: Höhere Auszahlung durch schlechteres Orbitfenster, tiefere Anfangsziele, härtere Beweisverwahrung, seltenen Ressourcennachweis oder engere Rückkehrabrechnung. Ausrüstungsmacht und Inventar werden zurückgesetzt.",
-          "audio": "Die Tafel zahlt mehr, wenn sie weniger von dir zurückerwartet.",
-          "in_game_wiki": "Riskantere Verträge locken erfahrene Marauder, ohne Survival zu brechen. Die Tafel kann bessere Pfandentlastung für ein schlechtes Fenster bieten, einen frühen Abstieg unter Komforttiefe, eine versiegelt zu haltende Probe oder Beweisverwahrung, die jede Abkürzung teuer macht. Der Spieler wählt Druck, nicht geerbte Stärke.",
-          "external_site": "Riskantere Vertrags-Seeds machen Replay wirtschaftlich und prozedural: Der Vertrag ändert, was der Ozean fordert, nicht was der Spieler tragen darf.",
-          "field_note": "Replay soll Gier, Mut oder Dummheit verlangen. Kein Grind."
-        },
-        "pl_PL": {
-          "title": "Ryzykowniejsze seedy kontraktów",
-          "scanner": "SEED KONTRAKTU // Gorsze okno, głębszy pierwszy cel, ostrzejszy depozyt, rzadsza próbka, większa ulga lien. Brak dziedziczonej mocy.",
-          "terminal": "OPCJA SEED: zwiększ wypłatę, przyjmując gorszy moment orbitalny, głębsze cele początkowe, surowszą opiekę nad dowodami, rzadszy dowód zasobu albo ciaśniejszy rozrachunek powrotu. Moc sprzętu i ekwipunek resetują się.",
-          "audio": "Tablica płaci więcej, gdy mniej oczekuje twojego powrotu.",
-          "in_game_wiki": "Ryzykowne kontrakty kuszą doświadczonego Maraudera bez psucia survivalu. Tablica może zaoferować lepszą ulgę lien za złe okno, wczesne zejście poniżej bezpiecznej głębokości, próbkę, która ma zostać zapieczętowana, albo opiekę nad dowodami tak surową, że każdy skrót kosztuje. Gracz wybiera presję, nie odziedziczoną siłę.",
-          "external_site": "Ryzykowniejsze seedy kontraktów tworzą replay przez ekonomię i procedurę: zmieniają żądania oceanu, nie bagaż gracza.",
-          "field_note": "Replay ma pytać o chciwość, odwagę albo głupotę. Nie o grind."
-        },
-        "uk_UA": {
-          "title": "Ризикованіші seed контрактів",
-          "scanner": "SEED КОНТРАКТУ // Гірше вікно, глибша перша ціль, суворіше зберігання, рідкісніший зразок, більше списання lien. Успадкованої сили немає.",
-          "terminal": "ОПЦІЯ SEED: збільшити виплату, прийнявши гірший орбітальний час, глибші стартові цілі, жорсткіше зберігання доказів, рідкісний ресурсний доказ або тісніший облік повернення. Сила обладнання й інвентар скидаються.",
-          "audio": "Дошка платить більше, коли менше чекає тебе назад.",
-          "in_game_wiki": "Ризиковані контракти - спосіб досьє спокусити досвідченого Marauder, не ламаючи survival. Дошка може запропонувати краще списання lien за погане вікно, ранній спуск нижче комфортної глибини, зразок, що має лишатися запечатаним, або зберігання доказів настільки суворе, що кожен shortcut коштує дорого. Гравець обирає тиск, а не успадковану силу.",
-          "external_site": "Ризикованіші seed контрактів роблять replay економічним і процедурним: змінюються вимоги океану, не те, що гравець може нести.",
-          "field_note": "Replay має питати жадібність, сміливість або дурість. Не grind."
-        },
-        "ar_SA": {
-          "title": "عقود seed أخطر",
-          "scanner": "SEED عقد // نافذة أسوأ، هدف أول أعمق، عهدة أشد، عينة أندر، تخفيف lien أكبر. لا قوة موروثة.",
-          "terminal": "خيار SEED: زد الدفع بقبول توقيت مداري أسوأ، أهداف أولى أعمق، عهدة أدلة أقسى، إثبات مورد أندر أو حساب عودة أضيق. قوة المعدات والمخزون يعاد ضبطهما.",
-          "audio": "اللوحة تدفع أكثر عندما تتوقع عودتك أقل.",
-          "in_game_wiki": "العقود الأخطر هي طريقة الملف لإغراء Marauder خبير من دون كسر البقاء. قد تعرض اللوحة تخفيف lien أفضل مقابل نافذة سيئة، نزول مبكر تحت عمق الراحة، عينة يجب أن تبقى مختومة، أو عهدة أدلة تجعل كل اختصار باهظا. اللاعب يختار الضغط، لا قوة موروثة.",
-          "external_site": "عقود seed الأخطر تجعل replay اقتصاديا وإجرائيا: العقد يغير ما يطلبه المحيط، لا ما يحمله اللاعب.",
-          "field_note": "يجب أن يسأل replay عن الجشع أو الشجاعة أو الحماقة. لا عن الطحن."
-        },
-        "id_ID": {
-          "title": "Seed Kontrak Lebih Berisiko",
-          "scanner": "SEED KONTRAK // Jendela lebih buruk, target pertama lebih dalam, kustodi lebih ketat, sampel lebih langka, keringanan lien lebih besar. Tidak ada kekuatan warisan.",
-          "terminal": "OPSI SEED: naikkan bayaran dengan menerima timing orbit buruk, objektif awal lebih dalam, kustodi bukti lebih keras, bukti sumber daya langka, atau akuntansi kembali lebih ketat. Kekuatan alat dan inventori tetap reset.",
-          "audio": "Papan membayar lebih saat berharap lebih sedikit kau pulang.",
-          "in_game_wiki": "Kontrak berisiko adalah cara dossier menggoda Marauder berpengalaman tanpa merusak survival. Papan bisa menawarkan keringanan lien lebih baik untuk jendela buruk, turun awal di bawah kedalaman nyaman, sampel yang harus tetap tersegel, atau kustodi bukti yang membuat tiap jalan pintas mahal. Pemain memilih tekanan, bukan kekuatan warisan.",
-          "external_site": "Seed Kontrak Lebih Berisiko membuat replay bersifat ekonomi dan prosedural: kontrak mengubah tuntutan samudra, bukan bawaan pemain.",
-          "field_note": "Replay harus meminta keserakahan, nyali, atau kebodohan. Bukan grind."
-        },
-        "ko_KR": {
-          "title": "더 위험한 계약 seed",
-          "scanner": "계약 SEED // 더 나쁜 창, 더 깊은 첫 목표, 더 엄격한 보관, 더 희귀한 샘플, 더 큰 lien 경감. 계승 힘 없음.",
-          "terminal": "SEED 선택: 나쁜 궤도 타이밍, 더 깊은 초기 목표, 더 가혹한 증거 보관, 희귀 자원 증명, 더 빡빡한 귀환 회계를 받아들여 보수를 올린다. 장비 힘과 인벤토리는 초기화된다.",
-          "audio": "게시판은 네 귀환을 덜 기대할수록 더 많이 낸다.",
-          "in_game_wiki": "위험한 계약은 survival을 망가뜨리지 않고 숙련된 Marauder를 유혹하는 방식이다. 게시판은 나쁜 창, 편한 깊도 아래의 이른 하강, 봉인 유지 샘플, 모든 지름길을 비싸게 만드는 증거 보관 조건과 맞바꿔 더 큰 lien 경감을 제시한다. 플레이어가 고르는 것은 계승된 힘이 아니라 압력이다.",
-          "external_site": "더 위험한 계약 seed는 replay를 경제와 절차로 만든다. 바뀌는 것은 바다가 요구하는 것이지 플레이어가 들고 가는 것이 아니다.",
-          "field_note": "replay는 탐욕, 용기, 어리석음을 물어야 한다. grind가 아니다."
-        },
-        "he_IL": {
-          "title": "זרעי חוזה מסוכנים יותר",
-          "scanner": "SEED חוזה // חלון גרוע יותר, יעד ראשון עמוק יותר, משמורת קשוחה יותר, דגימה נדירה יותר, הקלת lien גדולה יותר. אין כוח בירושה.",
-          "terminal": "אפשרות SEED: הגדל תשלום על ידי קבלת תזמון מסלולי גרוע, מטרות ראשוניות עמוקות יותר, משמורת ראיות קשה יותר, הוכחת משאב נדירה או חשבון חזרה הדוק יותר. כוח ציוד ומלאי מתאפסים.",
-          "audio": "הלוח משלם יותר כשהוא מצפה פחות שתחזור.",
-          "in_game_wiki": "חוזים מסוכנים הם הדרך שבה התיק מפתה Marauder מנוסה בלי לשבור את ההישרדות. הלוח יכול להציע הקלת lien טובה יותר תמורת חלון רע, ירידה מוקדמת מתחת לעומק נוח, דגימה שחייבת להישאר חתומה או משמורת ראיות שהופכת כל קיצור ליקר. השחקן בוחר לחץ, לא כוח בירושה.",
-          "external_site": "זרעי חוזה מסוכנים יותר הופכים replay לכלכלי ופרוצדורלי: החוזה משנה את דרישות האוקיינוס, לא את מה שהשחקן נושא.",
-          "field_note": "Replay צריך לשאול על חמדנות, אומץ או טיפשות. לא grind."
-        },
-        "pt_BR": {
-          "title": "Seeds de contrato mais arriscados",
-          "scanner": "SEED DE CONTRATO // Janela pior, primeiro alvo mais fundo, custódia mais rígida, amostra mais rara, maior alívio de lien. Sem poder herdado.",
-          "terminal": "OPÇÃO SEED: aumente o pagamento aceitando pior timing orbital, objetivos iniciais mais profundos, custódia de evidência mais dura, prova de recurso raro ou contabilidade de retorno mais apertada. Poder de equipamento e inventário ainda resetam.",
-          "audio": "O quadro paga mais quando espera menos que você volte.",
-          "in_game_wiki": "Contratos arriscados são como o dossiê tenta um Marauder experiente sem quebrar a sobrevivência. O quadro pode oferecer melhor alívio de lien por uma janela ruim, descida inicial abaixo da profundidade confortável, amostra que precisa ficar selada ou custódia de evidência tão rígida que cada atalho fica caro. O jogador escolhe pressão, não força herdada.",
-          "external_site": "Seeds de contrato mais arriscados tornam o replay econômico e procedural: o contrato muda o que o oceano exige, não o que o jogador carrega.",
-          "field_note": "Replay deve pedir ganância, coragem ou estupidez. Não grind."
-        },
-        "nl_NL": {
-          "title": "Riskantere contract-seeds",
-          "scanner": "CONTRACT-SEED // Slechter venster, dieper eerste doel, strengere bewaring, zeldzamer monster, grotere lien-verlichting. Geen geërfde macht.",
-          "terminal": "SEEDOPTIE: verhoog uitbetaling door slechtere orbittiming, diepere begindoelen, hardere bewijsbewaring, zeldzaam hulpbronbewijs of strakkere terugkeerboekhouding te accepteren. Uitrustingsmacht en inventaris resetten.",
-          "audio": "Het bord betaalt meer wanneer het minder van je terugkomst verwacht.",
-          "in_game_wiki": "Riskante contracten verleiden een ervaren Marauder zonder survival te breken. Het bord kan betere lien-verlichting bieden voor een slecht venster, vroege afdaling onder comfortabele diepte, een monster dat verzegeld moet blijven of bewijsbewaring die elke kortere weg duur maakt. De speler kiest druk, geen geërfde kracht.",
-          "external_site": "Riskantere contract-seeds maken replay economisch en procedureel: het contract verandert wat de oceaan eist, niet wat de speler draagt.",
-          "field_note": "Replay moet hebzucht, moed of domheid vragen. Geen grind."
-        }
-      }
+    "ru_RU": {
+     "title": "Память слухов в досье",
+     "scanner": "ПАМЯТЬ ДОСЬЕ // Слухи, предупреждения, контекст контрактов и записи концовок сохраняются. Корпус, кислород, инструменты, груз и карта - нет.",
+     "terminal": "ПРАВИЛО СОХРАНЕНИЯ: досье может переносить семьи слухов, категории улик, флаги концовок и маршрутные предупреждения между кампаниями. Оно не переносит оборудование, ресурсы, географию seed или право владеть правдой.",
+     "audio": "Файл помнит то, что руки не могут унести.",
+     "in_game_wiki": "Досье Marauder - не складской ящик. Это та часть работы, которая переживает сорванный claim: имена, услышанные обрывком по реле, пункты договора, от которых пахло неправильно, уже раскрытые категории концовок, предупреждения, купленные чужими последними минутами. Новый заход должен начинаться с более острого подозрения, а не с лучшей подлодки.",
+     "external_site": "Память слухов в досье делает replay-знание частью мира: запись хранит подозрение и последствия, но не выдает следующему заходу более сильное тело.",
+     "field_note": "Пусть знание живет. Пусть давление остается."
     },
-    {
-      "packet_id": "P138_FALSE_ENDING_COUNT_LADDER",
-      "article_id": "replay.false_ending_count_ladder",
-      "title_key": "applied_lore.false_ending_count_ladder.title",
-      "unlock": {
-        "primary": "unlock.false_ending_count_ladder",
-        "poi_tags": [
-          "poi.ending_family_board",
-          "poi.partial_result_stamp",
-          "poi.dossier_outcome_counter"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.relay_archive",
-          "biome.atlas_basin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "False Ending Count Ladder",
-          "scanner": "ENDING LADDER // Material payout, partial return, corporate capture or quarantine, public ledger leak. Four false families before the deep Atlas answers.",
-          "terminal": "DOSSIER SCOPE: mark many exits, but group them into clear families. Material payout, partial exit/return, corporate capture/quarantine and public ledger leak sit below the Atlas basin payload resolutions.",
-          "audio": "The dossier can mark exits before it marks an answer.",
-          "in_game_wiki": "HECTON-8 can have many ways out without turning truth into noise. The dossier should sort false or partial outcomes into a small number of legible families: take the material and leave, escape only to be pulled back, fall into corporate custody or quarantine, or leak enough ledger truth to wound the machine without ending it. Each exit is real. None is the bottom.",
-          "external_site": "False Ending Count Ladder keeps replay scope readable: several exits, four major incomplete families, and the Atlas basin as the gravity center.",
-          "field_note": "Enough endings to reward playstyles. Not enough to make truth cheap."
-        },
-        "ru_RU": {
-          "title": "Лестница ложных концовок",
-          "scanner": "ЛЕСТНИЦА КОНЦОВОК // Материальная выплата, частичный возврат, корпоративный захват или карантин, утечка публичного ledger. Четыре ложные семьи до глубоких ответов Atlas.",
-          "terminal": "МАСШТАБ ДОСЬЕ: отмечать много выходов, но собирать их в ясные семьи. Материальная выплата, частичный выход/возврат, корпоративный захват/карантин и утечка публичного ledger лежат ниже решений payload в бассейне Atlas.",
-          "audio": "Досье может отметить выход раньше, чем отметит ответ.",
-          "in_game_wiki": "У HECTON-8 может быть много путей наружу, но правда не должна превращаться в шум. Досье сортирует ложные или частичные исходы в несколько читаемых семей: забрать material и уйти, выбраться только затем, чтобы тебя втянуло обратно, попасть в корпоративное хранение или карантин, либо слить достаточно ledger-правды, чтобы ранить машину, но не остановить ее. Каждый выход реален. Ни один не является дном.",
-          "external_site": "Лестница ложных концовок удерживает replay читаемым: несколько выходов, четыре крупные неполные семьи и бассейн Atlas как центр тяжести.",
-          "field_note": "Достаточно концовок, чтобы наградить стиль игры. Недостаточно, чтобы обесценить правду."
-        },
-        "ja_JP": {
-          "title": "偽エンディング数の梯子",
-          "scanner": "ENDING LADDER // 物資支払い、部分帰還、企業捕獲または検疫、公的台帳漏洩。深いAtlas解答の前に四つの偽系統。",
-          "terminal": "ドシエ範囲: 多くの出口を記録してよいが、明確な系統にまとめる。物資支払い、部分脱出/帰還、企業捕獲/検疫、公的台帳漏洩はAtlas盆地payload解決の下に置く。",
-          "audio": "ドシエは、答えより先に出口を記録できる。",
-          "in_game_wiki": "HECTON-8には多くの脱出口があってよい。ただし真実を雑音にしてはいけない。ドシエは偽または部分的な結果を、読める少数の系統へ整理する。物資を取って去る。脱出したはずが戻される。企業保管や検疫に落ちる。台帳の真実を十分に漏らし、機械を傷つけるが止めきれない。どの出口も本物だ。どれも底ではない。",
-          "external_site": "偽エンディング数の梯子はリプレイ範囲を読みやすく保つ。複数の出口、四つの大きな未完系統、そしてAtlas盆地を重心にする。",
-          "field_note": "プレイスタイルを報いるだけの結末。真実を安くしないだけの少なさ。"
-        },
-        "zh_CN": {
-          "title": "假结局数量阶梯",
-          "scanner": "结局阶梯 // 物资结算，部分返回，企业捕获或隔离，公共 ledger 泄露。深层 Atlas 答案前的四个假结局族。",
-          "terminal": "档案范围：可以标记许多出口，但要归入清晰族群。物资结算、部分离开/返回、企业捕获/隔离、公共 ledger 泄露位于 Atlas 盆地 payload 解决之下。",
-          "audio": "档案可以先标记出口，再标记答案。",
-          "in_game_wiki": "HECTON-8 可以有很多离开的方式，但真相不能变成噪音。档案应把假结局或部分结局分成少数可读的族群：拿走 material 离开；逃出又被拖回；落入企业保管或隔离；泄露足够的 ledger 真相以伤到机器，却不足以结束它。每个出口都是真的。没有一个是最底层。",
-          "external_site": "假结局数量阶梯让重玩范围可读：多个出口、四个主要未完成族群，以及作为重心的 Atlas 盆地。",
-          "field_note": "结局要足以奖励玩法。又不能多到让真相廉价。"
-        },
-        "fr_FR": {
-          "title": "Échelle des fausses fins",
-          "scanner": "ÉCHELLE DE FINS // Paiement matériel, retour partiel, capture corpo ou quarantaine, fuite du ledger public. Quatre familles fausses avant les réponses profondes d'Atlas.",
-          "terminal": "PORTÉE DOSSIER : marquer beaucoup de sorties, mais les grouper en familles nettes. Paiement matériel, sortie/retour partiel, capture/quarantaine corpo et fuite du ledger public restent sous les résolutions de payload du bassin Atlas.",
-          "audio": "Le dossier peut marquer des sorties avant de marquer une réponse.",
-          "in_game_wiki": "HECTON-8 peut offrir beaucoup de sorties sans transformer la vérité en bruit. Le dossier doit classer les issues fausses ou partielles en quelques familles lisibles : prendre le matériel et partir, sortir seulement pour être repris, tomber en garde corpo ou quarantaine, ou fuir assez de vérité du ledger pour blesser la machine sans l'arrêter. Chaque sortie est réelle. Aucune n'est le fond.",
-          "external_site": "L'échelle des fausses fins garde le replay lisible : plusieurs sorties, quatre grandes familles incomplètes et le bassin Atlas comme centre de gravité.",
-          "field_note": "Assez de fins pour récompenser les styles. Pas assez pour rendre la vérité bon marché."
-        },
-        "es_ES": {
-          "title": "Escalera de falsos finales",
-          "scanner": "ESCALERA DE FINALES // Pago material, retorno parcial, captura corporativa o cuarentena, filtración del ledger público. Cuatro familias falsas antes de las respuestas profundas de Atlas.",
-          "terminal": "ALCANCE DEL DOSIER: marcar muchas salidas, pero agruparlas en familias claras. Pago material, salida/retorno parcial, captura/cuarentena corporativa y filtración de ledger público quedan bajo las resoluciones de payload de la cuenca Atlas.",
-          "audio": "El dosier puede marcar salidas antes de marcar una respuesta.",
-          "in_game_wiki": "HECTON-8 puede tener muchas formas de salir sin convertir la verdad en ruido. El dosier debe ordenar los resultados falsos o parciales en pocas familias legibles: tomar el material y marcharse, escapar sólo para ser arrastrado de vuelta, caer en custodia corporativa o cuarentena, o filtrar suficiente verdad del ledger para herir la máquina sin detenerla. Cada salida es real. Ninguna es el fondo.",
-          "external_site": "La escalera de falsos finales mantiene legible el alcance del replay: varias salidas, cuatro familias incompletas y la cuenca Atlas como centro de gravedad.",
-          "field_note": "Suficientes finales para premiar estilos. No tantos como para abaratar la verdad."
-        },
-        "de_DE": {
-          "title": "Leiter der falschen Enden",
-          "scanner": "ENDLEITER // Materialauszahlung, Teilrückkehr, Konzernfang oder Quarantäne, öffentliches Ledger-Leck. Vier falsche Familien vor den tiefen Atlas-Antworten.",
-          "terminal": "DOSSIER-UMFANG: viele Ausgänge markieren, aber in klare Familien gruppieren. Materialauszahlung, Teilausstieg/Rückkehr, Konzernfang/Quarantäne und öffentliches Ledger-Leck liegen unter den Payload-Lösungen im Atlas-Becken.",
-          "audio": "Das Dossier kann Ausgänge markieren, bevor es eine Antwort markiert.",
-          "in_game_wiki": "HECTON-8 darf viele Wege hinaus haben, ohne Wahrheit zu Lärm zu machen. Das Dossier soll falsche oder teilweise Ausgänge in wenige lesbare Familien sortieren: Material nehmen und gehen, entkommen und zurückgezogen werden, in Konzernverwahrung oder Quarantäne fallen, oder genug Ledger-Wahrheit leaken, um die Maschine zu verletzen, ohne sie zu beenden. Jeder Ausgang ist echt. Keiner ist der Grund.",
-          "external_site": "Die Leiter der falschen Enden hält Replay lesbar: mehrere Ausgänge, vier große unvollständige Familien und das Atlas-Becken als Schwerpunkt.",
-          "field_note": "Genug Enden für Spielstile. Nicht genug, um Wahrheit billig zu machen."
-        },
-        "pl_PL": {
-          "title": "Drabina fałszywych zakończeń",
-          "scanner": "DRABINA ZAKOŃCZEŃ // Wypłata materialna, częściowy powrót, korporacyjne przejęcie lub kwarantanna, wyciek publicznego ledger. Cztery fałszywe rodziny przed głębokimi odpowiedziami Atlas.",
-          "terminal": "ZAKRES DOSSIER: oznacz wiele wyjść, ale grupuj je w czytelne rodziny. Wypłata materialna, częściowe wyjście/powrót, przejęcie/kwarantanna korpo i wyciek publicznego ledger leżą poniżej rozwiązań payload w basenie Atlas.",
-          "audio": "Dossier może oznaczyć wyjścia, zanim oznaczy odpowiedź.",
-          "in_game_wiki": "HECTON-8 może mieć wiele wyjść, nie zamieniając prawdy w szum. Dossier powinno sortować fałszywe lub częściowe wyniki w kilka czytelnych rodzin: wziąć material i odejść, uciec tylko po to, by zostać wciągniętym z powrotem, trafić do korporacyjnej opieki albo kwarantanny, albo ujawnić dość prawdy z ledger, by zranić maszynę bez zatrzymania jej. Każde wyjście jest prawdziwe. Żadne nie jest dnem.",
-          "external_site": "Drabina fałszywych zakończeń utrzymuje zakres replayu czytelny: kilka wyjść, cztery duże niepełne rodziny i basen Atlas jako środek ciężkości.",
-          "field_note": "Dość zakończeń, by nagrodzić style. Nie dość, by prawda była tania."
-        },
-        "uk_UA": {
-          "title": "Драбина хибних кінцівок",
-          "scanner": "ДРАБИНА КІНЦІВОК // Матеріальна виплата, часткове повернення, корпоративне захоплення або карантин, витік публічного ledger. Чотири хибні родини до глибоких відповідей Atlas.",
-          "terminal": "МАСШТАБ ДОСЬЄ: позначати багато виходів, але групувати їх у чіткі родини. Матеріальна виплата, частковий вихід/повернення, корпоративне захоплення/карантин і витік публічного ledger лежать нижче payload-рішень у басейні Atlas.",
-          "audio": "Досьє може позначити вихід раніше, ніж відповідь.",
-          "in_game_wiki": "HECTON-8 може мати багато шляхів назовні, не перетворюючи правду на шум. Досьє має сортувати хибні або часткові наслідки в кілька читабельних родин: взяти material і піти, вибратися лише для того, щоб тебе втягнуло назад, потрапити в корпоративне зберігання або карантин, або злити досить ledger-правди, щоб поранити машину, але не зупинити її. Кожен вихід реальний. Жоден не є дном.",
-          "external_site": "Драбина хибних кінцівок тримає replay читабельним: кілька виходів, чотири великі неповні родини й басейн Atlas як центр тяжіння.",
-          "field_note": "Досить кінцівок, щоб винагородити стилі. Недосить, щоб здешевити правду."
-        },
-        "ar_SA": {
-          "title": "سلم النهايات الزائفة",
-          "scanner": "سلم النهايات // دفع material، عودة جزئية، أسر شركة أو حجر، تسريب ledger عام. أربع عائلات زائفة قبل إجابات Atlas العميقة.",
-          "terminal": "نطاق الملف: علّم مخارج كثيرة، لكن اجمعها في عائلات واضحة. دفع material، خروج/عودة جزئية، أسر/حجر شركة، وتسريب ledger عام تقع تحت حلول payload في حوض Atlas.",
-          "audio": "يمكن للملف أن يعلّم المخارج قبل أن يعلّم جوابا.",
-          "in_game_wiki": "يمكن أن يملك HECTON-8 طرقا كثيرة للخروج من دون تحويل الحقيقة إلى ضجيج. يجب أن يفرز الملف النتائج الزائفة أو الجزئية في عائلات قليلة مقروءة: خذ material وارحل، اخرج فقط لتُسحب عائدا، اسقط في عهدة شركة أو حجر، أو سرّب ما يكفي من حقيقة ledger لجرح الآلة من دون إيقافها. كل مخرج حقيقي. ولا واحد هو القاع.",
-          "external_site": "سلم النهايات الزائفة يبقي نطاق replay مقروءا: مخارج عدة، أربع عائلات ناقصة كبرى، وحوض Atlas مركز الثقل.",
-          "field_note": "نهايات كافية لمكافأة الأساليب. لا كثيرة حتى ترخص الحقيقة."
-        },
-        "id_ID": {
-          "title": "Tangga Ending Palsu",
-          "scanner": "TANGGA ENDING // Bayaran material, kembali sebagian, penangkapan korporat atau karantina, kebocoran ledger publik. Empat keluarga palsu sebelum jawaban Atlas dalam.",
-          "terminal": "CAKUPAN DOSSIER: tandai banyak jalan keluar, tapi kelompokkan dalam keluarga jelas. Bayaran material, keluar/kembali sebagian, penangkapan/karantina korporat, dan bocoran ledger publik berada di bawah resolusi payload basin Atlas.",
-          "audio": "Dossier bisa menandai jalan keluar sebelum menandai jawaban.",
-          "in_game_wiki": "HECTON-8 boleh punya banyak jalan keluar tanpa mengubah kebenaran menjadi bising. Dossier harus memilah hasil palsu atau sebagian ke keluarga yang terbaca: ambil material dan pergi, lolos hanya untuk ditarik kembali, jatuh ke kustodi korporat atau karantina, atau membocorkan cukup kebenaran ledger untuk melukai mesin tanpa mengakhirinya. Tiap jalan keluar nyata. Tak satu pun dasar terdalam.",
-          "external_site": "Tangga Ending Palsu menjaga cakupan replay tetap terbaca: beberapa keluar, empat keluarga besar yang belum selesai, dan basin Atlas sebagai pusat gravitasi.",
-          "field_note": "Cukup ending untuk menghargai gaya. Tidak cukup untuk membuat kebenaran murah."
-        },
-        "ko_KR": {
-          "title": "거짓 엔딩 수 사다리",
-          "scanner": "엔딩 사다리 // material 지급, 부분 귀환, 기업 포획 또는 격리, 공개 ledger 유출. 깊은 Atlas 답변 전 네 거짓 계열.",
-          "terminal": "도시어 범위: 많은 출구를 표시하되 명확한 계열로 묶는다. material 지급, 부분 탈출/귀환, 기업 포획/격리, 공개 ledger 유출은 Atlas 분지 payload 해결보다 아래에 둔다.",
-          "audio": "도시어는 답보다 먼저 출구를 표시할 수 있다.",
-          "in_game_wiki": "HECTON-8에는 여러 탈출 방식이 있을 수 있지만 진실이 소음이 되어서는 안 된다. 도시어는 거짓 또는 부분 결과를 읽히는 소수 계열로 정리해야 한다. material을 챙기고 떠난다. 빠져나왔지만 다시 끌려간다. 기업 보관이나 격리에 떨어진다. 기계를 끝내지는 못하지만 상처낼 만큼 ledger 진실을 유출한다. 모든 출구는 진짜다. 그러나 어느 것도 바닥은 아니다.",
-          "external_site": "거짓 엔딩 수 사다리는 replay 범위를 읽히게 유지한다. 여러 출구, 네 큰 미완 계열, 그리고 Atlas 분지를 중력 중심으로 둔다.",
-          "field_note": "플레이스타일을 보상할 만큼의 엔딩. 진실을 싸게 만들 만큼은 아니다."
-        },
-        "he_IL": {
-          "title": "סולם ספירת סופים כוזבים",
-          "scanner": "סולם סופים // תשלום material, חזרה חלקית, תפיסה תאגידית או הסגר, דליפת ledger ציבורית. ארבע משפחות כוזבות לפני תשובות Atlas העמוקות.",
-          "terminal": "היקף תיק: סמן הרבה יציאות, אבל קבץ אותן למשפחות ברורות. תשלום material, יציאה/חזרה חלקית, תפיסה/הסגר תאגידי ודליפת ledger ציבורית יושבים מתחת לפתרונות payload באגן Atlas.",
-          "audio": "התיק יכול לסמן יציאות לפני שהוא מסמן תשובה.",
-          "in_game_wiki": "ל-HECTON-8 יכולות להיות דרכים רבות החוצה בלי להפוך אמת לרעש. התיק צריך למיין תוצאות כוזבות או חלקיות למספר קטן של משפחות קריאות: לקחת material ולעזוב, לברוח רק כדי להימשך חזרה, ליפול למשמורת תאגידית או הסגר, או להדליף מספיק אמת ledger כדי לפצוע את המכונה בלי לסיים אותה. כל יציאה אמיתית. אף אחת אינה התחתית.",
-          "external_site": "סולם הסופים הכוזבים שומר את היקף ה-replay קריא: כמה יציאות, ארבע משפחות לא שלמות גדולות, ואגן Atlas כמרכז הכובד.",
-          "field_note": "מספיק סופים לתגמל סגנונות. לא מספיק כדי להוזיל אמת."
-        },
-        "pt_BR": {
-          "title": "Escada de falsos finais",
-          "scanner": "ESCADA DE FINAIS // Pagamento material, retorno parcial, captura corporativa ou quarentena, vazamento de ledger público. Quatro famílias falsas antes das respostas profundas de Atlas.",
-          "terminal": "ESCOPO DO DOSSIÊ: marque muitas saídas, mas agrupe em famílias claras. Pagamento material, saída/retorno parcial, captura/quarentena corporativa e vazamento de ledger público ficam abaixo das resoluções de payload da bacia Atlas.",
-          "audio": "O dossiê pode marcar saídas antes de marcar uma resposta.",
-          "in_game_wiki": "HECTON-8 pode ter muitas formas de sair sem transformar a verdade em ruído. O dossiê deve ordenar resultados falsos ou parciais em poucas famílias legíveis: pegar o material e ir embora, escapar só para ser puxado de volta, cair em custódia corporativa ou quarentena, ou vazar verdade suficiente do ledger para ferir a máquina sem encerrá-la. Cada saída é real. Nenhuma é o fundo.",
-          "external_site": "A escada de falsos finais mantém o escopo do replay legível: várias saídas, quatro grandes famílias incompletas e a bacia Atlas como centro de gravidade.",
-          "field_note": "Finais suficientes para premiar estilos. Não tantos que barateiem a verdade."
-        },
-        "nl_NL": {
-          "title": "Ladder van valse eindes",
-          "scanner": "EINDLADDER // Material-uitbetaling, gedeeltelijke terugkeer, bedrijfsgevangenschap of quarantaine, openbaar ledger-lek. Vier valse families vóór de diepe Atlas-antwoorden.",
-          "terminal": "DOSSIERBEREIK: markeer veel uitgangen, maar groepeer ze in duidelijke families. Material-uitbetaling, gedeeltelijke exit/terugkeer, bedrijfsgevangenschap/quarantaine en openbaar ledger-lek staan onder de payload-resoluties in het Atlas-bekken.",
-          "audio": "Het dossier kan uitgangen markeren voordat het een antwoord markeert.",
-          "in_game_wiki": "HECTON-8 kan veel wegen naar buiten hebben zonder waarheid in ruis te veranderen. Het dossier moet valse of gedeeltelijke uitkomsten sorteren in een klein aantal leesbare families: material pakken en vertrekken, ontsnappen om teruggesleept te worden, in bedrijfsbewaring of quarantaine vallen, of genoeg ledger-waarheid lekken om de machine te verwonden zonder haar te stoppen. Elke uitgang is echt. Geen enkele is de bodem.",
-          "external_site": "De ladder van valse eindes houdt replay leesbaar: meerdere uitgangen, vier grote onvolledige families en het Atlas-bekken als zwaartepunt.",
-          "field_note": "Genoeg eindes voor speelstijlen. Niet genoeg om waarheid goedkoop te maken."
-        }
-      }
+    "ja_JP": {
+     "title": "ドシエの噂記憶",
+     "scanner": "DOSSIER MEMORY // 噂、警告、契約文脈、エンディング記録は残る。船体、酸素、工具、貨物、地図は残らない。",
+     "terminal": "永続化規則: ドシエはキャンペーンを越えて噂系統、証拠分類、エンディングフラグ、航路警告を保持できる。装備、資源、seed地形、真実の所有権は持ち越さない。",
+     "audio": "そのファイルは、手で運べないものを覚えている。",
+     "in_game_wiki": "Marauderのドシエは保管箱ではない。失敗した請求のあとにも残る仕事の一部だ。リレー越しに半分だけ聞いた名前、嫌な匂いのする契約条項、すでに暴いた結末の分類、誰かの最後の数分で買った警告。新しい周回は、より良い潜水艇ではなく、より鋭い疑いから始まるべきだ。",
+     "external_site": "ドシエの噂記憶はリプレイ知識を世界内の記録にする。疑念と結果は残すが、次の周回に強い肉体は渡さない。",
+     "field_note": "知識は残していい。圧力は残せ。"
     },
-    {
-      "packet_id": "P139_STARTING_CLAIM_VARIANTS",
-      "article_id": "replay.starting_claim_variants",
-      "title_key": "applied_lore.starting_claim_variants.title",
-      "unlock": {
-        "primary": "unlock.starting_claim_variants",
-        "poi_tags": [
-          "poi.claim_variant_selector",
-          "poi.salvage_origin_stamp",
-          "poi.contract_motive_note"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.photic_shelf",
-          "biome.relay_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Starting Claim Variants",
-          "scanner": "CLAIM VARIANT // Same ex-Deep-Reach Marauder. Different first debt, bounty, route hardware, sample custody or blacklist relief.",
-          "terminal": "START RULE: variants alter initial pressure, rumor access, evidence weighting and payout logic. They do not create alternate heroes or erase the former Deep Reach spine.",
-          "audio": "You can change the job without changing who took it.",
-          "in_game_wiki": "A starting claim is the lie written at the top of the work order. Debt salvage, evidence bounty, missing route hardware, hazardous sample custody, blacklist relief: each variant changes why the board lets the Marauder down into the water. It should color motive and first pressure, not replace the protagonist with a new mask.",
-          "external_site": "Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.",
-          "field_note": "Change the claim. Keep the scar."
-        },
-        "ru_RU": {
-          "title": "Варианты стартового claim",
-          "scanner": "ВАРИАНТ CLAIM // Тот же бывший Deep Reach Marauder. Другой первый долг, bounty, маршрутное железо, хранение образца или снятие blacklist.",
-          "terminal": "СТАРТОВОЕ ПРАВИЛО: варианты меняют начальное давление, доступ к слухам, вес улик и логику выплат. Они не создают альтернативных героев и не стирают бывший Deep Reach spine.",
-          "audio": "Можно изменить работу, не меняя того, кто ее взял.",
-          "in_game_wiki": "Стартовый claim - это ложь, написанная вверху рабочего ордера. Долговой salvage, bounty за улику, пропавшее маршрутное железо, опасное хранение образца, снятие blacklist: каждый вариант меняет причину, по которой доска пускает Marauder вниз. Он должен окрашивать мотив и первое давление, а не заменять протагониста новой маской.",
-          "external_site": "Варианты стартового claim дают HECTON-8 replay с разными экономическими крючками, сохраняя одного сильного протагониста.",
-          "field_note": "Меняй claim. Оставь шрам."
-        },
-        "ja_JP": {
-          "title": "開始claimバリアント",
-          "scanner": "CLAIM VARIANT // 同じ元Deep ReachのMarauder。違う初期債務、賞金、航路機材、試料保管、またはブラックリスト緩和。",
-          "terminal": "開始規則: バリアントは初期圧力、噂アクセス、証拠重み、支払い論理を変える。別主人公を作らず、元Deep Reachという背骨を消さない。",
-          "audio": "仕事は変えられる。受けた人間は変えない。",
-          "in_game_wiki": "開始claimとは、作業命令の一番上に書かれた嘘だ。債務salvage、証拠賞金、失われた航路機材、危険試料の保管、ブラックリスト緩和。各バリアントは、なぜ掲示板がMarauderを水中へ下ろすのかを変える。動機と最初の圧力に色を付けるべきで、主人公を別の仮面に置き換えてはいけない。",
-          "external_site": "開始claimバリアントは、一人の強い主人公を保ちながら、異なる経済フックでHECTON-8をリプレイ可能にする。",
-          "field_note": "claimを変えろ。傷は残せ。"
-        },
-        "zh_CN": {
-          "title": "起始 claim 变体",
-          "scanner": "CLAIM 变体 // 同一个前 Deep Reach Marauder。不同首笔债务、bounty、路线硬件、样本保管或 blacklist 减免。",
-          "terminal": "起始规则：变体改变初始压力、传闻访问、证据权重和报酬逻辑。它们不创造替代英雄，也不抹掉前 Deep Reach 主线脊骨。",
-          "audio": "你可以改变工作，但不能改变接下工作的人。",
-          "in_game_wiki": "起始 claim 是写在工单顶端的谎言。债务 salvage、证据 bounty、失踪路线硬件、危险样本保管、blacklist 减免：每个变体都改变委员会为什么让 Marauder 下水。它应该给动机和第一层压力染色，而不是用新面具替换主角。",
-          "external_site": "起始 claim 变体让 HECTON-8 用不同经济钩子重玩，同时保留一个强主角。",
-          "field_note": "改变 claim。保留伤疤。"
-        },
-        "fr_FR": {
-          "title": "Variantes de claim initial",
-          "scanner": "VARIANTE CLAIM // Même Marauder ex-Deep-Reach. Première dette, bounty, matériel de route, garde d'échantillon ou allègement de blacklist différents.",
-          "terminal": "RÈGLE DE DÉPART : les variantes modifient pression initiale, accès aux rumeurs, poids des preuves et logique de paiement. Elles ne créent pas de héros alternatifs et n'effacent pas l'ancienne colonne Deep Reach.",
-          "audio": "Tu peux changer le travail sans changer celui qui l'a pris.",
-          "in_game_wiki": "Un claim initial est le mensonge écrit en haut de l'ordre de travail. Salvage de dette, bounty de preuve, matériel de route manquant, garde d'échantillon dangereux, allègement de blacklist : chaque variante change la raison pour laquelle le tableau laisse le Marauder descendre. Elle doit colorer le motif et la première pression, pas remplacer le protagoniste par un masque neuf.",
-          "external_site": "Les variantes de claim initial permettent de rejouer HECTON-8 avec des crochets économiques différents tout en conservant un protagoniste fort.",
-          "field_note": "Change le claim. Garde la cicatrice."
-        },
-        "es_ES": {
-          "title": "Variantes de claim inicial",
-          "scanner": "VARIANTE CLAIM // Mismo Marauder ex-Deep-Reach. Primera deuda, bounty, hardware de ruta, custodia de muestra o alivio de blacklist distintos.",
-          "terminal": "REGLA INICIAL: las variantes alteran presión inicial, acceso a rumores, peso de evidencia y lógica de pago. No crean héroes alternativos ni borran la columna ex-Deep Reach.",
-          "audio": "Puedes cambiar el trabajo sin cambiar a quien lo aceptó.",
-          "in_game_wiki": "Un claim inicial es la mentira escrita arriba de la orden de trabajo. Salvage de deuda, bounty de evidencia, hardware de ruta perdido, custodia de muestra peligrosa, alivio de blacklist: cada variante cambia por qué el tablero deja bajar al Marauder al agua. Debe colorear motivo y primera presión, no sustituir al protagonista con otra máscara.",
-          "external_site": "Las variantes de claim inicial permiten rejugar HECTON-8 con distintos ganchos económicos sin perder un protagonista fuerte.",
-          "field_note": "Cambia el claim. Conserva la cicatriz."
-        },
-        "de_DE": {
-          "title": "Start-Claim-Varianten",
-          "scanner": "CLAIM-VARIANTE // Derselbe Ex-Deep-Reach-Marauder. Andere Anfangsschuld, Bounty, Routenhardware, Probenverwahrung oder Blacklist-Erleichterung.",
-          "terminal": "STARTREGEL: Varianten ändern Anfangsdruck, Gerüchtezugang, Beweisgewichtung und Auszahlungslogik. Sie erschaffen keine Alternativhelden und löschen nicht das ehemalige Deep-Reach-Rückgrat.",
-          "audio": "Du kannst den Job ändern, ohne den zu ändern, der ihn annahm.",
-          "in_game_wiki": "Ein Start-Claim ist die Lüge oben auf dem Arbeitsauftrag. Schuld-salvage, Beweis-bounty, fehlende Routenhardware, gefährliche Probenverwahrung, Blacklist-Erleichterung: Jede Variante ändert, warum die Tafel den Marauder ins Wasser lässt. Sie soll Motiv und ersten Druck färben, nicht den Protagonisten durch eine neue Maske ersetzen.",
-          "external_site": "Start-Claim-Varianten lassen HECTON-8 mit verschiedenen wirtschaftlichen Haken wiederholen und bewahren einen starken Protagonisten.",
-          "field_note": "Ändere den Claim. Behalte die Narbe."
-        },
-        "pl_PL": {
-          "title": "Warianty początkowego claim",
-          "scanner": "WARIANT CLAIM // Ten sam były Marauder z Deep Reach. Inny pierwszy dług, bounty, sprzęt trasy, depozyt próbki albo ulga blacklist.",
-          "terminal": "REGUŁA STARTU: warianty zmieniają presję początkową, dostęp do plotek, wagę dowodów i logikę wypłaty. Nie tworzą alternatywnych bohaterów ani nie kasują kręgosłupa byłego Deep Reach.",
-          "audio": "Możesz zmienić robotę, nie zmieniając tego, kto ją wziął.",
-          "in_game_wiki": "Początkowy claim to kłamstwo zapisane na górze zlecenia. Dłużny salvage, bounty za dowód, brakujący sprzęt trasy, depozyt groźnej próbki, ulga blacklist: każdy wariant zmienia powód, dla którego tablica wpuszcza Maraudera do wody. Ma barwić motyw i pierwszą presję, nie zastępować protagonisty nową maską.",
-          "external_site": "Warianty początkowego claim pozwalają replayować HECTON-8 różnymi hakami ekonomicznymi, zachowując jednego silnego protagonistę.",
-          "field_note": "Zmień claim. Zostaw bliznę."
-        },
-        "uk_UA": {
-          "title": "Варіанти стартового claim",
-          "scanner": "ВАРІАНТ CLAIM // Той самий колишній Deep Reach Marauder. Інший перший борг, bounty, маршрутне залізо, зберігання зразка або полегшення blacklist.",
-          "terminal": "СТАРТОВЕ ПРАВИЛО: варіанти змінюють початковий тиск, доступ до чуток, вагу доказів і логіку виплат. Вони не створюють альтернативних героїв і не стирають колишній Deep Reach spine.",
-          "audio": "Можна змінити роботу, не змінюючи того, хто її взяв.",
-          "in_game_wiki": "Стартовий claim - це брехня, написана вгорі робочого ордера. Борговий salvage, bounty за доказ, зникле маршрутне залізо, небезпечне зберігання зразка, полегшення blacklist: кожен варіант змінює причину, з якої дошка пускає Marauder у воду. Він має фарбувати мотив і перший тиск, а не замінювати протагоніста новою маскою.",
-          "external_site": "Варіанти стартового claim дають HECTON-8 replay з різними економічними гачками, зберігаючи одного сильного протагоніста.",
-          "field_note": "Зміни claim. Залиш шрам."
-        },
-        "ar_SA": {
-          "title": "تنويعات claim البداية",
-          "scanner": "تنويع CLAIM // نفس Marauder السابق من Deep Reach. دين أول مختلف، bounty، عتاد مسار، عهدة عينة أو تخفيف blacklist.",
-          "terminal": "قاعدة البداية: التنويعات تغيّر الضغط الأول، وصول الشائعات، وزن الأدلة ومنطق الدفع. لا تخلق أبطالا بدلاء ولا تمحو عمود Deep Reach السابق.",
-          "audio": "يمكنك تغيير العمل من دون تغيير من قبله.",
-          "in_game_wiki": "claim البداية هو الكذبة المكتوبة أعلى أمر العمل. salvage دين، bounty دليل، عتاد مسار مفقود، عهدة عينة خطرة، تخفيف blacklist: كل تنويع يغير سبب سماح اللوحة للـ Marauder بالنزول إلى الماء. يجب أن يلوّن الدافع والضغط الأول، لا أن يستبدل البطل بقناع جديد.",
-          "external_site": "تنويعات claim البداية تسمح بإعادة لعب HECTON-8 بخطافات اقتصادية مختلفة مع الحفاظ على بطل واحد قوي.",
-          "field_note": "غيّر claim. أبق الندبة."
-        },
-        "id_ID": {
-          "title": "Varian Claim Awal",
-          "scanner": "VARIAN CLAIM // Marauder eks-Deep-Reach yang sama. Utang pertama, bounty, hardware rute, kustodi sampel, atau keringanan blacklist berbeda.",
-          "terminal": "ATURAN AWAL: varian mengubah tekanan awal, akses rumor, bobot bukti, dan logika bayaran. Mereka tidak menciptakan hero alternatif atau menghapus tulang punggung eks Deep Reach.",
-          "audio": "Kau bisa mengubah pekerjaan tanpa mengubah orang yang mengambilnya.",
-          "in_game_wiki": "Claim awal adalah kebohongan di bagian atas perintah kerja. Salvage utang, bounty bukti, hardware rute hilang, kustodi sampel berbahaya, keringanan blacklist: tiap varian mengubah alasan papan membiarkan Marauder turun ke air. Ia harus memberi warna pada motif dan tekanan pertama, bukan mengganti protagonis dengan topeng baru.",
-          "external_site": "Varian Claim Awal membuat HECTON-8 bisa direplay dengan kait ekonomi berbeda sambil mempertahankan satu protagonis kuat.",
-          "field_note": "Ubah claim. Pertahankan bekas lukanya."
-        },
-        "ko_KR": {
-          "title": "시작 claim 변형",
-          "scanner": "CLAIM 변형 // 같은 전 Deep Reach Marauder. 다른 첫 부채, bounty, 경로 장비, 샘플 보관 또는 blacklist 경감.",
-          "terminal": "시작 규칙: 변형은 초기 압력, 소문 접근, 증거 가중치, 지급 논리를 바꾼다. 대체 주인공을 만들거나 전 Deep Reach라는 척추를 지우지 않는다.",
-          "audio": "일은 바꿀 수 있다. 그 일을 받은 사람은 바꾸지 않는다.",
-          "in_game_wiki": "시작 claim은 작업 명령 맨 위에 적힌 거짓말이다. 부채 salvage, 증거 bounty, 사라진 경로 장비, 위험 샘플 보관, blacklist 경감. 각 변형은 게시판이 왜 Marauder를 물속으로 내려보내는지 바꾼다. 동기와 첫 압력에 색을 입혀야지, 주인공을 새 가면으로 바꾸면 안 된다.",
-          "external_site": "시작 claim 변형은 한 명의 강한 주인공을 보존하면서 HECTON-8을 다른 경제 갈고리로 replay하게 한다.",
-          "field_note": "claim을 바꿔라. 흉터는 남겨라."
-        },
-        "he_IL": {
-          "title": "וריאציות claim פתיחה",
-          "scanner": "וריאציית CLAIM // אותו Marauder לשעבר מ-Deep Reach. חוב ראשון, bounty, חומרת מסלול, משמורת דגימה או הקלת blacklist שונים.",
-          "terminal": "כלל פתיחה: וריאציות משנות לחץ התחלתי, גישה לשמועות, משקל ראיות ולוגיקת תשלום. הן לא יוצרות גיבורים חלופיים ולא מוחקות את עמוד השדרה של Deep Reach לשעבר.",
-          "audio": "אפשר לשנות את העבודה בלי לשנות את מי שלקח אותה.",
-          "in_game_wiki": "claim פתיחה הוא השקר הכתוב בראש פקודת העבודה. salvage חוב, bounty ראיה, חומרת מסלול חסרה, משמורת דגימה מסוכנת, הקלת blacklist: כל וריאציה משנה למה הלוח נותן ל-Marauder לרדת למים. היא צריכה לצבוע מניע ולחץ ראשון, לא להחליף את הגיבור במסכה חדשה.",
-          "external_site": "וריאציות claim פתיחה מאפשרות replay של HECTON-8 עם קרסים כלכליים שונים תוך שימור גיבור אחד חזק.",
-          "field_note": "שנה את ה-claim. השאר את הצלקת."
-        },
-        "pt_BR": {
-          "title": "Variantes de claim inicial",
-          "scanner": "VARIANTE CLAIM // Mesmo Marauder ex-Deep-Reach. Primeira dívida, bounty, hardware de rota, custódia de amostra ou alívio de blacklist diferentes.",
-          "terminal": "REGRA DE INÍCIO: variantes alteram pressão inicial, acesso a rumores, peso das evidências e lógica de pagamento. Não criam heróis alternativos nem apagam a espinha dorsal ex-Deep Reach.",
-          "audio": "Você pode mudar o trabalho sem mudar quem aceitou.",
-          "in_game_wiki": "Um claim inicial é a mentira escrita no topo da ordem de serviço. Salvage de dívida, bounty de evidência, hardware de rota desaparecido, custódia de amostra perigosa, alívio de blacklist: cada variante muda por que o quadro deixa o Marauder descer para a água. Deve colorir motivo e primeira pressão, não trocar o protagonista por uma máscara nova.",
-          "external_site": "Variantes de claim inicial permitem replay de HECTON-8 com ganchos econômicos diferentes enquanto preservam um protagonista forte.",
-          "field_note": "Mude o claim. Preserve a cicatriz."
-        },
-        "nl_NL": {
-          "title": "Start-claimvarianten",
-          "scanner": "CLAIMVARIANT // Dezelfde ex-Deep-Reach Marauder. Andere eerste schuld, bounty, routehardware, monsterbewaring of blacklist-verlichting.",
-          "terminal": "STARTREGEL: varianten veranderen begindruk, geruchtentoegang, bewijsweging en uitbetalingslogica. Ze maken geen alternatieve helden en wissen de voormalige Deep Reach-ruggengraat niet.",
-          "audio": "Je kunt de klus veranderen zonder degene die hem aannam te veranderen.",
-          "in_game_wiki": "Een start-claim is de leugen bovenaan de werkorder. Schuld-salvage, bewijs-bounty, ontbrekende routehardware, gevaarlijke monsterbewaring, blacklist-verlichting: elke variant verandert waarom het bord de Marauder het water in laat. Het moet motief en eerste druk kleuren, niet de protagonist vervangen door een nieuw masker.",
-          "external_site": "Start-claimvarianten laten HECTON-8 replayen met verschillende economische haken terwijl één sterke protagonist behouden blijft.",
-          "field_note": "Verander de claim. Bewaar het litteken."
-        }
-      }
+    "zh_CN": {
+     "title": "档案传闻记忆",
+     "scanner": "档案记忆 // 传闻、警告、合约背景和结局记录会保留。船壳、氧气、工具、货物和地图不会。",
+     "terminal": "持久化规则：档案可以跨战役保留传闻族、证据类别、结局标记和路线警告。它不得保留装备、资源、seed 地形或对真相的所有权。",
+     "audio": "文件记得双手带不走的东西。",
+     "in_game_wiki": "Marauder 档案不是储物箱。它是失败 claim 之后仍会留下的工作部分：中继里听到一半的名字，闻起来不对的合约条款，已经暴露的结局类别，用别人最后几分钟买来的警告。新的开局应该带来更敏锐的怀疑，而不是更好的潜艇。",
+     "external_site": "档案传闻记忆把重玩知识变成世界内记录：它保存怀疑和后果，但不把更强的身体交给下一轮。",
+     "field_note": "让知识留下。让压力继续。"
     },
-    {
-      "packet_id": "P140_DOSSIER_KNOWLEDGE_NOT_POWER",
-      "article_id": "replay.dossier_knowledge_not_power",
-      "title_key": "applied_lore.dossier_knowledge_not_power.title",
-      "unlock": {
-        "primary": "unlock.dossier_knowledge_not_power",
-        "poi_tags": [
-          "poi.no_power_carryover_notice",
-          "poi.route_warning_card",
-          "poi.old_ending_hash"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.relay_archive",
-          "biome.photic_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Dossier Knowledge, Not Power",
-          "scanner": "META RULE // No inherited oxygen, hull rating, weapons, inventory, route authority or magic shortcut. The dossier keeps warnings, not muscle.",
-          "terminal": "HARD LIMIT: persistent dossier data may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route permission.",
-          "audio": "Memory does not reinforce a cracked hull.",
-          "in_game_wiki": "If the dossier carries power, HECTON-8 stops being about pressure. The sea becomes homework already solved. The right persistence is stranger and harsher: the player recognizes a lie earlier, knows which contract clause should sting, sees why a clean payout is not clean, and still descends with a fragile body into a fresh seed. Wisdom can survive. Safety should not.",
-          "external_site": "Dossier Knowledge, Not Power is the replayability rule that keeps HECTON-8 long-form, dangerous and narratively honest.",
-          "field_note": "The player can become wiser. The ocean should not become smaller."
-        },
-        "ru_RU": {
-          "title": "Знание досье, не сила",
-          "scanner": "META RULE // Нет наследуемого кислорода, рейтинга корпуса, оружия, инвентаря, маршрутной власти или магического shortcut. Досье хранит предупреждения, не мышцы.",
-          "terminal": "ЖЕСТКИЙ ПРЕДЕЛ: постоянные данные досье могут открывать предупреждения, семьи слухов, варианты claim и контекст концовок. Они не сохраняют силу оборудования, инвентарь ресурсов, владение мировой правдой или маршрутное разрешение.",
-          "audio": "Память не усиливает треснувший корпус.",
-          "in_game_wiki": "Если досье переносит силу, HECTON-8 перестает быть игрой о давлении. Море превращается в уже решенную домашнюю работу. Правильное сохранение страннее и жестче: игрок раньше распознает ложь, понимает, какой пункт договора должен жалить, видит, почему чистая выплата не чистая, и всё равно спускается хрупким телом в новый seed. Мудрость может выжить. Безопасность - нет.",
-          "external_site": "Знание досье, не сила - правило replayability, которое сохраняет HECTON-8 долгой, опасной и честной по повествованию.",
-          "field_note": "Игрок может стать мудрее. Океан не должен стать меньше."
-        },
-        "ja_JP": {
-          "title": "ドシエは知識であり、力ではない",
-          "scanner": "META RULE // 継承酸素、船体等級、武器、所持品、航路権限、魔法の近道なし。ドシエが持つのは警告であって筋肉ではない。",
-          "terminal": "厳格制限: 永続ドシエデータは警告、噂系統、claimバリアント、エンディング文脈を解放できる。装備性能、資源所持、世界真実の所有権、航路許可を保持してはならない。",
-          "audio": "記憶は割れた船体を補強しない。",
-          "in_game_wiki": "ドシエが力を持ち越すなら、HECTON-8は圧力の物語ではなくなる。海はすでに解かれた宿題になる。正しい永続化はもっと奇妙で厳しい。プレイヤーは嘘を早く見抜き、どの契約条項が刺さるべきかを知り、きれいな支払いがなぜきれいでないかを理解し、それでも脆い身体で新しいseedへ潜る。知恵は生き残ってよい。安全はだめだ。",
-          "external_site": "ドシエは知識であり、力ではない。この規則がHECTON-8を長く、危険で、物語に正直なリプレイに保つ。",
-          "field_note": "プレイヤーは賢くなってよい。海は小さくなってはいけない。"
-        },
-        "zh_CN": {
-          "title": "档案是知识，不是力量",
-          "scanner": "META RULE // 不继承氧气、船壳等级、武器、库存、路线权限或魔法捷径。档案保存警告，不保存肌肉。",
-          "terminal": "硬性限制：持久档案数据可以解锁警告、传闻族、claim 变体和结局背景。它不得保留装备强度、资源库存、世界真相所有权或路线许可。",
-          "audio": "记忆不会加固开裂的船壳。",
-          "in_game_wiki": "如果档案携带力量，HECTON-8 就不再关于压力。海会变成已经做完的作业。正确的持久化更奇怪，也更残酷：玩家更早识别谎言，知道哪条合约该刺痛，看懂为什么干净报酬并不干净，然后仍以脆弱身体下潜进新的 seed。智慧可以存活。安全不该。",
-          "external_site": "档案是知识，不是力量，是让 HECTON-8 保持长线、危险且叙事诚实的重玩规则。",
-          "field_note": "玩家可以变聪明。海洋不该变小。"
-        },
-        "fr_FR": {
-          "title": "Savoir du dossier, pas pouvoir",
-          "scanner": "META RULE // Aucun oxygène hérité, cote de coque, arme, inventaire, autorité de route ou raccourci magique. Le dossier garde des avertissements, pas des muscles.",
-          "terminal": "LIMITE DURE : les données persistantes du dossier peuvent débloquer avertissements, familles de rumeurs, variantes de claim et contexte de fin. Elles ne conservent ni puissance d'équipement, ni inventaire de ressources, ni propriété de vérité du monde, ni permission de route.",
-          "audio": "La mémoire ne renforce pas une coque fissurée.",
-          "in_game_wiki": "Si le dossier transporte du pouvoir, HECTON-8 cesse de parler de pression. La mer devient un devoir déjà corrigé. La bonne persistance est plus étrange et plus dure : le joueur reconnaît un mensonge plus tôt, sait quelle clause du contrat devrait piquer, voit pourquoi un paiement propre ne l'est pas, et descend quand même avec un corps fragile dans un seed frais. La sagesse peut survivre. La sécurité ne doit pas.",
-          "external_site": "Savoir du dossier, pas pouvoir est la règle de rejouabilité qui garde HECTON-8 long, dangereux et honnête narrativement.",
-          "field_note": "Le joueur peut devenir plus sage. L'océan ne doit pas devenir plus petit."
-        },
-        "es_ES": {
-          "title": "Conocimiento del dosier, no poder",
-          "scanner": "META RULE // Sin oxígeno heredado, rating de casco, armas, inventario, autoridad de ruta ni atajo mágico. El dosier guarda avisos, no músculo.",
-          "terminal": "LÍMITE DURO: los datos persistentes del dosier pueden desbloquear avisos, familias de rumores, variantes de claim y contexto de final. No deben preservar poder de equipo, inventario de recursos, propiedad de verdad del mundo ni permiso de ruta.",
-          "audio": "La memoria no refuerza un casco agrietado.",
-          "in_game_wiki": "Si el dosier lleva poder, HECTON-8 deja de tratar sobre presión. El mar se vuelve una tarea ya resuelta. La persistencia correcta es más extraña y más dura: el jugador reconoce antes una mentira, sabe qué cláusula debe doler, ve por qué un pago limpio no está limpio, y aun así desciende con un cuerpo frágil a un seed nuevo. La sabiduría puede sobrevivir. La seguridad no debería.",
-          "external_site": "Conocimiento del dosier, no poder es la regla de rejugabilidad que mantiene HECTON-8 largo, peligroso y narrativamente honesto.",
-          "field_note": "El jugador puede volverse más sabio. El océano no debe volverse más pequeño."
-        },
-        "de_DE": {
-          "title": "Dossierwissen, keine Macht",
-          "scanner": "META RULE // Kein geerbter Sauerstoff, Rumpfrating, Waffen, Inventar, Routenautorität oder magische Abkürzung. Das Dossier behält Warnungen, keine Muskeln.",
-          "terminal": "HARTE GRENZE: Persistente Dossierdaten dürfen Warnungen, Gerüchtefamilien, Claim-Varianten und Endkontext freischalten. Sie dürfen Ausrüstungsmacht, Ressourceninventar, Besitz der Weltwahrheit oder Routenerlaubnis nicht bewahren.",
-          "audio": "Erinnerung verstärkt keinen gerissenen Rumpf.",
-          "in_game_wiki": "Wenn das Dossier Macht trägt, handelt HECTON-8 nicht mehr von Druck. Das Meer wird zu bereits gelösten Hausaufgaben. Die richtige Persistenz ist seltsamer und härter: Der Spieler erkennt eine Lüge früher, weiß, welche Vertragsklausel stechen sollte, sieht, warum eine saubere Auszahlung nicht sauber ist, und steigt trotzdem mit fragilem Körper in einen frischen seed. Weisheit darf überleben. Sicherheit nicht.",
-          "external_site": "Dossierwissen, keine Macht ist die Replay-Regel, die HECTON-8 lang, gefährlich und erzählerisch ehrlich hält.",
-          "field_note": "Der Spieler darf klüger werden. Der Ozean darf nicht kleiner werden."
-        },
-        "pl_PL": {
-          "title": "Wiedza dossier, nie moc",
-          "scanner": "META RULE // Brak dziedziczonego tlenu, ratingu kadłuba, broni, ekwipunku, władzy trasy czy magicznego skrótu. Dossier trzyma ostrzeżenia, nie mięśnie.",
-          "terminal": "TWARDA GRANICA: trwałe dane dossier mogą odblokować ostrzeżenia, rodziny plotek, warianty claim i kontekst zakończeń. Nie mogą zachować mocy sprzętu, zapasu zasobów, własności prawdy świata ani pozwolenia trasy.",
-          "audio": "Pamięć nie wzmacnia pękniętego kadłuba.",
-          "in_game_wiki": "Jeśli dossier przenosi moc, HECTON-8 przestaje być o ciśnieniu. Morze staje się odrobionym zadaniem. Właściwa trwałość jest dziwniejsza i surowsza: gracz wcześniej rozpoznaje kłamstwo, wie, która klauzula kontraktu powinna zaboleć, widzi, dlaczego czysta wypłata nie jest czysta, i wciąż schodzi kruchym ciałem w świeży seed. Mądrość może przetrwać. Bezpieczeństwo nie.",
-          "external_site": "Wiedza dossier, nie moc to reguła replayu, która utrzymuje HECTON-8 długim, groźnym i narracyjnie uczciwym.",
-          "field_note": "Gracz może stać się mądrzejszy. Ocean nie może stać się mniejszy."
-        },
-        "uk_UA": {
-          "title": "Знання досьє, не сила",
-          "scanner": "META RULE // Немає успадкованого кисню, рейтингу корпусу, зброї, інвентарю, маршрутної влади чи магічного shortcut. Досьє береже попередження, не м'язи.",
-          "terminal": "ЖОРСТКА МЕЖА: сталі дані досьє можуть відкривати попередження, родини чуток, варіанти claim і контекст кінцівок. Вони не зберігають силу обладнання, інвентар ресурсів, володіння світовою правдою чи маршрутний дозвіл.",
-          "audio": "Пам'ять не зміцнює тріснутий корпус.",
-          "in_game_wiki": "Якщо досьє переносить силу, HECTON-8 перестає бути про тиск. Море стає вже розв'язаним домашнім завданням. Правильне збереження дивніше й жорсткіше: гравець раніше впізнає брехню, знає, який пункт договору має боліти, бачить, чому чиста виплата не чиста, і все одно спускається крихким тілом у новий seed. Мудрість може вижити. Безпека - ні.",
-          "external_site": "Знання досьє, не сила - правило replayability, що зберігає HECTON-8 довгою, небезпечною й чесною в оповіді.",
-          "field_note": "Гравець може стати мудрішим. Океан не має стати меншим."
-        },
-        "ar_SA": {
-          "title": "معرفة الملف لا قوته",
-          "scanner": "META RULE // لا أكسجين موروث، لا تصنيف هيكل، لا أسلحة، لا مخزون، لا سلطة مسار، ولا اختصار سحري. الملف يحفظ التحذيرات لا العضلات.",
-          "terminal": "حد صلب: بيانات الملف المستمرة قد تفتح تحذيرات، عائلات شائعات، تنويعات claim وسياق نهايات. لا تحفظ قوة معدات أو مخزون موارد أو ملكية حقيقة العالم أو إذن المسار.",
-          "audio": "الذاكرة لا تقوي هيكلا متشققا.",
-          "in_game_wiki": "إذا حمل الملف القوة، يتوقف HECTON-8 عن كونه عن الضغط. يصبح البحر واجبا منزليا محلولا. الاستمرار الصحيح أغرب وأقسى: يتعرف اللاعب إلى الكذبة أبكر، يعرف أي بند عقد يجب أن يلسع، يرى لماذا الدفع النظيف ليس نظيفا، ثم ينزل بجسد هش إلى seed جديد. الحكمة قد تنجو. الأمان لا.",
-          "external_site": "معرفة الملف لا قوته هي قاعدة replayability التي تبقي HECTON-8 طويلا وخطرا وصادقا سرديا.",
-          "field_note": "يمكن للاعب أن يصبح أحكم. لا يجب أن يصغر المحيط."
-        },
-        "id_ID": {
-          "title": "Pengetahuan Dossier, Bukan Kekuatan",
-          "scanner": "META RULE // Tidak ada oksigen, rating lambung, senjata, inventori, otoritas rute, atau shortcut ajaib yang diwarisi. Dossier menyimpan peringatan, bukan otot.",
-          "terminal": "BATAS KERAS: data dossier persisten boleh membuka peringatan, keluarga rumor, varian claim, dan konteks ending. Tidak boleh mempertahankan kekuatan alat, inventori sumber daya, kepemilikan kebenaran dunia, atau izin rute.",
-          "audio": "Memori tidak memperkuat lambung retak.",
-          "in_game_wiki": "Jika dossier membawa kekuatan, HECTON-8 berhenti bicara tentang tekanan. Laut menjadi PR yang sudah selesai. Persistensi yang tepat lebih aneh dan lebih keras: pemain mengenali kebohongan lebih cepat, tahu klausul kontrak mana yang harus menyengat, melihat mengapa bayaran bersih tidak bersih, dan tetap turun dengan tubuh rapuh ke seed segar. Kebijaksanaan boleh selamat. Keamanan tidak.",
-          "external_site": "Pengetahuan Dossier, Bukan Kekuatan adalah aturan replayability yang menjaga HECTON-8 panjang, berbahaya, dan jujur secara naratif.",
-          "field_note": "Pemain bisa menjadi lebih bijak. Samudra tidak boleh mengecil."
-        },
-        "ko_KR": {
-          "title": "도시어 지식, 힘이 아니다",
-          "scanner": "META RULE // 계승 산소, 선체 등급, 무기, 인벤토리, 경로 권한, 마법 shortcut 없음. 도시어는 경고를 저장하지 근육을 저장하지 않는다.",
-          "terminal": "하드 리밋: 지속 도시어 데이터는 경고, 소문 계열, claim 변형, 엔딩 맥락을 열 수 있다. 장비 힘, 자원 인벤토리, 세계 진실 소유권, 경로 허가는 보존하면 안 된다.",
-          "audio": "기억은 금 간 선체를 보강하지 않는다.",
-          "in_game_wiki": "도시어가 힘을 옮기면 HECTON-8은 압력에 관한 게임이 아니게 된다. 바다는 이미 풀린 숙제가 된다. 올바른 지속성은 더 이상하고 더 가혹하다. 플레이어는 거짓말을 더 일찍 알아보고, 어느 계약 조항이 아파야 하는지 알고, 깨끗한 지급이 왜 깨끗하지 않은지 보면서도 연약한 몸으로 새 seed에 내려간다. 지혜는 살아남아도 된다. 안전은 안 된다.",
-          "external_site": "도시어 지식, 힘이 아니다는 HECTON-8을 길고 위험하며 서사적으로 정직하게 유지하는 replayability 규칙이다.",
-          "field_note": "플레이어는 더 현명해져도 된다. 바다는 작아지면 안 된다."
-        },
-        "he_IL": {
-          "title": "ידע תיק, לא כוח",
-          "scanner": "META RULE // אין חמצן, דירוג גוף, נשק, מלאי, סמכות מסלול או קיצור קסם בירושה. התיק שומר אזהרות, לא שריר.",
-          "terminal": "גבול קשיח: נתוני תיק מתמידים רשאים לפתוח אזהרות, משפחות שמועות, וריאציות claim והקשר סיום. אסור לשמר כוח ציוד, מלאי משאבים, בעלות על אמת העולם או הרשאת מסלול.",
-          "audio": "זיכרון לא מחזק גוף סדוק.",
-          "in_game_wiki": "אם התיק נושא כוח, HECTON-8 מפסיק להיות על לחץ. הים הופך לשיעורי בית שכבר נפתרו. ההתמדה הנכונה מוזרה וקשה יותר: השחקן מזהה שקר מוקדם יותר, יודע איזה סעיף חוזה אמור לעקוץ, רואה למה תשלום נקי אינו נקי, ועדיין יורד בגוף שביר אל seed טרי. חוכמה יכולה לשרוד. ביטחון לא.",
-          "external_site": "ידע תיק, לא כוח הוא כלל replayability ששומר את HECTON-8 ארוך, מסוכן וישר נרטיבית.",
-          "field_note": "השחקן יכול להחכים. האוקיינוס לא צריך לקטון."
-        },
-        "pt_BR": {
-          "title": "Conhecimento do dossiê, não poder",
-          "scanner": "META RULE // Sem oxigênio herdado, rating de casco, armas, inventário, autoridade de rota ou atalho mágico. O dossiê guarda avisos, não músculo.",
-          "terminal": "LIMITE DURO: dados persistentes do dossiê podem desbloquear avisos, famílias de rumores, variantes de claim e contexto de finais. Não devem preservar poder de equipamento, inventário de recursos, posse da verdade do mundo ou permissão de rota.",
-          "audio": "Memória não reforça um casco rachado.",
-          "in_game_wiki": "Se o dossiê carrega poder, HECTON-8 deixa de ser sobre pressão. O mar vira uma tarefa já resolvida. A persistência certa é mais estranha e mais dura: o jogador reconhece uma mentira mais cedo, sabe qual cláusula do contrato deve doer, vê por que um pagamento limpo não é limpo, e ainda desce com um corpo frágil para um seed novo. Sabedoria pode sobreviver. Segurança não.",
-          "external_site": "Conhecimento do dossiê, não poder é a regra de replayability que mantém HECTON-8 longo, perigoso e narrativamente honesto.",
-          "field_note": "O jogador pode ficar mais sábio. O oceano não deve ficar menor."
-        },
-        "nl_NL": {
-          "title": "Dossierkennis, geen macht",
-          "scanner": "META RULE // Geen geërfde zuurstof, rompwaarde, wapens, inventaris, routeautoriteit of magische shortcut. Het dossier bewaart waarschuwingen, geen spieren.",
-          "terminal": "HARDE GRENS: persistente dossierdata mag waarschuwingen, geruchtenfamilies, claimvarianten en eindcontext openen. Het mag geen uitrustingsmacht, hulpbroninventaris, eigendom van wereldwaarheid of routetoestemming bewaren.",
-          "audio": "Geheugen versterkt geen gebarsten romp.",
-          "in_game_wiki": "Als het dossier macht meedraagt, gaat HECTON-8 niet meer over druk. De zee wordt huiswerk dat al is opgelost. De juiste persistentie is vreemder en harder: de speler herkent een leugen eerder, weet welke contractclausule moet steken, ziet waarom een schone uitbetaling niet schoon is, en daalt toch met een kwetsbaar lichaam af in een verse seed. Wijsheid mag overleven. Veiligheid niet.",
-          "external_site": "Dossierkennis, geen macht is de replayability-regel die HECTON-8 lang, gevaarlijk en narratief eerlijk houdt.",
-          "field_note": "De speler mag wijzer worden. De oceaan mag niet kleiner worden."
-        }
-      }
+    "fr_FR": {
+     "title": "Mémoire de rumeurs du dossier",
+     "scanner": "MÉMOIRE DOSSIER // Rumeurs, avertissements, contexte contractuel et fins restent. Coque, oxygène, outils, cargaison et carte ne restent pas.",
+     "terminal": "RÈGLE DE PERSISTANCE : le dossier peut garder familles de rumeurs, catégories de preuve, marqueurs de fin et avertissements de route entre campagnes. Il ne transporte ni équipement, ni ressources, ni géographie du seed, ni propriété de la vérité.",
+     "audio": "Le fichier se souvient de ce que tes mains ne peuvent pas porter.",
+     "in_game_wiki": "Le dossier Marauder n'est pas un coffre. C'est la part du travail qui survit à une réclamation ratée : noms entendus à moitié sur relais, clauses de contrat qui sentaient mauvais, familles de fins déjà exposées, avertissements payés par les dernières minutes de quelqu'un d'autre. Une nouvelle partie doit commencer avec de meilleurs soupçons, pas avec un meilleur sous-marin.",
+     "external_site": "La mémoire de rumeurs du dossier rend le savoir de replay diégétique : le registre garde soupçon et conséquence sans donner un corps plus fort à la tentative suivante.",
+     "field_note": "Que le savoir persiste. Que la pression reste."
+    },
+    "es_ES": {
+     "title": "Memoria de rumores del dosier",
+     "scanner": "MEMORIA DEL DOSIER // Persisten rumores, avisos, contexto contractual y registros de finales. No persisten casco, oxígeno, herramientas, carga ni mapa.",
+     "terminal": "REGLA DE PERSISTENCIA: el dosier puede conservar familias de rumores, categorías de evidencia, marcas de final y avisos de ruta entre campañas. No debe llevar equipo, recursos, geografía de seed ni propiedad de la verdad.",
+     "audio": "El archivo recuerda lo que tus manos no pueden cargar.",
+     "in_game_wiki": "El dosier Marauder no es un almacén. Es la parte del trabajo que sobrevive a un claim fallido: nombres oídos a medias por relé, cláusulas de contrato que olían mal, familias de finales ya expuestas, advertencias pagadas con los últimos minutos de otra persona. Una nueva partida debe empezar con mejor sospecha, no con un submarino mejor.",
+     "external_site": "La memoria de rumores del dosier vuelve diegético el conocimiento de replay: conserva sospecha y consecuencia sin entregar un cuerpo más fuerte al siguiente intento.",
+     "field_note": "Que persista el conocimiento. Que permanezca la presión."
+    },
+    "de_DE": {
+     "title": "Gerüchterinnerung des Dossiers",
+     "scanner": "DOSSIER-GEDÄCHTNIS // Gerüchte, Warnungen, Vertragskontext und Endaufzeichnungen bleiben. Rumpf, Sauerstoff, Werkzeuge, Fracht und Karte nicht.",
+     "terminal": "PERSISTENZREGEL: Das Dossier darf Gerüchtefamilien, Beweiskategorien, Endmarken und Routenwarnungen kampagnenübergreifend behalten. Es darf keine Ausrüstung, Ressourcen, Seed-Geografie oder Wahrheitsbesitz übertragen.",
+     "audio": "Die Akte erinnert, was deine Hände nicht tragen können.",
+     "in_game_wiki": "Das Marauder-Dossier ist kein Lagerfach. Es ist der Teil der Arbeit, der einen gescheiterten Claim überlebt: Namen, halb über Relais gehört, Vertragsklauseln mit falschem Geruch, bereits freigelegte Endfamilien, Warnungen, bezahlt mit den letzten Minuten anderer Leute. Ein neuer Lauf soll mit schärferem Verdacht beginnen, nicht mit einem besseren U-Boot.",
+     "external_site": "Die Gerüchterinnerung des Dossiers macht Replay-Wissen diegetisch: Der Eintrag bewahrt Verdacht und Folgen, ohne dem nächsten Lauf einen stärkeren Körper zu geben.",
+     "field_note": "Wissen darf bleiben. Druck muss bleiben."
+    },
+    "pl_PL": {
+     "title": "Pamięć plotek w dossier",
+     "scanner": "PAMIĘĆ DOSSIER // Plotki, ostrzeżenia, kontekst kontraktu i zapisy zakończeń trwają. Kadłub, tlen, narzędzia, ładunek i mapa nie.",
+     "terminal": "REGUŁA TRWAŁOŚCI: dossier może przenosić rodziny plotek, kategorie dowodów, znaczniki zakończeń i ostrzeżenia tras między kampaniami. Nie przenosi sprzętu, zasobów, geografii seed ani prawa do prawdy.",
+     "audio": "Akta pamiętają to, czego ręce nie uniosą.",
+     "in_game_wiki": "Dossier Maraudera nie jest skrytką. To część pracy, która przeżywa nieudany claim: imiona usłyszane półsłówkiem przez przekaźnik, klauzule kontraktu o złym zapachu, już odsłonięte rodziny zakończeń, ostrzeżenia kupione czyimiś ostatnimi minutami. Nowe podejście powinno zaczynać się od lepszej podejrzliwości, nie od lepszej łodzi.",
+     "external_site": "Pamięć plotek w dossier czyni wiedzę z replayu częścią świata: zapis przechowuje podejrzenia i skutki, ale nie daje następnej próbie silniejszego ciała.",
+     "field_note": "Niech wiedza zostanie. Niech ciśnienie zostanie."
+    },
+    "uk_UA": {
+     "title": "Пам'ять чуток у досьє",
+     "scanner": "ПАМ'ЯТЬ ДОСЬЄ // Чутки, попередження, контекст контрактів і записи кінцівок зберігаються. Корпус, кисень, інструменти, вантаж і карта - ні.",
+     "terminal": "ПРАВИЛО ЗБЕРЕЖЕННЯ: досьє може переносити родини чуток, категорії доказів, позначки кінцівок і маршрутні попередження між кампаніями. Воно не переносить обладнання, ресурси, географію seed або право володіти правдою.",
+     "audio": "Файл пам'ятає те, чого руки не можуть понести.",
+     "in_game_wiki": "Досьє Marauder - не складська шафа. Це та частина роботи, що переживає провалений claim: імена, почуті уривком через реле, пункти договору з неправильним запахом, уже викриті родини кінцівок, попередження, куплені чужими останніми хвилинами. Новий захід має починатися з гострішої підозри, а не з кращого підводного човна.",
+     "external_site": "Пам'ять чуток у досьє робить replay-знання частиною світу: запис береже підозру й наслідки, але не дає наступному заходу сильнішого тіла.",
+     "field_note": "Нехай знання триває. Нехай тиск лишається."
+    },
+    "ar_SA": {
+     "title": "ذاكرة الشائعات في الملف",
+     "scanner": "ذاكرة الملف // الشائعات والتحذيرات وسياق العقود وسجلات النهايات تبقى. الهيكل والأكسجين والأدوات والحمولة والخريطة لا تبقى.",
+     "terminal": "قاعدة الاستمرار: يمكن للملف أن يحتفظ بعائلات الشائعات وفئات الأدلة وعلامات النهايات وتحذيرات المسار بين الحملات. لا يحمل معدات أو موارد أو جغرافيا seed أو ملكية الحقيقة.",
+     "audio": "الملف يتذكر ما لا تستطيع يداك حمله.",
+     "in_game_wiki": "ملف Marauder ليس صندوق تخزين. إنه الجزء من العمل الذي ينجو بعد claim فاشل: أسماء سُمعت نصف سماع عبر المرحل، بنود عقد كانت رائحتها خاطئة، عائلات نهايات كُشفت من قبل، وتحذيرات دُفعت ثمنها من الدقائق الأخيرة لشخص آخر. يجب أن يبدأ التشغيل الجديد بشك أفضل، لا بغواصة أفضل.",
+     "external_site": "ذاكرة الشائعات في الملف تجعل معرفة replay جزءا من العالم: السجل يحفظ الشك والعواقب من دون أن يمنح المحاولة التالية جسدا أقوى.",
+     "field_note": "ليستمر العلم. وليبق الضغط."
+    },
+    "id_ID": {
+     "title": "Memori Rumor Dossier",
+     "scanner": "MEMORI DOSSIER // Rumor, peringatan, konteks kontrak, dan catatan akhir bertahan. Lambung, oksigen, alat, kargo, dan peta tidak.",
+     "terminal": "ATURAN PERSISTENSI: dossier boleh menyimpan keluarga rumor, kategori bukti, penanda akhir, dan peringatan rute lintas kampanye. Ia tidak membawa alat, sumber daya, geografi seed, atau kepemilikan kebenaran.",
+     "audio": "Berkas itu mengingat apa yang tak bisa dibawa tanganmu.",
+     "in_game_wiki": "Dossier Marauder bukan loker penyimpanan. Itu bagian pekerjaan yang selamat dari claim gagal: nama yang terdengar separuh lewat relay, klausul kontrak yang terasa salah, keluarga akhir yang sudah terbuka, peringatan yang dibayar dengan menit terakhir orang lain. Run baru harus mulai dengan kecurigaan lebih tajam, bukan kapal selam lebih baik.",
+     "external_site": "Memori Rumor Dossier membuat pengetahuan replay menjadi diegetik: catatan menyimpan curiga dan akibat tanpa memberi tubuh lebih kuat pada percobaan berikutnya.",
+     "field_note": "Biarkan pengetahuan bertahan. Biarkan tekanan tetap ada."
+    },
+    "ko_KR": {
+     "title": "도시어 소문 기억",
+     "scanner": "도시어 기억 // 소문, 경고, 계약 맥락, 엔딩 기록은 남는다. 선체, 산소, 도구, 화물, 지도는 남지 않는다.",
+     "terminal": "지속 규칙: 도시어는 캠페인 사이에서 소문 계열, 증거 분류, 엔딩 플래그, 경로 경고를 보존할 수 있다. 장비, 자원, seed 지형, 진실 소유권은 옮기지 않는다.",
+     "audio": "파일은 손으로 들고 갈 수 없는 것을 기억한다.",
+     "in_game_wiki": "Marauder 도시어는 보관함이 아니다. 실패한 claim 뒤에도 살아남는 일의 일부다. 중계 너머로 반쯤 들은 이름, 수상한 냄새가 나는 계약 조항, 이미 드러낸 엔딩 계열, 누군가의 마지막 몇 분으로 산 경고. 새 run은 더 나은 잠수정이 아니라 더 날카로운 의심으로 시작해야 한다.",
+     "external_site": "도시어 소문 기억은 replay 지식을 세계 안 기록으로 만든다. 의심과 결과는 보존하지만 다음 run에 더 강한 몸을 주지 않는다.",
+     "field_note": "지식은 남겨라. 압력은 그대로 둬라."
+    },
+    "he_IL": {
+     "title": "זיכרון שמועות בתיק",
+     "scanner": "זיכרון תיק // שמועות, אזהרות, הקשר חוזי ורשומות סיום נשארים. גוף, חמצן, כלים, מטען ומפה לא.",
+     "terminal": "כלל התמדה: התיק רשאי לשמור משפחות שמועות, קטגוריות ראיה, סימוני סיום ואזהרות מסלול בין קמפיינים. הוא לא נושא ציוד, משאבים, גיאוגרפיית seed או בעלות על אמת.",
+     "audio": "הקובץ זוכר את מה שהידיים לא יכולות לשאת.",
+     "in_game_wiki": "תיק Marauder אינו ארון אחסון. הוא החלק בעבודה ששורד claim כושל: שמות שנשמעו רק בחצי דרך ממסר, סעיפי חוזה שהריחו לא נכון, משפחות סיום שכבר נחשפו, אזהרות שנקנו בדקות האחרונות של מישהו אחר. ריצה חדשה צריכה להתחיל בחשד טוב יותר, לא בצוללת טובה יותר.",
+     "external_site": "זיכרון השמועות בתיק הופך ידע replay לרשומה בתוך העולם: הוא שומר חשד ותוצאה בלי לתת לגוף הבא כוח רב יותר.",
+     "field_note": "שהידע יישאר. שהלחץ יישאר."
+    },
+    "pt_BR": {
+     "title": "Memória de rumores do dossiê",
+     "scanner": "MEMÓRIA DO DOSSIÊ // Rumores, avisos, contexto contratual e registros de finais persistem. Casco, oxigênio, ferramentas, carga e mapa não.",
+     "terminal": "REGRA DE PERSISTÊNCIA: o dossiê pode guardar famílias de rumores, categorias de evidência, marcas de finais e avisos de rota entre campanhas. Não carrega equipamento, recursos, geografia de seed nem posse da verdade.",
+     "audio": "O arquivo lembra o que suas mãos não conseguem levar.",
+     "in_game_wiki": "O dossiê Marauder não é um depósito. É a parte do trabalho que sobrevive a um claim fracassado: nomes ouvidos pela metade no relé, cláusulas de contrato com cheiro errado, famílias de finais já expostas, avisos comprados com os últimos minutos de outra pessoa. Uma nova tentativa deve começar com suspeita melhor, não com um submarino melhor.",
+     "external_site": "A memória de rumores do dossiê torna o conhecimento de replay diegético: o registro preserva suspeita e consequência sem entregar um corpo mais forte à próxima tentativa.",
+     "field_note": "Deixe o conhecimento persistir. Deixe a pressão ficar."
+    },
+    "nl_NL": {
+     "title": "Geruchtengeheugen van het dossier",
+     "scanner": "DOSSIERGEHEUGEN // Geruchten, waarschuwingen, contractcontext en eindrecords blijven. Romp, zuurstof, gereedschap, lading en kaart niet.",
+     "terminal": "PERSISTENTIEREGEL: het dossier mag geruchtenfamilies, bewijscategorieën, eindmarkeringen en routewaarschuwingen tussen campagnes bewaren. Het draagt geen uitrusting, middelen, seed-geografie of eigendom van waarheid over.",
+     "audio": "Het dossier onthoudt wat je handen niet kunnen dragen.",
+     "in_game_wiki": "Het Marauder-dossier is geen opslagkast. Het is het deel van het werk dat een mislukte claim overleeft: namen half gehoord via relais, contractclausules die verkeerd roken, al blootgelegde eindfamilies, waarschuwingen betaald met iemands laatste minuten. Een nieuwe run moet beginnen met betere argwaan, niet met een betere onderzeeër.",
+     "external_site": "Het geruchtengeheugen van het dossier maakt replay-kennis diegetisch: de registratie bewaart argwaan en gevolg zonder de volgende run een sterker lichaam te geven.",
+     "field_note": "Laat kennis blijven. Laat druk blijven."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P137_RISKIER_CONTRACT_SEEDS",
+   "article_id": "replay.riskier_contract_seeds",
+   "title_key": "applied_lore.riskier_contract_seeds.title",
+   "unlock": {
+    "primary": "unlock.riskier_contract_seeds",
+    "poi_tags": [
+     "poi.high_risk_contract_board",
+     "poi.storm_window_selector",
+     "poi.deep_claim_bonus_clause"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.photic_shelf",
+     "biome.industrial_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Riskier Contract Seeds",
+     "scanner": "CONTRACT SEED // Worse window, deeper first target, stricter custody, rarer sample, larger lien relief. No inherited power.",
+     "terminal": "SEED OPTION: increase payout by accepting worse orbital timing, deeper initial objectives, harsher evidence custody, rarer resource proof or tighter return accounting. Equipment power and inventory still reset.",
+     "audio": "The board pays more when it expects less of you to return.",
+     "in_game_wiki": "Riskier contracts are how the dossier tempts an experienced Marauder without breaking survival. The board can offer better lien relief for a worse window, an early descent below comfort depth, a sample that must stay sealed, or evidence custody strict enough to make every shortcut expensive. The player chooses pressure, not inherited strength.",
+     "external_site": "Riskier Contract Seeds make replayability economic and procedural: the contract changes what the ocean demands, not what the player gets to carry.",
+     "field_note": "Replay should ask for greed, courage, or stupidity. Not grind."
+    },
+    "ru_RU": {
+     "title": "Более рискованные seed контрактов",
+     "scanner": "SEED КОНТРАКТА // Худшее окно, более глубокая первая цель, строже хранение улик, более редкий образец, больше списание lien. Наследуемой силы нет.",
+     "terminal": "ОПЦИЯ SEED: увеличить выплату, приняв худшее орбитальное окно, более глубокие стартовые цели, жесткое хранение улик, редкое ресурсное доказательство или tighter учет возврата. Сила оборудования и инвентарь всё равно сбрасываются.",
+     "audio": "Доска платит больше, когда меньше ждёт тебя обратно.",
+     "in_game_wiki": "Рискованные контракты - способ досье соблазнить опытного Marauder, не ломая survival. Доска может предложить лучшее списание lien за плохое окно, ранний спуск ниже комфортной глубины, образец, который нельзя вскрывать, или хранение улик настолько строгое, что каждый shortcut становится дорогим. Игрок выбирает давление, а не унаследованную силу.",
+     "external_site": "Более рискованные seed контрактов делают replay экономическим и процедурным: меняется требование океана, а не то, что игроку разрешено нести.",
+     "field_note": "Replay должен спрашивать жадность, смелость или глупость. Не grind."
+    },
+    "ja_JP": {
+     "title": "より危険な契約seed",
+     "scanner": "契約SEED // 悪い窓、深い初期目標、厳格な証拠保管、希少な試料、大きい債務軽減。継承パワーなし。",
+     "terminal": "SEED選択: 悪い軌道タイミング、深い初期目的、厳しい証拠保管、希少資源の証明、きつい帰還会計を受け入れることで支払いを増やす。装備性能と所持品はリセットされる。",
+     "audio": "戻る期待が低いほど、掲示板は多く払う。",
+     "in_game_wiki": "危険な契約は、サバイバルを壊さずに経験済みのMarauderを誘惑する方法だ。掲示板は悪い窓、快適深度を越える早期降下、封印したままの試料、近道のすべてを高くつかせる証拠保管条件と引き換えに、より大きな債務軽減を提示できる。プレイヤーが選ぶのは圧力であって、継承された強さではない。",
+     "external_site": "より危険な契約seedはリプレイ性を経済と手順で作る。海の要求が変わるだけで、持ち込める力は変わらない。",
+     "field_note": "リプレイが問うべきは欲、勇気、愚かさだ。作業量ではない。"
+    },
+    "zh_CN": {
+     "title": "更高风险的合约 seed",
+     "scanner": "合约 SEED // 更差窗口，更深首目标，更严证据保管，更稀有样本，更高 lien 减免。没有继承力量。",
+     "terminal": "SEED 选项：接受更差轨道时机、更深初始目标、更严证据保管、更稀有资源证明或更紧返航账目，以换取更高报酬。装备强度和库存仍会重置。",
+     "audio": "委员会越不指望你回来，付得越多。",
+     "in_game_wiki": "高风险合约是在不破坏生存压力的情况下诱惑老练 Marauder 的方式。委员会可以用更高 lien 减免换取糟糕窗口、早期下潜到舒适深度以下、必须保持封存的样本，或严苛到让每个捷径都昂贵的证据保管。玩家选择的是压力，不是继承来的强度。",
+     "external_site": "更高风险的合约 seed 让重玩来自经济和流程：改变的是海洋的要求，而不是玩家能带走的东西。",
+     "field_note": "重玩应该询问贪婪、勇气或愚蠢。不是刷。"
+    },
+    "fr_FR": {
+     "title": "Seeds de contrats plus risqués",
+     "scanner": "SEED CONTRAT // Fenêtre pire, première cible plus profonde, garde plus stricte, échantillon plus rare, allègement de lien plus fort. Aucun pouvoir hérité.",
+     "terminal": "OPTION SEED : augmenter le paiement en acceptant un mauvais timing orbital, des objectifs initiaux plus profonds, une garde des preuves plus dure, une preuve de ressource rare ou un compte retour plus serré. Puissance d'équipement et inventaire se réinitialisent.",
+     "audio": "Le tableau paie plus quand il s'attend moins à ton retour.",
+     "in_game_wiki": "Les contrats risqués sont la manière dont le dossier tente un Marauder expérimenté sans casser la survie. Le tableau peut offrir un meilleur allègement de lien contre une mauvaise fenêtre, une descente précoce sous la profondeur confortable, un échantillon à garder scellé ou une garde des preuves si stricte que chaque raccourci coûte cher. Le joueur choisit la pression, pas une force héritée.",
+     "external_site": "Les seeds de contrats plus risqués rendent le replay économique et procédural : le contrat change ce que l'océan exige, pas ce que le joueur porte.",
+     "field_note": "Le replay doit demander avidité, courage ou bêtise. Pas du grind."
+    },
+    "es_ES": {
+     "title": "Seeds de contrato más arriesgados",
+     "scanner": "SEED DE CONTRATO // Peor ventana, primer objetivo más profundo, custodia más estricta, muestra más rara, mayor alivio de lien. Sin poder heredado.",
+     "terminal": "OPCIÓN SEED: aumentar pago aceptando peor sincronía orbital, objetivos iniciales más profundos, custodia de evidencia más dura, prueba de recurso raro o contabilidad de retorno más estrecha. Poder de equipo e inventario se reinician.",
+     "audio": "El tablero paga más cuando espera menos de tu regreso.",
+     "in_game_wiki": "Los contratos arriesgados son la forma en que el dosier tienta a un Marauder experto sin romper la supervivencia. El tablero puede ofrecer mejor alivio de lien por una mala ventana, un descenso temprano bajo la profundidad cómoda, una muestra que debe seguir sellada o una custodia de evidencia tan estricta que cada atajo sale caro. El jugador elige presión, no fuerza heredada.",
+     "external_site": "Los seeds de contrato más arriesgados hacen que el replay sea económico y procedimental: cambia lo que exige el océano, no lo que el jugador carga.",
+     "field_note": "El replay debe pedir codicia, valor o estupidez. No farmeo."
+    },
+    "de_DE": {
+     "title": "Riskantere Vertrags-Seeds",
+     "scanner": "VERTRAGS-SEED // Schlechteres Fenster, tieferes Erstziel, strengere Verwahrung, seltenere Probe, größere Pfandentlastung. Keine geerbte Macht.",
+     "terminal": "SEED-OPTION: Höhere Auszahlung durch schlechteres Orbitfenster, tiefere Anfangsziele, härtere Beweisverwahrung, seltenen Ressourcennachweis oder engere Rückkehrabrechnung. Ausrüstungsmacht und Inventar werden zurückgesetzt.",
+     "audio": "Die Tafel zahlt mehr, wenn sie weniger von dir zurückerwartet.",
+     "in_game_wiki": "Riskantere Verträge locken erfahrene Marauder, ohne Survival zu brechen. Die Tafel kann bessere Pfandentlastung für ein schlechtes Fenster bieten, einen frühen Abstieg unter Komforttiefe, eine versiegelt zu haltende Probe oder Beweisverwahrung, die jede Abkürzung teuer macht. Der Spieler wählt Druck, nicht geerbte Stärke.",
+     "external_site": "Riskantere Vertrags-Seeds machen Replay wirtschaftlich und prozedural: Der Vertrag ändert, was der Ozean fordert, nicht was der Spieler tragen darf.",
+     "field_note": "Replay soll Gier, Mut oder Dummheit verlangen. Kein Grind."
+    },
+    "pl_PL": {
+     "title": "Ryzykowniejsze seedy kontraktów",
+     "scanner": "SEED KONTRAKTU // Gorsze okno, głębszy pierwszy cel, ostrzejszy depozyt, rzadsza próbka, większa ulga lien. Brak dziedziczonej mocy.",
+     "terminal": "OPCJA SEED: zwiększ wypłatę, przyjmując gorszy moment orbitalny, głębsze cele początkowe, surowszą opiekę nad dowodami, rzadszy dowód zasobu albo ciaśniejszy rozrachunek powrotu. Moc sprzętu i ekwipunek resetują się.",
+     "audio": "Tablica płaci więcej, gdy mniej oczekuje twojego powrotu.",
+     "in_game_wiki": "Ryzykowne kontrakty kuszą doświadczonego Maraudera bez psucia survivalu. Tablica może zaoferować lepszą ulgę lien za złe okno, wczesne zejście poniżej bezpiecznej głębokości, próbkę, która ma zostać zapieczętowana, albo opiekę nad dowodami tak surową, że każdy skrót kosztuje. Gracz wybiera presję, nie odziedziczoną siłę.",
+     "external_site": "Ryzykowniejsze seedy kontraktów tworzą replay przez ekonomię i procedurę: zmieniają żądania oceanu, nie bagaż gracza.",
+     "field_note": "Replay ma pytać o chciwość, odwagę albo głupotę. Nie o grind."
+    },
+    "uk_UA": {
+     "title": "Ризикованіші seed контрактів",
+     "scanner": "SEED КОНТРАКТУ // Гірше вікно, глибша перша ціль, суворіше зберігання, рідкісніший зразок, більше списання lien. Успадкованої сили немає.",
+     "terminal": "ОПЦІЯ SEED: збільшити виплату, прийнявши гірший орбітальний час, глибші стартові цілі, жорсткіше зберігання доказів, рідкісний ресурсний доказ або тісніший облік повернення. Сила обладнання й інвентар скидаються.",
+     "audio": "Дошка платить більше, коли менше чекає тебе назад.",
+     "in_game_wiki": "Ризиковані контракти - спосіб досьє спокусити досвідченого Marauder, не ламаючи survival. Дошка може запропонувати краще списання lien за погане вікно, ранній спуск нижче комфортної глибини, зразок, що має лишатися запечатаним, або зберігання доказів настільки суворе, що кожен shortcut коштує дорого. Гравець обирає тиск, а не успадковану силу.",
+     "external_site": "Ризикованіші seed контрактів роблять replay економічним і процедурним: змінюються вимоги океану, не те, що гравець може нести.",
+     "field_note": "Replay має питати жадібність, сміливість або дурість. Не grind."
+    },
+    "ar_SA": {
+     "title": "عقود seed أخطر",
+     "scanner": "SEED عقد // نافذة أسوأ، هدف أول أعمق، عهدة أشد، عينة أندر، تخفيف lien أكبر. لا قوة موروثة.",
+     "terminal": "خيار SEED: زد الدفع بقبول توقيت مداري أسوأ، أهداف أولى أعمق، عهدة أدلة أقسى، إثبات مورد أندر أو حساب عودة أضيق. قوة المعدات والمخزون يعاد ضبطهما.",
+     "audio": "اللوحة تدفع أكثر عندما تتوقع عودتك أقل.",
+     "in_game_wiki": "العقود الأخطر هي طريقة الملف لإغراء Marauder خبير من دون كسر البقاء. قد تعرض اللوحة تخفيف lien أفضل مقابل نافذة سيئة، نزول مبكر تحت عمق الراحة، عينة يجب أن تبقى مختومة، أو عهدة أدلة تجعل كل اختصار باهظا. اللاعب يختار الضغط، لا قوة موروثة.",
+     "external_site": "عقود seed الأخطر تجعل replay اقتصاديا وإجرائيا: العقد يغير ما يطلبه المحيط، لا ما يحمله اللاعب.",
+     "field_note": "يجب أن يسأل replay عن الجشع أو الشجاعة أو الحماقة. لا عن الطحن."
+    },
+    "id_ID": {
+     "title": "Seed Kontrak Lebih Berisiko",
+     "scanner": "SEED KONTRAK // Jendela lebih buruk, target pertama lebih dalam, kustodi lebih ketat, sampel lebih langka, keringanan lien lebih besar. Tidak ada kekuatan warisan.",
+     "terminal": "OPSI SEED: naikkan bayaran dengan menerima timing orbit buruk, objektif awal lebih dalam, kustodi bukti lebih keras, bukti sumber daya langka, atau akuntansi kembali lebih ketat. Kekuatan alat dan inventori tetap reset.",
+     "audio": "Papan membayar lebih saat berharap lebih sedikit kau pulang.",
+     "in_game_wiki": "Kontrak berisiko adalah cara dossier menggoda Marauder berpengalaman tanpa merusak survival. Papan bisa menawarkan keringanan lien lebih baik untuk jendela buruk, turun awal di bawah kedalaman nyaman, sampel yang harus tetap tersegel, atau kustodi bukti yang membuat tiap jalan pintas mahal. Pemain memilih tekanan, bukan kekuatan warisan.",
+     "external_site": "Seed Kontrak Lebih Berisiko membuat replay bersifat ekonomi dan prosedural: kontrak mengubah tuntutan samudra, bukan bawaan pemain.",
+     "field_note": "Replay harus meminta keserakahan, nyali, atau kebodohan. Bukan grind."
+    },
+    "ko_KR": {
+     "title": "더 위험한 계약 seed",
+     "scanner": "계약 SEED // 더 나쁜 창, 더 깊은 첫 목표, 더 엄격한 보관, 더 희귀한 샘플, 더 큰 lien 경감. 계승 힘 없음.",
+     "terminal": "SEED 선택: 나쁜 궤도 타이밍, 더 깊은 초기 목표, 더 가혹한 증거 보관, 희귀 자원 증명, 더 빡빡한 귀환 회계를 받아들여 보수를 올린다. 장비 힘과 인벤토리는 초기화된다.",
+     "audio": "게시판은 네 귀환을 덜 기대할수록 더 많이 낸다.",
+     "in_game_wiki": "위험한 계약은 survival을 망가뜨리지 않고 숙련된 Marauder를 유혹하는 방식이다. 게시판은 나쁜 창, 편한 깊도 아래의 이른 하강, 봉인 유지 샘플, 모든 지름길을 비싸게 만드는 증거 보관 조건과 맞바꿔 더 큰 lien 경감을 제시한다. 플레이어가 고르는 것은 계승된 힘이 아니라 압력이다.",
+     "external_site": "더 위험한 계약 seed는 replay를 경제와 절차로 만든다. 바뀌는 것은 바다가 요구하는 것이지 플레이어가 들고 가는 것이 아니다.",
+     "field_note": "replay는 탐욕, 용기, 어리석음을 물어야 한다. grind가 아니다."
+    },
+    "he_IL": {
+     "title": "זרעי חוזה מסוכנים יותר",
+     "scanner": "SEED חוזה // חלון גרוע יותר, יעד ראשון עמוק יותר, משמורת קשוחה יותר, דגימה נדירה יותר, הקלת lien גדולה יותר. אין כוח בירושה.",
+     "terminal": "אפשרות SEED: הגדל תשלום על ידי קבלת תזמון מסלולי גרוע, מטרות ראשוניות עמוקות יותר, משמורת ראיות קשה יותר, הוכחת משאב נדירה או חשבון חזרה הדוק יותר. כוח ציוד ומלאי מתאפסים.",
+     "audio": "הלוח משלם יותר כשהוא מצפה פחות שתחזור.",
+     "in_game_wiki": "חוזים מסוכנים הם הדרך שבה התיק מפתה Marauder מנוסה בלי לשבור את ההישרדות. הלוח יכול להציע הקלת lien טובה יותר תמורת חלון רע, ירידה מוקדמת מתחת לעומק נוח, דגימה שחייבת להישאר חתומה או משמורת ראיות שהופכת כל קיצור ליקר. השחקן בוחר לחץ, לא כוח בירושה.",
+     "external_site": "זרעי חוזה מסוכנים יותר הופכים replay לכלכלי ופרוצדורלי: החוזה משנה את דרישות האוקיינוס, לא את מה שהשחקן נושא.",
+     "field_note": "Replay צריך לשאול על חמדנות, אומץ או טיפשות. לא grind."
+    },
+    "pt_BR": {
+     "title": "Seeds de contrato mais arriscados",
+     "scanner": "SEED DE CONTRATO // Janela pior, primeiro alvo mais fundo, custódia mais rígida, amostra mais rara, maior alívio de lien. Sem poder herdado.",
+     "terminal": "OPÇÃO SEED: aumente o pagamento aceitando pior timing orbital, objetivos iniciais mais profundos, custódia de evidência mais dura, prova de recurso raro ou contabilidade de retorno mais apertada. Poder de equipamento e inventário ainda resetam.",
+     "audio": "O quadro paga mais quando espera menos que você volte.",
+     "in_game_wiki": "Contratos arriscados são como o dossiê tenta um Marauder experiente sem quebrar a sobrevivência. O quadro pode oferecer melhor alívio de lien por uma janela ruim, descida inicial abaixo da profundidade confortável, amostra que precisa ficar selada ou custódia de evidência tão rígida que cada atalho fica caro. O jogador escolhe pressão, não força herdada.",
+     "external_site": "Seeds de contrato mais arriscados tornam o replay econômico e procedural: o contrato muda o que o oceano exige, não o que o jogador carrega.",
+     "field_note": "Replay deve pedir ganância, coragem ou estupidez. Não grind."
+    },
+    "nl_NL": {
+     "title": "Riskantere contract-seeds",
+     "scanner": "CONTRACT-SEED // Slechter venster, dieper eerste doel, strengere bewaring, zeldzamer monster, grotere lien-verlichting. Geen geërfde macht.",
+     "terminal": "SEEDOPTIE: verhoog uitbetaling door slechtere orbittiming, diepere begindoelen, hardere bewijsbewaring, zeldzaam hulpbronbewijs of strakkere terugkeerboekhouding te accepteren. Uitrustingsmacht en inventaris resetten.",
+     "audio": "Het bord betaalt meer wanneer het minder van je terugkomst verwacht.",
+     "in_game_wiki": "Riskante contracten verleiden een ervaren Marauder zonder survival te breken. Het bord kan betere lien-verlichting bieden voor een slecht venster, vroege afdaling onder comfortabele diepte, een monster dat verzegeld moet blijven of bewijsbewaring die elke kortere weg duur maakt. De speler kiest druk, geen geërfde kracht.",
+     "external_site": "Riskantere contract-seeds maken replay economisch en procedureel: het contract verandert wat de oceaan eist, niet wat de speler draagt.",
+     "field_note": "Replay moet hebzucht, moed of domheid vragen. Geen grind."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P138_FALSE_ENDING_COUNT_LADDER",
+   "article_id": "replay.false_ending_count_ladder",
+   "title_key": "applied_lore.false_ending_count_ladder.title",
+   "unlock": {
+    "primary": "unlock.false_ending_count_ladder",
+    "poi_tags": [
+     "poi.ending_family_board",
+     "poi.partial_result_stamp",
+     "poi.dossier_outcome_counter"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.relay_archive",
+     "biome.atlas_basin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "False Ending Count Ladder",
+     "scanner": "ENDING LADDER // Material payout, partial return, corporate capture or quarantine, public ledger leak. Four false families before the deep Atlas answers.",
+     "terminal": "DOSSIER SCOPE: mark many exits, but group them into clear families. Material payout, partial exit/return, corporate capture/quarantine and public ledger leak sit below the Atlas basin payload resolutions.",
+     "audio": "The dossier can mark exits before it marks an answer.",
+     "in_game_wiki": "HECTON-8 can have many ways out without turning truth into noise. The dossier should sort false or partial outcomes into a small number of legible families: take the material and leave, escape only to be pulled back, fall into corporate custody or quarantine, or leak enough ledger truth to wound the machine without ending it. Each exit is real. None is the bottom.",
+     "external_site": "False Ending Count Ladder keeps replay scope readable: several exits, four major incomplete families, and the Atlas basin as the gravity center.",
+     "field_note": "Enough endings to reward playstyles. Not enough to make truth cheap."
+    },
+    "ru_RU": {
+     "title": "Лестница ложных концовок",
+     "scanner": "ЛЕСТНИЦА КОНЦОВОК // Материальная выплата, частичный возврат, корпоративный захват или карантин, утечка публичного ledger. Четыре ложные семьи до глубоких ответов Atlas.",
+     "terminal": "МАСШТАБ ДОСЬЕ: отмечать много выходов, но собирать их в ясные семьи. Материальная выплата, частичный выход/возврат, корпоративный захват/карантин и утечка публичного ledger лежат ниже решений payload в бассейне Atlas.",
+     "audio": "Досье может отметить выход раньше, чем отметит ответ.",
+     "in_game_wiki": "У HECTON-8 может быть много путей наружу, но правда не должна превращаться в шум. Досье сортирует ложные или частичные исходы в несколько читаемых семей: забрать material и уйти, выбраться только затем, чтобы тебя втянуло обратно, попасть в корпоративное хранение или карантин, либо слить достаточно ledger-правды, чтобы ранить машину, но не остановить ее. Каждый выход реален. Ни один не является дном.",
+     "external_site": "Лестница ложных концовок удерживает replay читаемым: несколько выходов, четыре крупные неполные семьи и бассейн Atlas как центр тяжести.",
+     "field_note": "Достаточно концовок, чтобы наградить стиль игры. Недостаточно, чтобы обесценить правду."
+    },
+    "ja_JP": {
+     "title": "偽エンディング数の梯子",
+     "scanner": "ENDING LADDER // 物資支払い、部分帰還、企業捕獲または検疫、公的台帳漏洩。深いAtlas解答の前に四つの偽系統。",
+     "terminal": "ドシエ範囲: 多くの出口を記録してよいが、明確な系統にまとめる。物資支払い、部分脱出/帰還、企業捕獲/検疫、公的台帳漏洩はAtlas盆地payload解決の下に置く。",
+     "audio": "ドシエは、答えより先に出口を記録できる。",
+     "in_game_wiki": "HECTON-8には多くの脱出口があってよい。ただし真実を雑音にしてはいけない。ドシエは偽または部分的な結果を、読める少数の系統へ整理する。物資を取って去る。脱出したはずが戻される。企業保管や検疫に落ちる。台帳の真実を十分に漏らし、機械を傷つけるが止めきれない。どの出口も本物だ。どれも底ではない。",
+     "external_site": "偽エンディング数の梯子はリプレイ範囲を読みやすく保つ。複数の出口、四つの大きな未完系統、そしてAtlas盆地を重心にする。",
+     "field_note": "プレイスタイルを報いるだけの結末。真実を安くしないだけの少なさ。"
+    },
+    "zh_CN": {
+     "title": "假结局数量阶梯",
+     "scanner": "结局阶梯 // 物资结算，部分返回，企业捕获或隔离，公共 ledger 泄露。深层 Atlas 答案前的四个假结局族。",
+     "terminal": "档案范围：可以标记许多出口，但要归入清晰族群。物资结算、部分离开/返回、企业捕获/隔离、公共 ledger 泄露位于 Atlas 盆地 payload 解决之下。",
+     "audio": "档案可以先标记出口，再标记答案。",
+     "in_game_wiki": "HECTON-8 可以有很多离开的方式，但真相不能变成噪音。档案应把假结局或部分结局分成少数可读的族群：拿走 material 离开；逃出又被拖回；落入企业保管或隔离；泄露足够的 ledger 真相以伤到机器，却不足以结束它。每个出口都是真的。没有一个是最底层。",
+     "external_site": "假结局数量阶梯让重玩范围可读：多个出口、四个主要未完成族群，以及作为重心的 Atlas 盆地。",
+     "field_note": "结局要足以奖励玩法。又不能多到让真相廉价。"
+    },
+    "fr_FR": {
+     "title": "Échelle des fausses fins",
+     "scanner": "ÉCHELLE DE FINS // Paiement matériel, retour partiel, capture corpo ou quarantaine, fuite du ledger public. Quatre familles fausses avant les réponses profondes d'Atlas.",
+     "terminal": "PORTÉE DOSSIER : marquer beaucoup de sorties, mais les grouper en familles nettes. Paiement matériel, sortie/retour partiel, capture/quarantaine corpo et fuite du ledger public restent sous les résolutions de payload du bassin Atlas.",
+     "audio": "Le dossier peut marquer des sorties avant de marquer une réponse.",
+     "in_game_wiki": "HECTON-8 peut offrir beaucoup de sorties sans transformer la vérité en bruit. Le dossier doit classer les issues fausses ou partielles en quelques familles lisibles : prendre le matériel et partir, sortir seulement pour être repris, tomber en garde corpo ou quarantaine, ou fuir assez de vérité du ledger pour blesser la machine sans l'arrêter. Chaque sortie est réelle. Aucune n'est le fond.",
+     "external_site": "L'échelle des fausses fins garde le replay lisible : plusieurs sorties, quatre grandes familles incomplètes et le bassin Atlas comme centre de gravité.",
+     "field_note": "Assez de fins pour récompenser les styles. Pas assez pour rendre la vérité bon marché."
+    },
+    "es_ES": {
+     "title": "Escalera de falsos finales",
+     "scanner": "ESCALERA DE FINALES // Pago material, retorno parcial, captura corporativa o cuarentena, filtración del ledger público. Cuatro familias falsas antes de las respuestas profundas de Atlas.",
+     "terminal": "ALCANCE DEL DOSIER: marcar muchas salidas, pero agruparlas en familias claras. Pago material, salida/retorno parcial, captura/cuarentena corporativa y filtración de ledger público quedan bajo las resoluciones de payload de la cuenca Atlas.",
+     "audio": "El dosier puede marcar salidas antes de marcar una respuesta.",
+     "in_game_wiki": "HECTON-8 puede tener muchas formas de salir sin convertir la verdad en ruido. El dosier debe ordenar los resultados falsos o parciales en pocas familias legibles: tomar el material y marcharse, escapar sólo para ser arrastrado de vuelta, caer en custodia corporativa o cuarentena, o filtrar suficiente verdad del ledger para herir la máquina sin detenerla. Cada salida es real. Ninguna es el fondo.",
+     "external_site": "La escalera de falsos finales mantiene legible el alcance del replay: varias salidas, cuatro familias incompletas y la cuenca Atlas como centro de gravedad.",
+     "field_note": "Suficientes finales para premiar estilos. No tantos como para abaratar la verdad."
+    },
+    "de_DE": {
+     "title": "Leiter der falschen Enden",
+     "scanner": "ENDLEITER // Materialauszahlung, Teilrückkehr, Konzernfang oder Quarantäne, öffentliches Ledger-Leck. Vier falsche Familien vor den tiefen Atlas-Antworten.",
+     "terminal": "DOSSIER-UMFANG: viele Ausgänge markieren, aber in klare Familien gruppieren. Materialauszahlung, Teilausstieg/Rückkehr, Konzernfang/Quarantäne und öffentliches Ledger-Leck liegen unter den Payload-Lösungen im Atlas-Becken.",
+     "audio": "Das Dossier kann Ausgänge markieren, bevor es eine Antwort markiert.",
+     "in_game_wiki": "HECTON-8 darf viele Wege hinaus haben, ohne Wahrheit zu Lärm zu machen. Das Dossier soll falsche oder teilweise Ausgänge in wenige lesbare Familien sortieren: Material nehmen und gehen, entkommen und zurückgezogen werden, in Konzernverwahrung oder Quarantäne fallen, oder genug Ledger-Wahrheit leaken, um die Maschine zu verletzen, ohne sie zu beenden. Jeder Ausgang ist echt. Keiner ist der Grund.",
+     "external_site": "Die Leiter der falschen Enden hält Replay lesbar: mehrere Ausgänge, vier große unvollständige Familien und das Atlas-Becken als Schwerpunkt.",
+     "field_note": "Genug Enden für Spielstile. Nicht genug, um Wahrheit billig zu machen."
+    },
+    "pl_PL": {
+     "title": "Drabina fałszywych zakończeń",
+     "scanner": "DRABINA ZAKOŃCZEŃ // Wypłata materialna, częściowy powrót, korporacyjne przejęcie lub kwarantanna, wyciek publicznego ledger. Cztery fałszywe rodziny przed głębokimi odpowiedziami Atlas.",
+     "terminal": "ZAKRES DOSSIER: oznacz wiele wyjść, ale grupuj je w czytelne rodziny. Wypłata materialna, częściowe wyjście/powrót, przejęcie/kwarantanna korpo i wyciek publicznego ledger leżą poniżej rozwiązań payload w basenie Atlas.",
+     "audio": "Dossier może oznaczyć wyjścia, zanim oznaczy odpowiedź.",
+     "in_game_wiki": "HECTON-8 może mieć wiele wyjść, nie zamieniając prawdy w szum. Dossier powinno sortować fałszywe lub częściowe wyniki w kilka czytelnych rodzin: wziąć material i odejść, uciec tylko po to, by zostać wciągniętym z powrotem, trafić do korporacyjnej opieki albo kwarantanny, albo ujawnić dość prawdy z ledger, by zranić maszynę bez zatrzymania jej. Każde wyjście jest prawdziwe. Żadne nie jest dnem.",
+     "external_site": "Drabina fałszywych zakończeń utrzymuje zakres replayu czytelny: kilka wyjść, cztery duże niepełne rodziny i basen Atlas jako środek ciężkości.",
+     "field_note": "Dość zakończeń, by nagrodzić style. Nie dość, by prawda była tania."
+    },
+    "uk_UA": {
+     "title": "Драбина хибних кінцівок",
+     "scanner": "ДРАБИНА КІНЦІВОК // Матеріальна виплата, часткове повернення, корпоративне захоплення або карантин, витік публічного ledger. Чотири хибні родини до глибоких відповідей Atlas.",
+     "terminal": "МАСШТАБ ДОСЬЄ: позначати багато виходів, але групувати їх у чіткі родини. Матеріальна виплата, частковий вихід/повернення, корпоративне захоплення/карантин і витік публічного ledger лежать нижче payload-рішень у басейні Atlas.",
+     "audio": "Досьє може позначити вихід раніше, ніж відповідь.",
+     "in_game_wiki": "HECTON-8 може мати багато шляхів назовні, не перетворюючи правду на шум. Досьє має сортувати хибні або часткові наслідки в кілька читабельних родин: взяти material і піти, вибратися лише для того, щоб тебе втягнуло назад, потрапити в корпоративне зберігання або карантин, або злити досить ledger-правди, щоб поранити машину, але не зупинити її. Кожен вихід реальний. Жоден не є дном.",
+     "external_site": "Драбина хибних кінцівок тримає replay читабельним: кілька виходів, чотири великі неповні родини й басейн Atlas як центр тяжіння.",
+     "field_note": "Досить кінцівок, щоб винагородити стилі. Недосить, щоб здешевити правду."
+    },
+    "ar_SA": {
+     "title": "سلم النهايات الزائفة",
+     "scanner": "سلم النهايات // دفع material، عودة جزئية، أسر شركة أو حجر، تسريب ledger عام. أربع عائلات زائفة قبل إجابات Atlas العميقة.",
+     "terminal": "نطاق الملف: علّم مخارج كثيرة، لكن اجمعها في عائلات واضحة. دفع material، خروج/عودة جزئية، أسر/حجر شركة، وتسريب ledger عام تقع تحت حلول payload في حوض Atlas.",
+     "audio": "يمكن للملف أن يعلّم المخارج قبل أن يعلّم جوابا.",
+     "in_game_wiki": "يمكن أن يملك HECTON-8 طرقا كثيرة للخروج من دون تحويل الحقيقة إلى ضجيج. يجب أن يفرز الملف النتائج الزائفة أو الجزئية في عائلات قليلة مقروءة: خذ material وارحل، اخرج فقط لتُسحب عائدا، اسقط في عهدة شركة أو حجر، أو سرّب ما يكفي من حقيقة ledger لجرح الآلة من دون إيقافها. كل مخرج حقيقي. ولا واحد هو القاع.",
+     "external_site": "سلم النهايات الزائفة يبقي نطاق replay مقروءا: مخارج عدة، أربع عائلات ناقصة كبرى، وحوض Atlas مركز الثقل.",
+     "field_note": "نهايات كافية لمكافأة الأساليب. لا كثيرة حتى ترخص الحقيقة."
+    },
+    "id_ID": {
+     "title": "Tangga Ending Palsu",
+     "scanner": "TANGGA ENDING // Bayaran material, kembali sebagian, penangkapan korporat atau karantina, kebocoran ledger publik. Empat keluarga palsu sebelum jawaban Atlas dalam.",
+     "terminal": "CAKUPAN DOSSIER: tandai banyak jalan keluar, tapi kelompokkan dalam keluarga jelas. Bayaran material, keluar/kembali sebagian, penangkapan/karantina korporat, dan bocoran ledger publik berada di bawah resolusi payload basin Atlas.",
+     "audio": "Dossier bisa menandai jalan keluar sebelum menandai jawaban.",
+     "in_game_wiki": "HECTON-8 boleh punya banyak jalan keluar tanpa mengubah kebenaran menjadi bising. Dossier harus memilah hasil palsu atau sebagian ke keluarga yang terbaca: ambil material dan pergi, lolos hanya untuk ditarik kembali, jatuh ke kustodi korporat atau karantina, atau membocorkan cukup kebenaran ledger untuk melukai mesin tanpa mengakhirinya. Tiap jalan keluar nyata. Tak satu pun dasar terdalam.",
+     "external_site": "Tangga Ending Palsu menjaga cakupan replay tetap terbaca: beberapa keluar, empat keluarga besar yang belum selesai, dan basin Atlas sebagai pusat gravitasi.",
+     "field_note": "Cukup ending untuk menghargai gaya. Tidak cukup untuk membuat kebenaran murah."
+    },
+    "ko_KR": {
+     "title": "거짓 엔딩 수 사다리",
+     "scanner": "엔딩 사다리 // material 지급, 부분 귀환, 기업 포획 또는 격리, 공개 ledger 유출. 깊은 Atlas 답변 전 네 거짓 계열.",
+     "terminal": "도시어 범위: 많은 출구를 표시하되 명확한 계열로 묶는다. material 지급, 부분 탈출/귀환, 기업 포획/격리, 공개 ledger 유출은 Atlas 분지 payload 해결보다 아래에 둔다.",
+     "audio": "도시어는 답보다 먼저 출구를 표시할 수 있다.",
+     "in_game_wiki": "HECTON-8에는 여러 탈출 방식이 있을 수 있지만 진실이 소음이 되어서는 안 된다. 도시어는 거짓 또는 부분 결과를 읽히는 소수 계열로 정리해야 한다. material을 챙기고 떠난다. 빠져나왔지만 다시 끌려간다. 기업 보관이나 격리에 떨어진다. 기계를 끝내지는 못하지만 상처낼 만큼 ledger 진실을 유출한다. 모든 출구는 진짜다. 그러나 어느 것도 바닥은 아니다.",
+     "external_site": "거짓 엔딩 수 사다리는 replay 범위를 읽히게 유지한다. 여러 출구, 네 큰 미완 계열, 그리고 Atlas 분지를 중력 중심으로 둔다.",
+     "field_note": "플레이스타일을 보상할 만큼의 엔딩. 진실을 싸게 만들 만큼은 아니다."
+    },
+    "he_IL": {
+     "title": "סולם ספירת סופים כוזבים",
+     "scanner": "סולם סופים // תשלום material, חזרה חלקית, תפיסה תאגידית או הסגר, דליפת ledger ציבורית. ארבע משפחות כוזבות לפני תשובות Atlas העמוקות.",
+     "terminal": "היקף תיק: סמן הרבה יציאות, אבל קבץ אותן למשפחות ברורות. תשלום material, יציאה/חזרה חלקית, תפיסה/הסגר תאגידי ודליפת ledger ציבורית יושבים מתחת לפתרונות payload באגן Atlas.",
+     "audio": "התיק יכול לסמן יציאות לפני שהוא מסמן תשובה.",
+     "in_game_wiki": "ל-HECTON-8 יכולות להיות דרכים רבות החוצה בלי להפוך אמת לרעש. התיק צריך למיין תוצאות כוזבות או חלקיות למספר קטן של משפחות קריאות: לקחת material ולעזוב, לברוח רק כדי להימשך חזרה, ליפול למשמורת תאגידית או הסגר, או להדליף מספיק אמת ledger כדי לפצוע את המכונה בלי לסיים אותה. כל יציאה אמיתית. אף אחת אינה התחתית.",
+     "external_site": "סולם הסופים הכוזבים שומר את היקף ה-replay קריא: כמה יציאות, ארבע משפחות לא שלמות גדולות, ואגן Atlas כמרכז הכובד.",
+     "field_note": "מספיק סופים לתגמל סגנונות. לא מספיק כדי להוזיל אמת."
+    },
+    "pt_BR": {
+     "title": "Escada de falsos finais",
+     "scanner": "ESCADA DE FINAIS // Pagamento material, retorno parcial, captura corporativa ou quarentena, vazamento de ledger público. Quatro famílias falsas antes das respostas profundas de Atlas.",
+     "terminal": "ESCOPO DO DOSSIÊ: marque muitas saídas, mas agrupe em famílias claras. Pagamento material, saída/retorno parcial, captura/quarentena corporativa e vazamento de ledger público ficam abaixo das resoluções de payload da bacia Atlas.",
+     "audio": "O dossiê pode marcar saídas antes de marcar uma resposta.",
+     "in_game_wiki": "HECTON-8 pode ter muitas formas de sair sem transformar a verdade em ruído. O dossiê deve ordenar resultados falsos ou parciais em poucas famílias legíveis: pegar o material e ir embora, escapar só para ser puxado de volta, cair em custódia corporativa ou quarentena, ou vazar verdade suficiente do ledger para ferir a máquina sem encerrá-la. Cada saída é real. Nenhuma é o fundo.",
+     "external_site": "A escada de falsos finais mantém o escopo do replay legível: várias saídas, quatro grandes famílias incompletas e a bacia Atlas como centro de gravidade.",
+     "field_note": "Finais suficientes para premiar estilos. Não tantos que barateiem a verdade."
+    },
+    "nl_NL": {
+     "title": "Ladder van valse eindes",
+     "scanner": "EINDLADDER // Material-uitbetaling, gedeeltelijke terugkeer, bedrijfsgevangenschap of quarantaine, openbaar ledger-lek. Vier valse families vóór de diepe Atlas-antwoorden.",
+     "terminal": "DOSSIERBEREIK: markeer veel uitgangen, maar groepeer ze in duidelijke families. Material-uitbetaling, gedeeltelijke exit/terugkeer, bedrijfsgevangenschap/quarantaine en openbaar ledger-lek staan onder de payload-resoluties in het Atlas-bekken.",
+     "audio": "Het dossier kan uitgangen markeren voordat het een antwoord markeert.",
+     "in_game_wiki": "HECTON-8 kan veel wegen naar buiten hebben zonder waarheid in ruis te veranderen. Het dossier moet valse of gedeeltelijke uitkomsten sorteren in een klein aantal leesbare families: material pakken en vertrekken, ontsnappen om teruggesleept te worden, in bedrijfsbewaring of quarantaine vallen, of genoeg ledger-waarheid lekken om de machine te verwonden zonder haar te stoppen. Elke uitgang is echt. Geen enkele is de bodem.",
+     "external_site": "De ladder van valse eindes houdt replay leesbaar: meerdere uitgangen, vier grote onvolledige families en het Atlas-bekken als zwaartepunt.",
+     "field_note": "Genoeg eindes voor speelstijlen. Niet genoeg om waarheid goedkoop te maken."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P139_STARTING_CLAIM_VARIANTS",
+   "article_id": "replay.starting_claim_variants",
+   "title_key": "applied_lore.starting_claim_variants.title",
+   "unlock": {
+    "primary": "unlock.starting_claim_variants",
+    "poi_tags": [
+     "poi.claim_variant_selector",
+     "poi.salvage_origin_stamp",
+     "poi.contract_motive_note"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.photic_shelf",
+     "biome.relay_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Starting Claim Variants",
+     "scanner": "CLAIM VARIANT // Same ex-Deep-Reach Marauder. Different first debt, bounty, route hardware, sample custody or blacklist relief.",
+     "terminal": "START RULE: variants alter initial pressure, rumor access, evidence weighting and payout logic. They do not create alternate heroes or erase the former Deep Reach spine.",
+     "audio": "You can change the job without changing who took it.",
+     "in_game_wiki": "A starting claim is the lie written at the top of the work order. Debt salvage, evidence bounty, missing route hardware, hazardous sample custody, blacklist relief: each variant changes why the board lets the Marauder down into the water. It should color motive and first pressure, not replace the protagonist with a new mask.",
+     "external_site": "Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.",
+     "field_note": "Change the claim. Keep the scar."
+    },
+    "ru_RU": {
+     "title": "Варианты стартового claim",
+     "scanner": "ВАРИАНТ CLAIM // Тот же бывший Deep Reach Marauder. Другой первый долг, bounty, маршрутное железо, хранение образца или снятие blacklist.",
+     "terminal": "СТАРТОВОЕ ПРАВИЛО: варианты меняют начальное давление, доступ к слухам, вес улик и логику выплат. Они не создают альтернативных героев и не стирают бывший Deep Reach spine.",
+     "audio": "Можно изменить работу, не меняя того, кто ее взял.",
+     "in_game_wiki": "Стартовый claim - это ложь, написанная вверху рабочего ордера. Долговой salvage, bounty за улику, пропавшее маршрутное железо, опасное хранение образца, снятие blacklist: каждый вариант меняет причину, по которой доска пускает Marauder вниз. Он должен окрашивать мотив и первое давление, а не заменять протагониста новой маской.",
+     "external_site": "Варианты стартового claim дают HECTON-8 replay с разными экономическими крючками, сохраняя одного сильного протагониста.",
+     "field_note": "Меняй claim. Оставь шрам."
+    },
+    "ja_JP": {
+     "title": "開始claimバリアント",
+     "scanner": "CLAIM VARIANT // 同じ元Deep ReachのMarauder。違う初期債務、賞金、航路機材、試料保管、またはブラックリスト緩和。",
+     "terminal": "開始規則: バリアントは初期圧力、噂アクセス、証拠重み、支払い論理を変える。別主人公を作らず、元Deep Reachという背骨を消さない。",
+     "audio": "仕事は変えられる。受けた人間は変えない。",
+     "in_game_wiki": "開始claimとは、作業命令の一番上に書かれた嘘だ。債務salvage、証拠賞金、失われた航路機材、危険試料の保管、ブラックリスト緩和。各バリアントは、なぜ掲示板がMarauderを水中へ下ろすのかを変える。動機と最初の圧力に色を付けるべきで、主人公を別の仮面に置き換えてはいけない。",
+     "external_site": "開始claimバリアントは、一人の強い主人公を保ちながら、異なる経済フックでHECTON-8をリプレイ可能にする。",
+     "field_note": "claimを変えろ。傷は残せ。"
+    },
+    "zh_CN": {
+     "title": "起始 claim 变体",
+     "scanner": "CLAIM 变体 // 同一个前 Deep Reach Marauder。不同首笔债务、bounty、路线硬件、样本保管或 blacklist 减免。",
+     "terminal": "起始规则：变体改变初始压力、传闻访问、证据权重和报酬逻辑。它们不创造替代英雄，也不抹掉前 Deep Reach 主线脊骨。",
+     "audio": "你可以改变工作，但不能改变接下工作的人。",
+     "in_game_wiki": "起始 claim 是写在工单顶端的谎言。债务 salvage、证据 bounty、失踪路线硬件、危险样本保管、blacklist 减免：每个变体都改变委员会为什么让 Marauder 下水。它应该给动机和第一层压力染色，而不是用新面具替换主角。",
+     "external_site": "起始 claim 变体让 HECTON-8 用不同经济钩子重玩，同时保留一个强主角。",
+     "field_note": "改变 claim。保留伤疤。"
+    },
+    "fr_FR": {
+     "title": "Variantes de claim initial",
+     "scanner": "VARIANTE CLAIM // Même Marauder ex-Deep-Reach. Première dette, bounty, matériel de route, garde d'échantillon ou allègement de blacklist différents.",
+     "terminal": "RÈGLE DE DÉPART : les variantes modifient pression initiale, accès aux rumeurs, poids des preuves et logique de paiement. Elles ne créent pas de héros alternatifs et n'effacent pas l'ancienne colonne Deep Reach.",
+     "audio": "Tu peux changer le travail sans changer celui qui l'a pris.",
+     "in_game_wiki": "Un claim initial est le mensonge écrit en haut de l'ordre de travail. Salvage de dette, bounty de preuve, matériel de route manquant, garde d'échantillon dangereux, allègement de blacklist : chaque variante change la raison pour laquelle le tableau laisse le Marauder descendre. Elle doit colorer le motif et la première pression, pas remplacer le protagoniste par un masque neuf.",
+     "external_site": "Les variantes de claim initial permettent de rejouer HECTON-8 avec des crochets économiques différents tout en conservant un protagoniste fort.",
+     "field_note": "Change le claim. Garde la cicatrice."
+    },
+    "es_ES": {
+     "title": "Variantes de claim inicial",
+     "scanner": "VARIANTE CLAIM // Mismo Marauder ex-Deep-Reach. Primera deuda, bounty, hardware de ruta, custodia de muestra o alivio de blacklist distintos.",
+     "terminal": "REGLA INICIAL: las variantes alteran presión inicial, acceso a rumores, peso de evidencia y lógica de pago. No crean héroes alternativos ni borran la columna ex-Deep Reach.",
+     "audio": "Puedes cambiar el trabajo sin cambiar a quien lo aceptó.",
+     "in_game_wiki": "Un claim inicial es la mentira escrita arriba de la orden de trabajo. Salvage de deuda, bounty de evidencia, hardware de ruta perdido, custodia de muestra peligrosa, alivio de blacklist: cada variante cambia por qué el tablero deja bajar al Marauder al agua. Debe colorear motivo y primera presión, no sustituir al protagonista con otra máscara.",
+     "external_site": "Las variantes de claim inicial permiten rejugar HECTON-8 con distintos ganchos económicos sin perder un protagonista fuerte.",
+     "field_note": "Cambia el claim. Conserva la cicatriz."
+    },
+    "de_DE": {
+     "title": "Start-Claim-Varianten",
+     "scanner": "CLAIM-VARIANTE // Derselbe Ex-Deep-Reach-Marauder. Andere Anfangsschuld, Bounty, Routenhardware, Probenverwahrung oder Blacklist-Erleichterung.",
+     "terminal": "STARTREGEL: Varianten ändern Anfangsdruck, Gerüchtezugang, Beweisgewichtung und Auszahlungslogik. Sie erschaffen keine Alternativhelden und löschen nicht das ehemalige Deep-Reach-Rückgrat.",
+     "audio": "Du kannst den Job ändern, ohne den zu ändern, der ihn annahm.",
+     "in_game_wiki": "Ein Start-Claim ist die Lüge oben auf dem Arbeitsauftrag. Schuld-salvage, Beweis-bounty, fehlende Routenhardware, gefährliche Probenverwahrung, Blacklist-Erleichterung: Jede Variante ändert, warum die Tafel den Marauder ins Wasser lässt. Sie soll Motiv und ersten Druck färben, nicht den Protagonisten durch eine neue Maske ersetzen.",
+     "external_site": "Start-Claim-Varianten lassen HECTON-8 mit verschiedenen wirtschaftlichen Haken wiederholen und bewahren einen starken Protagonisten.",
+     "field_note": "Ändere den Claim. Behalte die Narbe."
+    },
+    "pl_PL": {
+     "title": "Warianty początkowego claim",
+     "scanner": "WARIANT CLAIM // Ten sam były Marauder z Deep Reach. Inny pierwszy dług, bounty, sprzęt trasy, depozyt próbki albo ulga blacklist.",
+     "terminal": "REGUŁA STARTU: warianty zmieniają presję początkową, dostęp do plotek, wagę dowodów i logikę wypłaty. Nie tworzą alternatywnych bohaterów ani nie kasują kręgosłupa byłego Deep Reach.",
+     "audio": "Możesz zmienić robotę, nie zmieniając tego, kto ją wziął.",
+     "in_game_wiki": "Początkowy claim to kłamstwo zapisane na górze zlecenia. Dłużny salvage, bounty za dowód, brakujący sprzęt trasy, depozyt groźnej próbki, ulga blacklist: każdy wariant zmienia powód, dla którego tablica wpuszcza Maraudera do wody. Ma barwić motyw i pierwszą presję, nie zastępować protagonisty nową maską.",
+     "external_site": "Warianty początkowego claim pozwalają replayować HECTON-8 różnymi hakami ekonomicznymi, zachowując jednego silnego protagonistę.",
+     "field_note": "Zmień claim. Zostaw bliznę."
+    },
+    "uk_UA": {
+     "title": "Варіанти стартового claim",
+     "scanner": "ВАРІАНТ CLAIM // Той самий колишній Deep Reach Marauder. Інший перший борг, bounty, маршрутне залізо, зберігання зразка або полегшення blacklist.",
+     "terminal": "СТАРТОВЕ ПРАВИЛО: варіанти змінюють початковий тиск, доступ до чуток, вагу доказів і логіку виплат. Вони не створюють альтернативних героїв і не стирають колишній Deep Reach spine.",
+     "audio": "Можна змінити роботу, не змінюючи того, хто її взяв.",
+     "in_game_wiki": "Стартовий claim - це брехня, написана вгорі робочого ордера. Борговий salvage, bounty за доказ, зникле маршрутне залізо, небезпечне зберігання зразка, полегшення blacklist: кожен варіант змінює причину, з якої дошка пускає Marauder у воду. Він має фарбувати мотив і перший тиск, а не замінювати протагоніста новою маскою.",
+     "external_site": "Варіанти стартового claim дають HECTON-8 replay з різними економічними гачками, зберігаючи одного сильного протагоніста.",
+     "field_note": "Зміни claim. Залиш шрам."
+    },
+    "ar_SA": {
+     "title": "تنويعات claim البداية",
+     "scanner": "تنويع CLAIM // نفس Marauder السابق من Deep Reach. دين أول مختلف، bounty، عتاد مسار، عهدة عينة أو تخفيف blacklist.",
+     "terminal": "قاعدة البداية: التنويعات تغيّر الضغط الأول، وصول الشائعات، وزن الأدلة ومنطق الدفع. لا تخلق أبطالا بدلاء ولا تمحو عمود Deep Reach السابق.",
+     "audio": "يمكنك تغيير العمل من دون تغيير من قبله.",
+     "in_game_wiki": "claim البداية هو الكذبة المكتوبة أعلى أمر العمل. salvage دين، bounty دليل، عتاد مسار مفقود، عهدة عينة خطرة، تخفيف blacklist: كل تنويع يغير سبب سماح اللوحة للـ Marauder بالنزول إلى الماء. يجب أن يلوّن الدافع والضغط الأول، لا أن يستبدل البطل بقناع جديد.",
+     "external_site": "تنويعات claim البداية تسمح بإعادة لعب HECTON-8 بخطافات اقتصادية مختلفة مع الحفاظ على بطل واحد قوي.",
+     "field_note": "غيّر claim. أبق الندبة."
+    },
+    "id_ID": {
+     "title": "Varian Claim Awal",
+     "scanner": "VARIAN CLAIM // Marauder eks-Deep-Reach yang sama. Utang pertama, bounty, hardware rute, kustodi sampel, atau keringanan blacklist berbeda.",
+     "terminal": "ATURAN AWAL: varian mengubah tekanan awal, akses rumor, bobot bukti, dan logika bayaran. Mereka tidak menciptakan hero alternatif atau menghapus tulang punggung eks Deep Reach.",
+     "audio": "Kau bisa mengubah pekerjaan tanpa mengubah orang yang mengambilnya.",
+     "in_game_wiki": "Claim awal adalah kebohongan di bagian atas perintah kerja. Salvage utang, bounty bukti, hardware rute hilang, kustodi sampel berbahaya, keringanan blacklist: tiap varian mengubah alasan papan membiarkan Marauder turun ke air. Ia harus memberi warna pada motif dan tekanan pertama, bukan mengganti protagonis dengan topeng baru.",
+     "external_site": "Varian Claim Awal membuat HECTON-8 bisa direplay dengan kait ekonomi berbeda sambil mempertahankan satu protagonis kuat.",
+     "field_note": "Ubah claim. Pertahankan bekas lukanya."
+    },
+    "ko_KR": {
+     "title": "시작 claim 변형",
+     "scanner": "CLAIM 변형 // 같은 전 Deep Reach Marauder. 다른 첫 부채, bounty, 경로 장비, 샘플 보관 또는 blacklist 경감.",
+     "terminal": "시작 규칙: 변형은 초기 압력, 소문 접근, 증거 가중치, 지급 논리를 바꾼다. 대체 주인공을 만들거나 전 Deep Reach라는 척추를 지우지 않는다.",
+     "audio": "일은 바꿀 수 있다. 그 일을 받은 사람은 바꾸지 않는다.",
+     "in_game_wiki": "시작 claim은 작업 명령 맨 위에 적힌 거짓말이다. 부채 salvage, 증거 bounty, 사라진 경로 장비, 위험 샘플 보관, blacklist 경감. 각 변형은 게시판이 왜 Marauder를 물속으로 내려보내는지 바꾼다. 동기와 첫 압력에 색을 입혀야지, 주인공을 새 가면으로 바꾸면 안 된다.",
+     "external_site": "시작 claim 변형은 한 명의 강한 주인공을 보존하면서 HECTON-8을 다른 경제 갈고리로 replay하게 한다.",
+     "field_note": "claim을 바꿔라. 흉터는 남겨라."
+    },
+    "he_IL": {
+     "title": "וריאציות claim פתיחה",
+     "scanner": "וריאציית CLAIM // אותו Marauder לשעבר מ-Deep Reach. חוב ראשון, bounty, חומרת מסלול, משמורת דגימה או הקלת blacklist שונים.",
+     "terminal": "כלל פתיחה: וריאציות משנות לחץ התחלתי, גישה לשמועות, משקל ראיות ולוגיקת תשלום. הן לא יוצרות גיבורים חלופיים ולא מוחקות את עמוד השדרה של Deep Reach לשעבר.",
+     "audio": "אפשר לשנות את העבודה בלי לשנות את מי שלקח אותה.",
+     "in_game_wiki": "claim פתיחה הוא השקר הכתוב בראש פקודת העבודה. salvage חוב, bounty ראיה, חומרת מסלול חסרה, משמורת דגימה מסוכנת, הקלת blacklist: כל וריאציה משנה למה הלוח נותן ל-Marauder לרדת למים. היא צריכה לצבוע מניע ולחץ ראשון, לא להחליף את הגיבור במסכה חדשה.",
+     "external_site": "וריאציות claim פתיחה מאפשרות replay של HECTON-8 עם קרסים כלכליים שונים תוך שימור גיבור אחד חזק.",
+     "field_note": "שנה את ה-claim. השאר את הצלקת."
+    },
+    "pt_BR": {
+     "title": "Variantes de claim inicial",
+     "scanner": "VARIANTE CLAIM // Mesmo Marauder ex-Deep-Reach. Primeira dívida, bounty, hardware de rota, custódia de amostra ou alívio de blacklist diferentes.",
+     "terminal": "REGRA DE INÍCIO: variantes alteram pressão inicial, acesso a rumores, peso das evidências e lógica de pagamento. Não criam heróis alternativos nem apagam a espinha dorsal ex-Deep Reach.",
+     "audio": "Você pode mudar o trabalho sem mudar quem aceitou.",
+     "in_game_wiki": "Um claim inicial é a mentira escrita no topo da ordem de serviço. Salvage de dívida, bounty de evidência, hardware de rota desaparecido, custódia de amostra perigosa, alívio de blacklist: cada variante muda por que o quadro deixa o Marauder descer para a água. Deve colorir motivo e primeira pressão, não trocar o protagonista por uma máscara nova.",
+     "external_site": "Variantes de claim inicial permitem replay de HECTON-8 com ganchos econômicos diferentes enquanto preservam um protagonista forte.",
+     "field_note": "Mude o claim. Preserve a cicatriz."
+    },
+    "nl_NL": {
+     "title": "Start-claimvarianten",
+     "scanner": "CLAIMVARIANT // Dezelfde ex-Deep-Reach Marauder. Andere eerste schuld, bounty, routehardware, monsterbewaring of blacklist-verlichting.",
+     "terminal": "STARTREGEL: varianten veranderen begindruk, geruchtentoegang, bewijsweging en uitbetalingslogica. Ze maken geen alternatieve helden en wissen de voormalige Deep Reach-ruggengraat niet.",
+     "audio": "Je kunt de klus veranderen zonder degene die hem aannam te veranderen.",
+     "in_game_wiki": "Een start-claim is de leugen bovenaan de werkorder. Schuld-salvage, bewijs-bounty, ontbrekende routehardware, gevaarlijke monsterbewaring, blacklist-verlichting: elke variant verandert waarom het bord de Marauder het water in laat. Het moet motief en eerste druk kleuren, niet de protagonist vervangen door een nieuw masker.",
+     "external_site": "Start-claimvarianten laten HECTON-8 replayen met verschillende economische haken terwijl één sterke protagonist behouden blijft.",
+     "field_note": "Verander de claim. Bewaar het litteken."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P140_DOSSIER_KNOWLEDGE_NOT_POWER",
+   "article_id": "replay.dossier_knowledge_not_power",
+   "title_key": "applied_lore.dossier_knowledge_not_power.title",
+   "unlock": {
+    "primary": "unlock.dossier_knowledge_not_power",
+    "poi_tags": [
+     "poi.no_power_carryover_notice",
+     "poi.route_warning_card",
+     "poi.old_ending_hash"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.relay_archive",
+     "biome.photic_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Dossier Knowledge, Not Power",
+     "scanner": "META RULE // No inherited oxygen, hull rating, weapons, inventory, route authority or magic shortcut. The dossier keeps warnings, not muscle.",
+     "terminal": "HARD LIMIT: persistent dossier data may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route permission.",
+     "audio": "Memory does not reinforce a cracked hull.",
+     "in_game_wiki": "If the dossier carries power, HECTON-8 stops being about pressure. The sea becomes homework already solved. The right persistence is stranger and harsher: the player recognizes a lie earlier, knows which contract clause should sting, sees why a clean payout is not clean, and still descends with a fragile body into a fresh seed. Wisdom can survive. Safety should not.",
+     "external_site": "Dossier Knowledge, Not Power is the replayability rule that keeps HECTON-8 long-form, dangerous and narratively honest.",
+     "field_note": "The player can become wiser. The ocean should not become smaller."
+    },
+    "ru_RU": {
+     "title": "Знание досье, не сила",
+     "scanner": "META RULE // Нет наследуемого кислорода, рейтинга корпуса, оружия, инвентаря, маршрутной власти или магического shortcut. Досье хранит предупреждения, не мышцы.",
+     "terminal": "ЖЕСТКИЙ ПРЕДЕЛ: постоянные данные досье могут открывать предупреждения, семьи слухов, варианты claim и контекст концовок. Они не сохраняют силу оборудования, инвентарь ресурсов, владение мировой правдой или маршрутное разрешение.",
+     "audio": "Память не усиливает треснувший корпус.",
+     "in_game_wiki": "Если досье переносит силу, HECTON-8 перестает быть игрой о давлении. Море превращается в уже решенную домашнюю работу. Правильное сохранение страннее и жестче: игрок раньше распознает ложь, понимает, какой пункт договора должен жалить, видит, почему чистая выплата не чистая, и всё равно спускается хрупким телом в новый seed. Мудрость может выжить. Безопасность - нет.",
+     "external_site": "Знание досье, не сила - правило replayability, которое сохраняет HECTON-8 долгой, опасной и честной по повествованию.",
+     "field_note": "Игрок может стать мудрее. Океан не должен стать меньше."
+    },
+    "ja_JP": {
+     "title": "ドシエは知識であり、力ではない",
+     "scanner": "META RULE // 継承酸素、船体等級、武器、所持品、航路権限、魔法の近道なし。ドシエが持つのは警告であって筋肉ではない。",
+     "terminal": "厳格制限: 永続ドシエデータは警告、噂系統、claimバリアント、エンディング文脈を解放できる。装備性能、資源所持、世界真実の所有権、航路許可を保持してはならない。",
+     "audio": "記憶は割れた船体を補強しない。",
+     "in_game_wiki": "ドシエが力を持ち越すなら、HECTON-8は圧力の物語ではなくなる。海はすでに解かれた宿題になる。正しい永続化はもっと奇妙で厳しい。プレイヤーは嘘を早く見抜き、どの契約条項が刺さるべきかを知り、きれいな支払いがなぜきれいでないかを理解し、それでも脆い身体で新しいseedへ潜る。知恵は生き残ってよい。安全はだめだ。",
+     "external_site": "ドシエは知識であり、力ではない。この規則がHECTON-8を長く、危険で、物語に正直なリプレイに保つ。",
+     "field_note": "プレイヤーは賢くなってよい。海は小さくなってはいけない。"
+    },
+    "zh_CN": {
+     "title": "档案是知识，不是力量",
+     "scanner": "META RULE // 不继承氧气、船壳等级、武器、库存、路线权限或魔法捷径。档案保存警告，不保存肌肉。",
+     "terminal": "硬性限制：持久档案数据可以解锁警告、传闻族、claim 变体和结局背景。它不得保留装备强度、资源库存、世界真相所有权或路线许可。",
+     "audio": "记忆不会加固开裂的船壳。",
+     "in_game_wiki": "如果档案携带力量，HECTON-8 就不再关于压力。海会变成已经做完的作业。正确的持久化更奇怪，也更残酷：玩家更早识别谎言，知道哪条合约该刺痛，看懂为什么干净报酬并不干净，然后仍以脆弱身体下潜进新的 seed。智慧可以存活。安全不该。",
+     "external_site": "档案是知识，不是力量，是让 HECTON-8 保持长线、危险且叙事诚实的重玩规则。",
+     "field_note": "玩家可以变聪明。海洋不该变小。"
+    },
+    "fr_FR": {
+     "title": "Savoir du dossier, pas pouvoir",
+     "scanner": "META RULE // Aucun oxygène hérité, cote de coque, arme, inventaire, autorité de route ou raccourci magique. Le dossier garde des avertissements, pas des muscles.",
+     "terminal": "LIMITE DURE : les données persistantes du dossier peuvent débloquer avertissements, familles de rumeurs, variantes de claim et contexte de fin. Elles ne conservent ni puissance d'équipement, ni inventaire de ressources, ni propriété de vérité du monde, ni permission de route.",
+     "audio": "La mémoire ne renforce pas une coque fissurée.",
+     "in_game_wiki": "Si le dossier transporte du pouvoir, HECTON-8 cesse de parler de pression. La mer devient un devoir déjà corrigé. La bonne persistance est plus étrange et plus dure : le joueur reconnaît un mensonge plus tôt, sait quelle clause du contrat devrait piquer, voit pourquoi un paiement propre ne l'est pas, et descend quand même avec un corps fragile dans un seed frais. La sagesse peut survivre. La sécurité ne doit pas.",
+     "external_site": "Savoir du dossier, pas pouvoir est la règle de rejouabilité qui garde HECTON-8 long, dangereux et honnête narrativement.",
+     "field_note": "Le joueur peut devenir plus sage. L'océan ne doit pas devenir plus petit."
+    },
+    "es_ES": {
+     "title": "Conocimiento del dosier, no poder",
+     "scanner": "META RULE // Sin oxígeno heredado, rating de casco, armas, inventario, autoridad de ruta ni atajo mágico. El dosier guarda avisos, no músculo.",
+     "terminal": "LÍMITE DURO: los datos persistentes del dosier pueden desbloquear avisos, familias de rumores, variantes de claim y contexto de final. No deben preservar poder de equipo, inventario de recursos, propiedad de verdad del mundo ni permiso de ruta.",
+     "audio": "La memoria no refuerza un casco agrietado.",
+     "in_game_wiki": "Si el dosier lleva poder, HECTON-8 deja de tratar sobre presión. El mar se vuelve una tarea ya resuelta. La persistencia correcta es más extraña y más dura: el jugador reconoce antes una mentira, sabe qué cláusula debe doler, ve por qué un pago limpio no está limpio, y aun así desciende con un cuerpo frágil a un seed nuevo. La sabiduría puede sobrevivir. La seguridad no debería.",
+     "external_site": "Conocimiento del dosier, no poder es la regla de rejugabilidad que mantiene HECTON-8 largo, peligroso y narrativamente honesto.",
+     "field_note": "El jugador puede volverse más sabio. El océano no debe volverse más pequeño."
+    },
+    "de_DE": {
+     "title": "Dossierwissen, keine Macht",
+     "scanner": "META RULE // Kein geerbter Sauerstoff, Rumpfrating, Waffen, Inventar, Routenautorität oder magische Abkürzung. Das Dossier behält Warnungen, keine Muskeln.",
+     "terminal": "HARTE GRENZE: Persistente Dossierdaten dürfen Warnungen, Gerüchtefamilien, Claim-Varianten und Endkontext freischalten. Sie dürfen Ausrüstungsmacht, Ressourceninventar, Besitz der Weltwahrheit oder Routenerlaubnis nicht bewahren.",
+     "audio": "Erinnerung verstärkt keinen gerissenen Rumpf.",
+     "in_game_wiki": "Wenn das Dossier Macht trägt, handelt HECTON-8 nicht mehr von Druck. Das Meer wird zu bereits gelösten Hausaufgaben. Die richtige Persistenz ist seltsamer und härter: Der Spieler erkennt eine Lüge früher, weiß, welche Vertragsklausel stechen sollte, sieht, warum eine saubere Auszahlung nicht sauber ist, und steigt trotzdem mit fragilem Körper in einen frischen seed. Weisheit darf überleben. Sicherheit nicht.",
+     "external_site": "Dossierwissen, keine Macht ist die Replay-Regel, die HECTON-8 lang, gefährlich und erzählerisch ehrlich hält.",
+     "field_note": "Der Spieler darf klüger werden. Der Ozean darf nicht kleiner werden."
+    },
+    "pl_PL": {
+     "title": "Wiedza dossier, nie moc",
+     "scanner": "META RULE // Brak dziedziczonego tlenu, ratingu kadłuba, broni, ekwipunku, władzy trasy czy magicznego skrótu. Dossier trzyma ostrzeżenia, nie mięśnie.",
+     "terminal": "TWARDA GRANICA: trwałe dane dossier mogą odblokować ostrzeżenia, rodziny plotek, warianty claim i kontekst zakończeń. Nie mogą zachować mocy sprzętu, zapasu zasobów, własności prawdy świata ani pozwolenia trasy.",
+     "audio": "Pamięć nie wzmacnia pękniętego kadłuba.",
+     "in_game_wiki": "Jeśli dossier przenosi moc, HECTON-8 przestaje być o ciśnieniu. Morze staje się odrobionym zadaniem. Właściwa trwałość jest dziwniejsza i surowsza: gracz wcześniej rozpoznaje kłamstwo, wie, która klauzula kontraktu powinna zaboleć, widzi, dlaczego czysta wypłata nie jest czysta, i wciąż schodzi kruchym ciałem w świeży seed. Mądrość może przetrwać. Bezpieczeństwo nie.",
+     "external_site": "Wiedza dossier, nie moc to reguła replayu, która utrzymuje HECTON-8 długim, groźnym i narracyjnie uczciwym.",
+     "field_note": "Gracz może stać się mądrzejszy. Ocean nie może stać się mniejszy."
+    },
+    "uk_UA": {
+     "title": "Знання досьє, не сила",
+     "scanner": "META RULE // Немає успадкованого кисню, рейтингу корпусу, зброї, інвентарю, маршрутної влади чи магічного shortcut. Досьє береже попередження, не м'язи.",
+     "terminal": "ЖОРСТКА МЕЖА: сталі дані досьє можуть відкривати попередження, родини чуток, варіанти claim і контекст кінцівок. Вони не зберігають силу обладнання, інвентар ресурсів, володіння світовою правдою чи маршрутний дозвіл.",
+     "audio": "Пам'ять не зміцнює тріснутий корпус.",
+     "in_game_wiki": "Якщо досьє переносить силу, HECTON-8 перестає бути про тиск. Море стає вже розв'язаним домашнім завданням. Правильне збереження дивніше й жорсткіше: гравець раніше впізнає брехню, знає, який пункт договору має боліти, бачить, чому чиста виплата не чиста, і все одно спускається крихким тілом у новий seed. Мудрість може вижити. Безпека - ні.",
+     "external_site": "Знання досьє, не сила - правило replayability, що зберігає HECTON-8 довгою, небезпечною й чесною в оповіді.",
+     "field_note": "Гравець може стати мудрішим. Океан не має стати меншим."
+    },
+    "ar_SA": {
+     "title": "معرفة الملف لا قوته",
+     "scanner": "META RULE // لا أكسجين موروث، لا تصنيف هيكل، لا أسلحة، لا مخزون، لا سلطة مسار، ولا اختصار سحري. الملف يحفظ التحذيرات لا العضلات.",
+     "terminal": "حد صلب: بيانات الملف المستمرة قد تفتح تحذيرات، عائلات شائعات، تنويعات claim وسياق نهايات. لا تحفظ قوة معدات أو مخزون موارد أو ملكية حقيقة العالم أو إذن المسار.",
+     "audio": "الذاكرة لا تقوي هيكلا متشققا.",
+     "in_game_wiki": "إذا حمل الملف القوة، يتوقف HECTON-8 عن كونه عن الضغط. يصبح البحر واجبا منزليا محلولا. الاستمرار الصحيح أغرب وأقسى: يتعرف اللاعب إلى الكذبة أبكر، يعرف أي بند عقد يجب أن يلسع، يرى لماذا الدفع النظيف ليس نظيفا، ثم ينزل بجسد هش إلى seed جديد. الحكمة قد تنجو. الأمان لا.",
+     "external_site": "معرفة الملف لا قوته هي قاعدة replayability التي تبقي HECTON-8 طويلا وخطرا وصادقا سرديا.",
+     "field_note": "يمكن للاعب أن يصبح أحكم. لا يجب أن يصغر المحيط."
+    },
+    "id_ID": {
+     "title": "Pengetahuan Dossier, Bukan Kekuatan",
+     "scanner": "META RULE // Tidak ada oksigen, rating lambung, senjata, inventori, otoritas rute, atau shortcut ajaib yang diwarisi. Dossier menyimpan peringatan, bukan otot.",
+     "terminal": "BATAS KERAS: data dossier persisten boleh membuka peringatan, keluarga rumor, varian claim, dan konteks ending. Tidak boleh mempertahankan kekuatan alat, inventori sumber daya, kepemilikan kebenaran dunia, atau izin rute.",
+     "audio": "Memori tidak memperkuat lambung retak.",
+     "in_game_wiki": "Jika dossier membawa kekuatan, HECTON-8 berhenti bicara tentang tekanan. Laut menjadi PR yang sudah selesai. Persistensi yang tepat lebih aneh dan lebih keras: pemain mengenali kebohongan lebih cepat, tahu klausul kontrak mana yang harus menyengat, melihat mengapa bayaran bersih tidak bersih, dan tetap turun dengan tubuh rapuh ke seed segar. Kebijaksanaan boleh selamat. Keamanan tidak.",
+     "external_site": "Pengetahuan Dossier, Bukan Kekuatan adalah aturan replayability yang menjaga HECTON-8 panjang, berbahaya, dan jujur secara naratif.",
+     "field_note": "Pemain bisa menjadi lebih bijak. Samudra tidak boleh mengecil."
+    },
+    "ko_KR": {
+     "title": "도시어 지식, 힘이 아니다",
+     "scanner": "META RULE // 계승 산소, 선체 등급, 무기, 인벤토리, 경로 권한, 마법 shortcut 없음. 도시어는 경고를 저장하지 근육을 저장하지 않는다.",
+     "terminal": "하드 리밋: 지속 도시어 데이터는 경고, 소문 계열, claim 변형, 엔딩 맥락을 열 수 있다. 장비 힘, 자원 인벤토리, 세계 진실 소유권, 경로 허가는 보존하면 안 된다.",
+     "audio": "기억은 금 간 선체를 보강하지 않는다.",
+     "in_game_wiki": "도시어가 힘을 옮기면 HECTON-8은 압력에 관한 게임이 아니게 된다. 바다는 이미 풀린 숙제가 된다. 올바른 지속성은 더 이상하고 더 가혹하다. 플레이어는 거짓말을 더 일찍 알아보고, 어느 계약 조항이 아파야 하는지 알고, 깨끗한 지급이 왜 깨끗하지 않은지 보면서도 연약한 몸으로 새 seed에 내려간다. 지혜는 살아남아도 된다. 안전은 안 된다.",
+     "external_site": "도시어 지식, 힘이 아니다는 HECTON-8을 길고 위험하며 서사적으로 정직하게 유지하는 replayability 규칙이다.",
+     "field_note": "플레이어는 더 현명해져도 된다. 바다는 작아지면 안 된다."
+    },
+    "he_IL": {
+     "title": "ידע תיק, לא כוח",
+     "scanner": "META RULE // אין חמצן, דירוג גוף, נשק, מלאי, סמכות מסלול או קיצור קסם בירושה. התיק שומר אזהרות, לא שריר.",
+     "terminal": "גבול קשיח: נתוני תיק מתמידים רשאים לפתוח אזהרות, משפחות שמועות, וריאציות claim והקשר סיום. אסור לשמר כוח ציוד, מלאי משאבים, בעלות על אמת העולם או הרשאת מסלול.",
+     "audio": "זיכרון לא מחזק גוף סדוק.",
+     "in_game_wiki": "אם התיק נושא כוח, HECTON-8 מפסיק להיות על לחץ. הים הופך לשיעורי בית שכבר נפתרו. ההתמדה הנכונה מוזרה וקשה יותר: השחקן מזהה שקר מוקדם יותר, יודע איזה סעיף חוזה אמור לעקוץ, רואה למה תשלום נקי אינו נקי, ועדיין יורד בגוף שביר אל seed טרי. חוכמה יכולה לשרוד. ביטחון לא.",
+     "external_site": "ידע תיק, לא כוח הוא כלל replayability ששומר את HECTON-8 ארוך, מסוכן וישר נרטיבית.",
+     "field_note": "השחקן יכול להחכים. האוקיינוס לא צריך לקטון."
+    },
+    "pt_BR": {
+     "title": "Conhecimento do dossiê, não poder",
+     "scanner": "META RULE // Sem oxigênio herdado, rating de casco, armas, inventário, autoridade de rota ou atalho mágico. O dossiê guarda avisos, não músculo.",
+     "terminal": "LIMITE DURO: dados persistentes do dossiê podem desbloquear avisos, famílias de rumores, variantes de claim e contexto de finais. Não devem preservar poder de equipamento, inventário de recursos, posse da verdade do mundo ou permissão de rota.",
+     "audio": "Memória não reforça um casco rachado.",
+     "in_game_wiki": "Se o dossiê carrega poder, HECTON-8 deixa de ser sobre pressão. O mar vira uma tarefa já resolvida. A persistência certa é mais estranha e mais dura: o jogador reconhece uma mentira mais cedo, sabe qual cláusula do contrato deve doer, vê por que um pagamento limpo não é limpo, e ainda desce com um corpo frágil para um seed novo. Sabedoria pode sobreviver. Segurança não.",
+     "external_site": "Conhecimento do dossiê, não poder é a regra de replayability que mantém HECTON-8 longo, perigoso e narrativamente honesto.",
+     "field_note": "O jogador pode ficar mais sábio. O oceano não deve ficar menor."
+    },
+    "nl_NL": {
+     "title": "Dossierkennis, geen macht",
+     "scanner": "META RULE // Geen geërfde zuurstof, rompwaarde, wapens, inventaris, routeautoriteit of magische shortcut. Het dossier bewaart waarschuwingen, geen spieren.",
+     "terminal": "HARDE GRENS: persistente dossierdata mag waarschuwingen, geruchtenfamilies, claimvarianten en eindcontext openen. Het mag geen uitrustingsmacht, hulpbroninventaris, eigendom van wereldwaarheid of routetoestemming bewaren.",
+     "audio": "Geheugen versterkt geen gebarsten romp.",
+     "in_game_wiki": "Als het dossier macht meedraagt, gaat HECTON-8 niet meer over druk. De zee wordt huiswerk dat al is opgelost. De juiste persistentie is vreemder en harder: de speler herkent een leugen eerder, weet welke contractclausule moet steken, ziet waarom een schone uitbetaling niet schoon is, en daalt toch met een kwetsbaar lichaam af in een verse seed. Wijsheid mag overleven. Veiligheid niet.",
+     "external_site": "Dossierkennis, geen macht is de replayability-regel die HECTON-8 lang, gevaarlijk en narratief eerlijk houdt.",
+     "field_note": "De speler mag wijzer worden. De oceaan mag niet kleiner worden."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,792 +1,802 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P451_RU_NATIVE_ENCODING_QA_BRIEF",
-      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.ru_native_encoding_qa_brief",
-      "title_key": "applied_lore.ru_native_encoding_qa_brief.title",
-      "unlock": {
-        "primary": "unlock.ru_native_encoding_qa_brief",
-        "poi_tags": [
-          "poi.ru_native_encoding_qa",
-          "poi.mojibake_guard",
-          "poi.loc_source_review_card"
-        ],
-        "biome_tags": [
-          "biome.localization",
-          "biome.qa"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Russian Text Integrity Review",
-          "scanner": "Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Russian Text Integrity Review",
-          "scanner": "RU LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "RU LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "RU LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "RU LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "RU LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "RU LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Russian Text Integrity Review",
-          "scanner": "JP LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "JP LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "JP LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "JP LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "JP LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "JP LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Russian Text Integrity Review",
-          "scanner": "CN LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "CN LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "CN LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "CN LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "CN LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "CN LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Russian Text Integrity Review",
-          "scanner": "FR LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "FR LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "FR LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "FR LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "FR LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "FR LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Russian Text Integrity Review",
-          "scanner": "ES LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "ES LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "ES LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "ES LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "ES LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "ES LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Russian Text Integrity Review",
-          "scanner": "DE LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "DE LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "DE LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "DE LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "DE LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "DE LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Russian Text Integrity Review",
-          "scanner": "PL LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "PL LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "PL LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "PL LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "PL LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "PL LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Russian Text Integrity Review",
-          "scanner": "UA LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "UA LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "UA LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "UA LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "UA LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "UA LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Russian Text Integrity Review",
-          "scanner": "AR LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "AR LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "AR LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "AR LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "AR LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "AR LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Russian Text Integrity Review",
-          "scanner": "ID LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "ID LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "ID LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "ID LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "ID LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "ID LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Russian Text Integrity Review",
-          "scanner": "KO LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "KO LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "KO LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "KO LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "KO LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "KO LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Russian Text Integrity Review",
-          "scanner": "HE LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "HE LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "HE LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "HE LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "HE LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "HE LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Russian Text Integrity Review",
-          "scanner": "PT LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "PT LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "PT LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "PT LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "PT LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "PT LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Russian Text Integrity Review",
-          "scanner": "NL LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
-          "terminal": "NL LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
-          "audio": "NL LOC HOLD: Broken text is a production defect, not flavor corruption.",
-          "in_game_wiki": "NL LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
-          "external_site": "NL LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
-          "field_note": "NL LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P451_RU_NATIVE_ENCODING_QA_BRIEF",
+   "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.ru_native_encoding_qa_brief",
+   "title_key": "applied_lore.ru_native_encoding_qa_brief.title",
+   "unlock": {
+    "primary": "unlock.ru_native_encoding_qa_brief",
+    "poi_tags": [
+     "poi.ru_native_encoding_qa",
+     "poi.mojibake_guard",
+     "poi.loc_source_review_card"
+    ],
+    "biome_tags": [
+     "biome.localization",
+     "biome.qa"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Russian Text Integrity Review",
+     "scanner": "Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
     },
-    {
-      "packet_id": "P452_CJK_FONT_WRAP_QA_BRIEF",
-      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.cjk_font_wrap_qa_brief",
-      "title_key": "applied_lore.cjk_font_wrap_qa_brief.title",
-      "unlock": {
-        "primary": "unlock.cjk_font_wrap_qa_brief",
-        "poi_tags": [
-          "poi.cjk_font_wrap_qa",
-          "poi.static_atlas_budget_card",
-          "poi.codex_linebreak_review"
-        ],
-        "biome_tags": [
-          "biome.localization",
-          "biome.ui_rules"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "CJK Font And Wrap Review",
-          "scanner": "CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "RU LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "RU LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "RU LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "RU LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "RU LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "RU LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "JP LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "JP LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "JP LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "JP LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "JP LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "JP LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "CN LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "CN LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "CN LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "CN LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "CN LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "CN LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "FR LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "FR LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "FR LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "FR LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "FR LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "FR LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "ES LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "ES LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "ES LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "ES LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "ES LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "ES LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "DE LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "DE LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "DE LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "DE LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "DE LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "DE LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "PL LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "PL LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "PL LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "PL LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "PL LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "PL LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "UA LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "UA LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "UA LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "UA LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "UA LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "UA LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "AR LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "AR LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "AR LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "AR LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "AR LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "AR LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "ID LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "ID LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "ID LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "ID LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "ID LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "ID LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "KO LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "KO LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "KO LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "KO LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "KO LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "KO LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "HE LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "HE LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "HE LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "HE LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "HE LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "HE LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "PT LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "PT LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "PT LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "PT LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "PT LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "PT LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: CJK Font And Wrap Review",
-          "scanner": "NL LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
-          "terminal": "NL LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
-          "audio": "NL LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
-          "in_game_wiki": "NL LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
-          "external_site": "NL LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
-          "field_note": "NL LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: Russian Text Integrity Review",
+     "scanner": "RU LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "RU LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "RU LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "RU LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "RU LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "RU LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
     },
-    {
-      "packet_id": "P453_RTL_BIDI_NUMERIC_QA_BRIEF",
-      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.rtl_bidi_numeric_qa_brief",
-      "title_key": "applied_lore.rtl_bidi_numeric_qa_brief.title",
-      "unlock": {
-        "primary": "unlock.rtl_bidi_numeric_qa_brief",
-        "poi_tags": [
-          "poi.rtl_bidi_numeric_qa",
-          "poi.hebrew_arabic_codex_review",
-          "poi.unit_directionality_card"
-        ],
-        "biome_tags": [
-          "biome.localization",
-          "biome.accessibility"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "RTL Bidi Numeric Review",
-          "scanner": "Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "The number must remain the same pressure.",
-          "in_game_wiki": "RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "RU LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "RU LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "RU LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "RU LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "RU LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "RU LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "JP LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "JP LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "JP LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "JP LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "JP LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "JP LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "CN LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "CN LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "CN LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "CN LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "CN LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "CN LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "FR LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "FR LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "FR LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "FR LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "FR LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "FR LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "ES LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "ES LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "ES LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "ES LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "ES LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "ES LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "DE LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "DE LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "DE LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "DE LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "DE LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "DE LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "PL LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "PL LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "PL LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "PL LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "PL LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "PL LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "UA LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "UA LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "UA LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "UA LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "UA LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "UA LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "AR LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "AR LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "AR LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "AR LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "AR LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "AR LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "ID LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "ID LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "ID LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "ID LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "ID LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "ID LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "KO LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "KO LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "KO LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "KO LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "KO LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "KO LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "HE LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "HE LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "HE LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "HE LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "HE LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "HE LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "PT LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "PT LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "PT LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "PT LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "PT LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "PT LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: RTL Bidi Numeric Review",
-          "scanner": "NL LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
-          "terminal": "NL LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
-          "audio": "NL LOC HOLD: The number must remain the same pressure.",
-          "in_game_wiki": "NL LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
-          "external_site": "NL LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
-          "field_note": "NL LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
-        }
-      }
+    "ja_JP": {
+     "title": "JP LOC HOLD: Russian Text Integrity Review",
+     "scanner": "JP LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "JP LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "JP LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "JP LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "JP LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "JP LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
     },
-    {
-      "packet_id": "P454_EUROPEAN_EXPANSION_FIT_QA_BRIEF",
-      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.european_expansion_fit_qa_brief",
-      "title_key": "applied_lore.european_expansion_fit_qa_brief.title",
-      "unlock": {
-        "primary": "unlock.european_expansion_fit_qa_brief",
-        "poi_tags": [
-          "poi.european_expansion_fit_qa",
-          "poi.terminal_length_review",
-          "poi.contract_label_fit_card"
-        ],
-        "biome_tags": [
-          "biome.localization",
-          "biome.ui_rules"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "European Text Fit Review",
-          "scanner": "German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: European Text Fit Review",
-          "scanner": "RU LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "RU LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "RU LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "RU LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "RU LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: European Text Fit Review",
-          "scanner": "JP LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "JP LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "JA LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "JP LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "JP LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "JP LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: European Text Fit Review",
-          "scanner": "CN LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "CN LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "ZH LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "CN LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "CN LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "CN LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: European Text Fit Review",
-          "scanner": "FR LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "FR LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "FR LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "FR LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "FR LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "FR LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: European Text Fit Review",
-          "scanner": "ES LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "ES LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "ES LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "ES LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "ES LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "ES LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: European Text Fit Review",
-          "scanner": "DE LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "DE LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "DE LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "DE LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "DE LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "DE LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: European Text Fit Review",
-          "scanner": "PL LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "PL LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "PL LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "PL LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "PL LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "PL LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: European Text Fit Review",
-          "scanner": "UA LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "UA LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "UK LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "UA LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "UA LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "UA LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: European Text Fit Review",
-          "scanner": "AR LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "AR LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "AR LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "AR LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "AR LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "AR LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: European Text Fit Review",
-          "scanner": "ID LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "ID LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "ID LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "ID LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "ID LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "ID LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: European Text Fit Review",
-          "scanner": "KO LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "KO LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "KO LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "KO LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "KO LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "KO LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: European Text Fit Review",
-          "scanner": "HE LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "HE LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "HE LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "HE LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "HE LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "HE LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: European Text Fit Review",
-          "scanner": "PT LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "PT LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "PT LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "PT LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "PT LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "PT LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: European Text Fit Review",
-          "scanner": "NL LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
-          "terminal": "NL LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
-          "audio": "NL LOC HOLD: Copy note: short is not simple when the room is flooding.",
-          "in_game_wiki": "NL LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
-          "external_site": "NL LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
-          "field_note": "NL LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
-        }
-      }
+    "zh_CN": {
+     "title": "CN LOC HOLD: Russian Text Integrity Review",
+     "scanner": "CN LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "CN LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "CN LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "CN LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "CN LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "CN LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
     },
-    {
-      "packet_id": "P455_SUBTITLE_AUDIO_TIMING_QA_BRIEF",
-      "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.subtitle_audio_timing_qa_brief",
-      "title_key": "applied_lore.subtitle_audio_timing_qa_brief.title",
-      "unlock": {
-        "primary": "unlock.subtitle_audio_timing_qa_brief",
-        "poi_tags": [
-          "poi.subtitle_audio_timing_qa",
-          "poi.audio_caption_review",
-          "poi.vo_line_budget_card"
-        ],
-        "biome_tags": [
-          "biome.localization",
-          "biome.audio"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Subtitle Audio Timing Review",
-          "scanner": "Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "Caption rule: warning first, poetry never.",
-          "in_game_wiki": "Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "RU LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "RU LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "Caption rule: warning first, poetry never.",
-          "in_game_wiki": "RU LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "RU LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "RU LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "JP LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "JP LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "JA LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "JP LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "JP LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "JP LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "CN LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "CN LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "ZH LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "CN LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "CN LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "CN LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "FR LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "FR LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "FR LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "FR LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "FR LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "FR LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "ES LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "ES LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "ES LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "ES LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "ES LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "ES LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "DE LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "DE LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "DE LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "DE LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "DE LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "DE LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "PL LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "PL LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "PL LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "PL LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "PL LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "PL LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "UA LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "UA LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "UK LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "UA LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "UA LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "UA LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "AR LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "AR LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "AR LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "AR LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "AR LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "AR LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "ID LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "ID LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "ID LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "ID LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "ID LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "ID LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "KO LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "KO LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "KO LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "KO LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "KO LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "KO LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "HE LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "HE LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "HE LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "HE LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "HE LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "HE LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "PT LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "PT LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "PT LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "PT LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "PT LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "PT LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Subtitle Audio Timing Review",
-          "scanner": "NL LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
-          "terminal": "NL LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
-          "audio": "NL LOC HOLD: Caption rule: warning first, poetry never.",
-          "in_game_wiki": "NL LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
-          "external_site": "NL LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
-          "field_note": "NL LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Russian Text Integrity Review",
+     "scanner": "FR LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "FR LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "FR LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "FR LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "FR LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "FR LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Russian Text Integrity Review",
+     "scanner": "ES LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "ES LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "ES LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "ES LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "ES LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "ES LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Russian Text Integrity Review",
+     "scanner": "DE LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "DE LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "DE LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "DE LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "DE LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "DE LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Russian Text Integrity Review",
+     "scanner": "PL LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "PL LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "PL LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "PL LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "PL LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "PL LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Russian Text Integrity Review",
+     "scanner": "UA LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "UA LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "UA LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "UA LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "UA LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "UA LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Russian Text Integrity Review",
+     "scanner": "AR LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "AR LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "AR LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "AR LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "AR LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "AR LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Russian Text Integrity Review",
+     "scanner": "ID LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "ID LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "ID LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "ID LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "ID LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "ID LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Russian Text Integrity Review",
+     "scanner": "KO LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "KO LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "KO LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "KO LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "KO LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "KO LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Russian Text Integrity Review",
+     "scanner": "HE LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "HE LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "HE LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "HE LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "HE LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "HE LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Russian Text Integrity Review",
+     "scanner": "PT LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "PT LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "PT LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "PT LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "PT LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "PT LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Russian Text Integrity Review",
+     "scanner": "NL LOC HOLD: Russian rows require native phrasing, UTF-8 source proof, and mojibake rejection before final publication.",
+     "terminal": "NL LOC HOLD: RU TEXT REVIEW: reject broken encoding, mixed register drift, overlong terminal copy, and untranslated gameplay units.",
+     "audio": "NL LOC HOLD: Broken text is a production defect, not flavor corruption.",
+     "in_game_wiki": "NL LOC HOLD: Russian source may carry the working discussion tone during drafting, but release rows require clean native phrasing, stable units, and no encoding damage.",
+     "external_site": "NL LOC HOLD: Russian public pages must read as native copy. Proper nouns, tone, units, and encoding stay stable.",
+     "field_note": "NL LOC HOLD: Russian review compares packet source, exported rows, wiki pages, and public pages as UTF-8. Any mojibake blocks publication."
     }
-  ]
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P452_CJK_FONT_WRAP_QA_BRIEF",
+   "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.cjk_font_wrap_qa_brief",
+   "title_key": "applied_lore.cjk_font_wrap_qa_brief.title",
+   "unlock": {
+    "primary": "unlock.cjk_font_wrap_qa_brief",
+    "poi_tags": [
+     "poi.cjk_font_wrap_qa",
+     "poi.static_atlas_budget_card",
+     "poi.codex_linebreak_review"
+    ],
+    "biome_tags": [
+     "biome.localization",
+     "biome.ui_rules"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "CJK Font And Wrap Review",
+     "scanner": "CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "RU LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "RU LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "RU LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "RU LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "RU LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "RU LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "JP LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "JP LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "JP LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "JP LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "JP LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "JP LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "CN LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "CN LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "CN LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "CN LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "CN LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "CN LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "FR LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "FR LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "FR LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "FR LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "FR LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "FR LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "ES LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "ES LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "ES LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "ES LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "ES LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "ES LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "DE LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "DE LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "DE LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "DE LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "DE LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "DE LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "PL LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "PL LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "PL LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "PL LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "PL LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "PL LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "UA LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "UA LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "UA LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "UA LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "UA LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "UA LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "AR LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "AR LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "AR LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "AR LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "AR LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "AR LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "ID LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "ID LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "ID LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "ID LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "ID LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "ID LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "KO LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "KO LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "KO LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "KO LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "KO LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "KO LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "HE LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "HE LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "HE LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "HE LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "HE LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "HE LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "PT LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "PT LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "PT LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "PT LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "PT LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "PT LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: CJK Font And Wrap Review",
+     "scanner": "NL LOC HOLD: CJK rows require static glyph coverage, line-break proof, and short evidence labels.",
+     "terminal": "NL LOC HOLD: CJK TEXT REVIEW: no dynamic glyph surprises, no live translation, no truth-changing abbreviation, no unreviewed vertical overflow.",
+     "audio": "NL LOC HOLD: If a language needs less space, spend it on clarity, not extra lore.",
+     "in_game_wiki": "NL LOC HOLD: CJK pages preserve packet identity, proper nouns, pressure units, and receiver labels while fitting PDA and terminal surfaces.",
+     "external_site": "NL LOC HOLD: CJK public articles require native typography, line-break, and glyph coverage review before publication.",
+     "field_note": "NL LOC HOLD: Chinese, Japanese, and Korean review covers glyph coverage, small-surface wraps, and evidence-tier label length."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P453_RTL_BIDI_NUMERIC_QA_BRIEF",
+   "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.rtl_bidi_numeric_qa_brief",
+   "title_key": "applied_lore.rtl_bidi_numeric_qa_brief.title",
+   "unlock": {
+    "primary": "unlock.rtl_bidi_numeric_qa_brief",
+    "poi_tags": [
+     "poi.rtl_bidi_numeric_qa",
+     "poi.hebrew_arabic_codex_review",
+     "poi.unit_directionality_card"
+    ],
+    "biome_tags": [
+     "biome.localization",
+     "biome.accessibility"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "RTL Bidi Numeric Review",
+     "scanner": "Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "The number must remain the same pressure.",
+     "in_game_wiki": "RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "RU LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "RU LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "RU LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "RU LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "RU LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "RU LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "JP LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "JP LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "JP LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "JP LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "JP LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "JP LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "CN LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "CN LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "CN LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "CN LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "CN LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "CN LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "FR LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "FR LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "FR LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "FR LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "FR LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "FR LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "ES LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "ES LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "ES LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "ES LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "ES LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "ES LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "DE LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "DE LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "DE LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "DE LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "DE LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "DE LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "PL LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "PL LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "PL LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "PL LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "PL LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "PL LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "UA LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "UA LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "UA LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "UA LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "UA LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "UA LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "AR LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "AR LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "AR LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "AR LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "AR LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "AR LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "ID LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "ID LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "ID LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "ID LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "ID LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "ID LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "KO LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "KO LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "KO LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "KO LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "KO LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "KO LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "HE LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "HE LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "HE LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "HE LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "HE LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "HE LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "PT LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "PT LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "PT LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "PT LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "PT LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "PT LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: RTL Bidi Numeric Review",
+     "scanner": "NL LOC HOLD: Arabic and Hebrew rows require bidi, unit, hash, depth, window, and receiver-label proof.",
+     "terminal": "NL LOC HOLD: RTL TEXT REVIEW: preserve HECTON-8, RAN-B:H8, packet IDs, meters, tonne-window, hashes, and receiver names in logical source order.",
+     "audio": "NL LOC HOLD: The number must remain the same pressure.",
+     "in_game_wiki": "NL LOC HOLD: RTL review is gameplay readability because route windows, depths, debts, and receivers are player decisions.",
+     "external_site": "NL LOC HOLD: Arabic and Hebrew public pages need native directionality proof before release publication.",
+     "field_note": "NL LOC HOLD: Arabic and Hebrew review covers mixed Latin IDs, numbers, units, and spoiler receiver labels without manually reversing source strings."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P454_EUROPEAN_EXPANSION_FIT_QA_BRIEF",
+   "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.european_expansion_fit_qa_brief",
+   "title_key": "applied_lore.european_expansion_fit_qa_brief.title",
+   "unlock": {
+    "primary": "unlock.european_expansion_fit_qa_brief",
+    "poi_tags": [
+     "poi.european_expansion_fit_qa",
+     "poi.terminal_length_review",
+     "poi.contract_label_fit_card"
+    ],
+    "biome_tags": [
+     "biome.localization",
+     "biome.ui_rules"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "European Text Fit Review",
+     "scanner": "German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: European Text Fit Review",
+     "scanner": "RU LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "RU LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "RU LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "RU LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "RU LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: European Text Fit Review",
+     "scanner": "JP LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "JP LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "JA LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "JP LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "JP LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "JP LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: European Text Fit Review",
+     "scanner": "CN LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "CN LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "ZH LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "CN LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "CN LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "CN LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: European Text Fit Review",
+     "scanner": "FR LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "FR LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "FR LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "FR LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "FR LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "FR LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: European Text Fit Review",
+     "scanner": "ES LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "ES LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "ES LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "ES LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "ES LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "ES LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: European Text Fit Review",
+     "scanner": "DE LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "DE LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "DE LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "DE LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "DE LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "DE LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: European Text Fit Review",
+     "scanner": "PL LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "PL LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "PL LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "PL LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "PL LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "PL LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: European Text Fit Review",
+     "scanner": "UA LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "UA LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "UK LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "UA LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "UA LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "UA LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: European Text Fit Review",
+     "scanner": "AR LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "AR LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "AR LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "AR LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "AR LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "AR LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: European Text Fit Review",
+     "scanner": "ID LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "ID LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "ID LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "ID LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "ID LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "ID LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: European Text Fit Review",
+     "scanner": "KO LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "KO LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "KO LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "KO LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "KO LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "KO LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: European Text Fit Review",
+     "scanner": "HE LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "HE LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "HE LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "HE LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "HE LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "HE LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: European Text Fit Review",
+     "scanner": "PT LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "PT LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "PT LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "PT LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "PT LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "PT LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: European Text Fit Review",
+     "scanner": "NL LOC HOLD: German, French, Spanish, Polish, Ukrainian, Portuguese, and Dutch need label-length and terminal-fit review.",
+     "terminal": "NL LOC HOLD: EU TEXT REVIEW: do not shrink evidence meaning to fit a box. Collapse, page, scroll, or shorten with native editorial review.",
+     "audio": "NL LOC HOLD: Copy note: short is not simple when the room is flooding.",
+     "in_game_wiki": "NL LOC HOLD: European-language review preserves cold terminal tone, receiver labels, route warnings, and spoiler gates under longer copy length.",
+     "external_site": "NL LOC HOLD: Public articles can be longer than terminal copy; layout limits should not be reused blindly across surfaces.",
+     "field_note": "NL LOC HOLD: European-language review checks terminal label overflow, article rhythm, receiver labels, route warnings, and spoiler gates."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P455_SUBTITLE_AUDIO_TIMING_QA_BRIEF",
+   "release_set_id": "RS091_NATIVE_LOCALIZATION_AND_ACCESSIBILITY_QA_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.subtitle_audio_timing_qa_brief",
+   "title_key": "applied_lore.subtitle_audio_timing_qa_brief.title",
+   "unlock": {
+    "primary": "unlock.subtitle_audio_timing_qa_brief",
+    "poi_tags": [
+     "poi.subtitle_audio_timing_qa",
+     "poi.audio_caption_review",
+     "poi.vo_line_budget_card"
+    ],
+    "biome_tags": [
+     "biome.localization",
+     "biome.audio"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Subtitle Audio Timing Review",
+     "scanner": "Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "Caption rule: warning first, poetry never.",
+     "in_game_wiki": "Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "RU LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "RU LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "Caption rule: warning first, poetry never.",
+     "in_game_wiki": "RU LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "RU LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "RU LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "JP LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "JP LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "JA LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "JP LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "JP LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "JP LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "CN LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "CN LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "ZH LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "CN LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "CN LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "CN LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "FR LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "FR LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "FR LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "FR LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "FR LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "FR LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "ES LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "ES LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "ES LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "ES LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "ES LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "ES LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "DE LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "DE LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "DE LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "DE LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "DE LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "DE LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "PL LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "PL LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "PL LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "PL LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "PL LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "PL LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "UA LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "UA LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "UK LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "UA LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "UA LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "UA LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "AR LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "AR LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "AR LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "AR LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "AR LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "AR LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "ID LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "ID LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "ID LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "ID LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "ID LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "ID LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "KO LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "KO LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "KO LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "KO LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "KO LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "KO LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "HE LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "HE LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "HE LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "HE LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "HE LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "HE LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "PT LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "PT LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "PT LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "PT LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "PT LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "PT LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Subtitle Audio Timing Review",
+     "scanner": "NL LOC HOLD: Subtitle rows require speaker, timing, pressure-warning, and spoiler-stage review.",
+     "terminal": "NL LOC HOLD: SUBTITLE REVIEW: Black Keel clipped audio, Deep Reach legal delay, worker fragments, Atlas traces, and ending records need per-locale timing budgets.",
+     "audio": "NL LOC HOLD: Caption rule: warning first, poetry never.",
+     "in_game_wiki": "NL LOC HOLD: Subtitles are survival readability. A delayed caption can break route trust as much as a bad waypoint.",
+     "external_site": "NL LOC HOLD: Transcript articles can be longer; in-game subtitles preserve timing, speaker, and actionable pressure.",
+     "field_note": "NL LOC HOLD: Caption review checks line length, reading time, speaker labels, audio occlusion, and spoiler unlock state per locale."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  }
+ ]
 }

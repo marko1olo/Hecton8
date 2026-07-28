@@ -1,11 +1,55 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS253_AEGIR_SKY_WEATHER_SURVIVAL_ARTICLE",
-  "title": "Aegir Sky Weather Survival Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS253_AEGIR_SKY_WEATHER_SURVIVAL_ARTICLE",
+ "title": "Aegir Sky Weather Survival Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1423_AEGIR_SKY_WEATHER_SURVIVAL_LEDGER",
+   "release_set_id": "RS253_AEGIR_SKY_WEATHER_SURVIVAL_ARTICLE",
+   "article_id": "applied_lore.aegir_sky_weather_survival_ledger",
+   "title_key": "LORE_AEGIR_SKY_WEATHER_SURVIVAL_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Aegir_System_Game_Texture.md",
+    "Docs/Lore/Gameable_World_Packets.md",
+    "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,263 +57,220 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1423_AEGIR_SKY_WEATHER_SURVIVAL_LEDGER",
-      "release_set_id": "RS253_AEGIR_SKY_WEATHER_SURVIVAL_ARTICLE",
-      "article_id": "applied_lore.aegir_sky_weather_survival_ledger",
-      "title_key": "LORE_AEGIR_SKY_WEATHER_SURVIVAL_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Aegir_System_Game_Texture.md",
-        "Docs/Lore/Gameable_World_Packets.md",
-        "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.aegir_sky_weather_survival_ledger",
-        "secondary": [
-          "unlock.first_clear_sky_radiation_conflict",
-          "unlock.first_moon_shadow_tide_error",
-          "unlock.first_black_keel_window_timing_conflict"
-        ],
-        "poi_tags": [
-          "poi.aegir_sky_window_plate",
-          "poi.radiation_count_strip",
-          "poi.moon_shadow_tide_card",
-          "poi.black_keel_window_timer"
-        ],
-        "biome_tags": [
-          "biome.surface_weather",
-          "biome.storm_shelf",
-          "biome.carrier_link",
-          "biome.shallow_reef"
-        ],
-        "first_20_boundary": "Turns the first repaired uplink, first clear-sky break, and first moon-shadow warning into readable survival timing: sky state gates signal, tide/current trust, radiation exposure, and later ascent planning."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Aegir Sky Window Scanner",
-          "terminal": "Black Keel Window Timing Desk",
-          "audio": "Old Marauder Sky Rule",
-          "in_game_wiki": "PDA Aegir Weather Primer",
-          "external_site": "Public Site Aegir Sky Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_clear_sky_window_or_signal_weather_conflict",
-        "truth_payload": "Aegir sky is a survival instrument: clear weather can improve signal while raising radiation, storms can protect the body while killing uplink, and moon shadows can break tide and ascent timing before Black Keel reserves a window.",
-        "player_question": "Why is the sky part of the survival loop instead of decoration?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Aegir Sky Weather Ledger",
-          "scanner": "AEGIR WINDOW PLATE // Salt-fogged glass, still warm behind the seal. Clear lane: signal noise falling. Charged-particle count rising. Moon shadow still pulling the tide model off truth. Pretty sky is not safe sky.",
-          "terminal": "BLACK KEEL SKY TIMING DESK // Local weather break confirmed. Uplink confidence 61 percent. Radiation load climbing. Moon occultation clears in 00:18:40. Ascent-mass estimate withheld until carrier geometry, storm band, and quarantine receiver agree.",
-          "audio": "On HECTON-8, the sky is another pressure door. It opens, it lies, and it closes on schedule.",
-          "in_game_wiki": "Aegir is not a painted backdrop. It is the largest machine the survivor can see without owning any part of it. The gas giant, its magnetosphere, the moon ladder, storm bands, relay angles, and Black Keel traffic all press on the same small ocean where you are trying to keep a suit sealed.\n\nA clear break over the water can feel like mercy because the light returns and the carrier starts to sound less broken. That is only half the reading. Clear sky can also mean the charged-particle count is climbing. A storm can hide Aegir and ruin a packet window while giving your body a little shelter from the worst noise. A moon shadow can make a tide card lie by a few minutes, and a few minutes is enough to turn a shallow hatch, a brine lip, or an ascent estimate into bad advice.\n\nOld stations survive by treating the sky like a gauge, not like scenery. Their ephemeris plates do not solve live celestial mechanics. They keep authored, repeated, believable window tables: when a relay lane is clean enough to send evidence, when the tide model is suspect, when the Black Keel can answer, and when an ascent stack is just expensive metal waiting under the wrong sky. If Aegir looks beautiful, check the radio. Beauty usually means something is moving through you.",
-          "external_site": "Aegir makes HECTON-8 readable and hostile at the same time: clear sky, storms, moon shadows, radiation, tide error, and carrier geometry all decide when the survivor can speak, move, or leave.",
-          "external_site_article": "HECTON-8 uses its sky as a survival system. Aegir is huge enough to give the surface drama, but the important fact is not size. The important fact is that the sky changes what is true for the player. A calm horizon can sharpen uplink and raise radiation. A storm can protect flesh and bury the carrier in static. A moon crossing can pull the tide model away from the door the player planned to use.\n\nThis keeps the fiction physical. Rescue is not blocked by a vague plot wall. It is blocked by weather, charge, relay geometry, custody routing, mass allocation, and the fact that a carrier in orbit cannot spend lift opportunity whenever a stranded person wants it. Black Keel may accept evidence during one window and still refuse body recovery until a later one. That difference is the game.\n\nThe player should learn to read Aegir the way they read oxygen. The sky tells them when to transmit, when to shelter, when to trust a current, when to mistrust a clean signal, and when an ascent plan is only a promise waiting for geometry.",
-          "field_note": "If Aegir looks clean enough to paint, do not stand under it until you read the count."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал погодных окон Aegir",
-          "scanner": "ПЛИТА ОКНА AEGIR // Стекло в соляном тумане, за уплотнителем еще тепло. Чистая полоса: шум сигнала падает. Счет заряженных частиц растет. Тень луны все еще уводит модель прилива от истины. Красивое небо не значит безопасное небо.",
-          "terminal": "СТОЛ НЕБЕСНОГО ТАЙМИНГА BLACK KEEL // Локальный разрыв погоды подтвержден. Уверенность uplink 61 процент. Радиационная нагрузка растет. Лунное покрытие очистится через 00:18:40. Оценка массы подъема удержана, пока геометрия carrier, штормовая полоса и карантинный приемник не сойдутся.",
-          "audio": "На HECTON-8 небо это еще одна напорная дверь. Оно открывается, врет и закрывается по расписанию.",
-          "in_game_wiki": "Aegir не нарисованный фон. Это самая большая машина, которую выживший может видеть, не владея ни одной ее частью. Газовый гигант, его магнитосфера, лестница лун, штормовые полосы, углы ретрансляции и трафик Black Keel давят на один и тот же маленький океан, где ты пытаешься удержать скафандр герметичным.\n\nЯсный разрыв над водой может казаться милостью: свет возвращается, а carrier звучит менее сломанно. Это только половина чтения. Чистое небо может означать, что счет заряженных частиц растет. Шторм может спрятать Aegir и убить пакетное окно, но дать телу немного защиты от худшего шума. Тень луны может заставить приливную карту соврать на несколько минут, а нескольких минут достаточно, чтобы мелководный люк, край рассола или расчет подъема стали плохим советом.\n\nСтарые станции выживают потому, что относятся к небу как к прибору, а не как к декорации. Их эфемеридные плиты не считают живую небесную механику. Они хранят заданные, повторяемые, правдоподобные таблицы окон: когда релейная полоса достаточно чиста для доказательств, когда модели прилива нельзя верить, когда Black Keel может ответить, и когда ascent stack остается просто дорогим железом под неправильным небом. Если Aegir красив, проверь радио. Красота обычно значит, что через тебя что-то проходит.",
-          "external_site": "Aegir делает HECTON-8 одновременно читаемым и враждебным: ясное небо, штормы, лунные тени, радиация, ошибка прилива и геометрия carrier решают, когда выживший может говорить, двигаться или уходить.",
-          "external_site_article": "HECTON-8 использует небо как систему выживания. Aegir достаточно огромен, чтобы дать поверхности драму, но важен не размер. Важно то, что небо меняет для игрока действительность. Спокойный горизонт может улучшить uplink и поднять радиацию. Шторм может защитить плоть и утопить carrier в статике. Проход луны может увести приливную модель от двери, которой игрок собирался пользоваться.\n\nТак фантастика остается физической. Спасение блокируется не туманной сюжетной стеной. Его блокируют погода, заряд, геометрия реле, маршрутизация опеки, распределение массы и тот факт, что carrier на орбите не тратит окно подъема всякий раз, когда застрявший человек этого хочет. Black Keel может принять доказательство в одно окно и все равно отказать в возврате тела до следующего. В этой разнице и есть игра.\n\nИгрок должен учиться читать Aegir так же, как кислород. Небо говорит, когда передавать, когда прятаться, когда доверять течению, когда не доверять чистому сигналу, и когда план подъема это всего лишь обещание, ожидающее геометрии.",
-          "field_note": "Если Aegir выглядит так чисто, что его хочется рисовать, не стой под ним, пока не прочитаешь счетчик."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Aegir空模様サバイバル台帳",
-          "scanner": "AEGIRウィンドウ板 // 塩霧で曇ったガラス。シールの奥はまだ温かい。晴れ筋: 信号ノイズ低下。荷電粒子カウント上昇。月影が潮汐モデルをまだ真実からずらしている。美しい空は安全な空ではない。",
-          "terminal": "BLACK KEEL空タイミング卓 // 局地的な天候切れ目を確認。アップリンク信頼度61パーセント。放射線負荷上昇中。月の掩蔽解除まで00:18:40。carrier幾何、嵐帯、隔離受信者が一致するまで上昇質量推定を保留。",
-          "audio": "HECTON-8では、空も圧力扉だ。開き、嘘をつき、予定どおり閉まる。",
-          "in_game_wiki": "Aegirは描かれた背景ではない。生存者がどの部品も所有しないまま見ることのできる最大の機械だ。ガス巨星、その磁気圏、月の階段、嵐帯、リレー角度、Black Keelの航行は、スーツの密閉を保とうとしている小さな海に同時に圧力をかけている。\n\n水面上の晴れ間は慈悲に見えることがある。光が戻り、carrierの声が少しだけ壊れていないように聞こえるからだ。だがそれは読みの半分でしかない。澄んだ空は荷電粒子カウントの上昇を意味することもある。嵐はAegirを隠し、パケット窓を潰す一方で、肉体を最悪のノイズから少し守る。月影は潮汐カードを数分だけ嘘にする。その数分で浅瀬のハッチ、塩水層の縁、上昇推定は悪い助言に変わる。\n\n古いステーションは空を景色ではなく計器として扱うから生き残る。エフェメリス板は生の天体力学を解かない。証拠を送るリレー帯が十分に澄む時、潮汐モデルが疑わしい時、Black Keelが応答できる時、そしてascent stackが間違った空の下で高価な金属にすぎない時を、作られた反復可能な窓表として保持している。Aegirが美しく見えたら、無線を確認しろ。美しさはたいてい、何かが君を通過しているという意味だ。",
-          "external_site": "AegirはHECTON-8を読める場所にし、同時に敵対的にもする。晴天、嵐、月影、放射線、潮汐誤差、carrier幾何が、生存者が話し、動き、離脱できる時を決める。",
-          "external_site_article": "HECTON-8は空をサバイバルシステムとして使う。Aegirは地表に迫力を与えるほど巨大だが、重要なのは大きさではない。重要なのは、空がプレイヤーにとっての真実を変えることだ。穏やかな地平線はアップリンクを鋭くし、放射線を上げる。嵐は肉体を守り、carrierを雑音に沈める。月の通過は、プレイヤーが使うつもりだった扉から潮汐モデルを外す。\n\nこれによりフィクションは物理的であり続ける。救助は曖昧な筋書きの壁で止められているのではない。天候、電荷、リレー幾何、custody経路、質量配分、そして軌道上のcarrierが遭難者の望むたびに揚力機会を使えないという事実に止められている。Black Keelは一つの窓で証拠を受け取り、それでも身体回収は後の窓まで拒むことがある。その差がゲームだ。\n\nプレイヤーは酸素計を読むようにAegirを読むべきだ。空は、いつ送信し、いつ避難し、いつ流れを信じ、いつ澄んだ信号を疑い、いつ上昇計画が幾何を待つ約束にすぎないかを教える。",
-          "field_note": "Aegirが絵にしたいほど澄んで見えるなら、カウントを見るまでその下に立つな。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Aegir天空天气生存账册",
-          "scanner": "AEGIR窗口板 // 盐雾蒙住的玻璃，密封圈后仍有余温。晴空通道：信号噪声下降。带电粒子计数上升。月影仍在把潮汐模型拉离真实。漂亮的天空不是安全的天空。",
-          "terminal": "BLACK KEEL天空计时台 // 已确认局地天气裂口。上行可信度61%。辐射负载上升。月掩将在00:18:40后解除。升空质量估算暂扣，直到carrier几何、风暴带与隔离接收方一致。",
-          "audio": "在HECTON-8，天空也是一道压力门。它会打开，会撒谎，也会按时关上。",
-          "in_game_wiki": "Aegir不是画上去的背景。它是幸存者能看见、却不拥有任何部件的最大机器。气态巨星、磁层、月梯、风暴带、中继角度和Black Keel航线，一起压在同一片小海上，而你只是在努力让潜服保持密封。\n\n海面上的晴朗缺口会像慈悲，因为光回来了，carrier的声音也不再那么破碎。但这只是读数的一半。晴空也可能意味着带电粒子计数正在上升。风暴会遮住Aegir并毁掉数据包窗口，却也可能让身体避开最糟的噪声。月影会让潮汐卡片错上几分钟，而几分钟足够让浅水舱门、盐水层边缘或升空估算变成坏建议。\n\n旧站点能活下来，是因为它们把天空当仪表，而不是风景。星历板不计算实时天体力学。它们保存被编写、可重复、可信的窗口表：什么时候中继通道足够干净可以发送证据，什么时候潮汐模型不可信，什么时候Black Keel能回答，以及什么时候ascent stack只是错误天空下的一堆昂贵金属。如果Aegir看起来很美，先检查无线电。美通常意味着有什么东西正穿过你。",
-          "external_site": "Aegir让HECTON-8既可读又敌对：晴空、风暴、月影、辐射、潮汐误差和carrier几何共同决定幸存者何时能说话、移动或离开。",
-          "external_site_article": "HECTON-8把天空用作生存系统。Aegir足够巨大，能让地表充满戏剧性，但关键并不是大小。关键是天空会改变玩家面对的真实。平静的地平线可能让上行链路更清晰，也可能提高辐射。风暴可能保护血肉，却把carrier埋进静电。月亮穿行可能把潮汐模型从玩家计划使用的门口拉走。\n\n这让虚构保持物理性。救援不是被模糊的剧情墙挡住。挡住它的是天气、电荷、中继几何、监管路由、质量分配，以及轨道上的carrier不能在每个被困者想要时都花掉一次升力机会这一事实。Black Keel可能在一个窗口接收证据，却仍拒绝身体回收直到之后的窗口。这个差别就是游戏。\n\n玩家应该像读氧气一样读Aegir。天空会告诉你何时传输、何时躲避、何时相信水流、何时怀疑清晰信号，以及何时升空计划只是一个等待几何条件的承诺。",
-          "field_note": "如果Aegir干净得像能画下来，先读计数器，再决定要不要站在下面。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre météo du ciel d'Aegir",
-          "scanner": "PLAQUE DE FENETRE AEGIR // Verre voilé de sel, encore tiède derrière le joint. Couloir clair : bruit de signal en baisse. Compteur de particules chargées en hausse. L'ombre lunaire tire encore le modèle de marée hors du vrai. Un beau ciel n'est pas un ciel sûr.",
-          "terminal": "POSTE DE TIMING CELESTE BLACK KEEL // Percée météo locale confirmée. Confiance uplink 61 pour cent. Charge radiative en hausse. Occultation lunaire dégagée dans 00:18:40. Estimation de masse d'ascension retenue jusqu'à accord entre géométrie carrier, bande d'orage et récepteur de quarantaine.",
-          "audio": "Sur HECTON-8, le ciel est une autre porte de pression. Il s'ouvre, il ment, et il se ferme à l'heure.",
-          "in_game_wiki": "Aegir n'est pas un décor peint. C'est la plus grande machine que le survivant puisse voir sans en posséder la moindre pièce. La géante gazeuse, sa magnétosphère, l'échelle des lunes, les bandes d'orage, les angles de relais et le trafic de Black Keel appuient tous sur le même petit océan où vous essayez de garder une combinaison étanche.\n\nUne trouée claire au-dessus de l'eau peut ressembler à une grâce parce que la lumière revient et que la voix du carrier paraît moins brisée. Ce n'est que la moitié de la lecture. Un ciel clair peut aussi signifier que le compteur de particules chargées grimpe. Un orage peut cacher Aegir et tuer une fenêtre de packet tout en donnant au corps un peu d'abri contre le pire bruit. Une ombre lunaire peut faire mentir une carte de marée de quelques minutes, et quelques minutes suffisent à transformer une écoutille peu profonde, une lèvre de saumure ou une estimation d'ascension en mauvais conseil.\n\nLes vieilles stations survivent parce qu'elles traitent le ciel comme une jauge, pas comme du paysage. Leurs plaques d'éphémérides ne résolvent pas une mécanique céleste vivante. Elles conservent des tables de fenêtres écrites, répétables et crédibles : quand une voie de relais est assez propre pour envoyer des preuves, quand le modèle de marée est suspect, quand Black Keel peut répondre, et quand un ascent stack n'est que du métal coûteux sous le mauvais ciel. Si Aegir est beau, vérifiez la radio. La beauté signifie souvent que quelque chose vous traverse.",
-          "external_site": "Aegir rend HECTON-8 lisible et hostile à la fois : ciel clair, orages, ombres lunaires, radiation, erreur de marée et géométrie carrier décident quand le survivant peut parler, bouger ou partir.",
-          "external_site_article": "HECTON-8 utilise son ciel comme système de survie. Aegir est assez immense pour donner du drame à la surface, mais le fait important n'est pas sa taille. Le fait important est que le ciel change ce qui est vrai pour le joueur. Un horizon calme peut affiner l'uplink et augmenter la radiation. Un orage peut protéger la chair et noyer le carrier dans la statique. Un passage de lune peut éloigner le modèle de marée de la porte que le joueur comptait utiliser.\n\nCela garde la fiction physique. Le sauvetage n'est pas bloqué par un mur narratif vague. Il est bloqué par la météo, la charge, la géométrie de relais, le routage de custody, l'allocation de masse et le fait qu'un carrier en orbite ne peut pas dépenser une opportunité de levage chaque fois qu'une personne coincée le veut. Black Keel peut accepter une preuve pendant une fenêtre et refuser quand même la récupération du corps jusqu'à une autre. Cette différence est le jeu.\n\nLe joueur doit apprendre à lire Aegir comme il lit l'oxygène. Le ciel dit quand transmettre, quand s'abriter, quand faire confiance à un courant, quand se méfier d'un signal propre, et quand un plan d'ascension n'est qu'une promesse qui attend la géométrie.",
-          "field_note": "Si Aegir est assez net pour être peint, ne restez pas dessous avant d'avoir lu le compteur."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro meteorológico del cielo de Aegir",
-          "scanner": "PLACA DE VENTANA AEGIR // Cristal empañado por sal, aún tibio tras la junta. Franja clara: ruido de señal bajando. Conteo de partículas cargadas subiendo. La sombra lunar todavía arrastra el modelo de marea fuera de la verdad. Un cielo bonito no es un cielo seguro.",
-          "terminal": "MESA DE TIEMPO CELESTE BLACK KEEL // Apertura meteorológica local confirmada. Confianza uplink 61 por ciento. Carga de radiación en ascenso. Ocultación lunar despeja en 00:18:40. Estimación de masa de ascenso retenida hasta que geometría carrier, banda de tormenta y receptor de cuarentena coincidan.",
-          "audio": "En HECTON-8, el cielo es otra puerta de presión. Se abre, miente y se cierra a horario.",
-          "in_game_wiki": "Aegir no es un fondo pintado. Es la máquina más grande que el superviviente puede ver sin poseer ninguna de sus piezas. El gigante gaseoso, su magnetosfera, la escalera de lunas, las bandas de tormenta, los ángulos de relevo y el tráfico de Black Keel presionan el mismo océano pequeño donde intentas mantener sellado el traje.\n\nUn claro sobre el agua puede parecer misericordia porque vuelve la luz y el carrier suena menos roto. Es solo media lectura. Un cielo despejado también puede significar que el conteo de partículas cargadas sube. Una tormenta puede ocultar Aegir y matar una ventana de packet mientras da al cuerpo algo de refugio contra el peor ruido. Una sombra lunar puede hacer mentir la carta de mareas por unos minutos, y unos minutos bastan para convertir una escotilla somera, un borde de salmuera o una estimación de ascenso en mal consejo.\n\nLas estaciones viejas sobreviven tratando el cielo como un medidor, no como paisaje. Sus placas de efemérides no resuelven mecánica celeste en vivo. Guardan tablas de ventanas escritas, repetibles y creíbles: cuándo un carril de relevo está bastante limpio para enviar evidencia, cuándo el modelo de marea es sospechoso, cuándo Black Keel puede responder y cuándo un ascent stack es solo metal caro bajo el cielo equivocado. Si Aegir se ve hermoso, revisa la radio. La belleza suele significar que algo se mueve a través de ti.",
-          "external_site": "Aegir hace que HECTON-8 sea legible y hostil a la vez: cielo claro, tormentas, sombras lunares, radiación, error de marea y geometría carrier deciden cuándo el superviviente puede hablar, moverse o irse.",
-          "external_site_article": "HECTON-8 usa su cielo como sistema de supervivencia. Aegir es lo bastante enorme para dar dramatismo a la superficie, pero el hecho importante no es el tamaño. El hecho importante es que el cielo cambia lo que es cierto para el jugador. Un horizonte tranquilo puede afilar el uplink y subir la radiación. Una tormenta puede proteger la carne y enterrar al carrier en estática. Un cruce lunar puede alejar el modelo de marea de la puerta que el jugador pensaba usar.\n\nAsí la ficción sigue siendo física. El rescate no está bloqueado por una pared argumental vaga. Lo bloquean el clima, la carga, la geometría de relevo, el ruteo de custody, la asignación de masa y el hecho de que un carrier en órbita no puede gastar una oportunidad de elevación cada vez que una persona varada la desea. Black Keel puede aceptar evidencia en una ventana y aun así negar recuperación corporal hasta otra posterior. Esa diferencia es el juego.\n\nEl jugador debe aprender a leer Aegir como lee el oxígeno. El cielo dice cuándo transmitir, cuándo cubrirse, cuándo confiar en una corriente, cuándo desconfiar de una señal limpia y cuándo un plan de ascenso es solo una promesa esperando geometría.",
-          "field_note": "Si Aegir parece lo bastante limpio para pintarlo, no te quedes debajo hasta leer el contador."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Aegir-Himmelswetter-Ledger",
-          "scanner": "AEGIR-FENSTERPLATTE // Salzvernebeltes Glas, hinter der Dichtung noch warm. Klarer Korridor: Signalrauschen sinkt. Geladene Teilchen steigen. Mondschatten zieht das Gezeitenmodell noch von der Wahrheit weg. Schöner Himmel ist kein sicherer Himmel.",
-          "terminal": "BLACK KEEL HIMMELSTAKT-DESK // Lokaler Wetterbruch bestätigt. Uplink-Vertrauen 61 Prozent. Strahlungslast steigt. Mondbedeckung endet in 00:18:40. Aufstiegsmassenschätzung zurückgehalten, bis carrier-Geometrie, Sturmstreifen und Quarantäneempfänger übereinstimmen.",
-          "audio": "Auf HECTON-8 ist der Himmel eine weitere Drucktür. Er öffnet sich, lügt und schließt nach Plan.",
-          "in_game_wiki": "Aegir ist kein gemalter Hintergrund. Es ist die größte Maschine, die der Überlebende sehen kann, ohne irgendein Teil davon zu besitzen. Gasriese, Magnetosphäre, Mondleiter, Sturmstreifen, Relaiswinkel und Black-Keel-Verkehr drücken alle auf denselben kleinen Ozean, in dem du versuchst, einen Anzug dicht zu halten.\n\nEin klarer Bruch über dem Wasser kann wie Gnade wirken, weil Licht zurückkehrt und der carrier weniger kaputt klingt. Das ist nur die halbe Lesung. Klarer Himmel kann auch bedeuten, dass die geladenen Teilchen steigen. Ein Sturm kann Aegir verbergen und ein packet window töten, während er dem Körper etwas Schutz vor dem schlimmsten Rauschen gibt. Ein Mondschatten kann eine Gezeitenkarte um wenige Minuten lügen lassen, und wenige Minuten reichen, um eine seichte Luke, eine Solekante oder eine Aufstiegsschätzung in schlechten Rat zu verwandeln.\n\nAlte Stationen überleben, weil sie den Himmel wie ein Messgerät behandeln, nicht wie Kulisse. Ihre Ephemeridenplatten lösen keine Live-Himmelsmechanik. Sie halten geschriebene, wiederholbare, glaubhafte Fenstertabellen: wann ein Relaiskorridor sauber genug für Beweise ist, wann das Gezeitenmodell verdächtig ist, wann Black Keel antworten kann und wann ein ascent stack nur teures Metall unter dem falschen Himmel ist. Wenn Aegir schön aussieht, prüfe das Funkgerät. Schönheit heißt meist, dass etwas durch dich hindurchzieht.",
-          "external_site": "Aegir macht HECTON-8 zugleich lesbar und feindlich: klarer Himmel, Stürme, Mondschatten, Strahlung, Gezeitenfehler und carrier-Geometrie entscheiden, wann der Überlebende sprechen, sich bewegen oder gehen kann.",
-          "external_site_article": "HECTON-8 benutzt seinen Himmel als Überlebenssystem. Aegir ist groß genug, um der Oberfläche Dramatik zu geben, aber die wichtige Tatsache ist nicht Größe. Wichtig ist, dass der Himmel verändert, was für den Spieler wahr ist. Ein ruhiger Horizont kann den uplink schärfen und Strahlung erhöhen. Ein Sturm kann Fleisch schützen und den carrier in Rauschen begraben. Ein Monddurchgang kann das Gezeitenmodell von der Tür wegziehen, die der Spieler nutzen wollte.\n\nSo bleibt die Fiktion physisch. Rettung wird nicht von einer vagen Plotwand blockiert. Sie wird von Wetter, Ladung, Relaisgeometrie, custody-Routing, Massenzuteilung und der Tatsache blockiert, dass ein carrier im Orbit keine Hebegelegenheit ausgibt, nur weil eine gestrandete Person sie will. Black Keel kann in einem Fenster Beweise annehmen und Körperbergung trotzdem bis zu einem späteren verweigern. Dieser Unterschied ist das Spiel.\n\nDer Spieler soll lernen, Aegir wie Sauerstoff zu lesen. Der Himmel sagt, wann man sendet, wann man Schutz sucht, wann man einer Strömung traut, wann man einem sauberen Signal misstraut und wann ein Aufstiegsplan nur ein Versprechen ist, das auf Geometrie wartet.",
-          "field_note": "Wenn Aegir sauber genug aussieht, um es zu malen, bleib nicht darunter, bevor du den Zähler gelesen hast."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr pogody nieba Aegir",
-          "scanner": "PŁYTA OKNA AEGIR // Szkło zamglone solą, za uszczelką wciąż ciepłe. Czysty pas: szum sygnału spada. Licznik cząstek naładowanych rośnie. Cień księżyca nadal ściąga model pływów z prawdy. Ładne niebo nie jest bezpiecznym niebem.",
-          "terminal": "PULPIT TAKTOWANIA NIEBA BLACK KEEL // Lokalna przerwa pogodowa potwierdzona. Pewność uplink 61 procent. Obciążenie radiacyjne rośnie. Okultacja księżyca ustąpi za 00:18:40. Szacunek masy wznoszenia wstrzymany do zgodności geometrii carrier, pasa burzy i odbiornika kwarantanny.",
-          "audio": "Na HECTON-8 niebo jest kolejnymi drzwiami ciśnieniowymi. Otwiera się, kłamie i zamyka zgodnie z planem.",
-          "in_game_wiki": "Aegir nie jest namalowanym tłem. To największa maszyna, którą ocalały może zobaczyć, nie posiadając żadnej jej części. Gazowy olbrzym, jego magnetosfera, drabina księżyców, pasy burzowe, kąty przekaźników i ruch Black Keel naciskają na ten sam mały ocean, w którym próbujesz utrzymać skafander szczelny.\n\nPrześwit nad wodą może wyglądać jak łaska, bo wraca światło, a carrier brzmi mniej uszkodzony. To tylko połowa odczytu. Czyste niebo może także znaczyć, że licznik cząstek naładowanych rośnie. Burza może ukryć Aegir i zabić okno packet, jednocześnie dając ciału trochę osłony przed najgorszym szumem. Cień księżyca może sprawić, że karta pływów skłamie o kilka minut, a kilka minut wystarczy, by płytki właz, krawędź solanki lub szacunek wznoszenia stały się złą radą.\n\nStare stacje przetrwały, bo traktują niebo jak wskaźnik, nie jak krajobraz. Ich płyty efemeryd nie rozwiązują żywej mechaniki nieba. Przechowują zapisane, powtarzalne, wiarygodne tabele okien: kiedy pas przekaźnika jest dość czysty, by wysłać dowód, kiedy model pływów jest podejrzany, kiedy Black Keel może odpowiedzieć i kiedy ascent stack jest tylko drogim metalem pod złym niebem. Jeśli Aegir wygląda pięknie, sprawdź radio. Piękno zwykle znaczy, że coś przechodzi przez ciebie.",
-          "external_site": "Aegir czyni HECTON-8 czytelnym i wrogim naraz: czyste niebo, burze, cienie księżyców, promieniowanie, błąd pływów i geometria carrier decydują, kiedy ocalały może mówić, poruszać się lub odejść.",
-          "external_site_article": "HECTON-8 używa nieba jako systemu przetrwania. Aegir jest dość ogromny, by dać powierzchni dramaturgię, ale najważniejszy nie jest rozmiar. Najważniejsze jest to, że niebo zmienia prawdę gracza. Spokojny horyzont może wyostrzyć uplink i podnieść promieniowanie. Burza może chronić ciało i utopić carrier w trzaskach. Przejście księżyca może odciągnąć model pływów od drzwi, których gracz chciał użyć.\n\nDzięki temu fikcja pozostaje fizyczna. Ratunku nie blokuje mglista ściana fabuły. Blokują go pogoda, ładunek, geometria przekaźnika, trasa custody, alokacja masy i fakt, że carrier na orbicie nie może wydawać okna podnoszenia za każdym razem, gdy uwięziony człowiek go chce. Black Keel może przyjąć dowód w jednym oknie i nadal odmówić odzyskania ciała do późniejszego. Ta różnica jest grą.\n\nGracz powinien nauczyć się czytać Aegir tak jak tlen. Niebo mówi, kiedy nadawać, kiedy się schronić, kiedy ufać prądowi, kiedy nie ufać czystemu sygnałowi i kiedy plan wznoszenia jest tylko obietnicą czekającą na geometrię.",
-          "field_note": "Jeśli Aegir wygląda tak czysto, że chcesz go malować, nie stój pod nim, dopóki nie odczytasz licznika."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал небесної погоди Aegir",
-          "scanner": "ПЛИТА ВІКНА AEGIR // Скло в соляному тумані, за ущільнювачем ще тепле. Чиста смуга: шум сигналу падає. Лічильник заряджених частинок зростає. Тінь місяця все ще відтягує модель припливу від правди. Гарне небо не означає безпечне небо.",
-          "terminal": "СТІЛ НЕБЕСНОГО ТАЙМІНГУ BLACK KEEL // Локальний розрив погоди підтверджено. Довіра uplink 61 відсоток. Радіаційне навантаження зростає. Місячне покриття очиститься через 00:18:40. Оцінку маси підйому утримано, доки геометрія carrier, штормова смуга і карантинний приймач не зійдуться.",
-          "audio": "На HECTON-8 небо це ще одні напірні двері. Воно відкривається, бреше і закривається за розкладом.",
-          "in_game_wiki": "Aegir не намальоване тло. Це найбільша машина, яку виживший може бачити, не володіючи жодною її частиною. Газовий гігант, його магнітосфера, драбина місяців, штормові смуги, кути ретрансляції і трафік Black Keel тиснуть на той самий маленький океан, де ти намагаєшся втримати скафандр герметичним.\n\nЯсний розрив над водою може здаватися милістю, бо світло повертається, а carrier звучить менш зламано. Це лише половина читання. Чисте небо може також означати, що лічильник заряджених частинок зростає. Шторм може сховати Aegir і вбити packet-вікно, але дати тілу трохи захисту від найгіршого шуму. Тінь місяця може змусити припливну карту збрехати на кілька хвилин, а кількох хвилин досить, щоб мілководний люк, край розсолу або оцінка підйому стали поганою порадою.\n\nСтарі станції виживають, бо ставляться до неба як до приладу, а не як до краєвиду. Їхні ефемеридні плити не розв'язують живу небесну механіку. Вони зберігають задані, повторювані, правдоподібні таблиці вікон: коли релейна смуга досить чиста для доказів, коли моделі припливу не можна вірити, коли Black Keel може відповісти, і коли ascent stack це лише дороге залізо під неправильним небом. Якщо Aegir гарний, перевір радіо. Краса зазвичай означає, що щось проходить крізь тебе.",
-          "external_site": "Aegir робить HECTON-8 одночасно читабельним і ворожим: ясне небо, шторми, місячні тіні, радіація, помилка припливу і геометрія carrier вирішують, коли виживший може говорити, рухатися або піти.",
-          "external_site_article": "HECTON-8 використовує небо як систему виживання. Aegir достатньо величезний, щоб дати поверхні драму, але важливий не розмір. Важливо те, що небо змінює правду для гравця. Спокійний горизонт може покращити uplink і підняти радіацію. Шторм може захистити плоть і втопити carrier у статичному шумі. Прохід місяця може відвести модель припливу від дверей, якими гравець збирався скористатися.\n\nТак фантастика лишається фізичною. Порятунок блокує не туманна сюжетна стіна. Його блокують погода, заряд, геометрія реле, маршрутизація custody, розподіл маси і факт, що carrier на орбіті не може витрачати підйомну можливість щоразу, коли застрягла людина цього хоче. Black Keel може прийняти доказ в одне вікно і все одно відмовити в поверненні тіла до пізнішого. Ця різниця і є грою.\n\nГравець має навчитися читати Aegir так само, як кисень. Небо каже, коли передавати, коли ховатися, коли довіряти течії, коли не довіряти чистому сигналу і коли план підйому лише обіцянка, що чекає геометрії.",
-          "field_note": "Якщо Aegir виглядає таким чистим, що його хочеться малювати, не стій під ним, доки не прочитаєш лічильник."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل طقس سماء Aegir",
-          "scanner": "لوحة نافذة AEGIR // زجاج مغشى بملح، وما زال دافئا خلف الختم. ممر صاف: ضجيج الإشارة يهبط. عداد الجسيمات المشحونة يرتفع. ظل القمر ما زال يسحب نموذج المد بعيدا عن الحقيقة. السماء الجميلة ليست سماء آمنة.",
-          "terminal": "مكتب توقيت السماء BLACK KEEL // تم تأكيد انقطاع طقس محلي. ثقة uplink 61 بالمئة. حمل الإشعاع يرتفع. الاحتجاب القمري ينقشع خلال 00:18:40. تقدير كتلة الصعود محجوز حتى تتفق هندسة carrier وحزام العاصفة ومستقبل الحجر.",
-          "audio": "على HECTON-8، السماء باب ضغط آخر. تفتح، وتكذب، وتغلق حسب الجدول.",
-          "in_game_wiki": "Aegir ليس خلفية مرسومة. إنه أكبر آلة يستطيع الناجي رؤيتها من دون أن يملك أي جزء منها. العملاق الغازي، وغلافه المغناطيسي، وسلسلة أقماره، وأحزمة العواصف، وزوايا الترحيل، وحركة Black Keel كلها تضغط على المحيط الصغير نفسه حيث تحاول إبقاء البدلة محكمة.\n\nقد تبدو الفجوة الصافية فوق الماء رحمة، لأن الضوء يعود وصوت carrier يبدو أقل تكسرا. هذا نصف القراءة فقط. السماء الصافية قد تعني أيضا أن عداد الجسيمات المشحونة يصعد. العاصفة قد تخفي Aegir وتقتل نافذة packet، لكنها تمنح الجسد بعض الحماية من أسوأ ضجيج. ظل القمر قد يجعل بطاقة المد تكذب بضع دقائق، وبضع دقائق تكفي لتحويل فتحة ضحلة أو حافة محلول ملحي أو تقدير صعود إلى نصيحة سيئة.\n\nتنجو المحطات القديمة لأنها تعامل السماء كمقياس لا كمنظر. ألواحها الفلكية لا تحل ميكانيكا سماوية حية. إنها تحفظ جداول نوافذ مكتوبة ومتكررة ومقنعة: متى يكون ممر الترحيل نظيفا بما يكفي لإرسال دليل، ومتى يكون نموذج المد مشبوها، ومتى يستطيع Black Keel أن يجيب، ومتى يكون ascent stack مجرد معدن غال تحت سماء خاطئة. إذا بدا Aegir جميلا، افحص الراديو. الجمال غالبا يعني أن شيئا يعبر من خلالك.",
-          "external_site": "يجعل Aegir عالم HECTON-8 قابلا للقراءة ومعاديا في الوقت نفسه: السماء الصافية، العواصف، ظلال الأقمار، الإشعاع، خطأ المد، وهندسة carrier تحدد متى يستطيع الناجي الكلام أو الحركة أو الرحيل.",
-          "external_site_article": "يستخدم HECTON-8 سماءه كنظام بقاء. Aegir ضخم بما يكفي ليمنح السطح رهبة، لكن الحقيقة المهمة ليست الحجم. الحقيقة المهمة أن السماء تغير ما يكون صحيحا للاعب. أفق هادئ قد يحسن uplink ويرفع الإشعاع. عاصفة قد تحمي اللحم وتدفن carrier في التشويش. عبور قمر قد يسحب نموذج المد بعيدا عن الباب الذي خطط اللاعب لاستخدامه.\n\nبهذا تبقى الحكاية مادية. الإنقاذ لا يوقفه جدار حبكة غامض. يوقفه الطقس، والشحنة، وهندسة الترحيل، ومسار custody، وتوزيع الكتلة، وحقيقة أن carrier في المدار لا يستطيع إنفاق فرصة رفع كلما أراد شخص عالق ذلك. قد يقبل Black Keel دليلا في نافذة ثم يرفض استرجاع الجسد حتى نافذة لاحقة. هذا الفرق هو اللعبة.\n\nعلى اللاعب أن يتعلم قراءة Aegir كما يقرأ الأكسجين. السماء تخبره متى يرسل، ومتى يختبئ، ومتى يثق بتيار، ومتى يشك في إشارة نظيفة، ومتى تكون خطة الصعود مجرد وعد ينتظر الهندسة.",
-          "field_note": "إذا بدا Aegir صافيا بما يكفي للرسم، فلا تقف تحته قبل أن تقرأ العداد."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Buku Cuaca Langit Aegir",
-          "scanner": "PELAT JENDELA AEGIR // Kaca berkabut garam, masih hangat di balik segel. Jalur cerah: derau sinyal turun. Hitungan partikel bermuatan naik. Bayangan bulan masih menarik model pasang dari kebenaran. Langit cantik bukan langit aman.",
-          "terminal": "MEJA WAKTU LANGIT BLACK KEEL // Celah cuaca lokal terkonfirmasi. Kepercayaan uplink 61 persen. Beban radiasi naik. Okultasi bulan bersih dalam 00:18:40. Estimasi massa naik ditahan sampai geometri carrier, pita badai, dan penerima karantina selaras.",
-          "audio": "Di HECTON-8, langit adalah pintu tekanan lain. Ia terbuka, berbohong, lalu menutup sesuai jadwal.",
-          "in_game_wiki": "Aegir bukan latar yang dilukis. Ia mesin terbesar yang bisa dilihat penyintas tanpa memiliki satu pun bagiannya. Raksasa gas, magnetosfernya, tangga bulan, pita badai, sudut relay, dan lalu lintas Black Keel semuanya menekan samudra kecil yang sama tempat kamu mencoba menjaga setelan tetap tersegel.\n\nCelah cerah di atas air bisa terasa seperti belas kasihan karena cahaya kembali dan carrier terdengar tidak terlalu rusak. Itu baru separuh bacaan. Langit cerah juga bisa berarti hitungan partikel bermuatan naik. Badai bisa menyembunyikan Aegir dan membunuh jendela packet sambil memberi tubuh sedikit perlindungan dari derau terburuk. Bayangan bulan bisa membuat kartu pasang berbohong beberapa menit, dan beberapa menit cukup untuk mengubah palka dangkal, bibir brine, atau estimasi naik menjadi nasihat buruk.\n\nStasiun lama bertahan karena memperlakukan langit seperti meter, bukan pemandangan. Pelat efemerisnya tidak menyelesaikan mekanika langit hidup. Ia menyimpan tabel jendela yang ditulis, berulang, dan masuk akal: kapan jalur relay cukup bersih untuk mengirim bukti, kapan model pasang mencurigakan, kapan Black Keel bisa menjawab, dan kapan ascent stack hanyalah logam mahal di bawah langit yang salah. Jika Aegir tampak indah, cek radio. Keindahan biasanya berarti sesuatu bergerak menembusmu.",
-          "external_site": "Aegir membuat HECTON-8 terbaca sekaligus bermusuhan: langit cerah, badai, bayangan bulan, radiasi, galat pasang, dan geometri carrier menentukan kapan penyintas bisa bicara, bergerak, atau pergi.",
-          "external_site_article": "HECTON-8 memakai langitnya sebagai sistem bertahan hidup. Aegir cukup besar untuk memberi drama pada permukaan, tetapi fakta pentingnya bukan ukuran. Fakta pentingnya adalah langit mengubah apa yang benar bagi pemain. Horison tenang bisa menajamkan uplink dan menaikkan radiasi. Badai bisa melindungi daging dan mengubur carrier dalam statik. Lintasan bulan bisa menarik model pasang menjauh dari pintu yang hendak dipakai pemain.\n\nIni menjaga fiksi tetap fisik. Penyelamatan tidak diblokir oleh dinding plot yang kabur. Ia diblokir oleh cuaca, muatan, geometri relay, rute custody, alokasi massa, dan kenyataan bahwa carrier di orbit tidak bisa membakar peluang angkat setiap kali orang yang terdampar menginginkannya. Black Keel bisa menerima bukti dalam satu jendela dan tetap menolak pemulihan tubuh sampai jendela lain. Perbedaan itu adalah permainan.\n\nPemain harus belajar membaca Aegir seperti membaca oksigen. Langit memberi tahu kapan mengirim, kapan berlindung, kapan mempercayai arus, kapan mencurigai sinyal bersih, dan kapan rencana naik hanya janji yang menunggu geometri.",
-          "field_note": "Jika Aegir tampak cukup bersih untuk dilukis, jangan berdiri di bawahnya sebelum membaca hitungan."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Aegir 하늘 기상 생존 장부",
-          "scanner": "AEGIR 창 플레이트 // 소금 안개 낀 유리, 실 뒤쪽은 아직 따뜻하다. 맑은 통로: 신호 잡음 하락. 대전 입자 계수 상승. 달 그림자가 조석 모델을 아직 진실에서 끌어내고 있다. 예쁜 하늘은 안전한 하늘이 아니다.",
-          "terminal": "BLACK KEEL 하늘 타이밍 데스크 // 국지적 날씨 틈 확인. uplink 신뢰도 61퍼센트. 방사선 부하 상승. 달 엄폐 해제까지 00:18:40. carrier 기하, 폭풍대, 격리 수신자가 맞기 전까지 상승 질량 추정 보류.",
-          "audio": "HECTON-8에서 하늘은 또 하나의 압력문이다. 열리고, 거짓말하고, 시간표대로 닫힌다.",
-          "in_game_wiki": "Aegir는 칠해진 배경이 아니다. 생존자가 어떤 부품도 소유하지 않은 채 볼 수 있는 가장 큰 기계다. 가스 거성, 자기권, 달 사다리, 폭풍대, 릴레이 각도, Black Keel 교통이 모두 같은 작은 바다를 누른다. 그 바다에서 너는 슈트를 밀봉한 채 버티려 한다.\n\n물 위의 맑은 틈은 자비처럼 느껴질 수 있다. 빛이 돌아오고 carrier의 목소리가 덜 망가져 들리기 때문이다. 하지만 그것은 절반의 판독일 뿐이다. 맑은 하늘은 대전 입자 계수가 오른다는 뜻일 수도 있다. 폭풍은 Aegir를 숨기고 packet 창을 죽이는 대신 몸을 최악의 잡음에서 조금 가려 준다. 달 그림자는 조석 카드를 몇 분 동안 거짓말하게 만들 수 있고, 그 몇 분이면 얕은 해치, 염수층 가장자리, 상승 추정이 나쁜 조언이 된다.\n\n오래된 정거장은 하늘을 풍경이 아니라 계기로 취급하기 때문에 살아남는다. 그들의 천문표 플레이트는 실시간 천체역학을 풀지 않는다. 증거를 보낼 만큼 릴레이 통로가 깨끗한 때, 조석 모델이 의심스러운 때, Black Keel이 응답할 수 있는 때, ascent stack이 잘못된 하늘 아래 비싼 금속일 뿐인 때를 기록한 반복 가능하고 믿을 만한 창 표를 보관한다. Aegir가 아름다워 보이면 무전기를 확인하라. 아름다움은 보통 무언가가 너를 통과하고 있다는 뜻이다.",
-          "external_site": "Aegir는 HECTON-8을 읽을 수 있으면서도 적대적으로 만든다. 맑은 하늘, 폭풍, 달 그림자, 방사선, 조석 오차, carrier 기하가 생존자가 말하고 움직이고 떠날 수 있는 때를 결정한다.",
-          "external_site_article": "HECTON-8은 하늘을 생존 시스템으로 쓴다. Aegir는 표면에 드라마를 줄 만큼 거대하지만 중요한 사실은 크기가 아니다. 중요한 사실은 하늘이 플레이어에게 참인 것을 바꾼다는 점이다. 고요한 지평선은 uplink를 선명하게 하고 방사선을 올릴 수 있다. 폭풍은 살을 보호하고 carrier를 잡음에 묻을 수 있다. 달의 통과는 플레이어가 쓰려던 문에서 조석 모델을 떼어낼 수 있다.\n\n그래서 허구는 물리적으로 남는다. 구조는 흐릿한 플롯 벽에 막히지 않는다. 날씨, 전하, 릴레이 기하, custody 라우팅, 질량 배정, 그리고 궤도의 carrier가 고립된 사람이 원할 때마다 리프트 기회를 쓸 수 없다는 사실에 막힌다. Black Keel은 한 창에서 증거를 받아도 몸 회수는 나중 창까지 거부할 수 있다. 그 차이가 게임이다.\n\n플레이어는 산소를 읽듯 Aegir를 읽어야 한다. 하늘은 언제 전송하고, 언제 숨고, 언제 해류를 믿고, 언제 깨끗한 신호를 의심하고, 언제 상승 계획이 기하를 기다리는 약속에 불과한지 말해 준다.",
-          "field_note": "Aegir가 그림으로 남기고 싶을 만큼 깨끗해 보이면, 계수를 읽기 전에는 그 아래 서지 마라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן מזג שמים של Aegir",
-          "scanner": "לוח חלון AEGIR // זכוכית מעורפלת במלח, עדיין חמה מאחורי האטם. נתיב צלול: רעש אות יורד. ספירת חלקיקים טעונים עולה. צל הירח עדיין מושך את מודל הגאות מן האמת. שמים יפים אינם שמים בטוחים.",
-          "terminal": "דלפק תזמון שמים BLACK KEEL // פריצת מזג אוויר מקומית אושרה. אמון uplink 61 אחוז. עומס קרינה עולה. הסתרת ירח תתנקה בעוד 00:18:40. הערכת מסת עלייה מוחזקת עד שהנדסת carrier, רצועת סערה ומקלט הסגר יתיישרו.",
-          "audio": "ב-HECTON-8, השמים הם עוד דלת לחץ. הם נפתחים, משקרים, ונסגרים לפי לוח זמנים.",
-          "in_game_wiki": "Aegir אינו רקע מצויר. הוא המכונה הגדולה ביותר שהשורד יכול לראות בלי להיות בעלים של אף חלק ממנה. ענק הגז, המגנטוספירה שלו, סולם הירחים, רצועות הסערה, זוויות הממסר ותנועת Black Keel לוחצים כולם על אותו אוקיינוס קטן שבו אתה מנסה לשמור חליפה אטומה.\n\nפתח בהיר מעל המים יכול להרגיש כמו רחמים, כי האור חוזר וה-carrier נשמע פחות שבור. זו רק חצי קריאה. שמים צלולים יכולים גם לומר שספירת החלקיקים הטעונים עולה. סערה יכולה להסתיר את Aegir ולהרוג חלון packet, ובאותו זמן לתת לגוף מעט מחסה מן הרעש הגרוע ביותר. צל ירח יכול לגרום לכרטיס גאות לשקר בכמה דקות, וכמה דקות מספיקות כדי להפוך פתח רדוד, שפת תמיסת מלח או הערכת עלייה לעצה רעה.\n\nתחנות ישנות שורדות משום שהן מתייחסות לשמים כאל מד, לא כאל נוף. לוחות האפמריס שלהן אינם פותרים מכניקה שמימית חיה. הם מחזיקים טבלאות חלון כתובות, חוזרות ואמינות: מתי נתיב ממסר נקי מספיק לשליחת ראיות, מתי מודל הגאות חשוד, מתי Black Keel יכול לענות, ומתי ascent stack הוא רק מתכת יקרה תחת שמים שגויים. אם Aegir נראה יפה, בדוק את הרדיו. יופי בדרך כלל אומר שמשהו עובר דרכך.",
-          "external_site": "Aegir הופך את HECTON-8 לקריא ועוין באותו זמן: שמים צלולים, סערות, צללי ירח, קרינה, שגיאת גאות והנדסת carrier קובעים מתי השורד יכול לדבר, לזוז או לעזוב.",
-          "external_site_article": "HECTON-8 משתמש בשמים שלו כמערכת הישרדות. Aegir עצום מספיק כדי לתת דרמה לפני השטח, אבל העובדה החשובה אינה הגודל. העובדה החשובה היא שהשמים משנים מה נכון לשחקן. אופק רגוע יכול לחדד uplink ולהעלות קרינה. סערה יכולה להגן על בשר ולקבור את carrier ברעש סטטי. מעבר ירח יכול למשוך את מודל הגאות מן הדלת שהשחקן תכנן להשתמש בה.\n\nכך הבדיון נשאר פיזי. חילוץ אינו חסום בקיר עלילתי מעורפל. הוא חסום במזג אוויר, מטען, הנדסת ממסר, ניתוב custody, הקצאת מסה, והעובדה ש-carrier במסלול אינו יכול לבזבז הזדמנות הרמה בכל פעם שאדם תקוע רוצה אותה. Black Keel יכול לקבל ראיה בחלון אחד ועדיין לסרב להשבת גוף עד חלון מאוחר יותר. ההבדל הזה הוא המשחק.\n\nהשחקן צריך ללמוד לקרוא את Aegir כפי שהוא קורא חמצן. השמים אומרים מתי לשדר, מתי למצוא מחסה, מתי לסמוך על זרם, מתי לחשוד באות נקי, ומתי תוכנית עלייה היא רק הבטחה שמחכה לגאומטריה.",
-          "field_note": "אם Aegir נראה נקי מספיק לציור, אל תעמוד תחתיו לפני שקראת את המונה."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Clima do Céu de Aegir",
-          "scanner": "PLACA DE JANELA AEGIR // Vidro enevoado de sal, ainda quente atrás da vedação. Faixa clara: ruído de sinal caindo. Contagem de partículas carregadas subindo. Sombra lunar ainda puxando o modelo de maré para fora da verdade. Céu bonito não é céu seguro.",
-          "terminal": "MESA DE TEMPO CELESTE BLACK KEEL // Abertura climática local confirmada. Confiança uplink 61 por cento. Carga de radiação subindo. Ocultação lunar limpa em 00:18:40. Estimativa de massa de ascensão retida até geometria carrier, faixa de tempestade e receptor de quarentena concordarem.",
-          "audio": "Em HECTON-8, o céu é outra porta de pressão. Ele abre, mente e fecha no horário.",
-          "in_game_wiki": "Aegir não é um fundo pintado. É a maior máquina que o sobrevivente pode ver sem possuir peça alguma dela. O gigante gasoso, sua magnetosfera, a escada de luas, faixas de tempestade, ângulos de relay e tráfego da Black Keel pressionam o mesmo pequeno oceano onde você tenta manter o traje selado.\n\nUma abertura clara sobre a água pode parecer misericórdia porque a luz volta e o carrier soa menos quebrado. Isso é só metade da leitura. Céu limpo também pode significar que a contagem de partículas carregadas está subindo. Uma tempestade pode esconder Aegir e matar uma janela de packet enquanto dá ao corpo um pouco de abrigo contra o pior ruído. Uma sombra lunar pode fazer uma carta de maré mentir por alguns minutos, e alguns minutos bastam para transformar uma escotilha rasa, uma borda de salmoura ou uma estimativa de ascensão em mau conselho.\n\nEstações antigas sobrevivem tratando o céu como medidor, não como paisagem. Suas placas de efemérides não resolvem mecânica celeste ao vivo. Elas guardam tabelas de janela escritas, repetíveis e críveis: quando uma faixa de relay está limpa o bastante para enviar prova, quando o modelo de maré é suspeito, quando Black Keel pode responder e quando um ascent stack é só metal caro sob o céu errado. Se Aegir parece bonito, confira o rádio. Beleza normalmente significa que algo está passando por você.",
-          "external_site": "Aegir torna HECTON-8 legível e hostil ao mesmo tempo: céu claro, tempestades, sombras lunares, radiação, erro de maré e geometria carrier decidem quando o sobrevivente pode falar, mover ou partir.",
-          "external_site_article": "HECTON-8 usa seu céu como sistema de sobrevivência. Aegir é enorme o bastante para dar drama à superfície, mas o fato importante não é o tamanho. O fato importante é que o céu muda o que é verdadeiro para o jogador. Um horizonte calmo pode afiar o uplink e aumentar a radiação. Uma tempestade pode proteger carne e enterrar o carrier em estática. A passagem de uma lua pode puxar o modelo de maré para longe da porta que o jogador planejava usar.\n\nIsso mantém a ficção física. O resgate não é bloqueado por uma parede vaga de enredo. Ele é bloqueado por clima, carga, geometria de relay, roteamento de custody, alocação de massa e pelo fato de que um carrier em órbita não pode gastar uma oportunidade de lift sempre que uma pessoa presa deseja isso. Black Keel pode aceitar prova em uma janela e ainda negar recuperação corporal até outra posterior. Essa diferença é o jogo.\n\nO jogador deve aprender a ler Aegir como lê oxigênio. O céu diz quando transmitir, quando se abrigar, quando confiar numa corrente, quando desconfiar de um sinal limpo e quando um plano de ascensão é só uma promessa esperando geometria.",
-          "field_note": "Se Aegir parece limpo o bastante para pintar, não fique embaixo dele antes de ler o contador."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Aegir Hemelweerlboek",
-          "scanner": "AEGIR-VENSTERPLAAT // Zoutbeneveld glas, nog warm achter de afdichting. Heldere baan: signaalruis daalt. Geladen-deeltjesteller stijgt. Maanschaduw trekt het getijdenmodel nog van de waarheid weg. Mooie lucht is geen veilige lucht.",
-          "terminal": "BLACK KEEL HEMELTIMINGDESK // Lokale weerbreuk bevestigd. Uplinkvertrouwen 61 procent. Stralingslast stijgt. Maanoccultatie klaart op in 00:18:40. Ascent-massaschatting vastgehouden tot carrier-geometrie, stormband en quarantainereceiver overeenkomen.",
-          "audio": "Op HECTON-8 is de hemel nog een drukdeur. Hij opent, liegt en sluit op schema.",
-          "in_game_wiki": "Aegir is geen geschilderde achtergrond. Het is de grootste machine die de overlevende kan zien zonder er ook maar één onderdeel van te bezitten. De gasreus, zijn magnetosfeer, de maanladder, stormbanden, relaisstanden en Black Keel-verkeer drukken allemaal op dezelfde kleine oceaan waar jij probeert een pak dicht te houden.\n\nEen heldere breuk boven het water kan als genade voelen omdat licht terugkomt en de carrier minder kapot klinkt. Dat is maar de helft van de lezing. Heldere lucht kan ook betekenen dat de geladen-deeltjesteller stijgt. Een storm kan Aegir verbergen en een packetvenster doden, terwijl hij het lichaam wat beschutting geeft tegen de ergste ruis. Een maanschaduw kan een getijdenkaart een paar minuten laten liegen, en een paar minuten is genoeg om een ondiep luik, een pekelrand of een ascentschatting slecht advies te maken.\n\nOude stations overleven doordat ze de hemel als meter behandelen, niet als landschap. Hun efemerideplaten lossen geen levende hemelmechanica op. Ze bewaren geschreven, herhaalbare, geloofwaardige venstertabellen: wanneer een relaisbaan schoon genoeg is om bewijs te sturen, wanneer het getijdenmodel verdacht is, wanneer Black Keel kan antwoorden en wanneer een ascent stack alleen duur metaal is onder de verkeerde hemel. Als Aegir mooi lijkt, controleer de radio. Schoonheid betekent meestal dat iets door je heen beweegt.",
-          "external_site": "Aegir maakt HECTON-8 tegelijk leesbaar en vijandig: heldere lucht, stormen, maanschaduwen, straling, getijdenfout en carrier-geometrie bepalen wanneer de overlevende kan spreken, bewegen of vertrekken.",
-          "external_site_article": "HECTON-8 gebruikt zijn hemel als overlevingssysteem. Aegir is groot genoeg om het oppervlak drama te geven, maar de belangrijke waarheid is niet grootte. De belangrijke waarheid is dat de hemel verandert wat voor de speler waar is. Een rustige horizon kan de uplink scherper maken en straling verhogen. Een storm kan vlees beschermen en de carrier in statische ruis begraven. Een maandoorgang kan het getijdenmodel wegtrekken van de deur die de speler wilde gebruiken.\n\nZo blijft de fictie fysiek. Redding wordt niet tegengehouden door een vage plotmuur. Ze wordt tegengehouden door weer, lading, relaisgeometrie, custody-routing, massa-allocatie en het feit dat een carrier in een baan geen liftkans kan uitgeven telkens wanneer een gestrande persoon dat wil. Black Keel kan bewijs in één venster accepteren en lichaamsrecovery toch weigeren tot een later venster. Dat verschil is het spel.\n\nDe speler moet Aegir leren lezen zoals zuurstof. De hemel zegt wanneer te zenden, wanneer te schuilen, wanneer een stroming te vertrouwen, wanneer een schoon signaal te wantrouwen en wanneer een ascentplan alleen een belofte is die op geometrie wacht.",
-          "field_note": "Als Aegir schoon genoeg lijkt om te schilderen, ga er dan niet onder staan voordat je de teller hebt gelezen."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.aegir_sky_weather_survival_ledger",
+    "secondary": [
+     "unlock.first_clear_sky_radiation_conflict",
+     "unlock.first_moon_shadow_tide_error",
+     "unlock.first_black_keel_window_timing_conflict"
+    ],
+    "poi_tags": [
+     "poi.aegir_sky_window_plate",
+     "poi.radiation_count_strip",
+     "poi.moon_shadow_tide_card",
+     "poi.black_keel_window_timer"
+    ],
+    "biome_tags": [
+     "biome.surface_weather",
+     "biome.storm_shelf",
+     "biome.carrier_link",
+     "biome.shallow_reef"
+    ],
+    "first_20_boundary": "Turns the first repaired uplink, first clear-sky break, and first moon-shadow warning into readable survival timing: sky state gates signal, tide/current trust, radiation exposure, and later ascent planning."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Aegir Sky Window Scanner",
+     "terminal": "Black Keel Window Timing Desk",
+     "audio": "Old Marauder Sky Rule",
+     "in_game_wiki": "PDA Aegir Weather Primer",
+     "external_site": "Public Site Aegir Sky Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_clear_sky_window_or_signal_weather_conflict",
+    "truth_payload": "Aegir sky is a survival instrument: clear weather can improve signal while raising radiation, storms can protect the body while killing uplink, and moon shadows can break tide and ascent timing before Black Keel reserves a window.",
+    "player_question": "Why is the sky part of the survival loop instead of decoration?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Aegir Sky Weather Ledger",
+     "scanner": "AEGIR WINDOW PLATE // Salt-fogged glass, still warm behind the seal. Clear lane: signal noise falling. Charged-particle count rising. Moon shadow still pulling the tide model off truth. Pretty sky is not safe sky.",
+     "terminal": "BLACK KEEL SKY TIMING DESK // Local weather break confirmed. Uplink confidence 61 percent. Radiation load climbing. Moon occultation clears in 00:18:40. Ascent-mass estimate withheld until carrier geometry, storm band, and quarantine receiver agree.",
+     "audio": "On HECTON-8, the sky is another pressure door. It opens, it lies, and it closes on schedule.",
+     "in_game_wiki": "Aegir is not a painted backdrop. It is the largest machine the survivor can see without owning any part of it. The gas giant, its magnetosphere, the moon ladder, storm bands, relay angles, and Black Keel traffic all press on the same small ocean where you are trying to keep a suit sealed.\n\nA clear break over the water can feel like mercy because the light returns and the carrier starts to sound less broken. That is only half the reading. Clear sky can also mean the charged-particle count is climbing. A storm can hide Aegir and ruin a packet window while giving your body a little shelter from the worst noise. A moon shadow can make a tide card lie by a few minutes, and a few minutes is enough to turn a shallow hatch, a brine lip, or an ascent estimate into bad advice.\n\nOld stations survive by treating the sky like a gauge, not like scenery. Their ephemeris plates do not solve live celestial mechanics. They keep authored, repeated, believable window tables: when a relay lane is clean enough to send evidence, when the tide model is suspect, when the Black Keel can answer, and when an ascent stack is just expensive metal waiting under the wrong sky. If Aegir looks beautiful, check the radio. Beauty usually means something is moving through you.",
+     "external_site": "Aegir makes HECTON-8 readable and hostile at the same time: clear sky, storms, moon shadows, radiation, tide error, and carrier geometry all decide when the survivor can speak, move, or leave.",
+     "external_site_article": "HECTON-8 uses its sky as a survival system. Aegir is huge enough to give the surface drama, but the important fact is not size. The important fact is that the sky changes what is true for the player. A calm horizon can sharpen uplink and raise radiation. A storm can protect flesh and bury the carrier in static. A moon crossing can pull the tide model away from the door the player planned to use.\n\nThis keeps the fiction physical. Rescue is not blocked by a vague plot wall. It is blocked by weather, charge, relay geometry, custody routing, mass allocation, and the fact that a carrier in orbit cannot spend lift opportunity whenever a stranded person wants it. Black Keel may accept evidence during one window and still refuse body recovery until a later one. That difference is the game.\n\nThe player should learn to read Aegir the way they read oxygen. The sky tells them when to transmit, when to shelter, when to trust a current, when to mistrust a clean signal, and when an ascent plan is only a promise waiting for geometry.",
+     "field_note": "If Aegir looks clean enough to paint, do not stand under it until you read the count."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал погодных окон Aegir",
+     "scanner": "ПЛИТА ОКНА AEGIR // Стекло в соляном тумане, за уплотнителем еще тепло. Чистая полоса: шум сигнала падает. Счет заряженных частиц растет. Тень луны все еще уводит модель прилива от истины. Красивое небо не значит безопасное небо.",
+     "terminal": "СТОЛ НЕБЕСНОГО ТАЙМИНГА BLACK KEEL // Локальный разрыв погоды подтвержден. Уверенность uplink 61 процент. Радиационная нагрузка растет. Лунное покрытие очистится через 00:18:40. Оценка массы подъема удержана, пока геометрия carrier, штормовая полоса и карантинный приемник не сойдутся.",
+     "audio": "На HECTON-8 небо это еще одна напорная дверь. Оно открывается, врет и закрывается по расписанию.",
+     "in_game_wiki": "Aegir не нарисованный фон. Это самая большая машина, которую выживший может видеть, не владея ни одной ее частью. Газовый гигант, его магнитосфера, лестница лун, штормовые полосы, углы ретрансляции и трафик Black Keel давят на один и тот же маленький океан, где ты пытаешься удержать скафандр герметичным.\n\nЯсный разрыв над водой может казаться милостью: свет возвращается, а carrier звучит менее сломанно. Это только половина чтения. Чистое небо может означать, что счет заряженных частиц растет. Шторм может спрятать Aegir и убить пакетное окно, но дать телу немного защиты от худшего шума. Тень луны может заставить приливную карту соврать на несколько минут, а нескольких минут достаточно, чтобы мелководный люк, край рассола или расчет подъема стали плохим советом.\n\nСтарые станции выживают потому, что относятся к небу как к прибору, а не как к декорации. Их эфемеридные плиты не считают живую небесную механику. Они хранят заданные, повторяемые, правдоподобные таблицы окон: когда релейная полоса достаточно чиста для доказательств, когда модели прилива нельзя верить, когда Black Keel может ответить, и когда ascent stack остается просто дорогим железом под неправильным небом. Если Aegir красив, проверь радио. Красота обычно значит, что через тебя что-то проходит.",
+     "external_site": "Aegir делает HECTON-8 одновременно читаемым и враждебным: ясное небо, штормы, лунные тени, радиация, ошибка прилива и геометрия carrier решают, когда выживший может говорить, двигаться или уходить.",
+     "external_site_article": "HECTON-8 использует небо как систему выживания. Aegir достаточно огромен, чтобы дать поверхности драму, но важен не размер. Важно то, что небо меняет для игрока действительность. Спокойный горизонт может улучшить uplink и поднять радиацию. Шторм может защитить плоть и утопить carrier в статике. Проход луны может увести приливную модель от двери, которой игрок собирался пользоваться.\n\nТак фантастика остается физической. Спасение блокируется не туманной сюжетной стеной. Его блокируют погода, заряд, геометрия реле, маршрутизация опеки, распределение массы и тот факт, что carrier на орбите не тратит окно подъема всякий раз, когда застрявший человек этого хочет. Black Keel может принять доказательство в одно окно и все равно отказать в возврате тела до следующего. В этой разнице и есть игра.\n\nИгрок должен учиться читать Aegir так же, как кислород. Небо говорит, когда передавать, когда прятаться, когда доверять течению, когда не доверять чистому сигналу, и когда план подъема это всего лишь обещание, ожидающее геометрии.",
+     "field_note": "Если Aegir выглядит так чисто, что его хочется рисовать, не стой под ним, пока не прочитаешь счетчик."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Aegir空模様サバイバル台帳",
+     "scanner": "AEGIRウィンドウ板 // 塩霧で曇ったガラス。シールの奥はまだ温かい。晴れ筋: 信号ノイズ低下。荷電粒子カウント上昇。月影が潮汐モデルをまだ真実からずらしている。美しい空は安全な空ではない。",
+     "terminal": "BLACK KEEL空タイミング卓 // 局地的な天候切れ目を確認。アップリンク信頼度61パーセント。放射線負荷上昇中。月の掩蔽解除まで00:18:40。carrier幾何、嵐帯、隔離受信者が一致するまで上昇質量推定を保留。",
+     "audio": "HECTON-8では、空も圧力扉だ。開き、嘘をつき、予定どおり閉まる。",
+     "in_game_wiki": "Aegirは描かれた背景ではない。生存者がどの部品も所有しないまま見ることのできる最大の機械だ。ガス巨星、その磁気圏、月の階段、嵐帯、リレー角度、Black Keelの航行は、スーツの密閉を保とうとしている小さな海に同時に圧力をかけている。\n\n水面上の晴れ間は慈悲に見えることがある。光が戻り、carrierの声が少しだけ壊れていないように聞こえるからだ。だがそれは読みの半分でしかない。澄んだ空は荷電粒子カウントの上昇を意味することもある。嵐はAegirを隠し、パケット窓を潰す一方で、肉体を最悪のノイズから少し守る。月影は潮汐カードを数分だけ嘘にする。その数分で浅瀬のハッチ、塩水層の縁、上昇推定は悪い助言に変わる。\n\n古いステーションは空を景色ではなく計器として扱うから生き残る。エフェメリス板は生の天体力学を解かない。証拠を送るリレー帯が十分に澄む時、潮汐モデルが疑わしい時、Black Keelが応答できる時、そしてascent stackが間違った空の下で高価な金属にすぎない時を、作られた反復可能な窓表として保持している。Aegirが美しく見えたら、無線を確認しろ。美しさはたいてい、何かが君を通過しているという意味だ。",
+     "external_site": "AegirはHECTON-8を読める場所にし、同時に敵対的にもする。晴天、嵐、月影、放射線、潮汐誤差、carrier幾何が、生存者が話し、動き、離脱できる時を決める。",
+     "external_site_article": "HECTON-8は空をサバイバルシステムとして使う。Aegirは地表に迫力を与えるほど巨大だが、重要なのは大きさではない。重要なのは、空がプレイヤーにとっての真実を変えることだ。穏やかな地平線はアップリンクを鋭くし、放射線を上げる。嵐は肉体を守り、carrierを雑音に沈める。月の通過は、プレイヤーが使うつもりだった扉から潮汐モデルを外す。\n\nこれによりフィクションは物理的であり続ける。救助は曖昧な筋書きの壁で止められているのではない。天候、電荷、リレー幾何、custody経路、質量配分、そして軌道上のcarrierが遭難者の望むたびに揚力機会を使えないという事実に止められている。Black Keelは一つの窓で証拠を受け取り、それでも身体回収は後の窓まで拒むことがある。その差がゲームだ。\n\nプレイヤーは酸素計を読むようにAegirを読むべきだ。空は、いつ送信し、いつ避難し、いつ流れを信じ、いつ澄んだ信号を疑い、いつ上昇計画が幾何を待つ約束にすぎないかを教える。",
+     "field_note": "Aegirが絵にしたいほど澄んで見えるなら、カウントを見るまでその下に立つな。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Aegir天空天气生存账册",
+     "scanner": "AEGIR窗口板 // 盐雾蒙住的玻璃，密封圈后仍有余温。晴空通道：信号噪声下降。带电粒子计数上升。月影仍在把潮汐模型拉离真实。漂亮的天空不是安全的天空。",
+     "terminal": "BLACK KEEL天空计时台 // 已确认局地天气裂口。上行可信度61%。辐射负载上升。月掩将在00:18:40后解除。升空质量估算暂扣，直到carrier几何、风暴带与隔离接收方一致。",
+     "audio": "在HECTON-8，天空也是一道压力门。它会打开，会撒谎，也会按时关上。",
+     "in_game_wiki": "Aegir不是画上去的背景。它是幸存者能看见、却不拥有任何部件的最大机器。气态巨星、磁层、月梯、风暴带、中继角度和Black Keel航线，一起压在同一片小海上，而你只是在努力让潜服保持密封。\n\n海面上的晴朗缺口会像慈悲，因为光回来了，carrier的声音也不再那么破碎。但这只是读数的一半。晴空也可能意味着带电粒子计数正在上升。风暴会遮住Aegir并毁掉数据包窗口，却也可能让身体避开最糟的噪声。月影会让潮汐卡片错上几分钟，而几分钟足够让浅水舱门、盐水层边缘或升空估算变成坏建议。\n\n旧站点能活下来，是因为它们把天空当仪表，而不是风景。星历板不计算实时天体力学。它们保存被编写、可重复、可信的窗口表：什么时候中继通道足够干净可以发送证据，什么时候潮汐模型不可信，什么时候Black Keel能回答，以及什么时候ascent stack只是错误天空下的一堆昂贵金属。如果Aegir看起来很美，先检查无线电。美通常意味着有什么东西正穿过你。",
+     "external_site": "Aegir让HECTON-8既可读又敌对：晴空、风暴、月影、辐射、潮汐误差和carrier几何共同决定幸存者何时能说话、移动或离开。",
+     "external_site_article": "HECTON-8把天空用作生存系统。Aegir足够巨大，能让地表充满戏剧性，但关键并不是大小。关键是天空会改变玩家面对的真实。平静的地平线可能让上行链路更清晰，也可能提高辐射。风暴可能保护血肉，却把carrier埋进静电。月亮穿行可能把潮汐模型从玩家计划使用的门口拉走。\n\n这让虚构保持物理性。救援不是被模糊的剧情墙挡住。挡住它的是天气、电荷、中继几何、监管路由、质量分配，以及轨道上的carrier不能在每个被困者想要时都花掉一次升力机会这一事实。Black Keel可能在一个窗口接收证据，却仍拒绝身体回收直到之后的窗口。这个差别就是游戏。\n\n玩家应该像读氧气一样读Aegir。天空会告诉你何时传输、何时躲避、何时相信水流、何时怀疑清晰信号，以及何时升空计划只是一个等待几何条件的承诺。",
+     "field_note": "如果Aegir干净得像能画下来，先读计数器，再决定要不要站在下面。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre météo du ciel d'Aegir",
+     "scanner": "PLAQUE DE FENETRE AEGIR // Verre voilé de sel, encore tiède derrière le joint. Couloir clair : bruit de signal en baisse. Compteur de particules chargées en hausse. L'ombre lunaire tire encore le modèle de marée hors du vrai. Un beau ciel n'est pas un ciel sûr.",
+     "terminal": "POSTE DE TIMING CELESTE BLACK KEEL // Percée météo locale confirmée. Confiance uplink 61 pour cent. Charge radiative en hausse. Occultation lunaire dégagée dans 00:18:40. Estimation de masse d'ascension retenue jusqu'à accord entre géométrie carrier, bande d'orage et récepteur de quarantaine.",
+     "audio": "Sur HECTON-8, le ciel est une autre porte de pression. Il s'ouvre, il ment, et il se ferme à l'heure.",
+     "in_game_wiki": "Aegir n'est pas un décor peint. C'est la plus grande machine que le survivant puisse voir sans en posséder la moindre pièce. La géante gazeuse, sa magnétosphère, l'échelle des lunes, les bandes d'orage, les angles de relais et le trafic de Black Keel appuient tous sur le même petit océan où vous essayez de garder une combinaison étanche.\n\nUne trouée claire au-dessus de l'eau peut ressembler à une grâce parce que la lumière revient et que la voix du carrier paraît moins brisée. Ce n'est que la moitié de la lecture. Un ciel clair peut aussi signifier que le compteur de particules chargées grimpe. Un orage peut cacher Aegir et tuer une fenêtre de packet tout en donnant au corps un peu d'abri contre le pire bruit. Une ombre lunaire peut faire mentir une carte de marée de quelques minutes, et quelques minutes suffisent à transformer une écoutille peu profonde, une lèvre de saumure ou une estimation d'ascension en mauvais conseil.\n\nLes vieilles stations survivent parce qu'elles traitent le ciel comme une jauge, pas comme du paysage. Leurs plaques d'éphémérides ne résolvent pas une mécanique céleste vivante. Elles conservent des tables de fenêtres écrites, répétables et crédibles : quand une voie de relais est assez propre pour envoyer des preuves, quand le modèle de marée est suspect, quand Black Keel peut répondre, et quand un ascent stack n'est que du métal coûteux sous le mauvais ciel. Si Aegir est beau, vérifiez la radio. La beauté signifie souvent que quelque chose vous traverse.",
+     "external_site": "Aegir rend HECTON-8 lisible et hostile à la fois : ciel clair, orages, ombres lunaires, radiation, erreur de marée et géométrie carrier décident quand le survivant peut parler, bouger ou partir.",
+     "external_site_article": "HECTON-8 utilise son ciel comme système de survie. Aegir est assez immense pour donner du drame à la surface, mais le fait important n'est pas sa taille. Le fait important est que le ciel change ce qui est vrai pour le joueur. Un horizon calme peut affiner l'uplink et augmenter la radiation. Un orage peut protéger la chair et noyer le carrier dans la statique. Un passage de lune peut éloigner le modèle de marée de la porte que le joueur comptait utiliser.\n\nCela garde la fiction physique. Le sauvetage n'est pas bloqué par un mur narratif vague. Il est bloqué par la météo, la charge, la géométrie de relais, le routage de custody, l'allocation de masse et le fait qu'un carrier en orbite ne peut pas dépenser une opportunité de levage chaque fois qu'une personne coincée le veut. Black Keel peut accepter une preuve pendant une fenêtre et refuser quand même la récupération du corps jusqu'à une autre. Cette différence est le jeu.\n\nLe joueur doit apprendre à lire Aegir comme il lit l'oxygène. Le ciel dit quand transmettre, quand s'abriter, quand faire confiance à un courant, quand se méfier d'un signal propre, et quand un plan d'ascension n'est qu'une promesse qui attend la géométrie.",
+     "field_note": "Si Aegir est assez net pour être peint, ne restez pas dessous avant d'avoir lu le compteur."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro meteorológico del cielo de Aegir",
+     "scanner": "PLACA DE VENTANA AEGIR // Cristal empañado por sal, aún tibio tras la junta. Franja clara: ruido de señal bajando. Conteo de partículas cargadas subiendo. La sombra lunar todavía arrastra el modelo de marea fuera de la verdad. Un cielo bonito no es un cielo seguro.",
+     "terminal": "MESA DE TIEMPO CELESTE BLACK KEEL // Apertura meteorológica local confirmada. Confianza uplink 61 por ciento. Carga de radiación en ascenso. Ocultación lunar despeja en 00:18:40. Estimación de masa de ascenso retenida hasta que geometría carrier, banda de tormenta y receptor de cuarentena coincidan.",
+     "audio": "En HECTON-8, el cielo es otra puerta de presión. Se abre, miente y se cierra a horario.",
+     "in_game_wiki": "Aegir no es un fondo pintado. Es la máquina más grande que el superviviente puede ver sin poseer ninguna de sus piezas. El gigante gaseoso, su magnetosfera, la escalera de lunas, las bandas de tormenta, los ángulos de relevo y el tráfico de Black Keel presionan el mismo océano pequeño donde intentas mantener sellado el traje.\n\nUn claro sobre el agua puede parecer misericordia porque vuelve la luz y el carrier suena menos roto. Es solo media lectura. Un cielo despejado también puede significar que el conteo de partículas cargadas sube. Una tormenta puede ocultar Aegir y matar una ventana de packet mientras da al cuerpo algo de refugio contra el peor ruido. Una sombra lunar puede hacer mentir la carta de mareas por unos minutos, y unos minutos bastan para convertir una escotilla somera, un borde de salmuera o una estimación de ascenso en mal consejo.\n\nLas estaciones viejas sobreviven tratando el cielo como un medidor, no como paisaje. Sus placas de efemérides no resuelven mecánica celeste en vivo. Guardan tablas de ventanas escritas, repetibles y creíbles: cuándo un carril de relevo está bastante limpio para enviar evidencia, cuándo el modelo de marea es sospechoso, cuándo Black Keel puede responder y cuándo un ascent stack es solo metal caro bajo el cielo equivocado. Si Aegir se ve hermoso, revisa la radio. La belleza suele significar que algo se mueve a través de ti.",
+     "external_site": "Aegir hace que HECTON-8 sea legible y hostil a la vez: cielo claro, tormentas, sombras lunares, radiación, error de marea y geometría carrier deciden cuándo el superviviente puede hablar, moverse o irse.",
+     "external_site_article": "HECTON-8 usa su cielo como sistema de supervivencia. Aegir es lo bastante enorme para dar dramatismo a la superficie, pero el hecho importante no es el tamaño. El hecho importante es que el cielo cambia lo que es cierto para el jugador. Un horizonte tranquilo puede afilar el uplink y subir la radiación. Una tormenta puede proteger la carne y enterrar al carrier en estática. Un cruce lunar puede alejar el modelo de marea de la puerta que el jugador pensaba usar.\n\nAsí la ficción sigue siendo física. El rescate no está bloqueado por una pared argumental vaga. Lo bloquean el clima, la carga, la geometría de relevo, el ruteo de custody, la asignación de masa y el hecho de que un carrier en órbita no puede gastar una oportunidad de elevación cada vez que una persona varada la desea. Black Keel puede aceptar evidencia en una ventana y aun así negar recuperación corporal hasta otra posterior. Esa diferencia es el juego.\n\nEl jugador debe aprender a leer Aegir como lee el oxígeno. El cielo dice cuándo transmitir, cuándo cubrirse, cuándo confiar en una corriente, cuándo desconfiar de una señal limpia y cuándo un plan de ascenso es solo una promesa esperando geometría.",
+     "field_note": "Si Aegir parece lo bastante limpio para pintarlo, no te quedes debajo hasta leer el contador."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Aegir-Himmelswetter-Ledger",
+     "scanner": "AEGIR-FENSTERPLATTE // Salzvernebeltes Glas, hinter der Dichtung noch warm. Klarer Korridor: Signalrauschen sinkt. Geladene Teilchen steigen. Mondschatten zieht das Gezeitenmodell noch von der Wahrheit weg. Schöner Himmel ist kein sicherer Himmel.",
+     "terminal": "BLACK KEEL HIMMELSTAKT-DESK // Lokaler Wetterbruch bestätigt. Uplink-Vertrauen 61 Prozent. Strahlungslast steigt. Mondbedeckung endet in 00:18:40. Aufstiegsmassenschätzung zurückgehalten, bis carrier-Geometrie, Sturmstreifen und Quarantäneempfänger übereinstimmen.",
+     "audio": "Auf HECTON-8 ist der Himmel eine weitere Drucktür. Er öffnet sich, lügt und schließt nach Plan.",
+     "in_game_wiki": "Aegir ist kein gemalter Hintergrund. Es ist die größte Maschine, die der Überlebende sehen kann, ohne irgendein Teil davon zu besitzen. Gasriese, Magnetosphäre, Mondleiter, Sturmstreifen, Relaiswinkel und Black-Keel-Verkehr drücken alle auf denselben kleinen Ozean, in dem du versuchst, einen Anzug dicht zu halten.\n\nEin klarer Bruch über dem Wasser kann wie Gnade wirken, weil Licht zurückkehrt und der carrier weniger kaputt klingt. Das ist nur die halbe Lesung. Klarer Himmel kann auch bedeuten, dass die geladenen Teilchen steigen. Ein Sturm kann Aegir verbergen und ein packet window töten, während er dem Körper etwas Schutz vor dem schlimmsten Rauschen gibt. Ein Mondschatten kann eine Gezeitenkarte um wenige Minuten lügen lassen, und wenige Minuten reichen, um eine seichte Luke, eine Solekante oder eine Aufstiegsschätzung in schlechten Rat zu verwandeln.\n\nAlte Stationen überleben, weil sie den Himmel wie ein Messgerät behandeln, nicht wie Kulisse. Ihre Ephemeridenplatten lösen keine Live-Himmelsmechanik. Sie halten geschriebene, wiederholbare, glaubhafte Fenstertabellen: wann ein Relaiskorridor sauber genug für Beweise ist, wann das Gezeitenmodell verdächtig ist, wann Black Keel antworten kann und wann ein ascent stack nur teures Metall unter dem falschen Himmel ist. Wenn Aegir schön aussieht, prüfe das Funkgerät. Schönheit heißt meist, dass etwas durch dich hindurchzieht.",
+     "external_site": "Aegir macht HECTON-8 zugleich lesbar und feindlich: klarer Himmel, Stürme, Mondschatten, Strahlung, Gezeitenfehler und carrier-Geometrie entscheiden, wann der Überlebende sprechen, sich bewegen oder gehen kann.",
+     "external_site_article": "HECTON-8 benutzt seinen Himmel als Überlebenssystem. Aegir ist groß genug, um der Oberfläche Dramatik zu geben, aber die wichtige Tatsache ist nicht Größe. Wichtig ist, dass der Himmel verändert, was für den Spieler wahr ist. Ein ruhiger Horizont kann den uplink schärfen und Strahlung erhöhen. Ein Sturm kann Fleisch schützen und den carrier in Rauschen begraben. Ein Monddurchgang kann das Gezeitenmodell von der Tür wegziehen, die der Spieler nutzen wollte.\n\nSo bleibt die Fiktion physisch. Rettung wird nicht von einer vagen Plotwand blockiert. Sie wird von Wetter, Ladung, Relaisgeometrie, custody-Routing, Massenzuteilung und der Tatsache blockiert, dass ein carrier im Orbit keine Hebegelegenheit ausgibt, nur weil eine gestrandete Person sie will. Black Keel kann in einem Fenster Beweise annehmen und Körperbergung trotzdem bis zu einem späteren verweigern. Dieser Unterschied ist das Spiel.\n\nDer Spieler soll lernen, Aegir wie Sauerstoff zu lesen. Der Himmel sagt, wann man sendet, wann man Schutz sucht, wann man einer Strömung traut, wann man einem sauberen Signal misstraut und wann ein Aufstiegsplan nur ein Versprechen ist, das auf Geometrie wartet.",
+     "field_note": "Wenn Aegir sauber genug aussieht, um es zu malen, bleib nicht darunter, bevor du den Zähler gelesen hast."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr pogody nieba Aegir",
+     "scanner": "PŁYTA OKNA AEGIR // Szkło zamglone solą, za uszczelką wciąż ciepłe. Czysty pas: szum sygnału spada. Licznik cząstek naładowanych rośnie. Cień księżyca nadal ściąga model pływów z prawdy. Ładne niebo nie jest bezpiecznym niebem.",
+     "terminal": "PULPIT TAKTOWANIA NIEBA BLACK KEEL // Lokalna przerwa pogodowa potwierdzona. Pewność uplink 61 procent. Obciążenie radiacyjne rośnie. Okultacja księżyca ustąpi za 00:18:40. Szacunek masy wznoszenia wstrzymany do zgodności geometrii carrier, pasa burzy i odbiornika kwarantanny.",
+     "audio": "Na HECTON-8 niebo jest kolejnymi drzwiami ciśnieniowymi. Otwiera się, kłamie i zamyka zgodnie z planem.",
+     "in_game_wiki": "Aegir nie jest namalowanym tłem. To największa maszyna, którą ocalały może zobaczyć, nie posiadając żadnej jej części. Gazowy olbrzym, jego magnetosfera, drabina księżyców, pasy burzowe, kąty przekaźników i ruch Black Keel naciskają na ten sam mały ocean, w którym próbujesz utrzymać skafander szczelny.\n\nPrześwit nad wodą może wyglądać jak łaska, bo wraca światło, a carrier brzmi mniej uszkodzony. To tylko połowa odczytu. Czyste niebo może także znaczyć, że licznik cząstek naładowanych rośnie. Burza może ukryć Aegir i zabić okno packet, jednocześnie dając ciału trochę osłony przed najgorszym szumem. Cień księżyca może sprawić, że karta pływów skłamie o kilka minut, a kilka minut wystarczy, by płytki właz, krawędź solanki lub szacunek wznoszenia stały się złą radą.\n\nStare stacje przetrwały, bo traktują niebo jak wskaźnik, nie jak krajobraz. Ich płyty efemeryd nie rozwiązują żywej mechaniki nieba. Przechowują zapisane, powtarzalne, wiarygodne tabele okien: kiedy pas przekaźnika jest dość czysty, by wysłać dowód, kiedy model pływów jest podejrzany, kiedy Black Keel może odpowiedzieć i kiedy ascent stack jest tylko drogim metalem pod złym niebem. Jeśli Aegir wygląda pięknie, sprawdź radio. Piękno zwykle znaczy, że coś przechodzi przez ciebie.",
+     "external_site": "Aegir czyni HECTON-8 czytelnym i wrogim naraz: czyste niebo, burze, cienie księżyców, promieniowanie, błąd pływów i geometria carrier decydują, kiedy ocalały może mówić, poruszać się lub odejść.",
+     "external_site_article": "HECTON-8 używa nieba jako systemu przetrwania. Aegir jest dość ogromny, by dać powierzchni dramaturgię, ale najważniejszy nie jest rozmiar. Najważniejsze jest to, że niebo zmienia prawdę gracza. Spokojny horyzont może wyostrzyć uplink i podnieść promieniowanie. Burza może chronić ciało i utopić carrier w trzaskach. Przejście księżyca może odciągnąć model pływów od drzwi, których gracz chciał użyć.\n\nDzięki temu fikcja pozostaje fizyczna. Ratunku nie blokuje mglista ściana fabuły. Blokują go pogoda, ładunek, geometria przekaźnika, trasa custody, alokacja masy i fakt, że carrier na orbicie nie może wydawać okna podnoszenia za każdym razem, gdy uwięziony człowiek go chce. Black Keel może przyjąć dowód w jednym oknie i nadal odmówić odzyskania ciała do późniejszego. Ta różnica jest grą.\n\nGracz powinien nauczyć się czytać Aegir tak jak tlen. Niebo mówi, kiedy nadawać, kiedy się schronić, kiedy ufać prądowi, kiedy nie ufać czystemu sygnałowi i kiedy plan wznoszenia jest tylko obietnicą czekającą na geometrię.",
+     "field_note": "Jeśli Aegir wygląda tak czysto, że chcesz go malować, nie stój pod nim, dopóki nie odczytasz licznika."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал небесної погоди Aegir",
+     "scanner": "ПЛИТА ВІКНА AEGIR // Скло в соляному тумані, за ущільнювачем ще тепле. Чиста смуга: шум сигналу падає. Лічильник заряджених частинок зростає. Тінь місяця все ще відтягує модель припливу від правди. Гарне небо не означає безпечне небо.",
+     "terminal": "СТІЛ НЕБЕСНОГО ТАЙМІНГУ BLACK KEEL // Локальний розрив погоди підтверджено. Довіра uplink 61 відсоток. Радіаційне навантаження зростає. Місячне покриття очиститься через 00:18:40. Оцінку маси підйому утримано, доки геометрія carrier, штормова смуга і карантинний приймач не зійдуться.",
+     "audio": "На HECTON-8 небо це ще одні напірні двері. Воно відкривається, бреше і закривається за розкладом.",
+     "in_game_wiki": "Aegir не намальоване тло. Це найбільша машина, яку виживший може бачити, не володіючи жодною її частиною. Газовий гігант, його магнітосфера, драбина місяців, штормові смуги, кути ретрансляції і трафік Black Keel тиснуть на той самий маленький океан, де ти намагаєшся втримати скафандр герметичним.\n\nЯсний розрив над водою може здаватися милістю, бо світло повертається, а carrier звучить менш зламано. Це лише половина читання. Чисте небо може також означати, що лічильник заряджених частинок зростає. Шторм може сховати Aegir і вбити packet-вікно, але дати тілу трохи захисту від найгіршого шуму. Тінь місяця може змусити припливну карту збрехати на кілька хвилин, а кількох хвилин досить, щоб мілководний люк, край розсолу або оцінка підйому стали поганою порадою.\n\nСтарі станції виживають, бо ставляться до неба як до приладу, а не як до краєвиду. Їхні ефемеридні плити не розв'язують живу небесну механіку. Вони зберігають задані, повторювані, правдоподібні таблиці вікон: коли релейна смуга досить чиста для доказів, коли моделі припливу не можна вірити, коли Black Keel може відповісти, і коли ascent stack це лише дороге залізо під неправильним небом. Якщо Aegir гарний, перевір радіо. Краса зазвичай означає, що щось проходить крізь тебе.",
+     "external_site": "Aegir робить HECTON-8 одночасно читабельним і ворожим: ясне небо, шторми, місячні тіні, радіація, помилка припливу і геометрія carrier вирішують, коли виживший може говорити, рухатися або піти.",
+     "external_site_article": "HECTON-8 використовує небо як систему виживання. Aegir достатньо величезний, щоб дати поверхні драму, але важливий не розмір. Важливо те, що небо змінює правду для гравця. Спокійний горизонт може покращити uplink і підняти радіацію. Шторм може захистити плоть і втопити carrier у статичному шумі. Прохід місяця може відвести модель припливу від дверей, якими гравець збирався скористатися.\n\nТак фантастика лишається фізичною. Порятунок блокує не туманна сюжетна стіна. Його блокують погода, заряд, геометрія реле, маршрутизація custody, розподіл маси і факт, що carrier на орбіті не може витрачати підйомну можливість щоразу, коли застрягла людина цього хоче. Black Keel може прийняти доказ в одне вікно і все одно відмовити в поверненні тіла до пізнішого. Ця різниця і є грою.\n\nГравець має навчитися читати Aegir так само, як кисень. Небо каже, коли передавати, коли ховатися, коли довіряти течії, коли не довіряти чистому сигналу і коли план підйому лише обіцянка, що чекає геометрії.",
+     "field_note": "Якщо Aegir виглядає таким чистим, що його хочеться малювати, не стій під ним, доки не прочитаєш лічильник."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل طقس سماء Aegir",
+     "scanner": "لوحة نافذة AEGIR // زجاج مغشى بملح، وما زال دافئا خلف الختم. ممر صاف: ضجيج الإشارة يهبط. عداد الجسيمات المشحونة يرتفع. ظل القمر ما زال يسحب نموذج المد بعيدا عن الحقيقة. السماء الجميلة ليست سماء آمنة.",
+     "terminal": "مكتب توقيت السماء BLACK KEEL // تم تأكيد انقطاع طقس محلي. ثقة uplink 61 بالمئة. حمل الإشعاع يرتفع. الاحتجاب القمري ينقشع خلال 00:18:40. تقدير كتلة الصعود محجوز حتى تتفق هندسة carrier وحزام العاصفة ومستقبل الحجر.",
+     "audio": "على HECTON-8، السماء باب ضغط آخر. تفتح، وتكذب، وتغلق حسب الجدول.",
+     "in_game_wiki": "Aegir ليس خلفية مرسومة. إنه أكبر آلة يستطيع الناجي رؤيتها من دون أن يملك أي جزء منها. العملاق الغازي، وغلافه المغناطيسي، وسلسلة أقماره، وأحزمة العواصف، وزوايا الترحيل، وحركة Black Keel كلها تضغط على المحيط الصغير نفسه حيث تحاول إبقاء البدلة محكمة.\n\nقد تبدو الفجوة الصافية فوق الماء رحمة، لأن الضوء يعود وصوت carrier يبدو أقل تكسرا. هذا نصف القراءة فقط. السماء الصافية قد تعني أيضا أن عداد الجسيمات المشحونة يصعد. العاصفة قد تخفي Aegir وتقتل نافذة packet، لكنها تمنح الجسد بعض الحماية من أسوأ ضجيج. ظل القمر قد يجعل بطاقة المد تكذب بضع دقائق، وبضع دقائق تكفي لتحويل فتحة ضحلة أو حافة محلول ملحي أو تقدير صعود إلى نصيحة سيئة.\n\nتنجو المحطات القديمة لأنها تعامل السماء كمقياس لا كمنظر. ألواحها الفلكية لا تحل ميكانيكا سماوية حية. إنها تحفظ جداول نوافذ مكتوبة ومتكررة ومقنعة: متى يكون ممر الترحيل نظيفا بما يكفي لإرسال دليل، ومتى يكون نموذج المد مشبوها، ومتى يستطيع Black Keel أن يجيب، ومتى يكون ascent stack مجرد معدن غال تحت سماء خاطئة. إذا بدا Aegir جميلا، افحص الراديو. الجمال غالبا يعني أن شيئا يعبر من خلالك.",
+     "external_site": "يجعل Aegir عالم HECTON-8 قابلا للقراءة ومعاديا في الوقت نفسه: السماء الصافية، العواصف، ظلال الأقمار، الإشعاع، خطأ المد، وهندسة carrier تحدد متى يستطيع الناجي الكلام أو الحركة أو الرحيل.",
+     "external_site_article": "يستخدم HECTON-8 سماءه كنظام بقاء. Aegir ضخم بما يكفي ليمنح السطح رهبة، لكن الحقيقة المهمة ليست الحجم. الحقيقة المهمة أن السماء تغير ما يكون صحيحا للاعب. أفق هادئ قد يحسن uplink ويرفع الإشعاع. عاصفة قد تحمي اللحم وتدفن carrier في التشويش. عبور قمر قد يسحب نموذج المد بعيدا عن الباب الذي خطط اللاعب لاستخدامه.\n\nبهذا تبقى الحكاية مادية. الإنقاذ لا يوقفه جدار حبكة غامض. يوقفه الطقس، والشحنة، وهندسة الترحيل، ومسار custody، وتوزيع الكتلة، وحقيقة أن carrier في المدار لا يستطيع إنفاق فرصة رفع كلما أراد شخص عالق ذلك. قد يقبل Black Keel دليلا في نافذة ثم يرفض استرجاع الجسد حتى نافذة لاحقة. هذا الفرق هو اللعبة.\n\nعلى اللاعب أن يتعلم قراءة Aegir كما يقرأ الأكسجين. السماء تخبره متى يرسل، ومتى يختبئ، ومتى يثق بتيار، ومتى يشك في إشارة نظيفة، ومتى تكون خطة الصعود مجرد وعد ينتظر الهندسة.",
+     "field_note": "إذا بدا Aegir صافيا بما يكفي للرسم، فلا تقف تحته قبل أن تقرأ العداد."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Buku Cuaca Langit Aegir",
+     "scanner": "PELAT JENDELA AEGIR // Kaca berkabut garam, masih hangat di balik segel. Jalur cerah: derau sinyal turun. Hitungan partikel bermuatan naik. Bayangan bulan masih menarik model pasang dari kebenaran. Langit cantik bukan langit aman.",
+     "terminal": "MEJA WAKTU LANGIT BLACK KEEL // Celah cuaca lokal terkonfirmasi. Kepercayaan uplink 61 persen. Beban radiasi naik. Okultasi bulan bersih dalam 00:18:40. Estimasi massa naik ditahan sampai geometri carrier, pita badai, dan penerima karantina selaras.",
+     "audio": "Di HECTON-8, langit adalah pintu tekanan lain. Ia terbuka, berbohong, lalu menutup sesuai jadwal.",
+     "in_game_wiki": "Aegir bukan latar yang dilukis. Ia mesin terbesar yang bisa dilihat penyintas tanpa memiliki satu pun bagiannya. Raksasa gas, magnetosfernya, tangga bulan, pita badai, sudut relay, dan lalu lintas Black Keel semuanya menekan samudra kecil yang sama tempat kamu mencoba menjaga setelan tetap tersegel.\n\nCelah cerah di atas air bisa terasa seperti belas kasihan karena cahaya kembali dan carrier terdengar tidak terlalu rusak. Itu baru separuh bacaan. Langit cerah juga bisa berarti hitungan partikel bermuatan naik. Badai bisa menyembunyikan Aegir dan membunuh jendela packet sambil memberi tubuh sedikit perlindungan dari derau terburuk. Bayangan bulan bisa membuat kartu pasang berbohong beberapa menit, dan beberapa menit cukup untuk mengubah palka dangkal, bibir brine, atau estimasi naik menjadi nasihat buruk.\n\nStasiun lama bertahan karena memperlakukan langit seperti meter, bukan pemandangan. Pelat efemerisnya tidak menyelesaikan mekanika langit hidup. Ia menyimpan tabel jendela yang ditulis, berulang, dan masuk akal: kapan jalur relay cukup bersih untuk mengirim bukti, kapan model pasang mencurigakan, kapan Black Keel bisa menjawab, dan kapan ascent stack hanyalah logam mahal di bawah langit yang salah. Jika Aegir tampak indah, cek radio. Keindahan biasanya berarti sesuatu bergerak menembusmu.",
+     "external_site": "Aegir membuat HECTON-8 terbaca sekaligus bermusuhan: langit cerah, badai, bayangan bulan, radiasi, galat pasang, dan geometri carrier menentukan kapan penyintas bisa bicara, bergerak, atau pergi.",
+     "external_site_article": "HECTON-8 memakai langitnya sebagai sistem bertahan hidup. Aegir cukup besar untuk memberi drama pada permukaan, tetapi fakta pentingnya bukan ukuran. Fakta pentingnya adalah langit mengubah apa yang benar bagi pemain. Horison tenang bisa menajamkan uplink dan menaikkan radiasi. Badai bisa melindungi daging dan mengubur carrier dalam statik. Lintasan bulan bisa menarik model pasang menjauh dari pintu yang hendak dipakai pemain.\n\nIni menjaga fiksi tetap fisik. Penyelamatan tidak diblokir oleh dinding plot yang kabur. Ia diblokir oleh cuaca, muatan, geometri relay, rute custody, alokasi massa, dan kenyataan bahwa carrier di orbit tidak bisa membakar peluang angkat setiap kali orang yang terdampar menginginkannya. Black Keel bisa menerima bukti dalam satu jendela dan tetap menolak pemulihan tubuh sampai jendela lain. Perbedaan itu adalah permainan.\n\nPemain harus belajar membaca Aegir seperti membaca oksigen. Langit memberi tahu kapan mengirim, kapan berlindung, kapan mempercayai arus, kapan mencurigai sinyal bersih, dan kapan rencana naik hanya janji yang menunggu geometri.",
+     "field_note": "Jika Aegir tampak cukup bersih untuk dilukis, jangan berdiri di bawahnya sebelum membaca hitungan."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Aegir 하늘 기상 생존 장부",
+     "scanner": "AEGIR 창 플레이트 // 소금 안개 낀 유리, 실 뒤쪽은 아직 따뜻하다. 맑은 통로: 신호 잡음 하락. 대전 입자 계수 상승. 달 그림자가 조석 모델을 아직 진실에서 끌어내고 있다. 예쁜 하늘은 안전한 하늘이 아니다.",
+     "terminal": "BLACK KEEL 하늘 타이밍 데스크 // 국지적 날씨 틈 확인. uplink 신뢰도 61퍼센트. 방사선 부하 상승. 달 엄폐 해제까지 00:18:40. carrier 기하, 폭풍대, 격리 수신자가 맞기 전까지 상승 질량 추정 보류.",
+     "audio": "HECTON-8에서 하늘은 또 하나의 압력문이다. 열리고, 거짓말하고, 시간표대로 닫힌다.",
+     "in_game_wiki": "Aegir는 칠해진 배경이 아니다. 생존자가 어떤 부품도 소유하지 않은 채 볼 수 있는 가장 큰 기계다. 가스 거성, 자기권, 달 사다리, 폭풍대, 릴레이 각도, Black Keel 교통이 모두 같은 작은 바다를 누른다. 그 바다에서 너는 슈트를 밀봉한 채 버티려 한다.\n\n물 위의 맑은 틈은 자비처럼 느껴질 수 있다. 빛이 돌아오고 carrier의 목소리가 덜 망가져 들리기 때문이다. 하지만 그것은 절반의 판독일 뿐이다. 맑은 하늘은 대전 입자 계수가 오른다는 뜻일 수도 있다. 폭풍은 Aegir를 숨기고 packet 창을 죽이는 대신 몸을 최악의 잡음에서 조금 가려 준다. 달 그림자는 조석 카드를 몇 분 동안 거짓말하게 만들 수 있고, 그 몇 분이면 얕은 해치, 염수층 가장자리, 상승 추정이 나쁜 조언이 된다.\n\n오래된 정거장은 하늘을 풍경이 아니라 계기로 취급하기 때문에 살아남는다. 그들의 천문표 플레이트는 실시간 천체역학을 풀지 않는다. 증거를 보낼 만큼 릴레이 통로가 깨끗한 때, 조석 모델이 의심스러운 때, Black Keel이 응답할 수 있는 때, ascent stack이 잘못된 하늘 아래 비싼 금속일 뿐인 때를 기록한 반복 가능하고 믿을 만한 창 표를 보관한다. Aegir가 아름다워 보이면 무전기를 확인하라. 아름다움은 보통 무언가가 너를 통과하고 있다는 뜻이다.",
+     "external_site": "Aegir는 HECTON-8을 읽을 수 있으면서도 적대적으로 만든다. 맑은 하늘, 폭풍, 달 그림자, 방사선, 조석 오차, carrier 기하가 생존자가 말하고 움직이고 떠날 수 있는 때를 결정한다.",
+     "external_site_article": "HECTON-8은 하늘을 생존 시스템으로 쓴다. Aegir는 표면에 드라마를 줄 만큼 거대하지만 중요한 사실은 크기가 아니다. 중요한 사실은 하늘이 플레이어에게 참인 것을 바꾼다는 점이다. 고요한 지평선은 uplink를 선명하게 하고 방사선을 올릴 수 있다. 폭풍은 살을 보호하고 carrier를 잡음에 묻을 수 있다. 달의 통과는 플레이어가 쓰려던 문에서 조석 모델을 떼어낼 수 있다.\n\n그래서 허구는 물리적으로 남는다. 구조는 흐릿한 플롯 벽에 막히지 않는다. 날씨, 전하, 릴레이 기하, custody 라우팅, 질량 배정, 그리고 궤도의 carrier가 고립된 사람이 원할 때마다 리프트 기회를 쓸 수 없다는 사실에 막힌다. Black Keel은 한 창에서 증거를 받아도 몸 회수는 나중 창까지 거부할 수 있다. 그 차이가 게임이다.\n\n플레이어는 산소를 읽듯 Aegir를 읽어야 한다. 하늘은 언제 전송하고, 언제 숨고, 언제 해류를 믿고, 언제 깨끗한 신호를 의심하고, 언제 상승 계획이 기하를 기다리는 약속에 불과한지 말해 준다.",
+     "field_note": "Aegir가 그림으로 남기고 싶을 만큼 깨끗해 보이면, 계수를 읽기 전에는 그 아래 서지 마라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן מזג שמים של Aegir",
+     "scanner": "לוח חלון AEGIR // זכוכית מעורפלת במלח, עדיין חמה מאחורי האטם. נתיב צלול: רעש אות יורד. ספירת חלקיקים טעונים עולה. צל הירח עדיין מושך את מודל הגאות מן האמת. שמים יפים אינם שמים בטוחים.",
+     "terminal": "דלפק תזמון שמים BLACK KEEL // פריצת מזג אוויר מקומית אושרה. אמון uplink 61 אחוז. עומס קרינה עולה. הסתרת ירח תתנקה בעוד 00:18:40. הערכת מסת עלייה מוחזקת עד שהנדסת carrier, רצועת סערה ומקלט הסגר יתיישרו.",
+     "audio": "ב-HECTON-8, השמים הם עוד דלת לחץ. הם נפתחים, משקרים, ונסגרים לפי לוח זמנים.",
+     "in_game_wiki": "Aegir אינו רקע מצויר. הוא המכונה הגדולה ביותר שהשורד יכול לראות בלי להיות בעלים של אף חלק ממנה. ענק הגז, המגנטוספירה שלו, סולם הירחים, רצועות הסערה, זוויות הממסר ותנועת Black Keel לוחצים כולם על אותו אוקיינוס קטן שבו אתה מנסה לשמור חליפה אטומה.\n\nפתח בהיר מעל המים יכול להרגיש כמו רחמים, כי האור חוזר וה-carrier נשמע פחות שבור. זו רק חצי קריאה. שמים צלולים יכולים גם לומר שספירת החלקיקים הטעונים עולה. סערה יכולה להסתיר את Aegir ולהרוג חלון packet, ובאותו זמן לתת לגוף מעט מחסה מן הרעש הגרוע ביותר. צל ירח יכול לגרום לכרטיס גאות לשקר בכמה דקות, וכמה דקות מספיקות כדי להפוך פתח רדוד, שפת תמיסת מלח או הערכת עלייה לעצה רעה.\n\nתחנות ישנות שורדות משום שהן מתייחסות לשמים כאל מד, לא כאל נוף. לוחות האפמריס שלהן אינם פותרים מכניקה שמימית חיה. הם מחזיקים טבלאות חלון כתובות, חוזרות ואמינות: מתי נתיב ממסר נקי מספיק לשליחת ראיות, מתי מודל הגאות חשוד, מתי Black Keel יכול לענות, ומתי ascent stack הוא רק מתכת יקרה תחת שמים שגויים. אם Aegir נראה יפה, בדוק את הרדיו. יופי בדרך כלל אומר שמשהו עובר דרכך.",
+     "external_site": "Aegir הופך את HECTON-8 לקריא ועוין באותו זמן: שמים צלולים, סערות, צללי ירח, קרינה, שגיאת גאות והנדסת carrier קובעים מתי השורד יכול לדבר, לזוז או לעזוב.",
+     "external_site_article": "HECTON-8 משתמש בשמים שלו כמערכת הישרדות. Aegir עצום מספיק כדי לתת דרמה לפני השטח, אבל העובדה החשובה אינה הגודל. העובדה החשובה היא שהשמים משנים מה נכון לשחקן. אופק רגוע יכול לחדד uplink ולהעלות קרינה. סערה יכולה להגן על בשר ולקבור את carrier ברעש סטטי. מעבר ירח יכול למשוך את מודל הגאות מן הדלת שהשחקן תכנן להשתמש בה.\n\nכך הבדיון נשאר פיזי. חילוץ אינו חסום בקיר עלילתי מעורפל. הוא חסום במזג אוויר, מטען, הנדסת ממסר, ניתוב custody, הקצאת מסה, והעובדה ש-carrier במסלול אינו יכול לבזבז הזדמנות הרמה בכל פעם שאדם תקוע רוצה אותה. Black Keel יכול לקבל ראיה בחלון אחד ועדיין לסרב להשבת גוף עד חלון מאוחר יותר. ההבדל הזה הוא המשחק.\n\nהשחקן צריך ללמוד לקרוא את Aegir כפי שהוא קורא חמצן. השמים אומרים מתי לשדר, מתי למצוא מחסה, מתי לסמוך על זרם, מתי לחשוד באות נקי, ומתי תוכנית עלייה היא רק הבטחה שמחכה לגאומטריה.",
+     "field_note": "אם Aegir נראה נקי מספיק לציור, אל תעמוד תחתיו לפני שקראת את המונה."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Clima do Céu de Aegir",
+     "scanner": "PLACA DE JANELA AEGIR // Vidro enevoado de sal, ainda quente atrás da vedação. Faixa clara: ruído de sinal caindo. Contagem de partículas carregadas subindo. Sombra lunar ainda puxando o modelo de maré para fora da verdade. Céu bonito não é céu seguro.",
+     "terminal": "MESA DE TEMPO CELESTE BLACK KEEL // Abertura climática local confirmada. Confiança uplink 61 por cento. Carga de radiação subindo. Ocultação lunar limpa em 00:18:40. Estimativa de massa de ascensão retida até geometria carrier, faixa de tempestade e receptor de quarentena concordarem.",
+     "audio": "Em HECTON-8, o céu é outra porta de pressão. Ele abre, mente e fecha no horário.",
+     "in_game_wiki": "Aegir não é um fundo pintado. É a maior máquina que o sobrevivente pode ver sem possuir peça alguma dela. O gigante gasoso, sua magnetosfera, a escada de luas, faixas de tempestade, ângulos de relay e tráfego da Black Keel pressionam o mesmo pequeno oceano onde você tenta manter o traje selado.\n\nUma abertura clara sobre a água pode parecer misericórdia porque a luz volta e o carrier soa menos quebrado. Isso é só metade da leitura. Céu limpo também pode significar que a contagem de partículas carregadas está subindo. Uma tempestade pode esconder Aegir e matar uma janela de packet enquanto dá ao corpo um pouco de abrigo contra o pior ruído. Uma sombra lunar pode fazer uma carta de maré mentir por alguns minutos, e alguns minutos bastam para transformar uma escotilha rasa, uma borda de salmoura ou uma estimativa de ascensão em mau conselho.\n\nEstações antigas sobrevivem tratando o céu como medidor, não como paisagem. Suas placas de efemérides não resolvem mecânica celeste ao vivo. Elas guardam tabelas de janela escritas, repetíveis e críveis: quando uma faixa de relay está limpa o bastante para enviar prova, quando o modelo de maré é suspeito, quando Black Keel pode responder e quando um ascent stack é só metal caro sob o céu errado. Se Aegir parece bonito, confira o rádio. Beleza normalmente significa que algo está passando por você.",
+     "external_site": "Aegir torna HECTON-8 legível e hostil ao mesmo tempo: céu claro, tempestades, sombras lunares, radiação, erro de maré e geometria carrier decidem quando o sobrevivente pode falar, mover ou partir.",
+     "external_site_article": "HECTON-8 usa seu céu como sistema de sobrevivência. Aegir é enorme o bastante para dar drama à superfície, mas o fato importante não é o tamanho. O fato importante é que o céu muda o que é verdadeiro para o jogador. Um horizonte calmo pode afiar o uplink e aumentar a radiação. Uma tempestade pode proteger carne e enterrar o carrier em estática. A passagem de uma lua pode puxar o modelo de maré para longe da porta que o jogador planejava usar.\n\nIsso mantém a ficção física. O resgate não é bloqueado por uma parede vaga de enredo. Ele é bloqueado por clima, carga, geometria de relay, roteamento de custody, alocação de massa e pelo fato de que um carrier em órbita não pode gastar uma oportunidade de lift sempre que uma pessoa presa deseja isso. Black Keel pode aceitar prova em uma janela e ainda negar recuperação corporal até outra posterior. Essa diferença é o jogo.\n\nO jogador deve aprender a ler Aegir como lê oxigênio. O céu diz quando transmitir, quando se abrigar, quando confiar numa corrente, quando desconfiar de um sinal limpo e quando um plano de ascensão é só uma promessa esperando geometria.",
+     "field_note": "Se Aegir parece limpo o bastante para pintar, não fique embaixo dele antes de ler o contador."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Aegir Hemelweerlboek",
+     "scanner": "AEGIR-VENSTERPLAAT // Zoutbeneveld glas, nog warm achter de afdichting. Heldere baan: signaalruis daalt. Geladen-deeltjesteller stijgt. Maanschaduw trekt het getijdenmodel nog van de waarheid weg. Mooie lucht is geen veilige lucht.",
+     "terminal": "BLACK KEEL HEMELTIMINGDESK // Lokale weerbreuk bevestigd. Uplinkvertrouwen 61 procent. Stralingslast stijgt. Maanoccultatie klaart op in 00:18:40. Ascent-massaschatting vastgehouden tot carrier-geometrie, stormband en quarantainereceiver overeenkomen.",
+     "audio": "Op HECTON-8 is de hemel nog een drukdeur. Hij opent, liegt en sluit op schema.",
+     "in_game_wiki": "Aegir is geen geschilderde achtergrond. Het is de grootste machine die de overlevende kan zien zonder er ook maar één onderdeel van te bezitten. De gasreus, zijn magnetosfeer, de maanladder, stormbanden, relaisstanden en Black Keel-verkeer drukken allemaal op dezelfde kleine oceaan waar jij probeert een pak dicht te houden.\n\nEen heldere breuk boven het water kan als genade voelen omdat licht terugkomt en de carrier minder kapot klinkt. Dat is maar de helft van de lezing. Heldere lucht kan ook betekenen dat de geladen-deeltjesteller stijgt. Een storm kan Aegir verbergen en een packetvenster doden, terwijl hij het lichaam wat beschutting geeft tegen de ergste ruis. Een maanschaduw kan een getijdenkaart een paar minuten laten liegen, en een paar minuten is genoeg om een ondiep luik, een pekelrand of een ascentschatting slecht advies te maken.\n\nOude stations overleven doordat ze de hemel als meter behandelen, niet als landschap. Hun efemerideplaten lossen geen levende hemelmechanica op. Ze bewaren geschreven, herhaalbare, geloofwaardige venstertabellen: wanneer een relaisbaan schoon genoeg is om bewijs te sturen, wanneer het getijdenmodel verdacht is, wanneer Black Keel kan antwoorden en wanneer een ascent stack alleen duur metaal is onder de verkeerde hemel. Als Aegir mooi lijkt, controleer de radio. Schoonheid betekent meestal dat iets door je heen beweegt.",
+     "external_site": "Aegir maakt HECTON-8 tegelijk leesbaar en vijandig: heldere lucht, stormen, maanschaduwen, straling, getijdenfout en carrier-geometrie bepalen wanneer de overlevende kan spreken, bewegen of vertrekken.",
+     "external_site_article": "HECTON-8 gebruikt zijn hemel als overlevingssysteem. Aegir is groot genoeg om het oppervlak drama te geven, maar de belangrijke waarheid is niet grootte. De belangrijke waarheid is dat de hemel verandert wat voor de speler waar is. Een rustige horizon kan de uplink scherper maken en straling verhogen. Een storm kan vlees beschermen en de carrier in statische ruis begraven. Een maandoorgang kan het getijdenmodel wegtrekken van de deur die de speler wilde gebruiken.\n\nZo blijft de fictie fysiek. Redding wordt niet tegengehouden door een vage plotmuur. Ze wordt tegengehouden door weer, lading, relaisgeometrie, custody-routing, massa-allocatie en het feit dat een carrier in een baan geen liftkans kan uitgeven telkens wanneer een gestrande persoon dat wil. Black Keel kan bewijs in één venster accepteren en lichaamsrecovery toch weigeren tot een later venster. Dat verschil is het spel.\n\nDe speler moet Aegir leren lezen zoals zuurstof. De hemel zegt wanneer te zenden, wanneer te schuilen, wanneer een stroming te vertrouwen, wanneer een schoon signaal te wantrouwen en wanneer een ascentplan alleen een belofte is die op geometrie wacht.",
+     "field_note": "Als Aegir schoon genoeg lijkt om te schilderen, ga er dan niet onder staan voordat je de teller hebt gelezen."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

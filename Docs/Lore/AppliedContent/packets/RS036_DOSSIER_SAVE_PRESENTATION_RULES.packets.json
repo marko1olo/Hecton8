@@ -1,787 +1,793 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P176_DOSSIER_SELECTION_UI_RULE",
-      "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
-      "article_id": "dossier_save.dossier_selection_ui_rule",
-      "title_key": "applied_lore.dossier_selection_ui_rule.title",
-      "unlock": {
-        "primary": "unlock.dossier_selection_ui_rule",
-        "poi_tags": [
-          "poi.dossier_selection_panel",
-          "poi.contract_seed_terminal",
-          "poi.marauder_profile_card"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.relay_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Dossier Claim Registry",
-          "scanner": "DR-902 claim registry. Active dossiers expose rumor families, ending records, lien pressure, custody terms, orbit/weather clauses and evidence-order hints. No equipment inheritance.",
-          "field_note": "Open a folder and Black Keel prices it. Keep the old suspicion; leave lungs, hull and tools out of the file.",
-          "terminal": "DEEP REACH FORM DR-902\nRegistry: Marauder dossier claim\nActive fields: rumor family, ending record, lien mass, custody term, orbit/weather window, evidence-order hint\nDenied fields: oxygen reserve, hull rating, weapon state, inventory carryover\nStatus: knowledge record only; survival equipment resets per contract",
-          "audio": "Folders keep names and bad clauses. They do not give you a stronger suit.",
-          "in_game_wiki": "The dossier claim registry is a Black Keel intake form for prior evidence, not a gear locker. A selected dossier can carry old endings, rumor families, lien pressure, custody terms and route warnings into a new contract. Those records change what the operator suspects and what the carrier charges. They do not alter oxygen reserve, hull rating, weapons, inventory or the worker identity written into the claim.",
-          "external_site": "DR-902 turns dossier selection into a claim record. It preserves knowledge, rumors and legal pressure while keeping survival equipment and world facts outside the file."
-        },
-        "ru_RU": {
-          "title": "Реестр претензионных досье",
-          "scanner": "Реестр претензий DR-902. Активные досье раскрывают семьи слухов, записи исходов, давление залога, условия хранения, орбитальные/погодные пункты и подсказки порядка улик. Без наследования снаряжения.",
-          "field_note": "Открыл папку — Black Keel уже выставляет цену. Старое подозрение бери с собой; легкие, корпус и инструменты оставь вне файла.",
-          "terminal": "ФОРМА DEEP REACH DR-902\nРеестр: претензия по досье Marauder\nАктивные поля: семья слухов, запись исхода, масса залога, условие хранения, орбитально-погодное окно, подсказка порядка улик\nОтклоненные поля: запас кислорода, класс корпуса, состояние оружия, перенос инвентаря\nСтатус: только запись знания; аварийное снаряжение сбрасывается по каждому контракту",
-          "audio": "Папки хранят имена и плохие пункты договора. Более крепкий костюм они не выдают.",
-          "in_game_wiki": "Реестр претензионных досье — входная форма Black Keel для прежних улик, а не шкаф со снаряжением. Выбранное досье может перенести в новый контракт старые записи исходов, семьи слухов, давление залога, условия хранения и маршрутные предупреждения. Эти записи меняют подозрения оператора и счет carrier. Они не меняют запас кислорода, класс корпуса, оружие, инвентарь или личность работника, указанную в претензии.",
-          "external_site": "DR-902 превращает выбор досье в претензионную запись. Он сохраняет знание, слухи и юридическое давление, но оставляет аварийное снаряжение и факты мира вне файла."
-        },
-        "ja_JP": {
-          "title": "ドシエ請求登録簿",
-          "scanner": "DR-902 請求登録簿。アクティブなドシエは噂系統、エンディング記録、リーエン圧、保管条件、軌道/気象条項、証拠順序ヒントを示す。装備継承なし。",
-          "field_note": "フォルダーを開けば Black Keel が値を付ける。古い疑いだけ持て。肺、船体、工具はファイルの外だ。",
-          "terminal": "DEEP REACH FORM DR-902\n登録: Marauder ドシエ請求\n有効欄: 噂系統、エンディング記録、リーエン質量、保管条件、軌道/気象ウィンドウ、証拠順序ヒント\n拒否欄: 酸素予備、船体等級、武器状態、在庫持越し\n状態: 知識記録のみ。生存装備は契約ごとにリセット",
-          "audio": "フォルダーは名前と悪い条項を残す。強いスーツはくれない。",
-          "in_game_wiki": "ドシエ請求登録簿は過去の証拠を Black Keel に渡す受付フォームであり、装備ロッカーではない。選択されたドシエは古いエンディング記録、噂系統、リーエン圧、保管条件、ルート警告を新しい契約へ持ち込む。これらの記録は操作者の疑いと carrier の請求額を変える。酸素予備、船体等級、武器、在庫、請求書に記された作業者の身元は変えない。",
-          "external_site": "DR-902 はドシエ選択を請求記録に変える。知識、噂、法的圧力は保持するが、生存装備と世界の事実はファイル外に置く。"
-        },
-        "zh_CN": {
-          "title": "档案索赔登记",
-          "scanner": "DR-902 索赔登记。激活档案显示传闻族、结局记录、留置压力、托管条款、轨道/天气条款和证据顺序提示。不继承装备。",
-          "field_note": "打开一个文件夹，Black Keel 就会给它标价。带走旧怀疑；氧气、艇体和工具留在文件外。",
-          "terminal": "DEEP REACH 表格 DR-902\n登记：Marauder 档案索赔\n激活字段：传闻族、结局记录、留置质量、托管条件、轨道/天气窗口、证据顺序提示\n拒绝字段：氧气储备、艇体等级、武器状态、库存继承\n状态：仅知识记录；生存装备按每份合同重置",
-          "audio": "文件夹保存姓名和坏条款。它们不会给你更强的潜服。",
-          "in_game_wiki": "档案索赔登记是 Black Keel 接收旧证据的表格，不是装备柜。被选中的档案可以把旧结局记录、传闻族、留置压力、托管条款和路线警告带入新合同。这些记录改变操作者怀疑的内容和 carrier 收取的费用。它们不改变氧气储备、艇体等级、武器、库存，也不改变索赔中写明的工人身份。",
-          "external_site": "DR-902 把档案选择变成索赔记录。它保留知识、传闻和法律压力，同时把生存装备和世界事实留在文件外。"
-        },
-        "fr_FR": {
-          "title": "Registre de réclamation de dossier",
-          "scanner": "Registre DR-902. Les dossiers actifs exposent familles de rumeurs, fins enregistrées, pression de privilège, termes de garde, clauses orbite/météo et indices d'ordre des preuves. Aucun héritage d'équipement.",
-          "field_note": "Ouvre un dossier et Black Keel le chiffre. Garde l'ancien soupçon ; poumons, coque et outils restent hors du fichier.",
-          "terminal": "FORMULAIRE DEEP REACH DR-902\nRegistre : réclamation de dossier Marauder\nChamps actifs : famille de rumeur, fin enregistrée, masse de privilège, terme de garde, fenêtre orbite/météo, indice d'ordre des preuves\nChamps refusés : réserve d'oxygène, classe de coque, état d'arme, report d'inventaire\nStatut : dossier de connaissance uniquement ; équipement de survie réinitialisé par contrat",
-          "audio": "Les dossiers gardent les noms et les mauvaises clauses. Ils ne donnent pas une combinaison plus solide.",
-          "in_game_wiki": "Le registre de réclamation de dossier est un formulaire d'entrée Black Keel pour preuves antérieures, pas une armoire d'équipement. Un dossier sélectionné peut porter anciennes fins, familles de rumeurs, pression de privilège, termes de garde et avertissements de route dans un nouveau contrat. Ces enregistrements changent ce que l'opérateur soupçonne et ce que le carrier facture. Ils ne changent pas la réserve d'oxygène, la classe de coque, les armes, l'inventaire ni l'identité du travailleur inscrite dans la réclamation.",
-          "external_site": "DR-902 transforme la sélection de dossier en enregistrement de réclamation. Il conserve savoir, rumeurs et pression légale, tout en laissant équipement de survie et faits du monde hors du fichier."
-        },
-        "es_ES": {
-          "title": "Registro de reclamación de expedientes",
-          "scanner": "Registro DR-902. Los expedientes activos exponen familias de rumores, registros de finales, presión de gravamen, custodia, cláusulas orbitales/climáticas y pistas de orden de pruebas. Sin herencia de equipo.",
-          "field_note": "Abres una carpeta y Black Keel le pone precio. Guarda la sospecha vieja; pulmones, casco y herramientas fuera del archivo.",
-          "terminal": "FORMULARIO DEEP REACH DR-902\nRegistro: reclamación de expediente Marauder\nCampos activos: familia de rumor, registro de final, masa de gravamen, término de custodia, ventana orbital/climática, pista de orden de pruebas\nCampos denegados: reserva de oxígeno, clase de casco, estado de arma, arrastre de inventario\nEstado: solo registro de conocimiento; el equipo de supervivencia se reinicia por contrato",
-          "audio": "Las carpetas guardan nombres y malas cláusulas. No te dan un traje más fuerte.",
-          "in_game_wiki": "El registro de reclamación de expedientes es un formulario de entrada de Black Keel para pruebas anteriores, no una taquilla de equipo. Un expediente seleccionado puede llevar finales antiguos, familias de rumores, presión de gravamen, términos de custodia y avisos de ruta a un contrato nuevo. Esos registros cambian lo que sospecha el operador y lo que cobra el carrier. No alteran la reserva de oxígeno, la clase del casco, las armas, el inventario ni la identidad laboral escrita en la reclamación.",
-          "external_site": "DR-902 convierte la selección de expedientes en un registro de reclamación. Conserva conocimiento, rumores y presión legal, mientras deja equipo de supervivencia y hechos del mundo fuera del archivo."
-        },
-        "de_DE": {
-          "title": "Dossier-Anspruchsregister",
-          "scanner": "DR-902 Anspruchsregister. Aktive Dossiers zeigen Gerüchtefamilien, Enddatensätze, Pfanddruck, Verwahrbedingungen, Orbit-/Wetterklauseln und Hinweise zur Beweisreihenfolge. Keine Ausrüstungsvererbung.",
-          "field_note": "Öffnest du eine Mappe, bepreist Black Keel sie. Behalte den alten Verdacht; Lungen, Hülle und Werkzeuge bleiben aus der Akte.",
-          "terminal": "DEEP REACH FORMULAR DR-902\nRegister: Marauder-Dossieranspruch\nAktive Felder: Gerüchtefamilie, Enddatensatz, Pfandmasse, Verwahrbedingung, Orbit-/Wetterfenster, Hinweis zur Beweisreihenfolge\nGesperrte Felder: Sauerstoffreserve, Hüllenklasse, Waffenstatus, Inventarübertrag\nStatus: Wissensdatensatz; Überlebensausrüstung wird pro Vertrag zurückgesetzt",
-          "audio": "Mappen behalten Namen und schlechte Klauseln. Sie geben dir keinen stärkeren Anzug.",
-          "in_game_wiki": "Das Dossier-Anspruchsregister ist ein Black-Keel-Eingabeformular für frühere Beweise, kein Ausrüstungsschrank. Ein gewähltes Dossier kann alte Enddatensätze, Gerüchtefamilien, Pfanddruck, Verwahrbedingungen und Routenwarnungen in einen neuen Vertrag tragen. Diese Datensätze ändern, was der Operator vermutet und was der Carrier berechnet. Sie ändern nicht Sauerstoffreserve, Hüllenklasse, Waffen, Inventar oder die im Anspruch geführte Arbeiteridentität.",
-          "external_site": "DR-902 macht die Dossierwahl zu einem Anspruchsdatensatz. Wissen, Gerüchte und Rechtsdruck bleiben erhalten; Überlebensausrüstung und Weltfakten bleiben außerhalb der Akte."
-        },
-        "pl_PL": {
-          "title": "Rejestr roszczeń dossier",
-          "scanner": "Rejestr roszczeń DR-902. Aktywne dossier odsłaniają rodziny plotek, zapisy zakończeń, presję zastawu, warunki depozytu, klauzule orbity/pogody i wskazówki kolejności dowodów. Bez dziedziczenia sprzętu.",
-          "field_note": "Otwórz teczkę, a Black Keel ją wyceni. Zachowaj stare podejrzenie; płuca, kadłub i narzędzia zostają poza aktami.",
-          "terminal": "FORMULARZ DEEP REACH DR-902\nRejestr: roszczenie dossier Maraudera\nPola aktywne: rodzina plotki, zapis zakończenia, masa zastawu, warunek depozytu, okno orbity/pogody, wskazówka kolejności dowodów\nPola odrzucone: rezerwa tlenu, klasa kadłuba, stan broni, przeniesienie ekwipunku\nStatus: wyłącznie zapis wiedzy; sprzęt przetrwania resetowany w każdym kontrakcie",
-          "audio": "Teczki trzymają nazwiska i złe klauzule. Nie dają mocniejszego skafandra.",
-          "in_game_wiki": "Rejestr roszczeń dossier jest formularzem przyjęcia Black Keel dla wcześniejszych dowodów, nie szafką ze sprzętem. Wybrane dossier może przenieść stare zapisy zakończeń, rodziny plotek, presję zastawu, warunki depozytu i ostrzeżenia trasowe do nowego kontraktu. Te zapisy zmieniają podejrzenia operatora i opłatę naliczaną przez carrier. Nie zmieniają rezerwy tlenu, klasy kadłuba, broni, ekwipunku ani tożsamości pracownika wpisanej do roszczenia.",
-          "external_site": "DR-902 zmienia wybór dossier w zapis roszczenia. Zachowuje wiedzę, plotki i presję prawną, a sprzęt przetrwania oraz fakty świata trzyma poza aktami."
-        },
-        "uk_UA": {
-          "title": "Реєстр претензійних досьє",
-          "scanner": "Реєстр претензій DR-902. Активні досьє відкривають родини чуток, записи фіналів, тиск застави, умови зберігання, орбітально-погодні пункти й підказки порядку доказів. Без успадкування спорядження.",
-          "field_note": "Відкрив теку — Black Keel вже ставить ціну. Стару підозру бери; легені, корпус і інструменти лишаються поза файлом.",
-          "terminal": "ФОРМА DEEP REACH DR-902\nРеєстр: претензія за досьє Marauder\nАктивні поля: родина чутки, запис фіналу, маса застави, умова зберігання, орбітально-погодне вікно, підказка порядку доказів\nВідхилені поля: запас кисню, клас корпусу, стан зброї, перенесення інвентарю\nСтатус: лише запис знання; спорядження виживання скидається для кожного контракту",
-          "audio": "Теки зберігають імена й погані пункти договору. Міцнішого костюма вони не дають.",
-          "in_game_wiki": "Реєстр претензійних досьє — це вхідна форма Black Keel для попередніх доказів, не шафа зі спорядженням. Обране досьє може перенести старі записи фіналів, родини чуток, тиск застави, умови зберігання й маршрутні попередження у новий контракт. Ці записи змінюють підозри оператора й рахунок carrier. Вони не змінюють запас кисню, клас корпусу, зброю, інвентар або особу працівника, вписану в претензію.",
-          "external_site": "DR-902 перетворює вибір досьє на претензійний запис. Він зберігає знання, чутки й юридичний тиск, але тримає спорядження виживання та факти світу поза файлом."
-        },
-        "ar_SA": {
-          "title": "سجل مطالبة الملفات",
-          "scanner": "سجل مطالبة DR-902. الملفات النشطة تكشف عائلات شائعات، سجلات نهايات، ضغط رهن، شروط عهدة، بنود مدار/طقس وتلميحات ترتيب أدلة. لا توريث معدات.",
-          "field_note": "افتح ملفا و Black Keel يضع له سعرا. احتفظ بالريبة القديمة؛ اترك الرئتين والبدن والأدوات خارج الملف.",
-          "terminal": "نموذج DEEP REACH DR-902\nالسجل: مطالبة ملف Marauder\nحقول نشطة: عائلة شائعة، سجل نهاية، كتلة رهن، شرط عهدة، نافذة مدار/طقس، تلميح ترتيب أدلة\nحقول مرفوضة: احتياطي أكسجين، تصنيف بدن، حالة سلاح، ترحيل مخزون\nالحالة: سجل معرفة فقط؛ معدات البقاء تعاد لكل عقد",
-          "audio": "الملفات تحفظ الأسماء والبنود السيئة. لا تعطيك بدلة أقوى.",
-          "in_game_wiki": "سجل مطالبة الملفات هو نموذج إدخال من Black Keel للأدلة السابقة، وليس خزانة معدات. الملف المختار يمكن أن يحمل نهايات قديمة، عائلات شائعات، ضغط رهن، شروط عهدة وتحذيرات طريق إلى عقد جديد. هذه السجلات تغير ما يشتبه به المشغل وما تفرضه الناقلة. لا تغير احتياطي الأكسجين أو تصنيف البدن أو الأسلحة أو المخزون أو هوية العامل المكتوبة في المطالبة.",
-          "external_site": "DR-902 يحول اختيار الملف إلى سجل مطالبة. يحفظ المعرفة والشائعات والضغط القانوني، ويبقي معدات البقاء وحقائق العالم خارج الملف."
-        },
-        "id_ID": {
-          "title": "Registri Klaim Dosier",
-          "scanner": "Registri klaim DR-902. Dosier aktif membuka keluarga rumor, catatan akhir, tekanan lien, syarat kustodi, klausul orbit/cuaca, dan petunjuk urutan bukti. Tidak ada warisan peralatan.",
-          "field_note": "Buka satu map dan Black Keel memberi harga. Simpan kecurigaan lama; paru-paru, hull, dan alat tetap di luar berkas.",
-          "terminal": "FORMULIR DEEP REACH DR-902\nRegistri: klaim dosier Marauder\nBidang aktif: keluarga rumor, catatan akhir, massa lien, syarat kustodi, jendela orbit/cuaca, petunjuk urutan bukti\nBidang ditolak: cadangan oksigen, rating hull, status senjata, bawaan inventaris\nStatus: catatan pengetahuan saja; peralatan bertahan hidup direset per kontrak",
-          "audio": "Map menyimpan nama dan klausul buruk. Map tidak memberimu suit yang lebih kuat.",
-          "in_game_wiki": "Registri klaim dosier adalah formulir intake Black Keel untuk bukti lama, bukan loker peralatan. Dosier yang dipilih dapat membawa catatan akhir lama, keluarga rumor, tekanan lien, syarat kustodi, dan peringatan rute ke kontrak baru. Catatan itu mengubah apa yang dicurigai operator dan apa yang ditagih carrier. Catatan itu tidak mengubah cadangan oksigen, rating hull, senjata, inventaris, atau identitas pekerja yang tertulis dalam klaim.",
-          "external_site": "DR-902 mengubah pemilihan dosier menjadi catatan klaim. Ia menyimpan pengetahuan, rumor, dan tekanan hukum sambil menjaga peralatan bertahan hidup dan fakta dunia di luar berkas."
-        },
-        "ko_KR": {
-          "title": "도시어 청구 등록부",
-          "scanner": "DR-902 청구 등록부. 활성 도시어는 소문 계열, 엔딩 기록, 유치권 압박, 보관 조건, 궤도/기상 조항, 증거 순서 힌트를 드러낸다. 장비 상속 없음.",
-          "field_note": "폴더를 열면 Black Keel이 가격을 매긴다. 오래된 의심은 챙겨라. 폐, 선체, 공구는 파일 밖에 둔다.",
-          "terminal": "DEEP REACH 양식 DR-902\n등록: Marauder 도시어 청구\n활성 필드: 소문 계열, 엔딩 기록, 유치권 질량, 보관 조건, 궤도/기상 창, 증거 순서 힌트\n거부 필드: 산소 예비량, 선체 등급, 무기 상태, 재고 이월\n상태: 지식 기록 전용. 생존 장비는 계약마다 초기화",
-          "audio": "폴더는 이름과 나쁜 조항을 보관한다. 더 강한 슈트를 주지는 않는다.",
-          "in_game_wiki": "도시어 청구 등록부는 이전 증거를 위한 Black Keel 접수 양식이지 장비 보관함이 아니다. 선택한 도시어는 오래된 엔딩 기록, 소문 계열, 유치권 압박, 보관 조건, 경로 경고를 새 계약으로 가져올 수 있다. 그 기록은 오퍼레이터가 의심하는 것과 carrier가 청구하는 금액을 바꾼다. 산소 예비량, 선체 등급, 무기, 재고, 청구서에 적힌 작업자 신원은 바꾸지 않는다.",
-          "external_site": "DR-902은 도시어 선택을 청구 기록으로 만든다. 지식, 소문, 법적 압박은 보존하지만 생존 장비와 세계 사실은 파일 밖에 둔다."
-        },
-        "he_IL": {
-          "title": "מרשם תביעת תיק",
-          "scanner": "מרשם תביעה DR-902. תיקים פעילים חושפים משפחות שמועה, רשומות סיום, לחץ שעבוד, תנאי משמורת, סעיפי מסלול/מזג אוויר ורמזי סדר ראיות. אין ירושת ציוד.",
-          "field_note": "פתח תיק ו Black Keel מתמחר אותו. שמור את החשד הישן; ריאות, גוף חליפה וכלים נשארים מחוץ לקובץ.",
-          "terminal": "טופס DEEP REACH DR-902\nמרשם: תביעת תיק Marauder\nשדות פעילים: משפחת שמועה, רשומת סיום, מסת שעבוד, תנאי משמורת, חלון מסלול/מזג אוויר, רמז סדר ראיות\nשדות נדחים: עתודת חמצן, דירוג גוף, מצב נשק, נשיאת מלאי\nסטטוס: רשומת ידע בלבד; ציוד הישרדות מאופס לכל חוזה",
-          "audio": "תיקים שומרים שמות וסעיפים רעים. הם לא נותנים לך חליפה חזקה יותר.",
-          "in_game_wiki": "מרשם תביעת התיקים הוא טופס קליטה של Black Keel לראיות קודמות, לא ארון ציוד. תיק שנבחר יכול לשאת רשומות סיום ישנות, משפחות שמועה, לחץ שעבוד, תנאי משמורת ואזהרות נתיב אל חוזה חדש. הרשומות משנות מה המפעיל חושד ומה ה-carrier מחייב. הן לא משנות עתודת חמצן, דירוג גוף, נשק, מלאי או את זהות העובד הרשומה בתביעה.",
-          "external_site": "DR-902 הופך בחירת תיק לרשומת תביעה. הוא משמר ידע, שמועות ולחץ משפטי, ומשאיר ציוד הישרדות ועובדות עולם מחוץ לקובץ."
-        },
-        "pt_BR": {
-          "title": "Registro de reivindicação de dossiê",
-          "scanner": "Registro DR-902. Dossiês ativos expõem famílias de rumor, registros de finais, pressão de penhor, termos de custódia, cláusulas orbitais/climáticas e pistas de ordem de evidência. Sem herança de equipamento.",
-          "field_note": "Abra uma pasta e a Black Keel coloca preço nela. Guarde a suspeita antiga; pulmões, casco e ferramentas ficam fora do arquivo.",
-          "terminal": "FORMULÁRIO DEEP REACH DR-902\nRegistro: reivindicação de dossiê Marauder\nCampos ativos: família de rumor, registro de final, massa de penhor, termo de custódia, janela orbital/climática, pista de ordem de evidência\nCampos negados: reserva de oxigênio, classe de casco, estado de arma, transferência de inventário\nStatus: apenas registro de conhecimento; equipamento de sobrevivência reinicia por contrato",
-          "audio": "Pastas guardam nomes e cláusulas ruins. Não dão um traje mais forte.",
-          "in_game_wiki": "O registro de reivindicação de dossiê é um formulário de entrada da Black Keel para evidência anterior, não um armário de equipamento. Um dossiê selecionado pode levar registros de finais antigos, famílias de rumor, pressão de penhor, termos de custódia e avisos de rota para um novo contrato. Esses registros mudam o que o operador suspeita e o que o carrier cobra. Não alteram reserva de oxigênio, classe de casco, armas, inventário nem a identidade do trabalhador escrita na reivindicação.",
-          "external_site": "DR-902 transforma seleção de dossiê em registro de reivindicação. Preserva conhecimento, rumores e pressão legal, mantendo equipamento de sobrevivência e fatos do mundo fora do arquivo."
-        },
-        "nl_NL": {
-          "title": "Dossierclaimregister",
-          "scanner": "DR-902 claimregister. Actieve dossiers tonen geruchtenfamilies, eindrecords, panddruk, bewaartermen, orbit-/weerclausules en bewijsvolgorde-hints. Geen uitrustingserfenis.",
-          "field_note": "Open een map en Black Keel prijst haar. Bewaar de oude argwaan; longen, romp en gereedschap blijven buiten het dossier.",
-          "terminal": "DEEP REACH FORMULIER DR-902\nRegister: Marauder-dossierclaim\nActieve velden: geruchtenfamilie, eindrecord, pandmassa, bewaarterm, orbit-/weervenster, bewijsvolgorde-hint\nGeweigerde velden: zuurstofreserve, rompklasse, wapenstatus, inventarisoverdracht\nStatus: alleen kennisrecord; overlevingsuitrusting reset per contract",
-          "audio": "Mappen bewaren namen en slechte clausules. Ze geven je geen sterker pak.",
-          "in_game_wiki": "Het dossierclaimregister is een Black-Keel-innameformulier voor oud bewijs, geen uitrustingskast. Een gekozen dossier kan oude eindrecords, geruchtenfamilies, panddruk, bewaartermen en routewaarschuwingen meenemen naar een nieuw contract. Die records veranderen wat de operator vermoedt en wat de carrier in rekening brengt. Ze veranderen geen zuurstofreserve, rompklasse, wapens, inventaris of de arbeidersidentiteit in de claim.",
-          "external_site": "DR-902 maakt van dossierselectie een claimrecord. Het bewaart kennis, geruchten en juridische druk, terwijl overlevingsuitrusting en wereldfeiten buiten het bestand blijven."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P176_DOSSIER_SELECTION_UI_RULE",
+   "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
+   "article_id": "dossier_save.dossier_selection_ui_rule",
+   "title_key": "applied_lore.dossier_selection_ui_rule.title",
+   "unlock": {
+    "primary": "unlock.dossier_selection_ui_rule",
+    "poi_tags": [
+     "poi.dossier_selection_panel",
+     "poi.contract_seed_terminal",
+     "poi.marauder_profile_card"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.relay_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Dossier Claim Registry",
+     "scanner": "DR-902 claim registry. Active dossiers expose rumor families, ending records, lien pressure, custody terms, orbit/weather clauses and evidence-order hints. No equipment inheritance.",
+     "field_note": "Open a folder and Black Keel prices it. Keep the old suspicion; leave lungs, hull and tools out of the file.",
+     "terminal": "DEEP REACH FORM DR-902\nRegistry: Marauder dossier claim\nActive fields: rumor family, ending record, lien mass, custody term, orbit/weather window, evidence-order hint\nDenied fields: oxygen reserve, hull rating, weapon state, inventory carryover\nStatus: knowledge record only; survival equipment resets per contract",
+     "audio": "Folders keep names and bad clauses. They do not give you a stronger suit.",
+     "in_game_wiki": "The dossier claim registry is a Black Keel intake form for prior evidence, not a gear locker. A selected dossier can carry old endings, rumor families, lien pressure, custody terms and route warnings into a new contract. Those records change what the operator suspects and what the carrier charges. They do not alter oxygen reserve, hull rating, weapons, inventory or the worker identity written into the claim.",
+     "external_site": "DR-902 turns dossier selection into a claim record. It preserves knowledge, rumors and legal pressure while keeping survival equipment and world facts outside the file."
     },
-    {
-      "packet_id": "P177_RISK_WEIGHT_CONTRACT_CARD",
-      "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
-      "article_id": "dossier_save.risk_weight_contract_card",
-      "title_key": "applied_lore.risk_weight_contract_card.title",
-      "unlock": {
-        "primary": "unlock.risk_weight_contract_card",
-        "poi_tags": [
-          "poi.risk_weight_card",
-          "poi.lien_multiplier_plate",
-          "poi.weather_clause_stamp"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Contract Risk Weight Card",
-          "scanner": "Claim-weight card. Variables: lien mass, storm window, sample custody, route blackout, witness hash demand, Deep Reach clause load. Incident record and operator identity locked.",
-          "field_note": "A heavier card means less mercy in the clauses. It does not rewrite the crime or lend you better gear.",
-          "terminal": "BLACK KEEL CONTRACT CARD\nWeight fields: lien mass, storm/orbit window, sample custody grade, route blackout, witness hash demand, quarantine delay, Deep Reach clause load\nLocked fields: operator identity, incident record, worker names, oxygen reserve, hull rating, tool grade\nReturn note: higher weight increases payout exposure and recovery denial surface",
-          "audio": "The card changes the bill. It does not change what happened down there.",
-          "in_game_wiki": "A contract risk weight card is a claim-pricing sheet. It can make a descent harsher by changing lien mass, storm timing, sample custody, blackout routing, witness-hash requirements and Deep Reach clause pressure. It cannot change who the operator is, what happened in 2147, which workers existed, or what equipment starts in the suit. A heavier card buys a higher possible return by adding more ways for Black Keel or Recovery Compliance to reject it.",
-          "external_site": "Risk weight cards vary the contract around a fixed crime scene. They adjust lien, custody, timing, blackout and proof pressure without changing identity, world facts or inherited equipment."
-        },
-        "ru_RU": {
-          "title": "Карточка весового риска контракта",
-          "scanner": "Карточка веса претензии. Переменные: масса залога, штормовое окно, хранение образца, маршрутное затемнение, требование witness hash, нагрузка пунктов Deep Reach. Запись инцидента и личность оператора заблокированы.",
-          "field_note": "Чем тяжелее карточка, тем меньше милости в пунктах договора. Преступление она не переписывает и лучшее снаряжение не дает взаймы.",
-          "terminal": "КАРТОЧКА КОНТРАКТА BLACK KEEL\nПоля веса: масса залога, штормовое/орбитальное окно, класс хранения образца, маршрутное затемнение, требование witness hash, задержка карантина, нагрузка пунктов Deep Reach\nЗаблокированные поля: личность оператора, запись инцидента, имена работников, запас кислорода, класс корпуса, класс инструмента\nПримечание возврата: больший вес повышает экспозицию выплаты и площадь отказа в восстановлении",
-          "audio": "Карточка меняет счет. Она не меняет то, что случилось внизу.",
-          "in_game_wiki": "Карточка весового риска контракта — претензионный лист цены. Она может сделать спуск жестче через массу залога, время шторма, хранение образца, маршрутное затемнение, требования witness hash и давление пунктов Deep Reach. Она не может изменить личность оператора, события 2147 года, существование работников или стартовое снаряжение в костюме. Более тяжелая карточка покупает больший возможный возврат, добавляя Black Keel или Recovery Compliance больше способов отказать.",
-          "external_site": "Карточки весового риска меняют контракт вокруг неизменного места преступления. Они регулируют залог, хранение, время, затемнение и давление доказательств, не меняя личность, факты мира или наследуемое снаряжение."
-        },
-        "ja_JP": {
-          "title": "契約リスク重量カード",
-          "scanner": "請求重量カード。変数: リーエン質量、嵐ウィンドウ、サンプル保管、ルート遮断、witness hash 要求、Deep Reach 条項負荷。事故記録と操作者身元は固定。",
-          "field_note": "重いカードほど条項の猶予は少ない。犯罪を書き換えず、良い装備も貸さない。",
-          "terminal": "BLACK KEEL 契約カード\n重量欄: リーエン質量、嵐/軌道ウィンドウ、サンプル保管等級、ルート遮断、witness hash 要求、検疫遅延、Deep Reach 条項負荷\n固定欄: 操作者身元、事故記録、作業者名、酸素予備、船体等級、工具等級\n帰還注記: 重量上昇は支払い露出と回収拒否面を増やす",
-          "audio": "カードは請求書を変える。下で起きたことは変えない。",
-          "in_game_wiki": "契約リスク重量カードは請求価格表である。リーエン質量、嵐の時刻、サンプル保管、遮断ルート、witness hash 要求、Deep Reach 条項圧を変えることで降下を厳しくできる。操作者の身元、2147年に起きたこと、存在した作業者、スーツ内の初期装備は変えられない。重いカードは、Black Keel または Recovery Compliance が拒否できる経路を増やす代わりに、より高い戻りの可能性を買う。",
-          "external_site": "リスク重量カードは固定された犯罪現場の周囲で契約を変える。リーエン、保管、時刻、遮断、証明圧を調整するが、身元、世界事実、継承装備は変えない。"
-        },
-        "zh_CN": {
-          "title": "合同风险权重卡",
-          "scanner": "索赔权重卡。变量：留置质量、风暴窗口、样本托管、路线黑障、witness hash 要求、Deep Reach 条款负载。事故记录和操作者身份锁定。",
-          "field_note": "卡越重，条款里的宽限越少。它不会重写罪行，也不会借给你更好的装备。",
-          "terminal": "BLACK KEEL 合同卡\n权重字段：留置质量、风暴/轨道窗口、样本托管等级、路线黑障、witness hash 要求、隔离延迟、Deep Reach 条款负载\n锁定字段：操作者身份、事故记录、工人姓名、氧气储备、艇体等级、工具等级\n返回备注：更高权重增加付款暴露面和回收拒绝面",
-          "audio": "这张卡改变账单。它不改变下面发生过的事。",
-          "in_game_wiki": "合同风险权重卡是一张索赔定价表。它可以通过改变留置质量、风暴时机、样本托管、黑障路线、witness hash 要求和 Deep Reach 条款压力，让一次下潜更苛刻。它不能改变操作者是谁、2147年发生了什么、哪些工人存在过，或潜服起始携带什么装备。更重的卡用更多可被 Black Keel 或 Recovery Compliance 拒绝的路径，换取更高的潜在回报。",
-          "external_site": "风险权重卡围绕固定犯罪现场改变合同。它调整留置、托管、时机、黑障和证明压力，但不改变身份、世界事实或继承装备。"
-        },
-        "fr_FR": {
-          "title": "Carte de poids de risque contractuel",
-          "scanner": "Carte de poids de réclamation. Variables : masse de privilège, fenêtre de tempête, garde d'échantillon, blackout de route, demande de witness hash, charge de clauses Deep Reach. Enregistrement d'incident et identité opérateur verrouillés.",
-          "field_note": "Une carte plus lourde laisse moins de clémence dans les clauses. Elle ne réécrit pas le crime et ne prête pas de meilleur équipement.",
-          "terminal": "CARTE DE CONTRAT BLACK KEEL\nChamps de poids : masse de privilège, fenêtre tempête/orbite, grade de garde d'échantillon, blackout de route, demande de witness hash, délai de quarantaine, charge de clauses Deep Reach\nChamps verrouillés : identité opérateur, enregistrement d'incident, noms des travailleurs, réserve d'oxygène, classe de coque, grade d'outil\nNote de retour : un poids plus haut augmente l'exposition de paiement et les surfaces de refus de récupération",
-          "audio": "La carte change la facture. Elle ne change pas ce qui s'est passé en bas.",
-          "in_game_wiki": "Une carte de poids de risque contractuel est une fiche de tarification de réclamation. Elle peut rendre une descente plus dure en modifiant masse de privilège, timing de tempête, garde d'échantillon, routage de blackout, exigences de witness hash et pression de clauses Deep Reach. Elle ne peut pas changer l'identité de l'opérateur, ce qui s'est passé en 2147, quels travailleurs ont existé ni quel équipement commence dans la combinaison. Une carte plus lourde achète un retour potentiel plus élevé en ajoutant plus de moyens de rejet pour Black Keel ou Recovery Compliance.",
-          "external_site": "Les cartes de poids de risque varient le contrat autour d'une scène de crime fixe. Elles ajustent privilège, garde, timing, blackout et pression de preuve sans changer identité, faits du monde ou équipement hérité."
-        },
-        "es_ES": {
-          "title": "Tarjeta de peso de riesgo contractual",
-          "scanner": "Tarjeta de peso de reclamación. Variables: masa de gravamen, ventana de tormenta, custodia de muestra, apagón de ruta, demanda de witness hash, carga de cláusulas Deep Reach. Registro del incidente e identidad del operador bloqueados.",
-          "field_note": "Una tarjeta más pesada deja menos piedad en las cláusulas. No reescribe el crimen ni te presta mejor equipo.",
-          "terminal": "TARJETA DE CONTRATO BLACK KEEL\nCampos de peso: masa de gravamen, ventana tormenta/orbita, grado de custodia de muestra, apagón de ruta, demanda de witness hash, demora de cuarentena, carga de cláusulas Deep Reach\nCampos bloqueados: identidad del operador, registro del incidente, nombres de trabajadores, reserva de oxígeno, clase de casco, grado de herramienta\nNota de retorno: más peso aumenta exposición de pago y superficie de denegación de recuperación",
-          "audio": "La tarjeta cambia la factura. No cambia lo que pasó ahí abajo.",
-          "in_game_wiki": "Una tarjeta de peso de riesgo contractual es una hoja de precio de reclamación. Puede endurecer un descenso cambiando masa de gravamen, momento de tormenta, custodia de muestra, enrutado de apagón, requisitos de witness hash y presión de cláusulas Deep Reach. No puede cambiar quién es el operador, qué ocurrió en 2147, qué trabajadores existieron ni qué equipo empieza en el traje. Una tarjeta más pesada compra un retorno posible más alto al añadir más formas de rechazo para Black Keel o Recovery Compliance.",
-          "external_site": "Las tarjetas de peso de riesgo varían el contrato alrededor de una escena de crimen fija. Ajustan gravamen, custodia, tiempo, apagón y presión de prueba sin cambiar identidad, hechos del mundo ni equipo heredado."
-        },
-        "de_DE": {
-          "title": "Vertragsrisikogewichtskarte",
-          "scanner": "Claim-Gewichtskarte. Variablen: Pfandmasse, Sturmfenster, Probenverwahrung, Routenausfall, Witness-Hash-Forderung, Deep-Reach-Klausellast. Vorfalldatensatz und Operatoridentität gesperrt.",
-          "field_note": "Eine schwerere Karte bedeutet weniger Gnade in den Klauseln. Sie schreibt das Verbrechen nicht um und leiht dir keine bessere Ausrüstung.",
-          "terminal": "BLACK KEEL VERTRAGSKARTE\nGewichtsfelder: Pfandmasse, Sturm-/Orbitfenster, Probenverwahrungsklasse, Routenausfall, Witness-Hash-Forderung, Quarantäneverzug, Deep-Reach-Klausellast\nGesperrte Felder: Operatoridentität, Vorfalldatensatz, Arbeiternamen, Sauerstoffreserve, Hüllenklasse, Werkzeugklasse\nRückkehrnotiz: höheres Gewicht erhöht Auszahlungsexposition und Ablehnungsfläche der Bergung",
-          "audio": "Die Karte ändert die Rechnung. Sie ändert nicht, was dort unten geschah.",
-          "in_game_wiki": "Eine Vertragsrisikogewichtskarte ist ein Preisblatt für Claims. Sie kann einen Abstieg härter machen, indem sie Pfandmasse, Sturmzeit, Probenverwahrung, Blackout-Routing, Witness-Hash-Anforderungen und Deep-Reach-Klauseldruck ändert. Sie kann nicht ändern, wer der Operator ist, was 2147 geschah, welche Arbeiter existierten oder welche Ausrüstung im Anzug startet. Eine schwerere Karte kauft eine höhere mögliche Rückkehr, indem sie Black Keel oder Recovery Compliance mehr Ablehnungswege gibt.",
-          "external_site": "Risikogewichtskarten variieren den Vertrag um einen festen Tatort. Sie ändern Pfand, Verwahrung, Timing, Blackout und Beweisdruck, ohne Identität, Weltfakten oder geerbte Ausrüstung zu ändern."
-        },
-        "pl_PL": {
-          "title": "Karta wagi ryzyka kontraktu",
-          "scanner": "Karta wagi roszczenia. Zmienne: masa zastawu, okno sztormu, depozyt próbki, blackout trasy, żądanie witness hash, obciążenie klauzul Deep Reach. Zapis incydentu i tożsamość operatora zablokowane.",
-          "field_note": "Cięższa karta oznacza mniej litości w klauzulach. Nie przepisuje zbrodni i nie pożycza lepszego sprzętu.",
-          "terminal": "KARTA KONTRAKTU BLACK KEEL\nPola wagi: masa zastawu, okno sztorm/orbita, stopień depozytu próbki, blackout trasy, żądanie witness hash, opóźnienie kwarantanny, obciążenie klauzul Deep Reach\nPola zablokowane: tożsamość operatora, zapis incydentu, nazwiska pracowników, rezerwa tlenu, klasa kadłuba, klasa narzędzi\nNotatka powrotu: wyższa waga zwiększa ekspozycję wypłaty i powierzchnię odmowy odzysku",
-          "audio": "Karta zmienia rachunek. Nie zmienia tego, co stało się tam na dole.",
-          "in_game_wiki": "Karta wagi ryzyka kontraktu jest arkuszem wyceny roszczenia. Może zaostrzyć zejście przez zmianę masy zastawu, czasu sztormu, depozytu próbki, trasy blackout, wymagań witness hash i presji klauzul Deep Reach. Nie może zmienić tego, kim jest operator, co stało się w 2147 roku, którzy pracownicy istnieli ani jaki sprzęt zaczyna w skafandrze. Cięższa karta kupuje wyższy możliwy zwrot, dodając Black Keel lub Recovery Compliance więcej dróg odmowy.",
-          "external_site": "Karty wagi ryzyka różnicują kontrakt wokół stałego miejsca zbrodni. Regulują zastaw, depozyt, czas, blackout i presję dowodową bez zmiany tożsamości, faktów świata lub dziedziczonego sprzętu."
-        },
-        "uk_UA": {
-          "title": "Картка вагового ризику контракту",
-          "scanner": "Картка ваги претензії. Змінні: маса застави, штормове вікно, зберігання зразка, маршрутне затемнення, вимога witness hash, навантаження пунктів Deep Reach. Запис інциденту й особа оператора заблоковані.",
-          "field_note": "Важча картка означає менше милості в пунктах договору. Вона не переписує злочин і не позичає краще спорядження.",
-          "terminal": "КАРТКА КОНТРАКТУ BLACK KEEL\nПоля ваги: маса застави, штормове/орбітальне вікно, клас зберігання зразка, маршрутне затемнення, вимога witness hash, затримка карантину, навантаження пунктів Deep Reach\nЗаблоковані поля: особа оператора, запис інциденту, імена працівників, запас кисню, клас корпусу, клас інструмента\nПримітка повернення: більша вага підвищує експозицію виплати й поверхню відмови у відновленні",
-          "audio": "Картка змінює рахунок. Вона не змінює того, що сталося внизу.",
-          "in_game_wiki": "Картка вагового ризику контракту — це претензійний лист ціни. Вона може зробити спуск жорсткішим через масу застави, час шторму, зберігання зразка, маршрутне затемнення, вимоги witness hash і тиск пунктів Deep Reach. Вона не може змінити особу оператора, події 2147 року, працівників, що існували, або стартове спорядження в костюмі. Важча картка купує більший можливий повернений дохід, додаючи Black Keel або Recovery Compliance більше способів відмовити.",
-          "external_site": "Картки вагового ризику змінюють контракт навколо незмінного місця злочину. Вони регулюють заставу, зберігання, час, затемнення й тиск доказів, не змінюючи особу, факти світу або успадковане спорядження."
-        },
-        "ar_SA": {
-          "title": "بطاقة وزن خطر العقد",
-          "scanner": "بطاقة وزن مطالبة. المتغيرات: كتلة رهن، نافذة عاصفة، عهدة عينة، تعتيم طريق، طلب witness hash، حمل بنود Deep Reach. سجل الحادث وهوية المشغل مقفلان.",
-          "field_note": "البطاقة الأثقل تعني رحمة أقل في البنود. لا تعيد كتابة الجريمة ولا تقرضك عتادا أفضل.",
-          "terminal": "بطاقة عقد BLACK KEEL\nحقول الوزن: كتلة رهن، نافذة عاصفة/مدار، درجة عهدة عينة، تعتيم طريق، طلب witness hash، تأخير حجر، حمل بنود Deep Reach\nحقول مقفلة: هوية المشغل، سجل الحادث، أسماء العمال، احتياطي أكسجين، تصنيف بدن، درجة أداة\nملاحظة عودة: الوزن الأعلى يزيد تعرض الدفع وسطح رفض الاستعادة",
-          "audio": "البطاقة تغير الفاتورة. لا تغير ما حدث هناك تحت.",
-          "in_game_wiki": "بطاقة وزن خطر العقد هي ورقة تسعير مطالبة. يمكنها جعل النزول أقسى عبر تغيير كتلة الرهن، توقيت العاصفة، عهدة العينة، توجيه التعتيم، متطلبات witness hash وضغط بنود Deep Reach. لا يمكنها تغيير هوية المشغل، ما حدث في 2147، أسماء العمال الذين كانوا موجودين، أو المعدات التي تبدأ داخل البدلة. البطاقة الأثقل تشتري عائدا محتملا أعلى بإضافة طرق أكثر كي ترفض Black Keel أو Recovery Compliance الإرجاع.",
-          "external_site": "بطاقات وزن الخطر تغير العقد حول مسرح جريمة ثابت. تعدل الرهن والعهدة والتوقيت والتعتيم وضغط الإثبات من دون تغيير الهوية أو حقائق العالم أو المعدات الموروثة."
-        },
-        "id_ID": {
-          "title": "Kartu Bobot Risiko Kontrak",
-          "scanner": "Kartu bobot klaim. Variabel: massa lien, jendela badai, kustodi sampel, blackout rute, tuntutan witness hash, beban klausul Deep Reach. Catatan insiden dan identitas operator terkunci.",
-          "field_note": "Kartu yang lebih berat berarti lebih sedikit ampun dalam klausul. Ia tidak menulis ulang kejahatan atau meminjamkan gear yang lebih baik.",
-          "terminal": "KARTU KONTRAK BLACK KEEL\nBidang bobot: massa lien, jendela badai/orbit, tingkat kustodi sampel, blackout rute, tuntutan witness hash, tunda karantina, beban klausul Deep Reach\nBidang terkunci: identitas operator, catatan insiden, nama pekerja, cadangan oksigen, rating hull, tingkat alat\nCatatan pulang: bobot lebih tinggi menaikkan paparan pembayaran dan permukaan penolakan pemulihan",
-          "audio": "Kartu mengubah tagihan. Ia tidak mengubah apa yang terjadi di bawah sana.",
-          "in_game_wiki": "Kartu bobot risiko kontrak adalah lembar harga klaim. Ia dapat membuat penurunan lebih keras dengan mengubah massa lien, waktu badai, kustodi sampel, routing blackout, tuntutan witness hash, dan tekanan klausul Deep Reach. Ia tidak dapat mengubah siapa operatornya, apa yang terjadi pada 2147, pekerja mana yang pernah ada, atau peralatan apa yang mulai di suit. Kartu lebih berat membeli kemungkinan imbalan lebih tinggi dengan menambah cara bagi Black Keel atau Recovery Compliance untuk menolaknya.",
-          "external_site": "Kartu bobot risiko memvariasikan kontrak di sekitar tempat kejahatan yang tetap. Ia mengatur lien, kustodi, waktu, blackout, dan tekanan bukti tanpa mengubah identitas, fakta dunia, atau peralatan warisan."
-        },
-        "ko_KR": {
-          "title": "계약 위험 가중 카드",
-          "scanner": "청구 가중 카드. 변수: 유치권 질량, 폭풍 창, 샘플 보관, 경로 블랙아웃, witness hash 요구, Deep Reach 조항 부하. 사건 기록과 오퍼레이터 신원은 잠김.",
-          "field_note": "무거운 카드는 조항 안의 자비가 줄었다는 뜻이다. 범죄를 다시 쓰지도, 더 나은 장비를 빌려 주지도 않는다.",
-          "terminal": "BLACK KEEL 계약 카드\n가중 필드: 유치권 질량, 폭풍/궤도 창, 샘플 보관 등급, 경로 블랙아웃, witness hash 요구, 격리 지연, Deep Reach 조항 부하\n잠긴 필드: 오퍼레이터 신원, 사건 기록, 작업자 이름, 산소 예비량, 선체 등급, 도구 등급\n귀환 메모: 더 높은 가중치는 지급 노출과 회수 거부 표면을 늘린다",
-          "audio": "카드는 청구서를 바꾼다. 아래에서 일어난 일은 바꾸지 않는다.",
-          "in_game_wiki": "계약 위험 가중 카드는 청구 가격표다. 유치권 질량, 폭풍 시각, 샘플 보관, 블랙아웃 경로, witness hash 요구, Deep Reach 조항 압박을 바꿔 하강을 더 혹독하게 만들 수 있다. 오퍼레이터가 누구인지, 2147년에 무슨 일이 있었는지, 어떤 작업자가 존재했는지, 슈트가 어떤 장비로 시작하는지는 바꾸지 못한다. 더 무거운 카드는 Black Keel이나 Recovery Compliance가 거부할 수 있는 길을 늘리는 대가로 더 높은 가능한 반환을 산다.",
-          "external_site": "위험 가중 카드는 고정된 범죄 현장 주변의 계약을 바꾼다. 유치권, 보관, 시각, 블랙아웃, 증명 압박을 조정하지만 신원, 세계 사실, 상속 장비는 바꾸지 않는다."
-        },
-        "he_IL": {
-          "title": "כרטיס משקל סיכון חוזה",
-          "scanner": "כרטיס משקל תביעה. משתנים: מסת שעבוד, חלון סערה, משמורת דגימה, האפלת נתיב, דרישת witness hash, עומס סעיפי Deep Reach. רשומת אירוע וזהות מפעיל נעולות.",
-          "field_note": "כרטיס כבד יותר אומר פחות רחמים בסעיפים. הוא לא כותב מחדש את הפשע ולא משאיל ציוד טוב יותר.",
-          "terminal": "כרטיס חוזה BLACK KEEL\nשדות משקל: מסת שעבוד, חלון סערה/מסלול, דרגת משמורת דגימה, האפלת נתיב, דרישת witness hash, עיכוב הסגר, עומס סעיפי Deep Reach\nשדות נעולים: זהות מפעיל, רשומת אירוע, שמות עובדים, עתודת חמצן, דירוג גוף, דרגת כלי\nהערת חזרה: משקל גבוה מגדיל חשיפת תשלום ומשטח דחיית חילוץ",
-          "audio": "הכרטיס משנה את החשבון. הוא לא משנה את מה שקרה שם למטה.",
-          "in_game_wiki": "כרטיס משקל סיכון חוזה הוא גיליון תמחור תביעה. הוא יכול להקשות ירידה באמצעות שינוי מסת שעבוד, תזמון סערה, משמורת דגימה, ניתוב האפלה, דרישות witness hash ולחץ סעיפי Deep Reach. הוא לא יכול לשנות מי המפעיל, מה קרה ב-2147, אילו עובדים היו קיימים או איזה ציוד מתחיל בחליפה. כרטיס כבד יותר קונה החזר אפשרי גבוה יותר בכך שהוא מוסיף ל-Black Keel או Recovery Compliance עוד דרכי דחייה.",
-          "external_site": "כרטיסי משקל סיכון משנים את החוזה סביב זירת פשע קבועה. הם מכווננים שעבוד, משמורת, תזמון, האפלה ולחץ הוכחה בלי לשנות זהות, עובדות עולם או ציוד מורש."
-        },
-        "pt_BR": {
-          "title": "Cartão de peso de risco contratual",
-          "scanner": "Cartão de peso de reivindicação. Variáveis: massa de penhor, janela de tempestade, custódia de amostra, apagão de rota, exigência de witness hash, carga de cláusulas Deep Reach. Registro do incidente e identidade do operador travados.",
-          "field_note": "Um cartão mais pesado significa menos misericórdia nas cláusulas. Ele não reescreve o crime nem empresta equipamento melhor.",
-          "terminal": "CARTÃO DE CONTRATO BLACK KEEL\nCampos de peso: massa de penhor, janela tempestade/orbita, grau de custódia de amostra, apagão de rota, exigência de witness hash, atraso de quarentena, carga de cláusulas Deep Reach\nCampos travados: identidade do operador, registro do incidente, nomes de trabalhadores, reserva de oxigênio, classe de casco, grau de ferramenta\nNota de retorno: peso maior aumenta exposição de pagamento e superfície de negação de recuperação",
-          "audio": "O cartão muda a conta. Não muda o que aconteceu lá embaixo.",
-          "in_game_wiki": "Um cartão de peso de risco contratual é uma folha de preço de reivindicação. Ele pode tornar uma descida mais dura ao mudar massa de penhor, timing de tempestade, custódia de amostra, roteamento de apagão, exigências de witness hash e pressão de cláusulas Deep Reach. Ele não pode mudar quem é o operador, o que aconteceu em 2147, quais trabalhadores existiram ou qual equipamento começa no traje. Um cartão mais pesado compra um retorno possível maior ao adicionar mais formas de recusa para Black Keel ou Recovery Compliance.",
-          "external_site": "Cartões de peso de risco variam o contrato em torno de uma cena de crime fixa. Ajustam penhor, custódia, timing, apagão e pressão de prova sem mudar identidade, fatos do mundo ou equipamento herdado."
-        },
-        "nl_NL": {
-          "title": "Contractrisicogewichtkaart",
-          "scanner": "Claimgewichtkaart. Variabelen: pandmassa, stormvenster, monsterbewaring, routeblackout, witness-hash-eis, Deep-Reach-clausulelast. Incidentrecord en operatoridentiteit vergrendeld.",
-          "field_note": "Een zwaardere kaart betekent minder genade in de clausules. Zij herschrijft de misdaad niet en leent je geen betere uitrusting.",
-          "terminal": "BLACK KEEL CONTRACTKAART\nGewichtsvelden: pandmassa, storm-/orbitvenster, monsterbewaringsgraad, routeblackout, witness-hash-eis, quarantainedelay, Deep-Reach-clausulelast\nVergrendelde velden: operatoridentiteit, incidentrecord, werknamen, zuurstofreserve, rompklasse, gereedschapsklasse\nTerugkeernotitie: hoger gewicht verhoogt betalingsblootstelling en herstelweigeringsvlak",
-          "audio": "De kaart verandert de rekening. Zij verandert niet wat daar beneden gebeurde.",
-          "in_game_wiki": "Een contractrisicogewichtkaart is een prijsblad voor claims. Zij kan een afdaling harder maken door pandmassa, stormtiming, monsterbewaring, blackoutroute, witness-hash-eisen en Deep-Reach-clausuledruk te wijzigen. Zij kan niet veranderen wie de operator is, wat in 2147 gebeurde, welke werkers bestonden of met welke uitrusting het pak begint. Een zwaardere kaart koopt een hogere mogelijke opbrengst door Black Keel of Recovery Compliance meer manieren te geven om die te weigeren.",
-          "external_site": "Risicogewichtkaarten variëren het contract rond een vaste plaats delict. Ze stellen pand, bewaring, timing, blackout en bewijsdruk bij zonder identiteit, wereldfeiten of geërfde uitrusting te veranderen."
-        }
-      }
+    "ru_RU": {
+     "title": "Реестр претензионных досье",
+     "scanner": "Реестр претензий DR-902. Активные досье раскрывают семьи слухов, записи исходов, давление залога, условия хранения, орбитальные/погодные пункты и подсказки порядка улик. Без наследования снаряжения.",
+     "field_note": "Открыл папку — Black Keel уже выставляет цену. Старое подозрение бери с собой; легкие, корпус и инструменты оставь вне файла.",
+     "terminal": "ФОРМА DEEP REACH DR-902\nРеестр: претензия по досье Marauder\nАктивные поля: семья слухов, запись исхода, масса залога, условие хранения, орбитально-погодное окно, подсказка порядка улик\nОтклоненные поля: запас кислорода, класс корпуса, состояние оружия, перенос инвентаря\nСтатус: только запись знания; аварийное снаряжение сбрасывается по каждому контракту",
+     "audio": "Папки хранят имена и плохие пункты договора. Более крепкий костюм они не выдают.",
+     "in_game_wiki": "Реестр претензионных досье — входная форма Black Keel для прежних улик, а не шкаф со снаряжением. Выбранное досье может перенести в новый контракт старые записи исходов, семьи слухов, давление залога, условия хранения и маршрутные предупреждения. Эти записи меняют подозрения оператора и счет carrier. Они не меняют запас кислорода, класс корпуса, оружие, инвентарь или личность работника, указанную в претензии.",
+     "external_site": "DR-902 превращает выбор досье в претензионную запись. Он сохраняет знание, слухи и юридическое давление, но оставляет аварийное снаряжение и факты мира вне файла."
     },
-    {
-      "packet_id": "P178_ENDING_RECORD_PRESENTATION",
-      "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
-      "article_id": "dossier_save.ending_record_presentation",
-      "title_key": "applied_lore.ending_record_presentation.title",
-      "unlock": {
-        "primary": "unlock.ending_record_presentation",
-        "poi_tags": [
-          "poi.ending_record_card",
-          "poi.public_ledger_stamp",
-          "poi.private_dossier_replay"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.relay_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ending Record Presentation",
-          "scanner": "An ending record is evidence, not a trophy shelf.",
-          "field_note": "Show who received the payload and what it cost.",
-          "terminal": "ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "The ending is not over. It is filed.",
-          "in_game_wiki": "Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "ru_RU": {
-          "title": "Подача записи концовки",
-          "scanner": "Запись концовки - evidence, не trophy shelf.",
-          "field_note": "Показывать, кто получил payload и сколько это стоило.",
-          "terminal": "ENDING RECORD: хранить outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state и lien consequence. Читать как claim file.",
-          "audio": "Концовка не окончена. Ее зарегистрировали.",
-          "in_game_wiki": "Записи концовок позволяют помнить последствия без наследования mechanical power.",
-          "external_site": "Подача записи концовки задает dossier-facing форму outcomes."
-        },
-        "ja_JP": {
-          "title": "Ending Record Presentation",
-          "scanner": "JP LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "JP LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "JP LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "JP LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "JP LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "JP LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "zh_CN": {
-          "title": "Ending Record Presentation",
-          "scanner": "CN LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "CN LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "CN LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "CN LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "CN LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "CN LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "fr_FR": {
-          "title": "Ending Record Presentation",
-          "scanner": "FR LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "FR LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "FR LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "FR LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "FR LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "FR LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "es_ES": {
-          "title": "Ending Record Presentation",
-          "scanner": "ES LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "ES LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "ES LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "ES LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "ES LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "ES LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "de_DE": {
-          "title": "Ending Record Presentation",
-          "scanner": "DE LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "DE LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "DE LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "DE LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "DE LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "DE LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "pl_PL": {
-          "title": "Ending Record Presentation",
-          "scanner": "PL LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "PL LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "PL LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "PL LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "PL LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "PL LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "uk_UA": {
-          "title": "Ending Record Presentation",
-          "scanner": "UA LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "UA LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "UA LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "UA LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "UA LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "UA LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "ar_SA": {
-          "title": "Ending Record Presentation",
-          "scanner": "AR LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "AR LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "AR LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "AR LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "AR LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "AR LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "id_ID": {
-          "title": "Ending Record Presentation",
-          "scanner": "ID LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "ID LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "ID LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "ID LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "ID LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "ID LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "ko_KR": {
-          "title": "Ending Record Presentation",
-          "scanner": "KO LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "KO LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "KO LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "KO LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "KO LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "KO LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "he_IL": {
-          "title": "Ending Record Presentation",
-          "scanner": "HE LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "HE LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "HE LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "HE LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "HE LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "HE LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "pt_BR": {
-          "title": "Ending Record Presentation",
-          "scanner": "PT LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "PT LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "PT LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "PT LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "PT LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "PT LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        },
-        "nl_NL": {
-          "title": "Ending Record Presentation",
-          "scanner": "NL LOC HOLD: An ending record is evidence, not a trophy shelf.",
-          "field_note": "NL LOC HOLD: Show who received the payload and what it cost.",
-          "terminal": "NL LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
-          "audio": "NL LOC HOLD: The ending is not over. It is filed.",
-          "in_game_wiki": "NL LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
-          "external_site": "NL LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
-        }
-      }
+    "ja_JP": {
+     "title": "ドシエ請求登録簿",
+     "scanner": "DR-902 請求登録簿。アクティブなドシエは噂系統、エンディング記録、リーエン圧、保管条件、軌道/気象条項、証拠順序ヒントを示す。装備継承なし。",
+     "field_note": "フォルダーを開けば Black Keel が値を付ける。古い疑いだけ持て。肺、船体、工具はファイルの外だ。",
+     "terminal": "DEEP REACH FORM DR-902\n登録: Marauder ドシエ請求\n有効欄: 噂系統、エンディング記録、リーエン質量、保管条件、軌道/気象ウィンドウ、証拠順序ヒント\n拒否欄: 酸素予備、船体等級、武器状態、在庫持越し\n状態: 知識記録のみ。生存装備は契約ごとにリセット",
+     "audio": "フォルダーは名前と悪い条項を残す。強いスーツはくれない。",
+     "in_game_wiki": "ドシエ請求登録簿は過去の証拠を Black Keel に渡す受付フォームであり、装備ロッカーではない。選択されたドシエは古いエンディング記録、噂系統、リーエン圧、保管条件、ルート警告を新しい契約へ持ち込む。これらの記録は操作者の疑いと carrier の請求額を変える。酸素予備、船体等級、武器、在庫、請求書に記された作業者の身元は変えない。",
+     "external_site": "DR-902 はドシエ選択を請求記録に変える。知識、噂、法的圧力は保持するが、生存装備と世界の事実はファイル外に置く。"
     },
-    {
-      "packet_id": "P179_SAVE_PROFILE_KNOWLEDGE_FLAGS",
-      "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
-      "article_id": "dossier_save.save_profile_knowledge_flags",
-      "title_key": "applied_lore.save_profile_knowledge_flags.title",
-      "unlock": {
-        "primary": "unlock.save_profile_knowledge_flags",
-        "poi_tags": [
-          "poi.knowledge_flag_manifest",
-          "poi.save_profile_stamp",
-          "poi.rumor_unlock_card"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "Memory is allowed. Power is not.",
-          "in_game_wiki": "Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "ru_RU": {
-          "title": "Флаги знания профиля",
-          "scanner": "Save persistence должна помнить категории знания, не hot inventory.",
-          "field_note": "Флаги знания не должны менять truth ownership или DTO layout.",
-          "terminal": "SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. Никакого oxygen, hull, weapon или inventory inheritance.",
-          "audio": "Память разрешена. Сила - нет.",
-          "in_game_wiki": "Флаги знания делают dossier совместимым с длинной кампанией и replay без поломки survival balance.",
-          "external_site": "Флаги знания профиля задают persistence-safe replay memory."
-        },
-        "ja_JP": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "JP LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "JP LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "JP LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "JP LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "JP LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "JP LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "zh_CN": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "CN LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "CN LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "CN LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "CN LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "CN LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "CN LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "fr_FR": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "FR LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "FR LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "FR LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "FR LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "FR LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "FR LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "es_ES": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "ES LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "ES LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "ES LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "ES LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "ES LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "ES LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "de_DE": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "DE LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "DE LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "DE LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "DE LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "DE LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "DE LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "pl_PL": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "PL LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "PL LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "PL LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "PL LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "PL LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "PL LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "uk_UA": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "UA LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "UA LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "UA LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "UA LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "UA LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "UA LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "ar_SA": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "AR LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "AR LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "AR LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "AR LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "AR LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "AR LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "id_ID": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "ID LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "ID LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "ID LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "ID LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "ID LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "ID LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "ko_KR": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "KO LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "KO LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "KO LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "KO LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "KO LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "KO LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "he_IL": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "HE LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "HE LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "HE LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "HE LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "HE LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "HE LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "pt_BR": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "PT LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "PT LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "PT LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "PT LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "PT LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "PT LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        },
-        "nl_NL": {
-          "title": "Save Profile Knowledge Flags",
-          "scanner": "NL LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
-          "field_note": "NL LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
-          "terminal": "NL LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
-          "audio": "NL LOC HOLD: Memory is allowed. Power is not.",
-          "in_game_wiki": "NL LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
-          "external_site": "NL LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
-        }
-      }
+    "zh_CN": {
+     "title": "档案索赔登记",
+     "scanner": "DR-902 索赔登记。激活档案显示传闻族、结局记录、留置压力、托管条款、轨道/天气条款和证据顺序提示。不继承装备。",
+     "field_note": "打开一个文件夹，Black Keel 就会给它标价。带走旧怀疑；氧气、艇体和工具留在文件外。",
+     "terminal": "DEEP REACH 表格 DR-902\n登记：Marauder 档案索赔\n激活字段：传闻族、结局记录、留置质量、托管条件、轨道/天气窗口、证据顺序提示\n拒绝字段：氧气储备、艇体等级、武器状态、库存继承\n状态：仅知识记录；生存装备按每份合同重置",
+     "audio": "文件夹保存姓名和坏条款。它们不会给你更强的潜服。",
+     "in_game_wiki": "档案索赔登记是 Black Keel 接收旧证据的表格，不是装备柜。被选中的档案可以把旧结局记录、传闻族、留置压力、托管条款和路线警告带入新合同。这些记录改变操作者怀疑的内容和 carrier 收取的费用。它们不改变氧气储备、艇体等级、武器、库存，也不改变索赔中写明的工人身份。",
+     "external_site": "DR-902 把档案选择变成索赔记录。它保留知识、传闻和法律压力，同时把生存装备和世界事实留在文件外。"
     },
-    {
-      "packet_id": "P180_WEBSITE_WIKI_SPOILER_TIERING",
-      "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
-      "article_id": "dossier_save.website_wiki_spoiler_tiering",
-      "title_key": "applied_lore.website_wiki_spoiler_tiering.title",
-      "unlock": {
-        "primary": "unlock.website_wiki_spoiler_tiering",
-        "poi_tags": [
-          "poi.spoiler_tier_index",
-          "poi.public_wiki_gate",
-          "poi.atlas_truth_warning"
-        ],
-        "biome_tags": [
-          "biome.relay_archive",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Public Spoiler Tiering Protocol",
-          "scanner": "Public records need pressure doors like field evidence does.",
-          "field_note": "Split what sells the world from what solves the crime.",
-          "terminal": "SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "RU LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "Разделять то, что продает мир, и то, что решает преступление.",
-          "terminal": "RU LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "RU LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "RU LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "RU LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "JP LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "JP LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "JP LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "JP LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "JP LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "JP LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "CN LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "CN LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "CN LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "CN LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "CN LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "CN LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "FR LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "FR LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "FR LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "FR LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "FR LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "FR LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "ES LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "ES LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "ES LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "ES LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "ES LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "ES LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "DE LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "DE LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "DE LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "DE LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "DE LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "DE LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "PL LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "PL LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "PL LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "PL LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "PL LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "PL LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "UA LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "UA LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "UA LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "UA LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "UA LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "UA LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "AR LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "AR LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "AR LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "AR LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "AR LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "AR LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "ID LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "ID LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "ID LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "ID LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "ID LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "ID LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "KO LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "KO LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "KO LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "KO LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "KO LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "KO LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "HE LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "HE LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "HE LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "HE LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "HE LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "HE LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "PT LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "PT LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "PT LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "PT LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "PT LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "PT LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Public Spoiler Tiering Protocol",
-          "scanner": "NL LOC HOLD: Public records need pressure doors like field evidence does.",
-          "field_note": "NL LOC HOLD: Split what sells the world from what solves the crime.",
-          "terminal": "NL LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
-          "audio": "NL LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
-          "in_game_wiki": "NL LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
-          "external_site": "NL LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
-        }
-      }
+    "fr_FR": {
+     "title": "Registre de réclamation de dossier",
+     "scanner": "Registre DR-902. Les dossiers actifs exposent familles de rumeurs, fins enregistrées, pression de privilège, termes de garde, clauses orbite/météo et indices d'ordre des preuves. Aucun héritage d'équipement.",
+     "field_note": "Ouvre un dossier et Black Keel le chiffre. Garde l'ancien soupçon ; poumons, coque et outils restent hors du fichier.",
+     "terminal": "FORMULAIRE DEEP REACH DR-902\nRegistre : réclamation de dossier Marauder\nChamps actifs : famille de rumeur, fin enregistrée, masse de privilège, terme de garde, fenêtre orbite/météo, indice d'ordre des preuves\nChamps refusés : réserve d'oxygène, classe de coque, état d'arme, report d'inventaire\nStatut : dossier de connaissance uniquement ; équipement de survie réinitialisé par contrat",
+     "audio": "Les dossiers gardent les noms et les mauvaises clauses. Ils ne donnent pas une combinaison plus solide.",
+     "in_game_wiki": "Le registre de réclamation de dossier est un formulaire d'entrée Black Keel pour preuves antérieures, pas une armoire d'équipement. Un dossier sélectionné peut porter anciennes fins, familles de rumeurs, pression de privilège, termes de garde et avertissements de route dans un nouveau contrat. Ces enregistrements changent ce que l'opérateur soupçonne et ce que le carrier facture. Ils ne changent pas la réserve d'oxygène, la classe de coque, les armes, l'inventaire ni l'identité du travailleur inscrite dans la réclamation.",
+     "external_site": "DR-902 transforme la sélection de dossier en enregistrement de réclamation. Il conserve savoir, rumeurs et pression légale, tout en laissant équipement de survie et faits du monde hors du fichier."
+    },
+    "es_ES": {
+     "title": "Registro de reclamación de expedientes",
+     "scanner": "Registro DR-902. Los expedientes activos exponen familias de rumores, registros de finales, presión de gravamen, custodia, cláusulas orbitales/climáticas y pistas de orden de pruebas. Sin herencia de equipo.",
+     "field_note": "Abres una carpeta y Black Keel le pone precio. Guarda la sospecha vieja; pulmones, casco y herramientas fuera del archivo.",
+     "terminal": "FORMULARIO DEEP REACH DR-902\nRegistro: reclamación de expediente Marauder\nCampos activos: familia de rumor, registro de final, masa de gravamen, término de custodia, ventana orbital/climática, pista de orden de pruebas\nCampos denegados: reserva de oxígeno, clase de casco, estado de arma, arrastre de inventario\nEstado: solo registro de conocimiento; el equipo de supervivencia se reinicia por contrato",
+     "audio": "Las carpetas guardan nombres y malas cláusulas. No te dan un traje más fuerte.",
+     "in_game_wiki": "El registro de reclamación de expedientes es un formulario de entrada de Black Keel para pruebas anteriores, no una taquilla de equipo. Un expediente seleccionado puede llevar finales antiguos, familias de rumores, presión de gravamen, términos de custodia y avisos de ruta a un contrato nuevo. Esos registros cambian lo que sospecha el operador y lo que cobra el carrier. No alteran la reserva de oxígeno, la clase del casco, las armas, el inventario ni la identidad laboral escrita en la reclamación.",
+     "external_site": "DR-902 convierte la selección de expedientes en un registro de reclamación. Conserva conocimiento, rumores y presión legal, mientras deja equipo de supervivencia y hechos del mundo fuera del archivo."
+    },
+    "de_DE": {
+     "title": "Dossier-Anspruchsregister",
+     "scanner": "DR-902 Anspruchsregister. Aktive Dossiers zeigen Gerüchtefamilien, Enddatensätze, Pfanddruck, Verwahrbedingungen, Orbit-/Wetterklauseln und Hinweise zur Beweisreihenfolge. Keine Ausrüstungsvererbung.",
+     "field_note": "Öffnest du eine Mappe, bepreist Black Keel sie. Behalte den alten Verdacht; Lungen, Hülle und Werkzeuge bleiben aus der Akte.",
+     "terminal": "DEEP REACH FORMULAR DR-902\nRegister: Marauder-Dossieranspruch\nAktive Felder: Gerüchtefamilie, Enddatensatz, Pfandmasse, Verwahrbedingung, Orbit-/Wetterfenster, Hinweis zur Beweisreihenfolge\nGesperrte Felder: Sauerstoffreserve, Hüllenklasse, Waffenstatus, Inventarübertrag\nStatus: Wissensdatensatz; Überlebensausrüstung wird pro Vertrag zurückgesetzt",
+     "audio": "Mappen behalten Namen und schlechte Klauseln. Sie geben dir keinen stärkeren Anzug.",
+     "in_game_wiki": "Das Dossier-Anspruchsregister ist ein Black-Keel-Eingabeformular für frühere Beweise, kein Ausrüstungsschrank. Ein gewähltes Dossier kann alte Enddatensätze, Gerüchtefamilien, Pfanddruck, Verwahrbedingungen und Routenwarnungen in einen neuen Vertrag tragen. Diese Datensätze ändern, was der Operator vermutet und was der Carrier berechnet. Sie ändern nicht Sauerstoffreserve, Hüllenklasse, Waffen, Inventar oder die im Anspruch geführte Arbeiteridentität.",
+     "external_site": "DR-902 macht die Dossierwahl zu einem Anspruchsdatensatz. Wissen, Gerüchte und Rechtsdruck bleiben erhalten; Überlebensausrüstung und Weltfakten bleiben außerhalb der Akte."
+    },
+    "pl_PL": {
+     "title": "Rejestr roszczeń dossier",
+     "scanner": "Rejestr roszczeń DR-902. Aktywne dossier odsłaniają rodziny plotek, zapisy zakończeń, presję zastawu, warunki depozytu, klauzule orbity/pogody i wskazówki kolejności dowodów. Bez dziedziczenia sprzętu.",
+     "field_note": "Otwórz teczkę, a Black Keel ją wyceni. Zachowaj stare podejrzenie; płuca, kadłub i narzędzia zostają poza aktami.",
+     "terminal": "FORMULARZ DEEP REACH DR-902\nRejestr: roszczenie dossier Maraudera\nPola aktywne: rodzina plotki, zapis zakończenia, masa zastawu, warunek depozytu, okno orbity/pogody, wskazówka kolejności dowodów\nPola odrzucone: rezerwa tlenu, klasa kadłuba, stan broni, przeniesienie ekwipunku\nStatus: wyłącznie zapis wiedzy; sprzęt przetrwania resetowany w każdym kontrakcie",
+     "audio": "Teczki trzymają nazwiska i złe klauzule. Nie dają mocniejszego skafandra.",
+     "in_game_wiki": "Rejestr roszczeń dossier jest formularzem przyjęcia Black Keel dla wcześniejszych dowodów, nie szafką ze sprzętem. Wybrane dossier może przenieść stare zapisy zakończeń, rodziny plotek, presję zastawu, warunki depozytu i ostrzeżenia trasowe do nowego kontraktu. Te zapisy zmieniają podejrzenia operatora i opłatę naliczaną przez carrier. Nie zmieniają rezerwy tlenu, klasy kadłuba, broni, ekwipunku ani tożsamości pracownika wpisanej do roszczenia.",
+     "external_site": "DR-902 zmienia wybór dossier w zapis roszczenia. Zachowuje wiedzę, plotki i presję prawną, a sprzęt przetrwania oraz fakty świata trzyma poza aktami."
+    },
+    "uk_UA": {
+     "title": "Реєстр претензійних досьє",
+     "scanner": "Реєстр претензій DR-902. Активні досьє відкривають родини чуток, записи фіналів, тиск застави, умови зберігання, орбітально-погодні пункти й підказки порядку доказів. Без успадкування спорядження.",
+     "field_note": "Відкрив теку — Black Keel вже ставить ціну. Стару підозру бери; легені, корпус і інструменти лишаються поза файлом.",
+     "terminal": "ФОРМА DEEP REACH DR-902\nРеєстр: претензія за досьє Marauder\nАктивні поля: родина чутки, запис фіналу, маса застави, умова зберігання, орбітально-погодне вікно, підказка порядку доказів\nВідхилені поля: запас кисню, клас корпусу, стан зброї, перенесення інвентарю\nСтатус: лише запис знання; спорядження виживання скидається для кожного контракту",
+     "audio": "Теки зберігають імена й погані пункти договору. Міцнішого костюма вони не дають.",
+     "in_game_wiki": "Реєстр претензійних досьє — це вхідна форма Black Keel для попередніх доказів, не шафа зі спорядженням. Обране досьє може перенести старі записи фіналів, родини чуток, тиск застави, умови зберігання й маршрутні попередження у новий контракт. Ці записи змінюють підозри оператора й рахунок carrier. Вони не змінюють запас кисню, клас корпусу, зброю, інвентар або особу працівника, вписану в претензію.",
+     "external_site": "DR-902 перетворює вибір досьє на претензійний запис. Він зберігає знання, чутки й юридичний тиск, але тримає спорядження виживання та факти світу поза файлом."
+    },
+    "ar_SA": {
+     "title": "سجل مطالبة الملفات",
+     "scanner": "سجل مطالبة DR-902. الملفات النشطة تكشف عائلات شائعات، سجلات نهايات، ضغط رهن، شروط عهدة، بنود مدار/طقس وتلميحات ترتيب أدلة. لا توريث معدات.",
+     "field_note": "افتح ملفا و Black Keel يضع له سعرا. احتفظ بالريبة القديمة؛ اترك الرئتين والبدن والأدوات خارج الملف.",
+     "terminal": "نموذج DEEP REACH DR-902\nالسجل: مطالبة ملف Marauder\nحقول نشطة: عائلة شائعة، سجل نهاية، كتلة رهن، شرط عهدة، نافذة مدار/طقس، تلميح ترتيب أدلة\nحقول مرفوضة: احتياطي أكسجين، تصنيف بدن، حالة سلاح، ترحيل مخزون\nالحالة: سجل معرفة فقط؛ معدات البقاء تعاد لكل عقد",
+     "audio": "الملفات تحفظ الأسماء والبنود السيئة. لا تعطيك بدلة أقوى.",
+     "in_game_wiki": "سجل مطالبة الملفات هو نموذج إدخال من Black Keel للأدلة السابقة، وليس خزانة معدات. الملف المختار يمكن أن يحمل نهايات قديمة، عائلات شائعات، ضغط رهن، شروط عهدة وتحذيرات طريق إلى عقد جديد. هذه السجلات تغير ما يشتبه به المشغل وما تفرضه الناقلة. لا تغير احتياطي الأكسجين أو تصنيف البدن أو الأسلحة أو المخزون أو هوية العامل المكتوبة في المطالبة.",
+     "external_site": "DR-902 يحول اختيار الملف إلى سجل مطالبة. يحفظ المعرفة والشائعات والضغط القانوني، ويبقي معدات البقاء وحقائق العالم خارج الملف."
+    },
+    "id_ID": {
+     "title": "Registri Klaim Dosier",
+     "scanner": "Registri klaim DR-902. Dosier aktif membuka keluarga rumor, catatan akhir, tekanan lien, syarat kustodi, klausul orbit/cuaca, dan petunjuk urutan bukti. Tidak ada warisan peralatan.",
+     "field_note": "Buka satu map dan Black Keel memberi harga. Simpan kecurigaan lama; paru-paru, hull, dan alat tetap di luar berkas.",
+     "terminal": "FORMULIR DEEP REACH DR-902\nRegistri: klaim dosier Marauder\nBidang aktif: keluarga rumor, catatan akhir, massa lien, syarat kustodi, jendela orbit/cuaca, petunjuk urutan bukti\nBidang ditolak: cadangan oksigen, rating hull, status senjata, bawaan inventaris\nStatus: catatan pengetahuan saja; peralatan bertahan hidup direset per kontrak",
+     "audio": "Map menyimpan nama dan klausul buruk. Map tidak memberimu suit yang lebih kuat.",
+     "in_game_wiki": "Registri klaim dosier adalah formulir intake Black Keel untuk bukti lama, bukan loker peralatan. Dosier yang dipilih dapat membawa catatan akhir lama, keluarga rumor, tekanan lien, syarat kustodi, dan peringatan rute ke kontrak baru. Catatan itu mengubah apa yang dicurigai operator dan apa yang ditagih carrier. Catatan itu tidak mengubah cadangan oksigen, rating hull, senjata, inventaris, atau identitas pekerja yang tertulis dalam klaim.",
+     "external_site": "DR-902 mengubah pemilihan dosier menjadi catatan klaim. Ia menyimpan pengetahuan, rumor, dan tekanan hukum sambil menjaga peralatan bertahan hidup dan fakta dunia di luar berkas."
+    },
+    "ko_KR": {
+     "title": "도시어 청구 등록부",
+     "scanner": "DR-902 청구 등록부. 활성 도시어는 소문 계열, 엔딩 기록, 유치권 압박, 보관 조건, 궤도/기상 조항, 증거 순서 힌트를 드러낸다. 장비 상속 없음.",
+     "field_note": "폴더를 열면 Black Keel이 가격을 매긴다. 오래된 의심은 챙겨라. 폐, 선체, 공구는 파일 밖에 둔다.",
+     "terminal": "DEEP REACH 양식 DR-902\n등록: Marauder 도시어 청구\n활성 필드: 소문 계열, 엔딩 기록, 유치권 질량, 보관 조건, 궤도/기상 창, 증거 순서 힌트\n거부 필드: 산소 예비량, 선체 등급, 무기 상태, 재고 이월\n상태: 지식 기록 전용. 생존 장비는 계약마다 초기화",
+     "audio": "폴더는 이름과 나쁜 조항을 보관한다. 더 강한 슈트를 주지는 않는다.",
+     "in_game_wiki": "도시어 청구 등록부는 이전 증거를 위한 Black Keel 접수 양식이지 장비 보관함이 아니다. 선택한 도시어는 오래된 엔딩 기록, 소문 계열, 유치권 압박, 보관 조건, 경로 경고를 새 계약으로 가져올 수 있다. 그 기록은 오퍼레이터가 의심하는 것과 carrier가 청구하는 금액을 바꾼다. 산소 예비량, 선체 등급, 무기, 재고, 청구서에 적힌 작업자 신원은 바꾸지 않는다.",
+     "external_site": "DR-902은 도시어 선택을 청구 기록으로 만든다. 지식, 소문, 법적 압박은 보존하지만 생존 장비와 세계 사실은 파일 밖에 둔다."
+    },
+    "he_IL": {
+     "title": "מרשם תביעת תיק",
+     "scanner": "מרשם תביעה DR-902. תיקים פעילים חושפים משפחות שמועה, רשומות סיום, לחץ שעבוד, תנאי משמורת, סעיפי מסלול/מזג אוויר ורמזי סדר ראיות. אין ירושת ציוד.",
+     "field_note": "פתח תיק ו Black Keel מתמחר אותו. שמור את החשד הישן; ריאות, גוף חליפה וכלים נשארים מחוץ לקובץ.",
+     "terminal": "טופס DEEP REACH DR-902\nמרשם: תביעת תיק Marauder\nשדות פעילים: משפחת שמועה, רשומת סיום, מסת שעבוד, תנאי משמורת, חלון מסלול/מזג אוויר, רמז סדר ראיות\nשדות נדחים: עתודת חמצן, דירוג גוף, מצב נשק, נשיאת מלאי\nסטטוס: רשומת ידע בלבד; ציוד הישרדות מאופס לכל חוזה",
+     "audio": "תיקים שומרים שמות וסעיפים רעים. הם לא נותנים לך חליפה חזקה יותר.",
+     "in_game_wiki": "מרשם תביעת התיקים הוא טופס קליטה של Black Keel לראיות קודמות, לא ארון ציוד. תיק שנבחר יכול לשאת רשומות סיום ישנות, משפחות שמועה, לחץ שעבוד, תנאי משמורת ואזהרות נתיב אל חוזה חדש. הרשומות משנות מה המפעיל חושד ומה ה-carrier מחייב. הן לא משנות עתודת חמצן, דירוג גוף, נשק, מלאי או את זהות העובד הרשומה בתביעה.",
+     "external_site": "DR-902 הופך בחירת תיק לרשומת תביעה. הוא משמר ידע, שמועות ולחץ משפטי, ומשאיר ציוד הישרדות ועובדות עולם מחוץ לקובץ."
+    },
+    "pt_BR": {
+     "title": "Registro de reivindicação de dossiê",
+     "scanner": "Registro DR-902. Dossiês ativos expõem famílias de rumor, registros de finais, pressão de penhor, termos de custódia, cláusulas orbitais/climáticas e pistas de ordem de evidência. Sem herança de equipamento.",
+     "field_note": "Abra uma pasta e a Black Keel coloca preço nela. Guarde a suspeita antiga; pulmões, casco e ferramentas ficam fora do arquivo.",
+     "terminal": "FORMULÁRIO DEEP REACH DR-902\nRegistro: reivindicação de dossiê Marauder\nCampos ativos: família de rumor, registro de final, massa de penhor, termo de custódia, janela orbital/climática, pista de ordem de evidência\nCampos negados: reserva de oxigênio, classe de casco, estado de arma, transferência de inventário\nStatus: apenas registro de conhecimento; equipamento de sobrevivência reinicia por contrato",
+     "audio": "Pastas guardam nomes e cláusulas ruins. Não dão um traje mais forte.",
+     "in_game_wiki": "O registro de reivindicação de dossiê é um formulário de entrada da Black Keel para evidência anterior, não um armário de equipamento. Um dossiê selecionado pode levar registros de finais antigos, famílias de rumor, pressão de penhor, termos de custódia e avisos de rota para um novo contrato. Esses registros mudam o que o operador suspeita e o que o carrier cobra. Não alteram reserva de oxigênio, classe de casco, armas, inventário nem a identidade do trabalhador escrita na reivindicação.",
+     "external_site": "DR-902 transforma seleção de dossiê em registro de reivindicação. Preserva conhecimento, rumores e pressão legal, mantendo equipamento de sobrevivência e fatos do mundo fora do arquivo."
+    },
+    "nl_NL": {
+     "title": "Dossierclaimregister",
+     "scanner": "DR-902 claimregister. Actieve dossiers tonen geruchtenfamilies, eindrecords, panddruk, bewaartermen, orbit-/weerclausules en bewijsvolgorde-hints. Geen uitrustingserfenis.",
+     "field_note": "Open een map en Black Keel prijst haar. Bewaar de oude argwaan; longen, romp en gereedschap blijven buiten het dossier.",
+     "terminal": "DEEP REACH FORMULIER DR-902\nRegister: Marauder-dossierclaim\nActieve velden: geruchtenfamilie, eindrecord, pandmassa, bewaarterm, orbit-/weervenster, bewijsvolgorde-hint\nGeweigerde velden: zuurstofreserve, rompklasse, wapenstatus, inventarisoverdracht\nStatus: alleen kennisrecord; overlevingsuitrusting reset per contract",
+     "audio": "Mappen bewaren namen en slechte clausules. Ze geven je geen sterker pak.",
+     "in_game_wiki": "Het dossierclaimregister is een Black-Keel-innameformulier voor oud bewijs, geen uitrustingskast. Een gekozen dossier kan oude eindrecords, geruchtenfamilies, panddruk, bewaartermen en routewaarschuwingen meenemen naar een nieuw contract. Die records veranderen wat de operator vermoedt en wat de carrier in rekening brengt. Ze veranderen geen zuurstofreserve, rompklasse, wapens, inventaris of de arbeidersidentiteit in de claim.",
+     "external_site": "DR-902 maakt van dossierselectie een claimrecord. Het bewaart kennis, geruchten en juridische druk, terwijl overlevingsuitrusting en wereldfeiten buiten het bestand blijven."
     }
-  ]
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P177_RISK_WEIGHT_CONTRACT_CARD",
+   "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
+   "article_id": "dossier_save.risk_weight_contract_card",
+   "title_key": "applied_lore.risk_weight_contract_card.title",
+   "unlock": {
+    "primary": "unlock.risk_weight_contract_card",
+    "poi_tags": [
+     "poi.risk_weight_card",
+     "poi.lien_multiplier_plate",
+     "poi.weather_clause_stamp"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Contract Risk Weight Card",
+     "scanner": "Claim-weight card. Variables: lien mass, storm window, sample custody, route blackout, witness hash demand, Deep Reach clause load. Incident record and operator identity locked.",
+     "field_note": "A heavier card means less mercy in the clauses. It does not rewrite the crime or lend you better gear.",
+     "terminal": "BLACK KEEL CONTRACT CARD\nWeight fields: lien mass, storm/orbit window, sample custody grade, route blackout, witness hash demand, quarantine delay, Deep Reach clause load\nLocked fields: operator identity, incident record, worker names, oxygen reserve, hull rating, tool grade\nReturn note: higher weight increases payout exposure and recovery denial surface",
+     "audio": "The card changes the bill. It does not change what happened down there.",
+     "in_game_wiki": "A contract risk weight card is a claim-pricing sheet. It can make a descent harsher by changing lien mass, storm timing, sample custody, blackout routing, witness-hash requirements and Deep Reach clause pressure. It cannot change who the operator is, what happened in 2147, which workers existed, or what equipment starts in the suit. A heavier card buys a higher possible return by adding more ways for Black Keel or Recovery Compliance to reject it.",
+     "external_site": "Risk weight cards vary the contract around a fixed crime scene. They adjust lien, custody, timing, blackout and proof pressure without changing identity, world facts or inherited equipment."
+    },
+    "ru_RU": {
+     "title": "Карточка весового риска контракта",
+     "scanner": "Карточка веса претензии. Переменные: масса залога, штормовое окно, хранение образца, маршрутное затемнение, требование witness hash, нагрузка пунктов Deep Reach. Запись инцидента и личность оператора заблокированы.",
+     "field_note": "Чем тяжелее карточка, тем меньше милости в пунктах договора. Преступление она не переписывает и лучшее снаряжение не дает взаймы.",
+     "terminal": "КАРТОЧКА КОНТРАКТА BLACK KEEL\nПоля веса: масса залога, штормовое/орбитальное окно, класс хранения образца, маршрутное затемнение, требование witness hash, задержка карантина, нагрузка пунктов Deep Reach\nЗаблокированные поля: личность оператора, запись инцидента, имена работников, запас кислорода, класс корпуса, класс инструмента\nПримечание возврата: больший вес повышает экспозицию выплаты и площадь отказа в восстановлении",
+     "audio": "Карточка меняет счет. Она не меняет то, что случилось внизу.",
+     "in_game_wiki": "Карточка весового риска контракта — претензионный лист цены. Она может сделать спуск жестче через массу залога, время шторма, хранение образца, маршрутное затемнение, требования witness hash и давление пунктов Deep Reach. Она не может изменить личность оператора, события 2147 года, существование работников или стартовое снаряжение в костюме. Более тяжелая карточка покупает больший возможный возврат, добавляя Black Keel или Recovery Compliance больше способов отказать.",
+     "external_site": "Карточки весового риска меняют контракт вокруг неизменного места преступления. Они регулируют залог, хранение, время, затемнение и давление доказательств, не меняя личность, факты мира или наследуемое снаряжение."
+    },
+    "ja_JP": {
+     "title": "契約リスク重量カード",
+     "scanner": "請求重量カード。変数: リーエン質量、嵐ウィンドウ、サンプル保管、ルート遮断、witness hash 要求、Deep Reach 条項負荷。事故記録と操作者身元は固定。",
+     "field_note": "重いカードほど条項の猶予は少ない。犯罪を書き換えず、良い装備も貸さない。",
+     "terminal": "BLACK KEEL 契約カード\n重量欄: リーエン質量、嵐/軌道ウィンドウ、サンプル保管等級、ルート遮断、witness hash 要求、検疫遅延、Deep Reach 条項負荷\n固定欄: 操作者身元、事故記録、作業者名、酸素予備、船体等級、工具等級\n帰還注記: 重量上昇は支払い露出と回収拒否面を増やす",
+     "audio": "カードは請求書を変える。下で起きたことは変えない。",
+     "in_game_wiki": "契約リスク重量カードは請求価格表である。リーエン質量、嵐の時刻、サンプル保管、遮断ルート、witness hash 要求、Deep Reach 条項圧を変えることで降下を厳しくできる。操作者の身元、2147年に起きたこと、存在した作業者、スーツ内の初期装備は変えられない。重いカードは、Black Keel または Recovery Compliance が拒否できる経路を増やす代わりに、より高い戻りの可能性を買う。",
+     "external_site": "リスク重量カードは固定された犯罪現場の周囲で契約を変える。リーエン、保管、時刻、遮断、証明圧を調整するが、身元、世界事実、継承装備は変えない。"
+    },
+    "zh_CN": {
+     "title": "合同风险权重卡",
+     "scanner": "索赔权重卡。变量：留置质量、风暴窗口、样本托管、路线黑障、witness hash 要求、Deep Reach 条款负载。事故记录和操作者身份锁定。",
+     "field_note": "卡越重，条款里的宽限越少。它不会重写罪行，也不会借给你更好的装备。",
+     "terminal": "BLACK KEEL 合同卡\n权重字段：留置质量、风暴/轨道窗口、样本托管等级、路线黑障、witness hash 要求、隔离延迟、Deep Reach 条款负载\n锁定字段：操作者身份、事故记录、工人姓名、氧气储备、艇体等级、工具等级\n返回备注：更高权重增加付款暴露面和回收拒绝面",
+     "audio": "这张卡改变账单。它不改变下面发生过的事。",
+     "in_game_wiki": "合同风险权重卡是一张索赔定价表。它可以通过改变留置质量、风暴时机、样本托管、黑障路线、witness hash 要求和 Deep Reach 条款压力，让一次下潜更苛刻。它不能改变操作者是谁、2147年发生了什么、哪些工人存在过，或潜服起始携带什么装备。更重的卡用更多可被 Black Keel 或 Recovery Compliance 拒绝的路径，换取更高的潜在回报。",
+     "external_site": "风险权重卡围绕固定犯罪现场改变合同。它调整留置、托管、时机、黑障和证明压力，但不改变身份、世界事实或继承装备。"
+    },
+    "fr_FR": {
+     "title": "Carte de poids de risque contractuel",
+     "scanner": "Carte de poids de réclamation. Variables : masse de privilège, fenêtre de tempête, garde d'échantillon, blackout de route, demande de witness hash, charge de clauses Deep Reach. Enregistrement d'incident et identité opérateur verrouillés.",
+     "field_note": "Une carte plus lourde laisse moins de clémence dans les clauses. Elle ne réécrit pas le crime et ne prête pas de meilleur équipement.",
+     "terminal": "CARTE DE CONTRAT BLACK KEEL\nChamps de poids : masse de privilège, fenêtre tempête/orbite, grade de garde d'échantillon, blackout de route, demande de witness hash, délai de quarantaine, charge de clauses Deep Reach\nChamps verrouillés : identité opérateur, enregistrement d'incident, noms des travailleurs, réserve d'oxygène, classe de coque, grade d'outil\nNote de retour : un poids plus haut augmente l'exposition de paiement et les surfaces de refus de récupération",
+     "audio": "La carte change la facture. Elle ne change pas ce qui s'est passé en bas.",
+     "in_game_wiki": "Une carte de poids de risque contractuel est une fiche de tarification de réclamation. Elle peut rendre une descente plus dure en modifiant masse de privilège, timing de tempête, garde d'échantillon, routage de blackout, exigences de witness hash et pression de clauses Deep Reach. Elle ne peut pas changer l'identité de l'opérateur, ce qui s'est passé en 2147, quels travailleurs ont existé ni quel équipement commence dans la combinaison. Une carte plus lourde achète un retour potentiel plus élevé en ajoutant plus de moyens de rejet pour Black Keel ou Recovery Compliance.",
+     "external_site": "Les cartes de poids de risque varient le contrat autour d'une scène de crime fixe. Elles ajustent privilège, garde, timing, blackout et pression de preuve sans changer identité, faits du monde ou équipement hérité."
+    },
+    "es_ES": {
+     "title": "Tarjeta de peso de riesgo contractual",
+     "scanner": "Tarjeta de peso de reclamación. Variables: masa de gravamen, ventana de tormenta, custodia de muestra, apagón de ruta, demanda de witness hash, carga de cláusulas Deep Reach. Registro del incidente e identidad del operador bloqueados.",
+     "field_note": "Una tarjeta más pesada deja menos piedad en las cláusulas. No reescribe el crimen ni te presta mejor equipo.",
+     "terminal": "TARJETA DE CONTRATO BLACK KEEL\nCampos de peso: masa de gravamen, ventana tormenta/orbita, grado de custodia de muestra, apagón de ruta, demanda de witness hash, demora de cuarentena, carga de cláusulas Deep Reach\nCampos bloqueados: identidad del operador, registro del incidente, nombres de trabajadores, reserva de oxígeno, clase de casco, grado de herramienta\nNota de retorno: más peso aumenta exposición de pago y superficie de denegación de recuperación",
+     "audio": "La tarjeta cambia la factura. No cambia lo que pasó ahí abajo.",
+     "in_game_wiki": "Una tarjeta de peso de riesgo contractual es una hoja de precio de reclamación. Puede endurecer un descenso cambiando masa de gravamen, momento de tormenta, custodia de muestra, enrutado de apagón, requisitos de witness hash y presión de cláusulas Deep Reach. No puede cambiar quién es el operador, qué ocurrió en 2147, qué trabajadores existieron ni qué equipo empieza en el traje. Una tarjeta más pesada compra un retorno posible más alto al añadir más formas de rechazo para Black Keel o Recovery Compliance.",
+     "external_site": "Las tarjetas de peso de riesgo varían el contrato alrededor de una escena de crimen fija. Ajustan gravamen, custodia, tiempo, apagón y presión de prueba sin cambiar identidad, hechos del mundo ni equipo heredado."
+    },
+    "de_DE": {
+     "title": "Vertragsrisikogewichtskarte",
+     "scanner": "Claim-Gewichtskarte. Variablen: Pfandmasse, Sturmfenster, Probenverwahrung, Routenausfall, Witness-Hash-Forderung, Deep-Reach-Klausellast. Vorfalldatensatz und Operatoridentität gesperrt.",
+     "field_note": "Eine schwerere Karte bedeutet weniger Gnade in den Klauseln. Sie schreibt das Verbrechen nicht um und leiht dir keine bessere Ausrüstung.",
+     "terminal": "BLACK KEEL VERTRAGSKARTE\nGewichtsfelder: Pfandmasse, Sturm-/Orbitfenster, Probenverwahrungsklasse, Routenausfall, Witness-Hash-Forderung, Quarantäneverzug, Deep-Reach-Klausellast\nGesperrte Felder: Operatoridentität, Vorfalldatensatz, Arbeiternamen, Sauerstoffreserve, Hüllenklasse, Werkzeugklasse\nRückkehrnotiz: höheres Gewicht erhöht Auszahlungsexposition und Ablehnungsfläche der Bergung",
+     "audio": "Die Karte ändert die Rechnung. Sie ändert nicht, was dort unten geschah.",
+     "in_game_wiki": "Eine Vertragsrisikogewichtskarte ist ein Preisblatt für Claims. Sie kann einen Abstieg härter machen, indem sie Pfandmasse, Sturmzeit, Probenverwahrung, Blackout-Routing, Witness-Hash-Anforderungen und Deep-Reach-Klauseldruck ändert. Sie kann nicht ändern, wer der Operator ist, was 2147 geschah, welche Arbeiter existierten oder welche Ausrüstung im Anzug startet. Eine schwerere Karte kauft eine höhere mögliche Rückkehr, indem sie Black Keel oder Recovery Compliance mehr Ablehnungswege gibt.",
+     "external_site": "Risikogewichtskarten variieren den Vertrag um einen festen Tatort. Sie ändern Pfand, Verwahrung, Timing, Blackout und Beweisdruck, ohne Identität, Weltfakten oder geerbte Ausrüstung zu ändern."
+    },
+    "pl_PL": {
+     "title": "Karta wagi ryzyka kontraktu",
+     "scanner": "Karta wagi roszczenia. Zmienne: masa zastawu, okno sztormu, depozyt próbki, blackout trasy, żądanie witness hash, obciążenie klauzul Deep Reach. Zapis incydentu i tożsamość operatora zablokowane.",
+     "field_note": "Cięższa karta oznacza mniej litości w klauzulach. Nie przepisuje zbrodni i nie pożycza lepszego sprzętu.",
+     "terminal": "KARTA KONTRAKTU BLACK KEEL\nPola wagi: masa zastawu, okno sztorm/orbita, stopień depozytu próbki, blackout trasy, żądanie witness hash, opóźnienie kwarantanny, obciążenie klauzul Deep Reach\nPola zablokowane: tożsamość operatora, zapis incydentu, nazwiska pracowników, rezerwa tlenu, klasa kadłuba, klasa narzędzi\nNotatka powrotu: wyższa waga zwiększa ekspozycję wypłaty i powierzchnię odmowy odzysku",
+     "audio": "Karta zmienia rachunek. Nie zmienia tego, co stało się tam na dole.",
+     "in_game_wiki": "Karta wagi ryzyka kontraktu jest arkuszem wyceny roszczenia. Może zaostrzyć zejście przez zmianę masy zastawu, czasu sztormu, depozytu próbki, trasy blackout, wymagań witness hash i presji klauzul Deep Reach. Nie może zmienić tego, kim jest operator, co stało się w 2147 roku, którzy pracownicy istnieli ani jaki sprzęt zaczyna w skafandrze. Cięższa karta kupuje wyższy możliwy zwrot, dodając Black Keel lub Recovery Compliance więcej dróg odmowy.",
+     "external_site": "Karty wagi ryzyka różnicują kontrakt wokół stałego miejsca zbrodni. Regulują zastaw, depozyt, czas, blackout i presję dowodową bez zmiany tożsamości, faktów świata lub dziedziczonego sprzętu."
+    },
+    "uk_UA": {
+     "title": "Картка вагового ризику контракту",
+     "scanner": "Картка ваги претензії. Змінні: маса застави, штормове вікно, зберігання зразка, маршрутне затемнення, вимога witness hash, навантаження пунктів Deep Reach. Запис інциденту й особа оператора заблоковані.",
+     "field_note": "Важча картка означає менше милості в пунктах договору. Вона не переписує злочин і не позичає краще спорядження.",
+     "terminal": "КАРТКА КОНТРАКТУ BLACK KEEL\nПоля ваги: маса застави, штормове/орбітальне вікно, клас зберігання зразка, маршрутне затемнення, вимога witness hash, затримка карантину, навантаження пунктів Deep Reach\nЗаблоковані поля: особа оператора, запис інциденту, імена працівників, запас кисню, клас корпусу, клас інструмента\nПримітка повернення: більша вага підвищує експозицію виплати й поверхню відмови у відновленні",
+     "audio": "Картка змінює рахунок. Вона не змінює того, що сталося внизу.",
+     "in_game_wiki": "Картка вагового ризику контракту — це претензійний лист ціни. Вона може зробити спуск жорсткішим через масу застави, час шторму, зберігання зразка, маршрутне затемнення, вимоги witness hash і тиск пунктів Deep Reach. Вона не може змінити особу оператора, події 2147 року, працівників, що існували, або стартове спорядження в костюмі. Важча картка купує більший можливий повернений дохід, додаючи Black Keel або Recovery Compliance більше способів відмовити.",
+     "external_site": "Картки вагового ризику змінюють контракт навколо незмінного місця злочину. Вони регулюють заставу, зберігання, час, затемнення й тиск доказів, не змінюючи особу, факти світу або успадковане спорядження."
+    },
+    "ar_SA": {
+     "title": "بطاقة وزن خطر العقد",
+     "scanner": "بطاقة وزن مطالبة. المتغيرات: كتلة رهن، نافذة عاصفة، عهدة عينة، تعتيم طريق، طلب witness hash، حمل بنود Deep Reach. سجل الحادث وهوية المشغل مقفلان.",
+     "field_note": "البطاقة الأثقل تعني رحمة أقل في البنود. لا تعيد كتابة الجريمة ولا تقرضك عتادا أفضل.",
+     "terminal": "بطاقة عقد BLACK KEEL\nحقول الوزن: كتلة رهن، نافذة عاصفة/مدار، درجة عهدة عينة، تعتيم طريق، طلب witness hash، تأخير حجر، حمل بنود Deep Reach\nحقول مقفلة: هوية المشغل، سجل الحادث، أسماء العمال، احتياطي أكسجين، تصنيف بدن، درجة أداة\nملاحظة عودة: الوزن الأعلى يزيد تعرض الدفع وسطح رفض الاستعادة",
+     "audio": "البطاقة تغير الفاتورة. لا تغير ما حدث هناك تحت.",
+     "in_game_wiki": "بطاقة وزن خطر العقد هي ورقة تسعير مطالبة. يمكنها جعل النزول أقسى عبر تغيير كتلة الرهن، توقيت العاصفة، عهدة العينة، توجيه التعتيم، متطلبات witness hash وضغط بنود Deep Reach. لا يمكنها تغيير هوية المشغل، ما حدث في 2147، أسماء العمال الذين كانوا موجودين، أو المعدات التي تبدأ داخل البدلة. البطاقة الأثقل تشتري عائدا محتملا أعلى بإضافة طرق أكثر كي ترفض Black Keel أو Recovery Compliance الإرجاع.",
+     "external_site": "بطاقات وزن الخطر تغير العقد حول مسرح جريمة ثابت. تعدل الرهن والعهدة والتوقيت والتعتيم وضغط الإثبات من دون تغيير الهوية أو حقائق العالم أو المعدات الموروثة."
+    },
+    "id_ID": {
+     "title": "Kartu Bobot Risiko Kontrak",
+     "scanner": "Kartu bobot klaim. Variabel: massa lien, jendela badai, kustodi sampel, blackout rute, tuntutan witness hash, beban klausul Deep Reach. Catatan insiden dan identitas operator terkunci.",
+     "field_note": "Kartu yang lebih berat berarti lebih sedikit ampun dalam klausul. Ia tidak menulis ulang kejahatan atau meminjamkan gear yang lebih baik.",
+     "terminal": "KARTU KONTRAK BLACK KEEL\nBidang bobot: massa lien, jendela badai/orbit, tingkat kustodi sampel, blackout rute, tuntutan witness hash, tunda karantina, beban klausul Deep Reach\nBidang terkunci: identitas operator, catatan insiden, nama pekerja, cadangan oksigen, rating hull, tingkat alat\nCatatan pulang: bobot lebih tinggi menaikkan paparan pembayaran dan permukaan penolakan pemulihan",
+     "audio": "Kartu mengubah tagihan. Ia tidak mengubah apa yang terjadi di bawah sana.",
+     "in_game_wiki": "Kartu bobot risiko kontrak adalah lembar harga klaim. Ia dapat membuat penurunan lebih keras dengan mengubah massa lien, waktu badai, kustodi sampel, routing blackout, tuntutan witness hash, dan tekanan klausul Deep Reach. Ia tidak dapat mengubah siapa operatornya, apa yang terjadi pada 2147, pekerja mana yang pernah ada, atau peralatan apa yang mulai di suit. Kartu lebih berat membeli kemungkinan imbalan lebih tinggi dengan menambah cara bagi Black Keel atau Recovery Compliance untuk menolaknya.",
+     "external_site": "Kartu bobot risiko memvariasikan kontrak di sekitar tempat kejahatan yang tetap. Ia mengatur lien, kustodi, waktu, blackout, dan tekanan bukti tanpa mengubah identitas, fakta dunia, atau peralatan warisan."
+    },
+    "ko_KR": {
+     "title": "계약 위험 가중 카드",
+     "scanner": "청구 가중 카드. 변수: 유치권 질량, 폭풍 창, 샘플 보관, 경로 블랙아웃, witness hash 요구, Deep Reach 조항 부하. 사건 기록과 오퍼레이터 신원은 잠김.",
+     "field_note": "무거운 카드는 조항 안의 자비가 줄었다는 뜻이다. 범죄를 다시 쓰지도, 더 나은 장비를 빌려 주지도 않는다.",
+     "terminal": "BLACK KEEL 계약 카드\n가중 필드: 유치권 질량, 폭풍/궤도 창, 샘플 보관 등급, 경로 블랙아웃, witness hash 요구, 격리 지연, Deep Reach 조항 부하\n잠긴 필드: 오퍼레이터 신원, 사건 기록, 작업자 이름, 산소 예비량, 선체 등급, 도구 등급\n귀환 메모: 더 높은 가중치는 지급 노출과 회수 거부 표면을 늘린다",
+     "audio": "카드는 청구서를 바꾼다. 아래에서 일어난 일은 바꾸지 않는다.",
+     "in_game_wiki": "계약 위험 가중 카드는 청구 가격표다. 유치권 질량, 폭풍 시각, 샘플 보관, 블랙아웃 경로, witness hash 요구, Deep Reach 조항 압박을 바꿔 하강을 더 혹독하게 만들 수 있다. 오퍼레이터가 누구인지, 2147년에 무슨 일이 있었는지, 어떤 작업자가 존재했는지, 슈트가 어떤 장비로 시작하는지는 바꾸지 못한다. 더 무거운 카드는 Black Keel이나 Recovery Compliance가 거부할 수 있는 길을 늘리는 대가로 더 높은 가능한 반환을 산다.",
+     "external_site": "위험 가중 카드는 고정된 범죄 현장 주변의 계약을 바꾼다. 유치권, 보관, 시각, 블랙아웃, 증명 압박을 조정하지만 신원, 세계 사실, 상속 장비는 바꾸지 않는다."
+    },
+    "he_IL": {
+     "title": "כרטיס משקל סיכון חוזה",
+     "scanner": "כרטיס משקל תביעה. משתנים: מסת שעבוד, חלון סערה, משמורת דגימה, האפלת נתיב, דרישת witness hash, עומס סעיפי Deep Reach. רשומת אירוע וזהות מפעיל נעולות.",
+     "field_note": "כרטיס כבד יותר אומר פחות רחמים בסעיפים. הוא לא כותב מחדש את הפשע ולא משאיל ציוד טוב יותר.",
+     "terminal": "כרטיס חוזה BLACK KEEL\nשדות משקל: מסת שעבוד, חלון סערה/מסלול, דרגת משמורת דגימה, האפלת נתיב, דרישת witness hash, עיכוב הסגר, עומס סעיפי Deep Reach\nשדות נעולים: זהות מפעיל, רשומת אירוע, שמות עובדים, עתודת חמצן, דירוג גוף, דרגת כלי\nהערת חזרה: משקל גבוה מגדיל חשיפת תשלום ומשטח דחיית חילוץ",
+     "audio": "הכרטיס משנה את החשבון. הוא לא משנה את מה שקרה שם למטה.",
+     "in_game_wiki": "כרטיס משקל סיכון חוזה הוא גיליון תמחור תביעה. הוא יכול להקשות ירידה באמצעות שינוי מסת שעבוד, תזמון סערה, משמורת דגימה, ניתוב האפלה, דרישות witness hash ולחץ סעיפי Deep Reach. הוא לא יכול לשנות מי המפעיל, מה קרה ב-2147, אילו עובדים היו קיימים או איזה ציוד מתחיל בחליפה. כרטיס כבד יותר קונה החזר אפשרי גבוה יותר בכך שהוא מוסיף ל-Black Keel או Recovery Compliance עוד דרכי דחייה.",
+     "external_site": "כרטיסי משקל סיכון משנים את החוזה סביב זירת פשע קבועה. הם מכווננים שעבוד, משמורת, תזמון, האפלה ולחץ הוכחה בלי לשנות זהות, עובדות עולם או ציוד מורש."
+    },
+    "pt_BR": {
+     "title": "Cartão de peso de risco contratual",
+     "scanner": "Cartão de peso de reivindicação. Variáveis: massa de penhor, janela de tempestade, custódia de amostra, apagão de rota, exigência de witness hash, carga de cláusulas Deep Reach. Registro do incidente e identidade do operador travados.",
+     "field_note": "Um cartão mais pesado significa menos misericórdia nas cláusulas. Ele não reescreve o crime nem empresta equipamento melhor.",
+     "terminal": "CARTÃO DE CONTRATO BLACK KEEL\nCampos de peso: massa de penhor, janela tempestade/orbita, grau de custódia de amostra, apagão de rota, exigência de witness hash, atraso de quarentena, carga de cláusulas Deep Reach\nCampos travados: identidade do operador, registro do incidente, nomes de trabalhadores, reserva de oxigênio, classe de casco, grau de ferramenta\nNota de retorno: peso maior aumenta exposição de pagamento e superfície de negação de recuperação",
+     "audio": "O cartão muda a conta. Não muda o que aconteceu lá embaixo.",
+     "in_game_wiki": "Um cartão de peso de risco contratual é uma folha de preço de reivindicação. Ele pode tornar uma descida mais dura ao mudar massa de penhor, timing de tempestade, custódia de amostra, roteamento de apagão, exigências de witness hash e pressão de cláusulas Deep Reach. Ele não pode mudar quem é o operador, o que aconteceu em 2147, quais trabalhadores existiram ou qual equipamento começa no traje. Um cartão mais pesado compra um retorno possível maior ao adicionar mais formas de recusa para Black Keel ou Recovery Compliance.",
+     "external_site": "Cartões de peso de risco variam o contrato em torno de uma cena de crime fixa. Ajustam penhor, custódia, timing, apagão e pressão de prova sem mudar identidade, fatos do mundo ou equipamento herdado."
+    },
+    "nl_NL": {
+     "title": "Contractrisicogewichtkaart",
+     "scanner": "Claimgewichtkaart. Variabelen: pandmassa, stormvenster, monsterbewaring, routeblackout, witness-hash-eis, Deep-Reach-clausulelast. Incidentrecord en operatoridentiteit vergrendeld.",
+     "field_note": "Een zwaardere kaart betekent minder genade in de clausules. Zij herschrijft de misdaad niet en leent je geen betere uitrusting.",
+     "terminal": "BLACK KEEL CONTRACTKAART\nGewichtsvelden: pandmassa, storm-/orbitvenster, monsterbewaringsgraad, routeblackout, witness-hash-eis, quarantainedelay, Deep-Reach-clausulelast\nVergrendelde velden: operatoridentiteit, incidentrecord, werknamen, zuurstofreserve, rompklasse, gereedschapsklasse\nTerugkeernotitie: hoger gewicht verhoogt betalingsblootstelling en herstelweigeringsvlak",
+     "audio": "De kaart verandert de rekening. Zij verandert niet wat daar beneden gebeurde.",
+     "in_game_wiki": "Een contractrisicogewichtkaart is een prijsblad voor claims. Zij kan een afdaling harder maken door pandmassa, stormtiming, monsterbewaring, blackoutroute, witness-hash-eisen en Deep-Reach-clausuledruk te wijzigen. Zij kan niet veranderen wie de operator is, wat in 2147 gebeurde, welke werkers bestonden of met welke uitrusting het pak begint. Een zwaardere kaart koopt een hogere mogelijke opbrengst door Black Keel of Recovery Compliance meer manieren te geven om die te weigeren.",
+     "external_site": "Risicogewichtkaarten variëren het contract rond een vaste plaats delict. Ze stellen pand, bewaring, timing, blackout en bewijsdruk bij zonder identiteit, wereldfeiten of geërfde uitrusting te veranderen."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P178_ENDING_RECORD_PRESENTATION",
+   "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
+   "article_id": "dossier_save.ending_record_presentation",
+   "title_key": "applied_lore.ending_record_presentation.title",
+   "unlock": {
+    "primary": "unlock.ending_record_presentation",
+    "poi_tags": [
+     "poi.ending_record_card",
+     "poi.public_ledger_stamp",
+     "poi.private_dossier_replay"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.relay_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ending Record Presentation",
+     "scanner": "An ending record is evidence, not a trophy shelf.",
+     "field_note": "Show who received the payload and what it cost.",
+     "terminal": "ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "The ending is not over. It is filed.",
+     "in_game_wiki": "Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "ru_RU": {
+     "title": "Подача записи концовки",
+     "scanner": "Запись концовки - evidence, не trophy shelf.",
+     "field_note": "Показывать, кто получил payload и сколько это стоило.",
+     "terminal": "ENDING RECORD: хранить outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state и lien consequence. Читать как claim file.",
+     "audio": "Концовка не окончена. Ее зарегистрировали.",
+     "in_game_wiki": "Записи концовок позволяют помнить последствия без наследования mechanical power.",
+     "external_site": "Подача записи концовки задает dossier-facing форму outcomes."
+    },
+    "ja_JP": {
+     "title": "Ending Record Presentation",
+     "scanner": "JP LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "JP LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "JP LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "JP LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "JP LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "JP LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "zh_CN": {
+     "title": "Ending Record Presentation",
+     "scanner": "CN LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "CN LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "CN LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "CN LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "CN LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "CN LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "fr_FR": {
+     "title": "Ending Record Presentation",
+     "scanner": "FR LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "FR LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "FR LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "FR LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "FR LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "FR LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "es_ES": {
+     "title": "Ending Record Presentation",
+     "scanner": "ES LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "ES LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "ES LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "ES LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "ES LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "ES LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "de_DE": {
+     "title": "Ending Record Presentation",
+     "scanner": "DE LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "DE LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "DE LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "DE LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "DE LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "DE LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "pl_PL": {
+     "title": "Ending Record Presentation",
+     "scanner": "PL LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "PL LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "PL LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "PL LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "PL LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "PL LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "uk_UA": {
+     "title": "Ending Record Presentation",
+     "scanner": "UA LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "UA LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "UA LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "UA LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "UA LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "UA LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "ar_SA": {
+     "title": "Ending Record Presentation",
+     "scanner": "AR LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "AR LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "AR LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "AR LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "AR LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "AR LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "id_ID": {
+     "title": "Ending Record Presentation",
+     "scanner": "ID LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "ID LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "ID LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "ID LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "ID LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "ID LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "ko_KR": {
+     "title": "Ending Record Presentation",
+     "scanner": "KO LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "KO LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "KO LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "KO LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "KO LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "KO LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "he_IL": {
+     "title": "Ending Record Presentation",
+     "scanner": "HE LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "HE LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "HE LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "HE LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "HE LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "HE LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "pt_BR": {
+     "title": "Ending Record Presentation",
+     "scanner": "PT LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "PT LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "PT LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "PT LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "PT LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "PT LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    },
+    "nl_NL": {
+     "title": "Ending Record Presentation",
+     "scanner": "NL LOC HOLD: An ending record is evidence, not a trophy shelf.",
+     "field_note": "NL LOC HOLD: Show who received the payload and what it cost.",
+     "terminal": "NL LOC HOLD: ENDING RECORD: store outcome family, receiver, payload class, public/private status, worker-name completeness, Atlas state and lien consequence. Keep it readable as a claim file.",
+     "audio": "NL LOC HOLD: The ending is not over. It is filed.",
+     "in_game_wiki": "NL LOC HOLD: Ending records let the player remember consequences without inheriting mechanical power.",
+     "external_site": "NL LOC HOLD: Ending Record Presentation defines the dossier-facing shape of outcomes."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P179_SAVE_PROFILE_KNOWLEDGE_FLAGS",
+   "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
+   "article_id": "dossier_save.save_profile_knowledge_flags",
+   "title_key": "applied_lore.save_profile_knowledge_flags.title",
+   "unlock": {
+    "primary": "unlock.save_profile_knowledge_flags",
+    "poi_tags": [
+     "poi.knowledge_flag_manifest",
+     "poi.save_profile_stamp",
+     "poi.rumor_unlock_card"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "Memory is allowed. Power is not.",
+     "in_game_wiki": "Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "ru_RU": {
+     "title": "Флаги знания профиля",
+     "scanner": "Save persistence должна помнить категории знания, не hot inventory.",
+     "field_note": "Флаги знания не должны менять truth ownership или DTO layout.",
+     "terminal": "SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. Никакого oxygen, hull, weapon или inventory inheritance.",
+     "audio": "Память разрешена. Сила - нет.",
+     "in_game_wiki": "Флаги знания делают dossier совместимым с длинной кампанией и replay без поломки survival balance.",
+     "external_site": "Флаги знания профиля задают persistence-safe replay memory."
+    },
+    "ja_JP": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "JP LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "JP LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "JP LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "JP LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "JP LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "JP LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "zh_CN": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "CN LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "CN LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "CN LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "CN LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "CN LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "CN LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "fr_FR": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "FR LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "FR LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "FR LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "FR LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "FR LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "FR LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "es_ES": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "ES LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "ES LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "ES LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "ES LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "ES LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "ES LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "de_DE": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "DE LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "DE LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "DE LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "DE LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "DE LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "DE LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "pl_PL": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "PL LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "PL LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "PL LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "PL LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "PL LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "PL LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "uk_UA": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "UA LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "UA LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "UA LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "UA LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "UA LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "UA LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "ar_SA": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "AR LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "AR LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "AR LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "AR LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "AR LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "AR LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "id_ID": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "ID LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "ID LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "ID LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "ID LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "ID LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "ID LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "ko_KR": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "KO LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "KO LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "KO LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "KO LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "KO LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "KO LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "he_IL": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "HE LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "HE LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "HE LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "HE LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "HE LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "HE LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "pt_BR": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "PT LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "PT LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "PT LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "PT LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "PT LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "PT LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    },
+    "nl_NL": {
+     "title": "Save Profile Knowledge Flags",
+     "scanner": "NL LOC HOLD: Save persistence should remember knowledge categories, not hot inventory.",
+     "field_note": "NL LOC HOLD: Knowledge flags must not change truth ownership or DTO layout.",
+     "terminal": "NL LOC HOLD: SAVE FLAGS: rumor family seen, ending family reached, contract class unlocked, legal context known, route warning known, evidence category known. No oxygen, hull, weapon or inventory inheritance.",
+     "audio": "NL LOC HOLD: Memory is allowed. Power is not.",
+     "in_game_wiki": "NL LOC HOLD: Knowledge flags make the dossier compatible with long campaigns and replay without breaking survival balance.",
+     "external_site": "NL LOC HOLD: Save Profile Knowledge Flags defines persistence-safe replay memory."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P180_WEBSITE_WIKI_SPOILER_TIERING",
+   "release_set_id": "RS036_DOSSIER_SAVE_PRESENTATION_RULES",
+   "article_id": "dossier_save.website_wiki_spoiler_tiering",
+   "title_key": "applied_lore.website_wiki_spoiler_tiering.title",
+   "unlock": {
+    "primary": "unlock.website_wiki_spoiler_tiering",
+    "poi_tags": [
+     "poi.spoiler_tier_index",
+     "poi.public_wiki_gate",
+     "poi.atlas_truth_warning"
+    ],
+    "biome_tags": [
+     "biome.relay_archive",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Public Spoiler Tiering Protocol",
+     "scanner": "Public records need pressure doors like field evidence does.",
+     "field_note": "Split what sells the world from what solves the crime.",
+     "terminal": "SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "RU LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "Разделять то, что продает мир, и то, что решает преступление.",
+     "terminal": "RU LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "RU LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "RU LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "RU LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "JP LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "JP LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "JP LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "JP LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "JP LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "JP LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "CN LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "CN LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "CN LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "CN LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "CN LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "CN LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "FR LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "FR LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "FR LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "FR LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "FR LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "FR LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "ES LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "ES LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "ES LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "ES LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "ES LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "ES LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "DE LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "DE LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "DE LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "DE LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "DE LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "DE LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "PL LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "PL LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "PL LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "PL LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "PL LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "PL LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "UA LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "UA LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "UA LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "UA LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "UA LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "UA LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "AR LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "AR LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "AR LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "AR LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "AR LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "AR LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "ID LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "ID LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "ID LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "ID LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "ID LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "ID LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "KO LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "KO LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "KO LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "KO LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "KO LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "KO LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "HE LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "HE LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "HE LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "HE LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "HE LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "HE LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "PT LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "PT LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "PT LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "PT LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "PT LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "PT LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Public Spoiler Tiering Protocol",
+     "scanner": "NL LOC HOLD: Public records need pressure doors like field evidence does.",
+     "field_note": "NL LOC HOLD: Split what sells the world from what solves the crime.",
+     "terminal": "NL LOC HOLD: SPOILER TIERS: Tier 0 premise, Tier 1 shallow evidence, Tier 2 Deep Reach liability, Tier 3 Atlas classification, Tier 4 ending payloads. Packet IDs remain stable across every surface.",
+     "audio": "NL LOC HOLD: A public archive can ruin a case if it has no pressure doors.",
+     "in_game_wiki": "NL LOC HOLD: Spoiler tiering keeps public records readable without flattening the player's evidence journey.",
+     "external_site": "NL LOC HOLD: Public spoiler tiers define what can be shown before the player earns shallow evidence, Deep Reach liability, Atlas classification, and ending payload truth."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

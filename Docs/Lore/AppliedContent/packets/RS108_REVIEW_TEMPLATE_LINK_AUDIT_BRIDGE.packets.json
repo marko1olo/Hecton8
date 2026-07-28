@@ -1,9 +1,234 @@
 {
-  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
-  "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
-  "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+ "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
+ "status": "canonical_source_candidate_pending_controller_review_and_downstream_wiring",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P524_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+   "article_id": "applied_lore.public_archive_review_queue_stamp_bridge",
+   "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
+   "title_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future review-queue, template-hold, and link-audit bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "review_queue",
+     "public_archive",
+     "proof_order",
+     "safe_next_action"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets the opening route show that an evidence page is queued for review without implying the evidence is false or final."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "A public archive review queue stamp tells the reader that an entry is visible but not settled. It can wait for source voice review, confidence ladder review, claimant-safe review, route alias review, or relation-edge review. The stamp keeps the page from looking broken and keeps the evidence from looking final.\n\nThe stamp is useful only when it names the safe next action. A plain waiting label is bureaucracy. A useful stamp tells the player what proof class is still pending without printing the hidden answer.",
+     "wiki_article": "Review queue stamp: a visible page or relation state used when evidence is present but not settled. It should name visible review state, held reason class, source voice, and safe next action. It must not expose final relation or final outcome.",
+     "pda_codex": "PDA review stamp: entry queued. Read the visible review state and safe next action. The hidden reason class is held until proof order clears it.",
+     "scanner_entry": "Scanner queue tag: evidence visible, review pending. Safe action available.",
+     "terminal_note": "Terminal review note: this entry is queued by proof class. Do not treat queue state as final approval.",
+     "evidence_caption": "Review queue stamp: visible entry, pending proof class.",
+     "spoiler_policy": "Safe to show visible review state and safe next action. Hold exact relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Public Archive Review Queue Stamp",
+     "website_article": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "wiki_article": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "pda_codex": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "scanner_entry": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "terminal_note": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "evidence_caption": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "spoiler_policy": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
+     "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    }
+   },
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
@@ -13,682 +238,460 @@
     "unity_placement_ready": false,
     "generated_page_ready": false,
     "publication_ready": false
+   },
+   "content_class": "in_world_artifact"
   },
-  "packets": [
-    {
-      "packet_id": "P524_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-      "article_id": "applied_lore.public_archive_review_queue_stamp_bridge",
-      "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
-      "title_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future review-queue, template-hold, and link-audit bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "review_queue",
-          "public_archive",
-          "proof_order",
-          "safe_next_action"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets the opening route show that an evidence page is queued for review without implying the evidence is false or final."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "A public archive review queue stamp tells the reader that an entry is visible but not settled. It can wait for source voice review, confidence ladder review, claimant-safe review, route alias review, or relation-edge review. The stamp keeps the page from looking broken and keeps the evidence from looking final.\n\nThe stamp is useful only when it names the safe next action. A plain waiting label is bureaucracy. A useful stamp tells the player what proof class is still pending without printing the hidden answer.",
-          "wiki_article": "Review queue stamp: a visible page or relation state used when evidence is present but not settled. It should name visible review state, held reason class, source voice, and safe next action. It must not expose final relation or final outcome.",
-          "pda_codex": "PDA review stamp: entry queued. Read the visible review state and safe next action. The hidden reason class is held until proof order clears it.",
-          "scanner_entry": "Scanner queue tag: evidence visible, review pending. Safe action available.",
-          "terminal_note": "Terminal review note: this entry is queued by proof class. Do not treat queue state as final approval.",
-          "evidence_caption": "Review queue stamp: visible entry, pending proof class.",
-          "spoiler_policy": "Safe to show visible review state and safe next action. Hold exact relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft ar_SA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft de_DE: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft es_ES: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft fr_FR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft he_IL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft id_ID: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft ja_JP: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft ko_KR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft nl_NL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft pl_PL: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft pt_BR: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft ru_RU: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft uk_UA: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Public Archive Review Queue Stamp",
-          "website_article": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "wiki_article": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "pda_codex": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "scanner_entry": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "terminal_note": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "evidence_caption": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "spoiler_policy": "Draft zh_CN: A review queue stamp marks an evidence entry as visible but unsettled and points to the safe next proof action.",
-          "string_pool_key": "LORE_EVIDENCE_PUBLIC_ARCHIVE_REVIEW_QUEUE_STAMP_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      },
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false,
-        "generated_page_ready": false,
-        "publication_ready": false
-      }
+  {
+   "packet_id": "P525_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+   "article_id": "applied_lore.wiki_page_template_hold_notice_bridge",
+   "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
+   "title_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future review-queue, template-hold, and link-audit bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "template_hold",
+     "wiki",
+     "held_section",
+     "unlock_hint"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets early wiki/public pages show held sections without revealing what the missing section proves."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "A wiki page template hold notice is a visible guardrail. It says that a section exists but is not safe to print yet. The section may be waiting for source voice, confidence state, relation edge, claimant-safe audit, route alias comparison, or proof escalation clearance.\n\nThe notice keeps the page shape honest. It avoids fake completeness and avoids spoiler leakage. A good hold names the safe requirement and leaves the answer protected.",
+     "wiki_article": "Template hold notice: a page-template state for held sections. It should name section type, held proof class, safe preview label, and unlock hint. It must not reveal hidden relation, protected claimant, final route, or final consequence.",
+     "pda_codex": "PDA section hold: section exists but is held. Check the safe requirement before opening it.",
+     "scanner_entry": "Scanner page-state tag: page section held by proof class.",
+     "terminal_note": "Terminal template note: held section is intentional. Complete safe proof action before revealing it.",
+     "evidence_caption": "Template hold: section visible, answer protected.",
+     "spoiler_policy": "Safe to show section type, held proof class, safe preview label, and unlock hint. Hold exact hidden relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "source_authority"
     },
-    {
-      "packet_id": "P525_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-      "article_id": "applied_lore.wiki_page_template_hold_notice_bridge",
-      "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
-      "title_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future review-queue, template-hold, and link-audit bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "template_hold",
-          "wiki",
-          "held_section",
-          "unlock_hint"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets early wiki/public pages show held sections without revealing what the missing section proves."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "A wiki page template hold notice is a visible guardrail. It says that a section exists but is not safe to print yet. The section may be waiting for source voice, confidence state, relation edge, claimant-safe audit, route alias comparison, or proof escalation clearance.\n\nThe notice keeps the page shape honest. It avoids fake completeness and avoids spoiler leakage. A good hold names the safe requirement and leaves the answer protected.",
-          "wiki_article": "Template hold notice: a page-template state for held sections. It should name section type, held proof class, safe preview label, and unlock hint. It must not reveal hidden relation, protected claimant, final route, or final consequence.",
-          "pda_codex": "PDA section hold: section exists but is held. Check the safe requirement before opening it.",
-          "scanner_entry": "Scanner page-state tag: page section held by proof class.",
-          "terminal_note": "Terminal template note: held section is intentional. Complete safe proof action before revealing it.",
-          "evidence_caption": "Template hold: section visible, answer protected.",
-          "spoiler_policy": "Safe to show section type, held proof class, safe preview label, and unlock hint. Hold exact hidden relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Wiki Page Template Hold Notice",
-          "website_article": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "wiki_article": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "pda_codex": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "scanner_entry": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "terminal_note": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "evidence_caption": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "spoiler_policy": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
-          "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      },
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false,
-        "generated_page_ready": false,
-        "publication_ready": false
-      }
+    "ar_SA": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft ar_SA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
     },
-    {
-      "packet_id": "P526_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-      "article_id": "applied_lore.pda_evidence_link_audit_trail_bridge",
-      "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
-      "title_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE_TITLE",
-      "status": "source_candidate_pending_controller_review_and_downstream_wiring",
-      "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
-      "unlock": {
-        "primary": "future review-queue, template-hold, and link-audit bridge after packet-specific proof gate",
-        "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
-        "poi_tags": [
-          "link_audit",
-          "pda",
-          "relation_state",
-          "safe_next_action"
-        ],
-        "biome_tags": [
-          "not_biome_bound"
-        ],
-        "first_20_boundary": "lets the opening route show that evidence links changed state without revealing the final relation behind the change."
-      },
-      "surfaces": [
-        "website_article",
-        "wiki_article",
-        "pda_codex",
-        "scanner_entry",
-        "terminal_note",
-        "evidence_caption",
-        "spoiler_policy",
-        "string_pool_key"
-      ],
-      "localized": {
-        "en_US": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "A PDA evidence link audit trail records when a relation link changes state. A link can become visible, partial, locked, downgraded, or suppressed. The trail names the visible cause: source voice match, confidence change, receipt-body support, route alias conflict, claimant-safe hold, or proof escalation.\n\nThe audit trail is not a confession log. It does not print the exact hidden relation. It tells the player that proof order changed the graph and gives one safe next action.",
-          "wiki_article": "Evidence link audit trail: a record of relation-link state changes. It should name previous state, new state, visible cause, held relation class, and safe next action. It must not reveal exact hidden relation or final outcome.",
-          "pda_codex": "PDA link audit: evidence link changed state. Read previous state, new state, visible cause, and safe next action. The exact hidden relation remains protected.",
-          "scanner_entry": "Scanner link audit tag: relation link state changed. Visible cause available; exact relation held.",
-          "terminal_note": "Terminal audit note: link state changed by proof order. Do not infer final relation from the state change alone.",
-          "evidence_caption": "Link audit trail: relation state changed, hidden relation protected.",
-          "spoiler_policy": "Safe to show previous state, new state, visible cause, and safe next action. Hold exact hidden relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "PDA Evidence Link Audit Trail",
-          "website_article": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "wiki_article": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "pda_codex": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "scanner_entry": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "terminal_note": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "evidence_caption": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "spoiler_policy": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
-          "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
-          "locale_status": "draft_machine_or_llm"
-        }
-      },
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false,
-        "generated_page_ready": false,
-        "publication_ready": false
-      }
+    "de_DE": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft de_DE: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft es_ES: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft fr_FR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft he_IL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft id_ID: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft ja_JP: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft ko_KR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft nl_NL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft pl_PL: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft pt_BR: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft ru_RU: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft uk_UA: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Wiki Page Template Hold Notice",
+     "website_article": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "wiki_article": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "pda_codex": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "scanner_entry": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "terminal_note": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "evidence_caption": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "spoiler_policy": "Draft zh_CN: A page template hold notice shows that a section exists but is held until a safe proof requirement is met.",
+     "string_pool_key": "LORE_EVIDENCE_WIKI_PAGE_TEMPLATE_HOLD_NOTICE_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P526_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+   "article_id": "applied_lore.pda_evidence_link_audit_trail_bridge",
+   "release_set_id": "RS108_REVIEW_TEMPLATE_LINK_AUDIT_BRIDGE",
+   "title_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE_TITLE",
+   "status": "source_candidate_pending_controller_review_and_downstream_wiring",
+   "canon_owner": "Canon_Locks.md, Lore_Bible.md, Lore_Content_System.md, Lore_Localization_Model.md, Website_Publication_Map.md",
+   "unlock": {
+    "primary": "future review-queue, template-hold, and link-audit bridge after packet-specific proof gate",
+    "secondary": "future scanner, terminal, PDA, evidence-caption, website, wiki, and string-pool extraction lanes",
+    "poi_tags": [
+     "link_audit",
+     "pda",
+     "relation_state",
+     "safe_next_action"
+    ],
+    "biome_tags": [
+     "not_biome_bound"
+    ],
+    "first_20_boundary": "lets the opening route show that evidence links changed state without revealing the final relation behind the change."
+   },
+   "surfaces": [
+    "website_article",
+    "wiki_article",
+    "pda_codex",
+    "scanner_entry",
+    "terminal_note",
+    "evidence_caption",
+    "spoiler_policy",
+    "string_pool_key"
+   ],
+   "localized": {
+    "en_US": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "A PDA evidence link audit trail records when a relation link changes state. A link can become visible, partial, locked, downgraded, or suppressed. The trail names the visible cause: source voice match, confidence change, receipt-body support, route alias conflict, claimant-safe hold, or proof escalation.\n\nThe audit trail is not a confession log. It does not print the exact hidden relation. It tells the player that proof order changed the graph and gives one safe next action.",
+     "wiki_article": "Evidence link audit trail: a record of relation-link state changes. It should name previous state, new state, visible cause, held relation class, and safe next action. It must not reveal exact hidden relation or final outcome.",
+     "pda_codex": "PDA link audit: evidence link changed state. Read previous state, new state, visible cause, and safe next action. The exact hidden relation remains protected.",
+     "scanner_entry": "Scanner link audit tag: relation link state changed. Visible cause available; exact relation held.",
+     "terminal_note": "Terminal audit note: link state changed by proof order. Do not infer final relation from the state change alone.",
+     "evidence_caption": "Link audit trail: relation state changed, hidden relation protected.",
+     "spoiler_policy": "Safe to show previous state, new state, visible cause, and safe next action. Hold exact hidden relation, final receiver, protected claimant, Atlas consequence, legal verdict, and rescue conclusion behind later proof gates.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft ar_SA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft de_DE: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft es_ES: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft fr_FR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft he_IL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft id_ID: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft ja_JP: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft ko_KR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft nl_NL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft pl_PL: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft pt_BR: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft ru_RU: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft uk_UA: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "PDA Evidence Link Audit Trail",
+     "website_article": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "wiki_article": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "pda_codex": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "scanner_entry": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "terminal_note": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "evidence_caption": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "spoiler_policy": "Draft zh_CN: An evidence link audit trail records a relation-link state change and names the safe next action without revealing the hidden relation.",
+     "string_pool_key": "LORE_EVIDENCE_PDA_EVIDENCE_LINK_AUDIT_TRAIL_BRIDGE",
+     "locale_status": "draft_machine_or_llm"
+    }
+   },
+   "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

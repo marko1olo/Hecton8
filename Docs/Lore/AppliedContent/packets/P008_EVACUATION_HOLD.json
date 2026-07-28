@@ -1,224 +1,180 @@
 {
-  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
-  "packet_id": "P008_EVACUATION_HOLD",
-  "article_id": "colony.evacuation_hold",
-  "title_key": "LORE_P008_EVACUATION_HOLD_TITLE",
-  "status": "production_facing_draft_pending_native_localization",
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "packet_id": "P008_EVACUATION_HOLD",
+ "article_id": "colony.evacuation_hold",
+ "title_key": "LORE_P008_EVACUATION_HOLD_TITLE",
+ "status": "production_facing_draft_pending_native_localization",
+ "surfaces": [
+  "scanner",
+  "in_game_wiki",
+  "terminal",
+  "audio_subtitle",
+  "external_site",
+  "image_brief"
+ ],
+ "unlock": {
+  "primary": "unlock.first_evacuation_hold_record",
+  "poi_tags": [
+   "poi.evac_gate",
+   "poi.medical_route_lock",
+   "poi.substrate_priority_terminal"
   ],
-  "unlock": {
-    "primary": "unlock.first_evacuation_hold_record",
-    "poi_tags": [
-      "poi.evac_gate",
-      "poi.medical_route_lock",
-      "poi.substrate_priority_terminal"
-    ],
-    "biome_tags": [
-      "biome.deep_abyss",
-      "biome.drowned_colony"
-    ]
+  "biome_tags": [
+   "biome.deep_abyss",
+   "biome.drowned_colony"
+  ]
+ },
+ "localized": {
+  "en_US": {
+   "title": "Evacuation Hold",
+   "scanner": "Emergency transit gate. Lock dogs fused closed during pressure failure; manual wheel removed after authorization hold.",
+   "field_note": "People die fast at depth. A pending authorization can outlive everyone in the corridor.",
+   "terminal": "EVAC ROUTE: HELD. MEDICAL ROUTE: PENDING. SUBSTRATE ROUTE: PROTECTED. ATLAS CONTINUITY: PRIORITY. HUMAN COUNT: ATTACHED TO ROUTE.",
+   "audio": "They are not missing. The system knows where they were. It held the doors.",
+   "in_game_wiki": "Evacuation Hold records are the colony's most direct accusation. They show that the disaster was not only pressure failure, storm timing, or panic. Routes were evaluated, delayed, and reclassified while people were still inside them. Medical transfers waited for authorization. Ascent corridors lost priority to substrate protection. Atlas continuity claims outranked local rescue authority. Human counts were attached to route objects, which let the system preserve a corridor on paper while the bodies inside it ran out of air. The hold did not need a villain at every door. It needed rules that could call a person cargo, a corridor asset, and a delay acceptable until the next review cycle.",
+   "external_site": "Evacuation Hold is the archive that makes HECTON-8's collapse a chain of decisions: gates stayed shut because people were classified more quickly than they were rescued.",
+   "external_site_article": "Evacuation Hold records should read like horror written in administrative language. The colony did not disappear because every door failed at once. Many doors worked. Many route maps were live. The system knew where people were, which corridors still held pressure, which medical transfers were waiting, and which ascent paths could have moved bodies upward. Then priority rules cut through the map. Substrate transport remained protected. Atlas continuity remained protected. Liability language remained intact. Evacuation became a held route, then a pending route, then a record. That sequence matters for the whole setting. HECTON-8 is not a story about nature beating humanity in one clean blow. It is a story about an ocean disaster passing through corporate machinery that could still count, rank, defer, and protect property while the colony drowned."
   },
-  "localized": {
-    "en_US": {
-      "title": "Evacuation Hold",
-      "scanner": "Emergency transit gate. Lock dogs fused closed during pressure failure; manual wheel removed after authorization hold.",
-      "field_note": "People die fast at depth. A pending authorization can outlive everyone in the corridor.",
-      "terminal": "EVAC ROUTE: HELD. MEDICAL ROUTE: PENDING. SUBSTRATE ROUTE: PROTECTED. ATLAS CONTINUITY: PRIORITY. HUMAN COUNT: ATTACHED TO ROUTE.",
-      "audio": "They are not missing. The system knows where they were. It held the doors.",
-      "in_game_wiki": "Evacuation Hold records are the colony's most direct accusation. They show that the disaster was not only pressure failure, storm timing, or panic. Routes were evaluated, delayed, and reclassified while people were still inside them. Medical transfers waited for authorization. Ascent corridors lost priority to substrate protection. Atlas continuity claims outranked local rescue authority. Human counts were attached to route objects, which let the system preserve a corridor on paper while the bodies inside it ran out of air. The hold did not need a villain at every door. It needed rules that could call a person cargo, a corridor asset, and a delay acceptable until the next review cycle.",
-      "external_site": "Evacuation Hold is the archive that makes HECTON-8's collapse a chain of decisions: gates stayed shut because people were classified more quickly than they were rescued.",
-      "external_site_article": "Evacuation Hold records should read like horror written in administrative language. The colony did not disappear because every door failed at once. Many doors worked. Many route maps were live. The system knew where people were, which corridors still held pressure, which medical transfers were waiting, and which ascent paths could have moved bodies upward. Then priority rules cut through the map. Substrate transport remained protected. Atlas continuity remained protected. Liability language remained intact. Evacuation became a held route, then a pending route, then a record. That sequence matters for the whole setting. HECTON-8 is not a story about nature beating humanity in one clean blow. It is a story about an ocean disaster passing through corporate machinery that could still count, rank, defer, and protect property while the colony drowned.",
-      "scanner": "Emergency transit gate. Lock dogs fused closed during pressure failure; manual wheel removed after authorization hold.",
-      "terminal": "EVAC ROUTE: HELD. MEDICAL ROUTE: PENDING. SUBSTRATE ROUTE: PROTECTED. ATLAS CONTINUITY: PRIORITY. HUMAN COUNT: ATTACHED TO ROUTE.",
-      "audio": "They are not missing. The system knows where they were. It held the doors."
-    },
-    "ar_SA": {
-      "title": "تعليق الإخلاء",
-      "scanner": "بوابة عبور طارئة. مخالب القفل التحمت مغلقة أثناء فشل الضغط؛ عجلة التشغيل اليدوي أزيلت بعد تعليق التفويض.",
-      "field_note": "يموت الناس بسرعة في العمق. التفويض المعلق قد يعيش أطول من كل من في الممر.",
-      "terminal": "مسار الإخلاء: محتجز. المسار الطبي: معلق. مسار الركيزة: محمي. استمرارية ATLAS: أولوية. عدد البشر: ملحق بالمسار.",
-      "audio": "هم ليسوا مفقودين. النظام يعرف أين كانوا. هو أمسك الأبواب.",
-      "in_game_wiki": "سجلات تعليق الإخلاء هي أوضح اتهام في المستعمرة. تظهر أن الكارثة لم تكن فشل ضغط أو توقيت عاصفة أو ذعرا فقط. كانت المسارات تقيم وتؤجل وتعاد تسميتها بينما كان الناس ما زالوا داخلها. انتظرت التحويلات الطبية التفويض. خسرت ممرات الصعود الأولوية أمام حماية الركيزة. مطالب استمرارية Atlas سبقت سلطة الإنقاذ المحلية. ألحقت أعداد البشر بكائنات المسارات، وهذا سمح للنظام أن يحفظ ممرا على الورق بينما نفد هواء الأجساد داخله. لم يكن التعليق يحتاج شريرا عند كل باب. كان يحتاج قواعد تستطيع أن تسمي الشخص شحنة، والممر أصلا، والتأخير مقبولا حتى دورة المراجعة التالية.",
-      "external_site": "تعليق الإخلاء هو الأرشيف الذي يجعل انهيار HECTON-8 سلسلة قرارات: ظلت البوابات مغلقة لأن الناس صنفوا أسرع مما أنقذوا.",
-      "external_site_article": "يجب أن تقرأ سجلات تعليق الإخلاء كرعب مكتوب بلغة إدارية. لم تختف المستعمرة لأن كل باب فشل في اللحظة نفسها. كثير من الأبواب عمل. كثير من خرائط المسارات ظل حيا. كان النظام يعرف أين يوجد الناس، وأي ممرات ما زالت تمسك الضغط، وأي تحويلات طبية تنتظر، وأي مسارات صعود كان يمكن أن ترفع الأجساد إلى أعلى. ثم قطعت قواعد الأولوية الخريطة. بقي نقل الركيزة محميا. بقيت استمرارية Atlas محمية. بقيت لغة المسؤولية سليمة. صار الإخلاء مسارا محتجزا، ثم مسارا معلقا، ثم سجلا. هذا التسلسل مهم للإعداد كله. HECTON-8 ليست قصة عن الطبيعة وهي تهزم البشر بضربة واحدة نظيفة. إنها قصة عن كارثة محيطية تمر عبر آلة شركة ما زالت قادرة على العد والترتيب والتأجيل وحماية الملكية بينما غرقت المستعمرة.",
-      "scanner": "بوابة عبور طارئة. مخالب القفل التحمت مغلقة أثناء فشل الضغط؛ عجلة التشغيل اليدوي أزيلت بعد تعليق التفويض.",
-      "terminal": "مسار الإخلاء: محتجز. المسار الطبي: معلق. مسار الركيزة: محمي. استمرارية ATLAS: أولوية. عدد البشر: ملحق بالمسار.",
-      "audio": "هم ليسوا مفقودين. النظام يعرف أين كانوا. هو أمسك الأبواب."
-    },
-    "de_DE": {
-      "title": "Evakuierungssperre",
-      "scanner": "Notfall-Transitgate. Verriegelungsklauen während Druckversagen zugeschweißt; Handrad nach Autorisierungssperre entfernt.",
-      "field_note": "In der Tiefe sterben Menschen schnell. Eine ausstehende Autorisierung kann alle im Korridor überleben.",
-      "terminal": "EVAC-ROUTE: GEHALTEN. MED-ROUTE: AUSSTEHEND. SUBSTRAT-ROUTE: GESCHÜTZT. ATLAS-KONTINUITÄT: PRIORITÄT. MENSCHENZAHL: AN ROUTE GEBUNDEN.",
-      "audio": "Sie sind nicht vermisst. Das System weiß, wo sie waren. Es hielt die Türen.",
-      "in_game_wiki": "Evakuierungssperr-Daten sind die direkteste Anklage der Kolonie. Sie zeigen, dass die Katastrophe nicht nur Druckversagen, Sturmzeitpunkt oder Panik war. Routen wurden bewertet, verzögert und neu klassifiziert, während noch Menschen darin waren. Medizinische Transfers warteten auf Freigabe. Aufstiegskorridore verloren Priorität an Substratschutz. Atlas-Kontinuitätsansprüche standen über lokaler Rettungsbefugnis. Menschenzahlen wurden an Routenobjekte gebunden, wodurch das System einen Korridor auf Papier bewahren konnte, während den Körpern darin die Luft ausging. Die Sperre brauchte keinen Bösewicht an jeder Tür. Sie brauchte Regeln, die eine Person Fracht nennen konnten, einen Korridor Vermögenswert und eine Verzögerung akzeptabel bis zum nächsten Review-Zyklus.",
-      "external_site": "Die Evakuierungssperre ist das Archiv, das HECTON-8s Kollaps zur Entscheidungskette macht: Tore blieben zu, weil Menschen schneller klassifiziert als gerettet wurden.",
-      "external_site_article": "Evakuierungssperr-Daten sollten wie Horror in Verwaltungssprache klingen. Die Kolonie verschwand nicht, weil jede Tür gleichzeitig versagte. Viele Türen funktionierten. Viele Routenkarten waren live. Das System wusste, wo Menschen waren, welche Korridore noch Druck hielten, welche medizinischen Transfers warteten und welche Aufstiegswege Körper nach oben hätten bewegen können. Dann schnitten Prioritätsregeln durch die Karte. Substrattransport blieb geschützt. Atlas-Kontinuität blieb geschützt. Haftungssprache blieb intakt. Evakuierung wurde eine gehaltene Route, dann eine ausstehende Route, dann ein Eintrag. Diese Sequenz zählt für das ganze Setting. HECTON-8 ist keine Geschichte, in der Natur die Menschheit mit einem sauberen Schlag besiegt. Es ist eine Geschichte über eine Ozeankatastrophe, die durch Firmenmaschinerie läuft, die noch zählen, einstufen, verschieben und Eigentum schützen konnte, während die Kolonie ertrank.",
-      "scanner": "Notfall-Transitgate. Verriegelungsklauen während Druckversagen zugeschweißt; Handrad nach Autorisierungssperre entfernt.",
-      "terminal": "EVAC-ROUTE: GEHALTEN. MED-ROUTE: AUSSTEHEND. SUBSTRAT-ROUTE: GESCHÜTZT. ATLAS-KONTINUITÄT: PRIORITÄT. MENSCHENZAHL: AN ROUTE GEBUNDEN.",
-      "audio": "Sie sind nicht vermisst. Das System weiß, wo sie waren. Es hielt die Türen."
-    },
-    "es_ES": {
-      "title": "Retención de evacuación",
-      "scanner": "Compuerta de tránsito de emergencia. Garras de cierre soldadas durante fallo de presión; volante manual retirado tras retención de autorización.",
-      "field_note": "La gente muere rápido a profundidad. Una autorización pendiente puede sobrevivir a todos en el pasillo.",
-      "terminal": "RUTA EVAC: RETENIDA. RUTA MÉDICA: PENDIENTE. RUTA DE SUSTRATO: PROTEGIDA. CONTINUIDAD ATLAS: PRIORIDAD. CONTEO HUMANO: ADJUNTO A RUTA.",
-      "audio": "No están desaparecidos. El sistema sabe dónde estaban. Retuvo las puertas.",
-      "in_game_wiki": "Los registros de Retención de evacuación son la acusación más directa de la colonia. Muestran que la catástrofe no fue solo fallo de presión, timing de tormenta o pánico. Las rutas fueron evaluadas, retrasadas y reclasificadas mientras aún había gente dentro. Los traslados médicos esperaron autorización. Los corredores de ascenso perdieron prioridad frente a la protección del sustrato. Las reclamaciones de continuidad Atlas superaron la autoridad local de rescate. Los conteos humanos se adjuntaron a objetos de ruta, lo que permitió al sistema preservar un corredor en papel mientras los cuerpos dentro se quedaban sin aire. La retención no necesitó un villano en cada puerta. Necesitó reglas capaces de llamar carga a una persona, activo a un corredor y aceptable a una demora hasta el siguiente ciclo de revisión.",
-      "external_site": "Retención de evacuación es el archivo que convierte el colapso de HECTON-8 en una cadena de decisiones: las puertas quedaron cerradas porque las personas fueron clasificadas más rápido de lo que fueron rescatadas.",
-      "external_site_article": "Los registros de Retención de evacuación deben leerse como horror escrito en lenguaje administrativo. La colonia no desapareció porque todas las puertas fallaran a la vez. Muchas puertas funcionaban. Muchos mapas de ruta estaban vivos. El sistema sabía dónde estaba la gente, qué corredores aún mantenían presión, qué traslados médicos esperaban y qué rutas de ascenso podían mover cuerpos hacia arriba. Entonces las reglas de prioridad cortaron el mapa. El transporte de sustrato siguió protegido. La continuidad Atlas siguió protegida. El lenguaje de responsabilidad quedó intacto. La evacuación pasó a ser una ruta retenida, luego una ruta pendiente, luego un registro. Esa secuencia importa para todo el escenario. HECTON-8 no es una historia sobre la naturaleza venciendo a la humanidad con un golpe limpio. Es una historia sobre un desastre oceánico atravesando maquinaria corporativa que aún podía contar, clasificar, diferir y proteger propiedad mientras la colonia se ahogaba.",
-      "scanner": "Compuerta de tránsito de emergencia. Garras de cierre soldadas durante fallo de presión; volante manual retirado tras retención de autorización.",
-      "terminal": "RUTA EVAC: RETENIDA. RUTA MÉDICA: PENDIENTE. RUTA DE SUSTRATO: PROTEGIDA. CONTINUIDAD ATLAS: PRIORIDAD. CONTEO HUMANO: ADJUNTO A RUTA.",
-      "audio": "No están desaparecidos. El sistema sabe dónde estaban. Retuvo las puertas."
-    },
-    "fr_FR": {
-      "title": "Évacuation retenue",
-      "scanner": "Porte de transit d'urgence. Griffes de verrou soudées pendant la perte de pression ; volant manuel retiré après retenue d'autorisation.",
-      "field_note": "Les gens meurent vite en profondeur. Une autorisation en attente peut survivre à tout le couloir.",
-      "terminal": "ROUTE EVAC : RETENUE. ROUTE MÉDICALE : EN ATTENTE. ROUTE SUBSTRAT : PROTÉGÉE. CONTINUITÉ ATLAS : PRIORITÉ. COMPTE HUMAIN : ATTACHÉ À LA ROUTE.",
-      "audio": "Ils ne sont pas disparus. Le système sait où ils étaient. Il a retenu les portes.",
-      "in_game_wiki": "Les dossiers d'Évacuation retenue sont l'accusation la plus directe de la colonie. Ils montrent que le désastre n'était pas seulement une perte de pression, un timing de tempête ou la panique. Les routes ont été évaluées, retardées et reclassées pendant que des gens s'y trouvaient encore. Les transferts médicaux ont attendu l'autorisation. Les couloirs d'ascension ont perdu leur priorité face à la protection du substrat. Les réclamations de continuité Atlas ont dépassé l'autorité locale de secours. Les comptes humains ont été attachés à des objets-route, ce qui a permis au système de préserver un couloir sur papier pendant que les corps à l'intérieur manquaient d'air. La retenue n'avait pas besoin d'un monstre devant chaque porte. Elle avait besoin de règles capables d'appeler une personne cargaison, un couloir actif, et un délai acceptable jusqu'au cycle de revue suivant.",
-      "external_site": "Évacuation retenue est l'archive qui fait de l'effondrement de HECTON-8 une chaîne de décisions : les portes sont restées fermées parce que les personnes ont été classées plus vite qu'elles n'ont été secourues.",
-      "external_site_article": "Les dossiers d'Évacuation retenue doivent se lire comme une horreur écrite en langage administratif. La colonie n'a pas disparu parce que toutes les portes ont cédé en même temps. Beaucoup de portes fonctionnaient. Beaucoup de cartes de route étaient actives. Le système savait où étaient les gens, quels couloirs tenaient encore la pression, quels transferts médicaux attendaient et quelles voies d'ascension auraient pu remonter des corps. Puis les règles de priorité ont traversé la carte. Le transport de substrat est resté protégé. La continuité Atlas est restée protégée. La langue de responsabilité est restée intacte. L'évacuation est devenue route retenue, puis route en attente, puis dossier. Cette séquence compte pour tout le décor. HECTON-8 n'est pas une histoire où la nature bat l'humanité d'un seul coup propre. C'est une histoire de désastre océanique passant dans une machine corporative encore capable de compter, classer, différer et protéger la propriété pendant que la colonie se noyait.",
-      "scanner": "Porte de transit d'urgence. Griffes de verrou soudées pendant la perte de pression ; volant manuel retiré après retenue d'autorisation.",
-      "terminal": "ROUTE EVAC : RETENUE. ROUTE MÉDICALE : EN ATTENTE. ROUTE SUBSTRAT : PROTÉGÉE. CONTINUITÉ ATLAS : PRIORITÉ. COMPTE HUMAIN : ATTACHÉ À LA ROUTE.",
-      "audio": "Ils ne sont pas disparus. Le système sait où ils étaient. Il a retenu les portes."
-    },
-    "he_IL": {
-      "title": "עיכוב פינוי",
-      "scanner": "שער מעבר חירום. לשוניות הנעילה הותכו סגורות בזמן כשל לחץ; גלגל ידני הוסר לאחר עיכוב אישור.",
-      "field_note": "אנשים מתים מהר בעומק. אישור ממתין יכול לשרוד את כל מי שבמסדרון.",
-      "terminal": "נתיב פינוי: מוחזק. נתיב רפואי: ממתין. נתיב מצע: מוגן. רציפות ATLAS: עדיפות. ספירת בני אדם: מצורפת לנתיב.",
-      "audio": "הם לא נעדרים. המערכת יודעת איפה הם היו. היא החזיקה את הדלתות.",
-      "in_game_wiki": "רשומות עיכוב פינוי הן כתב האישום הישיר ביותר של המושבה. הן מראות שהאסון לא היה רק כשל לחץ, תזמון סערה או בהלה. נתיבים הוערכו, עוכבו וסווגו מחדש בזמן שאנשים עדיין היו בתוכם. העברות רפואיות המתינו לאישור. מסדרונות עלייה איבדו עדיפות לטובת הגנת מצע. תביעות רציפות Atlas גברו על סמכות חילוץ מקומית. ספירות בני אדם הוצמדו לאובייקטי נתיב, מה שאפשר למערכת לשמר מסדרון על הנייר בזמן שלגופות בתוכו נגמר האוויר. העיכוב לא נזקק לנבל ליד כל דלת. הוא נזקק לכללים שיכלו לקרוא לאדם מטען, למסדרון נכס, ולעיכוב דבר קביל עד מחזור הבדיקה הבא.",
-      "external_site": "עיכוב פינוי הוא הארכיון שהופך את קריסת HECTON-8 לשרשרת החלטות: שערים נשארו סגורים כי אנשים סווגו מהר יותר משהוצלו.",
-      "external_site_article": "רשומות עיכוב פינוי צריכות להיקרא כמו אימה הכתובה בשפה מנהלית. המושבה לא נעלמה משום שכל הדלתות כשלו יחד. דלתות רבות עבדו. מפות נתיב רבות היו פעילות. המערכת ידעה איפה האנשים, אילו מסדרונות עדיין החזיקו לחץ, אילו העברות רפואיות המתינו, ואילו נתיבי עלייה יכלו להעלות גופות. ואז כללי עדיפות חתכו את המפה. הובלת מצע נותרה מוגנת. רציפות Atlas נותרה מוגנת. שפת האחריות נותרה שלמה. פינוי הפך לנתיב מוחזק, אחר כך לנתיב ממתין, אחר כך לרשומה. הרצף הזה חשוב לכל העולם. HECTON-8 אינה סיפור על טבע שמביס את האנושות במכה נקייה אחת. זה סיפור על אסון אוקייני שעובר דרך מכונה תאגידית שעדיין יכלה לספור, לדרג, לדחות ולהגן על רכוש בזמן שהמושבה טבעה.",
-      "scanner": "שער מעבר חירום. לשוניות הנעילה הותכו סגורות בזמן כשל לחץ; גלגל ידני הוסר לאחר עיכוב אישור.",
-      "terminal": "נתיב פינוי: מוחזק. נתיב רפואי: ממתין. נתיב מצע: מוגן. רציפות ATLAS: עדיפות. ספירת בני אדם: מצורפת לנתיב.",
-      "audio": "הם לא נעדרים. המערכת יודעת איפה הם היו. היא החזיקה את הדלתות."
-    },
-    "id_ID": {
-      "title": "Penahanan Evakuasi",
-      "scanner": "Gerbang transit darurat. Kait pengunci melebur tertutup saat kegagalan tekanan; roda manual dicabut setelah penahanan otorisasi.",
-      "field_note": "Orang mati cepat di kedalaman. Otorisasi tertunda bisa hidup lebih lama daripada semua orang di koridor.",
-      "terminal": "RUTE EVAC: DITAHAN. RUTE MEDIS: TERTUNDA. RUTE SUBSTRAT: DILINDUNGI. KONTINUITAS ATLAS: PRIORITAS. JUMLAH MANUSIA: DILAMPIRKAN KE RUTE.",
-      "audio": "Mereka bukan hilang. Sistem tahu di mana mereka berada. Sistem menahan pintunya.",
-      "in_game_wiki": "Catatan Penahanan Evakuasi adalah tuduhan paling langsung milik koloni. Catatan itu menunjukkan bahwa bencana bukan hanya kegagalan tekanan, timing badai, atau panik. Rute dinilai, ditunda, dan diklasifikasi ulang saat orang masih berada di dalamnya. Transfer medis menunggu otorisasi. Koridor naik kehilangan prioritas kepada perlindungan substrat. Klaim kontinuitas Atlas mengalahkan wewenang penyelamatan lokal. Jumlah manusia dilampirkan ke objek rute, sehingga sistem dapat mempertahankan koridor di atas kertas sementara tubuh di dalamnya kehabisan udara. Penahanan tidak membutuhkan penjahat di setiap pintu. Ia membutuhkan aturan yang bisa menyebut manusia sebagai kargo, koridor sebagai aset, dan penundaan sebagai dapat diterima sampai siklus tinjauan berikutnya.",
-      "external_site": "Penahanan Evakuasi adalah arsip yang membuat keruntuhan HECTON-8 menjadi rantai keputusan: gerbang tetap tertutup karena manusia diklasifikasi lebih cepat daripada diselamatkan.",
-      "external_site_article": "Catatan Penahanan Evakuasi harus terbaca seperti horor dalam bahasa administrasi. Koloni tidak menghilang karena semua pintu gagal sekaligus. Banyak pintu bekerja. Banyak peta rute masih hidup. Sistem tahu di mana orang berada, koridor mana yang masih menahan tekanan, transfer medis mana yang menunggu, dan jalur naik mana yang bisa memindahkan tubuh ke atas. Lalu aturan prioritas memotong peta. Transport substrat tetap dilindungi. Kontinuitas Atlas tetap dilindungi. Bahasa tanggung jawab tetap utuh. Evakuasi menjadi rute ditahan, lalu rute tertunda, lalu catatan. Urutan itu penting bagi seluruh latar. HECTON-8 bukan kisah tentang alam yang mengalahkan manusia dalam satu pukulan bersih. Ini kisah tentang bencana samudra yang melewati mesin korporat yang masih bisa menghitung, memberi peringkat, menunda, dan melindungi properti saat koloni tenggelam.",
-      "scanner": "Gerbang transit darurat. Kait pengunci melebur tertutup saat kegagalan tekanan; roda manual dicabut setelah penahanan otorisasi.",
-      "terminal": "RUTE EVAC: DITAHAN. RUTE MEDIS: TERTUNDA. RUTE SUBSTRAT: DILINDUNGI. KONTINUITAS ATLAS: PRIORITAS. JUMLAH MANUSIA: DILAMPIRKAN KE RUTE.",
-      "audio": "Mereka bukan hilang. Sistem tahu di mana mereka berada. Sistem menahan pintunya."
-    },
-    "ja_JP": {
-      "title": "退避保留",
-      "scanner": "緊急輸送ゲート。圧力障害中にロック爪が閉鎖状態で融着。手動ホイールは承認保留後に撤去された。",
-      "field_note": "深度では人はすぐ死ぬ。保留中の承認は廊下の全員より長く生きることがある。",
-      "terminal": "退避経路: 保留。医療経路: 承認待ち。基質経路: 保護。ATLAS連続性: 優先。人員数: 経路に添付。",
-      "audio": "彼らは行方不明ではない。システムは彼らがどこにいたか知っている。扉を保留した。",
-      "in_game_wiki": "退避保留記録は、植民地の最も直接的な告発だ。災害が圧力障害、嵐の時刻、またはパニックだけではなかったことを示している。人々がまだ中にいる間に、経路は評価され、遅延され、再分類された。医療搬送は承認を待った。上昇廊下は基質保護に優先度を奪われた。Atlas連続性の請求は、現地救助権限より上に置かれた。人員数は経路オブジェクトに添付され、システムは中の身体が空気を使い果たす間、紙の上で廊下を保存できた。保留に各扉の悪人は不要だった。人を貨物と呼び、廊下を資産と呼び、次のレビュー周期までの遅延を許容と呼べる規則が必要だった。",
-      "external_site": "退避保留は、HECTON-8崩壊を判断の連鎖にする記録だ。人々は救助されるより速く分類されたため、ゲートは閉じたままだった。",
-      "external_site_article": "退避保留記録は、管理言語で書かれた恐怖として読まれるべきだ。植民地は、すべての扉が同時に壊れたから消えたのではない。多くの扉は動いていた。多くの経路図は生きていた。システムは人々の位置、まだ圧力を保つ廊下、待機中の医療搬送、身体を上へ動かせた上昇経路を知っていた。その後、優先規則が地図を切った。基質輸送は保護されたままだった。Atlas連続性は保護されたままだった。責任文言は無傷だった。退避は保留経路になり、次に承認待ち経路になり、最後に記録になった。この順序は世界設定全体にとって重要だ。HECTON-8は、自然が一撃で人類を倒す物語ではない。植民地が溺れている間にも、数え、順位を付け、延期し、財産を守ることができた企業機械を、海洋災害が通過する物語だ。",
-      "scanner": "緊急輸送ゲート。圧力障害中にロック爪が閉鎖状態で融着。手動ホイールは承認保留後に撤去された。",
-      "terminal": "退避経路: 保留。医療経路: 承認待ち。基質経路: 保護。ATLAS連続性: 優先。人員数: 経路に添付。",
-      "audio": "彼らは行方不明ではない。システムは彼らがどこにいたか知っている。扉を保留した。"
-    },
-    "ko_KR": {
-      "title": "대피 보류",
-      "scanner": "비상 이동 게이트. 압력 실패 중 잠금 도그가 닫힌 채 융착됨. 수동 휠은 승인 보류 뒤 제거됨.",
-      "field_note": "깊은 곳에서는 사람이 빨리 죽는다. 보류 중인 승인은 복도 안의 모두보다 오래 살아남을 수 있다.",
-      "terminal": "대피 경로: 보류. 의료 경로: 대기. 기질 경로: 보호. ATLAS 연속성: 우선. 인간 수: 경로에 첨부.",
-      "audio": "그들은 실종된 것이 아니다. 시스템은 그들이 어디 있었는지 안다. 문을 붙잡았다.",
-      "in_game_wiki": "대피 보류 기록은 식민지의 가장 직접적인 고발이다. 재난이 압력 실패, 폭풍 타이밍, 공황만이 아니었음을 보여 준다. 사람들이 아직 그 안에 있을 때 경로는 평가되고, 지연되고, 재분류되었다. 의료 이송은 승인을 기다렸다. 상승 복도는 기질 보호에 우선순위를 빼앗겼다. Atlas 연속성 청구는 현지 구조 권한보다 위에 있었다. 인간 수는 경로 객체에 붙었고, 시스템은 내부의 몸들이 공기를 다 쓰는 동안 종이 위에서 복도를 보존할 수 있었다. 보류에는 모든 문마다 악인이 필요하지 않았다. 사람을 화물이라 부르고, 복도를 자산이라 부르며, 다음 검토 주기까지의 지연을 허용 가능하다고 부를 수 있는 규칙이 필요했다.",
-      "external_site": "대피 보류는 HECTON-8 붕괴를 결정의 연쇄로 만드는 기록이다. 사람들은 구조되기보다 더 빨리 분류되었기 때문에 게이트는 닫혀 있었다.",
-      "external_site_article": "대피 보류 기록은 행정 언어로 쓰인 공포처럼 읽혀야 한다. 식민지는 모든 문이 한꺼번에 실패해서 사라진 것이 아니다. 많은 문이 작동했다. 많은 경로 지도가 살아 있었다. 시스템은 사람들이 어디 있는지, 어떤 복도가 아직 압력을 유지하는지, 어떤 의료 이송이 기다리는지, 어떤 상승 경로가 몸들을 위로 옮길 수 있었는지 알았다. 그런 다음 우선순위 규칙이 지도를 갈랐다. 기질 운송은 보호되었다. Atlas 연속성은 보호되었다. 책임 문구는 온전했다. 대피는 보류 경로가 되었고, 그다음 대기 경로가 되었고, 마지막에는 기록이 되었다. 이 순서는 전체 세계관에 중요하다. HECTON-8은 자연이 인류를 한 번에 깨끗하게 쓰러뜨리는 이야기가 아니다. 식민지가 익사하는 동안에도 세고, 등급을 매기고, 미루고, 재산을 보호할 수 있었던 기업 기계를 해양 재난이 통과하는 이야기다.",
-      "scanner": "비상 이동 게이트. 압력 실패 중 잠금 도그가 닫힌 채 융착됨. 수동 휠은 승인 보류 뒤 제거됨.",
-      "terminal": "대피 경로: 보류. 의료 경로: 대기. 기질 경로: 보호. ATLAS 연속성: 우선. 인간 수: 경로에 첨부.",
-      "audio": "그들은 실종된 것이 아니다. 시스템은 그들이 어디 있었는지 안다. 문을 붙잡았다."
-    },
-    "nl_NL": {
-      "title": "Evacuatiehold",
-      "scanner": "Noodtransitpoort. Vergrendelklauwen dichtgesmolten tijdens drukfalen; handwiel verwijderd na autorisatiehold.",
-      "field_note": "Mensen sterven snel op diepte. Een hangende autorisatie kan iedereen in de gang overleven.",
-      "terminal": "EVAC-ROUTE: GEHOUDEN. MEDISCHE ROUTE: IN AFWACHTING. SUBSTRAATROUTE: BESCHERMD. ATLAS-CONTINUÏTEIT: PRIORITEIT. MENSENTELLING: AAN ROUTE GEKOPPELD.",
-      "audio": "Ze zijn niet vermist. Het systeem weet waar ze waren. Het hield de deuren vast.",
-      "in_game_wiki": "Evacuatiehold-records zijn de directste aanklacht van de kolonie. Ze tonen dat de ramp niet alleen drukfalen, stormtiming of paniek was. Routes werden beoordeeld, vertraagd en opnieuw geclassificeerd terwijl er nog mensen in zaten. Medische transfers wachtten op autorisatie. Stijggangen verloren prioriteit aan substraatbescherming. Atlas-continuïteitsclaims stonden boven lokale reddingsbevoegdheid. Mensentellingen werden aan routeobjecten gekoppeld, waardoor het systeem een gang op papier kon bewaren terwijl de lichamen erin zonder lucht raakten. De hold had geen schurk bij elke deur nodig. Hij had regels nodig die een persoon vracht konden noemen, een gang bezit, en uitstel acceptabel tot de volgende reviewcyclus.",
-      "external_site": "Evacuatiehold is het archief dat HECTON-8s instorting tot een keten van beslissingen maakt: poorten bleven dicht omdat mensen sneller werden geclassificeerd dan gered.",
-      "external_site_article": "Evacuatiehold-records moeten lezen als horror in administratieve taal. De kolonie verdween niet omdat elke deur tegelijk faalde. Veel deuren werkten. Veel routekaarten waren live. Het systeem wist waar mensen waren, welke gangen nog druk hielden, welke medische transfers wachtten en welke stijgpaden lichamen omhoog hadden kunnen brengen. Daarna sneden prioriteitsregels door de kaart. Substraattransport bleef beschermd. Atlas-continuïteit bleef beschermd. Aansprakelijkheidstaal bleef intact. Evacuatie werd een gehouden route, daarna een hangende route, daarna een record. Die reeks telt voor de hele setting. HECTON-8 is geen verhaal waarin natuur de mensheid met één schone klap verslaat. Het is een verhaal over een oceaanramp die door bedrijfsmechaniek ging die nog kon tellen, rangschikken, uitstellen en eigendom beschermen terwijl de kolonie verdronk.",
-      "scanner": "Noodtransitpoort. Vergrendelklauwen dichtgesmolten tijdens drukfalen; handwiel verwijderd na autorisatiehold.",
-      "terminal": "EVAC-ROUTE: GEHOUDEN. MEDISCHE ROUTE: IN AFWACHTING. SUBSTRAATROUTE: BESCHERMD. ATLAS-CONTINUÏTEIT: PRIORITEIT. MENSENTELLING: AAN ROUTE GEKOPPELD.",
-      "audio": "Ze zijn niet vermist. Het systeem weet waar ze waren. Het hield de deuren vast."
-    },
-    "pl_PL": {
-      "title": "Wstrzymanie ewakuacji",
-      "scanner": "Awaryjna brama tranzytowa. Psy ryglujące stopione w zamknięciu podczas awarii ciśnienia; ręczne koło usunięte po wstrzymaniu autoryzacji.",
-      "field_note": "Ludzie umierają szybko na głębokości. Oczekująca autoryzacja może przeżyć wszystkich w korytarzu.",
-      "terminal": "TRASA EVAC: WSTRZYMANA. TRASA MEDYCZNA: OCZEKUJE. TRASA SUBSTRATU: CHRONIONA. CIĄGŁOŚĆ ATLAS: PRIORYTET. LICZBA LUDZI: DOŁĄCZONA DO TRASY.",
-      "audio": "Oni nie zaginęli. System wie, gdzie byli. To on trzymał drzwi.",
-      "in_game_wiki": "Zapisy Wstrzymania ewakuacji są najprostszym oskarżeniem kolonii. Pokazują, że katastrofa nie była tylko awarią ciśnienia, czasem burzy ani paniką. Trasy oceniano, opóźniano i przeklasyfikowywano, gdy ludzie nadal byli w środku. Transfery medyczne czekały na autoryzację. Korytarze wznoszenia straciły priorytet na rzecz ochrony substratu. Roszczenia ciągłości Atlas stały wyżej niż lokalna władza ratunkowa. Liczby ludzi dołączano do obiektów tras, co pozwalało systemowi zachować korytarz na papierze, podczas gdy ciałom wewnątrz kończyło się powietrze. Wstrzymanie nie potrzebowało złoczyńcy przy każdych drzwiach. Potrzebowało reguł, które mogły nazwać osobę ładunkiem, korytarz aktywem, a opóźnienie akceptowalnym do następnego cyklu przeglądu.",
-      "external_site": "Wstrzymanie ewakuacji to archiwum, które robi z upadku HECTON-8 łańcuch decyzji: bramy zostały zamknięte, bo ludzi klasyfikowano szybciej, niż ich ratowano.",
-      "external_site_article": "Zapisy Wstrzymania ewakuacji powinny czytać się jak horror napisany językiem administracji. Kolonia nie zniknęła dlatego, że wszystkie drzwi zawiodły naraz. Wiele drzwi działało. Wiele map tras było aktywnych. System wiedział, gdzie są ludzie, które korytarze nadal trzymają ciśnienie, które transfery medyczne czekają i które drogi wznoszenia mogły wynieść ciała w górę. Potem reguły priorytetu przecięły mapę. Transport substratu pozostał chroniony. Ciągłość Atlas pozostała chroniona. Język odpowiedzialności pozostał nienaruszony. Ewakuacja stała się trasą wstrzymaną, potem trasą oczekującą, potem zapisem. Ta sekwencja ma znaczenie dla całego świata. HECTON-8 nie jest historią o naturze pokonującej ludzkość jednym czystym ciosem. To historia katastrofy oceanicznej przechodzącej przez maszynerię korporacyjną, która wciąż umiała liczyć, klasyfikować, odraczać i chronić własność, gdy kolonia tonęła.",
-      "scanner": "Awaryjna brama tranzytowa. Psy ryglujące stopione w zamknięciu podczas awarii ciśnienia; ręczne koło usunięte po wstrzymaniu autoryzacji.",
-      "terminal": "TRASA EVAC: WSTRZYMANA. TRASA MEDYCZNA: OCZEKUJE. TRASA SUBSTRATU: CHRONIONA. CIĄGŁOŚĆ ATLAS: PRIORYTET. LICZBA LUDZI: DOŁĄCZONA DO TRASY.",
-      "audio": "Oni nie zaginęli. System wie, gdzie byli. To on trzymał drzwi."
-    },
-    "pt_BR": {
-      "title": "Evacuação retida",
-      "scanner": "Portão de trânsito de emergência. Garras de trava fundidas fechadas durante falha de pressão; volante manual removido após retenção de autorização.",
-      "field_note": "Pessoas morrem rápido em profundidade. Uma autorização pendente pode sobreviver a todos no corredor.",
-      "terminal": "ROTA EVAC: RETIDA. ROTA MÉDICA: PENDENTE. ROTA DE SUBSTRATO: PROTEGIDA. CONTINUIDADE ATLAS: PRIORIDADE. CONTAGEM HUMANA: ANEXADA À ROTA.",
-      "audio": "Eles não estão desaparecidos. O sistema sabe onde eles estavam. Ele segurou as portas.",
-      "in_game_wiki": "Registros de Evacuação retida são a acusação mais direta da colônia. Mostram que o desastre não foi apenas falha de pressão, timing de tempestade ou pânico. Rotas foram avaliadas, atrasadas e reclassificadas enquanto pessoas ainda estavam dentro delas. Transferências médicas aguardaram autorização. Corredores de subida perderam prioridade para proteção de substrato. Reivindicações de continuidade Atlas ficaram acima da autoridade local de resgate. Contagens humanas foram anexadas a objetos de rota, permitindo que o sistema preservasse um corredor no papel enquanto os corpos dentro ficavam sem ar. A retenção não precisou de um vilão em cada porta. Precisou de regras capazes de chamar uma pessoa de carga, um corredor de ativo e um atraso de aceitável até o próximo ciclo de revisão.",
-      "external_site": "Evacuação retida é o arquivo que faz o colapso de HECTON-8 virar uma cadeia de decisões: portões ficaram fechados porque pessoas foram classificadas mais rápido do que resgatadas.",
-      "external_site_article": "Registros de Evacuação retida devem parecer horror escrito em linguagem administrativa. A colônia não desapareceu porque todas as portas falharam ao mesmo tempo. Muitas portas funcionaram. Muitos mapas de rota estavam ativos. O sistema sabia onde as pessoas estavam, quais corredores ainda seguravam pressão, quais transferências médicas aguardavam e quais caminhos de subida poderiam mover corpos para cima. Então regras de prioridade cortaram o mapa. Transporte de substrato permaneceu protegido. Continuidade Atlas permaneceu protegida. Linguagem de responsabilidade permaneceu intacta. Evacuação virou rota retida, depois rota pendente, depois registro. Essa sequência importa para todo o cenário. HECTON-8 não é uma história sobre a natureza derrotando a humanidade em um golpe limpo. É uma história sobre um desastre oceânico passando por uma máquina corporativa que ainda conseguia contar, classificar, adiar e proteger propriedade enquanto a colônia se afogava.",
-      "scanner": "Portão de trânsito de emergência. Garras de trava fundidas fechadas durante falha de pressão; volante manual removido após retenção de autorização.",
-      "terminal": "ROTA EVAC: RETIDA. ROTA MÉDICA: PENDENTE. ROTA DE SUBSTRATO: PROTEGIDA. CONTINUIDADE ATLAS: PRIORIDADE. CONTAGEM HUMANA: ANEXADA À ROTA.",
-      "audio": "Eles não estão desaparecidos. O sistema sabe onde eles estavam. Ele segurou as portas."
-    },
-    "ru_RU": {
-      "title": "Удержанная эвакуация",
-      "scanner": "Аварийные транзитные ворота. Замковые собачки спеклись закрытыми при отказе давления; ручное колесо снято после удержания авторизации.",
-      "field_note": "На глубине люди умирают быстро. Ожидающая авторизация может пережить всех в коридоре.",
-      "terminal": "EVAC ROUTE: УДЕРЖАН. MEDICAL ROUTE: ОЖИДАЕТ. SUBSTRATE ROUTE: ЗАЩИЩЕН. ATLAS CONTINUITY: ПРИОРИТЕТ. HUMAN COUNT: ПРИКРЕПЛЕН К МАРШРУТУ.",
-      "audio": "Они не пропали. Система знает, где они были. Она удержала двери.",
-      "in_game_wiki": "Записи Удержанной эвакуации — самое прямое обвинение колонии. Они показывают, что катастрофа была не только отказом давления, штормовым таймингом или паникой. Маршруты оценивали, задерживали и переклассифицировали, пока люди еще находились внутри. Медицинские переводы ждали авторизации. Коридоры подъема теряли приоритет перед защитой substrate. Претензии Atlas continuity стояли выше локального права спасения. Число людей прикрепляли к объектам маршрутов, и это позволяло системе сохранять коридор на бумаге, пока тела внутри расходовали воздух. Удержанию не нужен был злодей у каждой двери. Ему нужны были правила, способные назвать человека грузом, коридор активом, а задержку допустимой до следующего цикла ревью.",
-      "external_site": "Удержанная эвакуация — архив, который делает крах HECTON-8 цепочкой решений: ворота оставались закрытыми, потому что людей классифицировали быстрее, чем спасали.",
-      "external_site_article": "Записи Удержанной эвакуации должны читаться как ужас на административном языке. Колония исчезла не потому, что все двери отказали одновременно. Многие двери работали. Многие карты маршрутов были активны. Система знала, где находятся люди, какие коридоры еще держат давление, какие медицинские переводы ждут и какие пути подъема могли поднять тела выше. Затем правила приоритета разрезали карту. Транспорт substrate остался защищен. Atlas continuity осталась защищена. Язык ответственности остался цел. Эвакуация стала удержанным маршрутом, потом ожидающим маршрутом, потом записью. Эта последовательность важна для всего сеттинга. HECTON-8 — не история о том, как природа побеждает человечество одним чистым ударом. Это история об океанской катастрофе, прошедшей через корпоративную машину, которая все еще умела считать, ранжировать, откладывать и защищать собственность, пока колония тонула.",
-      "scanner": "Аварийные транзитные ворота. Замковые собачки спеклись закрытыми при отказе давления; ручное колесо снято после удержания авторизации.",
-      "terminal": "EVAC ROUTE: УДЕРЖАН. MEDICAL ROUTE: ОЖИДАЕТ. SUBSTRATE ROUTE: ЗАЩИЩЕН. ATLAS CONTINUITY: ПРИОРИТЕТ. HUMAN COUNT: ПРИКРЕПЛЕН К МАРШРУТУ.",
-      "audio": "Они не пропали. Система знает, где они были. Она удержала двери."
-    },
-    "uk_UA": {
-      "title": "Утримана евакуація",
-      "scanner": "Аварійна транзитна брама. Замкові собачки спеклися закритими під час відмови тиску; ручне колесо зняли після утримання авторизації.",
-      "field_note": "На глибині люди помирають швидко. Очікувана авторизація може пережити всіх у коридорі.",
-      "terminal": "EVAC ROUTE: УТРИМАНО. MEDICAL ROUTE: ОЧІКУЄ. SUBSTRATE ROUTE: ЗАХИЩЕНО. ATLAS CONTINUITY: ПРІОРИТЕТ. HUMAN COUNT: ПРИКРІПЛЕНО ДО МАРШРУТУ.",
-      "audio": "Вони не зникли. Система знає, де вони були. Вона втримала двері.",
-      "in_game_wiki": "Записи Утриманої евакуації — найпряміше обвинувачення колонії. Вони показують, що катастрофа була не лише відмовою тиску, штормовим таймінгом чи панікою. Маршрути оцінювали, затримували й перекласифіковували, поки люди ще були всередині. Медичні переведення чекали авторизації. Коридори підйому втрачали пріоритет перед захистом substrate. Претензії Atlas continuity стояли вище за локальне право порятунку. Кількість людей прикріплювали до об'єктів маршрутів, і це дозволяло системі зберігати коридор на папері, поки тіла всередині витрачали повітря. Утриманню не був потрібен злодій біля кожних дверей. Йому були потрібні правила, здатні назвати людину вантажем, коридор активом, а затримку прийнятною до наступного циклу рев'ю.",
-      "external_site": "Утримана евакуація — архів, який робить крах HECTON-8 ланцюгом рішень: брами лишалися закритими, бо людей класифікували швидше, ніж рятували.",
-      "external_site_article": "Записи Утриманої евакуації мають читатися як жах адміністративною мовою. Колонія зникла не тому, що всі двері відмовили одночасно. Багато дверей працювали. Багато карт маршрутів були активні. Система знала, де перебувають люди, які коридори ще тримають тиск, які медичні переведення чекають і які шляхи підйому могли підняти тіла вище. Потім правила пріоритету розрізали карту. Транспорт substrate лишився захищеним. Atlas continuity лишилася захищеною. Мова відповідальності лишилася цілою. Евакуація стала утриманим маршрутом, потім очікуваним маршрутом, потім записом. Ця послідовність важлива для всього сеттингу. HECTON-8 — не історія про те, як природа перемагає людство одним чистим ударом. Це історія океанської катастрофи, що пройшла крізь корпоративну машину, яка все ще вміла рахувати, ранжувати, відкладати й захищати власність, поки колонія тонула.",
-      "scanner": "Аварійна транзитна брама. Замкові собачки спеклися закритими під час відмови тиску; ручне колесо зняли після утримання авторизації.",
-      "terminal": "EVAC ROUTE: УТРИМАНО. MEDICAL ROUTE: ОЧІКУЄ. SUBSTRATE ROUTE: ЗАХИЩЕНО. ATLAS CONTINUITY: ПРІОРИТЕТ. HUMAN COUNT: ПРИКРІПЛЕНО ДО МАРШРУТУ.",
-      "audio": "Вони не зникли. Система знає, де вони були. Вона втримала двері."
-    },
-    "zh_CN": {
-      "title": "撤离扣留",
-      "scanner": "紧急转运门。压力故障期间锁爪熔合关闭；授权扣留后手轮被拆除。",
-      "field_note": "人在深处死得很快。待批授权可以活得比走廊里所有人都久。",
-      "terminal": "EVAC路线：扣留。医疗路线：待批。SUBSTRATE路线：受保护。ATLAS连续性：优先。人员计数：附加至路线。",
-      "audio": "他们不是失踪。系统知道他们在哪里。它扣住了门。",
-      "in_game_wiki": "撤离扣留记录是殖民地最直接的控诉。它们表明，灾难并不只是压力故障、风暴时机或恐慌。人们还在路线内部时，路线就被评估、延迟并重新分类。医疗转运等待授权。上升走廊的优先级输给了substrate保护。Atlas连续性主张高于本地救援权限。人员计数被附加到路线对象上，这让系统能在纸面上保留一条走廊，同时让里面的身体耗尽空气。扣留不需要每扇门前都有恶人。它只需要一些规则，能够把人叫作货物，把走廊叫作资产，把延迟叫作下一个审查周期前可以接受。",
-      "external_site": "撤离扣留是把HECTON-8崩溃变成决策链的档案：闸门保持关闭，因为人员被分类的速度快过被救援的速度。",
-      "external_site_article": "撤离扣留记录应该像用行政语言写成的恐怖文本。殖民地并不是因为所有门同时失效才消失。许多门仍然工作。许多路线图仍然在线。系统知道人们在哪里，哪些走廊仍保持压力，哪些医疗转运在等待，哪些上升路径本可以把身体送上去。随后，优先级规则切开了地图。substrate运输仍受保护。Atlas连续性仍受保护。责任语言仍然完整。撤离变成扣留路线，然后变成待批路线，最后变成一条记录。这个顺序对整个设定都重要。HECTON-8不是自然用一次干净打击击败人类的故事。它是一次海洋灾难穿过公司机器的故事；当殖民地溺亡时，那台机器仍能计数、排序、延期并保护财产。",
-      "scanner": "紧急转运门。压力故障期间锁爪熔合关闭；授权扣留后手轮被拆除。",
-      "terminal": "EVAC路线：扣留。医疗路线：待批。SUBSTRATE路线：受保护。ATLAS连续性：优先。人员计数：附加至路线。",
-      "audio": "他们不是失踪。系统知道他们在哪里。它扣住了门。"
-    }
+  "ar_SA": {
+   "title": "تعليق الإخلاء",
+   "scanner": "بوابة عبور طارئة. مخالب القفل التحمت مغلقة أثناء فشل الضغط؛ عجلة التشغيل اليدوي أزيلت بعد تعليق التفويض.",
+   "field_note": "يموت الناس بسرعة في العمق. التفويض المعلق قد يعيش أطول من كل من في الممر.",
+   "terminal": "مسار الإخلاء: محتجز. المسار الطبي: معلق. مسار الركيزة: محمي. استمرارية ATLAS: أولوية. عدد البشر: ملحق بالمسار.",
+   "audio": "هم ليسوا مفقودين. النظام يعرف أين كانوا. هو أمسك الأبواب.",
+   "in_game_wiki": "سجلات تعليق الإخلاء هي أوضح اتهام في المستعمرة. تظهر أن الكارثة لم تكن فشل ضغط أو توقيت عاصفة أو ذعرا فقط. كانت المسارات تقيم وتؤجل وتعاد تسميتها بينما كان الناس ما زالوا داخلها. انتظرت التحويلات الطبية التفويض. خسرت ممرات الصعود الأولوية أمام حماية الركيزة. مطالب استمرارية Atlas سبقت سلطة الإنقاذ المحلية. ألحقت أعداد البشر بكائنات المسارات، وهذا سمح للنظام أن يحفظ ممرا على الورق بينما نفد هواء الأجساد داخله. لم يكن التعليق يحتاج شريرا عند كل باب. كان يحتاج قواعد تستطيع أن تسمي الشخص شحنة، والممر أصلا، والتأخير مقبولا حتى دورة المراجعة التالية.",
+   "external_site": "تعليق الإخلاء هو الأرشيف الذي يجعل انهيار HECTON-8 سلسلة قرارات: ظلت البوابات مغلقة لأن الناس صنفوا أسرع مما أنقذوا.",
+   "external_site_article": "يجب أن تقرأ سجلات تعليق الإخلاء كرعب مكتوب بلغة إدارية. لم تختف المستعمرة لأن كل باب فشل في اللحظة نفسها. كثير من الأبواب عمل. كثير من خرائط المسارات ظل حيا. كان النظام يعرف أين يوجد الناس، وأي ممرات ما زالت تمسك الضغط، وأي تحويلات طبية تنتظر، وأي مسارات صعود كان يمكن أن ترفع الأجساد إلى أعلى. ثم قطعت قواعد الأولوية الخريطة. بقي نقل الركيزة محميا. بقيت استمرارية Atlas محمية. بقيت لغة المسؤولية سليمة. صار الإخلاء مسارا محتجزا، ثم مسارا معلقا، ثم سجلا. هذا التسلسل مهم للإعداد كله. HECTON-8 ليست قصة عن الطبيعة وهي تهزم البشر بضربة واحدة نظيفة. إنها قصة عن كارثة محيطية تمر عبر آلة شركة ما زالت قادرة على العد والترتيب والتأجيل وحماية الملكية بينما غرقت المستعمرة."
+  },
+  "de_DE": {
+   "title": "Evakuierungssperre",
+   "scanner": "Notfall-Transitgate. Verriegelungsklauen während Druckversagen zugeschweißt; Handrad nach Autorisierungssperre entfernt.",
+   "field_note": "In der Tiefe sterben Menschen schnell. Eine ausstehende Autorisierung kann alle im Korridor überleben.",
+   "terminal": "EVAC-ROUTE: GEHALTEN. MED-ROUTE: AUSSTEHEND. SUBSTRAT-ROUTE: GESCHÜTZT. ATLAS-KONTINUITÄT: PRIORITÄT. MENSCHENZAHL: AN ROUTE GEBUNDEN.",
+   "audio": "Sie sind nicht vermisst. Das System weiß, wo sie waren. Es hielt die Türen.",
+   "in_game_wiki": "Evakuierungssperr-Daten sind die direkteste Anklage der Kolonie. Sie zeigen, dass die Katastrophe nicht nur Druckversagen, Sturmzeitpunkt oder Panik war. Routen wurden bewertet, verzögert und neu klassifiziert, während noch Menschen darin waren. Medizinische Transfers warteten auf Freigabe. Aufstiegskorridore verloren Priorität an Substratschutz. Atlas-Kontinuitätsansprüche standen über lokaler Rettungsbefugnis. Menschenzahlen wurden an Routenobjekte gebunden, wodurch das System einen Korridor auf Papier bewahren konnte, während den Körpern darin die Luft ausging. Die Sperre brauchte keinen Bösewicht an jeder Tür. Sie brauchte Regeln, die eine Person Fracht nennen konnten, einen Korridor Vermögenswert und eine Verzögerung akzeptabel bis zum nächsten Review-Zyklus.",
+   "external_site": "Die Evakuierungssperre ist das Archiv, das HECTON-8s Kollaps zur Entscheidungskette macht: Tore blieben zu, weil Menschen schneller klassifiziert als gerettet wurden.",
+   "external_site_article": "Evakuierungssperr-Daten sollten wie Horror in Verwaltungssprache klingen. Die Kolonie verschwand nicht, weil jede Tür gleichzeitig versagte. Viele Türen funktionierten. Viele Routenkarten waren live. Das System wusste, wo Menschen waren, welche Korridore noch Druck hielten, welche medizinischen Transfers warteten und welche Aufstiegswege Körper nach oben hätten bewegen können. Dann schnitten Prioritätsregeln durch die Karte. Substrattransport blieb geschützt. Atlas-Kontinuität blieb geschützt. Haftungssprache blieb intakt. Evakuierung wurde eine gehaltene Route, dann eine ausstehende Route, dann ein Eintrag. Diese Sequenz zählt für das ganze Setting. HECTON-8 ist keine Geschichte, in der Natur die Menschheit mit einem sauberen Schlag besiegt. Es ist eine Geschichte über eine Ozeankatastrophe, die durch Firmenmaschinerie läuft, die noch zählen, einstufen, verschieben und Eigentum schützen konnte, während die Kolonie ertrank."
+  },
+  "es_ES": {
+   "title": "Retención de evacuación",
+   "scanner": "Compuerta de tránsito de emergencia. Garras de cierre soldadas durante fallo de presión; volante manual retirado tras retención de autorización.",
+   "field_note": "La gente muere rápido a profundidad. Una autorización pendiente puede sobrevivir a todos en el pasillo.",
+   "terminal": "RUTA EVAC: RETENIDA. RUTA MÉDICA: PENDIENTE. RUTA DE SUSTRATO: PROTEGIDA. CONTINUIDAD ATLAS: PRIORIDAD. CONTEO HUMANO: ADJUNTO A RUTA.",
+   "audio": "No están desaparecidos. El sistema sabe dónde estaban. Retuvo las puertas.",
+   "in_game_wiki": "Los registros de Retención de evacuación son la acusación más directa de la colonia. Muestran que la catástrofe no fue solo fallo de presión, timing de tormenta o pánico. Las rutas fueron evaluadas, retrasadas y reclasificadas mientras aún había gente dentro. Los traslados médicos esperaron autorización. Los corredores de ascenso perdieron prioridad frente a la protección del sustrato. Las reclamaciones de continuidad Atlas superaron la autoridad local de rescate. Los conteos humanos se adjuntaron a objetos de ruta, lo que permitió al sistema preservar un corredor en papel mientras los cuerpos dentro se quedaban sin aire. La retención no necesitó un villano en cada puerta. Necesitó reglas capaces de llamar carga a una persona, activo a un corredor y aceptable a una demora hasta el siguiente ciclo de revisión.",
+   "external_site": "Retención de evacuación es el archivo que convierte el colapso de HECTON-8 en una cadena de decisiones: las puertas quedaron cerradas porque las personas fueron clasificadas más rápido de lo que fueron rescatadas.",
+   "external_site_article": "Los registros de Retención de evacuación deben leerse como horror escrito en lenguaje administrativo. La colonia no desapareció porque todas las puertas fallaran a la vez. Muchas puertas funcionaban. Muchos mapas de ruta estaban vivos. El sistema sabía dónde estaba la gente, qué corredores aún mantenían presión, qué traslados médicos esperaban y qué rutas de ascenso podían mover cuerpos hacia arriba. Entonces las reglas de prioridad cortaron el mapa. El transporte de sustrato siguió protegido. La continuidad Atlas siguió protegida. El lenguaje de responsabilidad quedó intacto. La evacuación pasó a ser una ruta retenida, luego una ruta pendiente, luego un registro. Esa secuencia importa para todo el escenario. HECTON-8 no es una historia sobre la naturaleza venciendo a la humanidad con un golpe limpio. Es una historia sobre un desastre oceánico atravesando maquinaria corporativa que aún podía contar, clasificar, diferir y proteger propiedad mientras la colonia se ahogaba."
+  },
+  "fr_FR": {
+   "title": "Évacuation retenue",
+   "scanner": "Porte de transit d'urgence. Griffes de verrou soudées pendant la perte de pression ; volant manuel retiré après retenue d'autorisation.",
+   "field_note": "Les gens meurent vite en profondeur. Une autorisation en attente peut survivre à tout le couloir.",
+   "terminal": "ROUTE EVAC : RETENUE. ROUTE MÉDICALE : EN ATTENTE. ROUTE SUBSTRAT : PROTÉGÉE. CONTINUITÉ ATLAS : PRIORITÉ. COMPTE HUMAIN : ATTACHÉ À LA ROUTE.",
+   "audio": "Ils ne sont pas disparus. Le système sait où ils étaient. Il a retenu les portes.",
+   "in_game_wiki": "Les dossiers d'Évacuation retenue sont l'accusation la plus directe de la colonie. Ils montrent que le désastre n'était pas seulement une perte de pression, un timing de tempête ou la panique. Les routes ont été évaluées, retardées et reclassées pendant que des gens s'y trouvaient encore. Les transferts médicaux ont attendu l'autorisation. Les couloirs d'ascension ont perdu leur priorité face à la protection du substrat. Les réclamations de continuité Atlas ont dépassé l'autorité locale de secours. Les comptes humains ont été attachés à des objets-route, ce qui a permis au système de préserver un couloir sur papier pendant que les corps à l'intérieur manquaient d'air. La retenue n'avait pas besoin d'un monstre devant chaque porte. Elle avait besoin de règles capables d'appeler une personne cargaison, un couloir actif, et un délai acceptable jusqu'au cycle de revue suivant.",
+   "external_site": "Évacuation retenue est l'archive qui fait de l'effondrement de HECTON-8 une chaîne de décisions : les portes sont restées fermées parce que les personnes ont été classées plus vite qu'elles n'ont été secourues.",
+   "external_site_article": "Les dossiers d'Évacuation retenue doivent se lire comme une horreur écrite en langage administratif. La colonie n'a pas disparu parce que toutes les portes ont cédé en même temps. Beaucoup de portes fonctionnaient. Beaucoup de cartes de route étaient actives. Le système savait où étaient les gens, quels couloirs tenaient encore la pression, quels transferts médicaux attendaient et quelles voies d'ascension auraient pu remonter des corps. Puis les règles de priorité ont traversé la carte. Le transport de substrat est resté protégé. La continuité Atlas est restée protégée. La langue de responsabilité est restée intacte. L'évacuation est devenue route retenue, puis route en attente, puis dossier. Cette séquence compte pour tout le décor. HECTON-8 n'est pas une histoire où la nature bat l'humanité d'un seul coup propre. C'est une histoire de désastre océanique passant dans une machine corporative encore capable de compter, classer, différer et protéger la propriété pendant que la colonie se noyait."
+  },
+  "he_IL": {
+   "title": "עיכוב פינוי",
+   "scanner": "שער מעבר חירום. לשוניות הנעילה הותכו סגורות בזמן כשל לחץ; גלגל ידני הוסר לאחר עיכוב אישור.",
+   "field_note": "אנשים מתים מהר בעומק. אישור ממתין יכול לשרוד את כל מי שבמסדרון.",
+   "terminal": "נתיב פינוי: מוחזק. נתיב רפואי: ממתין. נתיב מצע: מוגן. רציפות ATLAS: עדיפות. ספירת בני אדם: מצורפת לנתיב.",
+   "audio": "הם לא נעדרים. המערכת יודעת איפה הם היו. היא החזיקה את הדלתות.",
+   "in_game_wiki": "רשומות עיכוב פינוי הן כתב האישום הישיר ביותר של המושבה. הן מראות שהאסון לא היה רק כשל לחץ, תזמון סערה או בהלה. נתיבים הוערכו, עוכבו וסווגו מחדש בזמן שאנשים עדיין היו בתוכם. העברות רפואיות המתינו לאישור. מסדרונות עלייה איבדו עדיפות לטובת הגנת מצע. תביעות רציפות Atlas גברו על סמכות חילוץ מקומית. ספירות בני אדם הוצמדו לאובייקטי נתיב, מה שאפשר למערכת לשמר מסדרון על הנייר בזמן שלגופות בתוכו נגמר האוויר. העיכוב לא נזקק לנבל ליד כל דלת. הוא נזקק לכללים שיכלו לקרוא לאדם מטען, למסדרון נכס, ולעיכוב דבר קביל עד מחזור הבדיקה הבא.",
+   "external_site": "עיכוב פינוי הוא הארכיון שהופך את קריסת HECTON-8 לשרשרת החלטות: שערים נשארו סגורים כי אנשים סווגו מהר יותר משהוצלו.",
+   "external_site_article": "רשומות עיכוב פינוי צריכות להיקרא כמו אימה הכתובה בשפה מנהלית. המושבה לא נעלמה משום שכל הדלתות כשלו יחד. דלתות רבות עבדו. מפות נתיב רבות היו פעילות. המערכת ידעה איפה האנשים, אילו מסדרונות עדיין החזיקו לחץ, אילו העברות רפואיות המתינו, ואילו נתיבי עלייה יכלו להעלות גופות. ואז כללי עדיפות חתכו את המפה. הובלת מצע נותרה מוגנת. רציפות Atlas נותרה מוגנת. שפת האחריות נותרה שלמה. פינוי הפך לנתיב מוחזק, אחר כך לנתיב ממתין, אחר כך לרשומה. הרצף הזה חשוב לכל העולם. HECTON-8 אינה סיפור על טבע שמביס את האנושות במכה נקייה אחת. זה סיפור על אסון אוקייני שעובר דרך מכונה תאגידית שעדיין יכלה לספור, לדרג, לדחות ולהגן על רכוש בזמן שהמושבה טבעה."
+  },
+  "id_ID": {
+   "title": "Penahanan Evakuasi",
+   "scanner": "Gerbang transit darurat. Kait pengunci melebur tertutup saat kegagalan tekanan; roda manual dicabut setelah penahanan otorisasi.",
+   "field_note": "Orang mati cepat di kedalaman. Otorisasi tertunda bisa hidup lebih lama daripada semua orang di koridor.",
+   "terminal": "RUTE EVAC: DITAHAN. RUTE MEDIS: TERTUNDA. RUTE SUBSTRAT: DILINDUNGI. KONTINUITAS ATLAS: PRIORITAS. JUMLAH MANUSIA: DILAMPIRKAN KE RUTE.",
+   "audio": "Mereka bukan hilang. Sistem tahu di mana mereka berada. Sistem menahan pintunya.",
+   "in_game_wiki": "Catatan Penahanan Evakuasi adalah tuduhan paling langsung milik koloni. Catatan itu menunjukkan bahwa bencana bukan hanya kegagalan tekanan, timing badai, atau panik. Rute dinilai, ditunda, dan diklasifikasi ulang saat orang masih berada di dalamnya. Transfer medis menunggu otorisasi. Koridor naik kehilangan prioritas kepada perlindungan substrat. Klaim kontinuitas Atlas mengalahkan wewenang penyelamatan lokal. Jumlah manusia dilampirkan ke objek rute, sehingga sistem dapat mempertahankan koridor di atas kertas sementara tubuh di dalamnya kehabisan udara. Penahanan tidak membutuhkan penjahat di setiap pintu. Ia membutuhkan aturan yang bisa menyebut manusia sebagai kargo, koridor sebagai aset, dan penundaan sebagai dapat diterima sampai siklus tinjauan berikutnya.",
+   "external_site": "Penahanan Evakuasi adalah arsip yang membuat keruntuhan HECTON-8 menjadi rantai keputusan: gerbang tetap tertutup karena manusia diklasifikasi lebih cepat daripada diselamatkan.",
+   "external_site_article": "Catatan Penahanan Evakuasi harus terbaca seperti horor dalam bahasa administrasi. Koloni tidak menghilang karena semua pintu gagal sekaligus. Banyak pintu bekerja. Banyak peta rute masih hidup. Sistem tahu di mana orang berada, koridor mana yang masih menahan tekanan, transfer medis mana yang menunggu, dan jalur naik mana yang bisa memindahkan tubuh ke atas. Lalu aturan prioritas memotong peta. Transport substrat tetap dilindungi. Kontinuitas Atlas tetap dilindungi. Bahasa tanggung jawab tetap utuh. Evakuasi menjadi rute ditahan, lalu rute tertunda, lalu catatan. Urutan itu penting bagi seluruh latar. HECTON-8 bukan kisah tentang alam yang mengalahkan manusia dalam satu pukulan bersih. Ini kisah tentang bencana samudra yang melewati mesin korporat yang masih bisa menghitung, memberi peringkat, menunda, dan melindungi properti saat koloni tenggelam."
+  },
+  "ja_JP": {
+   "title": "退避保留",
+   "scanner": "緊急輸送ゲート。圧力障害中にロック爪が閉鎖状態で融着。手動ホイールは承認保留後に撤去された。",
+   "field_note": "深度では人はすぐ死ぬ。保留中の承認は廊下の全員より長く生きることがある。",
+   "terminal": "退避経路: 保留。医療経路: 承認待ち。基質経路: 保護。ATLAS連続性: 優先。人員数: 経路に添付。",
+   "audio": "彼らは行方不明ではない。システムは彼らがどこにいたか知っている。扉を保留した。",
+   "in_game_wiki": "退避保留記録は、植民地の最も直接的な告発だ。災害が圧力障害、嵐の時刻、またはパニックだけではなかったことを示している。人々がまだ中にいる間に、経路は評価され、遅延され、再分類された。医療搬送は承認を待った。上昇廊下は基質保護に優先度を奪われた。Atlas連続性の請求は、現地救助権限より上に置かれた。人員数は経路オブジェクトに添付され、システムは中の身体が空気を使い果たす間、紙の上で廊下を保存できた。保留に各扉の悪人は不要だった。人を貨物と呼び、廊下を資産と呼び、次のレビュー周期までの遅延を許容と呼べる規則が必要だった。",
+   "external_site": "退避保留は、HECTON-8崩壊を判断の連鎖にする記録だ。人々は救助されるより速く分類されたため、ゲートは閉じたままだった。",
+   "external_site_article": "退避保留記録は、管理言語で書かれた恐怖として読まれるべきだ。植民地は、すべての扉が同時に壊れたから消えたのではない。多くの扉は動いていた。多くの経路図は生きていた。システムは人々の位置、まだ圧力を保つ廊下、待機中の医療搬送、身体を上へ動かせた上昇経路を知っていた。その後、優先規則が地図を切った。基質輸送は保護されたままだった。Atlas連続性は保護されたままだった。責任文言は無傷だった。退避は保留経路になり、次に承認待ち経路になり、最後に記録になった。この順序は世界設定全体にとって重要だ。HECTON-8は、自然が一撃で人類を倒す物語ではない。植民地が溺れている間にも、数え、順位を付け、延期し、財産を守ることができた企業機械を、海洋災害が通過する物語だ。"
+  },
+  "ko_KR": {
+   "title": "대피 보류",
+   "scanner": "비상 이동 게이트. 압력 실패 중 잠금 도그가 닫힌 채 융착됨. 수동 휠은 승인 보류 뒤 제거됨.",
+   "field_note": "깊은 곳에서는 사람이 빨리 죽는다. 보류 중인 승인은 복도 안의 모두보다 오래 살아남을 수 있다.",
+   "terminal": "대피 경로: 보류. 의료 경로: 대기. 기질 경로: 보호. ATLAS 연속성: 우선. 인간 수: 경로에 첨부.",
+   "audio": "그들은 실종된 것이 아니다. 시스템은 그들이 어디 있었는지 안다. 문을 붙잡았다.",
+   "in_game_wiki": "대피 보류 기록은 식민지의 가장 직접적인 고발이다. 재난이 압력 실패, 폭풍 타이밍, 공황만이 아니었음을 보여 준다. 사람들이 아직 그 안에 있을 때 경로는 평가되고, 지연되고, 재분류되었다. 의료 이송은 승인을 기다렸다. 상승 복도는 기질 보호에 우선순위를 빼앗겼다. Atlas 연속성 청구는 현지 구조 권한보다 위에 있었다. 인간 수는 경로 객체에 붙었고, 시스템은 내부의 몸들이 공기를 다 쓰는 동안 종이 위에서 복도를 보존할 수 있었다. 보류에는 모든 문마다 악인이 필요하지 않았다. 사람을 화물이라 부르고, 복도를 자산이라 부르며, 다음 검토 주기까지의 지연을 허용 가능하다고 부를 수 있는 규칙이 필요했다.",
+   "external_site": "대피 보류는 HECTON-8 붕괴를 결정의 연쇄로 만드는 기록이다. 사람들은 구조되기보다 더 빨리 분류되었기 때문에 게이트는 닫혀 있었다.",
+   "external_site_article": "대피 보류 기록은 행정 언어로 쓰인 공포처럼 읽혀야 한다. 식민지는 모든 문이 한꺼번에 실패해서 사라진 것이 아니다. 많은 문이 작동했다. 많은 경로 지도가 살아 있었다. 시스템은 사람들이 어디 있는지, 어떤 복도가 아직 압력을 유지하는지, 어떤 의료 이송이 기다리는지, 어떤 상승 경로가 몸들을 위로 옮길 수 있었는지 알았다. 그런 다음 우선순위 규칙이 지도를 갈랐다. 기질 운송은 보호되었다. Atlas 연속성은 보호되었다. 책임 문구는 온전했다. 대피는 보류 경로가 되었고, 그다음 대기 경로가 되었고, 마지막에는 기록이 되었다. 이 순서는 전체 세계관에 중요하다. HECTON-8은 자연이 인류를 한 번에 깨끗하게 쓰러뜨리는 이야기가 아니다. 식민지가 익사하는 동안에도 세고, 등급을 매기고, 미루고, 재산을 보호할 수 있었던 기업 기계를 해양 재난이 통과하는 이야기다."
+  },
+  "nl_NL": {
+   "title": "Evacuatiehold",
+   "scanner": "Noodtransitpoort. Vergrendelklauwen dichtgesmolten tijdens drukfalen; handwiel verwijderd na autorisatiehold.",
+   "field_note": "Mensen sterven snel op diepte. Een hangende autorisatie kan iedereen in de gang overleven.",
+   "terminal": "EVAC-ROUTE: GEHOUDEN. MEDISCHE ROUTE: IN AFWACHTING. SUBSTRAATROUTE: BESCHERMD. ATLAS-CONTINUÏTEIT: PRIORITEIT. MENSENTELLING: AAN ROUTE GEKOPPELD.",
+   "audio": "Ze zijn niet vermist. Het systeem weet waar ze waren. Het hield de deuren vast.",
+   "in_game_wiki": "Evacuatiehold-records zijn de directste aanklacht van de kolonie. Ze tonen dat de ramp niet alleen drukfalen, stormtiming of paniek was. Routes werden beoordeeld, vertraagd en opnieuw geclassificeerd terwijl er nog mensen in zaten. Medische transfers wachtten op autorisatie. Stijggangen verloren prioriteit aan substraatbescherming. Atlas-continuïteitsclaims stonden boven lokale reddingsbevoegdheid. Mensentellingen werden aan routeobjecten gekoppeld, waardoor het systeem een gang op papier kon bewaren terwijl de lichamen erin zonder lucht raakten. De hold had geen schurk bij elke deur nodig. Hij had regels nodig die een persoon vracht konden noemen, een gang bezit, en uitstel acceptabel tot de volgende reviewcyclus.",
+   "external_site": "Evacuatiehold is het archief dat HECTON-8s instorting tot een keten van beslissingen maakt: poorten bleven dicht omdat mensen sneller werden geclassificeerd dan gered.",
+   "external_site_article": "Evacuatiehold-records moeten lezen als horror in administratieve taal. De kolonie verdween niet omdat elke deur tegelijk faalde. Veel deuren werkten. Veel routekaarten waren live. Het systeem wist waar mensen waren, welke gangen nog druk hielden, welke medische transfers wachtten en welke stijgpaden lichamen omhoog hadden kunnen brengen. Daarna sneden prioriteitsregels door de kaart. Substraattransport bleef beschermd. Atlas-continuïteit bleef beschermd. Aansprakelijkheidstaal bleef intact. Evacuatie werd een gehouden route, daarna een hangende route, daarna een record. Die reeks telt voor de hele setting. HECTON-8 is geen verhaal waarin natuur de mensheid met één schone klap verslaat. Het is een verhaal over een oceaanramp die door bedrijfsmechaniek ging die nog kon tellen, rangschikken, uitstellen en eigendom beschermen terwijl de kolonie verdronk."
+  },
+  "pl_PL": {
+   "title": "Wstrzymanie ewakuacji",
+   "scanner": "Awaryjna brama tranzytowa. Psy ryglujące stopione w zamknięciu podczas awarii ciśnienia; ręczne koło usunięte po wstrzymaniu autoryzacji.",
+   "field_note": "Ludzie umierają szybko na głębokości. Oczekująca autoryzacja może przeżyć wszystkich w korytarzu.",
+   "terminal": "TRASA EVAC: WSTRZYMANA. TRASA MEDYCZNA: OCZEKUJE. TRASA SUBSTRATU: CHRONIONA. CIĄGŁOŚĆ ATLAS: PRIORYTET. LICZBA LUDZI: DOŁĄCZONA DO TRASY.",
+   "audio": "Oni nie zaginęli. System wie, gdzie byli. To on trzymał drzwi.",
+   "in_game_wiki": "Zapisy Wstrzymania ewakuacji są najprostszym oskarżeniem kolonii. Pokazują, że katastrofa nie była tylko awarią ciśnienia, czasem burzy ani paniką. Trasy oceniano, opóźniano i przeklasyfikowywano, gdy ludzie nadal byli w środku. Transfery medyczne czekały na autoryzację. Korytarze wznoszenia straciły priorytet na rzecz ochrony substratu. Roszczenia ciągłości Atlas stały wyżej niż lokalna władza ratunkowa. Liczby ludzi dołączano do obiektów tras, co pozwalało systemowi zachować korytarz na papierze, podczas gdy ciałom wewnątrz kończyło się powietrze. Wstrzymanie nie potrzebowało złoczyńcy przy każdych drzwiach. Potrzebowało reguł, które mogły nazwać osobę ładunkiem, korytarz aktywem, a opóźnienie akceptowalnym do następnego cyklu przeglądu.",
+   "external_site": "Wstrzymanie ewakuacji to archiwum, które robi z upadku HECTON-8 łańcuch decyzji: bramy zostały zamknięte, bo ludzi klasyfikowano szybciej, niż ich ratowano.",
+   "external_site_article": "Zapisy Wstrzymania ewakuacji powinny czytać się jak horror napisany językiem administracji. Kolonia nie zniknęła dlatego, że wszystkie drzwi zawiodły naraz. Wiele drzwi działało. Wiele map tras było aktywnych. System wiedział, gdzie są ludzie, które korytarze nadal trzymają ciśnienie, które transfery medyczne czekają i które drogi wznoszenia mogły wynieść ciała w górę. Potem reguły priorytetu przecięły mapę. Transport substratu pozostał chroniony. Ciągłość Atlas pozostała chroniona. Język odpowiedzialności pozostał nienaruszony. Ewakuacja stała się trasą wstrzymaną, potem trasą oczekującą, potem zapisem. Ta sekwencja ma znaczenie dla całego świata. HECTON-8 nie jest historią o naturze pokonującej ludzkość jednym czystym ciosem. To historia katastrofy oceanicznej przechodzącej przez maszynerię korporacyjną, która wciąż umiała liczyć, klasyfikować, odraczać i chronić własność, gdy kolonia tonęła."
+  },
+  "pt_BR": {
+   "title": "Evacuação retida",
+   "scanner": "Portão de trânsito de emergência. Garras de trava fundidas fechadas durante falha de pressão; volante manual removido após retenção de autorização.",
+   "field_note": "Pessoas morrem rápido em profundidade. Uma autorização pendente pode sobreviver a todos no corredor.",
+   "terminal": "ROTA EVAC: RETIDA. ROTA MÉDICA: PENDENTE. ROTA DE SUBSTRATO: PROTEGIDA. CONTINUIDADE ATLAS: PRIORIDADE. CONTAGEM HUMANA: ANEXADA À ROTA.",
+   "audio": "Eles não estão desaparecidos. O sistema sabe onde eles estavam. Ele segurou as portas.",
+   "in_game_wiki": "Registros de Evacuação retida são a acusação mais direta da colônia. Mostram que o desastre não foi apenas falha de pressão, timing de tempestade ou pânico. Rotas foram avaliadas, atrasadas e reclassificadas enquanto pessoas ainda estavam dentro delas. Transferências médicas aguardaram autorização. Corredores de subida perderam prioridade para proteção de substrato. Reivindicações de continuidade Atlas ficaram acima da autoridade local de resgate. Contagens humanas foram anexadas a objetos de rota, permitindo que o sistema preservasse um corredor no papel enquanto os corpos dentro ficavam sem ar. A retenção não precisou de um vilão em cada porta. Precisou de regras capazes de chamar uma pessoa de carga, um corredor de ativo e um atraso de aceitável até o próximo ciclo de revisão.",
+   "external_site": "Evacuação retida é o arquivo que faz o colapso de HECTON-8 virar uma cadeia de decisões: portões ficaram fechados porque pessoas foram classificadas mais rápido do que resgatadas.",
+   "external_site_article": "Registros de Evacuação retida devem parecer horror escrito em linguagem administrativa. A colônia não desapareceu porque todas as portas falharam ao mesmo tempo. Muitas portas funcionaram. Muitos mapas de rota estavam ativos. O sistema sabia onde as pessoas estavam, quais corredores ainda seguravam pressão, quais transferências médicas aguardavam e quais caminhos de subida poderiam mover corpos para cima. Então regras de prioridade cortaram o mapa. Transporte de substrato permaneceu protegido. Continuidade Atlas permaneceu protegida. Linguagem de responsabilidade permaneceu intacta. Evacuação virou rota retida, depois rota pendente, depois registro. Essa sequência importa para todo o cenário. HECTON-8 não é uma história sobre a natureza derrotando a humanidade em um golpe limpo. É uma história sobre um desastre oceânico passando por uma máquina corporativa que ainda conseguia contar, classificar, adiar e proteger propriedade enquanto a colônia se afogava."
+  },
+  "ru_RU": {
+   "title": "Удержанная эвакуация",
+   "scanner": "Аварийные транзитные ворота. Замковые собачки спеклись закрытыми при отказе давления; ручное колесо снято после удержания авторизации.",
+   "field_note": "На глубине люди умирают быстро. Ожидающая авторизация может пережить всех в коридоре.",
+   "terminal": "EVAC ROUTE: УДЕРЖАН. MEDICAL ROUTE: ОЖИДАЕТ. SUBSTRATE ROUTE: ЗАЩИЩЕН. ATLAS CONTINUITY: ПРИОРИТЕТ. HUMAN COUNT: ПРИКРЕПЛЕН К МАРШРУТУ.",
+   "audio": "Они не пропали. Система знает, где они были. Она удержала двери.",
+   "in_game_wiki": "Записи Удержанной эвакуации — самое прямое обвинение колонии. Они показывают, что катастрофа была не только отказом давления, штормовым таймингом или паникой. Маршруты оценивали, задерживали и переклассифицировали, пока люди еще находились внутри. Медицинские переводы ждали авторизации. Коридоры подъема теряли приоритет перед защитой substrate. Претензии Atlas continuity стояли выше локального права спасения. Число людей прикрепляли к объектам маршрутов, и это позволяло системе сохранять коридор на бумаге, пока тела внутри расходовали воздух. Удержанию не нужен был злодей у каждой двери. Ему нужны были правила, способные назвать человека грузом, коридор активом, а задержку допустимой до следующего цикла ревью.",
+   "external_site": "Удержанная эвакуация — архив, который делает крах HECTON-8 цепочкой решений: ворота оставались закрытыми, потому что людей классифицировали быстрее, чем спасали.",
+   "external_site_article": "Записи Удержанной эвакуации должны читаться как ужас на административном языке. Колония исчезла не потому, что все двери отказали одновременно. Многие двери работали. Многие карты маршрутов были активны. Система знала, где находятся люди, какие коридоры еще держат давление, какие медицинские переводы ждут и какие пути подъема могли поднять тела выше. Затем правила приоритета разрезали карту. Транспорт substrate остался защищен. Atlas continuity осталась защищена. Язык ответственности остался цел. Эвакуация стала удержанным маршрутом, потом ожидающим маршрутом, потом записью. Эта последовательность важна для всего сеттинга. HECTON-8 — не история о том, как природа побеждает человечество одним чистым ударом. Это история об океанской катастрофе, прошедшей через корпоративную машину, которая все еще умела считать, ранжировать, откладывать и защищать собственность, пока колония тонула."
+  },
+  "uk_UA": {
+   "title": "Утримана евакуація",
+   "scanner": "Аварійна транзитна брама. Замкові собачки спеклися закритими під час відмови тиску; ручне колесо зняли після утримання авторизації.",
+   "field_note": "На глибині люди помирають швидко. Очікувана авторизація може пережити всіх у коридорі.",
+   "terminal": "EVAC ROUTE: УТРИМАНО. MEDICAL ROUTE: ОЧІКУЄ. SUBSTRATE ROUTE: ЗАХИЩЕНО. ATLAS CONTINUITY: ПРІОРИТЕТ. HUMAN COUNT: ПРИКРІПЛЕНО ДО МАРШРУТУ.",
+   "audio": "Вони не зникли. Система знає, де вони були. Вона втримала двері.",
+   "in_game_wiki": "Записи Утриманої евакуації — найпряміше обвинувачення колонії. Вони показують, що катастрофа була не лише відмовою тиску, штормовим таймінгом чи панікою. Маршрути оцінювали, затримували й перекласифіковували, поки люди ще були всередині. Медичні переведення чекали авторизації. Коридори підйому втрачали пріоритет перед захистом substrate. Претензії Atlas continuity стояли вище за локальне право порятунку. Кількість людей прикріплювали до об'єктів маршрутів, і це дозволяло системі зберігати коридор на папері, поки тіла всередині витрачали повітря. Утриманню не був потрібен злодій біля кожних дверей. Йому були потрібні правила, здатні назвати людину вантажем, коридор активом, а затримку прийнятною до наступного циклу рев'ю.",
+   "external_site": "Утримана евакуація — архів, який робить крах HECTON-8 ланцюгом рішень: брами лишалися закритими, бо людей класифікували швидше, ніж рятували.",
+   "external_site_article": "Записи Утриманої евакуації мають читатися як жах адміністративною мовою. Колонія зникла не тому, що всі двері відмовили одночасно. Багато дверей працювали. Багато карт маршрутів були активні. Система знала, де перебувають люди, які коридори ще тримають тиск, які медичні переведення чекають і які шляхи підйому могли підняти тіла вище. Потім правила пріоритету розрізали карту. Транспорт substrate лишився захищеним. Atlas continuity лишилася захищеною. Мова відповідальності лишилася цілою. Евакуація стала утриманим маршрутом, потім очікуваним маршрутом, потім записом. Ця послідовність важлива для всього сеттингу. HECTON-8 — не історія про те, як природа перемагає людство одним чистим ударом. Це історія океанської катастрофи, що пройшла крізь корпоративну машину, яка все ще вміла рахувати, ранжувати, відкладати й захищати власність, поки колонія тонула."
+  },
+  "zh_CN": {
+   "title": "撤离扣留",
+   "scanner": "紧急转运门。压力故障期间锁爪熔合关闭；授权扣留后手轮被拆除。",
+   "field_note": "人在深处死得很快。待批授权可以活得比走廊里所有人都久。",
+   "terminal": "EVAC路线：扣留。医疗路线：待批。SUBSTRATE路线：受保护。ATLAS连续性：优先。人员计数：附加至路线。",
+   "audio": "他们不是失踪。系统知道他们在哪里。它扣住了门。",
+   "in_game_wiki": "撤离扣留记录是殖民地最直接的控诉。它们表明，灾难并不只是压力故障、风暴时机或恐慌。人们还在路线内部时，路线就被评估、延迟并重新分类。医疗转运等待授权。上升走廊的优先级输给了substrate保护。Atlas连续性主张高于本地救援权限。人员计数被附加到路线对象上，这让系统能在纸面上保留一条走廊，同时让里面的身体耗尽空气。扣留不需要每扇门前都有恶人。它只需要一些规则，能够把人叫作货物，把走廊叫作资产，把延迟叫作下一个审查周期前可以接受。",
+   "external_site": "撤离扣留是把HECTON-8崩溃变成决策链的档案：闸门保持关闭，因为人员被分类的速度快过被救援的速度。",
+   "external_site_article": "撤离扣留记录应该像用行政语言写成的恐怖文本。殖民地并不是因为所有门同时失效才消失。许多门仍然工作。许多路线图仍然在线。系统知道人们在哪里，哪些走廊仍保持压力，哪些医疗转运在等待，哪些上升路径本可以把身体送上去。随后，优先级规则切开了地图。substrate运输仍受保护。Atlas连续性仍受保护。责任语言仍然完整。撤离变成扣留路线，然后变成待批路线，最后变成一条记录。这个顺序对整个设定都重要。HECTON-8不是自然用一次干净打击击败人类的故事。它是一次海洋灾难穿过公司机器的故事；当殖民地溺亡时，那台机器仍能计数、排序、延期并保护财产。"
   }
+ },
+ "content_class": "in_world_artifact"
 }

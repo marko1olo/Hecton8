@@ -1,178 +1,179 @@
 {
-  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
-  "packet_id": "P004_BLUE_DEBT",
-  "article_id": "resource.blue_debt",
-  "title_key": "LORE_P004_BLUE_DEBT_TITLE",
-  "status": "production_facing_draft_pending_native_localization",
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "packet_id": "P004_BLUE_DEBT",
+ "article_id": "resource.blue_debt",
+ "title_key": "LORE_P004_BLUE_DEBT_TITLE",
+ "status": "production_facing_draft_pending_native_localization",
+ "surfaces": [
+  "scanner",
+  "in_game_wiki",
+  "terminal",
+  "audio_subtitle",
+  "external_site",
+  "image_brief"
+ ],
+ "unlock": {
+  "primary": "unlock.first_blue_debt_sample",
+  "poi_tags": [
+   "poi.pressure_casket",
+   "poi.cable_forest"
   ],
-  "unlock": {
-    "primary": "unlock.first_blue_debt_sample",
-    "poi_tags": [
-      "poi.pressure_casket",
-      "poi.cable_forest"
-    ],
-    "biome_tags": [
-      "biome.industrial_descent",
-      "biome.thermal_field"
-    ]
+  "biome_tags": [
+   "biome.industrial_descent",
+   "biome.thermal_field"
+  ]
+ },
+ "localized": {
+  "en_US": {
+   "title": "Blue Debt",
+   "scanner": "Pressure-kept Xenon-Omega residue. Stable in cold, dark, crushing water; hazardous in warm air and low pressure.",
+   "field_note": "Keep the pressure tag on. Loose blue buys fuel. Sealed blue buys fuel, quarantine attention and a name on the claim desk.",
+   "terminal": "XO CONTINUITY SUBSTRATE. PRESSURE LOCK REQUIRED. DO NOT VENT. CUSTODY FLAGS: CLAIM / CONTAMINATION / LIEN.",
+   "audio": "Container is singing on sonar. Low and regular. That is process residue, not life. Treat it worse than life.",
+   "in_game_wiki": "Blue Debt is Marauder slang for pressure-kept Xenon-Omega residue and contaminated substrate around it. It is not one mineral. It includes cold lattices, clathrate cages, computation ash, failed containment gel and sealed process scrap left by Deep Reach equipment. Under HECTON-8's water column it stays quiet enough to move. In cabin air it can shed reactive gas, glassy dust and claim trouble.\n\nA loose shard is payday. A sealed container is also custody history: pressure tag, route stain, acoustic return, claimant hook. The same sample can power a tool, poison a shelter, mark the carrier, or prove Deep Reach returned to a site it listed as abandoned. Handle it like evidence first and money second.",
+   "external_site": "Blue Debt is pressure-kept Xenon-Omega residue: useful for power and trade, dangerous in warm air, and valuable as evidence when the seal and custody tag survive.",
+   "external_site_article": "Blue Debt is not a treasure crystal in the reef. It is residue from industrial pressure systems: Xenon-Omega substrate, failed containment media, computation slag and sealed scrap that stayed stable because the ocean kept pressing on it. Raise it wrong and the sample changes state. Open it in shelter air and the shelter becomes part of the cleanup.\n\nThe value sits in the container as much as the material. A loose shard buys fuel and disappears into trade. A sealed casket carries pressure history, acoustic return and custody marks. That can buy better tools, trigger Black Keel liens, pull quarantine into the route, or prove Deep Reach worked a site after it claimed withdrawal. Blue Debt pays fast only when the operator ignores what the tag can prove."
   },
-  "localized": {
-    "en_US": {
-      "title": "Blue Debt",
-      "scanner": "Pressure-kept Xenon-Omega residue. Stable in cold, dark, crushing water; hazardous in warm air and low pressure.",
-      "field_note": "Keep the pressure tag on. Loose blue buys fuel. Sealed blue buys fuel, quarantine attention and a name on the claim desk.",
-      "terminal": "XO CONTINUITY SUBSTRATE. PRESSURE LOCK REQUIRED. DO NOT VENT. CUSTODY FLAGS: CLAIM / CONTAMINATION / LIEN.",
-      "audio": "Container is singing on sonar. Low and regular. That is process residue, not life. Treat it worse than life.",
-      "in_game_wiki": "Blue Debt is Marauder slang for pressure-kept Xenon-Omega residue and contaminated substrate around it. It is not one mineral. It includes cold lattices, clathrate cages, computation ash, failed containment gel and sealed process scrap left by Deep Reach equipment. Under HECTON-8's water column it stays quiet enough to move. In cabin air it can shed reactive gas, glassy dust and claim trouble.\n\nA loose shard is payday. A sealed container is also custody history: pressure tag, route stain, acoustic return, claimant hook. The same sample can power a tool, poison a shelter, mark the carrier, or prove Deep Reach returned to a site it listed as abandoned. Handle it like evidence first and money second.",
-      "external_site": "Blue Debt is pressure-kept Xenon-Omega residue: useful for power and trade, dangerous in warm air, and valuable as evidence when the seal and custody tag survive.",
-      "external_site_article": "Blue Debt is not a treasure crystal in the reef. It is residue from industrial pressure systems: Xenon-Omega substrate, failed containment media, computation slag and sealed scrap that stayed stable because the ocean kept pressing on it. Raise it wrong and the sample changes state. Open it in shelter air and the shelter becomes part of the cleanup.\n\nThe value sits in the container as much as the material. A loose shard buys fuel and disappears into trade. A sealed casket carries pressure history, acoustic return and custody marks. That can buy better tools, trigger Black Keel liens, pull quarantine into the route, or prove Deep Reach worked a site after it claimed withdrawal. Blue Debt pays fast only when the operator ignores what the tag can prove."
-    },
-    "ar_SA": {
-      "title": "الدين الأزرق",
-      "scanner": "بقايا Xenon-Omega محفوظة بالضغط. مستقرة في ماء بارد مظلم وساحق؛ خطرة في الهواء الدافئ والضغط المنخفض.",
-      "field_note": "يسمونه الدين الأزرق لأن كل غرام يستعير من المستقبل. يدفع أولا، ثم يرسل المحصلين.",
-      "terminal": "XO CONTINUITY SUBSTRATE. مطلوب قفل ضغط. لا تنفس. أعلام العهدة: مطالبة / تلوث / رهن.",
-      "audio": "الحاوية تغني على السونار. منخفضة ومنتظمة. تلك بقايا عملية، لا حياة. عاملها كأسوأ من الحياة.",
-      "in_game_wiki": "الدين الأزرق هو مصطلح المغيرين لبقايا Xenon-Omega المحفوظة بالضغط والركائز الملوثة التي نمت حولها. ليس معدنا واحدا. إنه عائلة من شبكات باردة، وأقفاص كلاثرات، ورماد حسابي، وجل احتواء فاشل، وخردة عمليات عميقة تركتها معدات Deep Reach. تحت عمود ماء HECTON-8 يبقى هادئا بما يكفي للنقل. في هواء المقصورة قد يطرح غازا تفاعليا وغبارا زجاجيا ومشكلة قانونية. أهميته أنه يربط ثلاثة أنظمة في وقت واحد: احتواء الطاقة العالية، ذاكرة متوافقة مع Atlas، واقتصاد الخردة. عينة مختومة قد تشتري خلايا طاقة أو رخص أدوات أو طريقا خارج الدين. والعينة نفسها قد تضع علامة على الحاملة، أو تفعل رهنا، أو تسمم ملجأ، أو تثبت أن Deep Reach عادت لشيء ادعت أنها تركته.",
-      "external_site": "الدين الأزرق هو أخطر أجر على HECTON-8: مورد مربوط بالضغط يشغل الآلات، ويكشف بنية Deep Reach، وقد يحول الناجي إلى ملكية شركة.",
-      "external_site_article": "الدين الأزرق هو ما يجعل السلب على HECTON-8 يبدو مربحا قبل أن يبدو آمنا. المادة ليست بلورة كنز تنتظر في الشعاب. إنها بقايا أنظمة ضغط صناعية: ركائز Xenon-Omega، ووسائط احتواء فاشلة، وخبث حسابي، وخردة مختومة بقيت مستقرة لأن المحيط لم يتوقف عن الضغط عليها. ارفعها بطريقة خاطئة فتتغير حالة العينة. بعها بطريقة خاطئة فيغيرك أثر الورق. هذه المخاطرة المزدوجة هي معنى الاسم. الدين الأزرق يدفع للناجي بسرعة، لكن كل حاوية تحمل كلفة لاحقة: إزالة تلوث، رهون carrier، قواعد عهدة Black Keel، لغة مطالبات Deep Reach، واحتمال أن تكون العينة دليلا أيضا. في اللور الأوسع، هذا المورد من أوائل الإشارات إلى أن HECTON-8 لم تُهجر فقط. لقد تُركت وفيها أنظمة ثمينة لا تزال تعمل تحت الضغط، حيث لن يلمسها إلا عامل يائس."
-    },
-    "de_DE": {
-      "title": "Blaue Schuld",
-      "scanner": "Druckgebundener Xenon-Omega-Rückstand. Stabil in kaltem, dunklem, zerdrückendem Wasser; gefährlich in warmer Luft und Niederdruck.",
-      "field_note": "Sie nennen es blaue Schuld, weil jedes Gramm Zukunft leiht. Es zahlt sofort und schickt danach Eintreiber.",
-      "terminal": "XO CONTINUITY SUBSTRATE. DRUCKSCHLEUSE ERFORDERLICH. NICHT ENTLÜFTEN. KETTENFLAGS: ANSPRUCH / KONTAMINATION / PFAND.",
-      "audio": "Der Behälter singt im Sonar. Tief und regelmäßig. Das ist Prozessrückstand, kein Leben. Behandle es schlimmer als Leben.",
-      "in_game_wiki": "Blaue Schuld ist Marauder-Slang für druckgebundene Xenon-Omega-Rückstände und die kontaminierten Substrate, die darum gewachsen sind. Es ist kein einzelnes Mineral. Es ist eine Familie aus kalten Gittern, Clathratkäfigen, Rechenasche, fehlgeschlagenem Eindämmgel und Tiefprozessschrott, den Deep-Reach-Ausrüstung hinterließ. Unter HECTON-8s Wassersäule bleibt es ruhig genug zum Transport. In Kabinenluft kann es reaktives Gas, glasigen Staub und juristischen Ärger abgeben. Das Material zählt, weil es drei Systeme zugleich verbindet: Hochenergie-Eindämmung, Atlas-kompatiblen Speicher und die Bergungswirtschaft. Eine versiegelte Probe kann Energiezellen, Werkzeuglizenzen oder einen Weg aus der Schuld kaufen. Dieselbe Probe kann den Carrier markieren, ein Pfand auslösen, eine Unterkunft vergiften oder belegen, dass Deep Reach für etwas zurückkam, das angeblich aufgegeben war.",
-      "external_site": "Blaue Schuld ist HECTON-8s gefährlichster Lohn: eine druckgebundene Ressource, die Maschinen speist, Deep-Reach-Infrastruktur offenlegt und einen Überlebenden zu Firmeneigentum machen kann.",
-      "external_site_article": "Blaue Schuld sorgt dafür, dass Bergung auf HECTON-8 zuerst profitabel klingt und erst danach sicher. Das Material ist kein Schatzkristall im Riff. Es ist Rückstand industrieller Drucksysteme: Xenon-Omega-Substrate, gescheiterte Eindämmmedien, Rechenschlacke und versiegelter Schrott, der stabil blieb, weil der Ozean nie aufhörte zu drücken. Hebe es falsch an und die Probe ändert ihren Zustand. Verkaufe es falsch und die Papierkette ändert dich. Dieses doppelte Risiko steckt im Namen. Blaue Schuld bezahlt Überlebende schnell, doch jeder Behälter trägt spätere Kosten: Dekontamination, Carrier-Pfandrechte, Black-Keel-Verwahrung, Deep-Reach-Anspruchssprache und die Möglichkeit, dass die Probe auch Beweis ist. Im größeren Lore ist die Ressource einer der ersten Hinweise, dass HECTON-8 nicht einfach verlassen wurde. Wertvolle Systeme liefen weiter unter Druck, dort unten, wo nur ein verzweifelter Operator sie anfassen würde."
-    },
-    "es_ES": {
-      "title": "Deuda azul",
-      "scanner": "Residuo Xenon-Omega retenido por presión. Estable en agua fría, oscura y aplastante; peligroso en aire cálido y baja presión.",
-      "field_note": "Lo llaman deuda azul porque cada gramo toma prestado del futuro. Paga por adelantado y luego manda cobradores.",
-      "terminal": "XO CONTINUITY SUBSTRATE. BLOQUEO DE PRESIÓN REQUERIDO. NO VENTILAR. MARCAS DE CUSTODIA: RECLAMACIÓN / CONTAMINACIÓN / GRAVAMEN.",
-      "audio": "El contenedor canta en el sonar. Bajo y regular. Eso es residuo de proceso, no vida. Trátalo peor que a la vida.",
-      "in_game_wiki": "Deuda azul es la jerga de los merodeadores para el residuo Xenon-Omega mantenido por presión y los sustratos contaminados crecidos alrededor. No es un mineral único. Es una familia de redes frías, jaulas de clatrato, ceniza computacional, gel de contención fallido y chatarra de proceso profundo dejada por equipos de Deep Reach. Bajo la columna de agua de HECTON-8 permanece lo bastante quieto para moverlo. En aire de cabina puede soltar gas reactivo, polvo vítreo y problemas legales. El material importa porque une tres sistemas a la vez: contención de alta energía, memoria compatible con Atlas y economía de salvamento. Una muestra sellada puede comprar celdas de energía, licencias de herramientas o una salida de la deuda. La misma muestra puede marcar el carrier, activar un gravamen, envenenar un refugio o demostrar que Deep Reach volvió por algo que decía haber abandonado.",
-      "external_site": "La deuda azul es el pago más peligroso de HECTON-8: un recurso sujeto a presión que alimenta máquinas, expone infraestructura de Deep Reach y puede convertir a un superviviente en propiedad corporativa.",
-      "external_site_article": "La Deuda azul hace que el salvamento en HECTON-8 parezca rentable antes de parecer seguro. El material no es un cristal de tesoro esperando en el arrecife. Es residuo de sistemas industriales de presión: sustratos Xenon-Omega, medios de contención fallidos, escoria computacional y chatarra sellada que siguió estable porque el océano nunca dejó de presionar. Sube la muestra mal y cambia de estado. Véndela mal y el rastro documental te cambia a ti. Ese doble riesgo da sentido al nombre. La deuda azul paga rápido a un superviviente, pero cada contenedor trae coste futuro: descontaminación, gravámenes de carrier, reglas de custodia de Black Keel, lenguaje de reclamación de Deep Reach y la posibilidad de que la muestra también sea prueba. En el lore mayor, el recurso es una de las primeras pistas de que HECTON-8 no fue abandonada sin más. Quedó con sistemas valiosos aún funcionando bajo presión, donde solo un operador desesperado aceptaría tocarlos."
-    },
-    "fr_FR": {
-      "title": "Dette bleue",
-      "scanner": "Résidu Xenon-Omega maintenu sous pression. Stable dans l'eau froide, noire et écrasante ; dangereux dans l'air chaud et la basse pression.",
-      "field_note": "On l'appelle dette bleue parce que chaque gramme emprunte au futur. Elle paie d'abord, puis envoie les collecteurs.",
-      "terminal": "XO CONTINUITY SUBSTRATE. VERROU DE PRESSION REQUIS. NE PAS PURGER. MARQUES DE GARDE : RÉCLAMATION / CONTAMINATION / GAGE.",
-      "audio": "Le conteneur chante au sonar. Bas et régulier. C'est un résidu de procédé, pas de la vie. Traite-le pire que la vie.",
-      "in_game_wiki": "Dette bleue est l'argot des maraudeurs pour les résidus Xenon-Omega gardés sous pression et les substrats contaminés qui ont poussé autour. Ce n'est pas un seul minerai. C'est une famille de réseaux froids, cages de clathrate, cendre de calcul, gel de confinement raté et rebut de procédé profond laissé par l'équipement Deep Reach. Sous la colonne d'eau de HECTON-8, le matériau reste assez calme pour être déplacé. Dans l'air de cabine, il peut relâcher du gaz réactif, de la poussière vitreuse et des ennuis juridiques. Il compte parce qu'il relie trois systèmes à la fois : confinement haute énergie, mémoire compatible Atlas et économie de récupération. Un échantillon scellé peut acheter des cellules d'énergie, des licences d'outils ou une sortie de dette. Le même échantillon peut marquer le carrier, déclencher un gage, empoisonner un abri ou prouver que Deep Reach est revenue chercher ce qu'elle disait avoir abandonné.",
-      "external_site": "La dette bleue est la paie la plus dangereuse de HECTON-8 : une ressource liée par la pression qui alimente les machines, expose l'infrastructure Deep Reach et peut changer un survivant en propriété corporative.",
-      "external_site_article": "La Dette bleue rend la récupération sur HECTON-8 rentable avant de la rendre sûre. Le matériau n'est pas un cristal de trésor dans le récif. C'est le résidu de systèmes industriels sous pression : substrats Xenon-Omega, milieux de confinement ratés, scorie computationnelle et rebut scellé resté stable parce que l'océan n'a jamais cessé d'appuyer. Remonte-le mal et l'échantillon change d'état. Vends-le mal et la piste documentaire te change toi. Ce double risque donne son nom au matériau. La dette bleue paie vite un survivant, mais chaque conteneur porte un coût futur : décontamination, gages de carrier, règles de garde Black Keel, langage de réclamation Deep Reach et possibilité que l'échantillon soit aussi une preuve. Dans le lore large, cette ressource est l'un des premiers indices que HECTON-8 n'a pas été simplement abandonnée. Des systèmes précieux y tournaient encore sous pression, là où seul un opérateur désespéré accepterait de les toucher."
-    },
-    "he_IL": {
-      "title": "חוב כחול",
-      "scanner": "שארית Xenon-Omega שמורה בלחץ. יציבה במים קרים, חשוכים ומוחצים; מסוכנת באוויר חם ובלחץ נמוך.",
-      "field_note": "קוראים לזה חוב כחול כי כל גרם לווה מן העתיד. הוא משלם מראש, ואז שולח גובים.",
-      "terminal": "XO CONTINUITY SUBSTRATE. נדרש נעילת לחץ. לא לאוורר. דגלי משמורת: תביעה / זיהום / שעבוד.",
-      "audio": "המכל שר בסונאר. נמוך וקבוע. זו שארית תהליך, לא חיים. התייחס אליה כגרועה מחיים.",
-      "in_game_wiki": "חוב כחול הוא סלנג של שודדי ים לשארית Xenon-Omega שנשמרה בלחץ ולמצעים המזוהמים שגדלו סביבה. זה אינו מינרל אחד. זו משפחה של סריגים קרים, כלובי קלאתרייט, אפר חישובי, ג'ל כליאה כושל וגרוטאות תהליך עומק שהשאיר ציוד Deep Reach. מתחת לעמוד המים של HECTON-8 החומר שקט מספיק כדי להזיז אותו. באוויר תא הוא עלול לפלוט גז תגובתי, אבק זכוכיתי וצרות משפטיות. החומר חשוב כי הוא מחבר שלוש מערכות בבת אחת: כליאת אנרגיה גבוהה, זיכרון תואם Atlas וכלכלת חילוץ. דגימה אטומה יכולה לקנות תאי כוח, רישיונות כלים או דרך החוצה מחוב. אותה דגימה יכולה לסמן את ה-carrier, להפעיל שעבוד, להרעיל מחסה או להוכיח ש-Deep Reach חזרה בשביל משהו שטענה שנטשה.",
-      "external_site": "חוב כחול הוא התשלום המסוכן ביותר של HECTON-8: משאב קשור בלחץ שיכול להזין מכונות, לחשוף תשתית Deep Reach ולהפוך ניצול לרכוש תאגידי.",
-      "external_site_article": "חוב כחול הוא מה שגורם לחילוץ ב-HECTON-8 להיראות רווחי לפני שהוא נראה בטוח. החומר אינו גביש אוצר שמחכה בשונית. הוא שארית של מערכות לחץ תעשייתיות: מצעי Xenon-Omega, אמצעי כליאה כושלים, סיגי חישוב וגרוטאות אטומות שנותרו יציבות כי האוקיינוס לא הפסיק ללחוץ עליהן. הרם אותו לא נכון והדגימה משנה מצב. מכור אותו לא נכון ושרשרת הנייר משנה אותך. הסיכון הכפול הזה הוא לב השם. חוב כחול משלם לניצול מהר, אבל כל מכל נושא עלות עתידית: טיהור, שעבודי carrier, כללי משמורת Black Keel, שפת תביעה של Deep Reach והאפשרות שהדגימה היא גם ראיה. בלור הרחב, המשאב הוא אחד הרמזים הראשונים לכך ש-HECTON-8 לא רק ננטשה. נותרו בה מערכות יקרות שעדיין פעלו תחת לחץ, במקום שבו רק מפעיל נואש יסכים לגעת בהן."
-    },
-    "id_ID": {
-      "title": "Utang Biru",
-      "scanner": "Residu Xenon-Omega yang ditahan tekanan. Stabil di air dingin, gelap, dan menghancurkan; berbahaya di udara hangat dan tekanan rendah.",
-      "field_note": "Mereka menyebutnya utang biru karena setiap gram meminjam dari masa depan. Ia membayar di muka, lalu mengirim penagih.",
-      "terminal": "XO CONTINUITY SUBSTRATE. KUNCI TEKANAN WAJIB. JANGAN VENTILASI. TANDA KUSTODI: KLAIM / KONTAMINASI / LIEN.",
-      "audio": "Kontainer bernyanyi di sonar. Rendah dan teratur. Itu residu proses, bukan kehidupan. Perlakukan lebih buruk daripada kehidupan.",
-      "in_game_wiki": "Utang biru adalah slang marauder untuk residu Xenon-Omega yang ditahan tekanan dan substrat tercemar yang tumbuh di sekitarnya. Itu bukan satu mineral. Itu keluarga kisi dingin, kandang klatrat, abu komputasi, gel penahanan gagal, dan scrap proses dalam yang ditinggalkan peralatan Deep Reach. Di bawah kolom air HECTON-8, ia cukup tenang untuk dipindahkan. Di udara kabin, ia dapat melepas gas reaktif, debu kaca, dan masalah hukum. Material ini penting karena mengikat tiga sistem sekaligus: penahanan energi tinggi, memori kompatibel Atlas, dan ekonomi salvage. Sampel tersegel bisa membeli sel daya, lisensi alat, atau jalan keluar dari utang. Sampel yang sama bisa menandai carrier, memicu lien, meracuni perlindungan, atau membuktikan Deep Reach kembali untuk sesuatu yang katanya telah ditinggalkan.",
-      "external_site": "Utang biru adalah bayaran paling berbahaya di HECTON-8: sumber daya terikat tekanan yang dapat menyalakan mesin, membuka infrastruktur Deep Reach, dan mengubah penyintas menjadi properti korporat.",
-      "external_site_article": "Utang Biru membuat salvage di HECTON-8 terasa menguntungkan sebelum terasa aman. Material itu bukan kristal harta yang menunggu di karang. Ia adalah residu sistem tekanan industri: substrat Xenon-Omega, media penahanan gagal, slag komputasi, dan scrap tersegel yang tetap stabil karena samudra tidak pernah berhenti menekannya. Angkat dengan cara salah dan sampel berubah keadaan. Jual dengan cara salah dan jejak dokumen mengubah dirimu. Risiko ganda itu adalah maksud namanya. Utang biru membayar penyintas dengan cepat, tetapi setiap kontainer membawa biaya masa depan: dekontaminasi, lien carrier, aturan kustodi Black Keel, bahasa klaim Deep Reach, dan kemungkinan bahwa sampel juga bukti. Dalam lore yang lebih luas, sumber daya ini menjadi salah satu petunjuk pertama bahwa HECTON-8 bukan sekadar ditinggalkan. Ia ditinggalkan dengan sistem bernilai masih berjalan di bawah tekanan, di tempat yang hanya operator putus asa mau menyentuhnya."
-    },
-    "ja_JP": {
-      "title": "青い負債",
-      "scanner": "圧力保持されたXenon-Omega残渣。冷たく暗い圧潰水中では安定。暖かい空気と低圧では危険。",
-      "field_note": "それを青い負債と呼ぶのは、1グラムごとに未来から借りているからだ。先払いし、そのあと回収人を送ってくる。",
-      "terminal": "XO CONTINUITY SUBSTRATE. 圧力ロック必須。ベント禁止。保管フラグ: 請求 / 汚染 / 留置権。",
-      "audio": "コンテナがソナーで歌っている。低く規則的だ。あれは生命ではなく処理残渣だ。生命より悪いものとして扱え。",
-      "in_game_wiki": "青い負債とは、圧力保持されたXenon-Omega残渣と、その周囲で育った汚染基質を指すマローダーの俗語だ。単一の鉱物ではない。冷たい格子、クラスレートの檻、計算灰、失敗した封じ込めゲル、Deep Reach装置が残した深部処理スクラップの総称である。HECTON-8の水柱の下では、動かせる程度には静かでいる。キャビン空気では反応性ガス、ガラス質の粉塵、法的な厄介事を放出しかねない。この物質が重要なのは、高エネルギー封じ込め、Atlas互換メモリ、サルベージ経済という三つの系を同時につなぐからだ。封印されたサンプルは電力セル、工具ライセンス、借金から出る道を買える。同じサンプルがcarrierを標識し、留置権を起動し、シェルターを汚染し、Deep Reachが捨てたと言ったものを取りに戻った証拠にもなる。",
-      "external_site": "青い負債はHECTON-8で最も危険な報酬だ。圧力に縛られた資源であり、機械を動かし、Deep Reachの基盤を露出させ、生存者を企業所有物に変え得る。",
-      "external_site_article": "青い負債があるから、HECTON-8のサルベージは安全に見える前に儲かりそうに見える。この物質は礁に眠る宝石ではない。産業圧力システムの残りかすだ。Xenon-Omega基質、失敗した封じ込め媒体、計算スラグ、そして海が押し続けたために安定していた封印スクラップ。間違って引き上げればサンプルは状態を変える。間違って売れば書類の痕跡があなたの身分を変える。その二重の危険が名前の意味だ。青い負債は生存者に素早く支払うが、各コンテナは未来の費用を運ぶ。除染、carrierの留置権、Black Keelの保管規則、Deep Reachの請求語彙、そしてサンプルが証拠でもある可能性。広いロアでは、この資源はHECTON-8が単に放棄されたわけではないという最初の手がかりの一つだ。価値あるシステムが圧力下でまだ動いており、触ろうとするのは追い詰められたオペレーターだけだった。"
-    },
-    "ko_KR": {
-      "title": "푸른 빚",
-      "scanner": "압력 보존 Xenon-Omega 잔류물. 차갑고 어둡고 짓누르는 물속에서는 안정. 따뜻한 공기와 저압에서는 위험.",
-      "field_note": "이것을 푸른 빚이라 부르는 이유는 1그램마다 미래에서 빌려 오기 때문이다. 먼저 돈을 주고, 나중에 추심자를 보낸다.",
-      "terminal": "XO CONTINUITY SUBSTRATE. 압력 잠금 필요. 배출 금지. 보관 플래그: 청구 / 오염 / 유치권.",
-      "audio": "컨테이너가 소나에서 노래한다. 낮고 규칙적이다. 저건 생명이 아니라 공정 잔류물이다. 생명보다 더 나쁘게 다뤄라.",
-      "in_game_wiki": "푸른 빚은 압력으로 보존된 Xenon-Omega 잔류물과 그 주변에 자란 오염 기질을 가리키는 마라우더 은어다. 단일 광물이 아니다. 차가운 격자, 클라스레이트 우리, 계산 재, 실패한 봉쇄 젤, Deep Reach 장비가 남긴 심부 공정 스크랩의 계열이다. HECTON-8의 수주 아래에서는 옮길 수 있을 만큼 조용하다. 객실 공기에서는 반응성 가스, 유리 같은 먼지, 법적 문제를 내뿜을 수 있다. 이 물질이 중요한 이유는 고에너지 봉쇄, Atlas 호환 메모리, salvage 경제라는 세 시스템을 동시에 잇기 때문이다. 봉인된 샘플은 전력 셀, 공구 라이선스, 빚에서 나갈 길을 살 수 있다. 같은 샘플이 carrier를 표시하고, 유치권을 발동하고, 대피처를 오염시키고, Deep Reach가 버렸다고 주장한 것을 되찾으러 왔다는 증거가 될 수도 있다.",
-      "external_site": "푸른 빚은 HECTON-8에서 가장 위험한 보수다. 압력에 묶인 자원으로, 기계를 먹이고 Deep Reach 기반시설을 드러내며 생존자를 기업 재산으로 바꿀 수 있다.",
-      "external_site_article": "푸른 빚 때문에 HECTON-8의 salvage는 안전해 보이기 전에 수익성 있어 보인다. 이 물질은 암초에 기다리는 보물 결정이 아니다. 산업 압력 시스템의 잔류물이다. Xenon-Omega 기질, 실패한 봉쇄 매질, 계산 슬래그, 그리고 바다가 계속 누르고 있었기 때문에 안정했던 봉인 스크랩. 잘못 올리면 샘플은 상태를 바꾼다. 잘못 팔면 문서 흔적이 너를 바꾼다. 그 이중 위험이 이름의 핵심이다. 푸른 빚은 생존자에게 빠르게 돈을 주지만, 모든 컨테이너는 미래 비용을 운반한다. 제염, carrier 유치권, Black Keel 보관 규칙, Deep Reach 청구 언어, 그리고 샘플이 증거이기도 할 가능성. 더 큰 로어에서 이 자원은 HECTON-8이 단순히 버려진 곳이 아니었다는 첫 단서 중 하나다. 귀중한 시스템은 압력 아래에서 아직 돌아가고 있었고, 그것을 만지려는 사람은 절박한 오퍼레이터뿐이었다."
-    },
-    "nl_NL": {
-      "title": "Blauwe schuld",
-      "scanner": "Door druk bewaarde Xenon-Omega-rest. Stabiel in koud, donker, verpletterend water; gevaarlijk in warme lucht en lage druk.",
-      "field_note": "Ze noemen het blauwe schuld omdat elke gram van de toekomst leent. Het betaalt vooraf en stuurt daarna incasso.",
-      "terminal": "XO CONTINUITY SUBSTRATE. DRUKSLOT VEREIST. NIET ONTLUCHTEN. BEWAARFLAGS: CLAIM / BESMETTING / PANDRECHT.",
-      "audio": "De container zingt op sonar. Laag en regelmatig. Dat is procesresidu, geen leven. Behandel het erger dan leven.",
-      "in_game_wiki": "Blauwe schuld is marauder-slang voor door druk bewaarde Xenon-Omega-resten en de besmette substraten die eromheen groeiden. Het is geen enkel mineraal. Het is een familie van koude roosters, clathraatkooien, rekenas, mislukt insluitingsgel en diep-procesafval van Deep Reach-apparatuur. Onder HECTON-8s waterkolom blijft het stil genoeg om te verplaatsen. In cabinelucht kan het reactief gas, glasachtig stof en juridische problemen afgeven. Het materiaal telt omdat het drie systemen tegelijk verbindt: hoogenergetische insluiting, Atlas-compatibel geheugen en de salvage-economie. Een verzegeld monster kan energiecellen, gereedschapslicenties of een weg uit schuld kopen. Hetzelfde monster kan de carrier markeren, een pandrecht activeren, een onderkomen vergiftigen of bewijzen dat Deep Reach terugkwam voor iets waarvan het zei dat het was achtergelaten.",
-      "external_site": "Blauwe schuld is HECTON-8s gevaarlijkste loon: een door druk gebonden grondstof die machines voedt, Deep Reach-infrastructuur blootlegt en een overlever in bedrijfseigendom kan veranderen.",
-      "external_site_article": "Blauwe schuld maakt salvage op HECTON-8 winstgevend voordat het veilig voelt. Het materiaal is geen schatkristal in het rif. Het is residu van industriële druksystemen: Xenon-Omega-substraten, mislukte insluitingsmedia, rekenslak en verzegeld afval dat stabiel bleef omdat de oceaan bleef drukken. Haal het verkeerd omhoog en het monster verandert van toestand. Verkoop het verkeerd en het papierpad verandert jou. Dat dubbele risico is de naam. Blauwe schuld betaalt een overlever snel, maar elke container draagt toekomstige kosten: decontaminatie, carrier-pandrechten, Black Keel-bewaarregels, Deep Reach-claimtaal en de kans dat het monster ook bewijs is. In de bredere lore is de grondstof een van de eerste aanwijzingen dat HECTON-8 niet alleen verlaten werd. Waardevolle systemen bleven onder druk draaien, waar alleen een wanhopige operator ze zou aanraken."
-    },
-    "pl_PL": {
-      "title": "Niebieski dług",
-      "scanner": "Pozostałość Xenon-Omega utrzymana ciśnieniem. Stabilna w zimnej, ciemnej, miażdżącej wodzie; groźna w ciepłym powietrzu i niskim ciśnieniu.",
-      "field_note": "Nazywają to niebieskim długiem, bo każdy gram pożycza z przyszłości. Płaci z góry, a potem wysyła windykatorów.",
-      "terminal": "XO CONTINUITY SUBSTRATE. WYMAGANA BLOKADA CIŚNIENIA. NIE ODPOWIETRZAĆ. FLAGI OPIEKI: ROSZCZENIE / SKAŻENIE / ZASTAW.",
-      "audio": "Pojemnik śpiewa w sonarze. Nisko i regularnie. To pozostałość procesu, nie życie. Traktuj to gorzej niż życie.",
-      "in_game_wiki": "Niebieski dług to slang marauderów na pozostałość Xenon-Omega utrzymaną ciśnieniem oraz skażone substraty wyrosłe wokół niej. To nie jeden minerał. To rodzina zimnych sieci, klatkowych klatratów, popiołu obliczeniowego, nieudanego żelu izolacyjnego i głębokoprocesowego złomu po sprzęcie Deep Reach. Pod kolumną wody HECTON-8 pozostaje dość spokojny, by dało się go przenieść. W powietrzu kabiny może oddać reaktywny gaz, szklisty pył i kłopoty prawne. Materiał ma znaczenie, bo łączy trzy systemy naraz: wysokenergetyczne zamknięcie, pamięć zgodną z Atlasem i ekonomię salvage. Zapieczętowana próbka może kupić ogniwa zasilania, licencje narzędzi albo wyjście z długu. Ta sama próbka może oznaczyć carrier, uruchomić zastaw, zatruć schronienie albo dowieść, że Deep Reach wróciło po coś, co rzekomo porzuciło.",
-      "external_site": "Niebieski dług to najniebezpieczniejsza wypłata HECTON-8: zasób związany ciśnieniem, który zasila maszyny, odsłania infrastrukturę Deep Reach i może zmienić ocalałego we własność korporacji.",
-      "external_site_article": "Niebieski dług sprawia, że salvage na HECTON-8 wygląda opłacalnie, zanim wygląda bezpiecznie. Materiał nie jest skarbem w rafie. To pozostałość przemysłowych systemów ciśnieniowych: substraty Xenon-Omega, nieudane media izolacyjne, żużel obliczeniowy i zapieczętowany złom, który pozostał stabilny, bo ocean nigdy nie przestał na niego naciskać. Podnieś go źle, a próbka zmieni stan. Sprzedaj go źle, a ślad papierowy zmieni ciebie. To podwójne ryzyko jest sensem nazwy. Niebieski dług szybko płaci ocalałemu, ale każdy pojemnik niesie przyszły koszt: dekontaminację, zastawy carriera, zasady opieki Black Keel, język roszczeń Deep Reach i szansę, że próbka jest też dowodem. W szerszym lore zasób jest jedną z pierwszych wskazówek, że HECTON-8 nie zostało zwyczajnie opuszczone. Cenne systemy nadal działały pod ciśnieniem, tam gdzie tylko zdesperowany operator zgodziłby się ich dotknąć."
-    },
-    "pt_BR": {
-      "title": "Dívida azul",
-      "scanner": "Resíduo Xenon-Omega mantido por pressão. Estável em água fria, escura e esmagadora; perigoso em ar quente e baixa pressão.",
-      "field_note": "Chamam de dívida azul porque cada grama toma emprestado do futuro. Paga na frente e depois manda cobradores.",
-      "terminal": "XO CONTINUITY SUBSTRATE. TRAVA DE PRESSÃO OBRIGATÓRIA. NÃO VENTILAR. MARCAS DE CUSTÓDIA: REIVINDICAÇÃO / CONTAMINAÇÃO / LIEN.",
-      "audio": "O contêiner está cantando no sonar. Baixo e regular. Isso é resíduo de processo, não vida. Trate como pior que vida.",
-      "in_game_wiki": "Dívida azul é a gíria dos marauders para resíduo Xenon-Omega mantido por pressão e os substratos contaminados crescidos ao redor. Não é um mineral único. É uma família de redes frias, gaiolas de clatrato, cinza computacional, gel de contenção falho e sucata de processo profundo deixada por equipamento da Deep Reach. Sob a coluna d'água de HECTON-8, fica quieta o bastante para ser movida. No ar da cabine, pode soltar gás reativo, poeira vítrea e problema legal. O material importa porque liga três sistemas ao mesmo tempo: contenção de alta energia, memória compatível com Atlas e economia de salvage. Uma amostra selada pode comprar células de energia, licenças de ferramenta ou uma rota para fora da dívida. A mesma amostra pode marcar o carrier, acionar um lien, envenenar um abrigo ou provar que a Deep Reach voltou por algo que dizia ter abandonado.",
-      "external_site": "Dívida azul é o pagamento mais perigoso de HECTON-8: um recurso preso por pressão que alimenta máquinas, expõe infraestrutura da Deep Reach e pode transformar um sobrevivente em propriedade corporativa.",
-      "external_site_article": "Dívida azul faz o salvage em HECTON-8 parecer lucrativo antes de parecer seguro. O material não é um cristal de tesouro esperando no recife. É resíduo de sistemas industriais de pressão: substratos Xenon-Omega, meios de contenção falhos, escória computacional e sucata selada que permaneceu estável porque o oceano nunca parou de pressioná-la. Suba errado e a amostra muda de estado. Venda errado e a trilha de papel muda você. Esse risco duplo é o sentido do nome. Dívida azul paga rápido a um sobrevivente, mas cada contêiner carrega custo futuro: descontaminação, liens de carrier, regras de custódia da Black Keel, linguagem de reivindicação da Deep Reach e a chance de que a amostra também seja prova. No lore maior, o recurso é uma das primeiras pistas de que HECTON-8 não foi simplesmente abandonada. Ela ficou com sistemas valiosos ainda rodando sob pressão, onde só um operador desesperado aceitaria tocar."
-    },
-    "ru_RU": {
-      "title": "Синий долг",
-      "scanner": "Остаток Xenon-Omega, удержанный давлением. Стабилен в холодной, темной, давящей воде; опасен в теплом воздухе и низком давлении.",
-      "field_note": "Его называют синим долгом, потому что каждый грамм берет взаймы у будущего. Сначала платит, потом присылает взыскателей.",
-      "terminal": "XO CONTINUITY SUBSTRATE. ТРЕБУЕТСЯ БЛОК ДАВЛЕНИЯ. НЕ СТРАВЛИВАТЬ. ФЛАГИ ХРАНЕНИЯ: ПРЕТЕНЗИЯ / ЗАГРЯЗНЕНИЕ / ЗАЛОГ.",
-      "audio": "Контейнер поет на сонаре. Низко и ровно. Это технологический остаток, не жизнь. Обращайся с ним хуже, чем с жизнью.",
-      "in_game_wiki": "Синий долг — мародерский сленг для остатков Xenon-Omega, удержанных давлением, и загрязненных субстратов, выросших вокруг них. Это не один минерал. Это семейство холодных решеток, клатратных клеток, вычислительного пепла, проваленного удерживающего геля и глубинного технологического лома, оставленного оборудованием Deep Reach. Под водяным столбом HECTON-8 материал достаточно тих, чтобы его можно было перемещать. В воздухе кабины он может сбросить реактивный газ, стеклянную пыль и юридические проблемы. Он важен, потому что связывает сразу три системы: высокоэнергетическое удержание, память, совместимую с Atlas, и экономику salvage. Запечатанный образец может купить энергоячейки, лицензии на инструмент или выход из долга. Тот же образец может пометить carrier, активировать залог, отравить укрытие или доказать, что Deep Reach вернулась за тем, что называла брошенным.",
-      "external_site": "Синий долг — самая опасная плата HECTON-8: ресурс, связанный давлением, который питает машины, вскрывает инфраструктуру Deep Reach и может превратить выжившего в корпоративную собственность.",
-      "external_site_article": "Синий долг делает salvage на HECTON-8 прибыльным раньше, чем безопасным. Это не драгоценный кристалл, ожидающий в рифе. Это остаток индустриальных систем давления: субстраты Xenon-Omega, неудачные среды удержания, вычислительный шлак и запечатанный лом, который оставался стабильным, потому что океан не переставал давить. Подними его неправильно — образец сменит состояние. Продай его неправильно — бумажный след сменит тебя. В этом двойном риске и смысл названия. Синий долг быстро платит выжившему, но каждый контейнер несет будущую цену: деконтаминацию, залоги carrier, правила хранения Black Keel, язык претензий Deep Reach и шанс, что образец одновременно является уликой. В большом лоре этот ресурс — одна из первых подсказок, что HECTON-8 не просто бросили. Там оставили ценные системы, которые продолжали работать под давлением, где к ним согласился бы прикоснуться только отчаявшийся оператор."
-    },
-    "uk_UA": {
-      "title": "Синій борг",
-      "scanner": "Залишок Xenon-Omega, утриманий тиском. Стабільний у холодній, темній, нищівній воді; небезпечний у теплому повітрі й низькому тиску.",
-      "field_note": "Його називають синім боргом, бо кожен грам позичає в майбутнього. Спершу платить, потім надсилає стягувачів.",
-      "terminal": "XO CONTINUITY SUBSTRATE. ПОТРІБЕН БЛОК ТИСКУ. НЕ СТРАВЛЮВАТИ. ПРАПОРИ ЗБЕРІГАННЯ: ПРЕТЕНЗІЯ / ЗАБРУДНЕННЯ / ЗАСТАВА.",
-      "audio": "Контейнер співає на сонарі. Низько й рівно. Це технологічний залишок, не життя. Стався до нього гірше, ніж до життя.",
-      "in_game_wiki": "Синій борг — мародерський сленг для залишків Xenon-Omega, утриманих тиском, і забруднених субстратів, що виросли навколо них. Це не один мінерал. Це родина холодних ґраток, клатратних кліток, обчислювального попелу, проваленого гелю утримання й глибинного технологічного брухту, залишеного обладнанням Deep Reach. Під водяним стовпом HECTON-8 матеріал достатньо тихий, щоб його можна було переміщати. У повітрі кабіни він може випустити реактивний газ, скляний пил і юридичні проблеми. Матеріал важить, бо поєднує одразу три системи: високоенергетичне утримання, пам'ять, сумісну з Atlas, і економіку salvage. Запечатаний зразок може купити енергоелементи, ліцензії на інструмент або шлях із боргу. Той самий зразок може позначити carrier, активувати заставу, отруїти укриття або довести, що Deep Reach повернулася по те, що називала покинутим.",
-      "external_site": "Синій борг — найнебезпечніша платня HECTON-8: ресурс, зв'язаний тиском, що живить машини, відкриває інфраструктуру Deep Reach і може перетворити вцілілого на корпоративну власність.",
-      "external_site_article": "Синій борг робить salvage на HECTON-8 прибутковим раніше, ніж безпечним. Це не коштовний кристал, що чекає в рифі. Це залишок індустріальних систем тиску: субстрати Xenon-Omega, невдалі середовища утримання, обчислювальний шлак і запечатаний брухт, який лишався стабільним, бо океан не припиняв тиснути. Підійми його неправильно — зразок змінить стан. Продай його неправильно — паперовий слід змінить тебе. У цьому подвійному ризику й сенс назви. Синій борг швидко платить вцілілому, але кожен контейнер несе майбутню ціну: деконтамінацію, застави carrier, правила зберігання Black Keel, мову претензій Deep Reach і шанс, що зразок також є доказом. У ширшому лорі цей ресурс — одна з перших підказок, що HECTON-8 не просто покинули. Там залишили цінні системи, які досі працювали під тиском, де торкнутися їх погодився б лише відчайдушний оператор."
-    },
-    "zh_CN": {
-      "title": "蓝债",
-      "scanner": "压力保存的Xenon-Omega残留物。在寒冷、黑暗、碾压般的水中稳定；在温暖空气和低压中危险。",
-      "field_note": "他们叫它蓝债，因为每一克都向未来借款。它先付款，然后派收债人来。",
-      "terminal": "XO CONTINUITY SUBSTRATE。需要压力锁。不得排放。保管标记：索赔 / 污染 / 留置权。",
-      "audio": "容器在声呐上歌唱。低沉而规律。那是工艺残留，不是生命。把它当成比生命更糟的东西处理。",
-      "in_game_wiki": "蓝债是掠夺者对压力保存Xenon-Omega残留物及其周围污染基质的俗称。它不是单一矿物，而是一族冷晶格、笼形包合物、计算灰、失败的约束凝胶，以及Deep Reach设备留下的深层工艺废料。在HECTON-8的水柱下，它安静到足以移动。进入舱内空气后，它可能释放反应性气体、玻璃状粉尘和法律麻烦。它重要，是因为它同时连接三套系统：高能约束、Atlas兼容记忆，以及salvage经济。密封样本可以买到能源电池、工具许可或脱离债务的路。同一份样本也可能标记carrier，触发留置权，毒害庇护所，或证明Deep Reach回来寻找它声称已经放弃的东西。",
-      "external_site": "蓝债是HECTON-8最危险的报酬：一种受压力束缚的资源，能供养机器，暴露Deep Reach基础设施，并把幸存者变成公司财产。",
-      "external_site_article": "蓝债让HECTON-8上的salvage先显得有利可图，然后才显得安全。这种材料不是等在礁石里的宝石晶体。它是工业压力系统的残留：Xenon-Omega基质、失败的约束介质、计算炉渣，以及因为海洋从未停止施压而保持稳定的密封废料。错误地提起它，样本会改变状态。错误地出售它，纸面记录会改变你。这种双重风险正是名字的含义。蓝债会很快付钱给幸存者，但每个容器都带着未来成本：去污、carrier留置权、Black Keel保管规则、Deep Reach索赔语言，以及样本本身也可能是证据的可能。在更大的 lore 中，这种资源是最早说明HECTON-8并非单纯被遗弃的线索之一。它被留下时，仍有贵重系统在压力下运行，只有走投无路的操作员才会愿意触碰它们。"
-    }
+  "ar_SA": {
+   "title": "الدين الأزرق",
+   "scanner": "بقايا Xenon-Omega محفوظة بالضغط. مستقرة في ماء بارد مظلم وساحق؛ خطرة في الهواء الدافئ والضغط المنخفض.",
+   "field_note": "يسمونه الدين الأزرق لأن كل غرام يستعير من المستقبل. يدفع أولا، ثم يرسل المحصلين.",
+   "terminal": "XO CONTINUITY SUBSTRATE. مطلوب قفل ضغط. لا تنفس. أعلام العهدة: مطالبة / تلوث / رهن.",
+   "audio": "الحاوية تغني على السونار. منخفضة ومنتظمة. تلك بقايا عملية، لا حياة. عاملها كأسوأ من الحياة.",
+   "in_game_wiki": "الدين الأزرق هو مصطلح المغيرين لبقايا Xenon-Omega المحفوظة بالضغط والركائز الملوثة التي نمت حولها. ليس معدنا واحدا. إنه عائلة من شبكات باردة، وأقفاص كلاثرات، ورماد حسابي، وجل احتواء فاشل، وخردة عمليات عميقة تركتها معدات Deep Reach. تحت عمود ماء HECTON-8 يبقى هادئا بما يكفي للنقل. في هواء المقصورة قد يطرح غازا تفاعليا وغبارا زجاجيا ومشكلة قانونية. أهميته أنه يربط ثلاثة أنظمة في وقت واحد: احتواء الطاقة العالية، ذاكرة متوافقة مع Atlas، واقتصاد الخردة. عينة مختومة قد تشتري خلايا طاقة أو رخص أدوات أو طريقا خارج الدين. والعينة نفسها قد تضع علامة على الحاملة، أو تفعل رهنا، أو تسمم ملجأ، أو تثبت أن Deep Reach عادت لشيء ادعت أنها تركته.",
+   "external_site": "الدين الأزرق هو أخطر أجر على HECTON-8: مورد مربوط بالضغط يشغل الآلات، ويكشف بنية Deep Reach، وقد يحول الناجي إلى ملكية شركة.",
+   "external_site_article": "الدين الأزرق هو ما يجعل السلب على HECTON-8 يبدو مربحا قبل أن يبدو آمنا. المادة ليست بلورة كنز تنتظر في الشعاب. إنها بقايا أنظمة ضغط صناعية: ركائز Xenon-Omega، ووسائط احتواء فاشلة، وخبث حسابي، وخردة مختومة بقيت مستقرة لأن المحيط لم يتوقف عن الضغط عليها. ارفعها بطريقة خاطئة فتتغير حالة العينة. بعها بطريقة خاطئة فيغيرك أثر الورق. هذه المخاطرة المزدوجة هي معنى الاسم. الدين الأزرق يدفع للناجي بسرعة، لكن كل حاوية تحمل كلفة لاحقة: إزالة تلوث، رهون carrier، قواعد عهدة Black Keel، لغة مطالبات Deep Reach، واحتمال أن تكون العينة دليلا أيضا. في اللور الأوسع، هذا المورد من أوائل الإشارات إلى أن HECTON-8 لم تُهجر فقط. لقد تُركت وفيها أنظمة ثمينة لا تزال تعمل تحت الضغط، حيث لن يلمسها إلا عامل يائس."
+  },
+  "de_DE": {
+   "title": "Blaue Schuld",
+   "scanner": "Druckgebundener Xenon-Omega-Rückstand. Stabil in kaltem, dunklem, zerdrückendem Wasser; gefährlich in warmer Luft und Niederdruck.",
+   "field_note": "Sie nennen es blaue Schuld, weil jedes Gramm Zukunft leiht. Es zahlt sofort und schickt danach Eintreiber.",
+   "terminal": "XO CONTINUITY SUBSTRATE. DRUCKSCHLEUSE ERFORDERLICH. NICHT ENTLÜFTEN. KETTENFLAGS: ANSPRUCH / KONTAMINATION / PFAND.",
+   "audio": "Der Behälter singt im Sonar. Tief und regelmäßig. Das ist Prozessrückstand, kein Leben. Behandle es schlimmer als Leben.",
+   "in_game_wiki": "Blaue Schuld ist Marauder-Slang für druckgebundene Xenon-Omega-Rückstände und die kontaminierten Substrate, die darum gewachsen sind. Es ist kein einzelnes Mineral. Es ist eine Familie aus kalten Gittern, Clathratkäfigen, Rechenasche, fehlgeschlagenem Eindämmgel und Tiefprozessschrott, den Deep-Reach-Ausrüstung hinterließ. Unter HECTON-8s Wassersäule bleibt es ruhig genug zum Transport. In Kabinenluft kann es reaktives Gas, glasigen Staub und juristischen Ärger abgeben. Das Material zählt, weil es drei Systeme zugleich verbindet: Hochenergie-Eindämmung, Atlas-kompatiblen Speicher und die Bergungswirtschaft. Eine versiegelte Probe kann Energiezellen, Werkzeuglizenzen oder einen Weg aus der Schuld kaufen. Dieselbe Probe kann den Carrier markieren, ein Pfand auslösen, eine Unterkunft vergiften oder belegen, dass Deep Reach für etwas zurückkam, das angeblich aufgegeben war.",
+   "external_site": "Blaue Schuld ist HECTON-8s gefährlichster Lohn: eine druckgebundene Ressource, die Maschinen speist, Deep-Reach-Infrastruktur offenlegt und einen Überlebenden zu Firmeneigentum machen kann.",
+   "external_site_article": "Blaue Schuld sorgt dafür, dass Bergung auf HECTON-8 zuerst profitabel klingt und erst danach sicher. Das Material ist kein Schatzkristall im Riff. Es ist Rückstand industrieller Drucksysteme: Xenon-Omega-Substrate, gescheiterte Eindämmmedien, Rechenschlacke und versiegelter Schrott, der stabil blieb, weil der Ozean nie aufhörte zu drücken. Hebe es falsch an und die Probe ändert ihren Zustand. Verkaufe es falsch und die Papierkette ändert dich. Dieses doppelte Risiko steckt im Namen. Blaue Schuld bezahlt Überlebende schnell, doch jeder Behälter trägt spätere Kosten: Dekontamination, Carrier-Pfandrechte, Black-Keel-Verwahrung, Deep-Reach-Anspruchssprache und die Möglichkeit, dass die Probe auch Beweis ist. Im größeren Lore ist die Ressource einer der ersten Hinweise, dass HECTON-8 nicht einfach verlassen wurde. Wertvolle Systeme liefen weiter unter Druck, dort unten, wo nur ein verzweifelter Operator sie anfassen würde."
+  },
+  "es_ES": {
+   "title": "Deuda azul",
+   "scanner": "Residuo Xenon-Omega retenido por presión. Estable en agua fría, oscura y aplastante; peligroso en aire cálido y baja presión.",
+   "field_note": "Lo llaman deuda azul porque cada gramo toma prestado del futuro. Paga por adelantado y luego manda cobradores.",
+   "terminal": "XO CONTINUITY SUBSTRATE. BLOQUEO DE PRESIÓN REQUERIDO. NO VENTILAR. MARCAS DE CUSTODIA: RECLAMACIÓN / CONTAMINACIÓN / GRAVAMEN.",
+   "audio": "El contenedor canta en el sonar. Bajo y regular. Eso es residuo de proceso, no vida. Trátalo peor que a la vida.",
+   "in_game_wiki": "Deuda azul es la jerga de los merodeadores para el residuo Xenon-Omega mantenido por presión y los sustratos contaminados crecidos alrededor. No es un mineral único. Es una familia de redes frías, jaulas de clatrato, ceniza computacional, gel de contención fallido y chatarra de proceso profundo dejada por equipos de Deep Reach. Bajo la columna de agua de HECTON-8 permanece lo bastante quieto para moverlo. En aire de cabina puede soltar gas reactivo, polvo vítreo y problemas legales. El material importa porque une tres sistemas a la vez: contención de alta energía, memoria compatible con Atlas y economía de salvamento. Una muestra sellada puede comprar celdas de energía, licencias de herramientas o una salida de la deuda. La misma muestra puede marcar el carrier, activar un gravamen, envenenar un refugio o demostrar que Deep Reach volvió por algo que decía haber abandonado.",
+   "external_site": "La deuda azul es el pago más peligroso de HECTON-8: un recurso sujeto a presión que alimenta máquinas, expone infraestructura de Deep Reach y puede convertir a un superviviente en propiedad corporativa.",
+   "external_site_article": "La Deuda azul hace que el salvamento en HECTON-8 parezca rentable antes de parecer seguro. El material no es un cristal de tesoro esperando en el arrecife. Es residuo de sistemas industriales de presión: sustratos Xenon-Omega, medios de contención fallidos, escoria computacional y chatarra sellada que siguió estable porque el océano nunca dejó de presionar. Sube la muestra mal y cambia de estado. Véndela mal y el rastro documental te cambia a ti. Ese doble riesgo da sentido al nombre. La deuda azul paga rápido a un superviviente, pero cada contenedor trae coste futuro: descontaminación, gravámenes de carrier, reglas de custodia de Black Keel, lenguaje de reclamación de Deep Reach y la posibilidad de que la muestra también sea prueba. En el lore mayor, el recurso es una de las primeras pistas de que HECTON-8 no fue abandonada sin más. Quedó con sistemas valiosos aún funcionando bajo presión, donde solo un operador desesperado aceptaría tocarlos."
+  },
+  "fr_FR": {
+   "title": "Dette bleue",
+   "scanner": "Résidu Xenon-Omega maintenu sous pression. Stable dans l'eau froide, noire et écrasante ; dangereux dans l'air chaud et la basse pression.",
+   "field_note": "On l'appelle dette bleue parce que chaque gramme emprunte au futur. Elle paie d'abord, puis envoie les collecteurs.",
+   "terminal": "XO CONTINUITY SUBSTRATE. VERROU DE PRESSION REQUIS. NE PAS PURGER. MARQUES DE GARDE : RÉCLAMATION / CONTAMINATION / GAGE.",
+   "audio": "Le conteneur chante au sonar. Bas et régulier. C'est un résidu de procédé, pas de la vie. Traite-le pire que la vie.",
+   "in_game_wiki": "Dette bleue est l'argot des maraudeurs pour les résidus Xenon-Omega gardés sous pression et les substrats contaminés qui ont poussé autour. Ce n'est pas un seul minerai. C'est une famille de réseaux froids, cages de clathrate, cendre de calcul, gel de confinement raté et rebut de procédé profond laissé par l'équipement Deep Reach. Sous la colonne d'eau de HECTON-8, le matériau reste assez calme pour être déplacé. Dans l'air de cabine, il peut relâcher du gaz réactif, de la poussière vitreuse et des ennuis juridiques. Il compte parce qu'il relie trois systèmes à la fois : confinement haute énergie, mémoire compatible Atlas et économie de récupération. Un échantillon scellé peut acheter des cellules d'énergie, des licences d'outils ou une sortie de dette. Le même échantillon peut marquer le carrier, déclencher un gage, empoisonner un abri ou prouver que Deep Reach est revenue chercher ce qu'elle disait avoir abandonné.",
+   "external_site": "La dette bleue est la paie la plus dangereuse de HECTON-8 : une ressource liée par la pression qui alimente les machines, expose l'infrastructure Deep Reach et peut changer un survivant en propriété corporative.",
+   "external_site_article": "La Dette bleue rend la récupération sur HECTON-8 rentable avant de la rendre sûre. Le matériau n'est pas un cristal de trésor dans le récif. C'est le résidu de systèmes industriels sous pression : substrats Xenon-Omega, milieux de confinement ratés, scorie computationnelle et rebut scellé resté stable parce que l'océan n'a jamais cessé d'appuyer. Remonte-le mal et l'échantillon change d'état. Vends-le mal et la piste documentaire te change toi. Ce double risque donne son nom au matériau. La dette bleue paie vite un survivant, mais chaque conteneur porte un coût futur : décontamination, gages de carrier, règles de garde Black Keel, langage de réclamation Deep Reach et possibilité que l'échantillon soit aussi une preuve. Dans le lore large, cette ressource est l'un des premiers indices que HECTON-8 n'a pas été simplement abandonnée. Des systèmes précieux y tournaient encore sous pression, là où seul un opérateur désespéré accepterait de les toucher."
+  },
+  "he_IL": {
+   "title": "חוב כחול",
+   "scanner": "שארית Xenon-Omega שמורה בלחץ. יציבה במים קרים, חשוכים ומוחצים; מסוכנת באוויר חם ובלחץ נמוך.",
+   "field_note": "קוראים לזה חוב כחול כי כל גרם לווה מן העתיד. הוא משלם מראש, ואז שולח גובים.",
+   "terminal": "XO CONTINUITY SUBSTRATE. נדרש נעילת לחץ. לא לאוורר. דגלי משמורת: תביעה / זיהום / שעבוד.",
+   "audio": "המכל שר בסונאר. נמוך וקבוע. זו שארית תהליך, לא חיים. התייחס אליה כגרועה מחיים.",
+   "in_game_wiki": "חוב כחול הוא סלנג של שודדי ים לשארית Xenon-Omega שנשמרה בלחץ ולמצעים המזוהמים שגדלו סביבה. זה אינו מינרל אחד. זו משפחה של סריגים קרים, כלובי קלאתרייט, אפר חישובי, ג'ל כליאה כושל וגרוטאות תהליך עומק שהשאיר ציוד Deep Reach. מתחת לעמוד המים של HECTON-8 החומר שקט מספיק כדי להזיז אותו. באוויר תא הוא עלול לפלוט גז תגובתי, אבק זכוכיתי וצרות משפטיות. החומר חשוב כי הוא מחבר שלוש מערכות בבת אחת: כליאת אנרגיה גבוהה, זיכרון תואם Atlas וכלכלת חילוץ. דגימה אטומה יכולה לקנות תאי כוח, רישיונות כלים או דרך החוצה מחוב. אותה דגימה יכולה לסמן את ה-carrier, להפעיל שעבוד, להרעיל מחסה או להוכיח ש-Deep Reach חזרה בשביל משהו שטענה שנטשה.",
+   "external_site": "חוב כחול הוא התשלום המסוכן ביותר של HECTON-8: משאב קשור בלחץ שיכול להזין מכונות, לחשוף תשתית Deep Reach ולהפוך ניצול לרכוש תאגידי.",
+   "external_site_article": "חוב כחול הוא מה שגורם לחילוץ ב-HECTON-8 להיראות רווחי לפני שהוא נראה בטוח. החומר אינו גביש אוצר שמחכה בשונית. הוא שארית של מערכות לחץ תעשייתיות: מצעי Xenon-Omega, אמצעי כליאה כושלים, סיגי חישוב וגרוטאות אטומות שנותרו יציבות כי האוקיינוס לא הפסיק ללחוץ עליהן. הרם אותו לא נכון והדגימה משנה מצב. מכור אותו לא נכון ושרשרת הנייר משנה אותך. הסיכון הכפול הזה הוא לב השם. חוב כחול משלם לניצול מהר, אבל כל מכל נושא עלות עתידית: טיהור, שעבודי carrier, כללי משמורת Black Keel, שפת תביעה של Deep Reach והאפשרות שהדגימה היא גם ראיה. בלור הרחב, המשאב הוא אחד הרמזים הראשונים לכך ש-HECTON-8 לא רק ננטשה. נותרו בה מערכות יקרות שעדיין פעלו תחת לחץ, במקום שבו רק מפעיל נואש יסכים לגעת בהן."
+  },
+  "id_ID": {
+   "title": "Utang Biru",
+   "scanner": "Residu Xenon-Omega yang ditahan tekanan. Stabil di air dingin, gelap, dan menghancurkan; berbahaya di udara hangat dan tekanan rendah.",
+   "field_note": "Mereka menyebutnya utang biru karena setiap gram meminjam dari masa depan. Ia membayar di muka, lalu mengirim penagih.",
+   "terminal": "XO CONTINUITY SUBSTRATE. KUNCI TEKANAN WAJIB. JANGAN VENTILASI. TANDA KUSTODI: KLAIM / KONTAMINASI / LIEN.",
+   "audio": "Kontainer bernyanyi di sonar. Rendah dan teratur. Itu residu proses, bukan kehidupan. Perlakukan lebih buruk daripada kehidupan.",
+   "in_game_wiki": "Utang biru adalah slang marauder untuk residu Xenon-Omega yang ditahan tekanan dan substrat tercemar yang tumbuh di sekitarnya. Itu bukan satu mineral. Itu keluarga kisi dingin, kandang klatrat, abu komputasi, gel penahanan gagal, dan scrap proses dalam yang ditinggalkan peralatan Deep Reach. Di bawah kolom air HECTON-8, ia cukup tenang untuk dipindahkan. Di udara kabin, ia dapat melepas gas reaktif, debu kaca, dan masalah hukum. Material ini penting karena mengikat tiga sistem sekaligus: penahanan energi tinggi, memori kompatibel Atlas, dan ekonomi salvage. Sampel tersegel bisa membeli sel daya, lisensi alat, atau jalan keluar dari utang. Sampel yang sama bisa menandai carrier, memicu lien, meracuni perlindungan, atau membuktikan Deep Reach kembali untuk sesuatu yang katanya telah ditinggalkan.",
+   "external_site": "Utang biru adalah bayaran paling berbahaya di HECTON-8: sumber daya terikat tekanan yang dapat menyalakan mesin, membuka infrastruktur Deep Reach, dan mengubah penyintas menjadi properti korporat.",
+   "external_site_article": "Utang Biru membuat salvage di HECTON-8 terasa menguntungkan sebelum terasa aman. Material itu bukan kristal harta yang menunggu di karang. Ia adalah residu sistem tekanan industri: substrat Xenon-Omega, media penahanan gagal, slag komputasi, dan scrap tersegel yang tetap stabil karena samudra tidak pernah berhenti menekannya. Angkat dengan cara salah dan sampel berubah keadaan. Jual dengan cara salah dan jejak dokumen mengubah dirimu. Risiko ganda itu adalah maksud namanya. Utang biru membayar penyintas dengan cepat, tetapi setiap kontainer membawa biaya masa depan: dekontaminasi, lien carrier, aturan kustodi Black Keel, bahasa klaim Deep Reach, dan kemungkinan bahwa sampel juga bukti. Dalam lore yang lebih luas, sumber daya ini menjadi salah satu petunjuk pertama bahwa HECTON-8 bukan sekadar ditinggalkan. Ia ditinggalkan dengan sistem bernilai masih berjalan di bawah tekanan, di tempat yang hanya operator putus asa mau menyentuhnya."
+  },
+  "ja_JP": {
+   "title": "青い負債",
+   "scanner": "圧力保持されたXenon-Omega残渣。冷たく暗い圧潰水中では安定。暖かい空気と低圧では危険。",
+   "field_note": "それを青い負債と呼ぶのは、1グラムごとに未来から借りているからだ。先払いし、そのあと回収人を送ってくる。",
+   "terminal": "XO CONTINUITY SUBSTRATE. 圧力ロック必須。ベント禁止。保管フラグ: 請求 / 汚染 / 留置権。",
+   "audio": "コンテナがソナーで歌っている。低く規則的だ。あれは生命ではなく処理残渣だ。生命より悪いものとして扱え。",
+   "in_game_wiki": "青い負債とは、圧力保持されたXenon-Omega残渣と、その周囲で育った汚染基質を指すマローダーの俗語だ。単一の鉱物ではない。冷たい格子、クラスレートの檻、計算灰、失敗した封じ込めゲル、Deep Reach装置が残した深部処理スクラップの総称である。HECTON-8の水柱の下では、動かせる程度には静かでいる。キャビン空気では反応性ガス、ガラス質の粉塵、法的な厄介事を放出しかねない。この物質が重要なのは、高エネルギー封じ込め、Atlas互換メモリ、サルベージ経済という三つの系を同時につなぐからだ。封印されたサンプルは電力セル、工具ライセンス、借金から出る道を買える。同じサンプルがcarrierを標識し、留置権を起動し、シェルターを汚染し、Deep Reachが捨てたと言ったものを取りに戻った証拠にもなる。",
+   "external_site": "青い負債はHECTON-8で最も危険な報酬だ。圧力に縛られた資源であり、機械を動かし、Deep Reachの基盤を露出させ、生存者を企業所有物に変え得る。",
+   "external_site_article": "青い負債があるから、HECTON-8のサルベージは安全に見える前に儲かりそうに見える。この物質は礁に眠る宝石ではない。産業圧力システムの残りかすだ。Xenon-Omega基質、失敗した封じ込め媒体、計算スラグ、そして海が押し続けたために安定していた封印スクラップ。間違って引き上げればサンプルは状態を変える。間違って売れば書類の痕跡があなたの身分を変える。その二重の危険が名前の意味だ。青い負債は生存者に素早く支払うが、各コンテナは未来の費用を運ぶ。除染、carrierの留置権、Black Keelの保管規則、Deep Reachの請求語彙、そしてサンプルが証拠でもある可能性。広いロアでは、この資源はHECTON-8が単に放棄されたわけではないという最初の手がかりの一つだ。価値あるシステムが圧力下でまだ動いており、触ろうとするのは追い詰められたオペレーターだけだった。"
+  },
+  "ko_KR": {
+   "title": "푸른 빚",
+   "scanner": "압력 보존 Xenon-Omega 잔류물. 차갑고 어둡고 짓누르는 물속에서는 안정. 따뜻한 공기와 저압에서는 위험.",
+   "field_note": "이것을 푸른 빚이라 부르는 이유는 1그램마다 미래에서 빌려 오기 때문이다. 먼저 돈을 주고, 나중에 추심자를 보낸다.",
+   "terminal": "XO CONTINUITY SUBSTRATE. 압력 잠금 필요. 배출 금지. 보관 플래그: 청구 / 오염 / 유치권.",
+   "audio": "컨테이너가 소나에서 노래한다. 낮고 규칙적이다. 저건 생명이 아니라 공정 잔류물이다. 생명보다 더 나쁘게 다뤄라.",
+   "in_game_wiki": "푸른 빚은 압력으로 보존된 Xenon-Omega 잔류물과 그 주변에 자란 오염 기질을 가리키는 마라우더 은어다. 단일 광물이 아니다. 차가운 격자, 클라스레이트 우리, 계산 재, 실패한 봉쇄 젤, Deep Reach 장비가 남긴 심부 공정 스크랩의 계열이다. HECTON-8의 수주 아래에서는 옮길 수 있을 만큼 조용하다. 객실 공기에서는 반응성 가스, 유리 같은 먼지, 법적 문제를 내뿜을 수 있다. 이 물질이 중요한 이유는 고에너지 봉쇄, Atlas 호환 메모리, salvage 경제라는 세 시스템을 동시에 잇기 때문이다. 봉인된 샘플은 전력 셀, 공구 라이선스, 빚에서 나갈 길을 살 수 있다. 같은 샘플이 carrier를 표시하고, 유치권을 발동하고, 대피처를 오염시키고, Deep Reach가 버렸다고 주장한 것을 되찾으러 왔다는 증거가 될 수도 있다.",
+   "external_site": "푸른 빚은 HECTON-8에서 가장 위험한 보수다. 압력에 묶인 자원으로, 기계를 먹이고 Deep Reach 기반시설을 드러내며 생존자를 기업 재산으로 바꿀 수 있다.",
+   "external_site_article": "푸른 빚 때문에 HECTON-8의 salvage는 안전해 보이기 전에 수익성 있어 보인다. 이 물질은 암초에 기다리는 보물 결정이 아니다. 산업 압력 시스템의 잔류물이다. Xenon-Omega 기질, 실패한 봉쇄 매질, 계산 슬래그, 그리고 바다가 계속 누르고 있었기 때문에 안정했던 봉인 스크랩. 잘못 올리면 샘플은 상태를 바꾼다. 잘못 팔면 문서 흔적이 너를 바꾼다. 그 이중 위험이 이름의 핵심이다. 푸른 빚은 생존자에게 빠르게 돈을 주지만, 모든 컨테이너는 미래 비용을 운반한다. 제염, carrier 유치권, Black Keel 보관 규칙, Deep Reach 청구 언어, 그리고 샘플이 증거이기도 할 가능성. 더 큰 로어에서 이 자원은 HECTON-8이 단순히 버려진 곳이 아니었다는 첫 단서 중 하나다. 귀중한 시스템은 압력 아래에서 아직 돌아가고 있었고, 그것을 만지려는 사람은 절박한 오퍼레이터뿐이었다."
+  },
+  "nl_NL": {
+   "title": "Blauwe schuld",
+   "scanner": "Door druk bewaarde Xenon-Omega-rest. Stabiel in koud, donker, verpletterend water; gevaarlijk in warme lucht en lage druk.",
+   "field_note": "Ze noemen het blauwe schuld omdat elke gram van de toekomst leent. Het betaalt vooraf en stuurt daarna incasso.",
+   "terminal": "XO CONTINUITY SUBSTRATE. DRUKSLOT VEREIST. NIET ONTLUCHTEN. BEWAARFLAGS: CLAIM / BESMETTING / PANDRECHT.",
+   "audio": "De container zingt op sonar. Laag en regelmatig. Dat is procesresidu, geen leven. Behandel het erger dan leven.",
+   "in_game_wiki": "Blauwe schuld is marauder-slang voor door druk bewaarde Xenon-Omega-resten en de besmette substraten die eromheen groeiden. Het is geen enkel mineraal. Het is een familie van koude roosters, clathraatkooien, rekenas, mislukt insluitingsgel en diep-procesafval van Deep Reach-apparatuur. Onder HECTON-8s waterkolom blijft het stil genoeg om te verplaatsen. In cabinelucht kan het reactief gas, glasachtig stof en juridische problemen afgeven. Het materiaal telt omdat het drie systemen tegelijk verbindt: hoogenergetische insluiting, Atlas-compatibel geheugen en de salvage-economie. Een verzegeld monster kan energiecellen, gereedschapslicenties of een weg uit schuld kopen. Hetzelfde monster kan de carrier markeren, een pandrecht activeren, een onderkomen vergiftigen of bewijzen dat Deep Reach terugkwam voor iets waarvan het zei dat het was achtergelaten.",
+   "external_site": "Blauwe schuld is HECTON-8s gevaarlijkste loon: een door druk gebonden grondstof die machines voedt, Deep Reach-infrastructuur blootlegt en een overlever in bedrijfseigendom kan veranderen.",
+   "external_site_article": "Blauwe schuld maakt salvage op HECTON-8 winstgevend voordat het veilig voelt. Het materiaal is geen schatkristal in het rif. Het is residu van industriële druksystemen: Xenon-Omega-substraten, mislukte insluitingsmedia, rekenslak en verzegeld afval dat stabiel bleef omdat de oceaan bleef drukken. Haal het verkeerd omhoog en het monster verandert van toestand. Verkoop het verkeerd en het papierpad verandert jou. Dat dubbele risico is de naam. Blauwe schuld betaalt een overlever snel, maar elke container draagt toekomstige kosten: decontaminatie, carrier-pandrechten, Black Keel-bewaarregels, Deep Reach-claimtaal en de kans dat het monster ook bewijs is. In de bredere lore is de grondstof een van de eerste aanwijzingen dat HECTON-8 niet alleen verlaten werd. Waardevolle systemen bleven onder druk draaien, waar alleen een wanhopige operator ze zou aanraken."
+  },
+  "pl_PL": {
+   "title": "Niebieski dług",
+   "scanner": "Pozostałość Xenon-Omega utrzymana ciśnieniem. Stabilna w zimnej, ciemnej, miażdżącej wodzie; groźna w ciepłym powietrzu i niskim ciśnieniu.",
+   "field_note": "Nazywają to niebieskim długiem, bo każdy gram pożycza z przyszłości. Płaci z góry, a potem wysyła windykatorów.",
+   "terminal": "XO CONTINUITY SUBSTRATE. WYMAGANA BLOKADA CIŚNIENIA. NIE ODPOWIETRZAĆ. FLAGI OPIEKI: ROSZCZENIE / SKAŻENIE / ZASTAW.",
+   "audio": "Pojemnik śpiewa w sonarze. Nisko i regularnie. To pozostałość procesu, nie życie. Traktuj to gorzej niż życie.",
+   "in_game_wiki": "Niebieski dług to slang marauderów na pozostałość Xenon-Omega utrzymaną ciśnieniem oraz skażone substraty wyrosłe wokół niej. To nie jeden minerał. To rodzina zimnych sieci, klatkowych klatratów, popiołu obliczeniowego, nieudanego żelu izolacyjnego i głębokoprocesowego złomu po sprzęcie Deep Reach. Pod kolumną wody HECTON-8 pozostaje dość spokojny, by dało się go przenieść. W powietrzu kabiny może oddać reaktywny gaz, szklisty pył i kłopoty prawne. Materiał ma znaczenie, bo łączy trzy systemy naraz: wysokenergetyczne zamknięcie, pamięć zgodną z Atlasem i ekonomię salvage. Zapieczętowana próbka może kupić ogniwa zasilania, licencje narzędzi albo wyjście z długu. Ta sama próbka może oznaczyć carrier, uruchomić zastaw, zatruć schronienie albo dowieść, że Deep Reach wróciło po coś, co rzekomo porzuciło.",
+   "external_site": "Niebieski dług to najniebezpieczniejsza wypłata HECTON-8: zasób związany ciśnieniem, który zasila maszyny, odsłania infrastrukturę Deep Reach i może zmienić ocalałego we własność korporacji.",
+   "external_site_article": "Niebieski dług sprawia, że salvage na HECTON-8 wygląda opłacalnie, zanim wygląda bezpiecznie. Materiał nie jest skarbem w rafie. To pozostałość przemysłowych systemów ciśnieniowych: substraty Xenon-Omega, nieudane media izolacyjne, żużel obliczeniowy i zapieczętowany złom, który pozostał stabilny, bo ocean nigdy nie przestał na niego naciskać. Podnieś go źle, a próbka zmieni stan. Sprzedaj go źle, a ślad papierowy zmieni ciebie. To podwójne ryzyko jest sensem nazwy. Niebieski dług szybko płaci ocalałemu, ale każdy pojemnik niesie przyszły koszt: dekontaminację, zastawy carriera, zasady opieki Black Keel, język roszczeń Deep Reach i szansę, że próbka jest też dowodem. W szerszym lore zasób jest jedną z pierwszych wskazówek, że HECTON-8 nie zostało zwyczajnie opuszczone. Cenne systemy nadal działały pod ciśnieniem, tam gdzie tylko zdesperowany operator zgodziłby się ich dotknąć."
+  },
+  "pt_BR": {
+   "title": "Dívida azul",
+   "scanner": "Resíduo Xenon-Omega mantido por pressão. Estável em água fria, escura e esmagadora; perigoso em ar quente e baixa pressão.",
+   "field_note": "Chamam de dívida azul porque cada grama toma emprestado do futuro. Paga na frente e depois manda cobradores.",
+   "terminal": "XO CONTINUITY SUBSTRATE. TRAVA DE PRESSÃO OBRIGATÓRIA. NÃO VENTILAR. MARCAS DE CUSTÓDIA: REIVINDICAÇÃO / CONTAMINAÇÃO / LIEN.",
+   "audio": "O contêiner está cantando no sonar. Baixo e regular. Isso é resíduo de processo, não vida. Trate como pior que vida.",
+   "in_game_wiki": "Dívida azul é a gíria dos marauders para resíduo Xenon-Omega mantido por pressão e os substratos contaminados crescidos ao redor. Não é um mineral único. É uma família de redes frias, gaiolas de clatrato, cinza computacional, gel de contenção falho e sucata de processo profundo deixada por equipamento da Deep Reach. Sob a coluna d'água de HECTON-8, fica quieta o bastante para ser movida. No ar da cabine, pode soltar gás reativo, poeira vítrea e problema legal. O material importa porque liga três sistemas ao mesmo tempo: contenção de alta energia, memória compatível com Atlas e economia de salvage. Uma amostra selada pode comprar células de energia, licenças de ferramenta ou uma rota para fora da dívida. A mesma amostra pode marcar o carrier, acionar um lien, envenenar um abrigo ou provar que a Deep Reach voltou por algo que dizia ter abandonado.",
+   "external_site": "Dívida azul é o pagamento mais perigoso de HECTON-8: um recurso preso por pressão que alimenta máquinas, expõe infraestrutura da Deep Reach e pode transformar um sobrevivente em propriedade corporativa.",
+   "external_site_article": "Dívida azul faz o salvage em HECTON-8 parecer lucrativo antes de parecer seguro. O material não é um cristal de tesouro esperando no recife. É resíduo de sistemas industriais de pressão: substratos Xenon-Omega, meios de contenção falhos, escória computacional e sucata selada que permaneceu estável porque o oceano nunca parou de pressioná-la. Suba errado e a amostra muda de estado. Venda errado e a trilha de papel muda você. Esse risco duplo é o sentido do nome. Dívida azul paga rápido a um sobrevivente, mas cada contêiner carrega custo futuro: descontaminação, liens de carrier, regras de custódia da Black Keel, linguagem de reivindicação da Deep Reach e a chance de que a amostra também seja prova. No lore maior, o recurso é uma das primeiras pistas de que HECTON-8 não foi simplesmente abandonada. Ela ficou com sistemas valiosos ainda rodando sob pressão, onde só um operador desesperado aceitaria tocar."
+  },
+  "ru_RU": {
+   "title": "Синий долг",
+   "scanner": "Остаток Xenon-Omega, удержанный давлением. Стабилен в холодной, темной, давящей воде; опасен в теплом воздухе и низком давлении.",
+   "field_note": "Его называют синим долгом, потому что каждый грамм берет взаймы у будущего. Сначала платит, потом присылает взыскателей.",
+   "terminal": "XO CONTINUITY SUBSTRATE. ТРЕБУЕТСЯ БЛОК ДАВЛЕНИЯ. НЕ СТРАВЛИВАТЬ. ФЛАГИ ХРАНЕНИЯ: ПРЕТЕНЗИЯ / ЗАГРЯЗНЕНИЕ / ЗАЛОГ.",
+   "audio": "Контейнер поет на сонаре. Низко и ровно. Это технологический остаток, не жизнь. Обращайся с ним хуже, чем с жизнью.",
+   "in_game_wiki": "Синий долг — мародерский сленг для остатков Xenon-Omega, удержанных давлением, и загрязненных субстратов, выросших вокруг них. Это не один минерал. Это семейство холодных решеток, клатратных клеток, вычислительного пепла, проваленного удерживающего геля и глубинного технологического лома, оставленного оборудованием Deep Reach. Под водяным столбом HECTON-8 материал достаточно тих, чтобы его можно было перемещать. В воздухе кабины он может сбросить реактивный газ, стеклянную пыль и юридические проблемы. Он важен, потому что связывает сразу три системы: высокоэнергетическое удержание, память, совместимую с Atlas, и экономику salvage. Запечатанный образец может купить энергоячейки, лицензии на инструмент или выход из долга. Тот же образец может пометить carrier, активировать залог, отравить укрытие или доказать, что Deep Reach вернулась за тем, что называла брошенным.",
+   "external_site": "Синий долг — самая опасная плата HECTON-8: ресурс, связанный давлением, который питает машины, вскрывает инфраструктуру Deep Reach и может превратить выжившего в корпоративную собственность.",
+   "external_site_article": "Синий долг делает salvage на HECTON-8 прибыльным раньше, чем безопасным. Это не драгоценный кристалл, ожидающий в рифе. Это остаток индустриальных систем давления: субстраты Xenon-Omega, неудачные среды удержания, вычислительный шлак и запечатанный лом, который оставался стабильным, потому что океан не переставал давить. Подними его неправильно — образец сменит состояние. Продай его неправильно — бумажный след сменит тебя. В этом двойном риске и смысл названия. Синий долг быстро платит выжившему, но каждый контейнер несет будущую цену: деконтаминацию, залоги carrier, правила хранения Black Keel, язык претензий Deep Reach и шанс, что образец одновременно является уликой. В большом лоре этот ресурс — одна из первых подсказок, что HECTON-8 не просто бросили. Там оставили ценные системы, которые продолжали работать под давлением, где к ним согласился бы прикоснуться только отчаявшийся оператор."
+  },
+  "uk_UA": {
+   "title": "Синій борг",
+   "scanner": "Залишок Xenon-Omega, утриманий тиском. Стабільний у холодній, темній, нищівній воді; небезпечний у теплому повітрі й низькому тиску.",
+   "field_note": "Його називають синім боргом, бо кожен грам позичає в майбутнього. Спершу платить, потім надсилає стягувачів.",
+   "terminal": "XO CONTINUITY SUBSTRATE. ПОТРІБЕН БЛОК ТИСКУ. НЕ СТРАВЛЮВАТИ. ПРАПОРИ ЗБЕРІГАННЯ: ПРЕТЕНЗІЯ / ЗАБРУДНЕННЯ / ЗАСТАВА.",
+   "audio": "Контейнер співає на сонарі. Низько й рівно. Це технологічний залишок, не життя. Стався до нього гірше, ніж до життя.",
+   "in_game_wiki": "Синій борг — мародерський сленг для залишків Xenon-Omega, утриманих тиском, і забруднених субстратів, що виросли навколо них. Це не один мінерал. Це родина холодних ґраток, клатратних кліток, обчислювального попелу, проваленого гелю утримання й глибинного технологічного брухту, залишеного обладнанням Deep Reach. Під водяним стовпом HECTON-8 матеріал достатньо тихий, щоб його можна було переміщати. У повітрі кабіни він може випустити реактивний газ, скляний пил і юридичні проблеми. Матеріал важить, бо поєднує одразу три системи: високоенергетичне утримання, пам'ять, сумісну з Atlas, і економіку salvage. Запечатаний зразок може купити енергоелементи, ліцензії на інструмент або шлях із боргу. Той самий зразок може позначити carrier, активувати заставу, отруїти укриття або довести, що Deep Reach повернулася по те, що називала покинутим.",
+   "external_site": "Синій борг — найнебезпечніша платня HECTON-8: ресурс, зв'язаний тиском, що живить машини, відкриває інфраструктуру Deep Reach і може перетворити вцілілого на корпоративну власність.",
+   "external_site_article": "Синій борг робить salvage на HECTON-8 прибутковим раніше, ніж безпечним. Це не коштовний кристал, що чекає в рифі. Це залишок індустріальних систем тиску: субстрати Xenon-Omega, невдалі середовища утримання, обчислювальний шлак і запечатаний брухт, який лишався стабільним, бо океан не припиняв тиснути. Підійми його неправильно — зразок змінить стан. Продай його неправильно — паперовий слід змінить тебе. У цьому подвійному ризику й сенс назви. Синій борг швидко платить вцілілому, але кожен контейнер несе майбутню ціну: деконтамінацію, застави carrier, правила зберігання Black Keel, мову претензій Deep Reach і шанс, що зразок також є доказом. У ширшому лорі цей ресурс — одна з перших підказок, що HECTON-8 не просто покинули. Там залишили цінні системи, які досі працювали під тиском, де торкнутися їх погодився б лише відчайдушний оператор."
+  },
+  "zh_CN": {
+   "title": "蓝债",
+   "scanner": "压力保存的Xenon-Omega残留物。在寒冷、黑暗、碾压般的水中稳定；在温暖空气和低压中危险。",
+   "field_note": "他们叫它蓝债，因为每一克都向未来借款。它先付款，然后派收债人来。",
+   "terminal": "XO CONTINUITY SUBSTRATE。需要压力锁。不得排放。保管标记：索赔 / 污染 / 留置权。",
+   "audio": "容器在声呐上歌唱。低沉而规律。那是工艺残留，不是生命。把它当成比生命更糟的东西处理。",
+   "in_game_wiki": "蓝债是掠夺者对压力保存Xenon-Omega残留物及其周围污染基质的俗称。它不是单一矿物，而是一族冷晶格、笼形包合物、计算灰、失败的约束凝胶，以及Deep Reach设备留下的深层工艺废料。在HECTON-8的水柱下，它安静到足以移动。进入舱内空气后，它可能释放反应性气体、玻璃状粉尘和法律麻烦。它重要，是因为它同时连接三套系统：高能约束、Atlas兼容记忆，以及salvage经济。密封样本可以买到能源电池、工具许可或脱离债务的路。同一份样本也可能标记carrier，触发留置权，毒害庇护所，或证明Deep Reach回来寻找它声称已经放弃的东西。",
+   "external_site": "蓝债是HECTON-8最危险的报酬：一种受压力束缚的资源，能供养机器，暴露Deep Reach基础设施，并把幸存者变成公司财产。",
+   "external_site_article": "蓝债让HECTON-8上的salvage先显得有利可图，然后才显得安全。这种材料不是等在礁石里的宝石晶体。它是工业压力系统的残留：Xenon-Omega基质、失败的约束介质、计算炉渣，以及因为海洋从未停止施压而保持稳定的密封废料。错误地提起它，样本会改变状态。错误地出售它，纸面记录会改变你。这种双重风险正是名字的含义。蓝债会很快付钱给幸存者，但每个容器都带着未来成本：去污、carrier留置权、Black Keel保管规则、Deep Reach索赔语言，以及样本本身也可能是证据的可能。在更大的 lore 中，这种资源是最早说明HECTON-8并非单纯被遗弃的线索之一。它被留下时，仍有贵重系统在压力下运行，只有走投无路的操作员才会愿意触碰它们。"
   }
+ },
+ "content_class": "in_world_artifact"
 }

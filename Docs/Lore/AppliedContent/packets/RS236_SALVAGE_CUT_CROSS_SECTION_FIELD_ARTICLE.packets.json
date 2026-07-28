@@ -1,258 +1,259 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS236_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS236_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1315_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE",
+   "release_set_id": "RS236_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE",
+   "article_id": "applied_lore.salvage_cut_cross_section_field_article",
+   "title_key": "LORE_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
+    "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1315_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE",
-      "release_set_id": "RS236_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE",
-      "article_id": "applied_lore.salvage_cut_cross_section_field_article",
-      "title_key": "LORE_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
-        "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.salvage_cut_cross_section_field_article",
-        "secondary": [
-          "unlock.first_open_hull_cut_edge",
-          "unlock.first_exposed_ceramic_insulation_layer",
-          "unlock.first_burned_cutter_line"
-        ],
-        "poi_tags": [
-          "poi.salvage_cut_cross_section",
-          "poi.torn_painted_hull_edge",
-          "poi.exposed_dark_metal_core",
-          "poi.ceramic_insulation_slice",
-          "poi.burned_cutter_line",
-          "poi.salt_stained_fracture_edge"
-        ],
-        "biome_tags": [
-          "biome.old_colony_wreck_field",
-          "biome.flooded_pressure_module",
-          "biome.salvage_route",
-          "biome.black_keel_claim_zone"
-        ],
-        "first_20_boundary": "Makes opened hulls and cut panels readable as route evidence: paint layer, metal core, ceramic insulation, gasket slice, cable bundle and cutter burn order."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Material Cut Scanner",
-          "terminal": "Black Keel Salvage Handling Note",
-          "audio": "Suit Recorder At Open Hull Edge",
-          "in_game_wiki": "PDA Salvage Cut Primer",
-          "external_site": "Public Site Salvage Cross-Section Article",
-          "field_note": "Marauder Cut-Edge Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_open_hull_cut_edge_or_salvage_panel",
-        "truth_payload": "A salvage-cut cross-section records the order of force: original hull construction, pressure fatigue, official repair, later cutter work, and post-flood mineral staining.",
-        "player_question": "Was this panel opened during rescue, during looting, or after the station was already too wet to pretend anything was controlled?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Salvage-Cut Cross-Section Field Article",
-          "scanner": "SALVAGE CUT EDGE // Painted hull skin, dark pressure metal, ceramic insulation, rubber gasket slice, cable-bundle cross-section, burned cutter line and salt-stained fracture edge. Cut sequence is readable.",
-          "terminal": "BLACK KEEL HANDLING // Do not price a cut panel by outer paint. Record exposed core, insulation waterline, cable state and burn direction. A clean edge can still be stolen evidence.",
-          "audio": "Edge is still warm in the insulation. Cutter was not here with the first flood.",
-          "in_game_wiki": "A salvage-cut cross-section is an opened wound in a pressure structure. The useful part is not the hole. The useful part is the order: paint, primer, dark load-bearing metal, ceramic insulation, rubber seal, cable bundle, heat-browned edge, salt after the water found it. A player who reads that order can tell whether a panel failed, was repaired, was cut for access, or was stripped after everyone had stopped calling the module recoverable.\n\nHECTON-8 hulls were not clean spaceship skins. A base wall could carry off-white paint, graphite ribs, sprayed ceramic backing, gasket lips, cable trays and patch plates from three maintenance periods. When a cutter opens it, the layers appear in cross-section. Fresh cut metal is darker and sharper. Old pressure cracks feather the primer before the cut reaches them. Ceramic insulation drinks water at the edge and turns chalky. Rubber gaskets smear instead of chipping. Cable bundles show copper, fiber and black jacket in one exposed bite.\n\nFor salvage, the edge is evidence. A burned line that runs over old salt means the cut came after flooding. Salt inside the insulation but not on the outer paint means water traveled through the wall before anyone opened it. A cable bundle sliced cleanly with no tagged isolation mark means the worker was moving fast or did not care what the cable still fed. If a gasket slice is glossy and compressed, the door or module was still being pressured when the cut was made. If the ceramic layer flakes into the room, the wall dried under air for a time before the next flood.\n\nThe scanner should not treat every cut as a loot prompt. Some cross-sections mark safe access into a service chase. Some warn that the visible path crosses live power, oxygen, coolant or data lines. Some are legal evidence: who cut first, who returned later, and which company tried to turn a rescue breach into a claimable salvage boundary. Marauders learn to read the burn direction before cutting deeper. The ocean does not erase a cutter line quickly. It salts it, stains it and lets small organisms decide which layer was easiest to inhabit.\n\nThe public story usually says opened wrecks are chaotic. They are not. A trained cutter leaves a grammar. Start notch. Slow corner. Pause where the tool met reinforcement. Wider burn where the operator lost cooling. A second pass that avoids a cable tray. A careless pass through the cable tray anyway. In a drowned colony, that grammar can matter more than the terminal beside it, because terminals lie in complete sentences and hull edges lie one layer at a time.\n\nBlack Keel payout clerks want mass, alloy class and custody. Deep Reach reports want failure category. The player needs something more immediate: can this edge be touched, cut, followed, sealed or ignored? A good salvage-cut cross-section answers with material. Paint says surface. Metal says load. Ceramic says heat and pressure. Rubber says seal. Cable says consequence. Burn says who came after the original accident.",
-          "external_site": "Salvage-cut cross-sections make opened HECTON-8 hulls readable: exposed paint, metal, insulation, gasket, cable and cutter-burn layers reveal repair order, flood timing and salvage custody.",
-          "external_site_article": "A salvage-cut cross-section is the readable edge left when a pressure panel, wreck plate or old colony wall has been opened by tool force. The exposed layers matter more than the missing piece. Paint, primer, metal, ceramic insulation, gasket rubber, cable bundles, burn marks and salt deposits each record a different moment.\n\nIn play, these edges can guide access, warn against live systems, or expose late human activity. Burn over salt points to a post-flood cut. Chalky insulation shows water movement inside the wall. A cleanly severed cable bundle can mean a hurried breach or a deliberate disabling cut. Compressed gasket rubber can show that pressure was still part of the system when the edge was made.\n\nThe article also separates salvage culture from simple looting. A Marauder reads the cut because custody, hazard and route value all sit in the same exposed seam. The edge says what the terminal may hide: who opened the hull, what they risked, and whether the path is worth following.",
-          "field_note": "Cut edges keep time better than clocks. Salt first, burn second means somebody came back after the room drowned."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "مقالة ميدانية عن مقطع القطع الإنقاذي",
-          "scanner": "حافة قطع إنقاذي // جلد طلاء خارجي، معدن ضغط داكن، عازل خزفي، شريحة حشية مطاطية، مقطع حزمة كابلات، خط قاطع محترق وحافة كسر ملوثة بالملح. ترتيب القطع قابل للقراءة.",
-          "terminal": "مناولة BLACK KEEL // لا تسعر اللوح المقطوع من الطلاء وحده. سجل القلب المكشوف، خط ماء العازل، حالة الكابلات واتجاه الحرق. الحافة النظيفة قد تظل دليلا مسروقا.",
-          "audio": "العازل عند الحافة ما زال دافئا. هذا القاطع لم يكن هنا مع أول غمر.",
-          "in_game_wiki": "مقطع القطع الإنقاذي جرح مفتوح في بنية ضغط. الفتحة ليست هي الشيء المهم. المهم هو الترتيب: طلاء، أساس، معدن حامل داكن، عازل خزفي، ختم مطاطي، حزمة كابلات، حافة مسمرة بالحرارة، ثم ملح جاء بعد أن عثرت المياه على الطريق. من يقرأ هذا الترتيب يستطيع معرفة هل فشل اللوح، أم أصلح، أم قطع للوصول، أم جرد بعد أن توقف الناس عن تسميته قابلا للاسترداد.\n\nجدران HECTON-8 لم تكن قشرة سفينة نظيفة. قد يحمل جدار قاعدة طلاء أبيض باهتا، أضلاع جرافيت، دعامة خزفية مرشوشة، شفاه حشيات، مسارات كابلات وصفائح رقع من ثلاث فترات صيانة. عندما يفتحه قاطع تظهر الطبقات في المقطع. المعدن المقطوع حديثا أدكن وأحد. الشقوق القديمة تنفش طبقة الأساس قبل أن يصل إليها القطع. العازل الخزفي يشرب الماء عند الحافة ويتحول إلى طباشير. المطاط يلطخ بدلا من أن يتكسر.\n\nالحافة في عمل الإنقاذ دليل. خط حرق فوق ملح قديم يعني أن القطع جاء بعد الغمر. وجود ملح داخل العازل لا على الطلاء الخارجي يعني أن الماء سار داخل الجدار قبل أن يفتحه أحد. حزمة كابلات مقطوعة بلا علامة عزل تعني أن العامل كان مستعجلا أو لم يبال بما كانت الكابلات تغذيه. إذا كانت شريحة الحشية لامعة ومضغوطة، فالنظام كان لا يزال يتعامل مع الضغط وقت القطع.\n\nلا ينبغي للماسح أن يعامل كل فتحة كدعوة نهب. بعض المقاطع تفتح طريقا آمنا إلى ممر خدمة. بعضها يحذر من طاقة أو أكسجين أو تبريد أو بيانات ما زالت تمر. وبعضها دليل قانوني: من قطع أولا، ومن عاد لاحقا، وأي شركة حاولت تحويل ثغرة إنقاذ إلى حد مطالبة. يتعلم المغير قراءة اتجاه الحرق قبل أن يقطع أعمق.",
-          "external_site": "مقاطع القطع الإنقاذي تجعل هياكل HECTON-8 المفتوحة قابلة للقراءة: طبقات الطلاء والمعدن والعازل والحشية والكابل والحرق تكشف ترتيب الإصلاح ووقت الغمر وحيازة الإنقاذ.",
-          "external_site_article": "مقطع القطع الإنقاذي هو الحافة التي تبقى عندما يفتح قاطع لوح ضغط أو قطعة حطام أو جدار مستعمرة قديم. الطبقات المكشوفة أهم من القطعة المفقودة: الطلاء، الأساس، المعدن، العازل الخزفي، المطاط، الكابلات، آثار الحرق ورواسب الملح.\n\nفي اللعب يمكن لهذه الحافة أن تقود إلى مسار، أو تحذر من نظام حي، أو تكشف عودة بشرية متأخرة. الحرق فوق الملح يعني قطعا بعد الغمر. العازل الطباشيري يكشف حركة الماء داخل الجدار. الكابل المقطوع بنظافة قد يعني فتحا مستعجلا أو تعطيلا مقصودا.\n\nهذا يفرق ثقافة الإنقاذ عن النهب البسيط. المغير يقرأ القطع لأن الحيازة والخطر وقيمة الطريق كلها موجودة في نفس الشق المكشوف.",
-          "field_note": "حواف القطع تحفظ الوقت أفضل من الساعات. ملح أولا ثم حرق يعني أن أحدهم عاد بعد غرق الغرفة."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Feldartikel: Bergeschnitt-Querschnitt",
-          "scanner": "BERGESCHNITTKANTE // Lackierte Hauthuelle, dunkles Druckmetall, Keramikisolierung, Gummidichtung, Kabelbuendel im Schnitt, verbrannte Schneidlinie und salzverfaerbte Bruchkante. Die Schnittfolge ist lesbar.",
-          "terminal": "BLACK-KEEL-HANDHABUNG // Eine geschnittene Platte nicht nach Aussenlack bewerten. Freigelegten Kern, Wasserlinie der Isolierung, Kabelzustand und Brandrichtung erfassen. Eine saubere Kante kann gestohlene Beweislage sein.",
-          "audio": "Die Isolierung an der Kante ist noch warm. Dieser Schneider war nicht beim ersten Fluten hier.",
-          "in_game_wiki": "Ein Bergeschnitt-Querschnitt ist eine offene Wunde in einer Druckstruktur. Nicht das Loch ist nuetzlich, sondern die Reihenfolge: Lack, Grundierung, dunkles tragendes Metall, Keramikisolierung, Gummidichtung, Kabelbuendel, hitzegebrannter Rand, Salz nachdem das Wasser ihn gefunden hat. Wer diese Reihenfolge liest, erkennt, ob eine Platte versagte, repariert wurde, fuer Zugang geschnitten wurde oder erst nach der Aufgabe des Moduls ausgeschlachtet wurde.\n\nHECTON-8-Huellen waren keine sauberen Raumfahrzeughaeute. Eine Basiswand konnte matten weissen Lack, Graphitrippen, gespritzte Keramik, Dichtungslippen, Kabelrinnen und Flicken aus mehreren Wartungsperioden tragen. Oeffnet ein Schneider sie, werden diese Schichten sichtbar. Frischer Schnitt ist dunkler und schaerfer. Alte Druckrisse federn die Grundierung auf. Keramik saugt an der Kante Wasser und wird kreidig. Gummi schmiert, statt zu splittern.\n\nIn der Bergung ist die Kante Beweis. Brand ueber altem Salz heisst: der Schnitt kam nach dem Fluten. Salz in der Isolierung, aber nicht auf dem Aussenlack, bedeutet Wasserweg im Inneren der Wand. Ein sauber getrenntes Kabelbuendel ohne Isolationsmarke zeigt Eile oder Gleichgueltigkeit. Eine glaenzend gepresste Dichtung zeigt, dass Druck beim Schnitt noch eine Rolle spielte.\n\nDer Scanner darf nicht jeden Schnitt als Beuteaufforderung behandeln. Manche Kanten fuehren sicher in einen Serviceschacht. Manche warnen vor Strom, Sauerstoff, Kuehlmittel oder Datenleitungen. Andere sind Rechtsbeweise: wer zuerst schnitt, wer spaeter zurueckkam und wer eine Rettungsbreach als Bergungsgrenze verkaufen wollte.",
-          "external_site": "Bergeschnitt-Querschnitte machen geoeffnete HECTON-8-Huellen lesbar: Lack, Metall, Isolierung, Dichtung, Kabel und Schneidbrand zeigen Reparaturfolge, Flutzeit und Bergungscustody.",
-          "external_site_article": "Ein Bergeschnitt-Querschnitt ist die Kante, die bleibt, wenn ein Druckpanel, Wrackblech oder alter Koloniewandabschnitt mit Werkzeugkraft geoeffnet wurde. Die fehlende Platte ist weniger wichtig als die freigelegten Schichten.\n\nIm Spiel koennen solche Kanten Zugang markieren, vor aktiven Systemen warnen oder spaete menschliche Rueckkehr beweisen. Brand ueber Salz deutet auf einen Schnitt nach dem Fluten. Kreidige Keramik zeigt Wasser im Wandinneren. Sauber getrennte Kabel koennen Eile, Absicht oder Gleichgueltigkeit verraten.\n\nDamit ist Bergung nicht einfach Pluendern. Wer die Kante liest, liest Gefahr, Eigentum, Route und Schuld in derselben Naht.",
-          "field_note": "Schnittkanten halten Zeit besser als Uhren. Erst Salz, dann Brand: jemand kam zurueck, nachdem der Raum ertrunken war."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Articulo de campo sobre seccion de corte de salvamento",
-          "scanner": "BORDE DE CORTE // Piel pintada del casco, metal oscuro de presion, aislamiento ceramico, junta de goma, seccion de mazo de cables, linea de corte quemada y fractura manchada de sal. La secuencia se puede leer.",
-          "terminal": "MANEJO BLACK KEEL // No tasar un panel cortado por la pintura exterior. Registrar nucleo expuesto, linea de agua en el aislamiento, estado de cables y direccion de quemado. Un borde limpio aun puede ser prueba robada.",
-          "audio": "El aislamiento del borde sigue caliente. Ese cortador no estuvo aqui con la primera inundacion.",
-          "in_game_wiki": "Una seccion de corte de salvamento es una herida abierta en una estructura de presion. Lo util no es el agujero, sino el orden: pintura, imprimacion, metal portante oscuro, aislamiento ceramico, sello de goma, mazo de cables, borde tostado por calor y sal despues de que el agua encontrara el camino. Leyendo ese orden se distingue un fallo, una reparacion, un acceso forzado o un desguace posterior al abandono.\n\nLos cascos de HECTON-8 no eran pieles limpias de nave. Una pared de base podia llevar pintura blanquecina, nervios de grafito, respaldo ceramico, labios de junta, bandejas de cable y placas de parche de distintas epocas de mantenimiento. Al abrirla, el corte deja las capas a la vista. El metal recien cortado es oscuro y agudo. Las grietas de presion antiguas deshilachan la imprimacion. El aislamiento ceramico bebe agua y se vuelve tiza. La goma se embadurna en vez de partirse.\n\nPara el salvamento, el borde es prueba. Quemado sobre sal vieja significa corte posterior a la inundacion. Sal dentro del aislamiento pero no en la pintura exterior significa que el agua viajo por la pared antes de la apertura. Un mazo de cables cortado sin marca de aislamiento indica prisa o desprecio por lo que seguia alimentando. Una junta brillante y comprimida dice que la presion aun importaba cuando se corto.\n\nEl escaner no debe tratar todo corte como botin. Algunos bordes abren un paso seguro a un conducto. Otros advierten de energia, oxigeno, refrigerante o datos. Otros son custodia legal: quien corto primero, quien volvio despues y que informe intento convertir una brecha de rescate en una frontera de reclamacion.",
-          "external_site": "Las secciones de corte de salvamento hacen legibles los cascos abiertos de HECTON-8: pintura, metal, aislamiento, junta, cable y quemado revelan orden de reparacion, inundacion y custodia.",
-          "external_site_article": "Una seccion de corte de salvamento es el borde que queda al abrir con herramienta un panel de presion, una placa de pecio o una pared colonial antigua. Las capas expuestas cuentan mas que la pieza perdida.\n\nEn juego, esos bordes pueden guiar acceso, avisar de sistemas vivos o demostrar actividad humana tardia. Quemado sobre sal apunta a un corte despues de la inundacion. Aislamiento tizado muestra agua dentro del muro. Cables seccionados limpiamente pueden revelar prisa, sabotaje o simple indiferencia.\n\nLeer el corte separa salvamento de saqueo. En la misma costura hay peligro, valor de ruta y custodia.",
-          "field_note": "Los bordes cortados guardan mejor el tiempo que los relojes. Sal primero y quemado despues significa que alguien volvio cuando la sala ya estaba hundida."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Article de terrain sur coupe de recuperation",
-          "scanner": "BORD DE COUPE // Peau de coque peinte, metal sombre sous pression, isolant ceramique, tranche de joint caoutchouc, coupe de faisceau de cables, ligne brulee au cutter et fracture salee. La sequence est lisible.",
-          "terminal": "MANUTENTION BLACK KEEL // Ne pas evaluer un panneau coupe a sa peinture. Noter noyau expose, ligne d'eau dans l'isolant, etat des cables et sens de brulure. Une arrete propre peut etre une preuve volee.",
-          "audio": "L'isolant du bord est encore tiede. Ce cutter n'etait pas la lors de la premiere inondation.",
-          "in_game_wiki": "Une coupe de recuperation est une plaie ouverte dans une structure sous pression. Le trou compte moins que l'ordre des couches: peinture, primaire, metal porteur sombre, isolant ceramique, joint caoutchouc, faisceau de cables, bord bruni par la chaleur, puis sel depose quand l'eau a trouve son passage. Cet ordre permet de lire une panne, une reparation, une ouverture d'acces ou un depouillage tardif.\n\nLes coques de HECTON-8 n'etaient pas des surfaces propres. Une paroi de base pouvait porter peinture blanc casse, nervures graphite, support ceramique, levres de joint, chemins de cable et plaques de reparation de plusieurs periodes. Le cutter revele cette stratigraphie. Le metal fraichement coupe est sombre et net. Les fissures de pression anciennes ouvrent le primaire. L'isolant boit l'eau au bord et devient poudreux. Le caoutchouc s'etale au lieu d'eclater.\n\nPour la recuperation, le bord est une preuve. Une brulure par-dessus du sel ancien signale une coupe apres inondation. Du sel dans l'isolant mais pas sur la peinture exterieure indique un trajet d'eau interne. Un faisceau tranche sans marque d'isolation trahit la hate ou l'indifference. Un joint luisant et comprime montre que la pression comptait encore au moment de la coupe.\n\nLe scanner ne doit pas confondre chaque ouverture avec du butin. Certaines coupes menent a une gaine de service. D'autres signalent courant, oxygene, refroidissement ou donnees. D'autres gardent une valeur juridique: qui a coupe, qui est revenu, et qui a tente de transformer une breche de secours en limite de reclamation.",
-          "external_site": "Les coupes de recuperation rendent lisibles les coques ouvertes de HECTON-8: peinture, metal, isolant, joint, cable et brulure indiquent reparations, inondation et custody.",
-          "external_site_article": "Une coupe de recuperation est le bord laisse par l'ouverture forcee d'un panneau de pression, d'une plaque d'epave ou d'une ancienne paroi coloniale. Les couches exposees importent davantage que la piece retiree.\n\nEn jeu, ces bords peuvent guider un acces, avertir d'un systeme actif ou prouver un retour humain tardif. La brulure sur le sel indique une intervention apres inondation. L'isolant poudreux montre l'eau dans la paroi. Les cables coupes proprement peuvent signaler hate, sabotage ou negligence.\n\nLe Marauder lit la coupe parce que danger, route et custody se trouvent dans la meme arrete.",
-          "field_note": "Les bords coupes gardent mieux le temps que les horloges. Sel d'abord, brulure ensuite: quelqu'un est revenu apres la noyade de la salle."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "מאמר שדה על חתך חיתוך חילוץ",
-          "scanner": "קצה חיתוך חילוץ // עור גוף צבוע, מתכת לחץ כהה, בידוד קרמי, פרוסת אטם גומי, חתך צרור כבלים, קו חיתוך שרוף ושפת שבר מוכתמת מלח. רצף החיתוך קריא.",
-          "terminal": "טיפול BLACK KEEL // אין לתמחר לוח חתוך לפי הצבע החיצוני. רשום ליבה חשופה, קו מים בבידוד, מצב כבלים וכיוון שרפה. קצה נקי עדיין יכול להיות ראיה גנובה.",
-          "audio": "הבידוד בקצה עדיין חם. החותך הזה לא היה כאן בהצפה הראשונה.",
-          "in_game_wiki": "חתך חיתוך חילוץ הוא פצע פתוח במבנה לחץ. החור פחות חשוב מן הסדר: צבע, פריימר, מתכת נושאת כהה, בידוד קרמי, אטם גומי, צרור כבלים, קצה שהושחם מחום ומלח שהגיע אחרי שהמים מצאו דרך. מי שקורא את הסדר הזה יכול להבין אם לוח כשל, תוקן, נחתך לגישה או נבזז אחרי שהמודול כבר לא נחשב בר חילוץ.\n\nגופי HECTON-8 לא היו קליפות חלל נקיות. קיר בסיס יכול לשאת צבע לבן שחוק, צלעות גרפיט, גב קרמי מרוסס, שפתי אטם, תעלות כבלים ופלטות תיקון מתקופות תחזוקה שונות. כשחותך פותח אותו, השכבות נראות. מתכת חתוכה טרי כהה וחדה יותר. סדקי לחץ ישנים מנפחים את הפריימר. בידוד קרמי שותה מים בקצה ונעשה גירי. גומי נמרח במקום להישבר.\n\nבחילוץ, הקצה הוא ראיה. קו שרפה מעל מלח ישן אומר שהחיתוך בא אחרי ההצפה. מלח בתוך הבידוד ולא על הצבע החיצוני אומר שהמים עברו בתוך הקיר לפני הפתיחה. צרור כבלים חתוך בלי סימון בידוד מראה שמישהו מיהר או לא בדק מה הקו עדיין מזין. אטם מבריק ודחוס אומר שלחץ עדיין היה חלק מן המערכת.\n\nהסורק לא אמור לראות בכל חיתוך הזמנה לשלל. חלק מן החתכים מובילים לתעלת שירות בטוחה. אחרים מזהירים מפני חשמל, חמצן, קירור או נתונים. אחרים הם ראיה משפטית: מי חתך ראשון, מי חזר אחר כך, ואיזו חברה ניסתה להפוך פרצת חילוץ לגבול תביעה.",
-          "external_site": "חתכי חיתוך חילוץ הופכים גופי HECTON-8 פתוחים לקריאים: צבע, מתכת, בידוד, אטם, כבל ושרפת חותך חושפים סדר תיקון, עיתוי הצפה וחזקת חילוץ.",
-          "external_site_article": "חתך חיתוך חילוץ הוא הקצה שנשאר כאשר כלי פותח לוח לחץ, פלטת טרופה או קיר מושבה ישן. השכבות החשופות חשובות יותר מן החלק שנלקח.\n\nבמשחק, קצוות כאלה יכולים להוביל לגישה, להזהיר ממערכת חיה או להוכיח חזרה אנושית מאוחרת. שרפה מעל מלח מצביעה על חיתוך אחרי הצפה. בידוד גירי מראה מים בתוך הקיר. כבלים חתוכים נקי יכולים להעיד על חיפזון או על ניתוק מכוון.\n\nהקריאה הזאת מפרידה חילוץ מביזה פשוטה: סכנה, נתיב וחזקה יושבים באותו תפר.",
-          "field_note": "קצוות חתוכים שומרים זמן טוב יותר משעונים. מלח לפני שרפה אומר שמישהו חזר אחרי שהחדר טבע."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artikel Lapangan Potongan Silang Salvage",
-          "scanner": "TEPI POTONG SALVAGE // Kulit lambung bercat, logam tekanan gelap, isolasi keramik, irisan gasket karet, potongan bundel kabel, garis pemotong terbakar, dan tepi retak bernoda garam. Urutan potong bisa dibaca.",
-          "terminal": "PENANGANAN BLACK KEEL // Jangan menilai panel potong dari cat luar. Catat inti terbuka, garis air isolasi, kondisi kabel, dan arah bakar. Tepi bersih masih bisa menjadi bukti curian.",
-          "audio": "Isolasi di tepi masih hangat. Pemotong itu tidak ada saat banjir pertama.",
-          "in_game_wiki": "Potongan silang salvage adalah luka terbuka pada struktur bertekanan. Yang berguna bukan lubangnya, melainkan urutannya: cat, primer, logam penahan gelap, isolasi keramik, segel karet, bundel kabel, tepi kecokelatan panas, lalu garam setelah air menemukan jalan. Dari urutan itu pemain bisa membedakan panel gagal, panel diperbaiki, akses yang dipotong, atau pembongkaran setelah modul dianggap hilang.\n\nLambung HECTON-8 bukan kulit pesawat ruang yang bersih. Satu dinding pangkalan bisa membawa cat putih kusam, rusuk grafit, lapisan keramik semprot, bibir gasket, baki kabel, dan pelat tambalan dari beberapa masa perawatan. Ketika pemotong membukanya, semua lapisan terlihat. Logam baru dipotong lebih gelap dan tajam. Retak tekanan lama membuat primer berbulu. Isolasi keramik menyerap air di tepi dan menjadi kapur. Karet melembek dan menyeret, bukan pecah.\n\nDalam salvage, tepi adalah bukti. Garis bakar di atas garam tua berarti potongan terjadi setelah banjir. Garam dalam isolasi tetapi bukan pada cat luar berarti air bergerak melalui dinding sebelum panel dibuka. Bundel kabel teriris tanpa tanda isolasi berarti pekerja terburu-buru atau tidak peduli apa yang masih diberi daya. Gasket mengilap dan tertekan berarti tekanan masih relevan saat potong dibuat.\n\nPemindai tidak boleh menganggap setiap potongan sebagai loot. Beberapa tepi membuka jalur servis aman. Beberapa memperingatkan listrik, oksigen, pendingin, atau data. Beberapa adalah bukti hukum: siapa memotong dulu, siapa kembali kemudian, dan siapa mencoba menjual celah penyelamatan sebagai batas klaim.",
-          "external_site": "Potongan silang salvage membuat lambung HECTON-8 yang terbuka bisa dibaca: cat, logam, isolasi, gasket, kabel, dan bekas bakar menunjukkan urutan perbaikan, waktu banjir, dan custody salvage.",
-          "external_site_article": "Potongan silang salvage adalah tepi yang tersisa saat panel tekanan, pelat bangkai, atau dinding koloni tua dibuka oleh alat. Lapisan yang terbuka lebih penting daripada bagian yang hilang.\n\nDi gameplay, tepi ini bisa menunjukkan akses, memperingatkan sistem hidup, atau membuktikan manusia kembali terlambat. Bekas bakar di atas garam menandai potongan pascabanjir. Isolasi berkapur menunjukkan air di dalam dinding. Kabel yang teriris rapi bisa berarti tergesa-gesa atau pemutusan sengaja.\n\nMarauder membaca potongan karena bahaya, rute, dan custody berada di jahitan yang sama.",
-          "field_note": "Tepi potong menyimpan waktu lebih baik daripada jam. Garam dulu, bakar kemudian: seseorang kembali setelah ruangan tenggelam."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "サルベージ切断断面フィールド記事",
-          "scanner": "サルベージ切断縁 // 塗装外皮、暗色の耐圧金属、セラミック断熱材、ゴムガスケット断片、ケーブル束断面、焼けたカッター線、塩で染まった破断縁。切断順序を読める。",
-          "terminal": "BLACK KEEL 取扱 // 切断パネルを外側の塗装だけで査定しないこと。露出した芯材、断熱材の水線、ケーブル状態、焼け方向を記録。きれいな縁でも盗まれた証拠であり得る。",
-          "audio": "縁の断熱材がまだ温かい。このカッターは最初の浸水時にはここになかった。",
-          "in_game_wiki": "サルベージ切断断面は、耐圧構造に開いた傷である。重要なのは穴そのものではなく、順序だ。塗装、下地、暗色の荷重金属、セラミック断熱材、ゴムシール、ケーブル束、熱で褐色になった縁、そして水が道を見つけた後の塩。これを読めば、パネルが破損したのか、修理されたのか、進入のために切られたのか、あるいは回収不能とされた後に剥がされたのかが分かる。\n\nHECTON-8 の外殻は清潔な宇宙船の皮ではなかった。基地壁には、くすんだ白い塗装、グラファイトリブ、吹き付けセラミック、ガスケットの唇、ケーブルトレイ、複数時期の補修板が重なっていた。カッターで開くと、それらは断面に現れる。新しい切断金属は暗く鋭い。古い圧力亀裂は下地を毛羽立たせる。セラミック断熱材は縁から水を吸って白く崩れる。ゴムは欠けずに擦れて伸びる。\n\nサルベージでは、縁が証拠になる。古い塩の上に焼け線があれば、切断は浸水後だ。断熱材の内部に塩があり外塗装にないなら、水は壁内を通った。隔離タグなしにケーブル束が切られていれば、作業者は急いでいたか、まだ何を供給していたかを無視した。光沢のある圧縮ガスケットは、切断時にも圧力が関係していたことを示す。\n\nスキャナーはすべての切断を戦利品として扱うべきではない。安全なサービス通路に続くものもあれば、電力、酸素、冷却材、データ線を警告するものもある。法的証拠になる縁もある。誰が最初に切り、誰が戻り、どの会社が救助の穴をサルベージ境界に変えようとしたか。",
-          "external_site": "サルベージ切断断面は、開かれた HECTON-8 外殻を読める証拠にする。塗装、金属、断熱材、ガスケット、ケーブル、焼け跡が修理順、浸水時期、回収権を示す。",
-          "external_site_article": "サルベージ切断断面は、耐圧パネルや漂着した外板、古いコロニー壁を工具で開いたあとに残る縁である。失われた部品より、露出した層の方が多くを語る。\n\nゲーム内では、この縁が進入口を示し、まだ生きている系統を警告し、遅い人間の帰還を証明する。塩の上の焼け跡は浸水後の切断を示す。白く崩れた断熱材は壁内の水を示す。きれいに断たれたケーブルは急ぎか意図的な遮断を示す。\n\nMarauder は切断を読む。同じ縁に危険、経路、所有の証拠が並んでいるからだ。",
-          "field_note": "切断縁は時計より時間を残す。塩が先で焼けが後なら、部屋が沈んだあとに誰かが戻った。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "인양 절단 단면 현장 문서",
-          "scanner": "인양 절단면 // 도장된 선체 표피, 어두운 압력 금속, 세라믹 단열층, 고무 개스킷 절편, 케이블 다발 단면, 탄 절단선, 소금에 얼룩진 파단면. 절단 순서를 읽을 수 있음.",
-          "terminal": "BLACK KEEL 취급 // 절단 패널을 외부 도장만 보고 가격 매기지 말 것. 노출된 코어, 단열층 수선, 케이블 상태, 탄 방향을 기록. 깨끗한 면도 훔친 증거일 수 있음.",
-          "audio": "가장자리 단열재가 아직 따뜻하다. 이 절단기는 첫 침수 때 여기 없었다.",
-          "in_game_wiki": "인양 절단 단면은 압력 구조물에 열린 상처다. 중요한 것은 구멍이 아니라 순서다. 도장, 프라이머, 어두운 하중 금속, 세라믹 단열층, 고무 씰, 케이블 다발, 열로 갈색이 된 가장자리, 그리고 물이 길을 찾은 뒤 남은 소금. 그 순서를 읽으면 패널이 실패했는지, 수리됐는지, 접근을 위해 잘렸는지, 회수 불능 판정 뒤 벗겨졌는지 구분할 수 있다.\n\nHECTON-8의 선체는 깨끗한 우주선 피부가 아니었다. 기지 벽 하나에도 바랜 흰 페인트, 흑연 리브, 분사 세라믹, 개스킷 입술, 케이블 트레이, 여러 정비 시기의 패치 플레이트가 겹쳤다. 절단기가 열면 그 층들이 단면에 드러난다. 새로 잘린 금속은 더 어둡고 날카롭다. 오래된 압력 균열은 프라이머를 보풀처럼 일으킨다. 세라믹 단열재는 가장자리에서 물을 마시고 분필처럼 변한다. 고무는 깨지기보다 번진다.\n\n인양에서 가장자리는 증거다. 오래된 소금 위를 지나는 탄 자국은 침수 뒤의 절단을 뜻한다. 바깥 페인트에는 없고 단열재 안에만 소금이 있다면 물은 벽 속을 지나갔다. 격리 표시 없이 깨끗하게 잘린 케이블 다발은 작업자가 서둘렀거나 남은 공급을 무시했다는 뜻이다. 윤기 있고 눌린 개스킷은 절단 때에도 압력이 관련되어 있었음을 말한다.\n\n스캐너가 모든 절단을 전리품으로 처리해서는 안 된다. 어떤 면은 안전한 서비스 통로로 이어진다. 어떤 면은 전력, 산소, 냉각수, 데이터 라인을 경고한다. 어떤 면은 법적 증거다. 누가 먼저 잘랐고, 누가 나중에 돌아왔으며, 어느 회사가 구조 구멍을 인양 청구 경계로 바꾸려 했는지.",
-          "external_site": "인양 절단 단면은 열린 HECTON-8 선체를 읽게 한다. 페인트, 금속, 단열층, 개스킷, 케이블, 탄 절단선은 수리 순서, 침수 시점, 인양 custody를 드러낸다.",
-          "external_site_article": "인양 절단 단면은 압력 패널, 잔해판, 오래된 식민지 벽을 도구로 열 때 남는 가장자리다. 빠진 조각보다 노출된 층이 더 중요하다.\n\n게임에서 이 가장자리는 접근로를 알려 주고, 살아 있는 시스템을 경고하며, 늦은 인간 활동을 증명한다. 소금 위의 탄 자국은 침수 후 절단을 가리킨다. 분필 같은 단열재는 벽 내부의 물을 보여 준다. 깨끗하게 잘린 케이블은 서두름이나 의도적 차단을 뜻할 수 있다.\n\nMarauder는 절단면을 읽는다. 위험, 경로, custody가 같은 이음새에 있기 때문이다.",
-          "field_note": "절단면은 시계보다 시간을 잘 보관한다. 소금이 먼저고 탄 자국이 나중이면, 방이 잠긴 뒤 누군가 돌아온 것이다."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Veldartikel: bergingssnede-doorsnede",
-          "scanner": "BERGINGSSNEDE // Geschilderde romphuid, donker drukmetaal, keramische isolatie, rubber pakkingdoorsnede, kabelbundeldoorsnede, verbrande snijlijn en zoutbevlekte breukrand. De snijvolgorde is leesbaar.",
-          "terminal": "BLACK KEEL AFHANDELING // Waardeer een gesneden paneel niet op buitenverf. Noteer blootgelegde kern, waterlijn in isolatie, kabelstaat en brandrichting. Een nette rand kan nog steeds gestolen bewijs zijn.",
-          "audio": "De isolatie aan de rand is nog warm. Die snijder was hier niet bij de eerste overstroming.",
-          "in_game_wiki": "Een bergingssnede-doorsnede is een open wond in een drukstructuur. Niet het gat is nuttig, maar de volgorde: verf, primer, donker dragend metaal, keramische isolatie, rubber afdichting, kabelbundel, hittebruine rand en zout nadat het water de weg vond. Wie die volgorde leest, ziet of een paneel faalde, gerepareerd werd, voor toegang werd geopend of pas na afschrijving werd gestript.\n\nHECTON-8-rompen waren geen schone ruimteschipvellen. Een basiswand kon gebroken wit verfwerk, grafietribben, gespoten keramiek, pakkinglippen, kabelgoten en herstelplaten uit meerdere onderhoudsperiodes dragen. Een snijder toont de lagen. Vers metaal is donker en scherp. Oude drukscheuren rafelen de primer. Keramische isolatie drinkt water aan de rand en wordt krijtig. Rubber smeert in plaats van te breken.\n\nVoor berging is de rand bewijs. Brand over oud zout betekent dat de snede na de overstroming kwam. Zout in de isolatie maar niet op de buitenverf betekent dat water door de wand liep. Een kabelbundel zonder isolatiemerk verraadt haast of onverschilligheid. Een glanzend samengedrukte pakking zegt dat druk nog meespeelde toen er werd gesneden.\n\nNiet elke snede is buit. Sommige randen leiden naar een veilige servicegang. Andere waarschuwen voor stroom, zuurstof, koelmiddel of datalijnen. Sommige zijn juridisch bewijs: wie eerst sneed, wie later terugkwam en welk rapport een reddingsgat tot claimgrens maakte.",
-          "external_site": "Bergingssnede-doorsneden maken geopende HECTON-8-rompen leesbaar: verf, metaal, isolatie, pakking, kabel en brandlijn tonen reparatievolgorde, overstromingstiming en bergingscustody.",
-          "external_site_article": "Een bergingssnede-doorsnede is de rand die achterblijft wanneer een drukpaneel, wrakplaat of oude koloniewand met gereedschap is geopend. De blootgelegde lagen zeggen meer dan het ontbrekende stuk.\n\nIn gameplay kunnen zulke randen toegang wijzen, levende systemen verraden of late menselijke terugkeer bewijzen. Brand over zout wijst op een snede na overstroming. Krijtige isolatie toont water in de wand. Net gesneden kabels kunnen haast, sabotage of verwaarlozing betekenen.\n\nEen Marauder leest de snede omdat gevaar, route en custody in dezelfde naad liggen.",
-          "field_note": "Gesneden randen bewaren tijd beter dan klokken. Eerst zout, dan brand: iemand kwam terug nadat de kamer verdronk."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artykul terenowy: przekroj ciecia zlomowego",
-          "scanner": "KRAWEDZ CIECIA // Malowana powloka kadluba, ciemny metal cisnieniowy, izolacja ceramiczna, przekroj gumowej uszczelki, przekroj wiazki kabli, przypalona linia ciecia i zasolona krawedz pekniecia. Sekwencja jest czytelna.",
-          "terminal": "OBSLUGA BLACK KEEL // Nie wyceniaj cietego panelu po farbie zewnetrznej. Zapisz odsłoniety rdzen, linie wody w izolacji, stan kabli i kierunek przepalenia. Czysta krawedz nadal moze byc skradzionym dowodem.",
-          "audio": "Izolacja przy krawedzi wciaz jest ciepla. Ten przecinak nie byl tu podczas pierwszego zalania.",
-          "in_game_wiki": "Przekroj ciecia zlomowego to otwarta rana w strukturze cisnieniowej. Nie dziura jest wazna, tylko kolejnosc: farba, podklad, ciemny metal nosny, izolacja ceramiczna, gumowa uszczelka, wiazka kabli, krawedz zbrunatniala od ciepla i sol po tym, jak woda znalazla droge. Z tej kolejnosci mozna odczytac awarie, naprawe, ciecie dostepowe albo pozne rozbieranie modulu.\n\nKadluby HECTON-8 nie byly czystymi skorupami statku kosmicznego. Sciana bazy mogla nosic przybrudzona biala farbe, grafitowe zebra, natrysk ceramiczny, wargi uszczelek, koryta kablowe i laty z roznych okresow. Po otwarciu przecinakiem warstwy wychodza na jaw. Swiezo ciety metal jest ciemniejszy i ostrzejszy. Stare pekniecia cisnieniowe strzepia podklad. Ceramika pije wode przy krawedzi i robi sie kredowa. Guma raczej sie rozmazuje niz odpryskuje.\n\nDla zlomowania krawedz jest dowodem. Przepalenie na starej soli znaczy, ze ciecie nastapilo po zalaniu. Sol w izolacji, ale nie na farbie zewnetrznej, znaczy ze woda szla przez sciane. Czysto przecieta wiazka kabli bez znacznika odciecia mowi o pospiechu albo obojetnosci. Blyszczaca, sprasowana uszczelka pokazuje, ze cisnienie nadal mialo znaczenie.\n\nSkaner nie powinien traktowac kazdego ciecia jako lup. Niektore krawedzie prowadza do bezpiecznego kanalu serwisowego. Inne ostrzegaja przed zasilaniem, tlenem, chlodzeniem lub danymi. Inne sa dowodem prawnym: kto cial pierwszy, kto wrocil pozniej i kto probowal zmienic otwor ratunkowy w granice roszczenia.",
-          "external_site": "Przekroje ciec zlomowych czynia otwarte kadluby HECTON-8 czytelnymi: farba, metal, izolacja, uszczelka, kabel i slady ciecia ujawniaja naprawy, czas zalania i custody.",
-          "external_site_article": "Przekroj ciecia zlomowego to krawedz po otwarciu panelu cisnieniowego, plyty wraku lub starej sciany kolonii. Odsłoniete warstwy mowia wiecej niz brakujacy element.\n\nW grze taka krawedz moze prowadzic do przejscia, ostrzegac przed zywym systemem albo dowodzic poznego powrotu ludzi. Przepalenie na soli wskazuje ciecie po zalaniu. Kredowa izolacja pokazuje wode w scianie. Czysto przeciete kable moga oznaczac pospiech albo celowe odciecie.\n\nMarauder czyta ciecie, bo zagrozenie, droga i custody leza w tej samej szczelinie.",
-          "field_note": "Ciete krawedzie lepiej przechowuja czas niz zegary. Najpierw sol, potem przypalenie: ktos wrocil po utopieniu pokoju."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artigo de campo sobre corte transversal de salvamento",
-          "scanner": "BORDA DE CORTE // Pele pintada do casco, metal escuro de pressão, isolamento cerâmico, fatia de junta de borracha, seção de feixe de cabos, linha de corte queimada e fratura manchada de sal. A sequência é legível.",
-          "terminal": "MANUSEIO BLACK KEEL // Não precificar um painel cortado pela pintura externa. Registrar núcleo exposto, linha d'água no isolamento, estado dos cabos e direção da queima. Uma borda limpa ainda pode ser prova roubada.",
-          "audio": "O isolamento na borda ainda está quente. Esse cortador não estava aqui na primeira inundação.",
-          "in_game_wiki": "Um corte transversal de salvamento é uma ferida aberta em uma estrutura de pressão. O útil não é o buraco, mas a ordem: tinta, primer, metal estrutural escuro, isolamento cerâmico, vedação de borracha, feixe de cabos, borda escurecida pelo calor e sal depois que a água achou passagem. Quem lê essa ordem sabe se o painel falhou, foi reparado, foi cortado para acesso ou foi desmontado depois que o módulo deixou de ser recuperável.\n\nOs cascos de HECTON-8 não eram superfícies limpas de nave. Uma parede de base podia ter tinta branco-gasta, nervuras de grafite, base cerâmica pulverizada, lábios de junta, bandejas de cabos e placas de remendo de vários períodos de manutenção. Quando um cortador abre a parede, as camadas aparecem. Metal recém-cortado é mais escuro e afiado. Rachaduras antigas de pressão arrepiam o primer. O isolamento cerâmico bebe água na borda e fica esfarelado. A borracha borra em vez de lascar.\n\nPara salvamento, a borda é prova. Linha queimada sobre sal antigo significa corte depois da inundação. Sal dentro do isolamento mas não na pintura externa significa que a água viajou pela parede. Um feixe de cabos cortado sem marca de isolamento mostra pressa ou indiferença. Uma junta brilhante e comprimida diz que a pressão ainda fazia parte do sistema no momento do corte.\n\nO scanner não deve tratar todo corte como saque. Alguns cortes abrem acesso seguro a uma galeria de serviço. Outros avisam sobre energia, oxigênio, resfriamento ou dados. Outros são prova legal: quem cortou primeiro, quem voltou depois, e qual empresa tentou transformar uma brecha de resgate em fronteira de reivindicação.",
-          "external_site": "Cortes transversais de salvamento tornam cascos abertos de HECTON-8 legíveis: tinta, metal, isolamento, junta, cabo e queima mostram reparo, inundação e custody.",
-          "external_site_article": "Um corte transversal de salvamento é a borda deixada quando uma ferramenta abre um painel de pressão, uma placa de destroço ou uma parede colonial antiga. As camadas expostas importam mais que a peça removida.\n\nNo jogo, essas bordas podem guiar acesso, alertar para sistemas vivos ou provar atividade humana tardia. Queima sobre sal aponta para corte pós-inundação. Isolamento esfarelado mostra água dentro da parede. Cabos cortados limpos podem indicar pressa ou desligamento intencional.\n\nO Marauder lê a borda porque perigo, rota e custody estão na mesma costura exposta.",
-          "field_note": "Bordas cortadas guardam tempo melhor que relógios. Sal primeiro, queimado depois: alguém voltou quando a sala já tinha afundado."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Полевая статья о спасательном срезе в разрезе",
-          "scanner": "СПАСАТЕЛЬНЫЙ СРЕЗ // Окрашенная обшивка, темный силовой металл, керамическая изоляция, срез резиновой прокладки, сечение кабельного пучка, выжженная линия резака и соленая кромка разлома. Последовательность читается.",
-          "terminal": "ИНСТРУКЦИЯ BLACK KEEL // Не оценивать срезанную панель по внешней краске. Фиксировать открытый сердечник, водяную линию в изоляции, состояние кабелей и направление прожога. Ровная кромка все еще может быть украденным доказательством.",
-          "audio": "Изоляция на кромке еще теплая. Этот резак пришел сюда не с первым затоплением.",
-          "in_game_wiki": "Спасательный срез в разрезе - это открытая рана в напорной конструкции. Полезна не дыра, а порядок слоев: краска, грунт, темный несущий металл, керамическая изоляция, резиновое уплотнение, кабельный пучок, потемневшая от жара кромка и соль, которая пришла после воды. По этому порядку можно понять, панель разрушилась сама, была отремонтирована, вскрыта для прохода или ободрана уже после того, как модуль перестали считать спасаемым.\n\nКорпуса HECTON-8 не были чистой космической кожей. Стена базы могла нести выцветшую белую краску, графитовые ребра, напыленную керамику, губы прокладок, кабельные лотки и ремонтные пластины трех разных эпох обслуживания. Когда ее открывает резак, слои выходят наружу. Свежий металл темнее и резче. Старые трещины давления вспушивают грунт. Керамическая изоляция пьет воду по краю и становится меловой. Резина мажется, а не крошится.\n\nДля мародерского дела кромка - доказательство. Прожог поверх старой соли значит, что резали после затопления. Соль внутри изоляции, но не на внешней краске, значит, вода шла через стену до вскрытия. Кабельный пучок, перерезанный без метки изоляции, говорит о спешке или безразличии к тому, что он еще питал. Блестящая сжатая прокладка показывает, что давление все еще участвовало в системе, когда сделали срез.\n\nСканер не должен считать каждый срез приглашением к добыче. Одни кромки ведут в безопасную сервисную нишу. Другие предупреждают о питании, кислороде, охлаждении или линии данных. Третьи являются юридическим следом: кто резал первым, кто вернулся позже, и какая компания попыталась превратить спасательный пролом в границу трофейной претензии.",
-          "external_site": "Спасательные срезы делают вскрытые корпуса HECTON-8 читаемыми: краска, металл, изоляция, прокладка, кабель и след резака показывают порядок ремонта, время затопления и custody salvage.",
-          "external_site_article": "Спасательный срез в разрезе - это кромка, оставшаяся после вскрытия напорной панели, обломка корпуса или старой колониальной стены инструментом. Открытые слои важнее отсутствующей детали.\n\nВ игре такие кромки могут вести к проходу, предупреждать о живой системе или доказывать позднее возвращение людей. Прожог поверх соли указывает на срез после затопления. Меловая изоляция показывает воду внутри стены. Ровно перерезанные кабели могут означать спешку, саботаж или намеренное отключение.\n\nМародер читает кромку, потому что опасность, маршрут и право на добычу лежат в одном открытом шве.",
-          "field_note": "Срезанные кромки держат время лучше часов. Сначала соль, потом прожог - значит, кто-то вернулся после того, как комнату утопило."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Польова стаття про рятувальний розріз у перерізі",
-          "scanner": "РЯТУВАЛЬНИЙ РОЗРІЗ // Фарбована обшивка, темний силовий метал, керамічна ізоляція, зріз гумової прокладки, переріз кабельного пучка, випалена лінія різака і засолена кромка зламу. Послідовність читається.",
-          "terminal": "ІНСТРУКЦІЯ BLACK KEEL // Не оцінювати зрізану панель за зовнішньою фарбою. Фіксувати відкритий сердечник, водяну лінію в ізоляції, стан кабелів і напрям пропалу. Рівна кромка все ще може бути вкраденим доказом.",
-          "audio": "Ізоляція на кромці ще тепла. Цей різак прийшов сюди не з першим затопленням.",
-          "in_game_wiki": "Рятувальний розріз у перерізі - це відкрита рана в напірній конструкції. Корисна не діра, а порядок шарів: фарба, ґрунт, темний несний метал, керамічна ізоляція, гумове ущільнення, кабельний пучок, потемніла від жару кромка і сіль, що прийшла після води. За цим порядком видно, панель зламалася сама, була відремонтована, розкрита для доступу чи розібрана вже після списання модуля.\n\nКорпуси HECTON-8 не були чистою космічною шкірою. Стіна бази могла нести вицвілу білу фарбу, графітові ребра, напилену кераміку, губи прокладок, кабельні лотки і ремонтні пластини з різних періодів. Коли її відкриває різак, шари виходять назовні. Свіжий метал темніший і гостріший. Старі тріщини тиску розпушують ґрунт. Керамічна ізоляція п'є воду на краю і стає крейдяною. Гума розмазується, а не кришиться.\n\nДля мародерської роботи кромка - доказ. Пропал поверх старої солі означає, що різали після затоплення. Сіль усередині ізоляції, але не на зовнішній фарбі, означає шлях води крізь стіну. Кабельний пучок, перерізаний без мітки ізоляції, говорить про поспіх або байдужість. Блискуча стиснута прокладка показує, що тиск ще був частиною системи.\n\nСканер не має сприймати кожен розріз як здобич. Одні кромки ведуть у безпечну сервісну нішу. Інші попереджають про живлення, кисень, охолодження або дані. Треті є юридичним слідом: хто різав першим, хто повернувся пізніше, і хто намагався перетворити рятувальний пролом на межу претензії.",
-          "external_site": "Рятувальні розрізи роблять відкриті корпуси HECTON-8 читаними: фарба, метал, ізоляція, прокладка, кабель і слід різака показують ремонт, затоплення і custody.",
-          "external_site_article": "Рятувальний розріз у перерізі - це кромка після відкриття напірної панелі, уламка корпусу чи старої колоніальної стіни інструментом. Відкриті шари важливіші за відсутню деталь.\n\nУ грі такі кромки можуть вести до проходу, попереджати про живу систему або доводити пізнє повернення людей. Пропал поверх солі вказує на розріз після затоплення. Крейдяна ізоляція показує воду всередині стіни. Рівно перерізані кабелі можуть означати поспіх або навмисне вимкнення.\n\nМародер читає кромку, бо небезпека, маршрут і право на здобич лежать в одному відкритому шві.",
-          "field_note": "Зрізані кромки тримають час краще за годинники. Спершу сіль, потім пропал: хтось повернувся після того, як кімнату втопило."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "打捞切割剖面现场条目",
-          "scanner": "打捞切割边 // 上漆 hull 外皮、深色承压金属、陶瓷隔热层、橡胶密封截面、线束剖面、烧蚀切割线和盐渍断裂边。切割顺序可读。",
-          "terminal": "BLACK KEEL 处理 // 不要按外层油漆给切割面板估价。记录暴露芯层、隔热层水线、线缆状态和烧蚀方向。干净边缘仍可能是被盗证据。",
-          "audio": "边缘里的隔热层还热。这个切割器不是第一次进水时来的。",
-          "in_game_wiki": "打捞切割剖面是承压结构上的开放伤口。有用的不是洞，而是顺序：油漆、底漆、深色承力金属、陶瓷隔热层、橡胶密封、线束、被热烤褐的边缘，以及水找到路径后留下的盐。读懂这个顺序，就能判断面板是自行失效、被维修、被切开作为通路，还是在模块被放弃后遭到拆取。\n\nHECTON-8 的外壳不是干净的飞船皮。基地墙面可能同时有旧白漆、石墨肋、喷涂陶瓷、密封唇、线缆槽和不同时期的补片。切割器打开它时，层次会在剖面上暴露。新切金属更暗更锐。旧压力裂纹会让底漆起毛。陶瓷隔热层从边缘吸水，变成粉笔状。橡胶会涂抹拖开，而不是碎裂。\n\n对打捞来说，边缘就是证据。烧痕压在旧盐上，说明切割发生在进水之后。盐在隔热层里却不在外漆上，说明水先从墙体内部走过。线束被干净切断却没有隔离标记，说明作业者很赶，或者不在乎它还供给什么。发亮且被压扁的密封截面说明切割时压力仍是系统的一部分。\n\n扫描器不应把每一道切割边都当成 loot 提示。有些边缘通往安全的服务夹层。有些在警告电力、氧气、冷却剂或数据线。还有一些是法律证据：谁先切开，谁后来返回，哪家公司试图把救援破口变成可索赔的打捞边界。",
-          "external_site": "打捞切割剖面让被打开的 HECTON-8 外壳可读：油漆、金属、隔热层、密封、线缆和烧蚀层显示维修顺序、进水时间和打捞 custody。",
-          "external_site_article": "打捞切割剖面是工具打开承压面板、残骸板或旧殖民墙后留下的边缘。暴露层次比缺失部件更重要。\n\n在玩法中，这些边缘可以指向通路，警告仍然带电或供氧的系统，或者证明有人在进水之后回来。盐上的烧痕意味着后期切割。粉化隔热层说明水在墙体内移动。干净切断的线束可能代表赶工，也可能代表有意断开。\n\nMarauder 会读切口，因为危险、路线和 custody 都在同一条暴露接缝里。",
-          "field_note": "切割边比时钟更会保存时间。先有盐，后有烧痕，说明房间淹没后有人回来过。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage_cut_cross_section_field_article",
+    "secondary": [
+     "unlock.first_open_hull_cut_edge",
+     "unlock.first_exposed_ceramic_insulation_layer",
+     "unlock.first_burned_cutter_line"
+    ],
+    "poi_tags": [
+     "poi.salvage_cut_cross_section",
+     "poi.torn_painted_hull_edge",
+     "poi.exposed_dark_metal_core",
+     "poi.ceramic_insulation_slice",
+     "poi.burned_cutter_line",
+     "poi.salt_stained_fracture_edge"
+    ],
+    "biome_tags": [
+     "biome.old_colony_wreck_field",
+     "biome.flooded_pressure_module",
+     "biome.salvage_route",
+     "biome.black_keel_claim_zone"
+    ],
+    "first_20_boundary": "Makes opened hulls and cut panels readable as route evidence: paint layer, metal core, ceramic insulation, gasket slice, cable bundle and cutter burn order."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Material Cut Scanner",
+     "terminal": "Black Keel Salvage Handling Note",
+     "audio": "Suit Recorder At Open Hull Edge",
+     "in_game_wiki": "PDA Salvage Cut Primer",
+     "external_site": "Public Site Salvage Cross-Section Article",
+     "field_note": "Marauder Cut-Edge Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_open_hull_cut_edge_or_salvage_panel",
+    "truth_payload": "A salvage-cut cross-section records the order of force: original hull construction, pressure fatigue, official repair, later cutter work, and post-flood mineral staining.",
+    "player_question": "Was this panel opened during rescue, during looting, or after the station was already too wet to pretend anything was controlled?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Salvage-Cut Cross-Section Field Article",
+     "scanner": "SALVAGE CUT EDGE // Painted hull skin, dark pressure metal, ceramic insulation, rubber gasket slice, cable-bundle cross-section, burned cutter line and salt-stained fracture edge. Cut sequence is readable.",
+     "terminal": "BLACK KEEL HANDLING // Do not price a cut panel by outer paint. Record exposed core, insulation waterline, cable state and burn direction. A clean edge can still be stolen evidence.",
+     "audio": "Edge is still warm in the insulation. Cutter was not here with the first flood.",
+     "in_game_wiki": "A salvage-cut cross-section is an opened wound in a pressure structure. The useful part is not the hole. The useful part is the order: paint, primer, dark load-bearing metal, ceramic insulation, rubber seal, cable bundle, heat-browned edge, salt after the water found it. A player who reads that order can tell whether a panel failed, was repaired, was cut for access, or was stripped after everyone had stopped calling the module recoverable.\n\nHECTON-8 hulls were not clean spaceship skins. A base wall could carry off-white paint, graphite ribs, sprayed ceramic backing, gasket lips, cable trays and patch plates from three maintenance periods. When a cutter opens it, the layers appear in cross-section. Fresh cut metal is darker and sharper. Old pressure cracks feather the primer before the cut reaches them. Ceramic insulation drinks water at the edge and turns chalky. Rubber gaskets smear instead of chipping. Cable bundles show copper, fiber and black jacket in one exposed bite.\n\nFor salvage, the edge is evidence. A burned line that runs over old salt means the cut came after flooding. Salt inside the insulation but not on the outer paint means water traveled through the wall before anyone opened it. A cable bundle sliced cleanly with no tagged isolation mark means the worker was moving fast or did not care what the cable still fed. If a gasket slice is glossy and compressed, the door or module was still being pressured when the cut was made. If the ceramic layer flakes into the room, the wall dried under air for a time before the next flood.\n\nThe scanner should not treat every cut as a loot prompt. Some cross-sections mark safe access into a service chase. Some warn that the visible path crosses live power, oxygen, coolant or data lines. Some are legal evidence: who cut first, who returned later, and which company tried to turn a rescue breach into a claimable salvage boundary. Marauders learn to read the burn direction before cutting deeper. The ocean does not erase a cutter line quickly. It salts it, stains it and lets small organisms decide which layer was easiest to inhabit.\n\nThe public story usually says opened wrecks are chaotic. They are not. A trained cutter leaves a grammar. Start notch. Slow corner. Pause where the tool met reinforcement. Wider burn where the operator lost cooling. A second pass that avoids a cable tray. A careless pass through the cable tray anyway. In a drowned colony, that grammar can matter more than the terminal beside it, because terminals lie in complete sentences and hull edges lie one layer at a time.\n\nBlack Keel payout clerks want mass, alloy class and custody. Deep Reach reports want failure category. The player needs something more immediate: can this edge be touched, cut, followed, sealed or ignored? A good salvage-cut cross-section answers with material. Paint says surface. Metal says load. Ceramic says heat and pressure. Rubber says seal. Cable says consequence. Burn says who came after the original accident.",
+     "external_site": "Salvage-cut cross-sections make opened HECTON-8 hulls readable: exposed paint, metal, insulation, gasket, cable and cutter-burn layers reveal repair order, flood timing and salvage custody.",
+     "external_site_article": "A salvage-cut cross-section is the readable edge left when a pressure panel, wreck plate or old colony wall has been opened by tool force. The exposed layers matter more than the missing piece. Paint, primer, metal, ceramic insulation, gasket rubber, cable bundles, burn marks and salt deposits each record a different moment.\n\nIn play, these edges can guide access, warn against live systems, or expose late human activity. Burn over salt points to a post-flood cut. Chalky insulation shows water movement inside the wall. A cleanly severed cable bundle can mean a hurried breach or a deliberate disabling cut. Compressed gasket rubber can show that pressure was still part of the system when the edge was made.\n\nThe article also separates salvage culture from simple looting. A Marauder reads the cut because custody, hazard and route value all sit in the same exposed seam. The edge says what the terminal may hide: who opened the hull, what they risked, and whether the path is worth following.",
+     "field_note": "Cut edges keep time better than clocks. Salt first, burn second means somebody came back after the room drowned."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "مقالة ميدانية عن مقطع القطع الإنقاذي",
+     "scanner": "حافة قطع إنقاذي // جلد طلاء خارجي، معدن ضغط داكن، عازل خزفي، شريحة حشية مطاطية، مقطع حزمة كابلات، خط قاطع محترق وحافة كسر ملوثة بالملح. ترتيب القطع قابل للقراءة.",
+     "terminal": "مناولة BLACK KEEL // لا تسعر اللوح المقطوع من الطلاء وحده. سجل القلب المكشوف، خط ماء العازل، حالة الكابلات واتجاه الحرق. الحافة النظيفة قد تظل دليلا مسروقا.",
+     "audio": "العازل عند الحافة ما زال دافئا. هذا القاطع لم يكن هنا مع أول غمر.",
+     "in_game_wiki": "مقطع القطع الإنقاذي جرح مفتوح في بنية ضغط. الفتحة ليست هي الشيء المهم. المهم هو الترتيب: طلاء، أساس، معدن حامل داكن، عازل خزفي، ختم مطاطي، حزمة كابلات، حافة مسمرة بالحرارة، ثم ملح جاء بعد أن عثرت المياه على الطريق. من يقرأ هذا الترتيب يستطيع معرفة هل فشل اللوح، أم أصلح، أم قطع للوصول، أم جرد بعد أن توقف الناس عن تسميته قابلا للاسترداد.\n\nجدران HECTON-8 لم تكن قشرة سفينة نظيفة. قد يحمل جدار قاعدة طلاء أبيض باهتا، أضلاع جرافيت، دعامة خزفية مرشوشة، شفاه حشيات، مسارات كابلات وصفائح رقع من ثلاث فترات صيانة. عندما يفتحه قاطع تظهر الطبقات في المقطع. المعدن المقطوع حديثا أدكن وأحد. الشقوق القديمة تنفش طبقة الأساس قبل أن يصل إليها القطع. العازل الخزفي يشرب الماء عند الحافة ويتحول إلى طباشير. المطاط يلطخ بدلا من أن يتكسر.\n\nالحافة في عمل الإنقاذ دليل. خط حرق فوق ملح قديم يعني أن القطع جاء بعد الغمر. وجود ملح داخل العازل لا على الطلاء الخارجي يعني أن الماء سار داخل الجدار قبل أن يفتحه أحد. حزمة كابلات مقطوعة بلا علامة عزل تعني أن العامل كان مستعجلا أو لم يبال بما كانت الكابلات تغذيه. إذا كانت شريحة الحشية لامعة ومضغوطة، فالنظام كان لا يزال يتعامل مع الضغط وقت القطع.\n\nلا ينبغي للماسح أن يعامل كل فتحة كدعوة نهب. بعض المقاطع تفتح طريقا آمنا إلى ممر خدمة. بعضها يحذر من طاقة أو أكسجين أو تبريد أو بيانات ما زالت تمر. وبعضها دليل قانوني: من قطع أولا، ومن عاد لاحقا، وأي شركة حاولت تحويل ثغرة إنقاذ إلى حد مطالبة. يتعلم المغير قراءة اتجاه الحرق قبل أن يقطع أعمق.",
+     "external_site": "مقاطع القطع الإنقاذي تجعل هياكل HECTON-8 المفتوحة قابلة للقراءة: طبقات الطلاء والمعدن والعازل والحشية والكابل والحرق تكشف ترتيب الإصلاح ووقت الغمر وحيازة الإنقاذ.",
+     "external_site_article": "مقطع القطع الإنقاذي هو الحافة التي تبقى عندما يفتح قاطع لوح ضغط أو قطعة حطام أو جدار مستعمرة قديم. الطبقات المكشوفة أهم من القطعة المفقودة: الطلاء، الأساس، المعدن، العازل الخزفي، المطاط، الكابلات، آثار الحرق ورواسب الملح.\n\nفي اللعب يمكن لهذه الحافة أن تقود إلى مسار، أو تحذر من نظام حي، أو تكشف عودة بشرية متأخرة. الحرق فوق الملح يعني قطعا بعد الغمر. العازل الطباشيري يكشف حركة الماء داخل الجدار. الكابل المقطوع بنظافة قد يعني فتحا مستعجلا أو تعطيلا مقصودا.\n\nهذا يفرق ثقافة الإنقاذ عن النهب البسيط. المغير يقرأ القطع لأن الحيازة والخطر وقيمة الطريق كلها موجودة في نفس الشق المكشوف.",
+     "field_note": "حواف القطع تحفظ الوقت أفضل من الساعات. ملح أولا ثم حرق يعني أن أحدهم عاد بعد غرق الغرفة."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Feldartikel: Bergeschnitt-Querschnitt",
+     "scanner": "BERGESCHNITTKANTE // Lackierte Hauthuelle, dunkles Druckmetall, Keramikisolierung, Gummidichtung, Kabelbuendel im Schnitt, verbrannte Schneidlinie und salzverfaerbte Bruchkante. Die Schnittfolge ist lesbar.",
+     "terminal": "BLACK-KEEL-HANDHABUNG // Eine geschnittene Platte nicht nach Aussenlack bewerten. Freigelegten Kern, Wasserlinie der Isolierung, Kabelzustand und Brandrichtung erfassen. Eine saubere Kante kann gestohlene Beweislage sein.",
+     "audio": "Die Isolierung an der Kante ist noch warm. Dieser Schneider war nicht beim ersten Fluten hier.",
+     "in_game_wiki": "Ein Bergeschnitt-Querschnitt ist eine offene Wunde in einer Druckstruktur. Nicht das Loch ist nuetzlich, sondern die Reihenfolge: Lack, Grundierung, dunkles tragendes Metall, Keramikisolierung, Gummidichtung, Kabelbuendel, hitzegebrannter Rand, Salz nachdem das Wasser ihn gefunden hat. Wer diese Reihenfolge liest, erkennt, ob eine Platte versagte, repariert wurde, fuer Zugang geschnitten wurde oder erst nach der Aufgabe des Moduls ausgeschlachtet wurde.\n\nHECTON-8-Huellen waren keine sauberen Raumfahrzeughaeute. Eine Basiswand konnte matten weissen Lack, Graphitrippen, gespritzte Keramik, Dichtungslippen, Kabelrinnen und Flicken aus mehreren Wartungsperioden tragen. Oeffnet ein Schneider sie, werden diese Schichten sichtbar. Frischer Schnitt ist dunkler und schaerfer. Alte Druckrisse federn die Grundierung auf. Keramik saugt an der Kante Wasser und wird kreidig. Gummi schmiert, statt zu splittern.\n\nIn der Bergung ist die Kante Beweis. Brand ueber altem Salz heisst: der Schnitt kam nach dem Fluten. Salz in der Isolierung, aber nicht auf dem Aussenlack, bedeutet Wasserweg im Inneren der Wand. Ein sauber getrenntes Kabelbuendel ohne Isolationsmarke zeigt Eile oder Gleichgueltigkeit. Eine glaenzend gepresste Dichtung zeigt, dass Druck beim Schnitt noch eine Rolle spielte.\n\nDer Scanner darf nicht jeden Schnitt als Beuteaufforderung behandeln. Manche Kanten fuehren sicher in einen Serviceschacht. Manche warnen vor Strom, Sauerstoff, Kuehlmittel oder Datenleitungen. Andere sind Rechtsbeweise: wer zuerst schnitt, wer spaeter zurueckkam und wer eine Rettungsbreach als Bergungsgrenze verkaufen wollte.",
+     "external_site": "Bergeschnitt-Querschnitte machen geoeffnete HECTON-8-Huellen lesbar: Lack, Metall, Isolierung, Dichtung, Kabel und Schneidbrand zeigen Reparaturfolge, Flutzeit und Bergungscustody.",
+     "external_site_article": "Ein Bergeschnitt-Querschnitt ist die Kante, die bleibt, wenn ein Druckpanel, Wrackblech oder alter Koloniewandabschnitt mit Werkzeugkraft geoeffnet wurde. Die fehlende Platte ist weniger wichtig als die freigelegten Schichten.\n\nIm Spiel koennen solche Kanten Zugang markieren, vor aktiven Systemen warnen oder spaete menschliche Rueckkehr beweisen. Brand ueber Salz deutet auf einen Schnitt nach dem Fluten. Kreidige Keramik zeigt Wasser im Wandinneren. Sauber getrennte Kabel koennen Eile, Absicht oder Gleichgueltigkeit verraten.\n\nDamit ist Bergung nicht einfach Pluendern. Wer die Kante liest, liest Gefahr, Eigentum, Route und Schuld in derselben Naht.",
+     "field_note": "Schnittkanten halten Zeit besser als Uhren. Erst Salz, dann Brand: jemand kam zurueck, nachdem der Raum ertrunken war."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Articulo de campo sobre seccion de corte de salvamento",
+     "scanner": "BORDE DE CORTE // Piel pintada del casco, metal oscuro de presion, aislamiento ceramico, junta de goma, seccion de mazo de cables, linea de corte quemada y fractura manchada de sal. La secuencia se puede leer.",
+     "terminal": "MANEJO BLACK KEEL // No tasar un panel cortado por la pintura exterior. Registrar nucleo expuesto, linea de agua en el aislamiento, estado de cables y direccion de quemado. Un borde limpio aun puede ser prueba robada.",
+     "audio": "El aislamiento del borde sigue caliente. Ese cortador no estuvo aqui con la primera inundacion.",
+     "in_game_wiki": "Una seccion de corte de salvamento es una herida abierta en una estructura de presion. Lo util no es el agujero, sino el orden: pintura, imprimacion, metal portante oscuro, aislamiento ceramico, sello de goma, mazo de cables, borde tostado por calor y sal despues de que el agua encontrara el camino. Leyendo ese orden se distingue un fallo, una reparacion, un acceso forzado o un desguace posterior al abandono.\n\nLos cascos de HECTON-8 no eran pieles limpias de nave. Una pared de base podia llevar pintura blanquecina, nervios de grafito, respaldo ceramico, labios de junta, bandejas de cable y placas de parche de distintas epocas de mantenimiento. Al abrirla, el corte deja las capas a la vista. El metal recien cortado es oscuro y agudo. Las grietas de presion antiguas deshilachan la imprimacion. El aislamiento ceramico bebe agua y se vuelve tiza. La goma se embadurna en vez de partirse.\n\nPara el salvamento, el borde es prueba. Quemado sobre sal vieja significa corte posterior a la inundacion. Sal dentro del aislamiento pero no en la pintura exterior significa que el agua viajo por la pared antes de la apertura. Un mazo de cables cortado sin marca de aislamiento indica prisa o desprecio por lo que seguia alimentando. Una junta brillante y comprimida dice que la presion aun importaba cuando se corto.\n\nEl escaner no debe tratar todo corte como botin. Algunos bordes abren un paso seguro a un conducto. Otros advierten de energia, oxigeno, refrigerante o datos. Otros son custodia legal: quien corto primero, quien volvio despues y que informe intento convertir una brecha de rescate en una frontera de reclamacion.",
+     "external_site": "Las secciones de corte de salvamento hacen legibles los cascos abiertos de HECTON-8: pintura, metal, aislamiento, junta, cable y quemado revelan orden de reparacion, inundacion y custodia.",
+     "external_site_article": "Una seccion de corte de salvamento es el borde que queda al abrir con herramienta un panel de presion, una placa de pecio o una pared colonial antigua. Las capas expuestas cuentan mas que la pieza perdida.\n\nEn juego, esos bordes pueden guiar acceso, avisar de sistemas vivos o demostrar actividad humana tardia. Quemado sobre sal apunta a un corte despues de la inundacion. Aislamiento tizado muestra agua dentro del muro. Cables seccionados limpiamente pueden revelar prisa, sabotaje o simple indiferencia.\n\nLeer el corte separa salvamento de saqueo. En la misma costura hay peligro, valor de ruta y custodia.",
+     "field_note": "Los bordes cortados guardan mejor el tiempo que los relojes. Sal primero y quemado despues significa que alguien volvio cuando la sala ya estaba hundida."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Article de terrain sur coupe de recuperation",
+     "scanner": "BORD DE COUPE // Peau de coque peinte, metal sombre sous pression, isolant ceramique, tranche de joint caoutchouc, coupe de faisceau de cables, ligne brulee au cutter et fracture salee. La sequence est lisible.",
+     "terminal": "MANUTENTION BLACK KEEL // Ne pas evaluer un panneau coupe a sa peinture. Noter noyau expose, ligne d'eau dans l'isolant, etat des cables et sens de brulure. Une arrete propre peut etre une preuve volee.",
+     "audio": "L'isolant du bord est encore tiede. Ce cutter n'etait pas la lors de la premiere inondation.",
+     "in_game_wiki": "Une coupe de recuperation est une plaie ouverte dans une structure sous pression. Le trou compte moins que l'ordre des couches: peinture, primaire, metal porteur sombre, isolant ceramique, joint caoutchouc, faisceau de cables, bord bruni par la chaleur, puis sel depose quand l'eau a trouve son passage. Cet ordre permet de lire une panne, une reparation, une ouverture d'acces ou un depouillage tardif.\n\nLes coques de HECTON-8 n'etaient pas des surfaces propres. Une paroi de base pouvait porter peinture blanc casse, nervures graphite, support ceramique, levres de joint, chemins de cable et plaques de reparation de plusieurs periodes. Le cutter revele cette stratigraphie. Le metal fraichement coupe est sombre et net. Les fissures de pression anciennes ouvrent le primaire. L'isolant boit l'eau au bord et devient poudreux. Le caoutchouc s'etale au lieu d'eclater.\n\nPour la recuperation, le bord est une preuve. Une brulure par-dessus du sel ancien signale une coupe apres inondation. Du sel dans l'isolant mais pas sur la peinture exterieure indique un trajet d'eau interne. Un faisceau tranche sans marque d'isolation trahit la hate ou l'indifference. Un joint luisant et comprime montre que la pression comptait encore au moment de la coupe.\n\nLe scanner ne doit pas confondre chaque ouverture avec du butin. Certaines coupes menent a une gaine de service. D'autres signalent courant, oxygene, refroidissement ou donnees. D'autres gardent une valeur juridique: qui a coupe, qui est revenu, et qui a tente de transformer une breche de secours en limite de reclamation.",
+     "external_site": "Les coupes de recuperation rendent lisibles les coques ouvertes de HECTON-8: peinture, metal, isolant, joint, cable et brulure indiquent reparations, inondation et custody.",
+     "external_site_article": "Une coupe de recuperation est le bord laisse par l'ouverture forcee d'un panneau de pression, d'une plaque d'epave ou d'une ancienne paroi coloniale. Les couches exposees importent davantage que la piece retiree.\n\nEn jeu, ces bords peuvent guider un acces, avertir d'un systeme actif ou prouver un retour humain tardif. La brulure sur le sel indique une intervention apres inondation. L'isolant poudreux montre l'eau dans la paroi. Les cables coupes proprement peuvent signaler hate, sabotage ou negligence.\n\nLe Marauder lit la coupe parce que danger, route et custody se trouvent dans la meme arrete.",
+     "field_note": "Les bords coupes gardent mieux le temps que les horloges. Sel d'abord, brulure ensuite: quelqu'un est revenu apres la noyade de la salle."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "מאמר שדה על חתך חיתוך חילוץ",
+     "scanner": "קצה חיתוך חילוץ // עור גוף צבוע, מתכת לחץ כהה, בידוד קרמי, פרוסת אטם גומי, חתך צרור כבלים, קו חיתוך שרוף ושפת שבר מוכתמת מלח. רצף החיתוך קריא.",
+     "terminal": "טיפול BLACK KEEL // אין לתמחר לוח חתוך לפי הצבע החיצוני. רשום ליבה חשופה, קו מים בבידוד, מצב כבלים וכיוון שרפה. קצה נקי עדיין יכול להיות ראיה גנובה.",
+     "audio": "הבידוד בקצה עדיין חם. החותך הזה לא היה כאן בהצפה הראשונה.",
+     "in_game_wiki": "חתך חיתוך חילוץ הוא פצע פתוח במבנה לחץ. החור פחות חשוב מן הסדר: צבע, פריימר, מתכת נושאת כהה, בידוד קרמי, אטם גומי, צרור כבלים, קצה שהושחם מחום ומלח שהגיע אחרי שהמים מצאו דרך. מי שקורא את הסדר הזה יכול להבין אם לוח כשל, תוקן, נחתך לגישה או נבזז אחרי שהמודול כבר לא נחשב בר חילוץ.\n\nגופי HECTON-8 לא היו קליפות חלל נקיות. קיר בסיס יכול לשאת צבע לבן שחוק, צלעות גרפיט, גב קרמי מרוסס, שפתי אטם, תעלות כבלים ופלטות תיקון מתקופות תחזוקה שונות. כשחותך פותח אותו, השכבות נראות. מתכת חתוכה טרי כהה וחדה יותר. סדקי לחץ ישנים מנפחים את הפריימר. בידוד קרמי שותה מים בקצה ונעשה גירי. גומי נמרח במקום להישבר.\n\nבחילוץ, הקצה הוא ראיה. קו שרפה מעל מלח ישן אומר שהחיתוך בא אחרי ההצפה. מלח בתוך הבידוד ולא על הצבע החיצוני אומר שהמים עברו בתוך הקיר לפני הפתיחה. צרור כבלים חתוך בלי סימון בידוד מראה שמישהו מיהר או לא בדק מה הקו עדיין מזין. אטם מבריק ודחוס אומר שלחץ עדיין היה חלק מן המערכת.\n\nהסורק לא אמור לראות בכל חיתוך הזמנה לשלל. חלק מן החתכים מובילים לתעלת שירות בטוחה. אחרים מזהירים מפני חשמל, חמצן, קירור או נתונים. אחרים הם ראיה משפטית: מי חתך ראשון, מי חזר אחר כך, ואיזו חברה ניסתה להפוך פרצת חילוץ לגבול תביעה.",
+     "external_site": "חתכי חיתוך חילוץ הופכים גופי HECTON-8 פתוחים לקריאים: צבע, מתכת, בידוד, אטם, כבל ושרפת חותך חושפים סדר תיקון, עיתוי הצפה וחזקת חילוץ.",
+     "external_site_article": "חתך חיתוך חילוץ הוא הקצה שנשאר כאשר כלי פותח לוח לחץ, פלטת טרופה או קיר מושבה ישן. השכבות החשופות חשובות יותר מן החלק שנלקח.\n\nבמשחק, קצוות כאלה יכולים להוביל לגישה, להזהיר ממערכת חיה או להוכיח חזרה אנושית מאוחרת. שרפה מעל מלח מצביעה על חיתוך אחרי הצפה. בידוד גירי מראה מים בתוך הקיר. כבלים חתוכים נקי יכולים להעיד על חיפזון או על ניתוק מכוון.\n\nהקריאה הזאת מפרידה חילוץ מביזה פשוטה: סכנה, נתיב וחזקה יושבים באותו תפר.",
+     "field_note": "קצוות חתוכים שומרים זמן טוב יותר משעונים. מלח לפני שרפה אומר שמישהו חזר אחרי שהחדר טבע."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artikel Lapangan Potongan Silang Salvage",
+     "scanner": "TEPI POTONG SALVAGE // Kulit lambung bercat, logam tekanan gelap, isolasi keramik, irisan gasket karet, potongan bundel kabel, garis pemotong terbakar, dan tepi retak bernoda garam. Urutan potong bisa dibaca.",
+     "terminal": "PENANGANAN BLACK KEEL // Jangan menilai panel potong dari cat luar. Catat inti terbuka, garis air isolasi, kondisi kabel, dan arah bakar. Tepi bersih masih bisa menjadi bukti curian.",
+     "audio": "Isolasi di tepi masih hangat. Pemotong itu tidak ada saat banjir pertama.",
+     "in_game_wiki": "Potongan silang salvage adalah luka terbuka pada struktur bertekanan. Yang berguna bukan lubangnya, melainkan urutannya: cat, primer, logam penahan gelap, isolasi keramik, segel karet, bundel kabel, tepi kecokelatan panas, lalu garam setelah air menemukan jalan. Dari urutan itu pemain bisa membedakan panel gagal, panel diperbaiki, akses yang dipotong, atau pembongkaran setelah modul dianggap hilang.\n\nLambung HECTON-8 bukan kulit pesawat ruang yang bersih. Satu dinding pangkalan bisa membawa cat putih kusam, rusuk grafit, lapisan keramik semprot, bibir gasket, baki kabel, dan pelat tambalan dari beberapa masa perawatan. Ketika pemotong membukanya, semua lapisan terlihat. Logam baru dipotong lebih gelap dan tajam. Retak tekanan lama membuat primer berbulu. Isolasi keramik menyerap air di tepi dan menjadi kapur. Karet melembek dan menyeret, bukan pecah.\n\nDalam salvage, tepi adalah bukti. Garis bakar di atas garam tua berarti potongan terjadi setelah banjir. Garam dalam isolasi tetapi bukan pada cat luar berarti air bergerak melalui dinding sebelum panel dibuka. Bundel kabel teriris tanpa tanda isolasi berarti pekerja terburu-buru atau tidak peduli apa yang masih diberi daya. Gasket mengilap dan tertekan berarti tekanan masih relevan saat potong dibuat.\n\nPemindai tidak boleh menganggap setiap potongan sebagai loot. Beberapa tepi membuka jalur servis aman. Beberapa memperingatkan listrik, oksigen, pendingin, atau data. Beberapa adalah bukti hukum: siapa memotong dulu, siapa kembali kemudian, dan siapa mencoba menjual celah penyelamatan sebagai batas klaim.",
+     "external_site": "Potongan silang salvage membuat lambung HECTON-8 yang terbuka bisa dibaca: cat, logam, isolasi, gasket, kabel, dan bekas bakar menunjukkan urutan perbaikan, waktu banjir, dan custody salvage.",
+     "external_site_article": "Potongan silang salvage adalah tepi yang tersisa saat panel tekanan, pelat bangkai, atau dinding koloni tua dibuka oleh alat. Lapisan yang terbuka lebih penting daripada bagian yang hilang.\n\nDi gameplay, tepi ini bisa menunjukkan akses, memperingatkan sistem hidup, atau membuktikan manusia kembali terlambat. Bekas bakar di atas garam menandai potongan pascabanjir. Isolasi berkapur menunjukkan air di dalam dinding. Kabel yang teriris rapi bisa berarti tergesa-gesa atau pemutusan sengaja.\n\nMarauder membaca potongan karena bahaya, rute, dan custody berada di jahitan yang sama.",
+     "field_note": "Tepi potong menyimpan waktu lebih baik daripada jam. Garam dulu, bakar kemudian: seseorang kembali setelah ruangan tenggelam."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "サルベージ切断断面フィールド記事",
+     "scanner": "サルベージ切断縁 // 塗装外皮、暗色の耐圧金属、セラミック断熱材、ゴムガスケット断片、ケーブル束断面、焼けたカッター線、塩で染まった破断縁。切断順序を読める。",
+     "terminal": "BLACK KEEL 取扱 // 切断パネルを外側の塗装だけで査定しないこと。露出した芯材、断熱材の水線、ケーブル状態、焼け方向を記録。きれいな縁でも盗まれた証拠であり得る。",
+     "audio": "縁の断熱材がまだ温かい。このカッターは最初の浸水時にはここになかった。",
+     "in_game_wiki": "サルベージ切断断面は、耐圧構造に開いた傷である。重要なのは穴そのものではなく、順序だ。塗装、下地、暗色の荷重金属、セラミック断熱材、ゴムシール、ケーブル束、熱で褐色になった縁、そして水が道を見つけた後の塩。これを読めば、パネルが破損したのか、修理されたのか、進入のために切られたのか、あるいは回収不能とされた後に剥がされたのかが分かる。\n\nHECTON-8 の外殻は清潔な宇宙船の皮ではなかった。基地壁には、くすんだ白い塗装、グラファイトリブ、吹き付けセラミック、ガスケットの唇、ケーブルトレイ、複数時期の補修板が重なっていた。カッターで開くと、それらは断面に現れる。新しい切断金属は暗く鋭い。古い圧力亀裂は下地を毛羽立たせる。セラミック断熱材は縁から水を吸って白く崩れる。ゴムは欠けずに擦れて伸びる。\n\nサルベージでは、縁が証拠になる。古い塩の上に焼け線があれば、切断は浸水後だ。断熱材の内部に塩があり外塗装にないなら、水は壁内を通った。隔離タグなしにケーブル束が切られていれば、作業者は急いでいたか、まだ何を供給していたかを無視した。光沢のある圧縮ガスケットは、切断時にも圧力が関係していたことを示す。\n\nスキャナーはすべての切断を戦利品として扱うべきではない。安全なサービス通路に続くものもあれば、電力、酸素、冷却材、データ線を警告するものもある。法的証拠になる縁もある。誰が最初に切り、誰が戻り、どの会社が救助の穴をサルベージ境界に変えようとしたか。",
+     "external_site": "サルベージ切断断面は、開かれた HECTON-8 外殻を読める証拠にする。塗装、金属、断熱材、ガスケット、ケーブル、焼け跡が修理順、浸水時期、回収権を示す。",
+     "external_site_article": "サルベージ切断断面は、耐圧パネルや漂着した外板、古いコロニー壁を工具で開いたあとに残る縁である。失われた部品より、露出した層の方が多くを語る。\n\nゲーム内では、この縁が進入口を示し、まだ生きている系統を警告し、遅い人間の帰還を証明する。塩の上の焼け跡は浸水後の切断を示す。白く崩れた断熱材は壁内の水を示す。きれいに断たれたケーブルは急ぎか意図的な遮断を示す。\n\nMarauder は切断を読む。同じ縁に危険、経路、所有の証拠が並んでいるからだ。",
+     "field_note": "切断縁は時計より時間を残す。塩が先で焼けが後なら、部屋が沈んだあとに誰かが戻った。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "인양 절단 단면 현장 문서",
+     "scanner": "인양 절단면 // 도장된 선체 표피, 어두운 압력 금속, 세라믹 단열층, 고무 개스킷 절편, 케이블 다발 단면, 탄 절단선, 소금에 얼룩진 파단면. 절단 순서를 읽을 수 있음.",
+     "terminal": "BLACK KEEL 취급 // 절단 패널을 외부 도장만 보고 가격 매기지 말 것. 노출된 코어, 단열층 수선, 케이블 상태, 탄 방향을 기록. 깨끗한 면도 훔친 증거일 수 있음.",
+     "audio": "가장자리 단열재가 아직 따뜻하다. 이 절단기는 첫 침수 때 여기 없었다.",
+     "in_game_wiki": "인양 절단 단면은 압력 구조물에 열린 상처다. 중요한 것은 구멍이 아니라 순서다. 도장, 프라이머, 어두운 하중 금속, 세라믹 단열층, 고무 씰, 케이블 다발, 열로 갈색이 된 가장자리, 그리고 물이 길을 찾은 뒤 남은 소금. 그 순서를 읽으면 패널이 실패했는지, 수리됐는지, 접근을 위해 잘렸는지, 회수 불능 판정 뒤 벗겨졌는지 구분할 수 있다.\n\nHECTON-8의 선체는 깨끗한 우주선 피부가 아니었다. 기지 벽 하나에도 바랜 흰 페인트, 흑연 리브, 분사 세라믹, 개스킷 입술, 케이블 트레이, 여러 정비 시기의 패치 플레이트가 겹쳤다. 절단기가 열면 그 층들이 단면에 드러난다. 새로 잘린 금속은 더 어둡고 날카롭다. 오래된 압력 균열은 프라이머를 보풀처럼 일으킨다. 세라믹 단열재는 가장자리에서 물을 마시고 분필처럼 변한다. 고무는 깨지기보다 번진다.\n\n인양에서 가장자리는 증거다. 오래된 소금 위를 지나는 탄 자국은 침수 뒤의 절단을 뜻한다. 바깥 페인트에는 없고 단열재 안에만 소금이 있다면 물은 벽 속을 지나갔다. 격리 표시 없이 깨끗하게 잘린 케이블 다발은 작업자가 서둘렀거나 남은 공급을 무시했다는 뜻이다. 윤기 있고 눌린 개스킷은 절단 때에도 압력이 관련되어 있었음을 말한다.\n\n스캐너가 모든 절단을 전리품으로 처리해서는 안 된다. 어떤 면은 안전한 서비스 통로로 이어진다. 어떤 면은 전력, 산소, 냉각수, 데이터 라인을 경고한다. 어떤 면은 법적 증거다. 누가 먼저 잘랐고, 누가 나중에 돌아왔으며, 어느 회사가 구조 구멍을 인양 청구 경계로 바꾸려 했는지.",
+     "external_site": "인양 절단 단면은 열린 HECTON-8 선체를 읽게 한다. 페인트, 금속, 단열층, 개스킷, 케이블, 탄 절단선은 수리 순서, 침수 시점, 인양 custody를 드러낸다.",
+     "external_site_article": "인양 절단 단면은 압력 패널, 잔해판, 오래된 식민지 벽을 도구로 열 때 남는 가장자리다. 빠진 조각보다 노출된 층이 더 중요하다.\n\n게임에서 이 가장자리는 접근로를 알려 주고, 살아 있는 시스템을 경고하며, 늦은 인간 활동을 증명한다. 소금 위의 탄 자국은 침수 후 절단을 가리킨다. 분필 같은 단열재는 벽 내부의 물을 보여 준다. 깨끗하게 잘린 케이블은 서두름이나 의도적 차단을 뜻할 수 있다.\n\nMarauder는 절단면을 읽는다. 위험, 경로, custody가 같은 이음새에 있기 때문이다.",
+     "field_note": "절단면은 시계보다 시간을 잘 보관한다. 소금이 먼저고 탄 자국이 나중이면, 방이 잠긴 뒤 누군가 돌아온 것이다."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Veldartikel: bergingssnede-doorsnede",
+     "scanner": "BERGINGSSNEDE // Geschilderde romphuid, donker drukmetaal, keramische isolatie, rubber pakkingdoorsnede, kabelbundeldoorsnede, verbrande snijlijn en zoutbevlekte breukrand. De snijvolgorde is leesbaar.",
+     "terminal": "BLACK KEEL AFHANDELING // Waardeer een gesneden paneel niet op buitenverf. Noteer blootgelegde kern, waterlijn in isolatie, kabelstaat en brandrichting. Een nette rand kan nog steeds gestolen bewijs zijn.",
+     "audio": "De isolatie aan de rand is nog warm. Die snijder was hier niet bij de eerste overstroming.",
+     "in_game_wiki": "Een bergingssnede-doorsnede is een open wond in een drukstructuur. Niet het gat is nuttig, maar de volgorde: verf, primer, donker dragend metaal, keramische isolatie, rubber afdichting, kabelbundel, hittebruine rand en zout nadat het water de weg vond. Wie die volgorde leest, ziet of een paneel faalde, gerepareerd werd, voor toegang werd geopend of pas na afschrijving werd gestript.\n\nHECTON-8-rompen waren geen schone ruimteschipvellen. Een basiswand kon gebroken wit verfwerk, grafietribben, gespoten keramiek, pakkinglippen, kabelgoten en herstelplaten uit meerdere onderhoudsperiodes dragen. Een snijder toont de lagen. Vers metaal is donker en scherp. Oude drukscheuren rafelen de primer. Keramische isolatie drinkt water aan de rand en wordt krijtig. Rubber smeert in plaats van te breken.\n\nVoor berging is de rand bewijs. Brand over oud zout betekent dat de snede na de overstroming kwam. Zout in de isolatie maar niet op de buitenverf betekent dat water door de wand liep. Een kabelbundel zonder isolatiemerk verraadt haast of onverschilligheid. Een glanzend samengedrukte pakking zegt dat druk nog meespeelde toen er werd gesneden.\n\nNiet elke snede is buit. Sommige randen leiden naar een veilige servicegang. Andere waarschuwen voor stroom, zuurstof, koelmiddel of datalijnen. Sommige zijn juridisch bewijs: wie eerst sneed, wie later terugkwam en welk rapport een reddingsgat tot claimgrens maakte.",
+     "external_site": "Bergingssnede-doorsneden maken geopende HECTON-8-rompen leesbaar: verf, metaal, isolatie, pakking, kabel en brandlijn tonen reparatievolgorde, overstromingstiming en bergingscustody.",
+     "external_site_article": "Een bergingssnede-doorsnede is de rand die achterblijft wanneer een drukpaneel, wrakplaat of oude koloniewand met gereedschap is geopend. De blootgelegde lagen zeggen meer dan het ontbrekende stuk.\n\nIn gameplay kunnen zulke randen toegang wijzen, levende systemen verraden of late menselijke terugkeer bewijzen. Brand over zout wijst op een snede na overstroming. Krijtige isolatie toont water in de wand. Net gesneden kabels kunnen haast, sabotage of verwaarlozing betekenen.\n\nEen Marauder leest de snede omdat gevaar, route en custody in dezelfde naad liggen.",
+     "field_note": "Gesneden randen bewaren tijd beter dan klokken. Eerst zout, dan brand: iemand kwam terug nadat de kamer verdronk."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artykul terenowy: przekroj ciecia zlomowego",
+     "scanner": "KRAWEDZ CIECIA // Malowana powloka kadluba, ciemny metal cisnieniowy, izolacja ceramiczna, przekroj gumowej uszczelki, przekroj wiazki kabli, przypalona linia ciecia i zasolona krawedz pekniecia. Sekwencja jest czytelna.",
+     "terminal": "OBSLUGA BLACK KEEL // Nie wyceniaj cietego panelu po farbie zewnetrznej. Zapisz odsłoniety rdzen, linie wody w izolacji, stan kabli i kierunek przepalenia. Czysta krawedz nadal moze byc skradzionym dowodem.",
+     "audio": "Izolacja przy krawedzi wciaz jest ciepla. Ten przecinak nie byl tu podczas pierwszego zalania.",
+     "in_game_wiki": "Przekroj ciecia zlomowego to otwarta rana w strukturze cisnieniowej. Nie dziura jest wazna, tylko kolejnosc: farba, podklad, ciemny metal nosny, izolacja ceramiczna, gumowa uszczelka, wiazka kabli, krawedz zbrunatniala od ciepla i sol po tym, jak woda znalazla droge. Z tej kolejnosci mozna odczytac awarie, naprawe, ciecie dostepowe albo pozne rozbieranie modulu.\n\nKadluby HECTON-8 nie byly czystymi skorupami statku kosmicznego. Sciana bazy mogla nosic przybrudzona biala farbe, grafitowe zebra, natrysk ceramiczny, wargi uszczelek, koryta kablowe i laty z roznych okresow. Po otwarciu przecinakiem warstwy wychodza na jaw. Swiezo ciety metal jest ciemniejszy i ostrzejszy. Stare pekniecia cisnieniowe strzepia podklad. Ceramika pije wode przy krawedzi i robi sie kredowa. Guma raczej sie rozmazuje niz odpryskuje.\n\nDla zlomowania krawedz jest dowodem. Przepalenie na starej soli znaczy, ze ciecie nastapilo po zalaniu. Sol w izolacji, ale nie na farbie zewnetrznej, znaczy ze woda szla przez sciane. Czysto przecieta wiazka kabli bez znacznika odciecia mowi o pospiechu albo obojetnosci. Blyszczaca, sprasowana uszczelka pokazuje, ze cisnienie nadal mialo znaczenie.\n\nSkaner nie powinien traktowac kazdego ciecia jako lup. Niektore krawedzie prowadza do bezpiecznego kanalu serwisowego. Inne ostrzegaja przed zasilaniem, tlenem, chlodzeniem lub danymi. Inne sa dowodem prawnym: kto cial pierwszy, kto wrocil pozniej i kto probowal zmienic otwor ratunkowy w granice roszczenia.",
+     "external_site": "Przekroje ciec zlomowych czynia otwarte kadluby HECTON-8 czytelnymi: farba, metal, izolacja, uszczelka, kabel i slady ciecia ujawniaja naprawy, czas zalania i custody.",
+     "external_site_article": "Przekroj ciecia zlomowego to krawedz po otwarciu panelu cisnieniowego, plyty wraku lub starej sciany kolonii. Odsłoniete warstwy mowia wiecej niz brakujacy element.\n\nW grze taka krawedz moze prowadzic do przejscia, ostrzegac przed zywym systemem albo dowodzic poznego powrotu ludzi. Przepalenie na soli wskazuje ciecie po zalaniu. Kredowa izolacja pokazuje wode w scianie. Czysto przeciete kable moga oznaczac pospiech albo celowe odciecie.\n\nMarauder czyta ciecie, bo zagrozenie, droga i custody leza w tej samej szczelinie.",
+     "field_note": "Ciete krawedzie lepiej przechowuja czas niz zegary. Najpierw sol, potem przypalenie: ktos wrocil po utopieniu pokoju."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artigo de campo sobre corte transversal de salvamento",
+     "scanner": "BORDA DE CORTE // Pele pintada do casco, metal escuro de pressão, isolamento cerâmico, fatia de junta de borracha, seção de feixe de cabos, linha de corte queimada e fratura manchada de sal. A sequência é legível.",
+     "terminal": "MANUSEIO BLACK KEEL // Não precificar um painel cortado pela pintura externa. Registrar núcleo exposto, linha d'água no isolamento, estado dos cabos e direção da queima. Uma borda limpa ainda pode ser prova roubada.",
+     "audio": "O isolamento na borda ainda está quente. Esse cortador não estava aqui na primeira inundação.",
+     "in_game_wiki": "Um corte transversal de salvamento é uma ferida aberta em uma estrutura de pressão. O útil não é o buraco, mas a ordem: tinta, primer, metal estrutural escuro, isolamento cerâmico, vedação de borracha, feixe de cabos, borda escurecida pelo calor e sal depois que a água achou passagem. Quem lê essa ordem sabe se o painel falhou, foi reparado, foi cortado para acesso ou foi desmontado depois que o módulo deixou de ser recuperável.\n\nOs cascos de HECTON-8 não eram superfícies limpas de nave. Uma parede de base podia ter tinta branco-gasta, nervuras de grafite, base cerâmica pulverizada, lábios de junta, bandejas de cabos e placas de remendo de vários períodos de manutenção. Quando um cortador abre a parede, as camadas aparecem. Metal recém-cortado é mais escuro e afiado. Rachaduras antigas de pressão arrepiam o primer. O isolamento cerâmico bebe água na borda e fica esfarelado. A borracha borra em vez de lascar.\n\nPara salvamento, a borda é prova. Linha queimada sobre sal antigo significa corte depois da inundação. Sal dentro do isolamento mas não na pintura externa significa que a água viajou pela parede. Um feixe de cabos cortado sem marca de isolamento mostra pressa ou indiferença. Uma junta brilhante e comprimida diz que a pressão ainda fazia parte do sistema no momento do corte.\n\nO scanner não deve tratar todo corte como saque. Alguns cortes abrem acesso seguro a uma galeria de serviço. Outros avisam sobre energia, oxigênio, resfriamento ou dados. Outros são prova legal: quem cortou primeiro, quem voltou depois, e qual empresa tentou transformar uma brecha de resgate em fronteira de reivindicação.",
+     "external_site": "Cortes transversais de salvamento tornam cascos abertos de HECTON-8 legíveis: tinta, metal, isolamento, junta, cabo e queima mostram reparo, inundação e custody.",
+     "external_site_article": "Um corte transversal de salvamento é a borda deixada quando uma ferramenta abre um painel de pressão, uma placa de destroço ou uma parede colonial antiga. As camadas expostas importam mais que a peça removida.\n\nNo jogo, essas bordas podem guiar acesso, alertar para sistemas vivos ou provar atividade humana tardia. Queima sobre sal aponta para corte pós-inundação. Isolamento esfarelado mostra água dentro da parede. Cabos cortados limpos podem indicar pressa ou desligamento intencional.\n\nO Marauder lê a borda porque perigo, rota e custody estão na mesma costura exposta.",
+     "field_note": "Bordas cortadas guardam tempo melhor que relógios. Sal primeiro, queimado depois: alguém voltou quando a sala já tinha afundado."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Полевая статья о спасательном срезе в разрезе",
+     "scanner": "СПАСАТЕЛЬНЫЙ СРЕЗ // Окрашенная обшивка, темный силовой металл, керамическая изоляция, срез резиновой прокладки, сечение кабельного пучка, выжженная линия резака и соленая кромка разлома. Последовательность читается.",
+     "terminal": "ИНСТРУКЦИЯ BLACK KEEL // Не оценивать срезанную панель по внешней краске. Фиксировать открытый сердечник, водяную линию в изоляции, состояние кабелей и направление прожога. Ровная кромка все еще может быть украденным доказательством.",
+     "audio": "Изоляция на кромке еще теплая. Этот резак пришел сюда не с первым затоплением.",
+     "in_game_wiki": "Спасательный срез в разрезе - это открытая рана в напорной конструкции. Полезна не дыра, а порядок слоев: краска, грунт, темный несущий металл, керамическая изоляция, резиновое уплотнение, кабельный пучок, потемневшая от жара кромка и соль, которая пришла после воды. По этому порядку можно понять, панель разрушилась сама, была отремонтирована, вскрыта для прохода или ободрана уже после того, как модуль перестали считать спасаемым.\n\nКорпуса HECTON-8 не были чистой космической кожей. Стена базы могла нести выцветшую белую краску, графитовые ребра, напыленную керамику, губы прокладок, кабельные лотки и ремонтные пластины трех разных эпох обслуживания. Когда ее открывает резак, слои выходят наружу. Свежий металл темнее и резче. Старые трещины давления вспушивают грунт. Керамическая изоляция пьет воду по краю и становится меловой. Резина мажется, а не крошится.\n\nДля мародерского дела кромка - доказательство. Прожог поверх старой соли значит, что резали после затопления. Соль внутри изоляции, но не на внешней краске, значит, вода шла через стену до вскрытия. Кабельный пучок, перерезанный без метки изоляции, говорит о спешке или безразличии к тому, что он еще питал. Блестящая сжатая прокладка показывает, что давление все еще участвовало в системе, когда сделали срез.\n\nСканер не должен считать каждый срез приглашением к добыче. Одни кромки ведут в безопасную сервисную нишу. Другие предупреждают о питании, кислороде, охлаждении или линии данных. Третьи являются юридическим следом: кто резал первым, кто вернулся позже, и какая компания попыталась превратить спасательный пролом в границу трофейной претензии.",
+     "external_site": "Спасательные срезы делают вскрытые корпуса HECTON-8 читаемыми: краска, металл, изоляция, прокладка, кабель и след резака показывают порядок ремонта, время затопления и custody salvage.",
+     "external_site_article": "Спасательный срез в разрезе - это кромка, оставшаяся после вскрытия напорной панели, обломка корпуса или старой колониальной стены инструментом. Открытые слои важнее отсутствующей детали.\n\nВ игре такие кромки могут вести к проходу, предупреждать о живой системе или доказывать позднее возвращение людей. Прожог поверх соли указывает на срез после затопления. Меловая изоляция показывает воду внутри стены. Ровно перерезанные кабели могут означать спешку, саботаж или намеренное отключение.\n\nМародер читает кромку, потому что опасность, маршрут и право на добычу лежат в одном открытом шве.",
+     "field_note": "Срезанные кромки держат время лучше часов. Сначала соль, потом прожог - значит, кто-то вернулся после того, как комнату утопило."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Польова стаття про рятувальний розріз у перерізі",
+     "scanner": "РЯТУВАЛЬНИЙ РОЗРІЗ // Фарбована обшивка, темний силовий метал, керамічна ізоляція, зріз гумової прокладки, переріз кабельного пучка, випалена лінія різака і засолена кромка зламу. Послідовність читається.",
+     "terminal": "ІНСТРУКЦІЯ BLACK KEEL // Не оцінювати зрізану панель за зовнішньою фарбою. Фіксувати відкритий сердечник, водяну лінію в ізоляції, стан кабелів і напрям пропалу. Рівна кромка все ще може бути вкраденим доказом.",
+     "audio": "Ізоляція на кромці ще тепла. Цей різак прийшов сюди не з першим затопленням.",
+     "in_game_wiki": "Рятувальний розріз у перерізі - це відкрита рана в напірній конструкції. Корисна не діра, а порядок шарів: фарба, ґрунт, темний несний метал, керамічна ізоляція, гумове ущільнення, кабельний пучок, потемніла від жару кромка і сіль, що прийшла після води. За цим порядком видно, панель зламалася сама, була відремонтована, розкрита для доступу чи розібрана вже після списання модуля.\n\nКорпуси HECTON-8 не були чистою космічною шкірою. Стіна бази могла нести вицвілу білу фарбу, графітові ребра, напилену кераміку, губи прокладок, кабельні лотки і ремонтні пластини з різних періодів. Коли її відкриває різак, шари виходять назовні. Свіжий метал темніший і гостріший. Старі тріщини тиску розпушують ґрунт. Керамічна ізоляція п'є воду на краю і стає крейдяною. Гума розмазується, а не кришиться.\n\nДля мародерської роботи кромка - доказ. Пропал поверх старої солі означає, що різали після затоплення. Сіль усередині ізоляції, але не на зовнішній фарбі, означає шлях води крізь стіну. Кабельний пучок, перерізаний без мітки ізоляції, говорить про поспіх або байдужість. Блискуча стиснута прокладка показує, що тиск ще був частиною системи.\n\nСканер не має сприймати кожен розріз як здобич. Одні кромки ведуть у безпечну сервісну нішу. Інші попереджають про живлення, кисень, охолодження або дані. Треті є юридичним слідом: хто різав першим, хто повернувся пізніше, і хто намагався перетворити рятувальний пролом на межу претензії.",
+     "external_site": "Рятувальні розрізи роблять відкриті корпуси HECTON-8 читаними: фарба, метал, ізоляція, прокладка, кабель і слід різака показують ремонт, затоплення і custody.",
+     "external_site_article": "Рятувальний розріз у перерізі - це кромка після відкриття напірної панелі, уламка корпусу чи старої колоніальної стіни інструментом. Відкриті шари важливіші за відсутню деталь.\n\nУ грі такі кромки можуть вести до проходу, попереджати про живу систему або доводити пізнє повернення людей. Пропал поверх солі вказує на розріз після затоплення. Крейдяна ізоляція показує воду всередині стіни. Рівно перерізані кабелі можуть означати поспіх або навмисне вимкнення.\n\nМародер читає кромку, бо небезпека, маршрут і право на здобич лежать в одному відкритому шві.",
+     "field_note": "Зрізані кромки тримають час краще за годинники. Спершу сіль, потім пропал: хтось повернувся після того, як кімнату втопило."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "打捞切割剖面现场条目",
+     "scanner": "打捞切割边 // 上漆 hull 外皮、深色承压金属、陶瓷隔热层、橡胶密封截面、线束剖面、烧蚀切割线和盐渍断裂边。切割顺序可读。",
+     "terminal": "BLACK KEEL 处理 // 不要按外层油漆给切割面板估价。记录暴露芯层、隔热层水线、线缆状态和烧蚀方向。干净边缘仍可能是被盗证据。",
+     "audio": "边缘里的隔热层还热。这个切割器不是第一次进水时来的。",
+     "in_game_wiki": "打捞切割剖面是承压结构上的开放伤口。有用的不是洞，而是顺序：油漆、底漆、深色承力金属、陶瓷隔热层、橡胶密封、线束、被热烤褐的边缘，以及水找到路径后留下的盐。读懂这个顺序，就能判断面板是自行失效、被维修、被切开作为通路，还是在模块被放弃后遭到拆取。\n\nHECTON-8 的外壳不是干净的飞船皮。基地墙面可能同时有旧白漆、石墨肋、喷涂陶瓷、密封唇、线缆槽和不同时期的补片。切割器打开它时，层次会在剖面上暴露。新切金属更暗更锐。旧压力裂纹会让底漆起毛。陶瓷隔热层从边缘吸水，变成粉笔状。橡胶会涂抹拖开，而不是碎裂。\n\n对打捞来说，边缘就是证据。烧痕压在旧盐上，说明切割发生在进水之后。盐在隔热层里却不在外漆上，说明水先从墙体内部走过。线束被干净切断却没有隔离标记，说明作业者很赶，或者不在乎它还供给什么。发亮且被压扁的密封截面说明切割时压力仍是系统的一部分。\n\n扫描器不应把每一道切割边都当成 loot 提示。有些边缘通往安全的服务夹层。有些在警告电力、氧气、冷却剂或数据线。还有一些是法律证据：谁先切开，谁后来返回，哪家公司试图把救援破口变成可索赔的打捞边界。",
+     "external_site": "打捞切割剖面让被打开的 HECTON-8 外壳可读：油漆、金属、隔热层、密封、线缆和烧蚀层显示维修顺序、进水时间和打捞 custody。",
+     "external_site_article": "打捞切割剖面是工具打开承压面板、残骸板或旧殖民墙后留下的边缘。暴露层次比缺失部件更重要。\n\n在玩法中，这些边缘可以指向通路，警告仍然带电或供氧的系统，或者证明有人在进水之后回来。盐上的烧痕意味着后期切割。粉化隔热层说明水在墙体内移动。干净切断的线束可能代表赶工，也可能代表有意断开。\n\nMarauder 会读切口，因为危险、路线和 custody 都在同一条暴露接缝里。",
+     "field_note": "切割边比时钟更会保存时间。先有盐，后有烧痕，说明房间淹没后有人回来过。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

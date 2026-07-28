@@ -1,258 +1,259 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS276_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS276_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1329_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE",
+   "release_set_id": "RS276_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE",
+   "article_id": "applied_lore.audio_fragment_tag_field_article",
+   "title_key": "LORE_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/AppliedContent/packets/RS043_WORKER_PROP_EVIDENCE_KIT.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS058_IN_GAME_ARTIFACT_AUDIO_SURFACES.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS088_AUDIO_TRANSCRIPT_ARTICLE_SEEDS.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1329_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE",
-      "release_set_id": "RS276_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE",
-      "article_id": "applied_lore.audio_fragment_tag_field_article",
-      "title_key": "LORE_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/AppliedContent/packets/RS043_WORKER_PROP_EVIDENCE_KIT.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS058_IN_GAME_ARTIFACT_AUDIO_SURFACES.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS088_AUDIO_TRANSCRIPT_ARTICLE_SEEDS.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.audio_fragment_tag_field_article",
-        "secondary": [
-          "unlock.first_audio_fragment_tag",
-          "unlock.first_hydrophone_log_strip",
-          "unlock.first_transcript_damage_band"
-        ],
-        "poi_tags": [
-          "poi.audio_fragment_tag",
-          "poi.hydrophone_log_strip",
-          "poi.transcript_damage_band",
-          "poi.suit_recorder_spool",
-          "poi.terminal_cache_audio",
-          "poi.black_box_fragment",
-          "poi.packet_notary_audio"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.industrial_shelf",
-          "biome.salvage_route",
-          "biome.audio_evidence"
-        ],
-        "depth_band_m": "0-5600"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Packet Notary Audio Rule",
-          "audio": "Recovered Low-Bitrate Fragment",
-          "in_game_wiki": "PDA Audio Evidence Primer",
-          "external_site": "Public Site Audio Evidence Article",
-          "field_note": "Marauder Field Annotation"
-        },
-        "writer_note": "Expand P215 into player-facing audio evidence rules. Audio must be attached to physical route proof, source device, custody and transcript damage. Avoid free-floating exposition monologues."
-      },
-      "localized": {
-        "en_US": {
-          "title": "Audio Fragment Tags",
-          "scanner": "AUDIO FRAGMENT TAG // Voice fragment attached to physical source. Verify device, custody stamp, transcript damage and matching object state before playing as evidence.",
-          "terminal": "PACKET NOTARY RULE // Audio is admissible only when source device, capture window, transcript band and object anchor agree. Voice without object proof is mood, not evidence.",
-          "audio": "If the voice has no hinge, no recorder, no packet stamp, leave it alone. The dead do not owe us narration.",
-          "in_game_wiki": "Audio fragment tags keep voice from becoming cheap exposition. On HECTON-8 a voice should come from something that could really have recorded it: a hydrophone strip, suit recorder spool, terminal cache, black-box shard, packet notary footer, damaged transcript band or Marauder scan tag. The object must answer why the voice survived.\n\nA useful fragment is short because the hardware was failing. It may carry a work order, a clipped warning, a breath count, a pump cadence, a failed translation, a correction mark or the last line of a checklist. It should not explain the plot from nowhere. If the player cannot point to the device, the custody stamp and the damage that shaped the transcript, the audio is not evidence yet.\n\nRead audio with the object. A clean transcript over a crushed recorder is suspicious. A missing time band can hide who cut the line. A subtitle damage strip can be diegetic damage and accessibility text at the same time, but it must not make the scene unreadable. The best voice logs do not make colonists melodramatic. They make them working people caught mid-task when the system failed.",
-          "external_site": "Audio fragment tags keep HECTON-8 voice logs tied to physical proof instead of free-floating monologues.",
-          "external_site_article": "HECTON-8 should never use voice as a shortcut around evidence. A good audio fragment is a damaged object that happens to speak.\n\nThe tag matters as much as the voice. It tells the player where the sound came from, who captured it, what device carried it and what damage changed the transcript. Hydrophone strips, suit recorder spools, black-box shards and terminal caches all speak differently. A hydrophone catches room pressure and machine rhythm. A suit recorder catches breath, glove impacts and panic suppression. A terminal cache catches what someone intended to preserve. A black-box fragment catches what the system could not afford to forget.\n\nThis keeps voice humane without making it manipulative. The colony should not be filled with perfect death speeches. It should be filled with fragments of work: hold the pump, count the oxygen, do not open the lock, repeat the route, leave the official line visible. When those fragments are tied to physical proof, the player hears people without being told what to feel.\n\nFor designers and writers, the rule is simple: no object, no voice. The transcript must carry damage, custody and source. The audio can deepen an object, contradict a label or humanize a route. It must never replace the object.",
-          "field_note": "No recorder, no voice. No custody, no trust.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Метки аудиофрагментов",
-          "scanner": "МЕТКА АУДИО // Голосовой фрагмент привязан к физическому источнику. Проверь устройство, custody stamp, повреждение транскрипта и состояние объекта, прежде чем считать запись доказательством.",
-          "terminal": "ПРАВИЛО ПАКЕТНОГО НОТАРИУСА // Аудио допустимо только когда источник, окно записи, полоса транскрипта и объектный якорь согласуются. Голос без объекта - настроение, а не доказательство.",
-          "audio": "Если у голоса нет петли, рекордера и packet stamp, не трогай. Мертвые не должны нам повествование.",
-          "in_game_wiki": "Метки аудиофрагментов не дают голосу стать дешевым объяснением. На HECTON-8 голос должен исходить от вещи, которая действительно могла его записать: hydrophone strip, катушки рекордера костюма, терминального кэша, осколка black-box, packet notary footer, поврежденной полосы транскрипта или мародерского scan tag. Объект должен отвечать, почему голос выжил.\n\nПолезный фрагмент короткий, потому что железо отказывало. В нем может быть рабочий приказ, обрубленное предупреждение, счет дыхания, ритм насоса, сбой перевода, правка мародера или последняя строка чеклиста. Он не должен объяснять сюжет из пустоты. Если игрок не может указать устройство, custody stamp и повреждение, которое сформировало транскрипт, аудио еще не доказательство.\n\nЧитай аудио вместе с объектом. Чистый транскрипт поверх раздавленного рекордера подозрителен. Потерянная временная полоса может скрывать, кто обрезал линию. Полоса повреждения субтитров может быть и diegetic damage, и accessibility text, но не должна делать сцену нечитаемой. Лучшие voice logs не превращают колонистов в мелодраму. Они показывают рабочих людей, пойманных посреди задачи, когда система отказала.",
-          "external_site": "Метки аудиофрагментов удерживают voice logs HECTON-8 рядом с физическим доказательством, а не превращают их в свободные монологи.",
-          "external_site_article": "HECTON-8 не должна использовать голос как обход доказательств. Хороший аудиофрагмент - это поврежденный объект, который умеет говорить.\n\nМетка важна не меньше голоса. Она говорит, откуда звук, кто его поймал, какое устройство его несет и какое повреждение изменило транскрипт. Hydrophone strips, катушки костюмов, black-box shards и терминальные кэши звучат по-разному. Гидрофон ловит давление комнаты и ритм машин. Рекордер костюма ловит дыхание, удары перчаток и подавленную панику. Кэш терминала ловит то, что кто-то хотел сохранить. Black-box ловит то, что система не могла позволить себе забыть.\n\nТак голос остается человеческим и не становится манипуляцией. Колония не должна быть набита идеальными предсмертными речами. В ней должны быть обрывки работы: держи насос, считай кислород, не открывай шлюз, повтори маршрут, оставь официальную строку видимой. Когда эти обрывки привязаны к предметам, игрок слышит людей без команды что чувствовать.\n\nПравило для авторов простое: нет объекта - нет голоса. Транскрипт должен нести повреждение, custody и источник. Аудио может углубить объект, оспорить ярлык или очеловечить маршрут. Оно не должно заменять объект.",
-          "field_note": "Нет рекордера - нет голоса. Нет custody - нет доверия.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Мітки аудіофрагментів",
-          "scanner": "МІТКА АУДІО // Голосовий фрагмент прив'язаний до фізичного джерела. Перевір пристрій, custody stamp, пошкодження транскрипту і стан об'єкта, перш ніж вважати запис доказом.",
-          "terminal": "ПРАВИЛО ПАКЕТНОГО НОТАРІУСА // Аудіо прийнятне лише коли джерело, вікно запису, смуга транскрипту й об'єктний якір узгоджені. Голос без об'єкта - настрій, не доказ.",
-          "audio": "Якщо в голосу немає петлі, рекордера і packet stamp, не чіпай. Мертві не винні нам оповіді.",
-          "in_game_wiki": "Мітки аудіофрагментів не дають голосу стати дешевим поясненням. На HECTON-8 голос має походити від речі, яка справді могла його записати: hydrophone strip, котушка рекордера костюма, термінальний кеш, уламок black-box, packet notary footer, пошкоджена смуга транскрипту або мародерський scan tag. Об'єкт має пояснити, чому голос вижив.\n\nКорисний фрагмент короткий, бо обладнання відмовляло. У ньому може бути робочий наказ, обрізане попередження, рахунок дихання, ритм помпи, збій перекладу, правка мародера або останній рядок чеклиста. Він не має пояснювати сюжет із порожнечі. Якщо гравець не може вказати пристрій, custody stamp і пошкодження, що сформувало транскрипт, аудіо ще не доказ.\n\nЧитай аудіо разом з об'єктом. Чистий транскрипт на розчавленому рекордері підозрілий. Втрачена часова смуга може приховувати, хто обрізав лінію. Смуга пошкодження субтитрів може бути і diegetic damage, і accessibility text, але не має робити сцену нечитабельною. Найкращі voice logs не роблять колоністів мелодрамою. Вони показують робочих людей, схоплених посеред задачі, коли система зламалася.",
-          "external_site": "Мітки аудіофрагментів тримають voice logs HECTON-8 біля фізичного доказу, а не вільними монологами.",
-          "external_site_article": "HECTON-8 не має використовувати голос як обхід доказів. Добрий аудіофрагмент - це пошкоджений об'єкт, який випадково говорить.\n\nМітка важлива не менше за голос. Вона каже, звідки звук, хто його захопив, який пристрій його несе і яке пошкодження змінило транскрипт. Hydrophone strips, котушки костюмів, уламки black-box і термінальні кеші звучать по-різному. Гідрофон ловить тиск кімнати і ритм машин. Рекордер костюма ловить дихання, удари рукавиць і стриману паніку. Кеш термінала ловить те, що хтось хотів зберегти. Black-box ловить те, що система не могла дозволити собі забути.\n\nТак голос лишається людським і не стає маніпуляцією. Колонія не повинна бути заповнена ідеальними передсмертними промовами. В ній мають бути уривки роботи: тримай помпу, рахуй кисень, не відкривай шлюз, повтори маршрут, залиш офіційний рядок видимим. Коли ці уривки прив'язані до предметів, гравець чує людей без наказу що відчувати.\n\nПравило для авторів просте: немає об'єкта - немає голосу. Транскрипт має нести пошкодження, custody і джерело. Аудіо може поглибити об'єкт, заперечити ярлик або олюднити маршрут. Воно не повинно замінювати об'єкт.",
-          "field_note": "Немає рекордера - немає голосу. Немає custody - немає довіри.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Audiofragment-Tags",
-          "scanner": "AUDIOFRAGMENT // Stimme an physische Quelle gebunden. Gerät, Verwahrungsstempel, Transkriptschaden und Objektzustand prüfen, bevor sie als Beweis abgespielt wird.",
-          "terminal": "PAKETNOTAR-REGEL // Audio ist nur zulässig, wenn Quelle, Aufnahmefenster, Transkriptband und Objektanker übereinstimmen. Stimme ohne Objektbeweis ist Stimmung, kein Beweis.",
-          "audio": "Wenn die Stimme kein Scharnier, keinen Recorder, keinen Paketstempel hat, lass sie. Die Toten schulden uns keine Erzählung.",
-          "in_game_wiki": "Audiofragment-Tags verhindern billige Exposition. Auf HECTON-8 sollte eine Stimme aus etwas kommen, das sie wirklich aufnehmen konnte: Hydrophonstreifen, Anzugrecorder-Spule, Terminalcache, Blackbox-Scherbe, Paketnotar-Fußzeile, beschädigtes Transkriptband oder Marauder-Scan-Tag. Das Objekt muss erklären, warum die Stimme überlebt hat.\n\nEin nützliches Fragment ist kurz, weil die Hardware versagte. Es kann einen Arbeitsauftrag, eine abgeschnittene Warnung, Atemzählung, Pumpentakt, Übersetzungsfehler, Korrekturmarke oder die letzte Checklistenzeile tragen. Es darf die Handlung nicht aus dem Nichts erklären. Wenn der Spieler Gerät, Verwahrungsstempel und Transkriptschaden nicht zeigen kann, ist das Audio noch kein Beweis.\n\nLies Audio mit dem Objekt. Ein sauberes Transkript über einem zerdrückten Recorder ist verdächtig. Ein fehlendes Zeitband kann verstecken, wer die Leitung schnitt. Ein Untertitelschaden kann diegetischer Schaden und Accessibility-Text zugleich sein, darf aber die Szene nicht unlesbar machen. Die besten Voice Logs machen Kolonisten nicht melodramatisch. Sie zeigen arbeitende Menschen mitten in einer Aufgabe, als das System versagte.",
-          "external_site": "Audiofragment-Tags halten HECTON-8-Stimmen an physische Beweise gebunden, statt freie Monologe zu erzeugen.",
-          "external_site_article": "HECTON-8 sollte Stimme nie als Abkürzung um Beweise herum benutzen. Ein gutes Audiofragment ist ein beschädigtes Objekt, das zufällig spricht.\n\nDer Tag zählt so sehr wie die Stimme. Er sagt, woher der Ton kam, wer ihn erfasste, welches Gerät ihn trug und welcher Schaden das Transkript veränderte. Hydrophonstreifen, Anzugspulen, Blackbox-Scherben und Terminalcaches sprechen verschieden. Ein Hydrophon fängt Raumdruck und Maschinenrhythmus. Ein Anzugrecorder fängt Atem, Handschläge und unterdrückte Panik. Ein Terminalcache fängt, was jemand bewahren wollte. Eine Blackbox fängt, was das System nicht vergessen durfte.\n\nSo bleibt Stimme menschlich, ohne manipulativ zu werden. Die Kolonie sollte nicht voller perfekter Sterbereden sein. Sie sollte Fragmente von Arbeit enthalten: halte die Pumpe, zähle den Sauerstoff, öffne die Schleuse nicht, wiederhole die Route, lass die offizielle Zeile sichtbar. Wenn diese Fragmente an Objekte gebunden sind, hört der Spieler Menschen, ohne gesagt zu bekommen, was er fühlen soll.\n\nFür Autorinnen und Designer gilt: kein Objekt, keine Stimme. Das Transkript muss Schaden, Verwahrung und Quelle tragen. Audio kann ein Objekt vertiefen, ein Etikett widersprechen oder eine Route menschlich machen. Es darf das Objekt nie ersetzen.",
-          "field_note": "Kein Recorder, keine Stimme. Keine Verwahrung, kein Vertrauen.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Tags de fragments audio",
-          "scanner": "TAG AUDIO // Fragment vocal attaché à une source physique. Vérifier appareil, tampon de garde, dégâts de transcription et état de l'objet avant de le traiter comme preuve.",
-          "terminal": "RÈGLE DU NOTAIRE DE PAQUET // L'audio n'est recevable que si source, fenêtre de capture, bande de transcription et ancrage d'objet concordent. Une voix sans objet est ambiance, pas preuve.",
-          "audio": "Si la voix n'a pas de charnière, pas d'enregistreur, pas de tampon de paquet, laisse-la. Les morts ne nous doivent pas de narration.",
-          "in_game_wiki": "Les tags de fragments audio empêchent la voix de devenir une exposition facile. Sur HECTON-8, une voix doit venir de quelque chose qui aurait pu l'enregistrer: bande hydrophone, bobine de combinaison, cache terminal, éclat de boîte noire, pied de paquet notarié, bande de transcription endommagée ou scan tag Marauder. L'objet doit expliquer pourquoi la voix a survécu.\n\nUn fragment utile est court parce que le matériel lâchait. Il peut porter un ordre de travail, un avertissement coupé, un compte de respiration, une cadence de pompe, une traduction ratée, une marque de correction ou la dernière ligne d'une checklist. Il ne doit pas expliquer l'intrigue depuis le vide. Si le joueur ne peut pas montrer l'appareil, le tampon de garde et les dégâts qui ont formé la transcription, l'audio n'est pas encore une preuve.\n\nLis l'audio avec l'objet. Une transcription propre sur un enregistreur écrasé est suspecte. Une bande temporelle manquante peut cacher qui a coupé la ligne. Une bande de sous-titre endommagée peut être dégât diégétique et texte d'accessibilité, mais elle ne doit pas rendre la scène illisible. Les meilleurs voice logs ne rendent pas les colons mélodramatiques. Ils montrent des travailleurs pris au milieu d'une tâche quand le système a échoué.",
-          "external_site": "Les tags de fragments audio gardent les voix de HECTON-8 liées à une preuve physique, pas à des monologues flottants.",
-          "external_site_article": "HECTON-8 ne doit jamais utiliser la voix comme raccourci autour de la preuve. Un bon fragment audio est un objet abîmé qui parle par accident.\n\nLe tag compte autant que la voix. Il dit d'où vient le son, qui l'a capturé, quel appareil l'a porté et quel dégât a changé la transcription. Bandes hydrophones, bobines de combinaison, éclats de boîte noire et caches terminaux ne parlent pas pareil. Un hydrophone capte la pression de la pièce et le rythme machine. Un enregistreur de combinaison capte souffle, chocs de gants et panique contenue. Un cache terminal capte ce que quelqu'un voulait préserver. Une boîte noire capte ce que le système ne pouvait pas oublier.\n\nAinsi la voix reste humaine sans manipuler. La colonie ne doit pas être remplie de discours de mort parfaits. Elle doit contenir des fragments de travail: tiens la pompe, compte l'oxygène, n'ouvre pas le sas, répète la route, garde la ligne officielle visible. Quand ces fragments sont attachés à des objets, le joueur entend des gens sans qu'on lui ordonne quoi ressentir.\n\nLa règle d'écriture est simple: pas d'objet, pas de voix. La transcription doit porter dégâts, garde et source. L'audio peut approfondir un objet, contredire une étiquette ou humaniser une route. Il ne doit jamais remplacer l'objet.",
-          "field_note": "Pas d'enregistreur, pas de voix. Pas de garde, pas de confiance.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Etiquetas de fragmento de audio",
-          "scanner": "ETIQUETA DE AUDIO // Fragmento de voz unido a fuente física. Verifica dispositivo, sello de custodia, daño de transcripción y estado del objeto antes de reproducirlo como prueba.",
-          "terminal": "REGLA DE NOTARIO DE PAQUETE // El audio solo es admisible si fuente, ventana de captura, banda de transcripción y ancla de objeto coinciden. Voz sin objeto es ambiente, no prueba.",
-          "audio": "Si la voz no tiene bisagra, grabador ni sello de paquete, déjala. Los muertos no nos deben narración.",
-          "in_game_wiki": "Las etiquetas de fragmento de audio evitan que la voz sea exposición barata. En HECTON-8, una voz debe venir de algo que realmente pudiera grabarla: tira de hidrófono, bobina de traje, caché de terminal, astilla de caja negra, pie de paquete notarial, banda de transcripción dañada o scan tag Marauder. El objeto debe explicar por qué sobrevivió la voz.\n\nUn fragmento útil es corto porque el hardware fallaba. Puede llevar una orden de trabajo, una advertencia cortada, un conteo de respiración, cadencia de bomba, traducción fallida, marca de corrección o la última línea de una lista. No debe explicar la trama desde la nada. Si el jugador no puede señalar dispositivo, sello de custodia y daño que dio forma al transcript, el audio aún no es prueba.\n\nLee el audio con el objeto. Una transcripción limpia sobre un grabador aplastado es sospechosa. Una banda de tiempo ausente puede ocultar quién cortó la línea. Una banda de subtítulo dañada puede ser daño diegético y texto de accesibilidad a la vez, pero no debe volver ilegible la escena. Los mejores voice logs no convierten colonos en melodrama. Los muestran como trabajadores atrapados a mitad de tarea cuando falló el sistema.",
-          "external_site": "Las etiquetas de fragmento de audio atan las voces de HECTON-8 a prueba física, no a monólogos flotantes.",
-          "external_site_article": "HECTON-8 no debe usar la voz como atajo alrededor de la evidencia. Un buen fragmento de audio es un objeto dañado que por casualidad habla.\n\nLa etiqueta importa tanto como la voz. Dice de dónde vino el sonido, quién lo capturó, qué dispositivo lo llevó y qué daño cambió la transcripción. Tiras de hidrófono, bobinas de traje, astillas de caja negra y cachés de terminal hablan de forma distinta. Un hidrófono recoge presión de sala y ritmo de máquina. Un grabador de traje recoge respiración, golpes de guante y pánico contenido. Un caché recoge lo que alguien quiso preservar. Una caja negra recoge lo que el sistema no podía olvidar.\n\nAsí la voz sigue siendo humana sin manipular. La colonia no debe llenarse de discursos de muerte perfectos. Debe contener fragmentos de trabajo: sujeta la bomba, cuenta oxígeno, no abras la esclusa, repite la ruta, deja visible la línea oficial. Cuando esos fragmentos están ligados a objetos, el jugador oye personas sin que le digan qué sentir.\n\nLa regla para escritura es simple: sin objeto, no hay voz. La transcripción debe llevar daño, custodia y fuente. El audio puede profundizar un objeto, contradecir una etiqueta o humanizar una ruta. Nunca debe reemplazar el objeto.",
-          "field_note": "Sin grabador, no hay voz. Sin custodia, no hay confianza.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Tagi fragmentów audio",
-          "scanner": "TAG AUDIO // Fragment głosu przypięty do fizycznego źródła. Sprawdź urządzenie, stempel custody, uszkodzenie transkryptu i stan obiektu, zanim uznasz nagranie za dowód.",
-          "terminal": "REGUŁA NOTARIUSZA PAKIETU // Audio jest dopuszczalne tylko gdy źródło, okno zapisu, pas transkryptu i kotwica obiektu zgadzają się. Głos bez obiektu to nastrój, nie dowód.",
-          "audio": "Jeśli głos nie ma zawiasu, rekordera ani stempla pakietu, zostaw go. Umarli nie są nam winni narracji.",
-          "in_game_wiki": "Tagi fragmentów audio chronią głos przed tanią ekspozycją. Na HECTON-8 głos powinien pochodzić z czegoś, co naprawdę mogło go nagrać: paska hydrofonu, szpuli skafandra, cache terminala, odłamka black-box, stopki notariusza pakietu, uszkodzonego pasa transkryptu albo scan tag Marauder. Obiekt musi wyjaśniać, dlaczego głos przetrwał.\n\nUżyteczny fragment jest krótki, bo sprzęt zawodził. Może nieść zlecenie pracy, urwane ostrzeżenie, liczenie oddechów, rytm pompy, błąd tłumaczenia, znak korekty albo ostatnią linię checklisty. Nie powinien wyjaśniać fabuły znikąd. Jeśli gracz nie może wskazać urządzenia, stempla custody i uszkodzenia, które uformowało transkrypt, audio nie jest jeszcze dowodem.\n\nCzytaj audio z obiektem. Czysty transkrypt na zmiażdżonym rekorderze jest podejrzany. Brakujący pas czasu może ukrywać, kto przeciął linię. Pasek uszkodzenia napisów może być jednocześnie diegetycznym uszkodzeniem i tekstem dostępności, ale nie może czynić sceny nieczytelną. Najlepsze voice logs nie robią z kolonistów melodramatu. Pokazują pracujących ludzi złapanych w środku zadania, kiedy system zawiódł.",
-          "external_site": "Tagi fragmentów audio trzymają głosy HECTON-8 przy fizycznym dowodzie zamiast wolnych monologów.",
-          "external_site_article": "HECTON-8 nie powinien używać głosu jako skrótu wokół dowodów. Dobry fragment audio to uszkodzony obiekt, który przypadkiem mówi.\n\nTag jest równie ważny jak głos. Mówi, skąd pochodził dźwięk, kto go uchwycił, jakie urządzenie go niosło i jakie uszkodzenie zmieniło transkrypt. Paski hydrofonu, szpule skafandrów, odłamki black-box i cache terminali mówią inaczej. Hydrofon łapie ciśnienie pokoju i rytm maszyn. Rekorder skafandra łapie oddech, uderzenia rękawic i tłumioną panikę. Cache terminala łapie to, co ktoś chciał zachować. Black-box łapie to, czego system nie mógł zapomnieć.\n\nDzięki temu głos pozostaje ludzki bez manipulacji. Kolonia nie powinna być pełna idealnych mów śmierci. Powinna mieć fragmenty pracy: trzymaj pompę, licz tlen, nie otwieraj śluzy, powtórz trasę, zostaw oficjalną linię widoczną. Gdy te fragmenty są przypięte do przedmiotów, gracz słyszy ludzi bez rozkazu, co czuć.\n\nReguła dla autorów jest prosta: bez obiektu nie ma głosu. Transkrypt musi nosić uszkodzenie, custody i źródło. Audio może pogłębić obiekt, zaprzeczyć etykiecie albo uczłowieczyć trasę. Nigdy nie może zastąpić obiektu.",
-          "field_note": "Brak rekordera, brak głosu. Brak custody, brak zaufania.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Tags de fragmento de áudio",
-          "scanner": "TAG DE ÁUDIO // Fragmento de voz preso a fonte física. Verifique dispositivo, selo de custódia, dano da transcrição e estado do objeto antes de tocar como prova.",
-          "terminal": "REGRA DO NOTÁRIO DE PACOTE // Áudio só é admissível quando fonte, janela de captura, faixa de transcrição e âncora de objeto concordam. Voz sem prova de objeto é clima, não evidência.",
-          "audio": "Se a voz não tem dobradiça, gravador nem selo de pacote, deixa. Os mortos não nos devem narração.",
-          "in_game_wiki": "Tags de fragmento de áudio impedem que a voz vire exposição barata. Em HECTON-8, uma voz deve vir de algo que realmente poderia gravá-la: faixa de hidrofone, rolo de gravador de traje, cache de terminal, estilhaço de black-box, rodapé de notário de pacote, faixa de transcrição danificada ou scan tag Marauder. O objeto deve responder por que a voz sobreviveu.\n\nUm fragmento útil é curto porque o hardware estava falhando. Pode carregar uma ordem de trabalho, um aviso cortado, contagem de respiração, cadência de bomba, tradução falha, marca de correção ou a última linha de uma checklist. Ele não deve explicar a trama do nada. Se o jogador não consegue apontar o dispositivo, o selo de custódia e o dano que moldou a transcrição, o áudio ainda não é prova.\n\nLeia áudio com o objeto. Uma transcrição limpa sobre um gravador esmagado é suspeita. Uma faixa de tempo ausente pode esconder quem cortou a linha. Uma faixa de legenda danificada pode ser dano diegético e texto de acessibilidade ao mesmo tempo, mas não pode tornar a cena ilegível. Os melhores voice logs não tornam colonos melodramáticos. Eles mostram trabalhadores pegos no meio da tarefa quando o sistema falhou.",
-          "external_site": "Tags de fragmento de áudio mantêm voice logs de HECTON-8 ligados a prova física, não a monólogos soltos.",
-          "external_site_article": "HECTON-8 nunca deve usar voz como atalho ao redor da evidência. Um bom fragmento de áudio é um objeto danificado que por acaso fala.\n\nA tag importa tanto quanto a voz. Ela diz de onde veio o som, quem capturou, que dispositivo o carregou e que dano mudou a transcrição. Faixas de hidrofone, rolos de traje, estilhaços de black-box e caches de terminal falam diferente. Um hidrofone captura pressão da sala e ritmo de máquina. Um gravador de traje captura respiração, impactos de luva e pânico contido. Um cache de terminal captura o que alguém quis preservar. Uma black-box captura o que o sistema não podia esquecer.\n\nIsso mantém a voz humana sem manipular. A colônia não deve estar cheia de discursos finais perfeitos. Deve estar cheia de fragmentos de trabalho: segura a bomba, conta oxigênio, não abre a eclusa, repete a rota, deixa a linha oficial visível. Quando esses fragmentos estão presos a objetos, o jogador ouve pessoas sem receber ordem do que sentir.\n\nPara escritores, a regra é simples: sem objeto, sem voz. A transcrição precisa carregar dano, custódia e fonte. O áudio pode aprofundar um objeto, contradizer uma etiqueta ou humanizar uma rota. Nunca deve substituir o objeto.",
-          "field_note": "Sem gravador, sem voz. Sem custódia, sem confiança.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Audiofragment-tags",
-          "scanner": "AUDIOFRAGMENT // Stemfragment aan fysieke bron gekoppeld. Controleer apparaat, custodystempel, transcriptieschade en objectstaat voordat je het als bewijs afspeelt.",
-          "terminal": "REGEL PAKKETNOTARIS // Audio is pas geldig als bronapparaat, opnamevenster, transcriptieband en objectanker overeenkomen. Stem zonder objectbewijs is sfeer, geen bewijs.",
-          "audio": "Als de stem geen scharnier, geen recorder, geen pakketstempel heeft, laat hem. De doden zijn ons geen vertelling schuldig.",
-          "in_game_wiki": "Audiofragment-tags voorkomen goedkope expositie. Op HECTON-8 moet een stem komen uit iets dat echt kon opnemen: hydrofoonstrip, pakrecorder-spoel, terminalcache, black-box scherf, pakketnotarisfooter, beschadigde transcriptieband of Marauder scan tag. Het object moet uitleggen waarom de stem overleefde.\n\nEen nuttig fragment is kort omdat de hardware faalde. Het kan een werkorder dragen, een afgebroken waarschuwing, ademhalingsteller, pompcadans, mislukte vertaling, correctiemarkering of laatste checklistregel. Het mag de plot niet uit het niets uitleggen. Als de speler apparaat, custodystempel en schade die het transcript vormde niet kan aanwijzen, is de audio nog geen bewijs.\n\nLees audio met het object. Een schoon transcript op een verbrijzelde recorder is verdacht. Een ontbrekende tijdsband kan verbergen wie de lijn sneed. Een beschadigde ondertitelband kan diegetische schade en toegankelijkheidstekst tegelijk zijn, maar mag de scène niet onleesbaar maken. De beste voice logs maken kolonisten niet melodramatisch. Ze tonen werkende mensen midden in een taak toen het systeem faalde.",
-          "external_site": "Audiofragment-tags houden HECTON-8-stemmen gekoppeld aan fysiek bewijs, niet aan zwevende monologen.",
-          "external_site_article": "HECTON-8 mag stem nooit gebruiken als omweg rond bewijs. Een goed audiofragment is een beschadigd object dat toevallig spreekt.\n\nDe tag telt net zo veel als de stem. Hij zegt waar het geluid vandaan kwam, wie het ving, welk apparaat het droeg en welke schade het transcript veranderde. Hydrofoonstrips, pakspoelen, black-box scherven en terminalcaches spreken anders. Een hydrofoon vangt ruimtedruk en machineritme. Een pakrecorder vangt adem, handschoenklappen en ingehouden paniek. Een terminalcache vangt wat iemand wilde bewaren. Een black-box vangt wat het systeem niet mocht vergeten.\n\nZo blijft stem menselijk zonder manipulatie. De kolonie moet niet vol perfecte sterftoespraken zitten. Ze moet vol werkfragmenten zitten: houd de pomp, tel zuurstof, open de sluis niet, herhaal de route, laat de officiële regel zichtbaar. Wanneer die fragmenten aan objecten vastzitten, hoort de speler mensen zonder opdracht wat te voelen.\n\nVoor schrijvers is de regel simpel: geen object, geen stem. Het transcript moet schade, custody en bron dragen. Audio kan een object verdiepen, een label tegenspreken of een route menselijk maken. Het mag het object nooit vervangen.",
-          "field_note": "Geen recorder, geen stem. Geen custody, geen vertrouwen.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Tag Fragmen Audio",
-          "scanner": "TAG AUDIO // Fragmen suara terikat ke sumber fisik. Verifikasi perangkat, cap kustodi, kerusakan transkrip, dan keadaan objek sebelum memainkannya sebagai bukti.",
-          "terminal": "ATURAN NOTARIS PAKET // Audio sah hanya jika perangkat sumber, jendela rekam, pita transkrip, dan jangkar objek cocok. Suara tanpa bukti objek adalah suasana, bukan bukti.",
-          "audio": "Kalau suara itu tidak punya engsel, perekam, atau cap paket, biarkan. Orang mati tidak berutang narasi pada kita.",
-          "in_game_wiki": "Tag fragmen audio menjaga suara agar tidak menjadi eksposisi murahan. Di HECTON-8, suara harus datang dari sesuatu yang benar-benar bisa merekamnya: strip hidrofon, gulungan perekam baju, cache terminal, pecahan black-box, footer notaris paket, pita transkrip rusak, atau scan tag Marauder. Objek harus menjawab mengapa suara itu selamat.\n\nFragmen berguna itu pendek karena perangkat keras sedang gagal. Ia bisa membawa perintah kerja, peringatan terpotong, hitungan napas, irama pompa, terjemahan gagal, tanda koreksi, atau baris terakhir checklist. Ia tidak boleh menjelaskan plot dari kehampaan. Jika pemain tidak bisa menunjuk perangkat, cap kustodi, dan kerusakan yang membentuk transkrip, audio belum menjadi bukti.\n\nBaca audio bersama objek. Transkrip bersih di atas perekam remuk mencurigakan. Pita waktu hilang bisa menyembunyikan siapa yang memotong jalur. Pita kerusakan subtitle bisa menjadi kerusakan diegetik dan teks aksesibilitas sekaligus, tetapi tidak boleh membuat adegan tidak terbaca. Voice logs terbaik tidak membuat kolonis melodramatis. Mereka menunjukkan pekerja yang tertangkap di tengah tugas ketika sistem gagal.",
-          "external_site": "Tag fragmen audio menjaga voice logs HECTON-8 terikat pada bukti fisik, bukan monolog bebas.",
-          "external_site_article": "HECTON-8 tidak boleh memakai suara sebagai jalan pintas melewati bukti. Fragmen audio yang baik adalah objek rusak yang kebetulan berbicara.\n\nTag sama pentingnya dengan suara. Ia memberi tahu dari mana suara datang, siapa yang menangkapnya, perangkat apa yang membawanya, dan kerusakan apa yang mengubah transkrip. Strip hidrofon, gulungan baju, pecahan black-box, dan cache terminal berbicara berbeda. Hidrofon menangkap tekanan ruangan dan ritme mesin. Perekam baju menangkap napas, benturan sarung tangan, dan panik yang ditahan. Cache terminal menangkap apa yang ingin disimpan seseorang. Black-box menangkap apa yang sistem tidak boleh lupakan.\n\nIni menjaga suara tetap manusiawi tanpa manipulasi. Koloni tidak boleh dipenuhi pidato kematian sempurna. Ia harus berisi fragmen kerja: tahan pompa, hitung oksigen, jangan buka kunci, ulangi rute, biarkan baris resmi terlihat. Ketika fragmen itu terikat pada objek, pemain mendengar orang tanpa diperintah harus merasa apa.\n\nAturan untuk penulis sederhana: tanpa objek, tanpa suara. Transkrip harus membawa kerusakan, kustodi, dan sumber. Audio bisa memperdalam objek, menentang label, atau memanusiakan rute. Ia tidak boleh menggantikan objek.",
-          "field_note": "Tanpa perekam, tanpa suara. Tanpa kustodi, tanpa kepercayaan.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "音声断片タグ",
-          "scanner": "音声断片タグ // 声の断片は物理ソースに接続。証拠として再生する前に、装置、保管印、転写損傷、物体状態を確認。",
-          "terminal": "パケット公証規則 // 音声は、ソース装置、記録窓、転写帯、物体アンカーが一致した時だけ有効。物体証拠のない声は雰囲気であり、証拠ではない。",
-          "audio": "その声に蝶番も記録器もパケット印もないなら、触るな。死者は私たちに語りを負っていない。",
-          "in_game_wiki": "音声断片タグは、声を安い説明にしないためのものだ。HECTON-8の声は、本当に記録できた物から来るべきである。ハイドロフォン帯、スーツ記録スプール、端末キャッシュ、black-box片、パケット公証フッター、損傷した転写帯、Marauder scan tagなどだ。物体は、なぜその声が残ったのかを説明しなければならない。\n\n有用な断片は短い。機材が壊れかけていたからだ。作業命令、切れた警告、呼吸の数、ポンプの拍子、失敗した翻訳、修正マーク、チェックリスト最後の行を含むことがある。空中から物語を説明してはならない。プレイヤーが装置、保管印、転写を形作った損傷を指せないなら、その音声はまだ証拠ではない。\n\n音声は物体と一緒に読む。潰れた記録器にきれいな転写があるなら怪しい。失われた時間帯は、誰が線を切ったかを隠せる。字幕損傷帯は、作中の損傷でありアクセシビリティ文でもあり得るが、場面を読めなくしてはならない。よいvoice logsは植民者をメロドラマにしない。システムが失敗した瞬間、仕事の途中にいた人々として見せる。",
-          "external_site": "音声断片タグは、HECTON-8の声を浮いた独白ではなく物理証拠に結びつける。",
-          "external_site_article": "HECTON-8は、証拠を避ける近道として声を使ってはならない。よい音声断片とは、偶然しゃべる損傷物である。\n\nタグは声と同じくらい重要だ。音がどこから来たか、誰が捕捉したか、どの装置が運んだか、どの損傷が転写を変えたかを示す。ハイドロフォン帯、スーツスプール、black-box片、端末キャッシュはそれぞれ違う話し方をする。ハイドロフォンは部屋の圧力と機械のリズムを拾う。スーツ記録器は呼吸、手袋の衝撃、抑えた恐怖を拾う。端末キャッシュは誰かが保存したかったものを拾う。black-boxは、システムが忘れられなかったものを拾う。\n\nこれによって声は人間的でありながら操作的にならない。植民地は完璧な最期の演説で満たされるべきではない。ポンプを押さえろ、酸素を数えろ、ロックを開けるな、経路を繰り返せ、公式行を見えるまま残せ。そういう仕事の断片で満たされるべきだ。断片が物体に結びついている時、プレイヤーは感情を命令されずに人を聞く。\n\n書き手の規則は単純だ。物体がなければ声はない。転写には損傷、保管、出所が必要だ。音声は物体を深め、ラベルに反論し、経路を人間的にできる。物体の代わりになってはならない。",
-          "field_note": "記録器なし、声なし。保管なし、信用なし。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "오디오 파편 태그",
-          "scanner": "오디오 파편 태그 // 음성 파편이 물리적 출처에 붙어 있다. 증거로 재생하기 전에 장치, 보관 도장, 전사 손상, 물체 상태를 확인하라.",
-          "terminal": "패킷 공증 규칙 // 오디오는 출처 장치, 기록 창, 전사 띠, 물체 앵커가 일치할 때만 유효하다. 물체 증거 없는 목소리는 분위기이지 증거가 아니다.",
-          "audio": "그 목소리에 경첩도, 기록기도, 패킷 도장도 없다면 놔둬. 죽은 사람들은 우리에게 서사를 빚지지 않았다.",
-          "in_game_wiki": "오디오 파편 태그는 목소리가 값싼 설명이 되지 않게 한다. HECTON-8에서 목소리는 실제로 기록할 수 있었던 물건에서 나와야 한다. 하이드로폰 스트립, 슈트 기록 스풀, 터미널 캐시, black-box 조각, 패킷 공증 푸터, 손상된 전사 띠, Marauder scan tag 같은 것이다. 물체는 왜 그 목소리가 살아남았는지 대답해야 한다.\n\n쓸모 있는 파편은 짧다. 하드웨어가 고장 나고 있었기 때문이다. 작업 명령, 잘린 경고, 호흡 수, 펌프 박자, 실패한 번역, 수정 표식, 체크리스트의 마지막 줄을 담을 수 있다. 허공에서 줄거리를 설명하면 안 된다. 플레이어가 장치, 보관 도장, 전사를 만든 손상을 가리킬 수 없다면 그 오디오는 아직 증거가 아니다.\n\n오디오는 물체와 함께 읽어야 한다. 부서진 기록기에 깨끗한 전사가 붙어 있으면 의심스럽다. 사라진 시간 띠는 누가 선을 끊었는지 숨길 수 있다. 자막 손상 띠는 세계 안의 손상이면서 접근성 텍스트일 수 있지만, 장면을 읽을 수 없게 하면 안 된다. 최고의 voice logs는 식민자를 멜로드라마로 만들지 않는다. 시스템이 실패했을 때 일하던 사람들을 작업 도중에 보여 준다.",
-          "external_site": "오디오 파편 태그는 HECTON-8의 목소리를 떠도는 독백이 아니라 물리 증거에 묶어 둔다.",
-          "external_site_article": "HECTON-8은 증거를 우회하는 지름길로 목소리를 쓰면 안 된다. 좋은 오디오 파편은 우연히 말하는 손상된 물체다.\n\n태그는 목소리만큼 중요하다. 소리가 어디서 왔는지, 누가 잡았는지, 어떤 장치가 담았는지, 어떤 손상이 전사를 바꾸었는지 말한다. 하이드로폰 스트립, 슈트 스풀, black-box 조각, 터미널 캐시는 다르게 말한다. 하이드로폰은 방의 압력과 기계 리듬을 잡는다. 슈트 기록기는 호흡, 장갑 충격, 눌린 공포를 잡는다. 터미널 캐시는 누군가 보존하려던 것을 잡는다. black-box는 시스템이 잊을 수 없던 것을 잡는다.\n\n이렇게 목소리는 조작적이지 않게 인간적일 수 있다. 식민지는 완벽한 죽음의 연설로 가득 차면 안 된다. 펌프를 잡아, 산소를 세, 잠금을 열지 마, 경로를 반복해, 공식 줄을 보이게 둬 같은 작업 파편으로 가득해야 한다. 그런 파편이 물체에 묶일 때 플레이어는 무엇을 느끼라고 명령받지 않고 사람을 듣는다.\n\n작가의 규칙은 단순하다. 물체 없으면 목소리 없다. 전사는 손상, 보관, 출처를 지녀야 한다. 오디오는 물체를 깊게 하고, 라벨과 모순되고, 경로를 인간적으로 만들 수 있다. 하지만 물체를 대체해서는 안 된다.",
-          "field_note": "기록기 없으면 목소리 없다. 보관 없으면 신뢰 없다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "音频碎片标签",
-          "scanner": "音频碎片标签 // 声音碎片附着于物理来源。作为证据播放前，先核对设备、保管印章、转录损伤和物体状态。",
-          "terminal": "数据包公证规则 // 只有来源设备、捕获窗口、转录带和物体锚点一致时，音频才可采信。没有物体证据的声音只是气氛，不是证据。",
-          "audio": "如果这声音没有铰链、没有记录器、没有数据包印章，就别碰。死者不欠我们叙述。",
-          "in_game_wiki": "音频碎片标签用来防止声音变成廉价说明。在 HECTON-8，一个声音应该来自真正可能记录它的东西：水听器条、潜服记录卷、终端缓存、black-box 碎片、数据包公证页脚、受损转录带，或 Marauder scan tag。物体必须回答为什么这个声音能存活。\n\n有用的碎片很短，因为硬件正在失效。它可能携带工作命令、被切断的警告、呼吸计数、泵节奏、失败翻译、修正标记，或检查表最后一行。它不应该从虚空解释剧情。如果玩家不能指出设备、保管印章和塑造转录的损伤，那么这段音频还不是证据。\n\n音频要和物体一起读。压碎的记录器上出现干净转录，很可疑。缺失的时间带可以隐藏是谁切断线路。字幕损伤带可以同时是叙事内损伤和无障碍文本，但不能让场景不可读。最好的 voice logs 不会把殖民者变成煽情角色。它们展示系统失败时，人们正被困在工作中。",
-          "external_site": "音频碎片标签把 HECTON-8 的声音绑定到物理证据，而不是漂浮的独白。",
-          "external_site_article": "HECTON-8 不应该把声音当成绕过证据的捷径。好的音频碎片，是一个碰巧会说话的受损物体。\n\n标签和声音一样重要。它说明声音来自哪里，谁捕获了它，哪个设备承载了它，什么损伤改变了转录。水听器条、潜服记录卷、black-box 碎片和终端缓存说话方式不同。水听器捕捉房间压力和机器节奏。潜服记录器捕捉呼吸、手套撞击和被压住的恐慌。终端缓存捕捉某人想保存的东西。black-box 捕捉系统不能忘记的东西。\n\n这让声音保持人性，而不变成操控。殖民地不该充满完美的临终演讲。它应该充满工作碎片：扶住泵、数氧气、不要开锁、重复路线、让官方行保持可见。当这些碎片绑定到物体时，玩家听到的是人，而不是被命令去感受什么。\n\n写作规则很简单：没有物体，就没有声音。转录必须带有损伤、保管和来源。音频可以加深物体，反驳标签，或让路线具有人味。它绝不能替代物体。",
-          "field_note": "没有记录器，就没有声音。没有保管，就没有信任。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "وسوم شظايا الصوت",
-          "scanner": "وسم صوت // شظية صوت مرتبطة بمصدر مادي. تحقق من الجهاز وختم الحيازة وضرر النص وحالة الشيء قبل تشغيلها كدليل.",
-          "terminal": "قاعدة كاتب الحزمة // لا يقبل الصوت إلا حين يتطابق جهاز المصدر ونافذة الالتقاط وشريط النص ومرساة الشيء. صوت بلا دليل مادي هو جو، لا دليل.",
-          "audio": "إذا لم يكن للصوت مفصلة ولا مسجل ولا ختم حزمة، فاتركه. الموتى لا يدينون لنا بسرد.",
-          "in_game_wiki": "وسوم شظايا الصوت تمنع الصوت من أن يصبح شرحا رخيصا. في HECTON-8 يجب أن يأتي الصوت من شيء كان يستطيع تسجيله فعلا: شريط هيدروفون، بكرة مسجل بدلة، ذاكرة طرفية، شظية black-box، تذييل كاتب حزمة، شريط نص تالف، أو scan tag Marauder. يجب أن يجيب الشيء عن سبب نجاة الصوت.\n\nالشظية المفيدة قصيرة لأن العتاد كان يفشل. قد تحمل أمر عمل، أو تحذيرا مقطوعا، أو عد أنفاس، أو إيقاع مضخة، أو ترجمة فاشلة، أو علامة تصحيح، أو آخر سطر من قائمة فحص. لا يجب أن تشرح الحبكة من الفراغ. إذا لم يستطع اللاعب الإشارة إلى الجهاز وختم الحيازة والضرر الذي صنع النص، فالصوت ليس دليلا بعد.\n\nاقرأ الصوت مع الشيء. نص نظيف فوق مسجل مسحوق مريب. شريط وقت مفقود قد يخفي من قطع الخط. شريط تلف الترجمة يمكن أن يكون ضررا داخل العالم ونص إتاحة في الوقت نفسه، لكنه لا يجب أن يجعل المشهد غير مقروء. أفضل voice logs لا تحول المستعمرين إلى ميلودراما. إنها تظهر عمالا أمسك بهم الفشل في منتصف المهمة.",
-          "external_site": "وسوم شظايا الصوت تبقي سجلات HECTON-8 الصوتية مربوطة بدليل مادي بدلا من مونولوجات عائمة.",
-          "external_site_article": "لا يجب أن تستخدم HECTON-8 الصوت كطريق مختصر حول الدليل. الشظية الصوتية الجيدة شيء متضرر يتكلم بالصدفة.\n\nالوسم مهم بقدر الصوت. يخبر من أين جاء الصوت، ومن التقطه، وأي جهاز حمله، وأي ضرر غير النص. أشرطة الهيدروفون وبكرات البدلات وشظايا black-box وذاكرات الطرفيات تتكلم بطرق مختلفة. الهيدروفون يلتقط ضغط الغرفة وإيقاع الآلات. مسجل البدلة يلتقط النفس وضربات القفازات والذعر المكبوت. ذاكرة الطرفية تلتقط ما أراد شخص حفظه. black-box تلتقط ما لم يستطع النظام نسيانه.\n\nهكذا يبقى الصوت إنسانيا من دون تلاعب. لا يجب أن تمتلئ المستعمرة بخطب موت مثالية. يجب أن تمتلئ بشظايا عمل: أمسك المضخة، عد الأكسجين، لا تفتح القفل، كرر المسار، أبق السطر الرسمي مرئيا. حين ترتبط هذه الشظايا بأشياء، يسمع اللاعب الناس من دون أن يؤمر بما يشعر.\n\nقاعدة الكتابة بسيطة: لا شيء، لا صوت. يجب أن يحمل النص ضررا وحيازة ومصدرا. يمكن للصوت أن يعمق الشيء، أو يناقض ملصقا، أو يجعل المسار إنسانيا. لكنه لا يجب أن يستبدل الشيء.",
-          "field_note": "لا مسجل، لا صوت. لا حيازة، لا ثقة.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "תגי קטעי שמע",
-          "scanner": "תג שמע // קטע קול מחובר למקור פיזי. אמת מכשיר, חותמת משמורת, נזק תמלול ומצב חפץ לפני הפעלה כראיה.",
-          "terminal": "כלל נוטריון חבילה // שמע קביל רק כשמכשיר מקור, חלון לכידה, פס תמלול ועוגן חפץ מסכימים. קול בלי ראיית חפץ הוא אווירה, לא ראיה.",
-          "audio": "אם לקול אין ציר, אין מקליט ואין חותמת חבילה, עזוב אותו. המתים אינם חייבים לנו סיפור.",
-          "in_game_wiki": "תגי קטעי שמע מונעים מהקול להפוך להסבר זול. ב-HECTON-8 קול צריך לבוא ממשהו שבאמת היה יכול להקליט אותו: פס הידרופון, סליל מקליט חליפה, מטמון טרמינל, רסיס black-box, תחתית חבילת נוטריון, פס תמלול פגום או scan tag Marauder. החפץ חייב לענות למה הקול שרד.\n\nקטע שימושי קצר כי החומרה כשלה. הוא יכול לשאת פקודת עבודה, אזהרה קטועה, ספירת נשימות, קצב משאבה, תרגום שנכשל, סימן תיקון או שורה אחרונה של checklist. הוא לא אמור להסביר את העלילה משום מקום. אם השחקן לא יכול להצביע על המכשיר, חותמת המשמורת והנזק שעיצב את התמלול, השמע עדיין אינו ראיה.\n\nקרא שמע עם החפץ. תמלול נקי מעל מקליט מרוסק חשוד. פס זמן חסר יכול להסתיר מי חתך את הקו. פס נזק כתוביות יכול להיות גם נזק דיאגטי וגם טקסט נגישות, אבל אסור שיגרום לסצנה להיות בלתי קריאה. ה-voice logs הטובים ביותר לא הופכים מתיישבים למלודרמה. הם מראים אנשים עובדים שנתפסו באמצע משימה כשהמערכת כשלה.",
-          "external_site": "תגי קטעי שמע שומרים את קולות HECTON-8 קשורים לראיה פיזית, לא למונולוגים מרחפים.",
-          "external_site_article": "HECTON-8 לא צריכה להשתמש בקול כקיצור דרך סביב ראיות. קטע שמע טוב הוא חפץ פגום שבמקרה מדבר.\n\nהתג חשוב כמו הקול. הוא אומר מאיפה הגיע הצליל, מי לכד אותו, איזה מכשיר נשא אותו ואיזה נזק שינה את התמלול. פסי הידרופון, סלילי חליפה, רסיסי black-box ומטמוני טרמינל מדברים אחרת. הידרופון קולט לחץ חדר וקצב מכונות. מקליט חליפה קולט נשימה, מכות כפפה ופאניקה עצורה. מטמון טרמינל קולט מה שמישהו רצה לשמור. black-box קולט מה שהמערכת לא יכלה לשכוח.\n\nכך הקול נשאר אנושי בלי להיות מניפולטיבי. המושבה לא צריכה להיות מלאה בנאומי מוות מושלמים. היא צריכה להיות מלאה בשברי עבודה: החזק את המשאבה, ספור חמצן, אל תפתח את המנעול, חזור על המסלול, השאר את השורה הרשמית גלויה. כששברים כאלה קשורים לחפצים, השחקן שומע אנשים בלי שמצווים עליו מה להרגיש.\n\nכלל הכתיבה פשוט: אין חפץ, אין קול. התמלול חייב לשאת נזק, משמורת ומקור. שמע יכול להעמיק חפץ, לסתור תווית או להאניש מסלול. אסור לו להחליף את החפץ.",
-          "field_note": "אין מקליט, אין קול. אין משמורת, אין אמון.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.audio_fragment_tag_field_article",
+    "secondary": [
+     "unlock.first_audio_fragment_tag",
+     "unlock.first_hydrophone_log_strip",
+     "unlock.first_transcript_damage_band"
+    ],
+    "poi_tags": [
+     "poi.audio_fragment_tag",
+     "poi.hydrophone_log_strip",
+     "poi.transcript_damage_band",
+     "poi.suit_recorder_spool",
+     "poi.terminal_cache_audio",
+     "poi.black_box_fragment",
+     "poi.packet_notary_audio"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.industrial_shelf",
+     "biome.salvage_route",
+     "biome.audio_evidence"
+    ],
+    "depth_band_m": "0-5600"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Packet Notary Audio Rule",
+     "audio": "Recovered Low-Bitrate Fragment",
+     "in_game_wiki": "PDA Audio Evidence Primer",
+     "external_site": "Public Site Audio Evidence Article",
+     "field_note": "Marauder Field Annotation"
+    },
+    "writer_note": "Expand P215 into player-facing audio evidence rules. Audio must be attached to physical route proof, source device, custody and transcript damage. Avoid free-floating exposition monologues."
+   },
+   "localized": {
+    "en_US": {
+     "title": "Audio Fragment Tags",
+     "scanner": "AUDIO FRAGMENT TAG // Voice fragment attached to physical source. Verify device, custody stamp, transcript damage and matching object state before playing as evidence.",
+     "terminal": "PACKET NOTARY RULE // Audio is admissible only when source device, capture window, transcript band and object anchor agree. Voice without object proof is mood, not evidence.",
+     "audio": "If the voice has no hinge, no recorder, no packet stamp, leave it alone. The dead do not owe us narration.",
+     "in_game_wiki": "Audio fragment tags keep voice from becoming cheap exposition. On HECTON-8 a voice should come from something that could really have recorded it: a hydrophone strip, suit recorder spool, terminal cache, black-box shard, packet notary footer, damaged transcript band or Marauder scan tag. The object must answer why the voice survived.\n\nA useful fragment is short because the hardware was failing. It may carry a work order, a clipped warning, a breath count, a pump cadence, a failed translation, a correction mark or the last line of a checklist. It should not explain the plot from nowhere. If the player cannot point to the device, the custody stamp and the damage that shaped the transcript, the audio is not evidence yet.\n\nRead audio with the object. A clean transcript over a crushed recorder is suspicious. A missing time band can hide who cut the line. A subtitle damage strip can be diegetic damage and accessibility text at the same time, but it must not make the scene unreadable. The best voice logs do not make colonists melodramatic. They make them working people caught mid-task when the system failed.",
+     "external_site": "Audio fragment tags keep HECTON-8 voice logs tied to physical proof instead of free-floating monologues.",
+     "external_site_article": "HECTON-8 should never use voice as a shortcut around evidence. A good audio fragment is a damaged object that happens to speak.\n\nThe tag matters as much as the voice. It tells the player where the sound came from, who captured it, what device carried it and what damage changed the transcript. Hydrophone strips, suit recorder spools, black-box shards and terminal caches all speak differently. A hydrophone catches room pressure and machine rhythm. A suit recorder catches breath, glove impacts and panic suppression. A terminal cache catches what someone intended to preserve. A black-box fragment catches what the system could not afford to forget.\n\nThis keeps voice humane without making it manipulative. The colony should not be filled with perfect death speeches. It should be filled with fragments of work: hold the pump, count the oxygen, do not open the lock, repeat the route, leave the official line visible. When those fragments are tied to physical proof, the player hears people without being told what to feel.\n\nFor designers and writers, the rule is simple: no object, no voice. The transcript must carry damage, custody and source. The audio can deepen an object, contradict a label or humanize a route. It must never replace the object.",
+     "field_note": "No recorder, no voice. No custody, no trust.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Метки аудиофрагментов",
+     "scanner": "МЕТКА АУДИО // Голосовой фрагмент привязан к физическому источнику. Проверь устройство, custody stamp, повреждение транскрипта и состояние объекта, прежде чем считать запись доказательством.",
+     "terminal": "ПРАВИЛО ПАКЕТНОГО НОТАРИУСА // Аудио допустимо только когда источник, окно записи, полоса транскрипта и объектный якорь согласуются. Голос без объекта - настроение, а не доказательство.",
+     "audio": "Если у голоса нет петли, рекордера и packet stamp, не трогай. Мертвые не должны нам повествование.",
+     "in_game_wiki": "Метки аудиофрагментов не дают голосу стать дешевым объяснением. На HECTON-8 голос должен исходить от вещи, которая действительно могла его записать: hydrophone strip, катушки рекордера костюма, терминального кэша, осколка black-box, packet notary footer, поврежденной полосы транскрипта или мародерского scan tag. Объект должен отвечать, почему голос выжил.\n\nПолезный фрагмент короткий, потому что железо отказывало. В нем может быть рабочий приказ, обрубленное предупреждение, счет дыхания, ритм насоса, сбой перевода, правка мародера или последняя строка чеклиста. Он не должен объяснять сюжет из пустоты. Если игрок не может указать устройство, custody stamp и повреждение, которое сформировало транскрипт, аудио еще не доказательство.\n\nЧитай аудио вместе с объектом. Чистый транскрипт поверх раздавленного рекордера подозрителен. Потерянная временная полоса может скрывать, кто обрезал линию. Полоса повреждения субтитров может быть и diegetic damage, и accessibility text, но не должна делать сцену нечитаемой. Лучшие voice logs не превращают колонистов в мелодраму. Они показывают рабочих людей, пойманных посреди задачи, когда система отказала.",
+     "external_site": "Метки аудиофрагментов удерживают voice logs HECTON-8 рядом с физическим доказательством, а не превращают их в свободные монологи.",
+     "external_site_article": "HECTON-8 не должна использовать голос как обход доказательств. Хороший аудиофрагмент - это поврежденный объект, который умеет говорить.\n\nМетка важна не меньше голоса. Она говорит, откуда звук, кто его поймал, какое устройство его несет и какое повреждение изменило транскрипт. Hydrophone strips, катушки костюмов, black-box shards и терминальные кэши звучат по-разному. Гидрофон ловит давление комнаты и ритм машин. Рекордер костюма ловит дыхание, удары перчаток и подавленную панику. Кэш терминала ловит то, что кто-то хотел сохранить. Black-box ловит то, что система не могла позволить себе забыть.\n\nТак голос остается человеческим и не становится манипуляцией. Колония не должна быть набита идеальными предсмертными речами. В ней должны быть обрывки работы: держи насос, считай кислород, не открывай шлюз, повтори маршрут, оставь официальную строку видимой. Когда эти обрывки привязаны к предметам, игрок слышит людей без команды что чувствовать.\n\nПравило для авторов простое: нет объекта - нет голоса. Транскрипт должен нести повреждение, custody и источник. Аудио может углубить объект, оспорить ярлык или очеловечить маршрут. Оно не должно заменять объект.",
+     "field_note": "Нет рекордера - нет голоса. Нет custody - нет доверия.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Мітки аудіофрагментів",
+     "scanner": "МІТКА АУДІО // Голосовий фрагмент прив'язаний до фізичного джерела. Перевір пристрій, custody stamp, пошкодження транскрипту і стан об'єкта, перш ніж вважати запис доказом.",
+     "terminal": "ПРАВИЛО ПАКЕТНОГО НОТАРІУСА // Аудіо прийнятне лише коли джерело, вікно запису, смуга транскрипту й об'єктний якір узгоджені. Голос без об'єкта - настрій, не доказ.",
+     "audio": "Якщо в голосу немає петлі, рекордера і packet stamp, не чіпай. Мертві не винні нам оповіді.",
+     "in_game_wiki": "Мітки аудіофрагментів не дають голосу стати дешевим поясненням. На HECTON-8 голос має походити від речі, яка справді могла його записати: hydrophone strip, котушка рекордера костюма, термінальний кеш, уламок black-box, packet notary footer, пошкоджена смуга транскрипту або мародерський scan tag. Об'єкт має пояснити, чому голос вижив.\n\nКорисний фрагмент короткий, бо обладнання відмовляло. У ньому може бути робочий наказ, обрізане попередження, рахунок дихання, ритм помпи, збій перекладу, правка мародера або останній рядок чеклиста. Він не має пояснювати сюжет із порожнечі. Якщо гравець не може вказати пристрій, custody stamp і пошкодження, що сформувало транскрипт, аудіо ще не доказ.\n\nЧитай аудіо разом з об'єктом. Чистий транскрипт на розчавленому рекордері підозрілий. Втрачена часова смуга може приховувати, хто обрізав лінію. Смуга пошкодження субтитрів може бути і diegetic damage, і accessibility text, але не має робити сцену нечитабельною. Найкращі voice logs не роблять колоністів мелодрамою. Вони показують робочих людей, схоплених посеред задачі, коли система зламалася.",
+     "external_site": "Мітки аудіофрагментів тримають voice logs HECTON-8 біля фізичного доказу, а не вільними монологами.",
+     "external_site_article": "HECTON-8 не має використовувати голос як обхід доказів. Добрий аудіофрагмент - це пошкоджений об'єкт, який випадково говорить.\n\nМітка важлива не менше за голос. Вона каже, звідки звук, хто його захопив, який пристрій його несе і яке пошкодження змінило транскрипт. Hydrophone strips, котушки костюмів, уламки black-box і термінальні кеші звучать по-різному. Гідрофон ловить тиск кімнати і ритм машин. Рекордер костюма ловить дихання, удари рукавиць і стриману паніку. Кеш термінала ловить те, що хтось хотів зберегти. Black-box ловить те, що система не могла дозволити собі забути.\n\nТак голос лишається людським і не стає маніпуляцією. Колонія не повинна бути заповнена ідеальними передсмертними промовами. В ній мають бути уривки роботи: тримай помпу, рахуй кисень, не відкривай шлюз, повтори маршрут, залиш офіційний рядок видимим. Коли ці уривки прив'язані до предметів, гравець чує людей без наказу що відчувати.\n\nПравило для авторів просте: немає об'єкта - немає голосу. Транскрипт має нести пошкодження, custody і джерело. Аудіо може поглибити об'єкт, заперечити ярлик або олюднити маршрут. Воно не повинно замінювати об'єкт.",
+     "field_note": "Немає рекордера - немає голосу. Немає custody - немає довіри.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Audiofragment-Tags",
+     "scanner": "AUDIOFRAGMENT // Stimme an physische Quelle gebunden. Gerät, Verwahrungsstempel, Transkriptschaden und Objektzustand prüfen, bevor sie als Beweis abgespielt wird.",
+     "terminal": "PAKETNOTAR-REGEL // Audio ist nur zulässig, wenn Quelle, Aufnahmefenster, Transkriptband und Objektanker übereinstimmen. Stimme ohne Objektbeweis ist Stimmung, kein Beweis.",
+     "audio": "Wenn die Stimme kein Scharnier, keinen Recorder, keinen Paketstempel hat, lass sie. Die Toten schulden uns keine Erzählung.",
+     "in_game_wiki": "Audiofragment-Tags verhindern billige Exposition. Auf HECTON-8 sollte eine Stimme aus etwas kommen, das sie wirklich aufnehmen konnte: Hydrophonstreifen, Anzugrecorder-Spule, Terminalcache, Blackbox-Scherbe, Paketnotar-Fußzeile, beschädigtes Transkriptband oder Marauder-Scan-Tag. Das Objekt muss erklären, warum die Stimme überlebt hat.\n\nEin nützliches Fragment ist kurz, weil die Hardware versagte. Es kann einen Arbeitsauftrag, eine abgeschnittene Warnung, Atemzählung, Pumpentakt, Übersetzungsfehler, Korrekturmarke oder die letzte Checklistenzeile tragen. Es darf die Handlung nicht aus dem Nichts erklären. Wenn der Spieler Gerät, Verwahrungsstempel und Transkriptschaden nicht zeigen kann, ist das Audio noch kein Beweis.\n\nLies Audio mit dem Objekt. Ein sauberes Transkript über einem zerdrückten Recorder ist verdächtig. Ein fehlendes Zeitband kann verstecken, wer die Leitung schnitt. Ein Untertitelschaden kann diegetischer Schaden und Accessibility-Text zugleich sein, darf aber die Szene nicht unlesbar machen. Die besten Voice Logs machen Kolonisten nicht melodramatisch. Sie zeigen arbeitende Menschen mitten in einer Aufgabe, als das System versagte.",
+     "external_site": "Audiofragment-Tags halten HECTON-8-Stimmen an physische Beweise gebunden, statt freie Monologe zu erzeugen.",
+     "external_site_article": "HECTON-8 sollte Stimme nie als Abkürzung um Beweise herum benutzen. Ein gutes Audiofragment ist ein beschädigtes Objekt, das zufällig spricht.\n\nDer Tag zählt so sehr wie die Stimme. Er sagt, woher der Ton kam, wer ihn erfasste, welches Gerät ihn trug und welcher Schaden das Transkript veränderte. Hydrophonstreifen, Anzugspulen, Blackbox-Scherben und Terminalcaches sprechen verschieden. Ein Hydrophon fängt Raumdruck und Maschinenrhythmus. Ein Anzugrecorder fängt Atem, Handschläge und unterdrückte Panik. Ein Terminalcache fängt, was jemand bewahren wollte. Eine Blackbox fängt, was das System nicht vergessen durfte.\n\nSo bleibt Stimme menschlich, ohne manipulativ zu werden. Die Kolonie sollte nicht voller perfekter Sterbereden sein. Sie sollte Fragmente von Arbeit enthalten: halte die Pumpe, zähle den Sauerstoff, öffne die Schleuse nicht, wiederhole die Route, lass die offizielle Zeile sichtbar. Wenn diese Fragmente an Objekte gebunden sind, hört der Spieler Menschen, ohne gesagt zu bekommen, was er fühlen soll.\n\nFür Autorinnen und Designer gilt: kein Objekt, keine Stimme. Das Transkript muss Schaden, Verwahrung und Quelle tragen. Audio kann ein Objekt vertiefen, ein Etikett widersprechen oder eine Route menschlich machen. Es darf das Objekt nie ersetzen.",
+     "field_note": "Kein Recorder, keine Stimme. Keine Verwahrung, kein Vertrauen.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Tags de fragments audio",
+     "scanner": "TAG AUDIO // Fragment vocal attaché à une source physique. Vérifier appareil, tampon de garde, dégâts de transcription et état de l'objet avant de le traiter comme preuve.",
+     "terminal": "RÈGLE DU NOTAIRE DE PAQUET // L'audio n'est recevable que si source, fenêtre de capture, bande de transcription et ancrage d'objet concordent. Une voix sans objet est ambiance, pas preuve.",
+     "audio": "Si la voix n'a pas de charnière, pas d'enregistreur, pas de tampon de paquet, laisse-la. Les morts ne nous doivent pas de narration.",
+     "in_game_wiki": "Les tags de fragments audio empêchent la voix de devenir une exposition facile. Sur HECTON-8, une voix doit venir de quelque chose qui aurait pu l'enregistrer: bande hydrophone, bobine de combinaison, cache terminal, éclat de boîte noire, pied de paquet notarié, bande de transcription endommagée ou scan tag Marauder. L'objet doit expliquer pourquoi la voix a survécu.\n\nUn fragment utile est court parce que le matériel lâchait. Il peut porter un ordre de travail, un avertissement coupé, un compte de respiration, une cadence de pompe, une traduction ratée, une marque de correction ou la dernière ligne d'une checklist. Il ne doit pas expliquer l'intrigue depuis le vide. Si le joueur ne peut pas montrer l'appareil, le tampon de garde et les dégâts qui ont formé la transcription, l'audio n'est pas encore une preuve.\n\nLis l'audio avec l'objet. Une transcription propre sur un enregistreur écrasé est suspecte. Une bande temporelle manquante peut cacher qui a coupé la ligne. Une bande de sous-titre endommagée peut être dégât diégétique et texte d'accessibilité, mais elle ne doit pas rendre la scène illisible. Les meilleurs voice logs ne rendent pas les colons mélodramatiques. Ils montrent des travailleurs pris au milieu d'une tâche quand le système a échoué.",
+     "external_site": "Les tags de fragments audio gardent les voix de HECTON-8 liées à une preuve physique, pas à des monologues flottants.",
+     "external_site_article": "HECTON-8 ne doit jamais utiliser la voix comme raccourci autour de la preuve. Un bon fragment audio est un objet abîmé qui parle par accident.\n\nLe tag compte autant que la voix. Il dit d'où vient le son, qui l'a capturé, quel appareil l'a porté et quel dégât a changé la transcription. Bandes hydrophones, bobines de combinaison, éclats de boîte noire et caches terminaux ne parlent pas pareil. Un hydrophone capte la pression de la pièce et le rythme machine. Un enregistreur de combinaison capte souffle, chocs de gants et panique contenue. Un cache terminal capte ce que quelqu'un voulait préserver. Une boîte noire capte ce que le système ne pouvait pas oublier.\n\nAinsi la voix reste humaine sans manipuler. La colonie ne doit pas être remplie de discours de mort parfaits. Elle doit contenir des fragments de travail: tiens la pompe, compte l'oxygène, n'ouvre pas le sas, répète la route, garde la ligne officielle visible. Quand ces fragments sont attachés à des objets, le joueur entend des gens sans qu'on lui ordonne quoi ressentir.\n\nLa règle d'écriture est simple: pas d'objet, pas de voix. La transcription doit porter dégâts, garde et source. L'audio peut approfondir un objet, contredire une étiquette ou humaniser une route. Il ne doit jamais remplacer l'objet.",
+     "field_note": "Pas d'enregistreur, pas de voix. Pas de garde, pas de confiance.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Etiquetas de fragmento de audio",
+     "scanner": "ETIQUETA DE AUDIO // Fragmento de voz unido a fuente física. Verifica dispositivo, sello de custodia, daño de transcripción y estado del objeto antes de reproducirlo como prueba.",
+     "terminal": "REGLA DE NOTARIO DE PAQUETE // El audio solo es admisible si fuente, ventana de captura, banda de transcripción y ancla de objeto coinciden. Voz sin objeto es ambiente, no prueba.",
+     "audio": "Si la voz no tiene bisagra, grabador ni sello de paquete, déjala. Los muertos no nos deben narración.",
+     "in_game_wiki": "Las etiquetas de fragmento de audio evitan que la voz sea exposición barata. En HECTON-8, una voz debe venir de algo que realmente pudiera grabarla: tira de hidrófono, bobina de traje, caché de terminal, astilla de caja negra, pie de paquete notarial, banda de transcripción dañada o scan tag Marauder. El objeto debe explicar por qué sobrevivió la voz.\n\nUn fragmento útil es corto porque el hardware fallaba. Puede llevar una orden de trabajo, una advertencia cortada, un conteo de respiración, cadencia de bomba, traducción fallida, marca de corrección o la última línea de una lista. No debe explicar la trama desde la nada. Si el jugador no puede señalar dispositivo, sello de custodia y daño que dio forma al transcript, el audio aún no es prueba.\n\nLee el audio con el objeto. Una transcripción limpia sobre un grabador aplastado es sospechosa. Una banda de tiempo ausente puede ocultar quién cortó la línea. Una banda de subtítulo dañada puede ser daño diegético y texto de accesibilidad a la vez, pero no debe volver ilegible la escena. Los mejores voice logs no convierten colonos en melodrama. Los muestran como trabajadores atrapados a mitad de tarea cuando falló el sistema.",
+     "external_site": "Las etiquetas de fragmento de audio atan las voces de HECTON-8 a prueba física, no a monólogos flotantes.",
+     "external_site_article": "HECTON-8 no debe usar la voz como atajo alrededor de la evidencia. Un buen fragmento de audio es un objeto dañado que por casualidad habla.\n\nLa etiqueta importa tanto como la voz. Dice de dónde vino el sonido, quién lo capturó, qué dispositivo lo llevó y qué daño cambió la transcripción. Tiras de hidrófono, bobinas de traje, astillas de caja negra y cachés de terminal hablan de forma distinta. Un hidrófono recoge presión de sala y ritmo de máquina. Un grabador de traje recoge respiración, golpes de guante y pánico contenido. Un caché recoge lo que alguien quiso preservar. Una caja negra recoge lo que el sistema no podía olvidar.\n\nAsí la voz sigue siendo humana sin manipular. La colonia no debe llenarse de discursos de muerte perfectos. Debe contener fragmentos de trabajo: sujeta la bomba, cuenta oxígeno, no abras la esclusa, repite la ruta, deja visible la línea oficial. Cuando esos fragmentos están ligados a objetos, el jugador oye personas sin que le digan qué sentir.\n\nLa regla para escritura es simple: sin objeto, no hay voz. La transcripción debe llevar daño, custodia y fuente. El audio puede profundizar un objeto, contradecir una etiqueta o humanizar una ruta. Nunca debe reemplazar el objeto.",
+     "field_note": "Sin grabador, no hay voz. Sin custodia, no hay confianza.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Tagi fragmentów audio",
+     "scanner": "TAG AUDIO // Fragment głosu przypięty do fizycznego źródła. Sprawdź urządzenie, stempel custody, uszkodzenie transkryptu i stan obiektu, zanim uznasz nagranie za dowód.",
+     "terminal": "REGUŁA NOTARIUSZA PAKIETU // Audio jest dopuszczalne tylko gdy źródło, okno zapisu, pas transkryptu i kotwica obiektu zgadzają się. Głos bez obiektu to nastrój, nie dowód.",
+     "audio": "Jeśli głos nie ma zawiasu, rekordera ani stempla pakietu, zostaw go. Umarli nie są nam winni narracji.",
+     "in_game_wiki": "Tagi fragmentów audio chronią głos przed tanią ekspozycją. Na HECTON-8 głos powinien pochodzić z czegoś, co naprawdę mogło go nagrać: paska hydrofonu, szpuli skafandra, cache terminala, odłamka black-box, stopki notariusza pakietu, uszkodzonego pasa transkryptu albo scan tag Marauder. Obiekt musi wyjaśniać, dlaczego głos przetrwał.\n\nUżyteczny fragment jest krótki, bo sprzęt zawodził. Może nieść zlecenie pracy, urwane ostrzeżenie, liczenie oddechów, rytm pompy, błąd tłumaczenia, znak korekty albo ostatnią linię checklisty. Nie powinien wyjaśniać fabuły znikąd. Jeśli gracz nie może wskazać urządzenia, stempla custody i uszkodzenia, które uformowało transkrypt, audio nie jest jeszcze dowodem.\n\nCzytaj audio z obiektem. Czysty transkrypt na zmiażdżonym rekorderze jest podejrzany. Brakujący pas czasu może ukrywać, kto przeciął linię. Pasek uszkodzenia napisów może być jednocześnie diegetycznym uszkodzeniem i tekstem dostępności, ale nie może czynić sceny nieczytelną. Najlepsze voice logs nie robią z kolonistów melodramatu. Pokazują pracujących ludzi złapanych w środku zadania, kiedy system zawiódł.",
+     "external_site": "Tagi fragmentów audio trzymają głosy HECTON-8 przy fizycznym dowodzie zamiast wolnych monologów.",
+     "external_site_article": "HECTON-8 nie powinien używać głosu jako skrótu wokół dowodów. Dobry fragment audio to uszkodzony obiekt, który przypadkiem mówi.\n\nTag jest równie ważny jak głos. Mówi, skąd pochodził dźwięk, kto go uchwycił, jakie urządzenie go niosło i jakie uszkodzenie zmieniło transkrypt. Paski hydrofonu, szpule skafandrów, odłamki black-box i cache terminali mówią inaczej. Hydrofon łapie ciśnienie pokoju i rytm maszyn. Rekorder skafandra łapie oddech, uderzenia rękawic i tłumioną panikę. Cache terminala łapie to, co ktoś chciał zachować. Black-box łapie to, czego system nie mógł zapomnieć.\n\nDzięki temu głos pozostaje ludzki bez manipulacji. Kolonia nie powinna być pełna idealnych mów śmierci. Powinna mieć fragmenty pracy: trzymaj pompę, licz tlen, nie otwieraj śluzy, powtórz trasę, zostaw oficjalną linię widoczną. Gdy te fragmenty są przypięte do przedmiotów, gracz słyszy ludzi bez rozkazu, co czuć.\n\nReguła dla autorów jest prosta: bez obiektu nie ma głosu. Transkrypt musi nosić uszkodzenie, custody i źródło. Audio może pogłębić obiekt, zaprzeczyć etykiecie albo uczłowieczyć trasę. Nigdy nie może zastąpić obiektu.",
+     "field_note": "Brak rekordera, brak głosu. Brak custody, brak zaufania.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Tags de fragmento de áudio",
+     "scanner": "TAG DE ÁUDIO // Fragmento de voz preso a fonte física. Verifique dispositivo, selo de custódia, dano da transcrição e estado do objeto antes de tocar como prova.",
+     "terminal": "REGRA DO NOTÁRIO DE PACOTE // Áudio só é admissível quando fonte, janela de captura, faixa de transcrição e âncora de objeto concordam. Voz sem prova de objeto é clima, não evidência.",
+     "audio": "Se a voz não tem dobradiça, gravador nem selo de pacote, deixa. Os mortos não nos devem narração.",
+     "in_game_wiki": "Tags de fragmento de áudio impedem que a voz vire exposição barata. Em HECTON-8, uma voz deve vir de algo que realmente poderia gravá-la: faixa de hidrofone, rolo de gravador de traje, cache de terminal, estilhaço de black-box, rodapé de notário de pacote, faixa de transcrição danificada ou scan tag Marauder. O objeto deve responder por que a voz sobreviveu.\n\nUm fragmento útil é curto porque o hardware estava falhando. Pode carregar uma ordem de trabalho, um aviso cortado, contagem de respiração, cadência de bomba, tradução falha, marca de correção ou a última linha de uma checklist. Ele não deve explicar a trama do nada. Se o jogador não consegue apontar o dispositivo, o selo de custódia e o dano que moldou a transcrição, o áudio ainda não é prova.\n\nLeia áudio com o objeto. Uma transcrição limpa sobre um gravador esmagado é suspeita. Uma faixa de tempo ausente pode esconder quem cortou a linha. Uma faixa de legenda danificada pode ser dano diegético e texto de acessibilidade ao mesmo tempo, mas não pode tornar a cena ilegível. Os melhores voice logs não tornam colonos melodramáticos. Eles mostram trabalhadores pegos no meio da tarefa quando o sistema falhou.",
+     "external_site": "Tags de fragmento de áudio mantêm voice logs de HECTON-8 ligados a prova física, não a monólogos soltos.",
+     "external_site_article": "HECTON-8 nunca deve usar voz como atalho ao redor da evidência. Um bom fragmento de áudio é um objeto danificado que por acaso fala.\n\nA tag importa tanto quanto a voz. Ela diz de onde veio o som, quem capturou, que dispositivo o carregou e que dano mudou a transcrição. Faixas de hidrofone, rolos de traje, estilhaços de black-box e caches de terminal falam diferente. Um hidrofone captura pressão da sala e ritmo de máquina. Um gravador de traje captura respiração, impactos de luva e pânico contido. Um cache de terminal captura o que alguém quis preservar. Uma black-box captura o que o sistema não podia esquecer.\n\nIsso mantém a voz humana sem manipular. A colônia não deve estar cheia de discursos finais perfeitos. Deve estar cheia de fragmentos de trabalho: segura a bomba, conta oxigênio, não abre a eclusa, repete a rota, deixa a linha oficial visível. Quando esses fragmentos estão presos a objetos, o jogador ouve pessoas sem receber ordem do que sentir.\n\nPara escritores, a regra é simples: sem objeto, sem voz. A transcrição precisa carregar dano, custódia e fonte. O áudio pode aprofundar um objeto, contradizer uma etiqueta ou humanizar uma rota. Nunca deve substituir o objeto.",
+     "field_note": "Sem gravador, sem voz. Sem custódia, sem confiança.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Audiofragment-tags",
+     "scanner": "AUDIOFRAGMENT // Stemfragment aan fysieke bron gekoppeld. Controleer apparaat, custodystempel, transcriptieschade en objectstaat voordat je het als bewijs afspeelt.",
+     "terminal": "REGEL PAKKETNOTARIS // Audio is pas geldig als bronapparaat, opnamevenster, transcriptieband en objectanker overeenkomen. Stem zonder objectbewijs is sfeer, geen bewijs.",
+     "audio": "Als de stem geen scharnier, geen recorder, geen pakketstempel heeft, laat hem. De doden zijn ons geen vertelling schuldig.",
+     "in_game_wiki": "Audiofragment-tags voorkomen goedkope expositie. Op HECTON-8 moet een stem komen uit iets dat echt kon opnemen: hydrofoonstrip, pakrecorder-spoel, terminalcache, black-box scherf, pakketnotarisfooter, beschadigde transcriptieband of Marauder scan tag. Het object moet uitleggen waarom de stem overleefde.\n\nEen nuttig fragment is kort omdat de hardware faalde. Het kan een werkorder dragen, een afgebroken waarschuwing, ademhalingsteller, pompcadans, mislukte vertaling, correctiemarkering of laatste checklistregel. Het mag de plot niet uit het niets uitleggen. Als de speler apparaat, custodystempel en schade die het transcript vormde niet kan aanwijzen, is de audio nog geen bewijs.\n\nLees audio met het object. Een schoon transcript op een verbrijzelde recorder is verdacht. Een ontbrekende tijdsband kan verbergen wie de lijn sneed. Een beschadigde ondertitelband kan diegetische schade en toegankelijkheidstekst tegelijk zijn, maar mag de scène niet onleesbaar maken. De beste voice logs maken kolonisten niet melodramatisch. Ze tonen werkende mensen midden in een taak toen het systeem faalde.",
+     "external_site": "Audiofragment-tags houden HECTON-8-stemmen gekoppeld aan fysiek bewijs, niet aan zwevende monologen.",
+     "external_site_article": "HECTON-8 mag stem nooit gebruiken als omweg rond bewijs. Een goed audiofragment is een beschadigd object dat toevallig spreekt.\n\nDe tag telt net zo veel als de stem. Hij zegt waar het geluid vandaan kwam, wie het ving, welk apparaat het droeg en welke schade het transcript veranderde. Hydrofoonstrips, pakspoelen, black-box scherven en terminalcaches spreken anders. Een hydrofoon vangt ruimtedruk en machineritme. Een pakrecorder vangt adem, handschoenklappen en ingehouden paniek. Een terminalcache vangt wat iemand wilde bewaren. Een black-box vangt wat het systeem niet mocht vergeten.\n\nZo blijft stem menselijk zonder manipulatie. De kolonie moet niet vol perfecte sterftoespraken zitten. Ze moet vol werkfragmenten zitten: houd de pomp, tel zuurstof, open de sluis niet, herhaal de route, laat de officiële regel zichtbaar. Wanneer die fragmenten aan objecten vastzitten, hoort de speler mensen zonder opdracht wat te voelen.\n\nVoor schrijvers is de regel simpel: geen object, geen stem. Het transcript moet schade, custody en bron dragen. Audio kan een object verdiepen, een label tegenspreken of een route menselijk maken. Het mag het object nooit vervangen.",
+     "field_note": "Geen recorder, geen stem. Geen custody, geen vertrouwen.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Tag Fragmen Audio",
+     "scanner": "TAG AUDIO // Fragmen suara terikat ke sumber fisik. Verifikasi perangkat, cap kustodi, kerusakan transkrip, dan keadaan objek sebelum memainkannya sebagai bukti.",
+     "terminal": "ATURAN NOTARIS PAKET // Audio sah hanya jika perangkat sumber, jendela rekam, pita transkrip, dan jangkar objek cocok. Suara tanpa bukti objek adalah suasana, bukan bukti.",
+     "audio": "Kalau suara itu tidak punya engsel, perekam, atau cap paket, biarkan. Orang mati tidak berutang narasi pada kita.",
+     "in_game_wiki": "Tag fragmen audio menjaga suara agar tidak menjadi eksposisi murahan. Di HECTON-8, suara harus datang dari sesuatu yang benar-benar bisa merekamnya: strip hidrofon, gulungan perekam baju, cache terminal, pecahan black-box, footer notaris paket, pita transkrip rusak, atau scan tag Marauder. Objek harus menjawab mengapa suara itu selamat.\n\nFragmen berguna itu pendek karena perangkat keras sedang gagal. Ia bisa membawa perintah kerja, peringatan terpotong, hitungan napas, irama pompa, terjemahan gagal, tanda koreksi, atau baris terakhir checklist. Ia tidak boleh menjelaskan plot dari kehampaan. Jika pemain tidak bisa menunjuk perangkat, cap kustodi, dan kerusakan yang membentuk transkrip, audio belum menjadi bukti.\n\nBaca audio bersama objek. Transkrip bersih di atas perekam remuk mencurigakan. Pita waktu hilang bisa menyembunyikan siapa yang memotong jalur. Pita kerusakan subtitle bisa menjadi kerusakan diegetik dan teks aksesibilitas sekaligus, tetapi tidak boleh membuat adegan tidak terbaca. Voice logs terbaik tidak membuat kolonis melodramatis. Mereka menunjukkan pekerja yang tertangkap di tengah tugas ketika sistem gagal.",
+     "external_site": "Tag fragmen audio menjaga voice logs HECTON-8 terikat pada bukti fisik, bukan monolog bebas.",
+     "external_site_article": "HECTON-8 tidak boleh memakai suara sebagai jalan pintas melewati bukti. Fragmen audio yang baik adalah objek rusak yang kebetulan berbicara.\n\nTag sama pentingnya dengan suara. Ia memberi tahu dari mana suara datang, siapa yang menangkapnya, perangkat apa yang membawanya, dan kerusakan apa yang mengubah transkrip. Strip hidrofon, gulungan baju, pecahan black-box, dan cache terminal berbicara berbeda. Hidrofon menangkap tekanan ruangan dan ritme mesin. Perekam baju menangkap napas, benturan sarung tangan, dan panik yang ditahan. Cache terminal menangkap apa yang ingin disimpan seseorang. Black-box menangkap apa yang sistem tidak boleh lupakan.\n\nIni menjaga suara tetap manusiawi tanpa manipulasi. Koloni tidak boleh dipenuhi pidato kematian sempurna. Ia harus berisi fragmen kerja: tahan pompa, hitung oksigen, jangan buka kunci, ulangi rute, biarkan baris resmi terlihat. Ketika fragmen itu terikat pada objek, pemain mendengar orang tanpa diperintah harus merasa apa.\n\nAturan untuk penulis sederhana: tanpa objek, tanpa suara. Transkrip harus membawa kerusakan, kustodi, dan sumber. Audio bisa memperdalam objek, menentang label, atau memanusiakan rute. Ia tidak boleh menggantikan objek.",
+     "field_note": "Tanpa perekam, tanpa suara. Tanpa kustodi, tanpa kepercayaan.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "音声断片タグ",
+     "scanner": "音声断片タグ // 声の断片は物理ソースに接続。証拠として再生する前に、装置、保管印、転写損傷、物体状態を確認。",
+     "terminal": "パケット公証規則 // 音声は、ソース装置、記録窓、転写帯、物体アンカーが一致した時だけ有効。物体証拠のない声は雰囲気であり、証拠ではない。",
+     "audio": "その声に蝶番も記録器もパケット印もないなら、触るな。死者は私たちに語りを負っていない。",
+     "in_game_wiki": "音声断片タグは、声を安い説明にしないためのものだ。HECTON-8の声は、本当に記録できた物から来るべきである。ハイドロフォン帯、スーツ記録スプール、端末キャッシュ、black-box片、パケット公証フッター、損傷した転写帯、Marauder scan tagなどだ。物体は、なぜその声が残ったのかを説明しなければならない。\n\n有用な断片は短い。機材が壊れかけていたからだ。作業命令、切れた警告、呼吸の数、ポンプの拍子、失敗した翻訳、修正マーク、チェックリスト最後の行を含むことがある。空中から物語を説明してはならない。プレイヤーが装置、保管印、転写を形作った損傷を指せないなら、その音声はまだ証拠ではない。\n\n音声は物体と一緒に読む。潰れた記録器にきれいな転写があるなら怪しい。失われた時間帯は、誰が線を切ったかを隠せる。字幕損傷帯は、作中の損傷でありアクセシビリティ文でもあり得るが、場面を読めなくしてはならない。よいvoice logsは植民者をメロドラマにしない。システムが失敗した瞬間、仕事の途中にいた人々として見せる。",
+     "external_site": "音声断片タグは、HECTON-8の声を浮いた独白ではなく物理証拠に結びつける。",
+     "external_site_article": "HECTON-8は、証拠を避ける近道として声を使ってはならない。よい音声断片とは、偶然しゃべる損傷物である。\n\nタグは声と同じくらい重要だ。音がどこから来たか、誰が捕捉したか、どの装置が運んだか、どの損傷が転写を変えたかを示す。ハイドロフォン帯、スーツスプール、black-box片、端末キャッシュはそれぞれ違う話し方をする。ハイドロフォンは部屋の圧力と機械のリズムを拾う。スーツ記録器は呼吸、手袋の衝撃、抑えた恐怖を拾う。端末キャッシュは誰かが保存したかったものを拾う。black-boxは、システムが忘れられなかったものを拾う。\n\nこれによって声は人間的でありながら操作的にならない。植民地は完璧な最期の演説で満たされるべきではない。ポンプを押さえろ、酸素を数えろ、ロックを開けるな、経路を繰り返せ、公式行を見えるまま残せ。そういう仕事の断片で満たされるべきだ。断片が物体に結びついている時、プレイヤーは感情を命令されずに人を聞く。\n\n書き手の規則は単純だ。物体がなければ声はない。転写には損傷、保管、出所が必要だ。音声は物体を深め、ラベルに反論し、経路を人間的にできる。物体の代わりになってはならない。",
+     "field_note": "記録器なし、声なし。保管なし、信用なし。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "오디오 파편 태그",
+     "scanner": "오디오 파편 태그 // 음성 파편이 물리적 출처에 붙어 있다. 증거로 재생하기 전에 장치, 보관 도장, 전사 손상, 물체 상태를 확인하라.",
+     "terminal": "패킷 공증 규칙 // 오디오는 출처 장치, 기록 창, 전사 띠, 물체 앵커가 일치할 때만 유효하다. 물체 증거 없는 목소리는 분위기이지 증거가 아니다.",
+     "audio": "그 목소리에 경첩도, 기록기도, 패킷 도장도 없다면 놔둬. 죽은 사람들은 우리에게 서사를 빚지지 않았다.",
+     "in_game_wiki": "오디오 파편 태그는 목소리가 값싼 설명이 되지 않게 한다. HECTON-8에서 목소리는 실제로 기록할 수 있었던 물건에서 나와야 한다. 하이드로폰 스트립, 슈트 기록 스풀, 터미널 캐시, black-box 조각, 패킷 공증 푸터, 손상된 전사 띠, Marauder scan tag 같은 것이다. 물체는 왜 그 목소리가 살아남았는지 대답해야 한다.\n\n쓸모 있는 파편은 짧다. 하드웨어가 고장 나고 있었기 때문이다. 작업 명령, 잘린 경고, 호흡 수, 펌프 박자, 실패한 번역, 수정 표식, 체크리스트의 마지막 줄을 담을 수 있다. 허공에서 줄거리를 설명하면 안 된다. 플레이어가 장치, 보관 도장, 전사를 만든 손상을 가리킬 수 없다면 그 오디오는 아직 증거가 아니다.\n\n오디오는 물체와 함께 읽어야 한다. 부서진 기록기에 깨끗한 전사가 붙어 있으면 의심스럽다. 사라진 시간 띠는 누가 선을 끊었는지 숨길 수 있다. 자막 손상 띠는 세계 안의 손상이면서 접근성 텍스트일 수 있지만, 장면을 읽을 수 없게 하면 안 된다. 최고의 voice logs는 식민자를 멜로드라마로 만들지 않는다. 시스템이 실패했을 때 일하던 사람들을 작업 도중에 보여 준다.",
+     "external_site": "오디오 파편 태그는 HECTON-8의 목소리를 떠도는 독백이 아니라 물리 증거에 묶어 둔다.",
+     "external_site_article": "HECTON-8은 증거를 우회하는 지름길로 목소리를 쓰면 안 된다. 좋은 오디오 파편은 우연히 말하는 손상된 물체다.\n\n태그는 목소리만큼 중요하다. 소리가 어디서 왔는지, 누가 잡았는지, 어떤 장치가 담았는지, 어떤 손상이 전사를 바꾸었는지 말한다. 하이드로폰 스트립, 슈트 스풀, black-box 조각, 터미널 캐시는 다르게 말한다. 하이드로폰은 방의 압력과 기계 리듬을 잡는다. 슈트 기록기는 호흡, 장갑 충격, 눌린 공포를 잡는다. 터미널 캐시는 누군가 보존하려던 것을 잡는다. black-box는 시스템이 잊을 수 없던 것을 잡는다.\n\n이렇게 목소리는 조작적이지 않게 인간적일 수 있다. 식민지는 완벽한 죽음의 연설로 가득 차면 안 된다. 펌프를 잡아, 산소를 세, 잠금을 열지 마, 경로를 반복해, 공식 줄을 보이게 둬 같은 작업 파편으로 가득해야 한다. 그런 파편이 물체에 묶일 때 플레이어는 무엇을 느끼라고 명령받지 않고 사람을 듣는다.\n\n작가의 규칙은 단순하다. 물체 없으면 목소리 없다. 전사는 손상, 보관, 출처를 지녀야 한다. 오디오는 물체를 깊게 하고, 라벨과 모순되고, 경로를 인간적으로 만들 수 있다. 하지만 물체를 대체해서는 안 된다.",
+     "field_note": "기록기 없으면 목소리 없다. 보관 없으면 신뢰 없다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "音频碎片标签",
+     "scanner": "音频碎片标签 // 声音碎片附着于物理来源。作为证据播放前，先核对设备、保管印章、转录损伤和物体状态。",
+     "terminal": "数据包公证规则 // 只有来源设备、捕获窗口、转录带和物体锚点一致时，音频才可采信。没有物体证据的声音只是气氛，不是证据。",
+     "audio": "如果这声音没有铰链、没有记录器、没有数据包印章，就别碰。死者不欠我们叙述。",
+     "in_game_wiki": "音频碎片标签用来防止声音变成廉价说明。在 HECTON-8，一个声音应该来自真正可能记录它的东西：水听器条、潜服记录卷、终端缓存、black-box 碎片、数据包公证页脚、受损转录带，或 Marauder scan tag。物体必须回答为什么这个声音能存活。\n\n有用的碎片很短，因为硬件正在失效。它可能携带工作命令、被切断的警告、呼吸计数、泵节奏、失败翻译、修正标记，或检查表最后一行。它不应该从虚空解释剧情。如果玩家不能指出设备、保管印章和塑造转录的损伤，那么这段音频还不是证据。\n\n音频要和物体一起读。压碎的记录器上出现干净转录，很可疑。缺失的时间带可以隐藏是谁切断线路。字幕损伤带可以同时是叙事内损伤和无障碍文本，但不能让场景不可读。最好的 voice logs 不会把殖民者变成煽情角色。它们展示系统失败时，人们正被困在工作中。",
+     "external_site": "音频碎片标签把 HECTON-8 的声音绑定到物理证据，而不是漂浮的独白。",
+     "external_site_article": "HECTON-8 不应该把声音当成绕过证据的捷径。好的音频碎片，是一个碰巧会说话的受损物体。\n\n标签和声音一样重要。它说明声音来自哪里，谁捕获了它，哪个设备承载了它，什么损伤改变了转录。水听器条、潜服记录卷、black-box 碎片和终端缓存说话方式不同。水听器捕捉房间压力和机器节奏。潜服记录器捕捉呼吸、手套撞击和被压住的恐慌。终端缓存捕捉某人想保存的东西。black-box 捕捉系统不能忘记的东西。\n\n这让声音保持人性，而不变成操控。殖民地不该充满完美的临终演讲。它应该充满工作碎片：扶住泵、数氧气、不要开锁、重复路线、让官方行保持可见。当这些碎片绑定到物体时，玩家听到的是人，而不是被命令去感受什么。\n\n写作规则很简单：没有物体，就没有声音。转录必须带有损伤、保管和来源。音频可以加深物体，反驳标签，或让路线具有人味。它绝不能替代物体。",
+     "field_note": "没有记录器，就没有声音。没有保管，就没有信任。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "وسوم شظايا الصوت",
+     "scanner": "وسم صوت // شظية صوت مرتبطة بمصدر مادي. تحقق من الجهاز وختم الحيازة وضرر النص وحالة الشيء قبل تشغيلها كدليل.",
+     "terminal": "قاعدة كاتب الحزمة // لا يقبل الصوت إلا حين يتطابق جهاز المصدر ونافذة الالتقاط وشريط النص ومرساة الشيء. صوت بلا دليل مادي هو جو، لا دليل.",
+     "audio": "إذا لم يكن للصوت مفصلة ولا مسجل ولا ختم حزمة، فاتركه. الموتى لا يدينون لنا بسرد.",
+     "in_game_wiki": "وسوم شظايا الصوت تمنع الصوت من أن يصبح شرحا رخيصا. في HECTON-8 يجب أن يأتي الصوت من شيء كان يستطيع تسجيله فعلا: شريط هيدروفون، بكرة مسجل بدلة، ذاكرة طرفية، شظية black-box، تذييل كاتب حزمة، شريط نص تالف، أو scan tag Marauder. يجب أن يجيب الشيء عن سبب نجاة الصوت.\n\nالشظية المفيدة قصيرة لأن العتاد كان يفشل. قد تحمل أمر عمل، أو تحذيرا مقطوعا، أو عد أنفاس، أو إيقاع مضخة، أو ترجمة فاشلة، أو علامة تصحيح، أو آخر سطر من قائمة فحص. لا يجب أن تشرح الحبكة من الفراغ. إذا لم يستطع اللاعب الإشارة إلى الجهاز وختم الحيازة والضرر الذي صنع النص، فالصوت ليس دليلا بعد.\n\nاقرأ الصوت مع الشيء. نص نظيف فوق مسجل مسحوق مريب. شريط وقت مفقود قد يخفي من قطع الخط. شريط تلف الترجمة يمكن أن يكون ضررا داخل العالم ونص إتاحة في الوقت نفسه، لكنه لا يجب أن يجعل المشهد غير مقروء. أفضل voice logs لا تحول المستعمرين إلى ميلودراما. إنها تظهر عمالا أمسك بهم الفشل في منتصف المهمة.",
+     "external_site": "وسوم شظايا الصوت تبقي سجلات HECTON-8 الصوتية مربوطة بدليل مادي بدلا من مونولوجات عائمة.",
+     "external_site_article": "لا يجب أن تستخدم HECTON-8 الصوت كطريق مختصر حول الدليل. الشظية الصوتية الجيدة شيء متضرر يتكلم بالصدفة.\n\nالوسم مهم بقدر الصوت. يخبر من أين جاء الصوت، ومن التقطه، وأي جهاز حمله، وأي ضرر غير النص. أشرطة الهيدروفون وبكرات البدلات وشظايا black-box وذاكرات الطرفيات تتكلم بطرق مختلفة. الهيدروفون يلتقط ضغط الغرفة وإيقاع الآلات. مسجل البدلة يلتقط النفس وضربات القفازات والذعر المكبوت. ذاكرة الطرفية تلتقط ما أراد شخص حفظه. black-box تلتقط ما لم يستطع النظام نسيانه.\n\nهكذا يبقى الصوت إنسانيا من دون تلاعب. لا يجب أن تمتلئ المستعمرة بخطب موت مثالية. يجب أن تمتلئ بشظايا عمل: أمسك المضخة، عد الأكسجين، لا تفتح القفل، كرر المسار، أبق السطر الرسمي مرئيا. حين ترتبط هذه الشظايا بأشياء، يسمع اللاعب الناس من دون أن يؤمر بما يشعر.\n\nقاعدة الكتابة بسيطة: لا شيء، لا صوت. يجب أن يحمل النص ضررا وحيازة ومصدرا. يمكن للصوت أن يعمق الشيء، أو يناقض ملصقا، أو يجعل المسار إنسانيا. لكنه لا يجب أن يستبدل الشيء.",
+     "field_note": "لا مسجل، لا صوت. لا حيازة، لا ثقة.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "תגי קטעי שמע",
+     "scanner": "תג שמע // קטע קול מחובר למקור פיזי. אמת מכשיר, חותמת משמורת, נזק תמלול ומצב חפץ לפני הפעלה כראיה.",
+     "terminal": "כלל נוטריון חבילה // שמע קביל רק כשמכשיר מקור, חלון לכידה, פס תמלול ועוגן חפץ מסכימים. קול בלי ראיית חפץ הוא אווירה, לא ראיה.",
+     "audio": "אם לקול אין ציר, אין מקליט ואין חותמת חבילה, עזוב אותו. המתים אינם חייבים לנו סיפור.",
+     "in_game_wiki": "תגי קטעי שמע מונעים מהקול להפוך להסבר זול. ב-HECTON-8 קול צריך לבוא ממשהו שבאמת היה יכול להקליט אותו: פס הידרופון, סליל מקליט חליפה, מטמון טרמינל, רסיס black-box, תחתית חבילת נוטריון, פס תמלול פגום או scan tag Marauder. החפץ חייב לענות למה הקול שרד.\n\nקטע שימושי קצר כי החומרה כשלה. הוא יכול לשאת פקודת עבודה, אזהרה קטועה, ספירת נשימות, קצב משאבה, תרגום שנכשל, סימן תיקון או שורה אחרונה של checklist. הוא לא אמור להסביר את העלילה משום מקום. אם השחקן לא יכול להצביע על המכשיר, חותמת המשמורת והנזק שעיצב את התמלול, השמע עדיין אינו ראיה.\n\nקרא שמע עם החפץ. תמלול נקי מעל מקליט מרוסק חשוד. פס זמן חסר יכול להסתיר מי חתך את הקו. פס נזק כתוביות יכול להיות גם נזק דיאגטי וגם טקסט נגישות, אבל אסור שיגרום לסצנה להיות בלתי קריאה. ה-voice logs הטובים ביותר לא הופכים מתיישבים למלודרמה. הם מראים אנשים עובדים שנתפסו באמצע משימה כשהמערכת כשלה.",
+     "external_site": "תגי קטעי שמע שומרים את קולות HECTON-8 קשורים לראיה פיזית, לא למונולוגים מרחפים.",
+     "external_site_article": "HECTON-8 לא צריכה להשתמש בקול כקיצור דרך סביב ראיות. קטע שמע טוב הוא חפץ פגום שבמקרה מדבר.\n\nהתג חשוב כמו הקול. הוא אומר מאיפה הגיע הצליל, מי לכד אותו, איזה מכשיר נשא אותו ואיזה נזק שינה את התמלול. פסי הידרופון, סלילי חליפה, רסיסי black-box ומטמוני טרמינל מדברים אחרת. הידרופון קולט לחץ חדר וקצב מכונות. מקליט חליפה קולט נשימה, מכות כפפה ופאניקה עצורה. מטמון טרמינל קולט מה שמישהו רצה לשמור. black-box קולט מה שהמערכת לא יכלה לשכוח.\n\nכך הקול נשאר אנושי בלי להיות מניפולטיבי. המושבה לא צריכה להיות מלאה בנאומי מוות מושלמים. היא צריכה להיות מלאה בשברי עבודה: החזק את המשאבה, ספור חמצן, אל תפתח את המנעול, חזור על המסלול, השאר את השורה הרשמית גלויה. כששברים כאלה קשורים לחפצים, השחקן שומע אנשים בלי שמצווים עליו מה להרגיש.\n\nכלל הכתיבה פשוט: אין חפץ, אין קול. התמלול חייב לשאת נזק, משמורת ומקור. שמע יכול להעמיק חפץ, לסתור תווית או להאניש מסלול. אסור לו להחליף את החפץ.",
+     "field_note": "אין מקליט, אין קול. אין משמורת, אין אמון.",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

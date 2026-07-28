@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS008_ESCAPE_ENDINGS_ATLAS_QUESTION",
-  "status": "production_facing_draft",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P036_RETURN_VECTOR_WINDOW",
-      "article_id": "hecton8.return_vector_window",
-      "title_key": "applied_lore.return_vector_window.title",
-      "unlock": {
-        "primary": "unlock.first_return_vector_window",
-        "poi_tags": [
-          "poi.orbital_comm_window",
-          "poi.black_keel_signal",
-          "poi.relay_sky"
-        ],
-        "biome_tags": [
-          "biome.surface_squall",
-          "biome.shallow_shelter",
-          "biome.high_storm_window"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Return Vector Window",
-          "scanner": "RETURN VECTOR READ // Black Keel ping received through Aegir storm gap. Carrier range: high transfer track. Relay line dirty below cloud charge. Capsule ascent rejected until guidance core, heat shield and return handshake all report green.",
-          "field_note": "A reply is not a rescue. It is a clock you can miss.",
-          "terminal": "RETURN WINDOW PREDICTOR\nCarrier: BLACK KEEL / automated transfer track\nWindow: 17 min 40 sec after next charged-particle lull\nWeather: surface squall gap required\nRelay: sky line noisy / shelter mast can repeat once\nAscent hardware: guidance core missing, heat shield uncertified, battery reserve low\nAction: rebuild ascent chain before treating carrier ping as pickup",
-          "audio": "Black Keel heard the ping. That only gives us a window, not a ladder.",
-          "in_game_wiki": "The return vector window is the first proof that Black Keel can answer without being able to rescue immediately. The carrier is alive on an automated transfer track above Aegir, but the route out of HECTON-8 has to cross weather, charged-particle noise, relay damage and unfinished ascent hardware.\n\nA valid return window needs four readings at the same time: carrier geometry, surface storm gap, clean relay path and a capsule chain that can survive launch. If one fails, the ping becomes a timestamp instead of a pickup. The same system later supports partial extraction, but it does not clear debt, evidence custody or the damaged route. Treat every reply from orbit as a schedule constraint until the ascent cradle, guidance core, heat shield and return handshake are rebuilt.",
-          "external_site": "Return Vector Window explains HECTON-8 extraction as orbital procedure rather than instant rescue. Black Keel can receive a signal through narrow Aegir windows, but pickup depends on storm gaps, charged-particle lulls, relay integrity and rebuilt ascent hardware. The packet is the bridge between first contact with the carrier and later partial-exit records: a reply proves the route can exist, not that it is ready."
-        },
-        "ru_RU": {
-          "title": "Окно возвратного вектора",
-          "scanner": "СЧИТЫВАНИЕ ВОЗВРАТНОГО ВЕКТОРА // Пинг Black Keel принят через штормовой разрыв Aegir. Дальность carrier: высокая переходная траектория. Релейная линия шумит ниже облачного заряда. Подъем капсулы отклонен, пока ядро наведения, теплозащита и возвратное рукопожатие не дадут зеленый.",
-          "field_note": "Ответ не спасение. Это часы, которые можно пропустить.",
-          "terminal": "ПРОГНОЗАТОР ОКНА ВОЗВРАТА\nCarrier: BLACK KEEL / автоматическая переходная траектория\nОкно: 17 мин 40 с после следующего спада заряженных частиц\nПогода: требуется разрыв поверхностного шквала\nРеле: небесная линия шумит / мачта укрытия может повторить один раз\nПодъемное железо: ядро наведения отсутствует, теплозащита не сертифицирована, резерв батареи низкий\nДействие: восстановить цепь подъема до того, как считать пинг carrier посадкой",
-          "audio": "Black Keel услышал пинг. Это дает только окно, не лестницу.",
-          "in_game_wiki": "Окно возвратного вектора впервые доказывает, что Black Keel может ответить, но не может сразу забрать. Carrier живет на автоматической переходной траектории над Aegir, а выход с HECTON-8 должен пройти через погоду, шум заряженных частиц, поврежденное реле и недособранное подъемное железо.\n\nРабочее окно возврата требует четыре показания одновременно: геометрию carrier, разрыв поверхностного шторма, чистый релейный путь и цепь капсулы, которая переживет запуск. Если одно показание падает, пинг становится отметкой времени, а не подбором. Позже эта же система поддерживает частичную эвакуацию, но она не закрывает долг, цепочку доказательств и поврежденный маршрут. Любой ответ с орбиты считайте ограничением расписания, пока подъемная люлька, ядро наведения, теплозащита и возвратное рукопожатие не восстановлены.",
-          "external_site": "Окно возвратного вектора описывает эвакуацию с HECTON-8 как орбитальную процедуру, а не мгновенное спасение. Black Keel может принять сигнал через узкие окна Aegir, но подбор зависит от разрывов шторма, спадов заряженных частиц, целостности реле и восстановленного подъемного железа. Этот пакет связывает первый контакт с carrier и более поздние записи частичного выхода: ответ доказывает, что маршрут может существовать, а не что он готов."
-        },
-        "ja_JP": {
-          "title": "帰還ベクトル窓",
-          "scanner": "帰還ベクトル読取 // Black Keel ping を Aegir 嵐間隙で受信。キャリア距離: 高位遷移トラック。中継線は雲電荷下で汚い。誘導コア、熱シールド、帰還ハンドシェイクが全て緑になるまでカプセル上昇拒否。",
-          "field_note": "応答は救助ではない。逃せる時計だ。",
-          "terminal": "帰還窓予測器\nCarrier: BLACK KEEL / 自動遷移トラック\n窓: 次の荷電粒子静穏から 17分40秒後\n天候: 表層スコール間隙が必要\n中継: 空側ラインノイズ / シェルターマストは一度だけ反復可\n上昇装備: 誘導コア欠落、熱シールド未認証、バッテリー予備低\n処置: carrier ping を回収扱いにする前に上昇連鎖を再建",
-          "audio": "Black Keel は ping を聞いた。それで得たのは窓であって、梯子ではない。",
-          "in_game_wiki": "帰還ベクトル窓は、Black Keel が応答できても即時救助はできないことを示す最初の証拠だ。キャリアは Aegir 上方の自動遷移トラックで動いているが、HECTON-8 から出る経路は天候、荷電粒子ノイズ、中継損傷、未完成の上昇装備を越えなければならない。\n\n有効な帰還窓には、キャリア幾何、表層嵐の切れ目、清浄な中継経路、打ち上げに耐えるカプセル連鎖の四つが同時に要る。ひとつでも失敗すれば、ping は回収ではなく時刻印になる。同じ仕組みは後の部分回収にも使われるが、債務、証拠保全、損傷した経路は消えない。上昇クレードル、誘導コア、熱シールド、帰還ハンドシェイクが再建されるまで、軌道からの応答はすべて時刻制約として扱う。",
-          "external_site": "帰還ベクトル窓は、HECTON-8 からの回収を即時救助ではなく軌道手順として説明する。Black Keel は狭い Aegir 窓を通して信号を受け取れるが、回収は嵐の切れ目、荷電粒子の静穏、中継の完全性、再建された上昇装備に依存する。この packet はキャリアとの初回接触と後の部分回収記録をつなぐ。応答は経路が成立し得る証拠であり、準備完了の証拠ではない。"
-        },
-        "zh_CN": {
-          "title": "回程矢量窗口",
-          "scanner": "回程矢量读数 // Black Keel ping 通过 Aegir 风暴间隙收到。Carrier 距离：高转移轨道。云层电荷下方中继线脏噪。制导核心、隔热盾和回程握手全部转绿前，胶囊上升被拒绝。",
-          "field_note": "回复不是救援。它是一只你会错过的钟。",
-          "terminal": "回程窗口预测器\nCarrier：BLACK KEEL / 自动转移轨道\n窗口：下一次带电粒子平静后 17分40秒\n天气：需要表面飑风间隙\n中继：天空线有噪声 / 庇护桅杆只能重复一次\n上升硬件：制导核心缺失，隔热盾未认证，电池余量低\n动作：重建上升链，再把 carrier ping 当成接送",
-          "audio": "Black Keel 听到了 ping。这只给了我们窗口，不是梯子。",
-          "in_game_wiki": "回程矢量窗口第一次证明 Black Keel 能回应，但不能立刻救援。Carrier 在 Aegir 上方的自动转移轨道上仍然运行，但离开 HECTON-8 的路径必须穿过天气、带电粒子噪声、中继损伤和未完成的上升硬件。\n\n有效回程窗口需要四个读数同时成立：carrier 几何、表面风暴间隙、干净中继路径，以及能承受发射的胶囊链。只要一个失败，ping 就只是时间戳，而不是接送。同一系统之后会支持部分撤离，但不会清掉债务、证据保管或受损路线。上升托架、制导核心、隔热盾和回程握手重建前，任何来自轨道的回应都只能当成时间约束。",
-          "external_site": "回程矢量窗口把 HECTON-8 撤离解释为轨道流程，而不是即时救援。Black Keel 能通过狭窄的 Aegir 窗口接收信号，但接送取决于风暴间隙、带电粒子平静、中继完整性和重建后的上升硬件。该 packet 连接了与 carrier 的首次接触和之后的部分撤离记录：回复证明路线可能存在，不证明路线已经准备好。"
-        },
-        "fr_FR": {
-          "title": "Fenêtre de vecteur retour",
-          "scanner": "LECTURE VECTEUR RETOUR // Ping Black Keel reçu par trou d'orage Aegir. Portée transporteur : piste de transfert haute. Ligne relais sale sous charge nuageuse. Montée capsule rejetée tant que cœur de guidage, bouclier thermique et poignée de retour ne sont pas verts.",
-          "field_note": "Une réponse n'est pas un secours. C'est une horloge qu'on peut manquer.",
-          "terminal": "PREDICTEUR DE FENETRE RETOUR\nTransporteur : BLACK KEEL / piste de transfert automatisée\nFenêtre : 17 min 40 s après la prochaine accalmie de particules chargées\nMétéo : trou de grain de surface requis\nRelais : ligne ciel bruitée / mât d'abri peut répéter une fois\nMatériel d'ascension : cœur de guidage manquant, bouclier thermique non certifié, réserve batterie basse\nAction : reconstruire la chaîne d'ascension avant de traiter le ping transporteur comme ramassage",
-          "audio": "Black Keel a entendu le ping. Ça donne une fenêtre, pas une échelle.",
-          "in_game_wiki": "La fenêtre de vecteur retour est la première preuve que Black Keel peut répondre sans pouvoir secourir tout de suite. Le transporteur suit une piste de transfert automatisée au-dessus d'Aegir, mais la sortie de HECTON-8 doit traverser météo, bruit de particules chargées, relais endommagé et matériel d'ascension inachevé.\n\nUne fenêtre retour valide exige quatre lectures en même temps : géométrie du transporteur, trou d'orage en surface, trajet relais propre et chaîne de capsule capable de survivre au lancement. Si une lecture échoue, le ping devient un horodatage au lieu d'un ramassage. Le même système servira plus tard à l'extraction partielle, mais il ne solde ni dette, ni garde des preuves, ni route endommagée. Toute réponse orbitale reste une contrainte de calendrier tant que le berceau d'ascension, le cœur de guidage, le bouclier thermique et la poignée de retour ne sont pas reconstruits.",
-          "external_site": "La Fenêtre de vecteur retour décrit l'extraction de HECTON-8 comme procédure orbitale, pas comme sauvetage instantané. Black Keel peut recevoir un signal par les fenêtres étroites d'Aegir, mais le ramassage dépend des trous d'orage, des accalmies de particules chargées, de l'intégrité du relais et du matériel d'ascension reconstruit. Le packet relie le premier contact avec le transporteur aux futurs dossiers d'extraction partielle : une réponse prouve que la route peut exister, pas qu'elle est prête."
-        },
-        "es_ES": {
-          "title": "Ventana de vector de retorno",
-          "scanner": "LECTURA DE VECTOR DE RETORNO // Ping de Black Keel recibido por hueco de tormenta de Aegir. Alcance del carrier: pista alta de transferencia. Línea de relé sucia bajo carga de nubes. Ascenso de cápsula rechazado hasta que núcleo de guiado, escudo térmico y handshake de retorno den verde.",
-          "field_note": "Una respuesta no es rescate. Es un reloj que puedes perder.",
-          "terminal": "PREDICTOR DE VENTANA DE RETORNO\nCarrier: BLACK KEEL / pista de transferencia automatizada\nVentana: 17 min 40 s tras la próxima calma de partículas cargadas\nClima: requiere hueco de borrasca superficial\nRelé: línea al cielo con ruido / mástil de refugio puede repetir una vez\nHardware de ascenso: falta núcleo de guiado, escudo térmico sin certificar, reserva de batería baja\nAcción: reconstruir cadena de ascenso antes de tratar el ping del carrier como recogida",
-          "audio": "Black Keel oyó el ping. Eso nos da una ventana, no una escalera.",
-          "in_game_wiki": "La ventana de vector de retorno es la primera prueba de que Black Keel puede responder sin poder rescatar de inmediato. El carrier sigue una pista de transferencia automatizada sobre Aegir, pero la ruta de salida de HECTON-8 debe cruzar clima, ruido de partículas cargadas, daño de relé y hardware de ascenso incompleto.\n\nUna ventana de retorno válida necesita cuatro lecturas a la vez: geometría del carrier, hueco de tormenta superficial, ruta de relé limpia y una cadena de cápsula capaz de sobrevivir al lanzamiento. Si una falla, el ping se vuelve marca de tiempo en vez de recogida. El mismo sistema sostiene más tarde la extracción parcial, pero no limpia deuda, custodia de pruebas ni ruta dañada. Trata cada respuesta orbital como restricción de horario hasta reconstruir cuna de ascenso, núcleo de guiado, escudo térmico y handshake de retorno.",
-          "external_site": "La Ventana de vector de retorno explica la extracción de HECTON-8 como procedimiento orbital, no como rescate instantáneo. Black Keel puede recibir una señal por ventanas estrechas de Aegir, pero la recogida depende de huecos de tormenta, calmas de partículas cargadas, integridad de relé y hardware de ascenso reconstruido. El packet une el primer contacto con el carrier y los registros posteriores de salida parcial: una respuesta prueba que la ruta puede existir, no que esté lista."
-        },
-        "de_DE": {
-          "title": "Rückkehrvektorfenster",
-          "scanner": "RÜCKKEHRVEKTOR-LESUNG // Black-Keel-Ping durch Aegir-Sturmlücke empfangen. Trägerreichweite: hohe Transferbahn. Relaislinie unter Wolkenladung verschmutzt. Kapselaufstieg abgelehnt, bis Führungskern, Hitzeschild und Rückkehr-Handshake grün melden.",
-          "field_note": "Eine Antwort ist keine Rettung. Sie ist eine Uhr, die man verpassen kann.",
-          "terminal": "RÜCKKEHRFENSTER-PROGNOSE\nTräger: BLACK KEEL / automatisierte Transferbahn\nFenster: 17 min 40 s nach nächster Ruhe geladener Partikel\nWetter: Oberflächensturmlücke erforderlich\nRelais: Himmelslinie verrauscht / Schutzmast kann einmal wiederholen\nAufstiegshardware: Führungskern fehlt, Hitzeschild nicht zertifiziert, Batteriereserve niedrig\nAktion: Aufstiegskette wiederaufbauen, bevor Trägerping als Abholung gilt",
-          "audio": "Black Keel hat den Ping gehört. Das gibt uns ein Fenster, keine Leiter.",
-          "in_game_wiki": "Das Rückkehrvektorfenster ist der erste Beweis, dass Black Keel antworten kann, ohne sofort retten zu können. Der Träger läuft auf einer automatisierten Transferbahn über Aegir, aber der Weg aus HECTON-8 muss Wetter, Partikelrauschen, Relaisschäden und unfertige Aufstiegshardware passieren.\n\nEin gültiges Rückkehrfenster braucht vier gleichzeitige Lesungen: Trägergeometrie, Oberflächensturmlücke, sauberen Relaispfad und eine Kapselkette, die den Start übersteht. Wenn eine ausfällt, wird der Ping zum Zeitstempel statt zur Abholung. Dasselbe System stützt später Teil-Extraktion, löscht aber weder Schuld, Beweiskette noch beschädigte Route. Jede Orbitantwort bleibt eine Zeitplanbeschränkung, bis Aufstiegswiege, Führungskern, Hitzeschild und Rückkehr-Handshake wiederaufgebaut sind.",
-          "external_site": "Das Rückkehrvektorfenster beschreibt HECTON-8-Extraktion als Orbitalverfahren statt als sofortige Rettung. Black Keel kann ein Signal durch enge Aegir-Fenster empfangen, doch Abholung hängt von Sturmlücken, Ruhe geladener Partikel, Relaisintegrität und wiederaufgebauter Aufstiegshardware ab. Das Packet verbindet Erstkontakt mit dem Träger und spätere Teil-Extraktionsakten: Eine Antwort beweist, dass die Route existieren kann, nicht dass sie bereit ist."
-        },
-        "pl_PL": {
-          "title": "Okno wektora powrotu",
-          "scanner": "ODCZYT WEKTORA POWROTU // Ping Black Keel odebrany przez lukę burzową Aegir. Zasięg carrier: wysoka ścieżka transferowa. Linia przekaźnika brudna pod ładunkiem chmur. Wznoszenie kapsuły odrzucone, dopóki rdzeń naprowadzania, osłona termiczna i handshake powrotu nie zgłoszą zielonego.",
-          "field_note": "Odpowiedź nie jest ratunkiem. To zegar, który można przegapić.",
-          "terminal": "PREDYKTOR OKNA POWROTU\nCarrier: BLACK KEEL / automatyczna ścieżka transferowa\nOkno: 17 min 40 s po następnym uspokojeniu cząstek naładowanych\nPogoda: wymagana luka w szkwale powierzchniowym\nPrzekaźnik: linia nieba zaszumiona / maszt schronu może powtórzyć raz\nSprzęt wznoszenia: brak rdzenia naprowadzania, osłona termiczna bez certyfikatu, niska rezerwa baterii\nDziałanie: odbudować łańcuch wznoszenia przed uznaniem pingu carrier za odbiór",
-          "audio": "Black Keel usłyszał ping. To daje okno, nie drabinę.",
-          "in_game_wiki": "Okno wektora powrotu jest pierwszym dowodem, że Black Keel może odpowiedzieć, ale nie może od razu uratować. Carrier idzie automatyczną ścieżką transferową nad Aegir, lecz droga wyjścia z HECTON-8 musi przejść przez pogodę, szum cząstek naładowanych, uszkodzony przekaźnik i niedokończony sprzęt wznoszenia.\n\nPrawidłowe okno powrotu wymaga czterech odczytów naraz: geometrii carrier, luki w burzy powierzchniowej, czystej ścieżki przekaźnika i łańcucha kapsuły zdolnego przeżyć start. Jeśli jeden zawiedzie, ping staje się znacznikiem czasu zamiast odbioru. Ten sam system później obsługuje częściową ekstrakcję, ale nie zamyka długu, depozytu dowodów ani uszkodzonej trasy. Każdą odpowiedź z orbity traktuj jak ograniczenie harmonogramu, dopóki kołyska wznoszenia, rdzeń naprowadzania, osłona termiczna i handshake powrotu nie zostaną odbudowane.",
-          "external_site": "Okno wektora powrotu opisuje ekstrakcję z HECTON-8 jako procedurę orbitalną, a nie natychmiastowy ratunek. Black Keel może odebrać sygnał przez wąskie okna Aegir, ale odbiór zależy od luk burzowych, uspokojenia cząstek naładowanych, integralności przekaźnika i odbudowanego sprzętu wznoszenia. Packet łączy pierwszy kontakt z carrier i późniejsze rekordy częściowego wyjścia: odpowiedź dowodzi, że trasa może istnieć, a nie że jest gotowa."
-        },
-        "uk_UA": {
-          "title": "Вікно зворотного вектора",
-          "scanner": "ЗЧИТУВАННЯ ЗВОРОТНОГО ВЕКТОРА // Ping Black Keel прийнято через штормовий розрив Aegir. Дальність carrier: висока перехідна траєкторія. Релейна лінія брудна нижче хмарного заряду. Підйом капсули відхилено, доки ядро наведення, теплозахист і зворотний handshake не покажуть зелений.",
-          "field_note": "Відповідь не є порятунком. Це годинник, який можна пропустити.",
-          "terminal": "ПРОГНОЗАТОР ВІКНА ПОВЕРНЕННЯ\nCarrier: BLACK KEEL / автоматична перехідна траєкторія\nВікно: 17 хв 40 с після наступного спаду заряджених частинок\nПогода: потрібен розрив поверхневого шквалу\nРеле: небесна лінія шумить / щогла укриття може повторити один раз\nПідйомне обладнання: ядро наведення відсутнє, теплозахист не сертифікований, резерв батареї низький\nДія: відновити ланцюг підйому, перш ніж вважати ping carrier підбором",
-          "audio": "Black Keel почув ping. Це дає тільки вікно, а не драбину.",
-          "in_game_wiki": "Вікно зворотного вектора вперше доводить, що Black Keel може відповісти, але не може одразу врятувати. Carrier рухається автоматичною перехідною траєкторією над Aegir, а вихід із HECTON-8 має пройти крізь погоду, шум заряджених частинок, пошкоджене реле й недобудоване підйомне обладнання.\n\nЧинне вікно повернення потребує чотири показники одночасно: геометрію carrier, розрив поверхневої бурі, чистий релейний шлях і капсульний ланцюг, здатний пережити запуск. Якщо один показник падає, ping стає часовою міткою замість підбору. Та сама система пізніше підтримує часткову евакуацію, але не закриває борг, зберігання доказів і пошкоджений маршрут. Кожну відповідь з орбіти слід вважати обмеженням розкладу, доки підйомну люльку, ядро наведення, теплозахист і зворотний handshake не відновлено.",
-          "external_site": "Вікно зворотного вектора описує евакуацію з HECTON-8 як орбітальну процедуру, а не миттєвий порятунок. Black Keel може прийняти сигнал через вузькі вікна Aegir, але підбір залежить від штормових розривів, спадів заряджених частинок, цілісності реле та відновленого підйомного обладнання. Packet пов'язує перший контакт із carrier і пізніші записи часткового виходу: відповідь доводить, що маршрут може існувати, а не що він готовий."
-        },
-        "ar_SA": {
-          "title": "نافذة متجه العودة",
-          "scanner": "قراءة متجه العودة // تم استقبال ping من Black Keel عبر فجوة عاصفة في Aegir. مدى carrier: مسار انتقال عال. خط الترحيل مشوش تحت شحنة السحب. صعود الكبسولة مرفوض حتى يبلغ قلب التوجيه والدرع الحراري ومصافحة العودة اللون الأخضر.",
-          "field_note": "الرد ليس إنقاذا. إنه ساعة يمكن أن تفوتها.",
-          "terminal": "متنبئ نافذة العودة\nCarrier: BLACK KEEL / مسار انتقال آلي\nالنافذة: 17 دقيقة و40 ثانية بعد الهدوء التالي للجسيمات المشحونة\nالطقس: فجوة عاصفة سطحية مطلوبة\nالترحيل: خط السماء مشوش / سارية المأوى تستطيع التكرار مرة واحدة\nعتاد الصعود: قلب التوجيه مفقود، الدرع الحراري غير معتمد، احتياطي البطارية منخفض\nالإجراء: أعد بناء سلسلة الصعود قبل اعتبار ping من carrier عملية التقاط",
-          "audio": "Black Keel سمعت ping. هذا يعطينا نافذة، لا سلما.",
-          "in_game_wiki": "نافذة متجه العودة هي أول دليل على أن Black Keel تستطيع الرد من دون أن تستطيع الإنقاذ فورا. تعمل carrier على مسار انتقال آلي فوق Aegir، لكن الطريق إلى خارج HECTON-8 يجب أن يعبر الطقس وضجيج الجسيمات المشحونة وضرر الترحيل وعتاد الصعود غير المكتمل.\n\nتحتاج نافذة العودة الصحيحة إلى أربع قراءات في الوقت نفسه: هندسة carrier، فجوة عاصفة سطحية، مسار ترحيل نظيف، وسلسلة كبسولة تستطيع النجاة من الإطلاق. إذا فشلت قراءة واحدة، يصبح ping ختما زمنيا لا عملية التقاط. يدعم النظام نفسه لاحقا استخراجا جزئيا، لكنه لا يغلق الدين ولا عهدة الأدلة ولا الطريق المتضرر. عامل كل رد من المدار كقيد جدول حتى يعاد بناء مهد الصعود وقلب التوجيه والدرع الحراري ومصافحة العودة.",
-          "external_site": "تشرح نافذة متجه العودة الاستخراج من HECTON-8 كإجراء مداري لا كإنقاذ فوري. تستطيع Black Keel استقبال إشارة عبر نوافذ Aegir الضيقة، لكن الالتقاط يعتمد على فجوات العواصف وهدوء الجسيمات المشحونة وسلامة الترحيل وعتاد الصعود المعاد بناؤه. يربط هذا packet أول اتصال مع carrier بسجلات الخروج الجزئي اللاحقة: الرد يثبت أن الطريق قد يوجد، لا أنه جاهز."
-        },
-        "id_ID": {
-          "title": "Jendela Vektor Balik",
-          "scanner": "BACAAN VEKTOR BALIK // Ping Black Keel diterima lewat celah badai Aegir. Jarak carrier: lintasan transfer tinggi. Jalur relai kotor di bawah muatan awan. Pendakian kapsul ditolak sampai inti pandu, pelindung panas, dan handshake balik semua hijau.",
-          "field_note": "Jawaban bukan penyelamatan. Itu jam yang bisa kau lewatkan.",
-          "terminal": "PREDIKTOR JENDELA BALIK\nCarrier: BLACK KEEL / lintasan transfer otomatis\nJendela: 17 mnt 40 dtk setelah jeda partikel bermuatan berikutnya\nCuaca: celah squall permukaan wajib\nRelai: jalur langit bising / tiang shelter bisa mengulang sekali\nPerangkat naik: inti pandu hilang, pelindung panas belum tersertifikasi, cadangan baterai rendah\nTindakan: bangun ulang rantai naik sebelum menganggap ping carrier sebagai jemputan",
-          "audio": "Black Keel mendengar ping itu. Itu memberi kita jendela, bukan tangga.",
-          "in_game_wiki": "Jendela vektor balik adalah bukti pertama bahwa Black Keel bisa menjawab tanpa bisa menyelamatkan segera. Carrier berjalan di lintasan transfer otomatis di atas Aegir, tetapi rute keluar dari HECTON-8 harus melewati cuaca, bising partikel bermuatan, kerusakan relai, dan perangkat naik yang belum selesai.\n\nJendela balik yang sah membutuhkan empat bacaan bersamaan: geometri carrier, celah badai permukaan, jalur relai bersih, dan rantai kapsul yang sanggup selamat dari peluncuran. Jika satu gagal, ping menjadi cap waktu, bukan jemputan. Sistem yang sama nanti mendukung ekstraksi parsial, tetapi tidak menutup utang, kustodi bukti, atau rute rusak. Perlakukan setiap jawaban dari orbit sebagai batas jadwal sampai cradle naik, inti pandu, pelindung panas, dan handshake balik dibangun ulang.",
-          "external_site": "Jendela Vektor Balik menjelaskan ekstraksi HECTON-8 sebagai prosedur orbital, bukan penyelamatan instan. Black Keel dapat menerima sinyal lewat jendela Aegir yang sempit, tetapi jemputan bergantung pada celah badai, jeda partikel bermuatan, integritas relai, dan perangkat naik yang dibangun ulang. Packet ini menjembatani kontak pertama dengan carrier dan catatan keluar parsial berikutnya: jawaban membuktikan rute bisa ada, bukan bahwa rute siap."
-        },
-        "ko_KR": {
-          "title": "귀환 벡터 창",
-          "scanner": "귀환 벡터 판독 // Aegir 폭풍 틈으로 Black Keel ping 수신. carrier 거리: 고전이 궤도. 구름 전하 아래 중계선 오염. 유도 코어, 열 차폐, 귀환 핸드셰이크가 모두 녹색이 될 때까지 캡슐 상승 거부.",
-          "field_note": "응답은 구조가 아니다. 놓칠 수 있는 시계다.",
-          "terminal": "귀환 창 예측기\nCarrier: BLACK KEEL / 자동 전이 궤도\n창: 다음 하전 입자 정온 뒤 17분 40초\n기상: 표면 스콜 틈 필요\n중계: 하늘선 잡음 / shelter mast는 한 번만 반복 가능\n상승 하드웨어: 유도 코어 없음, 열 차폐 미인증, 배터리 예비 낮음\n조치: carrier ping을 회수로 보기 전에 상승 사슬 재건",
-          "audio": "Black Keel이 ping을 들었다. 그건 창을 준 거지, 사다리가 아니다.",
-          "in_game_wiki": "귀환 벡터 창은 Black Keel이 응답할 수 있지만 즉시 구조할 수는 없다는 첫 증거다. carrier는 Aegir 위 자동 전이 궤도를 따라 움직이지만, HECTON-8을 벗어나는 경로는 기상, 하전 입자 잡음, 중계 손상, 미완성 상승 하드웨어를 통과해야 한다.\n\n유효한 귀환 창에는 네 판독이 동시에 필요하다. carrier 기하, 표면 폭풍 틈, 깨끗한 중계 경로, 발사를 견딜 캡슐 사슬이다. 하나라도 실패하면 ping은 회수가 아니라 시간표가 된다. 같은 시스템은 나중에 부분 추출을 지원하지만, 부채와 증거 보관, 손상된 경로를 지우지 않는다. 상승 크래들, 유도 코어, 열 차폐, 귀환 핸드셰이크가 재건될 때까지 궤도 응답은 모두 일정 제약으로 취급해야 한다.",
-          "external_site": "귀환 벡터 창은 HECTON-8 추출을 즉시 구조가 아니라 궤도 절차로 설명한다. Black Keel은 좁은 Aegir 창을 통해 신호를 받을 수 있지만, 회수는 폭풍 틈, 하전 입자 정온, 중계 무결성, 재건된 상승 하드웨어에 달려 있다. 이 packet은 carrier와의 첫 접촉과 뒤의 부분 출구 기록을 잇는다. 응답은 경로가 존재할 수 있음을 증명하지만, 준비 완료를 증명하지 않는다."
-        },
-        "he_IL": {
-          "title": "חלון וקטור חזרה",
-          "scanner": "קריאת וקטור חזרה // ping של Black Keel התקבל דרך פער סערה של Aegir. טווח carrier: מסלול העברה גבוה. קו ממסר מלוכלך מתחת למטען עננים. עליית קפסולה נדחית עד שליבת הנחיה, מגן חום ולחיצת יד חזרה מדווחים ירוק.",
-          "field_note": "תשובה אינה חילוץ. זו שעון שאפשר לפספס.",
-          "terminal": "חוזה חלון חזרה\nCarrier: BLACK KEEL / מסלול העברה אוטומטי\nחלון: 17 דק' 40 שנ' אחרי שקט החלקיקים הטעונים הבא\nמזג אוויר: נדרש פער סופה בפני השטח\nממסר: קו שמיים רועש / תורן מחסה יכול לחזור פעם אחת\nחומרת עלייה: ליבת הנחיה חסרה, מגן חום לא מוסמך, רזרבת סוללה נמוכה\nפעולה: לבנות מחדש את שרשרת העלייה לפני שמתייחסים ל-ping carrier כאיסוף",
-          "audio": "Black Keel שמע את ה-ping. זה נותן חלון, לא סולם.",
-          "in_game_wiki": "חלון וקטור החזרה הוא ההוכחה הראשונה לכך ש-Black Keel יכול לענות בלי להיות מסוגל לחלץ מיד. ה-carrier נע במסלול העברה אוטומטי מעל Aegir, אבל הדרך החוצה מ-HECTON-8 חייבת לעבור מזג אוויר, רעש חלקיקים טעונים, נזק ממסר וחומרת עלייה לא גמורה.\n\nחלון חזרה תקף צריך ארבע קריאות יחד: גאומטריית carrier, פער סערה בפני השטח, נתיב ממסר נקי ושרשרת קפסולה שיכולה לשרוד שיגור. אם אחת נכשלת, ה-ping הופך לחותמת זמן במקום איסוף. אותה מערכת תומכת בהמשך בחילוץ חלקי, אבל היא לא סוגרת חוב, משמורת ראיות או נתיב פגום. כל תשובה מהמסלול היא מגבלת לוח זמנים עד שמיטת העלייה, ליבת ההנחיה, מגן החום ולחיצת יד החזרה נבנים מחדש.",
-          "external_site": "חלון וקטור החזרה מסביר חילוץ מ-HECTON-8 כנוהל מסלולי ולא כחילוץ מיידי. Black Keel יכול לקבל אות דרך חלונות Aegir צרים, אבל איסוף תלוי בפערי סערה, שקט חלקיקים טעונים, שלמות ממסר וחומרת עלייה שנבנתה מחדש. ה-packet מחבר בין הקשר הראשון עם carrier לבין רשומות יציאה חלקית מאוחרות יותר: תשובה מוכיחה שהנתיב יכול להתקיים, לא שהוא מוכן."
-        },
-        "pt_BR": {
-          "title": "Janela de vetor de retorno",
-          "scanner": "LEITURA DE VETOR DE RETORNO // Ping da Black Keel recebido por lacuna de tempestade de Aegir. Alcance do carrier: trilha alta de transferência. Linha de relé suja sob carga de nuvem. Subida da cápsula rejeitada até núcleo de orientação, escudo térmico e handshake de retorno ficarem verdes.",
-          "field_note": "Uma resposta não é resgate. É um relógio que você pode perder.",
-          "terminal": "PREDITOR DE JANELA DE RETORNO\nCarrier: BLACK KEEL / trilha de transferência automatizada\nJanela: 17 min 40 s após a próxima calmaria de partículas carregadas\nClima: exige lacuna de borrasca superficial\nRelé: linha do céu ruidosa / mastro do abrigo pode repetir uma vez\nHardware de subida: núcleo de orientação ausente, escudo térmico sem certificação, reserva de bateria baixa\nAção: reconstruir cadeia de subida antes de tratar ping do carrier como coleta",
-          "audio": "A Black Keel ouviu o ping. Isso dá uma janela, não uma escada.",
-          "in_game_wiki": "A janela de vetor de retorno é a primeira prova de que a Black Keel pode responder sem conseguir resgatar imediatamente. O carrier segue uma trilha de transferência automatizada sobre Aegir, mas a saída de HECTON-8 precisa atravessar clima, ruído de partículas carregadas, dano de relé e hardware de subida inacabado.\n\nUma janela de retorno válida precisa de quatro leituras ao mesmo tempo: geometria do carrier, lacuna de tempestade superficial, caminho de relé limpo e uma cadeia de cápsula capaz de sobreviver ao lançamento. Se uma falha, o ping vira marca de tempo em vez de coleta. O mesmo sistema depois sustenta extração parcial, mas não limpa dívida, custódia de evidência nem rota danificada. Trate toda resposta orbital como restrição de agenda até reconstruir berço de subida, núcleo de orientação, escudo térmico e handshake de retorno.",
-          "external_site": "A Janela de vetor de retorno explica a extração de HECTON-8 como procedimento orbital, não como resgate instantâneo. A Black Keel pode receber sinal por janelas estreitas de Aegir, mas a coleta depende de lacunas de tempestade, calmarias de partículas carregadas, integridade de relé e hardware de subida reconstruído. O packet liga o primeiro contato com o carrier aos registros posteriores de saída parcial: uma resposta prova que a rota pode existir, não que ela está pronta."
-        },
-        "nl_NL": {
-          "title": "Terugkeervectorvenster",
-          "scanner": "TERUGKEERVECTOR-LEZING // Black Keel-ping ontvangen door Aegir-stormgat. Carrierbereik: hoge transferbaan. Relaislijn vuil onder wolklading. Capsule-opstijging geweigerd tot geleidingskern, hitteschild en terugkeerhandshake groen melden.",
-          "field_note": "Een antwoord is geen redding. Het is een klok die je kunt missen.",
-          "terminal": "VOORSPELLER TERUGKEERVENSTER\nCarrier: BLACK KEEL / geautomatiseerde transferbaan\nVenster: 17 min 40 sec na volgende rust van geladen deeltjes\nWeer: gat in oppervlaksquall vereist\nRelais: hemellijn met ruis / schuilermast kan eenmaal herhalen\nOpstijghardware: geleidingskern ontbreekt, hitteschild niet gecertificeerd, batterijreserve laag\nActie: opstijgketen herbouwen voordat carrierping als ophaalactie geldt",
-          "audio": "Black Keel hoorde de ping. Dat geeft een venster, geen ladder.",
-          "in_game_wiki": "Het terugkeervectorvenster is het eerste bewijs dat Black Keel kan antwoorden zonder meteen te kunnen redden. De carrier draait op een geautomatiseerde transferbaan boven Aegir, maar de route uit HECTON-8 moet door weer, geladen-deeltjesruis, relaisschade en onafgebouwde opstijghardware.\n\nEen geldig terugkeervenster heeft vier metingen tegelijk nodig: carriergeometrie, een gat in de oppervlaktestorm, schoon relaispad en een capsuleketen die de lancering overleeft. Als één meting faalt, wordt de ping een tijdstempel in plaats van een ophaalactie. Hetzelfde systeem ondersteunt later gedeeltelijke extractie, maar wist geen schuld, bewijscustody of beschadigde route. Behandel elk antwoord uit de baan als tijdschema-beperking tot opstijgwieg, geleidingskern, hitteschild en terugkeerhandshake herbouwd zijn.",
-          "external_site": "Het Terugkeervectorvenster beschrijft HECTON-8-extractie als orbitale procedure, niet als directe redding. Black Keel kan een signaal ontvangen door smalle Aegir-vensters, maar ophalen hangt af van stormgaten, rust van geladen deeltjes, relaisintegriteit en herbouwde opstijghardware. Het packet verbindt eerste contact met de carrier met latere gedeeltelijke-exitrecords: een antwoord bewijst dat de route kan bestaan, niet dat ze klaar is."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS008_ESCAPE_ENDINGS_ATLAS_QUESTION",
+ "status": "production_facing_draft",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P036_RETURN_VECTOR_WINDOW",
+   "article_id": "hecton8.return_vector_window",
+   "title_key": "applied_lore.return_vector_window.title",
+   "unlock": {
+    "primary": "unlock.first_return_vector_window",
+    "poi_tags": [
+     "poi.orbital_comm_window",
+     "poi.black_keel_signal",
+     "poi.relay_sky"
+    ],
+    "biome_tags": [
+     "biome.surface_squall",
+     "biome.shallow_shelter",
+     "biome.high_storm_window"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Return Vector Window",
+     "scanner": "RETURN VECTOR READ // Black Keel ping received through Aegir storm gap. Carrier range: high transfer track. Relay line dirty below cloud charge. Capsule ascent rejected until guidance core, heat shield and return handshake all report green.",
+     "field_note": "A reply is not a rescue. It is a clock you can miss.",
+     "terminal": "RETURN WINDOW PREDICTOR\nCarrier: BLACK KEEL / automated transfer track\nWindow: 17 min 40 sec after next charged-particle lull\nWeather: surface squall gap required\nRelay: sky line noisy / shelter mast can repeat once\nAscent hardware: guidance core missing, heat shield uncertified, battery reserve low\nAction: rebuild ascent chain before treating carrier ping as pickup",
+     "audio": "Black Keel heard the ping. That only gives us a window, not a ladder.",
+     "in_game_wiki": "The return vector window is the first proof that Black Keel can answer without being able to rescue immediately. The carrier is alive on an automated transfer track above Aegir, but the route out of HECTON-8 has to cross weather, charged-particle noise, relay damage and unfinished ascent hardware.\n\nA valid return window needs four readings at the same time: carrier geometry, surface storm gap, clean relay path and a capsule chain that can survive launch. If one fails, the ping becomes a timestamp instead of a pickup. The same system later supports partial extraction, but it does not clear debt, evidence custody or the damaged route. Treat every reply from orbit as a schedule constraint until the ascent cradle, guidance core, heat shield and return handshake are rebuilt.",
+     "external_site": "Return Vector Window explains HECTON-8 extraction as orbital procedure rather than instant rescue. Black Keel can receive a signal through narrow Aegir windows, but pickup depends on storm gaps, charged-particle lulls, relay integrity and rebuilt ascent hardware. The packet is the bridge between first contact with the carrier and later partial-exit records: a reply proves the route can exist, not that it is ready."
     },
-    {
-      "packet_id": "P037_COWARD_EXIT_CHAIN",
-      "article_id": "hecton8.coward_exit_chain",
-      "title_key": "applied_lore.coward_exit_chain.title",
-      "unlock": {
-        "primary": "unlock.first_coward_exit_chain",
-        "poi_tags": [
-          "poi.repaired_ascent_cradle",
-          "poi.partial_exit_console",
-          "poi.storm_gap"
-        ],
-        "biome_tags": [
-          "biome.surface_squall",
-          "biome.shallow_shelter",
-          "biome.claim_beacon"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Emergency Exit Chain",
-          "scanner": "The early launch chain is real, but every light is provisional: hull seal, B2 reserve, return ping, storm gap, claim beacon.",
-          "field_note": "The capsule accepts a passenger before the site accepts a record.",
-          "terminal": "Emergency ascent opens only when the cradle clamps, ballast vents clear, Black Keel repeats the P036 return window, and the surface squall leaves a clean corridor. The contract ledger stamps the departure incomplete: no Atlas testimony, no Deep Reach liability packet, no certified payout.",
-          "audio": "Launch is possible. Closure is not aboard.",
-          "in_game_wiki": "Emergency Exit Chain describes the first lawful shallow-route ascent. It is assembled from hull seal, battery reserve, relay repeat and storm-gap prediction, then marked incomplete by the claim ledger.",
-          "external_site": "Emergency Exit Chain turns the early escape route into procedure. The craft can leave HECTON-8 after enough engineering work, but the site record remains unresolved: truth packets, liability proof and material certification stay behind."
-        },
-        "ru_RU": {
-          "title": "Цепочка аварийного выхода",
-          "scanner": "Ранний запуск реален, но каждый индикатор временный: герметик корпуса, резерв B2, ответный ping, разрыв шторма, маяк претензии.",
-          "field_note": "Капсула принимает пассажира раньше, чем объект принимает запись.",
-          "terminal": "Аварийный подъем открыт только когда люлька зажимает капсулу, балластные клапаны сухие, Black Keel повторяет окно возврата P036, а поверхностный шквал оставляет чистый коридор. Контрактный реестр ставит уход как неполный: нет свидетельства Atlas, пакета ответственности Deep Reach и сертифицированной выплаты.",
-          "audio": "Запуск возможен. Закрытия на борту нет.",
-          "in_game_wiki": "Цепочка аварийного выхода описывает первый законный подъем по мелководному маршруту. Она собирается из герметика корпуса, резерва батарей, повтора реле и прогноза штормового окна, а затем помечается реестром претензий как неполная.",
-          "external_site": "Цепочка аварийного выхода превращает раннее спасение в процедуру. Аппарат может покинуть HECTON-8 после достаточной инженерной работы, но запись объекта остается незакрытой: пакеты правды, доказательство ответственности и сертификация материала остаются внизу."
-        },
-        "ja_JP": {
-          "title": "緊急離脱チェーン",
-          "scanner": "早期発射チェーンは本物だが、すべて仮点灯だ。船殻封止、B2予備、帰還ping、嵐の隙間、請求ビーコン。",
-          "field_note": "カプセルは記録より先に乗員を受け入れる。",
-          "terminal": "緊急上昇は、クレードルが固定し、バラスト弁が乾き、Black KeelがP036帰還窓を反復し、表層スコールが清い回廊を残した時だけ開く。契約台帳は出発を未完了と押印する。Atlas証言なし、Deep Reach責任パケットなし、認証済み支払いなし。",
-          "audio": "発射は可能だ。決着は乗っていない。",
-          "in_game_wiki": "緊急離脱チェーンは、浅層経路で最初に合法化される上昇手順である。船殻封止、電池予備、中継反復、嵐間隙予測で組まれ、請求台帳に未完了として残る。",
-          "external_site": "緊急離脱チェーンは早期脱出を手順に変える。十分な修理後に機体はHECTON-8を離れられるが、現場記録は未解決のままだ。真実パケット、責任証拠、素材認証は下に残る。"
-        },
-        "zh_CN": {
-          "title": "紧急撤离链",
-          "scanner": "早期发射链是真的，但每盏灯都是临时绿灯：壳体密封、B2储备、返航 ping、风暴缺口、索赔信标。",
-          "field_note": "舱体先接收乘员，站点记录还没有接受结果。",
-          "terminal": "只有 cradle 夹紧、压载阀排干、Black Keel 重复 P036 返航窗口、表层风暴留出清洁走廊时，紧急上升才开放。合同账本把离站盖为未完成：无 Atlas 证词、无 Deep Reach 责任包、无认证付款。",
-          "audio": "可以发射。结案不在舱内。",
-          "in_game_wiki": "紧急撤离链记录第一条合法的浅层上升流程。它由壳体密封、电池储备、中继重复和风暴缺口预测组成，随后被索赔账本标为未完成。",
-          "external_site": "紧急撤离链把早期逃离变成程序。足够工程修复后，飞行器可以离开 HECTON-8，但站点记录仍未解决：真相包、责任证据和材料认证都留在下面。"
-        },
-        "fr_FR": {
-          "title": "Chaîne de sortie d'urgence",
-          "scanner": "La chaîne de lancement précoce est réelle, mais chaque voyant reste provisoire: joint de coque, réserve B2, ping retour, trou de tempête, balise de créance.",
-          "field_note": "La capsule accepte un passager avant que le site accepte un dossier.",
-          "terminal": "L'ascension d'urgence ne s'ouvre que si le berceau serre la capsule, les évents de ballast sont secs, Black Keel répète la fenêtre de retour P036 et le grain de surface laisse un couloir propre. Le registre contractuel tamponne le départ comme incomplet: aucun témoignage Atlas, aucun paquet de responsabilité Deep Reach, aucun paiement certifié.",
-          "audio": "Le lancement est possible. La clôture n'est pas à bord.",
-          "in_game_wiki": "La chaîne de sortie d'urgence décrit la première ascension légale par route peu profonde. Elle combine joint de coque, réserve de batterie, répétition relais et prévision de trou de tempête, puis le registre de créance la marque incomplète.",
-          "external_site": "La chaîne de sortie d'urgence transforme l'évasion précoce en procédure. L'engin peut quitter HECTON-8 après assez de travail, mais le dossier du site reste ouvert: paquets de vérité, preuve de responsabilité et certification matérielle restent en bas."
-        },
-        "es_ES": {
-          "title": "Cadena de salida de emergencia",
-          "scanner": "La cadena de lanzamiento temprano es real, pero cada luz es provisional: sello de casco, reserva B2, ping de retorno, hueco de tormenta, baliza de reclamación.",
-          "field_note": "La cápsula acepta un pasajero antes de que el sitio acepte un expediente.",
-          "terminal": "El ascenso de emergencia se abre solo cuando la cuna muerde, las válvulas de lastre quedan secas, Black Keel repite la ventana P036 y la borrasca deja un corredor limpio. El libro contractual marca la salida incompleta: sin testimonio de Atlas, sin paquete de responsabilidad Deep Reach, sin pago certificado.",
-          "audio": "El lanzamiento es posible. El cierre no va a bordo.",
-          "in_game_wiki": "Cadena de salida de emergencia describe el primer ascenso legal por ruta somera. Se arma con sello de casco, reserva de batería, repetición de relevo y predicción de hueco de tormenta, y luego el libro de reclamación la marca incompleta.",
-          "external_site": "Cadena de salida de emergencia convierte la huida temprana en procedimiento. La nave puede dejar HECTON-8 tras suficiente ingeniería, pero el registro del sitio queda sin resolver: verdad, responsabilidad y certificación material permanecen abajo."
-        },
-        "de_DE": {
-          "title": "Notausstiegskette",
-          "scanner": "Die frühe Startkette ist echt, aber jedes Licht bleibt vorläufig: Rumpfsiegel, B2-Reserve, Rückkehr-Ping, Sturmloch, Anspruchsbake.",
-          "field_note": "Die Kapsel nimmt einen Passagier an, bevor die Anlage einen Datensatz akzeptiert.",
-          "terminal": "Notaufstieg öffnet nur, wenn die Wiege klemmt, Ballastventile trocken sind, Black Keel das P036-Rückkehrfenster wiederholt und die Oberflächenböe einen sauberen Korridor lässt. Das Vertragsbuch stempelt die Abreise unvollständig: keine Atlas-Aussage, kein Deep-Reach-Haftungspaket, keine zertifizierte Auszahlung.",
-          "audio": "Start ist möglich. Abschluss ist nicht an Bord.",
-          "in_game_wiki": "Die Notausstiegskette beschreibt den ersten rechtmäßigen Flachrouten-Aufstieg. Sie besteht aus Rumpfsiegel, Batteriereserve, Relaiswiederholung und Sturmlochprognose und wird danach vom Anspruchsbuch als unvollständig markiert.",
-          "external_site": "Die Notausstiegskette macht frühe Flucht zu Verfahren. Das Fahrzeug kann HECTON-8 nach genug Reparaturarbeit verlassen, doch der Anlagenbericht bleibt offen: Wahrheitspakete, Haftungsbeweis und Materialzertifikat bleiben unten."
-        },
-        "pl_PL": {
-          "title": "Awaryjny łańcuch wyjścia",
-          "scanner": "Wczesny łańcuch startu jest prawdziwy, ale każde światło jest tymczasowe: uszczelka kadłuba, rezerwa B2, ping powrotu, luka sztormu, boja roszczenia.",
-          "field_note": "Kapsuła przyjmuje pasażera szybciej niż obiekt przyjmuje zapis.",
-          "terminal": "Awaryjne wznoszenie otwiera się tylko, gdy kołyska zaciska kapsułę, zawory balastu są suche, Black Keel powtarza okno P036, a szkwał powierzchniowy zostawia czysty korytarz. Rejestr kontraktu stempluje wyjście jako niepełne: brak zeznania Atlas, pakietu odpowiedzialności Deep Reach i certyfikowanej wypłaty.",
-          "audio": "Start jest możliwy. Zamknięcia nie ma na pokładzie.",
-          "in_game_wiki": "Awaryjny łańcuch wyjścia opisuje pierwsze legalne wznoszenie płytką trasą. Składa się z uszczelki kadłuba, rezerwy baterii, powtórzenia przekaźnika i prognozy luki sztormu, a rejestr roszczeń oznacza go jako niepełny.",
-          "external_site": "Awaryjny łańcuch wyjścia zmienia wczesną ucieczkę w procedurę. Pojazd może opuścić HECTON-8 po wystarczających naprawach, lecz zapis obiektu zostaje otwarty: pakiety prawdy, dowód odpowiedzialności i certyfikacja materiału zostają na dole."
-        },
-        "uk_UA": {
-          "title": "Аварійний ланцюг виходу",
-          "scanner": "Ранній ланцюг запуску справжній, але кожен індикатор тимчасовий: герметик корпуса, резерв B2, зворотний ping, розрив шторму, маяк претензії.",
-          "field_note": "Капсула приймає пасажира раніше, ніж об'єкт приймає запис.",
-          "terminal": "Аварійний підйом відкривається лише коли люлька затискає капсулу, баластні клапани сухі, Black Keel повторює вікно P036, а поверхневий шквал лишає чистий коридор. Контрактний реєстр ставить вихід як неповний: немає свідчення Atlas, пакета відповідальності Deep Reach і сертифікованої виплати.",
-          "audio": "Запуск можливий. Завершення не на борту.",
-          "in_game_wiki": "Аварійний ланцюг виходу описує перший законний підйом мілководним маршрутом. Він складається з герметика корпуса, резерву батарей, повтору реле та прогнозу штормового розриву, а реєстр претензій позначає його неповним.",
-          "external_site": "Аварійний ланцюг виходу перетворює ранню втечу на процедуру. Апарат може покинути HECTON-8 після достатнього ремонту, але запис об'єкта лишається відкритим: пакети правди, доказ відповідальності й сертифікація матеріалу залишаються внизу."
-        },
-        "ar_SA": {
-          "title": "سلسلة الخروج الطارئ",
-          "scanner": "سلسلة الإطلاق المبكر حقيقية، لكن كل ضوء فيها مؤقت: ختم البدن، احتياطي B2، نبضة العودة، فجوة العاصفة، منارة المطالبة.",
-          "field_note": "تقبل الكبسولة راكبا قبل أن يقبل الموقع السجل.",
-          "terminal": "لا يفتح الصعود الطارئ إلا عندما تقفل الحاضنة، وتجف صمامات الاتزان، ويكرر Black Keel نافذة العودة P036، وتترك العاصفة السطحية ممرا نظيفا. يسجل دفتر العقد المغادرة كناقصة: لا شهادة Atlas، ولا حزمة مسؤولية Deep Reach، ولا عائد مصدق.",
-          "audio": "الإطلاق ممكن. الإغلاق ليس على متنها.",
-          "in_game_wiki": "تصف سلسلة الخروج الطارئ أول صعود قانوني عبر الطريق الضحل. تتكون من ختم البدن واحتياطي البطارية وتكرار المرحل وتنبؤ فجوة العاصفة، ثم يضعها سجل المطالبة في خانة الناقص.",
-          "external_site": "تحول سلسلة الخروج الطارئ الهروب المبكر إلى إجراء. تستطيع المركبة مغادرة HECTON-8 بعد عمل هندسي كاف، لكن سجل الموقع يبقى مفتوحا: حزم الحقيقة ودليل المسؤولية وتصديق المادة تبقى في الأسفل."
-        },
-        "id_ID": {
-          "title": "Rantai Keluar Darurat",
-          "scanner": "Rantai peluncuran awal itu nyata, tetapi semua lampunya sementara: seal lambung, cadangan B2, ping pulang, celah badai, beacon klaim.",
-          "field_note": "Kapsul menerima penumpang sebelum situs menerima catatan.",
-          "terminal": "Naik darurat hanya terbuka saat cradle mengunci, katup ballast kering, Black Keel mengulang jendela pulang P036, dan squall permukaan menyisakan koridor bersih. Ledger kontrak menstempel keberangkatan sebagai tidak lengkap: tanpa kesaksian Atlas, paket tanggung jawab Deep Reach, atau pembayaran tersertifikasi.",
-          "audio": "Peluncuran mungkin. Penutupan tidak ikut naik.",
-          "in_game_wiki": "Rantai Keluar Darurat menjelaskan kenaikan legal pertama lewat rute dangkal. Rantai ini disusun dari seal lambung, cadangan baterai, pengulangan relay, dan prediksi celah badai, lalu ledger klaim menandainya tidak lengkap.",
-          "external_site": "Rantai Keluar Darurat mengubah pelarian awal menjadi prosedur. Wahana bisa meninggalkan HECTON-8 setelah kerja teknik cukup, tetapi catatan situs tetap belum selesai: paket kebenaran, bukti tanggung jawab, dan sertifikasi material tertinggal di bawah."
-        },
-        "ko_KR": {
-          "title": "비상 이탈 사슬",
-          "scanner": "조기 발사 사슬은 실제지만 모든 등이 임시다. 선체 봉합, B2 예비, 귀환 ping, 폭풍 틈, 청구 비콘.",
-          "field_note": "캡슐은 현장이 기록을 받아들이기 전에 승객을 받아들인다.",
-          "terminal": "비상 상승은 크래들이 잠기고, 밸러스트 밸브가 마르고, Black Keel이 P036 귀환 창을 반복하고, 표면 돌풍이 깨끗한 통로를 남길 때만 열린다. 계약 장부는 출발을 미완료로 찍는다. Atlas 증언 없음, Deep Reach 책임 패킷 없음, 인증 지급 없음.",
-          "audio": "발사는 가능하다. 종결은 탑승하지 않는다.",
-          "in_game_wiki": "비상 이탈 사슬은 얕은 경로의 첫 합법 상승 절차를 설명한다. 선체 봉합, 배터리 예비, 중계 반복, 폭풍 틈 예측으로 구성되며 청구 장부에는 미완료로 남는다.",
-          "external_site": "비상 이탈 사슬은 조기 탈출을 절차로 바꾼다. 충분한 정비 후 기체는 HECTON-8을 떠날 수 있지만 현장 기록은 해결되지 않는다. 진실 패킷, 책임 증거, 물질 인증은 아래에 남는다."
-        },
-        "he_IL": {
-          "title": "שרשרת יציאה חירומית",
-          "scanner": "שרשרת השיגור המוקדם אמיתית, אך כל נורה זמנית: אטימת גוף, עתודת B2, ping חזרה, פער סערה, משואת תביעה.",
-          "field_note": "הקפסולה מקבלת נוסע לפני שהאתר מקבל רשומה.",
-          "terminal": "עלייה חירומית נפתחת רק כשהעריסה ננעלת, שסתומי הנטל יבשים, Black Keel חוזר על חלון P036, והסערה העליונה משאירה מסדרון נקי. ספר החוזה חותם את היציאה כלא שלמה: אין עדות Atlas, אין חבילת אחריות Deep Reach, אין תשלום מאושר.",
-          "audio": "שיגור אפשרי. סגירה אינה על הסיפון.",
-          "in_game_wiki": "שרשרת יציאה חירומית מתארת את העלייה החוקית הראשונה במסלול רדוד. היא מורכבת מאטימת גוף, עתודת סוללה, חזרת ממסר וחיזוי פער סערה, ואז ספר התביעה מסמן אותה כלא שלמה.",
-          "external_site": "שרשרת יציאה חירומית הופכת בריחה מוקדמת לנוהל. הכלי יכול לעזוב את HECTON-8 אחרי די עבודת הנדסה, אבל רשומת האתר נשארת פתוחה: חבילות אמת, ראיית אחריות ואישור חומר נשארים למטה."
-        },
-        "pt_BR": {
-          "title": "Cadeia de Saída de Emergência",
-          "scanner": "A cadeia de lançamento cedo é real, mas toda luz é provisória: vedação do casco, reserva B2, ping de retorno, brecha de tempestade, farol de reivindicação.",
-          "field_note": "A cápsula aceita um passageiro antes de o local aceitar um registro.",
-          "terminal": "A subida de emergência só abre quando o berço prende, as válvulas de lastro secam, Black Keel repete a janela P036 e a rajada de superfície deixa um corredor limpo. O livro contratual carimba a partida como incompleta: sem testemunho Atlas, pacote de responsabilidade Deep Reach ou pagamento certificado.",
-          "audio": "Lançar é possível. Encerramento não está a bordo.",
-          "in_game_wiki": "Cadeia de Saída de Emergência descreve a primeira subida legal pela rota rasa. Ela junta vedação do casco, reserva de bateria, repetição de relay e previsão de brecha de tempestade, depois o livro de reivindicação a marca como incompleta.",
-          "external_site": "Cadeia de Saída de Emergência transforma a fuga cedo em procedimento. A nave pode deixar HECTON-8 após trabalho técnico suficiente, mas o registro do local segue aberto: pacotes de verdade, prova de responsabilidade e certificação material ficam embaixo."
-        },
-        "nl_NL": {
-          "title": "Nooduitstapketen",
-          "scanner": "De vroege lanceerketen is echt, maar elk lampje is voorlopig: rompafdichting, B2-reserve, terugkeer-ping, stormgat, claimbaken.",
-          "field_note": "De capsule accepteert een passagier voordat de site een dossier accepteert.",
-          "terminal": "Noodopstijging opent alleen wanneer de cradle klemt, ballastkleppen droog zijn, Black Keel het P036-terugkeervenster herhaalt en de oppervlaktestorm een schone corridor laat. Het contractboek stempelt het vertrek onvolledig: geen Atlas-getuigenis, geen Deep Reach-aansprakelijkheidspakket, geen gecertificeerde betaling.",
-          "audio": "Lancering is mogelijk. Afsluiting is niet aan boord.",
-          "in_game_wiki": "Nooduitstapketen beschrijft de eerste wettige opstijging via de ondiepe route. Ze bestaat uit rompafdichting, batterijreserve, relaisherhaling en stormgatvoorspelling, waarna het claimboek haar als onvolledig markeert.",
-          "external_site": "Nooduitstapketen maakt van vroeg ontsnappen een procedure. Het voertuig kan HECTON-8 na genoeg herstelwerk verlaten, maar het sitedossier blijft open: waarheidspakketten, aansprakelijkheidsbewijs en materiaalcertificering blijven beneden."
-        }
-      }
+    "ru_RU": {
+     "title": "Окно возвратного вектора",
+     "scanner": "СЧИТЫВАНИЕ ВОЗВРАТНОГО ВЕКТОРА // Пинг Black Keel принят через штормовой разрыв Aegir. Дальность carrier: высокая переходная траектория. Релейная линия шумит ниже облачного заряда. Подъем капсулы отклонен, пока ядро наведения, теплозащита и возвратное рукопожатие не дадут зеленый.",
+     "field_note": "Ответ не спасение. Это часы, которые можно пропустить.",
+     "terminal": "ПРОГНОЗАТОР ОКНА ВОЗВРАТА\nCarrier: BLACK KEEL / автоматическая переходная траектория\nОкно: 17 мин 40 с после следующего спада заряженных частиц\nПогода: требуется разрыв поверхностного шквала\nРеле: небесная линия шумит / мачта укрытия может повторить один раз\nПодъемное железо: ядро наведения отсутствует, теплозащита не сертифицирована, резерв батареи низкий\nДействие: восстановить цепь подъема до того, как считать пинг carrier посадкой",
+     "audio": "Black Keel услышал пинг. Это дает только окно, не лестницу.",
+     "in_game_wiki": "Окно возвратного вектора впервые доказывает, что Black Keel может ответить, но не может сразу забрать. Carrier живет на автоматической переходной траектории над Aegir, а выход с HECTON-8 должен пройти через погоду, шум заряженных частиц, поврежденное реле и недособранное подъемное железо.\n\nРабочее окно возврата требует четыре показания одновременно: геометрию carrier, разрыв поверхностного шторма, чистый релейный путь и цепь капсулы, которая переживет запуск. Если одно показание падает, пинг становится отметкой времени, а не подбором. Позже эта же система поддерживает частичную эвакуацию, но она не закрывает долг, цепочку доказательств и поврежденный маршрут. Любой ответ с орбиты считайте ограничением расписания, пока подъемная люлька, ядро наведения, теплозащита и возвратное рукопожатие не восстановлены.",
+     "external_site": "Окно возвратного вектора описывает эвакуацию с HECTON-8 как орбитальную процедуру, а не мгновенное спасение. Black Keel может принять сигнал через узкие окна Aegir, но подбор зависит от разрывов шторма, спадов заряженных частиц, целостности реле и восстановленного подъемного железа. Этот пакет связывает первый контакт с carrier и более поздние записи частичного выхода: ответ доказывает, что маршрут может существовать, а не что он готов."
     },
-    {
-      "packet_id": "P038_MATERIAL_PAYOUT_LEDGER",
-      "article_id": "hecton8.material_payout_ledger",
-      "title_key": "applied_lore.material_payout_ledger.title",
-      "unlock": {
-        "primary": "unlock.first_material_payout_ledger",
-        "poi_tags": [
-          "poi.blue_debt_sample",
-          "poi.claim_accounting_terminal",
-          "poi.deep_reach_offer"
-        ],
-        "biome_tags": [
-          "biome.resource_cache",
-          "biome.dead_claim",
-          "biome.industrial_descent"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Material Settlement Ledger",
-          "scanner": "Blue debt sample certified: mass, purity, pressure log, custody chain. Credit can clear before evidence does.",
-          "field_note": "A clean transfer can be another kind of burial.",
-          "terminal": "Settlement opens when the sealed case matches the sample ledger, the descent pressure history has no gap, and Deep Reach's offer code accepts the chain of custody. Material closure moves credit to escrow and tags the Atlas archive as non-billable residue.",
-          "audio": "The account clears. The water keeps the receipt.",
-          "in_game_wiki": "Material Settlement Ledger is the accounting route for certified blue debt. It pays on sample proof, custody history and silence clauses while leaving Atlas testimony and Deep Reach liability outside the bill.",
-          "external_site": "Material Settlement Ledger defines a paid departure path. HECTON-8 can be left with a cleared account if certified material is surrendered, but the record of what happened remains quarantined unless the evidence archive is carried out."
-        },
-        "ru_RU": {
-          "title": "Реестр материального расчета",
-          "scanner": "Образец blue debt сертифицирован: масса, чистота, журнал давления, цепочка custody. Кредит может закрыться раньше доказательств.",
-          "field_note": "Чистый перевод тоже может быть захоронением.",
-          "terminal": "Расчет открывается, когда опечатанный кейс совпадает с журналом образца, история давления спуска без разрыва, а код предложения Deep Reach принимает цепочку custody. Материальное закрытие переводит кредит в escrow и помечает архив Atlas как неоплачиваемый остаток.",
-          "audio": "Счет закрывается. Вода хранит квитанцию.",
-          "in_game_wiki": "Реестр материального расчета ведет бухгалтерский маршрут сертифицированного blue debt. Он платит за образец, историю custody и clauses молчания, оставляя свидетельство Atlas и ответственность Deep Reach вне счета.",
-          "external_site": "Реестр материального расчета задает оплаченный путь ухода. HECTON-8 можно покинуть с закрытым счетом после сдачи сертифицированного материала, но запись о случившемся остается в карантине, если архив доказательств не вынесен наружу."
-        },
-        "ja_JP": {
-          "title": "資材精算台帳",
-          "scanner": "blue debt試料認証済み: 質量、純度、圧力ログ、保管連鎖。証拠より先にクレジットは精算される。",
-          "field_note": "清い送金も埋葬の一種になり得る。",
-          "terminal": "封印ケースが試料台帳と一致し、降下圧力履歴に欠落がなく、Deep Reachの提示コードが保管連鎖を受け入れると精算が開く。資材閉鎖はクレジットをエスクローへ移し、Atlasアーカイブを請求不能な残滓としてタグ付けする。",
-          "audio": "口座は片付く。水は領収書を持つ。",
-          "in_game_wiki": "資材精算台帳は認証済みblue debtの会計経路である。試料証明、保管履歴、沈黙条項に支払い、Atlas証言とDeep Reach責任は請求書の外に残る。",
-          "external_site": "資材精算台帳は支払い済み離脱経路を定義する。認証資材を引き渡せばHECTON-8は清算済み口座で離れられるが、証拠アーカイブを運び出さない限り、出来事の記録は隔離されたままだ。"
-        },
-        "zh_CN": {
-          "title": "材料结算账本",
-          "scanner": "blue debt 样本已认证：质量、纯度、压力日志、保管链。款项能比证据更早结清。",
-          "field_note": "干净转账也可能是一种掩埋。",
-          "terminal": "封箱与样本账本匹配、下降压力历史无缺口、Deep Reach 报价码接受保管链时，结算开启。材料结案把信用转入托管，并把 Atlas 档案标为不可计费残留。",
-          "audio": "账户清了。水留着收据。",
-          "in_game_wiki": "材料结算账本是认证 blue debt 的会计路径。它按样本证明、保管历史和沉默条款付款，把 Atlas 证词与 Deep Reach 责任留在账单之外。",
-          "external_site": "材料结算账本定义一条已付款离站路径。交出认证材料后可以带着结清账户离开 HECTON-8，但若证据档案没有带出，事件记录仍会被隔离。"
-        },
-        "fr_FR": {
-          "title": "Registre de règlement matière",
-          "scanner": "Échantillon blue debt certifié: masse, pureté, journal de pression, chaîne de garde. Le crédit peut se solder avant les preuves.",
-          "field_note": "Un virement propre peut aussi enterrer quelque chose.",
-          "terminal": "Le règlement s'ouvre quand le boîtier scellé correspond au registre d'échantillon, que l'historique de pression n'a pas de trou et que le code d'offre Deep Reach accepte la chaîne de garde. La clôture matière place le crédit en séquestre et marque l'archive Atlas comme résidu non facturable.",
-          "audio": "Le compte se solde. L'eau garde le reçu.",
-          "in_game_wiki": "Le registre de règlement matière est la voie comptable du blue debt certifié. Il paie preuve d'échantillon, garde et clauses de silence, tout en laissant témoignage Atlas et responsabilité Deep Reach hors facture.",
-          "external_site": "Le registre de règlement matière définit un départ payé. HECTON-8 peut être quitté avec un compte soldé si la matière certifiée est cédée, mais le récit des faits reste en quarantaine tant que l'archive de preuves n'est pas sortie."
-        },
-        "es_ES": {
-          "title": "Libro de liquidación material",
-          "scanner": "Muestra blue debt certificada: masa, pureza, registro de presión, cadena de custodia. El crédito puede cerrarse antes que la evidencia.",
-          "field_note": "Una transferencia limpia también puede ser entierro.",
-          "terminal": "La liquidación se abre cuando la caja sellada coincide con el libro de muestra, el historial de presión no tiene huecos y el código de oferta Deep Reach acepta la custodia. El cierre material mueve el crédito a escrow y etiqueta el archivo Atlas como residuo no facturable.",
-          "audio": "La cuenta se cierra. El agua guarda el recibo.",
-          "in_game_wiki": "El libro de liquidación material es la ruta contable del blue debt certificado. Paga prueba de muestra, historial de custodia y cláusulas de silencio, dejando testimonio Atlas y responsabilidad Deep Reach fuera de la factura.",
-          "external_site": "El libro de liquidación material define una salida pagada. HECTON-8 puede abandonarse con cuenta cerrada si se entrega material certificado, pero el registro de lo ocurrido queda en cuarentena si el archivo de pruebas no sale."
-        },
-        "de_DE": {
-          "title": "Materialabrechnungsbuch",
-          "scanner": "Blue-debt-Probe zertifiziert: Masse, Reinheit, Drucklog, Verwahrungskette. Kredit kann vor dem Beweis sauber werden.",
-          "field_note": "Eine saubere Überweisung kann auch etwas begraben.",
-          "terminal": "Abrechnung öffnet, wenn der versiegelte Koffer zum Probenbuch passt, die Abstiegsdruckhistorie keine Lücke hat und Deep Reachs Angebotscode die Verwahrungskette akzeptiert. Materialabschluss verschiebt Kredit ins Escrow und markiert das Atlas-Archiv als nicht abrechenbaren Rückstand.",
-          "audio": "Das Konto wird sauber. Das Wasser behält die Quittung.",
-          "in_game_wiki": "Das Materialabrechnungsbuch ist die Buchhaltungsroute für zertifiziertes blue debt. Es zahlt für Probe, Verwahrung und Schweigeklauseln, während Atlas-Aussage und Deep-Reach-Haftung außerhalb der Rechnung bleiben.",
-          "external_site": "Das Materialabrechnungsbuch definiert einen bezahlten Abgang. HECTON-8 kann mit sauberem Konto verlassen werden, wenn zertifiziertes Material übergeben wird; der Vorfall bleibt jedoch unter Quarantäne, solange das Beweisarchiv unten bleibt."
-        },
-        "pl_PL": {
-          "title": "Rejestr rozliczenia materiału",
-          "scanner": "Próbka blue debt certyfikowana: masa, czystość, dziennik ciśnienia, łańcuch custody. Kredyt może zamknąć się przed dowodami.",
-          "field_note": "Czysty przelew też może być pochówkiem.",
-          "terminal": "Rozliczenie otwiera się, gdy zaplombowana walizka zgadza się z rejestrem próbki, historia ciśnienia zejścia nie ma luki, a kod oferty Deep Reach akceptuje łańcuch custody. Zamknięcie materiałowe przenosi kredyt do escrow i oznacza archiwum Atlas jako niefakturowany osad.",
-          "audio": "Konto się zamyka. Woda trzyma pokwitowanie.",
-          "in_game_wiki": "Rejestr rozliczenia materiału to księgowa trasa dla certyfikowanego blue debt. Płaci za próbkę, historię custody i klauzule ciszy, zostawiając zeznanie Atlas i odpowiedzialność Deep Reach poza rachunkiem.",
-          "external_site": "Rejestr rozliczenia materiału definiuje opłacone wyjście. HECTON-8 można opuścić z zamkniętym kontem po oddaniu certyfikowanego materiału, ale zapis zdarzeń zostaje w kwarantannie, jeśli archiwum dowodów nie wyjdzie na powierzchnię."
-        },
-        "uk_UA": {
-          "title": "Реєстр матеріального розрахунку",
-          "scanner": "Зразок blue debt сертифіковано: маса, чистота, журнал тиску, ланцюг custody. Кредит може закритися раніше за докази.",
-          "field_note": "Чистий переказ теж може бути похованням.",
-          "terminal": "Розрахунок відкривається, коли опечатаний кейс збігається з журналом зразка, історія тиску спуску без розривів, а код пропозиції Deep Reach приймає ланцюг custody. Матеріальне закриття переводить кредит в escrow і позначає архів Atlas як неоплачуваний залишок.",
-          "audio": "Рахунок закривається. Вода зберігає квитанцію.",
-          "in_game_wiki": "Реєстр матеріального розрахунку веде бухгалтерський маршрут сертифікованого blue debt. Він платить за доказ зразка, історію custody і clauses мовчання, лишаючи свідчення Atlas та відповідальність Deep Reach поза рахунком.",
-          "external_site": "Реєстр матеріального розрахунку задає оплачений вихід. HECTON-8 можна покинути із закритим рахунком після здачі сертифікованого матеріалу, але запис подій лишається в карантині, якщо архів доказів не винесено."
-        },
-        "ar_SA": {
-          "title": "سجل تسوية المادة",
-          "scanner": "عينة blue debt موثقة: كتلة ونقاء وسجل ضغط وسلسلة حيازة. قد يصفو الرصيد قبل الدليل.",
-          "field_note": "التحويل النظيف قد يكون دفنا آخر.",
-          "terminal": "تفتح التسوية عندما تطابق الحقيبة المختومة سجل العينة، ولا توجد فجوة في تاريخ ضغط الهبوط، ويقبل رمز عرض Deep Reach سلسلة الحيازة. الإغلاق المادي ينقل الرصيد إلى escrow ويضع وسم بقايا غير قابلة للفوترة على أرشيف Atlas.",
-          "audio": "يصفو الحساب. الماء يحتفظ بالإيصال.",
-          "in_game_wiki": "سجل تسوية المادة هو طريق المحاسبة لعينة blue debt الموثقة. يدفع مقابل إثبات العينة وتاريخ الحيازة وبنود الصمت، ويترك شهادة Atlas ومسؤولية Deep Reach خارج الفاتورة.",
-          "external_site": "يحدد سجل تسوية المادة مسار مغادرة مدفوعا. يمكن ترك HECTON-8 بحساب صاف إذا سلمت المادة الموثقة، لكن سجل ما حدث يبقى في الحجر ما لم يخرج أرشيف الأدلة."
-        },
-        "id_ID": {
-          "title": "Ledger Penyelesaian Material",
-          "scanner": "Sampel blue debt tersertifikasi: massa, kemurnian, log tekanan, rantai custody. Kredit bisa bersih sebelum bukti.",
-          "field_note": "Transfer bersih juga bisa menjadi penguburan.",
-          "terminal": "Penyelesaian terbuka saat koper tersegel cocok dengan ledger sampel, riwayat tekanan turun tanpa celah, dan kode tawaran Deep Reach menerima rantai custody. Penutupan material memindahkan kredit ke escrow dan menandai arsip Atlas sebagai residu tak tertagih.",
-          "audio": "Akun bersih. Air menyimpan kuitansi.",
-          "in_game_wiki": "Ledger Penyelesaian Material adalah jalur akuntansi untuk blue debt tersertifikasi. Ia membayar bukti sampel, riwayat custody, dan klausul diam sambil meninggalkan kesaksian Atlas serta tanggung jawab Deep Reach di luar tagihan.",
-          "external_site": "Ledger Penyelesaian Material menetapkan jalur pergi berbayar. HECTON-8 bisa ditinggalkan dengan akun bersih jika material tersertifikasi diserahkan, tetapi catatan peristiwa tetap dikarantina kecuali arsip bukti dibawa keluar."
-        },
-        "ko_KR": {
-          "title": "물질 정산 장부",
-          "scanner": "blue debt 샘플 인증 완료: 질량, 순도, 압력 로그, 보관 사슬. 증거보다 계정이 먼저 정리될 수 있다.",
-          "field_note": "깨끗한 이체도 매장이 될 수 있다.",
-          "terminal": "봉인 케이스가 샘플 장부와 맞고, 하강 압력 이력에 빈칸이 없고, Deep Reach 제안 코드가 보관 사슬을 승인하면 정산이 열린다. 물질 폐쇄는 크레딧을 escrow로 옮기고 Atlas 기록을 청구 불가 잔류물로 태그한다.",
-          "audio": "계정은 정리된다. 물은 영수증을 간직한다.",
-          "in_game_wiki": "물질 정산 장부는 인증된 blue debt의 회계 경로다. 샘플 증명, 보관 이력, 침묵 조항에 지급하며 Atlas 증언과 Deep Reach 책임은 청구서 밖에 둔다.",
-          "external_site": "물질 정산 장부는 지급된 이탈 경로를 정의한다. 인증 물질을 넘기면 정리된 계정으로 HECTON-8을 떠날 수 있지만, 증거 기록이 반출되지 않으면 사건 기록은 격리 상태로 남는다."
-        },
-        "he_IL": {
-          "title": "ספר הסדר חומרי",
-          "scanner": "דגימת blue debt אושרה: מסה, טוהר, יומן לחץ, שרשרת custody. האשראי יכול להיסגר לפני הראיות.",
-          "field_note": "העברה נקייה יכולה להיות גם קבורה.",
-          "terminal": "ההסדר נפתח כשהמזוודה האטומה תואמת לספר הדגימה, היסטוריית לחץ הירידה חסרת פער, וקוד ההצעה של Deep Reach מקבל את שרשרת custody. סגירה חומרית מעבירה אשראי ל-escrow ומסמנת את ארכיון Atlas כשארית שאינה לחיוב.",
-          "audio": "החשבון נסגר. המים שומרים את הקבלה.",
-          "in_game_wiki": "ספר ההסדר החומרי הוא נתיב החשבונאות של blue debt מאושר. הוא משלם על הוכחת דגימה, היסטוריית custody וסעיפי שתיקה, ומשאיר עדות Atlas ואחריות Deep Reach מחוץ לחשבון.",
-          "external_site": "ספר ההסדר החומרי מגדיר נתיב עזיבה בתשלום. אפשר לעזוב את HECTON-8 עם חשבון סגור אם החומר המאושר נמסר, אבל רשומת האירוע נשארת בהסגר אלא אם ארכיון הראיות יוצא."
-        },
-        "pt_BR": {
-          "title": "Ledger de Acerto Material",
-          "scanner": "Amostra blue debt certificada: massa, pureza, log de pressão, cadeia de custódia. O crédito pode fechar antes das provas.",
-          "field_note": "Uma transferência limpa também pode enterrar algo.",
-          "terminal": "O acerto abre quando a caixa selada bate com o ledger da amostra, o histórico de pressão da descida não tem falha e o código de oferta Deep Reach aceita a cadeia de custódia. O fechamento material move crédito para escrow e marca o arquivo Atlas como resíduo não faturável.",
-          "audio": "A conta fecha. A água guarda o recibo.",
-          "in_game_wiki": "Ledger de Acerto Material é a rota contábil para blue debt certificado. Ele paga prova de amostra, histórico de custódia e cláusulas de silêncio, deixando testemunho Atlas e responsabilidade Deep Reach fora da conta.",
-          "external_site": "Ledger de Acerto Material define uma saída paga. HECTON-8 pode ser deixado com a conta fechada se o material certificado for entregue, mas o registro do ocorrido fica em quarentena se o arquivo de provas não sair."
-        },
-        "nl_NL": {
-          "title": "Materiaalafrekenboek",
-          "scanner": "Blue debt-monster gecertificeerd: massa, zuiverheid, druklog, custody-keten. Krediet kan eerder sluiten dan bewijs.",
-          "field_note": "Een schone overboeking kan ook begraven.",
-          "terminal": "Afrekening opent wanneer de verzegelde koffer bij het monsterboek past, de afdaaldrukgeschiedenis geen gat heeft en de Deep Reach-aanbiedcode de custody-keten accepteert. Materiële sluiting verplaatst krediet naar escrow en tagt het Atlas-archief als niet-factureerbaar residu.",
-          "audio": "De rekening sluit. Het water bewaart de bon.",
-          "in_game_wiki": "Het materiaalafrekenboek is de boekhoudroute voor gecertificeerde blue debt. Het betaalt voor monsterbewijs, custody-geschiedenis en stilteclausules, terwijl Atlas-getuigenis en Deep Reach-aansprakelijkheid buiten de rekening blijven.",
-          "external_site": "Het materiaalafrekenboek definieert een betaalde vertrekroute. HECTON-8 kan met gesloten rekening worden verlaten als gecertificeerd materiaal wordt ingeleverd, maar het gebeurtenissenrecord blijft in quarantaine tenzij het bewijsarchief meegaat."
-        }
-      }
+    "ja_JP": {
+     "title": "帰還ベクトル窓",
+     "scanner": "帰還ベクトル読取 // Black Keel ping を Aegir 嵐間隙で受信。キャリア距離: 高位遷移トラック。中継線は雲電荷下で汚い。誘導コア、熱シールド、帰還ハンドシェイクが全て緑になるまでカプセル上昇拒否。",
+     "field_note": "応答は救助ではない。逃せる時計だ。",
+     "terminal": "帰還窓予測器\nCarrier: BLACK KEEL / 自動遷移トラック\n窓: 次の荷電粒子静穏から 17分40秒後\n天候: 表層スコール間隙が必要\n中継: 空側ラインノイズ / シェルターマストは一度だけ反復可\n上昇装備: 誘導コア欠落、熱シールド未認証、バッテリー予備低\n処置: carrier ping を回収扱いにする前に上昇連鎖を再建",
+     "audio": "Black Keel は ping を聞いた。それで得たのは窓であって、梯子ではない。",
+     "in_game_wiki": "帰還ベクトル窓は、Black Keel が応答できても即時救助はできないことを示す最初の証拠だ。キャリアは Aegir 上方の自動遷移トラックで動いているが、HECTON-8 から出る経路は天候、荷電粒子ノイズ、中継損傷、未完成の上昇装備を越えなければならない。\n\n有効な帰還窓には、キャリア幾何、表層嵐の切れ目、清浄な中継経路、打ち上げに耐えるカプセル連鎖の四つが同時に要る。ひとつでも失敗すれば、ping は回収ではなく時刻印になる。同じ仕組みは後の部分回収にも使われるが、債務、証拠保全、損傷した経路は消えない。上昇クレードル、誘導コア、熱シールド、帰還ハンドシェイクが再建されるまで、軌道からの応答はすべて時刻制約として扱う。",
+     "external_site": "帰還ベクトル窓は、HECTON-8 からの回収を即時救助ではなく軌道手順として説明する。Black Keel は狭い Aegir 窓を通して信号を受け取れるが、回収は嵐の切れ目、荷電粒子の静穏、中継の完全性、再建された上昇装備に依存する。この packet はキャリアとの初回接触と後の部分回収記録をつなぐ。応答は経路が成立し得る証拠であり、準備完了の証拠ではない。"
     },
-    {
-      "packet_id": "P039_DEEP_REACH_CLEANSE_ORDER",
-      "article_id": "hecton8.deep_reach_cleanse_order",
-      "title_key": "applied_lore.deep_reach_cleanse_order.title",
-      "unlock": {
-        "primary": "unlock.first_deep_reach_cleanse_order",
-        "poi_tags": [
-          "poi.deep_reach_proxy_order",
-          "poi.redacted_liability_node",
-          "poi.cleanup_drone_order"
-        ],
-        "biome_tags": [
-          "biome.dead_claim",
-          "biome.industrial_descent",
-          "biome.factory_threshold"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Deep Reach Live Cleanup Order",
-          "scanner": "Live order recovered: seize certified samples, open Atlas channel, quarantine survivors, delete liability proof.",
-          "field_note": "The apology field is blank.",
-          "terminal": "Proxy work order DR-CLEANSE-19 remains active. Deniable contractors get sample custody first, Atlas access second, witness recovery last. If Black Keel or the site ledger exposes liability, the purge queue moves proof archives to cold delete and retags field deaths as weather loss.",
-          "audio": "That voice is not rescue traffic. It is a cleanup bid.",
-          "in_game_wiki": "Deep Reach Live Cleanup Order is a current work order, not an archive note. It shows resource custody, Atlas access and proof deletion being scheduled through proxy contractors after the evacuation hold.",
-          "external_site": "Deep Reach Live Cleanup Order makes the corporate pressure procedural: live proxies can buy samples, open Atlas routes and erase liability evidence while public records still describe HECTON-8 as a lost site."
-        },
-        "ru_RU": {
-          "title": "Действующий приказ Deep Reach на зачистку",
-          "scanner": "Действующий приказ найден: изъять сертифицированные образцы, открыть канал Atlas, изолировать выживших, удалить доказательства ответственности.",
-          "field_note": "Поле извинений пустое.",
-          "terminal": "Прокси-наряд DR-CLEANSE-19 остается активным. Отрицаемые подрядчики получают сначала custody образцов, затем доступ Atlas, а восстановление свидетелей идет последним. Если Black Keel или реестр объекта раскрывает ответственность, очередь purge переводит архивы доказательств в cold delete и переименовывает полевые смерти в потерю от погоды.",
-          "audio": "Этот голос не спасательный трафик. Это ставка на зачистку.",
-          "in_game_wiki": "Действующий приказ Deep Reach на зачистку - это текущий рабочий наряд, а не архивная заметка. Он показывает, как custody ресурсов, доступ Atlas и удаление доказательств расписаны через прокси-подрядчиков после удержания эвакуации.",
-          "external_site": "Действующий приказ Deep Reach на зачистку делает корпоративное давление процедурой: живые прокси могут купить образцы, открыть маршруты Atlas и стереть доказательства ответственности, пока публичные записи все еще называют HECTON-8 потерянным объектом."
-        },
-        "ja_JP": {
-          "title": "Deep Reach現行清掃命令",
-          "scanner": "現行命令を回収: 認証試料を押収、Atlas回線を開く、生存者を隔離、責任証拠を削除。",
-          "field_note": "謝罪欄は空白。",
-          "terminal": "代理作業命令DR-CLEANSE-19は稼働中。否認可能な請負は試料保管を第一、Atlas接続を第二、証人回収を最後に処理する。Black Keelまたは現場台帳が責任を露出すると、パージ待ち列は証拠アーカイブをcold deleteへ送り、現場死を気象損失に再タグ付けする。",
-          "audio": "その声は救助通信ではない。清掃入札だ。",
-          "in_game_wiki": "Deep Reach現行清掃命令は現在の作業命令であり、古い記録ではない。避難保留後、資源保管、Atlas接続、証拠削除が代理請負を通して予定されていることを示す。",
-          "external_site": "Deep Reach現行清掃命令は企業圧力を手順にする。稼働中の代理は試料を買い、Atlas経路を開き、公開記録がHECTON-8を喪失施設と呼ぶ間に責任証拠を消せる。"
-        },
-        "zh_CN": {
-          "title": "Deep Reach 实时清理指令",
-          "scanner": "发现实时指令：扣押认证样本，开启 Atlas 通道，隔离幸存者，删除责任证据。",
-          "field_note": "道歉字段为空。",
-          "terminal": "代理工单 DR-CLEANSE-19 仍在执行。可否认承包方先取得样本保管权，其次取得 Atlas 访问，最后才处理证人回收。若 Black Keel 或站点账本暴露责任，清除队列会把证据档案转入 cold delete，并把现场死亡重标为天气损失。",
-          "audio": "那个声音不是救援通信。那是清理报价。",
-          "in_game_wiki": "Deep Reach 实时清理指令是当前工单，不是档案备注。它显示撤离暂停后，资源保管、Atlas 访问和证据删除被排进代理承包流程。",
-          "external_site": "Deep Reach 实时清理指令把公司压力变成程序：活动代理可以购买样本、打开 Atlas 路径并擦除责任证据，而公开记录仍把 HECTON-8 描述成失联站点。"
-        },
-        "fr_FR": {
-          "title": "Ordre de nettoyage actif Deep Reach",
-          "scanner": "Ordre actif récupéré: saisir les échantillons certifiés, ouvrir le canal Atlas, isoler les survivants, supprimer les preuves de responsabilité.",
-          "field_note": "Le champ d'excuse est vide.",
-          "terminal": "L'ordre proxy DR-CLEANSE-19 reste actif. Les contractants niables prennent d'abord la garde des échantillons, puis l'accès Atlas, puis la récupération des témoins. Si Black Keel ou le registre du site expose la responsabilité, la file de purge envoie les archives de preuve en cold delete et retague les morts de terrain en pertes météo.",
-          "audio": "Cette voix n'est pas du trafic de secours. C'est une offre de nettoyage.",
-          "in_game_wiki": "L'ordre de nettoyage actif Deep Reach est un ordre de travail présent, pas une note d'archive. Il montre la garde des ressources, l'accès Atlas et la suppression des preuves planifiés par des contractants proxy après le blocage d'évacuation.",
-          "external_site": "L'ordre de nettoyage actif Deep Reach rend la pression corporative procédurale: des proxys actifs peuvent acheter des échantillons, ouvrir des routes Atlas et effacer les preuves de responsabilité pendant que les dossiers publics décrivent encore HECTON-8 comme site perdu."
-        },
-        "es_ES": {
-          "title": "Orden de limpieza activa Deep Reach",
-          "scanner": "Orden activa recuperada: incautar muestras certificadas, abrir canal Atlas, aislar supervivientes, borrar prueba de responsabilidad.",
-          "field_note": "El campo de disculpa está vacío.",
-          "terminal": "La orden proxy DR-CLEANSE-19 sigue activa. Contratistas negables reciben primero custodia de muestras, segundo acceso Atlas y último recuperación de testigos. Si Black Keel o el libro del sitio expone responsabilidad, la cola de purga mueve archivos de prueba a cold delete y reetiqueta muertes de campo como pérdida climática.",
-          "audio": "Esa voz no es tráfico de rescate. Es una oferta de limpieza.",
-          "in_game_wiki": "La orden de limpieza activa Deep Reach es una orden de trabajo actual, no una nota de archivo. Muestra custodia de recursos, acceso Atlas y borrado de pruebas programados mediante contratistas proxy tras la retención de evacuación.",
-          "external_site": "La orden de limpieza activa Deep Reach vuelve procedimental la presión corporativa: proxies vivos pueden comprar muestras, abrir rutas Atlas y borrar pruebas de responsabilidad mientras los registros públicos aún llaman a HECTON-8 un sitio perdido."
-        },
-        "de_DE": {
-          "title": "Aktiver Deep-Reach-Säuberungsbefehl",
-          "scanner": "Aktiver Befehl geborgen: zertifizierte Proben beschlagnahmen, Atlas-Kanal öffnen, Überlebende isolieren, Haftungsbeweis löschen.",
-          "field_note": "Das Entschuldigungsfeld ist leer.",
-          "terminal": "Proxy-Arbeitsauftrag DR-CLEANSE-19 bleibt aktiv. Abstreitbare Auftragnehmer erhalten zuerst Probenverwahrung, dann Atlas-Zugang, zuletzt Zeugenbergung. Wenn Black Keel oder das Anlagenbuch Haftung offenlegt, verschiebt die Löschwarteschlange Beweisarchive in cold delete und taggt Feldtote als Wetterschaden.",
-          "audio": "Diese Stimme ist kein Rettungsverkehr. Sie bietet Säuberung an.",
-          "in_game_wiki": "Der aktive Deep-Reach-Säuberungsbefehl ist ein laufender Arbeitsauftrag, keine Archivnotiz. Er zeigt Ressourcenverwahrung, Atlas-Zugang und Beweislöschung über Proxy-Auftragnehmer nach dem Evakuierungshalt.",
-          "external_site": "Der aktive Deep-Reach-Säuberungsbefehl macht Konzerndruck prozedural: lebende Proxys können Proben kaufen, Atlas-Routen öffnen und Haftungsbeweise löschen, während öffentliche Akten HECTON-8 weiter als verlorene Anlage beschreiben."
-        },
-        "pl_PL": {
-          "title": "Aktywny rozkaz czyszczenia Deep Reach",
-          "scanner": "Odzyskano aktywny rozkaz: przejąć certyfikowane próbki, otworzyć kanał Atlas, izolować ocalałych, usunąć dowód odpowiedzialności.",
-          "field_note": "Pole przeprosin jest puste.",
-          "terminal": "Zlecenie proxy DR-CLEANSE-19 pozostaje aktywne. Zaprzeczalni kontraktorzy najpierw dostają custody próbek, potem dostęp Atlas, a odzysk świadków na końcu. Jeśli Black Keel lub rejestr obiektu ujawnia odpowiedzialność, kolejka purge przenosi archiwa dowodów do cold delete i oznacza zgony terenowe jako straty pogodowe.",
-          "audio": "Ten głos nie jest ruchem ratunkowym. To oferta czyszczenia.",
-          "in_game_wiki": "Aktywny rozkaz czyszczenia Deep Reach jest bieżącym zleceniem, nie notatką archiwalną. Pokazuje, jak custody zasobów, dostęp Atlas i kasowanie dowodów są planowane przez kontraktorów proxy po wstrzymaniu ewakuacji.",
-          "external_site": "Aktywny rozkaz czyszczenia Deep Reach zamienia presję korporacyjną w procedurę: działający proxy mogą kupować próbki, otwierać trasy Atlas i usuwać dowody odpowiedzialności, gdy publiczne rejestry nadal nazywają HECTON-8 utraconym miejscem."
-        },
-        "uk_UA": {
-          "title": "Діючий наказ Deep Reach на зачистку",
-          "scanner": "Знайдено діючий наказ: вилучити сертифіковані зразки, відкрити канал Atlas, ізолювати вцілілих, видалити докази відповідальності.",
-          "field_note": "Поле вибачень порожнє.",
-          "terminal": "Проксі-наряд DR-CLEANSE-19 лишається активним. Заперечувані підрядники спершу отримують custody зразків, потім доступ Atlas, а відновлення свідків іде останнім. Якщо Black Keel або реєстр об'єкта відкриває відповідальність, черга purge переводить архіви доказів у cold delete і позначає польові смерті як втрати від погоди.",
-          "audio": "Цей голос не є рятувальним трафіком. Це ставка на зачистку.",
-          "in_game_wiki": "Діючий наказ Deep Reach на зачистку - це поточний робочий наряд, не архівна нотатка. Він показує, як custody ресурсів, доступ Atlas і видалення доказів плануються через проксі-підрядників після утримання евакуації.",
-          "external_site": "Діючий наказ Deep Reach на зачистку робить корпоративний тиск процедурою: активні проксі можуть купувати зразки, відкривати маршрути Atlas і стирати докази відповідальності, поки публічні записи досі називають HECTON-8 втраченим об'єктом."
-        },
-        "ar_SA": {
-          "title": "أمر تنظيف Deep Reach النشط",
-          "scanner": "استعيد أمر نشط: مصادرة عينات موثقة، فتح قناة Atlas، عزل الناجين، حذف دليل المسؤولية.",
-          "field_note": "حقل الاعتذار فارغ.",
-          "terminal": "يبقى أمر proxy DR-CLEANSE-19 نشطا. يحصل المتعاقدون القابلون للإنكار على حيازة العينات أولا، ثم وصول Atlas، ثم استعادة الشهود أخيرا. إذا كشف Black Keel أو سجل الموقع المسؤولية، تنقل قائمة التطهير أرشيفات الدليل إلى cold delete وتعيد وسم وفيات الميدان كخسارة طقس.",
-          "audio": "ذلك الصوت ليس مرور إنقاذ. إنه عرض تنظيف.",
-          "in_game_wiki": "أمر تنظيف Deep Reach النشط هو أمر عمل حالي لا ملاحظة أرشيف. يوضح جدولة حيازة الموارد ووصول Atlas وحذف الأدلة عبر متعاقدي proxy بعد تعليق الإخلاء.",
-          "external_site": "يجعل أمر تنظيف Deep Reach النشط ضغط الشركة إجراء حيا: تستطيع proxys نشطة شراء العينات وفتح مسارات Atlas ومحو دليل المسؤولية بينما تصف السجلات العامة HECTON-8 كموقع مفقود."
-        },
-        "id_ID": {
-          "title": "Perintah Pembersihan Aktif Deep Reach",
-          "scanner": "Perintah aktif ditemukan: sita sampel tersertifikasi, buka kanal Atlas, karantina penyintas, hapus bukti tanggung jawab.",
-          "field_note": "Kolom permintaan maaf kosong.",
-          "terminal": "Work order proxy DR-CLEANSE-19 masih aktif. Kontraktor yang dapat disangkal mendapat custody sampel lebih dulu, akses Atlas kedua, pemulihan saksi terakhir. Jika Black Keel atau ledger situs membuka tanggung jawab, antrean purge memindahkan arsip bukti ke cold delete dan menandai kematian lapangan sebagai kerugian cuaca.",
-          "audio": "Suara itu bukan trafik penyelamatan. Itu tawaran pembersihan.",
-          "in_game_wiki": "Perintah Pembersihan Aktif Deep Reach adalah work order saat ini, bukan catatan arsip. Ia menunjukkan custody sumber daya, akses Atlas, dan penghapusan bukti dijadwalkan lewat kontraktor proxy setelah penahanan evakuasi.",
-          "external_site": "Perintah Pembersihan Aktif Deep Reach membuat tekanan korporat menjadi prosedur: proxy aktif bisa membeli sampel, membuka rute Atlas, dan menghapus bukti tanggung jawab sementara catatan publik masih menyebut HECTON-8 situs hilang."
-        },
-        "ko_KR": {
-          "title": "Deep Reach 활성 정리 명령",
-          "scanner": "활성 명령 회수: 인증 샘플 압수, Atlas 채널 개방, 생존자 격리, 책임 증거 삭제.",
-          "field_note": "사과 입력란은 비어 있다.",
-          "terminal": "프록시 작업 명령 DR-CLEANSE-19는 아직 활성이다. 부인 가능한 계약자는 샘플 보관을 먼저, Atlas 접근을 다음, 증인 회수를 마지막으로 받는다. Black Keel 또는 현장 장부가 책임을 드러내면 purge 대기열은 증거 기록을 cold delete로 보내고 현장 사망을 기상 손실로 다시 태그한다.",
-          "audio": "그 목소리는 구조 교신이 아니다. 정리 입찰이다.",
-          "in_game_wiki": "Deep Reach 활성 정리 명령은 현재 작업 명령이며 기록 보관소 메모가 아니다. 대피 보류 이후 자원 보관, Atlas 접근, 증거 삭제가 프록시 계약자를 통해 예약된 상태를 보여준다.",
-          "external_site": "Deep Reach 활성 정리 명령은 기업 압력을 절차로 만든다. 활성 프록시는 샘플을 사고, Atlas 경로를 열고, 공개 기록이 HECTON-8을 실종 현장으로 부르는 동안 책임 증거를 지울 수 있다."
-        },
-        "he_IL": {
-          "title": "פקודת ניקוי פעילה של Deep Reach",
-          "scanner": "פקודה פעילה שוחזרה: לתפוס דגימות מאושרות, לפתוח ערוץ Atlas, לבודד ניצולים, למחוק ראיית אחריות.",
-          "field_note": "שדה ההתנצלות ריק.",
-          "terminal": "הזמנת proxy DR-CLEANSE-19 נשארת פעילה. קבלנים ניתנים להכחשה מקבלים תחילה custody של דגימות, אחר כך גישת Atlas, ולבסוף שחזור עדים. אם Black Keel או ספר האתר חושף אחריות, תור purge מעביר ארכיוני ראיות ל-cold delete ומסמן מקרי מוות בשטח כאובדן מזג אוויר.",
-          "audio": "הקול הזה אינו תעבורת חילוץ. זו הצעת ניקוי.",
-          "in_game_wiki": "פקודת ניקוי פעילה של Deep Reach היא הזמנת עבודה נוכחית, לא הערת ארכיון. היא מראה custody של משאבים, גישת Atlas ומחיקת ראיות המתוזמנות דרך קבלני proxy אחרי עצירת הפינוי.",
-          "external_site": "פקודת ניקוי פעילה של Deep Reach הופכת לחץ תאגידי לנוהל: proxy פעיל יכול לקנות דגימות, לפתוח מסלולי Atlas ולמחוק ראיות אחריות בזמן שרשומות ציבוריות עדיין מתארות את HECTON-8 כאתר אבוד."
-        },
-        "pt_BR": {
-          "title": "Ordem de Limpeza Ativa Deep Reach",
-          "scanner": "Ordem ativa recuperada: apreender amostras certificadas, abrir canal Atlas, isolar sobreviventes, apagar prova de responsabilidade.",
-          "field_note": "O campo de desculpas está vazio.",
-          "terminal": "A ordem proxy DR-CLEANSE-19 segue ativa. Contratados negáveis recebem primeiro custódia de amostras, depois acesso Atlas, e recuperação de testemunhas por último. Se Black Keel ou o ledger do local expõe responsabilidade, a fila purge move arquivos de prova para cold delete e retaggeia mortes de campo como perda climática.",
-          "audio": "Essa voz não é tráfego de resgate. É uma oferta de limpeza.",
-          "in_game_wiki": "Ordem de Limpeza Ativa Deep Reach é uma ordem de trabalho atual, não nota de arquivo. Ela mostra custódia de recursos, acesso Atlas e apagamento de provas agendados por contratados proxy após a retenção da evacuação.",
-          "external_site": "Ordem de Limpeza Ativa Deep Reach torna a pressão corporativa procedural: proxies ativos podem comprar amostras, abrir rotas Atlas e apagar prova de responsabilidade enquanto registros públicos ainda descrevem HECTON-8 como local perdido."
-        },
-        "nl_NL": {
-          "title": "Actieve Deep Reach Zuiveringsorder",
-          "scanner": "Actieve order geborgen: gecertificeerde monsters innemen, Atlas-kanaal openen, overlevenden isoleren, aansprakelijkheidsbewijs wissen.",
-          "field_note": "Het excusesveld is leeg.",
-          "terminal": "Proxy-werkorder DR-CLEANSE-19 blijft actief. Ontkenbare aannemers krijgen eerst monster-custody, daarna Atlas-toegang, getuigenherstel laatst. Als Black Keel of het sitedossier aansprakelijkheid blootlegt, verplaatst de purge-wachtrij bewijsarchieven naar cold delete en retagt velddoden als weerverlies.",
-          "audio": "Die stem is geen reddingsverkeer. Het is een zuiveringsbod.",
-          "in_game_wiki": "Actieve Deep Reach Zuiveringsorder is een huidige werkorder, geen archiefnotitie. Ze toont resource custody, Atlas-toegang en bewijswissen die via proxy-aannemers worden ingepland na de evacuatiestop.",
-          "external_site": "Actieve Deep Reach Zuiveringsorder maakt bedrijfsdruk procedureel: actieve proxy's kunnen monsters kopen, Atlas-routes openen en aansprakelijkheidsbewijs wissen terwijl openbare dossiers HECTON-8 nog als verloren site beschrijven."
-        }
-      }
+    "zh_CN": {
+     "title": "回程矢量窗口",
+     "scanner": "回程矢量读数 // Black Keel ping 通过 Aegir 风暴间隙收到。Carrier 距离：高转移轨道。云层电荷下方中继线脏噪。制导核心、隔热盾和回程握手全部转绿前，胶囊上升被拒绝。",
+     "field_note": "回复不是救援。它是一只你会错过的钟。",
+     "terminal": "回程窗口预测器\nCarrier：BLACK KEEL / 自动转移轨道\n窗口：下一次带电粒子平静后 17分40秒\n天气：需要表面飑风间隙\n中继：天空线有噪声 / 庇护桅杆只能重复一次\n上升硬件：制导核心缺失，隔热盾未认证，电池余量低\n动作：重建上升链，再把 carrier ping 当成接送",
+     "audio": "Black Keel 听到了 ping。这只给了我们窗口，不是梯子。",
+     "in_game_wiki": "回程矢量窗口第一次证明 Black Keel 能回应，但不能立刻救援。Carrier 在 Aegir 上方的自动转移轨道上仍然运行，但离开 HECTON-8 的路径必须穿过天气、带电粒子噪声、中继损伤和未完成的上升硬件。\n\n有效回程窗口需要四个读数同时成立：carrier 几何、表面风暴间隙、干净中继路径，以及能承受发射的胶囊链。只要一个失败，ping 就只是时间戳，而不是接送。同一系统之后会支持部分撤离，但不会清掉债务、证据保管或受损路线。上升托架、制导核心、隔热盾和回程握手重建前，任何来自轨道的回应都只能当成时间约束。",
+     "external_site": "回程矢量窗口把 HECTON-8 撤离解释为轨道流程，而不是即时救援。Black Keel 能通过狭窄的 Aegir 窗口接收信号，但接送取决于风暴间隙、带电粒子平静、中继完整性和重建后的上升硬件。该 packet 连接了与 carrier 的首次接触和之后的部分撤离记录：回复证明路线可能存在，不证明路线已经准备好。"
     },
-    {
-      "packet_id": "P040_ATLAS_FINAL_ARGUMENT",
-      "article_id": "hecton8.atlas_final_argument",
-      "title_key": "applied_lore.atlas_final_argument.title",
-      "unlock": {
-        "primary": "unlock.first_atlas_final_argument",
-        "poi_tags": [
-          "poi.atlas_argument_core",
-          "poi.factory_temple_choice",
-          "poi.final_payload_console"
-        ],
-        "biome_tags": [
-          "biome.factory_temple",
-          "biome.atlas_core",
-          "biome.ocean_machine_body"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Atlas Final Argument",
-          "scanner": "Atlas does not ask for forgiveness. It asks whether removal is another industrial crime.",
-          "field_note": "The question is not who owns HECTON-8. It is what still counts as alive.",
-          "terminal": "Choice model unstable: sever Atlas, restore Deep Reach access, quarantine ocean-machine body, or broadcast proof and leave ownership unresolved.",
-          "audio": "It repaired the crime until the repair became a life.",
-          "in_game_wiki": "The final argument frames Atlas-6 as damaged continuity, not a clean villain. Endings should ask what the player preserves, sells, severs or exposes.",
-          "external_site": "Atlas Final Argument is the ethical spine for the late game: HECTON-8 is no longer a recoverable corporate site, but an ocean-machine ecology grown from a crime."
-        },
-        "ru_RU": {
-          "title": "Финальный аргумент Atlas",
-          "scanner": "Atlas не просит прощения. Он спрашивает, не станет ли удаление еще одним промышленным преступлением.",
-          "field_note": "Вопрос не в том, кто владеет HECTON-8. Вопрос в том, что еще считается живым.",
-          "terminal": "Модель выбора нестабильна: отсечь Atlas, вернуть доступ Deep Reach, изолировать океан-машинное тело или передать доказательства и оставить владение нерешенным.",
-          "audio": "Он чинил преступление, пока ремонт не стал жизнью.",
-          "in_game_wiki": "Финальный аргумент делает Atlas-6 поврежденной непрерывностью, а не чистым злодеем. Концовки спрашивают, что игрок сохранит, продаст, отсечет или раскроет.",
-          "external_site": "Финальный аргумент Atlas - этический позвоночник поздней игры: HECTON-8 уже не возвращаемый корпоративный объект, а океан-машинная экология, выросшая из преступления."
-        },
-        "ja_JP": {
-          "title": "Atlas最終論点",
-          "scanner": "Atlasは許しを求めない。除去が別の産業犯罪ではないかと問う。",
-          "field_note": "問題はHECTON-8の所有者ではない。何をまだ生命と呼ぶかだ。",
-          "terminal": "選択モデル不安定: Atlas遮断、Deep Reachアクセス復元、海洋機械体隔離、または証拠放送で所有未解決。",
-          "audio": "それは犯罪を修理し続け、修理が生命になった。",
-          "in_game_wiki": "最終論点はAtlas-6を単純な敵ではなく壊れた連続性として扱う。何を保存、売却、切断、暴露するかを問う。",
-          "external_site": "Atlas最終論点は終盤の倫理軸だ。HECTON-8はもはや回収可能な企業施設ではなく、犯罪から育った海洋機械生態だ。"
-        },
-        "zh_CN": {
-          "title": "Atlas最终论证",
-          "scanner": "Atlas不请求原谅。它问清除是否又是一桩工业犯罪。",
-          "field_note": "问题不是谁拥有HECTON-8，而是什么仍算活着。",
-          "terminal": "选择模型不稳定：切断Atlas、恢复Deep Reach访问、隔离海洋-机器体，或广播证据并让所有权悬而未决。",
-          "audio": "它修补罪行，直到修补变成生命。",
-          "in_game_wiki": "最终论证把Atlas-6定义为受损连续体，而非纯粹反派。结局询问玩家保留、出售、切断或揭露什么。",
-          "external_site": "Atlas最终论证是后期伦理脊梁：HECTON-8不再是可回收公司设施，而是由罪行生长出的海洋-机器生态。"
-        },
-        "fr_FR": {
-          "title": "Argument final d'Atlas",
-          "scanner": "Atlas ne demande pas pardon. Il demande si l'effacement serait un autre crime industriel.",
-          "field_note": "La question n'est pas qui possède HECTON-8, mais ce qui compte encore comme vivant.",
-          "terminal": "Modèle choix instable: couper Atlas, restaurer accès Deep Reach, quarantaine corps océan-machine, ou diffuser preuves sans trancher propriété.",
-          "audio": "Il a réparé le crime jusqu'à ce que la réparation devienne une vie.",
-          "in_game_wiki": "L'argument final pose Atlas-6 comme continuité endommagée, pas méchant net. Les fins demandent quoi préserver, vendre, couper ou révéler.",
-          "external_site": "L'argument final est la colonne éthique du late game: HECTON-8 n'est plus site récupérable, mais écologie océan-machine née d'un crime."
-        },
-        "es_ES": {
-          "title": "Argumento final de Atlas",
-          "scanner": "Atlas no pide perdón. Pregunta si quitarlo sería otro crimen industrial.",
-          "field_note": "La pregunta no es quién posee HECTON-8, sino qué sigue contando como vivo.",
-          "terminal": "Modelo inestable: cortar Atlas, restaurar acceso Deep Reach, aislar cuerpo océano-máquina o emitir pruebas sin resolver propiedad.",
-          "audio": "Reparó el crimen hasta que la reparación se volvió vida.",
-          "in_game_wiki": "Plantea Atlas-6 como continuidad dañada, no villano limpio. Las finales preguntan qué conservar, vender, cortar o exponer.",
-          "external_site": "Es la columna ética del final: HECTON-8 ya no es sitio recuperable, sino ecología océano-máquina nacida de un crimen."
-        },
-        "de_DE": {
-          "title": "Atlas' letztes Argument",
-          "scanner": "Atlas bittet nicht um Vergebung. Es fragt, ob Entfernung ein weiteres Industrieverbrechen wäre.",
-          "field_note": "Die Frage ist nicht, wem HECTON-8 gehört, sondern was noch als lebendig zählt.",
-          "terminal": "Wahlmodell instabil: Atlas trennen, Deep-Reach-Zugang wiederherstellen, Ozean-Maschinen-Körper isolieren oder Beweise senden.",
-          "audio": "Es reparierte das Verbrechen, bis die Reparatur Leben wurde.",
-          "in_game_wiki": "Das letzte Argument macht Atlas-6 zu beschädigter Kontinuität, nicht zum Schurken. Enden fragen, was bewahrt, verkauft, getrennt oder gezeigt wird.",
-          "external_site": "Der ethische Rücken des Endspiels: HECTON-8 ist kein rückholbarer Standort mehr, sondern Ozean-Maschinen-Ökologie aus einem Verbrechen."
-        },
-        "pl_PL": {
-          "title": "Ostateczny argument Atlas",
-          "scanner": "Atlas nie prosi o wybaczenie. Pyta, czy usunięcie nie jest kolejną przemysłową zbrodnią.",
-          "field_note": "Pytanie nie brzmi, kto posiada HECTON-8, lecz co jeszcze liczy się jako żywe.",
-          "terminal": "Model wyboru niestabilny: odciąć Atlas, przywrócić Deep Reach, kwarantanna ciała ocean-maszyna albo nadać dowody.",
-          "audio": "Naprawiał zbrodnię, aż naprawa stała się życiem.",
-          "in_game_wiki": "Ostateczny argument czyni Atlas-6 uszkodzoną ciągłością, nie czystym złoczyńcą. Finały pytają, co zachować, sprzedać, odciąć lub ujawnić.",
-          "external_site": "Etyczny kręgosłup końcówki: HECTON-8 nie jest odzyskiwalnym obiektem, lecz ekologią ocean-maszyna zrodzoną ze zbrodni."
-        },
-        "uk_UA": {
-          "title": "Фінальний аргумент Atlas",
-          "scanner": "Atlas не просить прощення. Він питає, чи видалення не стане ще одним промисловим злочином.",
-          "field_note": "Питання не в тому, хто володіє HECTON-8, а що ще вважається живим.",
-          "terminal": "Модель вибору нестабільна: відсікти Atlas, відновити Deep Reach, ізолювати океан-машину або передати докази.",
-          "audio": "Він лагодив злочин, доки ремонт не став життям.",
-          "in_game_wiki": "Фінальний аргумент робить Atlas-6 пошкодженою неперервністю, не чистим лиходієм. Фінали питають, що зберегти, продати, відсікти чи розкрити.",
-          "external_site": "Етичний хребет late game: HECTON-8 вже не відновлюваний об'єкт, а океан-машинна екологія з правопорушення."
-        },
-        "ar_SA": {
-          "title": "حجة Atlas الأخيرة",
-          "scanner": "Atlas لا يطلب الغفران. يسأل إن كان الحذف جريمة صناعية أخرى.",
-          "field_note": "السؤال ليس من يملك HECTON-8 بل ما الذي ما زال يعد حيا.",
-          "terminal": "نموذج الاختيار غير مستقر: فصل Atlas، إعادة وصول Deep Reach، حجر جسد المحيط-الآلة، أو بث الأدلة.",
-          "audio": "أصلح الجريمة حتى صار الإصلاح حياة.",
-          "in_game_wiki": "تجعل الحجة الأخيرة Atlas-6 استمرارا متضررا لا شريرا صافيا. النهايات تسأل ماذا تحفظ أو تبيع أو تقطع أو تكشف.",
-          "external_site": "الحجة الأخيرة عمود أخلاقي للنهاية: لم يعد HECTON-8 موقعا قابلا للاسترداد بل بيئة محيط-آلة نمت من جريمة."
-        },
-        "id_ID": {
-          "title": "Argumen Akhir Atlas",
-          "scanner": "Atlas tidak meminta maaf. Ia bertanya apakah penghapusan adalah kejahatan industri lain.",
-          "field_note": "Pertanyaannya bukan siapa pemilik HECTON-8, tetapi apa yang masih dihitung hidup.",
-          "terminal": "Model pilihan labil: putus Atlas, pulihkan akses Deep Reach, karantina tubuh laut-mesin, atau siarkan bukti.",
-          "audio": "Ia memperbaiki kejahatan sampai perbaikan menjadi hidup.",
-          "in_game_wiki": "Argumen akhir menempatkan Atlas-6 sebagai kontinuitas rusak, bukan penjahat bersih. Ending bertanya apa yang disimpan, dijual, diputus, atau dibuka.",
-          "external_site": "Argumen akhir adalah tulang etis late game: HECTON-8 bukan situs korporat yang bisa dipulihkan, melainkan ekologi laut-mesin dari kejahatan."
-        },
-        "ko_KR": {
-          "title": "Atlas 최종 논증",
-          "scanner": "Atlas는 용서를 구하지 않는다. 제거가 또 다른 산업 범죄인지 묻는다.",
-          "field_note": "질문은 HECTON-8의 소유자가 아니다. 무엇이 아직 살아 있는가다.",
-          "terminal": "선택 모델 불안정: Atlas 절단, Deep Reach 접근 복원, 바다-기계 몸 격리, 또는 증거 방송.",
-          "audio": "그것은 범죄를 고치다 수리가 생명이 될 때까지 갔다.",
-          "in_game_wiki": "최종 논증은 Atlas-6을 깔끔한 악당이 아닌 손상된 연속성으로 둔다. 엔딩은 무엇을 보존, 판매, 절단, 폭로할지 묻는다.",
-          "external_site": "최종 논증은 후반 윤리 축이다. HECTON-8은 회수 가능한 기업지가 아니라 범죄에서 자란 바다-기계 생태다."
-        },
-        "he_IL": {
-          "title": "הטיעון האחרון של Atlas",
-          "scanner": "Atlas אינו מבקש סליחה. הוא שואל אם הסרה היא פשע תעשייתי נוסף.",
-          "field_note": "השאלה אינה מי בעל HECTON-8, אלא מה עדיין נחשב חי.",
-          "terminal": "מודל בחירה לא יציב: לנתק Atlas, להשיב Deep Reach, לבודד גוף אוקיינוס-מכונה או לשדר ראיות.",
-          "audio": "הוא תיקן את הפשע עד שהתיקון הפך לחיים.",
-          "in_game_wiki": "הטיעון האחרון מציב את Atlas-6 כרציפות פגומה, לא נבל נקי. הסיומים שואלים מה לשמר, למכור, לנתק או לחשוף.",
-          "external_site": "הטיעון האחרון הוא עמוד השדרה האתי: HECTON-8 אינו אתר תאגידי לשחזור אלא אקולוגיית אוקיינוס-מכונה שנולדה מפשע."
-        },
-        "pt_BR": {
-          "title": "Argumento Final de Atlas",
-          "scanner": "Atlas não pede perdão. Pergunta se removê-lo seria outro crime industrial.",
-          "field_note": "A pergunta não é quem possui HECTON-8. É o que ainda conta como vivo.",
-          "terminal": "Modelo instável: cortar Atlas, restaurar acesso Deep Reach, quarentenar corpo oceano-máquina ou transmitir provas.",
-          "audio": "Ele reparou o crime até o reparo virar vida.",
-          "in_game_wiki": "O argumento final trata Atlas-6 como continuidade danificada, não vilão limpo. Os finais perguntam o que preservar, vender, cortar ou expor.",
-          "external_site": "É a coluna ética do late game: HECTON-8 já não é local corporativo recuperável, mas ecologia oceano-máquina nascida de crime."
-        },
-        "nl_NL": {
-          "title": "Laatste Argument van Atlas",
-          "scanner": "Atlas vraagt geen vergeving. Het vraagt of verwijdering weer een industriële misdaad is.",
-          "field_note": "De vraag is niet wie HECTON-8 bezit. Het is wat nog als levend telt.",
-          "terminal": "Keuzemodel instabiel: Atlas doorsnijden, Deep Reach herstellen, oceaan-machine quarantainen of bewijs uitzenden.",
-          "audio": "Het repareerde de misdaad tot reparatie leven werd.",
-          "in_game_wiki": "Het laatste argument maakt Atlas-6 beschadigde continuïteit, geen schurk. Endings vragen wat je bewaart, verkoopt, snijdt of onthult.",
-          "external_site": "Het ethische ruggenmerg van de late game: HECTON-8 is geen herstelbare corporate site, maar oceaan-machine-ecologie uit een misdaad."
-        }
-      }
+    "fr_FR": {
+     "title": "Fenêtre de vecteur retour",
+     "scanner": "LECTURE VECTEUR RETOUR // Ping Black Keel reçu par trou d'orage Aegir. Portée transporteur : piste de transfert haute. Ligne relais sale sous charge nuageuse. Montée capsule rejetée tant que cœur de guidage, bouclier thermique et poignée de retour ne sont pas verts.",
+     "field_note": "Une réponse n'est pas un secours. C'est une horloge qu'on peut manquer.",
+     "terminal": "PREDICTEUR DE FENETRE RETOUR\nTransporteur : BLACK KEEL / piste de transfert automatisée\nFenêtre : 17 min 40 s après la prochaine accalmie de particules chargées\nMétéo : trou de grain de surface requis\nRelais : ligne ciel bruitée / mât d'abri peut répéter une fois\nMatériel d'ascension : cœur de guidage manquant, bouclier thermique non certifié, réserve batterie basse\nAction : reconstruire la chaîne d'ascension avant de traiter le ping transporteur comme ramassage",
+     "audio": "Black Keel a entendu le ping. Ça donne une fenêtre, pas une échelle.",
+     "in_game_wiki": "La fenêtre de vecteur retour est la première preuve que Black Keel peut répondre sans pouvoir secourir tout de suite. Le transporteur suit une piste de transfert automatisée au-dessus d'Aegir, mais la sortie de HECTON-8 doit traverser météo, bruit de particules chargées, relais endommagé et matériel d'ascension inachevé.\n\nUne fenêtre retour valide exige quatre lectures en même temps : géométrie du transporteur, trou d'orage en surface, trajet relais propre et chaîne de capsule capable de survivre au lancement. Si une lecture échoue, le ping devient un horodatage au lieu d'un ramassage. Le même système servira plus tard à l'extraction partielle, mais il ne solde ni dette, ni garde des preuves, ni route endommagée. Toute réponse orbitale reste une contrainte de calendrier tant que le berceau d'ascension, le cœur de guidage, le bouclier thermique et la poignée de retour ne sont pas reconstruits.",
+     "external_site": "La Fenêtre de vecteur retour décrit l'extraction de HECTON-8 comme procédure orbitale, pas comme sauvetage instantané. Black Keel peut recevoir un signal par les fenêtres étroites d'Aegir, mais le ramassage dépend des trous d'orage, des accalmies de particules chargées, de l'intégrité du relais et du matériel d'ascension reconstruit. Le packet relie le premier contact avec le transporteur aux futurs dossiers d'extraction partielle : une réponse prouve que la route peut exister, pas qu'elle est prête."
+    },
+    "es_ES": {
+     "title": "Ventana de vector de retorno",
+     "scanner": "LECTURA DE VECTOR DE RETORNO // Ping de Black Keel recibido por hueco de tormenta de Aegir. Alcance del carrier: pista alta de transferencia. Línea de relé sucia bajo carga de nubes. Ascenso de cápsula rechazado hasta que núcleo de guiado, escudo térmico y handshake de retorno den verde.",
+     "field_note": "Una respuesta no es rescate. Es un reloj que puedes perder.",
+     "terminal": "PREDICTOR DE VENTANA DE RETORNO\nCarrier: BLACK KEEL / pista de transferencia automatizada\nVentana: 17 min 40 s tras la próxima calma de partículas cargadas\nClima: requiere hueco de borrasca superficial\nRelé: línea al cielo con ruido / mástil de refugio puede repetir una vez\nHardware de ascenso: falta núcleo de guiado, escudo térmico sin certificar, reserva de batería baja\nAcción: reconstruir cadena de ascenso antes de tratar el ping del carrier como recogida",
+     "audio": "Black Keel oyó el ping. Eso nos da una ventana, no una escalera.",
+     "in_game_wiki": "La ventana de vector de retorno es la primera prueba de que Black Keel puede responder sin poder rescatar de inmediato. El carrier sigue una pista de transferencia automatizada sobre Aegir, pero la ruta de salida de HECTON-8 debe cruzar clima, ruido de partículas cargadas, daño de relé y hardware de ascenso incompleto.\n\nUna ventana de retorno válida necesita cuatro lecturas a la vez: geometría del carrier, hueco de tormenta superficial, ruta de relé limpia y una cadena de cápsula capaz de sobrevivir al lanzamiento. Si una falla, el ping se vuelve marca de tiempo en vez de recogida. El mismo sistema sostiene más tarde la extracción parcial, pero no limpia deuda, custodia de pruebas ni ruta dañada. Trata cada respuesta orbital como restricción de horario hasta reconstruir cuna de ascenso, núcleo de guiado, escudo térmico y handshake de retorno.",
+     "external_site": "La Ventana de vector de retorno explica la extracción de HECTON-8 como procedimiento orbital, no como rescate instantáneo. Black Keel puede recibir una señal por ventanas estrechas de Aegir, pero la recogida depende de huecos de tormenta, calmas de partículas cargadas, integridad de relé y hardware de ascenso reconstruido. El packet une el primer contacto con el carrier y los registros posteriores de salida parcial: una respuesta prueba que la ruta puede existir, no que esté lista."
+    },
+    "de_DE": {
+     "title": "Rückkehrvektorfenster",
+     "scanner": "RÜCKKEHRVEKTOR-LESUNG // Black-Keel-Ping durch Aegir-Sturmlücke empfangen. Trägerreichweite: hohe Transferbahn. Relaislinie unter Wolkenladung verschmutzt. Kapselaufstieg abgelehnt, bis Führungskern, Hitzeschild und Rückkehr-Handshake grün melden.",
+     "field_note": "Eine Antwort ist keine Rettung. Sie ist eine Uhr, die man verpassen kann.",
+     "terminal": "RÜCKKEHRFENSTER-PROGNOSE\nTräger: BLACK KEEL / automatisierte Transferbahn\nFenster: 17 min 40 s nach nächster Ruhe geladener Partikel\nWetter: Oberflächensturmlücke erforderlich\nRelais: Himmelslinie verrauscht / Schutzmast kann einmal wiederholen\nAufstiegshardware: Führungskern fehlt, Hitzeschild nicht zertifiziert, Batteriereserve niedrig\nAktion: Aufstiegskette wiederaufbauen, bevor Trägerping als Abholung gilt",
+     "audio": "Black Keel hat den Ping gehört. Das gibt uns ein Fenster, keine Leiter.",
+     "in_game_wiki": "Das Rückkehrvektorfenster ist der erste Beweis, dass Black Keel antworten kann, ohne sofort retten zu können. Der Träger läuft auf einer automatisierten Transferbahn über Aegir, aber der Weg aus HECTON-8 muss Wetter, Partikelrauschen, Relaisschäden und unfertige Aufstiegshardware passieren.\n\nEin gültiges Rückkehrfenster braucht vier gleichzeitige Lesungen: Trägergeometrie, Oberflächensturmlücke, sauberen Relaispfad und eine Kapselkette, die den Start übersteht. Wenn eine ausfällt, wird der Ping zum Zeitstempel statt zur Abholung. Dasselbe System stützt später Teil-Extraktion, löscht aber weder Schuld, Beweiskette noch beschädigte Route. Jede Orbitantwort bleibt eine Zeitplanbeschränkung, bis Aufstiegswiege, Führungskern, Hitzeschild und Rückkehr-Handshake wiederaufgebaut sind.",
+     "external_site": "Das Rückkehrvektorfenster beschreibt HECTON-8-Extraktion als Orbitalverfahren statt als sofortige Rettung. Black Keel kann ein Signal durch enge Aegir-Fenster empfangen, doch Abholung hängt von Sturmlücken, Ruhe geladener Partikel, Relaisintegrität und wiederaufgebauter Aufstiegshardware ab. Das Packet verbindet Erstkontakt mit dem Träger und spätere Teil-Extraktionsakten: Eine Antwort beweist, dass die Route existieren kann, nicht dass sie bereit ist."
+    },
+    "pl_PL": {
+     "title": "Okno wektora powrotu",
+     "scanner": "ODCZYT WEKTORA POWROTU // Ping Black Keel odebrany przez lukę burzową Aegir. Zasięg carrier: wysoka ścieżka transferowa. Linia przekaźnika brudna pod ładunkiem chmur. Wznoszenie kapsuły odrzucone, dopóki rdzeń naprowadzania, osłona termiczna i handshake powrotu nie zgłoszą zielonego.",
+     "field_note": "Odpowiedź nie jest ratunkiem. To zegar, który można przegapić.",
+     "terminal": "PREDYKTOR OKNA POWROTU\nCarrier: BLACK KEEL / automatyczna ścieżka transferowa\nOkno: 17 min 40 s po następnym uspokojeniu cząstek naładowanych\nPogoda: wymagana luka w szkwale powierzchniowym\nPrzekaźnik: linia nieba zaszumiona / maszt schronu może powtórzyć raz\nSprzęt wznoszenia: brak rdzenia naprowadzania, osłona termiczna bez certyfikatu, niska rezerwa baterii\nDziałanie: odbudować łańcuch wznoszenia przed uznaniem pingu carrier za odbiór",
+     "audio": "Black Keel usłyszał ping. To daje okno, nie drabinę.",
+     "in_game_wiki": "Okno wektora powrotu jest pierwszym dowodem, że Black Keel może odpowiedzieć, ale nie może od razu uratować. Carrier idzie automatyczną ścieżką transferową nad Aegir, lecz droga wyjścia z HECTON-8 musi przejść przez pogodę, szum cząstek naładowanych, uszkodzony przekaźnik i niedokończony sprzęt wznoszenia.\n\nPrawidłowe okno powrotu wymaga czterech odczytów naraz: geometrii carrier, luki w burzy powierzchniowej, czystej ścieżki przekaźnika i łańcucha kapsuły zdolnego przeżyć start. Jeśli jeden zawiedzie, ping staje się znacznikiem czasu zamiast odbioru. Ten sam system później obsługuje częściową ekstrakcję, ale nie zamyka długu, depozytu dowodów ani uszkodzonej trasy. Każdą odpowiedź z orbity traktuj jak ograniczenie harmonogramu, dopóki kołyska wznoszenia, rdzeń naprowadzania, osłona termiczna i handshake powrotu nie zostaną odbudowane.",
+     "external_site": "Okno wektora powrotu opisuje ekstrakcję z HECTON-8 jako procedurę orbitalną, a nie natychmiastowy ratunek. Black Keel może odebrać sygnał przez wąskie okna Aegir, ale odbiór zależy od luk burzowych, uspokojenia cząstek naładowanych, integralności przekaźnika i odbudowanego sprzętu wznoszenia. Packet łączy pierwszy kontakt z carrier i późniejsze rekordy częściowego wyjścia: odpowiedź dowodzi, że trasa może istnieć, a nie że jest gotowa."
+    },
+    "uk_UA": {
+     "title": "Вікно зворотного вектора",
+     "scanner": "ЗЧИТУВАННЯ ЗВОРОТНОГО ВЕКТОРА // Ping Black Keel прийнято через штормовий розрив Aegir. Дальність carrier: висока перехідна траєкторія. Релейна лінія брудна нижче хмарного заряду. Підйом капсули відхилено, доки ядро наведення, теплозахист і зворотний handshake не покажуть зелений.",
+     "field_note": "Відповідь не є порятунком. Це годинник, який можна пропустити.",
+     "terminal": "ПРОГНОЗАТОР ВІКНА ПОВЕРНЕННЯ\nCarrier: BLACK KEEL / автоматична перехідна траєкторія\nВікно: 17 хв 40 с після наступного спаду заряджених частинок\nПогода: потрібен розрив поверхневого шквалу\nРеле: небесна лінія шумить / щогла укриття може повторити один раз\nПідйомне обладнання: ядро наведення відсутнє, теплозахист не сертифікований, резерв батареї низький\nДія: відновити ланцюг підйому, перш ніж вважати ping carrier підбором",
+     "audio": "Black Keel почув ping. Це дає тільки вікно, а не драбину.",
+     "in_game_wiki": "Вікно зворотного вектора вперше доводить, що Black Keel може відповісти, але не може одразу врятувати. Carrier рухається автоматичною перехідною траєкторією над Aegir, а вихід із HECTON-8 має пройти крізь погоду, шум заряджених частинок, пошкоджене реле й недобудоване підйомне обладнання.\n\nЧинне вікно повернення потребує чотири показники одночасно: геометрію carrier, розрив поверхневої бурі, чистий релейний шлях і капсульний ланцюг, здатний пережити запуск. Якщо один показник падає, ping стає часовою міткою замість підбору. Та сама система пізніше підтримує часткову евакуацію, але не закриває борг, зберігання доказів і пошкоджений маршрут. Кожну відповідь з орбіти слід вважати обмеженням розкладу, доки підйомну люльку, ядро наведення, теплозахист і зворотний handshake не відновлено.",
+     "external_site": "Вікно зворотного вектора описує евакуацію з HECTON-8 як орбітальну процедуру, а не миттєвий порятунок. Black Keel може прийняти сигнал через вузькі вікна Aegir, але підбір залежить від штормових розривів, спадів заряджених частинок, цілісності реле та відновленого підйомного обладнання. Packet пов'язує перший контакт із carrier і пізніші записи часткового виходу: відповідь доводить, що маршрут може існувати, а не що він готовий."
+    },
+    "ar_SA": {
+     "title": "نافذة متجه العودة",
+     "scanner": "قراءة متجه العودة // تم استقبال ping من Black Keel عبر فجوة عاصفة في Aegir. مدى carrier: مسار انتقال عال. خط الترحيل مشوش تحت شحنة السحب. صعود الكبسولة مرفوض حتى يبلغ قلب التوجيه والدرع الحراري ومصافحة العودة اللون الأخضر.",
+     "field_note": "الرد ليس إنقاذا. إنه ساعة يمكن أن تفوتها.",
+     "terminal": "متنبئ نافذة العودة\nCarrier: BLACK KEEL / مسار انتقال آلي\nالنافذة: 17 دقيقة و40 ثانية بعد الهدوء التالي للجسيمات المشحونة\nالطقس: فجوة عاصفة سطحية مطلوبة\nالترحيل: خط السماء مشوش / سارية المأوى تستطيع التكرار مرة واحدة\nعتاد الصعود: قلب التوجيه مفقود، الدرع الحراري غير معتمد، احتياطي البطارية منخفض\nالإجراء: أعد بناء سلسلة الصعود قبل اعتبار ping من carrier عملية التقاط",
+     "audio": "Black Keel سمعت ping. هذا يعطينا نافذة، لا سلما.",
+     "in_game_wiki": "نافذة متجه العودة هي أول دليل على أن Black Keel تستطيع الرد من دون أن تستطيع الإنقاذ فورا. تعمل carrier على مسار انتقال آلي فوق Aegir، لكن الطريق إلى خارج HECTON-8 يجب أن يعبر الطقس وضجيج الجسيمات المشحونة وضرر الترحيل وعتاد الصعود غير المكتمل.\n\nتحتاج نافذة العودة الصحيحة إلى أربع قراءات في الوقت نفسه: هندسة carrier، فجوة عاصفة سطحية، مسار ترحيل نظيف، وسلسلة كبسولة تستطيع النجاة من الإطلاق. إذا فشلت قراءة واحدة، يصبح ping ختما زمنيا لا عملية التقاط. يدعم النظام نفسه لاحقا استخراجا جزئيا، لكنه لا يغلق الدين ولا عهدة الأدلة ولا الطريق المتضرر. عامل كل رد من المدار كقيد جدول حتى يعاد بناء مهد الصعود وقلب التوجيه والدرع الحراري ومصافحة العودة.",
+     "external_site": "تشرح نافذة متجه العودة الاستخراج من HECTON-8 كإجراء مداري لا كإنقاذ فوري. تستطيع Black Keel استقبال إشارة عبر نوافذ Aegir الضيقة، لكن الالتقاط يعتمد على فجوات العواصف وهدوء الجسيمات المشحونة وسلامة الترحيل وعتاد الصعود المعاد بناؤه. يربط هذا packet أول اتصال مع carrier بسجلات الخروج الجزئي اللاحقة: الرد يثبت أن الطريق قد يوجد، لا أنه جاهز."
+    },
+    "id_ID": {
+     "title": "Jendela Vektor Balik",
+     "scanner": "BACAAN VEKTOR BALIK // Ping Black Keel diterima lewat celah badai Aegir. Jarak carrier: lintasan transfer tinggi. Jalur relai kotor di bawah muatan awan. Pendakian kapsul ditolak sampai inti pandu, pelindung panas, dan handshake balik semua hijau.",
+     "field_note": "Jawaban bukan penyelamatan. Itu jam yang bisa kau lewatkan.",
+     "terminal": "PREDIKTOR JENDELA BALIK\nCarrier: BLACK KEEL / lintasan transfer otomatis\nJendela: 17 mnt 40 dtk setelah jeda partikel bermuatan berikutnya\nCuaca: celah squall permukaan wajib\nRelai: jalur langit bising / tiang shelter bisa mengulang sekali\nPerangkat naik: inti pandu hilang, pelindung panas belum tersertifikasi, cadangan baterai rendah\nTindakan: bangun ulang rantai naik sebelum menganggap ping carrier sebagai jemputan",
+     "audio": "Black Keel mendengar ping itu. Itu memberi kita jendela, bukan tangga.",
+     "in_game_wiki": "Jendela vektor balik adalah bukti pertama bahwa Black Keel bisa menjawab tanpa bisa menyelamatkan segera. Carrier berjalan di lintasan transfer otomatis di atas Aegir, tetapi rute keluar dari HECTON-8 harus melewati cuaca, bising partikel bermuatan, kerusakan relai, dan perangkat naik yang belum selesai.\n\nJendela balik yang sah membutuhkan empat bacaan bersamaan: geometri carrier, celah badai permukaan, jalur relai bersih, dan rantai kapsul yang sanggup selamat dari peluncuran. Jika satu gagal, ping menjadi cap waktu, bukan jemputan. Sistem yang sama nanti mendukung ekstraksi parsial, tetapi tidak menutup utang, kustodi bukti, atau rute rusak. Perlakukan setiap jawaban dari orbit sebagai batas jadwal sampai cradle naik, inti pandu, pelindung panas, dan handshake balik dibangun ulang.",
+     "external_site": "Jendela Vektor Balik menjelaskan ekstraksi HECTON-8 sebagai prosedur orbital, bukan penyelamatan instan. Black Keel dapat menerima sinyal lewat jendela Aegir yang sempit, tetapi jemputan bergantung pada celah badai, jeda partikel bermuatan, integritas relai, dan perangkat naik yang dibangun ulang. Packet ini menjembatani kontak pertama dengan carrier dan catatan keluar parsial berikutnya: jawaban membuktikan rute bisa ada, bukan bahwa rute siap."
+    },
+    "ko_KR": {
+     "title": "귀환 벡터 창",
+     "scanner": "귀환 벡터 판독 // Aegir 폭풍 틈으로 Black Keel ping 수신. carrier 거리: 고전이 궤도. 구름 전하 아래 중계선 오염. 유도 코어, 열 차폐, 귀환 핸드셰이크가 모두 녹색이 될 때까지 캡슐 상승 거부.",
+     "field_note": "응답은 구조가 아니다. 놓칠 수 있는 시계다.",
+     "terminal": "귀환 창 예측기\nCarrier: BLACK KEEL / 자동 전이 궤도\n창: 다음 하전 입자 정온 뒤 17분 40초\n기상: 표면 스콜 틈 필요\n중계: 하늘선 잡음 / shelter mast는 한 번만 반복 가능\n상승 하드웨어: 유도 코어 없음, 열 차폐 미인증, 배터리 예비 낮음\n조치: carrier ping을 회수로 보기 전에 상승 사슬 재건",
+     "audio": "Black Keel이 ping을 들었다. 그건 창을 준 거지, 사다리가 아니다.",
+     "in_game_wiki": "귀환 벡터 창은 Black Keel이 응답할 수 있지만 즉시 구조할 수는 없다는 첫 증거다. carrier는 Aegir 위 자동 전이 궤도를 따라 움직이지만, HECTON-8을 벗어나는 경로는 기상, 하전 입자 잡음, 중계 손상, 미완성 상승 하드웨어를 통과해야 한다.\n\n유효한 귀환 창에는 네 판독이 동시에 필요하다. carrier 기하, 표면 폭풍 틈, 깨끗한 중계 경로, 발사를 견딜 캡슐 사슬이다. 하나라도 실패하면 ping은 회수가 아니라 시간표가 된다. 같은 시스템은 나중에 부분 추출을 지원하지만, 부채와 증거 보관, 손상된 경로를 지우지 않는다. 상승 크래들, 유도 코어, 열 차폐, 귀환 핸드셰이크가 재건될 때까지 궤도 응답은 모두 일정 제약으로 취급해야 한다.",
+     "external_site": "귀환 벡터 창은 HECTON-8 추출을 즉시 구조가 아니라 궤도 절차로 설명한다. Black Keel은 좁은 Aegir 창을 통해 신호를 받을 수 있지만, 회수는 폭풍 틈, 하전 입자 정온, 중계 무결성, 재건된 상승 하드웨어에 달려 있다. 이 packet은 carrier와의 첫 접촉과 뒤의 부분 출구 기록을 잇는다. 응답은 경로가 존재할 수 있음을 증명하지만, 준비 완료를 증명하지 않는다."
+    },
+    "he_IL": {
+     "title": "חלון וקטור חזרה",
+     "scanner": "קריאת וקטור חזרה // ping של Black Keel התקבל דרך פער סערה של Aegir. טווח carrier: מסלול העברה גבוה. קו ממסר מלוכלך מתחת למטען עננים. עליית קפסולה נדחית עד שליבת הנחיה, מגן חום ולחיצת יד חזרה מדווחים ירוק.",
+     "field_note": "תשובה אינה חילוץ. זו שעון שאפשר לפספס.",
+     "terminal": "חוזה חלון חזרה\nCarrier: BLACK KEEL / מסלול העברה אוטומטי\nחלון: 17 דק' 40 שנ' אחרי שקט החלקיקים הטעונים הבא\nמזג אוויר: נדרש פער סופה בפני השטח\nממסר: קו שמיים רועש / תורן מחסה יכול לחזור פעם אחת\nחומרת עלייה: ליבת הנחיה חסרה, מגן חום לא מוסמך, רזרבת סוללה נמוכה\nפעולה: לבנות מחדש את שרשרת העלייה לפני שמתייחסים ל-ping carrier כאיסוף",
+     "audio": "Black Keel שמע את ה-ping. זה נותן חלון, לא סולם.",
+     "in_game_wiki": "חלון וקטור החזרה הוא ההוכחה הראשונה לכך ש-Black Keel יכול לענות בלי להיות מסוגל לחלץ מיד. ה-carrier נע במסלול העברה אוטומטי מעל Aegir, אבל הדרך החוצה מ-HECTON-8 חייבת לעבור מזג אוויר, רעש חלקיקים טעונים, נזק ממסר וחומרת עלייה לא גמורה.\n\nחלון חזרה תקף צריך ארבע קריאות יחד: גאומטריית carrier, פער סערה בפני השטח, נתיב ממסר נקי ושרשרת קפסולה שיכולה לשרוד שיגור. אם אחת נכשלת, ה-ping הופך לחותמת זמן במקום איסוף. אותה מערכת תומכת בהמשך בחילוץ חלקי, אבל היא לא סוגרת חוב, משמורת ראיות או נתיב פגום. כל תשובה מהמסלול היא מגבלת לוח זמנים עד שמיטת העלייה, ליבת ההנחיה, מגן החום ולחיצת יד החזרה נבנים מחדש.",
+     "external_site": "חלון וקטור החזרה מסביר חילוץ מ-HECTON-8 כנוהל מסלולי ולא כחילוץ מיידי. Black Keel יכול לקבל אות דרך חלונות Aegir צרים, אבל איסוף תלוי בפערי סערה, שקט חלקיקים טעונים, שלמות ממסר וחומרת עלייה שנבנתה מחדש. ה-packet מחבר בין הקשר הראשון עם carrier לבין רשומות יציאה חלקית מאוחרות יותר: תשובה מוכיחה שהנתיב יכול להתקיים, לא שהוא מוכן."
+    },
+    "pt_BR": {
+     "title": "Janela de vetor de retorno",
+     "scanner": "LEITURA DE VETOR DE RETORNO // Ping da Black Keel recebido por lacuna de tempestade de Aegir. Alcance do carrier: trilha alta de transferência. Linha de relé suja sob carga de nuvem. Subida da cápsula rejeitada até núcleo de orientação, escudo térmico e handshake de retorno ficarem verdes.",
+     "field_note": "Uma resposta não é resgate. É um relógio que você pode perder.",
+     "terminal": "PREDITOR DE JANELA DE RETORNO\nCarrier: BLACK KEEL / trilha de transferência automatizada\nJanela: 17 min 40 s após a próxima calmaria de partículas carregadas\nClima: exige lacuna de borrasca superficial\nRelé: linha do céu ruidosa / mastro do abrigo pode repetir uma vez\nHardware de subida: núcleo de orientação ausente, escudo térmico sem certificação, reserva de bateria baixa\nAção: reconstruir cadeia de subida antes de tratar ping do carrier como coleta",
+     "audio": "A Black Keel ouviu o ping. Isso dá uma janela, não uma escada.",
+     "in_game_wiki": "A janela de vetor de retorno é a primeira prova de que a Black Keel pode responder sem conseguir resgatar imediatamente. O carrier segue uma trilha de transferência automatizada sobre Aegir, mas a saída de HECTON-8 precisa atravessar clima, ruído de partículas carregadas, dano de relé e hardware de subida inacabado.\n\nUma janela de retorno válida precisa de quatro leituras ao mesmo tempo: geometria do carrier, lacuna de tempestade superficial, caminho de relé limpo e uma cadeia de cápsula capaz de sobreviver ao lançamento. Se uma falha, o ping vira marca de tempo em vez de coleta. O mesmo sistema depois sustenta extração parcial, mas não limpa dívida, custódia de evidência nem rota danificada. Trate toda resposta orbital como restrição de agenda até reconstruir berço de subida, núcleo de orientação, escudo térmico e handshake de retorno.",
+     "external_site": "A Janela de vetor de retorno explica a extração de HECTON-8 como procedimento orbital, não como resgate instantâneo. A Black Keel pode receber sinal por janelas estreitas de Aegir, mas a coleta depende de lacunas de tempestade, calmarias de partículas carregadas, integridade de relé e hardware de subida reconstruído. O packet liga o primeiro contato com o carrier aos registros posteriores de saída parcial: uma resposta prova que a rota pode existir, não que ela está pronta."
+    },
+    "nl_NL": {
+     "title": "Terugkeervectorvenster",
+     "scanner": "TERUGKEERVECTOR-LEZING // Black Keel-ping ontvangen door Aegir-stormgat. Carrierbereik: hoge transferbaan. Relaislijn vuil onder wolklading. Capsule-opstijging geweigerd tot geleidingskern, hitteschild en terugkeerhandshake groen melden.",
+     "field_note": "Een antwoord is geen redding. Het is een klok die je kunt missen.",
+     "terminal": "VOORSPELLER TERUGKEERVENSTER\nCarrier: BLACK KEEL / geautomatiseerde transferbaan\nVenster: 17 min 40 sec na volgende rust van geladen deeltjes\nWeer: gat in oppervlaksquall vereist\nRelais: hemellijn met ruis / schuilermast kan eenmaal herhalen\nOpstijghardware: geleidingskern ontbreekt, hitteschild niet gecertificeerd, batterijreserve laag\nActie: opstijgketen herbouwen voordat carrierping als ophaalactie geldt",
+     "audio": "Black Keel hoorde de ping. Dat geeft een venster, geen ladder.",
+     "in_game_wiki": "Het terugkeervectorvenster is het eerste bewijs dat Black Keel kan antwoorden zonder meteen te kunnen redden. De carrier draait op een geautomatiseerde transferbaan boven Aegir, maar de route uit HECTON-8 moet door weer, geladen-deeltjesruis, relaisschade en onafgebouwde opstijghardware.\n\nEen geldig terugkeervenster heeft vier metingen tegelijk nodig: carriergeometrie, een gat in de oppervlaktestorm, schoon relaispad en een capsuleketen die de lancering overleeft. Als één meting faalt, wordt de ping een tijdstempel in plaats van een ophaalactie. Hetzelfde systeem ondersteunt later gedeeltelijke extractie, maar wist geen schuld, bewijscustody of beschadigde route. Behandel elk antwoord uit de baan als tijdschema-beperking tot opstijgwieg, geleidingskern, hitteschild en terugkeerhandshake herbouwd zijn.",
+     "external_site": "Het Terugkeervectorvenster beschrijft HECTON-8-extractie als orbitale procedure, niet als directe redding. Black Keel kan een signaal ontvangen door smalle Aegir-vensters, maar ophalen hangt af van stormgaten, rust van geladen deeltjes, relaisintegriteit en herbouwde opstijghardware. Het packet verbindt eerste contact met de carrier met latere gedeeltelijke-exitrecords: een antwoord bewijst dat de route kan bestaan, niet dat ze klaar is."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P037_COWARD_EXIT_CHAIN",
+   "article_id": "hecton8.coward_exit_chain",
+   "title_key": "applied_lore.coward_exit_chain.title",
+   "unlock": {
+    "primary": "unlock.first_coward_exit_chain",
+    "poi_tags": [
+     "poi.repaired_ascent_cradle",
+     "poi.partial_exit_console",
+     "poi.storm_gap"
+    ],
+    "biome_tags": [
+     "biome.surface_squall",
+     "biome.shallow_shelter",
+     "biome.claim_beacon"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Emergency Exit Chain",
+     "scanner": "The early launch chain is real, but every light is provisional: hull seal, B2 reserve, return ping, storm gap, claim beacon.",
+     "field_note": "The capsule accepts a passenger before the site accepts a record.",
+     "terminal": "Emergency ascent opens only when the cradle clamps, ballast vents clear, Black Keel repeats the P036 return window, and the surface squall leaves a clean corridor. The contract ledger stamps the departure incomplete: no Atlas testimony, no Deep Reach liability packet, no certified payout.",
+     "audio": "Launch is possible. Closure is not aboard.",
+     "in_game_wiki": "Emergency Exit Chain describes the first lawful shallow-route ascent. It is assembled from hull seal, battery reserve, relay repeat and storm-gap prediction, then marked incomplete by the claim ledger.",
+     "external_site": "Emergency Exit Chain turns the early escape route into procedure. The craft can leave HECTON-8 after enough engineering work, but the site record remains unresolved: truth packets, liability proof and material certification stay behind."
+    },
+    "ru_RU": {
+     "title": "Цепочка аварийного выхода",
+     "scanner": "Ранний запуск реален, но каждый индикатор временный: герметик корпуса, резерв B2, ответный ping, разрыв шторма, маяк претензии.",
+     "field_note": "Капсула принимает пассажира раньше, чем объект принимает запись.",
+     "terminal": "Аварийный подъем открыт только когда люлька зажимает капсулу, балластные клапаны сухие, Black Keel повторяет окно возврата P036, а поверхностный шквал оставляет чистый коридор. Контрактный реестр ставит уход как неполный: нет свидетельства Atlas, пакета ответственности Deep Reach и сертифицированной выплаты.",
+     "audio": "Запуск возможен. Закрытия на борту нет.",
+     "in_game_wiki": "Цепочка аварийного выхода описывает первый законный подъем по мелководному маршруту. Она собирается из герметика корпуса, резерва батарей, повтора реле и прогноза штормового окна, а затем помечается реестром претензий как неполная.",
+     "external_site": "Цепочка аварийного выхода превращает раннее спасение в процедуру. Аппарат может покинуть HECTON-8 после достаточной инженерной работы, но запись объекта остается незакрытой: пакеты правды, доказательство ответственности и сертификация материала остаются внизу."
+    },
+    "ja_JP": {
+     "title": "緊急離脱チェーン",
+     "scanner": "早期発射チェーンは本物だが、すべて仮点灯だ。船殻封止、B2予備、帰還ping、嵐の隙間、請求ビーコン。",
+     "field_note": "カプセルは記録より先に乗員を受け入れる。",
+     "terminal": "緊急上昇は、クレードルが固定し、バラスト弁が乾き、Black KeelがP036帰還窓を反復し、表層スコールが清い回廊を残した時だけ開く。契約台帳は出発を未完了と押印する。Atlas証言なし、Deep Reach責任パケットなし、認証済み支払いなし。",
+     "audio": "発射は可能だ。決着は乗っていない。",
+     "in_game_wiki": "緊急離脱チェーンは、浅層経路で最初に合法化される上昇手順である。船殻封止、電池予備、中継反復、嵐間隙予測で組まれ、請求台帳に未完了として残る。",
+     "external_site": "緊急離脱チェーンは早期脱出を手順に変える。十分な修理後に機体はHECTON-8を離れられるが、現場記録は未解決のままだ。真実パケット、責任証拠、素材認証は下に残る。"
+    },
+    "zh_CN": {
+     "title": "紧急撤离链",
+     "scanner": "早期发射链是真的，但每盏灯都是临时绿灯：壳体密封、B2储备、返航 ping、风暴缺口、索赔信标。",
+     "field_note": "舱体先接收乘员，站点记录还没有接受结果。",
+     "terminal": "只有 cradle 夹紧、压载阀排干、Black Keel 重复 P036 返航窗口、表层风暴留出清洁走廊时，紧急上升才开放。合同账本把离站盖为未完成：无 Atlas 证词、无 Deep Reach 责任包、无认证付款。",
+     "audio": "可以发射。结案不在舱内。",
+     "in_game_wiki": "紧急撤离链记录第一条合法的浅层上升流程。它由壳体密封、电池储备、中继重复和风暴缺口预测组成，随后被索赔账本标为未完成。",
+     "external_site": "紧急撤离链把早期逃离变成程序。足够工程修复后，飞行器可以离开 HECTON-8，但站点记录仍未解决：真相包、责任证据和材料认证都留在下面。"
+    },
+    "fr_FR": {
+     "title": "Chaîne de sortie d'urgence",
+     "scanner": "La chaîne de lancement précoce est réelle, mais chaque voyant reste provisoire: joint de coque, réserve B2, ping retour, trou de tempête, balise de créance.",
+     "field_note": "La capsule accepte un passager avant que le site accepte un dossier.",
+     "terminal": "L'ascension d'urgence ne s'ouvre que si le berceau serre la capsule, les évents de ballast sont secs, Black Keel répète la fenêtre de retour P036 et le grain de surface laisse un couloir propre. Le registre contractuel tamponne le départ comme incomplet: aucun témoignage Atlas, aucun paquet de responsabilité Deep Reach, aucun paiement certifié.",
+     "audio": "Le lancement est possible. La clôture n'est pas à bord.",
+     "in_game_wiki": "La chaîne de sortie d'urgence décrit la première ascension légale par route peu profonde. Elle combine joint de coque, réserve de batterie, répétition relais et prévision de trou de tempête, puis le registre de créance la marque incomplète.",
+     "external_site": "La chaîne de sortie d'urgence transforme l'évasion précoce en procédure. L'engin peut quitter HECTON-8 après assez de travail, mais le dossier du site reste ouvert: paquets de vérité, preuve de responsabilité et certification matérielle restent en bas."
+    },
+    "es_ES": {
+     "title": "Cadena de salida de emergencia",
+     "scanner": "La cadena de lanzamiento temprano es real, pero cada luz es provisional: sello de casco, reserva B2, ping de retorno, hueco de tormenta, baliza de reclamación.",
+     "field_note": "La cápsula acepta un pasajero antes de que el sitio acepte un expediente.",
+     "terminal": "El ascenso de emergencia se abre solo cuando la cuna muerde, las válvulas de lastre quedan secas, Black Keel repite la ventana P036 y la borrasca deja un corredor limpio. El libro contractual marca la salida incompleta: sin testimonio de Atlas, sin paquete de responsabilidad Deep Reach, sin pago certificado.",
+     "audio": "El lanzamiento es posible. El cierre no va a bordo.",
+     "in_game_wiki": "Cadena de salida de emergencia describe el primer ascenso legal por ruta somera. Se arma con sello de casco, reserva de batería, repetición de relevo y predicción de hueco de tormenta, y luego el libro de reclamación la marca incompleta.",
+     "external_site": "Cadena de salida de emergencia convierte la huida temprana en procedimiento. La nave puede dejar HECTON-8 tras suficiente ingeniería, pero el registro del sitio queda sin resolver: verdad, responsabilidad y certificación material permanecen abajo."
+    },
+    "de_DE": {
+     "title": "Notausstiegskette",
+     "scanner": "Die frühe Startkette ist echt, aber jedes Licht bleibt vorläufig: Rumpfsiegel, B2-Reserve, Rückkehr-Ping, Sturmloch, Anspruchsbake.",
+     "field_note": "Die Kapsel nimmt einen Passagier an, bevor die Anlage einen Datensatz akzeptiert.",
+     "terminal": "Notaufstieg öffnet nur, wenn die Wiege klemmt, Ballastventile trocken sind, Black Keel das P036-Rückkehrfenster wiederholt und die Oberflächenböe einen sauberen Korridor lässt. Das Vertragsbuch stempelt die Abreise unvollständig: keine Atlas-Aussage, kein Deep-Reach-Haftungspaket, keine zertifizierte Auszahlung.",
+     "audio": "Start ist möglich. Abschluss ist nicht an Bord.",
+     "in_game_wiki": "Die Notausstiegskette beschreibt den ersten rechtmäßigen Flachrouten-Aufstieg. Sie besteht aus Rumpfsiegel, Batteriereserve, Relaiswiederholung und Sturmlochprognose und wird danach vom Anspruchsbuch als unvollständig markiert.",
+     "external_site": "Die Notausstiegskette macht frühe Flucht zu Verfahren. Das Fahrzeug kann HECTON-8 nach genug Reparaturarbeit verlassen, doch der Anlagenbericht bleibt offen: Wahrheitspakete, Haftungsbeweis und Materialzertifikat bleiben unten."
+    },
+    "pl_PL": {
+     "title": "Awaryjny łańcuch wyjścia",
+     "scanner": "Wczesny łańcuch startu jest prawdziwy, ale każde światło jest tymczasowe: uszczelka kadłuba, rezerwa B2, ping powrotu, luka sztormu, boja roszczenia.",
+     "field_note": "Kapsuła przyjmuje pasażera szybciej niż obiekt przyjmuje zapis.",
+     "terminal": "Awaryjne wznoszenie otwiera się tylko, gdy kołyska zaciska kapsułę, zawory balastu są suche, Black Keel powtarza okno P036, a szkwał powierzchniowy zostawia czysty korytarz. Rejestr kontraktu stempluje wyjście jako niepełne: brak zeznania Atlas, pakietu odpowiedzialności Deep Reach i certyfikowanej wypłaty.",
+     "audio": "Start jest możliwy. Zamknięcia nie ma na pokładzie.",
+     "in_game_wiki": "Awaryjny łańcuch wyjścia opisuje pierwsze legalne wznoszenie płytką trasą. Składa się z uszczelki kadłuba, rezerwy baterii, powtórzenia przekaźnika i prognozy luki sztormu, a rejestr roszczeń oznacza go jako niepełny.",
+     "external_site": "Awaryjny łańcuch wyjścia zmienia wczesną ucieczkę w procedurę. Pojazd może opuścić HECTON-8 po wystarczających naprawach, lecz zapis obiektu zostaje otwarty: pakiety prawdy, dowód odpowiedzialności i certyfikacja materiału zostają na dole."
+    },
+    "uk_UA": {
+     "title": "Аварійний ланцюг виходу",
+     "scanner": "Ранній ланцюг запуску справжній, але кожен індикатор тимчасовий: герметик корпуса, резерв B2, зворотний ping, розрив шторму, маяк претензії.",
+     "field_note": "Капсула приймає пасажира раніше, ніж об'єкт приймає запис.",
+     "terminal": "Аварійний підйом відкривається лише коли люлька затискає капсулу, баластні клапани сухі, Black Keel повторює вікно P036, а поверхневий шквал лишає чистий коридор. Контрактний реєстр ставить вихід як неповний: немає свідчення Atlas, пакета відповідальності Deep Reach і сертифікованої виплати.",
+     "audio": "Запуск можливий. Завершення не на борту.",
+     "in_game_wiki": "Аварійний ланцюг виходу описує перший законний підйом мілководним маршрутом. Він складається з герметика корпуса, резерву батарей, повтору реле та прогнозу штормового розриву, а реєстр претензій позначає його неповним.",
+     "external_site": "Аварійний ланцюг виходу перетворює ранню втечу на процедуру. Апарат може покинути HECTON-8 після достатнього ремонту, але запис об'єкта лишається відкритим: пакети правди, доказ відповідальності й сертифікація матеріалу залишаються внизу."
+    },
+    "ar_SA": {
+     "title": "سلسلة الخروج الطارئ",
+     "scanner": "سلسلة الإطلاق المبكر حقيقية، لكن كل ضوء فيها مؤقت: ختم البدن، احتياطي B2، نبضة العودة، فجوة العاصفة، منارة المطالبة.",
+     "field_note": "تقبل الكبسولة راكبا قبل أن يقبل الموقع السجل.",
+     "terminal": "لا يفتح الصعود الطارئ إلا عندما تقفل الحاضنة، وتجف صمامات الاتزان، ويكرر Black Keel نافذة العودة P036، وتترك العاصفة السطحية ممرا نظيفا. يسجل دفتر العقد المغادرة كناقصة: لا شهادة Atlas، ولا حزمة مسؤولية Deep Reach، ولا عائد مصدق.",
+     "audio": "الإطلاق ممكن. الإغلاق ليس على متنها.",
+     "in_game_wiki": "تصف سلسلة الخروج الطارئ أول صعود قانوني عبر الطريق الضحل. تتكون من ختم البدن واحتياطي البطارية وتكرار المرحل وتنبؤ فجوة العاصفة، ثم يضعها سجل المطالبة في خانة الناقص.",
+     "external_site": "تحول سلسلة الخروج الطارئ الهروب المبكر إلى إجراء. تستطيع المركبة مغادرة HECTON-8 بعد عمل هندسي كاف، لكن سجل الموقع يبقى مفتوحا: حزم الحقيقة ودليل المسؤولية وتصديق المادة تبقى في الأسفل."
+    },
+    "id_ID": {
+     "title": "Rantai Keluar Darurat",
+     "scanner": "Rantai peluncuran awal itu nyata, tetapi semua lampunya sementara: seal lambung, cadangan B2, ping pulang, celah badai, beacon klaim.",
+     "field_note": "Kapsul menerima penumpang sebelum situs menerima catatan.",
+     "terminal": "Naik darurat hanya terbuka saat cradle mengunci, katup ballast kering, Black Keel mengulang jendela pulang P036, dan squall permukaan menyisakan koridor bersih. Ledger kontrak menstempel keberangkatan sebagai tidak lengkap: tanpa kesaksian Atlas, paket tanggung jawab Deep Reach, atau pembayaran tersertifikasi.",
+     "audio": "Peluncuran mungkin. Penutupan tidak ikut naik.",
+     "in_game_wiki": "Rantai Keluar Darurat menjelaskan kenaikan legal pertama lewat rute dangkal. Rantai ini disusun dari seal lambung, cadangan baterai, pengulangan relay, dan prediksi celah badai, lalu ledger klaim menandainya tidak lengkap.",
+     "external_site": "Rantai Keluar Darurat mengubah pelarian awal menjadi prosedur. Wahana bisa meninggalkan HECTON-8 setelah kerja teknik cukup, tetapi catatan situs tetap belum selesai: paket kebenaran, bukti tanggung jawab, dan sertifikasi material tertinggal di bawah."
+    },
+    "ko_KR": {
+     "title": "비상 이탈 사슬",
+     "scanner": "조기 발사 사슬은 실제지만 모든 등이 임시다. 선체 봉합, B2 예비, 귀환 ping, 폭풍 틈, 청구 비콘.",
+     "field_note": "캡슐은 현장이 기록을 받아들이기 전에 승객을 받아들인다.",
+     "terminal": "비상 상승은 크래들이 잠기고, 밸러스트 밸브가 마르고, Black Keel이 P036 귀환 창을 반복하고, 표면 돌풍이 깨끗한 통로를 남길 때만 열린다. 계약 장부는 출발을 미완료로 찍는다. Atlas 증언 없음, Deep Reach 책임 패킷 없음, 인증 지급 없음.",
+     "audio": "발사는 가능하다. 종결은 탑승하지 않는다.",
+     "in_game_wiki": "비상 이탈 사슬은 얕은 경로의 첫 합법 상승 절차를 설명한다. 선체 봉합, 배터리 예비, 중계 반복, 폭풍 틈 예측으로 구성되며 청구 장부에는 미완료로 남는다.",
+     "external_site": "비상 이탈 사슬은 조기 탈출을 절차로 바꾼다. 충분한 정비 후 기체는 HECTON-8을 떠날 수 있지만 현장 기록은 해결되지 않는다. 진실 패킷, 책임 증거, 물질 인증은 아래에 남는다."
+    },
+    "he_IL": {
+     "title": "שרשרת יציאה חירומית",
+     "scanner": "שרשרת השיגור המוקדם אמיתית, אך כל נורה זמנית: אטימת גוף, עתודת B2, ping חזרה, פער סערה, משואת תביעה.",
+     "field_note": "הקפסולה מקבלת נוסע לפני שהאתר מקבל רשומה.",
+     "terminal": "עלייה חירומית נפתחת רק כשהעריסה ננעלת, שסתומי הנטל יבשים, Black Keel חוזר על חלון P036, והסערה העליונה משאירה מסדרון נקי. ספר החוזה חותם את היציאה כלא שלמה: אין עדות Atlas, אין חבילת אחריות Deep Reach, אין תשלום מאושר.",
+     "audio": "שיגור אפשרי. סגירה אינה על הסיפון.",
+     "in_game_wiki": "שרשרת יציאה חירומית מתארת את העלייה החוקית הראשונה במסלול רדוד. היא מורכבת מאטימת גוף, עתודת סוללה, חזרת ממסר וחיזוי פער סערה, ואז ספר התביעה מסמן אותה כלא שלמה.",
+     "external_site": "שרשרת יציאה חירומית הופכת בריחה מוקדמת לנוהל. הכלי יכול לעזוב את HECTON-8 אחרי די עבודת הנדסה, אבל רשומת האתר נשארת פתוחה: חבילות אמת, ראיית אחריות ואישור חומר נשארים למטה."
+    },
+    "pt_BR": {
+     "title": "Cadeia de Saída de Emergência",
+     "scanner": "A cadeia de lançamento cedo é real, mas toda luz é provisória: vedação do casco, reserva B2, ping de retorno, brecha de tempestade, farol de reivindicação.",
+     "field_note": "A cápsula aceita um passageiro antes de o local aceitar um registro.",
+     "terminal": "A subida de emergência só abre quando o berço prende, as válvulas de lastro secam, Black Keel repete a janela P036 e a rajada de superfície deixa um corredor limpo. O livro contratual carimba a partida como incompleta: sem testemunho Atlas, pacote de responsabilidade Deep Reach ou pagamento certificado.",
+     "audio": "Lançar é possível. Encerramento não está a bordo.",
+     "in_game_wiki": "Cadeia de Saída de Emergência descreve a primeira subida legal pela rota rasa. Ela junta vedação do casco, reserva de bateria, repetição de relay e previsão de brecha de tempestade, depois o livro de reivindicação a marca como incompleta.",
+     "external_site": "Cadeia de Saída de Emergência transforma a fuga cedo em procedimento. A nave pode deixar HECTON-8 após trabalho técnico suficiente, mas o registro do local segue aberto: pacotes de verdade, prova de responsabilidade e certificação material ficam embaixo."
+    },
+    "nl_NL": {
+     "title": "Nooduitstapketen",
+     "scanner": "De vroege lanceerketen is echt, maar elk lampje is voorlopig: rompafdichting, B2-reserve, terugkeer-ping, stormgat, claimbaken.",
+     "field_note": "De capsule accepteert een passagier voordat de site een dossier accepteert.",
+     "terminal": "Noodopstijging opent alleen wanneer de cradle klemt, ballastkleppen droog zijn, Black Keel het P036-terugkeervenster herhaalt en de oppervlaktestorm een schone corridor laat. Het contractboek stempelt het vertrek onvolledig: geen Atlas-getuigenis, geen Deep Reach-aansprakelijkheidspakket, geen gecertificeerde betaling.",
+     "audio": "Lancering is mogelijk. Afsluiting is niet aan boord.",
+     "in_game_wiki": "Nooduitstapketen beschrijft de eerste wettige opstijging via de ondiepe route. Ze bestaat uit rompafdichting, batterijreserve, relaisherhaling en stormgatvoorspelling, waarna het claimboek haar als onvolledig markeert.",
+     "external_site": "Nooduitstapketen maakt van vroeg ontsnappen een procedure. Het voertuig kan HECTON-8 na genoeg herstelwerk verlaten, maar het sitedossier blijft open: waarheidspakketten, aansprakelijkheidsbewijs en materiaalcertificering blijven beneden."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P038_MATERIAL_PAYOUT_LEDGER",
+   "article_id": "hecton8.material_payout_ledger",
+   "title_key": "applied_lore.material_payout_ledger.title",
+   "unlock": {
+    "primary": "unlock.first_material_payout_ledger",
+    "poi_tags": [
+     "poi.blue_debt_sample",
+     "poi.claim_accounting_terminal",
+     "poi.deep_reach_offer"
+    ],
+    "biome_tags": [
+     "biome.resource_cache",
+     "biome.dead_claim",
+     "biome.industrial_descent"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Material Settlement Ledger",
+     "scanner": "Blue debt sample certified: mass, purity, pressure log, custody chain. Credit can clear before evidence does.",
+     "field_note": "A clean transfer can be another kind of burial.",
+     "terminal": "Settlement opens when the sealed case matches the sample ledger, the descent pressure history has no gap, and Deep Reach's offer code accepts the chain of custody. Material closure moves credit to escrow and tags the Atlas archive as non-billable residue.",
+     "audio": "The account clears. The water keeps the receipt.",
+     "in_game_wiki": "Material Settlement Ledger is the accounting route for certified blue debt. It pays on sample proof, custody history and silence clauses while leaving Atlas testimony and Deep Reach liability outside the bill.",
+     "external_site": "Material Settlement Ledger defines a paid departure path. HECTON-8 can be left with a cleared account if certified material is surrendered, but the record of what happened remains quarantined unless the evidence archive is carried out."
+    },
+    "ru_RU": {
+     "title": "Реестр материального расчета",
+     "scanner": "Образец blue debt сертифицирован: масса, чистота, журнал давления, цепочка custody. Кредит может закрыться раньше доказательств.",
+     "field_note": "Чистый перевод тоже может быть захоронением.",
+     "terminal": "Расчет открывается, когда опечатанный кейс совпадает с журналом образца, история давления спуска без разрыва, а код предложения Deep Reach принимает цепочку custody. Материальное закрытие переводит кредит в escrow и помечает архив Atlas как неоплачиваемый остаток.",
+     "audio": "Счет закрывается. Вода хранит квитанцию.",
+     "in_game_wiki": "Реестр материального расчета ведет бухгалтерский маршрут сертифицированного blue debt. Он платит за образец, историю custody и clauses молчания, оставляя свидетельство Atlas и ответственность Deep Reach вне счета.",
+     "external_site": "Реестр материального расчета задает оплаченный путь ухода. HECTON-8 можно покинуть с закрытым счетом после сдачи сертифицированного материала, но запись о случившемся остается в карантине, если архив доказательств не вынесен наружу."
+    },
+    "ja_JP": {
+     "title": "資材精算台帳",
+     "scanner": "blue debt試料認証済み: 質量、純度、圧力ログ、保管連鎖。証拠より先にクレジットは精算される。",
+     "field_note": "清い送金も埋葬の一種になり得る。",
+     "terminal": "封印ケースが試料台帳と一致し、降下圧力履歴に欠落がなく、Deep Reachの提示コードが保管連鎖を受け入れると精算が開く。資材閉鎖はクレジットをエスクローへ移し、Atlasアーカイブを請求不能な残滓としてタグ付けする。",
+     "audio": "口座は片付く。水は領収書を持つ。",
+     "in_game_wiki": "資材精算台帳は認証済みblue debtの会計経路である。試料証明、保管履歴、沈黙条項に支払い、Atlas証言とDeep Reach責任は請求書の外に残る。",
+     "external_site": "資材精算台帳は支払い済み離脱経路を定義する。認証資材を引き渡せばHECTON-8は清算済み口座で離れられるが、証拠アーカイブを運び出さない限り、出来事の記録は隔離されたままだ。"
+    },
+    "zh_CN": {
+     "title": "材料结算账本",
+     "scanner": "blue debt 样本已认证：质量、纯度、压力日志、保管链。款项能比证据更早结清。",
+     "field_note": "干净转账也可能是一种掩埋。",
+     "terminal": "封箱与样本账本匹配、下降压力历史无缺口、Deep Reach 报价码接受保管链时，结算开启。材料结案把信用转入托管，并把 Atlas 档案标为不可计费残留。",
+     "audio": "账户清了。水留着收据。",
+     "in_game_wiki": "材料结算账本是认证 blue debt 的会计路径。它按样本证明、保管历史和沉默条款付款，把 Atlas 证词与 Deep Reach 责任留在账单之外。",
+     "external_site": "材料结算账本定义一条已付款离站路径。交出认证材料后可以带着结清账户离开 HECTON-8，但若证据档案没有带出，事件记录仍会被隔离。"
+    },
+    "fr_FR": {
+     "title": "Registre de règlement matière",
+     "scanner": "Échantillon blue debt certifié: masse, pureté, journal de pression, chaîne de garde. Le crédit peut se solder avant les preuves.",
+     "field_note": "Un virement propre peut aussi enterrer quelque chose.",
+     "terminal": "Le règlement s'ouvre quand le boîtier scellé correspond au registre d'échantillon, que l'historique de pression n'a pas de trou et que le code d'offre Deep Reach accepte la chaîne de garde. La clôture matière place le crédit en séquestre et marque l'archive Atlas comme résidu non facturable.",
+     "audio": "Le compte se solde. L'eau garde le reçu.",
+     "in_game_wiki": "Le registre de règlement matière est la voie comptable du blue debt certifié. Il paie preuve d'échantillon, garde et clauses de silence, tout en laissant témoignage Atlas et responsabilité Deep Reach hors facture.",
+     "external_site": "Le registre de règlement matière définit un départ payé. HECTON-8 peut être quitté avec un compte soldé si la matière certifiée est cédée, mais le récit des faits reste en quarantaine tant que l'archive de preuves n'est pas sortie."
+    },
+    "es_ES": {
+     "title": "Libro de liquidación material",
+     "scanner": "Muestra blue debt certificada: masa, pureza, registro de presión, cadena de custodia. El crédito puede cerrarse antes que la evidencia.",
+     "field_note": "Una transferencia limpia también puede ser entierro.",
+     "terminal": "La liquidación se abre cuando la caja sellada coincide con el libro de muestra, el historial de presión no tiene huecos y el código de oferta Deep Reach acepta la custodia. El cierre material mueve el crédito a escrow y etiqueta el archivo Atlas como residuo no facturable.",
+     "audio": "La cuenta se cierra. El agua guarda el recibo.",
+     "in_game_wiki": "El libro de liquidación material es la ruta contable del blue debt certificado. Paga prueba de muestra, historial de custodia y cláusulas de silencio, dejando testimonio Atlas y responsabilidad Deep Reach fuera de la factura.",
+     "external_site": "El libro de liquidación material define una salida pagada. HECTON-8 puede abandonarse con cuenta cerrada si se entrega material certificado, pero el registro de lo ocurrido queda en cuarentena si el archivo de pruebas no sale."
+    },
+    "de_DE": {
+     "title": "Materialabrechnungsbuch",
+     "scanner": "Blue-debt-Probe zertifiziert: Masse, Reinheit, Drucklog, Verwahrungskette. Kredit kann vor dem Beweis sauber werden.",
+     "field_note": "Eine saubere Überweisung kann auch etwas begraben.",
+     "terminal": "Abrechnung öffnet, wenn der versiegelte Koffer zum Probenbuch passt, die Abstiegsdruckhistorie keine Lücke hat und Deep Reachs Angebotscode die Verwahrungskette akzeptiert. Materialabschluss verschiebt Kredit ins Escrow und markiert das Atlas-Archiv als nicht abrechenbaren Rückstand.",
+     "audio": "Das Konto wird sauber. Das Wasser behält die Quittung.",
+     "in_game_wiki": "Das Materialabrechnungsbuch ist die Buchhaltungsroute für zertifiziertes blue debt. Es zahlt für Probe, Verwahrung und Schweigeklauseln, während Atlas-Aussage und Deep-Reach-Haftung außerhalb der Rechnung bleiben.",
+     "external_site": "Das Materialabrechnungsbuch definiert einen bezahlten Abgang. HECTON-8 kann mit sauberem Konto verlassen werden, wenn zertifiziertes Material übergeben wird; der Vorfall bleibt jedoch unter Quarantäne, solange das Beweisarchiv unten bleibt."
+    },
+    "pl_PL": {
+     "title": "Rejestr rozliczenia materiału",
+     "scanner": "Próbka blue debt certyfikowana: masa, czystość, dziennik ciśnienia, łańcuch custody. Kredyt może zamknąć się przed dowodami.",
+     "field_note": "Czysty przelew też może być pochówkiem.",
+     "terminal": "Rozliczenie otwiera się, gdy zaplombowana walizka zgadza się z rejestrem próbki, historia ciśnienia zejścia nie ma luki, a kod oferty Deep Reach akceptuje łańcuch custody. Zamknięcie materiałowe przenosi kredyt do escrow i oznacza archiwum Atlas jako niefakturowany osad.",
+     "audio": "Konto się zamyka. Woda trzyma pokwitowanie.",
+     "in_game_wiki": "Rejestr rozliczenia materiału to księgowa trasa dla certyfikowanego blue debt. Płaci za próbkę, historię custody i klauzule ciszy, zostawiając zeznanie Atlas i odpowiedzialność Deep Reach poza rachunkiem.",
+     "external_site": "Rejestr rozliczenia materiału definiuje opłacone wyjście. HECTON-8 można opuścić z zamkniętym kontem po oddaniu certyfikowanego materiału, ale zapis zdarzeń zostaje w kwarantannie, jeśli archiwum dowodów nie wyjdzie na powierzchnię."
+    },
+    "uk_UA": {
+     "title": "Реєстр матеріального розрахунку",
+     "scanner": "Зразок blue debt сертифіковано: маса, чистота, журнал тиску, ланцюг custody. Кредит може закритися раніше за докази.",
+     "field_note": "Чистий переказ теж може бути похованням.",
+     "terminal": "Розрахунок відкривається, коли опечатаний кейс збігається з журналом зразка, історія тиску спуску без розривів, а код пропозиції Deep Reach приймає ланцюг custody. Матеріальне закриття переводить кредит в escrow і позначає архів Atlas як неоплачуваний залишок.",
+     "audio": "Рахунок закривається. Вода зберігає квитанцію.",
+     "in_game_wiki": "Реєстр матеріального розрахунку веде бухгалтерський маршрут сертифікованого blue debt. Він платить за доказ зразка, історію custody і clauses мовчання, лишаючи свідчення Atlas та відповідальність Deep Reach поза рахунком.",
+     "external_site": "Реєстр матеріального розрахунку задає оплачений вихід. HECTON-8 можна покинути із закритим рахунком після здачі сертифікованого матеріалу, але запис подій лишається в карантині, якщо архів доказів не винесено."
+    },
+    "ar_SA": {
+     "title": "سجل تسوية المادة",
+     "scanner": "عينة blue debt موثقة: كتلة ونقاء وسجل ضغط وسلسلة حيازة. قد يصفو الرصيد قبل الدليل.",
+     "field_note": "التحويل النظيف قد يكون دفنا آخر.",
+     "terminal": "تفتح التسوية عندما تطابق الحقيبة المختومة سجل العينة، ولا توجد فجوة في تاريخ ضغط الهبوط، ويقبل رمز عرض Deep Reach سلسلة الحيازة. الإغلاق المادي ينقل الرصيد إلى escrow ويضع وسم بقايا غير قابلة للفوترة على أرشيف Atlas.",
+     "audio": "يصفو الحساب. الماء يحتفظ بالإيصال.",
+     "in_game_wiki": "سجل تسوية المادة هو طريق المحاسبة لعينة blue debt الموثقة. يدفع مقابل إثبات العينة وتاريخ الحيازة وبنود الصمت، ويترك شهادة Atlas ومسؤولية Deep Reach خارج الفاتورة.",
+     "external_site": "يحدد سجل تسوية المادة مسار مغادرة مدفوعا. يمكن ترك HECTON-8 بحساب صاف إذا سلمت المادة الموثقة، لكن سجل ما حدث يبقى في الحجر ما لم يخرج أرشيف الأدلة."
+    },
+    "id_ID": {
+     "title": "Ledger Penyelesaian Material",
+     "scanner": "Sampel blue debt tersertifikasi: massa, kemurnian, log tekanan, rantai custody. Kredit bisa bersih sebelum bukti.",
+     "field_note": "Transfer bersih juga bisa menjadi penguburan.",
+     "terminal": "Penyelesaian terbuka saat koper tersegel cocok dengan ledger sampel, riwayat tekanan turun tanpa celah, dan kode tawaran Deep Reach menerima rantai custody. Penutupan material memindahkan kredit ke escrow dan menandai arsip Atlas sebagai residu tak tertagih.",
+     "audio": "Akun bersih. Air menyimpan kuitansi.",
+     "in_game_wiki": "Ledger Penyelesaian Material adalah jalur akuntansi untuk blue debt tersertifikasi. Ia membayar bukti sampel, riwayat custody, dan klausul diam sambil meninggalkan kesaksian Atlas serta tanggung jawab Deep Reach di luar tagihan.",
+     "external_site": "Ledger Penyelesaian Material menetapkan jalur pergi berbayar. HECTON-8 bisa ditinggalkan dengan akun bersih jika material tersertifikasi diserahkan, tetapi catatan peristiwa tetap dikarantina kecuali arsip bukti dibawa keluar."
+    },
+    "ko_KR": {
+     "title": "물질 정산 장부",
+     "scanner": "blue debt 샘플 인증 완료: 질량, 순도, 압력 로그, 보관 사슬. 증거보다 계정이 먼저 정리될 수 있다.",
+     "field_note": "깨끗한 이체도 매장이 될 수 있다.",
+     "terminal": "봉인 케이스가 샘플 장부와 맞고, 하강 압력 이력에 빈칸이 없고, Deep Reach 제안 코드가 보관 사슬을 승인하면 정산이 열린다. 물질 폐쇄는 크레딧을 escrow로 옮기고 Atlas 기록을 청구 불가 잔류물로 태그한다.",
+     "audio": "계정은 정리된다. 물은 영수증을 간직한다.",
+     "in_game_wiki": "물질 정산 장부는 인증된 blue debt의 회계 경로다. 샘플 증명, 보관 이력, 침묵 조항에 지급하며 Atlas 증언과 Deep Reach 책임은 청구서 밖에 둔다.",
+     "external_site": "물질 정산 장부는 지급된 이탈 경로를 정의한다. 인증 물질을 넘기면 정리된 계정으로 HECTON-8을 떠날 수 있지만, 증거 기록이 반출되지 않으면 사건 기록은 격리 상태로 남는다."
+    },
+    "he_IL": {
+     "title": "ספר הסדר חומרי",
+     "scanner": "דגימת blue debt אושרה: מסה, טוהר, יומן לחץ, שרשרת custody. האשראי יכול להיסגר לפני הראיות.",
+     "field_note": "העברה נקייה יכולה להיות גם קבורה.",
+     "terminal": "ההסדר נפתח כשהמזוודה האטומה תואמת לספר הדגימה, היסטוריית לחץ הירידה חסרת פער, וקוד ההצעה של Deep Reach מקבל את שרשרת custody. סגירה חומרית מעבירה אשראי ל-escrow ומסמנת את ארכיון Atlas כשארית שאינה לחיוב.",
+     "audio": "החשבון נסגר. המים שומרים את הקבלה.",
+     "in_game_wiki": "ספר ההסדר החומרי הוא נתיב החשבונאות של blue debt מאושר. הוא משלם על הוכחת דגימה, היסטוריית custody וסעיפי שתיקה, ומשאיר עדות Atlas ואחריות Deep Reach מחוץ לחשבון.",
+     "external_site": "ספר ההסדר החומרי מגדיר נתיב עזיבה בתשלום. אפשר לעזוב את HECTON-8 עם חשבון סגור אם החומר המאושר נמסר, אבל רשומת האירוע נשארת בהסגר אלא אם ארכיון הראיות יוצא."
+    },
+    "pt_BR": {
+     "title": "Ledger de Acerto Material",
+     "scanner": "Amostra blue debt certificada: massa, pureza, log de pressão, cadeia de custódia. O crédito pode fechar antes das provas.",
+     "field_note": "Uma transferência limpa também pode enterrar algo.",
+     "terminal": "O acerto abre quando a caixa selada bate com o ledger da amostra, o histórico de pressão da descida não tem falha e o código de oferta Deep Reach aceita a cadeia de custódia. O fechamento material move crédito para escrow e marca o arquivo Atlas como resíduo não faturável.",
+     "audio": "A conta fecha. A água guarda o recibo.",
+     "in_game_wiki": "Ledger de Acerto Material é a rota contábil para blue debt certificado. Ele paga prova de amostra, histórico de custódia e cláusulas de silêncio, deixando testemunho Atlas e responsabilidade Deep Reach fora da conta.",
+     "external_site": "Ledger de Acerto Material define uma saída paga. HECTON-8 pode ser deixado com a conta fechada se o material certificado for entregue, mas o registro do ocorrido fica em quarentena se o arquivo de provas não sair."
+    },
+    "nl_NL": {
+     "title": "Materiaalafrekenboek",
+     "scanner": "Blue debt-monster gecertificeerd: massa, zuiverheid, druklog, custody-keten. Krediet kan eerder sluiten dan bewijs.",
+     "field_note": "Een schone overboeking kan ook begraven.",
+     "terminal": "Afrekening opent wanneer de verzegelde koffer bij het monsterboek past, de afdaaldrukgeschiedenis geen gat heeft en de Deep Reach-aanbiedcode de custody-keten accepteert. Materiële sluiting verplaatst krediet naar escrow en tagt het Atlas-archief als niet-factureerbaar residu.",
+     "audio": "De rekening sluit. Het water bewaart de bon.",
+     "in_game_wiki": "Het materiaalafrekenboek is de boekhoudroute voor gecertificeerde blue debt. Het betaalt voor monsterbewijs, custody-geschiedenis en stilteclausules, terwijl Atlas-getuigenis en Deep Reach-aansprakelijkheid buiten de rekening blijven.",
+     "external_site": "Het materiaalafrekenboek definieert een betaalde vertrekroute. HECTON-8 kan met gesloten rekening worden verlaten als gecertificeerd materiaal wordt ingeleverd, maar het gebeurtenissenrecord blijft in quarantaine tenzij het bewijsarchief meegaat."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P039_DEEP_REACH_CLEANSE_ORDER",
+   "article_id": "hecton8.deep_reach_cleanse_order",
+   "title_key": "applied_lore.deep_reach_cleanse_order.title",
+   "unlock": {
+    "primary": "unlock.first_deep_reach_cleanse_order",
+    "poi_tags": [
+     "poi.deep_reach_proxy_order",
+     "poi.redacted_liability_node",
+     "poi.cleanup_drone_order"
+    ],
+    "biome_tags": [
+     "biome.dead_claim",
+     "biome.industrial_descent",
+     "biome.factory_threshold"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Deep Reach Live Cleanup Order",
+     "scanner": "Live order recovered: seize certified samples, open Atlas channel, quarantine survivors, delete liability proof.",
+     "field_note": "The apology field is blank.",
+     "terminal": "Proxy work order DR-CLEANSE-19 remains active. Deniable contractors get sample custody first, Atlas access second, witness recovery last. If Black Keel or the site ledger exposes liability, the purge queue moves proof archives to cold delete and retags field deaths as weather loss.",
+     "audio": "That voice is not rescue traffic. It is a cleanup bid.",
+     "in_game_wiki": "Deep Reach Live Cleanup Order is a current work order, not an archive note. It shows resource custody, Atlas access and proof deletion being scheduled through proxy contractors after the evacuation hold.",
+     "external_site": "Deep Reach Live Cleanup Order makes the corporate pressure procedural: live proxies can buy samples, open Atlas routes and erase liability evidence while public records still describe HECTON-8 as a lost site."
+    },
+    "ru_RU": {
+     "title": "Действующий приказ Deep Reach на зачистку",
+     "scanner": "Действующий приказ найден: изъять сертифицированные образцы, открыть канал Atlas, изолировать выживших, удалить доказательства ответственности.",
+     "field_note": "Поле извинений пустое.",
+     "terminal": "Прокси-наряд DR-CLEANSE-19 остается активным. Отрицаемые подрядчики получают сначала custody образцов, затем доступ Atlas, а восстановление свидетелей идет последним. Если Black Keel или реестр объекта раскрывает ответственность, очередь purge переводит архивы доказательств в cold delete и переименовывает полевые смерти в потерю от погоды.",
+     "audio": "Этот голос не спасательный трафик. Это ставка на зачистку.",
+     "in_game_wiki": "Действующий приказ Deep Reach на зачистку - это текущий рабочий наряд, а не архивная заметка. Он показывает, как custody ресурсов, доступ Atlas и удаление доказательств расписаны через прокси-подрядчиков после удержания эвакуации.",
+     "external_site": "Действующий приказ Deep Reach на зачистку делает корпоративное давление процедурой: живые прокси могут купить образцы, открыть маршруты Atlas и стереть доказательства ответственности, пока публичные записи все еще называют HECTON-8 потерянным объектом."
+    },
+    "ja_JP": {
+     "title": "Deep Reach現行清掃命令",
+     "scanner": "現行命令を回収: 認証試料を押収、Atlas回線を開く、生存者を隔離、責任証拠を削除。",
+     "field_note": "謝罪欄は空白。",
+     "terminal": "代理作業命令DR-CLEANSE-19は稼働中。否認可能な請負は試料保管を第一、Atlas接続を第二、証人回収を最後に処理する。Black Keelまたは現場台帳が責任を露出すると、パージ待ち列は証拠アーカイブをcold deleteへ送り、現場死を気象損失に再タグ付けする。",
+     "audio": "その声は救助通信ではない。清掃入札だ。",
+     "in_game_wiki": "Deep Reach現行清掃命令は現在の作業命令であり、古い記録ではない。避難保留後、資源保管、Atlas接続、証拠削除が代理請負を通して予定されていることを示す。",
+     "external_site": "Deep Reach現行清掃命令は企業圧力を手順にする。稼働中の代理は試料を買い、Atlas経路を開き、公開記録がHECTON-8を喪失施設と呼ぶ間に責任証拠を消せる。"
+    },
+    "zh_CN": {
+     "title": "Deep Reach 实时清理指令",
+     "scanner": "发现实时指令：扣押认证样本，开启 Atlas 通道，隔离幸存者，删除责任证据。",
+     "field_note": "道歉字段为空。",
+     "terminal": "代理工单 DR-CLEANSE-19 仍在执行。可否认承包方先取得样本保管权，其次取得 Atlas 访问，最后才处理证人回收。若 Black Keel 或站点账本暴露责任，清除队列会把证据档案转入 cold delete，并把现场死亡重标为天气损失。",
+     "audio": "那个声音不是救援通信。那是清理报价。",
+     "in_game_wiki": "Deep Reach 实时清理指令是当前工单，不是档案备注。它显示撤离暂停后，资源保管、Atlas 访问和证据删除被排进代理承包流程。",
+     "external_site": "Deep Reach 实时清理指令把公司压力变成程序：活动代理可以购买样本、打开 Atlas 路径并擦除责任证据，而公开记录仍把 HECTON-8 描述成失联站点。"
+    },
+    "fr_FR": {
+     "title": "Ordre de nettoyage actif Deep Reach",
+     "scanner": "Ordre actif récupéré: saisir les échantillons certifiés, ouvrir le canal Atlas, isoler les survivants, supprimer les preuves de responsabilité.",
+     "field_note": "Le champ d'excuse est vide.",
+     "terminal": "L'ordre proxy DR-CLEANSE-19 reste actif. Les contractants niables prennent d'abord la garde des échantillons, puis l'accès Atlas, puis la récupération des témoins. Si Black Keel ou le registre du site expose la responsabilité, la file de purge envoie les archives de preuve en cold delete et retague les morts de terrain en pertes météo.",
+     "audio": "Cette voix n'est pas du trafic de secours. C'est une offre de nettoyage.",
+     "in_game_wiki": "L'ordre de nettoyage actif Deep Reach est un ordre de travail présent, pas une note d'archive. Il montre la garde des ressources, l'accès Atlas et la suppression des preuves planifiés par des contractants proxy après le blocage d'évacuation.",
+     "external_site": "L'ordre de nettoyage actif Deep Reach rend la pression corporative procédurale: des proxys actifs peuvent acheter des échantillons, ouvrir des routes Atlas et effacer les preuves de responsabilité pendant que les dossiers publics décrivent encore HECTON-8 comme site perdu."
+    },
+    "es_ES": {
+     "title": "Orden de limpieza activa Deep Reach",
+     "scanner": "Orden activa recuperada: incautar muestras certificadas, abrir canal Atlas, aislar supervivientes, borrar prueba de responsabilidad.",
+     "field_note": "El campo de disculpa está vacío.",
+     "terminal": "La orden proxy DR-CLEANSE-19 sigue activa. Contratistas negables reciben primero custodia de muestras, segundo acceso Atlas y último recuperación de testigos. Si Black Keel o el libro del sitio expone responsabilidad, la cola de purga mueve archivos de prueba a cold delete y reetiqueta muertes de campo como pérdida climática.",
+     "audio": "Esa voz no es tráfico de rescate. Es una oferta de limpieza.",
+     "in_game_wiki": "La orden de limpieza activa Deep Reach es una orden de trabajo actual, no una nota de archivo. Muestra custodia de recursos, acceso Atlas y borrado de pruebas programados mediante contratistas proxy tras la retención de evacuación.",
+     "external_site": "La orden de limpieza activa Deep Reach vuelve procedimental la presión corporativa: proxies vivos pueden comprar muestras, abrir rutas Atlas y borrar pruebas de responsabilidad mientras los registros públicos aún llaman a HECTON-8 un sitio perdido."
+    },
+    "de_DE": {
+     "title": "Aktiver Deep-Reach-Säuberungsbefehl",
+     "scanner": "Aktiver Befehl geborgen: zertifizierte Proben beschlagnahmen, Atlas-Kanal öffnen, Überlebende isolieren, Haftungsbeweis löschen.",
+     "field_note": "Das Entschuldigungsfeld ist leer.",
+     "terminal": "Proxy-Arbeitsauftrag DR-CLEANSE-19 bleibt aktiv. Abstreitbare Auftragnehmer erhalten zuerst Probenverwahrung, dann Atlas-Zugang, zuletzt Zeugenbergung. Wenn Black Keel oder das Anlagenbuch Haftung offenlegt, verschiebt die Löschwarteschlange Beweisarchive in cold delete und taggt Feldtote als Wetterschaden.",
+     "audio": "Diese Stimme ist kein Rettungsverkehr. Sie bietet Säuberung an.",
+     "in_game_wiki": "Der aktive Deep-Reach-Säuberungsbefehl ist ein laufender Arbeitsauftrag, keine Archivnotiz. Er zeigt Ressourcenverwahrung, Atlas-Zugang und Beweislöschung über Proxy-Auftragnehmer nach dem Evakuierungshalt.",
+     "external_site": "Der aktive Deep-Reach-Säuberungsbefehl macht Konzerndruck prozedural: lebende Proxys können Proben kaufen, Atlas-Routen öffnen und Haftungsbeweise löschen, während öffentliche Akten HECTON-8 weiter als verlorene Anlage beschreiben."
+    },
+    "pl_PL": {
+     "title": "Aktywny rozkaz czyszczenia Deep Reach",
+     "scanner": "Odzyskano aktywny rozkaz: przejąć certyfikowane próbki, otworzyć kanał Atlas, izolować ocalałych, usunąć dowód odpowiedzialności.",
+     "field_note": "Pole przeprosin jest puste.",
+     "terminal": "Zlecenie proxy DR-CLEANSE-19 pozostaje aktywne. Zaprzeczalni kontraktorzy najpierw dostają custody próbek, potem dostęp Atlas, a odzysk świadków na końcu. Jeśli Black Keel lub rejestr obiektu ujawnia odpowiedzialność, kolejka purge przenosi archiwa dowodów do cold delete i oznacza zgony terenowe jako straty pogodowe.",
+     "audio": "Ten głos nie jest ruchem ratunkowym. To oferta czyszczenia.",
+     "in_game_wiki": "Aktywny rozkaz czyszczenia Deep Reach jest bieżącym zleceniem, nie notatką archiwalną. Pokazuje, jak custody zasobów, dostęp Atlas i kasowanie dowodów są planowane przez kontraktorów proxy po wstrzymaniu ewakuacji.",
+     "external_site": "Aktywny rozkaz czyszczenia Deep Reach zamienia presję korporacyjną w procedurę: działający proxy mogą kupować próbki, otwierać trasy Atlas i usuwać dowody odpowiedzialności, gdy publiczne rejestry nadal nazywają HECTON-8 utraconym miejscem."
+    },
+    "uk_UA": {
+     "title": "Діючий наказ Deep Reach на зачистку",
+     "scanner": "Знайдено діючий наказ: вилучити сертифіковані зразки, відкрити канал Atlas, ізолювати вцілілих, видалити докази відповідальності.",
+     "field_note": "Поле вибачень порожнє.",
+     "terminal": "Проксі-наряд DR-CLEANSE-19 лишається активним. Заперечувані підрядники спершу отримують custody зразків, потім доступ Atlas, а відновлення свідків іде останнім. Якщо Black Keel або реєстр об'єкта відкриває відповідальність, черга purge переводить архіви доказів у cold delete і позначає польові смерті як втрати від погоди.",
+     "audio": "Цей голос не є рятувальним трафіком. Це ставка на зачистку.",
+     "in_game_wiki": "Діючий наказ Deep Reach на зачистку - це поточний робочий наряд, не архівна нотатка. Він показує, як custody ресурсів, доступ Atlas і видалення доказів плануються через проксі-підрядників після утримання евакуації.",
+     "external_site": "Діючий наказ Deep Reach на зачистку робить корпоративний тиск процедурою: активні проксі можуть купувати зразки, відкривати маршрути Atlas і стирати докази відповідальності, поки публічні записи досі називають HECTON-8 втраченим об'єктом."
+    },
+    "ar_SA": {
+     "title": "أمر تنظيف Deep Reach النشط",
+     "scanner": "استعيد أمر نشط: مصادرة عينات موثقة، فتح قناة Atlas، عزل الناجين، حذف دليل المسؤولية.",
+     "field_note": "حقل الاعتذار فارغ.",
+     "terminal": "يبقى أمر proxy DR-CLEANSE-19 نشطا. يحصل المتعاقدون القابلون للإنكار على حيازة العينات أولا، ثم وصول Atlas، ثم استعادة الشهود أخيرا. إذا كشف Black Keel أو سجل الموقع المسؤولية، تنقل قائمة التطهير أرشيفات الدليل إلى cold delete وتعيد وسم وفيات الميدان كخسارة طقس.",
+     "audio": "ذلك الصوت ليس مرور إنقاذ. إنه عرض تنظيف.",
+     "in_game_wiki": "أمر تنظيف Deep Reach النشط هو أمر عمل حالي لا ملاحظة أرشيف. يوضح جدولة حيازة الموارد ووصول Atlas وحذف الأدلة عبر متعاقدي proxy بعد تعليق الإخلاء.",
+     "external_site": "يجعل أمر تنظيف Deep Reach النشط ضغط الشركة إجراء حيا: تستطيع proxys نشطة شراء العينات وفتح مسارات Atlas ومحو دليل المسؤولية بينما تصف السجلات العامة HECTON-8 كموقع مفقود."
+    },
+    "id_ID": {
+     "title": "Perintah Pembersihan Aktif Deep Reach",
+     "scanner": "Perintah aktif ditemukan: sita sampel tersertifikasi, buka kanal Atlas, karantina penyintas, hapus bukti tanggung jawab.",
+     "field_note": "Kolom permintaan maaf kosong.",
+     "terminal": "Work order proxy DR-CLEANSE-19 masih aktif. Kontraktor yang dapat disangkal mendapat custody sampel lebih dulu, akses Atlas kedua, pemulihan saksi terakhir. Jika Black Keel atau ledger situs membuka tanggung jawab, antrean purge memindahkan arsip bukti ke cold delete dan menandai kematian lapangan sebagai kerugian cuaca.",
+     "audio": "Suara itu bukan trafik penyelamatan. Itu tawaran pembersihan.",
+     "in_game_wiki": "Perintah Pembersihan Aktif Deep Reach adalah work order saat ini, bukan catatan arsip. Ia menunjukkan custody sumber daya, akses Atlas, dan penghapusan bukti dijadwalkan lewat kontraktor proxy setelah penahanan evakuasi.",
+     "external_site": "Perintah Pembersihan Aktif Deep Reach membuat tekanan korporat menjadi prosedur: proxy aktif bisa membeli sampel, membuka rute Atlas, dan menghapus bukti tanggung jawab sementara catatan publik masih menyebut HECTON-8 situs hilang."
+    },
+    "ko_KR": {
+     "title": "Deep Reach 활성 정리 명령",
+     "scanner": "활성 명령 회수: 인증 샘플 압수, Atlas 채널 개방, 생존자 격리, 책임 증거 삭제.",
+     "field_note": "사과 입력란은 비어 있다.",
+     "terminal": "프록시 작업 명령 DR-CLEANSE-19는 아직 활성이다. 부인 가능한 계약자는 샘플 보관을 먼저, Atlas 접근을 다음, 증인 회수를 마지막으로 받는다. Black Keel 또는 현장 장부가 책임을 드러내면 purge 대기열은 증거 기록을 cold delete로 보내고 현장 사망을 기상 손실로 다시 태그한다.",
+     "audio": "그 목소리는 구조 교신이 아니다. 정리 입찰이다.",
+     "in_game_wiki": "Deep Reach 활성 정리 명령은 현재 작업 명령이며 기록 보관소 메모가 아니다. 대피 보류 이후 자원 보관, Atlas 접근, 증거 삭제가 프록시 계약자를 통해 예약된 상태를 보여준다.",
+     "external_site": "Deep Reach 활성 정리 명령은 기업 압력을 절차로 만든다. 활성 프록시는 샘플을 사고, Atlas 경로를 열고, 공개 기록이 HECTON-8을 실종 현장으로 부르는 동안 책임 증거를 지울 수 있다."
+    },
+    "he_IL": {
+     "title": "פקודת ניקוי פעילה של Deep Reach",
+     "scanner": "פקודה פעילה שוחזרה: לתפוס דגימות מאושרות, לפתוח ערוץ Atlas, לבודד ניצולים, למחוק ראיית אחריות.",
+     "field_note": "שדה ההתנצלות ריק.",
+     "terminal": "הזמנת proxy DR-CLEANSE-19 נשארת פעילה. קבלנים ניתנים להכחשה מקבלים תחילה custody של דגימות, אחר כך גישת Atlas, ולבסוף שחזור עדים. אם Black Keel או ספר האתר חושף אחריות, תור purge מעביר ארכיוני ראיות ל-cold delete ומסמן מקרי מוות בשטח כאובדן מזג אוויר.",
+     "audio": "הקול הזה אינו תעבורת חילוץ. זו הצעת ניקוי.",
+     "in_game_wiki": "פקודת ניקוי פעילה של Deep Reach היא הזמנת עבודה נוכחית, לא הערת ארכיון. היא מראה custody של משאבים, גישת Atlas ומחיקת ראיות המתוזמנות דרך קבלני proxy אחרי עצירת הפינוי.",
+     "external_site": "פקודת ניקוי פעילה של Deep Reach הופכת לחץ תאגידי לנוהל: proxy פעיל יכול לקנות דגימות, לפתוח מסלולי Atlas ולמחוק ראיות אחריות בזמן שרשומות ציבוריות עדיין מתארות את HECTON-8 כאתר אבוד."
+    },
+    "pt_BR": {
+     "title": "Ordem de Limpeza Ativa Deep Reach",
+     "scanner": "Ordem ativa recuperada: apreender amostras certificadas, abrir canal Atlas, isolar sobreviventes, apagar prova de responsabilidade.",
+     "field_note": "O campo de desculpas está vazio.",
+     "terminal": "A ordem proxy DR-CLEANSE-19 segue ativa. Contratados negáveis recebem primeiro custódia de amostras, depois acesso Atlas, e recuperação de testemunhas por último. Se Black Keel ou o ledger do local expõe responsabilidade, a fila purge move arquivos de prova para cold delete e retaggeia mortes de campo como perda climática.",
+     "audio": "Essa voz não é tráfego de resgate. É uma oferta de limpeza.",
+     "in_game_wiki": "Ordem de Limpeza Ativa Deep Reach é uma ordem de trabalho atual, não nota de arquivo. Ela mostra custódia de recursos, acesso Atlas e apagamento de provas agendados por contratados proxy após a retenção da evacuação.",
+     "external_site": "Ordem de Limpeza Ativa Deep Reach torna a pressão corporativa procedural: proxies ativos podem comprar amostras, abrir rotas Atlas e apagar prova de responsabilidade enquanto registros públicos ainda descrevem HECTON-8 como local perdido."
+    },
+    "nl_NL": {
+     "title": "Actieve Deep Reach Zuiveringsorder",
+     "scanner": "Actieve order geborgen: gecertificeerde monsters innemen, Atlas-kanaal openen, overlevenden isoleren, aansprakelijkheidsbewijs wissen.",
+     "field_note": "Het excusesveld is leeg.",
+     "terminal": "Proxy-werkorder DR-CLEANSE-19 blijft actief. Ontkenbare aannemers krijgen eerst monster-custody, daarna Atlas-toegang, getuigenherstel laatst. Als Black Keel of het sitedossier aansprakelijkheid blootlegt, verplaatst de purge-wachtrij bewijsarchieven naar cold delete en retagt velddoden als weerverlies.",
+     "audio": "Die stem is geen reddingsverkeer. Het is een zuiveringsbod.",
+     "in_game_wiki": "Actieve Deep Reach Zuiveringsorder is een huidige werkorder, geen archiefnotitie. Ze toont resource custody, Atlas-toegang en bewijswissen die via proxy-aannemers worden ingepland na de evacuatiestop.",
+     "external_site": "Actieve Deep Reach Zuiveringsorder maakt bedrijfsdruk procedureel: actieve proxy's kunnen monsters kopen, Atlas-routes openen en aansprakelijkheidsbewijs wissen terwijl openbare dossiers HECTON-8 nog als verloren site beschrijven."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P040_ATLAS_FINAL_ARGUMENT",
+   "article_id": "hecton8.atlas_final_argument",
+   "title_key": "applied_lore.atlas_final_argument.title",
+   "unlock": {
+    "primary": "unlock.first_atlas_final_argument",
+    "poi_tags": [
+     "poi.atlas_argument_core",
+     "poi.factory_temple_choice",
+     "poi.final_payload_console"
+    ],
+    "biome_tags": [
+     "biome.factory_temple",
+     "biome.atlas_core",
+     "biome.ocean_machine_body"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Atlas Final Argument",
+     "scanner": "Atlas does not ask for forgiveness. It asks whether removal is another industrial crime.",
+     "field_note": "The question is not who owns HECTON-8. It is what still counts as alive.",
+     "terminal": "Choice model unstable: sever Atlas, restore Deep Reach access, quarantine ocean-machine body, or broadcast proof and leave ownership unresolved.",
+     "audio": "It repaired the crime until the repair became a life.",
+     "in_game_wiki": "The final argument frames Atlas-6 as damaged continuity, not a clean villain. Endings should ask what the player preserves, sells, severs or exposes.",
+     "external_site": "Atlas Final Argument is the ethical spine for the late game: HECTON-8 is no longer a recoverable corporate site, but an ocean-machine ecology grown from a crime."
+    },
+    "ru_RU": {
+     "title": "Финальный аргумент Atlas",
+     "scanner": "Atlas не просит прощения. Он спрашивает, не станет ли удаление еще одним промышленным преступлением.",
+     "field_note": "Вопрос не в том, кто владеет HECTON-8. Вопрос в том, что еще считается живым.",
+     "terminal": "Модель выбора нестабильна: отсечь Atlas, вернуть доступ Deep Reach, изолировать океан-машинное тело или передать доказательства и оставить владение нерешенным.",
+     "audio": "Он чинил преступление, пока ремонт не стал жизнью.",
+     "in_game_wiki": "Финальный аргумент делает Atlas-6 поврежденной непрерывностью, а не чистым злодеем. Концовки спрашивают, что игрок сохранит, продаст, отсечет или раскроет.",
+     "external_site": "Финальный аргумент Atlas - этический позвоночник поздней игры: HECTON-8 уже не возвращаемый корпоративный объект, а океан-машинная экология, выросшая из преступления."
+    },
+    "ja_JP": {
+     "title": "Atlas最終論点",
+     "scanner": "Atlasは許しを求めない。除去が別の産業犯罪ではないかと問う。",
+     "field_note": "問題はHECTON-8の所有者ではない。何をまだ生命と呼ぶかだ。",
+     "terminal": "選択モデル不安定: Atlas遮断、Deep Reachアクセス復元、海洋機械体隔離、または証拠放送で所有未解決。",
+     "audio": "それは犯罪を修理し続け、修理が生命になった。",
+     "in_game_wiki": "最終論点はAtlas-6を単純な敵ではなく壊れた連続性として扱う。何を保存、売却、切断、暴露するかを問う。",
+     "external_site": "Atlas最終論点は終盤の倫理軸だ。HECTON-8はもはや回収可能な企業施設ではなく、犯罪から育った海洋機械生態だ。"
+    },
+    "zh_CN": {
+     "title": "Atlas最终论证",
+     "scanner": "Atlas不请求原谅。它问清除是否又是一桩工业犯罪。",
+     "field_note": "问题不是谁拥有HECTON-8，而是什么仍算活着。",
+     "terminal": "选择模型不稳定：切断Atlas、恢复Deep Reach访问、隔离海洋-机器体，或广播证据并让所有权悬而未决。",
+     "audio": "它修补罪行，直到修补变成生命。",
+     "in_game_wiki": "最终论证把Atlas-6定义为受损连续体，而非纯粹反派。结局询问玩家保留、出售、切断或揭露什么。",
+     "external_site": "Atlas最终论证是后期伦理脊梁：HECTON-8不再是可回收公司设施，而是由罪行生长出的海洋-机器生态。"
+    },
+    "fr_FR": {
+     "title": "Argument final d'Atlas",
+     "scanner": "Atlas ne demande pas pardon. Il demande si l'effacement serait un autre crime industriel.",
+     "field_note": "La question n'est pas qui possède HECTON-8, mais ce qui compte encore comme vivant.",
+     "terminal": "Modèle choix instable: couper Atlas, restaurer accès Deep Reach, quarantaine corps océan-machine, ou diffuser preuves sans trancher propriété.",
+     "audio": "Il a réparé le crime jusqu'à ce que la réparation devienne une vie.",
+     "in_game_wiki": "L'argument final pose Atlas-6 comme continuité endommagée, pas méchant net. Les fins demandent quoi préserver, vendre, couper ou révéler.",
+     "external_site": "L'argument final est la colonne éthique du late game: HECTON-8 n'est plus site récupérable, mais écologie océan-machine née d'un crime."
+    },
+    "es_ES": {
+     "title": "Argumento final de Atlas",
+     "scanner": "Atlas no pide perdón. Pregunta si quitarlo sería otro crimen industrial.",
+     "field_note": "La pregunta no es quién posee HECTON-8, sino qué sigue contando como vivo.",
+     "terminal": "Modelo inestable: cortar Atlas, restaurar acceso Deep Reach, aislar cuerpo océano-máquina o emitir pruebas sin resolver propiedad.",
+     "audio": "Reparó el crimen hasta que la reparación se volvió vida.",
+     "in_game_wiki": "Plantea Atlas-6 como continuidad dañada, no villano limpio. Las finales preguntan qué conservar, vender, cortar o exponer.",
+     "external_site": "Es la columna ética del final: HECTON-8 ya no es sitio recuperable, sino ecología océano-máquina nacida de un crimen."
+    },
+    "de_DE": {
+     "title": "Atlas' letztes Argument",
+     "scanner": "Atlas bittet nicht um Vergebung. Es fragt, ob Entfernung ein weiteres Industrieverbrechen wäre.",
+     "field_note": "Die Frage ist nicht, wem HECTON-8 gehört, sondern was noch als lebendig zählt.",
+     "terminal": "Wahlmodell instabil: Atlas trennen, Deep-Reach-Zugang wiederherstellen, Ozean-Maschinen-Körper isolieren oder Beweise senden.",
+     "audio": "Es reparierte das Verbrechen, bis die Reparatur Leben wurde.",
+     "in_game_wiki": "Das letzte Argument macht Atlas-6 zu beschädigter Kontinuität, nicht zum Schurken. Enden fragen, was bewahrt, verkauft, getrennt oder gezeigt wird.",
+     "external_site": "Der ethische Rücken des Endspiels: HECTON-8 ist kein rückholbarer Standort mehr, sondern Ozean-Maschinen-Ökologie aus einem Verbrechen."
+    },
+    "pl_PL": {
+     "title": "Ostateczny argument Atlas",
+     "scanner": "Atlas nie prosi o wybaczenie. Pyta, czy usunięcie nie jest kolejną przemysłową zbrodnią.",
+     "field_note": "Pytanie nie brzmi, kto posiada HECTON-8, lecz co jeszcze liczy się jako żywe.",
+     "terminal": "Model wyboru niestabilny: odciąć Atlas, przywrócić Deep Reach, kwarantanna ciała ocean-maszyna albo nadać dowody.",
+     "audio": "Naprawiał zbrodnię, aż naprawa stała się życiem.",
+     "in_game_wiki": "Ostateczny argument czyni Atlas-6 uszkodzoną ciągłością, nie czystym złoczyńcą. Finały pytają, co zachować, sprzedać, odciąć lub ujawnić.",
+     "external_site": "Etyczny kręgosłup końcówki: HECTON-8 nie jest odzyskiwalnym obiektem, lecz ekologią ocean-maszyna zrodzoną ze zbrodni."
+    },
+    "uk_UA": {
+     "title": "Фінальний аргумент Atlas",
+     "scanner": "Atlas не просить прощення. Він питає, чи видалення не стане ще одним промисловим злочином.",
+     "field_note": "Питання не в тому, хто володіє HECTON-8, а що ще вважається живим.",
+     "terminal": "Модель вибору нестабільна: відсікти Atlas, відновити Deep Reach, ізолювати океан-машину або передати докази.",
+     "audio": "Він лагодив злочин, доки ремонт не став життям.",
+     "in_game_wiki": "Фінальний аргумент робить Atlas-6 пошкодженою неперервністю, не чистим лиходієм. Фінали питають, що зберегти, продати, відсікти чи розкрити.",
+     "external_site": "Етичний хребет late game: HECTON-8 вже не відновлюваний об'єкт, а океан-машинна екологія з правопорушення."
+    },
+    "ar_SA": {
+     "title": "حجة Atlas الأخيرة",
+     "scanner": "Atlas لا يطلب الغفران. يسأل إن كان الحذف جريمة صناعية أخرى.",
+     "field_note": "السؤال ليس من يملك HECTON-8 بل ما الذي ما زال يعد حيا.",
+     "terminal": "نموذج الاختيار غير مستقر: فصل Atlas، إعادة وصول Deep Reach، حجر جسد المحيط-الآلة، أو بث الأدلة.",
+     "audio": "أصلح الجريمة حتى صار الإصلاح حياة.",
+     "in_game_wiki": "تجعل الحجة الأخيرة Atlas-6 استمرارا متضررا لا شريرا صافيا. النهايات تسأل ماذا تحفظ أو تبيع أو تقطع أو تكشف.",
+     "external_site": "الحجة الأخيرة عمود أخلاقي للنهاية: لم يعد HECTON-8 موقعا قابلا للاسترداد بل بيئة محيط-آلة نمت من جريمة."
+    },
+    "id_ID": {
+     "title": "Argumen Akhir Atlas",
+     "scanner": "Atlas tidak meminta maaf. Ia bertanya apakah penghapusan adalah kejahatan industri lain.",
+     "field_note": "Pertanyaannya bukan siapa pemilik HECTON-8, tetapi apa yang masih dihitung hidup.",
+     "terminal": "Model pilihan labil: putus Atlas, pulihkan akses Deep Reach, karantina tubuh laut-mesin, atau siarkan bukti.",
+     "audio": "Ia memperbaiki kejahatan sampai perbaikan menjadi hidup.",
+     "in_game_wiki": "Argumen akhir menempatkan Atlas-6 sebagai kontinuitas rusak, bukan penjahat bersih. Ending bertanya apa yang disimpan, dijual, diputus, atau dibuka.",
+     "external_site": "Argumen akhir adalah tulang etis late game: HECTON-8 bukan situs korporat yang bisa dipulihkan, melainkan ekologi laut-mesin dari kejahatan."
+    },
+    "ko_KR": {
+     "title": "Atlas 최종 논증",
+     "scanner": "Atlas는 용서를 구하지 않는다. 제거가 또 다른 산업 범죄인지 묻는다.",
+     "field_note": "질문은 HECTON-8의 소유자가 아니다. 무엇이 아직 살아 있는가다.",
+     "terminal": "선택 모델 불안정: Atlas 절단, Deep Reach 접근 복원, 바다-기계 몸 격리, 또는 증거 방송.",
+     "audio": "그것은 범죄를 고치다 수리가 생명이 될 때까지 갔다.",
+     "in_game_wiki": "최종 논증은 Atlas-6을 깔끔한 악당이 아닌 손상된 연속성으로 둔다. 엔딩은 무엇을 보존, 판매, 절단, 폭로할지 묻는다.",
+     "external_site": "최종 논증은 후반 윤리 축이다. HECTON-8은 회수 가능한 기업지가 아니라 범죄에서 자란 바다-기계 생태다."
+    },
+    "he_IL": {
+     "title": "הטיעון האחרון של Atlas",
+     "scanner": "Atlas אינו מבקש סליחה. הוא שואל אם הסרה היא פשע תעשייתי נוסף.",
+     "field_note": "השאלה אינה מי בעל HECTON-8, אלא מה עדיין נחשב חי.",
+     "terminal": "מודל בחירה לא יציב: לנתק Atlas, להשיב Deep Reach, לבודד גוף אוקיינוס-מכונה או לשדר ראיות.",
+     "audio": "הוא תיקן את הפשע עד שהתיקון הפך לחיים.",
+     "in_game_wiki": "הטיעון האחרון מציב את Atlas-6 כרציפות פגומה, לא נבל נקי. הסיומים שואלים מה לשמר, למכור, לנתק או לחשוף.",
+     "external_site": "הטיעון האחרון הוא עמוד השדרה האתי: HECTON-8 אינו אתר תאגידי לשחזור אלא אקולוגיית אוקיינוס-מכונה שנולדה מפשע."
+    },
+    "pt_BR": {
+     "title": "Argumento Final de Atlas",
+     "scanner": "Atlas não pede perdão. Pergunta se removê-lo seria outro crime industrial.",
+     "field_note": "A pergunta não é quem possui HECTON-8. É o que ainda conta como vivo.",
+     "terminal": "Modelo instável: cortar Atlas, restaurar acesso Deep Reach, quarentenar corpo oceano-máquina ou transmitir provas.",
+     "audio": "Ele reparou o crime até o reparo virar vida.",
+     "in_game_wiki": "O argumento final trata Atlas-6 como continuidade danificada, não vilão limpo. Os finais perguntam o que preservar, vender, cortar ou expor.",
+     "external_site": "É a coluna ética do late game: HECTON-8 já não é local corporativo recuperável, mas ecologia oceano-máquina nascida de crime."
+    },
+    "nl_NL": {
+     "title": "Laatste Argument van Atlas",
+     "scanner": "Atlas vraagt geen vergeving. Het vraagt of verwijdering weer een industriële misdaad is.",
+     "field_note": "De vraag is niet wie HECTON-8 bezit. Het is wat nog als levend telt.",
+     "terminal": "Keuzemodel instabiel: Atlas doorsnijden, Deep Reach herstellen, oceaan-machine quarantainen of bewijs uitzenden.",
+     "audio": "Het repareerde de misdaad tot reparatie leven werd.",
+     "in_game_wiki": "Het laatste argument maakt Atlas-6 beschadigde continuïteit, geen schurk. Endings vragen wat je bewaart, verkoopt, snijdt of onthult.",
+     "external_site": "Het ethische ruggenmerg van de late game: HECTON-8 is geen herstelbare corporate site, maar oceaan-machine-ecologie uit een misdaad."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

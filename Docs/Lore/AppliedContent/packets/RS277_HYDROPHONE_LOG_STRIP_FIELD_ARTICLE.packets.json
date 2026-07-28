@@ -1,255 +1,256 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS277_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS277_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1330_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE",
+   "release_set_id": "RS277_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE",
+   "article_id": "applied_lore.hydrophone_log_strip_field_article",
+   "title_key": "LORE_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/AppliedContent/packets/RS043_WORKER_PROP_EVIDENCE_KIT.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS276_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1330_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE",
-      "release_set_id": "RS277_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE",
-      "article_id": "applied_lore.hydrophone_log_strip_field_article",
-      "title_key": "LORE_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/AppliedContent/packets/RS043_WORKER_PROP_EVIDENCE_KIT.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS044_PUBLICATION_SPOILER_LOCALIZATION_PROTOCOL.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS276_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.hydrophone_log_strip_field_article",
-        "secondary": [
-          "unlock.first_hydrophone_log_strip",
-          "unlock.first_audio_fragment_tag",
-          "unlock.first_transcript_damage_band"
-        ],
-        "poi_tags": [
-          "poi.hydrophone_log_strip",
-          "poi.audio_fragment_tag",
-          "poi.transcript_damage_band",
-          "poi.pressure_room_recorder",
-          "poi.service_pump_audio",
-          "poi.airlock_bite_mark",
-          "poi.packet_notary_audio"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.relay_spine",
-          "biome.industrial_shelf",
-          "biome.audio_evidence"
-        ],
-        "depth_band_m": "0-4200"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Maintenance Recorder Bay Note",
-          "audio": "Recovered Hydrophone Strip Audio",
-          "in_game_wiki": "PDA Forensic Object Article",
-          "external_site": "Public Site Evidence Object Article",
-          "field_note": "Marauder Field Annotation"
-        },
-        "writer_note": "Player-facing hydrophone object article. Keep sound tied to room state, pressure marks and physical recorder wear. No ghost-monologue exposition."
-      },
-      "localized": {
-        "en_US": {
-          "title": "Hydrophone Log Strips",
-          "scanner": "HYDROPHONE LOG STRIP // Ceramic-fiber pressure tape from a room recorder. Reads pump cadence, lock impacts, hull groan and voice as vibration. Compare against route stamp and door state.",
-          "terminal": "MAINTENANCE NOTE // Hydrophone strips are admissible when the strip serial, recorder bay, pressure ink and timestamp ladder agree. A clean audio file without strip wear is not enough.",
-          "audio": "The strip heard the room before anyone admitted the room was failing.",
-          "in_game_wiki": "Hydrophone log strips are not voice diaries. They are maintenance receipts that learned to sound like ghosts.\n\n        Every pressure room in the older colony modules kept a narrow ceramic-fiber strip beside its hydrophone recorder. The strip was cheap, dumb and hard to corrupt. It listened through the wall: pump rhythm, door teeth, boot impacts, wrench taps, hull groan, breath inside helmets, and the low animal shudder of a room deciding whether to stay sealed. When the network went down, the strip still moved. That is why so many strips survived and so many official packets did not.\n\n        A strip is read in layers. First comes the pressure ink: slopes, dips, sudden teeth where a lock bit against its frame. Then the acoustic comb: repeating machine notes, missing pump strokes, a voice shape too blurred for words. Then the notary edge: serial, bay stamp, time ladder, splice marks. A player should never treat the recovered sound alone as truth. The strip has to agree with the room.\n\n        Good hydrophone evidence changes a route. It can show that a door opened before a permission stamp existed, that a pump kept working after a death time was filed, that a black-box clip was cleaned, or that someone stood in the room while the official log claimed remote operation. The strip does not accuse dramatically. It keeps pressure marks until someone learns to read them.",
-          "external_site": "Hydrophone log strips turn HECTON-8 audio into physical evidence: pressure ink, recorder wear, machine rhythm and room-state proof.",
-          "external_site_article": "The hydrophone strip is one of HECTON-8's most useful evidence objects because it makes sound physical.\n\n        It is a narrow ceramic-fiber tape pulled through an old room recorder. The recorder listened to the pressure chamber, not to a person. It caught pump cadence, hatch impacts, cable snaps, tool knocks, hull strain and the smeared shapes of voices through water and metal. The strip survived because it was simple. It did not need a live network, a clean terminal, or a cooperative company archive. It needed pressure, ink and movement.\n\n        For the player, a strip should read like a forensic object. The audio can be eerie, but the proof is in the mismatch: a door impact before authorization, a pump note after the claimed shutdown, a missing second where every other recorder goes flat, a voice shape that appears beside a route stamp no living operator signed. It is not a monologue. It is a room contradicting its paperwork.\n\n        This is the tone HECTON-8 needs: human presence recovered through work surfaces. The strip does not tell the player what to feel. It lets the player hear a place still trying to do its job after everyone above it decided the paperwork mattered more than the people inside.",
-          "field_note": "If the strip and the room disagree, believe the room last.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Гидрофонные ленты журнала",
-          "scanner": "ГИДРОФОННАЯ ЛЕНТА // Керамико-волоконная лента давления из комнатного рекордера. Читает ритм насоса, удары шлюза, стон корпуса и голос как вибрацию. Сравнить со штампом маршрута и состоянием двери.",
-          "terminal": "ЗАМЕТКА ОБСЛУЖИВАНИЯ // Гидрофонные ленты допустимы как улика, когда серийник ленты, отсек рекордера, чернила давления и лестница времени сходятся. Чистого аудиофайла без износа ленты недостаточно.",
-          "audio": "Лента услышала комнату раньше, чем кто-либо признал, что комната умирает.",
-          "in_game_wiki": "Гидрофонные ленты журнала - не голосовые дневники. Это квитанции обслуживания, которые научились звучать как призраки.\n\n        В старых модулях колонии у каждой напорной комнаты рядом с гидрофонным рекордером стояла узкая керамико-волоконная лента. Она была дешевой, тупой и почти не поддавалась подделке. Она слушала через стену: ритм насоса, зубья двери, удары ботинок, стук ключа, стон корпуса, дыхание в шлемах и низкую дрожь комнаты, которая решает, останется ли герметичной. Когда сеть падала, лента все равно двигалась. Поэтому ленты выжили чаще официальных пакетов.\n\n        Ленту читают слоями. Сначала чернила давления: наклоны, провалы, резкие зубцы, где шлюз бился о раму. Потом акустическая гребенка: повторяющиеся ноты машин, пропущенные удары насоса, форма голоса, слишком размазанная для слов. Потом нотариальный край: серийник, штамп отсека, лестница времени, следы склейки. Игрок не должен считать один восстановленный звук правдой. Лента должна совпасть с комнатой.\n\n        Хорошая гидрофонная улика меняет маршрут. Она может показать, что дверь открылась до появления разрешительного штампа, что насос работал после заявленного времени смерти, что black-box фрагмент чистили, или что кто-то стоял в комнате, пока официальный журнал называл операцию удаленной. Лента не обвиняет театрально. Она держит следы давления, пока кто-нибудь не научится их читать.",
-          "external_site": "Гидрофонные ленты превращают звук HECTON-8 в физическую улику: чернила давления, износ рекордера, машинный ритм и доказательство состояния комнаты.",
-          "external_site_article": "Гидрофонная лента - одна из самых полезных улик HECTON-8, потому что делает звук физическим.\n\n        Это узкая керамико-волоконная лента, протянутая через старый комнатный рекордер. Рекордер слушал напорную камеру, а не человека. Он ловил ритм насосов, удары люков, разрывы кабелей, стук инструментов, напряжение корпуса и размазанные формы голосов сквозь воду и металл. Лента выжила, потому что была простой. Ей не нужна была живая сеть, чистый терминал или послушный корпоративный архив. Ей нужны были давление, чернила и движение.\n\n        Для игрока лента должна читаться как судебный предмет. Аудио может быть жутким, но доказательство лежит в несовпадении: удар двери до разрешения, нота насоса после заявленного отключения, пропавшая секунда там, где все остальные рекордеры тоже глохнут, форма голоса рядом со штампом маршрута, который не подписывал живой оператор. Это не монолог. Это комната спорит со своими бумагами.\n\n        Такой тон нужен HECTON-8: человеческое присутствие, восстановленное через рабочие поверхности. Лента не говорит игроку, что чувствовать. Она дает услышать место, которое продолжало выполнять работу после того, как наверху решили, что бумага важнее людей внутри.",
-          "field_note": "Если лента и комната спорят, последней верь комнате.",
-          "localization_status": "draft_manual"
-        },
-        "uk_UA": {
-          "title": "Гідрофонні стрічки журналу",
-          "scanner": "ГІДРОФОННА СТРІЧКА // Керамічно-волоконна стрічка тиску з кімнатного рекордера. Читає ритм насоса, удари шлюзу, стогін корпусу й голос як вібрацію. Звір зі штампом маршруту та станом дверей.",
-          "terminal": "НОТАТКА ОБСЛУГИ // Гідрофонні стрічки приймаються як доказ, коли серійник стрічки, відсік рекордера, чорнило тиску й драбина часу збігаються. Чистого аудіофайлу без зносу стрічки замало.",
-          "audio": "Стрічка почула кімнату раніше, ніж хтось визнав, що кімната вмирає.",
-          "in_game_wiki": "Гідрофонні стрічки журналу - не голосові щоденники. Це квитанції обслуговування, які навчилися звучати як привиди.\n\n        У старих модулях колонії біля кожного кімнатного гідрофонного рекордера стояла вузька керамічно-волоконна стрічка. Вона була дешева, тупа й важка для підробки. Вона слухала крізь стіну: ритм насоса, зубці дверей, удари черевиків, стук ключа, стогін корпусу, дихання в шоломах і низьке тремтіння кімнати, яка вирішує, чи лишиться герметичною. Коли мережа падала, стрічка все одно рухалася. Тому стрічок вижило більше, ніж офіційних пакетів.\n\n        Стрічку читають шарами. Спершу чорнило тиску: схили, провали, різкі зубці там, де шлюз ударився об раму. Потім акустичний гребінь: повторювані ноти машин, пропущені удари насоса, форма голосу, надто розмита для слів. Потім нотаріальний край: серійник, штамп відсіку, драбина часу, сліди склейки. Гравець не має вірити самому відновленому звуку. Стрічка мусить збігтися з кімнатою.\n\n        Добрий гідрофонний доказ змінює маршрут. Він може показати, що двері відкрилися до появи дозволу, що насос працював після поданого часу смерті, що black-box фрагмент чистили, або що хтось стояв у кімнаті, поки офіційний журнал називав операцію віддаленою. Стрічка не звинувачує театрально. Вона тримає сліди тиску, доки хтось не навчиться їх читати.",
-          "external_site": "Гідрофонні стрічки перетворюють звук HECTON-8 на фізичний доказ: чорнило тиску, знос рекордера, машинний ритм і доказ стану кімнати.",
-          "external_site_article": "Гідрофонна стрічка - один із найкорисніших доказових предметів HECTON-8, бо робить звук фізичним.\n\n        Це вузька керамічно-волоконна стрічка, протягнута крізь старий кімнатний рекордер. Рекордер слухав камеру тиску, а не людину. Він ловив ритм насосів, удари люків, розриви кабелів, стукіт інструментів, напругу корпусу й розмиті форми голосів крізь воду та метал. Стрічка вижила, бо була проста. Їй не потрібні були жива мережа, чистий термінал чи слухняний корпоративний архів. Їй потрібні були тиск, чорнило й рух.\n\n        Для гравця стрічка має читатися як судовий предмет. Аудіо може бути моторошним, але доказ живе в невідповідності: удар дверей до дозволу, нота насоса після заявленого вимкнення, втрачена секунда там, де всі інші рекордери теж глухнуть, форма голосу поруч зі штампом маршруту, який не підписував живий оператор. Це не монолог. Це кімната сперечається зі своїми паперами.\n\n        Саме такий тон потрібен HECTON-8: людська присутність, відновлена через робочі поверхні. Стрічка не каже гравцю, що відчувати. Вона дає почути місце, яке продовжувало виконувати роботу після того, як нагорі вирішили, що папери важливіші за людей усередині.",
-          "field_note": "Якщо стрічка й кімната сперечаються, останньою вір кімнаті.",
-          "localization_status": "draft_manual"
-        },
-        "de_DE": {
-          "title": "Hydrophon-Logstreifen",
-          "scanner": "HYDROPHON-LOGSTREIFEN // Keramikfaser-Druckband aus einem Raumrecorder. Liest Pumpentakt, Schleusenstöße, Rumpfdröhnen und Stimme als Vibration. Mit Routenstempel und Türzustand vergleichen.",
-          "terminal": "WARTUNGSNOTIZ // Hydrophonstreifen gelten als Beweis, wenn Streifenseriennummer, Recorderschacht, Drucktinte und Zeitleiter übereinstimmen. Eine saubere Audiodatei ohne Streifenabrieb reicht nicht.",
-          "audio": "Der Streifen hörte den Raum, bevor jemand zugab, dass der Raum versagte.",
-          "in_game_wiki": "Hydrophon-Logstreifen sind keine Stimmtagebücher. Es sind Wartungsquittungen, die gelernt haben, wie Geister zu klingen.\n\n        In den älteren Koloniemodulen hatte jeder Druckraum einen schmalen Keramikfaserstreifen neben seinem Hydrophonrecorder. Der Streifen war billig, dumm und schwer zu verfälschen. Er hörte durch die Wand: Pumpentakt, Türzähne, Stiefelschläge, Werkzeugklopfen, Rumpfdröhnen, Atem in Helmen und das tiefe Zittern eines Raums, der entscheidet, ob er dicht bleibt. Als das Netz ausfiel, bewegte sich der Streifen weiter. Darum überlebten mehr Streifen als offizielle Pakete.\n\n        Man liest einen Streifen in Schichten. Zuerst die Drucktinte: Hänge, Einbrüche, harte Zähne dort, wo die Schleuse in den Rahmen biss. Dann der akustische Kamm: wiederholte Maschinennoten, fehlende Pumpenschläge, eine Stimmform zu verwischt für Worte. Dann die Notarkante: Seriennummer, Schachtstempel, Zeitleiter, Spleißspuren. Der Spieler darf den wiedergewonnenen Klang nicht allein als Wahrheit nehmen. Der Streifen muss zum Raum passen.\n\n        Guter Hydrophonbeweis verändert eine Route. Er kann zeigen, dass eine Tür vor der Genehmigung öffnete, dass eine Pumpe nach der gemeldeten Todeszeit lief, dass ein black-box-Clip gereinigt wurde oder dass jemand im Raum stand, während das offizielle Log Fernbetrieb behauptete. Der Streifen klagt nicht dramatisch an. Er hält Druckspuren, bis jemand lernt, sie zu lesen.",
-          "external_site": "Hydrophon-Logstreifen machen HECTON-8-Audio zu physischem Beweis: Drucktinte, Recorderabrieb, Maschinentakt und Raumzustand.",
-          "external_site_article": "Der Hydrophonstreifen ist eines der nützlichsten Beweisobjekte in HECTON-8, weil er Klang körperlich macht.\n\n        Er ist ein schmales Keramikfaserband, das durch einen alten Raumrecorder gezogen wurde. Der Recorder hörte auf die Druckkammer, nicht auf eine Person. Er fing Pumpentakt, Lukenschläge, Kabelrisse, Werkzeugklopfen, Rumpfspannung und verschmierte Stimmen durch Wasser und Metall. Der Streifen überlebte, weil er einfach war. Er brauchte kein lebendes Netz, kein sauberes Terminal und kein kooperatives Firmenarchiv. Er brauchte Druck, Tinte und Bewegung.\n\n        Für den Spieler sollte der Streifen wie ein forensischer Gegenstand lesbar sein. Das Audio darf unheimlich sein, aber der Beweis liegt im Widerspruch: ein Türschlag vor der Autorisierung, eine Pumpennote nach der behaupteten Abschaltung, eine fehlende Sekunde, in der auch alle anderen Recorder flach werden, eine Stimmform neben einem Routenstempel, den kein lebender Operator signierte. Es ist kein Monolog. Es ist ein Raum, der seinen Papieren widerspricht.\n\n        Das ist der Ton, den HECTON-8 braucht: menschliche Anwesenheit, geborgen aus Arbeitsflächen. Der Streifen sagt dem Spieler nicht, was er fühlen soll. Er lässt ihn einen Ort hören, der weiter seine Arbeit tat, nachdem oben beschlossen wurde, dass Papier wichtiger war als die Menschen darin.",
-          "field_note": "Wenn Streifen und Raum streiten, glaub dem Raum zuletzt.",
-          "localization_status": "draft_manual"
-        },
-        "fr_FR": {
-          "title": "Bandes de journal hydrophone",
-          "scanner": "BANDE HYDROPHONE // Ruban de pression en fibre céramique issu d'un enregistreur de salle. Lit cadence de pompe, impacts de sas, plainte de coque et voix comme vibration. Comparer au tampon de route et à l'état de porte.",
-          "terminal": "NOTE DE MAINTENANCE // Les bandes hydrophones sont recevables si le numéro de bande, la baie d'enregistreur, l'encre de pression et l'échelle de temps concordent. Un fichier audio propre sans usure de bande ne suffit pas.",
-          "audio": "La bande a entendu la salle avant que quelqu'un admette qu'elle était en train de céder.",
-          "in_game_wiki": "Les bandes de journal hydrophone ne sont pas des journaux intimes vocaux. Ce sont des reçus de maintenance qui ont appris à sonner comme des fantômes.\n\n        Dans les anciens modules de la colonie, chaque salle sous pression gardait une bande étroite en fibre céramique près de son enregistreur hydrophone. La bande était bon marché, stupide et difficile à corrompre. Elle écoutait à travers le mur : cadence de pompe, dents de porte, impacts de bottes, coups de clé, plainte de coque, souffle dans les casques et le tremblement bas d'une salle qui décide si elle va rester étanche. Quand le réseau tombait, la bande continuait à avancer. C'est pour cela que tant de bandes ont survécu aux paquets officiels.\n\n        Une bande se lit par couches. D'abord l'encre de pression : pentes, creux, dents soudaines là où un sas a mordu son cadre. Puis le peigne acoustique : notes de machine répétées, battements de pompe manquants, forme de voix trop floue pour devenir des mots. Puis le bord notarial : numéro, tampon de baie, échelle de temps, marques de raccord. Le joueur ne doit jamais prendre le son récupéré seul pour vérité. La bande doit être d'accord avec la salle.\n\n        Une bonne preuve hydrophone change une route. Elle peut montrer qu'une porte s'est ouverte avant l'autorisation, qu'une pompe tournait après l'heure de mort déclarée, qu'un extrait black-box a été nettoyé, ou que quelqu'un se tenait dans la salle pendant que le journal officiel parlait d'opération distante. La bande n'accuse pas avec théâtre. Elle garde les marques de pression jusqu'à ce que quelqu'un apprenne à les lire.",
-          "external_site": "Les bandes hydrophones transforment l'audio de HECTON-8 en preuve physique : encre de pression, usure d'enregistreur, rythme machine et état de salle.",
-          "external_site_article": "La bande hydrophone est l'un des objets de preuve les plus utiles de HECTON-8 parce qu'elle rend le son physique.\n\n        C'est un ruban étroit en fibre céramique tiré dans un ancien enregistreur de salle. L'enregistreur écoutait la chambre sous pression, pas une personne. Il captait la cadence des pompes, les impacts d'écoutille, les ruptures de câble, les coups d'outil, la contrainte de coque et les formes brouillées de voix à travers l'eau et le métal. La bande a survécu parce qu'elle était simple. Elle n'avait pas besoin d'un réseau vivant, d'un terminal propre ou d'une archive d'entreprise coopérative. Elle avait besoin de pression, d'encre et de mouvement.\n\n        Pour le joueur, une bande doit se lire comme un objet médico-légal. L'audio peut être inquiétant, mais la preuve est dans le décalage : un impact de porte avant l'autorisation, une note de pompe après l'arrêt déclaré, une seconde manquante là où tous les autres enregistreurs deviennent plats, une forme de voix près d'un tampon de route qu'aucun opérateur vivant n'a signé. Ce n'est pas un monologue. C'est une salle qui contredit ses papiers.\n\n        C'est le ton dont HECTON-8 a besoin : une présence humaine retrouvée dans les surfaces de travail. La bande ne dit pas au joueur quoi ressentir. Elle lui fait entendre un lieu qui essaie encore de faire son travail après que ceux d'en haut ont décidé que les papiers comptaient plus que les gens à l'intérieur.",
-          "field_note": "Si la bande et la salle se contredisent, crois la salle en dernier.",
-          "localization_status": "draft_manual"
-        },
-        "es_ES": {
-          "title": "Tiras de registro hidrofónico",
-          "scanner": "TIRA HIDROFÓNICA // Cinta de presión de fibra cerámica de un grabador de sala. Lee cadencia de bomba, impactos de esclusa, gemido de casco y voz como vibración. Comparar con sello de ruta y estado de puerta.",
-          "terminal": "NOTA DE MANTENIMIENTO // Las tiras hidrofónicas son admisibles cuando serie de tira, bahía de grabador, tinta de presión y escalera temporal coinciden. Un audio limpio sin desgaste de tira no basta.",
-          "audio": "La tira oyó la sala antes de que nadie admitiera que la sala estaba fallando.",
-          "in_game_wiki": "Las tiras de registro hidrofónico no son diarios de voz. Son recibos de mantenimiento que aprendieron a sonar como fantasmas.\n\n        En los módulos antiguos de la colonia, cada sala de presión guardaba una tira estrecha de fibra cerámica junto a su grabador hidrofónico. La tira era barata, tonta y difícil de corromper. Escuchaba a través de la pared: ritmo de bomba, dientes de puerta, golpes de botas, toques de llave, gemido del casco, respiración dentro de cascos y el temblor bajo de una sala decidiendo si seguir sellada. Cuando caía la red, la tira seguía moviéndose. Por eso sobrevivieron tantas tiras y tan pocos paquetes oficiales.\n\n        Una tira se lee por capas. Primero la tinta de presión: pendientes, caídas, dientes repentinos donde una esclusa mordió su marco. Luego el peine acústico: notas repetidas de máquina, golpes de bomba ausentes, una forma de voz demasiado borrosa para palabras. Luego el borde notarial: serie, sello de bahía, escalera temporal, marcas de empalme. El jugador no debe tomar el sonido recuperado como verdad por sí solo. La tira debe concordar con la sala.\n\n        Una buena prueba hidrofónica cambia una ruta. Puede mostrar que una puerta abrió antes de existir permiso, que una bomba siguió funcionando después de la hora de muerte archivada, que un clip black-box fue limpiado, o que alguien estuvo en la sala mientras el registro oficial decía operación remota. La tira no acusa de forma teatral. Guarda marcas de presión hasta que alguien aprende a leerlas.",
-          "external_site": "Las tiras hidrofónicas convierten el audio de HECTON-8 en prueba física: tinta de presión, desgaste de grabador, ritmo de máquina y estado de sala.",
-          "external_site_article": "La tira hidrofónica es uno de los objetos de prueba más útiles de HECTON-8 porque vuelve físico el sonido.\n\n        Es una cinta estrecha de fibra cerámica arrastrada por un viejo grabador de sala. El grabador escuchaba la cámara de presión, no a una persona. Captaba cadencia de bombas, impactos de escotilla, roturas de cable, golpes de herramienta, tensión del casco y formas de voz untadas por agua y metal. La tira sobrevivió porque era simple. No necesitaba una red viva, un terminal limpio ni un archivo corporativo cooperativo. Necesitaba presión, tinta y movimiento.\n\n        Para el jugador, una tira debe leerse como un objeto forense. El audio puede ser inquietante, pero la prueba está en el desajuste: impacto de puerta antes de autorización, nota de bomba después del apagado declarado, un segundo perdido donde todos los demás grabadores quedan planos, una forma de voz junto a un sello de ruta que no firmó ningún operador vivo. No es un monólogo. Es una sala contradiciendo sus papeles.\n\n        Ese es el tono que necesita HECTON-8: presencia humana recuperada por superficies de trabajo. La tira no le dice al jugador qué sentir. Le deja oír un lugar que seguía intentando hacer su trabajo después de que arriba decidieran que el papel importaba más que las personas dentro.",
-          "field_note": "Si la tira y la sala discrepan, cree a la sala al final.",
-          "localization_status": "draft_manual"
-        },
-        "pl_PL": {
-          "title": "Paski dziennika hydrofonu",
-          "scanner": "PASEK HYDROFONU // Ceramiczno-włóknista taśma ciśnienia z rejestratora pomieszczenia. Czyta takt pomp, uderzenia śluzy, jęk kadłuba i głos jako wibrację. Porównaj ze stemplem trasy i stanem drzwi.",
-          "terminal": "NOTA SERWISOWA // Paski hydrofonu są dowodem, gdy numer paska, zatoka rejestratora, atrament ciśnienia i drabina czasu zgadzają się. Czysty plik audio bez zużycia paska nie wystarczy.",
-          "audio": "Pasek usłyszał pomieszczenie, zanim ktokolwiek przyznał, że ono zawodzi.",
-          "in_game_wiki": "Paski dziennika hydrofonu nie są dziennikami głosowymi. To pokwitowania serwisowe, które nauczyły się brzmieć jak duchy.\n\n        W starszych modułach kolonii każde pomieszczenie ciśnieniowe miało wąski ceramiczno-włóknisty pasek przy rejestratorze hydrofonu. Był tani, głupi i trudny do sfałszowania. Słuchał przez ścianę: rytmu pomp, zębów drzwi, kroków, stuków narzędzi, jęku kadłuba, oddechu w hełmach i niskiego drżenia pokoju, który decyduje, czy zostanie szczelny. Gdy sieć padała, pasek nadal się poruszał. Dlatego przetrwało tak wiele pasków i tak mało oficjalnych pakietów.\n\n        Pasek czyta się warstwami. Najpierw atrament ciśnienia: spadki, dołki, ostre zęby po uderzeniu śluzy w ramę. Potem grzebień akustyczny: powtarzalne nuty maszyn, brakujące uderzenia pompy, kształt głosu zbyt rozmazany na słowa. Potem krawędź notarialna: numer, stempel zatoki, drabina czasu, ślady sklejenia. Sam odzyskany dźwięk nie jest prawdą. Pasek musi zgadzać się z pomieszczeniem.\n\n        Dobry dowód hydrofonu zmienia trasę. Może pokazać drzwi otwarte przed zezwoleniem, pompę działającą po zgłoszonym czasie śmierci, czyszczony klip black-box albo człowieka w pokoju, choć oficjalny log twierdził, że operacja była zdalna. Pasek nie oskarża teatralnie. Trzyma ślady ciśnienia, aż ktoś nauczy się je czytać.",
-          "external_site": "Paski hydrofonu zamieniają audio HECTON-8 w fizyczny dowód: atrament ciśnienia, zużycie rejestratora, rytm maszyn i stan pomieszczenia.",
-          "external_site_article": "Pasek hydrofonu jest jednym z najbardziej użytecznych dowodów HECTON-8, bo czyni dźwięk fizycznym.\n\n        To wąska ceramiczno-włóknista taśma przeciągnięta przez stary rejestrator pomieszczenia. Rejestrator słuchał komory ciśnieniowej, nie osoby. Łapał takt pomp, uderzenia włazów, pęknięcia kabli, stuki narzędzi, napięcie kadłuba i rozmazane głosy przez wodę i metal. Pasek przetrwał, bo był prosty. Nie potrzebował żywej sieci, czystego terminala ani chętnego archiwum firmy. Potrzebował ciśnienia, atramentu i ruchu.\n\n        Dla gracza pasek powinien czytać się jak obiekt sądowy. Audio może być niepokojące, ale dowód leży w niezgodności: uderzenie drzwi przed autoryzacją, nuta pompy po rzekomym wyłączeniu, brakująca sekunda tam, gdzie wszystkie inne rejestratory milkną, kształt głosu przy stemplu trasy, którego nie podpisał żywy operator. To nie monolog. To pomieszczenie sprzeciwia się własnym papierom.\n\n        Tego tonu potrzebuje HECTON-8: ludzkiej obecności odzyskanej z powierzchni pracy. Pasek nie mówi graczowi, co czuć. Pozwala usłyszeć miejsce, które dalej próbowało wykonywać swoją pracę, gdy na górze uznano, że papier jest ważniejszy od ludzi w środku.",
-          "field_note": "Jeśli pasek i pokój się kłócą, na końcu wierz pokojowi.",
-          "localization_status": "draft_manual"
-        },
-        "pt_BR": {
-          "title": "Tiras de registro de hidrofone",
-          "scanner": "TIRA DE HIDROFONE // Fita de pressão em fibra cerâmica de um gravador de sala. Lê cadência de bomba, impactos de eclusa, gemido de casco e voz como vibração. Compare com selo de rota e estado da porta.",
-          "terminal": "NOTA DE MANUTENÇÃO // Tiras de hidrofone são admissíveis quando série da tira, baia do gravador, tinta de pressão e escada de tempo concordam. Áudio limpo sem desgaste da tira não basta.",
-          "audio": "A tira ouviu a sala antes de alguém admitir que a sala estava falhando.",
-          "in_game_wiki": "Tiras de registro de hidrofone não são diários de voz. São recibos de manutenção que aprenderam a soar como fantasmas.\n\n        Nos módulos antigos da colônia, toda sala pressurizada tinha uma tira estreita de fibra cerâmica ao lado do gravador hidrofone. A tira era barata, burra e difícil de corromper. Ela escutava pela parede: ritmo da bomba, dentes da porta, passos de botas, batidas de chave, gemido do casco, respiração em capacetes e o tremor baixo de uma sala decidindo se continuaria selada. Quando a rede caía, a tira ainda se movia. Por isso tantas tiras sobreviveram e tantos pacotes oficiais não.\n\n        A tira é lida em camadas. Primeiro vem a tinta de pressão: inclinações, quedas, dentes repentinos onde uma eclusa mordeu a moldura. Depois o pente acústico: notas repetidas de máquina, batidas de bomba ausentes, uma forma de voz borrada demais para palavras. Depois a borda notarial: série, selo da baia, escada de tempo, marcas de emenda. O jogador nunca deve tratar o som recuperado sozinho como verdade. A tira precisa concordar com a sala.\n\n        Boa evidência hidrofone muda uma rota. Pode mostrar que uma porta abriu antes de existir permissão, que uma bomba continuou funcionando depois do horário de morte registrado, que um clipe black-box foi limpo, ou que alguém estava na sala enquanto o log oficial dizia operação remota. A tira não acusa de modo teatral. Ela guarda marcas de pressão até alguém aprender a lê-las.",
-          "external_site": "Tiras de hidrofone transformam áudio de HECTON-8 em evidência física: tinta de pressão, desgaste do gravador, ritmo de máquina e prova do estado da sala.",
-          "external_site_article": "A tira de hidrofone é um dos objetos de evidência mais úteis de HECTON-8 porque torna o som físico.\n\n        É uma fita estreita de fibra cerâmica puxada por um velho gravador de sala. O gravador escutava a câmara pressurizada, não uma pessoa. Captava cadência de bombas, impactos de escotilha, rompimentos de cabo, batidas de ferramenta, tensão do casco e formas borradas de vozes através de água e metal. A tira sobreviveu porque era simples. Não precisava de rede viva, terminal limpo ou arquivo corporativo cooperativo. Precisava de pressão, tinta e movimento.\n\n        Para o jogador, a tira deve parecer um objeto forense. O áudio pode ser estranho, mas a prova está no desencontro: impacto de porta antes da autorização, nota de bomba depois do desligamento declarado, segundo ausente onde todos os outros gravadores ficam planos, forma de voz ao lado de um selo de rota que nenhum operador vivo assinou. Não é monólogo. É uma sala contradizendo seus papéis.\n\n        Esse é o tom que HECTON-8 precisa: presença humana recuperada por superfícies de trabalho. A tira não diz ao jogador o que sentir. Ela deixa ouvir um lugar que ainda tentava cumprir sua função depois que lá em cima decidiram que papel importava mais que as pessoas dentro.",
-          "field_note": "Se a tira e a sala discordarem, acredite na sala por último.",
-          "localization_status": "draft_manual"
-        },
-        "nl_NL": {
-          "title": "Hydrofoon-logstroken",
-          "scanner": "HYDROFOON-LOGSTROOK // Keramische vezel-druktape uit een kamerrecorder. Leest pompcadans, sluisinslagen, rompkreun en stem als trilling. Vergelijk met routestempel en deurstatus.",
-          "terminal": "ONDERHOUDSNOTITIE // Hydrofoonstroken zijn bewijs wanneer strookserie, recorderbaai, drukinkt en tijdladder overeenkomen. Een schoon audiobestand zonder strookslijtage is niet genoeg.",
-          "audio": "De strook hoorde de kamer voordat iemand toegaf dat de kamer faalde.",
-          "in_game_wiki": "Hydrofoon-logstroken zijn geen stemdagboeken. Het zijn onderhoudsbewijzen die hebben geleerd als geesten te klinken.\n\n        In de oudere koloniemodules had elke drukkamer een smalle keramische vezelstrook naast de hydrofoonrecorder. De strook was goedkoop, dom en lastig te vervalsen. Hij luisterde door de muur: pompritme, deurtanden, laarsinslagen, gereedschaptikken, rompkreun, adem in helmen en de lage rilling van een kamer die beslist of hij dicht blijft. Toen het netwerk viel, bleef de strook bewegen. Daarom overleefden zoveel stroken en zo weinig officiële pakketten.\n\n        Een strook lees je in lagen. Eerst de drukinkt: hellingen, dalen, plotselinge tanden waar een sluis in zijn frame beet. Dan de akoestische kam: herhaalde machinenoten, ontbrekende pompslagen, een stemvorm te uitgesmeerd voor woorden. Dan de notarisrand: serie, baaistempel, tijdladder, sporen van splice. De speler mag de teruggewonnen klank nooit alleen als waarheid nemen. De strook moet kloppen met de kamer.\n\n        Goed hydrofoonbewijs verandert een route. Het kan tonen dat een deur openging vóór er toestemming was, dat een pomp werkte na de gemelde doodstijd, dat een black-box-clip werd schoongemaakt, of dat iemand in de kamer stond terwijl het officiële log bediening op afstand claimde. De strook beschuldigt niet theatraal. Hij bewaart druksporen tot iemand ze leert lezen.",
-          "external_site": "Hydrofoonstroken maken HECTON-8-audio fysiek bewijs: drukinkt, recorder-slijtage, machineritme en bewijs van kamerstatus.",
-          "external_site_article": "De hydrofoonstrook is een van HECTON-8's nuttigste bewijsobjecten omdat hij geluid fysiek maakt.\n\n        Het is een smalle keramische vezeltape die door een oude kamerrecorder loopt. De recorder luisterde naar de drukkamer, niet naar een persoon. Hij ving pompcadans, luikinslagen, kabelknappen, gereedschaptikken, rompspanning en uitgesmeerde stemvormen door water en metaal. De strook overleefde omdat hij simpel was. Hij had geen levend netwerk, schone terminal of meewerkend bedrijfsarchief nodig. Hij had druk, inkt en beweging nodig.\n\n        Voor de speler moet een strook lezen als een forensisch object. Het audio kan vreemd zijn, maar het bewijs zit in de mismatch: een deurinslag vóór autorisatie, een pompnoot na de gemelde shutdown, een ontbrekende seconde waar alle andere recorders vlak worden, een stemvorm naast een routestempel die geen levende operator tekende. Het is geen monoloog. Het is een kamer die zijn papierwerk tegenspreekt.\n\n        Dit is de toon die HECTON-8 nodig heeft: menselijke aanwezigheid teruggevonden via werkoppervlakken. De strook vertelt de speler niet wat te voelen. Hij laat een plek horen die nog probeerde zijn werk te doen nadat boven werd besloten dat papier belangrijker was dan de mensen binnen.",
-          "field_note": "Als strook en kamer ruziën, geloof de kamer als laatste.",
-          "localization_status": "draft_manual"
-        },
-        "id_ID": {
-          "title": "Strip Log Hidrofon",
-          "scanner": "STRIP HIDROFON // Pita tekanan serat keramik dari perekam ruangan. Membaca irama pompa, benturan airlock, erang lambung, dan suara sebagai getaran. Bandingkan dengan stempel rute dan status pintu.",
-          "terminal": "CATATAN PERAWATAN // Strip hidrofon sah sebagai bukti ketika seri strip, teluk perekam, tinta tekanan, dan tangga waktu cocok. File audio bersih tanpa aus strip tidak cukup.",
-          "audio": "Strip itu mendengar ruangan sebelum siapa pun mengakui ruangan itu gagal.",
-          "in_game_wiki": "Strip log hidrofon bukan buku harian suara. Ia adalah tanda terima perawatan yang belajar terdengar seperti hantu.\n\n        Di modul koloni lama, setiap ruang bertekanan menyimpan strip serat keramik sempit di samping perekam hidrofon. Strip itu murah, bodoh, dan sulit dirusak datanya. Ia mendengar lewat dinding: irama pompa, gigi pintu, hentakan sepatu, ketukan alat, erang lambung, napas di helm, dan getar rendah ruangan yang memutuskan apakah tetap tersegel. Saat jaringan mati, strip masih bergerak. Itu sebabnya banyak strip selamat dan banyak paket resmi tidak.\n\n        Strip dibaca berlapis. Pertama tinta tekanan: lereng, celah, gigi tajam ketika airlock menggigit rangka. Lalu sisir akustik: nada mesin berulang, ketukan pompa yang hilang, bentuk suara terlalu kabur untuk kata. Lalu tepi notaris: seri, stempel teluk, tangga waktu, bekas sambungan. Pemain tidak boleh menganggap suara pulih saja sebagai kebenaran. Strip harus cocok dengan ruangan.\n\n        Bukti hidrofon yang baik mengubah rute. Ia bisa menunjukkan pintu terbuka sebelum izin ada, pompa bekerja setelah waktu kematian dicatat, klip black-box dibersihkan, atau seseorang berdiri di ruangan saat log resmi mengklaim operasi jarak jauh. Strip tidak menuduh secara drama. Ia menyimpan tanda tekanan sampai seseorang belajar membacanya.",
-          "external_site": "Strip hidrofon mengubah audio HECTON-8 menjadi bukti fisik: tinta tekanan, aus perekam, irama mesin, dan bukti status ruangan.",
-          "external_site_article": "Strip hidrofon adalah salah satu objek bukti paling berguna di HECTON-8 karena membuat suara menjadi fisik.\n\n        Ia adalah pita serat keramik sempit yang ditarik melalui perekam ruangan lama. Perekam mendengar ruang tekanan, bukan manusia. Ia menangkap irama pompa, benturan palka, kabel putus, ketukan alat, tegangan lambung, dan bentuk suara yang luntur lewat air dan logam. Strip bertahan karena sederhana. Ia tidak butuh jaringan hidup, terminal bersih, atau arsip perusahaan yang kooperatif. Ia butuh tekanan, tinta, dan gerak.\n\n        Bagi pemain, strip harus terasa seperti objek forensik. Audio boleh menyeramkan, tetapi bukti ada pada ketidakcocokan: benturan pintu sebelum otorisasi, nada pompa setelah pemadaman resmi, detik hilang ketika semua perekam lain ikut datar, bentuk suara di samping stempel rute yang tidak ditandatangani operator hidup. Ini bukan monolog. Ini ruangan yang membantah berkasnya sendiri.\n\n        Inilah nada yang dibutuhkan HECTON-8: kehadiran manusia ditemukan lewat permukaan kerja. Strip tidak memberi tahu pemain harus merasa apa. Ia membiarkan pemain mendengar tempat yang masih mencoba bekerja setelah orang di atas memutuskan kertas lebih penting daripada manusia di dalam.",
-          "field_note": "Jika strip dan ruangan bertentangan, percayai ruangan terakhir.",
-          "localization_status": "draft_manual"
-        },
-        "ja_JP": {
-          "title": "ハイドロフォン・ログストリップ",
-          "scanner": "ハイドロフォン・ログストリップ // 室内レコーダーのセラミック繊維圧力テープ。ポンプ律動、ロック衝撃、船殻のうなり、声を振動として読む。経路スタンプと扉状態を照合。",
-          "terminal": "保守メモ // ストリップ番号、レコーダー区画、圧力インク、時間梯子が一致する場合のみ証拠として扱う。摩耗のないきれいな音声ファイルだけでは不十分。",
-          "audio": "そのストリップは、誰かが部屋の失敗を認める前に部屋を聞いていた。",
-          "in_game_wiki": "ハイドロフォン・ログストリップは音声日記ではない。幽霊のように鳴ることを覚えた保守領収書だ。\n\n        古いコロニーモジュールでは、各圧力室のハイドロフォンレコーダー脇に細いセラミック繊維ストリップがあった。安く、単純で、改ざんしにくい。壁越しにポンプの律動、扉の歯、ブーツの衝撃、工具音、船殻のうなり、ヘルメット内の呼吸、密閉を保つか迷う部屋の低い震えを聞いていた。ネットワークが落ちてもストリップは動いた。だから公式パケットより多く残った。\n\n        ストリップは層で読む。まず圧力インク。傾斜、落ち込み、ロックが枠に噛んだ鋭い歯。次に音響の櫛。繰り返す機械音、抜けたポンプ拍、言葉にならないほど滲んだ声の形。最後に公証の縁。番号、区画スタンプ、時間梯子、継ぎ目。復元音だけを真実にしてはいけない。ストリップは部屋と一致しなければならない。\n\n        よいハイドロフォン証拠は経路を変える。許可スタンプより前に扉が開いたこと、死亡時刻の後もポンプが動いていたこと、black-box断片が洗浄されたこと、公式ログが遠隔操作だと言う間に誰かが部屋にいたことを示せる。ストリップは劇的に告発しない。誰かが読めるまで圧力跡を持ち続ける。",
-          "external_site": "ハイドロフォン・ストリップはHECTON-8の音を物理証拠にする。圧力インク、レコーダー摩耗、機械律動、室内状態の証明。",
-          "external_site_article": "ハイドロフォン・ストリップは、音を物理化するため、HECTON-8で最も有用な証拠物の一つだ。\n\n        古い室内レコーダーを通る細いセラミック繊維テープである。レコーダーは人ではなく圧力室を聞いていた。ポンプ律動、ハッチ衝撃、ケーブル断線、工具の打撃、船殻応力、水と金属越しに滲んだ声を拾った。ストリップが生き残ったのは単純だったからだ。生きたネットワークも、きれいな端末も、協力的な企業アーカイブもいらない。必要なのは圧力、インク、動きだけだった。\n\n        プレイヤーにとってストリップは鑑識物として読めるべきだ。音は不気味でよいが、証拠は不一致にある。承認前の扉衝撃、停止申告後のポンプ音、他のレコーダーも平坦になる欠落秒、生存オペレーターが署名していない経路スタンプ横の声の形。これは独白ではない。部屋が書類に反論している。\n\n        HECTON-8に必要なのはこの調子だ。作業面から回収される人間の気配。ストリップはプレイヤーに何を感じるか命じない。上が中の人間より書類を重んじた後も、まだ仕事を続けようとしていた場所を聞かせる。",
-          "field_note": "ストリップと部屋が争うなら、最後は部屋を信じろ。",
-          "localization_status": "draft_manual"
-        },
-        "ko_KR": {
-          "title": "하이드로폰 로그 스트립",
-          "scanner": "하이드로폰 로그 스트립 // 방 녹음기의 세라믹 섬유 압력 테이프. 펌프 박자, 에어록 충격, 선체 신음, 목소리를 진동으로 읽는다. 경로 스탬프와 문 상태를 대조하라.",
-          "terminal": "정비 메모 // 스트립 일련번호, 녹음기 베이, 압력 잉크, 시간 사다리가 맞을 때 하이드로폰 스트립은 증거가 된다. 스트립 마모 없는 깨끗한 오디오 파일만으로는 부족하다.",
-          "audio": "그 스트립은 누군가 방이 망가지고 있다고 인정하기 전에 방을 들었다.",
-          "in_game_wiki": "하이드로폰 로그 스트립은 음성 일기가 아니다. 유령처럼 들리는 법을 배운 정비 영수증이다.\n\n        오래된 식민지 모듈의 모든 압력실에는 하이드로폰 녹음기 옆에 좁은 세라믹 섬유 스트립이 있었다. 싸고 단순하며 조작하기 어려웠다. 벽을 통해 펌프 박자, 문 톱니, 부츠 충격, 공구 타격, 선체 신음, 헬멧 속 숨, 밀폐를 유지할지 결정하는 방의 낮은 떨림을 들었다. 네트워크가 죽어도 스트립은 움직였다. 그래서 공식 패킷보다 많은 스트립이 살아남았다.\n\n        스트립은 층으로 읽는다. 먼저 압력 잉크: 기울기, 꺼짐, 에어록이 프레임을 물어뜯은 날카로운 이빨. 다음은 음향 빗: 반복되는 기계음, 빠진 펌프 박자, 말로 되기엔 너무 번진 목소리 모양. 마지막은 공증 가장자리: 일련번호, 베이 스탬프, 시간 사다리, 접합 흔적. 회수된 소리만으로 진실을 삼으면 안 된다. 스트립은 방과 맞아야 한다.\n\n        좋은 하이드로폰 증거는 경로를 바꾼다. 허가 스탬프 전 문이 열렸다는 것, 사망 시간이 제출된 뒤에도 펌프가 돌았다는 것, black-box 클립이 청소됐다는 것, 공식 로그가 원격 조작이라 말하는 동안 누군가 방 안에 있었다는 것을 보여 줄 수 있다. 스트립은 극적으로 고발하지 않는다. 누군가 읽을 때까지 압력 자국을 보관한다.",
-          "external_site": "하이드로폰 스트립은 HECTON-8 오디오를 물리 증거로 바꾼다. 압력 잉크, 녹음기 마모, 기계 박자, 방 상태 증명.",
-          "external_site_article": "하이드로폰 스트립은 소리를 물리적으로 만들기 때문에 HECTON-8에서 가장 유용한 증거 물체 중 하나다.\n\n        오래된 방 녹음기를 지나가는 좁은 세라믹 섬유 테이프다. 녹음기는 사람이 아니라 압력실을 들었다. 펌프 박자, 해치 충격, 케이블 끊김, 공구 타격, 선체 장력, 물과 금속을 지난 번진 목소리를 잡았다. 스트립은 단순해서 살아남았다. 살아 있는 네트워크, 깨끗한 단말기, 협조적인 회사 기록 보관소가 필요 없었다. 압력, 잉크, 움직임만 필요했다.\n\n        플레이어에게 스트립은 법의학 물체처럼 읽혀야 한다. 오디오는 섬뜩해도 되지만 증거는 불일치에 있다. 승인 전 문 충격, 신고된 정지 뒤 펌프음, 다른 녹음기도 동시에 평평해지는 사라진 1초, 살아 있는 오퍼레이터가 서명하지 않은 경로 스탬프 옆 목소리 모양. 이것은 독백이 아니다. 방이 자기 서류에 반박하는 것이다.\n\n        HECTON-8에 필요한 톤은 이것이다. 작업 표면을 통해 회수되는 인간의 흔적. 스트립은 플레이어에게 무엇을 느끼라고 말하지 않는다. 위쪽 사람들이 안의 사람보다 서류를 더 중요하게 여긴 뒤에도 계속 일하려던 장소를 들려준다.",
-          "field_note": "스트립과 방이 다투면 마지막에는 방을 믿어라.",
-          "localization_status": "draft_manual"
-        },
-        "zh_CN": {
-          "title": "水听器日志带",
-          "scanner": "水听器日志带 // 来自房间记录器的陶瓷纤维压力带。读取泵节奏、气闸撞击、船壳呻吟和作为振动的声音。与路线印章和门状态对照。",
-          "terminal": "维护注记 // 当带编号、记录器舱位、压力墨和时间阶梯一致时，水听器带可作为证据。没有带磨损的干净音频文件不够。",
-          "audio": "在任何人承认房间正在失败之前，那条带已经听见了房间。",
-          "in_game_wiki": "水听器日志带不是语音日记。它们是学会像幽灵一样发声的维护收据。\n\n        老殖民地模块里的每个压力房，都在水听器记录器旁放着一条窄窄的陶瓷纤维带。它便宜、迟钝、难以篡改。它隔墙聆听：泵节奏、门齿、靴子撞击、工具敲击、船壳呻吟、头盔里的呼吸，以及房间判断自己还能不能保持密封时的低震。网络倒下时，带仍在移动。所以留下来的带比官方包件更多。\n\n        读取一条带要分层。先看压力墨：斜坡、下陷、气闸咬住门框时的尖齿。再看声学梳：重复的机器音、缺失的泵拍、模糊到无法成词的声音形状。最后看公证边：编号、舱位章、时间阶梯、拼接痕。玩家不能只把恢复的声音当真。带必须和房间一致。\n\n        好的水听器证据会改变路线。它能显示门在许可印章出现前打开，泵在申报死亡时间后仍工作，black-box片段被清洗过，或有人站在房间里而官方日志声称远程操作。带不会戏剧化控诉。它保存压力痕迹，直到有人学会阅读。",
-          "external_site": "水听器日志带把HECTON-8音频变成物理证据：压力墨、记录器磨损、机器节奏和房间状态证明。",
-          "external_site_article": "水听器带是HECTON-8最有用的证据物之一，因为它让声音变成物理。\n\n        它是一条穿过旧房间记录器的窄陶瓷纤维带。记录器听的是压力舱，不是某个人。它捕捉泵节奏、舱口撞击、缆线断裂、工具敲击、船壳受力，以及穿过水和金属后被抹开的声音形状。带能幸存，是因为它简单。它不需要活着的网络、干净终端或配合的公司档案。它只需要压力、墨和运动。\n\n        对玩家来说，带应当像法证物一样被读取。音频可以诡异，但证据在错位里：授权前的门撞击、声称停机后的泵音、所有记录器同时变平的缺失秒、无人签署的路线印章旁边出现的声音形状。这不是独白。是房间在反驳自己的文件。\n\n        HECTON-8需要这种语气：通过工作表面找回人的存在。带不会命令玩家该感受什么。它让玩家听到一个地方在上面的人决定纸张比里面的人更重要之后，仍然试图完成自己的工作。",
-          "field_note": "如果带和房间互相矛盾，最后相信房间。",
-          "localization_status": "draft_manual"
-        },
-        "ar_SA": {
-          "title": "أشرطة سجل الهيدروفون",
-          "scanner": "شريط سجل هيدروفون // شريط ضغط من ألياف خزفية من مسجل غرفة. يقرأ إيقاع المضخة، ضربات القفل، أنين البدن، والصوت كاهتزاز. قارنه بختم المسار وحالة الباب.",
-          "terminal": "ملاحظة صيانة // تقبل أشرطة الهيدروفون كدليل عندما يتطابق رقم الشريط وحجرة المسجل وحبر الضغط وسلم الوقت. ملف صوت نظيف بلا تآكل شريط لا يكفي.",
-          "audio": "سمع الشريط الغرفة قبل أن يعترف أحد بأن الغرفة كانت تفشل.",
-          "in_game_wiki": "أشرطة سجل الهيدروفون ليست يوميات صوتية. إنها إيصالات صيانة تعلمت أن تبدو كالأشباح.\n\n        في وحدات المستعمرة القديمة كان لكل غرفة ضغط شريط خزفي ضيق قرب مسجل الهيدروفون. كان رخيصا وغبيا وصعب التزوير. كان يسمع عبر الجدار: إيقاع المضخة، أسنان الباب، ضربات الأحذية، طرق الأدوات، أنين البدن، التنفس داخل الخوذ، والرجفة المنخفضة لغرفة تقرر هل تبقى محكمة. عندما تسقط الشبكة، يستمر الشريط بالحركة. لذلك نجت أشرطة كثيرة ولم تنج حزم رسمية كثيرة.\n\n        يقرأ الشريط بطبقات. أولا حبر الضغط: ميول، هبوطات، أسنان حادة حيث عض القفل إطاره. ثم المشط الصوتي: نغمات آلة متكررة، ضربات مضخة مفقودة، شكل صوت ممسوح لا يصير كلمات. ثم حافة الكاتب: رقم، ختم حجرة، سلم وقت، آثار وصل. لا يجب أن يعامل اللاعب الصوت المستعاد وحده كحقيقة. يجب أن يتفق الشريط مع الغرفة.\n\n        الدليل الهيدروفوني الجيد يغير المسار. يمكن أن يثبت أن بابا فتح قبل وجود إذن، أو أن مضخة عملت بعد وقت موت مسجل، أو أن مقطع black-box نُظف، أو أن شخصا كان في الغرفة بينما قال السجل الرسمي إن العملية بعيدة. الشريط لا يتهم بمسرحية. إنه يحتفظ بعلامات الضغط حتى يتعلم أحد قراءتها.",
-          "external_site": "أشرطة الهيدروفون تحول صوت HECTON-8 إلى دليل مادي: حبر ضغط، تآكل مسجل، إيقاع آلة، وحالة غرفة.",
-          "external_site_article": "شريط الهيدروفون من أنفع أدلة HECTON-8 لأنه يجعل الصوت ماديا.\n\n        إنه شريط خزفي ضيق يمر في مسجل غرفة قديم. كان المسجل يستمع إلى حجرة الضغط لا إلى شخص. التقط إيقاع المضخات، ضربات الفتحات، انقطاع الكابلات، طرق الأدوات، إجهاد البدن، وأشكال أصوات ممسوحة عبر الماء والمعدن. نجا الشريط لأنه بسيط. لم يحتج إلى شبكة حية أو طرفية نظيفة أو أرشيف شركة متعاون. احتاج إلى ضغط وحبر وحركة.\n\n        بالنسبة للاعب يجب أن يقرأ الشريط كجسم جنائي. قد يكون الصوت مخيفا، لكن الدليل في عدم التطابق: ضربة باب قبل التفويض، نغمة مضخة بعد إيقاف معلن، ثانية مفقودة حيث تسطح كل المسجلات الأخرى، شكل صوت بجانب ختم مسار لم يوقعه عامل حي. هذا ليس مونولوجا. إنها غرفة تعارض أوراقها.\n\n        هذا هو النبرة التي تحتاجها HECTON-8: حضور بشري يستعاد من أسطح العمل. الشريط لا يقول للاعب ماذا يشعر. إنه يجعله يسمع مكانا ظل يحاول أداء عمله بعد أن قرر من في الأعلى أن الورق أهم من الناس في الداخل.",
-          "field_note": "إذا اختلف الشريط والغرفة، صدق الغرفة في النهاية.",
-          "localization_status": "draft_manual"
-        },
-        "he_IL": {
-          "title": "רצועות יומן הידרופון",
-          "scanner": "רצועת יומן הידרופון // סרט לחץ מסיבי קרמיקה ממקליט חדר. קורא קצב משאבה, פגיעות מנעול, אנקת גוף וקול כרעידה. השווה לחותמת מסלול ולמצב דלת.",
-          "terminal": "הערת תחזוקה // רצועות הידרופון קבילות כשמספר הרצועה, תא המקליט, דיו הלחץ וסולם הזמן מסכימים. קובץ שמע נקי בלי שחיקת רצועה אינו מספיק.",
-          "audio": "הרצועה שמעה את החדר לפני שמישהו הודה שהחדר כושל.",
-          "in_game_wiki": "רצועות יומן הידרופון אינן יומני קול. הן קבלות תחזוקה שלמדו להישמע כמו רוחות.\n\n        במודולים הישנים של המושבה, לכל חדר לחץ הייתה רצועת סיבי קרמיקה צרה ליד מקליט ההידרופון. היא הייתה זולה, טיפשה וקשה לזיוף. היא הקשיבה דרך הקיר: קצב משאבה, שיני דלת, פגיעות מגפיים, נקישות כלי, אנקת גוף, נשימה בתוך קסדות והרטט הנמוך של חדר שמחליט אם יישאר אטום. כשהרשת נפלה, הרצועה המשיכה לנוע. לכן כל כך הרבה רצועות שרדו וכל כך מעט חבילות רשמיות.\n\n        קוראים רצועה בשכבות. קודם דיו הלחץ: שיפועים, נפילות, שיניים חדות במקום שבו מנעול נשך את המסגרת. אחר כך המסרק האקוסטי: תווי מכונה חוזרים, פעימות משאבה חסרות, צורת קול מטושטשת מדי למילים. אחר כך קצה הנוטריון: מספר, חותמת תא, סולם זמן, סימני חיבור. השחקן לא צריך להתייחס לצליל המשוחזר לבדו כאמת. הרצועה חייבת להסכים עם החדר.\n\n        ראיית הידרופון טובה משנה מסלול. היא יכולה להראות שדלת נפתחה לפני שהיה אישור, שמשאבה פעלה אחרי זמן מוות שהוגש, שקליפ black-box נוקה, או שמישהו עמד בחדר בזמן שהיומן הרשמי טען להפעלה מרחוק. הרצועה אינה מאשימה בתיאטרון. היא שומרת סימני לחץ עד שמישהו לומד לקרוא אותם.",
-          "external_site": "רצועות הידרופון הופכות את השמע של HECTON-8 לראיה פיזית: דיו לחץ, שחיקת מקליט, קצב מכונה והוכחת מצב חדר.",
-          "external_site_article": "רצועת ההידרופון היא אחד מחפצי הראיה השימושיים ביותר ב-HECTON-8 כי היא הופכת קול לפיזי.\n\n        זה סרט סיבי קרמיקה צר שנמשך דרך מקליט חדר ישן. המקליט הקשיב לתא הלחץ, לא לאדם. הוא תפס קצב משאבות, פגיעות פתחים, קריעת כבלים, נקישות כלים, מאמץ גוף וצורות קול מרוחות דרך מים ומתכת. הרצועה שרדה כי הייתה פשוטה. היא לא נזקקה לרשת חיה, למסוף נקי או לארכיון חברה משתף פעולה. היא נזקקה ללחץ, דיו ותנועה.\n\n        לשחקן הרצועה צריכה להיקרא כחפץ פורנזי. השמע יכול להיות מטריד, אבל הראיה נמצאת באי ההתאמה: פגיעת דלת לפני הרשאה, תו משאבה אחרי כיבוי מוצהר, שנייה חסרה שבה כל המקליטים האחרים משתטחים, צורת קול לצד חותמת מסלול שאף מפעיל חי לא חתם. זה לא מונולוג. זה חדר שסותר את הניירת שלו.\n\n        זה הטון ש-HECTON-8 צריכה: נוכחות אנושית שנמצאת מחדש דרך משטחי עבודה. הרצועה לא אומרת לשחקן מה להרגיש. היא נותנת לו לשמוע מקום שעדיין ניסה לעשות את עבודתו אחרי שלמעלה החליטו שנייר חשוב יותר מהאנשים בפנים.",
-          "field_note": "אם הרצועה והחדר מתווכחים, האמן לחדר בסוף.",
-          "localization_status": "draft_manual"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.hydrophone_log_strip_field_article",
+    "secondary": [
+     "unlock.first_hydrophone_log_strip",
+     "unlock.first_audio_fragment_tag",
+     "unlock.first_transcript_damage_band"
+    ],
+    "poi_tags": [
+     "poi.hydrophone_log_strip",
+     "poi.audio_fragment_tag",
+     "poi.transcript_damage_band",
+     "poi.pressure_room_recorder",
+     "poi.service_pump_audio",
+     "poi.airlock_bite_mark",
+     "poi.packet_notary_audio"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.relay_spine",
+     "biome.industrial_shelf",
+     "biome.audio_evidence"
+    ],
+    "depth_band_m": "0-4200"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Maintenance Recorder Bay Note",
+     "audio": "Recovered Hydrophone Strip Audio",
+     "in_game_wiki": "PDA Forensic Object Article",
+     "external_site": "Public Site Evidence Object Article",
+     "field_note": "Marauder Field Annotation"
+    },
+    "writer_note": "Player-facing hydrophone object article. Keep sound tied to room state, pressure marks and physical recorder wear. No ghost-monologue exposition."
+   },
+   "localized": {
+    "en_US": {
+     "title": "Hydrophone Log Strips",
+     "scanner": "HYDROPHONE LOG STRIP // Ceramic-fiber pressure tape from a room recorder. Reads pump cadence, lock impacts, hull groan and voice as vibration. Compare against route stamp and door state.",
+     "terminal": "MAINTENANCE NOTE // Hydrophone strips are admissible when the strip serial, recorder bay, pressure ink and timestamp ladder agree. A clean audio file without strip wear is not enough.",
+     "audio": "The strip heard the room before anyone admitted the room was failing.",
+     "in_game_wiki": "Hydrophone log strips are not voice diaries. They are maintenance receipts that learned to sound like ghosts.\n\n        Every pressure room in the older colony modules kept a narrow ceramic-fiber strip beside its hydrophone recorder. The strip was cheap, dumb and hard to corrupt. It listened through the wall: pump rhythm, door teeth, boot impacts, wrench taps, hull groan, breath inside helmets, and the low animal shudder of a room deciding whether to stay sealed. When the network went down, the strip still moved. That is why so many strips survived and so many official packets did not.\n\n        A strip is read in layers. First comes the pressure ink: slopes, dips, sudden teeth where a lock bit against its frame. Then the acoustic comb: repeating machine notes, missing pump strokes, a voice shape too blurred for words. Then the notary edge: serial, bay stamp, time ladder, splice marks. A player should never treat the recovered sound alone as truth. The strip has to agree with the room.\n\n        Good hydrophone evidence changes a route. It can show that a door opened before a permission stamp existed, that a pump kept working after a death time was filed, that a black-box clip was cleaned, or that someone stood in the room while the official log claimed remote operation. The strip does not accuse dramatically. It keeps pressure marks until someone learns to read them.",
+     "external_site": "Hydrophone log strips turn HECTON-8 audio into physical evidence: pressure ink, recorder wear, machine rhythm and room-state proof.",
+     "external_site_article": "The hydrophone strip is one of HECTON-8's most useful evidence objects because it makes sound physical.\n\n        It is a narrow ceramic-fiber tape pulled through an old room recorder. The recorder listened to the pressure chamber, not to a person. It caught pump cadence, hatch impacts, cable snaps, tool knocks, hull strain and the smeared shapes of voices through water and metal. The strip survived because it was simple. It did not need a live network, a clean terminal, or a cooperative company archive. It needed pressure, ink and movement.\n\n        For the player, a strip should read like a forensic object. The audio can be eerie, but the proof is in the mismatch: a door impact before authorization, a pump note after the claimed shutdown, a missing second where every other recorder goes flat, a voice shape that appears beside a route stamp no living operator signed. It is not a monologue. It is a room contradicting its paperwork.\n\n        This is the tone HECTON-8 needs: human presence recovered through work surfaces. The strip does not tell the player what to feel. It lets the player hear a place still trying to do its job after everyone above it decided the paperwork mattered more than the people inside.",
+     "field_note": "If the strip and the room disagree, believe the room last.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Гидрофонные ленты журнала",
+     "scanner": "ГИДРОФОННАЯ ЛЕНТА // Керамико-волоконная лента давления из комнатного рекордера. Читает ритм насоса, удары шлюза, стон корпуса и голос как вибрацию. Сравнить со штампом маршрута и состоянием двери.",
+     "terminal": "ЗАМЕТКА ОБСЛУЖИВАНИЯ // Гидрофонные ленты допустимы как улика, когда серийник ленты, отсек рекордера, чернила давления и лестница времени сходятся. Чистого аудиофайла без износа ленты недостаточно.",
+     "audio": "Лента услышала комнату раньше, чем кто-либо признал, что комната умирает.",
+     "in_game_wiki": "Гидрофонные ленты журнала - не голосовые дневники. Это квитанции обслуживания, которые научились звучать как призраки.\n\n        В старых модулях колонии у каждой напорной комнаты рядом с гидрофонным рекордером стояла узкая керамико-волоконная лента. Она была дешевой, тупой и почти не поддавалась подделке. Она слушала через стену: ритм насоса, зубья двери, удары ботинок, стук ключа, стон корпуса, дыхание в шлемах и низкую дрожь комнаты, которая решает, останется ли герметичной. Когда сеть падала, лента все равно двигалась. Поэтому ленты выжили чаще официальных пакетов.\n\n        Ленту читают слоями. Сначала чернила давления: наклоны, провалы, резкие зубцы, где шлюз бился о раму. Потом акустическая гребенка: повторяющиеся ноты машин, пропущенные удары насоса, форма голоса, слишком размазанная для слов. Потом нотариальный край: серийник, штамп отсека, лестница времени, следы склейки. Игрок не должен считать один восстановленный звук правдой. Лента должна совпасть с комнатой.\n\n        Хорошая гидрофонная улика меняет маршрут. Она может показать, что дверь открылась до появления разрешительного штампа, что насос работал после заявленного времени смерти, что black-box фрагмент чистили, или что кто-то стоял в комнате, пока официальный журнал называл операцию удаленной. Лента не обвиняет театрально. Она держит следы давления, пока кто-нибудь не научится их читать.",
+     "external_site": "Гидрофонные ленты превращают звук HECTON-8 в физическую улику: чернила давления, износ рекордера, машинный ритм и доказательство состояния комнаты.",
+     "external_site_article": "Гидрофонная лента - одна из самых полезных улик HECTON-8, потому что делает звук физическим.\n\n        Это узкая керамико-волоконная лента, протянутая через старый комнатный рекордер. Рекордер слушал напорную камеру, а не человека. Он ловил ритм насосов, удары люков, разрывы кабелей, стук инструментов, напряжение корпуса и размазанные формы голосов сквозь воду и металл. Лента выжила, потому что была простой. Ей не нужна была живая сеть, чистый терминал или послушный корпоративный архив. Ей нужны были давление, чернила и движение.\n\n        Для игрока лента должна читаться как судебный предмет. Аудио может быть жутким, но доказательство лежит в несовпадении: удар двери до разрешения, нота насоса после заявленного отключения, пропавшая секунда там, где все остальные рекордеры тоже глохнут, форма голоса рядом со штампом маршрута, который не подписывал живой оператор. Это не монолог. Это комната спорит со своими бумагами.\n\n        Такой тон нужен HECTON-8: человеческое присутствие, восстановленное через рабочие поверхности. Лента не говорит игроку, что чувствовать. Она дает услышать место, которое продолжало выполнять работу после того, как наверху решили, что бумага важнее людей внутри.",
+     "field_note": "Если лента и комната спорят, последней верь комнате.",
+     "localization_status": "draft_manual"
+    },
+    "uk_UA": {
+     "title": "Гідрофонні стрічки журналу",
+     "scanner": "ГІДРОФОННА СТРІЧКА // Керамічно-волоконна стрічка тиску з кімнатного рекордера. Читає ритм насоса, удари шлюзу, стогін корпусу й голос як вібрацію. Звір зі штампом маршруту та станом дверей.",
+     "terminal": "НОТАТКА ОБСЛУГИ // Гідрофонні стрічки приймаються як доказ, коли серійник стрічки, відсік рекордера, чорнило тиску й драбина часу збігаються. Чистого аудіофайлу без зносу стрічки замало.",
+     "audio": "Стрічка почула кімнату раніше, ніж хтось визнав, що кімната вмирає.",
+     "in_game_wiki": "Гідрофонні стрічки журналу - не голосові щоденники. Це квитанції обслуговування, які навчилися звучати як привиди.\n\n        У старих модулях колонії біля кожного кімнатного гідрофонного рекордера стояла вузька керамічно-волоконна стрічка. Вона була дешева, тупа й важка для підробки. Вона слухала крізь стіну: ритм насоса, зубці дверей, удари черевиків, стук ключа, стогін корпусу, дихання в шоломах і низьке тремтіння кімнати, яка вирішує, чи лишиться герметичною. Коли мережа падала, стрічка все одно рухалася. Тому стрічок вижило більше, ніж офіційних пакетів.\n\n        Стрічку читають шарами. Спершу чорнило тиску: схили, провали, різкі зубці там, де шлюз ударився об раму. Потім акустичний гребінь: повторювані ноти машин, пропущені удари насоса, форма голосу, надто розмита для слів. Потім нотаріальний край: серійник, штамп відсіку, драбина часу, сліди склейки. Гравець не має вірити самому відновленому звуку. Стрічка мусить збігтися з кімнатою.\n\n        Добрий гідрофонний доказ змінює маршрут. Він може показати, що двері відкрилися до появи дозволу, що насос працював після поданого часу смерті, що black-box фрагмент чистили, або що хтось стояв у кімнаті, поки офіційний журнал називав операцію віддаленою. Стрічка не звинувачує театрально. Вона тримає сліди тиску, доки хтось не навчиться їх читати.",
+     "external_site": "Гідрофонні стрічки перетворюють звук HECTON-8 на фізичний доказ: чорнило тиску, знос рекордера, машинний ритм і доказ стану кімнати.",
+     "external_site_article": "Гідрофонна стрічка - один із найкорисніших доказових предметів HECTON-8, бо робить звук фізичним.\n\n        Це вузька керамічно-волоконна стрічка, протягнута крізь старий кімнатний рекордер. Рекордер слухав камеру тиску, а не людину. Він ловив ритм насосів, удари люків, розриви кабелів, стукіт інструментів, напругу корпусу й розмиті форми голосів крізь воду та метал. Стрічка вижила, бо була проста. Їй не потрібні були жива мережа, чистий термінал чи слухняний корпоративний архів. Їй потрібні були тиск, чорнило й рух.\n\n        Для гравця стрічка має читатися як судовий предмет. Аудіо може бути моторошним, але доказ живе в невідповідності: удар дверей до дозволу, нота насоса після заявленого вимкнення, втрачена секунда там, де всі інші рекордери теж глухнуть, форма голосу поруч зі штампом маршруту, який не підписував живий оператор. Це не монолог. Це кімната сперечається зі своїми паперами.\n\n        Саме такий тон потрібен HECTON-8: людська присутність, відновлена через робочі поверхні. Стрічка не каже гравцю, що відчувати. Вона дає почути місце, яке продовжувало виконувати роботу після того, як нагорі вирішили, що папери важливіші за людей усередині.",
+     "field_note": "Якщо стрічка й кімната сперечаються, останньою вір кімнаті.",
+     "localization_status": "draft_manual"
+    },
+    "de_DE": {
+     "title": "Hydrophon-Logstreifen",
+     "scanner": "HYDROPHON-LOGSTREIFEN // Keramikfaser-Druckband aus einem Raumrecorder. Liest Pumpentakt, Schleusenstöße, Rumpfdröhnen und Stimme als Vibration. Mit Routenstempel und Türzustand vergleichen.",
+     "terminal": "WARTUNGSNOTIZ // Hydrophonstreifen gelten als Beweis, wenn Streifenseriennummer, Recorderschacht, Drucktinte und Zeitleiter übereinstimmen. Eine saubere Audiodatei ohne Streifenabrieb reicht nicht.",
+     "audio": "Der Streifen hörte den Raum, bevor jemand zugab, dass der Raum versagte.",
+     "in_game_wiki": "Hydrophon-Logstreifen sind keine Stimmtagebücher. Es sind Wartungsquittungen, die gelernt haben, wie Geister zu klingen.\n\n        In den älteren Koloniemodulen hatte jeder Druckraum einen schmalen Keramikfaserstreifen neben seinem Hydrophonrecorder. Der Streifen war billig, dumm und schwer zu verfälschen. Er hörte durch die Wand: Pumpentakt, Türzähne, Stiefelschläge, Werkzeugklopfen, Rumpfdröhnen, Atem in Helmen und das tiefe Zittern eines Raums, der entscheidet, ob er dicht bleibt. Als das Netz ausfiel, bewegte sich der Streifen weiter. Darum überlebten mehr Streifen als offizielle Pakete.\n\n        Man liest einen Streifen in Schichten. Zuerst die Drucktinte: Hänge, Einbrüche, harte Zähne dort, wo die Schleuse in den Rahmen biss. Dann der akustische Kamm: wiederholte Maschinennoten, fehlende Pumpenschläge, eine Stimmform zu verwischt für Worte. Dann die Notarkante: Seriennummer, Schachtstempel, Zeitleiter, Spleißspuren. Der Spieler darf den wiedergewonnenen Klang nicht allein als Wahrheit nehmen. Der Streifen muss zum Raum passen.\n\n        Guter Hydrophonbeweis verändert eine Route. Er kann zeigen, dass eine Tür vor der Genehmigung öffnete, dass eine Pumpe nach der gemeldeten Todeszeit lief, dass ein black-box-Clip gereinigt wurde oder dass jemand im Raum stand, während das offizielle Log Fernbetrieb behauptete. Der Streifen klagt nicht dramatisch an. Er hält Druckspuren, bis jemand lernt, sie zu lesen.",
+     "external_site": "Hydrophon-Logstreifen machen HECTON-8-Audio zu physischem Beweis: Drucktinte, Recorderabrieb, Maschinentakt und Raumzustand.",
+     "external_site_article": "Der Hydrophonstreifen ist eines der nützlichsten Beweisobjekte in HECTON-8, weil er Klang körperlich macht.\n\n        Er ist ein schmales Keramikfaserband, das durch einen alten Raumrecorder gezogen wurde. Der Recorder hörte auf die Druckkammer, nicht auf eine Person. Er fing Pumpentakt, Lukenschläge, Kabelrisse, Werkzeugklopfen, Rumpfspannung und verschmierte Stimmen durch Wasser und Metall. Der Streifen überlebte, weil er einfach war. Er brauchte kein lebendes Netz, kein sauberes Terminal und kein kooperatives Firmenarchiv. Er brauchte Druck, Tinte und Bewegung.\n\n        Für den Spieler sollte der Streifen wie ein forensischer Gegenstand lesbar sein. Das Audio darf unheimlich sein, aber der Beweis liegt im Widerspruch: ein Türschlag vor der Autorisierung, eine Pumpennote nach der behaupteten Abschaltung, eine fehlende Sekunde, in der auch alle anderen Recorder flach werden, eine Stimmform neben einem Routenstempel, den kein lebender Operator signierte. Es ist kein Monolog. Es ist ein Raum, der seinen Papieren widerspricht.\n\n        Das ist der Ton, den HECTON-8 braucht: menschliche Anwesenheit, geborgen aus Arbeitsflächen. Der Streifen sagt dem Spieler nicht, was er fühlen soll. Er lässt ihn einen Ort hören, der weiter seine Arbeit tat, nachdem oben beschlossen wurde, dass Papier wichtiger war als die Menschen darin.",
+     "field_note": "Wenn Streifen und Raum streiten, glaub dem Raum zuletzt.",
+     "localization_status": "draft_manual"
+    },
+    "fr_FR": {
+     "title": "Bandes de journal hydrophone",
+     "scanner": "BANDE HYDROPHONE // Ruban de pression en fibre céramique issu d'un enregistreur de salle. Lit cadence de pompe, impacts de sas, plainte de coque et voix comme vibration. Comparer au tampon de route et à l'état de porte.",
+     "terminal": "NOTE DE MAINTENANCE // Les bandes hydrophones sont recevables si le numéro de bande, la baie d'enregistreur, l'encre de pression et l'échelle de temps concordent. Un fichier audio propre sans usure de bande ne suffit pas.",
+     "audio": "La bande a entendu la salle avant que quelqu'un admette qu'elle était en train de céder.",
+     "in_game_wiki": "Les bandes de journal hydrophone ne sont pas des journaux intimes vocaux. Ce sont des reçus de maintenance qui ont appris à sonner comme des fantômes.\n\n        Dans les anciens modules de la colonie, chaque salle sous pression gardait une bande étroite en fibre céramique près de son enregistreur hydrophone. La bande était bon marché, stupide et difficile à corrompre. Elle écoutait à travers le mur : cadence de pompe, dents de porte, impacts de bottes, coups de clé, plainte de coque, souffle dans les casques et le tremblement bas d'une salle qui décide si elle va rester étanche. Quand le réseau tombait, la bande continuait à avancer. C'est pour cela que tant de bandes ont survécu aux paquets officiels.\n\n        Une bande se lit par couches. D'abord l'encre de pression : pentes, creux, dents soudaines là où un sas a mordu son cadre. Puis le peigne acoustique : notes de machine répétées, battements de pompe manquants, forme de voix trop floue pour devenir des mots. Puis le bord notarial : numéro, tampon de baie, échelle de temps, marques de raccord. Le joueur ne doit jamais prendre le son récupéré seul pour vérité. La bande doit être d'accord avec la salle.\n\n        Une bonne preuve hydrophone change une route. Elle peut montrer qu'une porte s'est ouverte avant l'autorisation, qu'une pompe tournait après l'heure de mort déclarée, qu'un extrait black-box a été nettoyé, ou que quelqu'un se tenait dans la salle pendant que le journal officiel parlait d'opération distante. La bande n'accuse pas avec théâtre. Elle garde les marques de pression jusqu'à ce que quelqu'un apprenne à les lire.",
+     "external_site": "Les bandes hydrophones transforment l'audio de HECTON-8 en preuve physique : encre de pression, usure d'enregistreur, rythme machine et état de salle.",
+     "external_site_article": "La bande hydrophone est l'un des objets de preuve les plus utiles de HECTON-8 parce qu'elle rend le son physique.\n\n        C'est un ruban étroit en fibre céramique tiré dans un ancien enregistreur de salle. L'enregistreur écoutait la chambre sous pression, pas une personne. Il captait la cadence des pompes, les impacts d'écoutille, les ruptures de câble, les coups d'outil, la contrainte de coque et les formes brouillées de voix à travers l'eau et le métal. La bande a survécu parce qu'elle était simple. Elle n'avait pas besoin d'un réseau vivant, d'un terminal propre ou d'une archive d'entreprise coopérative. Elle avait besoin de pression, d'encre et de mouvement.\n\n        Pour le joueur, une bande doit se lire comme un objet médico-légal. L'audio peut être inquiétant, mais la preuve est dans le décalage : un impact de porte avant l'autorisation, une note de pompe après l'arrêt déclaré, une seconde manquante là où tous les autres enregistreurs deviennent plats, une forme de voix près d'un tampon de route qu'aucun opérateur vivant n'a signé. Ce n'est pas un monologue. C'est une salle qui contredit ses papiers.\n\n        C'est le ton dont HECTON-8 a besoin : une présence humaine retrouvée dans les surfaces de travail. La bande ne dit pas au joueur quoi ressentir. Elle lui fait entendre un lieu qui essaie encore de faire son travail après que ceux d'en haut ont décidé que les papiers comptaient plus que les gens à l'intérieur.",
+     "field_note": "Si la bande et la salle se contredisent, crois la salle en dernier.",
+     "localization_status": "draft_manual"
+    },
+    "es_ES": {
+     "title": "Tiras de registro hidrofónico",
+     "scanner": "TIRA HIDROFÓNICA // Cinta de presión de fibra cerámica de un grabador de sala. Lee cadencia de bomba, impactos de esclusa, gemido de casco y voz como vibración. Comparar con sello de ruta y estado de puerta.",
+     "terminal": "NOTA DE MANTENIMIENTO // Las tiras hidrofónicas son admisibles cuando serie de tira, bahía de grabador, tinta de presión y escalera temporal coinciden. Un audio limpio sin desgaste de tira no basta.",
+     "audio": "La tira oyó la sala antes de que nadie admitiera que la sala estaba fallando.",
+     "in_game_wiki": "Las tiras de registro hidrofónico no son diarios de voz. Son recibos de mantenimiento que aprendieron a sonar como fantasmas.\n\n        En los módulos antiguos de la colonia, cada sala de presión guardaba una tira estrecha de fibra cerámica junto a su grabador hidrofónico. La tira era barata, tonta y difícil de corromper. Escuchaba a través de la pared: ritmo de bomba, dientes de puerta, golpes de botas, toques de llave, gemido del casco, respiración dentro de cascos y el temblor bajo de una sala decidiendo si seguir sellada. Cuando caía la red, la tira seguía moviéndose. Por eso sobrevivieron tantas tiras y tan pocos paquetes oficiales.\n\n        Una tira se lee por capas. Primero la tinta de presión: pendientes, caídas, dientes repentinos donde una esclusa mordió su marco. Luego el peine acústico: notas repetidas de máquina, golpes de bomba ausentes, una forma de voz demasiado borrosa para palabras. Luego el borde notarial: serie, sello de bahía, escalera temporal, marcas de empalme. El jugador no debe tomar el sonido recuperado como verdad por sí solo. La tira debe concordar con la sala.\n\n        Una buena prueba hidrofónica cambia una ruta. Puede mostrar que una puerta abrió antes de existir permiso, que una bomba siguió funcionando después de la hora de muerte archivada, que un clip black-box fue limpiado, o que alguien estuvo en la sala mientras el registro oficial decía operación remota. La tira no acusa de forma teatral. Guarda marcas de presión hasta que alguien aprende a leerlas.",
+     "external_site": "Las tiras hidrofónicas convierten el audio de HECTON-8 en prueba física: tinta de presión, desgaste de grabador, ritmo de máquina y estado de sala.",
+     "external_site_article": "La tira hidrofónica es uno de los objetos de prueba más útiles de HECTON-8 porque vuelve físico el sonido.\n\n        Es una cinta estrecha de fibra cerámica arrastrada por un viejo grabador de sala. El grabador escuchaba la cámara de presión, no a una persona. Captaba cadencia de bombas, impactos de escotilla, roturas de cable, golpes de herramienta, tensión del casco y formas de voz untadas por agua y metal. La tira sobrevivió porque era simple. No necesitaba una red viva, un terminal limpio ni un archivo corporativo cooperativo. Necesitaba presión, tinta y movimiento.\n\n        Para el jugador, una tira debe leerse como un objeto forense. El audio puede ser inquietante, pero la prueba está en el desajuste: impacto de puerta antes de autorización, nota de bomba después del apagado declarado, un segundo perdido donde todos los demás grabadores quedan planos, una forma de voz junto a un sello de ruta que no firmó ningún operador vivo. No es un monólogo. Es una sala contradiciendo sus papeles.\n\n        Ese es el tono que necesita HECTON-8: presencia humana recuperada por superficies de trabajo. La tira no le dice al jugador qué sentir. Le deja oír un lugar que seguía intentando hacer su trabajo después de que arriba decidieran que el papel importaba más que las personas dentro.",
+     "field_note": "Si la tira y la sala discrepan, cree a la sala al final.",
+     "localization_status": "draft_manual"
+    },
+    "pl_PL": {
+     "title": "Paski dziennika hydrofonu",
+     "scanner": "PASEK HYDROFONU // Ceramiczno-włóknista taśma ciśnienia z rejestratora pomieszczenia. Czyta takt pomp, uderzenia śluzy, jęk kadłuba i głos jako wibrację. Porównaj ze stemplem trasy i stanem drzwi.",
+     "terminal": "NOTA SERWISOWA // Paski hydrofonu są dowodem, gdy numer paska, zatoka rejestratora, atrament ciśnienia i drabina czasu zgadzają się. Czysty plik audio bez zużycia paska nie wystarczy.",
+     "audio": "Pasek usłyszał pomieszczenie, zanim ktokolwiek przyznał, że ono zawodzi.",
+     "in_game_wiki": "Paski dziennika hydrofonu nie są dziennikami głosowymi. To pokwitowania serwisowe, które nauczyły się brzmieć jak duchy.\n\n        W starszych modułach kolonii każde pomieszczenie ciśnieniowe miało wąski ceramiczno-włóknisty pasek przy rejestratorze hydrofonu. Był tani, głupi i trudny do sfałszowania. Słuchał przez ścianę: rytmu pomp, zębów drzwi, kroków, stuków narzędzi, jęku kadłuba, oddechu w hełmach i niskiego drżenia pokoju, który decyduje, czy zostanie szczelny. Gdy sieć padała, pasek nadal się poruszał. Dlatego przetrwało tak wiele pasków i tak mało oficjalnych pakietów.\n\n        Pasek czyta się warstwami. Najpierw atrament ciśnienia: spadki, dołki, ostre zęby po uderzeniu śluzy w ramę. Potem grzebień akustyczny: powtarzalne nuty maszyn, brakujące uderzenia pompy, kształt głosu zbyt rozmazany na słowa. Potem krawędź notarialna: numer, stempel zatoki, drabina czasu, ślady sklejenia. Sam odzyskany dźwięk nie jest prawdą. Pasek musi zgadzać się z pomieszczeniem.\n\n        Dobry dowód hydrofonu zmienia trasę. Może pokazać drzwi otwarte przed zezwoleniem, pompę działającą po zgłoszonym czasie śmierci, czyszczony klip black-box albo człowieka w pokoju, choć oficjalny log twierdził, że operacja była zdalna. Pasek nie oskarża teatralnie. Trzyma ślady ciśnienia, aż ktoś nauczy się je czytać.",
+     "external_site": "Paski hydrofonu zamieniają audio HECTON-8 w fizyczny dowód: atrament ciśnienia, zużycie rejestratora, rytm maszyn i stan pomieszczenia.",
+     "external_site_article": "Pasek hydrofonu jest jednym z najbardziej użytecznych dowodów HECTON-8, bo czyni dźwięk fizycznym.\n\n        To wąska ceramiczno-włóknista taśma przeciągnięta przez stary rejestrator pomieszczenia. Rejestrator słuchał komory ciśnieniowej, nie osoby. Łapał takt pomp, uderzenia włazów, pęknięcia kabli, stuki narzędzi, napięcie kadłuba i rozmazane głosy przez wodę i metal. Pasek przetrwał, bo był prosty. Nie potrzebował żywej sieci, czystego terminala ani chętnego archiwum firmy. Potrzebował ciśnienia, atramentu i ruchu.\n\n        Dla gracza pasek powinien czytać się jak obiekt sądowy. Audio może być niepokojące, ale dowód leży w niezgodności: uderzenie drzwi przed autoryzacją, nuta pompy po rzekomym wyłączeniu, brakująca sekunda tam, gdzie wszystkie inne rejestratory milkną, kształt głosu przy stemplu trasy, którego nie podpisał żywy operator. To nie monolog. To pomieszczenie sprzeciwia się własnym papierom.\n\n        Tego tonu potrzebuje HECTON-8: ludzkiej obecności odzyskanej z powierzchni pracy. Pasek nie mówi graczowi, co czuć. Pozwala usłyszeć miejsce, które dalej próbowało wykonywać swoją pracę, gdy na górze uznano, że papier jest ważniejszy od ludzi w środku.",
+     "field_note": "Jeśli pasek i pokój się kłócą, na końcu wierz pokojowi.",
+     "localization_status": "draft_manual"
+    },
+    "pt_BR": {
+     "title": "Tiras de registro de hidrofone",
+     "scanner": "TIRA DE HIDROFONE // Fita de pressão em fibra cerâmica de um gravador de sala. Lê cadência de bomba, impactos de eclusa, gemido de casco e voz como vibração. Compare com selo de rota e estado da porta.",
+     "terminal": "NOTA DE MANUTENÇÃO // Tiras de hidrofone são admissíveis quando série da tira, baia do gravador, tinta de pressão e escada de tempo concordam. Áudio limpo sem desgaste da tira não basta.",
+     "audio": "A tira ouviu a sala antes de alguém admitir que a sala estava falhando.",
+     "in_game_wiki": "Tiras de registro de hidrofone não são diários de voz. São recibos de manutenção que aprenderam a soar como fantasmas.\n\n        Nos módulos antigos da colônia, toda sala pressurizada tinha uma tira estreita de fibra cerâmica ao lado do gravador hidrofone. A tira era barata, burra e difícil de corromper. Ela escutava pela parede: ritmo da bomba, dentes da porta, passos de botas, batidas de chave, gemido do casco, respiração em capacetes e o tremor baixo de uma sala decidindo se continuaria selada. Quando a rede caía, a tira ainda se movia. Por isso tantas tiras sobreviveram e tantos pacotes oficiais não.\n\n        A tira é lida em camadas. Primeiro vem a tinta de pressão: inclinações, quedas, dentes repentinos onde uma eclusa mordeu a moldura. Depois o pente acústico: notas repetidas de máquina, batidas de bomba ausentes, uma forma de voz borrada demais para palavras. Depois a borda notarial: série, selo da baia, escada de tempo, marcas de emenda. O jogador nunca deve tratar o som recuperado sozinho como verdade. A tira precisa concordar com a sala.\n\n        Boa evidência hidrofone muda uma rota. Pode mostrar que uma porta abriu antes de existir permissão, que uma bomba continuou funcionando depois do horário de morte registrado, que um clipe black-box foi limpo, ou que alguém estava na sala enquanto o log oficial dizia operação remota. A tira não acusa de modo teatral. Ela guarda marcas de pressão até alguém aprender a lê-las.",
+     "external_site": "Tiras de hidrofone transformam áudio de HECTON-8 em evidência física: tinta de pressão, desgaste do gravador, ritmo de máquina e prova do estado da sala.",
+     "external_site_article": "A tira de hidrofone é um dos objetos de evidência mais úteis de HECTON-8 porque torna o som físico.\n\n        É uma fita estreita de fibra cerâmica puxada por um velho gravador de sala. O gravador escutava a câmara pressurizada, não uma pessoa. Captava cadência de bombas, impactos de escotilha, rompimentos de cabo, batidas de ferramenta, tensão do casco e formas borradas de vozes através de água e metal. A tira sobreviveu porque era simples. Não precisava de rede viva, terminal limpo ou arquivo corporativo cooperativo. Precisava de pressão, tinta e movimento.\n\n        Para o jogador, a tira deve parecer um objeto forense. O áudio pode ser estranho, mas a prova está no desencontro: impacto de porta antes da autorização, nota de bomba depois do desligamento declarado, segundo ausente onde todos os outros gravadores ficam planos, forma de voz ao lado de um selo de rota que nenhum operador vivo assinou. Não é monólogo. É uma sala contradizendo seus papéis.\n\n        Esse é o tom que HECTON-8 precisa: presença humana recuperada por superfícies de trabalho. A tira não diz ao jogador o que sentir. Ela deixa ouvir um lugar que ainda tentava cumprir sua função depois que lá em cima decidiram que papel importava mais que as pessoas dentro.",
+     "field_note": "Se a tira e a sala discordarem, acredite na sala por último.",
+     "localization_status": "draft_manual"
+    },
+    "nl_NL": {
+     "title": "Hydrofoon-logstroken",
+     "scanner": "HYDROFOON-LOGSTROOK // Keramische vezel-druktape uit een kamerrecorder. Leest pompcadans, sluisinslagen, rompkreun en stem als trilling. Vergelijk met routestempel en deurstatus.",
+     "terminal": "ONDERHOUDSNOTITIE // Hydrofoonstroken zijn bewijs wanneer strookserie, recorderbaai, drukinkt en tijdladder overeenkomen. Een schoon audiobestand zonder strookslijtage is niet genoeg.",
+     "audio": "De strook hoorde de kamer voordat iemand toegaf dat de kamer faalde.",
+     "in_game_wiki": "Hydrofoon-logstroken zijn geen stemdagboeken. Het zijn onderhoudsbewijzen die hebben geleerd als geesten te klinken.\n\n        In de oudere koloniemodules had elke drukkamer een smalle keramische vezelstrook naast de hydrofoonrecorder. De strook was goedkoop, dom en lastig te vervalsen. Hij luisterde door de muur: pompritme, deurtanden, laarsinslagen, gereedschaptikken, rompkreun, adem in helmen en de lage rilling van een kamer die beslist of hij dicht blijft. Toen het netwerk viel, bleef de strook bewegen. Daarom overleefden zoveel stroken en zo weinig officiële pakketten.\n\n        Een strook lees je in lagen. Eerst de drukinkt: hellingen, dalen, plotselinge tanden waar een sluis in zijn frame beet. Dan de akoestische kam: herhaalde machinenoten, ontbrekende pompslagen, een stemvorm te uitgesmeerd voor woorden. Dan de notarisrand: serie, baaistempel, tijdladder, sporen van splice. De speler mag de teruggewonnen klank nooit alleen als waarheid nemen. De strook moet kloppen met de kamer.\n\n        Goed hydrofoonbewijs verandert een route. Het kan tonen dat een deur openging vóór er toestemming was, dat een pomp werkte na de gemelde doodstijd, dat een black-box-clip werd schoongemaakt, of dat iemand in de kamer stond terwijl het officiële log bediening op afstand claimde. De strook beschuldigt niet theatraal. Hij bewaart druksporen tot iemand ze leert lezen.",
+     "external_site": "Hydrofoonstroken maken HECTON-8-audio fysiek bewijs: drukinkt, recorder-slijtage, machineritme en bewijs van kamerstatus.",
+     "external_site_article": "De hydrofoonstrook is een van HECTON-8's nuttigste bewijsobjecten omdat hij geluid fysiek maakt.\n\n        Het is een smalle keramische vezeltape die door een oude kamerrecorder loopt. De recorder luisterde naar de drukkamer, niet naar een persoon. Hij ving pompcadans, luikinslagen, kabelknappen, gereedschaptikken, rompspanning en uitgesmeerde stemvormen door water en metaal. De strook overleefde omdat hij simpel was. Hij had geen levend netwerk, schone terminal of meewerkend bedrijfsarchief nodig. Hij had druk, inkt en beweging nodig.\n\n        Voor de speler moet een strook lezen als een forensisch object. Het audio kan vreemd zijn, maar het bewijs zit in de mismatch: een deurinslag vóór autorisatie, een pompnoot na de gemelde shutdown, een ontbrekende seconde waar alle andere recorders vlak worden, een stemvorm naast een routestempel die geen levende operator tekende. Het is geen monoloog. Het is een kamer die zijn papierwerk tegenspreekt.\n\n        Dit is de toon die HECTON-8 nodig heeft: menselijke aanwezigheid teruggevonden via werkoppervlakken. De strook vertelt de speler niet wat te voelen. Hij laat een plek horen die nog probeerde zijn werk te doen nadat boven werd besloten dat papier belangrijker was dan de mensen binnen.",
+     "field_note": "Als strook en kamer ruziën, geloof de kamer als laatste.",
+     "localization_status": "draft_manual"
+    },
+    "id_ID": {
+     "title": "Strip Log Hidrofon",
+     "scanner": "STRIP HIDROFON // Pita tekanan serat keramik dari perekam ruangan. Membaca irama pompa, benturan airlock, erang lambung, dan suara sebagai getaran. Bandingkan dengan stempel rute dan status pintu.",
+     "terminal": "CATATAN PERAWATAN // Strip hidrofon sah sebagai bukti ketika seri strip, teluk perekam, tinta tekanan, dan tangga waktu cocok. File audio bersih tanpa aus strip tidak cukup.",
+     "audio": "Strip itu mendengar ruangan sebelum siapa pun mengakui ruangan itu gagal.",
+     "in_game_wiki": "Strip log hidrofon bukan buku harian suara. Ia adalah tanda terima perawatan yang belajar terdengar seperti hantu.\n\n        Di modul koloni lama, setiap ruang bertekanan menyimpan strip serat keramik sempit di samping perekam hidrofon. Strip itu murah, bodoh, dan sulit dirusak datanya. Ia mendengar lewat dinding: irama pompa, gigi pintu, hentakan sepatu, ketukan alat, erang lambung, napas di helm, dan getar rendah ruangan yang memutuskan apakah tetap tersegel. Saat jaringan mati, strip masih bergerak. Itu sebabnya banyak strip selamat dan banyak paket resmi tidak.\n\n        Strip dibaca berlapis. Pertama tinta tekanan: lereng, celah, gigi tajam ketika airlock menggigit rangka. Lalu sisir akustik: nada mesin berulang, ketukan pompa yang hilang, bentuk suara terlalu kabur untuk kata. Lalu tepi notaris: seri, stempel teluk, tangga waktu, bekas sambungan. Pemain tidak boleh menganggap suara pulih saja sebagai kebenaran. Strip harus cocok dengan ruangan.\n\n        Bukti hidrofon yang baik mengubah rute. Ia bisa menunjukkan pintu terbuka sebelum izin ada, pompa bekerja setelah waktu kematian dicatat, klip black-box dibersihkan, atau seseorang berdiri di ruangan saat log resmi mengklaim operasi jarak jauh. Strip tidak menuduh secara drama. Ia menyimpan tanda tekanan sampai seseorang belajar membacanya.",
+     "external_site": "Strip hidrofon mengubah audio HECTON-8 menjadi bukti fisik: tinta tekanan, aus perekam, irama mesin, dan bukti status ruangan.",
+     "external_site_article": "Strip hidrofon adalah salah satu objek bukti paling berguna di HECTON-8 karena membuat suara menjadi fisik.\n\n        Ia adalah pita serat keramik sempit yang ditarik melalui perekam ruangan lama. Perekam mendengar ruang tekanan, bukan manusia. Ia menangkap irama pompa, benturan palka, kabel putus, ketukan alat, tegangan lambung, dan bentuk suara yang luntur lewat air dan logam. Strip bertahan karena sederhana. Ia tidak butuh jaringan hidup, terminal bersih, atau arsip perusahaan yang kooperatif. Ia butuh tekanan, tinta, dan gerak.\n\n        Bagi pemain, strip harus terasa seperti objek forensik. Audio boleh menyeramkan, tetapi bukti ada pada ketidakcocokan: benturan pintu sebelum otorisasi, nada pompa setelah pemadaman resmi, detik hilang ketika semua perekam lain ikut datar, bentuk suara di samping stempel rute yang tidak ditandatangani operator hidup. Ini bukan monolog. Ini ruangan yang membantah berkasnya sendiri.\n\n        Inilah nada yang dibutuhkan HECTON-8: kehadiran manusia ditemukan lewat permukaan kerja. Strip tidak memberi tahu pemain harus merasa apa. Ia membiarkan pemain mendengar tempat yang masih mencoba bekerja setelah orang di atas memutuskan kertas lebih penting daripada manusia di dalam.",
+     "field_note": "Jika strip dan ruangan bertentangan, percayai ruangan terakhir.",
+     "localization_status": "draft_manual"
+    },
+    "ja_JP": {
+     "title": "ハイドロフォン・ログストリップ",
+     "scanner": "ハイドロフォン・ログストリップ // 室内レコーダーのセラミック繊維圧力テープ。ポンプ律動、ロック衝撃、船殻のうなり、声を振動として読む。経路スタンプと扉状態を照合。",
+     "terminal": "保守メモ // ストリップ番号、レコーダー区画、圧力インク、時間梯子が一致する場合のみ証拠として扱う。摩耗のないきれいな音声ファイルだけでは不十分。",
+     "audio": "そのストリップは、誰かが部屋の失敗を認める前に部屋を聞いていた。",
+     "in_game_wiki": "ハイドロフォン・ログストリップは音声日記ではない。幽霊のように鳴ることを覚えた保守領収書だ。\n\n        古いコロニーモジュールでは、各圧力室のハイドロフォンレコーダー脇に細いセラミック繊維ストリップがあった。安く、単純で、改ざんしにくい。壁越しにポンプの律動、扉の歯、ブーツの衝撃、工具音、船殻のうなり、ヘルメット内の呼吸、密閉を保つか迷う部屋の低い震えを聞いていた。ネットワークが落ちてもストリップは動いた。だから公式パケットより多く残った。\n\n        ストリップは層で読む。まず圧力インク。傾斜、落ち込み、ロックが枠に噛んだ鋭い歯。次に音響の櫛。繰り返す機械音、抜けたポンプ拍、言葉にならないほど滲んだ声の形。最後に公証の縁。番号、区画スタンプ、時間梯子、継ぎ目。復元音だけを真実にしてはいけない。ストリップは部屋と一致しなければならない。\n\n        よいハイドロフォン証拠は経路を変える。許可スタンプより前に扉が開いたこと、死亡時刻の後もポンプが動いていたこと、black-box断片が洗浄されたこと、公式ログが遠隔操作だと言う間に誰かが部屋にいたことを示せる。ストリップは劇的に告発しない。誰かが読めるまで圧力跡を持ち続ける。",
+     "external_site": "ハイドロフォン・ストリップはHECTON-8の音を物理証拠にする。圧力インク、レコーダー摩耗、機械律動、室内状態の証明。",
+     "external_site_article": "ハイドロフォン・ストリップは、音を物理化するため、HECTON-8で最も有用な証拠物の一つだ。\n\n        古い室内レコーダーを通る細いセラミック繊維テープである。レコーダーは人ではなく圧力室を聞いていた。ポンプ律動、ハッチ衝撃、ケーブル断線、工具の打撃、船殻応力、水と金属越しに滲んだ声を拾った。ストリップが生き残ったのは単純だったからだ。生きたネットワークも、きれいな端末も、協力的な企業アーカイブもいらない。必要なのは圧力、インク、動きだけだった。\n\n        プレイヤーにとってストリップは鑑識物として読めるべきだ。音は不気味でよいが、証拠は不一致にある。承認前の扉衝撃、停止申告後のポンプ音、他のレコーダーも平坦になる欠落秒、生存オペレーターが署名していない経路スタンプ横の声の形。これは独白ではない。部屋が書類に反論している。\n\n        HECTON-8に必要なのはこの調子だ。作業面から回収される人間の気配。ストリップはプレイヤーに何を感じるか命じない。上が中の人間より書類を重んじた後も、まだ仕事を続けようとしていた場所を聞かせる。",
+     "field_note": "ストリップと部屋が争うなら、最後は部屋を信じろ。",
+     "localization_status": "draft_manual"
+    },
+    "ko_KR": {
+     "title": "하이드로폰 로그 스트립",
+     "scanner": "하이드로폰 로그 스트립 // 방 녹음기의 세라믹 섬유 압력 테이프. 펌프 박자, 에어록 충격, 선체 신음, 목소리를 진동으로 읽는다. 경로 스탬프와 문 상태를 대조하라.",
+     "terminal": "정비 메모 // 스트립 일련번호, 녹음기 베이, 압력 잉크, 시간 사다리가 맞을 때 하이드로폰 스트립은 증거가 된다. 스트립 마모 없는 깨끗한 오디오 파일만으로는 부족하다.",
+     "audio": "그 스트립은 누군가 방이 망가지고 있다고 인정하기 전에 방을 들었다.",
+     "in_game_wiki": "하이드로폰 로그 스트립은 음성 일기가 아니다. 유령처럼 들리는 법을 배운 정비 영수증이다.\n\n        오래된 식민지 모듈의 모든 압력실에는 하이드로폰 녹음기 옆에 좁은 세라믹 섬유 스트립이 있었다. 싸고 단순하며 조작하기 어려웠다. 벽을 통해 펌프 박자, 문 톱니, 부츠 충격, 공구 타격, 선체 신음, 헬멧 속 숨, 밀폐를 유지할지 결정하는 방의 낮은 떨림을 들었다. 네트워크가 죽어도 스트립은 움직였다. 그래서 공식 패킷보다 많은 스트립이 살아남았다.\n\n        스트립은 층으로 읽는다. 먼저 압력 잉크: 기울기, 꺼짐, 에어록이 프레임을 물어뜯은 날카로운 이빨. 다음은 음향 빗: 반복되는 기계음, 빠진 펌프 박자, 말로 되기엔 너무 번진 목소리 모양. 마지막은 공증 가장자리: 일련번호, 베이 스탬프, 시간 사다리, 접합 흔적. 회수된 소리만으로 진실을 삼으면 안 된다. 스트립은 방과 맞아야 한다.\n\n        좋은 하이드로폰 증거는 경로를 바꾼다. 허가 스탬프 전 문이 열렸다는 것, 사망 시간이 제출된 뒤에도 펌프가 돌았다는 것, black-box 클립이 청소됐다는 것, 공식 로그가 원격 조작이라 말하는 동안 누군가 방 안에 있었다는 것을 보여 줄 수 있다. 스트립은 극적으로 고발하지 않는다. 누군가 읽을 때까지 압력 자국을 보관한다.",
+     "external_site": "하이드로폰 스트립은 HECTON-8 오디오를 물리 증거로 바꾼다. 압력 잉크, 녹음기 마모, 기계 박자, 방 상태 증명.",
+     "external_site_article": "하이드로폰 스트립은 소리를 물리적으로 만들기 때문에 HECTON-8에서 가장 유용한 증거 물체 중 하나다.\n\n        오래된 방 녹음기를 지나가는 좁은 세라믹 섬유 테이프다. 녹음기는 사람이 아니라 압력실을 들었다. 펌프 박자, 해치 충격, 케이블 끊김, 공구 타격, 선체 장력, 물과 금속을 지난 번진 목소리를 잡았다. 스트립은 단순해서 살아남았다. 살아 있는 네트워크, 깨끗한 단말기, 협조적인 회사 기록 보관소가 필요 없었다. 압력, 잉크, 움직임만 필요했다.\n\n        플레이어에게 스트립은 법의학 물체처럼 읽혀야 한다. 오디오는 섬뜩해도 되지만 증거는 불일치에 있다. 승인 전 문 충격, 신고된 정지 뒤 펌프음, 다른 녹음기도 동시에 평평해지는 사라진 1초, 살아 있는 오퍼레이터가 서명하지 않은 경로 스탬프 옆 목소리 모양. 이것은 독백이 아니다. 방이 자기 서류에 반박하는 것이다.\n\n        HECTON-8에 필요한 톤은 이것이다. 작업 표면을 통해 회수되는 인간의 흔적. 스트립은 플레이어에게 무엇을 느끼라고 말하지 않는다. 위쪽 사람들이 안의 사람보다 서류를 더 중요하게 여긴 뒤에도 계속 일하려던 장소를 들려준다.",
+     "field_note": "스트립과 방이 다투면 마지막에는 방을 믿어라.",
+     "localization_status": "draft_manual"
+    },
+    "zh_CN": {
+     "title": "水听器日志带",
+     "scanner": "水听器日志带 // 来自房间记录器的陶瓷纤维压力带。读取泵节奏、气闸撞击、船壳呻吟和作为振动的声音。与路线印章和门状态对照。",
+     "terminal": "维护注记 // 当带编号、记录器舱位、压力墨和时间阶梯一致时，水听器带可作为证据。没有带磨损的干净音频文件不够。",
+     "audio": "在任何人承认房间正在失败之前，那条带已经听见了房间。",
+     "in_game_wiki": "水听器日志带不是语音日记。它们是学会像幽灵一样发声的维护收据。\n\n        老殖民地模块里的每个压力房，都在水听器记录器旁放着一条窄窄的陶瓷纤维带。它便宜、迟钝、难以篡改。它隔墙聆听：泵节奏、门齿、靴子撞击、工具敲击、船壳呻吟、头盔里的呼吸，以及房间判断自己还能不能保持密封时的低震。网络倒下时，带仍在移动。所以留下来的带比官方包件更多。\n\n        读取一条带要分层。先看压力墨：斜坡、下陷、气闸咬住门框时的尖齿。再看声学梳：重复的机器音、缺失的泵拍、模糊到无法成词的声音形状。最后看公证边：编号、舱位章、时间阶梯、拼接痕。玩家不能只把恢复的声音当真。带必须和房间一致。\n\n        好的水听器证据会改变路线。它能显示门在许可印章出现前打开，泵在申报死亡时间后仍工作，black-box片段被清洗过，或有人站在房间里而官方日志声称远程操作。带不会戏剧化控诉。它保存压力痕迹，直到有人学会阅读。",
+     "external_site": "水听器日志带把HECTON-8音频变成物理证据：压力墨、记录器磨损、机器节奏和房间状态证明。",
+     "external_site_article": "水听器带是HECTON-8最有用的证据物之一，因为它让声音变成物理。\n\n        它是一条穿过旧房间记录器的窄陶瓷纤维带。记录器听的是压力舱，不是某个人。它捕捉泵节奏、舱口撞击、缆线断裂、工具敲击、船壳受力，以及穿过水和金属后被抹开的声音形状。带能幸存，是因为它简单。它不需要活着的网络、干净终端或配合的公司档案。它只需要压力、墨和运动。\n\n        对玩家来说，带应当像法证物一样被读取。音频可以诡异，但证据在错位里：授权前的门撞击、声称停机后的泵音、所有记录器同时变平的缺失秒、无人签署的路线印章旁边出现的声音形状。这不是独白。是房间在反驳自己的文件。\n\n        HECTON-8需要这种语气：通过工作表面找回人的存在。带不会命令玩家该感受什么。它让玩家听到一个地方在上面的人决定纸张比里面的人更重要之后，仍然试图完成自己的工作。",
+     "field_note": "如果带和房间互相矛盾，最后相信房间。",
+     "localization_status": "draft_manual"
+    },
+    "ar_SA": {
+     "title": "أشرطة سجل الهيدروفون",
+     "scanner": "شريط سجل هيدروفون // شريط ضغط من ألياف خزفية من مسجل غرفة. يقرأ إيقاع المضخة، ضربات القفل، أنين البدن، والصوت كاهتزاز. قارنه بختم المسار وحالة الباب.",
+     "terminal": "ملاحظة صيانة // تقبل أشرطة الهيدروفون كدليل عندما يتطابق رقم الشريط وحجرة المسجل وحبر الضغط وسلم الوقت. ملف صوت نظيف بلا تآكل شريط لا يكفي.",
+     "audio": "سمع الشريط الغرفة قبل أن يعترف أحد بأن الغرفة كانت تفشل.",
+     "in_game_wiki": "أشرطة سجل الهيدروفون ليست يوميات صوتية. إنها إيصالات صيانة تعلمت أن تبدو كالأشباح.\n\n        في وحدات المستعمرة القديمة كان لكل غرفة ضغط شريط خزفي ضيق قرب مسجل الهيدروفون. كان رخيصا وغبيا وصعب التزوير. كان يسمع عبر الجدار: إيقاع المضخة، أسنان الباب، ضربات الأحذية، طرق الأدوات، أنين البدن، التنفس داخل الخوذ، والرجفة المنخفضة لغرفة تقرر هل تبقى محكمة. عندما تسقط الشبكة، يستمر الشريط بالحركة. لذلك نجت أشرطة كثيرة ولم تنج حزم رسمية كثيرة.\n\n        يقرأ الشريط بطبقات. أولا حبر الضغط: ميول، هبوطات، أسنان حادة حيث عض القفل إطاره. ثم المشط الصوتي: نغمات آلة متكررة، ضربات مضخة مفقودة، شكل صوت ممسوح لا يصير كلمات. ثم حافة الكاتب: رقم، ختم حجرة، سلم وقت، آثار وصل. لا يجب أن يعامل اللاعب الصوت المستعاد وحده كحقيقة. يجب أن يتفق الشريط مع الغرفة.\n\n        الدليل الهيدروفوني الجيد يغير المسار. يمكن أن يثبت أن بابا فتح قبل وجود إذن، أو أن مضخة عملت بعد وقت موت مسجل، أو أن مقطع black-box نُظف، أو أن شخصا كان في الغرفة بينما قال السجل الرسمي إن العملية بعيدة. الشريط لا يتهم بمسرحية. إنه يحتفظ بعلامات الضغط حتى يتعلم أحد قراءتها.",
+     "external_site": "أشرطة الهيدروفون تحول صوت HECTON-8 إلى دليل مادي: حبر ضغط، تآكل مسجل، إيقاع آلة، وحالة غرفة.",
+     "external_site_article": "شريط الهيدروفون من أنفع أدلة HECTON-8 لأنه يجعل الصوت ماديا.\n\n        إنه شريط خزفي ضيق يمر في مسجل غرفة قديم. كان المسجل يستمع إلى حجرة الضغط لا إلى شخص. التقط إيقاع المضخات، ضربات الفتحات، انقطاع الكابلات، طرق الأدوات، إجهاد البدن، وأشكال أصوات ممسوحة عبر الماء والمعدن. نجا الشريط لأنه بسيط. لم يحتج إلى شبكة حية أو طرفية نظيفة أو أرشيف شركة متعاون. احتاج إلى ضغط وحبر وحركة.\n\n        بالنسبة للاعب يجب أن يقرأ الشريط كجسم جنائي. قد يكون الصوت مخيفا، لكن الدليل في عدم التطابق: ضربة باب قبل التفويض، نغمة مضخة بعد إيقاف معلن، ثانية مفقودة حيث تسطح كل المسجلات الأخرى، شكل صوت بجانب ختم مسار لم يوقعه عامل حي. هذا ليس مونولوجا. إنها غرفة تعارض أوراقها.\n\n        هذا هو النبرة التي تحتاجها HECTON-8: حضور بشري يستعاد من أسطح العمل. الشريط لا يقول للاعب ماذا يشعر. إنه يجعله يسمع مكانا ظل يحاول أداء عمله بعد أن قرر من في الأعلى أن الورق أهم من الناس في الداخل.",
+     "field_note": "إذا اختلف الشريط والغرفة، صدق الغرفة في النهاية.",
+     "localization_status": "draft_manual"
+    },
+    "he_IL": {
+     "title": "רצועות יומן הידרופון",
+     "scanner": "רצועת יומן הידרופון // סרט לחץ מסיבי קרמיקה ממקליט חדר. קורא קצב משאבה, פגיעות מנעול, אנקת גוף וקול כרעידה. השווה לחותמת מסלול ולמצב דלת.",
+     "terminal": "הערת תחזוקה // רצועות הידרופון קבילות כשמספר הרצועה, תא המקליט, דיו הלחץ וסולם הזמן מסכימים. קובץ שמע נקי בלי שחיקת רצועה אינו מספיק.",
+     "audio": "הרצועה שמעה את החדר לפני שמישהו הודה שהחדר כושל.",
+     "in_game_wiki": "רצועות יומן הידרופון אינן יומני קול. הן קבלות תחזוקה שלמדו להישמע כמו רוחות.\n\n        במודולים הישנים של המושבה, לכל חדר לחץ הייתה רצועת סיבי קרמיקה צרה ליד מקליט ההידרופון. היא הייתה זולה, טיפשה וקשה לזיוף. היא הקשיבה דרך הקיר: קצב משאבה, שיני דלת, פגיעות מגפיים, נקישות כלי, אנקת גוף, נשימה בתוך קסדות והרטט הנמוך של חדר שמחליט אם יישאר אטום. כשהרשת נפלה, הרצועה המשיכה לנוע. לכן כל כך הרבה רצועות שרדו וכל כך מעט חבילות רשמיות.\n\n        קוראים רצועה בשכבות. קודם דיו הלחץ: שיפועים, נפילות, שיניים חדות במקום שבו מנעול נשך את המסגרת. אחר כך המסרק האקוסטי: תווי מכונה חוזרים, פעימות משאבה חסרות, צורת קול מטושטשת מדי למילים. אחר כך קצה הנוטריון: מספר, חותמת תא, סולם זמן, סימני חיבור. השחקן לא צריך להתייחס לצליל המשוחזר לבדו כאמת. הרצועה חייבת להסכים עם החדר.\n\n        ראיית הידרופון טובה משנה מסלול. היא יכולה להראות שדלת נפתחה לפני שהיה אישור, שמשאבה פעלה אחרי זמן מוות שהוגש, שקליפ black-box נוקה, או שמישהו עמד בחדר בזמן שהיומן הרשמי טען להפעלה מרחוק. הרצועה אינה מאשימה בתיאטרון. היא שומרת סימני לחץ עד שמישהו לומד לקרוא אותם.",
+     "external_site": "רצועות הידרופון הופכות את השמע של HECTON-8 לראיה פיזית: דיו לחץ, שחיקת מקליט, קצב מכונה והוכחת מצב חדר.",
+     "external_site_article": "רצועת ההידרופון היא אחד מחפצי הראיה השימושיים ביותר ב-HECTON-8 כי היא הופכת קול לפיזי.\n\n        זה סרט סיבי קרמיקה צר שנמשך דרך מקליט חדר ישן. המקליט הקשיב לתא הלחץ, לא לאדם. הוא תפס קצב משאבות, פגיעות פתחים, קריעת כבלים, נקישות כלים, מאמץ גוף וצורות קול מרוחות דרך מים ומתכת. הרצועה שרדה כי הייתה פשוטה. היא לא נזקקה לרשת חיה, למסוף נקי או לארכיון חברה משתף פעולה. היא נזקקה ללחץ, דיו ותנועה.\n\n        לשחקן הרצועה צריכה להיקרא כחפץ פורנזי. השמע יכול להיות מטריד, אבל הראיה נמצאת באי ההתאמה: פגיעת דלת לפני הרשאה, תו משאבה אחרי כיבוי מוצהר, שנייה חסרה שבה כל המקליטים האחרים משתטחים, צורת קול לצד חותמת מסלול שאף מפעיל חי לא חתם. זה לא מונולוג. זה חדר שסותר את הניירת שלו.\n\n        זה הטון ש-HECTON-8 צריכה: נוכחות אנושית שנמצאת מחדש דרך משטחי עבודה. הרצועה לא אומרת לשחקן מה להרגיש. היא נותנת לו לשמוע מקום שעדיין ניסה לעשות את עבודתו אחרי שלמעלה החליטו שנייר חשוב יותר מהאנשים בפנים.",
+     "field_note": "אם הרצועה והחדר מתווכחים, האמן לחדר בסוף.",
+     "localization_status": "draft_manual"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

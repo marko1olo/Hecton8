@@ -1,289 +1,290 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS296_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS296_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1344_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE",
+   "release_set_id": "RS296_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE",
+   "article_id": "applied_lore.support_load_carry_forward_exception_field_article",
+   "title_key": "LORE_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/AppliedContent/packets/RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS294_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS295_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1344_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE",
-      "release_set_id": "RS296_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE",
-      "article_id": "applied_lore.support_load_carry_forward_exception_field_article",
-      "title_key": "LORE_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/AppliedContent/packets/RS292_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS293_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS294_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS295_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.support_load_carry_forward_exception_field_article",
-        "secondary": [
-          "unlock.first_support_load_carry_forward_exception",
-          "unlock.first_compressor_handoff_backfill",
-          "unlock.first_oxygen_ledger_cutoff_claim_hold",
-          "unlock.first_suit_reserve_delta_mismatch",
-          "unlock.first_scrubber_cartridge_serial_mismatch"
-        ],
-        "poi_tags": [
-          "poi.support_load_carry_forward_exception",
-          "poi.exception_strip",
-          "poi.maintenance_override_stamp",
-          "poi.grease_break",
-          "poi.carry_forward_tick",
-          "poi.compressor_handoff_backfill",
-          "poi.oxygen_ledger_cutoff",
-          "poi.suit_reserve_delta",
-          "poi.scrubber_serial_mismatch",
-          "poi.claim_hold_field"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.pressure_base",
-          "biome.life_support",
-          "biome.maintenance_desk",
-          "biome.claim_admin",
-          "biome.route_desk",
-          "biome.evidence_custody"
-        ],
-        "depth_band_m": "0-4200"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Evidence Scanner",
-          "terminal": "Maintenance Carry-Forward QA Note",
-          "audio": "Recovered Maintenance Desk Clip",
-          "in_game_wiki": "PDA Forensic Object Article",
-          "external_site": "Public Lore Atlas Evidence Note",
-          "field_note": "Marauder Field Note"
-        },
-        "source_brief": {
-          "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
-          "spoiler_level": "1",
-          "speaker_source": "PDA scanner, maintenance QA note, maintenance desk clip, Marauder annotation, public lore atlas",
-          "audience": "after compressor handoff backfill; public atlas under early-evidence spoiler boundary",
-          "date_era": "2190 recovery reading of 2147 carry-forward exception strip and claim records",
-          "location_depth_route": "maintenance desk cache, service bay exception strip, compressor room, oxygen ledger strip, claim desk cache",
-          "unlock_context": "after compressor handoff backfill and life-support evidence chain",
-          "evidence_object": "exception strip, maintenance override stamp, grease break, carry-forward tick, compressor handoff row and claim hold",
-          "source_knows": "carry-forward can move liability after machine evidence shows support failed",
-          "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
-          "truth_pressure": "Support load carry-forward binds failed room support to later route and claim language without naming final culprit.",
-          "design_use": "extend life-support evidence chain through maintenance exception handling and claim status carry-forward"
-        },
-        "spoiler_boundary": {
-          "tier": 1,
-          "allowed_reveals": [
-            "support load can be carried forward after room support fails",
-            "maintenance custody can keep route and claim status active",
-            "exception strip damage can predate a later carry-forward tick"
-          ],
-          "blocked_reveals": [
-            "final culprit",
-            "hidden transcript sentence",
-            "ending payload identity"
-          ]
-        }
-      },
-      "localized": {
-        "en_US": {
-          "title": "Support Load Carry-Forward Exception",
-          "scanner": "SUPPORT LOAD CARRY-FORWARD // Exception strip carries room support after machine evidence stops. Grease break and override stamp do not match the compressor handoff.",
-          "terminal": "CARRY-FORWARD QA // Compare exception strip, maintenance override stamp, grease break, compressor handoff backfill, oxygen ledger cutoff, suit reserve delta and claim hold. Carry-forward is liability movement, not air support.",
-          "audio": "They carried the load forward after the room stopped carrying it.",
-          "in_game_wiki": "A support load carry-forward exception is the desk mark that keeps a failed room attached to a route after the machinery has stopped doing the work. It usually lives on a narrow strip: room code, load class, maintenance override, carry-forward tick, claim hold reference. On a clean day it is bookkeeping. After a life-support break, it becomes a hinge.\n\nThe strip is physical enough to read. Grease from the service bay can cross the first half of the row and stop before the override stamp. Ink can pool where damp paper took a thumb. Salt can sit under the folded lip. If the carry-forward tick is cleaner than the grease break, and the compressor handoff already disagrees with pump counter and relay tick, the exception did not move air. It moved responsibility.\n\nThis is not a confession line. Deep Reach did not need one. A route could remain active because support load was carried forward. A claim could stay open because the room was still marked under maintenance custody. A failed worker could remain billable or recoverable while the oxygen ledger, suit reserve and scrubber serial were already pointing the other way.\n\nField handling should treat the strip like a wet mechanical part. Photograph both sides before flattening it. Record grease breaks, salt under folds, stamp overlap and the exact carry-forward tick. Then read it beside compressor handoff backfill. If the exception arrives after the pump stops, the load left the room as liability, not as breath.",
-          "external_site": "A support load carry-forward exception shows how a failed room can stay attached to a route after the air system has already stopped supporting it.",
-          "external_site_article": "Carry-forward sounds harmless until it is read beside metal. It is a neat phrase for an ugly transfer: take the load that cannot be resolved here, move it to the next account, keep the route alive long enough for another desk to own the problem.\n\nOn HECTON-8, that phrase sat between maintenance and claims. Local life support could fail, but the room might remain under service custody. The worker could be absent, but the route could remain active. The suit could be empty, but the exception strip could keep support class open.\n\nThe material detail matters. A strip handled in a service bay does not age like a row entered later. Grease stops. Ink feathers. Salt marks the fold. A late carry-forward tick tends to sit cleanly across damage it should have shared. That clean little mark is where administration begins to outrun the machine.\n\nRead this entry after compressor handoff backfill. The pump and relay show whether air moved. The carry-forward exception shows who kept the failed load useful after it stopped being breathable.",
-          "field_note": "Carry-forward can move blame. It cannot move air.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Исключение переноса нагрузки жизнеобеспечения",
-          "scanner": "ПЕРЕНОС НАГРУЗКИ ЖИЗНЕОБЕСПЕЧЕНИЯ // Полоса исключения несет комнатную поддержку после остановки машинных следов. Разрыв смазки и override stamp не совпадают с передачей компрессора.",
-          "terminal": "QA ПЕРЕНОСА НАГРУЗКИ // Сверить полосу исключения, maintenance override stamp, разрыв смазки, позднюю передачу компрессора, отсечку кислородного журнала, дельту резерва костюма и claim hold. Carry-forward двигает ответственность, а не воздух.",
-          "audio": "Они перенесли нагрузку дальше после того, как комната перестала ее нести.",
-          "in_game_wiki": "Исключение переноса нагрузки жизнеобеспечения — это отметка стола, которая держит отказавшую комнату привязанной к маршруту после того, как машина перестала выполнять работу. Обычно она живет на узкой полосе: код комнаты, класс нагрузки, maintenance override, галка carry-forward, ссылка на claim hold. В нормальный день это учет. После разрыва жизнеобеспечения это шарнир.\n\nПолоса достаточно физическая, чтобы ее читать. Смазка из сервисного отсека может пересекать первую половину строки и останавливаться перед override stamp. Чернила могут расплываться там, где влажную бумагу прижали большим пальцем. Соль может сидеть под сгибом. Если галка carry-forward чище разрыва смазки, а передача компрессора уже спорит со счетчиком насоса и щелчком реле, исключение не двигало воздух. Оно двигало ответственность.\n\nЭто не строка признания. Deep Reach она не требовалась. Маршрут мог оставаться активным, потому что support load carried forward. Claim мог висеть открытым, потому что комната все еще числилась под обслуживающей ответственностью. Отказавший работник мог оставаться оплачиваемым или извлекаемым, пока кислородный журнал, резерв костюма и серийник скруббера уже показывали в другую сторону.\n\nВ поле с такой полосой нужно обращаться как с мокрой механической деталью. Снять обе стороны до выпрямления. Зафиксировать разрывы смазки, соль под сгибами, наложение штампа и точную галку carry-forward. Потом читать рядом с поздней передачей компрессора. Если исключение приходит после остановки насоса, нагрузка покинула комнату как ответственность, а не как дыхание.",
-          "external_site": "Исключение переноса нагрузки показывает, как отказавшая комната остается привязанной к маршруту после того, как воздушная система уже перестала ее поддерживать.",
-          "external_site_article": "Carry-forward звучит безобидно, пока его не читают рядом с металлом. Это аккуратная фраза для неприятного переноса: взять нагрузку, которую нельзя закрыть здесь, сдвинуть ее в следующий счет, удержать маршрут живым достаточно долго, чтобы проблему принял другой стол.\n\nНа HECTON-8 эта фраза стояла между maintenance и claims. Локальное жизнеобеспечение могло отказать, но комната оставалась под сервисной ответственностью. Работник мог отсутствовать, но маршрут оставался активным. Костюм мог быть пустым, но полоса исключения держала класс поддержки открытым.\n\nМатериальная мелочь важна. Полоса, которую держали в сервисном отсеке, стареет не так, как строка, введенная позже. Смазка обрывается. Чернила пушатся. Соль отмечает сгиб. Поздняя галка carry-forward обычно чисто лежит поверх повреждения, с которым должна была состариться. Эта маленькая чистая отметка и есть место, где администрация начинает обгонять машину.\n\nЭту запись нужно читать после поздней передачи компрессора. Насос и реле показывают, двигался ли воздух. Исключение переноса показывает, кто сохранил отказавшую нагрузку полезной после того, как она перестала быть пригодной для дыхания.",
-          "field_note": "Carry-forward может двигать вину. Воздух он не двигает.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "支援負荷繰り越し例外",
-          "scanner": "支援負荷繰り越し // 例外ストリップは機械痕が止まった後も部屋支援を運んでいる。グリースの切れ目とoverride stampはコンプレッサー引き渡しと合わない。",
-          "terminal": "繰り越し QA // 例外ストリップ、maintenance override stamp、グリースの切れ目、コンプレッサー後追い引き渡し、酸素台帳遮断、スーツ予備デルタ、claim holdを照合。carry-forwardは責任移動であり、空気支援ではない。",
-          "audio": "部屋が負荷を支えなくなった後で、彼らはその負荷を先へ運んだ。",
-          "in_game_wiki": "支援負荷繰り越し例外は、機械が仕事をやめた後も、失敗した部屋をルートへ結びつける机上の印だ。たいていは細いストリップにある。部屋コード、負荷クラス、maintenance override、carry-forward刻み、claim hold参照。平常なら会計だ。生命維持が切れた後では、蝶番になる。\n\nそのストリップは、物として読める。サービスベイのグリースは行の前半を横切り、override stampの前で止まることがある。湿った紙を親指で押した場所ではインクが溜まる。折り返しの下に塩が残る。carry-forward刻みがグリースの切れ目よりきれいで、コンプレッサー引き渡しがすでにポンプカウンターやリレー刻みと食い違っているなら、その例外は空気を動かしていない。責任を動かした。\n\nこれは自白の行ではない。Deep Reachには不要だった。支援負荷が繰り越されたから、ルートはアクティブのままでいられる。部屋がまだ保守管理下にあるから、claimは開いたままでいられる。酸素台帳、スーツ予備、スクラバー番号がすでに別方向を示していても、失敗した作業者は請求可能または回収可能として残る。\n\n現場ではストリップを濡れた機械部品のように扱う。平らにする前に両面を撮る。グリースの切れ目、折り目の下の塩、スタンプの重なり、正確なcarry-forward刻みを記録する。それからコンプレッサー引き渡し後追いと並べて読む。例外がポンプ停止の後に来たなら、負荷は呼吸としてではなく責任として部屋を出た。",
-          "external_site": "支援負荷繰り越し例外は、空気系が支援を終えた後も、失敗した部屋がルートにつながり続ける仕組みを示す。",
-          "external_site_article": "carry-forwardは、金属の隣で読むまで無害に聞こえる。解決できない負荷をここから取り、次の勘定へ動かし、別の机が問題を所有するまでルートを生かす。醜い転送に付いた整った言葉だ。\n\nHECTON-8では、その言葉はmaintenanceとclaimsの間に座っていた。ローカル生命維持が失敗しても、部屋は保守管理下に残ることがある。作業者が不在でも、ルートはアクティブのままになることがある。スーツが空でも、例外ストリップは支援クラスを開いたままにできる。\n\n物の細部が重要になる。サービスベイで扱われたストリップは、後で入力された行とは老い方が違う。グリースは途切れる。インクはにじむ。塩は折り目を印す。遅いcarry-forward刻みは、同じ傷を共有しているはずの場所にきれいに乗りがちだ。その小さな清潔な印が、管理が機械を追い越し始める場所だ。\n\nこの記録はコンプレッサー引き渡し後追いの後で読む。ポンプとリレーは空気が動いたかを示す。繰り越し例外は、失敗した負荷が呼吸不能になった後、誰がそれを有用に保ったかを示す。",
-          "field_note": "Carry-forwardは責任を動かせる。空気は動かせない。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "支持负载结转例外",
-          "scanner": "支持负载结转 // 机器痕迹停止后，例外条仍携带房间支持。油脂断点和 override stamp 与压缩机交接不匹配。",
-          "terminal": "结转 QA // 对照例外条、maintenance override stamp、油脂断点、压缩机交接回填、氧气账本截断、潜服储备差值和 claim hold。carry-forward 是责任移动，不是空气支持。",
-          "audio": "房间停止承载之后，他们把负载继续往前带。",
-          "in_game_wiki": "支持负载结转例外，是让失效房间在机器停止工作后仍挂在路线上的桌面标记。它通常在一条窄条上：房间代码、负载级别、maintenance override、carry-forward 勾、claim hold 引用。正常日子里它只是记账。生命维持断裂后，它成了铰链。\n\n这条窄条足够物理，可以读取。服务舱的油脂可能穿过前半行，却停在 override stamp 前。潮纸被拇指按过的地方，墨会聚起来。盐会留在折边下。如果 carry-forward 勾比油脂断点更干净，而压缩机交接已经和泵计数器、继电器刻点不一致，那么这个例外没有移动空气。它移动的是责任。\n\n这不是供词行。Deep Reach 不需要那种东西。路线可以保持激活，因为支持负载被结转。索赔可以保持开放，因为房间仍标在维护保管下。氧气账本、潜服储备和洗涤器序号已经指向另一边时，失败工人仍可能被保留为可计费或可回收。\n\n现场处理要把窄条当作潮湿机械件。压平前拍摄两面。记录油脂断点、折边下的盐、印章重叠和准确的 carry-forward 勾。然后和压缩机交接回填一起读。如果例外在泵停止后到来，负载离开房间时是责任，不是呼吸。",
-          "external_site": "支持负载结转例外显示了一个失效房间如何在空气系统停止支持后仍附着在路线上。",
-          "external_site_article": "carry-forward 听起来无害，直到它被放在金属旁边读。它是给丑陋转移起的整齐词：把无法在这里解决的负载拿走，移到下一笔账，让路线活到另一个桌面接手问题。\n\n在 HECTON-8 上，这个词坐在 maintenance 和 claims 之间。本地生命维持可以失效，房间仍可能保持在服务保管下。工人可以缺席，路线仍可能保持激活。潜服可以是空的，例外条仍能让支持级别保持开放。\n\n材料细节很重要。在服务舱里被拿过的条，不会像后来录入的行那样老化。油脂会断。墨会洇。盐会标出折边。迟来的 carry-forward 勾往往干净地跨过它本该共同经历的损伤。那个小小干净标记，就是行政开始跑赢机器的位置。\n\n这份记录应在压缩机交接回填之后阅读。泵和继电器显示空气是否移动。结转例外显示谁在负载不再可呼吸后仍把它保持为有用状态。",
-          "field_note": "Carry-forward 能移动责任。它不能移动空气。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Exception de report de charge de soutien",
-          "scanner": "REPORT DE CHARGE DE SOUTIEN // La bande d'exception porte le soutien de piece apres l'arret des preuves machine. Rupture de graisse et override stamp ne concordent pas avec la passation compresseur.",
-          "terminal": "QA REPORT DE CHARGE // Comparer bande d'exception, maintenance override stamp, rupture de graisse, rattrapage compresseur, coupure oxygene, delta de combinaison et claim hold. Carry-forward deplace la responsabilite, pas l'air.",
-          "audio": "Ils ont porte la charge plus loin apres que la piece a cesse de la porter.",
-          "in_game_wiki": "Une exception de report de charge de soutien est la marque de desk qui garde une piece en panne attachee a une route apres que la machine a cesse le travail. Elle vit souvent sur une bande etroite : code de piece, classe de charge, maintenance override, tick carry-forward, reference claim hold. Un jour propre, c'est de la comptabilite. Apres une rupture de support-vie, c'est une charniere.\n\nLa bande est assez physique pour etre lue. La graisse du service bay peut traverser la premiere moitie de la ligne et s'arreter avant l'override stamp. L'encre peut boire la ou un pouce a presse le papier humide. Le sel peut rester sous le pli. Si le tick carry-forward est plus propre que la rupture de graisse, et si la passation compresseur contredit deja compteur de pompe et relais, l'exception n'a pas deplace d'air. Elle a deplace la responsabilite.\n\nCe n'est pas une ligne d'aveu. Deep Reach n'en avait pas besoin. Une route pouvait rester active parce que la charge etait reportee. Une reclamation pouvait rester ouverte parce que la piece etait encore sous garde maintenance. Un travailleur perdu pouvait rester facturable ou recuperable alors que registre oxygene, reserve de combinaison et serie de scrubber pointaient deja ailleurs.\n\nSur le terrain, traiter la bande comme une piece mecanique mouillee. Photographier les deux faces avant de l'aplatir. Noter ruptures de graisse, sel sous les plis, chevauchement de tampon et tick carry-forward exact. Puis lire avec le rattrapage de passation compresseur. Si l'exception arrive apres l'arret de pompe, la charge a quitte la piece comme responsabilite, pas comme souffle.",
-          "external_site": "Une exception de report de charge montre comment une piece en panne peut rester attachee a une route apres l'arret du systeme d'air.",
-          "external_site_article": "Carry-forward semble inoffensif jusqu'a ce qu'on le lise pres du metal. C'est une phrase nette pour un transfert laid : prendre la charge impossible a resoudre ici, la pousser vers le compte suivant, garder la route vivante assez longtemps pour qu'un autre desk possede le probleme.\n\nSur HECTON-8, cette phrase se tenait entre maintenance et claims. Le support-vie local pouvait tomber, mais la piece rester sous garde service. Le travailleur pouvait etre absent, mais la route rester active. La combinaison pouvait etre vide, mais la bande d'exception gardait la classe de soutien ouverte.\n\nLe detail materiel compte. Une bande manipulee en service bay ne vieillit pas comme une ligne saisie plus tard. La graisse s'arrete. L'encre plume. Le sel marque le pli. Un tick carry-forward tardif repose souvent proprement sur un dommage qu'il aurait du partager. Cette petite marque propre est l'endroit ou l'administration commence a depasser la machine.\n\nLire cette entree apres le rattrapage de passation compresseur. Pompe et relais disent si l'air a bouge. L'exception de report dit qui a garde utile la charge en panne apres qu'elle n'etait plus respirable.",
-          "field_note": "Carry-forward peut deplacer la faute. Il ne deplace pas l'air.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Excepción de arrastre de carga de soporte",
-          "scanner": "ARRASTRE DE CARGA DE SOPORTE // La tira de excepcion mantiene soporte de sala despues de que paran las pruebas de maquina. Corte de grasa y override stamp no coinciden con el handoff del compresor.",
-          "terminal": "QA ARRASTRE DE CARGA // Comparar tira de excepcion, maintenance override stamp, corte de grasa, backfill del compresor, corte del libro de oxigeno, delta del traje y claim hold. Carry-forward mueve responsabilidad, no soporte de aire.",
-          "audio": "Arrastraron la carga hacia delante despues de que la sala dejo de cargarla.",
-          "in_game_wiki": "Una excepcion de arrastre de carga de soporte es la marca de mesa que mantiene una sala fallida atada a una ruta despues de que la maquinaria deja de hacer el trabajo. Suele vivir en una tira estrecha: codigo de sala, clase de carga, maintenance override, marca carry-forward, referencia claim hold. En un dia limpio es contabilidad. Tras una rotura de soporte vital, es una bisagra.\n\nLa tira es lo bastante fisica para leerla. La grasa del servicio puede cruzar la primera mitad de la linea y detenerse antes del override stamp. La tinta puede juntarse donde un pulgar apreto papel humedo. La sal puede quedar bajo el pliegue. Si la marca carry-forward esta mas limpia que el corte de grasa, y el handoff del compresor ya discrepa del contador y el rele, la excepcion no movio aire. Movio responsabilidad.\n\nNo es una linea de confesion. Deep Reach no la necesitaba. Una ruta podia seguir activa porque la carga de soporte se arrastro adelante. Un claim podia quedar abierto porque la sala seguia bajo custodia de mantenimiento. Un trabajador fallido podia seguir facturable o recuperable mientras el libro de oxigeno, la reserva del traje y la serie del scrubber ya apuntaban en otra direccion.\n\nEn campo, trata la tira como pieza mecanica mojada. Fotografia ambos lados antes de aplanarla. Registra cortes de grasa, sal bajo pliegues, solape de sello y la marca carry-forward exacta. Luego leela junto al backfill del compresor. Si la excepcion llega despues de parar la bomba, la carga salio de la sala como responsabilidad, no como respiracion.",
-          "external_site": "Una excepcion de arrastre muestra como una sala fallida puede seguir atada a una ruta despues de que el sistema de aire deja de sostenerla.",
-          "external_site_article": "Carry-forward suena inofensivo hasta que se lee junto al metal. Es una frase ordenada para una transferencia fea: tomar la carga que no puede resolverse aqui, moverla a la siguiente cuenta, mantener viva la ruta el tiempo suficiente para que otra mesa sea duena del problema.\n\nEn HECTON-8, esa frase se sentaba entre maintenance y claims. El soporte vital local podia fallar, pero la sala quedar bajo custodia de servicio. El trabajador podia faltar, pero la ruta seguir activa. El traje podia estar vacio, pero la tira de excepcion mantener abierta la clase de soporte.\n\nEl detalle material importa. Una tira manejada en un servicio no envejece como una linea introducida despues. La grasa se corta. La tinta se abre. La sal marca el pliegue. Una marca carry-forward tardia suele quedar limpia sobre dano que deberia haber compartido. Esa pequena marca limpia es donde la administracion empieza a adelantar a la maquina.\n\nLee esta entrada despues del backfill del compresor. Bomba y rele muestran si el aire se movio. La excepcion de arrastre muestra quien mantuvo util la carga fallida despues de que dejo de ser respirable.",
-          "field_note": "Carry-forward puede mover culpa. No puede mover aire.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Ausnahme zur Weiterfuehrung der Stuetzlast",
-          "scanner": "STUETZLAST WEITERGEFUEHRT // Ausnahmeband traegt Raumstuetzung nach dem Ende der Maschinenspuren. Fettbruch und override stamp passen nicht zur Kompressoruebergabe.",
-          "terminal": "QA STUETZLAST // Ausnahmeband, maintenance override stamp, Fettbruch, Kompressor-Nachtrag, Sauerstoffbuch-Schnitt, Anzugreserve-Delta und claim hold vergleichen. Carry-forward bewegt Haftung, keine Luftstuetzung.",
-          "audio": "Sie fuehrten die Last weiter, nachdem der Raum sie nicht mehr trug.",
-          "in_game_wiki": "Eine Ausnahme zur Weiterfuehrung der Stuetzlast ist die Desk-Markierung, die einen ausgefallenen Raum an einer Route haelt, nachdem die Maschinen ihre Arbeit eingestellt haben. Sie steht meist auf einem schmalen Streifen: Raumcode, Lastklasse, maintenance override, carry-forward-Haken, claim-hold-Verweis. An einem sauberen Tag ist das Buchhaltung. Nach einem Lebenserhaltungsbruch wird es zum Scharnier.\n\nDer Streifen ist physisch genug, um gelesen zu werden. Fett aus dem Service Bay kann die erste Zeilenhaelfte kreuzen und vor dem override stamp stoppen. Tinte kann dort ausbluten, wo ein Daumen feuchtes Papier drueckte. Salz kann unter der Falz sitzen. Ist der carry-forward-Haken sauberer als der Fettbruch, und widerspricht die Kompressoruebergabe bereits Pumpenzaehler und Relaisklick, bewegte die Ausnahme keine Luft. Sie bewegte Verantwortung.\n\nDas ist keine Geständniszeile. Deep Reach brauchte keine. Eine Route konnte aktiv bleiben, weil die Stuetzlast weitergefuehrt wurde. Ein Claim konnte offen bleiben, weil der Raum noch unter Maintenance-Custody stand. Ein ausgefallener Arbeiter konnte abrechenbar oder bergbar bleiben, waehrend Sauerstoffbuch, Anzugreserve und Scrubber-Serie schon in die andere Richtung zeigten.\n\nIm Feld den Streifen wie ein nasses Maschinenteil behandeln. Beide Seiten vor dem Glätten fotografieren. Fettbrueche, Salz unter Falzen, Stempelueberlappung und genauen carry-forward-Haken aufnehmen. Dann neben dem Kompressor-Nachtrag lesen. Kommt die Ausnahme nach dem Pumpenstopp, verliess die Last den Raum als Haftung, nicht als Atem.",
-          "external_site": "Eine Weiterfuehrungs-Ausnahme zeigt, wie ein ausgefallener Raum an einer Route haengen bleibt, nachdem das Luftsystem ihn nicht mehr stuetzt.",
-          "external_site_article": "Carry-forward klingt harmlos, bis es neben Metall gelesen wird. Es ist ein ordentlicher Ausdruck fuer einen haesslichen Transfer: die hier nicht loesbare Last nehmen, ins naechste Konto schieben, die Route lange genug am Leben halten, bis ein anderer Desk das Problem besitzt.\n\nAuf HECTON-8 sass dieser Ausdruck zwischen Maintenance und Claims. Lokale Lebenserhaltung konnte ausfallen, doch der Raum blieb unter Service-Custody. Der Arbeiter konnte fehlen, doch die Route blieb aktiv. Der Anzug konnte leer sein, doch der Ausnahmestreifen hielt die Stuetzklasse offen.\n\nDas Materialdetail zaehlt. Ein im Service Bay behandelter Streifen altert nicht wie eine spaeter eingegebene Zeile. Fett reisst ab. Tinte fasert. Salz markiert die Falz. Ein spaeter carry-forward-Haken liegt oft sauber ueber Schaden, den er haette teilen muessen. Diese kleine saubere Markierung ist der Ort, an dem Verwaltung die Maschine ueberholt.\n\nDiesen Eintrag nach dem Kompressor-Nachtrag lesen. Pumpe und Relais zeigen, ob Luft bewegt wurde. Die Weiterfuehrungs-Ausnahme zeigt, wer die ausgefallene Last nuetzlich hielt, nachdem sie nicht mehr atembar war.",
-          "field_note": "Carry-forward kann Schuld bewegen. Luft bewegt es nicht.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Wyjątek przeniesienia obciążenia wsparcia",
-          "scanner": "PRZENIESIENIE OBCIĄŻENIA // Pasek wyjątku niesie wsparcie pokoju po zatrzymaniu śladów maszyny. Przerwa smaru i override stamp nie pasują do przekazania sprężarki.",
-          "terminal": "QA PRZENIESIENIA // Porównaj pasek wyjątku, maintenance override stamp, przerwę smaru, dopisanie sprężarki, odcięcie dziennika tlenu, deltę skafandra i claim hold. Carry-forward przesuwa odpowiedzialność, nie powietrze.",
-          "audio": "Przenieśli obciążenie dalej, gdy pokój przestał je nieść.",
-          "in_game_wiki": "Wyjątek przeniesienia obciążenia wsparcia to znak biurka, który trzyma uszkodzony pokój przy trasie po tym, jak maszyna przestała wykonywać pracę. Zwykle żyje na wąskim pasku: kod pokoju, klasa obciążenia, maintenance override, tick carry-forward, odniesienie claim hold. W czysty dzień to księgowość. Po pęknięciu podtrzymania życia staje się zawiasem.\n\nPasek jest dość fizyczny, by go czytać. Smar z zatoki serwisowej może przeciąć pierwszą połowę wiersza i zatrzymać się przed override stamp. Atrament może zebrać się tam, gdzie kciuk przycisnął mokry papier. Sól może siedzieć pod zagięciem. Jeśli tick carry-forward jest czystszy niż przerwa smaru, a przekazanie sprężarki już nie zgadza się z licznikiem pompy i przekaźnikiem, wyjątek nie ruszył powietrza. Ruszył odpowiedzialność.\n\nTo nie jest wiersz wyznania. Deep Reach go nie potrzebowała. Trasa mogła zostać aktywna, bo obciążenie wsparcia przeniesiono dalej. Claim mógł pozostać otwarty, bo pokój nadal figurował pod custody serwisu. Uszkodzony pracownik mógł zostać rozliczalny lub odzyskiwalny, choć dziennik tlenu, rezerwa skafandra i seria scrubbera wskazywały już inaczej.\n\nW terenie traktuj pasek jak mokrą część mechaniczną. Sfotografuj obie strony przed prostowaniem. Zapisz przerwy smaru, sól pod zagięciami, nakładkę stempla i dokładny tick carry-forward. Potem czytaj obok wstecznego przekazania sprężarki. Jeśli wyjątek przychodzi po zatrzymaniu pompy, obciążenie opuściło pokój jako odpowiedzialność, nie oddech.",
-          "external_site": "Wyjątek przeniesienia obciążenia pokazuje, jak uszkodzony pokój zostaje przy trasie po tym, jak system powietrza przestał go wspierać.",
-          "external_site_article": "Carry-forward brzmi nieszkodliwie, dopóki nie czyta się go obok metalu. To schludne wyrażenie dla brzydkiego transferu: weź obciążenie, którego tu nie da się zamknąć, przesuń je na następne konto, utrzymaj trasę przy życiu, aż inny desk przejmie problem.\n\nNa HECTON-8 to słowo siedziało między maintenance i claims. Lokalne podtrzymanie mogło paść, ale pokój zostawał pod custody serwisu. Pracownik mógł być nieobecny, ale trasa mogła pozostać aktywna. Skafander mógł być pusty, ale pasek wyjątku mógł trzymać klasę wsparcia otwartą.\n\nLiczy się detal materiału. Pasek obsługiwany w zatoce serwisowej nie starzeje się jak wiersz wpisany później. Smar się urywa. Atrament piórkuje. Sól znaczy zagięcie. Późny tick carry-forward często leży czysto na uszkodzeniu, które powinien był dzielić. Ten mały czysty znak jest miejscem, gdzie administracja zaczyna wyprzedzać maszynę.\n\nTen zapis czytaj po wstecznym przekazaniu sprężarki. Pompa i przekaźnik mówią, czy powietrze się ruszyło. Wyjątek przeniesienia mówi, kto utrzymał wadliwe obciążenie użyteczne po tym, jak przestało nadawać się do oddychania.",
-          "field_note": "Carry-forward może przesunąć winę. Powietrza nie przesunie.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Виняток перенесення навантаження підтримки",
-          "scanner": "ПЕРЕНЕСЕННЯ НАВАНТАЖЕННЯ // Смуга винятку несе підтримку кімнати після зупинки машинних слідів. Розрив мастила й override stamp не збігаються з передачею компресора.",
-          "terminal": "QA ПЕРЕНЕСЕННЯ // Звірити смугу винятку, maintenance override stamp, розрив мастила, пізню передачу компресора, відсічення кисневого журналу, дельту костюма й claim hold. Carry-forward рухає відповідальність, не повітря.",
-          "audio": "Вони перенесли навантаження далі після того, як кімната перестала його нести.",
-          "in_game_wiki": "Виняток перенесення навантаження підтримки — це позначка стола, яка тримає відмовлену кімнату прив'язаною до маршруту після того, як машина перестала виконувати роботу. Зазвичай вона живе на вузькій смузі: код кімнати, клас навантаження, maintenance override, галка carry-forward, посилання claim hold. У чистий день це облік. Після розриву життєзабезпечення це шарнір.\n\nСмуга достатньо фізична, щоб її читати. Мастило із сервісного відсіку може перетнути першу половину рядка й зупинитися перед override stamp. Чорнило може збиратися там, де вологий папір притиснув великий палець. Сіль може лежати під згином. Якщо галка carry-forward чистіша за розрив мастила, а передача компресора вже не сходиться з лічильником помпи й клацанням реле, виняток не рухав повітря. Він рухав відповідальність.\n\nЦе не рядок зізнання. Deep Reach він не був потрібен. Маршрут міг лишатися активним, бо support load carried forward. Claim міг висіти відкритим, бо кімната ще числилася під сервісною відповідальністю. Відмовлений працівник міг лишатися оплачуваним або вилучним, поки кисневий журнал, резерв костюма й серійник скрубера вже показували в інший бік.\n\nУ полі з такою смугою поводяться як із мокрою механічною деталлю. Зняти обидві сторони до випрямлення. Зафіксувати розриви мастила, сіль під згинами, накладання штампа й точну галку carry-forward. Потім читати поруч із пізньою передачею компресора. Якщо виняток приходить після зупинки помпи, навантаження вийшло з кімнати як відповідальність, не як дихання.",
-          "external_site": "Виняток перенесення навантаження показує, як відмовлена кімната лишається прив'язаною до маршруту після того, як повітряна система вже перестала її підтримувати.",
-          "external_site_article": "Carry-forward звучить безпечно, доки його не читають поруч із металом. Це охайна фраза для неприємного перенесення: взяти навантаження, яке не можна закрити тут, пересунути його в наступний рахунок, утримати маршрут живим досить довго, щоб проблему прийняв інший стіл.\n\nНа HECTON-8 ця фраза стояла між maintenance і claims. Локальне життєзабезпечення могло відмовити, але кімната залишалася під сервісною відповідальністю. Працівник міг бути відсутнім, але маршрут залишався активним. Костюм міг бути порожнім, але смуга винятку тримала клас підтримки відкритим.\n\nМатеріальна дрібниця важлива. Смуга, яку тримали в сервісному відсіку, старіє не так, як рядок, введений пізніше. Мастило обривається. Чорнило розпушується. Сіль позначає згин. Пізня галка carry-forward часто чисто лежить поверх ушкодження, з яким мала б старіти. Ця маленька чиста позначка і є місце, де адміністрація починає обганяти машину.\n\nЦей запис слід читати після пізньої передачі компресора. Помпа й реле показують, чи рухалося повітря. Виняток перенесення показує, хто зберіг відмовлене навантаження корисним після того, як воно перестало бути придатним для дихання.",
-          "field_note": "Carry-forward може рухати провину. Повітря він не рухає.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "استثناء ترحيل حمل الدعم",
-          "scanner": "ترحيل حمل الدعم // يحمل شريط الاستثناء دعم الغرفة بعد توقف دليل الآلة. كسر الشحم وختم override لا يطابقان تسليم الضاغط.",
-          "terminal": "فحص ترحيل الحمل // قارن شريط الاستثناء، ختم maintenance override، كسر الشحم، إدخال تسليم الضاغط اللاحق، قطع سجل الأكسجين، فرق احتياطي البدلة وclaim hold. Carry-forward يحرك المسؤولية لا دعم الهواء.",
-          "audio": "رحلوا الحمل إلى الأمام بعد أن توقفت الغرفة عن حمله.",
-          "in_game_wiki": "استثناء ترحيل حمل الدعم هو علامة المكتب التي تبقي غرفة فاشلة مربوطة بالمسار بعد أن تتوقف الآلات عن أداء العمل. غالبا يعيش على شريط ضيق: رمز الغرفة، فئة الحمل، maintenance override، علامة carry-forward، ومرجع claim hold. في يوم عادي هو محاسبة. بعد كسر دعم الحياة يصبح مفصلا.\n\nالشريط مادي بما يكفي للقراءة. يمكن لشحم حجرة الخدمة أن يعبر نصف الصف الأول ويتوقف قبل ختم override. يمكن للحبر أن يتجمع حيث ضغط إبهام على الورق الرطب. يمكن للملح أن يجلس تحت الطية. إذا كانت علامة carry-forward أنظف من كسر الشحم، وكان تسليم الضاغط يخالف عداد المضخة ونقرة المرحل، فالاستثناء لم يحرك الهواء. حرك المسؤولية.\n\nهذه ليست خانة اعتراف. لم تكن Deep Reach تحتاج إليها. كان يمكن للمسار أن يبقى نشطا لأن حمل الدعم رحل إلى الأمام. وكان يمكن للمطالبة أن تبقى مفتوحة لأن الغرفة بقيت تحت حيازة الصيانة. وكان يمكن للعامل الفاشل أن يبقى قابلا للفوترة أو الاسترداد بينما سجل الأكسجين واحتياطي البدلة ورقم المرشح تشير إلى جهة أخرى.\n\nفي الميدان يعامل الشريط كقطعة ميكانيكية رطبة. صور الجانبين قبل فرده. سجل انقطاعات الشحم، الملح تحت الطيات، تراكب الختم، وعلامة carry-forward الدقيقة. ثم اقرأه بجانب إدخال تسليم الضاغط اللاحق. إذا وصل الاستثناء بعد توقف المضخة، فقد غادر الحمل الغرفة كمسؤولية لا كتنفس.",
-          "external_site": "استثناء ترحيل حمل الدعم يبين كيف تبقى غرفة فاشلة مربوطة بمسار بعد أن يتوقف نظام الهواء عن دعمها.",
-          "external_site_article": "تبدو عبارة carry-forward بلا أذى حتى تقرأ بجانب المعدن. إنها عبارة مرتبة لنقل قبيح: خذ الحمل الذي لا يمكن حله هنا، انقله إلى الحساب التالي، وأبق المسار حيا مدة تكفي كي يمتلك مكتب آخر المشكلة.\n\nعلى HECTON-8 جلست هذه العبارة بين maintenance وclaims. قد يفشل دعم الحياة المحلي، لكن الغرفة تبقى تحت حيازة الخدمة. قد يغيب العامل، لكن المسار يبقى نشطا. قد تكون البدلة فارغة، لكن شريط الاستثناء يبقي فئة الدعم مفتوحة.\n\nالتفصيل المادي مهم. الشريط الذي عولج في حجرة الخدمة لا يشيخ مثل صف أدخل لاحقا. الشحم ينقطع. الحبر يتشعب. الملح يعلم الطية. علامة carry-forward المتأخرة تميل إلى الجلوس نظيفة فوق ضرر كان يجب أن تشاركه. تلك العلامة النظيفة الصغيرة هي موضع بدء الإدارة بتجاوز الآلة.\n\nتقرأ هذه السجلة بعد إدخال تسليم الضاغط اللاحق. المضخة والمرحل يبينان هل تحرك الهواء. استثناء الترحيل يبين من أبقى الحمل الفاشل مفيدا بعد أن لم يعد صالحا للتنفس.",
-          "field_note": "يمكن لـ carry-forward أن يحرك اللوم. لا يمكنه تحريك الهواء.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Pengecualian Carry-Forward Beban Dukungan",
-          "scanner": "SUPPORT LOAD CARRY-FORWARD // Strip pengecualian membawa dukungan ruang setelah bukti mesin berhenti. Putus lemak dan override stamp tidak cocok dengan handoff kompresor.",
-          "terminal": "QA CARRY-FORWARD // Bandingkan strip pengecualian, maintenance override stamp, putus lemak, backfill handoff kompresor, pemutusan buku oksigen, delta cadangan suit, dan claim hold. Carry-forward memindahkan tanggung jawab, bukan dukungan udara.",
-          "audio": "Mereka membawa beban itu maju setelah ruang berhenti membawanya.",
-          "in_game_wiki": "Pengecualian carry-forward beban dukungan adalah tanda meja yang menjaga ruang gagal tetap menempel pada rute setelah mesin berhenti bekerja. Biasanya ia ada pada strip sempit: kode ruang, kelas beban, maintenance override, tik carry-forward, referensi claim hold. Pada hari bersih itu pembukuan. Setelah life support patah, ia menjadi engsel.\n\nStrip itu cukup fisik untuk dibaca. Lemak dari service bay bisa melintasi separuh baris pertama dan berhenti sebelum override stamp. Tinta bisa menggenang di tempat jempol menekan kertas basah. Garam bisa duduk di bawah lipatan. Jika tik carry-forward lebih bersih daripada putus lemak, dan handoff kompresor sudah bertentangan dengan penghitung pompa serta tik relai, pengecualian itu tidak memindahkan udara. Ia memindahkan tanggung jawab.\n\nIni bukan baris pengakuan. Deep Reach tidak membutuhkannya. Rute bisa tetap aktif karena beban dukungan dibawa maju. Claim bisa tetap terbuka karena ruang masih ditandai di bawah custody maintenance. Pekerja yang gagal bisa tetap bisa ditagih atau dipulihkan sementara buku oksigen, cadangan suit, dan seri scrubber sudah menunjuk ke arah lain.\n\nDi lapangan, perlakukan strip seperti bagian mekanis basah. Foto dua sisi sebelum diratakan. Catat putus lemak, garam di bawah lipatan, tumpang tindih cap, dan tik carry-forward persis. Lalu baca bersama backfill handoff kompresor. Jika pengecualian datang setelah pompa berhenti, beban meninggalkan ruang sebagai tanggung jawab, bukan napas.",
-          "external_site": "Pengecualian carry-forward menunjukkan bagaimana ruang gagal tetap terkait ke rute setelah sistem udara berhenti mendukungnya.",
-          "external_site_article": "Carry-forward terdengar aman sampai dibaca di samping logam. Itu frasa rapi untuk transfer buruk: ambil beban yang tidak bisa diselesaikan di sini, pindahkan ke akun berikutnya, jaga rute tetap hidup cukup lama agar meja lain memiliki masalahnya.\n\nDi HECTON-8, frasa itu duduk di antara maintenance dan claims. Life support lokal bisa gagal, tetapi ruang tetap berada dalam custody servis. Pekerja bisa absen, tetapi rute tetap aktif. Suit bisa kosong, tetapi strip pengecualian menjaga kelas dukungan tetap terbuka.\n\nDetail material penting. Strip yang dipegang di service bay tidak menua seperti baris yang dimasukkan belakangan. Lemak berhenti. Tinta berbulu. Garam menandai lipatan. Tik carry-forward terlambat cenderung duduk bersih di atas kerusakan yang seharusnya ia bagi. Tanda kecil bersih itulah tempat administrasi mulai mendahului mesin.\n\nCatatan ini dibaca setelah backfill handoff kompresor. Pompa dan relai menunjukkan apakah udara bergerak. Pengecualian carry-forward menunjukkan siapa menjaga beban gagal tetap berguna setelah tidak lagi bisa dihirup.",
-          "field_note": "Carry-forward bisa memindahkan salah. Ia tidak bisa memindahkan udara.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "지원 부하 이월 예외",
-          "scanner": "지원 부하 이월 // 예외 스트립은 기계 증거가 멈춘 뒤에도 방 지원을 운반한다. 그리스 끊김과 override stamp는 압축기 handoff와 맞지 않는다.",
-          "terminal": "이월 QA // 예외 스트립, maintenance override stamp, 그리스 끊김, 압축기 handoff 사후기입, 산소 장부 절단, 슈트 예비량 델타, claim hold를 대조한다. Carry-forward는 책임 이동이지 공기 지원이 아니다.",
-          "audio": "방이 더는 부하를 지지하지 못한 뒤에도 그들은 부하를 앞으로 옮겼다.",
-          "in_game_wiki": "지원 부하 이월 예외는 기계가 일을 멈춘 뒤에도 실패한 방을 경로에 붙여 두는 데스크 표시다. 보통 좁은 스트립에 산다. 방 코드, 부하 등급, maintenance override, carry-forward 틱, claim hold 참조. 평상시에는 회계다. 생명유지 파열 뒤에는 경첩이 된다.\n\n스트립은 물리적으로 읽을 수 있을 만큼 충분하다. 서비스 베이의 그리스가 행 앞부분을 가로지르다가 override stamp 앞에서 멈출 수 있다. 젖은 종이를 엄지가 누른 곳에는 잉크가 고일 수 있다. 소금은 접힌 입술 아래에 남을 수 있다. carry-forward 틱이 그리스 끊김보다 깨끗하고, 압축기 handoff가 이미 펌프 계수기와 릴레이 틱과 맞지 않는다면 그 예외는 공기를 움직이지 않았다. 책임을 움직였다.\n\n이것은 자백 행이 아니다. Deep Reach에는 필요 없었다. 지원 부하가 이월되었기 때문에 경로는 활성 상태로 남을 수 있었다. 방이 여전히 maintenance custody 아래 표시되었기 때문에 claim은 열린 상태로 남을 수 있었다. 산소 장부, 슈트 예비량, 스크러버 일련번호가 이미 다른 쪽을 가리키는 동안에도 실패한 작업자는 청구 가능하거나 회수 가능하게 남을 수 있었다.\n\n현장에서는 스트립을 젖은 기계 부품처럼 다룬다. 펼치기 전에 양면을 촬영한다. 그리스 끊김, 접힘 아래 소금, 스탬프 겹침, 정확한 carry-forward 틱을 기록한다. 그런 다음 압축기 handoff 사후기입 옆에서 읽는다. 예외가 펌프 정지 뒤에 왔다면, 부하는 호흡이 아니라 책임으로 방을 떠났다.",
-          "external_site": "지원 부하 이월 예외는 공기 시스템이 지원을 멈춘 뒤에도 실패한 방이 경로에 붙어 있는 방식을 보여준다.",
-          "external_site_article": "Carry-forward는 금속 옆에서 읽기 전까지는 해롭지 않게 들린다. 여기서 해결할 수 없는 부하를 다음 계정으로 옮기고, 다른 데스크가 문제를 소유할 때까지 경로를 살려 두는 추한 이송에 붙은 단정한 표현이다.\n\nHECTON-8에서 그 표현은 maintenance와 claims 사이에 있었다. 로컬 생명유지는 실패할 수 있지만 방은 서비스 custody 아래 남을 수 있었다. 작업자는 없을 수 있지만 경로는 활성 상태로 남을 수 있었다. 슈트는 비어 있을 수 있지만 예외 스트립은 지원 등급을 열어 둘 수 있었다.\n\n물질 디테일이 중요하다. 서비스 베이에서 다뤄진 스트립은 나중에 입력된 행처럼 늙지 않는다. 그리스는 끊긴다. 잉크는 번진다. 소금은 접힘을 표시한다. 늦은 carry-forward 틱은 함께 겪었어야 할 손상 위에 깨끗하게 앉는 경향이 있다. 그 작은 깨끗한 표시가 행정이 기계를 앞지르기 시작하는 자리다.\n\n이 기록은 압축기 handoff 사후기입 뒤에 읽는다. 펌프와 릴레이는 공기가 움직였는지 보여준다. 이월 예외는 실패한 부하가 더는 숨쉴 수 없게 된 뒤 누가 그것을 유용하게 유지했는지 보여준다.",
-          "field_note": "Carry-forward는 책임을 움직일 수 있다. 공기는 움직일 수 없다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "חריג העברת עומס תמיכה קדימה",
-          "scanner": "העברת עומס תמיכה // רצועת החריג נושאת תמיכת חדר אחרי שעקבות המכונה נעצרות. שבירת גריז ו-override stamp אינם תואמים למסירת המדחס.",
-          "terminal": "בדיקת CARRY-FORWARD // להשוות רצועת חריג, maintenance override stamp, שבירת גריז, מילוי מאוחר של מסירת מדחס, חיתוך יומן חמצן, דלתא עתודת חליפה ו-claim hold. Carry-forward מזיז אחריות, לא תמיכת אוויר.",
-          "audio": "הם נשאו את העומס קדימה אחרי שהחדר הפסיק לשאת אותו.",
-          "in_game_wiki": "חריג העברת עומס תמיכה קדימה הוא סימן שולחן שמשאיר חדר כושל מחובר למסלול אחרי שהמכונה הפסיקה לעשות את העבודה. בדרך כלל הוא יושב על רצועה צרה: קוד חדר, מחלקת עומס, maintenance override, סימון carry-forward, הפניית claim hold. ביום נקי זו הנהלת חשבונות. אחרי שבר בתמיכת חיים זה ציר.\n\nהרצועה פיזית מספיק כדי לקרוא אותה. גריז ממפרץ השירות יכול לחצות את חצי השורה הראשון ולהיעצר לפני ה-override stamp. דיו יכול להיקוות במקום שבו אגודל לחץ על נייר רטוב. מלח יכול לשבת מתחת לקיפול. אם סימון carry-forward נקי יותר משבירת הגריז, ומסירת המדחס כבר לא מתאימה למונה המשאבה ולתקתוק הממסר, החריג לא הזיז אוויר. הוא הזיז אחריות.\n\nזו אינה שורת הודאה. Deep Reach לא נזקקה לה. מסלול יכול להישאר פעיל כי עומס התמיכה הועבר קדימה. Claim יכול להישאר פתוח כי החדר עדיין מסומן תחת משמורת תחזוקה. עובד שנכשל יכול להישאר בר-חיוב או בר-השבה בזמן שיומן החמצן, עתודת החליפה וסדרת הסקראבר כבר מצביעים אחרת.\n\nבשטח מתייחסים לרצועה כמו לחלק מכני רטוב. לצלם את שני הצדדים לפני יישור. לרשום שבירות גריז, מלח תחת קיפולים, חפיפת חותמת ואת סימון ה-carry-forward המדויק. אחר כך לקרוא לצד מילוי מאוחר של מסירת המדחס. אם החריג מגיע אחרי עצירת המשאבה, העומס עזב את החדר כאחריות, לא כנשימה.",
-          "external_site": "חריג העברת עומס תמיכה מראה איך חדר כושל נשאר מחובר למסלול אחרי שמערכת האוויר כבר הפסיקה לתמוך בו.",
-          "external_site_article": "Carry-forward נשמע תמים עד שקוראים אותו ליד מתכת. זה ביטוי מסודר להעברה מכוערת: לקחת את העומס שאי אפשר לסגור כאן, להעביר אותו לחשבון הבא, להשאיר את המסלול חי עד ששולחן אחר יחזיק בבעיה.\n\nב-HECTON-8 הביטוי הזה ישב בין maintenance ל-claims. תמיכת החיים המקומית יכלה להיכשל, אבל החדר נשאר תחת משמורת שירות. העובד יכול היה להיעדר, אבל המסלול נשאר פעיל. החליפה יכולה להיות ריקה, אבל רצועת החריג שומרת את מחלקת התמיכה פתוחה.\n\nהפרט החומרי חשוב. רצועה שטופלה במפרץ שירות אינה מזדקנת כמו שורה שהוזנה מאוחר יותר. גריז נקטע. דיו מתפצל. מלח מסמן את הקיפול. סימון carry-forward מאוחר נוטה לשבת נקי על נזק שהיה אמור לחלוק. הסימן הנקי הקטן הזה הוא המקום שבו המינהל מתחיל לעקוף את המכונה.\n\nאת הרשומה הזאת קוראים אחרי מילוי מאוחר של מסירת מדחס. המשאבה והממסר מראים אם אוויר זז. חריג ההעברה מראה מי שמר על העומס הכושל שימושי אחרי שכבר לא היה אפשר לנשום אותו.",
-          "field_note": "Carry-forward יכול להזיז אשמה. הוא לא יכול להזיז אוויר.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Exceção de Carry-Forward da Carga de Suporte",
-          "scanner": "CARRY-FORWARD DA CARGA // Fita de exceção carrega suporte da sala depois que a evidência da máquina para. Quebra de graxa e override stamp não batem com o handoff do compressor.",
-          "terminal": "QA CARRY-FORWARD // Compare fita de exceção, maintenance override stamp, quebra de graxa, backfill do compressor, corte do livro de oxigênio, delta da reserva do traje e claim hold. Carry-forward move responsabilidade, não suporte de ar.",
-          "audio": "Eles carregaram a carga adiante depois que a sala parou de carregá-la.",
-          "in_game_wiki": "Uma exceção de carry-forward da carga de suporte é a marca de mesa que mantém uma sala falha presa a uma rota depois que a máquina parou de fazer o trabalho. Ela costuma viver numa fita estreita: código da sala, classe de carga, maintenance override, tique carry-forward, referência claim hold. Num dia limpo, é contabilidade. Depois de uma quebra de suporte de vida, vira dobradiça.\n\nA fita é física o bastante para leitura. Graxa da baia de serviço pode cruzar a primeira metade da linha e parar antes do override stamp. Tinta pode empoçar onde o papel úmido recebeu um polegar. Sal pode ficar sob a dobra. Se o tique carry-forward é mais limpo que a quebra da graxa, e o handoff do compressor já discorda do contador da bomba e do relé, a exceção não moveu ar. Moveu responsabilidade.\n\nIsto não é linha de confissão. A Deep Reach não precisava de uma. Uma rota podia seguir ativa porque a carga de suporte foi carregada adiante. Um claim podia seguir aberto porque a sala ainda estava sob custódia de manutenção. Um trabalhador falho podia continuar faturável ou recuperável enquanto livro de oxigênio, reserva do traje e série do scrubber já apontavam para outro lado.\n\nNo campo, trate a fita como peça mecânica molhada. Fotografe os dois lados antes de achatar. Registre quebras de graxa, sal sob dobras, sobreposição de carimbo e o tique carry-forward exato. Depois leia junto do backfill do handoff do compressor. Se a exceção chega depois que a bomba para, a carga saiu da sala como responsabilidade, não como respiração.",
-          "external_site": "Uma exceção de carry-forward mostra como uma sala falha continua presa a uma rota depois que o sistema de ar já parou de sustentá-la.",
-          "external_site_article": "Carry-forward parece inofensivo até ser lido ao lado do metal. É uma frase limpa para uma transferência feia: pegue a carga que não dá para resolver aqui, mova para a próxima conta, mantenha a rota viva tempo suficiente para outra mesa possuir o problema.\n\nEm HECTON-8, essa frase ficava entre maintenance e claims. O suporte de vida local podia falhar, mas a sala continuava sob custódia de serviço. O trabalhador podia estar ausente, mas a rota continuava ativa. O traje podia estar vazio, mas a fita de exceção mantinha a classe de suporte aberta.\n\nO detalhe material importa. Uma fita manuseada numa baia de serviço não envelhece como linha inserida depois. Graxa para. Tinta abre fibras. Sal marca a dobra. Um tique carry-forward tardio tende a ficar limpo sobre dano que deveria compartilhar. Essa pequena marca limpa é onde a administração começa a passar a máquina.\n\nLeia este registro depois do backfill do handoff do compressor. Bomba e relé mostram se o ar moveu. A exceção de carry-forward mostra quem manteve útil a carga falha depois que ela deixou de ser respirável.",
-          "field_note": "Carry-forward pode mover culpa. Não pode mover ar.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Uitzondering voor doorgedragen steunlast",
-          "scanner": "STEUNLAST DOORGEDRAGEN // Uitzonderingsstrip draagt kamersteun nadat machinesporen stoppen. Vetbreuk en override stamp passen niet bij compressorhandoff.",
-          "terminal": "QA DOORGEDRAGEN LAST // Vergelijk uitzonderingsstrip, maintenance override stamp, vetbreuk, nagevulde compressorhandoff, zuurstofregistersnede, pakreserve-delta en claim hold. Carry-forward verplaatst aansprakelijkheid, geen luchtsteun.",
-          "audio": "Ze droegen de last verder nadat de kamer hem niet meer droeg.",
-          "in_game_wiki": "Een uitzondering voor doorgedragen steunlast is het deskteken dat een falende kamer aan een route vast houdt nadat de machine het werk niet meer doet. Het staat meestal op een smalle strip: kamercode, lastklasse, maintenance override, carry-forward-tik, claim hold-verwijzing. Op een schone dag is het boekhouding. Na een breuk in life support wordt het een scharnier.\n\nDe strip is fysiek genoeg om te lezen. Vet uit de servicebaai kan de eerste helft van de regel kruisen en stoppen voor de override stamp. Inkt kan poelen waar een duim nat papier indrukte. Zout kan onder de vouw zitten. Als de carry-forward-tik schoner is dan de vetbreuk, en de compressorhandoff al botst met pompteller en relaistik, verplaatste de uitzondering geen lucht. Hij verplaatste verantwoordelijkheid.\n\nDit is geen bekentenisregel. Deep Reach had er geen nodig. Een route kon actief blijven omdat de steunlast werd doorgedragen. Een claim kon open blijven omdat de kamer nog onder maintenance custody stond. Een falende werker kon factureerbaar of bergbaar blijven terwijl zuurstofregister, pakreserve en scrubber-serie al de andere kant op wezen.\n\nVeldwerk behandelt de strip als een nat mechanisch onderdeel. Fotografeer beide zijden voor je hem plat maakt. Noteer vetbreuken, zout onder vouwen, stempeloverlap en de exacte carry-forward-tik. Lees hem daarna naast nagevulde compressorhandoff. Als de uitzondering na de pompstop komt, verliet de last de kamer als aansprakelijkheid, niet als adem.",
-          "external_site": "Een doorgedragen-steunlastuitzondering toont hoe een falende kamer aan een route vast blijft nadat het luchtsysteem hem niet meer ondersteunt.",
-          "external_site_article": "Carry-forward klinkt onschuldig tot je het naast metaal leest. Het is een nette zin voor een lelijke overdracht: neem de last die hier niet kan worden opgelost, schuif hem naar de volgende rekening, houd de route lang genoeg levend tot een andere desk het probleem bezit.\n\nOp HECTON-8 zat die zin tussen maintenance en claims. Lokale life support kon falen, maar de kamer bleef onder service custody. De werker kon ontbreken, maar de route bleef actief. Het pak kon leeg zijn, maar de uitzonderingsstrip hield de steunklasse open.\n\nMaterieel detail telt. Een strip die in een servicebaai is gehanteerd veroudert niet als een later ingevoerde regel. Vet stopt. Inkt veert uit. Zout markeert de vouw. Een late carry-forward-tik ligt vaak schoon over schade die hij had moeten delen. Dat kleine schone teken is waar administratie de machine begint in te halen.\n\nLees dit record na nagevulde compressorhandoff. Pomp en relais tonen of lucht bewoog. De carry-forward-uitzondering toont wie de falende last bruikbaar hield nadat hij niet meer adembaar was.",
-          "field_note": "Carry-forward kan schuld verplaatsen. Lucht verplaatst het niet.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.support_load_carry_forward_exception_field_article",
+    "secondary": [
+     "unlock.first_support_load_carry_forward_exception",
+     "unlock.first_compressor_handoff_backfill",
+     "unlock.first_oxygen_ledger_cutoff_claim_hold",
+     "unlock.first_suit_reserve_delta_mismatch",
+     "unlock.first_scrubber_cartridge_serial_mismatch"
+    ],
+    "poi_tags": [
+     "poi.support_load_carry_forward_exception",
+     "poi.exception_strip",
+     "poi.maintenance_override_stamp",
+     "poi.grease_break",
+     "poi.carry_forward_tick",
+     "poi.compressor_handoff_backfill",
+     "poi.oxygen_ledger_cutoff",
+     "poi.suit_reserve_delta",
+     "poi.scrubber_serial_mismatch",
+     "poi.claim_hold_field"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.pressure_base",
+     "biome.life_support",
+     "biome.maintenance_desk",
+     "biome.claim_admin",
+     "biome.route_desk",
+     "biome.evidence_custody"
+    ],
+    "depth_band_m": "0-4200"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Evidence Scanner",
+     "terminal": "Maintenance Carry-Forward QA Note",
+     "audio": "Recovered Maintenance Desk Clip",
+     "in_game_wiki": "PDA Forensic Object Article",
+     "external_site": "Public Lore Atlas Evidence Note",
+     "field_note": "Marauder Field Note"
+    },
+    "source_brief": {
+     "surface_targets": "scanner, terminal, audio, in_game_wiki, external_site, field_note",
+     "spoiler_level": "1",
+     "speaker_source": "PDA scanner, maintenance QA note, maintenance desk clip, Marauder annotation, public lore atlas",
+     "audience": "after compressor handoff backfill; public atlas under early-evidence spoiler boundary",
+     "date_era": "2190 recovery reading of 2147 carry-forward exception strip and claim records",
+     "location_depth_route": "maintenance desk cache, service bay exception strip, compressor room, oxygen ledger strip, claim desk cache",
+     "unlock_context": "after compressor handoff backfill and life-support evidence chain",
+     "evidence_object": "exception strip, maintenance override stamp, grease break, carry-forward tick, compressor handoff row and claim hold",
+     "source_knows": "carry-forward can move liability after machine evidence shows support failed",
+     "source_does_not_know": "hidden transcript sentence, final legal culprit, ending payload receiver",
+     "truth_pressure": "Support load carry-forward binds failed room support to later route and claim language without naming final culprit.",
+     "design_use": "extend life-support evidence chain through maintenance exception handling and claim status carry-forward"
+    },
+    "spoiler_boundary": {
+     "tier": 1,
+     "allowed_reveals": [
+      "support load can be carried forward after room support fails",
+      "maintenance custody can keep route and claim status active",
+      "exception strip damage can predate a later carry-forward tick"
+     ],
+     "blocked_reveals": [
+      "final culprit",
+      "hidden transcript sentence",
+      "ending payload identity"
+     ]
     }
-  ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Support Load Carry-Forward Exception",
+     "scanner": "SUPPORT LOAD CARRY-FORWARD // Exception strip carries room support after machine evidence stops. Grease break and override stamp do not match the compressor handoff.",
+     "terminal": "CARRY-FORWARD QA // Compare exception strip, maintenance override stamp, grease break, compressor handoff backfill, oxygen ledger cutoff, suit reserve delta and claim hold. Carry-forward is liability movement, not air support.",
+     "audio": "They carried the load forward after the room stopped carrying it.",
+     "in_game_wiki": "A support load carry-forward exception is the desk mark that keeps a failed room attached to a route after the machinery has stopped doing the work. It usually lives on a narrow strip: room code, load class, maintenance override, carry-forward tick, claim hold reference. On a clean day it is bookkeeping. After a life-support break, it becomes a hinge.\n\nThe strip is physical enough to read. Grease from the service bay can cross the first half of the row and stop before the override stamp. Ink can pool where damp paper took a thumb. Salt can sit under the folded lip. If the carry-forward tick is cleaner than the grease break, and the compressor handoff already disagrees with pump counter and relay tick, the exception did not move air. It moved responsibility.\n\nThis is not a confession line. Deep Reach did not need one. A route could remain active because support load was carried forward. A claim could stay open because the room was still marked under maintenance custody. A failed worker could remain billable or recoverable while the oxygen ledger, suit reserve and scrubber serial were already pointing the other way.\n\nField handling should treat the strip like a wet mechanical part. Photograph both sides before flattening it. Record grease breaks, salt under folds, stamp overlap and the exact carry-forward tick. Then read it beside compressor handoff backfill. If the exception arrives after the pump stops, the load left the room as liability, not as breath.",
+     "external_site": "A support load carry-forward exception shows how a failed room can stay attached to a route after the air system has already stopped supporting it.",
+     "external_site_article": "Carry-forward sounds harmless until it is read beside metal. It is a neat phrase for an ugly transfer: take the load that cannot be resolved here, move it to the next account, keep the route alive long enough for another desk to own the problem.\n\nOn HECTON-8, that phrase sat between maintenance and claims. Local life support could fail, but the room might remain under service custody. The worker could be absent, but the route could remain active. The suit could be empty, but the exception strip could keep support class open.\n\nThe material detail matters. A strip handled in a service bay does not age like a row entered later. Grease stops. Ink feathers. Salt marks the fold. A late carry-forward tick tends to sit cleanly across damage it should have shared. That clean little mark is where administration begins to outrun the machine.\n\nRead this entry after compressor handoff backfill. The pump and relay show whether air moved. The carry-forward exception shows who kept the failed load useful after it stopped being breathable.",
+     "field_note": "Carry-forward can move blame. It cannot move air.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Исключение переноса нагрузки жизнеобеспечения",
+     "scanner": "ПЕРЕНОС НАГРУЗКИ ЖИЗНЕОБЕСПЕЧЕНИЯ // Полоса исключения несет комнатную поддержку после остановки машинных следов. Разрыв смазки и override stamp не совпадают с передачей компрессора.",
+     "terminal": "QA ПЕРЕНОСА НАГРУЗКИ // Сверить полосу исключения, maintenance override stamp, разрыв смазки, позднюю передачу компрессора, отсечку кислородного журнала, дельту резерва костюма и claim hold. Carry-forward двигает ответственность, а не воздух.",
+     "audio": "Они перенесли нагрузку дальше после того, как комната перестала ее нести.",
+     "in_game_wiki": "Исключение переноса нагрузки жизнеобеспечения — это отметка стола, которая держит отказавшую комнату привязанной к маршруту после того, как машина перестала выполнять работу. Обычно она живет на узкой полосе: код комнаты, класс нагрузки, maintenance override, галка carry-forward, ссылка на claim hold. В нормальный день это учет. После разрыва жизнеобеспечения это шарнир.\n\nПолоса достаточно физическая, чтобы ее читать. Смазка из сервисного отсека может пересекать первую половину строки и останавливаться перед override stamp. Чернила могут расплываться там, где влажную бумагу прижали большим пальцем. Соль может сидеть под сгибом. Если галка carry-forward чище разрыва смазки, а передача компрессора уже спорит со счетчиком насоса и щелчком реле, исключение не двигало воздух. Оно двигало ответственность.\n\nЭто не строка признания. Deep Reach она не требовалась. Маршрут мог оставаться активным, потому что support load carried forward. Claim мог висеть открытым, потому что комната все еще числилась под обслуживающей ответственностью. Отказавший работник мог оставаться оплачиваемым или извлекаемым, пока кислородный журнал, резерв костюма и серийник скруббера уже показывали в другую сторону.\n\nВ поле с такой полосой нужно обращаться как с мокрой механической деталью. Снять обе стороны до выпрямления. Зафиксировать разрывы смазки, соль под сгибами, наложение штампа и точную галку carry-forward. Потом читать рядом с поздней передачей компрессора. Если исключение приходит после остановки насоса, нагрузка покинула комнату как ответственность, а не как дыхание.",
+     "external_site": "Исключение переноса нагрузки показывает, как отказавшая комната остается привязанной к маршруту после того, как воздушная система уже перестала ее поддерживать.",
+     "external_site_article": "Carry-forward звучит безобидно, пока его не читают рядом с металлом. Это аккуратная фраза для неприятного переноса: взять нагрузку, которую нельзя закрыть здесь, сдвинуть ее в следующий счет, удержать маршрут живым достаточно долго, чтобы проблему принял другой стол.\n\nНа HECTON-8 эта фраза стояла между maintenance и claims. Локальное жизнеобеспечение могло отказать, но комната оставалась под сервисной ответственностью. Работник мог отсутствовать, но маршрут оставался активным. Костюм мог быть пустым, но полоса исключения держала класс поддержки открытым.\n\nМатериальная мелочь важна. Полоса, которую держали в сервисном отсеке, стареет не так, как строка, введенная позже. Смазка обрывается. Чернила пушатся. Соль отмечает сгиб. Поздняя галка carry-forward обычно чисто лежит поверх повреждения, с которым должна была состариться. Эта маленькая чистая отметка и есть место, где администрация начинает обгонять машину.\n\nЭту запись нужно читать после поздней передачи компрессора. Насос и реле показывают, двигался ли воздух. Исключение переноса показывает, кто сохранил отказавшую нагрузку полезной после того, как она перестала быть пригодной для дыхания.",
+     "field_note": "Carry-forward может двигать вину. Воздух он не двигает.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "支援負荷繰り越し例外",
+     "scanner": "支援負荷繰り越し // 例外ストリップは機械痕が止まった後も部屋支援を運んでいる。グリースの切れ目とoverride stampはコンプレッサー引き渡しと合わない。",
+     "terminal": "繰り越し QA // 例外ストリップ、maintenance override stamp、グリースの切れ目、コンプレッサー後追い引き渡し、酸素台帳遮断、スーツ予備デルタ、claim holdを照合。carry-forwardは責任移動であり、空気支援ではない。",
+     "audio": "部屋が負荷を支えなくなった後で、彼らはその負荷を先へ運んだ。",
+     "in_game_wiki": "支援負荷繰り越し例外は、機械が仕事をやめた後も、失敗した部屋をルートへ結びつける机上の印だ。たいていは細いストリップにある。部屋コード、負荷クラス、maintenance override、carry-forward刻み、claim hold参照。平常なら会計だ。生命維持が切れた後では、蝶番になる。\n\nそのストリップは、物として読める。サービスベイのグリースは行の前半を横切り、override stampの前で止まることがある。湿った紙を親指で押した場所ではインクが溜まる。折り返しの下に塩が残る。carry-forward刻みがグリースの切れ目よりきれいで、コンプレッサー引き渡しがすでにポンプカウンターやリレー刻みと食い違っているなら、その例外は空気を動かしていない。責任を動かした。\n\nこれは自白の行ではない。Deep Reachには不要だった。支援負荷が繰り越されたから、ルートはアクティブのままでいられる。部屋がまだ保守管理下にあるから、claimは開いたままでいられる。酸素台帳、スーツ予備、スクラバー番号がすでに別方向を示していても、失敗した作業者は請求可能または回収可能として残る。\n\n現場ではストリップを濡れた機械部品のように扱う。平らにする前に両面を撮る。グリースの切れ目、折り目の下の塩、スタンプの重なり、正確なcarry-forward刻みを記録する。それからコンプレッサー引き渡し後追いと並べて読む。例外がポンプ停止の後に来たなら、負荷は呼吸としてではなく責任として部屋を出た。",
+     "external_site": "支援負荷繰り越し例外は、空気系が支援を終えた後も、失敗した部屋がルートにつながり続ける仕組みを示す。",
+     "external_site_article": "carry-forwardは、金属の隣で読むまで無害に聞こえる。解決できない負荷をここから取り、次の勘定へ動かし、別の机が問題を所有するまでルートを生かす。醜い転送に付いた整った言葉だ。\n\nHECTON-8では、その言葉はmaintenanceとclaimsの間に座っていた。ローカル生命維持が失敗しても、部屋は保守管理下に残ることがある。作業者が不在でも、ルートはアクティブのままになることがある。スーツが空でも、例外ストリップは支援クラスを開いたままにできる。\n\n物の細部が重要になる。サービスベイで扱われたストリップは、後で入力された行とは老い方が違う。グリースは途切れる。インクはにじむ。塩は折り目を印す。遅いcarry-forward刻みは、同じ傷を共有しているはずの場所にきれいに乗りがちだ。その小さな清潔な印が、管理が機械を追い越し始める場所だ。\n\nこの記録はコンプレッサー引き渡し後追いの後で読む。ポンプとリレーは空気が動いたかを示す。繰り越し例外は、失敗した負荷が呼吸不能になった後、誰がそれを有用に保ったかを示す。",
+     "field_note": "Carry-forwardは責任を動かせる。空気は動かせない。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "支持负载结转例外",
+     "scanner": "支持负载结转 // 机器痕迹停止后，例外条仍携带房间支持。油脂断点和 override stamp 与压缩机交接不匹配。",
+     "terminal": "结转 QA // 对照例外条、maintenance override stamp、油脂断点、压缩机交接回填、氧气账本截断、潜服储备差值和 claim hold。carry-forward 是责任移动，不是空气支持。",
+     "audio": "房间停止承载之后，他们把负载继续往前带。",
+     "in_game_wiki": "支持负载结转例外，是让失效房间在机器停止工作后仍挂在路线上的桌面标记。它通常在一条窄条上：房间代码、负载级别、maintenance override、carry-forward 勾、claim hold 引用。正常日子里它只是记账。生命维持断裂后，它成了铰链。\n\n这条窄条足够物理，可以读取。服务舱的油脂可能穿过前半行，却停在 override stamp 前。潮纸被拇指按过的地方，墨会聚起来。盐会留在折边下。如果 carry-forward 勾比油脂断点更干净，而压缩机交接已经和泵计数器、继电器刻点不一致，那么这个例外没有移动空气。它移动的是责任。\n\n这不是供词行。Deep Reach 不需要那种东西。路线可以保持激活，因为支持负载被结转。索赔可以保持开放，因为房间仍标在维护保管下。氧气账本、潜服储备和洗涤器序号已经指向另一边时，失败工人仍可能被保留为可计费或可回收。\n\n现场处理要把窄条当作潮湿机械件。压平前拍摄两面。记录油脂断点、折边下的盐、印章重叠和准确的 carry-forward 勾。然后和压缩机交接回填一起读。如果例外在泵停止后到来，负载离开房间时是责任，不是呼吸。",
+     "external_site": "支持负载结转例外显示了一个失效房间如何在空气系统停止支持后仍附着在路线上。",
+     "external_site_article": "carry-forward 听起来无害，直到它被放在金属旁边读。它是给丑陋转移起的整齐词：把无法在这里解决的负载拿走，移到下一笔账，让路线活到另一个桌面接手问题。\n\n在 HECTON-8 上，这个词坐在 maintenance 和 claims 之间。本地生命维持可以失效，房间仍可能保持在服务保管下。工人可以缺席，路线仍可能保持激活。潜服可以是空的，例外条仍能让支持级别保持开放。\n\n材料细节很重要。在服务舱里被拿过的条，不会像后来录入的行那样老化。油脂会断。墨会洇。盐会标出折边。迟来的 carry-forward 勾往往干净地跨过它本该共同经历的损伤。那个小小干净标记，就是行政开始跑赢机器的位置。\n\n这份记录应在压缩机交接回填之后阅读。泵和继电器显示空气是否移动。结转例外显示谁在负载不再可呼吸后仍把它保持为有用状态。",
+     "field_note": "Carry-forward 能移动责任。它不能移动空气。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Exception de report de charge de soutien",
+     "scanner": "REPORT DE CHARGE DE SOUTIEN // La bande d'exception porte le soutien de piece apres l'arret des preuves machine. Rupture de graisse et override stamp ne concordent pas avec la passation compresseur.",
+     "terminal": "QA REPORT DE CHARGE // Comparer bande d'exception, maintenance override stamp, rupture de graisse, rattrapage compresseur, coupure oxygene, delta de combinaison et claim hold. Carry-forward deplace la responsabilite, pas l'air.",
+     "audio": "Ils ont porte la charge plus loin apres que la piece a cesse de la porter.",
+     "in_game_wiki": "Une exception de report de charge de soutien est la marque de desk qui garde une piece en panne attachee a une route apres que la machine a cesse le travail. Elle vit souvent sur une bande etroite : code de piece, classe de charge, maintenance override, tick carry-forward, reference claim hold. Un jour propre, c'est de la comptabilite. Apres une rupture de support-vie, c'est une charniere.\n\nLa bande est assez physique pour etre lue. La graisse du service bay peut traverser la premiere moitie de la ligne et s'arreter avant l'override stamp. L'encre peut boire la ou un pouce a presse le papier humide. Le sel peut rester sous le pli. Si le tick carry-forward est plus propre que la rupture de graisse, et si la passation compresseur contredit deja compteur de pompe et relais, l'exception n'a pas deplace d'air. Elle a deplace la responsabilite.\n\nCe n'est pas une ligne d'aveu. Deep Reach n'en avait pas besoin. Une route pouvait rester active parce que la charge etait reportee. Une reclamation pouvait rester ouverte parce que la piece etait encore sous garde maintenance. Un travailleur perdu pouvait rester facturable ou recuperable alors que registre oxygene, reserve de combinaison et serie de scrubber pointaient deja ailleurs.\n\nSur le terrain, traiter la bande comme une piece mecanique mouillee. Photographier les deux faces avant de l'aplatir. Noter ruptures de graisse, sel sous les plis, chevauchement de tampon et tick carry-forward exact. Puis lire avec le rattrapage de passation compresseur. Si l'exception arrive apres l'arret de pompe, la charge a quitte la piece comme responsabilite, pas comme souffle.",
+     "external_site": "Une exception de report de charge montre comment une piece en panne peut rester attachee a une route apres l'arret du systeme d'air.",
+     "external_site_article": "Carry-forward semble inoffensif jusqu'a ce qu'on le lise pres du metal. C'est une phrase nette pour un transfert laid : prendre la charge impossible a resoudre ici, la pousser vers le compte suivant, garder la route vivante assez longtemps pour qu'un autre desk possede le probleme.\n\nSur HECTON-8, cette phrase se tenait entre maintenance et claims. Le support-vie local pouvait tomber, mais la piece rester sous garde service. Le travailleur pouvait etre absent, mais la route rester active. La combinaison pouvait etre vide, mais la bande d'exception gardait la classe de soutien ouverte.\n\nLe detail materiel compte. Une bande manipulee en service bay ne vieillit pas comme une ligne saisie plus tard. La graisse s'arrete. L'encre plume. Le sel marque le pli. Un tick carry-forward tardif repose souvent proprement sur un dommage qu'il aurait du partager. Cette petite marque propre est l'endroit ou l'administration commence a depasser la machine.\n\nLire cette entree apres le rattrapage de passation compresseur. Pompe et relais disent si l'air a bouge. L'exception de report dit qui a garde utile la charge en panne apres qu'elle n'etait plus respirable.",
+     "field_note": "Carry-forward peut deplacer la faute. Il ne deplace pas l'air.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Excepción de arrastre de carga de soporte",
+     "scanner": "ARRASTRE DE CARGA DE SOPORTE // La tira de excepcion mantiene soporte de sala despues de que paran las pruebas de maquina. Corte de grasa y override stamp no coinciden con el handoff del compresor.",
+     "terminal": "QA ARRASTRE DE CARGA // Comparar tira de excepcion, maintenance override stamp, corte de grasa, backfill del compresor, corte del libro de oxigeno, delta del traje y claim hold. Carry-forward mueve responsabilidad, no soporte de aire.",
+     "audio": "Arrastraron la carga hacia delante despues de que la sala dejo de cargarla.",
+     "in_game_wiki": "Una excepcion de arrastre de carga de soporte es la marca de mesa que mantiene una sala fallida atada a una ruta despues de que la maquinaria deja de hacer el trabajo. Suele vivir en una tira estrecha: codigo de sala, clase de carga, maintenance override, marca carry-forward, referencia claim hold. En un dia limpio es contabilidad. Tras una rotura de soporte vital, es una bisagra.\n\nLa tira es lo bastante fisica para leerla. La grasa del servicio puede cruzar la primera mitad de la linea y detenerse antes del override stamp. La tinta puede juntarse donde un pulgar apreto papel humedo. La sal puede quedar bajo el pliegue. Si la marca carry-forward esta mas limpia que el corte de grasa, y el handoff del compresor ya discrepa del contador y el rele, la excepcion no movio aire. Movio responsabilidad.\n\nNo es una linea de confesion. Deep Reach no la necesitaba. Una ruta podia seguir activa porque la carga de soporte se arrastro adelante. Un claim podia quedar abierto porque la sala seguia bajo custodia de mantenimiento. Un trabajador fallido podia seguir facturable o recuperable mientras el libro de oxigeno, la reserva del traje y la serie del scrubber ya apuntaban en otra direccion.\n\nEn campo, trata la tira como pieza mecanica mojada. Fotografia ambos lados antes de aplanarla. Registra cortes de grasa, sal bajo pliegues, solape de sello y la marca carry-forward exacta. Luego leela junto al backfill del compresor. Si la excepcion llega despues de parar la bomba, la carga salio de la sala como responsabilidad, no como respiracion.",
+     "external_site": "Una excepcion de arrastre muestra como una sala fallida puede seguir atada a una ruta despues de que el sistema de aire deja de sostenerla.",
+     "external_site_article": "Carry-forward suena inofensivo hasta que se lee junto al metal. Es una frase ordenada para una transferencia fea: tomar la carga que no puede resolverse aqui, moverla a la siguiente cuenta, mantener viva la ruta el tiempo suficiente para que otra mesa sea duena del problema.\n\nEn HECTON-8, esa frase se sentaba entre maintenance y claims. El soporte vital local podia fallar, pero la sala quedar bajo custodia de servicio. El trabajador podia faltar, pero la ruta seguir activa. El traje podia estar vacio, pero la tira de excepcion mantener abierta la clase de soporte.\n\nEl detalle material importa. Una tira manejada en un servicio no envejece como una linea introducida despues. La grasa se corta. La tinta se abre. La sal marca el pliegue. Una marca carry-forward tardia suele quedar limpia sobre dano que deberia haber compartido. Esa pequena marca limpia es donde la administracion empieza a adelantar a la maquina.\n\nLee esta entrada despues del backfill del compresor. Bomba y rele muestran si el aire se movio. La excepcion de arrastre muestra quien mantuvo util la carga fallida despues de que dejo de ser respirable.",
+     "field_note": "Carry-forward puede mover culpa. No puede mover aire.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Ausnahme zur Weiterfuehrung der Stuetzlast",
+     "scanner": "STUETZLAST WEITERGEFUEHRT // Ausnahmeband traegt Raumstuetzung nach dem Ende der Maschinenspuren. Fettbruch und override stamp passen nicht zur Kompressoruebergabe.",
+     "terminal": "QA STUETZLAST // Ausnahmeband, maintenance override stamp, Fettbruch, Kompressor-Nachtrag, Sauerstoffbuch-Schnitt, Anzugreserve-Delta und claim hold vergleichen. Carry-forward bewegt Haftung, keine Luftstuetzung.",
+     "audio": "Sie fuehrten die Last weiter, nachdem der Raum sie nicht mehr trug.",
+     "in_game_wiki": "Eine Ausnahme zur Weiterfuehrung der Stuetzlast ist die Desk-Markierung, die einen ausgefallenen Raum an einer Route haelt, nachdem die Maschinen ihre Arbeit eingestellt haben. Sie steht meist auf einem schmalen Streifen: Raumcode, Lastklasse, maintenance override, carry-forward-Haken, claim-hold-Verweis. An einem sauberen Tag ist das Buchhaltung. Nach einem Lebenserhaltungsbruch wird es zum Scharnier.\n\nDer Streifen ist physisch genug, um gelesen zu werden. Fett aus dem Service Bay kann die erste Zeilenhaelfte kreuzen und vor dem override stamp stoppen. Tinte kann dort ausbluten, wo ein Daumen feuchtes Papier drueckte. Salz kann unter der Falz sitzen. Ist der carry-forward-Haken sauberer als der Fettbruch, und widerspricht die Kompressoruebergabe bereits Pumpenzaehler und Relaisklick, bewegte die Ausnahme keine Luft. Sie bewegte Verantwortung.\n\nDas ist keine Geständniszeile. Deep Reach brauchte keine. Eine Route konnte aktiv bleiben, weil die Stuetzlast weitergefuehrt wurde. Ein Claim konnte offen bleiben, weil der Raum noch unter Maintenance-Custody stand. Ein ausgefallener Arbeiter konnte abrechenbar oder bergbar bleiben, waehrend Sauerstoffbuch, Anzugreserve und Scrubber-Serie schon in die andere Richtung zeigten.\n\nIm Feld den Streifen wie ein nasses Maschinenteil behandeln. Beide Seiten vor dem Glätten fotografieren. Fettbrueche, Salz unter Falzen, Stempelueberlappung und genauen carry-forward-Haken aufnehmen. Dann neben dem Kompressor-Nachtrag lesen. Kommt die Ausnahme nach dem Pumpenstopp, verliess die Last den Raum als Haftung, nicht als Atem.",
+     "external_site": "Eine Weiterfuehrungs-Ausnahme zeigt, wie ein ausgefallener Raum an einer Route haengen bleibt, nachdem das Luftsystem ihn nicht mehr stuetzt.",
+     "external_site_article": "Carry-forward klingt harmlos, bis es neben Metall gelesen wird. Es ist ein ordentlicher Ausdruck fuer einen haesslichen Transfer: die hier nicht loesbare Last nehmen, ins naechste Konto schieben, die Route lange genug am Leben halten, bis ein anderer Desk das Problem besitzt.\n\nAuf HECTON-8 sass dieser Ausdruck zwischen Maintenance und Claims. Lokale Lebenserhaltung konnte ausfallen, doch der Raum blieb unter Service-Custody. Der Arbeiter konnte fehlen, doch die Route blieb aktiv. Der Anzug konnte leer sein, doch der Ausnahmestreifen hielt die Stuetzklasse offen.\n\nDas Materialdetail zaehlt. Ein im Service Bay behandelter Streifen altert nicht wie eine spaeter eingegebene Zeile. Fett reisst ab. Tinte fasert. Salz markiert die Falz. Ein spaeter carry-forward-Haken liegt oft sauber ueber Schaden, den er haette teilen muessen. Diese kleine saubere Markierung ist der Ort, an dem Verwaltung die Maschine ueberholt.\n\nDiesen Eintrag nach dem Kompressor-Nachtrag lesen. Pumpe und Relais zeigen, ob Luft bewegt wurde. Die Weiterfuehrungs-Ausnahme zeigt, wer die ausgefallene Last nuetzlich hielt, nachdem sie nicht mehr atembar war.",
+     "field_note": "Carry-forward kann Schuld bewegen. Luft bewegt es nicht.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Wyjątek przeniesienia obciążenia wsparcia",
+     "scanner": "PRZENIESIENIE OBCIĄŻENIA // Pasek wyjątku niesie wsparcie pokoju po zatrzymaniu śladów maszyny. Przerwa smaru i override stamp nie pasują do przekazania sprężarki.",
+     "terminal": "QA PRZENIESIENIA // Porównaj pasek wyjątku, maintenance override stamp, przerwę smaru, dopisanie sprężarki, odcięcie dziennika tlenu, deltę skafandra i claim hold. Carry-forward przesuwa odpowiedzialność, nie powietrze.",
+     "audio": "Przenieśli obciążenie dalej, gdy pokój przestał je nieść.",
+     "in_game_wiki": "Wyjątek przeniesienia obciążenia wsparcia to znak biurka, który trzyma uszkodzony pokój przy trasie po tym, jak maszyna przestała wykonywać pracę. Zwykle żyje na wąskim pasku: kod pokoju, klasa obciążenia, maintenance override, tick carry-forward, odniesienie claim hold. W czysty dzień to księgowość. Po pęknięciu podtrzymania życia staje się zawiasem.\n\nPasek jest dość fizyczny, by go czytać. Smar z zatoki serwisowej może przeciąć pierwszą połowę wiersza i zatrzymać się przed override stamp. Atrament może zebrać się tam, gdzie kciuk przycisnął mokry papier. Sól może siedzieć pod zagięciem. Jeśli tick carry-forward jest czystszy niż przerwa smaru, a przekazanie sprężarki już nie zgadza się z licznikiem pompy i przekaźnikiem, wyjątek nie ruszył powietrza. Ruszył odpowiedzialność.\n\nTo nie jest wiersz wyznania. Deep Reach go nie potrzebowała. Trasa mogła zostać aktywna, bo obciążenie wsparcia przeniesiono dalej. Claim mógł pozostać otwarty, bo pokój nadal figurował pod custody serwisu. Uszkodzony pracownik mógł zostać rozliczalny lub odzyskiwalny, choć dziennik tlenu, rezerwa skafandra i seria scrubbera wskazywały już inaczej.\n\nW terenie traktuj pasek jak mokrą część mechaniczną. Sfotografuj obie strony przed prostowaniem. Zapisz przerwy smaru, sól pod zagięciami, nakładkę stempla i dokładny tick carry-forward. Potem czytaj obok wstecznego przekazania sprężarki. Jeśli wyjątek przychodzi po zatrzymaniu pompy, obciążenie opuściło pokój jako odpowiedzialność, nie oddech.",
+     "external_site": "Wyjątek przeniesienia obciążenia pokazuje, jak uszkodzony pokój zostaje przy trasie po tym, jak system powietrza przestał go wspierać.",
+     "external_site_article": "Carry-forward brzmi nieszkodliwie, dopóki nie czyta się go obok metalu. To schludne wyrażenie dla brzydkiego transferu: weź obciążenie, którego tu nie da się zamknąć, przesuń je na następne konto, utrzymaj trasę przy życiu, aż inny desk przejmie problem.\n\nNa HECTON-8 to słowo siedziało między maintenance i claims. Lokalne podtrzymanie mogło paść, ale pokój zostawał pod custody serwisu. Pracownik mógł być nieobecny, ale trasa mogła pozostać aktywna. Skafander mógł być pusty, ale pasek wyjątku mógł trzymać klasę wsparcia otwartą.\n\nLiczy się detal materiału. Pasek obsługiwany w zatoce serwisowej nie starzeje się jak wiersz wpisany później. Smar się urywa. Atrament piórkuje. Sól znaczy zagięcie. Późny tick carry-forward często leży czysto na uszkodzeniu, które powinien był dzielić. Ten mały czysty znak jest miejscem, gdzie administracja zaczyna wyprzedzać maszynę.\n\nTen zapis czytaj po wstecznym przekazaniu sprężarki. Pompa i przekaźnik mówią, czy powietrze się ruszyło. Wyjątek przeniesienia mówi, kto utrzymał wadliwe obciążenie użyteczne po tym, jak przestało nadawać się do oddychania.",
+     "field_note": "Carry-forward może przesunąć winę. Powietrza nie przesunie.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Виняток перенесення навантаження підтримки",
+     "scanner": "ПЕРЕНЕСЕННЯ НАВАНТАЖЕННЯ // Смуга винятку несе підтримку кімнати після зупинки машинних слідів. Розрив мастила й override stamp не збігаються з передачею компресора.",
+     "terminal": "QA ПЕРЕНЕСЕННЯ // Звірити смугу винятку, maintenance override stamp, розрив мастила, пізню передачу компресора, відсічення кисневого журналу, дельту костюма й claim hold. Carry-forward рухає відповідальність, не повітря.",
+     "audio": "Вони перенесли навантаження далі після того, як кімната перестала його нести.",
+     "in_game_wiki": "Виняток перенесення навантаження підтримки — це позначка стола, яка тримає відмовлену кімнату прив'язаною до маршруту після того, як машина перестала виконувати роботу. Зазвичай вона живе на вузькій смузі: код кімнати, клас навантаження, maintenance override, галка carry-forward, посилання claim hold. У чистий день це облік. Після розриву життєзабезпечення це шарнір.\n\nСмуга достатньо фізична, щоб її читати. Мастило із сервісного відсіку може перетнути першу половину рядка й зупинитися перед override stamp. Чорнило може збиратися там, де вологий папір притиснув великий палець. Сіль може лежати під згином. Якщо галка carry-forward чистіша за розрив мастила, а передача компресора вже не сходиться з лічильником помпи й клацанням реле, виняток не рухав повітря. Він рухав відповідальність.\n\nЦе не рядок зізнання. Deep Reach він не був потрібен. Маршрут міг лишатися активним, бо support load carried forward. Claim міг висіти відкритим, бо кімната ще числилася під сервісною відповідальністю. Відмовлений працівник міг лишатися оплачуваним або вилучним, поки кисневий журнал, резерв костюма й серійник скрубера вже показували в інший бік.\n\nУ полі з такою смугою поводяться як із мокрою механічною деталлю. Зняти обидві сторони до випрямлення. Зафіксувати розриви мастила, сіль під згинами, накладання штампа й точну галку carry-forward. Потім читати поруч із пізньою передачею компресора. Якщо виняток приходить після зупинки помпи, навантаження вийшло з кімнати як відповідальність, не як дихання.",
+     "external_site": "Виняток перенесення навантаження показує, як відмовлена кімната лишається прив'язаною до маршруту після того, як повітряна система вже перестала її підтримувати.",
+     "external_site_article": "Carry-forward звучить безпечно, доки його не читають поруч із металом. Це охайна фраза для неприємного перенесення: взяти навантаження, яке не можна закрити тут, пересунути його в наступний рахунок, утримати маршрут живим досить довго, щоб проблему прийняв інший стіл.\n\nНа HECTON-8 ця фраза стояла між maintenance і claims. Локальне життєзабезпечення могло відмовити, але кімната залишалася під сервісною відповідальністю. Працівник міг бути відсутнім, але маршрут залишався активним. Костюм міг бути порожнім, але смуга винятку тримала клас підтримки відкритим.\n\nМатеріальна дрібниця важлива. Смуга, яку тримали в сервісному відсіку, старіє не так, як рядок, введений пізніше. Мастило обривається. Чорнило розпушується. Сіль позначає згин. Пізня галка carry-forward часто чисто лежить поверх ушкодження, з яким мала б старіти. Ця маленька чиста позначка і є місце, де адміністрація починає обганяти машину.\n\nЦей запис слід читати після пізньої передачі компресора. Помпа й реле показують, чи рухалося повітря. Виняток перенесення показує, хто зберіг відмовлене навантаження корисним після того, як воно перестало бути придатним для дихання.",
+     "field_note": "Carry-forward може рухати провину. Повітря він не рухає.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "استثناء ترحيل حمل الدعم",
+     "scanner": "ترحيل حمل الدعم // يحمل شريط الاستثناء دعم الغرفة بعد توقف دليل الآلة. كسر الشحم وختم override لا يطابقان تسليم الضاغط.",
+     "terminal": "فحص ترحيل الحمل // قارن شريط الاستثناء، ختم maintenance override، كسر الشحم، إدخال تسليم الضاغط اللاحق، قطع سجل الأكسجين، فرق احتياطي البدلة وclaim hold. Carry-forward يحرك المسؤولية لا دعم الهواء.",
+     "audio": "رحلوا الحمل إلى الأمام بعد أن توقفت الغرفة عن حمله.",
+     "in_game_wiki": "استثناء ترحيل حمل الدعم هو علامة المكتب التي تبقي غرفة فاشلة مربوطة بالمسار بعد أن تتوقف الآلات عن أداء العمل. غالبا يعيش على شريط ضيق: رمز الغرفة، فئة الحمل، maintenance override، علامة carry-forward، ومرجع claim hold. في يوم عادي هو محاسبة. بعد كسر دعم الحياة يصبح مفصلا.\n\nالشريط مادي بما يكفي للقراءة. يمكن لشحم حجرة الخدمة أن يعبر نصف الصف الأول ويتوقف قبل ختم override. يمكن للحبر أن يتجمع حيث ضغط إبهام على الورق الرطب. يمكن للملح أن يجلس تحت الطية. إذا كانت علامة carry-forward أنظف من كسر الشحم، وكان تسليم الضاغط يخالف عداد المضخة ونقرة المرحل، فالاستثناء لم يحرك الهواء. حرك المسؤولية.\n\nهذه ليست خانة اعتراف. لم تكن Deep Reach تحتاج إليها. كان يمكن للمسار أن يبقى نشطا لأن حمل الدعم رحل إلى الأمام. وكان يمكن للمطالبة أن تبقى مفتوحة لأن الغرفة بقيت تحت حيازة الصيانة. وكان يمكن للعامل الفاشل أن يبقى قابلا للفوترة أو الاسترداد بينما سجل الأكسجين واحتياطي البدلة ورقم المرشح تشير إلى جهة أخرى.\n\nفي الميدان يعامل الشريط كقطعة ميكانيكية رطبة. صور الجانبين قبل فرده. سجل انقطاعات الشحم، الملح تحت الطيات، تراكب الختم، وعلامة carry-forward الدقيقة. ثم اقرأه بجانب إدخال تسليم الضاغط اللاحق. إذا وصل الاستثناء بعد توقف المضخة، فقد غادر الحمل الغرفة كمسؤولية لا كتنفس.",
+     "external_site": "استثناء ترحيل حمل الدعم يبين كيف تبقى غرفة فاشلة مربوطة بمسار بعد أن يتوقف نظام الهواء عن دعمها.",
+     "external_site_article": "تبدو عبارة carry-forward بلا أذى حتى تقرأ بجانب المعدن. إنها عبارة مرتبة لنقل قبيح: خذ الحمل الذي لا يمكن حله هنا، انقله إلى الحساب التالي، وأبق المسار حيا مدة تكفي كي يمتلك مكتب آخر المشكلة.\n\nعلى HECTON-8 جلست هذه العبارة بين maintenance وclaims. قد يفشل دعم الحياة المحلي، لكن الغرفة تبقى تحت حيازة الخدمة. قد يغيب العامل، لكن المسار يبقى نشطا. قد تكون البدلة فارغة، لكن شريط الاستثناء يبقي فئة الدعم مفتوحة.\n\nالتفصيل المادي مهم. الشريط الذي عولج في حجرة الخدمة لا يشيخ مثل صف أدخل لاحقا. الشحم ينقطع. الحبر يتشعب. الملح يعلم الطية. علامة carry-forward المتأخرة تميل إلى الجلوس نظيفة فوق ضرر كان يجب أن تشاركه. تلك العلامة النظيفة الصغيرة هي موضع بدء الإدارة بتجاوز الآلة.\n\nتقرأ هذه السجلة بعد إدخال تسليم الضاغط اللاحق. المضخة والمرحل يبينان هل تحرك الهواء. استثناء الترحيل يبين من أبقى الحمل الفاشل مفيدا بعد أن لم يعد صالحا للتنفس.",
+     "field_note": "يمكن لـ carry-forward أن يحرك اللوم. لا يمكنه تحريك الهواء.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Pengecualian Carry-Forward Beban Dukungan",
+     "scanner": "SUPPORT LOAD CARRY-FORWARD // Strip pengecualian membawa dukungan ruang setelah bukti mesin berhenti. Putus lemak dan override stamp tidak cocok dengan handoff kompresor.",
+     "terminal": "QA CARRY-FORWARD // Bandingkan strip pengecualian, maintenance override stamp, putus lemak, backfill handoff kompresor, pemutusan buku oksigen, delta cadangan suit, dan claim hold. Carry-forward memindahkan tanggung jawab, bukan dukungan udara.",
+     "audio": "Mereka membawa beban itu maju setelah ruang berhenti membawanya.",
+     "in_game_wiki": "Pengecualian carry-forward beban dukungan adalah tanda meja yang menjaga ruang gagal tetap menempel pada rute setelah mesin berhenti bekerja. Biasanya ia ada pada strip sempit: kode ruang, kelas beban, maintenance override, tik carry-forward, referensi claim hold. Pada hari bersih itu pembukuan. Setelah life support patah, ia menjadi engsel.\n\nStrip itu cukup fisik untuk dibaca. Lemak dari service bay bisa melintasi separuh baris pertama dan berhenti sebelum override stamp. Tinta bisa menggenang di tempat jempol menekan kertas basah. Garam bisa duduk di bawah lipatan. Jika tik carry-forward lebih bersih daripada putus lemak, dan handoff kompresor sudah bertentangan dengan penghitung pompa serta tik relai, pengecualian itu tidak memindahkan udara. Ia memindahkan tanggung jawab.\n\nIni bukan baris pengakuan. Deep Reach tidak membutuhkannya. Rute bisa tetap aktif karena beban dukungan dibawa maju. Claim bisa tetap terbuka karena ruang masih ditandai di bawah custody maintenance. Pekerja yang gagal bisa tetap bisa ditagih atau dipulihkan sementara buku oksigen, cadangan suit, dan seri scrubber sudah menunjuk ke arah lain.\n\nDi lapangan, perlakukan strip seperti bagian mekanis basah. Foto dua sisi sebelum diratakan. Catat putus lemak, garam di bawah lipatan, tumpang tindih cap, dan tik carry-forward persis. Lalu baca bersama backfill handoff kompresor. Jika pengecualian datang setelah pompa berhenti, beban meninggalkan ruang sebagai tanggung jawab, bukan napas.",
+     "external_site": "Pengecualian carry-forward menunjukkan bagaimana ruang gagal tetap terkait ke rute setelah sistem udara berhenti mendukungnya.",
+     "external_site_article": "Carry-forward terdengar aman sampai dibaca di samping logam. Itu frasa rapi untuk transfer buruk: ambil beban yang tidak bisa diselesaikan di sini, pindahkan ke akun berikutnya, jaga rute tetap hidup cukup lama agar meja lain memiliki masalahnya.\n\nDi HECTON-8, frasa itu duduk di antara maintenance dan claims. Life support lokal bisa gagal, tetapi ruang tetap berada dalam custody servis. Pekerja bisa absen, tetapi rute tetap aktif. Suit bisa kosong, tetapi strip pengecualian menjaga kelas dukungan tetap terbuka.\n\nDetail material penting. Strip yang dipegang di service bay tidak menua seperti baris yang dimasukkan belakangan. Lemak berhenti. Tinta berbulu. Garam menandai lipatan. Tik carry-forward terlambat cenderung duduk bersih di atas kerusakan yang seharusnya ia bagi. Tanda kecil bersih itulah tempat administrasi mulai mendahului mesin.\n\nCatatan ini dibaca setelah backfill handoff kompresor. Pompa dan relai menunjukkan apakah udara bergerak. Pengecualian carry-forward menunjukkan siapa menjaga beban gagal tetap berguna setelah tidak lagi bisa dihirup.",
+     "field_note": "Carry-forward bisa memindahkan salah. Ia tidak bisa memindahkan udara.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "지원 부하 이월 예외",
+     "scanner": "지원 부하 이월 // 예외 스트립은 기계 증거가 멈춘 뒤에도 방 지원을 운반한다. 그리스 끊김과 override stamp는 압축기 handoff와 맞지 않는다.",
+     "terminal": "이월 QA // 예외 스트립, maintenance override stamp, 그리스 끊김, 압축기 handoff 사후기입, 산소 장부 절단, 슈트 예비량 델타, claim hold를 대조한다. Carry-forward는 책임 이동이지 공기 지원이 아니다.",
+     "audio": "방이 더는 부하를 지지하지 못한 뒤에도 그들은 부하를 앞으로 옮겼다.",
+     "in_game_wiki": "지원 부하 이월 예외는 기계가 일을 멈춘 뒤에도 실패한 방을 경로에 붙여 두는 데스크 표시다. 보통 좁은 스트립에 산다. 방 코드, 부하 등급, maintenance override, carry-forward 틱, claim hold 참조. 평상시에는 회계다. 생명유지 파열 뒤에는 경첩이 된다.\n\n스트립은 물리적으로 읽을 수 있을 만큼 충분하다. 서비스 베이의 그리스가 행 앞부분을 가로지르다가 override stamp 앞에서 멈출 수 있다. 젖은 종이를 엄지가 누른 곳에는 잉크가 고일 수 있다. 소금은 접힌 입술 아래에 남을 수 있다. carry-forward 틱이 그리스 끊김보다 깨끗하고, 압축기 handoff가 이미 펌프 계수기와 릴레이 틱과 맞지 않는다면 그 예외는 공기를 움직이지 않았다. 책임을 움직였다.\n\n이것은 자백 행이 아니다. Deep Reach에는 필요 없었다. 지원 부하가 이월되었기 때문에 경로는 활성 상태로 남을 수 있었다. 방이 여전히 maintenance custody 아래 표시되었기 때문에 claim은 열린 상태로 남을 수 있었다. 산소 장부, 슈트 예비량, 스크러버 일련번호가 이미 다른 쪽을 가리키는 동안에도 실패한 작업자는 청구 가능하거나 회수 가능하게 남을 수 있었다.\n\n현장에서는 스트립을 젖은 기계 부품처럼 다룬다. 펼치기 전에 양면을 촬영한다. 그리스 끊김, 접힘 아래 소금, 스탬프 겹침, 정확한 carry-forward 틱을 기록한다. 그런 다음 압축기 handoff 사후기입 옆에서 읽는다. 예외가 펌프 정지 뒤에 왔다면, 부하는 호흡이 아니라 책임으로 방을 떠났다.",
+     "external_site": "지원 부하 이월 예외는 공기 시스템이 지원을 멈춘 뒤에도 실패한 방이 경로에 붙어 있는 방식을 보여준다.",
+     "external_site_article": "Carry-forward는 금속 옆에서 읽기 전까지는 해롭지 않게 들린다. 여기서 해결할 수 없는 부하를 다음 계정으로 옮기고, 다른 데스크가 문제를 소유할 때까지 경로를 살려 두는 추한 이송에 붙은 단정한 표현이다.\n\nHECTON-8에서 그 표현은 maintenance와 claims 사이에 있었다. 로컬 생명유지는 실패할 수 있지만 방은 서비스 custody 아래 남을 수 있었다. 작업자는 없을 수 있지만 경로는 활성 상태로 남을 수 있었다. 슈트는 비어 있을 수 있지만 예외 스트립은 지원 등급을 열어 둘 수 있었다.\n\n물질 디테일이 중요하다. 서비스 베이에서 다뤄진 스트립은 나중에 입력된 행처럼 늙지 않는다. 그리스는 끊긴다. 잉크는 번진다. 소금은 접힘을 표시한다. 늦은 carry-forward 틱은 함께 겪었어야 할 손상 위에 깨끗하게 앉는 경향이 있다. 그 작은 깨끗한 표시가 행정이 기계를 앞지르기 시작하는 자리다.\n\n이 기록은 압축기 handoff 사후기입 뒤에 읽는다. 펌프와 릴레이는 공기가 움직였는지 보여준다. 이월 예외는 실패한 부하가 더는 숨쉴 수 없게 된 뒤 누가 그것을 유용하게 유지했는지 보여준다.",
+     "field_note": "Carry-forward는 책임을 움직일 수 있다. 공기는 움직일 수 없다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "חריג העברת עומס תמיכה קדימה",
+     "scanner": "העברת עומס תמיכה // רצועת החריג נושאת תמיכת חדר אחרי שעקבות המכונה נעצרות. שבירת גריז ו-override stamp אינם תואמים למסירת המדחס.",
+     "terminal": "בדיקת CARRY-FORWARD // להשוות רצועת חריג, maintenance override stamp, שבירת גריז, מילוי מאוחר של מסירת מדחס, חיתוך יומן חמצן, דלתא עתודת חליפה ו-claim hold. Carry-forward מזיז אחריות, לא תמיכת אוויר.",
+     "audio": "הם נשאו את העומס קדימה אחרי שהחדר הפסיק לשאת אותו.",
+     "in_game_wiki": "חריג העברת עומס תמיכה קדימה הוא סימן שולחן שמשאיר חדר כושל מחובר למסלול אחרי שהמכונה הפסיקה לעשות את העבודה. בדרך כלל הוא יושב על רצועה צרה: קוד חדר, מחלקת עומס, maintenance override, סימון carry-forward, הפניית claim hold. ביום נקי זו הנהלת חשבונות. אחרי שבר בתמיכת חיים זה ציר.\n\nהרצועה פיזית מספיק כדי לקרוא אותה. גריז ממפרץ השירות יכול לחצות את חצי השורה הראשון ולהיעצר לפני ה-override stamp. דיו יכול להיקוות במקום שבו אגודל לחץ על נייר רטוב. מלח יכול לשבת מתחת לקיפול. אם סימון carry-forward נקי יותר משבירת הגריז, ומסירת המדחס כבר לא מתאימה למונה המשאבה ולתקתוק הממסר, החריג לא הזיז אוויר. הוא הזיז אחריות.\n\nזו אינה שורת הודאה. Deep Reach לא נזקקה לה. מסלול יכול להישאר פעיל כי עומס התמיכה הועבר קדימה. Claim יכול להישאר פתוח כי החדר עדיין מסומן תחת משמורת תחזוקה. עובד שנכשל יכול להישאר בר-חיוב או בר-השבה בזמן שיומן החמצן, עתודת החליפה וסדרת הסקראבר כבר מצביעים אחרת.\n\nבשטח מתייחסים לרצועה כמו לחלק מכני רטוב. לצלם את שני הצדדים לפני יישור. לרשום שבירות גריז, מלח תחת קיפולים, חפיפת חותמת ואת סימון ה-carry-forward המדויק. אחר כך לקרוא לצד מילוי מאוחר של מסירת המדחס. אם החריג מגיע אחרי עצירת המשאבה, העומס עזב את החדר כאחריות, לא כנשימה.",
+     "external_site": "חריג העברת עומס תמיכה מראה איך חדר כושל נשאר מחובר למסלול אחרי שמערכת האוויר כבר הפסיקה לתמוך בו.",
+     "external_site_article": "Carry-forward נשמע תמים עד שקוראים אותו ליד מתכת. זה ביטוי מסודר להעברה מכוערת: לקחת את העומס שאי אפשר לסגור כאן, להעביר אותו לחשבון הבא, להשאיר את המסלול חי עד ששולחן אחר יחזיק בבעיה.\n\nב-HECTON-8 הביטוי הזה ישב בין maintenance ל-claims. תמיכת החיים המקומית יכלה להיכשל, אבל החדר נשאר תחת משמורת שירות. העובד יכול היה להיעדר, אבל המסלול נשאר פעיל. החליפה יכולה להיות ריקה, אבל רצועת החריג שומרת את מחלקת התמיכה פתוחה.\n\nהפרט החומרי חשוב. רצועה שטופלה במפרץ שירות אינה מזדקנת כמו שורה שהוזנה מאוחר יותר. גריז נקטע. דיו מתפצל. מלח מסמן את הקיפול. סימון carry-forward מאוחר נוטה לשבת נקי על נזק שהיה אמור לחלוק. הסימן הנקי הקטן הזה הוא המקום שבו המינהל מתחיל לעקוף את המכונה.\n\nאת הרשומה הזאת קוראים אחרי מילוי מאוחר של מסירת מדחס. המשאבה והממסר מראים אם אוויר זז. חריג ההעברה מראה מי שמר על העומס הכושל שימושי אחרי שכבר לא היה אפשר לנשום אותו.",
+     "field_note": "Carry-forward יכול להזיז אשמה. הוא לא יכול להזיז אוויר.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Exceção de Carry-Forward da Carga de Suporte",
+     "scanner": "CARRY-FORWARD DA CARGA // Fita de exceção carrega suporte da sala depois que a evidência da máquina para. Quebra de graxa e override stamp não batem com o handoff do compressor.",
+     "terminal": "QA CARRY-FORWARD // Compare fita de exceção, maintenance override stamp, quebra de graxa, backfill do compressor, corte do livro de oxigênio, delta da reserva do traje e claim hold. Carry-forward move responsabilidade, não suporte de ar.",
+     "audio": "Eles carregaram a carga adiante depois que a sala parou de carregá-la.",
+     "in_game_wiki": "Uma exceção de carry-forward da carga de suporte é a marca de mesa que mantém uma sala falha presa a uma rota depois que a máquina parou de fazer o trabalho. Ela costuma viver numa fita estreita: código da sala, classe de carga, maintenance override, tique carry-forward, referência claim hold. Num dia limpo, é contabilidade. Depois de uma quebra de suporte de vida, vira dobradiça.\n\nA fita é física o bastante para leitura. Graxa da baia de serviço pode cruzar a primeira metade da linha e parar antes do override stamp. Tinta pode empoçar onde o papel úmido recebeu um polegar. Sal pode ficar sob a dobra. Se o tique carry-forward é mais limpo que a quebra da graxa, e o handoff do compressor já discorda do contador da bomba e do relé, a exceção não moveu ar. Moveu responsabilidade.\n\nIsto não é linha de confissão. A Deep Reach não precisava de uma. Uma rota podia seguir ativa porque a carga de suporte foi carregada adiante. Um claim podia seguir aberto porque a sala ainda estava sob custódia de manutenção. Um trabalhador falho podia continuar faturável ou recuperável enquanto livro de oxigênio, reserva do traje e série do scrubber já apontavam para outro lado.\n\nNo campo, trate a fita como peça mecânica molhada. Fotografe os dois lados antes de achatar. Registre quebras de graxa, sal sob dobras, sobreposição de carimbo e o tique carry-forward exato. Depois leia junto do backfill do handoff do compressor. Se a exceção chega depois que a bomba para, a carga saiu da sala como responsabilidade, não como respiração.",
+     "external_site": "Uma exceção de carry-forward mostra como uma sala falha continua presa a uma rota depois que o sistema de ar já parou de sustentá-la.",
+     "external_site_article": "Carry-forward parece inofensivo até ser lido ao lado do metal. É uma frase limpa para uma transferência feia: pegue a carga que não dá para resolver aqui, mova para a próxima conta, mantenha a rota viva tempo suficiente para outra mesa possuir o problema.\n\nEm HECTON-8, essa frase ficava entre maintenance e claims. O suporte de vida local podia falhar, mas a sala continuava sob custódia de serviço. O trabalhador podia estar ausente, mas a rota continuava ativa. O traje podia estar vazio, mas a fita de exceção mantinha a classe de suporte aberta.\n\nO detalhe material importa. Uma fita manuseada numa baia de serviço não envelhece como linha inserida depois. Graxa para. Tinta abre fibras. Sal marca a dobra. Um tique carry-forward tardio tende a ficar limpo sobre dano que deveria compartilhar. Essa pequena marca limpa é onde a administração começa a passar a máquina.\n\nLeia este registro depois do backfill do handoff do compressor. Bomba e relé mostram se o ar moveu. A exceção de carry-forward mostra quem manteve útil a carga falha depois que ela deixou de ser respirável.",
+     "field_note": "Carry-forward pode mover culpa. Não pode mover ar.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Uitzondering voor doorgedragen steunlast",
+     "scanner": "STEUNLAST DOORGEDRAGEN // Uitzonderingsstrip draagt kamersteun nadat machinesporen stoppen. Vetbreuk en override stamp passen niet bij compressorhandoff.",
+     "terminal": "QA DOORGEDRAGEN LAST // Vergelijk uitzonderingsstrip, maintenance override stamp, vetbreuk, nagevulde compressorhandoff, zuurstofregistersnede, pakreserve-delta en claim hold. Carry-forward verplaatst aansprakelijkheid, geen luchtsteun.",
+     "audio": "Ze droegen de last verder nadat de kamer hem niet meer droeg.",
+     "in_game_wiki": "Een uitzondering voor doorgedragen steunlast is het deskteken dat een falende kamer aan een route vast houdt nadat de machine het werk niet meer doet. Het staat meestal op een smalle strip: kamercode, lastklasse, maintenance override, carry-forward-tik, claim hold-verwijzing. Op een schone dag is het boekhouding. Na een breuk in life support wordt het een scharnier.\n\nDe strip is fysiek genoeg om te lezen. Vet uit de servicebaai kan de eerste helft van de regel kruisen en stoppen voor de override stamp. Inkt kan poelen waar een duim nat papier indrukte. Zout kan onder de vouw zitten. Als de carry-forward-tik schoner is dan de vetbreuk, en de compressorhandoff al botst met pompteller en relaistik, verplaatste de uitzondering geen lucht. Hij verplaatste verantwoordelijkheid.\n\nDit is geen bekentenisregel. Deep Reach had er geen nodig. Een route kon actief blijven omdat de steunlast werd doorgedragen. Een claim kon open blijven omdat de kamer nog onder maintenance custody stond. Een falende werker kon factureerbaar of bergbaar blijven terwijl zuurstofregister, pakreserve en scrubber-serie al de andere kant op wezen.\n\nVeldwerk behandelt de strip als een nat mechanisch onderdeel. Fotografeer beide zijden voor je hem plat maakt. Noteer vetbreuken, zout onder vouwen, stempeloverlap en de exacte carry-forward-tik. Lees hem daarna naast nagevulde compressorhandoff. Als de uitzondering na de pompstop komt, verliet de last de kamer als aansprakelijkheid, niet als adem.",
+     "external_site": "Een doorgedragen-steunlastuitzondering toont hoe een falende kamer aan een route vast blijft nadat het luchtsysteem hem niet meer ondersteunt.",
+     "external_site_article": "Carry-forward klinkt onschuldig tot je het naast metaal leest. Het is een nette zin voor een lelijke overdracht: neem de last die hier niet kan worden opgelost, schuif hem naar de volgende rekening, houd de route lang genoeg levend tot een andere desk het probleem bezit.\n\nOp HECTON-8 zat die zin tussen maintenance en claims. Lokale life support kon falen, maar de kamer bleef onder service custody. De werker kon ontbreken, maar de route bleef actief. Het pak kon leeg zijn, maar de uitzonderingsstrip hield de steunklasse open.\n\nMaterieel detail telt. Een strip die in een servicebaai is gehanteerd veroudert niet als een later ingevoerde regel. Vet stopt. Inkt veert uit. Zout markeert de vouw. Een late carry-forward-tik ligt vaak schoon over schade die hij had moeten delen. Dat kleine schone teken is waar administratie de machine begint in te halen.\n\nLees dit record na nagevulde compressorhandoff. Pomp en relais tonen of lucht bewoog. De carry-forward-uitzondering toont wie de falende last bruikbaar hield nadat hij niet meer adembaar was.",
+     "field_note": "Carry-forward kan schuld verplaatsen. Lucht verplaatst het niet.",
+     "localization_status": "draft_machine_or_llm"
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

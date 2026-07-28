@@ -1,11 +1,46 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS251_SALVAGE_CUT_CROSS_SECTION_ARTICLE",
-  "title": "Salvage Cut Cross-Section Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS251_SALVAGE_CUT_CROSS_SECTION_ARTICLE",
+ "title": "Salvage Cut Cross-Section Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1421_SALVAGE_CUT_CROSS_SECTION_LEDGER",
+   "release_set_id": "RS251_SALVAGE_CUT_CROSS_SECTION_ARTICLE",
+   "article_id": "applied_lore.salvage_cut_cross_section_ledger",
+   "title_key": "LORE_SALVAGE_CUT_CROSS_SECTION_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": "Narrative",
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -14,251 +49,217 @@
     "data_monolith_ready": false,
     "h8bin_ready": false,
     "unity_placement_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1421_SALVAGE_CUT_CROSS_SECTION_LEDGER",
-      "release_set_id": "RS251_SALVAGE_CUT_CROSS_SECTION_ARTICLE",
-      "article_id": "applied_lore.salvage_cut_cross_section_ledger",
-      "title_key": "LORE_SALVAGE_CUT_CROSS_SECTION_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": "Narrative",
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.salvage_cut_cross_section_ledger",
-        "secondary": [
-          "unlock.first_salvage_cut_scan",
-          "unlock.first_ceramic_heat_read",
-          "unlock.first_post_flood_cut_trace"
-        ],
-        "poi_tags": [
-          "poi.salvage_cut_cross_section",
-          "poi.burned_hull_cut_edge",
-          "poi.ceramic_insulation_fray",
-          "poi.cut_cable_bundle"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.wreckage",
-          "biome.pressure_route"
-        ]
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Salvage Cut Scanner",
-          "terminal": "Old Colony Hull Section Readout",
-          "audio": "Marauder Cross-Section Instructor",
-          "in_game_wiki": "PDA Salvage Cut Field Guide",
-          "external_site": "Public Site Salvage Cut Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_salvage_cut_or_post_flood_edge_read",
-        "truth_payload": "Salvage-cut cross sections reveal late intervention, panic work, deliberate system severing and erased routes.",
-        "player_question": "Which cut made a door, and which cut made an alibi?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Salvage Cut Cross-Section Ledger",
-          "scanner": "CUT EDGE // Painted hull skin, dark metal core, ceramic insulation layer, rubber gasket slice, cable bundle, burned cutter line, salt on torn fracture. The cut is not random: heat entered from the outer face, then stopped twice.",
-          "terminal": "CROSS-SECTION READ // Smooth heat bead means controlled cutter. Ragged ceramic means panic or tool chatter. Salt inside the metal core means the edge sat open before recovery. Clean cable ends mean post-flood cut; green-black cable paste means pre-cut leak.",
-          "audio": "A cut edge tells you who arrived after the failure, and what they were willing to destroy.",
-          "in_game_wiki": "A salvage cut is an argument left in material. Nobody slices pressure hull for beauty. They cut because a route was blocked, a body was behind the wall, a cable had to be stolen, or a compartment still had value after the maps stopped agreeing with the metal.\n\nThe layers matter. Paint tells the original face. Dark metal core tells load path. Ceramic insulation tells whether the cutter heat was controlled. Rubber gasket slices show whether the seal was cut or torn. Cable bundles reveal whether the crew preserved signal, harvested copper or severed a system on purpose. Salt inside the cross-section means the opening stayed wet before anyone sealed it.\n\nFor a Marauder, the question is not only “can this be looted?” It is “who cut this, when, and what were they trying not to lose?” A clean official rescue cut and a hungry Black Keel cut do not leave the same edge. One makes a door. The other makes an alibi.",
-          "external_site": "Salvage-cut hull skin, core, insulation, gasket and cable layers reveal late intervention, panic work and deliberate erasure.",
-          "external_site_article": "In HECTON-8, the most honest doorway is often the one nobody designed. A panel cut open after collapse has no corporate promise left in it. It has heat color, torn insulation, gasket slices and the impatient geometry of people who needed something behind the wall.\n\nStart at the outside face and work inward. Painted skin gives orientation. The dark core shows the load-bearing part of the hull. Ceramic dust tells how much heat wandered. Rubber torn into teeth means mechanical force after the cutter. Cable ends tell intent: neat cut for isolation, crushed cut for panic, stripped cut for theft, capped cut for a crew that expected to return.\n\nA good cross-section can carry a whole missing scene. It can show that someone opened a wall after flooding, bypassed a sealed hatch, removed evidence, rescued a trapped worker, or made a passage for later looters. The edge is a witness that cannot remember names, but it remembers tools.",
-          "field_note": "Look at the ceramic dust before the metal. Panic always shakes the soft layer first."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал среза спасательной резки",
-          "scanner": "КРОМКА РЕЗА // Окрашенная кожа корпуса, темное силовое ядро, слой керамической изоляции, срез резиновой прокладки, пучок кабелей, обожженная линия резака, соль на рваном изломе. Рез не случайный: тепло вошло снаружи и дважды останавливалось.",
-          "terminal": "ЧТЕНИЕ СРЕЗА // Ровный тепловой валик - управляемый резак. Рваная керамика - паника или дрожание инструмента. Соль внутри металла - край стоял открытым до подъема. Чистые кабельные концы - рез после затопления; зелено-черная паста - течь до реза.",
-          "audio": "Кромка реза говорит, кто пришел после отказа и что он был готов уничтожить.",
-          "in_game_wiki": "Спасательный срез - спор, оставленный в материале. Никто не режет напорный корпус ради красоты. Режут, потому что путь перекрыт, тело за стеной, кабель надо забрать, или отсек все еще имеет цену после того, как карты перестали совпадать с металлом.\n\nСлои важны. Краска показывает исходную сторону. Темное металлическое ядро показывает силовой путь. Керамическая изоляция говорит, держал ли резак тепло под контролем. Срезы резины показывают, разрезали уплотнение или рвали. Кабельные пучки говорят, сохраняли ли сигнал, добывали медь или намеренно убивали систему. Соль внутри среза значит, что отверстие стояло мокрым до позднего закрытия.\n\nДля мародера вопрос не только в том, можно ли это забрать. Вопрос в том, кто резал, когда и что он пытался не потерять. Чистый официальный спасательный рез и голодный рез Черного Киля не оставляют одинаковую кромку. Один делает дверь. Второй делает алиби.",
-          "external_site": "Полевая статья о срезах спасательной резки: кожа корпуса, силовое ядро, изоляция, прокладка и кабели раскрывают позднее вмешательство, паническую работу и намеренное стирание следов.",
-          "external_site_article": "В HECTON-8 самая честная дверь часто та, которую никто не проектировал. Панель, вскрытая после обрушения, уже не несет корпоративного обещания. В ней остались цвет перегрева, рваная изоляция, куски прокладки и нетерпеливая геометрия людей, которым было нужно что-то за стеной.\n\nКромку читают снаружи внутрь. Окрашенная кожа дает ориентацию. Темное ядро показывает несущую часть корпуса. Керамическая пыль говорит, насколько гуляло тепло. Резина, разорванная зубьями, значит механическое усилие после резака. Кабельные концы показывают намерение: ровный срез для изоляции, смятый для паники, зачищенный для кражи, заглушенный для экипажа, который собирался вернуться.\n\nХороший срез может держать целую пропавшую сцену. Он показывает, что стену вскрыли после затопления, обходили запертый люк, вынимали доказательство, спасали зажатого рабочего или готовили проход для поздних добытчиков. Кромка не помнит имен, но помнит инструменты.",
-          "field_note": "Смотри на керамическую пыль до металла. Паника всегда первой трясет мягкий слой."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "サルベージ切断断面台帳",
-          "scanner": "切断縁 // 塗装された船体皮膜、暗い金属芯、セラミック断熱層、ゴムガスケット断面、ケーブル束、焼けたカッター線、裂け目の塩。無作為ではない。熱は外側から入り、二度止まっている。",
-          "terminal": "断面読み // 滑らかな熱ビードは制御されたカッター。裂けたセラミックは焦りか工具の震え。金属芯の中の塩は回収前に開口が濡れていた証拠。きれいなケーブル端は浸水後の切断。",
-          "audio": "切断縁は、故障後に誰が来て、何を壊す覚悟があったかを語る。",
-          "in_game_wiki": "サルベージ切断は、物質に残された議論だ。圧力船体は美しさのために切られない。道が塞がれた、壁の向こうに人がいた、ケーブルを奪う必要があった、あるいは地図が金属と一致しなくなった後も区画に価値があったから切る。\n\n層が重要だ。塗装は元の外側を示す。暗い金属芯は荷重の道を示す。セラミック断熱は熱が制御されたかを語る。ゴムガスケットの断面は、封止が切られたのか裂かれたのかを示す。ケーブル束は、信号を守ったのか、銅を取ったのか、意図的に系統を殺したのかを語る。\n\nマローダーにとって、問いは「持ち去れるか」だけではない。「誰が、いつ、何を失わないために切ったか」だ。公式救助の切断と飢えたブラックキールの切断は同じ縁を残さない。一方は扉を作る。もう一方はアリバイを作る。",
-          "external_site": "船体皮膜、芯材、断熱、ガスケット、ケーブル層から、遅い介入や意図的な消去を読む現場記事。",
-          "external_site_article": "HECTON-8で最も正直な扉は、設計されなかった扉であることが多い。崩壊後に切られたパネルには、企業の約束は残らない。残るのは熱色、裂けた断熱、ガスケット断片、壁の向こうを必要とした人間の急いだ幾何だ。\n\n縁は外から内へ読む。塗装皮膜が向きを与える。暗い芯が支持部を示す。セラミック粉は熱の迷いを示す。歯のように裂けたゴムは、カッター後の機械力を示す。ケーブル端は意図を示す。隔離、焦り、盗み、帰還予定。\n\n良い断面は消えた一場面を抱える。浸水後に壁を開けた、封鎖ハッチを迂回した、証拠を抜いた、閉じ込められた作業者を救った、後の略奪者の通路を作った。縁は名前を覚えないが、工具を覚える。",
-          "field_note": "金属より先にセラミック粉を見ろ。焦りはいつも柔らかい層を先に震わせる。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "打捞切割断面账",
-          "scanner": "切割边 // 涂漆船壳、深色金属芯、陶瓷绝热层、橡胶密封切片、线束、烧灼切割线、撕裂处的盐。这个切口不是随机的：热从外面进入，中途停了两次。",
-          "terminal": "断面读取 // 平滑热珠表示受控切割。撕裂陶瓷表示恐慌或工具抖动。金属芯里的盐说明回收前开口曾长期湿着。干净线头表示淹水后切断；绿黑胶泥表示切前已有泄漏。",
-          "audio": "切割边会告诉你故障后谁来了，以及他们愿意毁掉什么。",
-          "in_game_wiki": "打捞切口是留在材料里的争论。没人为了好看去切压力船壳。切开它，是因为路线被堵、墙后有人、线缆必须被拿走，或地图不再对应金属之后，某个舱室仍然有价值。\n\n层次很重要。油漆告诉原来的外侧。深色金属芯告诉承力路径。陶瓷绝热层说明切割热量是否受控。橡胶密封切片说明密封件是被切开还是被撕开。线束说明当时是保护信号、收割铜，还是故意切断一个系统。断面里的盐说明开口在封闭前湿了很久。\n\n对拾荒者来说，问题不只是能不能拿走。问题是谁切的、什么时候切的、他们在试图不失去什么。干净的官方救援切口和饥饿的黑龙骨切口不会留下同一种边。一个制造门，另一个制造不在场证明。",
-          "external_site": "关于打捞切割断面的现场文章：船壳、芯材、绝热、密封和线缆层能揭示后期介入、恐慌工作和刻意抹除。",
-          "external_site_article": "在HECTON-8，最诚实的门常常不是设计出来的。坍塌后被切开的面板不再有公司承诺，只剩热色、撕裂绝热层、密封碎片，以及那些需要墙后之物的人留下的急迫几何。\n\n读边缘要从外向内。涂漆外皮给方向。深色芯材显示船壳承力部分。陶瓷粉尘说明热走得多散。橡胶像牙一样撕裂，说明切割后又用了机械力。线缆端头说明意图：整齐为隔离，压碎为恐慌，剥皮为盗取，封帽则说明有人以为自己会回来。\n\n好的断面能装下一整段失踪场景。它能说明有人在淹水后打开墙、绕过密封舱门、取走证据、救出被困工人，或给后来拾荒者做路。边缘不记得名字，但记得工具。",
-          "field_note": "先看陶瓷粉，再看金属。恐慌总是先震碎软层。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre des coupes de récupération",
-          "scanner": "BORD DE COUPE // Peau de coque peinte, noyau métallique sombre, isolant céramique, tranche de joint caoutchouc, faisceau de câbles, ligne de torche brûlée, sel dans la fracture. La coupe n'est pas aléatoire.",
-          "terminal": "LECTURE DE SECTION // Bourrelet lisse : torche contrôlée. Céramique déchirée : panique ou outil qui broute. Sel dans le noyau : bord resté ouvert avant récupération. Câbles nets : coupe post-inondation.",
-          "audio": "Un bord coupé dit qui est venu après la panne, et ce qu'il acceptait de détruire.",
-          "in_game_wiki": "Une coupe de récupération est un désaccord laissé dans la matière. On ne tranche pas une coque pressurisée pour la beauté. On coupe parce qu'une route est bloquée, qu'un corps est derrière la paroi, qu'un câble doit être pris, ou qu'un compartiment garde de la valeur quand les plans ne correspondent plus au métal.\n\nLes couches comptent. La peinture donne la face d'origine. Le noyau sombre donne le chemin de charge. La céramique dit si la chaleur était tenue. Le caoutchouc montre si le joint fut coupé ou arraché. Les câbles disent si l'on préservait le signal, volait le cuivre ou tuait un système exprès.\n\nPour un maraudeur, la question n'est pas seulement le butin. C'est qui a coupé, quand, et ce qu'il refusait de perdre. Une coupe de secours officielle et une coupe affamée de la Quille Noire ne laissent pas le même bord.",
-          "external_site": "Article de terrain sur les sections de coupe : coque, noyau, isolant, joint et câbles révèlent intervention tardive et effacement.",
-          "external_site_article": "Dans HECTON-8, la porte la plus honnête est souvent celle que personne n'a dessinée. Un panneau ouvert après l'effondrement ne porte plus de promesse d'entreprise. Il porte couleur de chauffe, isolant déchiré, tranches de joint et géométrie pressée.\n\nLis le bord de dehors vers dedans. La peau peinte oriente. Le noyau sombre montre la structure. La poussière céramique montre l'errance de la chaleur. Le caoutchouc déchiré en dents indique force mécanique après torche. Les extrémités de câble donnent l'intention : isoler, paniquer, voler, revenir.\n\nUne bonne section porte une scène manquante entière : mur ouvert après inondation, trappe contournée, preuve retirée, travailleur sauvé, passage préparé pour des récupérateurs tardifs.",
-          "field_note": "Regarde la poussière céramique avant le métal. La panique secoue d'abord la couche tendre."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de sección de corte de salvamento",
-          "scanner": "BORDE DE CORTE // Piel de casco pintada, núcleo metálico oscuro, aislante cerámico, rodaja de junta de goma, mazo de cables, línea quemada de cortador, sal en fractura. El corte no es aleatorio.",
-          "terminal": "LECTURA DE SECCIÓN // Cordón térmico liso: cortador controlado. Cerámica rota: pánico o vibración de herramienta. Sal en núcleo: borde abierto antes de rescate. Cables limpios: corte tras inundación.",
-          "audio": "Un borde cortado dice quién llegó después del fallo y qué estaba dispuesto a destruir.",
-          "in_game_wiki": "Un corte de salvamento es una discusión dejada en el material. Nadie corta un casco presurizado por belleza. Se corta porque una ruta quedó bloqueada, había un cuerpo tras la pared, hacía falta robar un cable, o un compartimento seguía valiendo algo cuando los planos dejaron de coincidir con el metal.\n\nLas capas importan. La pintura da la cara original. El núcleo oscuro da la ruta de carga. La cerámica dice si el calor estuvo controlado. La goma muestra si la junta fue cortada o arrancada. Los cables dicen si cuidaron señal, cosecharon cobre o mataron un sistema a propósito.\n\nPara un saqueador, la pregunta no es sólo botín. Es quién cortó, cuándo, y qué intentaba no perder. Un corte oficial de rescate y un corte hambriento de Quilla Negra no dejan el mismo borde.",
-          "external_site": "Artículo de campo sobre secciones de corte: casco, núcleo, aislante, junta y cables revelan intervención tardía y borrado deliberado.",
-          "external_site_article": "En HECTON-8, la puerta más honesta suele ser la que nadie diseñó. Un panel abierto tras el colapso ya no lleva promesa corporativa. Lleva color de calor, aislante rasgado, rodajas de junta y geometría impaciente.\n\nLee el borde de fuera adentro. La piel pintada orienta. El núcleo oscuro muestra estructura. El polvo cerámico muestra calor errante. Goma rota en dientes indica fuerza mecánica después del cortador. Los extremos de cable dicen intención: aislar, entrar en pánico, robar, volver.\n\nUna buena sección contiene una escena perdida: pared abierta tras inundación, compuerta evitada, prueba retirada, trabajador rescatado o paso preparado para saqueadores posteriores.",
-          "field_note": "Mira el polvo cerámico antes que el metal. El pánico sacude primero la capa blanda."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Protokoll für Bergungsschnitt-Querschnitte",
-          "scanner": "SCHNITTKANTE // Lackierte Hauthülle, dunkler Metallkern, Keramikisolierung, Gummidichtungsscheibe, Kabelbündel, gebrannte Schneidlinie, Salz im Riss. Der Schnitt ist nicht zufällig.",
-          "terminal": "QUERSCHNITT LESEN // Glatte Hitzewulst: kontrollierter Cutter. Zerfetzte Keramik: Panik oder Werkzeugrattern. Salz im Kern: offene nasse Kante vor Bergung. Saubere Kabelenden: Schnitt nach Flutung.",
-          "audio": "Eine Schnittkante sagt, wer nach dem Fehler kam und was er zerstören wollte.",
-          "in_game_wiki": "Ein Bergungsschnitt ist ein Streit in Materialform. Niemand schneidet Druckhülle aus Schönheit. Man schneidet, weil ein Weg blockiert ist, ein Körper hinter der Wand liegt, ein Kabel gestohlen werden muss oder ein Raum noch Wert hat, nachdem Pläne und Metall nicht mehr übereinstimmen.\n\nDie Schichten zählen. Lack zeigt die Ursprungsseite. Der dunkle Kern zeigt Lastpfad. Keramik zeigt, ob die Hitze kontrolliert war. Gummi zeigt Schnitt oder Riss. Kabelbündel zeigen Signalrettung, Kupferraub oder absichtliche Systemtrennung.\n\nFür einen Marauder geht es nicht nur um Beute. Wer schnitt, wann, und was wollte er nicht verlieren? Ein offizieller Rettungsschnitt und ein hungriger Schwarzkiel-Schnitt hinterlassen keine gleiche Kante.",
-          "external_site": "Feldartikel über Schnittquerschnitte: Hülle, Kern, Isolierung, Dichtung und Kabel zeigen späte Eingriffe.",
-          "external_site_article": "In HECTON-8 ist die ehrlichste Tür oft die ungeplante. Ein nach dem Kollaps geöffnetes Paneel trägt kein Firmenversprechen mehr. Es trägt Hitzefarbe, zerrissene Isolierung, Dichtungsscheiben und die ungeduldige Geometrie von Leuten, die etwas hinter der Wand brauchten.\n\nLies die Kante von außen nach innen. Lack gibt Richtung. Dunkler Kern zeigt Struktur. Keramikstaub zeigt wandernde Hitze. Zahnartig gerissener Gummi zeigt mechanische Kraft nach dem Cutter. Kabelenden sagen Absicht: isolieren, Panik, Diebstahl, Rückkehr.\n\nEin guter Querschnitt trägt eine fehlende Szene: Wand nach Flutung geöffnet, Luke umgangen, Beweis entfernt, Arbeiter gerettet oder Durchgang für spätere Plünderer vorbereitet.",
-          "field_note": "Sieh erst den Keramikstaub an. Panik schüttelt immer zuerst die weiche Schicht."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr przekroju cięcia ratowniczego",
-          "scanner": "KRAWĘDŹ CIĘCIA // Malowana skóra kadłuba, ciemny rdzeń metalu, izolacja ceramiczna, plaster gumowej uszczelki, wiązka kabli, przypalona linia noża, sól w rozdarciu. Cięcie nie jest losowe.",
-          "terminal": "CZYTANIE PRZEKROJU // Gładki wałek ciepła: kontrolowany nóż. Poszarpana ceramika: panika lub drżenie narzędzia. Sól w rdzeniu: krawędź mokra przed odzyskiem. Czyste końce kabli: cięcie po zalaniu.",
-          "audio": "Krawędź cięcia mówi, kto przyszedł po awarii i co był gotów zniszczyć.",
-          "in_game_wiki": "Cięcie ratownicze to spór zostawiony w materiale. Kadłuba ciśnieniowego nie tnie się dla urody. Tnie się, bo droga jest zamknięta, ciało leży za ścianą, kabel trzeba zabrać albo przedział ma wartość, gdy mapy nie zgadzają się z metalem.\n\nWarstwy mają znaczenie. Farba pokazuje stronę. Ciemny rdzeń pokazuje ścieżkę obciążeń. Ceramika mówi o kontroli ciepła. Guma pokazuje, czy uszczelkę cięto, czy rwano. Kable mówią, czy chroniono sygnał, kradziono miedź, czy zabijano system.\n\nDla maraudera pytanie nie brzmi tylko: co zabrać. Brzmi: kto ciął, kiedy i czego nie chciał stracić. Oficjalne cięcie ratunkowe i głodne cięcie Czarnej Stępki nie zostawiają tej samej krawędzi.",
-          "external_site": "Artykuł terenowy o przekrojach cięć: kadłub, rdzeń, izolacja, uszczelka i kable ujawniają późną interwencję.",
-          "external_site_article": "W HECTON-8 najuczciwsze drzwi bywają tymi, których nikt nie zaprojektował. Panel otwarty po katastrofie nie niesie już obietnicy korporacji. Niesie barwę ciepła, rozdartą izolację, plastry uszczelki i geometrię ludzi, którzy czegoś potrzebowali.\n\nKrawędź czyta się z zewnątrz do środka. Farba daje kierunek. Ciemny rdzeń pokazuje konstrukcję. Pył ceramiczny pokazuje błądzenie ciepła. Guma rozerwana w zęby to siła po nożu. Końce kabli mówią o intencji: izolacja, panika, kradzież, powrót.\n\nDobry przekrój trzyma całą brakującą scenę: ścianę otwartą po zalaniu, ominięty właz, usunięty dowód, uratowanego pracownika albo przejście dla późnych szabrowników.",
-          "field_note": "Najpierw patrz na pył ceramiczny. Panika zawsze trzęsie miękką warstwą."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал перерізу рятувального різання",
-          "scanner": "КРАЙ РІЗУ // Фарбована шкіра корпусу, темне металеве ядро, керамічна ізоляція, зріз гумової прокладки, пучок кабелів, обпалена лінія різака, сіль на рваному зламі. Різ не випадковий.",
-          "terminal": "ЧИТАННЯ ПЕРЕРІЗУ // Рівний тепловий валик - контрольований різак. Рвана кераміка - паніка або тремтіння інструмента. Сіль у металі - край стояв відкритим до підйому. Чисті кабелі - різ після затоплення.",
-          "audio": "Край різу говорить, хто прийшов після відмови й що був готовий знищити.",
-          "in_game_wiki": "Рятувальний різ - це суперечка, лишена в матеріалі. Напірний корпус не ріжуть заради краси. Ріжуть, бо шлях закритий, тіло за стіною, кабель треба забрати або відсік ще має ціну після того, як мапи розійшлися з металом.\n\nШари важливі. Фарба показує початковий бік. Темне ядро показує силовий шлях. Кераміка говорить, чи тримали тепло під контролем. Гума показує, різали ущільнення чи рвали. Кабелі кажуть, чи берегли сигнал, крали мідь, чи навмисне вбивали систему.\n\nДля мародера питання не тільки в здобичі. Хто різав, коли, і що він не хотів втратити? Чистий офіційний рятувальний різ і голодний різ Чорного Кіля не лишають однакового краю.",
-          "external_site": "Польова стаття про перерізи різання: корпус, ядро, ізоляція, прокладка й кабелі показують пізнє втручання.",
-          "external_site_article": "У HECTON-8 найчесніші двері часто ті, яких ніхто не проєктував. Панель, розкрита після аварії, вже не несе корпоративної обіцянки. У ній лишилися колір перегріву, рвана ізоляція, зрізи прокладки й нетерпляча геометрія людей, яким було щось потрібно за стіною.\n\nКрай читають ззовні всередину. Фарбована шкіра дає напрям. Темне ядро показує конструкцію. Керамічний пил показує блукання тепла. Гума, розірвана зубцями, означає силу після різака. Кінці кабелів кажуть про намір: ізоляція, паніка, крадіжка, повернення.\n\nХороший переріз тримає цілу зниклу сцену: стіну відкрили після затоплення, обійшли люк, прибрали доказ, урятували працівника або зробили шлях для пізніх добувачів.",
-          "field_note": "Дивись на керамічний пил до металу. Паніка першою трясе м'який шар."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل مقطع قطع الانتشال",
-          "scanner": "حافة قطع // جلد هيكل مطلي، لب معدني داكن، طبقة عزل خزفية، شريحة حشية مطاط، حزمة كابلات، خط قاطع محروق، ملح على كسر ممزق. القطع ليس عشوائيا.",
-          "terminal": "قراءة المقطع // خرزة حرارية ناعمة تعني قاطعا مضبوطا. خزف ممزق يعني ذعرا أو اهتزاز أداة. ملح داخل اللب يعني أن الحافة بقيت مفتوحة ورطبة. نهايات كابل نظيفة تعني قطعا بعد الغمر.",
-          "audio": "حافة القطع تقول من جاء بعد الفشل وما الذي قبل تدميره.",
-          "in_game_wiki": "قطع الانتشال جدال متروك في المادة. لا أحد يقطع هيكل ضغط للجمال. يقطعون لأن الطريق مسدود، أو جسدا خلف الجدار، أو كابلا يجب أخذه، أو مقصورة بقيت ذات قيمة بعد أن توقفت الخرائط عن مطابقة المعدن.\n\nالطبقات مهمة. الطلاء يحدد الوجه الأصلي. اللب الداكن يبين مسار الحمل. الخزف يقول هل سيطرت الأداة على الحرارة. المطاط يبين هل قطعت الحشية أم مزقت. الكابلات تقول هل حمي الإشارة أم سرق النحاس أم قتل نظام عمدا.\n\nبالنسبة إلى المغير، السؤال ليس الغنيمة فقط. من قطع، ومتى، وما الذي رفض خسارته؟ قطع إنقاذ رسمي وقطع جائع من الكيل الأسود لا يتركان الحافة نفسها.",
-          "external_site": "مقال ميداني عن مقاطع قطع الانتشال: الجلد واللب والعزل والحشية والكابلات تكشف تدخلا متأخرا.",
-          "external_site_article": "في HECTON-8، أصدق باب غالبا هو الذي لم يصممه أحد. اللوح المفتوح بعد الانهيار لا يحمل وعد شركة. يحمل لون حرارة، عزلا ممزقا، شرائح حشية، وهندسة مستعجلة لأناس احتاجوا شيئا خلف الجدار.\n\nتقرأ الحافة من الخارج إلى الداخل. الجلد المطلي يعطي الاتجاه. اللب الداكن يبين البنية. غبار الخزف يبين تجول الحرارة. مطاط ممزق كأسنان يعني قوة ميكانيكية بعد القاطع. نهايات الكابلات تقول النية: عزل، ذعر، سرقة، عودة.\n\nالمقطع الجيد يحمل مشهدا مفقودا: جدار فتح بعد الغمر، فتحة تم تجاوزها، دليل أزيل، عامل أنقذ، أو ممر صنع لناهبي وقت لاحق.",
-          "field_note": "انظر إلى غبار الخزف قبل المعدن. الذعر يهز الطبقة اللينة أولا."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Log Penampang Potongan Salvage",
-          "scanner": "TEPI POTONG // Kulit lambung bercat, inti logam gelap, lapisan isolasi keramik, irisan gasket karet, bundel kabel, garis pemotong terbakar, garam pada patahan robek. Potongan ini tidak acak.",
-          "terminal": "BACA PENAMPANG // Manik panas halus berarti pemotong terkendali. Keramik robek berarti panik atau alat bergetar. Garam di inti berarti tepi terbuka basah sebelum recovery. Ujung kabel bersih berarti potong setelah banjir.",
-          "audio": "Tepi potong memberi tahu siapa datang setelah gagal, dan apa yang rela mereka hancurkan.",
-          "in_game_wiki": "Potongan salvage adalah argumen yang tertinggal di material. Tak ada yang mengiris lambung tekanan demi cantik. Mereka memotong karena rute buntu, ada tubuh di balik dinding, kabel harus diambil, atau kompartemen masih bernilai saat peta tak lagi cocok dengan logam.\n\nLapisan penting. Cat menunjukkan muka asli. Inti gelap menunjukkan jalur beban. Keramik menunjukkan apakah panas terkendali. Karet menunjukkan seal dipotong atau dirobek. Bundel kabel menunjukkan sinyal dijaga, tembaga dipanen, atau sistem sengaja dibunuh.\n\nBagi perompak laut-dalam, pertanyaannya bukan hanya bisa diambil. Siapa memotong, kapan, dan apa yang mereka coba tidak kehilangan? Potongan rescue resmi dan potongan lapar Black Keel tidak meninggalkan tepi yang sama.",
-          "external_site": "Artikel lapangan tentang penampang potongan salvage: kulit, inti, isolasi, gasket, dan kabel mengungkap intervensi terlambat.",
-          "external_site_article": "Di HECTON-8, pintu paling jujur sering kali pintu yang tak pernah dirancang. Panel yang dibuka setelah runtuh tak lagi membawa janji korporat. Ia membawa warna panas, isolasi robek, irisan gasket, dan geometri terburu-buru orang yang butuh sesuatu di balik dinding.\n\nBaca tepi dari luar ke dalam. Kulit bercat memberi arah. Inti gelap menunjukkan struktur. Debu keramik menunjukkan panas mengembara. Karet robek seperti gigi berarti gaya mekanik setelah pemotong. Ujung kabel memberi niat: isolasi, panik, curi, kembali.\n\nPenampang bagus bisa menahan satu adegan hilang: dinding dibuka setelah banjir, palka disiasati, bukti diambil, pekerja diselamatkan, atau lorong dibuat untuk penjarah belakangan.",
-          "field_note": "Lihat debu keramik sebelum logam. Panik selalu mengguncang lapisan lunak dulu."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "인양 절단 단면 장부",
-          "scanner": "절단 가장자리 // 칠해진 선체 피부, 어두운 금속 코어, 세라믹 단열층, 고무 가스켓 단면, 케이블 묶음, 탄 절단선, 찢긴 파면의 소금. 무작위 절단이 아니다.",
-          "terminal": "단면 읽기 // 매끈한 열 비드는 제어된 커터다. 찢긴 세라믹은 공포나 공구 떨림이다. 금속 코어 속 소금은 회수 전 열린 채 젖어 있었다는 뜻이다. 깨끗한 케이블 끝은 침수 후 절단이다.",
-          "audio": "절단 가장자리는 고장 뒤 누가 왔고 무엇을 부술 각오가 있었는지 말한다.",
-          "in_game_wiki": "인양 절단은 재료에 남은 논쟁이다. 아무도 아름다움 때문에 압력 선체를 자르지 않는다. 길이 막혔거나, 벽 뒤에 사람이 있었거나, 케이블을 가져가야 했거나, 도면이 금속과 맞지 않게 된 뒤에도 구획에 가치가 있었기 때문에 자른다.\n\n층이 중요하다. 도장은 원래 면을 말한다. 어두운 코어는 하중 경로를 말한다. 세라믹은 열 제어를 말한다. 고무는 밀봉이 잘렸는지 찢겼는지 말한다. 케이블 묶음은 신호 보존, 구리 수확, 또는 시스템 절단 의도를 말한다.\n\n마라우더에게 질문은 전리품뿐이 아니다. 누가, 언제, 무엇을 잃지 않으려고 잘랐는가. 공식 구조 절단과 굶주린 블랙 킬 절단은 같은 가장자리를 남기지 않는다.",
-          "external_site": "선체, 코어, 단열, 가스켓, 케이블 층으로 늦은 개입과 의도적 삭제를 읽는 현장 기사.",
-          "external_site_article": "HECTON-8에서 가장 솔직한 문은 설계되지 않은 문일 때가 많다. 붕괴 후 열린 패널에는 기업의 약속이 남지 않는다. 열색, 찢긴 단열재, 가스켓 조각, 벽 뒤의 무언가가 필요했던 사람들의 성급한 기하가 남는다.\n\n가장자리는 밖에서 안으로 읽는다. 칠해진 피부는 방향을 준다. 어두운 코어는 구조를 보여 준다. 세라믹 먼지는 열이 얼마나 헤맸는지 보여 준다. 이빨처럼 찢긴 고무는 커터 뒤의 기계력을 뜻한다. 케이블 끝은 의도를 말한다: 격리, 공포, 절도, 귀환.\n\n좋은 단면은 사라진 장면 하나를 품는다. 침수 뒤 벽을 열었고, 해치를 우회했고, 증거를 제거했고, 갇힌 작업자를 구했고, 후발 약탈자를 위한 길을 냈다는 식이다.",
-          "field_note": "금속보다 세라믹 먼지를 먼저 봐라. 공포는 언제나 부드러운 층을 먼저 흔든다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן חתך חיתוך חילוץ",
-          "scanner": "שפת חיתוך // עור גוף צבוע, ליבת מתכת כהה, שכבת בידוד קרמית, פרוסת אטם גומי, צרור כבלים, קו חותך שרוף, מלח בשבר קרוע. החיתוך אינו אקראי.",
-          "terminal": "קריאת חתך // חרוז חום חלק הוא חותך נשלט. קרמיקה קרועה היא בהלה או רעד כלי. מלח בתוך הליבה אומר שהשפה נשארה פתוחה ורטובה לפני חילוץ. קצוות כבל נקיים הם חיתוך אחרי הצפה.",
-          "audio": "שפת חיתוך אומרת מי הגיע אחרי הכשל ומה היה מוכן להרוס.",
-          "in_game_wiki": "חיתוך חילוץ הוא ויכוח שנשאר בחומר. אף אחד לא חותך גוף לחץ בשביל יופי. חותכים כי נתיב נחסם, גוף נמצא מאחורי הקיר, כבל צריך להילקח, או תא עדיין שווה משהו אחרי שהמפות הפסיקו להתאים למתכת.\n\nהשכבות חשובות. צבע מראה את הפנים המקוריים. הליבה הכהה מראה נתיב עומס. קרמיקה מספרת אם החום נשלט. גומי מראה אם האטם נחתך או נקרע. כבלים מראים אם שמרו אות, לקחו נחושת או הרגו מערכת בכוונה.\n\nלמראודר השאלה אינה רק שלל. מי חתך, מתי, ומה ניסה לא לאבד? חיתוך חילוץ רשמי וחיתוך רעב של הקיל השחור אינם משאירים אותה שפה.",
-          "external_site": "מאמר שטח על חתכי חילוץ: עור, ליבה, בידוד, אטם וכבלים חושפים התערבות מאוחרת.",
-          "external_site_article": "ב-HECTON-8 הדלת הכנה ביותר היא לעיתים זו שאיש לא תכנן. לוח שנפתח אחרי הקריסה אינו נושא עוד הבטחה תאגידית. הוא נושא צבע חום, בידוד קרוע, פרוסות אטם וגיאומטריה חסרת סבלנות של מי שהיה צריך משהו מעבר לקיר.\n\nקוראים את השפה מבחוץ פנימה. העור הצבוע נותן כיוון. הליבה הכהה מראה מבנה. אבק קרמי מראה נדידת חום. גומי קרוע כשיניים אומר כוח מכני אחרי החותך. קצוות כבל אומרים כוונה: בידוד, בהלה, גניבה, חזרה.\n\nחתך טוב מחזיק סצנה חסרה: קיר נפתח אחרי הצפה, פתח נעקף, ראיה הוסרה, עובד חולץ, או מעבר הוכן לבוזזים מאוחרים.",
-          "field_note": "הבט באבק הקרמי לפני המתכת. בהלה תמיד מרעידה קודם את השכבה הרכה."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Seção de Corte de Salvamento",
-          "scanner": "BORDA DE CORTE // Pele pintada do casco, núcleo metálico escuro, camada cerâmica de isolamento, fatia de gaxeta, feixe de cabos, linha queimada de cortador, sal na fratura rasgada. O corte não é aleatório.",
-          "terminal": "LEITURA DA SEÇÃO // Cordão térmico liso: cortador controlado. Cerâmica rasgada: pânico ou trepidação. Sal no núcleo: borda aberta e molhada antes da recuperação. Cabos limpos: corte pós-inundação.",
-          "audio": "Uma borda cortada diz quem chegou depois da falha e o que aceitou destruir.",
-          "in_game_wiki": "Um corte de salvamento é uma discussão deixada no material. Ninguém fatia casco pressurizado por beleza. Cortam porque a rota foi bloqueada, havia corpo atrás da parede, cabo precisava ser levado, ou um compartimento ainda valia algo quando os mapas pararam de combinar com o metal.\n\nAs camadas importam. A tinta dá a face original. O núcleo escuro dá o caminho de carga. A cerâmica diz se o calor foi controlado. A borracha mostra se a vedação foi cortada ou rasgada. Os cabos mostram se preservaram sinal, colheram cobre ou mataram um sistema de propósito.\n\nPara um saqueador, a pergunta não é só saque. Quem cortou, quando, e o que tentava não perder? Um corte oficial de resgate e um corte faminto da Quilha Negra não deixam a mesma borda.",
-          "external_site": "Artigo de campo sobre seções de corte: casco, núcleo, isolamento, vedação e cabos revelam intervenção tardia.",
-          "external_site_article": "Em HECTON-8, a porta mais honesta costuma ser a que ninguém projetou. Um painel aberto após o colapso não carrega mais promessa corporativa. Carrega cor de calor, isolamento rasgado, fatias de gaxeta e a geometria apressada de gente que precisava de algo atrás da parede.\n\nLeia a borda de fora para dentro. Pele pintada dá orientação. Núcleo escuro mostra estrutura. Pó cerâmico mostra calor perdido. Borracha rasgada em dentes indica força mecânica depois do cortador. Pontas de cabo dizem intenção: isolar, entrar em pânico, roubar, voltar.\n\nUma boa seção segura uma cena desaparecida: parede aberta depois da inundação, escotilha contornada, prova removida, trabalhador salvo ou passagem preparada para saqueadores tardios.",
-          "field_note": "Olhe o pó cerâmico antes do metal. Pânico sempre sacode primeiro a camada macia."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Log van bergingssnede-doorsnede",
-          "scanner": "SNIJRAND // Geschilderde romphuid, donkere metaalkern, keramische isolatie, plak rubberpakking, kabelbundel, verbrande snijlijn, zout op gescheurde breuk. De snede is niet willekeurig.",
-          "terminal": "DOORSNEDE LEZEN // Gladde hittekraal: gecontroleerde snijder. Gescheurd keramiek: paniek of gereedschapstrilling. Zout in kern: open natte rand voor berging. Schone kabelenden: snede na overstroming.",
-          "audio": "Een snijrand vertelt wie na de fout kwam en wat men wilde vernietigen.",
-          "in_game_wiki": "Een bergingssnede is een ruzie die in materiaal bleef zitten. Niemand snijdt een drukromp voor schoonheid. Men snijdt omdat een route dicht is, een lichaam achter de wand ligt, een kabel meegenomen moet worden, of een compartiment waarde houdt wanneer kaarten niet meer bij metaal passen.\n\nDe lagen tellen. Verf geeft de oorspronkelijke zijde. De donkere kern geeft lastpad. Keramiek vertelt of hitte beheerst was. Rubber toont snijden of scheuren. Kabelbundels tonen signaalbehoud, koperdiefstal of opzettelijke systeemdoding.\n\nVoor een marauder is de vraag niet alleen buit. Wie sneed, wanneer, en wat probeerde die niet te verliezen? Een officiële reddingssnede en een hongerige Zwarte Kiel-snede laten niet dezelfde rand achter.",
-          "external_site": "Veldartikel over snede-doorsneden: huid, kern, isolatie, pakking en kabels onthullen late ingreep.",
-          "external_site_article": "In HECTON-8 is de eerlijkste deur vaak de deur die niemand ontwierp. Een paneel dat na instorting werd geopend draagt geen bedrijfsbelofte meer. Het draagt hittekleur, gescheurde isolatie, pakkingplakken en de haastige geometrie van mensen die iets achter de wand nodig hadden.\n\nLees de rand van buiten naar binnen. Geschilderde huid geeft richting. Donkere kern toont structuur. Keramisch stof toont zwervende hitte. Rubber als tanden gescheurd betekent mechanische kracht na de snijder. Kabelenden zeggen bedoeling: isoleren, paniek, diefstal, terugkeer.\n\nEen goede doorsnede draagt een ontbrekende scène: wand geopend na overstroming, luik omzeild, bewijs verwijderd, arbeider gered of doorgang gemaakt voor latere plunderaars.",
-          "field_note": "Kijk naar keramisch stof voor metaal. Paniek schudt altijd eerst de zachte laag."
-        }
-      }
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage_cut_cross_section_ledger",
+    "secondary": [
+     "unlock.first_salvage_cut_scan",
+     "unlock.first_ceramic_heat_read",
+     "unlock.first_post_flood_cut_trace"
+    ],
+    "poi_tags": [
+     "poi.salvage_cut_cross_section",
+     "poi.burned_hull_cut_edge",
+     "poi.ceramic_insulation_fray",
+     "poi.cut_cable_bundle"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.wreckage",
+     "biome.pressure_route"
+    ]
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Salvage Cut Scanner",
+     "terminal": "Old Colony Hull Section Readout",
+     "audio": "Marauder Cross-Section Instructor",
+     "in_game_wiki": "PDA Salvage Cut Field Guide",
+     "external_site": "Public Site Salvage Cut Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_salvage_cut_or_post_flood_edge_read",
+    "truth_payload": "Salvage-cut cross sections reveal late intervention, panic work, deliberate system severing and erased routes.",
+    "player_question": "Which cut made a door, and which cut made an alibi?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Salvage Cut Cross-Section Ledger",
+     "scanner": "CUT EDGE // Painted hull skin, dark metal core, ceramic insulation layer, rubber gasket slice, cable bundle, burned cutter line, salt on torn fracture. The cut is not random: heat entered from the outer face, then stopped twice.",
+     "terminal": "CROSS-SECTION READ // Smooth heat bead means controlled cutter. Ragged ceramic means panic or tool chatter. Salt inside the metal core means the edge sat open before recovery. Clean cable ends mean post-flood cut; green-black cable paste means pre-cut leak.",
+     "audio": "A cut edge tells you who arrived after the failure, and what they were willing to destroy.",
+     "in_game_wiki": "A salvage cut is an argument left in material. Nobody slices pressure hull for beauty. They cut because a route was blocked, a body was behind the wall, a cable had to be stolen, or a compartment still had value after the maps stopped agreeing with the metal.\n\nThe layers matter. Paint tells the original face. Dark metal core tells load path. Ceramic insulation tells whether the cutter heat was controlled. Rubber gasket slices show whether the seal was cut or torn. Cable bundles reveal whether the crew preserved signal, harvested copper or severed a system on purpose. Salt inside the cross-section means the opening stayed wet before anyone sealed it.\n\nFor a Marauder, the question is not only “can this be looted?” It is “who cut this, when, and what were they trying not to lose?” A clean official rescue cut and a hungry Black Keel cut do not leave the same edge. One makes a door. The other makes an alibi.",
+     "external_site": "Salvage-cut hull skin, core, insulation, gasket and cable layers reveal late intervention, panic work and deliberate erasure.",
+     "external_site_article": "In HECTON-8, the most honest doorway is often the one nobody designed. A panel cut open after collapse has no corporate promise left in it. It has heat color, torn insulation, gasket slices and the impatient geometry of people who needed something behind the wall.\n\nStart at the outside face and work inward. Painted skin gives orientation. The dark core shows the load-bearing part of the hull. Ceramic dust tells how much heat wandered. Rubber torn into teeth means mechanical force after the cutter. Cable ends tell intent: neat cut for isolation, crushed cut for panic, stripped cut for theft, capped cut for a crew that expected to return.\n\nA good cross-section can carry a whole missing scene. It can show that someone opened a wall after flooding, bypassed a sealed hatch, removed evidence, rescued a trapped worker, or made a passage for later looters. The edge is a witness that cannot remember names, but it remembers tools.",
+     "field_note": "Look at the ceramic dust before the metal. Panic always shakes the soft layer first."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал среза спасательной резки",
+     "scanner": "КРОМКА РЕЗА // Окрашенная кожа корпуса, темное силовое ядро, слой керамической изоляции, срез резиновой прокладки, пучок кабелей, обожженная линия резака, соль на рваном изломе. Рез не случайный: тепло вошло снаружи и дважды останавливалось.",
+     "terminal": "ЧТЕНИЕ СРЕЗА // Ровный тепловой валик - управляемый резак. Рваная керамика - паника или дрожание инструмента. Соль внутри металла - край стоял открытым до подъема. Чистые кабельные концы - рез после затопления; зелено-черная паста - течь до реза.",
+     "audio": "Кромка реза говорит, кто пришел после отказа и что он был готов уничтожить.",
+     "in_game_wiki": "Спасательный срез - спор, оставленный в материале. Никто не режет напорный корпус ради красоты. Режут, потому что путь перекрыт, тело за стеной, кабель надо забрать, или отсек все еще имеет цену после того, как карты перестали совпадать с металлом.\n\nСлои важны. Краска показывает исходную сторону. Темное металлическое ядро показывает силовой путь. Керамическая изоляция говорит, держал ли резак тепло под контролем. Срезы резины показывают, разрезали уплотнение или рвали. Кабельные пучки говорят, сохраняли ли сигнал, добывали медь или намеренно убивали систему. Соль внутри среза значит, что отверстие стояло мокрым до позднего закрытия.\n\nДля мародера вопрос не только в том, можно ли это забрать. Вопрос в том, кто резал, когда и что он пытался не потерять. Чистый официальный спасательный рез и голодный рез Черного Киля не оставляют одинаковую кромку. Один делает дверь. Второй делает алиби.",
+     "external_site": "Полевая статья о срезах спасательной резки: кожа корпуса, силовое ядро, изоляция, прокладка и кабели раскрывают позднее вмешательство, паническую работу и намеренное стирание следов.",
+     "external_site_article": "В HECTON-8 самая честная дверь часто та, которую никто не проектировал. Панель, вскрытая после обрушения, уже не несет корпоративного обещания. В ней остались цвет перегрева, рваная изоляция, куски прокладки и нетерпеливая геометрия людей, которым было нужно что-то за стеной.\n\nКромку читают снаружи внутрь. Окрашенная кожа дает ориентацию. Темное ядро показывает несущую часть корпуса. Керамическая пыль говорит, насколько гуляло тепло. Резина, разорванная зубьями, значит механическое усилие после резака. Кабельные концы показывают намерение: ровный срез для изоляции, смятый для паники, зачищенный для кражи, заглушенный для экипажа, который собирался вернуться.\n\nХороший срез может держать целую пропавшую сцену. Он показывает, что стену вскрыли после затопления, обходили запертый люк, вынимали доказательство, спасали зажатого рабочего или готовили проход для поздних добытчиков. Кромка не помнит имен, но помнит инструменты.",
+     "field_note": "Смотри на керамическую пыль до металла. Паника всегда первой трясет мягкий слой."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "サルベージ切断断面台帳",
+     "scanner": "切断縁 // 塗装された船体皮膜、暗い金属芯、セラミック断熱層、ゴムガスケット断面、ケーブル束、焼けたカッター線、裂け目の塩。無作為ではない。熱は外側から入り、二度止まっている。",
+     "terminal": "断面読み // 滑らかな熱ビードは制御されたカッター。裂けたセラミックは焦りか工具の震え。金属芯の中の塩は回収前に開口が濡れていた証拠。きれいなケーブル端は浸水後の切断。",
+     "audio": "切断縁は、故障後に誰が来て、何を壊す覚悟があったかを語る。",
+     "in_game_wiki": "サルベージ切断は、物質に残された議論だ。圧力船体は美しさのために切られない。道が塞がれた、壁の向こうに人がいた、ケーブルを奪う必要があった、あるいは地図が金属と一致しなくなった後も区画に価値があったから切る。\n\n層が重要だ。塗装は元の外側を示す。暗い金属芯は荷重の道を示す。セラミック断熱は熱が制御されたかを語る。ゴムガスケットの断面は、封止が切られたのか裂かれたのかを示す。ケーブル束は、信号を守ったのか、銅を取ったのか、意図的に系統を殺したのかを語る。\n\nマローダーにとって、問いは「持ち去れるか」だけではない。「誰が、いつ、何を失わないために切ったか」だ。公式救助の切断と飢えたブラックキールの切断は同じ縁を残さない。一方は扉を作る。もう一方はアリバイを作る。",
+     "external_site": "船体皮膜、芯材、断熱、ガスケット、ケーブル層から、遅い介入や意図的な消去を読む現場記事。",
+     "external_site_article": "HECTON-8で最も正直な扉は、設計されなかった扉であることが多い。崩壊後に切られたパネルには、企業の約束は残らない。残るのは熱色、裂けた断熱、ガスケット断片、壁の向こうを必要とした人間の急いだ幾何だ。\n\n縁は外から内へ読む。塗装皮膜が向きを与える。暗い芯が支持部を示す。セラミック粉は熱の迷いを示す。歯のように裂けたゴムは、カッター後の機械力を示す。ケーブル端は意図を示す。隔離、焦り、盗み、帰還予定。\n\n良い断面は消えた一場面を抱える。浸水後に壁を開けた、封鎖ハッチを迂回した、証拠を抜いた、閉じ込められた作業者を救った、後の略奪者の通路を作った。縁は名前を覚えないが、工具を覚える。",
+     "field_note": "金属より先にセラミック粉を見ろ。焦りはいつも柔らかい層を先に震わせる。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "打捞切割断面账",
+     "scanner": "切割边 // 涂漆船壳、深色金属芯、陶瓷绝热层、橡胶密封切片、线束、烧灼切割线、撕裂处的盐。这个切口不是随机的：热从外面进入，中途停了两次。",
+     "terminal": "断面读取 // 平滑热珠表示受控切割。撕裂陶瓷表示恐慌或工具抖动。金属芯里的盐说明回收前开口曾长期湿着。干净线头表示淹水后切断；绿黑胶泥表示切前已有泄漏。",
+     "audio": "切割边会告诉你故障后谁来了，以及他们愿意毁掉什么。",
+     "in_game_wiki": "打捞切口是留在材料里的争论。没人为了好看去切压力船壳。切开它，是因为路线被堵、墙后有人、线缆必须被拿走，或地图不再对应金属之后，某个舱室仍然有价值。\n\n层次很重要。油漆告诉原来的外侧。深色金属芯告诉承力路径。陶瓷绝热层说明切割热量是否受控。橡胶密封切片说明密封件是被切开还是被撕开。线束说明当时是保护信号、收割铜，还是故意切断一个系统。断面里的盐说明开口在封闭前湿了很久。\n\n对拾荒者来说，问题不只是能不能拿走。问题是谁切的、什么时候切的、他们在试图不失去什么。干净的官方救援切口和饥饿的黑龙骨切口不会留下同一种边。一个制造门，另一个制造不在场证明。",
+     "external_site": "关于打捞切割断面的现场文章：船壳、芯材、绝热、密封和线缆层能揭示后期介入、恐慌工作和刻意抹除。",
+     "external_site_article": "在HECTON-8，最诚实的门常常不是设计出来的。坍塌后被切开的面板不再有公司承诺，只剩热色、撕裂绝热层、密封碎片，以及那些需要墙后之物的人留下的急迫几何。\n\n读边缘要从外向内。涂漆外皮给方向。深色芯材显示船壳承力部分。陶瓷粉尘说明热走得多散。橡胶像牙一样撕裂，说明切割后又用了机械力。线缆端头说明意图：整齐为隔离，压碎为恐慌，剥皮为盗取，封帽则说明有人以为自己会回来。\n\n好的断面能装下一整段失踪场景。它能说明有人在淹水后打开墙、绕过密封舱门、取走证据、救出被困工人，或给后来拾荒者做路。边缘不记得名字，但记得工具。",
+     "field_note": "先看陶瓷粉，再看金属。恐慌总是先震碎软层。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre des coupes de récupération",
+     "scanner": "BORD DE COUPE // Peau de coque peinte, noyau métallique sombre, isolant céramique, tranche de joint caoutchouc, faisceau de câbles, ligne de torche brûlée, sel dans la fracture. La coupe n'est pas aléatoire.",
+     "terminal": "LECTURE DE SECTION // Bourrelet lisse : torche contrôlée. Céramique déchirée : panique ou outil qui broute. Sel dans le noyau : bord resté ouvert avant récupération. Câbles nets : coupe post-inondation.",
+     "audio": "Un bord coupé dit qui est venu après la panne, et ce qu'il acceptait de détruire.",
+     "in_game_wiki": "Une coupe de récupération est un désaccord laissé dans la matière. On ne tranche pas une coque pressurisée pour la beauté. On coupe parce qu'une route est bloquée, qu'un corps est derrière la paroi, qu'un câble doit être pris, ou qu'un compartiment garde de la valeur quand les plans ne correspondent plus au métal.\n\nLes couches comptent. La peinture donne la face d'origine. Le noyau sombre donne le chemin de charge. La céramique dit si la chaleur était tenue. Le caoutchouc montre si le joint fut coupé ou arraché. Les câbles disent si l'on préservait le signal, volait le cuivre ou tuait un système exprès.\n\nPour un maraudeur, la question n'est pas seulement le butin. C'est qui a coupé, quand, et ce qu'il refusait de perdre. Une coupe de secours officielle et une coupe affamée de la Quille Noire ne laissent pas le même bord.",
+     "external_site": "Article de terrain sur les sections de coupe : coque, noyau, isolant, joint et câbles révèlent intervention tardive et effacement.",
+     "external_site_article": "Dans HECTON-8, la porte la plus honnête est souvent celle que personne n'a dessinée. Un panneau ouvert après l'effondrement ne porte plus de promesse d'entreprise. Il porte couleur de chauffe, isolant déchiré, tranches de joint et géométrie pressée.\n\nLis le bord de dehors vers dedans. La peau peinte oriente. Le noyau sombre montre la structure. La poussière céramique montre l'errance de la chaleur. Le caoutchouc déchiré en dents indique force mécanique après torche. Les extrémités de câble donnent l'intention : isoler, paniquer, voler, revenir.\n\nUne bonne section porte une scène manquante entière : mur ouvert après inondation, trappe contournée, preuve retirée, travailleur sauvé, passage préparé pour des récupérateurs tardifs.",
+     "field_note": "Regarde la poussière céramique avant le métal. La panique secoue d'abord la couche tendre."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de sección de corte de salvamento",
+     "scanner": "BORDE DE CORTE // Piel de casco pintada, núcleo metálico oscuro, aislante cerámico, rodaja de junta de goma, mazo de cables, línea quemada de cortador, sal en fractura. El corte no es aleatorio.",
+     "terminal": "LECTURA DE SECCIÓN // Cordón térmico liso: cortador controlado. Cerámica rota: pánico o vibración de herramienta. Sal en núcleo: borde abierto antes de rescate. Cables limpios: corte tras inundación.",
+     "audio": "Un borde cortado dice quién llegó después del fallo y qué estaba dispuesto a destruir.",
+     "in_game_wiki": "Un corte de salvamento es una discusión dejada en el material. Nadie corta un casco presurizado por belleza. Se corta porque una ruta quedó bloqueada, había un cuerpo tras la pared, hacía falta robar un cable, o un compartimento seguía valiendo algo cuando los planos dejaron de coincidir con el metal.\n\nLas capas importan. La pintura da la cara original. El núcleo oscuro da la ruta de carga. La cerámica dice si el calor estuvo controlado. La goma muestra si la junta fue cortada o arrancada. Los cables dicen si cuidaron señal, cosecharon cobre o mataron un sistema a propósito.\n\nPara un saqueador, la pregunta no es sólo botín. Es quién cortó, cuándo, y qué intentaba no perder. Un corte oficial de rescate y un corte hambriento de Quilla Negra no dejan el mismo borde.",
+     "external_site": "Artículo de campo sobre secciones de corte: casco, núcleo, aislante, junta y cables revelan intervención tardía y borrado deliberado.",
+     "external_site_article": "En HECTON-8, la puerta más honesta suele ser la que nadie diseñó. Un panel abierto tras el colapso ya no lleva promesa corporativa. Lleva color de calor, aislante rasgado, rodajas de junta y geometría impaciente.\n\nLee el borde de fuera adentro. La piel pintada orienta. El núcleo oscuro muestra estructura. El polvo cerámico muestra calor errante. Goma rota en dientes indica fuerza mecánica después del cortador. Los extremos de cable dicen intención: aislar, entrar en pánico, robar, volver.\n\nUna buena sección contiene una escena perdida: pared abierta tras inundación, compuerta evitada, prueba retirada, trabajador rescatado o paso preparado para saqueadores posteriores.",
+     "field_note": "Mira el polvo cerámico antes que el metal. El pánico sacude primero la capa blanda."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Protokoll für Bergungsschnitt-Querschnitte",
+     "scanner": "SCHNITTKANTE // Lackierte Hauthülle, dunkler Metallkern, Keramikisolierung, Gummidichtungsscheibe, Kabelbündel, gebrannte Schneidlinie, Salz im Riss. Der Schnitt ist nicht zufällig.",
+     "terminal": "QUERSCHNITT LESEN // Glatte Hitzewulst: kontrollierter Cutter. Zerfetzte Keramik: Panik oder Werkzeugrattern. Salz im Kern: offene nasse Kante vor Bergung. Saubere Kabelenden: Schnitt nach Flutung.",
+     "audio": "Eine Schnittkante sagt, wer nach dem Fehler kam und was er zerstören wollte.",
+     "in_game_wiki": "Ein Bergungsschnitt ist ein Streit in Materialform. Niemand schneidet Druckhülle aus Schönheit. Man schneidet, weil ein Weg blockiert ist, ein Körper hinter der Wand liegt, ein Kabel gestohlen werden muss oder ein Raum noch Wert hat, nachdem Pläne und Metall nicht mehr übereinstimmen.\n\nDie Schichten zählen. Lack zeigt die Ursprungsseite. Der dunkle Kern zeigt Lastpfad. Keramik zeigt, ob die Hitze kontrolliert war. Gummi zeigt Schnitt oder Riss. Kabelbündel zeigen Signalrettung, Kupferraub oder absichtliche Systemtrennung.\n\nFür einen Marauder geht es nicht nur um Beute. Wer schnitt, wann, und was wollte er nicht verlieren? Ein offizieller Rettungsschnitt und ein hungriger Schwarzkiel-Schnitt hinterlassen keine gleiche Kante.",
+     "external_site": "Feldartikel über Schnittquerschnitte: Hülle, Kern, Isolierung, Dichtung und Kabel zeigen späte Eingriffe.",
+     "external_site_article": "In HECTON-8 ist die ehrlichste Tür oft die ungeplante. Ein nach dem Kollaps geöffnetes Paneel trägt kein Firmenversprechen mehr. Es trägt Hitzefarbe, zerrissene Isolierung, Dichtungsscheiben und die ungeduldige Geometrie von Leuten, die etwas hinter der Wand brauchten.\n\nLies die Kante von außen nach innen. Lack gibt Richtung. Dunkler Kern zeigt Struktur. Keramikstaub zeigt wandernde Hitze. Zahnartig gerissener Gummi zeigt mechanische Kraft nach dem Cutter. Kabelenden sagen Absicht: isolieren, Panik, Diebstahl, Rückkehr.\n\nEin guter Querschnitt trägt eine fehlende Szene: Wand nach Flutung geöffnet, Luke umgangen, Beweis entfernt, Arbeiter gerettet oder Durchgang für spätere Plünderer vorbereitet.",
+     "field_note": "Sieh erst den Keramikstaub an. Panik schüttelt immer zuerst die weiche Schicht."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr przekroju cięcia ratowniczego",
+     "scanner": "KRAWĘDŹ CIĘCIA // Malowana skóra kadłuba, ciemny rdzeń metalu, izolacja ceramiczna, plaster gumowej uszczelki, wiązka kabli, przypalona linia noża, sól w rozdarciu. Cięcie nie jest losowe.",
+     "terminal": "CZYTANIE PRZEKROJU // Gładki wałek ciepła: kontrolowany nóż. Poszarpana ceramika: panika lub drżenie narzędzia. Sól w rdzeniu: krawędź mokra przed odzyskiem. Czyste końce kabli: cięcie po zalaniu.",
+     "audio": "Krawędź cięcia mówi, kto przyszedł po awarii i co był gotów zniszczyć.",
+     "in_game_wiki": "Cięcie ratownicze to spór zostawiony w materiale. Kadłuba ciśnieniowego nie tnie się dla urody. Tnie się, bo droga jest zamknięta, ciało leży za ścianą, kabel trzeba zabrać albo przedział ma wartość, gdy mapy nie zgadzają się z metalem.\n\nWarstwy mają znaczenie. Farba pokazuje stronę. Ciemny rdzeń pokazuje ścieżkę obciążeń. Ceramika mówi o kontroli ciepła. Guma pokazuje, czy uszczelkę cięto, czy rwano. Kable mówią, czy chroniono sygnał, kradziono miedź, czy zabijano system.\n\nDla maraudera pytanie nie brzmi tylko: co zabrać. Brzmi: kto ciął, kiedy i czego nie chciał stracić. Oficjalne cięcie ratunkowe i głodne cięcie Czarnej Stępki nie zostawiają tej samej krawędzi.",
+     "external_site": "Artykuł terenowy o przekrojach cięć: kadłub, rdzeń, izolacja, uszczelka i kable ujawniają późną interwencję.",
+     "external_site_article": "W HECTON-8 najuczciwsze drzwi bywają tymi, których nikt nie zaprojektował. Panel otwarty po katastrofie nie niesie już obietnicy korporacji. Niesie barwę ciepła, rozdartą izolację, plastry uszczelki i geometrię ludzi, którzy czegoś potrzebowali.\n\nKrawędź czyta się z zewnątrz do środka. Farba daje kierunek. Ciemny rdzeń pokazuje konstrukcję. Pył ceramiczny pokazuje błądzenie ciepła. Guma rozerwana w zęby to siła po nożu. Końce kabli mówią o intencji: izolacja, panika, kradzież, powrót.\n\nDobry przekrój trzyma całą brakującą scenę: ścianę otwartą po zalaniu, ominięty właz, usunięty dowód, uratowanego pracownika albo przejście dla późnych szabrowników.",
+     "field_note": "Najpierw patrz na pył ceramiczny. Panika zawsze trzęsie miękką warstwą."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал перерізу рятувального різання",
+     "scanner": "КРАЙ РІЗУ // Фарбована шкіра корпусу, темне металеве ядро, керамічна ізоляція, зріз гумової прокладки, пучок кабелів, обпалена лінія різака, сіль на рваному зламі. Різ не випадковий.",
+     "terminal": "ЧИТАННЯ ПЕРЕРІЗУ // Рівний тепловий валик - контрольований різак. Рвана кераміка - паніка або тремтіння інструмента. Сіль у металі - край стояв відкритим до підйому. Чисті кабелі - різ після затоплення.",
+     "audio": "Край різу говорить, хто прийшов після відмови й що був готовий знищити.",
+     "in_game_wiki": "Рятувальний різ - це суперечка, лишена в матеріалі. Напірний корпус не ріжуть заради краси. Ріжуть, бо шлях закритий, тіло за стіною, кабель треба забрати або відсік ще має ціну після того, як мапи розійшлися з металом.\n\nШари важливі. Фарба показує початковий бік. Темне ядро показує силовий шлях. Кераміка говорить, чи тримали тепло під контролем. Гума показує, різали ущільнення чи рвали. Кабелі кажуть, чи берегли сигнал, крали мідь, чи навмисне вбивали систему.\n\nДля мародера питання не тільки в здобичі. Хто різав, коли, і що він не хотів втратити? Чистий офіційний рятувальний різ і голодний різ Чорного Кіля не лишають однакового краю.",
+     "external_site": "Польова стаття про перерізи різання: корпус, ядро, ізоляція, прокладка й кабелі показують пізнє втручання.",
+     "external_site_article": "У HECTON-8 найчесніші двері часто ті, яких ніхто не проєктував. Панель, розкрита після аварії, вже не несе корпоративної обіцянки. У ній лишилися колір перегріву, рвана ізоляція, зрізи прокладки й нетерпляча геометрія людей, яким було щось потрібно за стіною.\n\nКрай читають ззовні всередину. Фарбована шкіра дає напрям. Темне ядро показує конструкцію. Керамічний пил показує блукання тепла. Гума, розірвана зубцями, означає силу після різака. Кінці кабелів кажуть про намір: ізоляція, паніка, крадіжка, повернення.\n\nХороший переріз тримає цілу зниклу сцену: стіну відкрили після затоплення, обійшли люк, прибрали доказ, урятували працівника або зробили шлях для пізніх добувачів.",
+     "field_note": "Дивись на керамічний пил до металу. Паніка першою трясе м'який шар."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل مقطع قطع الانتشال",
+     "scanner": "حافة قطع // جلد هيكل مطلي، لب معدني داكن، طبقة عزل خزفية، شريحة حشية مطاط، حزمة كابلات، خط قاطع محروق، ملح على كسر ممزق. القطع ليس عشوائيا.",
+     "terminal": "قراءة المقطع // خرزة حرارية ناعمة تعني قاطعا مضبوطا. خزف ممزق يعني ذعرا أو اهتزاز أداة. ملح داخل اللب يعني أن الحافة بقيت مفتوحة ورطبة. نهايات كابل نظيفة تعني قطعا بعد الغمر.",
+     "audio": "حافة القطع تقول من جاء بعد الفشل وما الذي قبل تدميره.",
+     "in_game_wiki": "قطع الانتشال جدال متروك في المادة. لا أحد يقطع هيكل ضغط للجمال. يقطعون لأن الطريق مسدود، أو جسدا خلف الجدار، أو كابلا يجب أخذه، أو مقصورة بقيت ذات قيمة بعد أن توقفت الخرائط عن مطابقة المعدن.\n\nالطبقات مهمة. الطلاء يحدد الوجه الأصلي. اللب الداكن يبين مسار الحمل. الخزف يقول هل سيطرت الأداة على الحرارة. المطاط يبين هل قطعت الحشية أم مزقت. الكابلات تقول هل حمي الإشارة أم سرق النحاس أم قتل نظام عمدا.\n\nبالنسبة إلى المغير، السؤال ليس الغنيمة فقط. من قطع، ومتى، وما الذي رفض خسارته؟ قطع إنقاذ رسمي وقطع جائع من الكيل الأسود لا يتركان الحافة نفسها.",
+     "external_site": "مقال ميداني عن مقاطع قطع الانتشال: الجلد واللب والعزل والحشية والكابلات تكشف تدخلا متأخرا.",
+     "external_site_article": "في HECTON-8، أصدق باب غالبا هو الذي لم يصممه أحد. اللوح المفتوح بعد الانهيار لا يحمل وعد شركة. يحمل لون حرارة، عزلا ممزقا، شرائح حشية، وهندسة مستعجلة لأناس احتاجوا شيئا خلف الجدار.\n\nتقرأ الحافة من الخارج إلى الداخل. الجلد المطلي يعطي الاتجاه. اللب الداكن يبين البنية. غبار الخزف يبين تجول الحرارة. مطاط ممزق كأسنان يعني قوة ميكانيكية بعد القاطع. نهايات الكابلات تقول النية: عزل، ذعر، سرقة، عودة.\n\nالمقطع الجيد يحمل مشهدا مفقودا: جدار فتح بعد الغمر، فتحة تم تجاوزها، دليل أزيل، عامل أنقذ، أو ممر صنع لناهبي وقت لاحق.",
+     "field_note": "انظر إلى غبار الخزف قبل المعدن. الذعر يهز الطبقة اللينة أولا."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Log Penampang Potongan Salvage",
+     "scanner": "TEPI POTONG // Kulit lambung bercat, inti logam gelap, lapisan isolasi keramik, irisan gasket karet, bundel kabel, garis pemotong terbakar, garam pada patahan robek. Potongan ini tidak acak.",
+     "terminal": "BACA PENAMPANG // Manik panas halus berarti pemotong terkendali. Keramik robek berarti panik atau alat bergetar. Garam di inti berarti tepi terbuka basah sebelum recovery. Ujung kabel bersih berarti potong setelah banjir.",
+     "audio": "Tepi potong memberi tahu siapa datang setelah gagal, dan apa yang rela mereka hancurkan.",
+     "in_game_wiki": "Potongan salvage adalah argumen yang tertinggal di material. Tak ada yang mengiris lambung tekanan demi cantik. Mereka memotong karena rute buntu, ada tubuh di balik dinding, kabel harus diambil, atau kompartemen masih bernilai saat peta tak lagi cocok dengan logam.\n\nLapisan penting. Cat menunjukkan muka asli. Inti gelap menunjukkan jalur beban. Keramik menunjukkan apakah panas terkendali. Karet menunjukkan seal dipotong atau dirobek. Bundel kabel menunjukkan sinyal dijaga, tembaga dipanen, atau sistem sengaja dibunuh.\n\nBagi perompak laut-dalam, pertanyaannya bukan hanya bisa diambil. Siapa memotong, kapan, dan apa yang mereka coba tidak kehilangan? Potongan rescue resmi dan potongan lapar Black Keel tidak meninggalkan tepi yang sama.",
+     "external_site": "Artikel lapangan tentang penampang potongan salvage: kulit, inti, isolasi, gasket, dan kabel mengungkap intervensi terlambat.",
+     "external_site_article": "Di HECTON-8, pintu paling jujur sering kali pintu yang tak pernah dirancang. Panel yang dibuka setelah runtuh tak lagi membawa janji korporat. Ia membawa warna panas, isolasi robek, irisan gasket, dan geometri terburu-buru orang yang butuh sesuatu di balik dinding.\n\nBaca tepi dari luar ke dalam. Kulit bercat memberi arah. Inti gelap menunjukkan struktur. Debu keramik menunjukkan panas mengembara. Karet robek seperti gigi berarti gaya mekanik setelah pemotong. Ujung kabel memberi niat: isolasi, panik, curi, kembali.\n\nPenampang bagus bisa menahan satu adegan hilang: dinding dibuka setelah banjir, palka disiasati, bukti diambil, pekerja diselamatkan, atau lorong dibuat untuk penjarah belakangan.",
+     "field_note": "Lihat debu keramik sebelum logam. Panik selalu mengguncang lapisan lunak dulu."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "인양 절단 단면 장부",
+     "scanner": "절단 가장자리 // 칠해진 선체 피부, 어두운 금속 코어, 세라믹 단열층, 고무 가스켓 단면, 케이블 묶음, 탄 절단선, 찢긴 파면의 소금. 무작위 절단이 아니다.",
+     "terminal": "단면 읽기 // 매끈한 열 비드는 제어된 커터다. 찢긴 세라믹은 공포나 공구 떨림이다. 금속 코어 속 소금은 회수 전 열린 채 젖어 있었다는 뜻이다. 깨끗한 케이블 끝은 침수 후 절단이다.",
+     "audio": "절단 가장자리는 고장 뒤 누가 왔고 무엇을 부술 각오가 있었는지 말한다.",
+     "in_game_wiki": "인양 절단은 재료에 남은 논쟁이다. 아무도 아름다움 때문에 압력 선체를 자르지 않는다. 길이 막혔거나, 벽 뒤에 사람이 있었거나, 케이블을 가져가야 했거나, 도면이 금속과 맞지 않게 된 뒤에도 구획에 가치가 있었기 때문에 자른다.\n\n층이 중요하다. 도장은 원래 면을 말한다. 어두운 코어는 하중 경로를 말한다. 세라믹은 열 제어를 말한다. 고무는 밀봉이 잘렸는지 찢겼는지 말한다. 케이블 묶음은 신호 보존, 구리 수확, 또는 시스템 절단 의도를 말한다.\n\n마라우더에게 질문은 전리품뿐이 아니다. 누가, 언제, 무엇을 잃지 않으려고 잘랐는가. 공식 구조 절단과 굶주린 블랙 킬 절단은 같은 가장자리를 남기지 않는다.",
+     "external_site": "선체, 코어, 단열, 가스켓, 케이블 층으로 늦은 개입과 의도적 삭제를 읽는 현장 기사.",
+     "external_site_article": "HECTON-8에서 가장 솔직한 문은 설계되지 않은 문일 때가 많다. 붕괴 후 열린 패널에는 기업의 약속이 남지 않는다. 열색, 찢긴 단열재, 가스켓 조각, 벽 뒤의 무언가가 필요했던 사람들의 성급한 기하가 남는다.\n\n가장자리는 밖에서 안으로 읽는다. 칠해진 피부는 방향을 준다. 어두운 코어는 구조를 보여 준다. 세라믹 먼지는 열이 얼마나 헤맸는지 보여 준다. 이빨처럼 찢긴 고무는 커터 뒤의 기계력을 뜻한다. 케이블 끝은 의도를 말한다: 격리, 공포, 절도, 귀환.\n\n좋은 단면은 사라진 장면 하나를 품는다. 침수 뒤 벽을 열었고, 해치를 우회했고, 증거를 제거했고, 갇힌 작업자를 구했고, 후발 약탈자를 위한 길을 냈다는 식이다.",
+     "field_note": "금속보다 세라믹 먼지를 먼저 봐라. 공포는 언제나 부드러운 층을 먼저 흔든다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן חתך חיתוך חילוץ",
+     "scanner": "שפת חיתוך // עור גוף צבוע, ליבת מתכת כהה, שכבת בידוד קרמית, פרוסת אטם גומי, צרור כבלים, קו חותך שרוף, מלח בשבר קרוע. החיתוך אינו אקראי.",
+     "terminal": "קריאת חתך // חרוז חום חלק הוא חותך נשלט. קרמיקה קרועה היא בהלה או רעד כלי. מלח בתוך הליבה אומר שהשפה נשארה פתוחה ורטובה לפני חילוץ. קצוות כבל נקיים הם חיתוך אחרי הצפה.",
+     "audio": "שפת חיתוך אומרת מי הגיע אחרי הכשל ומה היה מוכן להרוס.",
+     "in_game_wiki": "חיתוך חילוץ הוא ויכוח שנשאר בחומר. אף אחד לא חותך גוף לחץ בשביל יופי. חותכים כי נתיב נחסם, גוף נמצא מאחורי הקיר, כבל צריך להילקח, או תא עדיין שווה משהו אחרי שהמפות הפסיקו להתאים למתכת.\n\nהשכבות חשובות. צבע מראה את הפנים המקוריים. הליבה הכהה מראה נתיב עומס. קרמיקה מספרת אם החום נשלט. גומי מראה אם האטם נחתך או נקרע. כבלים מראים אם שמרו אות, לקחו נחושת או הרגו מערכת בכוונה.\n\nלמראודר השאלה אינה רק שלל. מי חתך, מתי, ומה ניסה לא לאבד? חיתוך חילוץ רשמי וחיתוך רעב של הקיל השחור אינם משאירים אותה שפה.",
+     "external_site": "מאמר שטח על חתכי חילוץ: עור, ליבה, בידוד, אטם וכבלים חושפים התערבות מאוחרת.",
+     "external_site_article": "ב-HECTON-8 הדלת הכנה ביותר היא לעיתים זו שאיש לא תכנן. לוח שנפתח אחרי הקריסה אינו נושא עוד הבטחה תאגידית. הוא נושא צבע חום, בידוד קרוע, פרוסות אטם וגיאומטריה חסרת סבלנות של מי שהיה צריך משהו מעבר לקיר.\n\nקוראים את השפה מבחוץ פנימה. העור הצבוע נותן כיוון. הליבה הכהה מראה מבנה. אבק קרמי מראה נדידת חום. גומי קרוע כשיניים אומר כוח מכני אחרי החותך. קצוות כבל אומרים כוונה: בידוד, בהלה, גניבה, חזרה.\n\nחתך טוב מחזיק סצנה חסרה: קיר נפתח אחרי הצפה, פתח נעקף, ראיה הוסרה, עובד חולץ, או מעבר הוכן לבוזזים מאוחרים.",
+     "field_note": "הבט באבק הקרמי לפני המתכת. בהלה תמיד מרעידה קודם את השכבה הרכה."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Seção de Corte de Salvamento",
+     "scanner": "BORDA DE CORTE // Pele pintada do casco, núcleo metálico escuro, camada cerâmica de isolamento, fatia de gaxeta, feixe de cabos, linha queimada de cortador, sal na fratura rasgada. O corte não é aleatório.",
+     "terminal": "LEITURA DA SEÇÃO // Cordão térmico liso: cortador controlado. Cerâmica rasgada: pânico ou trepidação. Sal no núcleo: borda aberta e molhada antes da recuperação. Cabos limpos: corte pós-inundação.",
+     "audio": "Uma borda cortada diz quem chegou depois da falha e o que aceitou destruir.",
+     "in_game_wiki": "Um corte de salvamento é uma discussão deixada no material. Ninguém fatia casco pressurizado por beleza. Cortam porque a rota foi bloqueada, havia corpo atrás da parede, cabo precisava ser levado, ou um compartimento ainda valia algo quando os mapas pararam de combinar com o metal.\n\nAs camadas importam. A tinta dá a face original. O núcleo escuro dá o caminho de carga. A cerâmica diz se o calor foi controlado. A borracha mostra se a vedação foi cortada ou rasgada. Os cabos mostram se preservaram sinal, colheram cobre ou mataram um sistema de propósito.\n\nPara um saqueador, a pergunta não é só saque. Quem cortou, quando, e o que tentava não perder? Um corte oficial de resgate e um corte faminto da Quilha Negra não deixam a mesma borda.",
+     "external_site": "Artigo de campo sobre seções de corte: casco, núcleo, isolamento, vedação e cabos revelam intervenção tardia.",
+     "external_site_article": "Em HECTON-8, a porta mais honesta costuma ser a que ninguém projetou. Um painel aberto após o colapso não carrega mais promessa corporativa. Carrega cor de calor, isolamento rasgado, fatias de gaxeta e a geometria apressada de gente que precisava de algo atrás da parede.\n\nLeia a borda de fora para dentro. Pele pintada dá orientação. Núcleo escuro mostra estrutura. Pó cerâmico mostra calor perdido. Borracha rasgada em dentes indica força mecânica depois do cortador. Pontas de cabo dizem intenção: isolar, entrar em pânico, roubar, voltar.\n\nUma boa seção segura uma cena desaparecida: parede aberta depois da inundação, escotilha contornada, prova removida, trabalhador salvo ou passagem preparada para saqueadores tardios.",
+     "field_note": "Olhe o pó cerâmico antes do metal. Pânico sempre sacode primeiro a camada macia."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Log van bergingssnede-doorsnede",
+     "scanner": "SNIJRAND // Geschilderde romphuid, donkere metaalkern, keramische isolatie, plak rubberpakking, kabelbundel, verbrande snijlijn, zout op gescheurde breuk. De snede is niet willekeurig.",
+     "terminal": "DOORSNEDE LEZEN // Gladde hittekraal: gecontroleerde snijder. Gescheurd keramiek: paniek of gereedschapstrilling. Zout in kern: open natte rand voor berging. Schone kabelenden: snede na overstroming.",
+     "audio": "Een snijrand vertelt wie na de fout kwam en wat men wilde vernietigen.",
+     "in_game_wiki": "Een bergingssnede is een ruzie die in materiaal bleef zitten. Niemand snijdt een drukromp voor schoonheid. Men snijdt omdat een route dicht is, een lichaam achter de wand ligt, een kabel meegenomen moet worden, of een compartiment waarde houdt wanneer kaarten niet meer bij metaal passen.\n\nDe lagen tellen. Verf geeft de oorspronkelijke zijde. De donkere kern geeft lastpad. Keramiek vertelt of hitte beheerst was. Rubber toont snijden of scheuren. Kabelbundels tonen signaalbehoud, koperdiefstal of opzettelijke systeemdoding.\n\nVoor een marauder is de vraag niet alleen buit. Wie sneed, wanneer, en wat probeerde die niet te verliezen? Een officiële reddingssnede en een hongerige Zwarte Kiel-snede laten niet dezelfde rand achter.",
+     "external_site": "Veldartikel over snede-doorsneden: huid, kern, isolatie, pakking en kabels onthullen late ingreep.",
+     "external_site_article": "In HECTON-8 is de eerlijkste deur vaak de deur die niemand ontwierp. Een paneel dat na instorting werd geopend draagt geen bedrijfsbelofte meer. Het draagt hittekleur, gescheurde isolatie, pakkingplakken en de haastige geometrie van mensen die iets achter de wand nodig hadden.\n\nLees de rand van buiten naar binnen. Geschilderde huid geeft richting. Donkere kern toont structuur. Keramisch stof toont zwervende hitte. Rubber als tanden gescheurd betekent mechanische kracht na de snijder. Kabelenden zeggen bedoeling: isoleren, paniek, diefstal, terugkeer.\n\nEen goede doorsnede draagt een ontbrekende scène: wand geopend na overstroming, luik omzeild, bewijs verwijderd, arbeider gered of doorgang gemaakt voor latere plunderaars.",
+     "field_note": "Kijk naar keramisch stof voor metaal. Paniek schudt altijd eerst de zachte laag."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

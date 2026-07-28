@@ -1,11 +1,55 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS259_RECEIVER_BRAKING_DEBT_ARTICLE",
-  "title": "Receiver Braking Debt Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS259_RECEIVER_BRAKING_DEBT_ARTICLE",
+ "title": "Receiver Braking Debt Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1427_RECEIVER_BRAKING_DEBT_LEDGER",
+   "release_set_id": "RS259_RECEIVER_BRAKING_DEBT_ARTICLE",
+   "article_id": "applied_lore.receiver_braking_debt_ledger",
+   "title_key": "LORE_RECEIVER_BRAKING_DEBT_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
+    "Docs/Lore/AppliedContent/packets/RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY.packets.json",
+    "Docs/Lore/AppliedContent/packets/RS220_NEARLIGHT_DRIVE_STACK_CUTAWAY_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,263 +57,220 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1427_RECEIVER_BRAKING_DEBT_LEDGER",
-      "release_set_id": "RS259_RECEIVER_BRAKING_DEBT_ARTICLE",
-      "article_id": "applied_lore.receiver_braking_debt_ledger",
-      "title_key": "LORE_RECEIVER_BRAKING_DEBT_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/SourceArticles/SA005_NEARLIGHT_ROUTE_STACK_AND_BRAKING_DEBT.md",
-        "Docs/Lore/AppliedContent/packets/RS021_INTERSTELLAR_TRANSIT_ROUTE_HISTORY.packets.json",
-        "Docs/Lore/AppliedContent/packets/RS220_NEARLIGHT_DRIVE_STACK_CUTAWAY_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.receiver_braking_debt_ledger",
-        "secondary": [
-          "unlock.first_braking_rights_receipt",
-          "unlock.first_signal_vs_mass_route_split",
-          "unlock.first_prepared_freight_not_rescue"
-        ],
-        "poi_tags": [
-          "poi.receiver_braking_receipt",
-          "poi.magsail_spool_account",
-          "poi.pellet_lane_loss_table",
-          "poi.black_keel_catch_rights_panel"
-        ],
-        "biome_tags": [
-          "biome.claim_admin",
-          "biome.carrier_link",
-          "biome.ascent_stack",
-          "biome.old_colony_ruins"
-        ],
-        "first_20_boundary": "Explains the first signal/rescue split without FTL or magic: messages can move through relay custody, while heavy living mass needs owned braking, receiver liability and a scheduled catch window."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Braking Debt Receipt Scanner",
-          "terminal": "Receiver Catch Rights Desk",
-          "audio": "Old Freight Pilot Rule",
-          "in_game_wiki": "PDA Nearlight Braking Primer",
-          "external_site": "Public Site Braking Debt Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_nearlight_route_or_no_instant_rescue_question",
-        "truth_payload": "Nearlight travel industrialized distance without defeating it: a signal or claim can route cheaply, but certified body mass needs owned braking, receiver custody, heat margin, quarantine handling and a paid catch window.",
-        "player_question": "If humans have near-light ships, why is one stranded body still hard to recover?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Receiver Braking Debt Ledger",
-          "scanner": "BRAKING RECEIPT // Pitted alloy card, Barnard stamp under salt. Line items: magsail spool wear, pellet-lane loss, receiver heat margin, quarantine berth, living-mass exception. Signal is cheap. Stopping mass is not.",
-          "terminal": "RECEIVER CATCH RIGHTS DESK // Aegir inbound route accepts claim packets and shielded freight receipts. Unscheduled living return mass requires braking owner, receiver custody, quarantine berth and paid catch margin before carrier lift reservation.",
-          "audio": "The hard part is not leaving the dark. The hard part is arriving where somebody agreed to slow you down.",
-          "in_game_wiki": "Nearlight travel did not make distance harmless. It made distance accountable. Human ships cross between stars because old routes are owned in pieces: beam arrays push, pellet lanes feed, fusion stages spend, shields lose mass, radiators dump heat, magsails bite into fields, and receiver stations agree to catch what the route sends.\n\nThat last verb is the ugly one. To catch a body, a receiver must accept braking debt before the body arrives. It must reserve heat margin, quarantine volume, medical custody, legal exposure, and the right to say who pays when the stop goes wrong. A signal packet does not need most of that. A sealed evidence hash can ride a relay. A freight crate can ride a schedule written years earlier. A living operator in a broken ocean claim is a different kind of mass.\n\nThis is why HECTON-8 can feel connected and abandoned at the same time. Black Keel can hear you through a relay window. A broker can price your sample. A public ledger can record that your distress hash existed. None of those facts create braking rights for your body. Rescue becomes possible only when signal, custody, receiver liability, quarantine, sky timing, lift mass and actual hardware line up. Until then, the system is not silent. It is worse: it is legible.",
-          "external_site": "Nearlight ships move through owned route stacks. They can carry probes, freight and contracts across the dark, but a stranded living body still needs braking rights, receiver custody and paid catch margin.",
-          "external_site_article": "HECTON-8's space lore works because the civilization is capable and still constrained. There is no faster-than-light rescue hidden behind the plot, and there is no primitive isolation either. Humanity can push mass through near-light routes, but every kilogram crosses on infrastructure somebody owns.\n\nA braking debt ledger is the document that makes that visible. It records who owns the slowing path, who absorbs heat, who accepts quarantine, who receives the cargo, and who pays if the stop damages ship, station, cargo or body. A signal can be cheap because it does not ask a receiver to catch a person. Evidence can move before rescue because proof is not breath.\n\nFor the player, this turns distance into pressure instead of trivia. The question is not whether civilization exists. It does. The question is whether the player can make their body, evidence, samples and debt fit into a route that is already busy moving things that corporations cared about first.",
-          "field_note": "If the receipt says catch rights, check whether it catches people or just profit."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал тормозного долга приемника",
-          "scanner": "КВИТАНЦИЯ ТОРМОЖЕНИЯ // Изъеденная сплавная карта, штамп Barnard под солью. Строки: износ magsail spool, потери pellet-lane, тепловой запас приемника, карантинная койка, исключение living-mass. Сигнал дешев. Остановить массу нет.",
-          "terminal": "СТОЛ ПРАВ ЗАХВАТА ПРИЕМНИКА // Входящий маршрут Aegir принимает claim packets и квитанции shielded freight. Незапланированная живая return mass требует владельца торможения, receiver custody, карантинной койки и оплаченного catch margin до резерва carrier lift.",
-          "audio": "Трудно не уйти из темноты. Трудно прибыть туда, где кто-то согласился тебя замедлить.",
-          "in_game_wiki": "Nearlight-переходы не сделали расстояние безвредным. Они сделали расстояние подотчетным. Человеческие корабли ходят между звездами потому, что старые маршруты принадлежат по частям: beam arrays толкают, pellet lanes кормят, fusion stages тратят, щиты теряют массу, радиаторы сбрасывают тепло, magsails вгрызаются в поля, а receiver stations соглашаются поймать то, что присылает маршрут.\n\nПоследний глагол самый грязный. Чтобы поймать тело, приемник должен принять тормозной долг до прибытия тела. Он должен зарезервировать тепловой запас, карантинный объем, медицинскую опеку, юридическую экспозицию и право решить, кто платит, если остановка пойдет плохо. Signal packet почти ничего из этого не требует. Запечатанный evidence hash может ехать через relay. Грузовой ящик может ехать по расписанию, написанному за годы. Живой оператор в сломанной океанской претензии это другая масса.\n\nПоэтому HECTON-8 одновременно связан и брошен. Black Keel может слышать тебя через relay window. Брокер может назначить цену образцу. Публичный ledger может записать, что distress hash существовал. Ни один из этих фактов не создает braking rights для твоего тела. Спасение становится возможным только когда signal, custody, receiver liability, карантин, небесный тайминг, lift mass и реальное железо сходятся. До этого система не молчит. Хуже: она читаема.",
-          "external_site": "Nearlight ships движутся по принадлежащим кому-то route stacks. Они несут probes, freight и contracts через темноту, но застрявшему живому телу все еще нужны braking rights, receiver custody и оплаченный catch margin.",
-          "external_site_article": "Космический лор HECTON-8 работает потому, что цивилизация способна и все равно ограничена. За сюжетом не спрятано FTL-спасение, но и примитивной изоляции нет. Люди могут толкать массу по near-light routes, но каждый килограмм идет по инфраструктуре, которой кто-то владеет.\n\nЖурнал тормозного долга делает это видимым. Он записывает, кому принадлежит путь замедления, кто поглощает тепло, кто принимает карантин, кто получает груз и кто платит, если остановка повредит корабль, станцию, груз или тело. Сигнал может быть дешевым, потому что он не просит приемник ловить человека. Доказательство может двигаться раньше спасения, потому что доказательство не дышит.\n\nДля игрока это превращает расстояние в давление, а не в справку. Вопрос не в том, существует ли цивилизация. Существует. Вопрос в том, сможет ли игрок вписать свое тело, доказательства, образцы и долг в маршрут, который уже занят вещами, о которых корпорации заботились раньше.",
-          "field_note": "Если в квитанции написано catch rights, проверь, ловит она людей или только прибыль."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "受信側制動債務台帳",
-          "scanner": "制動レシート // 穴食い合金カード。塩の下にBarnard印。項目: magsail spool摩耗、pellet-lane損失、受信側熱余裕、隔離寝台、living-mass例外。信号は安い。質量を止めるのは安くない。",
-          "terminal": "受信側捕獲権デスク // Aegir着信ルートはclaim packetsとshielded freight receiptsを受理。予定外のliving return massには、carrier lift予約前に制動所有者、receiver custody、隔離寝台、有料catch marginが必要。",
-          "audio": "難しいのは暗闇を出ることではない。誰かが減速に同意した場所へ着くことだ。",
-          "in_game_wiki": "Nearlight航行は距離を無害にしなかった。距離を会計可能にした。人間の船が星の間を渡れるのは、古い航路が部品ごとに所有されているからだ。beam arraysが押し、pellet lanesが供給し、fusion stagesが消費し、シールドが質量を失い、ラジエータが熱を捨て、magsailsが場に噛みつき、receiver stationsが航路の送るものを捕まえることに同意する。\n\n最後の動詞が醜い。身体を捕まえるには、受信側が身体の到着前に制動債務を受け入れなければならない。熱余裕、隔離容積、医療custody、法的露出、停止が失敗した時に誰が払うかを予約する必要がある。signal packetはその大半を求めない。封印されたevidence hashはrelayに乗れる。貨物箱は何年も前に書かれた予定に乗れる。壊れた海洋claim内の生きたoperatorは別種の質量だ。\n\nだからHECTON-8はつながっていて、同時に見捨てられている。Black Keelはrelay window越しに君を聞ける。brokerはsampleに価格を付けられる。public ledgerは君のdistress hashが存在したと記録できる。だがそのどれも君の身体のbraking rightsを作らない。救助が可能になるのは、signal、custody、receiver liability、隔離、空のタイミング、lift mass、実際のhardwareが揃った時だけだ。それまではシステムは沈黙していない。もっと悪い。読み取れる。",
-          "external_site": "Nearlight shipsは所有されたroute stacksを通る。probe、freight、contractを暗闇の向こうへ運べるが、取り残された生きた身体にはなおbraking rights、receiver custody、有料catch marginが必要だ。",
-          "external_site_article": "HECTON-8の宇宙ロアが機能するのは、文明が有能でありながら制限されているからだ。筋書きの裏にFTL救助は隠れていないし、原始的な孤立でもない。人類はnear-light routesで質量を押せる。ただし、すべてのキログラムは誰かが所有するインフラを通る。\n\n制動債務台帳はそれを見えるようにする文書だ。誰が減速経路を所有し、誰が熱を吸収し、誰が隔離を受け、誰が貨物を受け取り、停止が船、ステーション、貨物、身体を傷つけた時に誰が払うかを記録する。信号が安いのは、受信側に人間を捕まえろと求めないからだ。証拠が救助より先に動けるのは、証拠が呼吸しないからだ。\n\nプレイヤーにとって、距離は豆知識ではなく圧力になる。文明が存在するかではない。存在する。問題は、身体、証拠、試料、債務を、企業が先に気にした物を運んでいる忙しい航路に収められるかだ。",
-          "field_note": "レシートにcatch rightsとあれば、それが人間を捕まえるのか利益だけを捕まえるのか確認しろ。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "接收端制动债务账册",
-          "scanner": "制动收据 // 坑蚀合金卡，盐层下有Barnard印记。条目：magsail spool磨损、pellet-lane损失、接收端热余量、隔离床位、living-mass例外。信号便宜。停止质量不便宜。",
-          "terminal": "接收端捕获权台 // Aegir入境航路接受claim packets和shielded freight receipts。未排程living return mass在carrier lift预留前，需要制动所有者、receiver custody、隔离床位和付费catch margin。",
-          "audio": "难的不是离开黑暗。难的是抵达一个有人同意替你减速的地方。",
-          "in_game_wiki": "Nearlight航行没有让距离变得无害。它让距离变得可记账。人类船只能在恒星之间航行，是因为旧航路被分件拥有：beam arrays负责推动，pellet lanes负责供料，fusion stages负责消耗，护盾损失质量，散热器丢弃热量，magsails咬住场线，而receiver stations同意捕获航路送来的东西。\n\n最后一个动词最难看。要捕获一具身体，接收端必须在身体抵达前接受制动债务。它必须预留热余量、隔离体积、医疗custody、法律暴露，以及停止出错时由谁付款的权利。signal packet几乎不需要这些。密封的evidence hash可以搭乘relay。货箱可以搭乘多年前写好的时刻表。破碎海洋claim里的活operator是另一种质量。\n\n所以HECTON-8可以同时显得已连接又被抛弃。Black Keel能通过relay window听见你。broker能给你的sample定价。public ledger能记录你的distress hash曾经存在。但这些事实都不会为你的身体创造braking rights。只有signal、custody、receiver liability、隔离、天空时机、lift mass和真实hardware排到一起时，救援才可能发生。在那之前，系统并不沉默。更糟的是，它清晰可读。",
-          "external_site": "Nearlight ships穿过被拥有的route stacks。它们能让probe、freight和contract穿越黑暗，但被困的活体仍需要braking rights、receiver custody和付费catch margin。",
-          "external_site_article": "HECTON-8的太空设定成立，是因为文明有能力但仍受约束。剧情背后没有隐藏的FTL救援，也不是原始孤立。人类可以通过near-light routes推动质量，但每一公斤都穿过某人拥有的基础设施。\n\n制动债务账册让这一点变得可见。它记录谁拥有减速路径，谁吸收热量，谁接受隔离，谁接收货物，以及停止损坏船、站、货物或身体时谁付款。信号可以便宜，因为它不要求接收端捕获一个人。证据能先于救援移动，因为证据不会呼吸。\n\n对玩家来说，这把距离变成压力，而不是资料。问题不是文明是否存在。它存在。问题是玩家能否把自己的身体、证据、样本和债务塞进一条已经忙着搬运公司更早关心之物的航路。",
-          "field_note": "如果收据写着catch rights，先看它捕获的是人，还是利润。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre de dette de freinage du récepteur",
-          "scanner": "RECU DE FREINAGE // Carte d'alliage piquée, tampon Barnard sous le sel. Lignes : usure magsail spool, perte pellet-lane, marge thermique du récepteur, couchette de quarantaine, exception living-mass. Le signal est bon marché. Arrêter la masse ne l'est pas.",
-          "terminal": "POSTE DES DROITS DE CAPTURE RECEIVER // Route entrante Aegir accepte claim packets et reçus shielded freight. Living return mass non planifiée exige propriétaire de freinage, receiver custody, couchette de quarantaine et catch margin payé avant réservation carrier lift.",
-          "audio": "Le plus dur n'est pas de quitter le noir. Le plus dur est d'arriver là où quelqu'un a accepté de vous ralentir.",
-          "in_game_wiki": "Le voyage nearlight n'a pas rendu la distance inoffensive. Il l'a rendue comptable. Les vaisseaux humains traversent les étoiles parce que les anciennes routes sont possédées par morceaux : beam arrays poussent, pellet lanes alimentent, fusion stages dépensent, les boucliers perdent de la masse, les radiateurs rejettent la chaleur, les magsails mordent les champs, et les receiver stations acceptent d'attraper ce que la route envoie.\n\nCe dernier verbe est le sale. Pour attraper un corps, un récepteur doit accepter la dette de freinage avant l'arrivée du corps. Il doit réserver marge thermique, volume de quarantaine, custody médicale, exposition légale et droit de dire qui paie quand l'arrêt tourne mal. Un signal packet n'a pas besoin de tout cela. Un evidence hash scellé peut prendre un relais. Une caisse de fret peut suivre un calendrier écrit des années plus tôt. Un opérateur vivant dans une claim océanique brisée est une autre sorte de masse.\n\nC'est pourquoi HECTON-8 peut sembler connecté et abandonné à la fois. Black Keel peut vous entendre par une relay window. Un broker peut chiffrer votre sample. Un public ledger peut enregistrer que votre distress hash a existé. Aucun de ces faits ne crée de braking rights pour votre corps. Le sauvetage devient possible seulement quand signal, custody, receiver liability, quarantaine, timing du ciel, lift mass et matériel réel s'alignent. Jusque-là, le système n'est pas silencieux. C'est pire : il est lisible.",
-          "external_site": "Les nearlight ships passent par des route stacks possédées. Ils portent probes, freight et contracts dans le noir, mais un corps vivant bloqué a encore besoin de braking rights, receiver custody et catch margin payé.",
-          "external_site_article": "Le lore spatial de HECTON-8 fonctionne parce que la civilisation est capable et pourtant contrainte. Il n'y a pas de sauvetage FTL caché derrière l'intrigue, et il n'y a pas non plus d'isolement primitif. L'humanité peut pousser de la masse dans des near-light routes, mais chaque kilogramme traverse une infrastructure possédée par quelqu'un.\n\nUn registre de dette de freinage rend cela visible. Il note qui possède le chemin de ralentissement, qui absorbe la chaleur, qui accepte la quarantaine, qui reçoit la cargaison, et qui paie si l'arrêt abîme vaisseau, station, cargaison ou corps. Un signal peut être bon marché parce qu'il ne demande pas au récepteur d'attraper une personne. La preuve peut bouger avant le sauvetage parce que la preuve ne respire pas.\n\nPour le joueur, la distance devient pression plutôt que trivia. La question n'est pas de savoir si la civilisation existe. Elle existe. La question est de savoir si le joueur peut faire entrer son corps, ses preuves, ses échantillons et sa dette dans une route déjà occupée à déplacer ce dont les entreprises se souciaient d'abord.",
-          "field_note": "Si le reçu dit catch rights, vérifiez s'il attrape des personnes ou seulement du profit."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de deuda de frenado del receptor",
-          "scanner": "RECIBO DE FRENADO // Tarjeta de aleación picada, sello Barnard bajo sal. Líneas: desgaste magsail spool, pérdida pellet-lane, margen térmico del receptor, litera de cuarentena, excepción living-mass. La señal es barata. Detener masa no.",
-          "terminal": "MESA DE DERECHOS DE CAPTURA DEL RECEPTOR // Ruta entrante Aegir acepta claim packets y recibos shielded freight. Living return mass no programada requiere dueño de frenado, receiver custody, litera de cuarentena y catch margin pagado antes de reserva carrier lift.",
-          "audio": "Lo difícil no es salir de la oscuridad. Lo difícil es llegar donde alguien aceptó frenarte.",
-          "in_game_wiki": "El viaje nearlight no volvió inocua la distancia. La volvió contable. Las naves humanas cruzan entre estrellas porque las rutas viejas tienen dueños por partes: beam arrays empujan, pellet lanes alimentan, fusion stages gastan, los escudos pierden masa, los radiadores tiran calor, las magsails muerden campos y las receiver stations aceptan atrapar lo que envía la ruta.\n\nEse último verbo es el feo. Para atrapar un cuerpo, el receptor debe aceptar deuda de frenado antes de que llegue el cuerpo. Debe reservar margen térmico, volumen de cuarentena, custody médica, exposición legal y derecho a decir quién paga si la parada sale mal. Un signal packet no necesita casi nada de eso. Un evidence hash sellado puede subir a un relay. Una caja de carga puede viajar en un horario escrito años antes. Un operador vivo en una claim oceánica rota es otra clase de masa.\n\nPor eso HECTON-8 puede sentirse conectado y abandonado a la vez. Black Keel puede oírte por una relay window. Un broker puede tasar tu sample. Un public ledger puede registrar que existió tu distress hash. Ninguno de esos hechos crea braking rights para tu cuerpo. El rescate solo se vuelve posible cuando signal, custody, receiver liability, cuarentena, tiempo del cielo, lift mass y hardware real se alinean. Hasta entonces, el sistema no está callado. Peor: es legible.",
-          "external_site": "Las nearlight ships se mueven por route stacks con dueño. Pueden llevar probes, freight y contracts por la oscuridad, pero un cuerpo vivo varado aún necesita braking rights, receiver custody y catch margin pagado.",
-          "external_site_article": "El lore espacial de HECTON-8 funciona porque la civilización es capaz y sigue limitada. No hay rescate FTL oculto tras la trama, ni aislamiento primitivo. La humanidad puede empujar masa por near-light routes, pero cada kilogramo cruza infraestructura de alguien.\n\nUn registro de deuda de frenado lo vuelve visible. Registra quién posee el camino de frenado, quién absorbe calor, quién acepta cuarentena, quién recibe la carga y quién paga si la parada daña nave, estación, carga o cuerpo. Una señal puede ser barata porque no pide al receptor atrapar a una persona. La evidencia puede moverse antes del rescate porque la prueba no respira.\n\nPara el jugador, la distancia se vuelve presión en lugar de dato. La pregunta no es si existe la civilización. Existe. La pregunta es si el jugador puede encajar su cuerpo, pruebas, muestras y deuda en una ruta ya ocupada moviendo cosas que las corporaciones valoraron primero.",
-          "field_note": "Si el recibo dice catch rights, mira si atrapa personas o solo beneficio."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Empfänger-Bremsschuld-Ledger",
-          "scanner": "BREMSBELEG // Narbige Legierungskarte, Barnard-Stempel unter Salz. Posten: magsail spool wear, pellet-lane loss, Empfänger-Hitzemarge, Quarantänekoje, living-mass exception. Signal ist billig. Masse stoppen nicht.",
-          "terminal": "EMPFÄNGER-CATCH-RIGHTS-DESK // Aegir-Inboundroute akzeptiert claim packets und shielded freight receipts. Ungeplante living return mass braucht Bremsbesitzer, receiver custody, Quarantänekoje und bezahlten catch margin vor carrier lift reservation.",
-          "audio": "Das Harte ist nicht, die Dunkelheit zu verlassen. Das Harte ist, dort anzukommen, wo jemand zugestimmt hat, dich abzubremsen.",
-          "in_game_wiki": "Nearlight-Reisen machten Entfernung nicht harmlos. Sie machten Entfernung abrechenbar. Menschliche Schiffe kreuzen zwischen Sternen, weil alte Routen in Teilen besessen werden: beam arrays drücken, pellet lanes füttern, fusion stages verbrauchen, Schilde verlieren Masse, Radiatoren werfen Hitze ab, magsails beißen in Felder, und receiver stations stimmen zu, das zu fangen, was die Route schickt.\n\nDieses letzte Verb ist das hässliche. Um einen Körper zu fangen, muss ein Empfänger Bremsschuld akzeptieren, bevor der Körper ankommt. Er muss Hitzemarge, Quarantänevolumen, medizinische custody, rechtliche Exposition und das Recht reservieren, zu sagen, wer zahlt, wenn der Stopp misslingt. Ein signal packet braucht das meiste davon nicht. Ein versiegelter evidence hash kann über ein relay reisen. Eine Frachtkiste kann einem Jahre vorher geschriebenen Plan folgen. Ein lebender Operator in einem gebrochenen Ozean-claim ist eine andere Art Masse.\n\nDarum kann HECTON-8 verbunden und verlassen zugleich wirken. Black Keel kann dich durch ein relay window hören. Ein broker kann dein sample bepreisen. Ein public ledger kann festhalten, dass dein distress hash existierte. Keiner dieser Fakten erzeugt braking rights für deinen Körper. Rettung wird erst möglich, wenn signal, custody, receiver liability, Quarantäne, Himmelstiming, lift mass und echte hardware zusammenpassen. Bis dahin schweigt das System nicht. Schlimmer: Es ist lesbar.",
-          "external_site": "Nearlight ships bewegen sich durch besessene route stacks. Sie können probes, freight und contracts durch die Dunkelheit tragen, aber ein gestrandeter lebender Körper braucht weiter braking rights, receiver custody und bezahlten catch margin.",
-          "external_site_article": "HECTON-8s Weltraumlore funktioniert, weil die Zivilisation fähig und trotzdem begrenzt ist. Es gibt keine hinter dem Plot versteckte FTL-Rettung, aber auch keine primitive Isolation. Die Menschheit kann Masse durch near-light routes drücken, doch jedes Kilogramm überquert Infrastruktur, die jemand besitzt.\n\nEin Bremsschuld-Ledger macht das sichtbar. Es verzeichnet, wem der Verzögerungspfad gehört, wer Hitze aufnimmt, wer Quarantäne akzeptiert, wer Fracht empfängt und wer zahlt, wenn der Stopp Schiff, Station, Fracht oder Körper beschädigt. Ein Signal kann billig sein, weil es keinen Empfänger bittet, eine Person zu fangen. Beweise können vor Rettung reisen, weil Beweise nicht atmen.\n\nFür den Spieler wird Entfernung zu Druck statt Trivia. Die Frage ist nicht, ob Zivilisation existiert. Das tut sie. Die Frage ist, ob der Spieler Körper, Beweise, Proben und Schuld in eine Route pressen kann, die bereits Dinge bewegt, um die sich Konzerne zuerst kümmerten.",
-          "field_note": "Wenn der Beleg catch rights sagt, prüfe, ob er Menschen fängt oder nur Profit."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr długu hamowania odbiorcy",
-          "scanner": "POKWITOWANIE HAMOWANIA // Wżarta karta stopowa, znak Barnard pod solą. Pozycje: zużycie magsail spool, strata pellet-lane, margines cieplny odbiorcy, koja kwarantanny, wyjątek living-mass. Sygnał jest tani. Zatrzymanie masy nie.",
-          "terminal": "PULPIT PRAW PRZECHWYTU ODBIORCY // Trasa przychodząca Aegir przyjmuje claim packets i shielded freight receipts. Nieplanowana living return mass wymaga właściciela hamowania, receiver custody, koi kwarantanny i opłaconego catch margin przed rezerwacją carrier lift.",
-          "audio": "Trudne nie jest opuszczenie ciemności. Trudne jest dotarcie tam, gdzie ktoś zgodził się cię spowolnić.",
-          "in_game_wiki": "Podróż nearlight nie uczyniła odległości nieszkodliwą. Uczyniła ją rozliczalną. Ludzkie statki przechodzą między gwiazdami, bo stare trasy mają właścicieli w częściach: beam arrays pchają, pellet lanes karmią, fusion stages wydają, osłony tracą masę, radiatory wyrzucają ciepło, magsails wgryzają się w pola, a receiver stations zgadzają się złapać to, co trasa wysyła.\n\nTen ostatni czasownik jest brudny. Aby złapać ciało, odbiorca musi przyjąć dług hamowania, zanim ciało dotrze. Musi zarezerwować margines ciepła, objętość kwarantanny, medyczną custody, ekspozycję prawną i prawo do wskazania, kto płaci, gdy zatrzymanie pójdzie źle. Signal packet nie potrzebuje większości tego. Zapieczętowany evidence hash może jechać relayem. Skrzynia frachtu może jechać według planu spisanego lata wcześniej. Żywy operator w pękniętym oceanicznym claim to inny rodzaj masy.\n\nDlatego HECTON-8 może wydawać się połączony i porzucony jednocześnie. Black Keel słyszy cię przez relay window. Broker może wycenić sample. Public ledger może zapisać, że distress hash istniał. Żaden z tych faktów nie tworzy braking rights dla twojego ciała. Ratunek staje się możliwy dopiero, gdy signal, custody, receiver liability, kwarantanna, timing nieba, lift mass i prawdziwy hardware ustawią się razem. Do tego czasu system nie milczy. Jest gorzej: jest czytelny.",
-          "external_site": "Nearlight ships poruszają się przez posiadane route stacks. Mogą nieść probes, freight i contracts przez ciemność, ale uwięzione żywe ciało nadal potrzebuje braking rights, receiver custody i opłaconego catch margin.",
-          "external_site_article": "Kosmiczny lore HECTON-8 działa, bo cywilizacja jest zdolna i nadal ograniczona. Za fabułą nie ma ukrytego ratunku FTL, ale nie ma też prymitywnej izolacji. Ludzkość może pchać masę przez near-light routes, lecz każdy kilogram przechodzi przez czyjąś infrastrukturę.\n\nRejestr długu hamowania czyni to widocznym. Zapisuje, kto posiada ścieżkę spowalniania, kto pochłania ciepło, kto akceptuje kwarantannę, kto odbiera ładunek i kto płaci, jeśli zatrzymanie uszkodzi statek, stację, ładunek lub ciało. Sygnał może być tani, bo nie prosi odbiorcy o złapanie człowieka. Dowód może ruszyć przed ratunkiem, bo dowód nie oddycha.\n\nDla gracza odległość staje się presją zamiast ciekawostką. Pytanie nie brzmi, czy cywilizacja istnieje. Istnieje. Pytanie brzmi, czy gracz zdoła wcisnąć swoje ciało, dowody, próbki i dług w trasę już zajętą przez rzeczy, o które korporacje dbały jako pierwsze.",
-          "field_note": "Jeśli pokwitowanie mówi catch rights, sprawdź, czy łapie ludzi, czy tylko zysk."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал гальмівного боргу приймача",
-          "scanner": "КВИТАНЦІЯ ГАЛЬМУВАННЯ // Поїдена сплавна карта, штамп Barnard під сіллю. Рядки: знос magsail spool, втрата pellet-lane, тепловий запас приймача, карантинна койка, виняток living-mass. Сигнал дешевий. Зупинити масу ні.",
-          "terminal": "СТІЛ ПРАВ ЗАХОПЛЕННЯ ПРИЙМАЧА // Вхідний маршрут Aegir приймає claim packets і shielded freight receipts. Незапланована living return mass потребує власника гальмування, receiver custody, карантинної койки й оплаченого catch margin до резерву carrier lift.",
-          "audio": "Важко не вийти з темряви. Важко прибути туди, де хтось погодився тебе сповільнити.",
-          "in_game_wiki": "Nearlight-подорожі не зробили відстань нешкідливою. Вони зробили її підзвітною. Людські кораблі ходять між зорями тому, що старі маршрути належать частинами: beam arrays штовхають, pellet lanes годують, fusion stages витрачають, щити втрачають масу, радіатори скидають тепло, magsails вгризаються в поля, а receiver stations погоджуються ловити те, що надсилає маршрут.\n\nОстаннє дієслово найбридкіше. Щоб зловити тіло, приймач має прийняти гальмівний борг до прибуття тіла. Він мусить зарезервувати тепловий запас, карантинний об'єм, медичну custody, юридичний ризик і право сказати, хто платить, якщо зупинка піде погано. Signal packet майже нічого з цього не потребує. Запечатаний evidence hash може їхати relay. Вантажна скриня може їхати за розкладом, написаним роками раніше. Живий оператор у зламаному океанському claim це інша маса.\n\nТому HECTON-8 може бути зв'язаним і покинутим одночасно. Black Keel може чути тебе через relay window. Broker може оцінити sample. Public ledger може записати, що distress hash існував. Жоден із цих фактів не створює braking rights для твого тіла. Порятунок стає можливим лише коли signal, custody, receiver liability, карантин, небесний таймінг, lift mass і реальне hardware сходяться. До того система не мовчить. Гірше: вона читабельна.",
-          "external_site": "Nearlight ships рухаються крізь route stacks, які комусь належать. Вони несуть probes, freight і contracts через темряву, але застрягле живе тіло все ще потребує braking rights, receiver custody і оплаченого catch margin.",
-          "external_site_article": "Космічний лор HECTON-8 працює тому, що цивілізація здатна і все одно обмежена. За сюжетом немає прихованого FTL-порятунку, але немає й примітивної ізоляції. Людство може штовхати масу через near-light routes, але кожен кілограм проходить інфраструктурою, якою хтось володіє.\n\nЖурнал гальмівного боргу робить це видимим. Він записує, кому належить шлях сповільнення, хто поглинає тепло, хто приймає карантин, хто отримує вантаж і хто платить, якщо зупинка пошкодить корабель, станцію, вантаж або тіло. Сигнал може бути дешевим, бо не просить приймач ловити людину. Доказ може рухатися раніше за порятунок, бо доказ не дихає.\n\nДля гравця відстань стає тиском, а не довідкою. Питання не в тому, чи існує цивілізація. Існує. Питання в тому, чи зможе гравець вписати своє тіло, докази, зразки й борг у маршрут, який уже зайнятий речами, про які корпорації дбали першими.",
-          "field_note": "Якщо квитанція каже catch rights, перевір, чи вона ловить людей, чи лише прибуток."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل دين الكبح عند المستقبل",
-          "scanner": "إيصال كبح // بطاقة سبيكة منقورة، ختم Barnard تحت الملح. بنود: تآكل magsail spool، خسارة pellet-lane، هامش حرارة المستقبل، سرير حجر، استثناء living-mass. الإشارة رخيصة. إيقاف الكتلة ليس رخيصا.",
-          "terminal": "مكتب حقوق الالتقاط للمستقبل // طريق Aegir الوارد يقبل claim packets وإيصالات shielded freight. living return mass غير المجدولة تتطلب مالك كبح وreceiver custody وسرير حجر وcatch margin مدفوعا قبل حجز carrier lift.",
-          "audio": "الصعب ليس مغادرة الظلام. الصعب هو الوصول إلى مكان وافق فيه أحد على إبطائك.",
-          "in_game_wiki": "السفر nearlight لم يجعل المسافة آمنة. جعلها قابلة للمحاسبة. تعبر سفن البشر بين النجوم لأن الطرق القديمة مملوكة على أجزاء: beam arrays تدفع، pellet lanes تغذي، fusion stages تنفق، الدروع تفقد كتلة، المشعات ترمي الحرارة، magsails تعض في الحقول، وreceiver stations توافق على التقاط ما يرسله الطريق.\n\nذلك الفعل الأخير هو القبيح. لالتقاط جسد، يجب على المستقبل قبول دين الكبح قبل وصول الجسد. يجب أن يحجز هامش حرارة، وحجم حجر، وcustody طبية، وتعرضا قانونيا، وحق تقرير من يدفع إذا فشل التوقف. signal packet لا يحتاج معظم ذلك. evidence hash مختوم يستطيع ركوب relay. صندوق freight يستطيع ركوب جدول كتب قبل سنوات. مشغل حي في claim محيطي مكسور هو نوع آخر من الكتلة.\n\nلهذا يمكن أن يبدو HECTON-8 متصلا ومهجورا في الوقت نفسه. يستطيع Black Keel سماعك عبر relay window. يستطيع broker تسعير sample. يستطيع public ledger تسجيل أن distress hash كان موجودا. لا يخلق أي من ذلك braking rights لجسدك. يصبح الإنقاذ ممكنا فقط عندما تتوافق signal وcustody وreceiver liability والحجر وتوقيت السماء وlift mass وhardware الفعلي. حتى ذلك الحين، النظام ليس صامتا. الأسوأ أنه مقروء.",
-          "external_site": "تتحرك nearlight ships عبر route stacks مملوكة. يمكنها حمل probes وfreight وcontracts عبر الظلام، لكن الجسد الحي العالق ما زال يحتاج braking rights وreceiver custody وcatch margin مدفوعا.",
-          "external_site_article": "يعمل لور الفضاء في HECTON-8 لأن الحضارة قادرة وما زالت مقيدة. لا يوجد إنقاذ FTL مخفي خلف الحبكة، ولا توجد عزلة بدائية أيضا. تستطيع البشرية دفع الكتلة عبر near-light routes، لكن كل كيلوغرام يعبر بنية تحتية يملكها أحد.\n\nسجل دين الكبح يجعل ذلك مرئيا. يسجل من يملك مسار الإبطاء، ومن يمتص الحرارة، ومن يقبل الحجر، ومن يستلم الحمولة، ومن يدفع إذا أضر التوقف بالسفينة أو المحطة أو الحمولة أو الجسد. يمكن أن تكون الإشارة رخيصة لأنها لا تطلب من المستقبل التقاط شخص. يمكن للدليل أن يتحرك قبل الإنقاذ لأن الدليل لا يتنفس.\n\nبالنسبة للاعب، تتحول المسافة إلى ضغط لا إلى معلومة جانبية. السؤال ليس هل توجد حضارة. إنها موجودة. السؤال هل يستطيع اللاعب إدخال جسده وأدلته وعيناته ودينه في طريق مشغول أصلا بنقل أشياء اهتمت بها الشركات أولا.",
-          "field_note": "إذا قال الإيصال catch rights، تحقق هل يلتقط البشر أم الربح فقط."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Buku Utang Pengereman Penerima",
-          "scanner": "TANDA TERIMA PENGEREMAN // Kartu paduan bopeng, cap Barnard di bawah garam. Item: aus magsail spool, rugi pellet-lane, margin panas penerima, ranjang karantina, pengecualian living-mass. Sinyal murah. Menghentikan massa tidak.",
-          "terminal": "MEJA HAK TANGKAP PENERIMA // Rute masuk Aegir menerima claim packets dan shielded freight receipts. Living return mass tak terjadwal membutuhkan pemilik pengereman, receiver custody, ranjang karantina, dan catch margin berbayar sebelum reservasi carrier lift.",
-          "audio": "Yang sulit bukan meninggalkan gelap. Yang sulit adalah tiba di tempat seseorang setuju memperlambatmu.",
-          "in_game_wiki": "Perjalanan nearlight tidak membuat jarak aman. Ia membuat jarak bisa ditagih. Kapal manusia melintas antar bintang karena rute tua dimiliki per bagian: beam arrays mendorong, pellet lanes memberi makan, fusion stages membakar, perisai kehilangan massa, radiator membuang panas, magsails menggigit medan, dan receiver stations setuju menangkap apa yang dikirim rute.\n\nKata kerja terakhir itu yang buruk. Untuk menangkap tubuh, penerima harus menerima utang pengereman sebelum tubuh tiba. Ia harus menyisihkan margin panas, volume karantina, custody medis, paparan hukum, dan hak menentukan siapa membayar jika berhenti berjalan buruk. Signal packet tidak butuh sebagian besar itu. Evidence hash tersegel bisa naik relay. Peti freight bisa naik jadwal yang ditulis bertahun-tahun sebelumnya. Operator hidup dalam claim samudra rusak adalah jenis massa lain.\n\nItu sebabnya HECTON-8 bisa terasa tersambung dan ditinggalkan sekaligus. Black Keel bisa mendengarmu melalui relay window. Broker bisa menilai sample. Public ledger bisa mencatat bahwa distress hash milikmu pernah ada. Tidak satu pun fakta itu menciptakan braking rights untuk tubuhmu. Penyelamatan hanya mungkin ketika signal, custody, receiver liability, karantina, waktu langit, lift mass, dan hardware nyata sejajar. Sampai saat itu, sistem tidak diam. Lebih buruk: sistem bisa dibaca.",
-          "external_site": "Nearlight ships bergerak lewat route stacks yang dimiliki. Mereka bisa membawa probes, freight, dan contracts melintasi gelap, tetapi tubuh hidup yang terdampar tetap membutuhkan braking rights, receiver custody, dan catch margin berbayar.",
-          "external_site_article": "Lore ruang angkasa HECTON-8 bekerja karena peradaban mampu tetapi tetap dibatasi. Tidak ada penyelamatan FTL tersembunyi di balik plot, dan tidak ada isolasi primitif juga. Manusia bisa mendorong massa lewat near-light routes, tetapi setiap kilogram melintasi infrastruktur milik seseorang.\n\nBuku utang pengereman membuat hal itu terlihat. Ia mencatat siapa memiliki jalur perlambatan, siapa menyerap panas, siapa menerima karantina, siapa menerima kargo, dan siapa membayar jika berhenti merusak kapal, stasiun, kargo, atau tubuh. Sinyal bisa murah karena tidak meminta penerima menangkap manusia. Bukti bisa bergerak sebelum penyelamatan karena bukti tidak bernapas.\n\nBagi pemain, jarak menjadi tekanan, bukan trivia. Pertanyaannya bukan apakah peradaban ada. Ada. Pertanyaannya apakah pemain bisa memasukkan tubuh, bukti, sampel, dan utangnya ke rute yang sudah sibuk memindahkan hal-hal yang lebih dulu dipedulikan korporasi.",
-          "field_note": "Jika tanda terima bilang catch rights, periksa apakah ia menangkap manusia atau hanya untung."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "수신자 제동 부채 장부",
-          "scanner": "제동 영수증 // 패인 합금 카드, 소금 아래 Barnard 도장. 항목: magsail spool 마모, pellet-lane 손실, 수신자 열 여유, 격리 침상, living-mass 예외. 신호는 싸다. 질량을 멈추는 것은 아니다.",
-          "terminal": "수신자 포획권 데스크 // Aegir 인바운드 항로는 claim packets와 shielded freight receipts를 수락한다. 예정 없는 living return mass는 carrier lift 예약 전 제동 소유자, receiver custody, 격리 침상, 유료 catch margin을 요구한다.",
-          "audio": "어둠을 떠나는 것이 어려운 게 아니다. 누군가 네 감속에 동의한 곳에 도착하는 것이 어렵다.",
-          "in_game_wiki": "Nearlight 항해는 거리를 무해하게 만들지 않았다. 거리를 회계 가능하게 만들었다. 인간 함선이 별 사이를 건너는 것은 오래된 항로가 조각별로 소유되기 때문이다. beam arrays가 밀고, pellet lanes가 먹이고, fusion stages가 쓰고, 방패가 질량을 잃고, 라디에이터가 열을 버리고, magsails가 장을 물고, receiver stations가 항로가 보내는 것을 붙잡겠다고 동의한다.\n\n마지막 동사가 더럽다. 몸을 붙잡으려면 수신자는 몸이 도착하기 전 제동 부채를 받아들여야 한다. 열 여유, 격리 부피, 의료 custody, 법적 노출, 정지가 잘못될 때 누가 지불하는지를 예약해야 한다. signal packet은 그 대부분이 필요 없다. 봉인된 evidence hash는 relay를 탈 수 있다. 화물 상자는 몇 년 전에 쓰인 일정에 탈 수 있다. 부서진 바다 claim 속 살아 있는 operator는 다른 종류의 질량이다.\n\n그래서 HECTON-8은 연결되어 있으면서도 버려진 것처럼 느껴진다. Black Keel은 relay window 너머로 너를 들을 수 있다. broker는 sample 가격을 매길 수 있다. public ledger는 네 distress hash가 존재했다고 기록할 수 있다. 그 어떤 사실도 네 몸을 위한 braking rights를 만들지 않는다. 구조는 signal, custody, receiver liability, 격리, 하늘 타이밍, lift mass, 실제 hardware가 맞을 때만 가능해진다. 그때까지 시스템은 침묵하지 않는다. 더 나쁘게, 읽힌다.",
-          "external_site": "Nearlight ships는 소유된 route stacks를 통과한다. probes, freight, contracts를 어둠 너머로 실을 수 있지만 고립된 산 몸은 여전히 braking rights, receiver custody, 유료 catch margin이 필요하다.",
-          "external_site_article": "HECTON-8의 우주 로어는 문명이 유능하면서도 제한되어 있기 때문에 작동한다. 플롯 뒤에 숨은 FTL 구조는 없고, 원시적 고립도 아니다. 인류는 near-light routes를 통해 질량을 밀 수 있지만 모든 킬로그램은 누군가의 인프라를 지난다.\n\n제동 부채 장부는 그것을 보이게 한다. 누가 감속 경로를 소유하는지, 누가 열을 흡수하는지, 누가 격리를 받아들이는지, 누가 화물을 받는지, 정지가 함선, 정거장, 화물, 몸을 손상시키면 누가 지불하는지 기록한다. 신호는 수신자에게 사람을 붙잡으라고 요구하지 않기 때문에 쌀 수 있다. 증거는 숨을 쉬지 않기 때문에 구조보다 먼저 움직일 수 있다.\n\n플레이어에게 거리는 상식이 아니라 압력이 된다. 질문은 문명이 존재하는가가 아니다. 존재한다. 질문은 플레이어가 자신의 몸, 증거, 샘플, 부채를 기업들이 먼저 신경 쓴 것들을 옮기느라 이미 바쁜 항로에 끼워 넣을 수 있는가다.",
-          "field_note": "영수증에 catch rights라고 쓰여 있으면, 그것이 사람을 붙잡는지 이익만 붙잡는지 확인하라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן חוב בלימה של מקלט",
-          "scanner": "קבלת בלימה // כרטיס סגסוגת מחורר, חותמת Barnard תחת מלח. שורות: שחיקת magsail spool, אובדן pellet-lane, מרווח חום מקלט, מיטת הסגר, חריג living-mass. אות זול. עצירת מסה לא.",
-          "terminal": "דלפק זכויות תפיסה של מקלט // נתיב נכנס Aegir מקבל claim packets וקבלות shielded freight. living return mass לא מתוכננת דורשת בעל בלימה, receiver custody, מיטת הסגר ו-catch margin בתשלום לפני הזמנת carrier lift.",
-          "audio": "הקשה אינו לעזוב את החושך. הקשה הוא להגיע למקום שבו מישהו הסכים להאט אותך.",
-          "in_game_wiki": "מסע nearlight לא הפך מרחק לבטוח. הוא הפך מרחק לחשבונאי. ספינות אדם חוצות בין כוכבים כי נתיבים ישנים בבעלות בחלקים: beam arrays דוחפים, pellet lanes מזינים, fusion stages מוציאים, מגנים מאבדים מסה, מקרנים זורקים חום, magsails נושכים שדות, ו-receiver stations מסכימות לתפוס את מה שהנתיב שולח.\n\nהפועל האחרון הוא המכוער. כדי לתפוס גוף, המקלט חייב לקבל חוב בלימה לפני שהגוף מגיע. עליו לשמור מרווח חום, נפח הסגר, custody רפואית, חשיפה משפטית וזכות לקבוע מי משלם כשהעצירה משתבשת. signal packet לא צריך את רוב זה. evidence hash חתום יכול לרכוב על relay. ארגז freight יכול לרכוב על לוח זמנים שנכתב שנים קודם. operator חי בתוך claim אוקייני שבור הוא סוג אחר של מסה.\n\nלכן HECTON-8 יכול להרגיש מחובר ונטוש בו זמנית. Black Keel יכול לשמוע אותך דרך relay window. broker יכול לתמחר sample. public ledger יכול לרשום ש-distress hash שלך התקיים. אף עובדה כזו לא יוצרת braking rights לגוף שלך. חילוץ נעשה אפשרי רק כאשר signal, custody, receiver liability, הסגר, תזמון שמים, lift mass ו-hardware אמיתי מסתדרים. עד אז המערכת אינה שותקת. גרוע יותר: היא קריאה.",
-          "external_site": "Nearlight ships נעות דרך route stacks בבעלות. הן יכולות לשאת probes, freight ו-contracts דרך החושך, אבל גוף חי תקוע עדיין צריך braking rights, receiver custody ו-catch margin בתשלום.",
-          "external_site_article": "לור החלל של HECTON-8 עובד משום שהציוויליזציה מסוגלת ועדיין מוגבלת. אין חילוץ FTL מוסתר מאחורי העלילה, ואין גם בידוד פרימיטיבי. האנושות יכולה לדחוף מסה דרך near-light routes, אבל כל קילוגרם חוצה תשתית שמישהו מחזיק.\n\nיומן חוב בלימה הופך זאת לנראה. הוא רושם מי מחזיק את מסלול ההאטה, מי סופג חום, מי מקבל הסגר, מי מקבל את המטען ומי משלם אם העצירה פוגעת בספינה, בתחנה, במטען או בגוף. אות יכול להיות זול כי הוא לא מבקש ממקלט לתפוס אדם. ראיה יכולה לנוע לפני חילוץ כי ראיה אינה נושמת.\n\nעבור השחקן, מרחק הופך ללחץ במקום לפרט רקע. השאלה אינה אם קיימת ציוויליזציה. היא קיימת. השאלה היא אם השחקן יכול לדחוס את גופו, ראיותיו, דגימותיו וחובו אל נתיב שכבר עסוק בהזזת דברים שתאגידים דאגו להם קודם.",
-          "field_note": "אם הקבלה אומרת catch rights, בדוק אם היא תופסת אנשים או רק רווח."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Dívida de Frenagem do Receptor",
-          "scanner": "RECIBO DE FRENAGEM // Cartão de liga corroído, selo Barnard sob sal. Linhas: desgaste magsail spool, perda pellet-lane, margem térmica do receptor, leito de quarentena, exceção living-mass. Sinal é barato. Parar massa não.",
-          "terminal": "MESA DE DIREITOS DE CAPTURA DO RECEPTOR // Rota inbound Aegir aceita claim packets e recibos shielded freight. Living return mass não programada exige dono de frenagem, receiver custody, leito de quarentena e catch margin pago antes de reserva carrier lift.",
-          "audio": "O difícil não é sair do escuro. O difícil é chegar onde alguém aceitou te desacelerar.",
-          "in_game_wiki": "Viagem nearlight não tornou distância inofensiva. Tornou distância contável. Naves humanas cruzam entre estrelas porque rotas antigas são possuídas em partes: beam arrays empurram, pellet lanes alimentam, fusion stages gastam, escudos perdem massa, radiadores despejam calor, magsails mordem campos, e receiver stations aceitam capturar o que a rota envia.\n\nEsse último verbo é o sujo. Para capturar um corpo, o receptor precisa aceitar dívida de frenagem antes de o corpo chegar. Precisa reservar margem térmica, volume de quarentena, custody médica, exposição legal e o direito de dizer quem paga quando a parada dá errado. Um signal packet não precisa da maior parte disso. Um evidence hash selado pode pegar um relay. Uma caixa de freight pode seguir um cronograma escrito anos antes. Um operador vivo numa claim oceânica quebrada é outro tipo de massa.\n\nÉ por isso que HECTON-8 pode parecer conectado e abandonado ao mesmo tempo. Black Keel pode te ouvir por uma relay window. Um broker pode precificar seu sample. Um public ledger pode registrar que seu distress hash existiu. Nenhum desses fatos cria braking rights para seu corpo. Resgate só se torna possível quando signal, custody, receiver liability, quarentena, timing do céu, lift mass e hardware real se alinham. Até lá, o sistema não está em silêncio. Pior: é legível.",
-          "external_site": "Nearlight ships se movem por route stacks com dono. Elas podem levar probes, freight e contracts pela escuridão, mas um corpo vivo preso ainda precisa de braking rights, receiver custody e catch margin pago.",
-          "external_site_article": "O lore espacial de HECTON-8 funciona porque a civilização é capaz e ainda limitada. Não há resgate FTL escondido atrás da trama, nem isolamento primitivo. A humanidade pode empurrar massa por near-light routes, mas cada quilo atravessa infraestrutura que alguém possui.\n\nUm registro de dívida de frenagem torna isso visível. Ele registra quem possui o caminho de desaceleração, quem absorve calor, quem aceita quarentena, quem recebe a carga e quem paga se a parada danificar nave, estação, carga ou corpo. Um sinal pode ser barato porque não pede ao receptor que capture uma pessoa. Prova pode se mover antes do resgate porque prova não respira.\n\nPara o jogador, distância vira pressão em vez de curiosidade. A pergunta não é se a civilização existe. Existe. A pergunta é se o jogador consegue encaixar seu corpo, provas, amostras e dívida numa rota já ocupada movendo coisas com que corporações se importaram primeiro.",
-          "field_note": "Se o recibo diz catch rights, veja se ele captura pessoas ou só lucro."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Receiver Remschuldlog",
-          "scanner": "REMBON // Aangevreten legeringskaart, Barnard-stempel onder zout. Regels: magsail spool-slijtage, pellet-lane-verlies, receiver-hitte marge, quarantainebed, living-mass-uitzondering. Signaal is goedkoop. Massa stoppen niet.",
-          "terminal": "RECEIVER CATCH-RIGHTS-DESK // Aegir inbound route accepteert claim packets en shielded freight receipts. Ongeplande living return mass vereist braking owner, receiver custody, quarantainebed en betaalde catch margin vóór carrier lift reservation.",
-          "audio": "Het moeilijke is niet het donker verlaten. Het moeilijke is aankomen waar iemand instemde je af te remmen.",
-          "in_game_wiki": "Nearlight-reizen maakte afstand niet onschadelijk. Het maakte afstand boekhoudbaar. Menselijke schepen kruisen tussen sterren omdat oude routes in stukken bezit zijn: beam arrays duwen, pellet lanes voeren, fusion stages verbruiken, schilden verliezen massa, radiatoren dumpen warmte, magsails bijten in velden, en receiver stations stemmen ermee in te vangen wat de route stuurt.\n\nDat laatste werkwoord is het vuile. Om een lichaam te vangen moet een receiver remschuld accepteren voordat het lichaam arriveert. Hij moet hittemarge, quarantainevolume, medische custody, juridische blootstelling en het recht reserveren om te zeggen wie betaalt als de stop misgaat. Een signal packet heeft het meeste daarvan niet nodig. Een verzegelde evidence hash kan een relay nemen. Een freightkist kan een schema volgen dat jaren eerder is geschreven. Een levende operator in een gebroken oceaanclaim is een ander soort massa.\n\nDaarom kan HECTON-8 tegelijk verbonden en verlaten voelen. Black Keel kan je horen door een relay window. Een broker kan je sample prijzen. Een public ledger kan noteren dat je distress hash bestond. Geen van die feiten maakt braking rights voor je lichaam. Redding wordt pas mogelijk wanneer signal, custody, receiver liability, quarantaine, hemeltiming, lift mass en echte hardware op één lijn staan. Tot dan is het systeem niet stil. Erger: het is leesbaar.",
-          "external_site": "Nearlight ships bewegen door route stacks met eigenaars. Ze kunnen probes, freight en contracts door het donker dragen, maar een gestrand levend lichaam heeft nog steeds braking rights, receiver custody en betaalde catch margin nodig.",
-          "external_site_article": "De ruimtelore van HECTON-8 werkt omdat de beschaving capabel is en toch begrensd. Er zit geen FTL-redding achter het plot verstopt, en er is ook geen primitieve isolatie. De mensheid kan massa door near-light routes duwen, maar elke kilo kruist infrastructuur die iemand bezit.\n\nEen remschuldlog maakt dat zichtbaar. Het noteert wie het vertragingspad bezit, wie warmte absorbeert, wie quarantaine accepteert, wie cargo ontvangt en wie betaalt als de stop schip, station, cargo of lichaam beschadigt. Een signaal kan goedkoop zijn omdat het een receiver niet vraagt een mens te vangen. Bewijs kan vóór redding bewegen omdat bewijs niet ademt.\n\nVoor de speler verandert afstand in druk in plaats van trivia. De vraag is niet of beschaving bestaat. Die bestaat. De vraag is of de speler lichaam, bewijs, samples en schuld kan persen in een route die al bezig is dingen te verplaatsen waar bedrijven eerst om gaven.",
-          "field_note": "Als de bon catch rights zegt, kijk dan of hij mensen vangt of alleen winst."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.receiver_braking_debt_ledger",
+    "secondary": [
+     "unlock.first_braking_rights_receipt",
+     "unlock.first_signal_vs_mass_route_split",
+     "unlock.first_prepared_freight_not_rescue"
+    ],
+    "poi_tags": [
+     "poi.receiver_braking_receipt",
+     "poi.magsail_spool_account",
+     "poi.pellet_lane_loss_table",
+     "poi.black_keel_catch_rights_panel"
+    ],
+    "biome_tags": [
+     "biome.claim_admin",
+     "biome.carrier_link",
+     "biome.ascent_stack",
+     "biome.old_colony_ruins"
+    ],
+    "first_20_boundary": "Explains the first signal/rescue split without FTL or magic: messages can move through relay custody, while heavy living mass needs owned braking, receiver liability and a scheduled catch window."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Braking Debt Receipt Scanner",
+     "terminal": "Receiver Catch Rights Desk",
+     "audio": "Old Freight Pilot Rule",
+     "in_game_wiki": "PDA Nearlight Braking Primer",
+     "external_site": "Public Site Braking Debt Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_nearlight_route_or_no_instant_rescue_question",
+    "truth_payload": "Nearlight travel industrialized distance without defeating it: a signal or claim can route cheaply, but certified body mass needs owned braking, receiver custody, heat margin, quarantine handling and a paid catch window.",
+    "player_question": "If humans have near-light ships, why is one stranded body still hard to recover?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Receiver Braking Debt Ledger",
+     "scanner": "BRAKING RECEIPT // Pitted alloy card, Barnard stamp under salt. Line items: magsail spool wear, pellet-lane loss, receiver heat margin, quarantine berth, living-mass exception. Signal is cheap. Stopping mass is not.",
+     "terminal": "RECEIVER CATCH RIGHTS DESK // Aegir inbound route accepts claim packets and shielded freight receipts. Unscheduled living return mass requires braking owner, receiver custody, quarantine berth and paid catch margin before carrier lift reservation.",
+     "audio": "The hard part is not leaving the dark. The hard part is arriving where somebody agreed to slow you down.",
+     "in_game_wiki": "Nearlight travel did not make distance harmless. It made distance accountable. Human ships cross between stars because old routes are owned in pieces: beam arrays push, pellet lanes feed, fusion stages spend, shields lose mass, radiators dump heat, magsails bite into fields, and receiver stations agree to catch what the route sends.\n\nThat last verb is the ugly one. To catch a body, a receiver must accept braking debt before the body arrives. It must reserve heat margin, quarantine volume, medical custody, legal exposure, and the right to say who pays when the stop goes wrong. A signal packet does not need most of that. A sealed evidence hash can ride a relay. A freight crate can ride a schedule written years earlier. A living operator in a broken ocean claim is a different kind of mass.\n\nThis is why HECTON-8 can feel connected and abandoned at the same time. Black Keel can hear you through a relay window. A broker can price your sample. A public ledger can record that your distress hash existed. None of those facts create braking rights for your body. Rescue becomes possible only when signal, custody, receiver liability, quarantine, sky timing, lift mass and actual hardware line up. Until then, the system is not silent. It is worse: it is legible.",
+     "external_site": "Nearlight ships move through owned route stacks. They can carry probes, freight and contracts across the dark, but a stranded living body still needs braking rights, receiver custody and paid catch margin.",
+     "external_site_article": "HECTON-8's space lore works because the civilization is capable and still constrained. There is no faster-than-light rescue hidden behind the plot, and there is no primitive isolation either. Humanity can push mass through near-light routes, but every kilogram crosses on infrastructure somebody owns.\n\nA braking debt ledger is the document that makes that visible. It records who owns the slowing path, who absorbs heat, who accepts quarantine, who receives the cargo, and who pays if the stop damages ship, station, cargo or body. A signal can be cheap because it does not ask a receiver to catch a person. Evidence can move before rescue because proof is not breath.\n\nFor the player, this turns distance into pressure instead of trivia. The question is not whether civilization exists. It does. The question is whether the player can make their body, evidence, samples and debt fit into a route that is already busy moving things that corporations cared about first.",
+     "field_note": "If the receipt says catch rights, check whether it catches people or just profit."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал тормозного долга приемника",
+     "scanner": "КВИТАНЦИЯ ТОРМОЖЕНИЯ // Изъеденная сплавная карта, штамп Barnard под солью. Строки: износ magsail spool, потери pellet-lane, тепловой запас приемника, карантинная койка, исключение living-mass. Сигнал дешев. Остановить массу нет.",
+     "terminal": "СТОЛ ПРАВ ЗАХВАТА ПРИЕМНИКА // Входящий маршрут Aegir принимает claim packets и квитанции shielded freight. Незапланированная живая return mass требует владельца торможения, receiver custody, карантинной койки и оплаченного catch margin до резерва carrier lift.",
+     "audio": "Трудно не уйти из темноты. Трудно прибыть туда, где кто-то согласился тебя замедлить.",
+     "in_game_wiki": "Nearlight-переходы не сделали расстояние безвредным. Они сделали расстояние подотчетным. Человеческие корабли ходят между звездами потому, что старые маршруты принадлежат по частям: beam arrays толкают, pellet lanes кормят, fusion stages тратят, щиты теряют массу, радиаторы сбрасывают тепло, magsails вгрызаются в поля, а receiver stations соглашаются поймать то, что присылает маршрут.\n\nПоследний глагол самый грязный. Чтобы поймать тело, приемник должен принять тормозной долг до прибытия тела. Он должен зарезервировать тепловой запас, карантинный объем, медицинскую опеку, юридическую экспозицию и право решить, кто платит, если остановка пойдет плохо. Signal packet почти ничего из этого не требует. Запечатанный evidence hash может ехать через relay. Грузовой ящик может ехать по расписанию, написанному за годы. Живой оператор в сломанной океанской претензии это другая масса.\n\nПоэтому HECTON-8 одновременно связан и брошен. Black Keel может слышать тебя через relay window. Брокер может назначить цену образцу. Публичный ledger может записать, что distress hash существовал. Ни один из этих фактов не создает braking rights для твоего тела. Спасение становится возможным только когда signal, custody, receiver liability, карантин, небесный тайминг, lift mass и реальное железо сходятся. До этого система не молчит. Хуже: она читаема.",
+     "external_site": "Nearlight ships движутся по принадлежащим кому-то route stacks. Они несут probes, freight и contracts через темноту, но застрявшему живому телу все еще нужны braking rights, receiver custody и оплаченный catch margin.",
+     "external_site_article": "Космический лор HECTON-8 работает потому, что цивилизация способна и все равно ограничена. За сюжетом не спрятано FTL-спасение, но и примитивной изоляции нет. Люди могут толкать массу по near-light routes, но каждый килограмм идет по инфраструктуре, которой кто-то владеет.\n\nЖурнал тормозного долга делает это видимым. Он записывает, кому принадлежит путь замедления, кто поглощает тепло, кто принимает карантин, кто получает груз и кто платит, если остановка повредит корабль, станцию, груз или тело. Сигнал может быть дешевым, потому что он не просит приемник ловить человека. Доказательство может двигаться раньше спасения, потому что доказательство не дышит.\n\nДля игрока это превращает расстояние в давление, а не в справку. Вопрос не в том, существует ли цивилизация. Существует. Вопрос в том, сможет ли игрок вписать свое тело, доказательства, образцы и долг в маршрут, который уже занят вещами, о которых корпорации заботились раньше.",
+     "field_note": "Если в квитанции написано catch rights, проверь, ловит она людей или только прибыль."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "受信側制動債務台帳",
+     "scanner": "制動レシート // 穴食い合金カード。塩の下にBarnard印。項目: magsail spool摩耗、pellet-lane損失、受信側熱余裕、隔離寝台、living-mass例外。信号は安い。質量を止めるのは安くない。",
+     "terminal": "受信側捕獲権デスク // Aegir着信ルートはclaim packetsとshielded freight receiptsを受理。予定外のliving return massには、carrier lift予約前に制動所有者、receiver custody、隔離寝台、有料catch marginが必要。",
+     "audio": "難しいのは暗闇を出ることではない。誰かが減速に同意した場所へ着くことだ。",
+     "in_game_wiki": "Nearlight航行は距離を無害にしなかった。距離を会計可能にした。人間の船が星の間を渡れるのは、古い航路が部品ごとに所有されているからだ。beam arraysが押し、pellet lanesが供給し、fusion stagesが消費し、シールドが質量を失い、ラジエータが熱を捨て、magsailsが場に噛みつき、receiver stationsが航路の送るものを捕まえることに同意する。\n\n最後の動詞が醜い。身体を捕まえるには、受信側が身体の到着前に制動債務を受け入れなければならない。熱余裕、隔離容積、医療custody、法的露出、停止が失敗した時に誰が払うかを予約する必要がある。signal packetはその大半を求めない。封印されたevidence hashはrelayに乗れる。貨物箱は何年も前に書かれた予定に乗れる。壊れた海洋claim内の生きたoperatorは別種の質量だ。\n\nだからHECTON-8はつながっていて、同時に見捨てられている。Black Keelはrelay window越しに君を聞ける。brokerはsampleに価格を付けられる。public ledgerは君のdistress hashが存在したと記録できる。だがそのどれも君の身体のbraking rightsを作らない。救助が可能になるのは、signal、custody、receiver liability、隔離、空のタイミング、lift mass、実際のhardwareが揃った時だけだ。それまではシステムは沈黙していない。もっと悪い。読み取れる。",
+     "external_site": "Nearlight shipsは所有されたroute stacksを通る。probe、freight、contractを暗闇の向こうへ運べるが、取り残された生きた身体にはなおbraking rights、receiver custody、有料catch marginが必要だ。",
+     "external_site_article": "HECTON-8の宇宙ロアが機能するのは、文明が有能でありながら制限されているからだ。筋書きの裏にFTL救助は隠れていないし、原始的な孤立でもない。人類はnear-light routesで質量を押せる。ただし、すべてのキログラムは誰かが所有するインフラを通る。\n\n制動債務台帳はそれを見えるようにする文書だ。誰が減速経路を所有し、誰が熱を吸収し、誰が隔離を受け、誰が貨物を受け取り、停止が船、ステーション、貨物、身体を傷つけた時に誰が払うかを記録する。信号が安いのは、受信側に人間を捕まえろと求めないからだ。証拠が救助より先に動けるのは、証拠が呼吸しないからだ。\n\nプレイヤーにとって、距離は豆知識ではなく圧力になる。文明が存在するかではない。存在する。問題は、身体、証拠、試料、債務を、企業が先に気にした物を運んでいる忙しい航路に収められるかだ。",
+     "field_note": "レシートにcatch rightsとあれば、それが人間を捕まえるのか利益だけを捕まえるのか確認しろ。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "接收端制动债务账册",
+     "scanner": "制动收据 // 坑蚀合金卡，盐层下有Barnard印记。条目：magsail spool磨损、pellet-lane损失、接收端热余量、隔离床位、living-mass例外。信号便宜。停止质量不便宜。",
+     "terminal": "接收端捕获权台 // Aegir入境航路接受claim packets和shielded freight receipts。未排程living return mass在carrier lift预留前，需要制动所有者、receiver custody、隔离床位和付费catch margin。",
+     "audio": "难的不是离开黑暗。难的是抵达一个有人同意替你减速的地方。",
+     "in_game_wiki": "Nearlight航行没有让距离变得无害。它让距离变得可记账。人类船只能在恒星之间航行，是因为旧航路被分件拥有：beam arrays负责推动，pellet lanes负责供料，fusion stages负责消耗，护盾损失质量，散热器丢弃热量，magsails咬住场线，而receiver stations同意捕获航路送来的东西。\n\n最后一个动词最难看。要捕获一具身体，接收端必须在身体抵达前接受制动债务。它必须预留热余量、隔离体积、医疗custody、法律暴露，以及停止出错时由谁付款的权利。signal packet几乎不需要这些。密封的evidence hash可以搭乘relay。货箱可以搭乘多年前写好的时刻表。破碎海洋claim里的活operator是另一种质量。\n\n所以HECTON-8可以同时显得已连接又被抛弃。Black Keel能通过relay window听见你。broker能给你的sample定价。public ledger能记录你的distress hash曾经存在。但这些事实都不会为你的身体创造braking rights。只有signal、custody、receiver liability、隔离、天空时机、lift mass和真实hardware排到一起时，救援才可能发生。在那之前，系统并不沉默。更糟的是，它清晰可读。",
+     "external_site": "Nearlight ships穿过被拥有的route stacks。它们能让probe、freight和contract穿越黑暗，但被困的活体仍需要braking rights、receiver custody和付费catch margin。",
+     "external_site_article": "HECTON-8的太空设定成立，是因为文明有能力但仍受约束。剧情背后没有隐藏的FTL救援，也不是原始孤立。人类可以通过near-light routes推动质量，但每一公斤都穿过某人拥有的基础设施。\n\n制动债务账册让这一点变得可见。它记录谁拥有减速路径，谁吸收热量，谁接受隔离，谁接收货物，以及停止损坏船、站、货物或身体时谁付款。信号可以便宜，因为它不要求接收端捕获一个人。证据能先于救援移动，因为证据不会呼吸。\n\n对玩家来说，这把距离变成压力，而不是资料。问题不是文明是否存在。它存在。问题是玩家能否把自己的身体、证据、样本和债务塞进一条已经忙着搬运公司更早关心之物的航路。",
+     "field_note": "如果收据写着catch rights，先看它捕获的是人，还是利润。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre de dette de freinage du récepteur",
+     "scanner": "RECU DE FREINAGE // Carte d'alliage piquée, tampon Barnard sous le sel. Lignes : usure magsail spool, perte pellet-lane, marge thermique du récepteur, couchette de quarantaine, exception living-mass. Le signal est bon marché. Arrêter la masse ne l'est pas.",
+     "terminal": "POSTE DES DROITS DE CAPTURE RECEIVER // Route entrante Aegir accepte claim packets et reçus shielded freight. Living return mass non planifiée exige propriétaire de freinage, receiver custody, couchette de quarantaine et catch margin payé avant réservation carrier lift.",
+     "audio": "Le plus dur n'est pas de quitter le noir. Le plus dur est d'arriver là où quelqu'un a accepté de vous ralentir.",
+     "in_game_wiki": "Le voyage nearlight n'a pas rendu la distance inoffensive. Il l'a rendue comptable. Les vaisseaux humains traversent les étoiles parce que les anciennes routes sont possédées par morceaux : beam arrays poussent, pellet lanes alimentent, fusion stages dépensent, les boucliers perdent de la masse, les radiateurs rejettent la chaleur, les magsails mordent les champs, et les receiver stations acceptent d'attraper ce que la route envoie.\n\nCe dernier verbe est le sale. Pour attraper un corps, un récepteur doit accepter la dette de freinage avant l'arrivée du corps. Il doit réserver marge thermique, volume de quarantaine, custody médicale, exposition légale et droit de dire qui paie quand l'arrêt tourne mal. Un signal packet n'a pas besoin de tout cela. Un evidence hash scellé peut prendre un relais. Une caisse de fret peut suivre un calendrier écrit des années plus tôt. Un opérateur vivant dans une claim océanique brisée est une autre sorte de masse.\n\nC'est pourquoi HECTON-8 peut sembler connecté et abandonné à la fois. Black Keel peut vous entendre par une relay window. Un broker peut chiffrer votre sample. Un public ledger peut enregistrer que votre distress hash a existé. Aucun de ces faits ne crée de braking rights pour votre corps. Le sauvetage devient possible seulement quand signal, custody, receiver liability, quarantaine, timing du ciel, lift mass et matériel réel s'alignent. Jusque-là, le système n'est pas silencieux. C'est pire : il est lisible.",
+     "external_site": "Les nearlight ships passent par des route stacks possédées. Ils portent probes, freight et contracts dans le noir, mais un corps vivant bloqué a encore besoin de braking rights, receiver custody et catch margin payé.",
+     "external_site_article": "Le lore spatial de HECTON-8 fonctionne parce que la civilisation est capable et pourtant contrainte. Il n'y a pas de sauvetage FTL caché derrière l'intrigue, et il n'y a pas non plus d'isolement primitif. L'humanité peut pousser de la masse dans des near-light routes, mais chaque kilogramme traverse une infrastructure possédée par quelqu'un.\n\nUn registre de dette de freinage rend cela visible. Il note qui possède le chemin de ralentissement, qui absorbe la chaleur, qui accepte la quarantaine, qui reçoit la cargaison, et qui paie si l'arrêt abîme vaisseau, station, cargaison ou corps. Un signal peut être bon marché parce qu'il ne demande pas au récepteur d'attraper une personne. La preuve peut bouger avant le sauvetage parce que la preuve ne respire pas.\n\nPour le joueur, la distance devient pression plutôt que trivia. La question n'est pas de savoir si la civilisation existe. Elle existe. La question est de savoir si le joueur peut faire entrer son corps, ses preuves, ses échantillons et sa dette dans une route déjà occupée à déplacer ce dont les entreprises se souciaient d'abord.",
+     "field_note": "Si le reçu dit catch rights, vérifiez s'il attrape des personnes ou seulement du profit."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de deuda de frenado del receptor",
+     "scanner": "RECIBO DE FRENADO // Tarjeta de aleación picada, sello Barnard bajo sal. Líneas: desgaste magsail spool, pérdida pellet-lane, margen térmico del receptor, litera de cuarentena, excepción living-mass. La señal es barata. Detener masa no.",
+     "terminal": "MESA DE DERECHOS DE CAPTURA DEL RECEPTOR // Ruta entrante Aegir acepta claim packets y recibos shielded freight. Living return mass no programada requiere dueño de frenado, receiver custody, litera de cuarentena y catch margin pagado antes de reserva carrier lift.",
+     "audio": "Lo difícil no es salir de la oscuridad. Lo difícil es llegar donde alguien aceptó frenarte.",
+     "in_game_wiki": "El viaje nearlight no volvió inocua la distancia. La volvió contable. Las naves humanas cruzan entre estrellas porque las rutas viejas tienen dueños por partes: beam arrays empujan, pellet lanes alimentan, fusion stages gastan, los escudos pierden masa, los radiadores tiran calor, las magsails muerden campos y las receiver stations aceptan atrapar lo que envía la ruta.\n\nEse último verbo es el feo. Para atrapar un cuerpo, el receptor debe aceptar deuda de frenado antes de que llegue el cuerpo. Debe reservar margen térmico, volumen de cuarentena, custody médica, exposición legal y derecho a decir quién paga si la parada sale mal. Un signal packet no necesita casi nada de eso. Un evidence hash sellado puede subir a un relay. Una caja de carga puede viajar en un horario escrito años antes. Un operador vivo en una claim oceánica rota es otra clase de masa.\n\nPor eso HECTON-8 puede sentirse conectado y abandonado a la vez. Black Keel puede oírte por una relay window. Un broker puede tasar tu sample. Un public ledger puede registrar que existió tu distress hash. Ninguno de esos hechos crea braking rights para tu cuerpo. El rescate solo se vuelve posible cuando signal, custody, receiver liability, cuarentena, tiempo del cielo, lift mass y hardware real se alinean. Hasta entonces, el sistema no está callado. Peor: es legible.",
+     "external_site": "Las nearlight ships se mueven por route stacks con dueño. Pueden llevar probes, freight y contracts por la oscuridad, pero un cuerpo vivo varado aún necesita braking rights, receiver custody y catch margin pagado.",
+     "external_site_article": "El lore espacial de HECTON-8 funciona porque la civilización es capaz y sigue limitada. No hay rescate FTL oculto tras la trama, ni aislamiento primitivo. La humanidad puede empujar masa por near-light routes, pero cada kilogramo cruza infraestructura de alguien.\n\nUn registro de deuda de frenado lo vuelve visible. Registra quién posee el camino de frenado, quién absorbe calor, quién acepta cuarentena, quién recibe la carga y quién paga si la parada daña nave, estación, carga o cuerpo. Una señal puede ser barata porque no pide al receptor atrapar a una persona. La evidencia puede moverse antes del rescate porque la prueba no respira.\n\nPara el jugador, la distancia se vuelve presión en lugar de dato. La pregunta no es si existe la civilización. Existe. La pregunta es si el jugador puede encajar su cuerpo, pruebas, muestras y deuda en una ruta ya ocupada moviendo cosas que las corporaciones valoraron primero.",
+     "field_note": "Si el recibo dice catch rights, mira si atrapa personas o solo beneficio."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Empfänger-Bremsschuld-Ledger",
+     "scanner": "BREMSBELEG // Narbige Legierungskarte, Barnard-Stempel unter Salz. Posten: magsail spool wear, pellet-lane loss, Empfänger-Hitzemarge, Quarantänekoje, living-mass exception. Signal ist billig. Masse stoppen nicht.",
+     "terminal": "EMPFÄNGER-CATCH-RIGHTS-DESK // Aegir-Inboundroute akzeptiert claim packets und shielded freight receipts. Ungeplante living return mass braucht Bremsbesitzer, receiver custody, Quarantänekoje und bezahlten catch margin vor carrier lift reservation.",
+     "audio": "Das Harte ist nicht, die Dunkelheit zu verlassen. Das Harte ist, dort anzukommen, wo jemand zugestimmt hat, dich abzubremsen.",
+     "in_game_wiki": "Nearlight-Reisen machten Entfernung nicht harmlos. Sie machten Entfernung abrechenbar. Menschliche Schiffe kreuzen zwischen Sternen, weil alte Routen in Teilen besessen werden: beam arrays drücken, pellet lanes füttern, fusion stages verbrauchen, Schilde verlieren Masse, Radiatoren werfen Hitze ab, magsails beißen in Felder, und receiver stations stimmen zu, das zu fangen, was die Route schickt.\n\nDieses letzte Verb ist das hässliche. Um einen Körper zu fangen, muss ein Empfänger Bremsschuld akzeptieren, bevor der Körper ankommt. Er muss Hitzemarge, Quarantänevolumen, medizinische custody, rechtliche Exposition und das Recht reservieren, zu sagen, wer zahlt, wenn der Stopp misslingt. Ein signal packet braucht das meiste davon nicht. Ein versiegelter evidence hash kann über ein relay reisen. Eine Frachtkiste kann einem Jahre vorher geschriebenen Plan folgen. Ein lebender Operator in einem gebrochenen Ozean-claim ist eine andere Art Masse.\n\nDarum kann HECTON-8 verbunden und verlassen zugleich wirken. Black Keel kann dich durch ein relay window hören. Ein broker kann dein sample bepreisen. Ein public ledger kann festhalten, dass dein distress hash existierte. Keiner dieser Fakten erzeugt braking rights für deinen Körper. Rettung wird erst möglich, wenn signal, custody, receiver liability, Quarantäne, Himmelstiming, lift mass und echte hardware zusammenpassen. Bis dahin schweigt das System nicht. Schlimmer: Es ist lesbar.",
+     "external_site": "Nearlight ships bewegen sich durch besessene route stacks. Sie können probes, freight und contracts durch die Dunkelheit tragen, aber ein gestrandeter lebender Körper braucht weiter braking rights, receiver custody und bezahlten catch margin.",
+     "external_site_article": "HECTON-8s Weltraumlore funktioniert, weil die Zivilisation fähig und trotzdem begrenzt ist. Es gibt keine hinter dem Plot versteckte FTL-Rettung, aber auch keine primitive Isolation. Die Menschheit kann Masse durch near-light routes drücken, doch jedes Kilogramm überquert Infrastruktur, die jemand besitzt.\n\nEin Bremsschuld-Ledger macht das sichtbar. Es verzeichnet, wem der Verzögerungspfad gehört, wer Hitze aufnimmt, wer Quarantäne akzeptiert, wer Fracht empfängt und wer zahlt, wenn der Stopp Schiff, Station, Fracht oder Körper beschädigt. Ein Signal kann billig sein, weil es keinen Empfänger bittet, eine Person zu fangen. Beweise können vor Rettung reisen, weil Beweise nicht atmen.\n\nFür den Spieler wird Entfernung zu Druck statt Trivia. Die Frage ist nicht, ob Zivilisation existiert. Das tut sie. Die Frage ist, ob der Spieler Körper, Beweise, Proben und Schuld in eine Route pressen kann, die bereits Dinge bewegt, um die sich Konzerne zuerst kümmerten.",
+     "field_note": "Wenn der Beleg catch rights sagt, prüfe, ob er Menschen fängt oder nur Profit."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr długu hamowania odbiorcy",
+     "scanner": "POKWITOWANIE HAMOWANIA // Wżarta karta stopowa, znak Barnard pod solą. Pozycje: zużycie magsail spool, strata pellet-lane, margines cieplny odbiorcy, koja kwarantanny, wyjątek living-mass. Sygnał jest tani. Zatrzymanie masy nie.",
+     "terminal": "PULPIT PRAW PRZECHWYTU ODBIORCY // Trasa przychodząca Aegir przyjmuje claim packets i shielded freight receipts. Nieplanowana living return mass wymaga właściciela hamowania, receiver custody, koi kwarantanny i opłaconego catch margin przed rezerwacją carrier lift.",
+     "audio": "Trudne nie jest opuszczenie ciemności. Trudne jest dotarcie tam, gdzie ktoś zgodził się cię spowolnić.",
+     "in_game_wiki": "Podróż nearlight nie uczyniła odległości nieszkodliwą. Uczyniła ją rozliczalną. Ludzkie statki przechodzą między gwiazdami, bo stare trasy mają właścicieli w częściach: beam arrays pchają, pellet lanes karmią, fusion stages wydają, osłony tracą masę, radiatory wyrzucają ciepło, magsails wgryzają się w pola, a receiver stations zgadzają się złapać to, co trasa wysyła.\n\nTen ostatni czasownik jest brudny. Aby złapać ciało, odbiorca musi przyjąć dług hamowania, zanim ciało dotrze. Musi zarezerwować margines ciepła, objętość kwarantanny, medyczną custody, ekspozycję prawną i prawo do wskazania, kto płaci, gdy zatrzymanie pójdzie źle. Signal packet nie potrzebuje większości tego. Zapieczętowany evidence hash może jechać relayem. Skrzynia frachtu może jechać według planu spisanego lata wcześniej. Żywy operator w pękniętym oceanicznym claim to inny rodzaj masy.\n\nDlatego HECTON-8 może wydawać się połączony i porzucony jednocześnie. Black Keel słyszy cię przez relay window. Broker może wycenić sample. Public ledger może zapisać, że distress hash istniał. Żaden z tych faktów nie tworzy braking rights dla twojego ciała. Ratunek staje się możliwy dopiero, gdy signal, custody, receiver liability, kwarantanna, timing nieba, lift mass i prawdziwy hardware ustawią się razem. Do tego czasu system nie milczy. Jest gorzej: jest czytelny.",
+     "external_site": "Nearlight ships poruszają się przez posiadane route stacks. Mogą nieść probes, freight i contracts przez ciemność, ale uwięzione żywe ciało nadal potrzebuje braking rights, receiver custody i opłaconego catch margin.",
+     "external_site_article": "Kosmiczny lore HECTON-8 działa, bo cywilizacja jest zdolna i nadal ograniczona. Za fabułą nie ma ukrytego ratunku FTL, ale nie ma też prymitywnej izolacji. Ludzkość może pchać masę przez near-light routes, lecz każdy kilogram przechodzi przez czyjąś infrastrukturę.\n\nRejestr długu hamowania czyni to widocznym. Zapisuje, kto posiada ścieżkę spowalniania, kto pochłania ciepło, kto akceptuje kwarantannę, kto odbiera ładunek i kto płaci, jeśli zatrzymanie uszkodzi statek, stację, ładunek lub ciało. Sygnał może być tani, bo nie prosi odbiorcy o złapanie człowieka. Dowód może ruszyć przed ratunkiem, bo dowód nie oddycha.\n\nDla gracza odległość staje się presją zamiast ciekawostką. Pytanie nie brzmi, czy cywilizacja istnieje. Istnieje. Pytanie brzmi, czy gracz zdoła wcisnąć swoje ciało, dowody, próbki i dług w trasę już zajętą przez rzeczy, o które korporacje dbały jako pierwsze.",
+     "field_note": "Jeśli pokwitowanie mówi catch rights, sprawdź, czy łapie ludzi, czy tylko zysk."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал гальмівного боргу приймача",
+     "scanner": "КВИТАНЦІЯ ГАЛЬМУВАННЯ // Поїдена сплавна карта, штамп Barnard під сіллю. Рядки: знос magsail spool, втрата pellet-lane, тепловий запас приймача, карантинна койка, виняток living-mass. Сигнал дешевий. Зупинити масу ні.",
+     "terminal": "СТІЛ ПРАВ ЗАХОПЛЕННЯ ПРИЙМАЧА // Вхідний маршрут Aegir приймає claim packets і shielded freight receipts. Незапланована living return mass потребує власника гальмування, receiver custody, карантинної койки й оплаченого catch margin до резерву carrier lift.",
+     "audio": "Важко не вийти з темряви. Важко прибути туди, де хтось погодився тебе сповільнити.",
+     "in_game_wiki": "Nearlight-подорожі не зробили відстань нешкідливою. Вони зробили її підзвітною. Людські кораблі ходять між зорями тому, що старі маршрути належать частинами: beam arrays штовхають, pellet lanes годують, fusion stages витрачають, щити втрачають масу, радіатори скидають тепло, magsails вгризаються в поля, а receiver stations погоджуються ловити те, що надсилає маршрут.\n\nОстаннє дієслово найбридкіше. Щоб зловити тіло, приймач має прийняти гальмівний борг до прибуття тіла. Він мусить зарезервувати тепловий запас, карантинний об'єм, медичну custody, юридичний ризик і право сказати, хто платить, якщо зупинка піде погано. Signal packet майже нічого з цього не потребує. Запечатаний evidence hash може їхати relay. Вантажна скриня може їхати за розкладом, написаним роками раніше. Живий оператор у зламаному океанському claim це інша маса.\n\nТому HECTON-8 може бути зв'язаним і покинутим одночасно. Black Keel може чути тебе через relay window. Broker може оцінити sample. Public ledger може записати, що distress hash існував. Жоден із цих фактів не створює braking rights для твого тіла. Порятунок стає можливим лише коли signal, custody, receiver liability, карантин, небесний таймінг, lift mass і реальне hardware сходяться. До того система не мовчить. Гірше: вона читабельна.",
+     "external_site": "Nearlight ships рухаються крізь route stacks, які комусь належать. Вони несуть probes, freight і contracts через темряву, але застрягле живе тіло все ще потребує braking rights, receiver custody і оплаченого catch margin.",
+     "external_site_article": "Космічний лор HECTON-8 працює тому, що цивілізація здатна і все одно обмежена. За сюжетом немає прихованого FTL-порятунку, але немає й примітивної ізоляції. Людство може штовхати масу через near-light routes, але кожен кілограм проходить інфраструктурою, якою хтось володіє.\n\nЖурнал гальмівного боргу робить це видимим. Він записує, кому належить шлях сповільнення, хто поглинає тепло, хто приймає карантин, хто отримує вантаж і хто платить, якщо зупинка пошкодить корабель, станцію, вантаж або тіло. Сигнал може бути дешевим, бо не просить приймач ловити людину. Доказ може рухатися раніше за порятунок, бо доказ не дихає.\n\nДля гравця відстань стає тиском, а не довідкою. Питання не в тому, чи існує цивілізація. Існує. Питання в тому, чи зможе гравець вписати своє тіло, докази, зразки й борг у маршрут, який уже зайнятий речами, про які корпорації дбали першими.",
+     "field_note": "Якщо квитанція каже catch rights, перевір, чи вона ловить людей, чи лише прибуток."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل دين الكبح عند المستقبل",
+     "scanner": "إيصال كبح // بطاقة سبيكة منقورة، ختم Barnard تحت الملح. بنود: تآكل magsail spool، خسارة pellet-lane، هامش حرارة المستقبل، سرير حجر، استثناء living-mass. الإشارة رخيصة. إيقاف الكتلة ليس رخيصا.",
+     "terminal": "مكتب حقوق الالتقاط للمستقبل // طريق Aegir الوارد يقبل claim packets وإيصالات shielded freight. living return mass غير المجدولة تتطلب مالك كبح وreceiver custody وسرير حجر وcatch margin مدفوعا قبل حجز carrier lift.",
+     "audio": "الصعب ليس مغادرة الظلام. الصعب هو الوصول إلى مكان وافق فيه أحد على إبطائك.",
+     "in_game_wiki": "السفر nearlight لم يجعل المسافة آمنة. جعلها قابلة للمحاسبة. تعبر سفن البشر بين النجوم لأن الطرق القديمة مملوكة على أجزاء: beam arrays تدفع، pellet lanes تغذي، fusion stages تنفق، الدروع تفقد كتلة، المشعات ترمي الحرارة، magsails تعض في الحقول، وreceiver stations توافق على التقاط ما يرسله الطريق.\n\nذلك الفعل الأخير هو القبيح. لالتقاط جسد، يجب على المستقبل قبول دين الكبح قبل وصول الجسد. يجب أن يحجز هامش حرارة، وحجم حجر، وcustody طبية، وتعرضا قانونيا، وحق تقرير من يدفع إذا فشل التوقف. signal packet لا يحتاج معظم ذلك. evidence hash مختوم يستطيع ركوب relay. صندوق freight يستطيع ركوب جدول كتب قبل سنوات. مشغل حي في claim محيطي مكسور هو نوع آخر من الكتلة.\n\nلهذا يمكن أن يبدو HECTON-8 متصلا ومهجورا في الوقت نفسه. يستطيع Black Keel سماعك عبر relay window. يستطيع broker تسعير sample. يستطيع public ledger تسجيل أن distress hash كان موجودا. لا يخلق أي من ذلك braking rights لجسدك. يصبح الإنقاذ ممكنا فقط عندما تتوافق signal وcustody وreceiver liability والحجر وتوقيت السماء وlift mass وhardware الفعلي. حتى ذلك الحين، النظام ليس صامتا. الأسوأ أنه مقروء.",
+     "external_site": "تتحرك nearlight ships عبر route stacks مملوكة. يمكنها حمل probes وfreight وcontracts عبر الظلام، لكن الجسد الحي العالق ما زال يحتاج braking rights وreceiver custody وcatch margin مدفوعا.",
+     "external_site_article": "يعمل لور الفضاء في HECTON-8 لأن الحضارة قادرة وما زالت مقيدة. لا يوجد إنقاذ FTL مخفي خلف الحبكة، ولا توجد عزلة بدائية أيضا. تستطيع البشرية دفع الكتلة عبر near-light routes، لكن كل كيلوغرام يعبر بنية تحتية يملكها أحد.\n\nسجل دين الكبح يجعل ذلك مرئيا. يسجل من يملك مسار الإبطاء، ومن يمتص الحرارة، ومن يقبل الحجر، ومن يستلم الحمولة، ومن يدفع إذا أضر التوقف بالسفينة أو المحطة أو الحمولة أو الجسد. يمكن أن تكون الإشارة رخيصة لأنها لا تطلب من المستقبل التقاط شخص. يمكن للدليل أن يتحرك قبل الإنقاذ لأن الدليل لا يتنفس.\n\nبالنسبة للاعب، تتحول المسافة إلى ضغط لا إلى معلومة جانبية. السؤال ليس هل توجد حضارة. إنها موجودة. السؤال هل يستطيع اللاعب إدخال جسده وأدلته وعيناته ودينه في طريق مشغول أصلا بنقل أشياء اهتمت بها الشركات أولا.",
+     "field_note": "إذا قال الإيصال catch rights، تحقق هل يلتقط البشر أم الربح فقط."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Buku Utang Pengereman Penerima",
+     "scanner": "TANDA TERIMA PENGEREMAN // Kartu paduan bopeng, cap Barnard di bawah garam. Item: aus magsail spool, rugi pellet-lane, margin panas penerima, ranjang karantina, pengecualian living-mass. Sinyal murah. Menghentikan massa tidak.",
+     "terminal": "MEJA HAK TANGKAP PENERIMA // Rute masuk Aegir menerima claim packets dan shielded freight receipts. Living return mass tak terjadwal membutuhkan pemilik pengereman, receiver custody, ranjang karantina, dan catch margin berbayar sebelum reservasi carrier lift.",
+     "audio": "Yang sulit bukan meninggalkan gelap. Yang sulit adalah tiba di tempat seseorang setuju memperlambatmu.",
+     "in_game_wiki": "Perjalanan nearlight tidak membuat jarak aman. Ia membuat jarak bisa ditagih. Kapal manusia melintas antar bintang karena rute tua dimiliki per bagian: beam arrays mendorong, pellet lanes memberi makan, fusion stages membakar, perisai kehilangan massa, radiator membuang panas, magsails menggigit medan, dan receiver stations setuju menangkap apa yang dikirim rute.\n\nKata kerja terakhir itu yang buruk. Untuk menangkap tubuh, penerima harus menerima utang pengereman sebelum tubuh tiba. Ia harus menyisihkan margin panas, volume karantina, custody medis, paparan hukum, dan hak menentukan siapa membayar jika berhenti berjalan buruk. Signal packet tidak butuh sebagian besar itu. Evidence hash tersegel bisa naik relay. Peti freight bisa naik jadwal yang ditulis bertahun-tahun sebelumnya. Operator hidup dalam claim samudra rusak adalah jenis massa lain.\n\nItu sebabnya HECTON-8 bisa terasa tersambung dan ditinggalkan sekaligus. Black Keel bisa mendengarmu melalui relay window. Broker bisa menilai sample. Public ledger bisa mencatat bahwa distress hash milikmu pernah ada. Tidak satu pun fakta itu menciptakan braking rights untuk tubuhmu. Penyelamatan hanya mungkin ketika signal, custody, receiver liability, karantina, waktu langit, lift mass, dan hardware nyata sejajar. Sampai saat itu, sistem tidak diam. Lebih buruk: sistem bisa dibaca.",
+     "external_site": "Nearlight ships bergerak lewat route stacks yang dimiliki. Mereka bisa membawa probes, freight, dan contracts melintasi gelap, tetapi tubuh hidup yang terdampar tetap membutuhkan braking rights, receiver custody, dan catch margin berbayar.",
+     "external_site_article": "Lore ruang angkasa HECTON-8 bekerja karena peradaban mampu tetapi tetap dibatasi. Tidak ada penyelamatan FTL tersembunyi di balik plot, dan tidak ada isolasi primitif juga. Manusia bisa mendorong massa lewat near-light routes, tetapi setiap kilogram melintasi infrastruktur milik seseorang.\n\nBuku utang pengereman membuat hal itu terlihat. Ia mencatat siapa memiliki jalur perlambatan, siapa menyerap panas, siapa menerima karantina, siapa menerima kargo, dan siapa membayar jika berhenti merusak kapal, stasiun, kargo, atau tubuh. Sinyal bisa murah karena tidak meminta penerima menangkap manusia. Bukti bisa bergerak sebelum penyelamatan karena bukti tidak bernapas.\n\nBagi pemain, jarak menjadi tekanan, bukan trivia. Pertanyaannya bukan apakah peradaban ada. Ada. Pertanyaannya apakah pemain bisa memasukkan tubuh, bukti, sampel, dan utangnya ke rute yang sudah sibuk memindahkan hal-hal yang lebih dulu dipedulikan korporasi.",
+     "field_note": "Jika tanda terima bilang catch rights, periksa apakah ia menangkap manusia atau hanya untung."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "수신자 제동 부채 장부",
+     "scanner": "제동 영수증 // 패인 합금 카드, 소금 아래 Barnard 도장. 항목: magsail spool 마모, pellet-lane 손실, 수신자 열 여유, 격리 침상, living-mass 예외. 신호는 싸다. 질량을 멈추는 것은 아니다.",
+     "terminal": "수신자 포획권 데스크 // Aegir 인바운드 항로는 claim packets와 shielded freight receipts를 수락한다. 예정 없는 living return mass는 carrier lift 예약 전 제동 소유자, receiver custody, 격리 침상, 유료 catch margin을 요구한다.",
+     "audio": "어둠을 떠나는 것이 어려운 게 아니다. 누군가 네 감속에 동의한 곳에 도착하는 것이 어렵다.",
+     "in_game_wiki": "Nearlight 항해는 거리를 무해하게 만들지 않았다. 거리를 회계 가능하게 만들었다. 인간 함선이 별 사이를 건너는 것은 오래된 항로가 조각별로 소유되기 때문이다. beam arrays가 밀고, pellet lanes가 먹이고, fusion stages가 쓰고, 방패가 질량을 잃고, 라디에이터가 열을 버리고, magsails가 장을 물고, receiver stations가 항로가 보내는 것을 붙잡겠다고 동의한다.\n\n마지막 동사가 더럽다. 몸을 붙잡으려면 수신자는 몸이 도착하기 전 제동 부채를 받아들여야 한다. 열 여유, 격리 부피, 의료 custody, 법적 노출, 정지가 잘못될 때 누가 지불하는지를 예약해야 한다. signal packet은 그 대부분이 필요 없다. 봉인된 evidence hash는 relay를 탈 수 있다. 화물 상자는 몇 년 전에 쓰인 일정에 탈 수 있다. 부서진 바다 claim 속 살아 있는 operator는 다른 종류의 질량이다.\n\n그래서 HECTON-8은 연결되어 있으면서도 버려진 것처럼 느껴진다. Black Keel은 relay window 너머로 너를 들을 수 있다. broker는 sample 가격을 매길 수 있다. public ledger는 네 distress hash가 존재했다고 기록할 수 있다. 그 어떤 사실도 네 몸을 위한 braking rights를 만들지 않는다. 구조는 signal, custody, receiver liability, 격리, 하늘 타이밍, lift mass, 실제 hardware가 맞을 때만 가능해진다. 그때까지 시스템은 침묵하지 않는다. 더 나쁘게, 읽힌다.",
+     "external_site": "Nearlight ships는 소유된 route stacks를 통과한다. probes, freight, contracts를 어둠 너머로 실을 수 있지만 고립된 산 몸은 여전히 braking rights, receiver custody, 유료 catch margin이 필요하다.",
+     "external_site_article": "HECTON-8의 우주 로어는 문명이 유능하면서도 제한되어 있기 때문에 작동한다. 플롯 뒤에 숨은 FTL 구조는 없고, 원시적 고립도 아니다. 인류는 near-light routes를 통해 질량을 밀 수 있지만 모든 킬로그램은 누군가의 인프라를 지난다.\n\n제동 부채 장부는 그것을 보이게 한다. 누가 감속 경로를 소유하는지, 누가 열을 흡수하는지, 누가 격리를 받아들이는지, 누가 화물을 받는지, 정지가 함선, 정거장, 화물, 몸을 손상시키면 누가 지불하는지 기록한다. 신호는 수신자에게 사람을 붙잡으라고 요구하지 않기 때문에 쌀 수 있다. 증거는 숨을 쉬지 않기 때문에 구조보다 먼저 움직일 수 있다.\n\n플레이어에게 거리는 상식이 아니라 압력이 된다. 질문은 문명이 존재하는가가 아니다. 존재한다. 질문은 플레이어가 자신의 몸, 증거, 샘플, 부채를 기업들이 먼저 신경 쓴 것들을 옮기느라 이미 바쁜 항로에 끼워 넣을 수 있는가다.",
+     "field_note": "영수증에 catch rights라고 쓰여 있으면, 그것이 사람을 붙잡는지 이익만 붙잡는지 확인하라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן חוב בלימה של מקלט",
+     "scanner": "קבלת בלימה // כרטיס סגסוגת מחורר, חותמת Barnard תחת מלח. שורות: שחיקת magsail spool, אובדן pellet-lane, מרווח חום מקלט, מיטת הסגר, חריג living-mass. אות זול. עצירת מסה לא.",
+     "terminal": "דלפק זכויות תפיסה של מקלט // נתיב נכנס Aegir מקבל claim packets וקבלות shielded freight. living return mass לא מתוכננת דורשת בעל בלימה, receiver custody, מיטת הסגר ו-catch margin בתשלום לפני הזמנת carrier lift.",
+     "audio": "הקשה אינו לעזוב את החושך. הקשה הוא להגיע למקום שבו מישהו הסכים להאט אותך.",
+     "in_game_wiki": "מסע nearlight לא הפך מרחק לבטוח. הוא הפך מרחק לחשבונאי. ספינות אדם חוצות בין כוכבים כי נתיבים ישנים בבעלות בחלקים: beam arrays דוחפים, pellet lanes מזינים, fusion stages מוציאים, מגנים מאבדים מסה, מקרנים זורקים חום, magsails נושכים שדות, ו-receiver stations מסכימות לתפוס את מה שהנתיב שולח.\n\nהפועל האחרון הוא המכוער. כדי לתפוס גוף, המקלט חייב לקבל חוב בלימה לפני שהגוף מגיע. עליו לשמור מרווח חום, נפח הסגר, custody רפואית, חשיפה משפטית וזכות לקבוע מי משלם כשהעצירה משתבשת. signal packet לא צריך את רוב זה. evidence hash חתום יכול לרכוב על relay. ארגז freight יכול לרכוב על לוח זמנים שנכתב שנים קודם. operator חי בתוך claim אוקייני שבור הוא סוג אחר של מסה.\n\nלכן HECTON-8 יכול להרגיש מחובר ונטוש בו זמנית. Black Keel יכול לשמוע אותך דרך relay window. broker יכול לתמחר sample. public ledger יכול לרשום ש-distress hash שלך התקיים. אף עובדה כזו לא יוצרת braking rights לגוף שלך. חילוץ נעשה אפשרי רק כאשר signal, custody, receiver liability, הסגר, תזמון שמים, lift mass ו-hardware אמיתי מסתדרים. עד אז המערכת אינה שותקת. גרוע יותר: היא קריאה.",
+     "external_site": "Nearlight ships נעות דרך route stacks בבעלות. הן יכולות לשאת probes, freight ו-contracts דרך החושך, אבל גוף חי תקוע עדיין צריך braking rights, receiver custody ו-catch margin בתשלום.",
+     "external_site_article": "לור החלל של HECTON-8 עובד משום שהציוויליזציה מסוגלת ועדיין מוגבלת. אין חילוץ FTL מוסתר מאחורי העלילה, ואין גם בידוד פרימיטיבי. האנושות יכולה לדחוף מסה דרך near-light routes, אבל כל קילוגרם חוצה תשתית שמישהו מחזיק.\n\nיומן חוב בלימה הופך זאת לנראה. הוא רושם מי מחזיק את מסלול ההאטה, מי סופג חום, מי מקבל הסגר, מי מקבל את המטען ומי משלם אם העצירה פוגעת בספינה, בתחנה, במטען או בגוף. אות יכול להיות זול כי הוא לא מבקש ממקלט לתפוס אדם. ראיה יכולה לנוע לפני חילוץ כי ראיה אינה נושמת.\n\nעבור השחקן, מרחק הופך ללחץ במקום לפרט רקע. השאלה אינה אם קיימת ציוויליזציה. היא קיימת. השאלה היא אם השחקן יכול לדחוס את גופו, ראיותיו, דגימותיו וחובו אל נתיב שכבר עסוק בהזזת דברים שתאגידים דאגו להם קודם.",
+     "field_note": "אם הקבלה אומרת catch rights, בדוק אם היא תופסת אנשים או רק רווח."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Dívida de Frenagem do Receptor",
+     "scanner": "RECIBO DE FRENAGEM // Cartão de liga corroído, selo Barnard sob sal. Linhas: desgaste magsail spool, perda pellet-lane, margem térmica do receptor, leito de quarentena, exceção living-mass. Sinal é barato. Parar massa não.",
+     "terminal": "MESA DE DIREITOS DE CAPTURA DO RECEPTOR // Rota inbound Aegir aceita claim packets e recibos shielded freight. Living return mass não programada exige dono de frenagem, receiver custody, leito de quarentena e catch margin pago antes de reserva carrier lift.",
+     "audio": "O difícil não é sair do escuro. O difícil é chegar onde alguém aceitou te desacelerar.",
+     "in_game_wiki": "Viagem nearlight não tornou distância inofensiva. Tornou distância contável. Naves humanas cruzam entre estrelas porque rotas antigas são possuídas em partes: beam arrays empurram, pellet lanes alimentam, fusion stages gastam, escudos perdem massa, radiadores despejam calor, magsails mordem campos, e receiver stations aceitam capturar o que a rota envia.\n\nEsse último verbo é o sujo. Para capturar um corpo, o receptor precisa aceitar dívida de frenagem antes de o corpo chegar. Precisa reservar margem térmica, volume de quarentena, custody médica, exposição legal e o direito de dizer quem paga quando a parada dá errado. Um signal packet não precisa da maior parte disso. Um evidence hash selado pode pegar um relay. Uma caixa de freight pode seguir um cronograma escrito anos antes. Um operador vivo numa claim oceânica quebrada é outro tipo de massa.\n\nÉ por isso que HECTON-8 pode parecer conectado e abandonado ao mesmo tempo. Black Keel pode te ouvir por uma relay window. Um broker pode precificar seu sample. Um public ledger pode registrar que seu distress hash existiu. Nenhum desses fatos cria braking rights para seu corpo. Resgate só se torna possível quando signal, custody, receiver liability, quarentena, timing do céu, lift mass e hardware real se alinham. Até lá, o sistema não está em silêncio. Pior: é legível.",
+     "external_site": "Nearlight ships se movem por route stacks com dono. Elas podem levar probes, freight e contracts pela escuridão, mas um corpo vivo preso ainda precisa de braking rights, receiver custody e catch margin pago.",
+     "external_site_article": "O lore espacial de HECTON-8 funciona porque a civilização é capaz e ainda limitada. Não há resgate FTL escondido atrás da trama, nem isolamento primitivo. A humanidade pode empurrar massa por near-light routes, mas cada quilo atravessa infraestrutura que alguém possui.\n\nUm registro de dívida de frenagem torna isso visível. Ele registra quem possui o caminho de desaceleração, quem absorve calor, quem aceita quarentena, quem recebe a carga e quem paga se a parada danificar nave, estação, carga ou corpo. Um sinal pode ser barato porque não pede ao receptor que capture uma pessoa. Prova pode se mover antes do resgate porque prova não respira.\n\nPara o jogador, distância vira pressão em vez de curiosidade. A pergunta não é se a civilização existe. Existe. A pergunta é se o jogador consegue encaixar seu corpo, provas, amostras e dívida numa rota já ocupada movendo coisas com que corporações se importaram primeiro.",
+     "field_note": "Se o recibo diz catch rights, veja se ele captura pessoas ou só lucro."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Receiver Remschuldlog",
+     "scanner": "REMBON // Aangevreten legeringskaart, Barnard-stempel onder zout. Regels: magsail spool-slijtage, pellet-lane-verlies, receiver-hitte marge, quarantainebed, living-mass-uitzondering. Signaal is goedkoop. Massa stoppen niet.",
+     "terminal": "RECEIVER CATCH-RIGHTS-DESK // Aegir inbound route accepteert claim packets en shielded freight receipts. Ongeplande living return mass vereist braking owner, receiver custody, quarantainebed en betaalde catch margin vóór carrier lift reservation.",
+     "audio": "Het moeilijke is niet het donker verlaten. Het moeilijke is aankomen waar iemand instemde je af te remmen.",
+     "in_game_wiki": "Nearlight-reizen maakte afstand niet onschadelijk. Het maakte afstand boekhoudbaar. Menselijke schepen kruisen tussen sterren omdat oude routes in stukken bezit zijn: beam arrays duwen, pellet lanes voeren, fusion stages verbruiken, schilden verliezen massa, radiatoren dumpen warmte, magsails bijten in velden, en receiver stations stemmen ermee in te vangen wat de route stuurt.\n\nDat laatste werkwoord is het vuile. Om een lichaam te vangen moet een receiver remschuld accepteren voordat het lichaam arriveert. Hij moet hittemarge, quarantainevolume, medische custody, juridische blootstelling en het recht reserveren om te zeggen wie betaalt als de stop misgaat. Een signal packet heeft het meeste daarvan niet nodig. Een verzegelde evidence hash kan een relay nemen. Een freightkist kan een schema volgen dat jaren eerder is geschreven. Een levende operator in een gebroken oceaanclaim is een ander soort massa.\n\nDaarom kan HECTON-8 tegelijk verbonden en verlaten voelen. Black Keel kan je horen door een relay window. Een broker kan je sample prijzen. Een public ledger kan noteren dat je distress hash bestond. Geen van die feiten maakt braking rights voor je lichaam. Redding wordt pas mogelijk wanneer signal, custody, receiver liability, quarantaine, hemeltiming, lift mass en echte hardware op één lijn staan. Tot dan is het systeem niet stil. Erger: het is leesbaar.",
+     "external_site": "Nearlight ships bewegen door route stacks met eigenaars. Ze kunnen probes, freight en contracts door het donker dragen, maar een gestrand levend lichaam heeft nog steeds braking rights, receiver custody en betaalde catch margin nodig.",
+     "external_site_article": "De ruimtelore van HECTON-8 werkt omdat de beschaving capabel is en toch begrensd. Er zit geen FTL-redding achter het plot verstopt, en er is ook geen primitieve isolatie. De mensheid kan massa door near-light routes duwen, maar elke kilo kruist infrastructuur die iemand bezit.\n\nEen remschuldlog maakt dat zichtbaar. Het noteert wie het vertragingspad bezit, wie warmte absorbeert, wie quarantaine accepteert, wie cargo ontvangt en wie betaalt als de stop schip, station, cargo of lichaam beschadigt. Een signaal kan goedkoop zijn omdat het een receiver niet vraagt een mens te vangen. Bewijs kan vóór redding bewegen omdat bewijs niet ademt.\n\nVoor de speler verandert afstand in druk in plaats van trivia. De vraag is niet of beschaving bestaat. Die bestaat. De vraag is of de speler lichaam, bewijs, samples en schuld kan persen in een route die al bezig is dingen te verplaatsen waar bedrijven eerst om gaven.",
+     "field_note": "Als de bon catch rights zegt, kijk dan of hij mensen vangt of alleen winst."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

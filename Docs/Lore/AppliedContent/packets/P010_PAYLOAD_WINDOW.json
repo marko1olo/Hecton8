@@ -1,179 +1,180 @@
 {
-  "schema": "H8.APPLIED_CONTENT_PACKET.V0",
-  "packet_id": "P010_PAYLOAD_WINDOW",
-  "article_id": "ending.payload_window",
-  "title_key": "LORE_P010_PAYLOAD_WINDOW_TITLE",
-  "status": "production_facing_draft_pending_native_localization",
-  "surfaces": [
-    "scanner",
-    "in_game_wiki",
-    "terminal",
-    "audio_subtitle",
-    "external_site",
-    "image_brief"
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "packet_id": "P010_PAYLOAD_WINDOW",
+ "article_id": "ending.payload_window",
+ "title_key": "LORE_P010_PAYLOAD_WINDOW_TITLE",
+ "status": "production_facing_draft_pending_native_localization",
+ "surfaces": [
+  "scanner",
+  "in_game_wiki",
+  "terminal",
+  "audio_subtitle",
+  "external_site",
+  "image_brief"
+ ],
+ "unlock": {
+  "primary": "unlock.first_payload_window",
+  "poi_tags": [
+   "poi.ascent_package",
+   "poi.launch_floodgate",
+   "poi.carrier_geometry_lock"
   ],
-  "unlock": {
-    "primary": "unlock.first_payload_window",
-    "poi_tags": [
-      "poi.ascent_package",
-      "poi.launch_floodgate",
-      "poi.carrier_geometry_lock"
-    ],
-    "biome_tags": [
-      "biome.atlas_bottom",
-      "biome.deep_launch_route"
-    ]
+  "biome_tags": [
+   "biome.atlas_bottom",
+   "biome.deep_launch_route"
+  ]
+ },
+ "localized": {
+  "en_US": {
+   "title": "Payload Window",
+   "scanner": "Improvised ascent package. It can leave the ocean if mass, weather, dose timing, and Black Keel geometry agree.",
+   "field_note": "Getting out is a route. Getting out clean is a story people sell after someone else pays the mass.",
+   "terminal": "PAYLOAD SLOT: LIMITED. WINDOW: OPEN. ROUTE: CONTESTED. RECEIVER: UNCONFIRMED. CLAIM VALUE: VARIABLE. EVIDENCE STATE: INSUFFICIENT FOR CLEAN DISPUTE.",
+   "audio": "Window is open. It will not stay open for everything.",
+   "in_game_wiki": "The Payload Window is where final choices become physical. The player can move only limited mass through pressure, storm cover, Aegir radiation timing, and Black Keel recovery geometry. Money, proof, worker names, coordinates, living samples, Atlas signal, or silence cannot all leave together.",
+   "external_site": "Payload Window makes HECTON-8’s endings material: not only what the player believes, but what fits through pressure, weather, debt, evidence custody, and receiver control.",
+   "external_site_article": "The final problem on HECTON-8 is not a moral menu floating above the ocean. It is a payload window. The ascent package has mass limits, the weather has timing, Aegir has radiation and orbital constraints, and Black Keel has receiver rules before it has mercy. Every ending therefore asks what leaves the moon and who receives it. Coordinates can buy recovery and hand Deep Reach the crime scene. Evidence can reach a public ledger and remove the player’s control over consequence. Samples can pay debt while strengthening the system that buried worker names. Silence can deny the corporation and leave proof under water. The window carries no justice by itself. It is the shape justice has to squeeze through."
   },
-  "localized": {
-    "en_US": {
-      "title": "Payload Window",
-      "scanner": "Improvised ascent package. It can leave the ocean if mass, weather, dose timing, and Black Keel geometry agree.",
-      "field_note": "Getting out is a route. Getting out clean is a story people sell after someone else pays the mass.",
-      "terminal": "PAYLOAD SLOT: LIMITED. WINDOW: OPEN. ROUTE: CONTESTED. RECEIVER: UNCONFIRMED. CLAIM VALUE: VARIABLE. EVIDENCE STATE: INSUFFICIENT FOR CLEAN DISPUTE.",
-      "audio": "Window is open. It will not stay open for everything.",
-      "in_game_wiki": "The Payload Window is where final choices become physical. The player can move only limited mass through pressure, storm cover, Aegir radiation timing, and Black Keel recovery geometry. Money, proof, worker names, coordinates, living samples, Atlas signal, or silence cannot all leave together.",
-      "external_site": "Payload Window makes HECTON-8’s endings material: not only what the player believes, but what fits through pressure, weather, debt, evidence custody, and receiver control.",
-      "external_site_article": "The final problem on HECTON-8 is not a moral menu floating above the ocean. It is a payload window. The ascent package has mass limits, the weather has timing, Aegir has radiation and orbital constraints, and Black Keel has receiver rules before it has mercy. Every ending therefore asks what leaves the moon and who receives it. Coordinates can buy recovery and hand Deep Reach the crime scene. Evidence can reach a public ledger and remove the player’s control over consequence. Samples can pay debt while strengthening the system that buried worker names. Silence can deny the corporation and leave proof under water. The window carries no justice by itself. It is the shape justice has to squeeze through."
-    },
-    "ar_SA": {
-      "title": "نافذة الحمولة",
-      "scanner": "حزمة صعود مرتجلة. يمكنها مغادرة المحيط إذا اتفقت الكتلة والطقس وتوقيت الجرعة وهندسة Black Keel.",
-      "field_note": "الخروج مسار. الخروج النظيف قصة يبيعها الناس بعد أن يدفع شخص آخر ثمن الكتلة.",
-      "terminal": "خانة الحمولة: محدودة. النافذة: مفتوحة. المسار: متنازع. المستلم: غير مؤكد. قيمة المطالبة: متغيرة. حالة الدليل: غير كافية لنزاع نظيف.",
-      "audio": "النافذة مفتوحة. لن تبقى مفتوحة لكل شيء.",
-      "in_game_wiki": "نافذة الحمولة هي المكان الذي تصبح فيه الاختيارات النهائية مادية. يستطيع اللاعب نقل كتلة محدودة فقط عبر الضغط وغطاء العاصفة وتوقيت إشعاع أيغير وهندسة استعادة Black Keel. المال والدليل وأسماء العمال والإحداثيات والعينات الحية وإشارة Atlas أو الصمت لا يمكن أن تغادر كلها معاً.",
-      "external_site": "تجعل نافذة الحمولة نهايات HECTON-8 مادية: ليس فقط ما يصدقه اللاعب، بل ما يتسع له الضغط والطقس والدين وحيازة الدليل وتحكم المستلم.",
-      "external_site_article": "المشكلة الأخيرة على HECTON-8 ليست قائمة أخلاقية عائمة فوق المحيط. إنها نافذة حمولة. لحزمة الصعود حدود كتلة، وللطقس توقيت، ولأيغير قيود إشعاع ومدار، ولـ Black Keel قواعد مستلم قبل الرحمة. لذلك يسأل كل ending: ما الذي يغادر القمر ومن يستلمه؟ قد تشتري الإحداثيات الاستعادة وتسلم مسرح الجريمة إلى Deep Reach. قد يصل الدليل إلى سجل عام ويفقد اللاعب التحكم بالعاقبة. قد تدفع العينات الدين وتقوي النظام الذي دفن أسماء العمال. قد يحرم الصمت الشركة ويترك الدليل تحت الماء. النافذة ليست عدالة. إنها الشكل الذي تضطر العدالة إلى المرور عبره."
-    },
-    "de_DE": {
-      "title": "Nutzlastfenster",
-      "scanner": "Improvisiertes Aufstiegspaket. Es kann den Ozean verlassen, wenn Masse, Wetter, Dosiszeit und Black-Keel-Geometrie zusammenpassen.",
-      "field_note": "Rauskommen ist eine Route. Sauber rauskommen ist eine Geschichte, die Leute verkaufen, nachdem jemand anderes die Masse bezahlt hat.",
-      "terminal": "PAYLOAD SLOT: BEGRENZT. WINDOW: OFFEN. ROUTE: UMSTRITTEN. EMPFÄNGER: UNBESTÄTIGT. CLAIM-WERT: VARIABEL. BEWEISSTATUS: UNZUREICHEND FÜR SAUBEREN STREIT.",
-      "audio": "Das Fenster ist offen. Es bleibt nicht für alles offen.",
-      "in_game_wiki": "Im Nutzlastfenster werden letzte Entscheidungen physisch. Der Spieler kann nur begrenzte Masse durch Druck, Sturmdeckung, Aegir-Strahlungszeit und Black-Keel-Bergungsgeometrie bewegen. Geld, Beweise, Arbeiternamen, Koordinaten, lebende Proben, Atlas-Signal oder Schweigen können nicht alle zusammen hinaus.",
-      "external_site": "Das Nutzlastfenster macht HECTON-8s Enden materiell: nicht nur, was der Spieler glaubt, sondern was durch Druck, Wetter, Schulden, Beweiskette und Empfängerkontrolle passt.",
-      "external_site_article": "Das letzte Problem auf HECTON-8 ist kein Moralmenü über dem Ozean. Es ist ein Nutzlastfenster. Das Aufstiegspaket hat Massengrenzen, das Wetter hat Timing, Aegir hat Strahlungs- und Orbitgrenzen, und Black Keel hat Empfängerregeln, bevor es Mitleid hat. Jedes Ende fragt daher, was den Mond verlässt und wer es bekommt. Koordinaten können Bergung kaufen und Deep Reach den Tatort geben. Beweise können ein öffentliches Register erreichen und dem Spieler die Kontrolle über Folgen nehmen. Proben können Schulden bezahlen und das System stärken, das Arbeiternamen begrub. Schweigen kann den Konzern blenden und Beweise unter Wasser lassen. Das Fenster ist keine Gerechtigkeit. Es ist die Form, durch die Gerechtigkeit hindurchpassen muss."
-    },
-    "es_ES": {
-      "title": "Ventana de carga",
-      "scanner": "Paquete de ascenso improvisado. Puede dejar el océano si masa, clima, tiempo de dosis y geometría Black Keel coinciden.",
-      "field_note": "Salir es una ruta. Salir limpio es una historia que la gente vende después de que otro paga la masa.",
-      "terminal": "RANURA DE CARGA: LIMITADA. VENTANA: ABIERTA. RUTA: DISPUTADA. RECEPTOR: SIN CONFIRMAR. VALOR CLAIM: VARIABLE. ESTADO DE EVIDENCIA: INSUFICIENTE PARA DISPUTA LIMPIA.",
-      "audio": "La ventana está abierta. No seguirá abierta para todo.",
-      "in_game_wiki": "La Ventana de carga es donde las decisiones finales se vuelven físicas. El jugador solo puede mover masa limitada a través de presión, cobertura de tormenta, tiempo de radiación de Aegir y geometría de recuperación Black Keel. Dinero, pruebas, nombres de trabajadores, coordenadas, muestras vivas, señal Atlas o silencio no pueden salir juntos.",
-      "external_site": "La Ventana de carga vuelve materiales los finales de HECTON-8: no solo lo que cree el jugador, sino lo que cabe por presión, clima, deuda, custodia de evidencia y control del receptor.",
-      "external_site_article": "El último problema en HECTON-8 no es un menú moral flotando sobre el océano. Es una ventana de carga. El paquete de ascenso tiene límite de masa, el clima tiene tiempo, Aegir tiene restricciones de radiación y órbita, y Black Keel tiene reglas de receptor antes que piedad. Cada final pregunta qué deja la luna y quién lo recibe. Las coordenadas pueden comprar recuperación y entregar la escena del crimen a Deep Reach. La evidencia puede llegar a un libro público y quitar al jugador el control de la consecuencia. Las muestras pueden pagar deuda mientras fortalecen el sistema que enterró nombres de trabajadores. El silencio puede negar a la corporación y dejar la prueba bajo el agua. La ventana no es justicia. Es la forma por la que la justicia debe apretarse."
-    },
-    "fr_FR": {
-      "title": "Fenêtre de charge utile",
-      "scanner": "Paquet de remontée improvisé. Il peut quitter l’océan si masse, météo, timing de dose et géométrie Black Keel s’accordent.",
-      "field_note": "Sortir est une route. Sortir proprement est une histoire que les gens vendent après que quelqu’un d’autre a payé la masse.",
-      "terminal": "SLOT PAYLOAD : LIMITÉ. FENÊTRE : OUVERTE. ROUTE : CONTESTÉE. RÉCEPTEUR : NON CONFIRMÉ. VALEUR CLAIM : VARIABLE. ÉTAT PREUVE : INSUFFISANT POUR LITIGE PROPRE.",
-      "audio": "La fenêtre est ouverte. Elle ne restera pas ouverte pour tout.",
-      "in_game_wiki": "La Fenêtre de charge utile est l’endroit où les choix finaux deviennent physiques. Le joueur ne peut déplacer qu’une masse limitée à travers pression, couverture de tempête, timing radiatif d’Aegir et géométrie de récupération Black Keel. Argent, preuves, noms d’ouvriers, coordonnées, échantillons vivants, signal Atlas ou silence ne peuvent pas tous partir ensemble.",
-      "external_site": "La Fenêtre de charge utile rend les fins de HECTON-8 matérielles : pas seulement ce que croit le joueur, mais ce qui passe par pression, météo, dette, garde de preuve et contrôle du récepteur.",
-      "external_site_article": "Le dernier problème sur HECTON-8 n’est pas un menu moral suspendu au-dessus de l’océan. C’est une fenêtre de charge utile. Le paquet de remontée a des limites de masse, la météo a son timing, Aegir impose radiation et orbite, et Black Keel possède des règles de récepteur avant toute pitié. Chaque fin demande donc ce qui quitte la lune et qui le reçoit. Les coordonnées peuvent acheter la récupération et livrer la scène de crime à Deep Reach. Les preuves peuvent atteindre un registre public et retirer au joueur le contrôle des conséquences. Les échantillons peuvent payer la dette tout en renforçant le système qui a enterré les noms des ouvriers. Le silence peut priver la corporation et laisser la preuve sous l’eau. La fenêtre n’est pas la justice. C’est la forme par laquelle la justice doit passer."
-    },
-    "he_IL": {
-      "title": "חלון מטען",
-      "scanner": "חבילת עלייה מאולתרת. היא יכולה לצאת מן האוקיינוס אם מסה, מזג אוויר, תזמון מנה וגאומטריית Black Keel מסכימים.",
-      "field_note": "יציאה היא נתיב. יציאה נקייה היא סיפור שאנשים מוכרים אחרי שמישהו אחר שילם את המסה.",
-      "terminal": "חריץ מטען: מוגבל. חלון: פתוח. נתיב: במחלוקת. מקבל: לא מאושר. ערך CLAIM: משתנה. מצב ראיה: לא מספיק לוויכוח נקי.",
-      "audio": "החלון פתוח. הוא לא יישאר פתוח בשביל הכול.",
-      "in_game_wiki": "חלון המטען הוא המקום שבו בחירות אחרונות הופכות לפיזיות. השחקן יכול להזיז רק מסה מוגבלת דרך לחץ, כיסוי סערה, תזמון קרינה של אגיר וגאומטריית חילוץ של Black Keel. כסף, ראיות, שמות עובדים, קואורדינטות, דגימות חיות, אות Atlas או שתיקה אינם יכולים לצאת יחד.",
-      "external_site": "חלון המטען הופך את הסופים של HECTON-8 לחומריים: לא רק מה השחקן מאמין, אלא מה נכנס דרך לחץ, מזג אוויר, חוב, משמורת ראיות ושליטת מקבל.",
-      "external_site_article": "הבעיה האחרונה על HECTON-8 אינה תפריט מוסרי שמרחף מעל האוקיינוס. היא חלון מטען. לחבילת העלייה יש מגבלות מסה, למזג האוויר יש תזמון, לאגיר יש קרינה ואילוצי מסלול, ול-Black Keel יש כללי מקבל לפני רחמים. לכן כל סוף שואל מה עוזב את הירח ומי מקבל אותו. קואורדינטות יכולות לקנות חילוץ ולמסור את זירת הפשע ל-Deep Reach. ראיות יכולות להגיע לרישום ציבורי ולקחת מהשחקן שליטה על התוצאה. דגימות יכולות לשלם חוב ולחזק את המערכת שקברה שמות עובדים. שתיקה יכולה לשלול מהתאגיד ולהשאיר ראיות מתחת למים. החלון אינו צדק. הוא הצורה שדרכה הצדק חייב להידחק."
-    },
-    "id_ID": {
-      "title": "Jendela Payload",
-      "scanner": "Paket naik improvisasi. Ia bisa meninggalkan laut jika massa, cuaca, waktu dosis, dan geometri Black Keel cocok.",
-      "field_note": "Keluar adalah rute. Keluar bersih adalah cerita yang dijual orang setelah orang lain membayar massanya.",
-      "terminal": "SLOT PAYLOAD: TERBATAS. JENDELA: TERBUKA. RUTE: DIPEREBUTKAN. PENERIMA: BELUM PASTI. NILAI CLAIM: BERUBAH. STATUS BUKTI: TIDAK CUKUP UNTUK SENGKETA BERSIH.",
-      "audio": "Jendela terbuka. Ia tidak akan tetap terbuka untuk semuanya.",
-      "in_game_wiki": "Jendela Payload adalah tempat pilihan akhir menjadi fisik. Pemain hanya dapat memindahkan massa terbatas melalui tekanan, perlindungan badai, waktu radiasi Aegir, dan geometri pemulihan Black Keel. Uang, bukti, nama pekerja, koordinat, sampel hidup, sinyal Atlas, atau diam tidak bisa semuanya keluar bersama.",
-      "external_site": "Jendela Payload membuat akhir HECTON-8 menjadi materi: bukan hanya apa yang dipercaya pemain, tetapi apa yang muat melalui tekanan, cuaca, utang, kustodi bukti, dan kontrol penerima.",
-      "external_site_article": "Masalah terakhir di HECTON-8 bukan menu moral yang melayang di atas laut. Itu jendela payload. Paket naik punya batas massa, cuaca punya waktu, Aegir punya batas radiasi dan orbit, dan Black Keel punya aturan penerima sebelum punya belas kasihan. Maka setiap akhir bertanya apa yang meninggalkan bulan dan siapa yang menerimanya. Koordinat dapat membeli pemulihan dan menyerahkan tempat perkara ke Deep Reach. Bukti dapat mencapai buku publik dan menghapus kendali pemain atas akibat. Sampel dapat membayar utang sambil menguatkan sistem yang mengubur nama pekerja. Diam dapat menolak korporasi dan membiarkan bukti di bawah air. Jendela itu bukan keadilan. Itu bentuk yang harus dilewati keadilan."
-    },
-    "ja_JP": {
-      "title": "ペイロード・ウィンドウ",
-      "scanner": "即席上昇パッケージ。質量、天候、線量時刻、Black Keel幾何が合えば海を出られる。",
-      "field_note": "脱出は経路だ。きれいな脱出は、誰か別の人間が質量を払った後に売られる物語だ。",
-      "terminal": "PAYLOAD SLOT: 制限。WINDOW: 開放。ROUTE: 係争中。RECEIVER: 未確認。CLAIM VALUE: 変動。EVIDENCE STATE: 清潔な異議には不足。",
-      "audio": "窓は開いている。すべてのために開き続けるわけではない。",
-      "in_game_wiki": "ペイロード・ウィンドウでは、最後の選択が物理になる。プレイヤーが圧力、嵐の覆い、エーギル放射線時刻、Black Keel回収幾何を通して動かせる質量は限られる。金、証拠、作業員名、座標、生体サンプル、Atlas信号、沈黙をすべて同時に持ち出すことはできない。",
-      "external_site": "ペイロード・ウィンドウはHECTON-8の結末を物質にする。何を信じるかだけでなく、圧力、天候、負債、証拠保管、受取人支配を通れるものが問われる。",
-      "external_site_article": "HECTON-8の最後の問題は、海の上に浮かぶ道徳メニューではない。ペイロード・ウィンドウだ。上昇パッケージには質量制限があり、天候には時刻があり、エーギルには放射線と軌道制約があり、Black Keelには慈悲より先に受取人規則がある。だからすべての結末は、何が月を離れ、誰がそれを受け取るかを問う。座標は回収を買い、Deep Reachへ犯罪現場を渡すかもしれない。証拠は公開台帳へ届き、プレイヤーから結果の制御を奪うかもしれない。サンプルは負債を払い、作業員名を埋めたシステムを強めるかもしれない。沈黙は企業を拒み、証拠を水中に残すかもしれない。窓は正義ではない。正義が押し込まれなければならない形だ。"
-    },
-    "ko_KR": {
-      "title": "페이로드 창",
-      "scanner": "즉석 상승 패키지. 질량, 날씨, 선량 타이밍, Black Keel 기하가 맞으면 바다를 떠날 수 있다.",
-      "field_note": "나가는 것은 경로다. 깨끗하게 나가는 것은 누군가가 질량값을 치른 뒤 팔리는 이야기다.",
-      "terminal": "PAYLOAD SLOT: 제한. WINDOW: 개방. ROUTE: 분쟁 중. RECEIVER: 미확인. CLAIM VALUE: 가변. EVIDENCE STATE: 깨끗한 분쟁에 부족.",
-      "audio": "창은 열려 있다. 모든 것을 위해 계속 열리지는 않는다.",
-      "in_game_wiki": "페이로드 창은 마지막 선택을 물리적으로 만든다. 플레이어가 압력, 폭풍 엄폐, 에기르 방사선 타이밍, Black Keel 회수 기하를 통해 움직일 수 있는 질량은 제한된다. 돈, 증거, 작업자 이름, 좌표, 살아 있는 샘플, Atlas 신호, 침묵은 모두 함께 나갈 수 없다.",
-      "external_site": "페이로드 창은 HECTON-8의 결말을 물질로 만든다. 플레이어가 무엇을 믿는지만이 아니라, 압력과 날씨와 부채와 증거 보관과 수신자 통제를 통과할 수 있는 것이 문제다.",
-      "external_site_article": "HECTON-8의 마지막 문제는 바다 위에 떠 있는 도덕 메뉴가 아니다. 페이로드 창이다. 상승 패키지에는 질량 제한이 있고, 날씨에는 시간이 있고, 에기르에는 방사선과 궤도 제약이 있으며, Black Keel에는 자비보다 먼저 수신자 규칙이 있다. 그래서 모든 결말은 무엇이 달을 떠나고 누가 받는지를 묻는다. 좌표는 회수를 살 수 있지만 Deep Reach에 범죄 현장을 넘길 수 있다. 증거는 공개 장부에 닿고 플레이어에게서 결과 통제를 빼앗을 수 있다. 샘플은 빚을 갚지만 작업자 이름을 묻은 시스템을 강하게 만들 수 있다. 침묵은 기업을 거부하고 증거를 물속에 남길 수 있다. 창은 정의가 아니다. 정의가 비집고 지나가야 하는 모양이다."
-    },
-    "nl_NL": {
-      "title": "Ladingvenster",
-      "scanner": "Geïmproviseerd stijgpakket. Het kan de oceaan verlaten als massa, weer, dosistiming en Black Keel-geometrie overeenkomen.",
-      "field_note": "Eruit komen is een route. Schoon eruit komen is een verhaal dat mensen verkopen nadat iemand anders de massa heeft betaald.",
-      "terminal": "PAYLOAD SLOT: BEPERKT. WINDOW: OPEN. ROUTE: BETWIST. ONTVANGER: ONBEVESTIGD. CLAIMWAARDE: VARIABEL. BEWIJSSTATUS: ONVOLDOENDE VOOR SCHOON GESCHIL.",
-      "audio": "Het venster is open. Het blijft niet voor alles open.",
-      "in_game_wiki": "Het Ladingvenster is waar laatste keuzes fysiek worden. De speler kan slechts beperkte massa door druk, stormdekking, Aegir-stralingstiming en Black Keel-recoverygeometrie bewegen. Geld, bewijs, arbeidersnamen, coördinaten, levende monsters, Atlas-signaal of stilte kunnen niet allemaal samen vertrekken.",
-      "external_site": "Het Ladingvenster maakt HECTON-8s eindes materieel: niet alleen wat de speler gelooft, maar wat door druk, weer, schuld, bewijscustody en ontvangercontrole past.",
-      "external_site_article": "Het laatste probleem op HECTON-8 is geen moreel menu dat boven de oceaan zweeft. Het is een ladingvenster. Het stijgpakket heeft massalimieten, het weer heeft timing, Aegir heeft stralings- en orbitale beperkingen, en Black Keel heeft ontvangerregels voordat het genade heeft. Elk einde vraagt daarom wat de maan verlaat en wie het krijgt. Coördinaten kunnen recovery kopen en Deep Reach de plaats delict geven. Bewijs kan een openbaar register bereiken en de speler controle over gevolgen ontnemen. Monsters kunnen schuld betalen terwijl ze het systeem versterken dat arbeidersnamen begroef. Stilte kan de corporatie ontkennen en bewijs onder water laten. Het venster is geen gerechtigheid. Het is de vorm waar gerechtigheid doorheen moet knijpen."
-    },
-    "pl_PL": {
-      "title": "Okno ładunku",
-      "scanner": "Improwizowany pakiet wynurzenia. Może opuścić ocean, jeśli zgadzają się masa, pogoda, timing dawki i geometria Black Keel.",
-      "field_note": "Wydostanie się to trasa. Czyste wydostanie się to opowieść sprzedawana po tym, jak ktoś inny zapłacił masę.",
-      "terminal": "PAYLOAD SLOT: OGRANICZONY. WINDOW: OTWARTE. ROUTE: SPORNA. ODBIORCA: NIEPOTWIERDZONY. CLAIM VALUE: ZMIENNA. EVIDENCE STATE: NIEWYSTARCZAJĄCY DO CZYSTEGO SPORU.",
-      "audio": "Okno jest otwarte. Nie pozostanie otwarte dla wszystkiego.",
-      "in_game_wiki": "Okno ładunku to miejsce, gdzie końcowe wybory stają się fizyczne. Gracz może przenieść tylko ograniczoną masę przez ciśnienie, osłonę burzy, timing promieniowania Aegira i geometrię odzysku Black Keel. Pieniądze, dowody, nazwiska pracowników, koordynaty, żywe próbki, sygnał Atlas albo cisza nie mogą wyjść razem.",
-      "external_site": "Okno ładunku czyni zakończenia HECTON-8 materialnymi: nie tylko to, w co gracz wierzy, ale co mieści się w ciśnieniu, pogodzie, długu, custody dowodu i kontroli odbiorcy.",
-      "external_site_article": "Ostatni problem na HECTON-8 nie jest moralnym menu unoszącym się nad oceanem. To okno ładunku. Pakiet wynurzenia ma limity masy, pogoda ma timing, Aegir ma ograniczenia promieniowania i orbity, a Black Keel ma zasady odbiorcy, zanim okaże litość. Każde zakończenie pyta więc, co opuszcza księżyc i kto to dostaje. Koordynaty mogą kupić odzysk i oddać Deep Reach miejsce zbrodni. Dowody mogą trafić do publicznego rejestru i odebrać graczowi kontrolę nad konsekwencją. Próbki mogą spłacić dług, wzmacniając system, który pogrzebał nazwiska pracowników. Cisza może odmówić korporacji i zostawić dowód pod wodą. Okno nie jest sprawiedliwością. Jest kształtem, przez który sprawiedliwość musi się przecisnąć."
-    },
-    "pt_BR": {
-      "title": "Janela de carga",
-      "scanner": "Pacote de subida improvisado. Pode deixar o oceano se massa, clima, tempo de dose e geometria da Black Keel coincidirem.",
-      "field_note": "Sair é uma rota. Sair limpo é uma história que as pessoas vendem depois que outra pessoa pagou a massa.",
-      "terminal": "PAYLOAD SLOT: LIMITADO. WINDOW: ABERTA. ROUTE: CONTESTADA. RECEPTOR: NÃO CONFIRMADO. CLAIM VALUE: VARIÁVEL. EVIDENCE STATE: INSUFICIENTE PARA DISPUTA LIMPA.",
-      "audio": "A janela está aberta. Ela não ficará aberta para tudo.",
-      "in_game_wiki": "A Janela de carga é onde escolhas finais viram físicas. O jogador só consegue mover massa limitada através de pressão, cobertura de tempestade, tempo de radiação de Aegir e geometria de recuperação da Black Keel. Dinheiro, prova, nomes de trabalhadores, coordenadas, amostras vivas, sinal Atlas ou silêncio não podem sair juntos.",
-      "external_site": "A Janela de carga torna os finais de HECTON-8 materiais: não só o que o jogador acredita, mas o que cabe por pressão, clima, dívida, custódia de prova e controle do receptor.",
-      "external_site_article": "O problema final em HECTON-8 não é um menu moral flutuando sobre o oceano. É uma janela de carga. O pacote de subida tem limites de massa, o clima tem tempo, Aegir tem restrições de radiação e órbita, e a Black Keel tem regras de receptor antes de ter misericórdia. Cada final pergunta o que deixa a lua e quem recebe. Coordenadas podem comprar recuperação e entregar a cena do crime à Deep Reach. Provas podem chegar a um registro público e tirar do jogador o controle sobre a consequência. Amostras podem pagar dívida enquanto fortalecem o sistema que enterrou nomes de trabalhadores. Silêncio pode negar a corporação e deixar prova sob a água. A janela não é justiça. É o formato pelo qual a justiça precisa passar."
-    },
-    "ru_RU": {
-      "title": "Окно полезной нагрузки",
-      "scanner": "Импровизированный пакет подъёма. Он может покинуть океан, если совпадут масса, погода, дозовое время и геометрия Black Keel.",
-      "field_note": "Выбраться — это маршрут. Выбраться чисто — история, которую продают после того, как кто-то другой оплатил массу.",
-      "terminal": "PAYLOAD SLOT: ОГРАНИЧЕН. WINDOW: ОТКРЫТО. ROUTE: ОСПАРИВАЕТСЯ. RECEIVER: НЕ ПОДТВЕРЖДЁН. CLAIM VALUE: ПЕРЕМЕННАЯ. EVIDENCE STATE: НЕДОСТАТОЧНА ДЛЯ ЧИСТОГО СПОРА.",
-      "audio": "Окно открыто. Оно не останется открытым для всего.",
-      "in_game_wiki": "Окно полезной нагрузки — место, где финальные выборы становятся физическими. Игрок может провести через давление, штормовое прикрытие, радиационное время Аегира и геометрию восстановления Black Keel только ограниченную массу. Деньги, доказательства, имена работников, координаты, живые образцы, сигнал Atlas или молчание не могут уйти вместе.",
-      "external_site": "Окно полезной нагрузки делает финалы HECTON-8 материальными: важно не только, во что верит игрок, а что проходит через давление, погоду, долг, custody доказательств и контроль получателя.",
-      "external_site_article": "Последняя проблема HECTON-8 — не моральное меню, висящее над океаном. Это окно полезной нагрузки. У пакета подъёма есть предел массы, у погоды есть время, у Аегира есть радиационные и орбитальные ограничения, а у Black Keel есть правила получателя раньше, чем милость. Поэтому каждый финал спрашивает, что покидает луну и кто это получает. Координаты могут купить восстановление и отдать Deep Reach место преступления. Доказательства могут попасть в публичный реестр и забрать у игрока контроль над последствиями. Образцы могут оплатить долг и усилить систему, похоронившую имена работников. Молчание может отказать корпорации и оставить доказательство под водой. Окно — не справедливость. Это форма, через которую справедливости приходится протискиваться."
-    },
-    "uk_UA": {
-      "title": "Вікно корисного вантажу",
-      "scanner": "Імпровізований пакет підйому. Він може залишити океан, якщо збігатимуться маса, погода, дозовий час і геометрія Black Keel.",
-      "field_note": "Вибратися — це маршрут. Вибратися чисто — історія, яку продають після того, як хтось інший оплатив масу.",
-      "terminal": "PAYLOAD SLOT: ОБМЕЖЕНИЙ. WINDOW: ВІДКРИТЕ. ROUTE: ОСПОРЮЄТЬСЯ. RECEIVER: НЕ ПІДТВЕРДЖЕНИЙ. CLAIM VALUE: ЗМІННА. EVIDENCE STATE: НЕДОСТАТНЯ ДЛЯ ЧИСТОЇ СУПЕРЕЧКИ.",
-      "audio": "Вікно відкрите. Воно не лишиться відкритим для всього.",
-      "in_game_wiki": "Вікно корисного вантажу — місце, де фінальні вибори стають фізичними. Гравець може провести крізь тиск, штормове прикриття, радіаційний час Аегіра й геометрію відновлення Black Keel лише обмежену масу. Гроші, докази, імена працівників, координати, живі зразки, сигнал Atlas або мовчання не можуть піти разом.",
-      "external_site": "Вікно корисного вантажу робить фінали HECTON-8 матеріальними: важливо не тільки, у що вірить гравець, а що проходить крізь тиск, погоду, борг, custody доказів і контроль отримувача.",
-      "external_site_article": "Остання проблема HECTON-8 — не моральне меню, що висить над океаном. Це вікно корисного вантажу. У пакета підйому є межа маси, у погоди є час, в Аегіра є радіаційні й орбітальні обмеження, а в Black Keel є правила отримувача раніше, ніж милість. Тому кожен фінал питає, що залишає місяць і хто це отримує. Координати можуть купити відновлення й віддати Deep Reach місце злочину. Докази можуть потрапити в публічний реєстр і забрати у гравця контроль над наслідками. Зразки можуть оплатити борг і посилити систему, що поховала імена працівників. Мовчання може відмовити корпорації й лишити доказ під водою. Вікно — не справедливість. Це форма, крізь яку справедливості доводиться протискатися."
-    },
-    "zh_CN": {
-      "title": "载荷窗口",
-      "scanner": "临时上升包。如果质量、天气、剂量时序和Black Keel几何一致，它就能离开海洋。",
-      "field_note": "出去是一条路线。干净出去，是别人付完质量账之后拿来卖的故事。",
-      "terminal": "PAYLOAD SLOT：有限。WINDOW：开启。ROUTE：争议中。RECEIVER：未确认。CLAIM VALUE：可变。EVIDENCE STATE：不足以进行干净争端。",
-      "audio": "窗口已开。它不会为所有东西一直开着。",
-      "in_game_wiki": "载荷窗口是最终选择变成物理问题的地方。玩家只能把有限质量带过压力、风暴遮蔽、埃吉尔辐射时序和Black Keel回收几何。金钱、证据、工人姓名、坐标、活体样本、Atlas信号或沉默，不可能全部一起离开。",
-      "external_site": "载荷窗口让HECTON-8的结局变成物质问题：不只是玩家相信什么，而是什么能穿过压力、天气、债务、证据保管和接收方控制。",
-      "external_site_article": "HECTON-8的最终问题不是漂在海面上的道德菜单。它是一个载荷窗口。上升包有质量限制，天气有时序，埃吉尔有辐射和轨道约束，Black Keel在怜悯之前有接收方规则。因此每个结局都在问：什么离开这颗卫星，由谁接收？坐标可以买来回收，也会把犯罪现场交给Deep Reach。证据可以抵达公共账簿，并让玩家失去对后果的控制。样本可以偿还债务，同时强化那个埋掉工人姓名的系统。沉默可以拒绝公司，也会把证据留在水下。窗口不是正义。它是正义不得不挤过的形状。"
-    }
+  "ar_SA": {
+   "title": "نافذة الحمولة",
+   "scanner": "حزمة صعود مرتجلة. يمكنها مغادرة المحيط إذا اتفقت الكتلة والطقس وتوقيت الجرعة وهندسة Black Keel.",
+   "field_note": "الخروج مسار. الخروج النظيف قصة يبيعها الناس بعد أن يدفع شخص آخر ثمن الكتلة.",
+   "terminal": "خانة الحمولة: محدودة. النافذة: مفتوحة. المسار: متنازع. المستلم: غير مؤكد. قيمة المطالبة: متغيرة. حالة الدليل: غير كافية لنزاع نظيف.",
+   "audio": "النافذة مفتوحة. لن تبقى مفتوحة لكل شيء.",
+   "in_game_wiki": "نافذة الحمولة هي المكان الذي تصبح فيه الاختيارات النهائية مادية. يستطيع اللاعب نقل كتلة محدودة فقط عبر الضغط وغطاء العاصفة وتوقيت إشعاع أيغير وهندسة استعادة Black Keel. المال والدليل وأسماء العمال والإحداثيات والعينات الحية وإشارة Atlas أو الصمت لا يمكن أن تغادر كلها معاً.",
+   "external_site": "تجعل نافذة الحمولة نهايات HECTON-8 مادية: ليس فقط ما يصدقه اللاعب، بل ما يتسع له الضغط والطقس والدين وحيازة الدليل وتحكم المستلم.",
+   "external_site_article": "المشكلة الأخيرة على HECTON-8 ليست قائمة أخلاقية عائمة فوق المحيط. إنها نافذة حمولة. لحزمة الصعود حدود كتلة، وللطقس توقيت، ولأيغير قيود إشعاع ومدار، ولـ Black Keel قواعد مستلم قبل الرحمة. لذلك يسأل كل ending: ما الذي يغادر القمر ومن يستلمه؟ قد تشتري الإحداثيات الاستعادة وتسلم مسرح الجريمة إلى Deep Reach. قد يصل الدليل إلى سجل عام ويفقد اللاعب التحكم بالعاقبة. قد تدفع العينات الدين وتقوي النظام الذي دفن أسماء العمال. قد يحرم الصمت الشركة ويترك الدليل تحت الماء. النافذة ليست عدالة. إنها الشكل الذي تضطر العدالة إلى المرور عبره."
+  },
+  "de_DE": {
+   "title": "Nutzlastfenster",
+   "scanner": "Improvisiertes Aufstiegspaket. Es kann den Ozean verlassen, wenn Masse, Wetter, Dosiszeit und Black-Keel-Geometrie zusammenpassen.",
+   "field_note": "Rauskommen ist eine Route. Sauber rauskommen ist eine Geschichte, die Leute verkaufen, nachdem jemand anderes die Masse bezahlt hat.",
+   "terminal": "PAYLOAD SLOT: BEGRENZT. WINDOW: OFFEN. ROUTE: UMSTRITTEN. EMPFÄNGER: UNBESTÄTIGT. CLAIM-WERT: VARIABEL. BEWEISSTATUS: UNZUREICHEND FÜR SAUBEREN STREIT.",
+   "audio": "Das Fenster ist offen. Es bleibt nicht für alles offen.",
+   "in_game_wiki": "Im Nutzlastfenster werden letzte Entscheidungen physisch. Der Spieler kann nur begrenzte Masse durch Druck, Sturmdeckung, Aegir-Strahlungszeit und Black-Keel-Bergungsgeometrie bewegen. Geld, Beweise, Arbeiternamen, Koordinaten, lebende Proben, Atlas-Signal oder Schweigen können nicht alle zusammen hinaus.",
+   "external_site": "Das Nutzlastfenster macht HECTON-8s Enden materiell: nicht nur, was der Spieler glaubt, sondern was durch Druck, Wetter, Schulden, Beweiskette und Empfängerkontrolle passt.",
+   "external_site_article": "Das letzte Problem auf HECTON-8 ist kein Moralmenü über dem Ozean. Es ist ein Nutzlastfenster. Das Aufstiegspaket hat Massengrenzen, das Wetter hat Timing, Aegir hat Strahlungs- und Orbitgrenzen, und Black Keel hat Empfängerregeln, bevor es Mitleid hat. Jedes Ende fragt daher, was den Mond verlässt und wer es bekommt. Koordinaten können Bergung kaufen und Deep Reach den Tatort geben. Beweise können ein öffentliches Register erreichen und dem Spieler die Kontrolle über Folgen nehmen. Proben können Schulden bezahlen und das System stärken, das Arbeiternamen begrub. Schweigen kann den Konzern blenden und Beweise unter Wasser lassen. Das Fenster ist keine Gerechtigkeit. Es ist die Form, durch die Gerechtigkeit hindurchpassen muss."
+  },
+  "es_ES": {
+   "title": "Ventana de carga",
+   "scanner": "Paquete de ascenso improvisado. Puede dejar el océano si masa, clima, tiempo de dosis y geometría Black Keel coinciden.",
+   "field_note": "Salir es una ruta. Salir limpio es una historia que la gente vende después de que otro paga la masa.",
+   "terminal": "RANURA DE CARGA: LIMITADA. VENTANA: ABIERTA. RUTA: DISPUTADA. RECEPTOR: SIN CONFIRMAR. VALOR CLAIM: VARIABLE. ESTADO DE EVIDENCIA: INSUFICIENTE PARA DISPUTA LIMPIA.",
+   "audio": "La ventana está abierta. No seguirá abierta para todo.",
+   "in_game_wiki": "La Ventana de carga es donde las decisiones finales se vuelven físicas. El jugador solo puede mover masa limitada a través de presión, cobertura de tormenta, tiempo de radiación de Aegir y geometría de recuperación Black Keel. Dinero, pruebas, nombres de trabajadores, coordenadas, muestras vivas, señal Atlas o silencio no pueden salir juntos.",
+   "external_site": "La Ventana de carga vuelve materiales los finales de HECTON-8: no solo lo que cree el jugador, sino lo que cabe por presión, clima, deuda, custodia de evidencia y control del receptor.",
+   "external_site_article": "El último problema en HECTON-8 no es un menú moral flotando sobre el océano. Es una ventana de carga. El paquete de ascenso tiene límite de masa, el clima tiene tiempo, Aegir tiene restricciones de radiación y órbita, y Black Keel tiene reglas de receptor antes que piedad. Cada final pregunta qué deja la luna y quién lo recibe. Las coordenadas pueden comprar recuperación y entregar la escena del crimen a Deep Reach. La evidencia puede llegar a un libro público y quitar al jugador el control de la consecuencia. Las muestras pueden pagar deuda mientras fortalecen el sistema que enterró nombres de trabajadores. El silencio puede negar a la corporación y dejar la prueba bajo el agua. La ventana no es justicia. Es la forma por la que la justicia debe apretarse."
+  },
+  "fr_FR": {
+   "title": "Fenêtre de charge utile",
+   "scanner": "Paquet de remontée improvisé. Il peut quitter l’océan si masse, météo, timing de dose et géométrie Black Keel s’accordent.",
+   "field_note": "Sortir est une route. Sortir proprement est une histoire que les gens vendent après que quelqu’un d’autre a payé la masse.",
+   "terminal": "SLOT PAYLOAD : LIMITÉ. FENÊTRE : OUVERTE. ROUTE : CONTESTÉE. RÉCEPTEUR : NON CONFIRMÉ. VALEUR CLAIM : VARIABLE. ÉTAT PREUVE : INSUFFISANT POUR LITIGE PROPRE.",
+   "audio": "La fenêtre est ouverte. Elle ne restera pas ouverte pour tout.",
+   "in_game_wiki": "La Fenêtre de charge utile est l’endroit où les choix finaux deviennent physiques. Le joueur ne peut déplacer qu’une masse limitée à travers pression, couverture de tempête, timing radiatif d’Aegir et géométrie de récupération Black Keel. Argent, preuves, noms d’ouvriers, coordonnées, échantillons vivants, signal Atlas ou silence ne peuvent pas tous partir ensemble.",
+   "external_site": "La Fenêtre de charge utile rend les fins de HECTON-8 matérielles : pas seulement ce que croit le joueur, mais ce qui passe par pression, météo, dette, garde de preuve et contrôle du récepteur.",
+   "external_site_article": "Le dernier problème sur HECTON-8 n’est pas un menu moral suspendu au-dessus de l’océan. C’est une fenêtre de charge utile. Le paquet de remontée a des limites de masse, la météo a son timing, Aegir impose radiation et orbite, et Black Keel possède des règles de récepteur avant toute pitié. Chaque fin demande donc ce qui quitte la lune et qui le reçoit. Les coordonnées peuvent acheter la récupération et livrer la scène de crime à Deep Reach. Les preuves peuvent atteindre un registre public et retirer au joueur le contrôle des conséquences. Les échantillons peuvent payer la dette tout en renforçant le système qui a enterré les noms des ouvriers. Le silence peut priver la corporation et laisser la preuve sous l’eau. La fenêtre n’est pas la justice. C’est la forme par laquelle la justice doit passer."
+  },
+  "he_IL": {
+   "title": "חלון מטען",
+   "scanner": "חבילת עלייה מאולתרת. היא יכולה לצאת מן האוקיינוס אם מסה, מזג אוויר, תזמון מנה וגאומטריית Black Keel מסכימים.",
+   "field_note": "יציאה היא נתיב. יציאה נקייה היא סיפור שאנשים מוכרים אחרי שמישהו אחר שילם את המסה.",
+   "terminal": "חריץ מטען: מוגבל. חלון: פתוח. נתיב: במחלוקת. מקבל: לא מאושר. ערך CLAIM: משתנה. מצב ראיה: לא מספיק לוויכוח נקי.",
+   "audio": "החלון פתוח. הוא לא יישאר פתוח בשביל הכול.",
+   "in_game_wiki": "חלון המטען הוא המקום שבו בחירות אחרונות הופכות לפיזיות. השחקן יכול להזיז רק מסה מוגבלת דרך לחץ, כיסוי סערה, תזמון קרינה של אגיר וגאומטריית חילוץ של Black Keel. כסף, ראיות, שמות עובדים, קואורדינטות, דגימות חיות, אות Atlas או שתיקה אינם יכולים לצאת יחד.",
+   "external_site": "חלון המטען הופך את הסופים של HECTON-8 לחומריים: לא רק מה השחקן מאמין, אלא מה נכנס דרך לחץ, מזג אוויר, חוב, משמורת ראיות ושליטת מקבל.",
+   "external_site_article": "הבעיה האחרונה על HECTON-8 אינה תפריט מוסרי שמרחף מעל האוקיינוס. היא חלון מטען. לחבילת העלייה יש מגבלות מסה, למזג האוויר יש תזמון, לאגיר יש קרינה ואילוצי מסלול, ול-Black Keel יש כללי מקבל לפני רחמים. לכן כל סוף שואל מה עוזב את הירח ומי מקבל אותו. קואורדינטות יכולות לקנות חילוץ ולמסור את זירת הפשע ל-Deep Reach. ראיות יכולות להגיע לרישום ציבורי ולקחת מהשחקן שליטה על התוצאה. דגימות יכולות לשלם חוב ולחזק את המערכת שקברה שמות עובדים. שתיקה יכולה לשלול מהתאגיד ולהשאיר ראיות מתחת למים. החלון אינו צדק. הוא הצורה שדרכה הצדק חייב להידחק."
+  },
+  "id_ID": {
+   "title": "Jendela Payload",
+   "scanner": "Paket naik improvisasi. Ia bisa meninggalkan laut jika massa, cuaca, waktu dosis, dan geometri Black Keel cocok.",
+   "field_note": "Keluar adalah rute. Keluar bersih adalah cerita yang dijual orang setelah orang lain membayar massanya.",
+   "terminal": "SLOT PAYLOAD: TERBATAS. JENDELA: TERBUKA. RUTE: DIPEREBUTKAN. PENERIMA: BELUM PASTI. NILAI CLAIM: BERUBAH. STATUS BUKTI: TIDAK CUKUP UNTUK SENGKETA BERSIH.",
+   "audio": "Jendela terbuka. Ia tidak akan tetap terbuka untuk semuanya.",
+   "in_game_wiki": "Jendela Payload adalah tempat pilihan akhir menjadi fisik. Pemain hanya dapat memindahkan massa terbatas melalui tekanan, perlindungan badai, waktu radiasi Aegir, dan geometri pemulihan Black Keel. Uang, bukti, nama pekerja, koordinat, sampel hidup, sinyal Atlas, atau diam tidak bisa semuanya keluar bersama.",
+   "external_site": "Jendela Payload membuat akhir HECTON-8 menjadi materi: bukan hanya apa yang dipercaya pemain, tetapi apa yang muat melalui tekanan, cuaca, utang, kustodi bukti, dan kontrol penerima.",
+   "external_site_article": "Masalah terakhir di HECTON-8 bukan menu moral yang melayang di atas laut. Itu jendela payload. Paket naik punya batas massa, cuaca punya waktu, Aegir punya batas radiasi dan orbit, dan Black Keel punya aturan penerima sebelum punya belas kasihan. Maka setiap akhir bertanya apa yang meninggalkan bulan dan siapa yang menerimanya. Koordinat dapat membeli pemulihan dan menyerahkan tempat perkara ke Deep Reach. Bukti dapat mencapai buku publik dan menghapus kendali pemain atas akibat. Sampel dapat membayar utang sambil menguatkan sistem yang mengubur nama pekerja. Diam dapat menolak korporasi dan membiarkan bukti di bawah air. Jendela itu bukan keadilan. Itu bentuk yang harus dilewati keadilan."
+  },
+  "ja_JP": {
+   "title": "ペイロード・ウィンドウ",
+   "scanner": "即席上昇パッケージ。質量、天候、線量時刻、Black Keel幾何が合えば海を出られる。",
+   "field_note": "脱出は経路だ。きれいな脱出は、誰か別の人間が質量を払った後に売られる物語だ。",
+   "terminal": "PAYLOAD SLOT: 制限。WINDOW: 開放。ROUTE: 係争中。RECEIVER: 未確認。CLAIM VALUE: 変動。EVIDENCE STATE: 清潔な異議には不足。",
+   "audio": "窓は開いている。すべてのために開き続けるわけではない。",
+   "in_game_wiki": "ペイロード・ウィンドウでは、最後の選択が物理になる。プレイヤーが圧力、嵐の覆い、エーギル放射線時刻、Black Keel回収幾何を通して動かせる質量は限られる。金、証拠、作業員名、座標、生体サンプル、Atlas信号、沈黙をすべて同時に持ち出すことはできない。",
+   "external_site": "ペイロード・ウィンドウはHECTON-8の結末を物質にする。何を信じるかだけでなく、圧力、天候、負債、証拠保管、受取人支配を通れるものが問われる。",
+   "external_site_article": "HECTON-8の最後の問題は、海の上に浮かぶ道徳メニューではない。ペイロード・ウィンドウだ。上昇パッケージには質量制限があり、天候には時刻があり、エーギルには放射線と軌道制約があり、Black Keelには慈悲より先に受取人規則がある。だからすべての結末は、何が月を離れ、誰がそれを受け取るかを問う。座標は回収を買い、Deep Reachへ犯罪現場を渡すかもしれない。証拠は公開台帳へ届き、プレイヤーから結果の制御を奪うかもしれない。サンプルは負債を払い、作業員名を埋めたシステムを強めるかもしれない。沈黙は企業を拒み、証拠を水中に残すかもしれない。窓は正義ではない。正義が押し込まれなければならない形だ。"
+  },
+  "ko_KR": {
+   "title": "페이로드 창",
+   "scanner": "즉석 상승 패키지. 질량, 날씨, 선량 타이밍, Black Keel 기하가 맞으면 바다를 떠날 수 있다.",
+   "field_note": "나가는 것은 경로다. 깨끗하게 나가는 것은 누군가가 질량값을 치른 뒤 팔리는 이야기다.",
+   "terminal": "PAYLOAD SLOT: 제한. WINDOW: 개방. ROUTE: 분쟁 중. RECEIVER: 미확인. CLAIM VALUE: 가변. EVIDENCE STATE: 깨끗한 분쟁에 부족.",
+   "audio": "창은 열려 있다. 모든 것을 위해 계속 열리지는 않는다.",
+   "in_game_wiki": "페이로드 창은 마지막 선택을 물리적으로 만든다. 플레이어가 압력, 폭풍 엄폐, 에기르 방사선 타이밍, Black Keel 회수 기하를 통해 움직일 수 있는 질량은 제한된다. 돈, 증거, 작업자 이름, 좌표, 살아 있는 샘플, Atlas 신호, 침묵은 모두 함께 나갈 수 없다.",
+   "external_site": "페이로드 창은 HECTON-8의 결말을 물질로 만든다. 플레이어가 무엇을 믿는지만이 아니라, 압력과 날씨와 부채와 증거 보관과 수신자 통제를 통과할 수 있는 것이 문제다.",
+   "external_site_article": "HECTON-8의 마지막 문제는 바다 위에 떠 있는 도덕 메뉴가 아니다. 페이로드 창이다. 상승 패키지에는 질량 제한이 있고, 날씨에는 시간이 있고, 에기르에는 방사선과 궤도 제약이 있으며, Black Keel에는 자비보다 먼저 수신자 규칙이 있다. 그래서 모든 결말은 무엇이 달을 떠나고 누가 받는지를 묻는다. 좌표는 회수를 살 수 있지만 Deep Reach에 범죄 현장을 넘길 수 있다. 증거는 공개 장부에 닿고 플레이어에게서 결과 통제를 빼앗을 수 있다. 샘플은 빚을 갚지만 작업자 이름을 묻은 시스템을 강하게 만들 수 있다. 침묵은 기업을 거부하고 증거를 물속에 남길 수 있다. 창은 정의가 아니다. 정의가 비집고 지나가야 하는 모양이다."
+  },
+  "nl_NL": {
+   "title": "Ladingvenster",
+   "scanner": "Geïmproviseerd stijgpakket. Het kan de oceaan verlaten als massa, weer, dosistiming en Black Keel-geometrie overeenkomen.",
+   "field_note": "Eruit komen is een route. Schoon eruit komen is een verhaal dat mensen verkopen nadat iemand anders de massa heeft betaald.",
+   "terminal": "PAYLOAD SLOT: BEPERKT. WINDOW: OPEN. ROUTE: BETWIST. ONTVANGER: ONBEVESTIGD. CLAIMWAARDE: VARIABEL. BEWIJSSTATUS: ONVOLDOENDE VOOR SCHOON GESCHIL.",
+   "audio": "Het venster is open. Het blijft niet voor alles open.",
+   "in_game_wiki": "Het Ladingvenster is waar laatste keuzes fysiek worden. De speler kan slechts beperkte massa door druk, stormdekking, Aegir-stralingstiming en Black Keel-recoverygeometrie bewegen. Geld, bewijs, arbeidersnamen, coördinaten, levende monsters, Atlas-signaal of stilte kunnen niet allemaal samen vertrekken.",
+   "external_site": "Het Ladingvenster maakt HECTON-8s eindes materieel: niet alleen wat de speler gelooft, maar wat door druk, weer, schuld, bewijscustody en ontvangercontrole past.",
+   "external_site_article": "Het laatste probleem op HECTON-8 is geen moreel menu dat boven de oceaan zweeft. Het is een ladingvenster. Het stijgpakket heeft massalimieten, het weer heeft timing, Aegir heeft stralings- en orbitale beperkingen, en Black Keel heeft ontvangerregels voordat het genade heeft. Elk einde vraagt daarom wat de maan verlaat en wie het krijgt. Coördinaten kunnen recovery kopen en Deep Reach de plaats delict geven. Bewijs kan een openbaar register bereiken en de speler controle over gevolgen ontnemen. Monsters kunnen schuld betalen terwijl ze het systeem versterken dat arbeidersnamen begroef. Stilte kan de corporatie ontkennen en bewijs onder water laten. Het venster is geen gerechtigheid. Het is de vorm waar gerechtigheid doorheen moet knijpen."
+  },
+  "pl_PL": {
+   "title": "Okno ładunku",
+   "scanner": "Improwizowany pakiet wynurzenia. Może opuścić ocean, jeśli zgadzają się masa, pogoda, timing dawki i geometria Black Keel.",
+   "field_note": "Wydostanie się to trasa. Czyste wydostanie się to opowieść sprzedawana po tym, jak ktoś inny zapłacił masę.",
+   "terminal": "PAYLOAD SLOT: OGRANICZONY. WINDOW: OTWARTE. ROUTE: SPORNA. ODBIORCA: NIEPOTWIERDZONY. CLAIM VALUE: ZMIENNA. EVIDENCE STATE: NIEWYSTARCZAJĄCY DO CZYSTEGO SPORU.",
+   "audio": "Okno jest otwarte. Nie pozostanie otwarte dla wszystkiego.",
+   "in_game_wiki": "Okno ładunku to miejsce, gdzie końcowe wybory stają się fizyczne. Gracz może przenieść tylko ograniczoną masę przez ciśnienie, osłonę burzy, timing promieniowania Aegira i geometrię odzysku Black Keel. Pieniądze, dowody, nazwiska pracowników, koordynaty, żywe próbki, sygnał Atlas albo cisza nie mogą wyjść razem.",
+   "external_site": "Okno ładunku czyni zakończenia HECTON-8 materialnymi: nie tylko to, w co gracz wierzy, ale co mieści się w ciśnieniu, pogodzie, długu, custody dowodu i kontroli odbiorcy.",
+   "external_site_article": "Ostatni problem na HECTON-8 nie jest moralnym menu unoszącym się nad oceanem. To okno ładunku. Pakiet wynurzenia ma limity masy, pogoda ma timing, Aegir ma ograniczenia promieniowania i orbity, a Black Keel ma zasady odbiorcy, zanim okaże litość. Każde zakończenie pyta więc, co opuszcza księżyc i kto to dostaje. Koordynaty mogą kupić odzysk i oddać Deep Reach miejsce zbrodni. Dowody mogą trafić do publicznego rejestru i odebrać graczowi kontrolę nad konsekwencją. Próbki mogą spłacić dług, wzmacniając system, który pogrzebał nazwiska pracowników. Cisza może odmówić korporacji i zostawić dowód pod wodą. Okno nie jest sprawiedliwością. Jest kształtem, przez który sprawiedliwość musi się przecisnąć."
+  },
+  "pt_BR": {
+   "title": "Janela de carga",
+   "scanner": "Pacote de subida improvisado. Pode deixar o oceano se massa, clima, tempo de dose e geometria da Black Keel coincidirem.",
+   "field_note": "Sair é uma rota. Sair limpo é uma história que as pessoas vendem depois que outra pessoa pagou a massa.",
+   "terminal": "PAYLOAD SLOT: LIMITADO. WINDOW: ABERTA. ROUTE: CONTESTADA. RECEPTOR: NÃO CONFIRMADO. CLAIM VALUE: VARIÁVEL. EVIDENCE STATE: INSUFICIENTE PARA DISPUTA LIMPA.",
+   "audio": "A janela está aberta. Ela não ficará aberta para tudo.",
+   "in_game_wiki": "A Janela de carga é onde escolhas finais viram físicas. O jogador só consegue mover massa limitada através de pressão, cobertura de tempestade, tempo de radiação de Aegir e geometria de recuperação da Black Keel. Dinheiro, prova, nomes de trabalhadores, coordenadas, amostras vivas, sinal Atlas ou silêncio não podem sair juntos.",
+   "external_site": "A Janela de carga torna os finais de HECTON-8 materiais: não só o que o jogador acredita, mas o que cabe por pressão, clima, dívida, custódia de prova e controle do receptor.",
+   "external_site_article": "O problema final em HECTON-8 não é um menu moral flutuando sobre o oceano. É uma janela de carga. O pacote de subida tem limites de massa, o clima tem tempo, Aegir tem restrições de radiação e órbita, e a Black Keel tem regras de receptor antes de ter misericórdia. Cada final pergunta o que deixa a lua e quem recebe. Coordenadas podem comprar recuperação e entregar a cena do crime à Deep Reach. Provas podem chegar a um registro público e tirar do jogador o controle sobre a consequência. Amostras podem pagar dívida enquanto fortalecem o sistema que enterrou nomes de trabalhadores. Silêncio pode negar a corporação e deixar prova sob a água. A janela não é justiça. É o formato pelo qual a justiça precisa passar."
+  },
+  "ru_RU": {
+   "title": "Окно полезной нагрузки",
+   "scanner": "Импровизированный пакет подъёма. Он может покинуть океан, если совпадут масса, погода, дозовое время и геометрия Black Keel.",
+   "field_note": "Выбраться — это маршрут. Выбраться чисто — история, которую продают после того, как кто-то другой оплатил массу.",
+   "terminal": "PAYLOAD SLOT: ОГРАНИЧЕН. WINDOW: ОТКРЫТО. ROUTE: ОСПАРИВАЕТСЯ. RECEIVER: НЕ ПОДТВЕРЖДЁН. CLAIM VALUE: ПЕРЕМЕННАЯ. EVIDENCE STATE: НЕДОСТАТОЧНА ДЛЯ ЧИСТОГО СПОРА.",
+   "audio": "Окно открыто. Оно не останется открытым для всего.",
+   "in_game_wiki": "Окно полезной нагрузки — место, где финальные выборы становятся физическими. Игрок может провести через давление, штормовое прикрытие, радиационное время Аегира и геометрию восстановления Black Keel только ограниченную массу. Деньги, доказательства, имена работников, координаты, живые образцы, сигнал Atlas или молчание не могут уйти вместе.",
+   "external_site": "Окно полезной нагрузки делает финалы HECTON-8 материальными: важно не только, во что верит игрок, а что проходит через давление, погоду, долг, custody доказательств и контроль получателя.",
+   "external_site_article": "Последняя проблема HECTON-8 — не моральное меню, висящее над океаном. Это окно полезной нагрузки. У пакета подъёма есть предел массы, у погоды есть время, у Аегира есть радиационные и орбитальные ограничения, а у Black Keel есть правила получателя раньше, чем милость. Поэтому каждый финал спрашивает, что покидает луну и кто это получает. Координаты могут купить восстановление и отдать Deep Reach место преступления. Доказательства могут попасть в публичный реестр и забрать у игрока контроль над последствиями. Образцы могут оплатить долг и усилить систему, похоронившую имена работников. Молчание может отказать корпорации и оставить доказательство под водой. Окно — не справедливость. Это форма, через которую справедливости приходится протискиваться."
+  },
+  "uk_UA": {
+   "title": "Вікно корисного вантажу",
+   "scanner": "Імпровізований пакет підйому. Він може залишити океан, якщо збігатимуться маса, погода, дозовий час і геометрія Black Keel.",
+   "field_note": "Вибратися — це маршрут. Вибратися чисто — історія, яку продають після того, як хтось інший оплатив масу.",
+   "terminal": "PAYLOAD SLOT: ОБМЕЖЕНИЙ. WINDOW: ВІДКРИТЕ. ROUTE: ОСПОРЮЄТЬСЯ. RECEIVER: НЕ ПІДТВЕРДЖЕНИЙ. CLAIM VALUE: ЗМІННА. EVIDENCE STATE: НЕДОСТАТНЯ ДЛЯ ЧИСТОЇ СУПЕРЕЧКИ.",
+   "audio": "Вікно відкрите. Воно не лишиться відкритим для всього.",
+   "in_game_wiki": "Вікно корисного вантажу — місце, де фінальні вибори стають фізичними. Гравець може провести крізь тиск, штормове прикриття, радіаційний час Аегіра й геометрію відновлення Black Keel лише обмежену масу. Гроші, докази, імена працівників, координати, живі зразки, сигнал Atlas або мовчання не можуть піти разом.",
+   "external_site": "Вікно корисного вантажу робить фінали HECTON-8 матеріальними: важливо не тільки, у що вірить гравець, а що проходить крізь тиск, погоду, борг, custody доказів і контроль отримувача.",
+   "external_site_article": "Остання проблема HECTON-8 — не моральне меню, що висить над океаном. Це вікно корисного вантажу. У пакета підйому є межа маси, у погоди є час, в Аегіра є радіаційні й орбітальні обмеження, а в Black Keel є правила отримувача раніше, ніж милість. Тому кожен фінал питає, що залишає місяць і хто це отримує. Координати можуть купити відновлення й віддати Deep Reach місце злочину. Докази можуть потрапити в публічний реєстр і забрати у гравця контроль над наслідками. Зразки можуть оплатити борг і посилити систему, що поховала імена працівників. Мовчання може відмовити корпорації й лишити доказ під водою. Вікно — не справедливість. Це форма, крізь яку справедливості доводиться протискатися."
+  },
+  "zh_CN": {
+   "title": "载荷窗口",
+   "scanner": "临时上升包。如果质量、天气、剂量时序和Black Keel几何一致，它就能离开海洋。",
+   "field_note": "出去是一条路线。干净出去，是别人付完质量账之后拿来卖的故事。",
+   "terminal": "PAYLOAD SLOT：有限。WINDOW：开启。ROUTE：争议中。RECEIVER：未确认。CLAIM VALUE：可变。EVIDENCE STATE：不足以进行干净争端。",
+   "audio": "窗口已开。它不会为所有东西一直开着。",
+   "in_game_wiki": "载荷窗口是最终选择变成物理问题的地方。玩家只能把有限质量带过压力、风暴遮蔽、埃吉尔辐射时序和Black Keel回收几何。金钱、证据、工人姓名、坐标、活体样本、Atlas信号或沉默，不可能全部一起离开。",
+   "external_site": "载荷窗口让HECTON-8的结局变成物质问题：不只是玩家相信什么，而是什么能穿过压力、天气、债务、证据保管和接收方控制。",
+   "external_site_article": "HECTON-8的最终问题不是漂在海面上的道德菜单。它是一个载荷窗口。上升包有质量限制，天气有时序，埃吉尔有辐射和轨道约束，Black Keel在怜悯之前有接收方规则。因此每个结局都在问：什么离开这颗卫星，由谁接收？坐标可以买来回收，也会把犯罪现场交给Deep Reach。证据可以抵达公共账簿，并让玩家失去对后果的控制。样本可以偿还债务，同时强化那个埋掉工人姓名的系统。沉默可以拒绝公司，也会把证据留在水下。窗口不是正义。它是正义不得不挤过的形状。"
   }
+ },
+ "content_class": "in_world_artifact"
 }

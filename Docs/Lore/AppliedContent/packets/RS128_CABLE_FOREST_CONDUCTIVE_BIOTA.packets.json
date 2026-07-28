@@ -1,229 +1,230 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS128_CABLE_FOREST_CONDUCTIVE_BIOTA",
-  "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS128_CABLE_FOREST_CONDUCTIVE_BIOTA",
+ "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P624_CABLE_FOREST_CONDUCTIVE_BIOTA",
+   "release_set_id": "RS128_CABLE_FOREST_CONDUCTIVE_BIOTA",
+   "article_id": "applied_lore.cable_forest_conductive_biota",
+   "title_key": "LORE_CABLE_FOREST_CONDUCTIVE_BIOTA_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md",
+    "PROJECT_BIBLES.md",
+    ".agents-skills/world.md",
+    ".agents-skills/writing.md",
+    ".agents-skills/localization.md",
+    ".agents-skills/textes.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P624_CABLE_FOREST_CONDUCTIVE_BIOTA",
-      "release_set_id": "RS128_CABLE_FOREST_CONDUCTIVE_BIOTA",
-      "article_id": "applied_lore.cable_forest_conductive_biota",
-      "title_key": "LORE_CABLE_FOREST_CONDUCTIVE_BIOTA_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md",
-        "PROJECT_BIBLES.md",
-        ".agents-skills/world.md",
-        ".agents-skills/writing.md",
-        ".agents-skills/localization.md",
-        ".agents-skills/textes.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.cable_forest_conductive_biota",
-        "secondary": [
-          "unlock.first_conductive_kelp_sample",
-          "unlock.first_static_thicket_grounding",
-          "unlock.first_signal_ghost_contact"
-        ],
-        "poi_tags": [
-          "poi.cable_forest_service_trunk",
-          "poi.live_relay_jacket",
-          "poi.static_thicket_grounding_spike",
-          "poi.abandoned_repair_drone_nest"
-        ],
-        "biome_tags": [
-          "biome.cable_forest",
-          "biome.service_canyon",
-          "biome.conductive_biota",
-          "biome.relay_shadow"
-        ],
-        "first_20_boundary": "This packet can unlock once the player reaches cable-colonized infrastructure. It gives useful ecological and salvage context without turning Cable Forest into horror-only space or claiming Atlas agency."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Biotic Conductivity Scan",
-          "terminal": "Maintenance Ecology Note",
-          "audio": "Marauder Spool Log",
-          "in_game_wiki": "Recovered Cable-Forest Field Note",
-          "external_site": "Field Archive Longform",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "cable_forest_800_1500m",
-        "route_moment": "first_grounded_harvest_or_signal_ghost",
-        "truth_payload": "Cable Forest biota is not decoration or monster bait: it uses abandoned infrastructure as habitat, nerve and resource path, making salvage useful and dangerous at the same time.",
-        "player_question": "Why does a living plant behave like wiring, and why does cutting it wake old systems?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Cable Forest Conductive Biota",
-          "scanner": "CONDUCTIVE KELP // Living strands braided through dead relay cable. Stores weak charge, repeats false pings and feeds clean current if cut after grounding.",
-          "terminal": "CABLE FOREST ECOLOGY // Static thicket, lantern grass and cable kelp colonize torn insulation. Treat wet tissue as live line: it reads vibration, bridges damaged routes and may be logged by repair drones as infrastructure.",
-          "audio": "Marauder spool: if the kelp hums back, stop cutting. That is not a plant singing. That is the route remembering pressure.",
-          "in_game_wiki": "A recovered cable-forest sample shows why salvage crews ground their tools before harvesting conductive kelp. The growth forms where old relay jackets, mineral brine and light-starved mats overlap. It can patch weak wiring, lure charge into a dead cell or make a relay answer for one more burst, but it also throws signal ghosts and may wake repair drones that still count the living bridge as part of the route.",
-          "external_site": "The Cable Forest is where HECTON-8 stops separating biology from infrastructure. Dead relay trunks, torn insulation, brine seepage and patient colonial algae gave local life a scaffold rich in copper, ceramic dust and remembered current. Cable kelp entered that scaffold first as a stain, then as a thread, then as a braided wet conductor. Static thicket learned to stiffen when service pulses passed through the lines. Lantern grass grew near leaks and flashed in reply to pressure waves, not language, but the rhythm is close enough to make a tired diver look twice. For a Marauder, this ecology is a resource map with teeth. A grounded cut can produce conductive fiber, lantern enzyme and a small useful charge. A careless cut can turn a quiet trunk into a complaint: false maintenance pings, old evacuation tones, route fragments repeating through wet tissue, and drones arriving to repair a line that is no longer only metal. The forest is not evil and not a miracle. It is the moon using what the colony left behind, and the abandoned colony misreading life as damage or repair depending on which protocol wakes first.",
-          "field_note": "Good wire does not twitch. If it twitches, ground it, tag it and decide whether you need power badly enough."
-        },
-        "ru_RU": {
-          "title": "Проводящая биота Кабельного леса",
-          "scanner": "ПРОВОДЯЩАЯ ЛАМИНАРИЯ // Живые пряди вплетены в мертвый релейный кабель. Держат слабый заряд, повторяют ложные пинги и дают чистый ток, если резать после заземления.",
-          "terminal": "ЭКОЛОГИЯ КАБЕЛЬНОГО ЛЕСА // Статическая чаща, фонарная трава и кабельная ламинария заселяют разорванную изоляцию. Мокрую ткань считать линией под напряжением: она читает вибрацию, мостит поврежденные маршруты и может числиться у ремонтных дронов как инфраструктура.",
-          "audio": "Катушка мародера: если ламинария гудит в ответ, прекращай резать. Это не растение поет. Это маршрут помнит давление.",
-          "in_game_wiki": "Найденный образец из Кабельного леса объясняет, почему добытчики заземляют инструменты перед сбором проводящей ламинарии. Рост начинается там, где старые релейные оболочки, минеральная рассолина и светоголодные маты ложатся друг на друга. Биота может подлатать слабую проводку, стянуть заряд в мертвую ячейку или заставить реле ответить еще одним импульсом, но она же выбрасывает сигнальные призраки и будит ремонтных дронов, которые все еще считают живой мост частью маршрута.",
-          "external_site": "В Кабельном лесу HECTON-8 перестает разделять биологию и инфраструктуру. Мертвые релейные стволы, рваная изоляция, просачивающийся рассол и терпеливые колониальные водоросли дали местной жизни каркас, богатый медью, керамической пылью и памятью о токе. Кабельная ламинария вошла в этот каркас сначала пятном, потом нитью, потом мокрым сплетенным проводником. Статическая чаща научилась деревенеть, когда по линиям проходят служебные импульсы. Фонарная трава растет у утечек и отвечает вспышками на волны давления; это не язык, но ритм достаточно похож, чтобы усталый водолаз посмотрел дважды. Для мародера такая экология является картой ресурсов с зубами. Заземленный срез дает проводящее волокно, фонарный фермент и маленький полезный заряд. Небрежный срез превращает тихий ствол в жалобу: ложные пинги обслуживания, старые эвакуационные тона, обрывки маршрута, повторенные мокрой тканью, и дроны, пришедшие чинить линию, которая уже не только металл. Лес не злой и не чудесный. Это луна использует то, что оставила колония, а заброшенная колония принимает жизнь то за повреждение, то за ремонт, смотря какой протокол проснется первым.",
-          "field_note": "Хороший провод не дергается. Если дергается, заземли, пометь и реши, так ли тебе нужен ток."
-        },
-        "ja_JP": {
-          "title": "ケーブルの森の導電性生物相",
-          "scanner": "導電ケルプ // 死んだ中継ケーブルに編み込まれた生きた束。弱い電荷を蓄え、偽のピングを返し、接地してから切ればきれいな電流を渡す。",
-          "terminal": "ケーブルの森の生態 // 静電の藪、ランタングラス、ケーブルケルプが裂けた絶縁材に住み着く。濡れた組織は通電線として扱うこと。振動を読み、損傷した経路を橋渡しし、修理ドローンにはインフラとして記録される場合がある。",
-          "audio": "Marauderのスプール記録: ケルプが唸り返したら切るな。植物が歌っているわけじゃない。経路が圧力を覚えている。",
-          "in_game_wiki": "回収されたケーブルの森の試料は、サルベージ班が導電ケルプを採る前に工具を接地する理由を示している。この成長は、古い中継ジャケット、鉱物ブライン、光に飢えたマットが重なる場所で生まれる。弱い配線をつなぎ、死んだセルへ電荷を誘導し、リレーにもう一度だけ応答させることもできるが、同時に信号ゴーストを投げ、いまだにその生きた橋を経路の一部と数える修理ドローンを起こすことがある。",
-          "external_site": "ケーブルの森では、HECTON-8は生物とインフラを分けるのをやめる。死んだ中継幹線、裂けた絶縁材、染み出すブライン、辛抱強い植民地藻類が、銅とセラミック粉と電流の記憶に富んだ足場を現地の生命へ与えた。ケーブルケルプは最初は染みとして入り、次に糸となり、最後には濡れた編み導体になった。静電の藪は、保守パルスが線を通ると硬くなることを覚えた。ランタングラスは漏れの近くに育ち、言葉ではなく圧力波に光で答えるが、そのリズムは疲れた潜水者を二度見させる程度には近い。Marauderにとって、この生態は歯のある資源地図だ。接地した切断なら導電繊維、ランタン酵素、小さな有用電荷を得られる。雑に切れば、静かな幹線が苦情になる。偽の保守ピング、古い避難音、濡れた組織を通じて繰り返される経路断片、そしてもはや金属だけではない線を直しに来るドローン。森は邪悪でも奇跡でもない。月が植民地の残したものを使っており、放棄された植民地が、どのプロトコルが先に目覚めるかによって生命を損傷とも修理とも読み違えている。",
-          "field_note": "良い線は震えない。震えたなら接地し、タグを付け、それでも電力が欲しいか決めろ。"
-        },
-        "zh_CN": {
-          "title": "电缆森林导电生物群",
-          "scanner": "导电海带 // 活体丝束编进死去的中继电缆。储存微弱电荷，复述假脉冲；接地后切割，可以输出干净电流。",
-          "terminal": "电缆森林生态 // 静电灌丛、灯草和电缆海带占据破裂绝缘层。湿润组织按带电线路处理：它读取振动，桥接受损通道，也可能被维修无人机登记为基础设施。",
-          "audio": "掠夺者线轴记录：如果海带对你嗡鸣回应，停止切割。那不是植物在唱歌。那是通道还记得压力。",
-          "in_game_wiki": "一份回收的电缆森林样本说明了为什么打捞队在采集导电海带前必须给工具接地。这种生长出现在旧中继护套、矿物盐水和缺光菌藻垫重叠的地方。它能修补微弱线路，把电荷引入死电池，或让中继再回答一次；但它也会投出信号幽影，并可能唤醒仍把活体桥接视为通道一部分的维修无人机。",
-          "external_site": "在电缆森林里，HECTON-8不再把生物和基础设施分开。死去的中继主干、撕裂的绝缘层、渗出的盐水，以及耐心的殖民藻类，为本地生命提供了富含铜、陶瓷尘和电流记忆的脚手架。电缆海带最初像污迹一样进入，随后变成丝线，最后成为湿润的编织导体。静电灌丛学会在维护脉冲通过线路时僵硬起来。灯草生长在泄漏附近，用闪光回应压力波，而不是语言；但那节奏足以让疲惫的潜水者回头再看一眼。对掠夺者来说，这种生态是一张带牙的资源图。接地切割可以得到导电纤维、灯草酶和一点有用电荷。粗心切割会把安静的主干变成投诉：假的维护脉冲、旧撤离音、湿组织里重复的通道碎片，还有赶来维修一条已不只属于金属的线路的无人机。这片森林并不邪恶，也不是奇迹。它是这颗卫星在使用殖民地留下的东西，而被遗弃的殖民地会根据先醒来的协议，把生命误读成损坏或修理。",
-          "field_note": "好线缆不会抽动。会抽动就接地、标记，然后决定你是否真的那么需要电力。"
-        },
-        "fr_FR": {
-          "title": "Biote conductrice de la Forêt de câbles",
-          "scanner": "KELP CONDUCTEUR // Brins vivants tressés dans un câble relais mort. Stocke une faible charge, répète de faux pings et fournit un courant propre si la coupe suit une mise à la terre.",
-          "terminal": "ÉCOLOGIE DE LA FORÊT DE CÂBLES // Fourré statique, herbe-lanterne et kelp de câble colonisent l'isolant déchiré. Traiter tout tissu humide comme une ligne active : il lit les vibrations, ponte les routes endommagées et peut être journalisé comme infrastructure par les drones de réparation.",
-          "audio": "Bobine de Marauder : si le kelp répond par un bourdonnement, arrête de couper. Ce n'est pas une plante qui chante. C'est la route qui se souvient de la pression.",
-          "in_game_wiki": "Un échantillon récupéré dans la Forêt de câbles explique pourquoi les équipes de récupération mettent leurs outils à la terre avant de récolter le kelp conducteur. La croissance apparaît là où les vieilles gaines relais, la saumure minérale et les tapis privés de lumière se superposent. Elle peut réparer un câblage faible, attirer une charge dans une cellule morte ou faire répondre un relais pour une dernière impulsion, mais elle produit aussi des fantômes de signal et peut réveiller des drones de réparation qui comptent encore ce pont vivant comme une partie de la route.",
-          "external_site": "Dans la Forêt de câbles, HECTON-8 cesse de séparer biologie et infrastructure. Troncs relais morts, isolant lacéré, suintements de saumure et algues coloniales patientes ont offert à la vie locale un échafaudage riche en cuivre, poussière céramique et mémoire de courant. Le kelp de câble y est entré d'abord comme une tache, puis comme un fil, puis comme un conducteur humide tressé. Le fourré statique a appris à se raidir lorsque des impulsions de service traversent les lignes. L'herbe-lanterne pousse près des fuites et répond par éclairs aux ondes de pression, pas par langage, mais le rythme est assez proche pour faire regarder deux fois un plongeur épuisé. Pour un Marauder, cette écologie est une carte de ressources avec des dents. Une coupe mise à la terre peut donner fibre conductrice, enzyme de lanterne et petite charge utile. Une coupe négligente peut changer un tronc silencieux en plainte : faux pings de maintenance, anciens tons d'évacuation, fragments de route répétés par le tissu humide, et drones arrivant pour réparer une ligne qui n'est plus seulement du métal. La forêt n'est ni mauvaise ni miraculeuse. C'est la lune qui utilise ce que la colonie a laissé, et la colonie abandonnée qui confond la vie avec une avarie ou une réparation selon le protocole qui se réveille en premier.",
-          "field_note": "Un bon câble ne tressaille pas. S'il tressaille, mets-le à la terre, balise-le, puis décide si tu as besoin d'énergie à ce point."
-        },
-        "es_ES": {
-          "title": "Biota conductora del Bosque de Cables",
-          "scanner": "KELP CONDUCTOR // Hebras vivas trenzadas dentro de cable de relé muerto. Guarda carga débil, repite pings falsos y entrega corriente limpia si se corta después de poner a tierra.",
-          "terminal": "ECOLOGÍA DEL BOSQUE DE CABLES // Matorral estático, hierba linterna y kelp de cable colonizan aislamiento roto. Tratar el tejido húmedo como línea viva: lee vibración, puentea rutas dañadas y puede quedar registrado por drones de reparación como infraestructura.",
-          "audio": "Bobina de Marauder: si el kelp te devuelve el zumbido, deja de cortar. No es una planta cantando. Es la ruta recordando presión.",
-          "in_game_wiki": "Una muestra recuperada del Bosque de Cables explica por qué las cuadrillas de salvamento ponen a tierra sus herramientas antes de cosechar kelp conductor. El crecimiento se forma donde se superponen viejas cubiertas de relé, salmuera mineral y tapetes hambrientos de luz. Puede reparar cableado débil, atraer carga a una celda muerta o hacer que un relé responda una ráfaga más, pero también lanza fantasmas de señal y puede despertar drones de reparación que aún cuentan el puente vivo como parte de la ruta.",
-          "external_site": "En el Bosque de Cables, HECTON-8 deja de separar biología e infraestructura. Troncales de relé muertas, aislamiento desgarrado, filtraciones de salmuera y algas coloniales pacientes dieron a la vida local un andamio rico en cobre, polvo cerámico y memoria de corriente. El kelp de cable entró primero como mancha, luego como hilo y por último como conductor húmedo trenzado. El matorral estático aprendió a endurecerse cuando los pulsos de servicio pasan por las líneas. La hierba linterna crece cerca de fugas y responde con destellos a ondas de presión, no a lenguaje, pero el ritmo se parece lo suficiente para que un buzo cansado mire dos veces. Para un Marauder, esta ecología es un mapa de recursos con dientes. Un corte puesto a tierra puede dar fibra conductora, enzima de linterna y una pequeña carga útil. Un corte descuidado puede convertir un troncal silencioso en una queja: pings falsos de mantenimiento, viejos tonos de evacuación, fragmentos de ruta repetidos por tejido húmedo y drones que llegan a reparar una línea que ya no es solo metal. El bosque no es malvado ni milagroso. Es la luna usando lo que dejó la colonia, y la colonia abandonada leyendo la vida como daño o reparación según qué protocolo despierte primero.",
-          "field_note": "Un buen cable no se retuerce. Si se retuerce, ponlo a tierra, márcalo y decide si necesitas tanto la energía."
-        },
-        "de_DE": {
-          "title": "Leitfähige Biota des Kabelwalds",
-          "scanner": "LEITKELP // Lebende Stränge, in tote Relaiskabel geflochten. Speichert schwache Ladung, wiederholt falsche Pings und liefert sauberen Strom, wenn nach Erdung geschnitten wird.",
-          "terminal": "KABELWALD-ÖKOLOGIE // Statisches Dickicht, Laternenkraut und Kabelkelp besiedeln aufgerissene Isolierung. Nasses Gewebe als aktive Leitung behandeln: Es liest Vibration, überbrückt beschädigte Routen und kann von Reparaturdrohnen als Infrastruktur protokolliert werden.",
-          "audio": "Marauder-Spule: Wenn der Kelp zurücksummt, hör auf zu schneiden. Das ist keine singende Pflanze. Das ist die Route, die sich an Druck erinnert.",
-          "in_game_wiki": "Eine geborgene Probe aus dem Kabelwald erklärt, warum Bergungsteams ihre Werkzeuge erden, bevor sie Leitkelp ernten. Der Bewuchs entsteht dort, wo alte Relaishüllen, mineralische Sole und lichthungrige Matten übereinanderliegen. Er kann schwache Verkabelung flicken, Ladung in eine tote Zelle ziehen oder ein Relais zu einem letzten Burst bringen, wirft aber auch Signalgeister aus und kann Reparaturdrohnen wecken, die die lebende Brücke noch als Teil der Route zählen.",
-          "external_site": "Im Kabelwald hört HECTON-8 auf, Biologie und Infrastruktur zu trennen. Tote Relaisstämme, zerrissene Isolierung, Soleaustritte und geduldige Koloniealgen gaben dem lokalen Leben ein Gerüst aus Kupfer, Keramikstaub und erinnerter Spannung. Kabelkelp drang zuerst als Fleck ein, dann als Faden, dann als geflochtener nasser Leiter. Statisches Dickicht lernte zu versteifen, wenn Serviceimpulse durch die Leitungen laufen. Laternenkraut wächst nahe Lecks und antwortet mit Blitzen auf Druckwellen, nicht auf Sprache, aber der Rhythmus ist ähnlich genug, dass ein müder Taucher zweimal hinsieht. Für einen Marauder ist diese Ökologie eine Ressourcenkarte mit Zähnen. Ein geerdeter Schnitt kann leitfähige Faser, Laternenenzym und eine kleine nutzbare Ladung bringen. Ein unvorsichtiger Schnitt kann einen stillen Stamm in eine Beschwerde verwandeln: falsche Wartungspings, alte Evakuierungstöne, Routenfragmente, die durch nasses Gewebe wiederholt werden, und Drohnen, die eine Leitung reparieren wollen, die nicht mehr nur Metall ist. Der Wald ist weder böse noch ein Wunder. Er ist der Mond, der nutzt, was die Kolonie zurückließ, und die verlassene Kolonie, die Leben je nach zuerst erwachendem Protokoll als Schaden oder Reparatur missliest.",
-          "field_note": "Guter Draht zuckt nicht. Wenn er zuckt, erde ihn, markiere ihn und entscheide, ob du Strom so dringend brauchst."
-        },
-        "pl_PL": {
-          "title": "Przewodząca biota Lasu Kabli",
-          "scanner": "PRZEWODZĄCA LISTOWNICA // Żywe pasma wplecione w martwy kabel przekaźnikowy. Trzymają słaby ładunek, powtarzają fałszywe pingi i dają czysty prąd, jeśli ciąć po uziemieniu.",
-          "terminal": "EKOLOGIA LASU KABLI // Statyczny gąszcz, trawa latarniowa i kablowa listownica zasiedlają rozerwaną izolację. Mokre tkanki traktować jak linię pod napięciem: czytają drgania, mostkują uszkodzone trasy i mogą być wpisane przez drony naprawcze jako infrastruktura.",
-          "audio": "Szpula Maraudera: jeśli listownica odmrukuje, przestań ciąć. To nie roślina śpiewa. To trasa pamięta ciśnienie.",
-          "in_game_wiki": "Odzyskana próbka z Lasu Kabli wyjaśnia, czemu ekipy złomiarzy uziemiają narzędzia przed zbiorem przewodzącej listownicy. Narost powstaje tam, gdzie stare płaszcze przekaźników, mineralna solanka i maty głodne światła zachodzą na siebie. Może łatać słabe okablowanie, ściągać ładunek do martwej komórki albo sprawić, że przekaźnik odpowie jeszcze jednym impulsem, ale wyrzuca też duchy sygnału i może obudzić drony naprawcze, które nadal liczą żywy most jako część trasy.",
-          "external_site": "W Lesie Kabli HECTON-8 przestaje oddzielać biologię od infrastruktury. Martwe pnie przekaźnikowe, rozdarta izolacja, przesączająca się solanka i cierpliwe algi kolonialne dały miejscowemu życiu rusztowanie bogate w miedź, pył ceramiczny i pamięć prądu. Kablowa listownica weszła w nie najpierw jako plama, potem jako nić, a potem jako spleciony mokry przewodnik. Statyczny gąszcz nauczył się sztywnieć, gdy przez linie idą impulsy serwisowe. Trawa latarniowa rośnie przy wyciekach i błyska w odpowiedzi na fale ciśnienia, nie na język, ale rytm jest dość bliski, by zmęczony nurek spojrzał drugi raz. Dla Maraudera ta ekologia jest mapą zasobów z zębami. Uziemione cięcie może dać włókno przewodzące, enzym latarniowy i mały użyteczny ładunek. Niedbałe cięcie może zmienić cichy pień w skargę: fałszywe pingi konserwacyjne, stare tony ewakuacyjne, fragmenty trasy powtarzane przez mokrą tkankę i drony przybywające naprawiać linię, która nie jest już tylko metalem. Las nie jest zły ani cudowny. To księżyc używa tego, co zostawiła kolonia, a opuszczona kolonia myli życie z uszkodzeniem albo naprawą zależnie od tego, który protokół obudzi się pierwszy.",
-          "field_note": "Dobry przewód nie drga. Jeśli drga, uziem, oznacz i zdecyduj, czy naprawdę tak bardzo potrzebujesz prądu."
-        },
-        "uk_UA": {
-          "title": "Провідна біота Кабельного лісу",
-          "scanner": "ПРОВІДНА ЛАМІНАРІЯ // Живі пасма вплетені в мертвий релейний кабель. Тримають слабкий заряд, повторюють хибні пінги й дають чистий струм, якщо різати після заземлення.",
-          "terminal": "ЕКОЛОГІЯ КАБЕЛЬНОГО ЛІСУ // Статична хаща, ліхтарна трава й кабельна ламінарія заселяють розірвану ізоляцію. Мокру тканину вважати лінією під напругою: вона читає вібрацію, мостить пошкоджені маршрути й може числитися в ремонтних дронів як інфраструктура.",
-          "audio": "Котушка Marauder: якщо ламінарія гуде у відповідь, припини різати. Це не рослина співає. Це маршрут пам'ятає тиск.",
-          "in_game_wiki": "Знайдений зразок із Кабельного лісу пояснює, чому команди видобувачів заземлюють інструменти перед збором провідної ламінарії. Наріст виникає там, де старі релейні оболонки, мінеральна ропа й мати, голодні до світла, накладаються одне на одне. Він може підлатати слабку проводку, затягнути заряд у мертву комірку або змусити реле відповісти ще одним імпульсом, але також викидає сигнальні привиди й може розбудити ремонтних дронів, які досі рахують живий міст частиною маршруту.",
-          "external_site": "У Кабельному лісі HECTON-8 перестає розділяти біологію та інфраструктуру. Мертві релейні стовбури, розірвана ізоляція, просочування ропи й терплячі колоніальні водорості дали місцевому життю каркас, багатий на мідь, керамічний пил і пам'ять про струм. Кабельна ламінарія ввійшла в цей каркас спершу плямою, потім ниткою, а потім мокрим сплетеним провідником. Статична хаща навчилася дерев'яніти, коли лініями проходять службові імпульси. Ліхтарна трава росте біля витоків і відповідає спалахами на хвилі тиску, не на мову, але ритм достатньо схожий, щоб утомлений водолаз озирнувся вдруге. Для Marauder така екологія є мапою ресурсів із зубами. Заземлений зріз може дати провідне волокно, ліхтарний фермент і невеликий корисний заряд. Недбалий зріз може перетворити тихий стовбур на скаргу: хибні пінги обслуговування, старі евакуаційні тони, уламки маршруту, повторені мокрою тканиною, і дрони, що прибувають ремонтувати лінію, яка вже не лише метал. Ліс не злий і не чудесний. Це місяць використовує те, що залишила колонія, а покинута колонія плутає життя з пошкодженням або ремонтом залежно від того, який протокол прокинеться першим.",
-          "field_note": "Добрий дріт не смикається. Якщо смикається, заземли, познач і виріши, чи справді тобі так потрібен струм."
-        },
-        "ar_SA": {
-          "title": "الأحياء الموصلة في غابة الكابلات",
-          "scanner": "عشب بحر موصل // خيوط حية مضفورة داخل كابل ترحيل ميت. تخزن شحنة ضعيفة، تكرر نبضات كاذبة، وتعطي تياراً نظيفاً إذا قُطعت بعد التأريض.",
-          "terminal": "بيئة غابة الكابلات // الأجمة الساكنة، عشب المصباح، وعشب الكابل تستعمر العزل الممزق. عومل النسيج الرطب كخط حي: يقرأ الاهتزاز، يجسر المسارات التالفة، وقد تسجله مسيرات الإصلاح كبنية تحتية.",
-          "audio": "بكرة Marauder: إذا رد العشب بالطنين، توقف عن القطع. هذه ليست نبتة تغني. هذا هو المسار يتذكر الضغط.",
-          "in_game_wiki": "عينة مستعادة من غابة الكابلات تشرح لماذا تؤرض فرق النهب أدواتها قبل حصاد العشب الموصل. ينمو هذا النسيج حيث تتداخل أغطية الترحيل القديمة، والمحلول الملحي المعدني، والحصائر الجائعة للضوء. يستطيع ترقيع توصيل ضعيف، أو جذب شحنة إلى خلية ميتة، أو جعل مرحل يجيب بدفقة أخرى، لكنه يطرح أيضاً أشباح إشارة وقد يوقظ مسيرات إصلاح ما زالت تعد الجسر الحي جزءاً من المسار.",
-          "external_site": "في غابة الكابلات، يتوقف HECTON-8 عن فصل الأحياء عن البنية التحتية. جذوع الترحيل الميتة، والعزل الممزق، وتسربات المحلول الملحي، والطحالب الاستعمارية الصبورة منحت الحياة المحلية سقالة غنية بالنحاس، وغبار السيراميك، وذاكرة التيار. دخل عشب الكابل تلك السقالة أولاً كبقعة، ثم كخيط، ثم كموصل رطب مضفور. تعلمت الأجمة الساكنة أن تتصلب عندما تمر نبضات الخدمة في الخطوط. ينمو عشب المصباح قرب التسربات ويرد بالوميض على موجات الضغط، لا على اللغة، لكن الإيقاع قريب بما يكفي ليجعل غواصاً منهكاً ينظر مرتين. بالنسبة إلى Marauder، هذه البيئة خريطة موارد ذات أسنان. القطع المؤرض يعطي أليافاً موصلة، وإنزيماً مصباحياً، وشحنة صغيرة نافعة. القطع المهمل يحول جذعاً صامتاً إلى شكوى: نبضات صيانة كاذبة، نغمات إخلاء قديمة، شظايا مسار يكررها نسيج رطب، ومسيرات تصل لإصلاح خط لم يعد معدناً فقط. الغابة ليست شريرة وليست معجزة. إنها القمر يستخدم ما تركته المستعمرة، والمستعمرة المهجورة تسيء قراءة الحياة كضرر أو إصلاح بحسب البروتوكول الذي يستيقظ أولاً.",
-          "field_note": "السلك الجيد لا يرتعش. إذا ارتعش، أرضه، ووسمه، ثم قرر هل تحتاج الطاقة إلى هذا الحد."
-        },
-        "id_ID": {
-          "title": "Biota Konduktif Hutan Kabel",
-          "scanner": "KELP KONDUKTIF // Untaian hidup terjalin melalui kabel relai mati. Menyimpan muatan lemah, mengulang ping palsu, dan memberi arus bersih jika dipotong setelah dibumikan.",
-          "terminal": "EKOLOGI HUTAN KABEL // Belukar statis, rumput lentera, dan kelp kabel menjajah insulasi robek. Perlakukan jaringan basah sebagai jalur hidup: ia membaca getaran, menjembatani rute rusak, dan bisa dicatat drone perbaikan sebagai infrastruktur.",
-          "audio": "Gulungan Marauder: kalau kelp berdengung balik, berhenti memotong. Itu bukan tanaman bernyanyi. Itu rute yang mengingat tekanan.",
-          "in_game_wiki": "Sampel Hutan Kabel yang ditemukan menjelaskan mengapa kru salvage membumikan alat sebelum memanen kelp konduktif. Pertumbuhan ini terbentuk di tempat jaket relai tua, brine mineral, dan hamparan yang kelaparan cahaya saling menumpuk. Ia dapat menambal kabel lemah, menarik muatan ke sel mati, atau membuat relai menjawab satu burst lagi, tetapi ia juga melempar hantu sinyal dan bisa membangunkan drone perbaikan yang masih menghitung jembatan hidup itu sebagai bagian rute.",
-          "external_site": "Di Hutan Kabel, HECTON-8 berhenti memisahkan biologi dari infrastruktur. Batang relai mati, insulasi robek, rembesan brine, dan alga koloni yang sabar memberi kehidupan lokal rangka kaya tembaga, debu keramik, dan ingatan arus. Kelp kabel masuk ke rangka itu mula-mula sebagai noda, lalu benang, lalu konduktor basah yang terjalin. Belukar statis belajar mengeras saat pulsa layanan lewat di jalur. Rumput lentera tumbuh dekat kebocoran dan menjawab gelombang tekanan dengan kilat, bukan bahasa, tetapi ritmenya cukup mirip untuk membuat penyelam lelah menoleh lagi. Bagi Marauder, ekologi ini peta sumber daya bergigi. Potongan yang dibumikan bisa memberi serat konduktif, enzim lentera, dan muatan kecil yang berguna. Potongan ceroboh bisa mengubah batang sunyi menjadi keluhan: ping perawatan palsu, nada evakuasi lama, fragmen rute yang diulang melalui jaringan basah, dan drone yang datang memperbaiki jalur yang bukan lagi hanya logam. Hutan ini tidak jahat dan bukan mukjizat. Ini bulan yang memakai sisa koloni, dan koloni terbengkalai yang salah membaca kehidupan sebagai kerusakan atau perbaikan, tergantung protokol mana bangun lebih dulu.",
-          "field_note": "Kabel yang baik tidak berkedut. Jika berkedut, bumikan, tandai, lalu putuskan apakah kau butuh daya seburuk itu."
-        },
-        "ko_KR": {
-          "title": "케이블 숲의 전도성 생물상",
-          "scanner": "전도 켈프 // 죽은 중계 케이블 사이로 엮인 살아 있는 가닥. 약한 전하를 저장하고 가짜 핑을 반복하며, 접지 뒤 자르면 깨끗한 전류를 내준다.",
-          "terminal": "케이블 숲 생태 // 정전기 덤불, 랜턴그래스, 케이블 켈프가 찢어진 절연재를 점령한다. 젖은 조직은 살아 있는 선로로 취급하라. 진동을 읽고, 손상된 경로를 잇고, 수리 드론에게 인프라로 기록될 수 있다.",
-          "audio": "Marauder 스풀 기록: 켈프가 윙윙거리며 대답하면 절단을 멈춰라. 식물이 노래하는 게 아니다. 경로가 압력을 기억하는 것이다.",
-          "in_game_wiki": "회수된 케이블 숲 표본은 왜 인양 작업반이 전도성 켈프를 채취하기 전에 공구를 접지하는지 설명한다. 이 생장은 오래된 중계 재킷, 미네랄 염수, 빛에 굶주린 매트가 겹치는 곳에서 형성된다. 약한 배선을 보수하고, 죽은 셀로 전하를 끌어들이거나, 릴레이가 한 번 더 버스트로 응답하게 만들 수 있다. 그러나 동시에 신호 유령을 뿌리고, 살아 있는 다리를 아직 경로의 일부로 계산하는 수리 드론을 깨울 수 있다.",
-          "external_site": "케이블 숲에서 HECTON-8은 생물과 인프라를 더 이상 분리하지 않는다. 죽은 중계 줄기, 찢어진 절연재, 스며드는 염수, 끈질긴 식민지 조류가 구리와 세라믹 먼지와 전류의 기억이 풍부한 발판을 지역 생명에게 제공했다. 케이블 켈프는 처음에는 얼룩으로, 다음에는 실로, 그다음에는 젖은 편조 도체로 그 발판에 들어갔다. 정전기 덤불은 서비스 펄스가 선로를 지나갈 때 뻣뻣해지는 법을 배웠다. 랜턴그래스는 누출 근처에서 자라고 언어가 아니라 압력파에 섬광으로 답하지만, 그 리듬은 지친 잠수부가 두 번 돌아볼 만큼 가깝다. Marauder에게 이 생태는 이빨 달린 자원 지도다. 접지한 절단은 전도성 섬유, 랜턴 효소, 작은 유용 전하를 줄 수 있다. 부주의한 절단은 조용한 줄기를 불만으로 바꾼다. 가짜 정비 핑, 오래된 대피음, 젖은 조직을 통해 반복되는 경로 파편, 그리고 더 이상 금속만이 아닌 선을 고치러 오는 드론. 숲은 사악하지도 기적도 아니다. 달이 식민지가 남긴 것을 쓰고 있으며, 버려진 식민지는 어떤 프로토콜이 먼저 깨어나느냐에 따라 생명을 손상이나 수리로 오독한다.",
-          "field_note": "멀쩡한 전선은 꿈틀대지 않는다. 꿈틀대면 접지하고, 표식하고, 그 전력이 정말 필요한지 결정해라."
-        },
-        "he_IL": {
-          "title": "ביוטה מוליכה ביער הכבלים",
-          "scanner": "קלפ מוליך // גדילים חיים קלועים בתוך כבל ממסר מת. אוגר מטען חלש, חוזר על פינגים כוזבים ומספק זרם נקי אם חותכים אחרי הארקה.",
-          "terminal": "אקולוגיית יער הכבלים // סבך סטטי, עשב פנס וקלפ כבלים מתיישבים בבידוד קרוע. יש להתייחס לרקמה רטובה כקו חי: היא קוראת רטט, מגשרת נתיבים פגומים ועלולה להירשם אצל רחפני תיקון כתשתית.",
-          "audio": "סליל Marauder: אם הקלפ מזמזם בחזרה, הפסק לחתוך. זו לא צמחייה ששרה. זה הנתיב שזוכר לחץ.",
-          "in_game_wiki": "דגימה שנמצאה ביער הכבלים מסבירה מדוע צוותי חילוץ מאריקים את הכלים לפני קציר קלפ מוליך. הצמיחה נוצרת במקום שבו מעטפות ממסר ישנות, תמלחת מינרלית ומרבדים רעבי אור חופפים. היא יכולה לטלא חיווט חלש, למשוך מטען לתא מת או לגרום לממסר לענות בעוד פעימה אחת, אבל היא גם משליכה רוחות אות ועלולה להעיר רחפני תיקון שעדיין סופרים את הגשר החי כחלק מהנתיב.",
-          "external_site": "ביער הכבלים HECTON-8 מפסיק להפריד בין ביולוגיה לתשתית. גזעי ממסר מתים, בידוד קרוע, חלחול תמלחת ואצות מושבה סבלניות נתנו לחיים המקומיים שלד עשיר בנחושת, אבק קרמי וזיכרון של זרם. קלפ הכבלים נכנס לשלד הזה תחילה ככתם, אחר כך כחוט, ולבסוף כמוליך רטוב קלוע. הסבך הסטטי למד להתקשח כאשר פעימות שירות עוברות בקווים. עשב הפנס גדל ליד דליפות ומשיב בהבזקים לגלי לחץ, לא לשפה, אבל הקצב קרוב מספיק כדי לגרום לצולל עייף להביט שוב. עבור Marauder, האקולוגיה הזו היא מפת משאבים עם שיניים. חתך מוארק יכול להפיק סיב מוליך, אנזים פנס ומטען קטן שימושי. חתך רשלני יכול להפוך גזע שקט לתלונה: פינגי תחזוקה כוזבים, צלילי פינוי ישנים, שברי נתיב שחוזרים דרך רקמה רטובה ורחפנים שמגיעים לתקן קו שכבר אינו רק מתכת. היער אינו מרושע ואינו נס. זה הירח משתמש במה שהמושבה השאירה, והמושבה הנטושה מפרשת חיים בטעות כנזק או תיקון לפי הפרוטוקול שמתעורר ראשון.",
-          "field_note": "חוט טוב לא מתעוות. אם הוא מתעוות, הארק אותו, סמן אותו, ואז החלט אם אתה צריך חשמל עד כדי כך."
-        },
-        "pt_BR": {
-          "title": "Biota condutiva da Floresta de Cabos",
-          "scanner": "KELP CONDUTIVO // Fios vivos trançados por cabo de relé morto. Guarda carga fraca, repete pings falsos e entrega corrente limpa se for cortado depois do aterramento.",
-          "terminal": "ECOLOGIA DA FLORESTA DE CABOS // Moita estática, capim-lanterna e kelp de cabo colonizam isolamento rasgado. Trate tecido molhado como linha viva: ele lê vibração, ponteia rotas danificadas e pode ser registrado por drones de reparo como infraestrutura.",
-          "audio": "Bobina de Marauder: se o kelp zumbir de volta, pare de cortar. Não é uma planta cantando. É a rota lembrando pressão.",
-          "in_game_wiki": "Uma amostra recuperada da Floresta de Cabos explica por que equipes de salvamento aterram suas ferramentas antes de colher kelp condutivo. O crescimento se forma onde capas antigas de relé, salmoura mineral e mantos famintos por luz se sobrepõem. Pode remendar fiação fraca, puxar carga para uma célula morta ou fazer um relé responder por mais um pulso, mas também lança fantasmas de sinal e pode acordar drones de reparo que ainda contam a ponte viva como parte da rota.",
-          "external_site": "Na Floresta de Cabos, HECTON-8 para de separar biologia de infraestrutura. Troncos mortos de relé, isolamento rasgado, infiltração de salmoura e algas coloniais pacientes deram à vida local um andaime rico em cobre, poeira cerâmica e memória de corrente. O kelp de cabo entrou nesse andaime primeiro como mancha, depois como fio, depois como condutor molhado trançado. A moita estática aprendeu a enrijecer quando pulsos de serviço atravessam as linhas. O capim-lanterna cresce perto de vazamentos e responde com flashes a ondas de pressão, não a linguagem, mas o ritmo é parecido o bastante para fazer um mergulhador cansado olhar duas vezes. Para um Marauder, essa ecologia é um mapa de recursos com dentes. Um corte aterrado pode render fibra condutiva, enzima de lanterna e uma pequena carga útil. Um corte descuidado pode transformar um tronco silencioso em reclamação: pings falsos de manutenção, velhos tons de evacuação, fragmentos de rota repetidos por tecido molhado e drones chegando para reparar uma linha que já não é só metal. A floresta não é má nem milagrosa. É a lua usando o que a colônia deixou para trás, e a colônia abandonada lendo vida como dano ou reparo conforme o protocolo que acorda primeiro.",
-          "field_note": "Fio bom não se contorce. Se contorcer, aterre, marque e decida se precisa tanto assim de energia."
-        },
-        "nl_NL": {
-          "title": "Geleidende biota van het Kabelbos",
-          "scanner": "GELEIDENDE KELP // Levende strengen gevlochten door dode relaiskabel. Slaat zwakke lading op, herhaalt valse pings en levert schone stroom als er na aarding wordt gesneden.",
-          "terminal": "KABELBOS-ECOLOGIE // Statisch struikgewas, lantaarngras en kabelkelp koloniseren gescheurde isolatie. Behandel nat weefsel als een levende lijn: het leest trilling, overbrugt beschadigde routes en kan door reparatiedrones als infrastructuur worden gelogd.",
-          "audio": "Marauder-spoel: als de kelp terug zoemt, stop met snijden. Dat is geen plant die zingt. Dat is de route die druk onthoudt.",
-          "in_game_wiki": "Een geborgen monster uit het Kabelbos verklaart waarom bergingsploegen hun gereedschap aarden voordat ze geleidende kelp oogsten. De groei ontstaat waar oude relaismantels, minerale pekel en lichtarme matten elkaar overlappen. Ze kan zwakke bedrading lappen, lading naar een dode cel lokken of een relais nog één burst laten antwoorden, maar ze werpt ook signaalgeesten op en kan reparatiedrones wekken die de levende brug nog steeds als deel van de route tellen.",
-          "external_site": "In het Kabelbos houdt HECTON-8 op biologie van infrastructuur te scheiden. Dode relaisstammen, gescheurde isolatie, pekellekkage en geduldig koloniaal wier gaven lokaal leven een steiger rijk aan koper, keramisch stof en herinnerde stroom. Kabelkelp kwam die steiger eerst binnen als vlek, daarna als draad, daarna als gevlochten natte geleider. Statisch struikgewas leerde verstijven wanneer servicepulsen door de lijnen lopen. Lantaarngras groeit bij lekken en antwoordt met flitsen op drukgolven, niet op taal, maar het ritme lijkt genoeg om een vermoeide duiker twee keer te laten kijken. Voor een Marauder is deze ecologie een middelenkaart met tanden. Een geaarde snede kan geleidende vezel, lantaarnenzym en een kleine bruikbare lading opleveren. Een slordige snede kan een stille stam in een klacht veranderen: valse onderhoudspings, oude evacuatietonen, routefragmenten die door nat weefsel worden herhaald, en drones die een lijn komen repareren die niet langer alleen metaal is. Het bos is niet kwaad en geen wonder. Het is de maan die gebruikt wat de kolonie achterliet, en de verlaten kolonie die leven verkeerd leest als schade of reparatie, afhankelijk van welk protocol het eerst wakker wordt.",
-          "field_note": "Goede draad trekt niet samen. Als hij trekt, aard hem, tag hem en beslis of je stroom zo hard nodig hebt."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.cable_forest_conductive_biota",
+    "secondary": [
+     "unlock.first_conductive_kelp_sample",
+     "unlock.first_static_thicket_grounding",
+     "unlock.first_signal_ghost_contact"
+    ],
+    "poi_tags": [
+     "poi.cable_forest_service_trunk",
+     "poi.live_relay_jacket",
+     "poi.static_thicket_grounding_spike",
+     "poi.abandoned_repair_drone_nest"
+    ],
+    "biome_tags": [
+     "biome.cable_forest",
+     "biome.service_canyon",
+     "biome.conductive_biota",
+     "biome.relay_shadow"
+    ],
+    "first_20_boundary": "This packet can unlock once the player reaches cable-colonized infrastructure. It gives useful ecological and salvage context without turning Cable Forest into horror-only space or claiming Atlas agency."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Biotic Conductivity Scan",
+     "terminal": "Maintenance Ecology Note",
+     "audio": "Marauder Spool Log",
+     "in_game_wiki": "Recovered Cable-Forest Field Note",
+     "external_site": "Field Archive Longform",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "cable_forest_800_1500m",
+    "route_moment": "first_grounded_harvest_or_signal_ghost",
+    "truth_payload": "Cable Forest biota is not decoration or monster bait: it uses abandoned infrastructure as habitat, nerve and resource path, making salvage useful and dangerous at the same time.",
+    "player_question": "Why does a living plant behave like wiring, and why does cutting it wake old systems?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Cable Forest Conductive Biota",
+     "scanner": "CONDUCTIVE KELP // Living strands braided through dead relay cable. Stores weak charge, repeats false pings and feeds clean current if cut after grounding.",
+     "terminal": "CABLE FOREST ECOLOGY // Static thicket, lantern grass and cable kelp colonize torn insulation. Treat wet tissue as live line: it reads vibration, bridges damaged routes and may be logged by repair drones as infrastructure.",
+     "audio": "Marauder spool: if the kelp hums back, stop cutting. That is not a plant singing. That is the route remembering pressure.",
+     "in_game_wiki": "A recovered cable-forest sample shows why salvage crews ground their tools before harvesting conductive kelp. The growth forms where old relay jackets, mineral brine and light-starved mats overlap. It can patch weak wiring, lure charge into a dead cell or make a relay answer for one more burst, but it also throws signal ghosts and may wake repair drones that still count the living bridge as part of the route.",
+     "external_site": "The Cable Forest is where HECTON-8 stops separating biology from infrastructure. Dead relay trunks, torn insulation, brine seepage and patient colonial algae gave local life a scaffold rich in copper, ceramic dust and remembered current. Cable kelp entered that scaffold first as a stain, then as a thread, then as a braided wet conductor. Static thicket learned to stiffen when service pulses passed through the lines. Lantern grass grew near leaks and flashed in reply to pressure waves, not language, but the rhythm is close enough to make a tired diver look twice. For a Marauder, this ecology is a resource map with teeth. A grounded cut can produce conductive fiber, lantern enzyme and a small useful charge. A careless cut can turn a quiet trunk into a complaint: false maintenance pings, old evacuation tones, route fragments repeating through wet tissue, and drones arriving to repair a line that is no longer only metal. The forest is not evil and not a miracle. It is the moon using what the colony left behind, and the abandoned colony misreading life as damage or repair depending on which protocol wakes first.",
+     "field_note": "Good wire does not twitch. If it twitches, ground it, tag it and decide whether you need power badly enough."
+    },
+    "ru_RU": {
+     "title": "Проводящая биота Кабельного леса",
+     "scanner": "ПРОВОДЯЩАЯ ЛАМИНАРИЯ // Живые пряди вплетены в мертвый релейный кабель. Держат слабый заряд, повторяют ложные пинги и дают чистый ток, если резать после заземления.",
+     "terminal": "ЭКОЛОГИЯ КАБЕЛЬНОГО ЛЕСА // Статическая чаща, фонарная трава и кабельная ламинария заселяют разорванную изоляцию. Мокрую ткань считать линией под напряжением: она читает вибрацию, мостит поврежденные маршруты и может числиться у ремонтных дронов как инфраструктура.",
+     "audio": "Катушка мародера: если ламинария гудит в ответ, прекращай резать. Это не растение поет. Это маршрут помнит давление.",
+     "in_game_wiki": "Найденный образец из Кабельного леса объясняет, почему добытчики заземляют инструменты перед сбором проводящей ламинарии. Рост начинается там, где старые релейные оболочки, минеральная рассолина и светоголодные маты ложатся друг на друга. Биота может подлатать слабую проводку, стянуть заряд в мертвую ячейку или заставить реле ответить еще одним импульсом, но она же выбрасывает сигнальные призраки и будит ремонтных дронов, которые все еще считают живой мост частью маршрута.",
+     "external_site": "В Кабельном лесу HECTON-8 перестает разделять биологию и инфраструктуру. Мертвые релейные стволы, рваная изоляция, просачивающийся рассол и терпеливые колониальные водоросли дали местной жизни каркас, богатый медью, керамической пылью и памятью о токе. Кабельная ламинария вошла в этот каркас сначала пятном, потом нитью, потом мокрым сплетенным проводником. Статическая чаща научилась деревенеть, когда по линиям проходят служебные импульсы. Фонарная трава растет у утечек и отвечает вспышками на волны давления; это не язык, но ритм достаточно похож, чтобы усталый водолаз посмотрел дважды. Для мародера такая экология является картой ресурсов с зубами. Заземленный срез дает проводящее волокно, фонарный фермент и маленький полезный заряд. Небрежный срез превращает тихий ствол в жалобу: ложные пинги обслуживания, старые эвакуационные тона, обрывки маршрута, повторенные мокрой тканью, и дроны, пришедшие чинить линию, которая уже не только металл. Лес не злой и не чудесный. Это луна использует то, что оставила колония, а заброшенная колония принимает жизнь то за повреждение, то за ремонт, смотря какой протокол проснется первым.",
+     "field_note": "Хороший провод не дергается. Если дергается, заземли, пометь и реши, так ли тебе нужен ток."
+    },
+    "ja_JP": {
+     "title": "ケーブルの森の導電性生物相",
+     "scanner": "導電ケルプ // 死んだ中継ケーブルに編み込まれた生きた束。弱い電荷を蓄え、偽のピングを返し、接地してから切ればきれいな電流を渡す。",
+     "terminal": "ケーブルの森の生態 // 静電の藪、ランタングラス、ケーブルケルプが裂けた絶縁材に住み着く。濡れた組織は通電線として扱うこと。振動を読み、損傷した経路を橋渡しし、修理ドローンにはインフラとして記録される場合がある。",
+     "audio": "Marauderのスプール記録: ケルプが唸り返したら切るな。植物が歌っているわけじゃない。経路が圧力を覚えている。",
+     "in_game_wiki": "回収されたケーブルの森の試料は、サルベージ班が導電ケルプを採る前に工具を接地する理由を示している。この成長は、古い中継ジャケット、鉱物ブライン、光に飢えたマットが重なる場所で生まれる。弱い配線をつなぎ、死んだセルへ電荷を誘導し、リレーにもう一度だけ応答させることもできるが、同時に信号ゴーストを投げ、いまだにその生きた橋を経路の一部と数える修理ドローンを起こすことがある。",
+     "external_site": "ケーブルの森では、HECTON-8は生物とインフラを分けるのをやめる。死んだ中継幹線、裂けた絶縁材、染み出すブライン、辛抱強い植民地藻類が、銅とセラミック粉と電流の記憶に富んだ足場を現地の生命へ与えた。ケーブルケルプは最初は染みとして入り、次に糸となり、最後には濡れた編み導体になった。静電の藪は、保守パルスが線を通ると硬くなることを覚えた。ランタングラスは漏れの近くに育ち、言葉ではなく圧力波に光で答えるが、そのリズムは疲れた潜水者を二度見させる程度には近い。Marauderにとって、この生態は歯のある資源地図だ。接地した切断なら導電繊維、ランタン酵素、小さな有用電荷を得られる。雑に切れば、静かな幹線が苦情になる。偽の保守ピング、古い避難音、濡れた組織を通じて繰り返される経路断片、そしてもはや金属だけではない線を直しに来るドローン。森は邪悪でも奇跡でもない。月が植民地の残したものを使っており、放棄された植民地が、どのプロトコルが先に目覚めるかによって生命を損傷とも修理とも読み違えている。",
+     "field_note": "良い線は震えない。震えたなら接地し、タグを付け、それでも電力が欲しいか決めろ。"
+    },
+    "zh_CN": {
+     "title": "电缆森林导电生物群",
+     "scanner": "导电海带 // 活体丝束编进死去的中继电缆。储存微弱电荷，复述假脉冲；接地后切割，可以输出干净电流。",
+     "terminal": "电缆森林生态 // 静电灌丛、灯草和电缆海带占据破裂绝缘层。湿润组织按带电线路处理：它读取振动，桥接受损通道，也可能被维修无人机登记为基础设施。",
+     "audio": "掠夺者线轴记录：如果海带对你嗡鸣回应，停止切割。那不是植物在唱歌。那是通道还记得压力。",
+     "in_game_wiki": "一份回收的电缆森林样本说明了为什么打捞队在采集导电海带前必须给工具接地。这种生长出现在旧中继护套、矿物盐水和缺光菌藻垫重叠的地方。它能修补微弱线路，把电荷引入死电池，或让中继再回答一次；但它也会投出信号幽影，并可能唤醒仍把活体桥接视为通道一部分的维修无人机。",
+     "external_site": "在电缆森林里，HECTON-8不再把生物和基础设施分开。死去的中继主干、撕裂的绝缘层、渗出的盐水，以及耐心的殖民藻类，为本地生命提供了富含铜、陶瓷尘和电流记忆的脚手架。电缆海带最初像污迹一样进入，随后变成丝线，最后成为湿润的编织导体。静电灌丛学会在维护脉冲通过线路时僵硬起来。灯草生长在泄漏附近，用闪光回应压力波，而不是语言；但那节奏足以让疲惫的潜水者回头再看一眼。对掠夺者来说，这种生态是一张带牙的资源图。接地切割可以得到导电纤维、灯草酶和一点有用电荷。粗心切割会把安静的主干变成投诉：假的维护脉冲、旧撤离音、湿组织里重复的通道碎片，还有赶来维修一条已不只属于金属的线路的无人机。这片森林并不邪恶，也不是奇迹。它是这颗卫星在使用殖民地留下的东西，而被遗弃的殖民地会根据先醒来的协议，把生命误读成损坏或修理。",
+     "field_note": "好线缆不会抽动。会抽动就接地、标记，然后决定你是否真的那么需要电力。"
+    },
+    "fr_FR": {
+     "title": "Biote conductrice de la Forêt de câbles",
+     "scanner": "KELP CONDUCTEUR // Brins vivants tressés dans un câble relais mort. Stocke une faible charge, répète de faux pings et fournit un courant propre si la coupe suit une mise à la terre.",
+     "terminal": "ÉCOLOGIE DE LA FORÊT DE CÂBLES // Fourré statique, herbe-lanterne et kelp de câble colonisent l'isolant déchiré. Traiter tout tissu humide comme une ligne active : il lit les vibrations, ponte les routes endommagées et peut être journalisé comme infrastructure par les drones de réparation.",
+     "audio": "Bobine de Marauder : si le kelp répond par un bourdonnement, arrête de couper. Ce n'est pas une plante qui chante. C'est la route qui se souvient de la pression.",
+     "in_game_wiki": "Un échantillon récupéré dans la Forêt de câbles explique pourquoi les équipes de récupération mettent leurs outils à la terre avant de récolter le kelp conducteur. La croissance apparaît là où les vieilles gaines relais, la saumure minérale et les tapis privés de lumière se superposent. Elle peut réparer un câblage faible, attirer une charge dans une cellule morte ou faire répondre un relais pour une dernière impulsion, mais elle produit aussi des fantômes de signal et peut réveiller des drones de réparation qui comptent encore ce pont vivant comme une partie de la route.",
+     "external_site": "Dans la Forêt de câbles, HECTON-8 cesse de séparer biologie et infrastructure. Troncs relais morts, isolant lacéré, suintements de saumure et algues coloniales patientes ont offert à la vie locale un échafaudage riche en cuivre, poussière céramique et mémoire de courant. Le kelp de câble y est entré d'abord comme une tache, puis comme un fil, puis comme un conducteur humide tressé. Le fourré statique a appris à se raidir lorsque des impulsions de service traversent les lignes. L'herbe-lanterne pousse près des fuites et répond par éclairs aux ondes de pression, pas par langage, mais le rythme est assez proche pour faire regarder deux fois un plongeur épuisé. Pour un Marauder, cette écologie est une carte de ressources avec des dents. Une coupe mise à la terre peut donner fibre conductrice, enzyme de lanterne et petite charge utile. Une coupe négligente peut changer un tronc silencieux en plainte : faux pings de maintenance, anciens tons d'évacuation, fragments de route répétés par le tissu humide, et drones arrivant pour réparer une ligne qui n'est plus seulement du métal. La forêt n'est ni mauvaise ni miraculeuse. C'est la lune qui utilise ce que la colonie a laissé, et la colonie abandonnée qui confond la vie avec une avarie ou une réparation selon le protocole qui se réveille en premier.",
+     "field_note": "Un bon câble ne tressaille pas. S'il tressaille, mets-le à la terre, balise-le, puis décide si tu as besoin d'énergie à ce point."
+    },
+    "es_ES": {
+     "title": "Biota conductora del Bosque de Cables",
+     "scanner": "KELP CONDUCTOR // Hebras vivas trenzadas dentro de cable de relé muerto. Guarda carga débil, repite pings falsos y entrega corriente limpia si se corta después de poner a tierra.",
+     "terminal": "ECOLOGÍA DEL BOSQUE DE CABLES // Matorral estático, hierba linterna y kelp de cable colonizan aislamiento roto. Tratar el tejido húmedo como línea viva: lee vibración, puentea rutas dañadas y puede quedar registrado por drones de reparación como infraestructura.",
+     "audio": "Bobina de Marauder: si el kelp te devuelve el zumbido, deja de cortar. No es una planta cantando. Es la ruta recordando presión.",
+     "in_game_wiki": "Una muestra recuperada del Bosque de Cables explica por qué las cuadrillas de salvamento ponen a tierra sus herramientas antes de cosechar kelp conductor. El crecimiento se forma donde se superponen viejas cubiertas de relé, salmuera mineral y tapetes hambrientos de luz. Puede reparar cableado débil, atraer carga a una celda muerta o hacer que un relé responda una ráfaga más, pero también lanza fantasmas de señal y puede despertar drones de reparación que aún cuentan el puente vivo como parte de la ruta.",
+     "external_site": "En el Bosque de Cables, HECTON-8 deja de separar biología e infraestructura. Troncales de relé muertas, aislamiento desgarrado, filtraciones de salmuera y algas coloniales pacientes dieron a la vida local un andamio rico en cobre, polvo cerámico y memoria de corriente. El kelp de cable entró primero como mancha, luego como hilo y por último como conductor húmedo trenzado. El matorral estático aprendió a endurecerse cuando los pulsos de servicio pasan por las líneas. La hierba linterna crece cerca de fugas y responde con destellos a ondas de presión, no a lenguaje, pero el ritmo se parece lo suficiente para que un buzo cansado mire dos veces. Para un Marauder, esta ecología es un mapa de recursos con dientes. Un corte puesto a tierra puede dar fibra conductora, enzima de linterna y una pequeña carga útil. Un corte descuidado puede convertir un troncal silencioso en una queja: pings falsos de mantenimiento, viejos tonos de evacuación, fragmentos de ruta repetidos por tejido húmedo y drones que llegan a reparar una línea que ya no es solo metal. El bosque no es malvado ni milagroso. Es la luna usando lo que dejó la colonia, y la colonia abandonada leyendo la vida como daño o reparación según qué protocolo despierte primero.",
+     "field_note": "Un buen cable no se retuerce. Si se retuerce, ponlo a tierra, márcalo y decide si necesitas tanto la energía."
+    },
+    "de_DE": {
+     "title": "Leitfähige Biota des Kabelwalds",
+     "scanner": "LEITKELP // Lebende Stränge, in tote Relaiskabel geflochten. Speichert schwache Ladung, wiederholt falsche Pings und liefert sauberen Strom, wenn nach Erdung geschnitten wird.",
+     "terminal": "KABELWALD-ÖKOLOGIE // Statisches Dickicht, Laternenkraut und Kabelkelp besiedeln aufgerissene Isolierung. Nasses Gewebe als aktive Leitung behandeln: Es liest Vibration, überbrückt beschädigte Routen und kann von Reparaturdrohnen als Infrastruktur protokolliert werden.",
+     "audio": "Marauder-Spule: Wenn der Kelp zurücksummt, hör auf zu schneiden. Das ist keine singende Pflanze. Das ist die Route, die sich an Druck erinnert.",
+     "in_game_wiki": "Eine geborgene Probe aus dem Kabelwald erklärt, warum Bergungsteams ihre Werkzeuge erden, bevor sie Leitkelp ernten. Der Bewuchs entsteht dort, wo alte Relaishüllen, mineralische Sole und lichthungrige Matten übereinanderliegen. Er kann schwache Verkabelung flicken, Ladung in eine tote Zelle ziehen oder ein Relais zu einem letzten Burst bringen, wirft aber auch Signalgeister aus und kann Reparaturdrohnen wecken, die die lebende Brücke noch als Teil der Route zählen.",
+     "external_site": "Im Kabelwald hört HECTON-8 auf, Biologie und Infrastruktur zu trennen. Tote Relaisstämme, zerrissene Isolierung, Soleaustritte und geduldige Koloniealgen gaben dem lokalen Leben ein Gerüst aus Kupfer, Keramikstaub und erinnerter Spannung. Kabelkelp drang zuerst als Fleck ein, dann als Faden, dann als geflochtener nasser Leiter. Statisches Dickicht lernte zu versteifen, wenn Serviceimpulse durch die Leitungen laufen. Laternenkraut wächst nahe Lecks und antwortet mit Blitzen auf Druckwellen, nicht auf Sprache, aber der Rhythmus ist ähnlich genug, dass ein müder Taucher zweimal hinsieht. Für einen Marauder ist diese Ökologie eine Ressourcenkarte mit Zähnen. Ein geerdeter Schnitt kann leitfähige Faser, Laternenenzym und eine kleine nutzbare Ladung bringen. Ein unvorsichtiger Schnitt kann einen stillen Stamm in eine Beschwerde verwandeln: falsche Wartungspings, alte Evakuierungstöne, Routenfragmente, die durch nasses Gewebe wiederholt werden, und Drohnen, die eine Leitung reparieren wollen, die nicht mehr nur Metall ist. Der Wald ist weder böse noch ein Wunder. Er ist der Mond, der nutzt, was die Kolonie zurückließ, und die verlassene Kolonie, die Leben je nach zuerst erwachendem Protokoll als Schaden oder Reparatur missliest.",
+     "field_note": "Guter Draht zuckt nicht. Wenn er zuckt, erde ihn, markiere ihn und entscheide, ob du Strom so dringend brauchst."
+    },
+    "pl_PL": {
+     "title": "Przewodząca biota Lasu Kabli",
+     "scanner": "PRZEWODZĄCA LISTOWNICA // Żywe pasma wplecione w martwy kabel przekaźnikowy. Trzymają słaby ładunek, powtarzają fałszywe pingi i dają czysty prąd, jeśli ciąć po uziemieniu.",
+     "terminal": "EKOLOGIA LASU KABLI // Statyczny gąszcz, trawa latarniowa i kablowa listownica zasiedlają rozerwaną izolację. Mokre tkanki traktować jak linię pod napięciem: czytają drgania, mostkują uszkodzone trasy i mogą być wpisane przez drony naprawcze jako infrastruktura.",
+     "audio": "Szpula Maraudera: jeśli listownica odmrukuje, przestań ciąć. To nie roślina śpiewa. To trasa pamięta ciśnienie.",
+     "in_game_wiki": "Odzyskana próbka z Lasu Kabli wyjaśnia, czemu ekipy złomiarzy uziemiają narzędzia przed zbiorem przewodzącej listownicy. Narost powstaje tam, gdzie stare płaszcze przekaźników, mineralna solanka i maty głodne światła zachodzą na siebie. Może łatać słabe okablowanie, ściągać ładunek do martwej komórki albo sprawić, że przekaźnik odpowie jeszcze jednym impulsem, ale wyrzuca też duchy sygnału i może obudzić drony naprawcze, które nadal liczą żywy most jako część trasy.",
+     "external_site": "W Lesie Kabli HECTON-8 przestaje oddzielać biologię od infrastruktury. Martwe pnie przekaźnikowe, rozdarta izolacja, przesączająca się solanka i cierpliwe algi kolonialne dały miejscowemu życiu rusztowanie bogate w miedź, pył ceramiczny i pamięć prądu. Kablowa listownica weszła w nie najpierw jako plama, potem jako nić, a potem jako spleciony mokry przewodnik. Statyczny gąszcz nauczył się sztywnieć, gdy przez linie idą impulsy serwisowe. Trawa latarniowa rośnie przy wyciekach i błyska w odpowiedzi na fale ciśnienia, nie na język, ale rytm jest dość bliski, by zmęczony nurek spojrzał drugi raz. Dla Maraudera ta ekologia jest mapą zasobów z zębami. Uziemione cięcie może dać włókno przewodzące, enzym latarniowy i mały użyteczny ładunek. Niedbałe cięcie może zmienić cichy pień w skargę: fałszywe pingi konserwacyjne, stare tony ewakuacyjne, fragmenty trasy powtarzane przez mokrą tkankę i drony przybywające naprawiać linię, która nie jest już tylko metalem. Las nie jest zły ani cudowny. To księżyc używa tego, co zostawiła kolonia, a opuszczona kolonia myli życie z uszkodzeniem albo naprawą zależnie od tego, który protokół obudzi się pierwszy.",
+     "field_note": "Dobry przewód nie drga. Jeśli drga, uziem, oznacz i zdecyduj, czy naprawdę tak bardzo potrzebujesz prądu."
+    },
+    "uk_UA": {
+     "title": "Провідна біота Кабельного лісу",
+     "scanner": "ПРОВІДНА ЛАМІНАРІЯ // Живі пасма вплетені в мертвий релейний кабель. Тримають слабкий заряд, повторюють хибні пінги й дають чистий струм, якщо різати після заземлення.",
+     "terminal": "ЕКОЛОГІЯ КАБЕЛЬНОГО ЛІСУ // Статична хаща, ліхтарна трава й кабельна ламінарія заселяють розірвану ізоляцію. Мокру тканину вважати лінією під напругою: вона читає вібрацію, мостить пошкоджені маршрути й може числитися в ремонтних дронів як інфраструктура.",
+     "audio": "Котушка Marauder: якщо ламінарія гуде у відповідь, припини різати. Це не рослина співає. Це маршрут пам'ятає тиск.",
+     "in_game_wiki": "Знайдений зразок із Кабельного лісу пояснює, чому команди видобувачів заземлюють інструменти перед збором провідної ламінарії. Наріст виникає там, де старі релейні оболонки, мінеральна ропа й мати, голодні до світла, накладаються одне на одне. Він може підлатати слабку проводку, затягнути заряд у мертву комірку або змусити реле відповісти ще одним імпульсом, але також викидає сигнальні привиди й може розбудити ремонтних дронів, які досі рахують живий міст частиною маршруту.",
+     "external_site": "У Кабельному лісі HECTON-8 перестає розділяти біологію та інфраструктуру. Мертві релейні стовбури, розірвана ізоляція, просочування ропи й терплячі колоніальні водорості дали місцевому життю каркас, багатий на мідь, керамічний пил і пам'ять про струм. Кабельна ламінарія ввійшла в цей каркас спершу плямою, потім ниткою, а потім мокрим сплетеним провідником. Статична хаща навчилася дерев'яніти, коли лініями проходять службові імпульси. Ліхтарна трава росте біля витоків і відповідає спалахами на хвилі тиску, не на мову, але ритм достатньо схожий, щоб утомлений водолаз озирнувся вдруге. Для Marauder така екологія є мапою ресурсів із зубами. Заземлений зріз може дати провідне волокно, ліхтарний фермент і невеликий корисний заряд. Недбалий зріз може перетворити тихий стовбур на скаргу: хибні пінги обслуговування, старі евакуаційні тони, уламки маршруту, повторені мокрою тканиною, і дрони, що прибувають ремонтувати лінію, яка вже не лише метал. Ліс не злий і не чудесний. Це місяць використовує те, що залишила колонія, а покинута колонія плутає життя з пошкодженням або ремонтом залежно від того, який протокол прокинеться першим.",
+     "field_note": "Добрий дріт не смикається. Якщо смикається, заземли, познач і виріши, чи справді тобі так потрібен струм."
+    },
+    "ar_SA": {
+     "title": "الأحياء الموصلة في غابة الكابلات",
+     "scanner": "عشب بحر موصل // خيوط حية مضفورة داخل كابل ترحيل ميت. تخزن شحنة ضعيفة، تكرر نبضات كاذبة، وتعطي تياراً نظيفاً إذا قُطعت بعد التأريض.",
+     "terminal": "بيئة غابة الكابلات // الأجمة الساكنة، عشب المصباح، وعشب الكابل تستعمر العزل الممزق. عومل النسيج الرطب كخط حي: يقرأ الاهتزاز، يجسر المسارات التالفة، وقد تسجله مسيرات الإصلاح كبنية تحتية.",
+     "audio": "بكرة Marauder: إذا رد العشب بالطنين، توقف عن القطع. هذه ليست نبتة تغني. هذا هو المسار يتذكر الضغط.",
+     "in_game_wiki": "عينة مستعادة من غابة الكابلات تشرح لماذا تؤرض فرق النهب أدواتها قبل حصاد العشب الموصل. ينمو هذا النسيج حيث تتداخل أغطية الترحيل القديمة، والمحلول الملحي المعدني، والحصائر الجائعة للضوء. يستطيع ترقيع توصيل ضعيف، أو جذب شحنة إلى خلية ميتة، أو جعل مرحل يجيب بدفقة أخرى، لكنه يطرح أيضاً أشباح إشارة وقد يوقظ مسيرات إصلاح ما زالت تعد الجسر الحي جزءاً من المسار.",
+     "external_site": "في غابة الكابلات، يتوقف HECTON-8 عن فصل الأحياء عن البنية التحتية. جذوع الترحيل الميتة، والعزل الممزق، وتسربات المحلول الملحي، والطحالب الاستعمارية الصبورة منحت الحياة المحلية سقالة غنية بالنحاس، وغبار السيراميك، وذاكرة التيار. دخل عشب الكابل تلك السقالة أولاً كبقعة، ثم كخيط، ثم كموصل رطب مضفور. تعلمت الأجمة الساكنة أن تتصلب عندما تمر نبضات الخدمة في الخطوط. ينمو عشب المصباح قرب التسربات ويرد بالوميض على موجات الضغط، لا على اللغة، لكن الإيقاع قريب بما يكفي ليجعل غواصاً منهكاً ينظر مرتين. بالنسبة إلى Marauder، هذه البيئة خريطة موارد ذات أسنان. القطع المؤرض يعطي أليافاً موصلة، وإنزيماً مصباحياً، وشحنة صغيرة نافعة. القطع المهمل يحول جذعاً صامتاً إلى شكوى: نبضات صيانة كاذبة، نغمات إخلاء قديمة، شظايا مسار يكررها نسيج رطب، ومسيرات تصل لإصلاح خط لم يعد معدناً فقط. الغابة ليست شريرة وليست معجزة. إنها القمر يستخدم ما تركته المستعمرة، والمستعمرة المهجورة تسيء قراءة الحياة كضرر أو إصلاح بحسب البروتوكول الذي يستيقظ أولاً.",
+     "field_note": "السلك الجيد لا يرتعش. إذا ارتعش، أرضه، ووسمه، ثم قرر هل تحتاج الطاقة إلى هذا الحد."
+    },
+    "id_ID": {
+     "title": "Biota Konduktif Hutan Kabel",
+     "scanner": "KELP KONDUKTIF // Untaian hidup terjalin melalui kabel relai mati. Menyimpan muatan lemah, mengulang ping palsu, dan memberi arus bersih jika dipotong setelah dibumikan.",
+     "terminal": "EKOLOGI HUTAN KABEL // Belukar statis, rumput lentera, dan kelp kabel menjajah insulasi robek. Perlakukan jaringan basah sebagai jalur hidup: ia membaca getaran, menjembatani rute rusak, dan bisa dicatat drone perbaikan sebagai infrastruktur.",
+     "audio": "Gulungan Marauder: kalau kelp berdengung balik, berhenti memotong. Itu bukan tanaman bernyanyi. Itu rute yang mengingat tekanan.",
+     "in_game_wiki": "Sampel Hutan Kabel yang ditemukan menjelaskan mengapa kru salvage membumikan alat sebelum memanen kelp konduktif. Pertumbuhan ini terbentuk di tempat jaket relai tua, brine mineral, dan hamparan yang kelaparan cahaya saling menumpuk. Ia dapat menambal kabel lemah, menarik muatan ke sel mati, atau membuat relai menjawab satu burst lagi, tetapi ia juga melempar hantu sinyal dan bisa membangunkan drone perbaikan yang masih menghitung jembatan hidup itu sebagai bagian rute.",
+     "external_site": "Di Hutan Kabel, HECTON-8 berhenti memisahkan biologi dari infrastruktur. Batang relai mati, insulasi robek, rembesan brine, dan alga koloni yang sabar memberi kehidupan lokal rangka kaya tembaga, debu keramik, dan ingatan arus. Kelp kabel masuk ke rangka itu mula-mula sebagai noda, lalu benang, lalu konduktor basah yang terjalin. Belukar statis belajar mengeras saat pulsa layanan lewat di jalur. Rumput lentera tumbuh dekat kebocoran dan menjawab gelombang tekanan dengan kilat, bukan bahasa, tetapi ritmenya cukup mirip untuk membuat penyelam lelah menoleh lagi. Bagi Marauder, ekologi ini peta sumber daya bergigi. Potongan yang dibumikan bisa memberi serat konduktif, enzim lentera, dan muatan kecil yang berguna. Potongan ceroboh bisa mengubah batang sunyi menjadi keluhan: ping perawatan palsu, nada evakuasi lama, fragmen rute yang diulang melalui jaringan basah, dan drone yang datang memperbaiki jalur yang bukan lagi hanya logam. Hutan ini tidak jahat dan bukan mukjizat. Ini bulan yang memakai sisa koloni, dan koloni terbengkalai yang salah membaca kehidupan sebagai kerusakan atau perbaikan, tergantung protokol mana bangun lebih dulu.",
+     "field_note": "Kabel yang baik tidak berkedut. Jika berkedut, bumikan, tandai, lalu putuskan apakah kau butuh daya seburuk itu."
+    },
+    "ko_KR": {
+     "title": "케이블 숲의 전도성 생물상",
+     "scanner": "전도 켈프 // 죽은 중계 케이블 사이로 엮인 살아 있는 가닥. 약한 전하를 저장하고 가짜 핑을 반복하며, 접지 뒤 자르면 깨끗한 전류를 내준다.",
+     "terminal": "케이블 숲 생태 // 정전기 덤불, 랜턴그래스, 케이블 켈프가 찢어진 절연재를 점령한다. 젖은 조직은 살아 있는 선로로 취급하라. 진동을 읽고, 손상된 경로를 잇고, 수리 드론에게 인프라로 기록될 수 있다.",
+     "audio": "Marauder 스풀 기록: 켈프가 윙윙거리며 대답하면 절단을 멈춰라. 식물이 노래하는 게 아니다. 경로가 압력을 기억하는 것이다.",
+     "in_game_wiki": "회수된 케이블 숲 표본은 왜 인양 작업반이 전도성 켈프를 채취하기 전에 공구를 접지하는지 설명한다. 이 생장은 오래된 중계 재킷, 미네랄 염수, 빛에 굶주린 매트가 겹치는 곳에서 형성된다. 약한 배선을 보수하고, 죽은 셀로 전하를 끌어들이거나, 릴레이가 한 번 더 버스트로 응답하게 만들 수 있다. 그러나 동시에 신호 유령을 뿌리고, 살아 있는 다리를 아직 경로의 일부로 계산하는 수리 드론을 깨울 수 있다.",
+     "external_site": "케이블 숲에서 HECTON-8은 생물과 인프라를 더 이상 분리하지 않는다. 죽은 중계 줄기, 찢어진 절연재, 스며드는 염수, 끈질긴 식민지 조류가 구리와 세라믹 먼지와 전류의 기억이 풍부한 발판을 지역 생명에게 제공했다. 케이블 켈프는 처음에는 얼룩으로, 다음에는 실로, 그다음에는 젖은 편조 도체로 그 발판에 들어갔다. 정전기 덤불은 서비스 펄스가 선로를 지나갈 때 뻣뻣해지는 법을 배웠다. 랜턴그래스는 누출 근처에서 자라고 언어가 아니라 압력파에 섬광으로 답하지만, 그 리듬은 지친 잠수부가 두 번 돌아볼 만큼 가깝다. Marauder에게 이 생태는 이빨 달린 자원 지도다. 접지한 절단은 전도성 섬유, 랜턴 효소, 작은 유용 전하를 줄 수 있다. 부주의한 절단은 조용한 줄기를 불만으로 바꾼다. 가짜 정비 핑, 오래된 대피음, 젖은 조직을 통해 반복되는 경로 파편, 그리고 더 이상 금속만이 아닌 선을 고치러 오는 드론. 숲은 사악하지도 기적도 아니다. 달이 식민지가 남긴 것을 쓰고 있으며, 버려진 식민지는 어떤 프로토콜이 먼저 깨어나느냐에 따라 생명을 손상이나 수리로 오독한다.",
+     "field_note": "멀쩡한 전선은 꿈틀대지 않는다. 꿈틀대면 접지하고, 표식하고, 그 전력이 정말 필요한지 결정해라."
+    },
+    "he_IL": {
+     "title": "ביוטה מוליכה ביער הכבלים",
+     "scanner": "קלפ מוליך // גדילים חיים קלועים בתוך כבל ממסר מת. אוגר מטען חלש, חוזר על פינגים כוזבים ומספק זרם נקי אם חותכים אחרי הארקה.",
+     "terminal": "אקולוגיית יער הכבלים // סבך סטטי, עשב פנס וקלפ כבלים מתיישבים בבידוד קרוע. יש להתייחס לרקמה רטובה כקו חי: היא קוראת רטט, מגשרת נתיבים פגומים ועלולה להירשם אצל רחפני תיקון כתשתית.",
+     "audio": "סליל Marauder: אם הקלפ מזמזם בחזרה, הפסק לחתוך. זו לא צמחייה ששרה. זה הנתיב שזוכר לחץ.",
+     "in_game_wiki": "דגימה שנמצאה ביער הכבלים מסבירה מדוע צוותי חילוץ מאריקים את הכלים לפני קציר קלפ מוליך. הצמיחה נוצרת במקום שבו מעטפות ממסר ישנות, תמלחת מינרלית ומרבדים רעבי אור חופפים. היא יכולה לטלא חיווט חלש, למשוך מטען לתא מת או לגרום לממסר לענות בעוד פעימה אחת, אבל היא גם משליכה רוחות אות ועלולה להעיר רחפני תיקון שעדיין סופרים את הגשר החי כחלק מהנתיב.",
+     "external_site": "ביער הכבלים HECTON-8 מפסיק להפריד בין ביולוגיה לתשתית. גזעי ממסר מתים, בידוד קרוע, חלחול תמלחת ואצות מושבה סבלניות נתנו לחיים המקומיים שלד עשיר בנחושת, אבק קרמי וזיכרון של זרם. קלפ הכבלים נכנס לשלד הזה תחילה ככתם, אחר כך כחוט, ולבסוף כמוליך רטוב קלוע. הסבך הסטטי למד להתקשח כאשר פעימות שירות עוברות בקווים. עשב הפנס גדל ליד דליפות ומשיב בהבזקים לגלי לחץ, לא לשפה, אבל הקצב קרוב מספיק כדי לגרום לצולל עייף להביט שוב. עבור Marauder, האקולוגיה הזו היא מפת משאבים עם שיניים. חתך מוארק יכול להפיק סיב מוליך, אנזים פנס ומטען קטן שימושי. חתך רשלני יכול להפוך גזע שקט לתלונה: פינגי תחזוקה כוזבים, צלילי פינוי ישנים, שברי נתיב שחוזרים דרך רקמה רטובה ורחפנים שמגיעים לתקן קו שכבר אינו רק מתכת. היער אינו מרושע ואינו נס. זה הירח משתמש במה שהמושבה השאירה, והמושבה הנטושה מפרשת חיים בטעות כנזק או תיקון לפי הפרוטוקול שמתעורר ראשון.",
+     "field_note": "חוט טוב לא מתעוות. אם הוא מתעוות, הארק אותו, סמן אותו, ואז החלט אם אתה צריך חשמל עד כדי כך."
+    },
+    "pt_BR": {
+     "title": "Biota condutiva da Floresta de Cabos",
+     "scanner": "KELP CONDUTIVO // Fios vivos trançados por cabo de relé morto. Guarda carga fraca, repete pings falsos e entrega corrente limpa se for cortado depois do aterramento.",
+     "terminal": "ECOLOGIA DA FLORESTA DE CABOS // Moita estática, capim-lanterna e kelp de cabo colonizam isolamento rasgado. Trate tecido molhado como linha viva: ele lê vibração, ponteia rotas danificadas e pode ser registrado por drones de reparo como infraestrutura.",
+     "audio": "Bobina de Marauder: se o kelp zumbir de volta, pare de cortar. Não é uma planta cantando. É a rota lembrando pressão.",
+     "in_game_wiki": "Uma amostra recuperada da Floresta de Cabos explica por que equipes de salvamento aterram suas ferramentas antes de colher kelp condutivo. O crescimento se forma onde capas antigas de relé, salmoura mineral e mantos famintos por luz se sobrepõem. Pode remendar fiação fraca, puxar carga para uma célula morta ou fazer um relé responder por mais um pulso, mas também lança fantasmas de sinal e pode acordar drones de reparo que ainda contam a ponte viva como parte da rota.",
+     "external_site": "Na Floresta de Cabos, HECTON-8 para de separar biologia de infraestrutura. Troncos mortos de relé, isolamento rasgado, infiltração de salmoura e algas coloniais pacientes deram à vida local um andaime rico em cobre, poeira cerâmica e memória de corrente. O kelp de cabo entrou nesse andaime primeiro como mancha, depois como fio, depois como condutor molhado trançado. A moita estática aprendeu a enrijecer quando pulsos de serviço atravessam as linhas. O capim-lanterna cresce perto de vazamentos e responde com flashes a ondas de pressão, não a linguagem, mas o ritmo é parecido o bastante para fazer um mergulhador cansado olhar duas vezes. Para um Marauder, essa ecologia é um mapa de recursos com dentes. Um corte aterrado pode render fibra condutiva, enzima de lanterna e uma pequena carga útil. Um corte descuidado pode transformar um tronco silencioso em reclamação: pings falsos de manutenção, velhos tons de evacuação, fragmentos de rota repetidos por tecido molhado e drones chegando para reparar uma linha que já não é só metal. A floresta não é má nem milagrosa. É a lua usando o que a colônia deixou para trás, e a colônia abandonada lendo vida como dano ou reparo conforme o protocolo que acorda primeiro.",
+     "field_note": "Fio bom não se contorce. Se contorcer, aterre, marque e decida se precisa tanto assim de energia."
+    },
+    "nl_NL": {
+     "title": "Geleidende biota van het Kabelbos",
+     "scanner": "GELEIDENDE KELP // Levende strengen gevlochten door dode relaiskabel. Slaat zwakke lading op, herhaalt valse pings en levert schone stroom als er na aarding wordt gesneden.",
+     "terminal": "KABELBOS-ECOLOGIE // Statisch struikgewas, lantaarngras en kabelkelp koloniseren gescheurde isolatie. Behandel nat weefsel als een levende lijn: het leest trilling, overbrugt beschadigde routes en kan door reparatiedrones als infrastructuur worden gelogd.",
+     "audio": "Marauder-spoel: als de kelp terug zoemt, stop met snijden. Dat is geen plant die zingt. Dat is de route die druk onthoudt.",
+     "in_game_wiki": "Een geborgen monster uit het Kabelbos verklaart waarom bergingsploegen hun gereedschap aarden voordat ze geleidende kelp oogsten. De groei ontstaat waar oude relaismantels, minerale pekel en lichtarme matten elkaar overlappen. Ze kan zwakke bedrading lappen, lading naar een dode cel lokken of een relais nog één burst laten antwoorden, maar ze werpt ook signaalgeesten op en kan reparatiedrones wekken die de levende brug nog steeds als deel van de route tellen.",
+     "external_site": "In het Kabelbos houdt HECTON-8 op biologie van infrastructuur te scheiden. Dode relaisstammen, gescheurde isolatie, pekellekkage en geduldig koloniaal wier gaven lokaal leven een steiger rijk aan koper, keramisch stof en herinnerde stroom. Kabelkelp kwam die steiger eerst binnen als vlek, daarna als draad, daarna als gevlochten natte geleider. Statisch struikgewas leerde verstijven wanneer servicepulsen door de lijnen lopen. Lantaarngras groeit bij lekken en antwoordt met flitsen op drukgolven, niet op taal, maar het ritme lijkt genoeg om een vermoeide duiker twee keer te laten kijken. Voor een Marauder is deze ecologie een middelenkaart met tanden. Een geaarde snede kan geleidende vezel, lantaarnenzym en een kleine bruikbare lading opleveren. Een slordige snede kan een stille stam in een klacht veranderen: valse onderhoudspings, oude evacuatietonen, routefragmenten die door nat weefsel worden herhaald, en drones die een lijn komen repareren die niet langer alleen metaal is. Het bos is niet kwaad en geen wonder. Het is de maan die gebruikt wat de kolonie achterliet, en de verlaten kolonie die leven verkeerd leest als schade of reparatie, afhankelijk van welk protocol het eerst wakker wordt.",
+     "field_note": "Goede draad trekt niet samen. Als hij trekt, aard hem, tag hem en beslis of je stroom zo hard nodig hebt."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

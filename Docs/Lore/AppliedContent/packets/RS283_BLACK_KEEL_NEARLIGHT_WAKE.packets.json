@@ -1,271 +1,272 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS283_BLACK_KEEL_NEARLIGHT_WAKE",
-  "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS283_BLACK_KEEL_NEARLIGHT_WAKE",
+ "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P6801_BLACK_KEEL_NEARLIGHT_WAKE",
+   "release_set_id": "RS283_BLACK_KEEL_NEARLIGHT_WAKE",
+   "article_id": "applied_lore.black_keel_nearlight_wake",
+   "title_key": "LORE_BLACK_KEEL_NEARLIGHT_WAKE_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Codex_Delivery_Map.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P013_NEARLIGHT_SHIP_CLASSES.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P014_AEGIR_ROUTE_WINDOW.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P142_PROBE_PACKET_TRAVEL_TIMES.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P143_HEAVY_FREIGHT_STAGING_TIME.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P621_AEGIR_RECOVERY_WINDOW_GEOMETRY.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1091_PELLET_WAKE_BRAKING_LEDGER.md",
+    ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
+    ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
+    ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P6801_BLACK_KEEL_NEARLIGHT_WAKE",
-      "release_set_id": "RS283_BLACK_KEEL_NEARLIGHT_WAKE",
-      "article_id": "applied_lore.black_keel_nearlight_wake",
-      "title_key": "LORE_BLACK_KEEL_NEARLIGHT_WAKE_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Codex_Delivery_Map.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P013_NEARLIGHT_SHIP_CLASSES.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P014_AEGIR_ROUTE_WINDOW.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P142_PROBE_PACKET_TRAVEL_TIMES.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P143_HEAVY_FREIGHT_STAGING_TIME.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P621_AEGIR_RECOVERY_WINDOW_GEOMETRY.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1091_PELLET_WAKE_BRAKING_LEDGER.md",
-        ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
-        ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
-        ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.black_keel_nearlight_wake",
-        "secondary": [
-          "unlock.first_carrier_window_receipt",
-          "unlock.first_tonne_window_lien",
-          "unlock.first_kestrel_shadow_notice",
-          "unlock.first_p63_relay_clock"
-        ],
-        "poi_tags": [
-          "poi.black_keel_window_clock",
-          "poi.p63_relay_board",
-          "poi.keelmark_lien_terminal",
-          "poi.transit_wake_sample",
-          "poi.bathydrop_ascent_sleeve"
-        ],
-        "biome_tags": [
-          "biome.carrier_link",
-          "biome.surface_relay",
-          "biome.photic_shelf",
-          "biome.black_keel_orbit",
-          "biome.storm_ceiling"
-        ],
-        "first_20_boundary": "Explains why a true carrier signal still leaves the player underwater until ascent hardware, quarantine, geometry and mass window agree."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Suit Carrier-Link Classifier",
-          "terminal": "Black Keel Transfer Ledger",
-          "audio": "Black Keel Relay",
-          "in_game_wiki": "Recovered Route Engineering Note",
-          "external_site": "Public Site Hard-Sci-Fi Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "depth_band": "surface_to_photic_shelf",
-        "route_moment": "first_carrier_signal_after_tonne_window_lien",
-        "truth_payload": "Black Keel is a local Aegir claim tender; packet contact is easier than body recovery because mass, heat, quarantine, geometry and custody are separate gates.",
-        "player_question": "Why can the carrier hear me but still not rescue me?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Black Keel Nearlight Wake",
-          "scanner": "CARRIER WAKE READ // Packet route open. Body recovery closed by ascent seal, Kestrel shadow, storm ceiling, quarantine and tonne-window mass.",
-          "terminal": "BLACK KEEL TRANSFER LEDGER // Packet receipt does not allocate lift. Recovery requires rated ascent sleeve, seal integrity, low Aegir noise, Kestrel shadow clearance, quarantine handshake and accepted tonne-window mass.",
-          "audio": "Black Keel relay: Heard you. Cannot lift you. Window takes mass, seal, clearance, and receiver line.",
-          "in_game_wiki": "Black Keel is an Aegir-system claim tender, not a rescue ship from Sol. A data packet can fit through a dirty relay pass while a living body still fails ascent seal, storm ceiling, Kestrel shadow, quarantine and tonne-window checks. Treat carrier contact as route evidence: log the window, keep proof tagged, and do not spend ascent hardware until the mass line accepts the payload.",
-          "external_site": "A hard-sci-fi primer on why Black Keel can sound close while rescue remains closed: no FTL, no instant lift, only packet routes, transfer geometry, heat, quarantine and tonne-window custody.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/en_US_external_site.md",
-          "field_note": "If the ship can hear you, good. If the ship can lift you, the ledger will say it in colder words.",
-          "localization_status": "source_authority"
-        },
-        "ar_SA": {
-          "title": "Wake nearlight لـ Black Keel",
-          "scanner": "قراءة WAKE carrier // طريق الحزمة مفتوح. استرداد الجسد مغلق بسبب ascent seal، وظل Kestrel، وسقف العاصفة، والحجر، وكتلة tonne-window.",
-          "terminal": "سجل تحويل BLACK KEEL // استلام الحزمة لا يخصص الرفع. الاسترداد يحتاج ascent sleeve مصنفة، وسلامة seal، وضجيج Aegir منخفض، وخلو ظل Kestrel، وquarantine handshake، وكتلة tonne-window مقبولة.",
-          "audio": "مرحل Black Keel: سمعناك. لا يمكننا رفعك. النافذة تحتاج كتلة، وseal، وclearance، وخط مستقبل.",
-          "in_game_wiki": "Black Keel tender مطالبات داخل نظام Aegir، وليس سفينة إنقاذ من Sol. قد تمر حزمة بيانات عبر relay pass قذر بينما يفشل الجسد الحي في فحوص ascent seal وسقف العاصفة وظل Kestrel والحجر وtonne-window. عامل اتصال carrier كدليل طريق: سجل النافذة، أبق proof tagged، ولا تصرف ascent hardware حتى يقبل سطر الكتلة payload.",
-          "external_site": "تمهيد hard-sci-fi يشرح لماذا قد يبدو Black Keel قريبا بينما يبقى الإنقاذ مغلقا: لا FTL، لا رفع فوري، فقط طرق حزم، وهندسة انتقال، وحرارة، وحجر، وcustody tonne-window.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/ar_SA_external_site.md",
-          "field_note": "إذا كانت السفينة تسمعك فهذا جيد. إذا كانت تستطيع رفعك فسيقول ledger ذلك بكلمات أبرد.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Black Keel Nearlight Wake",
-          "scanner": "CARRIER-WAKE-READ // Paketroute offen. Körperbergung durch Ascent-Seal, Kestrel-Schatten, Sturmdecke, Quarantäne und tonne-window-Masse geschlossen.",
-          "terminal": "BLACK KEEL TRANSFERLEDGER // Paketempfang weist keinen Lift zu. Bergung verlangt geratete Ascent Sleeve, Seal-Integrität, niedriges Aegir-Rauschen, Kestrel-Schattenfreigabe, Quarantine Handshake und akzeptierte tonne-window-Masse.",
-          "audio": "Black-Keel-Relais: Wir hören dich. Können dich nicht liften. Fenster braucht Masse, Seal, Clearance und Receiver-Linie.",
-          "in_game_wiki": "Black Keel ist ein Claim-Tender im Aegir-System, kein Rettungsschiff aus Sol. Ein Datenpaket kann durch einen schmutzigen Relay-Pass passen, während ein lebender Körper noch an Ascent-Seal, Sturmdecke, Kestrel-Schatten, Quarantäne und tonne-window-Prüfungen scheitert. Behandle Carrier-Kontakt als Routennachweis: Fenster protokollieren, Beweis getaggt halten und Ascent-Hardware nicht ausgeben, bevor die Masselinie die Payload akzeptiert.",
-          "external_site": "Ein Hard-Sci-Fi-Primer darüber, warum Black Keel nah klingen kann, während Rettung geschlossen bleibt: kein FTL, kein Sofortlift, nur Paketrouten, Transfergeometrie, Hitze, Quarantäne und tonne-window-Custody.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/de_DE_external_site.md",
-          "field_note": "Wenn das Schiff dich hört, gut. Wenn es dich liften kann, sagt der Ledger es in kälteren Worten.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Estela nearlight de Black Keel",
-          "scanner": "LECTURA DE ESTELA CARRIER // Ruta de paquete abierta. Recuperación corporal cerrada por sello de ascenso, sombra Kestrel, techo de tormenta, cuarentena y masa tonne-window.",
-          "terminal": "LEDGER DE TRANSFERENCIA BLACK KEEL // La recepción del paquete no asigna izado. La recuperación exige ascent sleeve certificada, integridad del sello, bajo ruido de Aegir, despeje de sombra Kestrel, handshake de cuarentena y masa tonne-window aceptada.",
-          "audio": "Relé Black Keel: te oímos. No podemos izarte. La ventana exige masa, sello, clearance y línea receptora.",
-          "in_game_wiki": "Black Keel es un tender de claims del sistema Aegir, no una nave de rescate desde Sol. Un paquete de datos puede caber por un relay pass sucio mientras un cuerpo vivo aún falla por sello de ascenso, techo de tormenta, sombra Kestrel, cuarentena y chequeos tonne-window. Trata el contacto carrier como evidencia de ruta: registra la ventana, mantén la prueba etiquetada y no gastes hardware de ascenso hasta que la línea de masa acepte el payload.",
-          "external_site": "Un primer hard-sci-fi sobre por qué Black Keel puede sonar cerca mientras el rescate sigue cerrado: sin FTL, sin izado instantáneo, solo rutas de paquete, geometría de transferencia, calor, cuarentena y custodia tonne-window.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/es_ES_external_site.md",
-          "field_note": "Si la nave puede oírte, bien. Si puede izarte, el ledger lo dirá con palabras más frías.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Sillage nearlight de Black Keel",
-          "scanner": "LECTURE DE SILLAGE CARRIER // Route paquet ouverte. Récupération du corps fermée par joint d'ascension, ombre Kestrel, plafond de tempête, quarantaine et masse tonne-window.",
-          "terminal": "LEDGER DE TRANSFERT BLACK KEEL // La réception du paquet n'alloue aucune levée. La récupération exige ascent sleeve certifiée, intégrité du joint, faible bruit Aegir, dégagement d'ombre Kestrel, handshake de quarantaine et masse tonne-window acceptée.",
-          "audio": "Relais Black Keel: on t'a entendu. Impossible de te lever. La fenêtre exige masse, joint, clearance et ligne receveur.",
-          "in_game_wiki": "Black Keel est un tender de claim du système Aegir, pas un vaisseau de sauvetage venu de Sol. Un paquet de données peut passer par un relay pass sale tandis qu'un corps vivant échoue encore aux contrôles de joint d'ascension, plafond de tempête, ombre Kestrel, quarantaine et tonne-window. Traite le contact carrier comme preuve de route: note la fenêtre, garde la preuve taguée et ne dépense pas de matériel d'ascension avant que la ligne de masse accepte le payload.",
-          "external_site": "Un primer hard-sci-fi sur pourquoi Black Keel peut sembler proche alors que le sauvetage reste fermé: pas de FTL, pas de levée instantanée, seulement routes de paquets, géométrie de transfert, chaleur, quarantaine et custody tonne-window.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/fr_FR_external_site.md",
-          "field_note": "Si le vaisseau t'entend, bien. S'il peut te lever, le ledger le dira avec des mots plus froids.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "Wake nearlight של Black Keel",
-          "scanner": "קריאת WAKE של CARRIER // נתיב חבילה פתוח. חילוץ גוף סגור בגלל ascent seal, צל Kestrel, תקרת סערה, הסגר ומסת tonne-window.",
-          "terminal": "LEDGER העברה BLACK KEEL // קבלת חבילה אינה מקצה הרמה. חילוץ דורש ascent sleeve מדורג, שלמות seal, רעש Aegir נמוך, clearance מצל Kestrel, quarantine handshake ומסת tonne-window מאושרת.",
-          "audio": "ממסר Black Keel: שמענו אותך. אי אפשר להרים אותך. החלון דורש מסה, seal, clearance וקו מקבל.",
-          "in_game_wiki": "Black Keel הוא tender תביעות במערכת Aegir, לא ספינת חילוץ מ-Sol. חבילת נתונים יכולה לעבור דרך relay pass מלוכלך בזמן שגוף חי עדיין נכשל בבדיקות ascent seal, תקרת סערה, צל Kestrel, הסגר ו-tonne-window. התייחס לקשר carrier כהוכחת נתיב: רשום את החלון, שמור proof tagged, ואל תבזבז ascent hardware עד שקו המסה מקבל את ה-payload.",
-          "external_site": "פריימר hard-sci-fi על כך ש-Black Keel יכול להישמע קרוב בזמן שהחילוץ נשאר סגור: בלי FTL, בלי הרמה מיידית, רק נתיבי חבילות, גיאומטריית מעבר, חום, הסגר ו-tonne-window custody.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/he_IL_external_site.md",
-          "field_note": "אם הספינה שומעת אותך, טוב. אם היא יכולה להרים אותך, ה-ledger יגיד את זה במילים קרות יותר.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Wake nearlight Black Keel",
-          "scanner": "BACAAN WAKE CARRIER // Rute paket terbuka. Pemulihan tubuh tertutup oleh ascent seal, bayangan Kestrel, batas badai, karantina, dan massa tonne-window.",
-          "terminal": "LEDGER TRANSFER BLACK KEEL // Penerimaan paket tidak mengalokasikan angkat. Pemulihan memerlukan ascent sleeve terating, integritas seal, noise Aegir rendah, bebas bayangan Kestrel, quarantine handshake, dan massa tonne-window diterima.",
-          "audio": "Relai Black Keel: kami mendengarmu. Tidak bisa mengangkatmu. Jendela perlu massa, seal, clearance, dan garis penerima.",
-          "in_game_wiki": "Black Keel adalah tender klaim sistem Aegir, bukan kapal penyelamat dari Sol. Paket data bisa masuk melalui relay pass kotor sementara tubuh hidup masih gagal pada ascent seal, batas badai, bayangan Kestrel, karantina, dan pemeriksaan tonne-window. Perlakukan kontak carrier sebagai bukti rute: catat jendela, jaga bukti tetap bertag, dan jangan gunakan hardware ascent sampai garis massa menerima payload.",
-          "external_site": "Primer hard-sci-fi tentang mengapa Black Keel bisa terdengar dekat sementara penyelamatan tetap tertutup: tanpa FTL, tanpa angkat instan, hanya rute paket, geometri transfer, panas, karantina, dan custody tonne-window.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/id_ID_external_site.md",
-          "field_note": "Jika kapal bisa mendengarmu, bagus. Jika kapal bisa mengangkatmu, ledger akan mengatakannya dengan kata yang lebih dingin.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Black Keel Nearlight Wake",
-          "scanner": "CARRIER WAKE READ // パケット経路は開放。身体回収は ascent seal、Kestrel 影、嵐の天井、隔離、tonne-window 質量で閉鎖。",
-          "terminal": "BLACK KEEL 転送 LEDGER // パケット受領は揚収を割り当てない。回収には定格 ascent sleeve、seal 完全性、低い Aegir ノイズ、Kestrel 影 clearance、quarantine handshake、承認済み tonne-window 質量が必要。",
-          "audio": "Black Keel relay: 聞こえている。揚げられない。窓には質量、seal、clearance、receiver line が必要。",
-          "in_game_wiki": "Black Keel は Aegir 系内の claim tender であり、Sol から来る救助船ではない。データパケットは汚れた relay pass を通れても、生きた身体は ascent seal、嵐の天井、Kestrel 影、隔離、tonne-window 検査で止まる。carrier contact はルート証拠として扱う。窓を記録し、proof tagged を保ち、質量行が payload を受け入れるまで ascent hardware を使わない。",
-          "external_site": "Black Keel が近く聞こえても救助が閉じたままになる理由を扱う hard-sci-fi 入門。FTL なし、即時揚収なし。あるのはパケット経路、転送幾何、熱、隔離、tonne-window custody だけ。",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/ja_JP_external_site.md",
-          "field_note": "船が聞いているならいい。船が揚げられるなら、ledger はもっと冷たい言葉でそう言う。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Black Keel Nearlight Wake",
-          "scanner": "CARRIER WAKE 판독 // 패킷 경로 열림. 몸 회수는 ascent seal, Kestrel 그림자, 폭풍 천장, 검역, tonne-window 질량 때문에 닫힘.",
-          "terminal": "BLACK KEEL 전이 LEDGER // 패킷 수신은 인양을 배정하지 않는다. 회수에는 등급 ascent sleeve, seal 무결성, 낮은 Aegir 소음, Kestrel 그림자 clearance, quarantine handshake, 승인된 tonne-window 질량이 필요하다.",
-          "audio": "Black Keel 중계: 들었다. 들어 올릴 수 없다. 창에는 질량, seal, clearance, 수신자 라인이 필요하다.",
-          "in_game_wiki": "Black Keel은 Aegir 계의 claim tender이지 Sol에서 온 구조선이 아니다. 데이터 패킷은 더러운 relay pass를 통과할 수 있지만 살아 있는 몸은 ascent seal, 폭풍 천장, Kestrel 그림자, 검역, tonne-window 검사에서 막힐 수 있다. carrier contact를 경로 증거로 다뤄라. 창을 기록하고, proof tagged를 유지하고, 질량 행이 payload를 승인할 때까지 ascent hardware를 쓰지 마라.",
-          "external_site": "Black Keel이 가까이 들리는데도 구조가 닫힌 채 남는 이유를 설명하는 hard-sci-fi 입문: FTL도 즉시 인양도 없고, 패킷 경로, 전이 기하, 열, 검역, tonne-window custody만 있다.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/ko_KR_external_site.md",
-          "field_note": "배가 널 들을 수 있다면 좋다. 배가 널 들어 올릴 수 있다면 ledger가 더 차가운 말로 그렇게 말할 것이다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Black Keel Nearlight Wake",
-          "scanner": "CARRIER-WAKE-LEZING // Pakketroute open. Lichaamsberging gesloten door ascent seal, Kestrel-schaduw, stormplafond, quarantaine en tonne-window-massa.",
-          "terminal": "BLACK KEEL TRANSFERLEDGER // Pakketontvangst wijst geen lift toe. Berging vereist gerate ascent sleeve, seal-integriteit, lage Aegir-ruis, vrijgave uit Kestrel-schaduw, quarantine handshake en geaccepteerde tonne-window-massa.",
-          "audio": "Black Keel-relais: we horen je. Kunnen je niet liften. Venster vraagt massa, seal, clearance en receiver-lijn.",
-          "in_game_wiki": "Black Keel is een claim-tender in het Aegir-systeem, geen reddingsschip uit Sol. Een datapakket kan door een vuile relay pass passen terwijl een levend lichaam nog faalt op ascent seal, stormplafond, Kestrel-schaduw, quarantaine en tonne-window-controles. Behandel carrier contact als routebewijs: noteer het venster, houd bewijs getagd en gebruik geen ascent hardware voordat de massalijn de payload accepteert.",
-          "external_site": "Een hard-sci-fi primer over waarom Black Keel dichtbij kan klinken terwijl redding gesloten blijft: geen FTL, geen directe lift, alleen pakketroutes, transfergeometrie, hitte, quarantaine en tonne-window custody.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/nl_NL_external_site.md",
-          "field_note": "Als het schip je kan horen, goed. Als het je kan liften, zegt de ledger dat met koudere woorden.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Black Keel Nearlight Wake",
-          "scanner": "ODCZYT WAKE CARRIERA // Trasa pakietu otwarta. Odzysk ciała zamknięty przez ascent seal, cień Kestrel, pułap sztormu, kwarantannę i masę tonne-window.",
-          "terminal": "LEDGER TRANSFERU BLACK KEEL // Odbiór pakietu nie przydziela podnoszenia. Odzysk wymaga certyfikowanej ascent sleeve, integralności seal, niskiego szumu Aegir, clearance cienia Kestrel, quarantine handshake i zaakceptowanej masy tonne-window.",
-          "audio": "Przekaźnik Black Keel: słyszymy cię. Nie możemy podnieść. Okno wymaga masy, seal, clearance i linii odbiorcy.",
-          "in_game_wiki": "Black Keel jest tenderem claimów w systemie Aegir, nie statkiem ratunkowym z Sol. Pakiet danych może zmieścić się w brudnym relay pass, gdy żywe ciało nadal odpada na ascent seal, pułapie sztormu, cieniu Kestrel, kwarantannie i kontrolach tonne-window. Traktuj kontakt carriera jak dowód trasy: zapisz okno, trzymaj dowód otagowany i nie zużywaj ascent hardware, dopóki linia masy nie zaakceptuje payloadu.",
-          "external_site": "Hard-sci-fi primer o tym, czemu Black Keel może brzmieć blisko, gdy ratunek pozostaje zamknięty: bez FTL, bez natychmiastowego podnoszenia, tylko trasy pakietów, geometria transferu, ciepło, kwarantanna i tonne-window custody.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/pl_PL_external_site.md",
-          "field_note": "Jeśli statek cię słyszy, dobrze. Jeśli może cię podnieść, ledger powie to zimniejszymi słowami.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Esteira nearlight de Black Keel",
-          "scanner": "LEITURA DE ESTEIRA CARRIER // Rota de pacote aberta. Recuperação corporal fechada por ascent seal, sombra Kestrel, teto de tempestade, quarentena e massa tonne-window.",
-          "terminal": "LEDGER DE TRANSFERÊNCIA BLACK KEEL // Recebimento de pacote não aloca içamento. Recuperação requer ascent sleeve certificada, integridade de seal, baixo ruído de Aegir, liberação de sombra Kestrel, quarantine handshake e massa tonne-window aceita.",
-          "audio": "Relé Black Keel: ouvimos você. Não podemos içar. A janela exige massa, seal, clearance e linha receptora.",
-          "in_game_wiki": "Black Keel é um tender de claims do sistema Aegir, não uma nave de resgate vinda de Sol. Um pacote de dados pode caber num relay pass sujo enquanto um corpo vivo ainda falha em ascent seal, teto de tempestade, sombra Kestrel, quarentena e checagens tonne-window. Trate contato carrier como evidência de rota: registre a janela, mantenha a prova etiquetada e não gaste hardware de ascensão até a linha de massa aceitar o payload.",
-          "external_site": "Um primer hard-sci-fi sobre por que Black Keel pode soar perto enquanto o resgate segue fechado: sem FTL, sem içamento instantâneo, só rotas de pacote, geometria de transferência, calor, quarentena e custody tonne-window.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/pt_BR_external_site.md",
-          "field_note": "Se a nave consegue ouvir você, bom. Se consegue içar você, o ledger dirá isso com palavras mais frias.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ru_RU": {
-          "title": "Околосветовой след Black Keel",
-          "scanner": "ЧТЕНИЕ CARRIER WAKE // Пакетный маршрут открыт. Подъем тела закрыт ascent seal, тенью Kestrel, storm ceiling, карантином и массой tonne-window.",
-          "terminal": "TRANSFER LEDGER BLACK KEEL // Прием пакета не выделяет подъем. Recovery требует rated ascent sleeve, целого seal, низкого шума Aegir, выхода из тени Kestrel, quarantine handshake и принятой массы tonne-window.",
-          "audio": "Ретранслятор Black Keel: слышим тебя. Поднять не можем. Окну нужны масса, seal, clearance и receiver line.",
-          "in_game_wiki": "Black Keel это claim tender системы Aegir, а не спасательное судно из Sol. Пакет данных может пройти через грязный relay pass, пока живое тело все еще проваливает проверки ascent seal, storm ceiling, тени Kestrel, quarantine и tonne-window. Считай carrier contact маршрутным доказательством: записывай окно, держи proof tagged и не трать ascent hardware, пока строка массы не примет payload.",
-          "external_site": "Hard-sci-fi primer о том, почему Black Keel может звучать близко, пока спасение закрыто: без FTL, без мгновенного подъема, только packet routes, transfer geometry, тепло, quarantine и tonne-window custody.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/ru_RU_external_site.md",
-          "field_note": "Если корабль тебя слышит, хорошо. Если корабль может тебя поднять, ledger скажет это более холодными словами.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Навколосвітловий слід Black Keel",
-          "scanner": "ЧИТАННЯ CARRIER WAKE // Пакетний маршрут відкрито. Підйом тіла закрито ascent seal, тінню Kestrel, storm ceiling, карантином і масою tonne-window.",
-          "terminal": "TRANSFER LEDGER BLACK KEEL // Прийом пакета не виділяє підйом. Recovery потребує rated ascent sleeve, цілого seal, низького шуму Aegir, виходу з тіні Kestrel, quarantine handshake і прийнятої маси tonne-window.",
-          "audio": "Ретранслятор Black Keel: чуємо тебе. Підняти не можемо. Вікну потрібні маса, seal, clearance і receiver line.",
-          "in_game_wiki": "Black Keel це claim tender системи Aegir, а не рятувальне судно із Sol. Пакет даних може пройти через брудний relay pass, поки живе тіло ще провалює перевірки ascent seal, storm ceiling, тіні Kestrel, quarantine і tonne-window. Сприймай carrier contact як маршрутний доказ: записуй вікно, тримай proof tagged і не витрачай ascent hardware, доки рядок маси не прийме payload.",
-          "external_site": "Hard-sci-fi primer про те, чому Black Keel може звучати близько, поки порятунок закритий: без FTL, без миттєвого підйому, лише packet routes, transfer geometry, тепло, quarantine і tonne-window custody.",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/uk_UA_external_site.md",
-          "field_note": "Якщо корабель тебе чує, добре. Якщо корабель може тебе підняти, ledger скаже це холоднішими словами.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Black Keel 近光 Wake",
-          "scanner": "CARRIER WAKE 读数 // 数据包路线开启。身体回收因 ascent seal、Kestrel 阴影、storm ceiling、隔离和 tonne-window 质量而关闭。",
-          "terminal": "BLACK KEEL 转移 LEDGER // 数据包接收不分配吊升。回收需要合格 ascent sleeve、seal 完整、低 Aegir 噪声、Kestrel 阴影 clearance、quarantine handshake 和被接受的 tonne-window 质量。",
-          "audio": "Black Keel 中继：听见你了。不能吊起你。窗口需要质量、seal、clearance 和接收方线。",
-          "in_game_wiki": "Black Keel 是 Aegir 系统的 claim tender，不是来自 Sol 的救援船。数据包可以穿过脏的 relay pass，而活体仍可能卡在 ascent seal、storm ceiling、Kestrel 阴影、隔离和 tonne-window 检查上。把 carrier contact 当作路线证据：记录窗口，保持 proof tagged，在质量行接受 payload 之前不要消耗 ascent hardware。",
-          "external_site": "一篇 hard-sci-fi 入门，说明为什么 Black Keel 听起来很近，救援却仍然关闭：没有 FTL，没有即时吊升，只有数据包路线、转移几何、热量、隔离和 tonne-window custody。",
-          "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/zh_CN_external_site.md",
-          "field_note": "如果船能听见你，很好。如果船能吊起你，ledger 会用更冷的词说出来。",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.black_keel_nearlight_wake",
+    "secondary": [
+     "unlock.first_carrier_window_receipt",
+     "unlock.first_tonne_window_lien",
+     "unlock.first_kestrel_shadow_notice",
+     "unlock.first_p63_relay_clock"
+    ],
+    "poi_tags": [
+     "poi.black_keel_window_clock",
+     "poi.p63_relay_board",
+     "poi.keelmark_lien_terminal",
+     "poi.transit_wake_sample",
+     "poi.bathydrop_ascent_sleeve"
+    ],
+    "biome_tags": [
+     "biome.carrier_link",
+     "biome.surface_relay",
+     "biome.photic_shelf",
+     "biome.black_keel_orbit",
+     "biome.storm_ceiling"
+    ],
+    "first_20_boundary": "Explains why a true carrier signal still leaves the player underwater until ascent hardware, quarantine, geometry and mass window agree."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Suit Carrier-Link Classifier",
+     "terminal": "Black Keel Transfer Ledger",
+     "audio": "Black Keel Relay",
+     "in_game_wiki": "Recovered Route Engineering Note",
+     "external_site": "Public Site Hard-Sci-Fi Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "depth_band": "surface_to_photic_shelf",
+    "route_moment": "first_carrier_signal_after_tonne_window_lien",
+    "truth_payload": "Black Keel is a local Aegir claim tender; packet contact is easier than body recovery because mass, heat, quarantine, geometry and custody are separate gates.",
+    "player_question": "Why can the carrier hear me but still not rescue me?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Black Keel Nearlight Wake",
+     "scanner": "CARRIER WAKE READ // Packet route open. Body recovery closed by ascent seal, Kestrel shadow, storm ceiling, quarantine and tonne-window mass.",
+     "terminal": "BLACK KEEL TRANSFER LEDGER // Packet receipt does not allocate lift. Recovery requires rated ascent sleeve, seal integrity, low Aegir noise, Kestrel shadow clearance, quarantine handshake and accepted tonne-window mass.",
+     "audio": "Black Keel relay: Heard you. Cannot lift you. Window takes mass, seal, clearance, and receiver line.",
+     "in_game_wiki": "Black Keel is an Aegir-system claim tender, not a rescue ship from Sol. A data packet can fit through a dirty relay pass while a living body still fails ascent seal, storm ceiling, Kestrel shadow, quarantine and tonne-window checks. Treat carrier contact as route evidence: log the window, keep proof tagged, and do not spend ascent hardware until the mass line accepts the payload.",
+     "external_site": "A hard-sci-fi primer on why Black Keel can sound close while rescue remains closed: no FTL, no instant lift, only packet routes, transfer geometry, heat, quarantine and tonne-window custody.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/en_US_external_site.md",
+     "field_note": "If the ship can hear you, good. If the ship can lift you, the ledger will say it in colder words.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "title": "Wake nearlight لـ Black Keel",
+     "scanner": "قراءة WAKE carrier // طريق الحزمة مفتوح. استرداد الجسد مغلق بسبب ascent seal، وظل Kestrel، وسقف العاصفة، والحجر، وكتلة tonne-window.",
+     "terminal": "سجل تحويل BLACK KEEL // استلام الحزمة لا يخصص الرفع. الاسترداد يحتاج ascent sleeve مصنفة، وسلامة seal، وضجيج Aegir منخفض، وخلو ظل Kestrel، وquarantine handshake، وكتلة tonne-window مقبولة.",
+     "audio": "مرحل Black Keel: سمعناك. لا يمكننا رفعك. النافذة تحتاج كتلة، وseal، وclearance، وخط مستقبل.",
+     "in_game_wiki": "Black Keel tender مطالبات داخل نظام Aegir، وليس سفينة إنقاذ من Sol. قد تمر حزمة بيانات عبر relay pass قذر بينما يفشل الجسد الحي في فحوص ascent seal وسقف العاصفة وظل Kestrel والحجر وtonne-window. عامل اتصال carrier كدليل طريق: سجل النافذة، أبق proof tagged، ولا تصرف ascent hardware حتى يقبل سطر الكتلة payload.",
+     "external_site": "تمهيد hard-sci-fi يشرح لماذا قد يبدو Black Keel قريبا بينما يبقى الإنقاذ مغلقا: لا FTL، لا رفع فوري، فقط طرق حزم، وهندسة انتقال، وحرارة، وحجر، وcustody tonne-window.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/ar_SA_external_site.md",
+     "field_note": "إذا كانت السفينة تسمعك فهذا جيد. إذا كانت تستطيع رفعك فسيقول ledger ذلك بكلمات أبرد.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Black Keel Nearlight Wake",
+     "scanner": "CARRIER-WAKE-READ // Paketroute offen. Körperbergung durch Ascent-Seal, Kestrel-Schatten, Sturmdecke, Quarantäne und tonne-window-Masse geschlossen.",
+     "terminal": "BLACK KEEL TRANSFERLEDGER // Paketempfang weist keinen Lift zu. Bergung verlangt geratete Ascent Sleeve, Seal-Integrität, niedriges Aegir-Rauschen, Kestrel-Schattenfreigabe, Quarantine Handshake und akzeptierte tonne-window-Masse.",
+     "audio": "Black-Keel-Relais: Wir hören dich. Können dich nicht liften. Fenster braucht Masse, Seal, Clearance und Receiver-Linie.",
+     "in_game_wiki": "Black Keel ist ein Claim-Tender im Aegir-System, kein Rettungsschiff aus Sol. Ein Datenpaket kann durch einen schmutzigen Relay-Pass passen, während ein lebender Körper noch an Ascent-Seal, Sturmdecke, Kestrel-Schatten, Quarantäne und tonne-window-Prüfungen scheitert. Behandle Carrier-Kontakt als Routennachweis: Fenster protokollieren, Beweis getaggt halten und Ascent-Hardware nicht ausgeben, bevor die Masselinie die Payload akzeptiert.",
+     "external_site": "Ein Hard-Sci-Fi-Primer darüber, warum Black Keel nah klingen kann, während Rettung geschlossen bleibt: kein FTL, kein Sofortlift, nur Paketrouten, Transfergeometrie, Hitze, Quarantäne und tonne-window-Custody.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/de_DE_external_site.md",
+     "field_note": "Wenn das Schiff dich hört, gut. Wenn es dich liften kann, sagt der Ledger es in kälteren Worten.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Estela nearlight de Black Keel",
+     "scanner": "LECTURA DE ESTELA CARRIER // Ruta de paquete abierta. Recuperación corporal cerrada por sello de ascenso, sombra Kestrel, techo de tormenta, cuarentena y masa tonne-window.",
+     "terminal": "LEDGER DE TRANSFERENCIA BLACK KEEL // La recepción del paquete no asigna izado. La recuperación exige ascent sleeve certificada, integridad del sello, bajo ruido de Aegir, despeje de sombra Kestrel, handshake de cuarentena y masa tonne-window aceptada.",
+     "audio": "Relé Black Keel: te oímos. No podemos izarte. La ventana exige masa, sello, clearance y línea receptora.",
+     "in_game_wiki": "Black Keel es un tender de claims del sistema Aegir, no una nave de rescate desde Sol. Un paquete de datos puede caber por un relay pass sucio mientras un cuerpo vivo aún falla por sello de ascenso, techo de tormenta, sombra Kestrel, cuarentena y chequeos tonne-window. Trata el contacto carrier como evidencia de ruta: registra la ventana, mantén la prueba etiquetada y no gastes hardware de ascenso hasta que la línea de masa acepte el payload.",
+     "external_site": "Un primer hard-sci-fi sobre por qué Black Keel puede sonar cerca mientras el rescate sigue cerrado: sin FTL, sin izado instantáneo, solo rutas de paquete, geometría de transferencia, calor, cuarentena y custodia tonne-window.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/es_ES_external_site.md",
+     "field_note": "Si la nave puede oírte, bien. Si puede izarte, el ledger lo dirá con palabras más frías.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Sillage nearlight de Black Keel",
+     "scanner": "LECTURE DE SILLAGE CARRIER // Route paquet ouverte. Récupération du corps fermée par joint d'ascension, ombre Kestrel, plafond de tempête, quarantaine et masse tonne-window.",
+     "terminal": "LEDGER DE TRANSFERT BLACK KEEL // La réception du paquet n'alloue aucune levée. La récupération exige ascent sleeve certifiée, intégrité du joint, faible bruit Aegir, dégagement d'ombre Kestrel, handshake de quarantaine et masse tonne-window acceptée.",
+     "audio": "Relais Black Keel: on t'a entendu. Impossible de te lever. La fenêtre exige masse, joint, clearance et ligne receveur.",
+     "in_game_wiki": "Black Keel est un tender de claim du système Aegir, pas un vaisseau de sauvetage venu de Sol. Un paquet de données peut passer par un relay pass sale tandis qu'un corps vivant échoue encore aux contrôles de joint d'ascension, plafond de tempête, ombre Kestrel, quarantaine et tonne-window. Traite le contact carrier comme preuve de route: note la fenêtre, garde la preuve taguée et ne dépense pas de matériel d'ascension avant que la ligne de masse accepte le payload.",
+     "external_site": "Un primer hard-sci-fi sur pourquoi Black Keel peut sembler proche alors que le sauvetage reste fermé: pas de FTL, pas de levée instantanée, seulement routes de paquets, géométrie de transfert, chaleur, quarantaine et custody tonne-window.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/fr_FR_external_site.md",
+     "field_note": "Si le vaisseau t'entend, bien. S'il peut te lever, le ledger le dira avec des mots plus froids.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "Wake nearlight של Black Keel",
+     "scanner": "קריאת WAKE של CARRIER // נתיב חבילה פתוח. חילוץ גוף סגור בגלל ascent seal, צל Kestrel, תקרת סערה, הסגר ומסת tonne-window.",
+     "terminal": "LEDGER העברה BLACK KEEL // קבלת חבילה אינה מקצה הרמה. חילוץ דורש ascent sleeve מדורג, שלמות seal, רעש Aegir נמוך, clearance מצל Kestrel, quarantine handshake ומסת tonne-window מאושרת.",
+     "audio": "ממסר Black Keel: שמענו אותך. אי אפשר להרים אותך. החלון דורש מסה, seal, clearance וקו מקבל.",
+     "in_game_wiki": "Black Keel הוא tender תביעות במערכת Aegir, לא ספינת חילוץ מ-Sol. חבילת נתונים יכולה לעבור דרך relay pass מלוכלך בזמן שגוף חי עדיין נכשל בבדיקות ascent seal, תקרת סערה, צל Kestrel, הסגר ו-tonne-window. התייחס לקשר carrier כהוכחת נתיב: רשום את החלון, שמור proof tagged, ואל תבזבז ascent hardware עד שקו המסה מקבל את ה-payload.",
+     "external_site": "פריימר hard-sci-fi על כך ש-Black Keel יכול להישמע קרוב בזמן שהחילוץ נשאר סגור: בלי FTL, בלי הרמה מיידית, רק נתיבי חבילות, גיאומטריית מעבר, חום, הסגר ו-tonne-window custody.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/he_IL_external_site.md",
+     "field_note": "אם הספינה שומעת אותך, טוב. אם היא יכולה להרים אותך, ה-ledger יגיד את זה במילים קרות יותר.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Wake nearlight Black Keel",
+     "scanner": "BACAAN WAKE CARRIER // Rute paket terbuka. Pemulihan tubuh tertutup oleh ascent seal, bayangan Kestrel, batas badai, karantina, dan massa tonne-window.",
+     "terminal": "LEDGER TRANSFER BLACK KEEL // Penerimaan paket tidak mengalokasikan angkat. Pemulihan memerlukan ascent sleeve terating, integritas seal, noise Aegir rendah, bebas bayangan Kestrel, quarantine handshake, dan massa tonne-window diterima.",
+     "audio": "Relai Black Keel: kami mendengarmu. Tidak bisa mengangkatmu. Jendela perlu massa, seal, clearance, dan garis penerima.",
+     "in_game_wiki": "Black Keel adalah tender klaim sistem Aegir, bukan kapal penyelamat dari Sol. Paket data bisa masuk melalui relay pass kotor sementara tubuh hidup masih gagal pada ascent seal, batas badai, bayangan Kestrel, karantina, dan pemeriksaan tonne-window. Perlakukan kontak carrier sebagai bukti rute: catat jendela, jaga bukti tetap bertag, dan jangan gunakan hardware ascent sampai garis massa menerima payload.",
+     "external_site": "Primer hard-sci-fi tentang mengapa Black Keel bisa terdengar dekat sementara penyelamatan tetap tertutup: tanpa FTL, tanpa angkat instan, hanya rute paket, geometri transfer, panas, karantina, dan custody tonne-window.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/id_ID_external_site.md",
+     "field_note": "Jika kapal bisa mendengarmu, bagus. Jika kapal bisa mengangkatmu, ledger akan mengatakannya dengan kata yang lebih dingin.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Black Keel Nearlight Wake",
+     "scanner": "CARRIER WAKE READ // パケット経路は開放。身体回収は ascent seal、Kestrel 影、嵐の天井、隔離、tonne-window 質量で閉鎖。",
+     "terminal": "BLACK KEEL 転送 LEDGER // パケット受領は揚収を割り当てない。回収には定格 ascent sleeve、seal 完全性、低い Aegir ノイズ、Kestrel 影 clearance、quarantine handshake、承認済み tonne-window 質量が必要。",
+     "audio": "Black Keel relay: 聞こえている。揚げられない。窓には質量、seal、clearance、receiver line が必要。",
+     "in_game_wiki": "Black Keel は Aegir 系内の claim tender であり、Sol から来る救助船ではない。データパケットは汚れた relay pass を通れても、生きた身体は ascent seal、嵐の天井、Kestrel 影、隔離、tonne-window 検査で止まる。carrier contact はルート証拠として扱う。窓を記録し、proof tagged を保ち、質量行が payload を受け入れるまで ascent hardware を使わない。",
+     "external_site": "Black Keel が近く聞こえても救助が閉じたままになる理由を扱う hard-sci-fi 入門。FTL なし、即時揚収なし。あるのはパケット経路、転送幾何、熱、隔離、tonne-window custody だけ。",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/ja_JP_external_site.md",
+     "field_note": "船が聞いているならいい。船が揚げられるなら、ledger はもっと冷たい言葉でそう言う。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Black Keel Nearlight Wake",
+     "scanner": "CARRIER WAKE 판독 // 패킷 경로 열림. 몸 회수는 ascent seal, Kestrel 그림자, 폭풍 천장, 검역, tonne-window 질량 때문에 닫힘.",
+     "terminal": "BLACK KEEL 전이 LEDGER // 패킷 수신은 인양을 배정하지 않는다. 회수에는 등급 ascent sleeve, seal 무결성, 낮은 Aegir 소음, Kestrel 그림자 clearance, quarantine handshake, 승인된 tonne-window 질량이 필요하다.",
+     "audio": "Black Keel 중계: 들었다. 들어 올릴 수 없다. 창에는 질량, seal, clearance, 수신자 라인이 필요하다.",
+     "in_game_wiki": "Black Keel은 Aegir 계의 claim tender이지 Sol에서 온 구조선이 아니다. 데이터 패킷은 더러운 relay pass를 통과할 수 있지만 살아 있는 몸은 ascent seal, 폭풍 천장, Kestrel 그림자, 검역, tonne-window 검사에서 막힐 수 있다. carrier contact를 경로 증거로 다뤄라. 창을 기록하고, proof tagged를 유지하고, 질량 행이 payload를 승인할 때까지 ascent hardware를 쓰지 마라.",
+     "external_site": "Black Keel이 가까이 들리는데도 구조가 닫힌 채 남는 이유를 설명하는 hard-sci-fi 입문: FTL도 즉시 인양도 없고, 패킷 경로, 전이 기하, 열, 검역, tonne-window custody만 있다.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/ko_KR_external_site.md",
+     "field_note": "배가 널 들을 수 있다면 좋다. 배가 널 들어 올릴 수 있다면 ledger가 더 차가운 말로 그렇게 말할 것이다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Black Keel Nearlight Wake",
+     "scanner": "CARRIER-WAKE-LEZING // Pakketroute open. Lichaamsberging gesloten door ascent seal, Kestrel-schaduw, stormplafond, quarantaine en tonne-window-massa.",
+     "terminal": "BLACK KEEL TRANSFERLEDGER // Pakketontvangst wijst geen lift toe. Berging vereist gerate ascent sleeve, seal-integriteit, lage Aegir-ruis, vrijgave uit Kestrel-schaduw, quarantine handshake en geaccepteerde tonne-window-massa.",
+     "audio": "Black Keel-relais: we horen je. Kunnen je niet liften. Venster vraagt massa, seal, clearance en receiver-lijn.",
+     "in_game_wiki": "Black Keel is een claim-tender in het Aegir-systeem, geen reddingsschip uit Sol. Een datapakket kan door een vuile relay pass passen terwijl een levend lichaam nog faalt op ascent seal, stormplafond, Kestrel-schaduw, quarantaine en tonne-window-controles. Behandel carrier contact als routebewijs: noteer het venster, houd bewijs getagd en gebruik geen ascent hardware voordat de massalijn de payload accepteert.",
+     "external_site": "Een hard-sci-fi primer over waarom Black Keel dichtbij kan klinken terwijl redding gesloten blijft: geen FTL, geen directe lift, alleen pakketroutes, transfergeometrie, hitte, quarantaine en tonne-window custody.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/nl_NL_external_site.md",
+     "field_note": "Als het schip je kan horen, goed. Als het je kan liften, zegt de ledger dat met koudere woorden.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Black Keel Nearlight Wake",
+     "scanner": "ODCZYT WAKE CARRIERA // Trasa pakietu otwarta. Odzysk ciała zamknięty przez ascent seal, cień Kestrel, pułap sztormu, kwarantannę i masę tonne-window.",
+     "terminal": "LEDGER TRANSFERU BLACK KEEL // Odbiór pakietu nie przydziela podnoszenia. Odzysk wymaga certyfikowanej ascent sleeve, integralności seal, niskiego szumu Aegir, clearance cienia Kestrel, quarantine handshake i zaakceptowanej masy tonne-window.",
+     "audio": "Przekaźnik Black Keel: słyszymy cię. Nie możemy podnieść. Okno wymaga masy, seal, clearance i linii odbiorcy.",
+     "in_game_wiki": "Black Keel jest tenderem claimów w systemie Aegir, nie statkiem ratunkowym z Sol. Pakiet danych może zmieścić się w brudnym relay pass, gdy żywe ciało nadal odpada na ascent seal, pułapie sztormu, cieniu Kestrel, kwarantannie i kontrolach tonne-window. Traktuj kontakt carriera jak dowód trasy: zapisz okno, trzymaj dowód otagowany i nie zużywaj ascent hardware, dopóki linia masy nie zaakceptuje payloadu.",
+     "external_site": "Hard-sci-fi primer o tym, czemu Black Keel może brzmieć blisko, gdy ratunek pozostaje zamknięty: bez FTL, bez natychmiastowego podnoszenia, tylko trasy pakietów, geometria transferu, ciepło, kwarantanna i tonne-window custody.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/pl_PL_external_site.md",
+     "field_note": "Jeśli statek cię słyszy, dobrze. Jeśli może cię podnieść, ledger powie to zimniejszymi słowami.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Esteira nearlight de Black Keel",
+     "scanner": "LEITURA DE ESTEIRA CARRIER // Rota de pacote aberta. Recuperação corporal fechada por ascent seal, sombra Kestrel, teto de tempestade, quarentena e massa tonne-window.",
+     "terminal": "LEDGER DE TRANSFERÊNCIA BLACK KEEL // Recebimento de pacote não aloca içamento. Recuperação requer ascent sleeve certificada, integridade de seal, baixo ruído de Aegir, liberação de sombra Kestrel, quarantine handshake e massa tonne-window aceita.",
+     "audio": "Relé Black Keel: ouvimos você. Não podemos içar. A janela exige massa, seal, clearance e linha receptora.",
+     "in_game_wiki": "Black Keel é um tender de claims do sistema Aegir, não uma nave de resgate vinda de Sol. Um pacote de dados pode caber num relay pass sujo enquanto um corpo vivo ainda falha em ascent seal, teto de tempestade, sombra Kestrel, quarentena e checagens tonne-window. Trate contato carrier como evidência de rota: registre a janela, mantenha a prova etiquetada e não gaste hardware de ascensão até a linha de massa aceitar o payload.",
+     "external_site": "Um primer hard-sci-fi sobre por que Black Keel pode soar perto enquanto o resgate segue fechado: sem FTL, sem içamento instantâneo, só rotas de pacote, geometria de transferência, calor, quarentena e custody tonne-window.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/pt_BR_external_site.md",
+     "field_note": "Se a nave consegue ouvir você, bom. Se consegue içar você, o ledger dirá isso com palavras mais frias.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ru_RU": {
+     "title": "Околосветовой след Black Keel",
+     "scanner": "ЧТЕНИЕ CARRIER WAKE // Пакетный маршрут открыт. Подъем тела закрыт ascent seal, тенью Kestrel, storm ceiling, карантином и массой tonne-window.",
+     "terminal": "TRANSFER LEDGER BLACK KEEL // Прием пакета не выделяет подъем. Recovery требует rated ascent sleeve, целого seal, низкого шума Aegir, выхода из тени Kestrel, quarantine handshake и принятой массы tonne-window.",
+     "audio": "Ретранслятор Black Keel: слышим тебя. Поднять не можем. Окну нужны масса, seal, clearance и receiver line.",
+     "in_game_wiki": "Black Keel это claim tender системы Aegir, а не спасательное судно из Sol. Пакет данных может пройти через грязный relay pass, пока живое тело все еще проваливает проверки ascent seal, storm ceiling, тени Kestrel, quarantine и tonne-window. Считай carrier contact маршрутным доказательством: записывай окно, держи proof tagged и не трать ascent hardware, пока строка массы не примет payload.",
+     "external_site": "Hard-sci-fi primer о том, почему Black Keel может звучать близко, пока спасение закрыто: без FTL, без мгновенного подъема, только packet routes, transfer geometry, тепло, quarantine и tonne-window custody.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/ru_RU_external_site.md",
+     "field_note": "Если корабль тебя слышит, хорошо. Если корабль может тебя поднять, ledger скажет это более холодными словами.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Навколосвітловий слід Black Keel",
+     "scanner": "ЧИТАННЯ CARRIER WAKE // Пакетний маршрут відкрито. Підйом тіла закрито ascent seal, тінню Kestrel, storm ceiling, карантином і масою tonne-window.",
+     "terminal": "TRANSFER LEDGER BLACK KEEL // Прийом пакета не виділяє підйом. Recovery потребує rated ascent sleeve, цілого seal, низького шуму Aegir, виходу з тіні Kestrel, quarantine handshake і прийнятої маси tonne-window.",
+     "audio": "Ретранслятор Black Keel: чуємо тебе. Підняти не можемо. Вікну потрібні маса, seal, clearance і receiver line.",
+     "in_game_wiki": "Black Keel це claim tender системи Aegir, а не рятувальне судно із Sol. Пакет даних може пройти через брудний relay pass, поки живе тіло ще провалює перевірки ascent seal, storm ceiling, тіні Kestrel, quarantine і tonne-window. Сприймай carrier contact як маршрутний доказ: записуй вікно, тримай proof tagged і не витрачай ascent hardware, доки рядок маси не прийме payload.",
+     "external_site": "Hard-sci-fi primer про те, чому Black Keel може звучати близько, поки порятунок закритий: без FTL, без миттєвого підйому, лише packet routes, transfer geometry, тепло, quarantine і tonne-window custody.",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/uk_UA_external_site.md",
+     "field_note": "Якщо корабель тебе чує, добре. Якщо корабель може тебе підняти, ledger скаже це холоднішими словами.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Black Keel 近光 Wake",
+     "scanner": "CARRIER WAKE 读数 // 数据包路线开启。身体回收因 ascent seal、Kestrel 阴影、storm ceiling、隔离和 tonne-window 质量而关闭。",
+     "terminal": "BLACK KEEL 转移 LEDGER // 数据包接收不分配吊升。回收需要合格 ascent sleeve、seal 完整、低 Aegir 噪声、Kestrel 阴影 clearance、quarantine handshake 和被接受的 tonne-window 质量。",
+     "audio": "Black Keel 中继：听见你了。不能吊起你。窗口需要质量、seal、clearance 和接收方线。",
+     "in_game_wiki": "Black Keel 是 Aegir 系统的 claim tender，不是来自 Sol 的救援船。数据包可以穿过脏的 relay pass，而活体仍可能卡在 ascent seal、storm ceiling、Kestrel 阴影、隔离和 tonne-window 检查上。把 carrier contact 当作路线证据：记录窗口，保持 proof tagged，在质量行接受 payload 之前不要消耗 ascent hardware。",
+     "external_site": "一篇 hard-sci-fi 入门，说明为什么 Black Keel 听起来很近，救援却仍然关闭：没有 FTL，没有即时吊升，只有数据包路线、转移几何、热量、隔离和 tonne-window custody。",
+     "external_site_article_path": "articles/RS283_BLACK_KEEL_NEARLIGHT_WAKE/zh_CN_external_site.md",
+     "field_note": "如果船能听见你，很好。如果船能吊起你，ledger 会用更冷的词说出来。",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

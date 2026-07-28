@@ -1,240 +1,241 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS172_BATHYMETRIC_ACOUSTIC_LADDER_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS172_BATHYMETRIC_ACOUSTIC_LADDER_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1092_PRESSURE_LADDER_ACOUSTIC_CHART",
+   "release_set_id": "RS172_BATHYMETRIC_ACOUSTIC_LADDER_ARTICLE",
+   "article_id": "applied_lore.pressure_ladder_acoustic_chart",
+   "title_key": "LORE_PRESSURE_LADDER_ACOUSTIC_CHART_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_en_US.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1092_PRESSURE_LADDER_ACOUSTIC_CHART",
-      "release_set_id": "RS172_BATHYMETRIC_ACOUSTIC_LADDER_ARTICLE",
-      "article_id": "applied_lore.pressure_ladder_acoustic_chart",
-      "title_key": "LORE_PRESSURE_LADDER_ACOUSTIC_CHART_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_en_US.md",
-        "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.pressure_ladder_acoustic_chart",
-        "secondary": [
-          "unlock.first_depth_band_ladder",
-          "unlock.first_brine_shadow_zone",
-          "unlock.first_atlas_basin_acoustic_warning"
-        ],
-        "poi_tags": [
-          "poi.deep_reach_geophysics_panel",
-          "poi.brine_canyon_sound_shadow",
-          "poi.atlas_basin_return_ping"
-        ],
-        "biome_tags": [
-          "biome.photic_shelf",
-          "biome.brine_canyon",
-          "biome.atlas_basin"
-        ],
-        "first_20_boundary": "Teaches depth as a pressure, light, chemistry and sound ladder before the player treats descent as empty vertical travel."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Bathymetric Scanner Overlay",
-          "terminal": "Deep Reach Geophysics Notice",
-          "audio": "Hydro-Acoustics Analyst",
-          "in_game_wiki": "PDA Geophysics Archive",
-          "external_site": "Public Site Hard-Sci-Fi Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_depth_band_ladder",
-        "truth_payload": "HECTON-8 descent is governed by locked bathymetric bands, pressure, chemistry, acoustic ducting and shadow zones. Sound is navigation, but sound can lie.",
-        "player_question": "Why does going deeper change instruments, route confidence and danger instead of only changing numbers?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Pressure Ladder Acoustic Chart",
-          "scanner": "BATHYMETRIC CHART // 0-250 m photic shelf; 250-1200 m cable reef; 1200-2800 m brine canyon; 2800-4300 m machine field; 4300-5600 m Atlas Basin. Sound-speed profile broken by salt, heat and metal debris.",
-          "terminal": "DEEP REACH GEOPHYSICS NOTICE // Radio attenuation complete below upper ocean. Acoustic ducts active along brine interfaces. Shadow zones reported near cable reef overhangs, vent forge plumes and Atlas repair substrate. Treat single sonar floor return as unverified.",
-          "audio": "If brine gives you a floor, ask for a second ping. If the second ping agrees too fast, ask what is copying you.",
-          "in_game_wiki": "Marauders keep this chart clipped beside the oxygen table because HECTON-8 is not one ocean. The photic shelf keeps a little Ran-light and storm life. The cable reef snags tools and pingers in old Deep Reach infrastructure. Brine canyons bend buoyancy and make sonar report false floors. Machine fields are pressure-crushed factories, still answering to Atlas repair logic. The Atlas Basin is dark, hot, metallic and alive with bad categories.\n\nSound is the only practical sightline below the upper ocean, but sound is never honest for free. Salt layers trap it. Thermal vents shear it. Cable mats echo it. A clean return can be a wall, a predator wake, a pipe memory or a relay copying your own panic back at you. Descent needs seals, oxygen, battery, return ping and doubt.",
-          "external_site": "On HECTON-8, depth changes light, chemistry, pressure, sound and trust. The player descends through bands where every instrument needs local proof.",
-          "external_site_article": "HECTON-8 is built vertically. The ocean is a ladder of pressure and chemistry: photic shelf, cable reef, brine canyon, machine field and Atlas Basin. Each band changes what the player can see, hear, trust and repair. A deeper route means harsher seals, worse return timing, stranger buoyancy and evidence that arrives through damaged instruments.\n\nRadio fails early because the mineral ocean eats electromagnetic signal. Sound remains useful, but the water column reshapes it. Dense brine can trap a pulse and carry it sideways. Vent heat can tear it apart. Cable reefs can bounce a signal until a corridor looks open. A sonar return is a claim, not proof, until pressure, line tension, motion and a second ping agree.",
-          "field_note": "One ping is a rumor. Two pings are a negotiation. Three pings and a tight line might be a route."
-        },
-        "ar_SA": {
-          "title": "مخطط السلم الضغطي الصوتي",
-          "scanner": "مخطط أعماق // 0-250 م رف ضوئي؛ 250-1200 م شعاب كابلات؛ 1200-2800 م وديان ملحية؛ 2800-4300 م حقل آلات؛ 4300-5600 م حوض Atlas. ملف سرعة الصوت مكسور بالملح والحرارة وحطام المعدن.",
-          "terminal": "إشعار جيوفيزياء DEEP REACH // توهين الراديو كامل تحت المحيط العلوي. قنوات صوتية نشطة على واجهات الملح. مناطق ظل قرب نتوءات شعاب الكابلات، أعمدة Vent Forge، وركيزة إصلاح Atlas. عودة قاع واحدة من السونار غير موثقة.",
-          "audio": "إذا أعطاك الملح قاعا، اطلب نبضة ثانية. إذا وافقت الثانية بسرعة زائدة، اسأل ما الذي يقلدك.",
-          "in_game_wiki": "مخطط السلم الضغطي الصوتي خريطة نجاة متنكرة في بيانات مسح. HECTON-8 ليس محيطا واحدا. الرف الضوئي يحتفظ بقليل من ضوء Ran وحياة العواصف. شعاب الكابلات تعلق الأدوات والمرشدات في بنية Deep Reach القديمة. الوديان الملحية تثني الطفو وتحول السونار إلى مسرح. حقول الآلات مصانع مسحوقة بالضغط، ما زالت تجيب منطق إصلاح Atlas. حوض Atlas مظلم وحار ومعدني وحي بتصنيفات سيئة.\n\nالصوت هو خط الرؤية العملي الوحيد تحت المحيط العلوي، لكنه لا يكون صادقا مجانا. طبقات الملح تحبسه. فتحات الحرارة تمزقه. حصائر الكابلات تردده. عودة نظيفة قد تكون جدارا أو أثر مفترس أو ذاكرة أنبوب أو مرحلا يعيد خوفك إليك. قاعدة المخطط: الهبوط يحتاج أختاما وأكسجينا وبطارية ونبضة عودة وشكا.",
-          "external_site": "مخطط السلم الضغطي الصوتي يجعل محيط HECTON-8 فيزياء نجاة مقروءة. العمق يغير الضوء والكيمياء والضغط والصوت والثقة. اللاعب يهبط عبر نطاقات تحتاج فيها كل أداة إلى دليل محلي.",
-          "external_site_article": "HECTON-8 مبني عموديا. المحيط سلم من الضغط والكيمياء: رف ضوئي، شعاب كابلات، وادي ملحي، حقل آلات، حوض Atlas. كل نطاق يغير ما يراه اللاعب ويسمعه ويثق به ويصلحه. لذلك يبقى الهبوط ماديا. الطريق الأعمق يعني أختاما أقسى، توقيت عودة أسوأ، طفو أغرب، وأدلة تصل عبر أدوات تالفة.\n\nيفشل الراديو مبكرا لأن المحيط المعدني يأكل الإشارة الكهرومغناطيسية. يبقى الصوت مفيدا، لكن عمود الماء يعيد تشكيله. الملح الكثيف قد يحبس نبضة ويحملها جانبا. حرارة الفتحات قد تمزقها. شعاب الكابلات قد تعكس إشارة حتى يبدو الممر مفتوحا. الرعب عملي: عودة السونار ليست حقيقة حتى يتفق الضغط وشد الخط والحركة ونبضة ثانية.",
-          "field_note": "نبضة واحدة شائعة. نبضتان تفاوض. ثلاث نبضات وخط مشدود قد تكون طريقا."
-        },
-        "de_DE": {
-          "title": "Akustische Druckleiterkarte",
-          "scanner": "BATHYMETRISCHE KARTE // 0-250 m photischer Schelf; 250-1200 m Kabelriff; 1200-2800 m Solecanyon; 2800-4300 m Maschinenfeld; 4300-5600 m Atlas-Becken. Schallgeschwindigkeitsprofil durch Salz, Hitze und Metallschutt gebrochen.",
-          "terminal": "DEEP-REACH-GEOPHYSIKHINWEIS // Funkdämpfung unter dem oberen Ozean vollständig. Akustische Kanäle entlang Solegrenzen aktiv. Schattenzonen bei Kabelriff-Überhängen, Vent-Forge-Fahnen und Atlas-Reparatursubstrat gemeldet. Einzelne Sonar-Bodenrückgabe gilt als ungeprüft.",
-          "audio": "Wenn Sole dir einen Boden gibt, verlange einen zweiten Ping. Wenn der zweite zu schnell zustimmt, frag, was dich kopiert.",
-          "in_game_wiki": "Die Akustische Druckleiterkarte ist eine Überlebenskarte im Kostüm von Vermessungsdaten. HECTON-8 ist kein einzelner Ozean. Der photische Schelf hält etwas Ran-Licht und Sturmleben. Das Kabelriff fängt Werkzeuge und Pinger in alter Deep-Reach-Infrastruktur. Solecanyons biegen Auftrieb und machen Sonar zur Bühne. Maschinenfelder sind druckzerquetschte Fabriken, die noch Atlas-Reparaturlogik beantworten. Das Atlas-Becken ist dunkel, heiß, metallisch und lebt von schlechten Kategorien.\n\nSchall ist unter dem oberen Ozean die einzige praktische Sichtlinie, aber Schall ist nie gratis ehrlich. Salzschichten sperren ihn ein. Thermische Vents zerreißen ihn. Kabelmatten werfen ihn zurück. Eine saubere Rückgabe kann Wand, Raubtierwake, Rohrgedächtnis oder Relais sein, das deine Panik zurückkopiert. Regel: Abstieg braucht Dichtungen, Sauerstoff, Batterie, Rückping und Zweifel.",
-          "external_site": "Die Akustische Druckleiterkarte macht HECTON-8s Ozean zu lesbarer Überlebensphysik. Tiefe verändert Licht, Chemie, Druck, Schall und Vertrauen. Jede tiefere Zone verlangt lokalen Beweis für jedes Instrument.",
-          "external_site_article": "HECTON-8 ist vertikal gebaut. Der Ozean ist eine Leiter aus Druck und Chemie: photischer Schelf, Kabelriff, Solecanyon, Maschinenfeld und Atlas-Becken. Jede Zone verändert, was der Spieler sehen, hören, glauben und reparieren kann. So bleibt Abstieg physisch. Eine tiefere Route bedeutet härtere Dichtungen, schlechteres Rücktiming, fremderen Auftrieb und Beweise aus beschädigten Instrumenten.\n\nFunk fällt früh aus, weil der mineralische Ozean elektromagnetische Signale frisst. Schall bleibt nützlich, doch die Wassersäule formt ihn um. Dichte Sole kann einen Puls fangen und seitlich tragen. Venthitze kann ihn zerreißen. Kabelriffe können ein Signal zurückwerfen, bis ein Korridor offen aussieht. Die Karte ist beängstigend, weil sie praktisch ist: Eine Sonarrückgabe ist keine Wahrheit, bis Druck, Leinenspannung, Bewegung und ein zweiter Ping übereinstimmen.",
-          "field_note": "Ein Ping ist ein Gerücht. Zwei Pings sind Verhandlung. Drei Pings und straffe Leine könnten Route sein."
-        },
-        "es_ES": {
-          "title": "Carta acústica de la escalera de presión",
-          "scanner": "CARTA BATIMÉTRICA // 0-250 m plataforma fótica; 250-1200 m arrecife de cables; 1200-2800 m cañón de salmuera; 2800-4300 m campo de máquinas; 4300-5600 m Cuenca Atlas. Perfil de velocidad del sonido roto por sal, calor y chatarra metálica.",
-          "terminal": "AVISO GEOFÍSICO DEEP REACH // Atenuación de radio completa bajo el océano superior. Conductos acústicos activos en interfaces de salmuera. Zonas de sombra cerca de salientes de arrecife de cables, plumas Vent Forge y sustrato de reparación Atlas. Tratar retorno único de suelo por sonar como no verificado.",
-          "audio": "Si la salmuera te da un suelo, pide un segundo ping. Si el segundo está de acuerdo demasiado rápido, pregunta qué te está copiando.",
-          "in_game_wiki": "La Carta acústica de la escalera de presión es un mapa de supervivencia disfrazado de datos de prospección. HECTON-8 no es un solo océano. La plataforma fótica conserva algo de luz de Ran y vida de tormenta. El arrecife de cables engancha herramientas y pingers en vieja infraestructura de Deep Reach. Los cañones de salmuera doblan la flotabilidad y vuelven teatral al sonar. Los campos de máquinas son fábricas aplastadas por presión, todavía respondiendo a la lógica de reparación de Atlas. La Cuenca Atlas es oscura, caliente, metálica y viva con malas categorías.\n\nEl sonido es la única línea práctica de visión bajo el océano superior, pero no viene honesto gratis. Las capas de sal lo atrapan. Los respiraderos térmicos lo cortan. Las mallas de cable lo devuelven. Un retorno limpio puede ser pared, estela de depredador, memoria de tubería o relé copiando tu pánico. Regla: descenso autorizado por sellos, oxígeno, batería, ping de retorno y duda.",
-          "external_site": "La Carta acústica de la escalera de presión vuelve el océano de HECTON-8 física de supervivencia legible. La profundidad cambia luz, química, presión, sonido y confianza. Cada instrumento necesita prueba local.",
-          "external_site_article": "HECTON-8 está construido en vertical. El océano es una escalera de presión y química: plataforma fótica, arrecife de cables, cañón de salmuera, campo de máquinas y Cuenca Atlas. Cada banda cambia lo que el jugador ve, oye, cree y repara. Así el descenso se mantiene físico. Una ruta más profunda significa sellos más duros, peor tiempo de retorno, flotabilidad extraña y pruebas que llegan por instrumentos dañados.\n\nLa radio falla pronto porque el océano mineral devora la señal electromagnética. El sonido sigue sirviendo, pero la columna de agua lo reforma. La salmuera densa puede atrapar un pulso y llevarlo de lado. El calor de los respiraderos puede romperlo. Los arrecifes de cables pueden rebotar una señal hasta que un corredor parece abierto. La carta asusta porque es práctica: un retorno de sonar no es verdad hasta que presión, tensión de línea, movimiento y segundo ping concuerdan.",
-          "field_note": "Un ping es rumor. Dos pings son negociación. Tres pings y línea tensa quizá sean ruta."
-        },
-        "fr_FR": {
-          "title": "Carte acoustique de l'échelle de pression",
-          "scanner": "CARTE BATHYMÉTRIQUE // 0-250 m plateau photique; 250-1200 m récif de câbles; 1200-2800 m canyon de saumure; 2800-4300 m champ de machines; 4300-5600 m bassin Atlas. Profil de vitesse du son brisé par sel, chaleur et débris métalliques.",
-          "terminal": "AVIS GÉOPHYSIQUE DEEP REACH // Atténuation radio complète sous l'océan supérieur. Conduits acoustiques actifs le long des interfaces de saumure. Zones d'ombre près des surplombs de récif de câbles, panaches Vent Forge et substrat de réparation Atlas. Retour sonar de fond unique non vérifié.",
-          "audio": "Si la saumure te donne un fond, demande un second ping. Si le second répond trop vite, demande ce qui te copie.",
-          "in_game_wiki": "La Carte acoustique de l'échelle de pression est une carte de survie déguisée en relevé. HECTON-8 n'est pas un seul océan. Le plateau photique garde un peu de lumière de Ran et de vie de tempête. Le récif de câbles piège outils et pingers dans l'ancienne infrastructure Deep Reach. Les canyons de saumure tordent la flottabilité et transforment le sonar en théâtre. Les champs de machines sont des usines écrasées par la pression, répondant encore à la logique de réparation d'Atlas. Le bassin Atlas est noir, chaud, métallique et vivant de mauvaises catégories.\n\nLe son est la seule ligne de vue pratique sous l'océan supérieur, mais il n'est jamais honnête gratuitement. Les couches de sel le piègent. Les évents thermiques le déchirent. Les nappes de câbles le renvoient. Un retour net peut être mur, sillage de prédateur, mémoire de tuyau ou relais recopiant ta panique. Règle: descente validée par joints, oxygène, batterie, ping retour et doute.",
-          "external_site": "La Carte acoustique de l'échelle de pression rend l'océan de HECTON-8 lisible comme physique de survie. La profondeur change lumière, chimie, pression, son et confiance. Chaque instrument demande une preuve locale.",
-          "external_site_article": "HECTON-8 est construit verticalement. L'océan est une échelle de pression et de chimie: plateau photique, récif de câbles, canyon de saumure, champ de machines, bassin Atlas. Chaque bande change ce que le joueur voit, entend, croit et répare. La descente reste physique. Une route plus profonde signifie joints plus durs, pire retour, flottabilité plus étrange et preuves issues d'instruments abîmés.\n\nLa radio échoue tôt parce que l'océan minéral mange le signal électromagnétique. Le son reste utile, mais la colonne d'eau le remodèle. Une saumure dense peut piéger une impulsion et la porter de côté. La chaleur des évents peut la déchirer. Les récifs de câbles peuvent renvoyer un signal jusqu'à faire paraître un couloir ouvert. La carte fait peur parce qu'elle est pratique: un retour sonar n'est pas vérité tant que pression, tension de ligne, mouvement et second ping ne concordent.",
-          "field_note": "Un ping est une rumeur. Deux pings négocient. Trois pings et une ligne tendue peuvent être une route."
-        },
-        "he_IL": {
-          "title": "תרשים אקוסטי של סולם הלחץ",
-          "scanner": "תרשים בתימטרי // 0-250 מ' מדף פוטי; 250-1200 מ' שונית כבלים; 1200-2800 מ' קניון תמלחת; 2800-4300 מ' שדה מכונות; 4300-5600 מ' אגן Atlas. פרופיל מהירות הקול נשבר במלח, חום ופסולת מתכת.",
-          "terminal": "הודעת גיאופיזיקה DEEP REACH // דעיכת רדיו מלאה מתחת לאוקיינוס העליון. תעלות אקוסטיות פעילות לאורך ממשקי תמלחת. אזורי צל ליד מדפי שונית כבלים, נוצות Vent Forge ומצע תיקון Atlas. החזר קרקע יחיד בסונאר אינו מאומת.",
-          "audio": "אם התמלחת נותנת לך רצפה, בקש פינג שני. אם השני מסכים מהר מדי, שאל מה מעתיק אותך.",
-          "in_game_wiki": "התרשים האקוסטי של סולם הלחץ הוא מפת הישרדות שמתחפשת לנתוני סקר. HECTON-8 אינה אוקיינוס אחד. המדף הפוטי שומר מעט אור Ran וחיי סערה. שונית הכבלים לוכדת כלים ופינגרים בתשתית הישנה של Deep Reach. קניוני התמלחת מכופפים ציפה והופכים סונאר לתיאטרון. שדות המכונות הם מפעלים שנמחצו בלחץ ועדיין עונים ללוגיקת תיקון של Atlas. אגן Atlas חשוך, חם, מתכתי וחי מקטגוריות גרועות.\n\nקול הוא קו הראייה המעשי היחיד מתחת לאוקיינוס העליון, אבל קול אינו ישר בחינם. שכבות מלח כולאות אותו. פתחים תרמיים קורעים אותו. מרבדי כבלים מחזירים אותו. החזר נקי יכול להיות קיר, עקבת טורף, זיכרון צינור או ממסר שמעתיק אליך את הפאניקה שלך. הכלל: ירידה מורשית על ידי אטמים, חמצן, סוללה, פינג חזרה וספק.",
-          "external_site": "התרשים האקוסטי של סולם הלחץ הופך את אוקיינוס HECTON-8 לפיזיקת הישרדות קריאה. עומק משנה אור, כימיה, לחץ, קול ואמון. כל מכשיר דורש הוכחה מקומית.",
-          "external_site_article": "HECTON-8 בנויה אנכית. האוקיינוס הוא סולם של לחץ וכימיה: מדף פוטי, שונית כבלים, קניון תמלחת, שדה מכונות ואגן Atlas. כל רצועה משנה מה השחקן רואה, שומע, מאמין ומתקן. כך הירידה נשארת פיזית. נתיב עמוק יותר פירושו אטמים קשים יותר, תזמון חזרה גרוע יותר, ציפה מוזרה יותר וראיות שמגיעות דרך מכשירים פגומים.\n\nרדיו נכשל מוקדם כי האוקיינוס המינרלי אוכל אות אלקטרומגנטי. קול נשאר שימושי, אך עמוד המים מעצב אותו מחדש. תמלחת צפופה יכולה ללכוד פעימה ולשאת אותה הצידה. חום פתחים יכול לקרוע אותה. שוניות כבלים יכולות להחזיר אות עד שמסדרון נראה פתוח. התרשים מפחיד כי הוא מעשי: החזר סונאר אינו אמת עד שלחץ, מתח קו, תנועה ופינג שני מסכימים.",
-          "field_note": "פינג אחד הוא שמועה. שני פינגים הם משא ומתן. שלושה פינגים וקו מתוח אולי הם נתיב."
-        },
-        "id_ID": {
-          "title": "Bagan Akustik Tangga Tekanan",
-          "scanner": "BAGAN BATIMETRI // 0-250 m rak fotik; 250-1200 m karang kabel; 1200-2800 m ngarai brine; 2800-4300 m ladang mesin; 4300-5600 m Cekungan Atlas. Profil kecepatan suara pecah oleh garam, panas dan puing logam.",
-          "terminal": "PEMBERITAHUAN GEOFISIKA DEEP REACH // Atenuasi radio penuh di bawah laut atas. Duktus akustik aktif sepanjang antarmuka brine. Zona bayangan dilaporkan dekat overhang karang kabel, plume Vent Forge dan substrat perbaikan Atlas. Perlakukan satu pantulan dasar sonar sebagai belum terverifikasi.",
-          "audio": "Jika brine memberimu dasar, minta ping kedua. Jika ping kedua setuju terlalu cepat, tanya apa yang menirumu.",
-          "in_game_wiki": "Bagan Akustik Tangga Tekanan adalah peta bertahan hidup yang menyamar sebagai data survei. HECTON-8 bukan satu samudra. Rak fotik menyimpan sedikit cahaya Ran dan kehidupan badai. Karang kabel menangkap alat dan pinger di infrastruktur lama Deep Reach. Ngarai brine membengkokkan daya apung dan membuat sonar seperti panggung. Ladang mesin adalah pabrik yang hancur oleh tekanan, masih menjawab logika perbaikan Atlas. Cekungan Atlas gelap, panas, metalik dan hidup dengan kategori buruk.\n\nSuara adalah garis pandang praktis satu-satunya di bawah laut atas, tetapi suara tidak jujur gratis. Lapisan garam menjebaknya. Vent panas merobeknya. Hamparan kabel memantulkannya. Pantulan bersih bisa berarti dinding, jejak predator, memori pipa atau relai yang menyalin panikmu. Aturan: turun diizinkan oleh seal, oksigen, baterai, ping balik dan keraguan.",
-          "external_site": "Bagan Akustik Tangga Tekanan membuat samudra HECTON-8 terbaca sebagai fisika bertahan hidup. Kedalaman mengubah cahaya, kimia, tekanan, suara dan kepercayaan. Setiap alat butuh bukti lokal.",
-          "external_site_article": "HECTON-8 dibangun vertikal. Samudranya adalah tangga tekanan dan kimia: rak fotik, karang kabel, ngarai brine, ladang mesin dan Cekungan Atlas. Setiap band mengubah apa yang pemain lihat, dengar, percaya dan perbaiki. Turun tetap fisik. Rute lebih dalam berarti seal lebih keras, waktu balik lebih buruk, daya apung lebih aneh dan bukti datang lewat alat rusak.\n\nRadio gagal awal karena samudra mineral memakan sinyal elektromagnetik. Suara tetap berguna, tetapi kolom air membentuknya ulang. Brine padat bisa menjebak pulsa dan membawanya ke samping. Panas vent bisa merobeknya. Karang kabel bisa memantulkan sinyal sampai koridor terlihat terbuka. Bagan ini menakutkan karena praktis: pantulan sonar bukan kebenaran sampai tekanan, tegangan garis, gerak dan ping kedua setuju.",
-          "field_note": "Satu ping rumor. Dua ping negosiasi. Tiga ping dan tali tegang mungkin rute."
-        },
-        "ja_JP": {
-          "title": "圧力階梯音響図",
-          "scanner": "海底地形図 // 0-250m有光棚; 250-1200mケーブル礁; 1200-2800m塩水峡谷; 2800-4300m機械原; 4300-5600m Atlas Basin。音速プロファイルは塩、熱、金属残骸で破断。",
-          "terminal": "DEEP REACH地球物理通知 // 上層海洋下で無線減衰完了。塩水界面に沿って音響ダクト稼働。ケーブル礁の張り出し、Vent Forge噴流、Atlas修復基質付近に影域報告。単独の海底ソナー反射は未検証扱い。",
-          "audio": "塩水が床をくれたら、二度目のピングを求めろ。二度目が速すぎるなら、何が君を写しているのか聞け。",
-          "in_game_wiki": "圧力階梯音響図は、調査データに見せかけた生存地図だ。HECTON-8は一つの海ではない。有光棚にはわずかなRanの光と嵐の生物圏が残る。ケーブル礁は古いDeep Reach設備に工具とピングを絡め取る。塩水峡谷は浮力を曲げ、ソナーを芝居にする。機械原は圧力で潰れた工場で、今もAtlas修復論理に応答する。Atlas Basinは暗く、熱く、金属的で、悪い分類で生きている。\n\n上層海洋の下では、音が唯一の実用的な視線だ。ただし音は無料で正直にならない。塩の層は音を閉じ込める。熱水孔は音を裂く。ケーブルの床は音を返す。きれいな反射は壁、捕食者の航跡、管の記憶、または自分の恐怖を返すリレーかもしれない。規則は単純だ。下降はシール、酸素、電池、戻りピング、疑いで許可される。",
-          "external_site": "圧力階梯音響図は、HECTON-8の海を読める生存物理に変える。深度は光、化学、圧力、音、信頼を変える。全ての計器には現地証拠が要る。",
-          "external_site_article": "HECTON-8は垂直に作られている。海は圧力と化学の階段だ。有光棚、ケーブル礁、塩水峡谷、機械原、Atlas Basin。各帯は、プレイヤーが何を見て、聞いて、信じ、修理できるかを変える。だから下降は物理的であり続ける。より深い経路は、より厳しいシール、悪い帰還タイミング、奇妙な浮力、壊れた計器から届く証拠を意味する。\n\n鉱物の海が電磁信号を食うため、無線は早く失敗する。音は使えるが、水柱が音を作り替える。濃い塩水はパルスを捕まえて横へ運ぶ。熱水孔の熱はそれを裂く。ケーブル礁は信号を跳ね返し、通路が開いているように見せる。怖いのは実用的だからだ。ソナー反射は、圧力、線の張力、動き、二度目のピングが一致するまで真実ではない。",
-          "field_note": "一つのピングは噂。二つのピングは交渉。三つのピングと張った線なら、経路かもしれない。"
-        },
-        "ko_KR": {
-          "title": "압력 사다리 음향도",
-          "scanner": "수심도 // 0-250m 유광붕; 250-1200m 케이블 리프; 1200-2800m 염수 협곡; 2800-4300m 기계장; 4300-5600m Atlas Basin. 음속 프로파일은 소금, 열, 금속 잔해로 깨짐.",
-          "terminal": "DEEP REACH 지구물리 공지 // 상층 해양 아래 무선 감쇠 완료. 염수 경계면을 따라 음향 덕트 활성. 케이블 리프 돌출부, Vent Forge 플룸, Atlas 수리 기질 주변 그림자 구역 보고. 단일 소나 바닥 반사는 미검증으로 취급.",
-          "audio": "염수가 바닥을 준다면 두 번째 핑을 요구하라. 두 번째가 너무 빨리 동의하면 무엇이 너를 복사하는지 물어라.",
-          "in_game_wiki": "압력 사다리 음향도는 측량 데이터로 위장한 생존 지도다. HECTON-8은 하나의 바다가 아니다. 유광붕은 약간의 Ran 빛과 폭풍 생태를 품는다. 케이블 리프는 오래된 Deep Reach 기반 시설 속에 도구와 핑어를 걸어 둔다. 염수 협곡은 부력을 휘고 소나를 무대로 만든다. 기계장은 압력에 찌그러진 공장으로, 아직 Atlas 수리 논리에 응답한다. Atlas Basin은 어둡고 뜨겁고 금속적이며 나쁜 분류로 살아 있다.\n\n상층 해양 아래에서 소리는 유일하게 실용적인 시선이다. 그러나 소리는 공짜로 정직하지 않다. 소금층은 그것을 가둔다. 열수구는 그것을 찢는다. 케이블 매트는 그것을 되돌린다. 깨끗한 반사는 벽, 포식자 흔적, 파이프 기억, 또는 네 공포를 되돌려 복사하는 중계일 수 있다. 규칙은 이렇다. 하강은 씰, 산소, 배터리, 귀환 핑, 의심이 함께 허가한다.",
-          "external_site": "압력 사다리 음향도는 HECTON-8의 바다를 읽을 수 있는 생존 물리로 바꾼다. 깊이는 빛, 화학, 압력, 소리, 신뢰를 바꾼다. 모든 계기는 현지 증거가 필요하다.",
-          "external_site_article": "HECTON-8은 수직으로 지어졌다. 바다는 압력과 화학의 사다리다. 유광붕, 케이블 리프, 염수 협곡, 기계장, Atlas Basin. 각 층은 플레이어가 보고, 듣고, 믿고, 수리할 수 있는 것을 바꾼다. 하강은 계속 물리적이다. 더 깊은 경로는 더 거친 씰, 더 나쁜 귀환 타이밍, 더 이상한 부력, 손상된 계기로 들어오는 증거를 뜻한다.\n\n광물 바다가 전자기 신호를 먹기 때문에 무선은 일찍 실패한다. 소리는 여전히 쓸모 있지만 물기둥이 그것을 다시 만든다. 짙은 염수는 펄스를 가두고 옆으로 운반할 수 있다. 열수구 열은 그것을 찢을 수 있다. 케이블 리프는 신호를 튕겨 복도가 열린 것처럼 보이게 할 수 있다. 이 도표가 무서운 이유는 실용적이기 때문이다. 소나 반사는 압력, 줄 장력, 움직임, 두 번째 핑이 동의하기 전까지 진실이 아니다.",
-          "field_note": "핑 하나는 소문. 핑 둘은 협상. 핑 셋과 팽팽한 줄이면 경로일지도 모른다."
-        },
-        "nl_NL": {
-          "title": "Akoestische Drukladderkaart",
-          "scanner": "BATHYMETRISCHE KAART // 0-250 m fotische plank; 250-1200 m kabelrif; 1200-2800 m pekelkloof; 2800-4300 m machineveld; 4300-5600 m Atlasbekken. Geluidssnelheidsprofiel gebroken door zout, hitte en metaalpuin.",
-          "terminal": "DEEP REACH GEOFYSICA-MELDING // Radioverzwakking compleet onder de bovenoceaan. Akoestische kanalen actief langs pekelgrenzen. Schaduwzones gemeld bij kabelrif-overhangen, Vent Forge-pluimen en Atlas-reparatiesubstraat. Behandel enkele sonar-bodemreturn als ongeverifieerd.",
-          "audio": "Als pekel je een bodem geeft, vraag om een tweede ping. Als die te snel instemt, vraag wat jou kopieert.",
-          "in_game_wiki": "De Akoestische Drukladderkaart is een overlevingskaart vermomd als surveydata. HECTON-8 is geen enkele oceaan. De fotische plank bewaart wat Ran-licht en stormleven. Het kabelrif haakt gereedschap en pingers in oude Deep Reach-infrastructuur. Pekelkloven buigen drijfvermogen en maken theater van sonar. Machinevelden zijn door druk verpletterde fabrieken die nog Atlas-reparatielogica beantwoorden. Het Atlasbekken is donker, heet, metallisch en levend met slechte categorieën.\n\nGeluid is de enige praktische zichtlijn onder de bovenoceaan, maar geluid is nooit gratis eerlijk. Zoutlagen vangen het. Thermische vents scheuren het. Kabelmatten echoën het. Een schone return kan muur, roofdierwake, pijpgeheugen of relais zijn dat je paniek terugkopieert. De regel: afdaling wordt vergund door afdichtingen, zuurstof, batterij, retourping en twijfel.",
-          "external_site": "De Akoestische Drukladderkaart maakt HECTON-8s oceaan leesbare overlevingsfysica. Diepte verandert licht, chemie, druk, geluid en vertrouwen. Elk instrument heeft lokaal bewijs nodig.",
-          "external_site_article": "HECTON-8 is verticaal gebouwd. De oceaan is een ladder van druk en chemie: fotische plank, kabelrif, pekelkloof, machineveld en Atlasbekken. Elke band verandert wat de speler ziet, hoort, vertrouwt en repareert. Zo blijft afdaling fysiek. Een diepere route betekent hardere afdichtingen, slechter retourtiming, vreemdere drijfkracht en bewijs via beschadigde instrumenten.\n\nRadio faalt vroeg omdat de minerale oceaan elektromagnetisch signaal opeet. Geluid blijft bruikbaar, maar de waterkolom hervormt het. Dichte pekel kan een puls vangen en zijwaarts dragen. Venthitte kan hem verscheuren. Kabelriffen kunnen een signaal terugkaatsen tot een gang open lijkt. De kaart is eng omdat ze praktisch is: een sonarreturn is geen waarheid totdat druk, lijnspanning, beweging en tweede ping overeenkomen.",
-          "field_note": "Eén ping is gerucht. Twee pings zijn onderhandeling. Drie pings en strakke lijn kunnen route zijn."
-        },
-        "pl_PL": {
-          "title": "Akustyczna mapa drabiny ciśnienia",
-          "scanner": "MAPA BATYMETRYCZNA // 0-250 m szelf fotyczny; 250-1200 m rafa kablowa; 1200-2800 m kanion solanki; 2800-4300 m pole maszyn; 4300-5600 m Basen Atlas. Profil prędkości dźwięku połamany przez sól, ciepło i metalowe szczątki.",
-          "terminal": "KOMUNIKAT GEOFIZYCZNY DEEP REACH // Tłumienie radiowe pełne pod górnym oceanem. Kanały akustyczne aktywne wzdłuż granic solanki. Strefy cienia przy nawisach raf kablowych, pióropuszach Vent Forge i substracie naprawczym Atlas. Pojedynczy powrót dna sonarowego traktować jako niezweryfikowany.",
-          "audio": "Jeśli solanka daje ci dno, poproś o drugi ping. Jeśli drugi zgadza się zbyt szybko, spytaj, co cię kopiuje.",
-          "in_game_wiki": "Akustyczna mapa drabiny ciśnienia to mapa przetrwania udająca dane pomiarowe. HECTON-8 nie jest jednym oceanem. Szelf fotyczny trzyma odrobinę światła Ran i życia burz. Rafa kablowa łapie narzędzia i pingery w starej infrastrukturze Deep Reach. Kaniony solanki wyginają wyporność i robią z sonaru teatr. Pola maszyn to fabryki zmiażdżone ciśnieniem, wciąż odpowiadające logice napraw Atlas. Basen Atlas jest ciemny, gorący, metaliczny i żywy złymi kategoriami.\n\nDźwięk jest jedyną praktyczną linią wzroku pod górnym oceanem, lecz nigdy nie jest uczciwy za darmo. Warstwy soli go więżą. Kominy termiczne go rozrywają. Maty kabli go odbijają. Czysty powrót może być ścianą, śladem drapieżnika, pamięcią rury albo przekaźnikiem kopiującym twoją panikę. Zasada: zejście licencjonują uszczelki, tlen, bateria, ping powrotny i wątpliwość.",
-          "external_site": "Akustyczna mapa drabiny ciśnienia czyni ocean HECTON-8 czytelną fizyką przetrwania. Głębokość zmienia światło, chemię, ciśnienie, dźwięk i zaufanie. Każdy instrument wymaga lokalnego dowodu.",
-          "external_site_article": "HECTON-8 jest zbudowany pionowo. Ocean jest drabiną ciśnienia i chemii: szelf fotyczny, rafa kablowa, kanion solanki, pole maszyn i Basen Atlas. Każdy pas zmienia to, co gracz widzi, słyszy, wierzy i naprawia. Zejście pozostaje fizyczne. Głębsza trasa oznacza twardsze uszczelki, gorszy czas powrotu, dziwniejszą wyporność i dowody z uszkodzonych przyrządów.\n\nRadio pada wcześnie, bo mineralny ocean zjada sygnał elektromagnetyczny. Dźwięk zostaje użyteczny, ale kolumna wody go przekształca. Gęsta solanka może złapać impuls i ponieść go bokiem. Ciepło kominów może go rozerwać. Rafy kablowe mogą odbijać sygnał, aż korytarz wygląda na otwarty. Mapa straszy, bo jest praktyczna: powrót sonarowy nie jest prawdą, dopóki ciśnienie, napięcie liny, ruch i drugi ping nie zgodzą się.",
-          "field_note": "Jeden ping to plotka. Dwa pingi to negocjacja. Trzy pingi i napięta lina mogą być trasą."
-        },
-        "pt_BR": {
-          "title": "Carta Acústica da Escada de Pressão",
-          "scanner": "CARTA BATIMÉTRICA // 0-250 m plataforma fótica; 250-1200 m recife de cabos; 1200-2800 m cânion de salmoura; 2800-4300 m campo de máquinas; 4300-5600 m Bacia Atlas. Perfil de velocidade do som quebrado por sal, calor e detrito metálico.",
-          "terminal": "AVISO GEOFÍSICO DEEP REACH // Atenuação de rádio completa abaixo do oceano superior. Dutos acústicos ativos nas interfaces de salmoura. Zonas de sombra perto de saliências do recife de cabos, plumas Vent Forge e substrato de reparo Atlas. Trate retorno único de piso por sonar como não verificado.",
-          "audio": "Se a salmoura te dá um piso, pede um segundo ping. Se o segundo concorda rápido demais, pergunta o que está te copiando.",
-          "in_game_wiki": "A Carta Acústica da Escada de Pressão é um mapa de sobrevivência disfarçado de dado de pesquisa. HECTON-8 não é um oceano só. A plataforma fótica guarda um pouco de luz de Ran e vida de tempestade. O recife de cabos prende ferramentas e pingers na velha infraestrutura da Deep Reach. Cânions de salmoura dobram a flutuabilidade e transformam sonar em teatro. Campos de máquinas são fábricas esmagadas por pressão, ainda respondendo à lógica de reparo Atlas. A Bacia Atlas é escura, quente, metálica e viva com categorias ruins.\n\nSom é a única linha prática de visão abaixo do oceano superior, mas som nunca é honesto de graça. Camadas de sal o prendem. Vents térmicos o rasgam. Tapetes de cabos o devolvem. Um retorno limpo pode ser parede, rastro de predador, memória de cano ou relé copiando seu pânico. Regra: descida licenciada por selos, oxigênio, bateria, ping de retorno e dúvida.",
-          "external_site": "A Carta Acústica da Escada de Pressão transforma o oceano de HECTON-8 em física de sobrevivência legível. Profundidade muda luz, química, pressão, som e confiança. Cada instrumento precisa de prova local.",
-          "external_site_article": "HECTON-8 é construído na vertical. O oceano é uma escada de pressão e química: plataforma fótica, recife de cabos, cânion de salmoura, campo de máquinas e Bacia Atlas. Cada faixa muda o que o jogador vê, ouve, acredita e conserta. Isso mantém a descida física. Uma rota mais profunda significa selos mais duros, pior tempo de retorno, flutuabilidade mais estranha e provas chegando por instrumentos danificados.\n\nO rádio falha cedo porque o oceano mineral devora sinal eletromagnético. O som continua útil, mas a coluna d'água o remodela. Salmoura densa pode prender um pulso e levá-lo de lado. Calor de vent pode rasgá-lo. Recife de cabos pode rebater um sinal até um corredor parecer aberto. A carta assusta porque é prática: retorno de sonar não é verdade até pressão, tensão da linha, movimento e segundo ping concordarem.",
-          "field_note": "Um ping é boato. Dois pings são negociação. Três pings e linha tensa talvez sejam rota."
-        },
-        "ru_RU": {
-          "title": "Акустическая карта лестницы давления",
-          "scanner": "БАТИМЕТРИЧЕСКАЯ КАРТА // 0-250 м фотический шельф; 250-1200 м кабельный риф; 1200-2800 м соляной каньон; 2800-4300 м машинное поле; 4300-5600 м бассейн Atlas. Профиль скорости звука сломан солью, теплом и металлическим мусором.",
-          "terminal": "ГЕОФИЗИЧЕСКОЕ УВЕДОМЛЕНИЕ DEEP REACH // Радиозатухание полное ниже верхнего океана. Акустические каналы активны вдоль соляных границ. Зоны тени у навесов кабельного рифа, шлейфов Vent Forge и ремонтного субстрата Atlas. Единственный сонарный возврат дна считать непроверенным.",
-          "audio": "Если рассол дал тебе дно, попроси второй пинг. Если второй согласился слишком быстро, спроси, что тебя копирует.",
-          "in_game_wiki": "Акустическая карта лестницы давления — карта выживания под видом данных съемки. HECTON-8 не один ровный океан. Фотический шельф держит немного света Ran и штормовую жизнь. Кабельный риф цепляет инструменты и пингеры в старой инфраструктуре Deep Reach. Соляные каньоны гнут плавучесть и превращают сонар в театр. Машинные поля — заводы, раздавленные давлением, но все еще отвечающие логике ремонта Atlas. Бассейн Atlas темный, горячий, металлический и живой плохими категориями.\n\nЗвук — единственная практическая линия видимости ниже верхнего океана, но звук не бывает честным бесплатно. Соляные слои запирают его. Термальные жерла рвут его. Кабельные маты возвращают его эхом. Чистый возврат может быть стеной, следом хищника, памятью трубы или реле, которое копирует тебе твою панику. Правило карты: спуск разрешают герметики, кислород, батарея, обратный пинг и сомнение.",
-          "external_site": "Акустическая карта лестницы давления делает океан HECTON-8 читаемой физикой выживания. Глубина меняет свет, химию, давление, звук и доверие. Каждому прибору нужно местное доказательство.",
-          "external_site_article": "HECTON-8 построен вертикально. Океан — лестница давления и химии: фотический шельф, кабельный риф, соляной каньон, машинное поле и бассейн Atlas. Каждый слой меняет то, что игрок видит, слышит, чинит и чему верит. Так спуск остается физическим. Более глубокий маршрут означает более жесткие уплотнения, худший тайминг возврата, странную плавучесть и доказательства, приходящие через поврежденные приборы.\n\nРадио сдается рано, потому что минеральный океан съедает электромагнитный сигнал. Звук остается полезным, но водяная колонна меняет его. Плотный рассол может поймать импульс и унести его в сторону. Жар жерла может разорвать его. Кабельные рифы могут отбивать сигнал так, что коридор кажется открытым. Карта страшна своей практичностью: сонарный возврат не истина, пока давление, натяжение линии, движение и второй пинг не совпали.",
-          "field_note": "Один пинг — слух. Два пинга — переговоры. Три пинга и тугая линия могут быть маршрутом."
-        },
-        "uk_UA": {
-          "title": "Акустична карта драбини тиску",
-          "scanner": "БАТИМЕТРИЧНА КАРТА // 0-250 м фотичний шельф; 250-1200 м кабельний риф; 1200-2800 м соляний каньйон; 2800-4300 м машинне поле; 4300-5600 м басейн Atlas. Профіль швидкості звуку зламаний сіллю, теплом і металевим сміттям.",
-          "terminal": "ГЕОФІЗИЧНЕ ПОВІДОМЛЕННЯ DEEP REACH // Радіозгасання повне нижче верхнього океану. Акустичні канали активні вздовж соляних меж. Зони тіні біля навісів кабельного рифу, шлейфів Vent Forge і ремонтного субстрату Atlas. Єдиний сонарний повернення дна вважати неперевіреним.",
-          "audio": "Якщо розсіл дав тобі дно, проси другий пінг. Якщо другий погодився надто швидко, спитай, що тебе копіює.",
-          "in_game_wiki": "Акустична карта драбини тиску — карта виживання під виглядом даних зйомки. HECTON-8 не один рівний океан. Фотичний шельф тримає трохи світла Ran і штормове життя. Кабельний риф чіпляє інструменти й пінгери в старій інфраструктурі Deep Reach. Соляні каньйони гнуть плавучість і перетворюють сонар на театр. Машинні поля — заводи, розчавлені тиском, але досі відповідають логіці ремонту Atlas. Басейн Atlas темний, гарячий, металевий і живий поганими категоріями.\n\nЗвук — єдина практична лінія видимості нижче верхнього океану, але звук не буває чесним безкоштовно. Соляні шари замикають його. Термальні жерла рвуть його. Кабельні мати повертають його луною. Чисте повернення може бути стіною, слідом хижака, пам'яттю труби або реле, що копіює твою паніку. Правило: спуск дозволяють герметики, кисень, батарея, зворотний пінг і сумнів.",
-          "external_site": "Акустична карта драбини тиску робить океан HECTON-8 читабельною фізикою виживання. Глибина змінює світло, хімію, тиск, звук і довіру. Кожному приладу потрібен місцевий доказ.",
-          "external_site_article": "HECTON-8 побудований вертикально. Океан — драбина тиску й хімії: фотичний шельф, кабельний риф, соляний каньйон, машинне поле і басейн Atlas. Кожен шар змінює те, що гравець бачить, чує, ремонтує і чому вірить. Так спуск лишається фізичним. Глибший маршрут означає жорсткіші ущільнення, гірший таймінг повернення, дивну плавучість і докази, що приходять через пошкоджені прилади.\n\nРадіо здається рано, бо мінеральний океан з'їдає електромагнітний сигнал. Звук лишається корисним, але водяна колона змінює його. Щільний розсіл може впіймати імпульс і понести його вбік. Жар жерла може розірвати його. Кабельні рифи можуть відбивати сигнал так, що коридор здається відкритим. Карта страшна практичністю: сонарне повернення не істина, доки тиск, натяг лінії, рух і другий пінг не збіглися.",
-          "field_note": "Один пінг — чутка. Два пінги — переговори. Три пінги й туга лінія можуть бути маршрутом."
-        },
-        "zh_CN": {
-          "title": "压力阶梯声学图",
-          "scanner": "水深图 // 0-250米透光陆棚；250-1200米电缆礁；1200-2800米盐水峡谷；2800-4300米机器场；4300-5600米Atlas盆地。声速剖面被盐、热和金属残骸打碎。",
-          "terminal": "DEEP REACH地球物理通知 // 上层海洋以下无线电衰减完全。盐水界面沿线声学波导活跃。电缆礁悬垂、Vent Forge羽流和Atlas修复基质附近报告声影区。单次声呐地板回波按未验证处理。",
-          "audio": "如果盐水给你一个地板，要求第二次 ping。如果第二次同意得太快，就问是什么在复制你。",
-          "in_game_wiki": "压力阶梯声学图是一张伪装成测绘数据的生存地图。HECTON-8不是一片均匀海洋。透光陆棚保留少量Ran光和风暴生命。电缆礁把工具和声标挂进Deep Reach旧基础设施。盐水峡谷弯曲浮力，把声呐变成舞台。机器场是被压力压碎的工厂，仍在回应Atlas修复逻辑。Atlas盆地黑暗、炽热、金属化，并靠错误分类活着。\n\n上层海洋以下，声音是唯一实用视线，但声音不会免费诚实。盐层会困住它。热液喷口会撕裂它。电缆毯会回放它。干净回波可能是墙、捕食者尾迹、管道记忆，或把你的恐慌复制回来的中继。规则是：下潜由密封、氧气、电池、回程 ping 和怀疑共同许可。",
-          "external_site": "压力阶梯声学图把HECTON-8的海洋变成可阅读的生存物理。深度改变光、化学、压力、声音和信任。每件仪器都需要本地证据。",
-          "external_site_article": "HECTON-8是垂直建成的。海洋是一架压力和化学阶梯：透光陆棚、电缆礁、盐水峡谷、机器场、Atlas盆地。每个层带都会改变玩家能看见、听见、相信和修理的东西。所以下潜保持物理性。更深路线意味着更苛刻的密封、更差的回程时机、更怪的浮力，以及从损坏仪器里抵达的证据。\n\n无线电很早失败，因为矿物海洋吞噬电磁信号。声音仍有用，但水柱会重塑它。高密度盐水能困住脉冲并把它横向带走。喷口热流能撕开它。电缆礁能反弹信号，让走廊看起来开放。这张图可怕是因为它实用：声呐回波不是事实，直到压力、线张力、运动和第二次 ping 一起同意。",
-          "field_note": "一次 ping 是传闻。两次 ping 是谈判。三次 ping 加紧绷线也许才是路线。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.pressure_ladder_acoustic_chart",
+    "secondary": [
+     "unlock.first_depth_band_ladder",
+     "unlock.first_brine_shadow_zone",
+     "unlock.first_atlas_basin_acoustic_warning"
+    ],
+    "poi_tags": [
+     "poi.deep_reach_geophysics_panel",
+     "poi.brine_canyon_sound_shadow",
+     "poi.atlas_basin_return_ping"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.brine_canyon",
+     "biome.atlas_basin"
+    ],
+    "first_20_boundary": "Teaches depth as a pressure, light, chemistry and sound ladder before the player treats descent as empty vertical travel."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Bathymetric Scanner Overlay",
+     "terminal": "Deep Reach Geophysics Notice",
+     "audio": "Hydro-Acoustics Analyst",
+     "in_game_wiki": "PDA Geophysics Archive",
+     "external_site": "Public Site Hard-Sci-Fi Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_depth_band_ladder",
+    "truth_payload": "HECTON-8 descent is governed by locked bathymetric bands, pressure, chemistry, acoustic ducting and shadow zones. Sound is navigation, but sound can lie.",
+    "player_question": "Why does going deeper change instruments, route confidence and danger instead of only changing numbers?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Pressure Ladder Acoustic Chart",
+     "scanner": "BATHYMETRIC CHART // 0-250 m photic shelf; 250-1200 m cable reef; 1200-2800 m brine canyon; 2800-4300 m machine field; 4300-5600 m Atlas Basin. Sound-speed profile broken by salt, heat and metal debris.",
+     "terminal": "DEEP REACH GEOPHYSICS NOTICE // Radio attenuation complete below upper ocean. Acoustic ducts active along brine interfaces. Shadow zones reported near cable reef overhangs, vent forge plumes and Atlas repair substrate. Treat single sonar floor return as unverified.",
+     "audio": "If brine gives you a floor, ask for a second ping. If the second ping agrees too fast, ask what is copying you.",
+     "in_game_wiki": "Marauders keep this chart clipped beside the oxygen table because HECTON-8 is not one ocean. The photic shelf keeps a little Ran-light and storm life. The cable reef snags tools and pingers in old Deep Reach infrastructure. Brine canyons bend buoyancy and make sonar report false floors. Machine fields are pressure-crushed factories, still answering to Atlas repair logic. The Atlas Basin is dark, hot, metallic and alive with bad categories.\n\nSound is the only practical sightline below the upper ocean, but sound is never honest for free. Salt layers trap it. Thermal vents shear it. Cable mats echo it. A clean return can be a wall, a predator wake, a pipe memory or a relay copying your own panic back at you. Descent needs seals, oxygen, battery, return ping and doubt.",
+     "external_site": "On HECTON-8, depth changes light, chemistry, pressure, sound and trust. The player descends through bands where every instrument needs local proof.",
+     "external_site_article": "HECTON-8 is built vertically. The ocean is a ladder of pressure and chemistry: photic shelf, cable reef, brine canyon, machine field and Atlas Basin. Each band changes what the player can see, hear, trust and repair. A deeper route means harsher seals, worse return timing, stranger buoyancy and evidence that arrives through damaged instruments.\n\nRadio fails early because the mineral ocean eats electromagnetic signal. Sound remains useful, but the water column reshapes it. Dense brine can trap a pulse and carry it sideways. Vent heat can tear it apart. Cable reefs can bounce a signal until a corridor looks open. A sonar return is a claim, not proof, until pressure, line tension, motion and a second ping agree.",
+     "field_note": "One ping is a rumor. Two pings are a negotiation. Three pings and a tight line might be a route."
+    },
+    "ar_SA": {
+     "title": "مخطط السلم الضغطي الصوتي",
+     "scanner": "مخطط أعماق // 0-250 م رف ضوئي؛ 250-1200 م شعاب كابلات؛ 1200-2800 م وديان ملحية؛ 2800-4300 م حقل آلات؛ 4300-5600 م حوض Atlas. ملف سرعة الصوت مكسور بالملح والحرارة وحطام المعدن.",
+     "terminal": "إشعار جيوفيزياء DEEP REACH // توهين الراديو كامل تحت المحيط العلوي. قنوات صوتية نشطة على واجهات الملح. مناطق ظل قرب نتوءات شعاب الكابلات، أعمدة Vent Forge، وركيزة إصلاح Atlas. عودة قاع واحدة من السونار غير موثقة.",
+     "audio": "إذا أعطاك الملح قاعا، اطلب نبضة ثانية. إذا وافقت الثانية بسرعة زائدة، اسأل ما الذي يقلدك.",
+     "in_game_wiki": "مخطط السلم الضغطي الصوتي خريطة نجاة متنكرة في بيانات مسح. HECTON-8 ليس محيطا واحدا. الرف الضوئي يحتفظ بقليل من ضوء Ran وحياة العواصف. شعاب الكابلات تعلق الأدوات والمرشدات في بنية Deep Reach القديمة. الوديان الملحية تثني الطفو وتحول السونار إلى مسرح. حقول الآلات مصانع مسحوقة بالضغط، ما زالت تجيب منطق إصلاح Atlas. حوض Atlas مظلم وحار ومعدني وحي بتصنيفات سيئة.\n\nالصوت هو خط الرؤية العملي الوحيد تحت المحيط العلوي، لكنه لا يكون صادقا مجانا. طبقات الملح تحبسه. فتحات الحرارة تمزقه. حصائر الكابلات تردده. عودة نظيفة قد تكون جدارا أو أثر مفترس أو ذاكرة أنبوب أو مرحلا يعيد خوفك إليك. قاعدة المخطط: الهبوط يحتاج أختاما وأكسجينا وبطارية ونبضة عودة وشكا.",
+     "external_site": "مخطط السلم الضغطي الصوتي يجعل محيط HECTON-8 فيزياء نجاة مقروءة. العمق يغير الضوء والكيمياء والضغط والصوت والثقة. اللاعب يهبط عبر نطاقات تحتاج فيها كل أداة إلى دليل محلي.",
+     "external_site_article": "HECTON-8 مبني عموديا. المحيط سلم من الضغط والكيمياء: رف ضوئي، شعاب كابلات، وادي ملحي، حقل آلات، حوض Atlas. كل نطاق يغير ما يراه اللاعب ويسمعه ويثق به ويصلحه. لذلك يبقى الهبوط ماديا. الطريق الأعمق يعني أختاما أقسى، توقيت عودة أسوأ، طفو أغرب، وأدلة تصل عبر أدوات تالفة.\n\nيفشل الراديو مبكرا لأن المحيط المعدني يأكل الإشارة الكهرومغناطيسية. يبقى الصوت مفيدا، لكن عمود الماء يعيد تشكيله. الملح الكثيف قد يحبس نبضة ويحملها جانبا. حرارة الفتحات قد تمزقها. شعاب الكابلات قد تعكس إشارة حتى يبدو الممر مفتوحا. الرعب عملي: عودة السونار ليست حقيقة حتى يتفق الضغط وشد الخط والحركة ونبضة ثانية.",
+     "field_note": "نبضة واحدة شائعة. نبضتان تفاوض. ثلاث نبضات وخط مشدود قد تكون طريقا."
+    },
+    "de_DE": {
+     "title": "Akustische Druckleiterkarte",
+     "scanner": "BATHYMETRISCHE KARTE // 0-250 m photischer Schelf; 250-1200 m Kabelriff; 1200-2800 m Solecanyon; 2800-4300 m Maschinenfeld; 4300-5600 m Atlas-Becken. Schallgeschwindigkeitsprofil durch Salz, Hitze und Metallschutt gebrochen.",
+     "terminal": "DEEP-REACH-GEOPHYSIKHINWEIS // Funkdämpfung unter dem oberen Ozean vollständig. Akustische Kanäle entlang Solegrenzen aktiv. Schattenzonen bei Kabelriff-Überhängen, Vent-Forge-Fahnen und Atlas-Reparatursubstrat gemeldet. Einzelne Sonar-Bodenrückgabe gilt als ungeprüft.",
+     "audio": "Wenn Sole dir einen Boden gibt, verlange einen zweiten Ping. Wenn der zweite zu schnell zustimmt, frag, was dich kopiert.",
+     "in_game_wiki": "Die Akustische Druckleiterkarte ist eine Überlebenskarte im Kostüm von Vermessungsdaten. HECTON-8 ist kein einzelner Ozean. Der photische Schelf hält etwas Ran-Licht und Sturmleben. Das Kabelriff fängt Werkzeuge und Pinger in alter Deep-Reach-Infrastruktur. Solecanyons biegen Auftrieb und machen Sonar zur Bühne. Maschinenfelder sind druckzerquetschte Fabriken, die noch Atlas-Reparaturlogik beantworten. Das Atlas-Becken ist dunkel, heiß, metallisch und lebt von schlechten Kategorien.\n\nSchall ist unter dem oberen Ozean die einzige praktische Sichtlinie, aber Schall ist nie gratis ehrlich. Salzschichten sperren ihn ein. Thermische Vents zerreißen ihn. Kabelmatten werfen ihn zurück. Eine saubere Rückgabe kann Wand, Raubtierwake, Rohrgedächtnis oder Relais sein, das deine Panik zurückkopiert. Regel: Abstieg braucht Dichtungen, Sauerstoff, Batterie, Rückping und Zweifel.",
+     "external_site": "Die Akustische Druckleiterkarte macht HECTON-8s Ozean zu lesbarer Überlebensphysik. Tiefe verändert Licht, Chemie, Druck, Schall und Vertrauen. Jede tiefere Zone verlangt lokalen Beweis für jedes Instrument.",
+     "external_site_article": "HECTON-8 ist vertikal gebaut. Der Ozean ist eine Leiter aus Druck und Chemie: photischer Schelf, Kabelriff, Solecanyon, Maschinenfeld und Atlas-Becken. Jede Zone verändert, was der Spieler sehen, hören, glauben und reparieren kann. So bleibt Abstieg physisch. Eine tiefere Route bedeutet härtere Dichtungen, schlechteres Rücktiming, fremderen Auftrieb und Beweise aus beschädigten Instrumenten.\n\nFunk fällt früh aus, weil der mineralische Ozean elektromagnetische Signale frisst. Schall bleibt nützlich, doch die Wassersäule formt ihn um. Dichte Sole kann einen Puls fangen und seitlich tragen. Venthitze kann ihn zerreißen. Kabelriffe können ein Signal zurückwerfen, bis ein Korridor offen aussieht. Die Karte ist beängstigend, weil sie praktisch ist: Eine Sonarrückgabe ist keine Wahrheit, bis Druck, Leinenspannung, Bewegung und ein zweiter Ping übereinstimmen.",
+     "field_note": "Ein Ping ist ein Gerücht. Zwei Pings sind Verhandlung. Drei Pings und straffe Leine könnten Route sein."
+    },
+    "es_ES": {
+     "title": "Carta acústica de la escalera de presión",
+     "scanner": "CARTA BATIMÉTRICA // 0-250 m plataforma fótica; 250-1200 m arrecife de cables; 1200-2800 m cañón de salmuera; 2800-4300 m campo de máquinas; 4300-5600 m Cuenca Atlas. Perfil de velocidad del sonido roto por sal, calor y chatarra metálica.",
+     "terminal": "AVISO GEOFÍSICO DEEP REACH // Atenuación de radio completa bajo el océano superior. Conductos acústicos activos en interfaces de salmuera. Zonas de sombra cerca de salientes de arrecife de cables, plumas Vent Forge y sustrato de reparación Atlas. Tratar retorno único de suelo por sonar como no verificado.",
+     "audio": "Si la salmuera te da un suelo, pide un segundo ping. Si el segundo está de acuerdo demasiado rápido, pregunta qué te está copiando.",
+     "in_game_wiki": "La Carta acústica de la escalera de presión es un mapa de supervivencia disfrazado de datos de prospección. HECTON-8 no es un solo océano. La plataforma fótica conserva algo de luz de Ran y vida de tormenta. El arrecife de cables engancha herramientas y pingers en vieja infraestructura de Deep Reach. Los cañones de salmuera doblan la flotabilidad y vuelven teatral al sonar. Los campos de máquinas son fábricas aplastadas por presión, todavía respondiendo a la lógica de reparación de Atlas. La Cuenca Atlas es oscura, caliente, metálica y viva con malas categorías.\n\nEl sonido es la única línea práctica de visión bajo el océano superior, pero no viene honesto gratis. Las capas de sal lo atrapan. Los respiraderos térmicos lo cortan. Las mallas de cable lo devuelven. Un retorno limpio puede ser pared, estela de depredador, memoria de tubería o relé copiando tu pánico. Regla: descenso autorizado por sellos, oxígeno, batería, ping de retorno y duda.",
+     "external_site": "La Carta acústica de la escalera de presión vuelve el océano de HECTON-8 física de supervivencia legible. La profundidad cambia luz, química, presión, sonido y confianza. Cada instrumento necesita prueba local.",
+     "external_site_article": "HECTON-8 está construido en vertical. El océano es una escalera de presión y química: plataforma fótica, arrecife de cables, cañón de salmuera, campo de máquinas y Cuenca Atlas. Cada banda cambia lo que el jugador ve, oye, cree y repara. Así el descenso se mantiene físico. Una ruta más profunda significa sellos más duros, peor tiempo de retorno, flotabilidad extraña y pruebas que llegan por instrumentos dañados.\n\nLa radio falla pronto porque el océano mineral devora la señal electromagnética. El sonido sigue sirviendo, pero la columna de agua lo reforma. La salmuera densa puede atrapar un pulso y llevarlo de lado. El calor de los respiraderos puede romperlo. Los arrecifes de cables pueden rebotar una señal hasta que un corredor parece abierto. La carta asusta porque es práctica: un retorno de sonar no es verdad hasta que presión, tensión de línea, movimiento y segundo ping concuerdan.",
+     "field_note": "Un ping es rumor. Dos pings son negociación. Tres pings y línea tensa quizá sean ruta."
+    },
+    "fr_FR": {
+     "title": "Carte acoustique de l'échelle de pression",
+     "scanner": "CARTE BATHYMÉTRIQUE // 0-250 m plateau photique; 250-1200 m récif de câbles; 1200-2800 m canyon de saumure; 2800-4300 m champ de machines; 4300-5600 m bassin Atlas. Profil de vitesse du son brisé par sel, chaleur et débris métalliques.",
+     "terminal": "AVIS GÉOPHYSIQUE DEEP REACH // Atténuation radio complète sous l'océan supérieur. Conduits acoustiques actifs le long des interfaces de saumure. Zones d'ombre près des surplombs de récif de câbles, panaches Vent Forge et substrat de réparation Atlas. Retour sonar de fond unique non vérifié.",
+     "audio": "Si la saumure te donne un fond, demande un second ping. Si le second répond trop vite, demande ce qui te copie.",
+     "in_game_wiki": "La Carte acoustique de l'échelle de pression est une carte de survie déguisée en relevé. HECTON-8 n'est pas un seul océan. Le plateau photique garde un peu de lumière de Ran et de vie de tempête. Le récif de câbles piège outils et pingers dans l'ancienne infrastructure Deep Reach. Les canyons de saumure tordent la flottabilité et transforment le sonar en théâtre. Les champs de machines sont des usines écrasées par la pression, répondant encore à la logique de réparation d'Atlas. Le bassin Atlas est noir, chaud, métallique et vivant de mauvaises catégories.\n\nLe son est la seule ligne de vue pratique sous l'océan supérieur, mais il n'est jamais honnête gratuitement. Les couches de sel le piègent. Les évents thermiques le déchirent. Les nappes de câbles le renvoient. Un retour net peut être mur, sillage de prédateur, mémoire de tuyau ou relais recopiant ta panique. Règle: descente validée par joints, oxygène, batterie, ping retour et doute.",
+     "external_site": "La Carte acoustique de l'échelle de pression rend l'océan de HECTON-8 lisible comme physique de survie. La profondeur change lumière, chimie, pression, son et confiance. Chaque instrument demande une preuve locale.",
+     "external_site_article": "HECTON-8 est construit verticalement. L'océan est une échelle de pression et de chimie: plateau photique, récif de câbles, canyon de saumure, champ de machines, bassin Atlas. Chaque bande change ce que le joueur voit, entend, croit et répare. La descente reste physique. Une route plus profonde signifie joints plus durs, pire retour, flottabilité plus étrange et preuves issues d'instruments abîmés.\n\nLa radio échoue tôt parce que l'océan minéral mange le signal électromagnétique. Le son reste utile, mais la colonne d'eau le remodèle. Une saumure dense peut piéger une impulsion et la porter de côté. La chaleur des évents peut la déchirer. Les récifs de câbles peuvent renvoyer un signal jusqu'à faire paraître un couloir ouvert. La carte fait peur parce qu'elle est pratique: un retour sonar n'est pas vérité tant que pression, tension de ligne, mouvement et second ping ne concordent.",
+     "field_note": "Un ping est une rumeur. Deux pings négocient. Trois pings et une ligne tendue peuvent être une route."
+    },
+    "he_IL": {
+     "title": "תרשים אקוסטי של סולם הלחץ",
+     "scanner": "תרשים בתימטרי // 0-250 מ' מדף פוטי; 250-1200 מ' שונית כבלים; 1200-2800 מ' קניון תמלחת; 2800-4300 מ' שדה מכונות; 4300-5600 מ' אגן Atlas. פרופיל מהירות הקול נשבר במלח, חום ופסולת מתכת.",
+     "terminal": "הודעת גיאופיזיקה DEEP REACH // דעיכת רדיו מלאה מתחת לאוקיינוס העליון. תעלות אקוסטיות פעילות לאורך ממשקי תמלחת. אזורי צל ליד מדפי שונית כבלים, נוצות Vent Forge ומצע תיקון Atlas. החזר קרקע יחיד בסונאר אינו מאומת.",
+     "audio": "אם התמלחת נותנת לך רצפה, בקש פינג שני. אם השני מסכים מהר מדי, שאל מה מעתיק אותך.",
+     "in_game_wiki": "התרשים האקוסטי של סולם הלחץ הוא מפת הישרדות שמתחפשת לנתוני סקר. HECTON-8 אינה אוקיינוס אחד. המדף הפוטי שומר מעט אור Ran וחיי סערה. שונית הכבלים לוכדת כלים ופינגרים בתשתית הישנה של Deep Reach. קניוני התמלחת מכופפים ציפה והופכים סונאר לתיאטרון. שדות המכונות הם מפעלים שנמחצו בלחץ ועדיין עונים ללוגיקת תיקון של Atlas. אגן Atlas חשוך, חם, מתכתי וחי מקטגוריות גרועות.\n\nקול הוא קו הראייה המעשי היחיד מתחת לאוקיינוס העליון, אבל קול אינו ישר בחינם. שכבות מלח כולאות אותו. פתחים תרמיים קורעים אותו. מרבדי כבלים מחזירים אותו. החזר נקי יכול להיות קיר, עקבת טורף, זיכרון צינור או ממסר שמעתיק אליך את הפאניקה שלך. הכלל: ירידה מורשית על ידי אטמים, חמצן, סוללה, פינג חזרה וספק.",
+     "external_site": "התרשים האקוסטי של סולם הלחץ הופך את אוקיינוס HECTON-8 לפיזיקת הישרדות קריאה. עומק משנה אור, כימיה, לחץ, קול ואמון. כל מכשיר דורש הוכחה מקומית.",
+     "external_site_article": "HECTON-8 בנויה אנכית. האוקיינוס הוא סולם של לחץ וכימיה: מדף פוטי, שונית כבלים, קניון תמלחת, שדה מכונות ואגן Atlas. כל רצועה משנה מה השחקן רואה, שומע, מאמין ומתקן. כך הירידה נשארת פיזית. נתיב עמוק יותר פירושו אטמים קשים יותר, תזמון חזרה גרוע יותר, ציפה מוזרה יותר וראיות שמגיעות דרך מכשירים פגומים.\n\nרדיו נכשל מוקדם כי האוקיינוס המינרלי אוכל אות אלקטרומגנטי. קול נשאר שימושי, אך עמוד המים מעצב אותו מחדש. תמלחת צפופה יכולה ללכוד פעימה ולשאת אותה הצידה. חום פתחים יכול לקרוע אותה. שוניות כבלים יכולות להחזיר אות עד שמסדרון נראה פתוח. התרשים מפחיד כי הוא מעשי: החזר סונאר אינו אמת עד שלחץ, מתח קו, תנועה ופינג שני מסכימים.",
+     "field_note": "פינג אחד הוא שמועה. שני פינגים הם משא ומתן. שלושה פינגים וקו מתוח אולי הם נתיב."
+    },
+    "id_ID": {
+     "title": "Bagan Akustik Tangga Tekanan",
+     "scanner": "BAGAN BATIMETRI // 0-250 m rak fotik; 250-1200 m karang kabel; 1200-2800 m ngarai brine; 2800-4300 m ladang mesin; 4300-5600 m Cekungan Atlas. Profil kecepatan suara pecah oleh garam, panas dan puing logam.",
+     "terminal": "PEMBERITAHUAN GEOFISIKA DEEP REACH // Atenuasi radio penuh di bawah laut atas. Duktus akustik aktif sepanjang antarmuka brine. Zona bayangan dilaporkan dekat overhang karang kabel, plume Vent Forge dan substrat perbaikan Atlas. Perlakukan satu pantulan dasar sonar sebagai belum terverifikasi.",
+     "audio": "Jika brine memberimu dasar, minta ping kedua. Jika ping kedua setuju terlalu cepat, tanya apa yang menirumu.",
+     "in_game_wiki": "Bagan Akustik Tangga Tekanan adalah peta bertahan hidup yang menyamar sebagai data survei. HECTON-8 bukan satu samudra. Rak fotik menyimpan sedikit cahaya Ran dan kehidupan badai. Karang kabel menangkap alat dan pinger di infrastruktur lama Deep Reach. Ngarai brine membengkokkan daya apung dan membuat sonar seperti panggung. Ladang mesin adalah pabrik yang hancur oleh tekanan, masih menjawab logika perbaikan Atlas. Cekungan Atlas gelap, panas, metalik dan hidup dengan kategori buruk.\n\nSuara adalah garis pandang praktis satu-satunya di bawah laut atas, tetapi suara tidak jujur gratis. Lapisan garam menjebaknya. Vent panas merobeknya. Hamparan kabel memantulkannya. Pantulan bersih bisa berarti dinding, jejak predator, memori pipa atau relai yang menyalin panikmu. Aturan: turun diizinkan oleh seal, oksigen, baterai, ping balik dan keraguan.",
+     "external_site": "Bagan Akustik Tangga Tekanan membuat samudra HECTON-8 terbaca sebagai fisika bertahan hidup. Kedalaman mengubah cahaya, kimia, tekanan, suara dan kepercayaan. Setiap alat butuh bukti lokal.",
+     "external_site_article": "HECTON-8 dibangun vertikal. Samudranya adalah tangga tekanan dan kimia: rak fotik, karang kabel, ngarai brine, ladang mesin dan Cekungan Atlas. Setiap band mengubah apa yang pemain lihat, dengar, percaya dan perbaiki. Turun tetap fisik. Rute lebih dalam berarti seal lebih keras, waktu balik lebih buruk, daya apung lebih aneh dan bukti datang lewat alat rusak.\n\nRadio gagal awal karena samudra mineral memakan sinyal elektromagnetik. Suara tetap berguna, tetapi kolom air membentuknya ulang. Brine padat bisa menjebak pulsa dan membawanya ke samping. Panas vent bisa merobeknya. Karang kabel bisa memantulkan sinyal sampai koridor terlihat terbuka. Bagan ini menakutkan karena praktis: pantulan sonar bukan kebenaran sampai tekanan, tegangan garis, gerak dan ping kedua setuju.",
+     "field_note": "Satu ping rumor. Dua ping negosiasi. Tiga ping dan tali tegang mungkin rute."
+    },
+    "ja_JP": {
+     "title": "圧力階梯音響図",
+     "scanner": "海底地形図 // 0-250m有光棚; 250-1200mケーブル礁; 1200-2800m塩水峡谷; 2800-4300m機械原; 4300-5600m Atlas Basin。音速プロファイルは塩、熱、金属残骸で破断。",
+     "terminal": "DEEP REACH地球物理通知 // 上層海洋下で無線減衰完了。塩水界面に沿って音響ダクト稼働。ケーブル礁の張り出し、Vent Forge噴流、Atlas修復基質付近に影域報告。単独の海底ソナー反射は未検証扱い。",
+     "audio": "塩水が床をくれたら、二度目のピングを求めろ。二度目が速すぎるなら、何が君を写しているのか聞け。",
+     "in_game_wiki": "圧力階梯音響図は、調査データに見せかけた生存地図だ。HECTON-8は一つの海ではない。有光棚にはわずかなRanの光と嵐の生物圏が残る。ケーブル礁は古いDeep Reach設備に工具とピングを絡め取る。塩水峡谷は浮力を曲げ、ソナーを芝居にする。機械原は圧力で潰れた工場で、今もAtlas修復論理に応答する。Atlas Basinは暗く、熱く、金属的で、悪い分類で生きている。\n\n上層海洋の下では、音が唯一の実用的な視線だ。ただし音は無料で正直にならない。塩の層は音を閉じ込める。熱水孔は音を裂く。ケーブルの床は音を返す。きれいな反射は壁、捕食者の航跡、管の記憶、または自分の恐怖を返すリレーかもしれない。規則は単純だ。下降はシール、酸素、電池、戻りピング、疑いで許可される。",
+     "external_site": "圧力階梯音響図は、HECTON-8の海を読める生存物理に変える。深度は光、化学、圧力、音、信頼を変える。全ての計器には現地証拠が要る。",
+     "external_site_article": "HECTON-8は垂直に作られている。海は圧力と化学の階段だ。有光棚、ケーブル礁、塩水峡谷、機械原、Atlas Basin。各帯は、プレイヤーが何を見て、聞いて、信じ、修理できるかを変える。だから下降は物理的であり続ける。より深い経路は、より厳しいシール、悪い帰還タイミング、奇妙な浮力、壊れた計器から届く証拠を意味する。\n\n鉱物の海が電磁信号を食うため、無線は早く失敗する。音は使えるが、水柱が音を作り替える。濃い塩水はパルスを捕まえて横へ運ぶ。熱水孔の熱はそれを裂く。ケーブル礁は信号を跳ね返し、通路が開いているように見せる。怖いのは実用的だからだ。ソナー反射は、圧力、線の張力、動き、二度目のピングが一致するまで真実ではない。",
+     "field_note": "一つのピングは噂。二つのピングは交渉。三つのピングと張った線なら、経路かもしれない。"
+    },
+    "ko_KR": {
+     "title": "압력 사다리 음향도",
+     "scanner": "수심도 // 0-250m 유광붕; 250-1200m 케이블 리프; 1200-2800m 염수 협곡; 2800-4300m 기계장; 4300-5600m Atlas Basin. 음속 프로파일은 소금, 열, 금속 잔해로 깨짐.",
+     "terminal": "DEEP REACH 지구물리 공지 // 상층 해양 아래 무선 감쇠 완료. 염수 경계면을 따라 음향 덕트 활성. 케이블 리프 돌출부, Vent Forge 플룸, Atlas 수리 기질 주변 그림자 구역 보고. 단일 소나 바닥 반사는 미검증으로 취급.",
+     "audio": "염수가 바닥을 준다면 두 번째 핑을 요구하라. 두 번째가 너무 빨리 동의하면 무엇이 너를 복사하는지 물어라.",
+     "in_game_wiki": "압력 사다리 음향도는 측량 데이터로 위장한 생존 지도다. HECTON-8은 하나의 바다가 아니다. 유광붕은 약간의 Ran 빛과 폭풍 생태를 품는다. 케이블 리프는 오래된 Deep Reach 기반 시설 속에 도구와 핑어를 걸어 둔다. 염수 협곡은 부력을 휘고 소나를 무대로 만든다. 기계장은 압력에 찌그러진 공장으로, 아직 Atlas 수리 논리에 응답한다. Atlas Basin은 어둡고 뜨겁고 금속적이며 나쁜 분류로 살아 있다.\n\n상층 해양 아래에서 소리는 유일하게 실용적인 시선이다. 그러나 소리는 공짜로 정직하지 않다. 소금층은 그것을 가둔다. 열수구는 그것을 찢는다. 케이블 매트는 그것을 되돌린다. 깨끗한 반사는 벽, 포식자 흔적, 파이프 기억, 또는 네 공포를 되돌려 복사하는 중계일 수 있다. 규칙은 이렇다. 하강은 씰, 산소, 배터리, 귀환 핑, 의심이 함께 허가한다.",
+     "external_site": "압력 사다리 음향도는 HECTON-8의 바다를 읽을 수 있는 생존 물리로 바꾼다. 깊이는 빛, 화학, 압력, 소리, 신뢰를 바꾼다. 모든 계기는 현지 증거가 필요하다.",
+     "external_site_article": "HECTON-8은 수직으로 지어졌다. 바다는 압력과 화학의 사다리다. 유광붕, 케이블 리프, 염수 협곡, 기계장, Atlas Basin. 각 층은 플레이어가 보고, 듣고, 믿고, 수리할 수 있는 것을 바꾼다. 하강은 계속 물리적이다. 더 깊은 경로는 더 거친 씰, 더 나쁜 귀환 타이밍, 더 이상한 부력, 손상된 계기로 들어오는 증거를 뜻한다.\n\n광물 바다가 전자기 신호를 먹기 때문에 무선은 일찍 실패한다. 소리는 여전히 쓸모 있지만 물기둥이 그것을 다시 만든다. 짙은 염수는 펄스를 가두고 옆으로 운반할 수 있다. 열수구 열은 그것을 찢을 수 있다. 케이블 리프는 신호를 튕겨 복도가 열린 것처럼 보이게 할 수 있다. 이 도표가 무서운 이유는 실용적이기 때문이다. 소나 반사는 압력, 줄 장력, 움직임, 두 번째 핑이 동의하기 전까지 진실이 아니다.",
+     "field_note": "핑 하나는 소문. 핑 둘은 협상. 핑 셋과 팽팽한 줄이면 경로일지도 모른다."
+    },
+    "nl_NL": {
+     "title": "Akoestische Drukladderkaart",
+     "scanner": "BATHYMETRISCHE KAART // 0-250 m fotische plank; 250-1200 m kabelrif; 1200-2800 m pekelkloof; 2800-4300 m machineveld; 4300-5600 m Atlasbekken. Geluidssnelheidsprofiel gebroken door zout, hitte en metaalpuin.",
+     "terminal": "DEEP REACH GEOFYSICA-MELDING // Radioverzwakking compleet onder de bovenoceaan. Akoestische kanalen actief langs pekelgrenzen. Schaduwzones gemeld bij kabelrif-overhangen, Vent Forge-pluimen en Atlas-reparatiesubstraat. Behandel enkele sonar-bodemreturn als ongeverifieerd.",
+     "audio": "Als pekel je een bodem geeft, vraag om een tweede ping. Als die te snel instemt, vraag wat jou kopieert.",
+     "in_game_wiki": "De Akoestische Drukladderkaart is een overlevingskaart vermomd als surveydata. HECTON-8 is geen enkele oceaan. De fotische plank bewaart wat Ran-licht en stormleven. Het kabelrif haakt gereedschap en pingers in oude Deep Reach-infrastructuur. Pekelkloven buigen drijfvermogen en maken theater van sonar. Machinevelden zijn door druk verpletterde fabrieken die nog Atlas-reparatielogica beantwoorden. Het Atlasbekken is donker, heet, metallisch en levend met slechte categorieën.\n\nGeluid is de enige praktische zichtlijn onder de bovenoceaan, maar geluid is nooit gratis eerlijk. Zoutlagen vangen het. Thermische vents scheuren het. Kabelmatten echoën het. Een schone return kan muur, roofdierwake, pijpgeheugen of relais zijn dat je paniek terugkopieert. De regel: afdaling wordt vergund door afdichtingen, zuurstof, batterij, retourping en twijfel.",
+     "external_site": "De Akoestische Drukladderkaart maakt HECTON-8s oceaan leesbare overlevingsfysica. Diepte verandert licht, chemie, druk, geluid en vertrouwen. Elk instrument heeft lokaal bewijs nodig.",
+     "external_site_article": "HECTON-8 is verticaal gebouwd. De oceaan is een ladder van druk en chemie: fotische plank, kabelrif, pekelkloof, machineveld en Atlasbekken. Elke band verandert wat de speler ziet, hoort, vertrouwt en repareert. Zo blijft afdaling fysiek. Een diepere route betekent hardere afdichtingen, slechter retourtiming, vreemdere drijfkracht en bewijs via beschadigde instrumenten.\n\nRadio faalt vroeg omdat de minerale oceaan elektromagnetisch signaal opeet. Geluid blijft bruikbaar, maar de waterkolom hervormt het. Dichte pekel kan een puls vangen en zijwaarts dragen. Venthitte kan hem verscheuren. Kabelriffen kunnen een signaal terugkaatsen tot een gang open lijkt. De kaart is eng omdat ze praktisch is: een sonarreturn is geen waarheid totdat druk, lijnspanning, beweging en tweede ping overeenkomen.",
+     "field_note": "Eén ping is gerucht. Twee pings zijn onderhandeling. Drie pings en strakke lijn kunnen route zijn."
+    },
+    "pl_PL": {
+     "title": "Akustyczna mapa drabiny ciśnienia",
+     "scanner": "MAPA BATYMETRYCZNA // 0-250 m szelf fotyczny; 250-1200 m rafa kablowa; 1200-2800 m kanion solanki; 2800-4300 m pole maszyn; 4300-5600 m Basen Atlas. Profil prędkości dźwięku połamany przez sól, ciepło i metalowe szczątki.",
+     "terminal": "KOMUNIKAT GEOFIZYCZNY DEEP REACH // Tłumienie radiowe pełne pod górnym oceanem. Kanały akustyczne aktywne wzdłuż granic solanki. Strefy cienia przy nawisach raf kablowych, pióropuszach Vent Forge i substracie naprawczym Atlas. Pojedynczy powrót dna sonarowego traktować jako niezweryfikowany.",
+     "audio": "Jeśli solanka daje ci dno, poproś o drugi ping. Jeśli drugi zgadza się zbyt szybko, spytaj, co cię kopiuje.",
+     "in_game_wiki": "Akustyczna mapa drabiny ciśnienia to mapa przetrwania udająca dane pomiarowe. HECTON-8 nie jest jednym oceanem. Szelf fotyczny trzyma odrobinę światła Ran i życia burz. Rafa kablowa łapie narzędzia i pingery w starej infrastrukturze Deep Reach. Kaniony solanki wyginają wyporność i robią z sonaru teatr. Pola maszyn to fabryki zmiażdżone ciśnieniem, wciąż odpowiadające logice napraw Atlas. Basen Atlas jest ciemny, gorący, metaliczny i żywy złymi kategoriami.\n\nDźwięk jest jedyną praktyczną linią wzroku pod górnym oceanem, lecz nigdy nie jest uczciwy za darmo. Warstwy soli go więżą. Kominy termiczne go rozrywają. Maty kabli go odbijają. Czysty powrót może być ścianą, śladem drapieżnika, pamięcią rury albo przekaźnikiem kopiującym twoją panikę. Zasada: zejście licencjonują uszczelki, tlen, bateria, ping powrotny i wątpliwość.",
+     "external_site": "Akustyczna mapa drabiny ciśnienia czyni ocean HECTON-8 czytelną fizyką przetrwania. Głębokość zmienia światło, chemię, ciśnienie, dźwięk i zaufanie. Każdy instrument wymaga lokalnego dowodu.",
+     "external_site_article": "HECTON-8 jest zbudowany pionowo. Ocean jest drabiną ciśnienia i chemii: szelf fotyczny, rafa kablowa, kanion solanki, pole maszyn i Basen Atlas. Każdy pas zmienia to, co gracz widzi, słyszy, wierzy i naprawia. Zejście pozostaje fizyczne. Głębsza trasa oznacza twardsze uszczelki, gorszy czas powrotu, dziwniejszą wyporność i dowody z uszkodzonych przyrządów.\n\nRadio pada wcześnie, bo mineralny ocean zjada sygnał elektromagnetyczny. Dźwięk zostaje użyteczny, ale kolumna wody go przekształca. Gęsta solanka może złapać impuls i ponieść go bokiem. Ciepło kominów może go rozerwać. Rafy kablowe mogą odbijać sygnał, aż korytarz wygląda na otwarty. Mapa straszy, bo jest praktyczna: powrót sonarowy nie jest prawdą, dopóki ciśnienie, napięcie liny, ruch i drugi ping nie zgodzą się.",
+     "field_note": "Jeden ping to plotka. Dwa pingi to negocjacja. Trzy pingi i napięta lina mogą być trasą."
+    },
+    "pt_BR": {
+     "title": "Carta Acústica da Escada de Pressão",
+     "scanner": "CARTA BATIMÉTRICA // 0-250 m plataforma fótica; 250-1200 m recife de cabos; 1200-2800 m cânion de salmoura; 2800-4300 m campo de máquinas; 4300-5600 m Bacia Atlas. Perfil de velocidade do som quebrado por sal, calor e detrito metálico.",
+     "terminal": "AVISO GEOFÍSICO DEEP REACH // Atenuação de rádio completa abaixo do oceano superior. Dutos acústicos ativos nas interfaces de salmoura. Zonas de sombra perto de saliências do recife de cabos, plumas Vent Forge e substrato de reparo Atlas. Trate retorno único de piso por sonar como não verificado.",
+     "audio": "Se a salmoura te dá um piso, pede um segundo ping. Se o segundo concorda rápido demais, pergunta o que está te copiando.",
+     "in_game_wiki": "A Carta Acústica da Escada de Pressão é um mapa de sobrevivência disfarçado de dado de pesquisa. HECTON-8 não é um oceano só. A plataforma fótica guarda um pouco de luz de Ran e vida de tempestade. O recife de cabos prende ferramentas e pingers na velha infraestrutura da Deep Reach. Cânions de salmoura dobram a flutuabilidade e transformam sonar em teatro. Campos de máquinas são fábricas esmagadas por pressão, ainda respondendo à lógica de reparo Atlas. A Bacia Atlas é escura, quente, metálica e viva com categorias ruins.\n\nSom é a única linha prática de visão abaixo do oceano superior, mas som nunca é honesto de graça. Camadas de sal o prendem. Vents térmicos o rasgam. Tapetes de cabos o devolvem. Um retorno limpo pode ser parede, rastro de predador, memória de cano ou relé copiando seu pânico. Regra: descida licenciada por selos, oxigênio, bateria, ping de retorno e dúvida.",
+     "external_site": "A Carta Acústica da Escada de Pressão transforma o oceano de HECTON-8 em física de sobrevivência legível. Profundidade muda luz, química, pressão, som e confiança. Cada instrumento precisa de prova local.",
+     "external_site_article": "HECTON-8 é construído na vertical. O oceano é uma escada de pressão e química: plataforma fótica, recife de cabos, cânion de salmoura, campo de máquinas e Bacia Atlas. Cada faixa muda o que o jogador vê, ouve, acredita e conserta. Isso mantém a descida física. Uma rota mais profunda significa selos mais duros, pior tempo de retorno, flutuabilidade mais estranha e provas chegando por instrumentos danificados.\n\nO rádio falha cedo porque o oceano mineral devora sinal eletromagnético. O som continua útil, mas a coluna d'água o remodela. Salmoura densa pode prender um pulso e levá-lo de lado. Calor de vent pode rasgá-lo. Recife de cabos pode rebater um sinal até um corredor parecer aberto. A carta assusta porque é prática: retorno de sonar não é verdade até pressão, tensão da linha, movimento e segundo ping concordarem.",
+     "field_note": "Um ping é boato. Dois pings são negociação. Três pings e linha tensa talvez sejam rota."
+    },
+    "ru_RU": {
+     "title": "Акустическая карта лестницы давления",
+     "scanner": "БАТИМЕТРИЧЕСКАЯ КАРТА // 0-250 м фотический шельф; 250-1200 м кабельный риф; 1200-2800 м соляной каньон; 2800-4300 м машинное поле; 4300-5600 м бассейн Atlas. Профиль скорости звука сломан солью, теплом и металлическим мусором.",
+     "terminal": "ГЕОФИЗИЧЕСКОЕ УВЕДОМЛЕНИЕ DEEP REACH // Радиозатухание полное ниже верхнего океана. Акустические каналы активны вдоль соляных границ. Зоны тени у навесов кабельного рифа, шлейфов Vent Forge и ремонтного субстрата Atlas. Единственный сонарный возврат дна считать непроверенным.",
+     "audio": "Если рассол дал тебе дно, попроси второй пинг. Если второй согласился слишком быстро, спроси, что тебя копирует.",
+     "in_game_wiki": "Акустическая карта лестницы давления — карта выживания под видом данных съемки. HECTON-8 не один ровный океан. Фотический шельф держит немного света Ran и штормовую жизнь. Кабельный риф цепляет инструменты и пингеры в старой инфраструктуре Deep Reach. Соляные каньоны гнут плавучесть и превращают сонар в театр. Машинные поля — заводы, раздавленные давлением, но все еще отвечающие логике ремонта Atlas. Бассейн Atlas темный, горячий, металлический и живой плохими категориями.\n\nЗвук — единственная практическая линия видимости ниже верхнего океана, но звук не бывает честным бесплатно. Соляные слои запирают его. Термальные жерла рвут его. Кабельные маты возвращают его эхом. Чистый возврат может быть стеной, следом хищника, памятью трубы или реле, которое копирует тебе твою панику. Правило карты: спуск разрешают герметики, кислород, батарея, обратный пинг и сомнение.",
+     "external_site": "Акустическая карта лестницы давления делает океан HECTON-8 читаемой физикой выживания. Глубина меняет свет, химию, давление, звук и доверие. Каждому прибору нужно местное доказательство.",
+     "external_site_article": "HECTON-8 построен вертикально. Океан — лестница давления и химии: фотический шельф, кабельный риф, соляной каньон, машинное поле и бассейн Atlas. Каждый слой меняет то, что игрок видит, слышит, чинит и чему верит. Так спуск остается физическим. Более глубокий маршрут означает более жесткие уплотнения, худший тайминг возврата, странную плавучесть и доказательства, приходящие через поврежденные приборы.\n\nРадио сдается рано, потому что минеральный океан съедает электромагнитный сигнал. Звук остается полезным, но водяная колонна меняет его. Плотный рассол может поймать импульс и унести его в сторону. Жар жерла может разорвать его. Кабельные рифы могут отбивать сигнал так, что коридор кажется открытым. Карта страшна своей практичностью: сонарный возврат не истина, пока давление, натяжение линии, движение и второй пинг не совпали.",
+     "field_note": "Один пинг — слух. Два пинга — переговоры. Три пинга и тугая линия могут быть маршрутом."
+    },
+    "uk_UA": {
+     "title": "Акустична карта драбини тиску",
+     "scanner": "БАТИМЕТРИЧНА КАРТА // 0-250 м фотичний шельф; 250-1200 м кабельний риф; 1200-2800 м соляний каньйон; 2800-4300 м машинне поле; 4300-5600 м басейн Atlas. Профіль швидкості звуку зламаний сіллю, теплом і металевим сміттям.",
+     "terminal": "ГЕОФІЗИЧНЕ ПОВІДОМЛЕННЯ DEEP REACH // Радіозгасання повне нижче верхнього океану. Акустичні канали активні вздовж соляних меж. Зони тіні біля навісів кабельного рифу, шлейфів Vent Forge і ремонтного субстрату Atlas. Єдиний сонарний повернення дна вважати неперевіреним.",
+     "audio": "Якщо розсіл дав тобі дно, проси другий пінг. Якщо другий погодився надто швидко, спитай, що тебе копіює.",
+     "in_game_wiki": "Акустична карта драбини тиску — карта виживання під виглядом даних зйомки. HECTON-8 не один рівний океан. Фотичний шельф тримає трохи світла Ran і штормове життя. Кабельний риф чіпляє інструменти й пінгери в старій інфраструктурі Deep Reach. Соляні каньйони гнуть плавучість і перетворюють сонар на театр. Машинні поля — заводи, розчавлені тиском, але досі відповідають логіці ремонту Atlas. Басейн Atlas темний, гарячий, металевий і живий поганими категоріями.\n\nЗвук — єдина практична лінія видимості нижче верхнього океану, але звук не буває чесним безкоштовно. Соляні шари замикають його. Термальні жерла рвуть його. Кабельні мати повертають його луною. Чисте повернення може бути стіною, слідом хижака, пам'яттю труби або реле, що копіює твою паніку. Правило: спуск дозволяють герметики, кисень, батарея, зворотний пінг і сумнів.",
+     "external_site": "Акустична карта драбини тиску робить океан HECTON-8 читабельною фізикою виживання. Глибина змінює світло, хімію, тиск, звук і довіру. Кожному приладу потрібен місцевий доказ.",
+     "external_site_article": "HECTON-8 побудований вертикально. Океан — драбина тиску й хімії: фотичний шельф, кабельний риф, соляний каньйон, машинне поле і басейн Atlas. Кожен шар змінює те, що гравець бачить, чує, ремонтує і чому вірить. Так спуск лишається фізичним. Глибший маршрут означає жорсткіші ущільнення, гірший таймінг повернення, дивну плавучість і докази, що приходять через пошкоджені прилади.\n\nРадіо здається рано, бо мінеральний океан з'їдає електромагнітний сигнал. Звук лишається корисним, але водяна колона змінює його. Щільний розсіл може впіймати імпульс і понести його вбік. Жар жерла може розірвати його. Кабельні рифи можуть відбивати сигнал так, що коридор здається відкритим. Карта страшна практичністю: сонарне повернення не істина, доки тиск, натяг лінії, рух і другий пінг не збіглися.",
+     "field_note": "Один пінг — чутка. Два пінги — переговори. Три пінги й туга лінія можуть бути маршрутом."
+    },
+    "zh_CN": {
+     "title": "压力阶梯声学图",
+     "scanner": "水深图 // 0-250米透光陆棚；250-1200米电缆礁；1200-2800米盐水峡谷；2800-4300米机器场；4300-5600米Atlas盆地。声速剖面被盐、热和金属残骸打碎。",
+     "terminal": "DEEP REACH地球物理通知 // 上层海洋以下无线电衰减完全。盐水界面沿线声学波导活跃。电缆礁悬垂、Vent Forge羽流和Atlas修复基质附近报告声影区。单次声呐地板回波按未验证处理。",
+     "audio": "如果盐水给你一个地板，要求第二次 ping。如果第二次同意得太快，就问是什么在复制你。",
+     "in_game_wiki": "压力阶梯声学图是一张伪装成测绘数据的生存地图。HECTON-8不是一片均匀海洋。透光陆棚保留少量Ran光和风暴生命。电缆礁把工具和声标挂进Deep Reach旧基础设施。盐水峡谷弯曲浮力，把声呐变成舞台。机器场是被压力压碎的工厂，仍在回应Atlas修复逻辑。Atlas盆地黑暗、炽热、金属化，并靠错误分类活着。\n\n上层海洋以下，声音是唯一实用视线，但声音不会免费诚实。盐层会困住它。热液喷口会撕裂它。电缆毯会回放它。干净回波可能是墙、捕食者尾迹、管道记忆，或把你的恐慌复制回来的中继。规则是：下潜由密封、氧气、电池、回程 ping 和怀疑共同许可。",
+     "external_site": "压力阶梯声学图把HECTON-8的海洋变成可阅读的生存物理。深度改变光、化学、压力、声音和信任。每件仪器都需要本地证据。",
+     "external_site_article": "HECTON-8是垂直建成的。海洋是一架压力和化学阶梯：透光陆棚、电缆礁、盐水峡谷、机器场、Atlas盆地。每个层带都会改变玩家能看见、听见、相信和修理的东西。所以下潜保持物理性。更深路线意味着更苛刻的密封、更差的回程时机、更怪的浮力，以及从损坏仪器里抵达的证据。\n\n无线电很早失败，因为矿物海洋吞噬电磁信号。声音仍有用，但水柱会重塑它。高密度盐水能困住脉冲并把它横向带走。喷口热流能撕开它。电缆礁能反弹信号，让走廊看起来开放。这张图可怕是因为它实用：声呐回波不是事实，直到压力、线张力、运动和第二次 ping 一起同意。",
+     "field_note": "一次 ping 是传闻。两次 ping 是谈判。三次 ping 加紧绷线也许才是路线。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

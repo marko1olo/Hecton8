@@ -1,792 +1,798 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT",
-      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
-      "surface_mask": 65,
-      "article_id": "tuning.resource_table_placeholder_contract",
-      "title_key": "applied_lore.resource_table_placeholder_contract.title",
-      "unlock": {
-        "primary": "unlock.resource_table_placeholder_contract",
-        "poi_tags": [
-          "poi.resource_table_contract_card",
-          "poi.balance_owner_stamp",
-          "poi.source_data_gate"
-        ],
-        "biome_tags": [
-          "biome.dossier_archive",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Resource Value Table Boundary",
-          "scanner": "Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "Do not hide fake math inside flavor.",
-          "in_game_wiki": "Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Resource Value Table Boundary",
-          "scanner": "Точные resource yields, stack limits и rarity curves принадлежат таблицам.",
-          "field_note": "RU LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "RU LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "Не прячь фейковую математику внутри flavor.",
-          "in_game_wiki": "RU LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "RU LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Resource Value Table Boundary",
-          "scanner": "JP LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "JP LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "JP LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "JP LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "JP LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "JP LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Resource Value Table Boundary",
-          "scanner": "CN LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "CN LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "CN LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "CN LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "CN LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "CN LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Resource Value Table Boundary",
-          "scanner": "FR LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "FR LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "FR LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "FR LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "FR LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "FR LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Resource Value Table Boundary",
-          "scanner": "ES LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "ES LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "ES LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "ES LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "ES LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "ES LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Resource Value Table Boundary",
-          "scanner": "DE LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "DE LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "DE LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "DE LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "DE LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "DE LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Resource Value Table Boundary",
-          "scanner": "PL LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "PL LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "PL LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "PL LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "PL LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "PL LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Resource Value Table Boundary",
-          "scanner": "UA LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "UA LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "UA LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "UA LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "UA LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "UA LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Resource Value Table Boundary",
-          "scanner": "AR LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "AR LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "AR LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "AR LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "AR LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "AR LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Resource Value Table Boundary",
-          "scanner": "ID LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "ID LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "ID LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "ID LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "ID LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "ID LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Resource Value Table Boundary",
-          "scanner": "KO LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "KO LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "KO LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "KO LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "KO LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "KO LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Resource Value Table Boundary",
-          "scanner": "HE LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "HE LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "HE LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "HE LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "HE LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "HE LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Resource Value Table Boundary",
-          "scanner": "PT LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "PT LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "PT LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "PT LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "PT LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "PT LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Resource Value Table Boundary",
-          "scanner": "NL LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
-          "field_note": "NL LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
-          "terminal": "NL LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
-          "audio": "NL LOC HOLD: Do not hide fake math inside flavor.",
-          "in_game_wiki": "NL LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
-          "external_site": "NL LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P196_RESOURCE_TABLE_PLACEHOLDER_CONTRACT",
+   "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+   "surface_mask": 65,
+   "article_id": "tuning.resource_table_placeholder_contract",
+   "title_key": "applied_lore.resource_table_placeholder_contract.title",
+   "unlock": {
+    "primary": "unlock.resource_table_placeholder_contract",
+    "poi_tags": [
+     "poi.resource_table_contract_card",
+     "poi.balance_owner_stamp",
+     "poi.source_data_gate"
+    ],
+    "biome_tags": [
+     "biome.dossier_archive",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Resource Value Table Boundary",
+     "scanner": "Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "Do not hide fake math inside flavor.",
+     "in_game_wiki": "Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
     },
-    {
-      "packet_id": "P197_ESCAPE_RECIPE_BALANCE_BANDS",
-      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
-      "surface_mask": 65,
-      "article_id": "tuning.escape_recipe_balance_bands",
-      "title_key": "applied_lore.escape_recipe_balance_bands.title",
-      "unlock": {
-        "primary": "unlock.escape_recipe_balance_bands",
-        "poi_tags": [
-          "poi.escape_recipe_band_sheet",
-          "poi.ascent_component_card",
-          "poi.fabricator_balance_gate"
-        ],
-        "biome_tags": [
-          "biome.p63_shallows",
-          "biome.atlas_basin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ascent Repair Certification Bands",
-          "scanner": "Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "A recipe is a route, not a shopping list.",
-          "in_game_wiki": "Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "Рецептам побега нужны bands до чисел: relay, seal, guidance, ascent energy, legal handshake и payload authority.",
-          "field_note": "Каждый escape recipe должен отвечать, какую physical failure он решает и какой deeper route forced.",
-          "terminal": "RU LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "Рецепт - это маршрут, а не список покупок.",
-          "in_game_wiki": "RU LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "RU LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "JP LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "JP LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "JP LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "JP LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "JP LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "JP LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "CN LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "CN LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "CN LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "CN LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "CN LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "CN LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "FR LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "FR LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "FR LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "FR LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "FR LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "FR LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "ES LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "ES LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "ES LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "ES LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "ES LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "ES LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "DE LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "DE LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "DE LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "DE LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "DE LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "DE LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "PL LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "PL LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "PL LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "PL LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "PL LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "PL LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "UA LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "UA LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "UA LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "UA LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "UA LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "UA LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "AR LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "AR LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "AR LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "AR LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "AR LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "AR LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "ID LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "ID LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "ID LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "ID LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "ID LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "ID LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "KO LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "KO LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "KO LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "KO LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "KO LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "KO LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "HE LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "HE LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "HE LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "HE LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "HE LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "HE LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "PT LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "PT LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "PT LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "PT LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "PT LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "PT LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Ascent Repair Certification Bands",
-          "scanner": "NL LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
-          "field_note": "NL LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
-          "terminal": "NL LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
-          "audio": "NL LOC HOLD: A recipe is a route, not a shopping list.",
-          "in_game_wiki": "NL LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
-          "external_site": "NL LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: Resource Value Table Boundary",
+     "scanner": "Точные resource yields, stack limits и rarity curves принадлежат таблицам.",
+     "field_note": "RU LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "RU LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "Не прячь фейковую математику внутри flavor.",
+     "in_game_wiki": "RU LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "RU LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
     },
-    {
-      "packet_id": "P198_RISK_REWARD_TABLE_BANDS",
-      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
-      "surface_mask": 65,
-      "article_id": "tuning.risk_reward_table_bands",
-      "title_key": "applied_lore.risk_reward_table_bands.title",
-      "unlock": {
-        "primary": "unlock.risk_reward_table_bands",
-        "poi_tags": [
-          "poi.risk_reward_band_card",
-          "poi.lien_reward_curve",
-          "poi.contract_seed_math_gate"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.dossier_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "The contract can get meaner without changing who you are.",
-          "in_game_wiki": "Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "ru_RU": {
-          "title": "Диапазоны таблиц риска и награды",
-          "scanner": "RU LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "Более жесткий контракт может платить больше, требовать лучшей custody, сокращать windows или прятать evidence глубже.",
-          "terminal": "RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth и Deep Reach clause weight. Не выдавать inherited strength.",
-          "audio": "Контракт может стать злее, не меняя того, кто ты.",
-          "in_game_wiki": "RU LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "RU LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "ja_JP": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "JP LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "JP LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "JP LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "JP LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "JP LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "JP LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "zh_CN": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "CN LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "CN LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "CN LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "CN LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "CN LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "CN LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "fr_FR": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "FR LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "FR LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "FR LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "FR LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "FR LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "FR LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "es_ES": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "ES LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "ES LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "ES LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "ES LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "ES LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "ES LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "de_DE": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "DE LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "DE LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "DE LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "DE LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "DE LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "DE LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "pl_PL": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "PL LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "PL LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "PL LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "PL LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "PL LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "PL LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "uk_UA": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "UA LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "UA LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "UA LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "UA LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "UA LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "UA LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "ar_SA": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "AR LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "AR LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "AR LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "AR LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "AR LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "AR LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "id_ID": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "ID LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "ID LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "ID LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "ID LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "ID LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "ID LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "ko_KR": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "KO LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "KO LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "KO LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "KO LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "KO LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "KO LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "he_IL": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "HE LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "HE LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "HE LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "HE LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "HE LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "HE LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "pt_BR": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "PT LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "PT LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "PT LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "PT LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "PT LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "PT LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        },
-        "nl_NL": {
-          "title": "Risk Reward Table Bands",
-          "scanner": "NL LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
-          "field_note": "NL LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
-          "terminal": "NL LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
-          "audio": "NL LOC HOLD: The contract can get meaner without changing who you are.",
-          "in_game_wiki": "NL LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
-          "external_site": "NL LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
-        }
-      }
+    "ja_JP": {
+     "title": "JP LOC HOLD: Resource Value Table Boundary",
+     "scanner": "JP LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "JP LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "JP LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "JP LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "JP LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "JP LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
     },
-    {
-      "packet_id": "P199_INVENTORY_STACK_TUNING_RULE",
-      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
-      "surface_mask": 65,
-      "article_id": "tuning.inventory_stack_tuning_rule",
-      "title_key": "applied_lore.inventory_stack_tuning_rule.title",
-      "unlock": {
-        "primary": "unlock.inventory_stack_tuning_rule",
-        "poi_tags": [
-          "poi.stack_policy_card",
-          "poi.pressure_container_label",
-          "poi.cargo_lien_meter"
-        ],
-        "biome_tags": [
-          "biome.fabricator_room",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Inventory Stack Pressure Rule",
-          "scanner": "Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "Inventory stacks должны выражать physical containment и cargo debt, а не arbitrary UI convenience.",
-          "field_note": "Blue debt, seals, samples и payload parts должны переносить pressure и custody logic в inventory.",
-          "terminal": "STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state и sample quality. Generic loot stacks rejected для critical resources.",
-          "audio": "Если это может сломать claim, оно не должно stack как scrap.",
-          "in_game_wiki": "RU LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "RU LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "JP LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "JP LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "JP LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "JP LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "JP LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "JP LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "CN LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "CN LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "CN LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "CN LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "CN LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "CN LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "FR LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "FR LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "FR LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "FR LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "FR LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "FR LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "ES LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "ES LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "ES LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "ES LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "ES LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "ES LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "DE LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "DE LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "DE LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "DE LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "DE LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "DE LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "PL LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "PL LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "PL LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "PL LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "PL LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "PL LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "UA LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "UA LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "UA LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "UA LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "UA LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "UA LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "AR LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "AR LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "AR LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "AR LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "AR LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "AR LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "ID LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "ID LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "ID LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "ID LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "ID LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "ID LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "KO LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "KO LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "KO LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "KO LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "KO LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "KO LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "HE LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "HE LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "HE LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "HE LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "HE LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "HE LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "PT LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "PT LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "PT LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "PT LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "PT LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "PT LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Inventory Stack Pressure Rule",
-          "scanner": "NL LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
-          "field_note": "NL LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
-          "terminal": "NL LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
-          "audio": "NL LOC HOLD: If it can break your claim, it should not stack like scrap.",
-          "in_game_wiki": "NL LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
-          "external_site": "NL LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
-        }
-      }
+    "zh_CN": {
+     "title": "CN LOC HOLD: Resource Value Table Boundary",
+     "scanner": "CN LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "CN LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "CN LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "CN LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "CN LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "CN LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
     },
-    {
-      "packet_id": "P200_NATIVE_LOCALIZATION_PASS_CONTRACT",
-      "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
-      "surface_mask": 65,
-      "article_id": "tuning.native_localization_pass_contract",
-      "title_key": "applied_lore.native_localization_pass_contract.title",
-      "unlock": {
-        "primary": "unlock.native_localization_pass_contract",
-        "poi_tags": [
-          "poi.localization_pass_contract",
-          "poi.rtl_font_swap_gate",
-          "poi.string_pool_owner_stamp"
-        ],
-        "biome_tags": [
-          "biome.dossier_archive",
-          "biome.public_archive"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Native Text Release Contract",
-          "scanner": "Localized text is baked, reviewed content, not live translation.",
-          "field_note": "Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "Translate the words. Do not move the evidence.",
-          "in_game_wiki": "Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Native Text Release Contract",
-          "scanner": "RU LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "RU LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "RU LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "Переведи слова. Не двигай доказательства.",
-          "in_game_wiki": "RU LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "RU LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Native Text Release Contract",
-          "scanner": "JP LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "JP LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "JP LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "JP LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "JP LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "JP LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Native Text Release Contract",
-          "scanner": "CN LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "CN LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "CN LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "CN LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "CN LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "CN LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Native Text Release Contract",
-          "scanner": "FR LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "FR LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "FR LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "FR LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "FR LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "FR LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Native Text Release Contract",
-          "scanner": "ES LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "ES LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "ES LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "ES LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "ES LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "ES LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Native Text Release Contract",
-          "scanner": "DE LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "DE LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "DE LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "DE LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "DE LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "DE LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Native Text Release Contract",
-          "scanner": "PL LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "PL LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "PL LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "PL LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "PL LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "PL LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Native Text Release Contract",
-          "scanner": "UA LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "UA LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "UA LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "UA LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "UA LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "UA LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Native Text Release Contract",
-          "scanner": "AR LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "AR LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "AR LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "AR LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "AR LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "AR LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Native Text Release Contract",
-          "scanner": "ID LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "ID LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "ID LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "ID LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "ID LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "ID LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Native Text Release Contract",
-          "scanner": "KO LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "KO LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "KO LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "KO LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "KO LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "KO LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Native Text Release Contract",
-          "scanner": "HE LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "HE LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "HE LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "HE LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "HE LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "HE LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Native Text Release Contract",
-          "scanner": "PT LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "PT LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "PT LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "PT LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "PT LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "PT LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Native Text Release Contract",
-          "scanner": "NL LOC HOLD: Localized text is baked, reviewed content, not live translation.",
-          "field_note": "NL LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
-          "terminal": "NL LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
-          "audio": "NL LOC HOLD: Translate the words. Do not move the evidence.",
-          "in_game_wiki": "NL LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
-          "external_site": "NL LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Resource Value Table Boundary",
+     "scanner": "FR LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "FR LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "FR LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "FR LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "FR LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "FR LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Resource Value Table Boundary",
+     "scanner": "ES LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "ES LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "ES LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "ES LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "ES LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "ES LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Resource Value Table Boundary",
+     "scanner": "DE LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "DE LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "DE LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "DE LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "DE LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "DE LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Resource Value Table Boundary",
+     "scanner": "PL LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "PL LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "PL LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "PL LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "PL LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "PL LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Resource Value Table Boundary",
+     "scanner": "UA LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "UA LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "UA LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "UA LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "UA LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "UA LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Resource Value Table Boundary",
+     "scanner": "AR LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "AR LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "AR LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "AR LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "AR LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "AR LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Resource Value Table Boundary",
+     "scanner": "ID LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "ID LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "ID LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "ID LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "ID LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "ID LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Resource Value Table Boundary",
+     "scanner": "KO LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "KO LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "KO LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "KO LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "KO LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "KO LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Resource Value Table Boundary",
+     "scanner": "HE LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "HE LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "HE LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "HE LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "HE LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "HE LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Resource Value Table Boundary",
+     "scanner": "PT LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "PT LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "PT LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "PT LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "PT LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "PT LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Resource Value Table Boundary",
+     "scanner": "NL LOC HOLD: Exact resource yields, stack limits and rarity curves are table-owned.",
+     "field_note": "NL LOC HOLD: Resource prose owns identity, pressure behavior, and evidence meaning. Value tables own quantities.",
+     "terminal": "NL LOC HOLD: RESOURCE VALUE BOUNDARY: resource id, category, depth band, pressure stage, containment class, base yield, rarity weight, stack policy, and route tag stay in stable value tables.",
+     "audio": "NL LOC HOLD: Do not hide fake math inside flavor.",
+     "in_game_wiki": "NL LOC HOLD: Resource Value Table Boundary keeps resource identity stable while quantities remain adjustable through table records.",
+     "external_site": "NL LOC HOLD: Resource identity, pressure behavior, and evidence role are public canon; exact yields and rarity curves remain table-owned records."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P197_ESCAPE_RECIPE_BALANCE_BANDS",
+   "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+   "surface_mask": 65,
+   "article_id": "tuning.escape_recipe_balance_bands",
+   "title_key": "applied_lore.escape_recipe_balance_bands.title",
+   "unlock": {
+    "primary": "unlock.escape_recipe_balance_bands",
+    "poi_tags": [
+     "poi.escape_recipe_band_sheet",
+     "poi.ascent_component_card",
+     "poi.fabricator_balance_gate"
+    ],
+    "biome_tags": [
+     "biome.p63_shallows",
+     "biome.atlas_basin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ascent Repair Certification Bands",
+     "scanner": "Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "A recipe is a route, not a shopping list.",
+     "in_game_wiki": "Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "Рецептам побега нужны bands до чисел: relay, seal, guidance, ascent energy, legal handshake и payload authority.",
+     "field_note": "Каждый escape recipe должен отвечать, какую physical failure он решает и какой deeper route forced.",
+     "terminal": "RU LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "Рецепт - это маршрут, а не список покупок.",
+     "in_game_wiki": "RU LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "RU LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "JP LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "JP LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "JP LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "JP LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "JP LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "JP LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "CN LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "CN LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "CN LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "CN LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "CN LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "CN LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "FR LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "FR LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "FR LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "FR LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "FR LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "FR LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "ES LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "ES LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "ES LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "ES LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "ES LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "ES LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "DE LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "DE LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "DE LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "DE LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "DE LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "DE LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "PL LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "PL LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "PL LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "PL LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "PL LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "PL LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "UA LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "UA LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "UA LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "UA LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "UA LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "UA LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "AR LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "AR LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "AR LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "AR LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "AR LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "AR LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "ID LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "ID LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "ID LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "ID LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "ID LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "ID LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "KO LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "KO LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "KO LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "KO LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "KO LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "KO LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "HE LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "HE LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "HE LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "HE LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "HE LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "HE LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "PT LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "PT LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "PT LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "PT LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "PT LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "PT LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Ascent Repair Certification Bands",
+     "scanner": "NL LOC HOLD: Escape recipes need bands before numbers: relay, seal, guidance, ascent energy, legal handshake and payload authority.",
+     "field_note": "NL LOC HOLD: Every escape recipe should ask what physical failure it solves and what deeper route it forces.",
+     "terminal": "NL LOC HOLD: RECIPE BANDS: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority. Each band carries count, quality, pressure stage, and certification requirements.",
+     "audio": "NL LOC HOLD: A recipe is a route, not a shopping list.",
+     "in_game_wiki": "NL LOC HOLD: Ascent Repair Certification Bands keep crafting tied to survival engineering: emergency patch, rated repair, containment-grade, ascent-qualified, and Atlas-authority hardware.",
+     "external_site": "NL LOC HOLD: Ascent repair certification separates emergency patchwork from ascent-qualified hardware by pressure stage, certification, and failure consequence."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P198_RISK_REWARD_TABLE_BANDS",
+   "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+   "surface_mask": 65,
+   "article_id": "tuning.risk_reward_table_bands",
+   "title_key": "applied_lore.risk_reward_table_bands.title",
+   "unlock": {
+    "primary": "unlock.risk_reward_table_bands",
+    "poi_tags": [
+     "poi.risk_reward_band_card",
+     "poi.lien_reward_curve",
+     "poi.contract_seed_math_gate"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.dossier_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "The contract can get meaner without changing who you are.",
+     "in_game_wiki": "Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "ru_RU": {
+     "title": "Диапазоны таблиц риска и награды",
+     "scanner": "RU LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "Более жесткий контракт может платить больше, требовать лучшей custody, сокращать windows или прятать evidence глубже.",
+     "terminal": "RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth и Deep Reach clause weight. Не выдавать inherited strength.",
+     "audio": "Контракт может стать злее, не меняя того, кто ты.",
+     "in_game_wiki": "RU LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "RU LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "ja_JP": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "JP LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "JP LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "JP LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "JP LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "JP LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "JP LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "zh_CN": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "CN LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "CN LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "CN LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "CN LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "CN LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "CN LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "fr_FR": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "FR LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "FR LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "FR LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "FR LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "FR LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "FR LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "es_ES": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "ES LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "ES LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "ES LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "ES LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "ES LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "ES LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "de_DE": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "DE LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "DE LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "DE LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "DE LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "DE LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "DE LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "pl_PL": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "PL LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "PL LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "PL LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "PL LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "PL LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "PL LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "uk_UA": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "UA LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "UA LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "UA LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "UA LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "UA LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "UA LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "ar_SA": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "AR LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "AR LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "AR LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "AR LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "AR LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "AR LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "id_ID": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "ID LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "ID LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "ID LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "ID LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "ID LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "ID LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "ko_KR": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "KO LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "KO LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "KO LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "KO LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "KO LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "KO LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "he_IL": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "HE LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "HE LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "HE LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "HE LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "HE LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "HE LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "pt_BR": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "PT LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "PT LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "PT LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "PT LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "PT LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "PT LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    },
+    "nl_NL": {
+     "title": "Risk Reward Table Bands",
+     "scanner": "NL LOC HOLD: Risk and reward move as contract pressure, not as a binary difficulty switch.",
+     "field_note": "NL LOC HOLD: A harder contract can pay more, demand better custody, cut windows shorter or hide evidence deeper.",
+     "terminal": "NL LOC HOLD: RISK TABLE BANDS: lien severity, payout ceiling, storm window, quarantine delay, sample custody grade, evidence-order depth and Deep Reach clause weight. Do not grant inherited strength.",
+     "audio": "NL LOC HOLD: The contract can get meaner without changing who you are.",
+     "in_game_wiki": "NL LOC HOLD: Risk Reward Table Bands track replay pressure through lien severity, payout ceiling, storm window, custody grade, evidence order, and clause weight.",
+     "external_site": "NL LOC HOLD: Contract risk changes through debt, custody, storm timing, evidence depth, and Deep Reach clause pressure without granting inherited strength."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P199_INVENTORY_STACK_TUNING_RULE",
+   "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+   "surface_mask": 65,
+   "article_id": "tuning.inventory_stack_tuning_rule",
+   "title_key": "applied_lore.inventory_stack_tuning_rule.title",
+   "unlock": {
+    "primary": "unlock.inventory_stack_tuning_rule",
+    "poi_tags": [
+     "poi.stack_policy_card",
+     "poi.pressure_container_label",
+     "poi.cargo_lien_meter"
+    ],
+    "biome_tags": [
+     "biome.fabricator_room",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Inventory Stack Pressure Rule",
+     "scanner": "Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "Inventory stacks должны выражать physical containment и cargo debt, а не arbitrary UI convenience.",
+     "field_note": "Blue debt, seals, samples и payload parts должны переносить pressure и custody logic в inventory.",
+     "terminal": "STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state и sample quality. Generic loot stacks rejected для critical resources.",
+     "audio": "Если это может сломать claim, оно не должно stack как scrap.",
+     "in_game_wiki": "RU LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "RU LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "JP LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "JP LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "JP LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "JP LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "JP LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "JP LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "CN LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "CN LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "CN LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "CN LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "CN LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "CN LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "FR LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "FR LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "FR LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "FR LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "FR LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "FR LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "ES LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "ES LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "ES LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "ES LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "ES LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "ES LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "DE LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "DE LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "DE LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "DE LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "DE LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "DE LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "PL LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "PL LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "PL LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "PL LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "PL LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "PL LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "UA LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "UA LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "UA LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "UA LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "UA LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "UA LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "AR LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "AR LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "AR LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "AR LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "AR LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "AR LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "ID LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "ID LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "ID LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "ID LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "ID LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "ID LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "KO LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "KO LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "KO LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "KO LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "KO LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "KO LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "HE LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "HE LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "HE LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "HE LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "HE LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "HE LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "PT LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "PT LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "PT LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "PT LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "PT LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "PT LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Inventory Stack Pressure Rule",
+     "scanner": "NL LOC HOLD: Inventory stacks must express physical containment and cargo debt, not arbitrary UI convenience.",
+     "field_note": "NL LOC HOLD: Blue debt, seals, samples and payload parts should carry pressure and custody logic into inventory.",
+     "terminal": "NL LOC HOLD: STACK RULE: stack by containment vessel, pressure class, contamination stage, carrier lien mass, certification state and sample quality. Generic loot stacks are rejected for critical resources.",
+     "audio": "NL LOC HOLD: If it can break your claim, it should not stack like scrap.",
+     "in_game_wiki": "NL LOC HOLD: Inventory Stack Pressure Rule keeps salvage weight physical and legible through vessel class, pressure rating, contamination stage, lien mass, certification, and sample quality.",
+     "external_site": "NL LOC HOLD: Critical resources do not stack like scrap: containment, contamination, pressure, and custody decide what can travel together."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P200_NATIVE_LOCALIZATION_PASS_CONTRACT",
+   "release_set_id": "RS040_NUMERIC_TUNING_SOURCE_RULES",
+   "surface_mask": 65,
+   "article_id": "tuning.native_localization_pass_contract",
+   "title_key": "applied_lore.native_localization_pass_contract.title",
+   "unlock": {
+    "primary": "unlock.native_localization_pass_contract",
+    "poi_tags": [
+     "poi.localization_pass_contract",
+     "poi.rtl_font_swap_gate",
+     "poi.string_pool_owner_stamp"
+    ],
+    "biome_tags": [
+     "biome.dossier_archive",
+     "biome.public_archive"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Native Text Release Contract",
+     "scanner": "Localized text is baked, reviewed content, not live translation.",
+     "field_note": "Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "Translate the words. Do not move the evidence.",
+     "in_game_wiki": "Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Native Text Release Contract",
+     "scanner": "RU LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "RU LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "RU LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "Переведи слова. Не двигай доказательства.",
+     "in_game_wiki": "RU LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "RU LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Native Text Release Contract",
+     "scanner": "JP LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "JP LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "JP LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "JP LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "JP LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "JP LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Native Text Release Contract",
+     "scanner": "CN LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "CN LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "CN LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "CN LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "CN LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "CN LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Native Text Release Contract",
+     "scanner": "FR LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "FR LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "FR LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "FR LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "FR LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "FR LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Native Text Release Contract",
+     "scanner": "ES LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "ES LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "ES LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "ES LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "ES LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "ES LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Native Text Release Contract",
+     "scanner": "DE LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "DE LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "DE LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "DE LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "DE LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "DE LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Native Text Release Contract",
+     "scanner": "PL LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "PL LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "PL LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "PL LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "PL LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "PL LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Native Text Release Contract",
+     "scanner": "UA LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "UA LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "UA LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "UA LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "UA LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "UA LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Native Text Release Contract",
+     "scanner": "AR LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "AR LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "AR LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "AR LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "AR LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "AR LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Native Text Release Contract",
+     "scanner": "ID LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "ID LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "ID LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "ID LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "ID LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "ID LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Native Text Release Contract",
+     "scanner": "KO LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "KO LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "KO LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "KO LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "KO LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "KO LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Native Text Release Contract",
+     "scanner": "HE LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "HE LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "HE LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "HE LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "HE LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "HE LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Native Text Release Contract",
+     "scanner": "PT LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "PT LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "PT LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "PT LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "PT LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "PT LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Native Text Release Contract",
+     "scanner": "NL LOC HOLD: Localized text is baked, reviewed content, not live translation.",
+     "field_note": "NL LOC HOLD: Draft multilingual rows can exist during production; release text needs native review, script-direction proof, font coverage, and baked text verification.",
+     "terminal": "NL LOC HOLD: NATIVE TEXT CONTRACT: stable packet IDs, stable personal names, script-direction proof, font coverage, subtitle timing, baked text rows, and native review before publication lock.",
+     "audio": "NL LOC HOLD: Translate the words. Do not move the evidence.",
+     "in_game_wiki": "NL LOC HOLD: Native Text Release Contract keeps multilingual records fast, stable, readable, and respectful of names, units, and directionality.",
+     "external_site": "NL LOC HOLD: Native text release depends on review, readable glyph coverage, stable names, correct directionality, subtitle timing, and baked publication rows."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

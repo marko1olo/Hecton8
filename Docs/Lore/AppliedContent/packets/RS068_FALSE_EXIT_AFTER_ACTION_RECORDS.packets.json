@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P336_MATERIAL_EXIT_RECEIPT_AUDIT",
-      "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
-      "article_id": "applied_lore.material_exit_receipt_audit",
-      "title_key": "applied_lore.material_exit_receipt_audit.title",
-      "unlock": {
-        "primary": "unlock.material_exit_receipt_audit",
-        "poi_tags": [
-          "poi.material_exit_receipt",
-          "poi.unreconciled_name_list",
-          "poi.payout_after_action_card"
-        ],
-        "biome_tags": [
-          "biome.ending",
-          "biome.contract"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Material Exit Receipt Audit",
-          "scanner": "Exit receipt validates recovered mass. Evidence custody is broken; worker names remain unaccepted.",
-          "terminal": "AFTER-ACTION RECEIPT: salvage payout released for recoverable mass and contracted hazard. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger rejected as non-custodial evidence. Exit granted; case remains owned by the carrier.",
-          "audio": "You got paid. That is not the same as getting out clean.",
-          "in_game_wiki": "Material Exit Receipt Audit makes the money ending legitimate and bitter. The player extracted value and survived the contract, but the institution still owns the record, the names, and the official shape of the disaster.",
-          "external_site": "HECTON-8 false exits are not fake fail screens. They are real outcomes that expose what the player chose to value: mass, proof, names, freedom, or the right to decide who owns the story after escape.",
-          "field_note": "After-action record for a paid but morally incomplete exit: reward clears, evidence chain fails, names stay outside official custody."
-        },
-        "ru_RU": {
-          "title": "Аудит квитанции материального выхода",
-          "scanner": "Квитанция выхода подтверждает извлеченную массу. Цепочка доказательств сломана; имена рабочих не приняты.",
-          "terminal": "КВИТАНЦИЯ AFTER-ACTION: сальважная выплата выдана за извлекаемую массу и контрактный риск. Правда координат не разрешена. Статус ответственности Deep Reach не изменен. Реестр имен рабочих отклонен как доказательство вне цепочки хранения. Выход разрешен; дело остается собственностью носителя.",
-          "audio": "Тебе заплатили. Это не значит, что ты вышел чистым.",
-          "in_game_wiki": "Аудит квитанции делает денежную концовку настоящей и горькой. Игрок вынес ценность и пережил контракт, но институт все еще владеет записью, именами и официальной формой катастрофы.",
-          "external_site": "Ложные выходы HECTON-8 не являются фальшивыми экранами провала. Это реальные исходы, показывающие, что игрок решил ценить: массу, доказательство, имена, свободу или право решать, кому принадлежит история после бегства.",
-          "field_note": "After-action запись для оплаченного, но морально незавершенного выхода: награда закрыта, evidence chain провалена, имена остаются вне официального хранения."
-        },
-        "ja_JP": {
-          "title": "物資退出領収監査",
-          "scanner": "退出領収は回収質量を有効と認める。証拠保管は破綻し、作業員名簿は未承認のまま。",
-          "terminal": "AFTER-ACTION 領収: 回収可能質量と契約危険に対するサルベージ支払いを解除。座標の真実は未解決。Deep Reach の責任状態は不変。作業員名簿は非保管証拠として拒否。退出は許可、案件はキャリア所有のまま。",
-          "audio": "金は出た。きれいに出られたという意味ではない。",
-          "in_game_wiki": "物資退出領収監査は、金銭エンディングを正当で苦いものにする。プレイヤーは価値を持ち出し契約を生き残ったが、組織はなお記録、名前、災害の公式な形を所有している。",
-          "external_site": "HECTON-8 の偽出口は偽の失敗画面ではない。質量、証拠、名前、自由、逃亡後に物語を誰が所有するか。そのどれをプレイヤーが重んじたかを露出する、本物の結末だ。",
-          "field_note": "報酬は通るが倫理的には未完の退出用 after-action 記録。報酬は精算、証拠連鎖は失敗、名前は公式保管の外に残る。"
-        },
-        "zh_CN": {
-          "title": "物资脱离收据审计",
-          "scanner": "脱离收据确认回收质量。证据监管链断裂；工人姓名仍未被接受。",
-          "terminal": "AFTER-ACTION 收据：已按可回收质量和合同风险释放打捞付款。坐标真相未解决。Deep Reach 责任状态未改变。工人姓名账册因不在监管链内被拒绝为证据。准许脱离；案件仍由载舰拥有。",
-          "audio": "你拿到了钱。这不等于干净离开。",
-          "in_game_wiki": "物资脱离收据审计让金钱结局既真实又苦涩。玩家提取了价值并活过合同，但机构仍拥有记录、姓名，以及灾难的官方形状。",
-          "external_site": "HECTON-8 的假出口不是假的失败界面。它们是真实结果，暴露玩家选择重视什么：质量、证据、姓名、自由，或逃离后由谁拥有这个故事的权利。",
-          "field_note": "用于已付款但道德上未完成的退出记录：奖励结清，证据链失败，姓名仍在官方监管之外。"
-        },
-        "fr_FR": {
-          "title": "Audit du reçu de sortie matérielle",
-          "scanner": "Le reçu de sortie valide la masse récupérée. La garde des preuves est brisée ; les noms des ouvriers restent refusés.",
-          "terminal": "REÇU AFTER-ACTION : paiement de sauvetage libéré pour masse récupérable et risque contractuel. Vérité des coordonnées non résolue. Statut de responsabilité Deep Reach inchangé. Registre des noms d'ouvriers rejeté comme preuve hors garde. Sortie accordée ; le dossier reste propriété du transporteur.",
-          "audio": "Tu as été payé. Ce n'est pas sortir propre.",
-          "in_game_wiki": "L'audit du reçu rend la fin argent légitime et amère. Le joueur a extrait de la valeur et survécu au contrat, mais l'institution possède encore le dossier, les noms et la forme officielle du désastre.",
-          "external_site": "Les fausses sorties de HECTON-8 ne sont pas des écrans d'échec déguisés. Ce sont de vrais résultats qui montrent ce que le joueur a choisi de valoriser : masse, preuve, noms, liberté ou droit de décider à qui appartient l'histoire après la fuite.",
-          "field_note": "Dossier d'après-action pour une sortie payée mais moralement incomplète : la récompense passe, la chaîne de preuve échoue, les noms restent hors garde officielle."
-        },
-        "es_ES": {
-          "title": "Auditoría del recibo de salida material",
-          "scanner": "El recibo de salida valida la masa recuperada. La custodia de pruebas está rota; los nombres de trabajadores siguen sin aceptarse.",
-          "terminal": "RECIBO AFTER-ACTION: pago de salvamento liberado por masa recuperable y riesgo contratado. Verdad de coordenadas sin resolver. Estado de responsabilidad de Deep Reach sin cambios. Libro de nombres de trabajadores rechazado como prueba no custodiada. Salida concedida; el caso sigue siendo propiedad del portador.",
-          "audio": "Te pagaron. Eso no es lo mismo que salir limpio.",
-          "in_game_wiki": "La auditoría del recibo hace que el final de dinero sea legítimo y amargo. El jugador extrajo valor y sobrevivió al contrato, pero la institución aún posee el registro, los nombres y la forma oficial del desastre.",
-          "external_site": "Las falsas salidas de HECTON-8 no son pantallas falsas de fracaso. Son resultados reales que exponen qué eligió valorar el jugador: masa, prueba, nombres, libertad o el derecho a decidir quién posee la historia tras escapar.",
-          "field_note": "Registro posterior a la acción para una salida pagada pero moralmente incompleta: la recompensa se liquida, la cadena de pruebas falla, los nombres quedan fuera de custodia oficial."
-        },
-        "de_DE": {
-          "title": "Audit der Materialausgangsquittung",
-          "scanner": "Ausgangsquittung bestätigt geborgene Masse. Beweisverwahrung ist gebrochen; Arbeiternamen bleiben unangenommen.",
-          "terminal": "AFTER-ACTION-QUITTUNG: Bergungszahlung für rückholbare Masse und Vertragsgefahr freigegeben. Koordinatenwahrheit ungelöst. Haftungsstatus von Deep Reach unverändert. Arbeiternamen-Ledger als nicht verwahrter Beweis zurückgewiesen. Ausgang gewährt; der Fall bleibt Eigentum des Trägers.",
-          "audio": "Du wurdest bezahlt. Das heißt nicht, dass du sauber raus bist.",
-          "in_game_wiki": "Das Audit der Materialausgangsquittung macht das Geldende legitim und bitter. Der Spieler hat Wert geborgen und den Vertrag überlebt, doch die Institution besitzt weiter die Akte, die Namen und die offizielle Form der Katastrophe.",
-          "external_site": "HECTON-8s falsche Ausgänge sind keine falschen Fail-Screens. Es sind echte Ergebnisse, die zeigen, was der Spieler wertgeschätzt hat: Masse, Beweis, Namen, Freiheit oder das Recht zu entscheiden, wem die Geschichte nach der Flucht gehört.",
-          "field_note": "Nachaktionsdatensatz für einen bezahlten, aber moralisch unvollständigen Ausgang: Belohnung wird freigegeben, Beweiskette scheitert, Namen bleiben außerhalb offizieller Verwahrung."
-        },
-        "pl_PL": {
-          "title": "Audyt kwitu wyjścia materiałowego",
-          "scanner": "Kwit wyjścia potwierdza odzyskaną masę. Dozór dowodów jest przerwany; nazwiska pracowników nie zostały przyjęte.",
-          "terminal": "KWIT AFTER-ACTION: wypłata salvage zwolniona za odzyskiwalną masę i ryzyko kontraktowe. Prawda współrzędnych nierozstrzygnięta. Status odpowiedzialności Deep Reach bez zmian. Rejestr nazwisk pracowników odrzucony jako dowód poza dozorem. Wyjście przyznane; sprawa pozostaje własnością nośnika.",
-          "audio": "Zapłacili ci. To nie znaczy, że wyszedłeś czysto.",
-          "in_game_wiki": "Audyt kwitu sprawia, że zakończenie za pieniądze jest prawdziwe i gorzkie. Gracz wydobył wartość i przetrwał kontrakt, ale instytucja nadal posiada zapis, nazwiska i oficjalny kształt katastrofy.",
-          "external_site": "Fałszywe wyjścia HECTON-8 nie są udawanymi ekranami porażki. To realne wyniki ujawniające, co gracz wybrał jako wartość: masę, dowód, nazwiska, wolność albo prawo decydowania, kto po ucieczce posiada tę historię.",
-          "field_note": "Raport poakcyjny dla płatnego, ale moralnie niepełnego wyjścia: nagroda przechodzi, łańcuch dowodowy zawodzi, nazwiska pozostają poza oficjalnym dozorem."
-        },
-        "uk_UA": {
-          "title": "Аудит квитанції матеріального виходу",
-          "scanner": "Квитанція виходу підтверджує вилучену масу. Ланцюг доказів зламаний; імена працівників не прийняті.",
-          "terminal": "КВИТАНЦІЯ AFTER-ACTION: сальважну виплату видано за вилучувану масу й контрактний ризик. Правда координат не вирішена. Статус відповідальності Deep Reach не змінено. Реєстр імен працівників відхилено як доказ поза ланцюгом зберігання. Вихід дозволено; справа лишається власністю носія.",
-          "audio": "Тобі заплатили. Це не означає, що ти вийшов чисто.",
-          "in_game_wiki": "Аудит квитанції робить грошову кінцівку справжньою й гіркою. Гравець виніс цінність і пережив контракт, але інституція все ще володіє записом, іменами й офіційною формою катастрофи.",
-          "external_site": "Хибні виходи HECTON-8 не є фальшивими екранами поразки. Це реальні наслідки, які показують, що гравець вирішив цінувати: масу, доказ, імена, свободу або право визначити, кому належить історія після втечі.",
-          "field_note": "Післядійний запис для оплаченого, але морально незавершеного виходу: винагорода закрита, evidence chain провалена, імена лишаються поза офіційним зберіганням."
-        },
-        "ar_SA": {
-          "title": "تدقيق إيصال الخروج المادي",
-          "scanner": "إيصال الخروج يثبت الكتلة المستعادة. حيازة الأدلة مكسورة؛ أسماء العمال لا تزال غير مقبولة.",
-          "terminal": "إيصال AFTER-ACTION: أفرج عن دفعة الإنقاذ للكتلة القابلة للاستعادة والخطر المتعاقد عليه. حقيقة الإحداثيات غير محسومة. حالة مسؤولية Deep Reach بلا تغيير. رفض دفتر أسماء العمال كدليل خارج الحيازة. الخروج ممنوح؛ القضية تبقى ملكا للناقل.",
-          "audio": "لقد قبضت المال. هذا لا يعني أنك خرجت نظيفا.",
-          "in_game_wiki": "يجعل تدقيق الإيصال نهاية المال شرعية ومرة. استخرج اللاعب قيمة ونجا من العقد، لكن المؤسسة ما زالت تملك السجل والأسماء والشكل الرسمي للكارثة.",
-          "external_site": "خروجات HECTON-8 الزائفة ليست شاشات فشل وهمية. إنها نتائج حقيقية تكشف ما اختار اللاعب تقديره: الكتلة، الدليل، الأسماء، الحرية، أو حق تقرير من يملك القصة بعد الهرب.",
-          "field_note": "سجل ما بعد الفعل لخروج مدفوع لكنه ناقص أخلاقيا: المكافأة تصفى، سلسلة الأدلة تفشل، والأسماء تبقى خارج الحيازة الرسمية."
-        },
-        "id_ID": {
-          "title": "Audit Tanda Terima Keluar Material",
-          "scanner": "Tanda terima keluar memvalidasi massa yang dipulihkan. Rantai bukti rusak; nama pekerja tetap tidak diterima.",
-          "terminal": "TANDA TERIMA AFTER-ACTION: pembayaran salvage dilepas untuk massa yang dapat dipulihkan dan bahaya kontrak. Kebenaran koordinat belum terselesaikan. Status liabilitas Deep Reach tidak berubah. Buku nama pekerja ditolak sebagai bukti non-kustodial. Keluar diizinkan; kasus tetap dimiliki carrier.",
-          "audio": "Kau dibayar. Itu tidak sama dengan keluar bersih.",
-          "in_game_wiki": "Audit ini membuat akhir uang terasa sah dan pahit. Pemain mengekstrak nilai dan bertahan dari kontrak, tetapi institusi masih memiliki catatan, nama, dan bentuk resmi bencana.",
-          "external_site": "Keluar palsu HECTON-8 bukan layar gagal palsu. Itu hasil nyata yang memperlihatkan apa yang dipilih pemain untuk dihargai: massa, bukti, nama, kebebasan, atau hak menentukan siapa yang memiliki cerita setelah kabur.",
-          "field_note": "Catatan pasca-aksi untuk keluar yang dibayar tetapi belum selesai secara moral: hadiah cair, rantai bukti gagal, nama tetap di luar kustodi resmi."
-        },
-        "ko_KR": {
-          "title": "물자 탈출 영수 감사",
-          "scanner": "탈출 영수증이 회수 질량을 검증했다. 증거 보관은 끊겼고, 작업자 이름은 아직 인정되지 않았다.",
-          "terminal": "AFTER-ACTION 영수: 회수 가능 질량과 계약 위험에 대한 salvage 지급 해제. 좌표 진실 미해결. Deep Reach 책임 상태 변화 없음. 작업자 이름 장부는 비보관 증거로 거부. 탈출 승인. 사건은 carrier 소유로 유지된다.",
-          "audio": "돈은 받았다. 깨끗이 나온 것과는 다르다.",
-          "in_game_wiki": "물자 탈출 영수 감사는 돈 엔딩을 정당하고도 씁쓸하게 만든다. 플레이어는 가치를 빼내고 계약에서 살아남았지만, 기관은 여전히 기록과 이름, 재난의 공식 형태를 소유한다.",
-          "external_site": "HECTON-8의 거짓 탈출은 가짜 실패 화면이 아니다. 그것은 플레이어가 무엇을 가치로 삼았는지 드러내는 실제 결과다. 질량, 증거, 이름, 자유, 또는 탈출 뒤 이야기를 누가 소유할지 정할 권리.",
-          "field_note": "돈은 받았지만 도덕적으로 미완인 탈출을 위한 사후 기록. 보상은 정산되고, 증거 연쇄는 실패하며, 이름들은 공식 보관 밖에 남는다."
-        },
-        "he_IL": {
-          "title": "ביקורת קבלת יציאה חומרית",
-          "scanner": "קבלת היציאה מאשרת מסה שחולצה. משמורת הראיות שבורה; שמות העובדים עדיין לא התקבלו.",
-          "terminal": "קבלת AFTER-ACTION: תשלום salvage שוחרר עבור מסה ברת חילוץ וסיכון חוזי. אמת הקואורדינטות לא נפתרה. מצב האחריות של Deep Reach לא השתנה. פנקס שמות העובדים נדחה כראיה שאינה במשמורת. יציאה אושרה; התיק נשאר בבעלות הנשא.",
-          "audio": "קיבלת כסף. זה לא אותו דבר כמו לצאת נקי.",
-          "in_game_wiki": "ביקורת הקבלה הופכת את סוף הכסף ללגיטימי ומר. השחקן הוציא ערך ושרד את החוזה, אבל המוסד עדיין מחזיק ברשומה, בשמות ובצורה הרשמית של האסון.",
-          "external_site": "היציאות השקריות של HECTON-8 אינן מסכי כישלון מזויפים. הן תוצאות אמיתיות שחושפות מה השחקן בחר להעריך: מסה, הוכחה, שמות, חירות או הזכות לקבוע למי שייך הסיפור אחרי הבריחה.",
-          "field_note": "רשומת אחרי פעולה ליציאה ששולמה אך אינה שלמה מוסרית: התגמול עובר, שרשרת הראיות נכשלת, השמות נשארים מחוץ למשמורת רשמית."
-        },
-        "pt_BR": {
-          "title": "Auditoria do Recibo de Saída Material",
-          "scanner": "O recibo de saída valida a massa recuperada. A custódia de provas está quebrada; nomes de trabalhadores continuam não aceitos.",
-          "terminal": "RECIBO AFTER-ACTION: pagamento de salvage liberado por massa recuperável e risco contratado. Verdade das coordenadas não resolvida. Status de responsabilidade da Deep Reach inalterado. Livro de nomes de trabalhadores rejeitado como prova sem custódia. Saída concedida; o caso permanece propriedade do carrier.",
-          "audio": "Você recebeu. Não é o mesmo que sair limpo.",
-          "in_game_wiki": "A auditoria torna o final do dinheiro legítimo e amargo. O jogador extraiu valor e sobreviveu ao contrato, mas a instituição ainda possui o registro, os nomes e a forma oficial do desastre.",
-          "external_site": "As falsas saídas de HECTON-8 não são telas falsas de fracasso. São resultados reais que expõem o que o jogador escolheu valorizar: massa, prova, nomes, liberdade ou o direito de decidir quem possui a história depois da fuga.",
-          "field_note": "Registro pós-ação para uma saída paga, mas moralmente incompleta: recompensa liberada, cadeia de provas falha, nomes ficam fora da custódia oficial."
-        },
-        "nl_NL": {
-          "title": "Audit van materiaaluitgangsbon",
-          "scanner": "Uitgangsbon valideert geborgen massa. Bewijsbewaring is verbroken; werknamen blijven onaanvaard.",
-          "terminal": "AFTER-ACTION-BON: salvagebetaling vrijgegeven voor terugwinbare massa en contractueel gevaar. Coördinatenwaarheid onopgelost. Aansprakelijkheidsstatus Deep Reach ongewijzigd. Werknamenregister afgewezen als niet-bewaard bewijs. Uitgang verleend; zaak blijft eigendom van de carrier.",
-          "audio": "Je bent betaald. Dat is niet hetzelfde als schoon wegkomen.",
-          "in_game_wiki": "De audit maakt het geldeinde legitiem en bitter. De speler heeft waarde gewonnen en het contract overleefd, maar de instelling bezit nog steeds het dossier, de namen en de officiële vorm van de ramp.",
-          "external_site": "De valse uitgangen van HECTON-8 zijn geen nepfaalschermen. Het zijn echte uitkomsten die tonen wat de speler waardeerde: massa, bewijs, namen, vrijheid of het recht te bepalen wie het verhaal na ontsnapping bezit.",
-          "field_note": "Na-actieverslag voor een betaalde maar moreel onvolledige uitgang: beloning gaat door, bewijsketen faalt, namen blijven buiten officiële bewaring."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P336_MATERIAL_EXIT_RECEIPT_AUDIT",
+   "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
+   "article_id": "applied_lore.material_exit_receipt_audit",
+   "title_key": "applied_lore.material_exit_receipt_audit.title",
+   "unlock": {
+    "primary": "unlock.material_exit_receipt_audit",
+    "poi_tags": [
+     "poi.material_exit_receipt",
+     "poi.unreconciled_name_list",
+     "poi.payout_after_action_card"
+    ],
+    "biome_tags": [
+     "biome.ending",
+     "biome.contract"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Material Exit Receipt Audit",
+     "scanner": "Exit receipt validates recovered mass. Evidence custody is broken; worker names remain unaccepted.",
+     "terminal": "AFTER-ACTION RECEIPT: salvage payout released for recoverable mass and contracted hazard. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger rejected as non-custodial evidence. Exit granted; case remains owned by the carrier.",
+     "audio": "You got paid. That is not the same as getting out clean.",
+     "in_game_wiki": "Material Exit Receipt Audit makes the money ending legitimate and bitter. The player extracted value and survived the contract, but the institution still owns the record, the names, and the official shape of the disaster.",
+     "external_site": "HECTON-8 false exits are not fake fail screens. They are real outcomes that expose what the player chose to value: mass, proof, names, freedom, or the right to decide who owns the story after escape.",
+     "field_note": "After-action record for a paid but morally incomplete exit: reward clears, evidence chain fails, names stay outside official custody."
     },
-    {
-      "packet_id": "P337_PARTIAL_RETURN_LIEN_EXTENSION",
-      "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
-      "article_id": "applied_lore.partial_return_lien_extension",
-      "title_key": "applied_lore.partial_return_lien_extension.title",
-      "unlock": {
-        "primary": "unlock.partial_return_lien_extension",
-        "poi_tags": [
-          "poi.partial_return_lien_notice",
-          "poi.same_seed_return_stamp",
-          "poi.carrier_reentry_clause"
-        ],
-        "biome_tags": [
-          "biome.ending",
-          "biome.replay"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Partial Return Lien Extension",
-          "scanner": "Return approved under extended lien. Knowledge flags persist; equipment inventory is quarantined and stripped.",
-          "terminal": "PARTIAL RETURN ORDER: same-seed reentry permitted under extended lien, revised storm window, and retained knowledge dossier. Physical inventory reset by custody quarantine; tools remain carrier property until evidence review closes.",
-          "audio": "The route remembers what you proved. The ocean keeps the rest.",
-          "in_game_wiki": "Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player returns because the dossier and debt changed, not because HECTON-8 became easier.",
-          "external_site": "HECTON-8 replay structure treats partial exits as records, not resets. A failed escape can still move the campaign forward by changing what is known, who is owed, and which window opens next.",
-          "field_note": "Reentry record: same-seed return carries knowledge, debt pressure, storm changes, and custody reset instead of inherited equipment."
-        },
-        "ru_RU": {
-          "title": "Продление удержания для частичного возврата",
-          "scanner": "Возврат одобрен под продленным удержанием. Флаги знания сохраняются; инвентарь помещен в карантин и снят.",
-          "terminal": "ПРИКАЗ ЧАСТИЧНОГО ВОЗВРАТА: повторный вход в тот же seed разрешен под продленным удержанием, пересчитанным штормовым окном и сохраненным досье знаний. Физический инвентарь сброшен карантином хранения; инструменты остаются собственностью носителя до закрытия проверки доказательств.",
-          "audio": "Маршрут помнит, что ты доказал. Океан оставляет себе остальное.",
-          "in_game_wiki": "Продление удержания фиксирует replay-постоянство как знание, а не как силу снаряжения. Игрок возвращается потому, что изменились досье и долг, а не потому, что HECTON-8 стала проще.",
-          "external_site": "Структура replay в HECTON-8 относится к частичным выходам как к записям, а не сбросам. Неудачный побег все еще может двигать кампанию вперед, меняя известное, задолженное и следующее открывающееся окно.",
-          "field_note": "Запись повторного входа: same-seed возврат несет знание, давление долга, изменения шторма и custody reset вместо унаследованного снаряжения."
-        },
-        "ja_JP": {
-          "title": "部分帰還先取特権延長",
-          "scanner": "延長先取特権の下で帰還承認。知識フラグは残り、装備在庫は隔離され剥奪される。",
-          "terminal": "PARTIAL RETURN 命令: 延長先取特権、改訂された嵐窓、保持知識ドシエの下で同一 seed 再突入を許可。物理インベントリは保管隔離でリセット。工具は証拠審査終了までキャリア所有物。",
-          "audio": "ルートは君が証明したことを覚えている。海は残りを持っていく。",
-          "in_game_wiki": "部分帰還先取特権延長は、リプレイの持続性を装備力ではなく知識として固定する。プレイヤーが戻れるのは、ドシエと債務が変わったからで、HECTON-8 が易しくなったからではない。",
-          "external_site": "HECTON-8 のリプレイ構造は、部分出口をリセットではなく記録として扱う。失敗した脱出でも、何が知られ、誰に負債があり、次にどの窓が開くかを変えることでキャンペーンを進める。",
-          "field_note": "再突入記録: 同一 seed 帰還は、継承装備ではなく知識、債務圧、嵐の変化、保管リセットを運ぶ。"
-        },
-        "zh_CN": {
-          "title": "部分返回留置权延长",
-          "scanner": "返回在延长留置权下获准。知识标记保留；装备库存被隔离并剥离。",
-          "terminal": "PARTIAL RETURN 命令：在延长留置权、修订风暴窗口和保留知识档案下，允许同 seed 重入。实体库存由监管隔离重置；工具在证据审查结束前仍属载舰财产。",
-          "audio": "路线记得你证明过什么。海洋留下其余的一切。",
-          "in_game_wiki": "部分返回留置权延长把重玩持续性锁定为知识，而不是装备强度。玩家能返回，是因为档案和债务改变了，不是因为 HECTON-8 变简单了。",
-          "external_site": "HECTON-8 的重玩结构把部分出口视为记录，而不是重置。失败的逃离仍能推动战役，因为它改变了已知信息、欠债对象，以及下一次打开的窗口。",
-          "field_note": "重入记录：同 seed 返回携带知识、债务压力、风暴变化和监管重置，而不是继承装备。"
-        },
-        "fr_FR": {
-          "title": "Prolongation de privilège pour retour partiel",
-          "scanner": "Retour approuvé sous privilège prolongé. Les marqueurs de connaissance persistent ; l'inventaire est mis en quarantaine et retiré.",
-          "terminal": "ORDRE PARTIAL RETURN : réentrée même seed autorisée sous privilège prolongé, fenêtre de tempête révisée et dossier de connaissance conservé. Inventaire physique remis à zéro par quarantaine de garde ; les outils restent propriété du transporteur jusqu'à clôture de l'examen des preuves.",
-          "audio": "La route se souvient de ce que tu as prouvé. L'océan garde le reste.",
-          "in_game_wiki": "La prolongation verrouille la persistance de replay comme connaissance, pas comme puissance d'équipement. Le joueur revient parce que le dossier et la dette ont changé, pas parce que HECTON-8 est devenue plus facile.",
-          "external_site": "La structure de replay de HECTON-8 traite les sorties partielles comme des dossiers, pas des remises à zéro. Une fuite ratée peut encore faire avancer la campagne en changeant ce qui est su, ce qui est dû et quelle fenêtre s'ouvre ensuite.",
-          "field_note": "Dossier de réentrée : retour même seed avec connaissance, dette, variations de tempête et remise à zéro de garde plutôt qu'équipement hérité."
-        },
-        "es_ES": {
-          "title": "Extensión de gravamen de retorno parcial",
-          "scanner": "Retorno aprobado bajo gravamen extendido. Las marcas de conocimiento persisten; el inventario queda en cuarentena y retirado.",
-          "terminal": "ORDEN PARTIAL RETURN: reentrada al mismo seed permitida bajo gravamen extendido, ventana de tormenta revisada y dossier de conocimiento retenido. Inventario físico reiniciado por cuarentena de custodia; las herramientas siguen siendo propiedad del portador hasta cerrar la revisión de pruebas.",
-          "audio": "La ruta recuerda lo que probaste. El océano se queda lo demás.",
-          "in_game_wiki": "La extensión fija la persistencia de repetición como conocimiento, no como poder de equipo. El jugador vuelve porque cambiaron el dossier y la deuda, no porque HECTON-8 se volviera más fácil.",
-          "external_site": "La estructura de repetición de HECTON-8 trata las salidas parciales como registros, no reinicios. Un escape fallido aún puede mover la campaña al cambiar lo que se sabe, a quién se debe y qué ventana se abre después.",
-          "field_note": "Registro de reentrada: retorno mismo seed con conocimiento, presión de deuda, cambios de tormenta y reinicio de custodia en lugar de equipo heredado."
-        },
-        "de_DE": {
-          "title": "Teilrückkehr-Pfandrechtsverlängerung",
-          "scanner": "Rückkehr unter verlängertem Pfandrecht genehmigt. Wissensflags bleiben; Ausrüstungsinventar wird quarantänisiert und entzogen.",
-          "terminal": "PARTIAL-RETURN-BEFEHL: Wiedereintritt in denselben Seed unter verlängertem Pfandrecht, revidiertem Sturmfenster und behaltenem Wissensdossier erlaubt. Physisches Inventar durch Verwahrungsquarantäne zurückgesetzt; Werkzeuge bleiben Trägereigentum bis Abschluss der Beweisprüfung.",
-          "audio": "Die Route merkt sich, was du bewiesen hast. Der Ozean behält den Rest.",
-          "in_game_wiki": "Die Verlängerung verankert Replay-Persistenz als Wissen, nicht als Ausrüstungsmacht. Der Spieler kehrt zurück, weil Dossier und Schuld sich geändert haben, nicht weil HECTON-8 leichter wurde.",
-          "external_site": "HECTON-8s Replay-Struktur behandelt Teilausgänge als Akten, nicht als Resets. Eine gescheiterte Flucht kann die Kampagne weiterbewegen, indem sie ändert, was bekannt ist, wem etwas geschuldet wird und welches Fenster sich als Nächstes öffnet.",
-          "field_note": "Wiedereintrittsdatensatz: same-seed-Rückkehr trägt Wissen, Schuldendruck, Sturmänderungen und Verwahrungsreset statt geerbter Ausrüstung."
-        },
-        "pl_PL": {
-          "title": "Przedłużenie zastawu dla częściowego powrotu",
-          "scanner": "Powrót zatwierdzony pod przedłużonym zastawem. Flagi wiedzy trwają; ekwipunek jest objęty kwarantanną i zdjęty.",
-          "terminal": "ROZKAZ PARTIAL RETURN: ponowne wejście w ten sam seed dozwolone pod przedłużonym zastawem, zmienionym oknem burzy i zachowanym dossier wiedzy. Fizyczny ekwipunek resetowany przez kwarantannę dozoru; narzędzia pozostają własnością nośnika do zamknięcia przeglądu dowodów.",
-          "audio": "Trasa pamięta, co udowodniłeś. Ocean zatrzymuje resztę.",
-          "in_game_wiki": "Przedłużenie zastawu ustawia trwałość powtórek jako wiedzę, nie siłę sprzętu. Gracz wraca, bo zmieniły się dossier i dług, nie dlatego, że HECTON-8 stała się łatwiejsza.",
-          "external_site": "Struktura replay HECTON-8 traktuje częściowe wyjścia jak zapisy, nie resety. Nieudana ucieczka nadal może pchnąć kampanię naprzód, zmieniając to, co wiadomo, komu się należy i które okno otworzy się następne.",
-          "field_note": "Rejestr ponownego wejścia: powrót w tym samym seed niesie wiedzę, presję długu, zmiany burzy i reset dozoru zamiast dziedziczonego sprzętu."
-        },
-        "uk_UA": {
-          "title": "Продовження утримання для часткового повернення",
-          "scanner": "Повернення схвалено під продовженим утриманням. Прапори знання зберігаються; інвентар ізольовано й знято.",
-          "terminal": "НАКАЗ PARTIAL RETURN: повторний вхід у той самий seed дозволено під продовженим утриманням, переглянутим штормовим вікном і збереженим досьє знань. Фізичний інвентар скинуто карантином зберігання; інструменти лишаються власністю носія до закриття перевірки доказів.",
-          "audio": "Маршрут пам'ятає, що ти довів. Океан залишає решту собі.",
-          "in_game_wiki": "Продовження утримання закріплює replay-постійність як знання, а не силу спорядження. Гравець повертається, бо змінилися досьє й борг, а не тому, що HECTON-8 стала легшою.",
-          "external_site": "Структура replay у HECTON-8 трактує часткові виходи як записи, а не скидання. Невдала втеча все одно може рухати кампанію вперед, змінюючи відоме, борги й наступне відкрите вікно.",
-          "field_note": "Запис повторного входу: same-seed повернення несе знання, борговий тиск, зміни шторму й custody reset замість успадкованого спорядження."
-        },
-        "ar_SA": {
-          "title": "تمديد امتياز العودة الجزئية",
-          "scanner": "العودة موافق عليها تحت امتياز ممدد. تبقى علامات المعرفة؛ يصادر جرد المعدات بعد الحجر.",
-          "terminal": "أمر PARTIAL RETURN: يسمح بإعادة الدخول إلى seed نفسه تحت امتياز ممدد ونافذة عاصفة معدلة وملف معرفة محتفظ به. يعاد ضبط الجرد المادي بحجر الحيازة؛ تبقى الأدوات ملكا للناقل حتى إغلاق مراجعة الأدلة.",
-          "audio": "يتذكر المسار ما أثبته. يحتفظ المحيط بالباقي.",
-          "in_game_wiki": "يثبت تمديد الامتياز استمرارية الإعادة كمعرفة لا كقوة معدات. يعود اللاعب لأن الملف والدين تغيرا، لا لأن HECTON-8 أصبحت أسهل.",
-          "external_site": "تعامل بنية الإعادة في HECTON-8 الخروجات الجزئية كسجلات لا كإعادة ضبط. يمكن لهروب فاشل أن يدفع الحملة إلى الأمام بتغيير ما هو معروف، ومن له الدين، وأي نافذة ستفتح لاحقا.",
-          "field_note": "سجل إعادة دخول: عودة بنفس seed تحمل المعرفة وضغط الدين وتغيرات العاصفة وإعادة ضبط الحيازة بدلا من معدات موروثة."
-        },
-        "id_ID": {
-          "title": "Perpanjangan Hak Gadai Kembali Parsial",
-          "scanner": "Kembali disetujui di bawah hak gadai yang diperpanjang. Flag pengetahuan bertahan; inventaris peralatan dikarantina dan dicabut.",
-          "terminal": "PERINTAH PARTIAL RETURN: reentry same-seed diizinkan di bawah hak gadai diperpanjang, jendela badai revisi, dan dossier pengetahuan tersimpan. Inventaris fisik direset oleh karantina kustodi; alat tetap milik carrier sampai tinjauan bukti ditutup.",
-          "audio": "Rute mengingat apa yang kau buktikan. Laut menyimpan sisanya.",
-          "in_game_wiki": "Perpanjangan ini mengunci persistensi replay sebagai pengetahuan, bukan kekuatan peralatan. Pemain kembali karena dossier dan utang berubah, bukan karena HECTON-8 menjadi lebih mudah.",
-          "external_site": "Struktur replay HECTON-8 memperlakukan keluar parsial sebagai catatan, bukan reset. Pelarian gagal masih dapat mendorong kampanye maju dengan mengubah apa yang diketahui, siapa yang ditagih, dan jendela mana yang terbuka berikutnya.",
-          "field_note": "Catatan masuk ulang: kembali same-seed membawa pengetahuan, tekanan utang, perubahan badai, dan reset kustodi alih-alih peralatan warisan."
-        },
-        "ko_KR": {
-          "title": "부분 귀환 유치권 연장",
-          "scanner": "연장 유치권 아래 귀환 승인. 지식 플래그는 유지되며 장비 인벤토리는 격리되고 회수된다.",
-          "terminal": "PARTIAL RETURN 명령: 연장 유치권, 수정된 폭풍 창, 보존된 지식 dossier 아래 같은 seed 재진입 허가. 물리 인벤토리는 보관 격리로 초기화. 도구는 증거 검토 종료 전까지 carrier 재산으로 남는다.",
-          "audio": "루트는 네가 증명한 것을 기억한다. 바다는 나머지를 가져간다.",
-          "in_game_wiki": "부분 귀환 유치권 연장은 리플레이 지속성을 장비 힘이 아니라 지식으로 고정한다. 플레이어가 돌아오는 이유는 dossier와 빚이 바뀌었기 때문이지, HECTON-8이 쉬워졌기 때문이 아니다.",
-          "external_site": "HECTON-8의 리플레이 구조는 부분 탈출을 리셋이 아니라 기록으로 다룬다. 실패한 탈출도 무엇을 알게 되었는지, 누구에게 빚졌는지, 다음 어떤 창이 열리는지를 바꾸며 캠페인을 전진시킬 수 있다.",
-          "field_note": "재진입 기록: 같은 seed 귀환은 상속 장비가 아니라 지식, 채무 압박, 폭풍 변화, 보관 리셋을 운반한다."
-        },
-        "he_IL": {
-          "title": "הארכת שעבוד לחזרה חלקית",
-          "scanner": "חזרה אושרה תחת שעבוד מוארך. דגלי ידע נשמרים; מלאי הציוד מוכנס להסגר ומוסר.",
-          "terminal": "פקודת PARTIAL RETURN: כניסה מחדש לאותו seed מותרת תחת שעבוד מוארך, חלון סערה מעודכן ותיק ידע שמור. מלאי פיזי מאופס בהסגר משמורת; הכלים נשארים רכוש הנשא עד סגירת בדיקת הראיות.",
-          "audio": "המסלול זוכר מה הוכחת. האוקיינוס שומר את השאר.",
-          "in_game_wiki": "הארכת השעבוד מקבעת התמדה של replay כידע, לא ככוח ציוד. השחקן חוזר כי התיק והחוב השתנו, לא כי HECTON-8 נעשתה קלה יותר.",
-          "external_site": "מבנה ה-replay של HECTON-8 מתייחס ליציאות חלקיות כרשומות, לא כאיפוסים. בריחה כושלת עדיין יכולה לקדם את הקמפיין דרך שינוי מה שידוע, למי חייבים ואיזה חלון נפתח אחר כך.",
-          "field_note": "רשומת כניסה מחדש: חזרה באותו seed נושאת ידע, לחץ חוב, שינויי סערה ואיפוס משמורת במקום ציוד שעובר בירושה."
-        },
-        "pt_BR": {
-          "title": "Extensão de Gravame de Retorno Parcial",
-          "scanner": "Retorno aprovado sob gravame estendido. Flags de conhecimento persistem; inventário de equipamentos é quarentenado e removido.",
-          "terminal": "ORDEM PARTIAL RETURN: reentrada no mesmo seed permitida sob gravame estendido, janela de tempestade revisada e dossier de conhecimento retido. Inventário físico resetado por quarentena de custódia; ferramentas continuam propriedade do carrier até o fim da revisão de provas.",
-          "audio": "A rota lembra o que você provou. O oceano fica com o resto.",
-          "in_game_wiki": "A extensão fixa a persistência de replay como conhecimento, não como poder de equipamento. O jogador retorna porque o dossier e a dívida mudaram, não porque HECTON-8 ficou mais fácil.",
-          "external_site": "A estrutura de replay de HECTON-8 trata saídas parciais como registros, não resets. Uma fuga falha ainda pode mover a campanha adiante ao mudar o que se sabe, quem cobra a dívida e qual janela se abre depois.",
-          "field_note": "Registro de reentrada: retorno same-seed carrega conhecimento, pressão de dívida, mudanças de tempestade e reset de custódia em vez de equipamento herdado."
-        },
-        "nl_NL": {
-          "title": "Verlenging retentierecht voor gedeeltelijke terugkeer",
-          "scanner": "Terugkeer goedgekeurd onder verlengd retentierecht. Kennisflags blijven; uitrustingsinventaris wordt in quarantaine gezet en gestript.",
-          "terminal": "PARTIAL RETURN-ORDER: herintrede in dezelfde seed toegestaan onder verlengd retentierecht, herzien stormvenster en behouden kennisdossier. Fysieke inventaris gereset door bewaringsquarantaine; gereedschap blijft carrier-eigendom tot bewijsreview sluit.",
-          "audio": "De route onthoudt wat je bewees. De oceaan houdt de rest.",
-          "in_game_wiki": "De verlenging legt replaypersistentie vast als kennis, niet als uitrustingsmacht. De speler keert terug omdat dossier en schuld veranderden, niet omdat HECTON-8 makkelijker werd.",
-          "external_site": "De replaystructuur van HECTON-8 behandelt gedeeltelijke uitgangen als dossiers, niet als resets. Een mislukte ontsnapping kan de campagne nog steeds vooruitduwen door te veranderen wat bekend is, wie iets tegoed heeft en welk venster daarna opengaat.",
-          "field_note": "Herintredingsrecord: same-seed-terugkeer draagt kennis, schulddruk, stormwijzigingen en bewaringsreset in plaats van geërfde uitrusting."
-        }
-      }
+    "ru_RU": {
+     "title": "Аудит квитанции материального выхода",
+     "scanner": "Квитанция выхода подтверждает извлеченную массу. Цепочка доказательств сломана; имена рабочих не приняты.",
+     "terminal": "КВИТАНЦИЯ AFTER-ACTION: сальважная выплата выдана за извлекаемую массу и контрактный риск. Правда координат не разрешена. Статус ответственности Deep Reach не изменен. Реестр имен рабочих отклонен как доказательство вне цепочки хранения. Выход разрешен; дело остается собственностью носителя.",
+     "audio": "Тебе заплатили. Это не значит, что ты вышел чистым.",
+     "in_game_wiki": "Аудит квитанции делает денежную концовку настоящей и горькой. Игрок вынес ценность и пережил контракт, но институт все еще владеет записью, именами и официальной формой катастрофы.",
+     "external_site": "Ложные выходы HECTON-8 не являются фальшивыми экранами провала. Это реальные исходы, показывающие, что игрок решил ценить: массу, доказательство, имена, свободу или право решать, кому принадлежит история после бегства.",
+     "field_note": "After-action запись для оплаченного, но морально незавершенного выхода: награда закрыта, evidence chain провалена, имена остаются вне официального хранения."
     },
-    {
-      "packet_id": "P338_QUARANTINE_HOLD_INTERROGATION_RECORD",
-      "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
-      "article_id": "applied_lore.quarantine_hold_interrogation_record",
-      "title_key": "applied_lore.quarantine_hold_interrogation_record.title",
-      "unlock": {
-        "primary": "unlock.quarantine_hold_interrogation_record",
-        "poi_tags": [
-          "poi.quarantine_hold_record",
-          "poi.biological_custody_tag",
-          "poi.receiver_interrogation_clip"
-        ],
-        "biome_tags": [
-          "biome.ending",
-          "biome.quarantine"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Quarantine Hold Interrogation Record",
-          "scanner": "Recovered claimant alive. Quarantine flag overrides rescue language; evidence payload isolated.",
-          "terminal": "QUARANTINE HOLD RECORD: biological claimant recovered alive. Movement restricted pending contamination scan, pressure exposure interview, and evidence custody review. Receiver interrogation prioritizes Atlas access vector before medical clearance.",
-          "audio": "They saved the body first because the body knew the route.",
-          "in_game_wiki": "Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but the player exits as witness, contamination risk, map carrier, and disputed evidence before becoming a free person again.",
-          "external_site": "A HECTON-8 exit can be physically successful and politically catastrophic. The player may leave the ocean and still enter a room where every question treats their body as the only surviving route log.",
-          "field_note": "Post-exit dossier: biological rescue becomes quarantine, interrogation, route extraction, and payload custody before freedom."
-        },
-        "ru_RU": {
-          "title": "Протокол допроса в карантинном удержании",
-          "scanner": "Извлеченный заявитель жив. Флаг карантина перекрывает язык спасения; доказательный payload изолирован.",
-          "terminal": "ЗАПИСЬ QUARANTINE HOLD: биологический заявитель извлечен живым. Передвижение ограничено до скана заражения, интервью о давлении и проверки цепочки доказательств. Допрос приемника ставит вектор доступа Atlas выше медицинского допуска.",
-          "audio": "Сначала они спасли тело, потому что тело знало маршрут.",
-          "in_game_wiki": "Протокол делает спасение неприятным. Выживание реально, но игрок выходит как свидетель, риск заражения, носитель карты и спорное доказательство, прежде чем снова стать свободным человеком.",
-          "external_site": "Выход из HECTON-8 может быть физически успешным и политически катастрофичным. Игрок покидает океан, но попадает в комнату, где каждый вопрос обращается с его телом как с единственным уцелевшим журналом маршрута.",
-          "field_note": "Post-exit досье: биологическое спасение до свободы становится карантином, допросом, извлечением маршрута и удержанием payload."
-        },
-        "ja_JP": {
-          "title": "隔離拘束尋問記録",
-          "scanner": "回収された請求者は生存。隔離フラグが救助文言を上書きし、証拠ペイロードは隔離された。",
-          "terminal": "QUARANTINE HOLD 記録: 生物学的請求者を生存回収。汚染スキャン、圧力曝露面談、証拠保管レビュー完了まで移動制限。受信側尋問は医療許可より先に Atlas アクセスベクトルを優先。",
-          "audio": "彼らが先に身体を救ったのは、身体がルートを知っていたからだ。",
-          "in_game_wiki": "隔離拘束尋問記録は救助を不穏にする。生存は本物だが、プレイヤーは自由人に戻る前に、証人、汚染リスク、地図運搬者、係争中の証拠として退出する。",
-          "external_site": "HECTON-8 の出口は、肉体的には成功しても政治的には破滅になり得る。プレイヤーは海を出ても、身体を唯一残ったルートログとして扱う質問室に入る。",
-          "field_note": "退出後ドシエ: 生物学的救助は自由の前に、隔離、尋問、ルート抽出、ペイロード保管へ変わる。"
-        },
-        "zh_CN": {
-          "title": "隔离留置审讯记录",
-          "scanner": "已回收申领者存活。隔离标记覆盖救援措辞；证据载荷已隔离。",
-          "terminal": "QUARANTINE HOLD 记录：生物申领者已存活回收。移动受限，等待污染扫描、压力暴露访谈和证据监管审查。接收方审讯在医疗许可前优先索取 Atlas 接入矢量。",
-          "audio": "他们先救身体，因为身体知道路线。",
-          "in_game_wiki": "隔离留置审讯记录让救援变得不舒服。生存是真的，但玩家在重新成为自由人之前，会先作为证人、污染风险、地图载体和争议证据离开。",
-          "external_site": "HECTON-8 的出口可以在肉体上成功，却在政治上灾难性。玩家可能离开海洋，却进入一个把其身体当作唯一幸存路线日志来提问的房间。",
-          "field_note": "退出后档案：生物救援在自由之前变成隔离、审讯、路线提取和载荷监管。"
-        },
-        "fr_FR": {
-          "title": "Dossier d'interrogatoire en rétention sanitaire",
-          "scanner": "Réclamant récupéré vivant. Le marqueur de quarantaine écrase le langage de sauvetage ; la charge de preuve est isolée.",
-          "terminal": "DOSSIER QUARANTINE HOLD : réclamant biologique récupéré vivant. Déplacement restreint en attente de scan de contamination, entretien d'exposition à la pression et revue de garde des preuves. L'interrogatoire récepteur priorise le vecteur d'accès Atlas avant l'autorisation médicale.",
-          "audio": "Ils ont sauvé le corps d'abord, parce que le corps connaissait la route.",
-          "in_game_wiki": "Ce dossier rend le sauvetage inconfortable. La survie est réelle, mais le joueur sort comme témoin, risque de contamination, porteur de carte et preuve disputée avant de redevenir une personne libre.",
-          "external_site": "Une sortie de HECTON-8 peut réussir physiquement et être catastrophique politiquement. Le joueur quitte peut-être l'océan pour entrer dans une pièce où chaque question traite son corps comme le seul journal de route survivant.",
-          "field_note": "Dossier post-sortie : le sauvetage biologique devient quarantaine, interrogatoire, extraction de route et garde de payload avant la liberté."
-        },
-        "es_ES": {
-          "title": "Registro de interrogatorio en retención de cuarentena",
-          "scanner": "Reclamante recuperado con vida. La marca de cuarentena invalida el lenguaje de rescate; la carga de evidencia queda aislada.",
-          "terminal": "REGISTRO QUARANTINE HOLD: reclamante biológico recuperado con vida. Movimiento restringido pendiente de escaneo de contaminación, entrevista de exposición a presión y revisión de custodia de pruebas. El interrogatorio del receptor prioriza el vector de acceso Atlas antes del alta médica.",
-          "audio": "Salvaron primero el cuerpo porque el cuerpo conocía la ruta.",
-          "in_game_wiki": "El registro vuelve incómodo el rescate. La supervivencia es real, pero el jugador sale como testigo, riesgo de contaminación, portador de mapa y prueba disputada antes de volver a ser una persona libre.",
-          "external_site": "Una salida de HECTON-8 puede tener éxito físico y ser una catástrofe política. El jugador puede dejar el océano y aun así entrar en una sala donde cada pregunta trata su cuerpo como el único registro de ruta superviviente.",
-          "field_note": "Dossier posterior a la salida: el rescate biológico se convierte en cuarentena, interrogatorio, extracción de ruta y custodia de payload antes de la libertad."
-        },
-        "de_DE": {
-          "title": "Verhörakte der Quarantänehaltung",
-          "scanner": "Geborgener Anspruchsteller lebt. Quarantäneflag überschreibt Rettungssprache; Beweispayload isoliert.",
-          "terminal": "QUARANTINE-HOLD-AKTE: biologischer Anspruchsteller lebend geborgen. Bewegung eingeschränkt bis Kontaminationsscan, Druckexpositionsinterview und Prüfung der Beweisverwahrung. Empfängerverhör priorisiert Atlas-Zugangsvektor vor medizinischer Freigabe.",
-          "audio": "Sie retteten zuerst den Körper, weil der Körper die Route kannte.",
-          "in_game_wiki": "Die Verhörakte macht Rettung unbequem. Überleben ist echt, aber der Spieler verlässt als Zeuge, Kontaminationsrisiko, Kartenträger und umstrittener Beweis, bevor er wieder freie Person wird.",
-          "external_site": "Ein HECTON-8-Ausgang kann körperlich erfolgreich und politisch katastrophal sein. Der Spieler verlässt vielleicht den Ozean und betritt doch einen Raum, in dem jede Frage seinen Körper als einzig überlebendes Routenlog behandelt.",
-          "field_note": "Nachausgangsdossier: biologische Rettung wird vor Freiheit zu Quarantäne, Verhör, Routenextraktion und Payload-Verwahrung."
-        },
-        "pl_PL": {
-          "title": "Protokół przesłuchania w zatrzymaniu kwarantannowym",
-          "scanner": "Odzyskany roszczący żyje. Flaga kwarantanny nadpisuje język ratunku; payload dowodowy odizolowany.",
-          "terminal": "REJESTR QUARANTINE HOLD: biologiczny roszczący odzyskany żywy. Ruch ograniczony do czasu skanu skażenia, wywiadu ekspozycji ciśnieniowej i przeglądu dozoru dowodów. Przesłuchanie odbiornika priorytetuje wektor dostępu Atlas przed zgodą medyczną.",
-          "audio": "Najpierw uratowali ciało, bo ciało znało trasę.",
-          "in_game_wiki": "Protokół czyni ratunek niewygodnym. Przetrwanie jest prawdziwe, ale gracz wychodzi jako świadek, ryzyko skażenia, nośnik mapy i sporny dowód, zanim znów stanie się wolną osobą.",
-          "external_site": "Wyjście z HECTON-8 może być fizycznym sukcesem i polityczną katastrofą. Gracz może opuścić ocean i wciąż wejść do pokoju, gdzie każde pytanie traktuje jego ciało jak jedyny ocalały dziennik trasy.",
-          "field_note": "Dossier po wyjściu: biologiczny ratunek przed wolnością zmienia się w kwarantannę, przesłuchanie, wydobycie trasy i dozór payloadu."
-        },
-        "uk_UA": {
-          "title": "Протокол допиту в карантинному утриманні",
-          "scanner": "Вилучений заявник живий. Прапор карантину перекриває мову порятунку; доказовий payload ізольовано.",
-          "terminal": "ЗАПИС QUARANTINE HOLD: біологічного заявника вилучено живим. Пересування обмежено до скану зараження, інтерв'ю про тиск і перевірки ланцюга доказів. Допит приймача ставить вектор доступу Atlas вище за медичний допуск.",
-          "audio": "Спершу вони врятували тіло, бо тіло знало маршрут.",
-          "in_game_wiki": "Протокол робить порятунок незручним. Виживання справжнє, але гравець виходить як свідок, ризик зараження, носій карти й спірний доказ, перш ніж знову стати вільною людиною.",
-          "external_site": "Вихід із HECTON-8 може бути фізично успішним і політично катастрофічним. Гравець може покинути океан і все одно потрапити в кімнату, де кожне питання трактує його тіло як єдиний уцілілий журнал маршруту.",
-          "field_note": "Post-exit досьє: біологічний порятунок до свободи стає карантином, допитом, вилученням маршруту й утриманням payload."
-        },
-        "ar_SA": {
-          "title": "سجل استجواب احتجاز الحجر",
-          "scanner": "المطالب المستعاد حي. علامة الحجر تتجاوز لغة الإنقاذ؛ حمولة الأدلة معزولة.",
-          "terminal": "سجل QUARANTINE HOLD: المطالب البيولوجي استعيد حيا. الحركة مقيدة بانتظار فحص التلوث، ومقابلة التعرض للضغط، ومراجعة حيازة الأدلة. يستبق استجواب المستقبل متجه وصول Atlas قبل التصريح الطبي.",
-          "audio": "أنقذوا الجسد أولا لأن الجسد عرف الطريق.",
-          "in_game_wiki": "يجعل هذا السجل الإنقاذ غير مريح. النجاة حقيقية، لكن اللاعب يخرج كشاهد وخطر تلوث وحامل خريطة ودليل متنازع عليه قبل أن يصبح حرا مرة أخرى.",
-          "external_site": "يمكن لخروج HECTON-8 أن يكون ناجحا جسديا وكارثيا سياسيا. قد يغادر اللاعب المحيط ويدخل غرفة يعامل فيها كل سؤال جسده كآخر سجل مسار باق.",
-          "field_note": "ملف ما بعد الخروج: يتحول الإنقاذ البيولوجي قبل الحرية إلى حجر واستجواب واستخراج مسار وحيازة payload."
-        },
-        "id_ID": {
-          "title": "Catatan Interogasi Tahanan Karantina",
-          "scanner": "Pengklaim pulih dalam keadaan hidup. Flag karantina menimpa bahasa penyelamatan; payload bukti diisolasi.",
-          "terminal": "CATATAN QUARANTINE HOLD: pengklaim biologis dipulihkan hidup. Gerak dibatasi menunggu scan kontaminasi, wawancara paparan tekanan, dan tinjauan kustodi bukti. Interogasi penerima memprioritaskan vektor akses Atlas sebelum izin medis.",
-          "audio": "Mereka menyelamatkan tubuh dulu karena tubuh tahu rutenya.",
-          "in_game_wiki": "Catatan ini membuat penyelamatan terasa tidak nyaman. Bertahan hidup itu nyata, tetapi pemain keluar sebagai saksi, risiko kontaminasi, pembawa peta, dan bukti yang diperdebatkan sebelum kembali menjadi orang bebas.",
-          "external_site": "Keluar dari HECTON-8 bisa berhasil secara fisik dan hancur secara politik. Pemain mungkin meninggalkan laut tetapi memasuki ruangan tempat setiap pertanyaan memperlakukan tubuhnya sebagai satu-satunya log rute yang selamat.",
-          "field_note": "Dossier pasca-keluar: penyelamatan biologis menjadi karantina, interogasi, ekstraksi rute, dan kustodi payload sebelum kebebasan."
-        },
-        "ko_KR": {
-          "title": "격리 보류 심문 기록",
-          "scanner": "회수된 청구자는 생존. 격리 플래그가 구조 언어를 덮어쓰고, 증거 payload는 격리되었다.",
-          "terminal": "QUARANTINE HOLD 기록: 생물학적 청구자 생존 회수. 오염 스캔, 압력 노출 면담, 증거 보관 검토 전까지 이동 제한. 수신자 심문은 의료 허가보다 Atlas 접근 벡터를 우선한다.",
-          "audio": "그들은 몸이 경로를 알고 있었기 때문에 몸을 먼저 구했다.",
-          "in_game_wiki": "이 기록은 구조를 불편하게 만든다. 생존은 진짜지만, 플레이어는 다시 자유인이 되기 전까지 증인, 오염 위험, 지도 운반자, 분쟁 증거로 탈출한다.",
-          "external_site": "HECTON-8의 탈출은 육체적으로 성공하고도 정치적으로 재앙일 수 있다. 플레이어는 바다를 떠나도 자신의 몸을 유일한 생존 경로 로그로 취급하는 방에 들어갈 수 있다.",
-          "field_note": "탈출 후 dossier: 생물학적 구조는 자유에 앞서 격리, 심문, 경로 추출, payload 보관이 된다."
-        },
-        "he_IL": {
-          "title": "רשומת חקירה בהחזקת הסגר",
-          "scanner": "התובע חולץ חי. דגל הסגר גובר על שפת החילוץ; payload הראיות מבודד.",
-          "terminal": "רשומת QUARANTINE HOLD: תובע ביולוגי חולץ חי. תנועה מוגבלת עד סריקת זיהום, ראיון חשיפה ללחץ ובדיקת משמורת ראיות. חקירת המקלט מעדיפה את וקטור הגישה Atlas לפני אישור רפואי.",
-          "audio": "הם הצילו את הגוף קודם כי הגוף ידע את המסלול.",
-          "in_game_wiki": "הרשומה הזאת הופכת חילוץ ללא נוח. ההישרדות אמיתית, אבל השחקן יוצא כעד, סיכון זיהום, נושא מפה וראיה שנויה במחלוקת לפני שהוא חוזר להיות אדם חופשי.",
-          "external_site": "יציאה מ-HECTON-8 יכולה להצליח פיזית ולהיות אסון פוליטי. השחקן עשוי לעזוב את האוקיינוס ועדיין להיכנס לחדר שבו כל שאלה מתייחסת לגופו כאל יומן המסלול היחיד ששרד.",
-          "field_note": "תיק לאחר יציאה: חילוץ ביולוגי הופך לפני חירות להסגר, חקירה, חילוץ מסלול ומשמורת payload."
-        },
-        "pt_BR": {
-          "title": "Registro de Interrogatório em Retenção de Quarentena",
-          "scanner": "Reclamante recuperado vivo. Flag de quarentena sobrepõe linguagem de resgate; payload de provas isolado.",
-          "terminal": "REGISTRO QUARANTINE HOLD: reclamante biológico recuperado vivo. Movimento restrito aguardando scan de contaminação, entrevista de exposição à pressão e revisão de custódia de provas. Interrogatório do receptor prioriza vetor de acesso Atlas antes de liberação médica.",
-          "audio": "Eles salvaram o corpo primeiro porque o corpo sabia a rota.",
-          "in_game_wiki": "O registro torna o resgate desconfortável. A sobrevivência é real, mas o jogador sai como testemunha, risco de contaminação, portador de mapa e prova disputada antes de voltar a ser livre.",
-          "external_site": "Uma saída de HECTON-8 pode ser fisicamente bem-sucedida e politicamente catastrófica. O jogador pode deixar o oceano e ainda entrar numa sala onde cada pergunta trata seu corpo como o único log de rota sobrevivente.",
-          "field_note": "Dossier pós-saída: resgate biológico vira quarentena, interrogatório, extração de rota e custódia de payload antes da liberdade."
-        },
-        "nl_NL": {
-          "title": "Verhoorrecord van quarantainebewaring",
-          "scanner": "Geborgen claimant leeft. Quarantaineflag overschrijft reddingstaal; bewijs-payload geïsoleerd.",
-          "terminal": "QUARANTINE HOLD-RECORD: biologische claimant levend geborgen. Beweging beperkt tot besmettingsscan, drukblootstellingsgesprek en bewijsbewaringsreview. Ontvangerverhoor geeft Atlas-toegangsvector prioriteit boven medische vrijgave.",
-          "audio": "Ze redden eerst het lichaam omdat het lichaam de route kende.",
-          "in_game_wiki": "Het record maakt redding ongemakkelijk. Overleven is echt, maar de speler vertrekt als getuige, besmettingsrisico, kaartdrager en betwist bewijs voordat hij weer vrij persoon wordt.",
-          "external_site": "Een HECTON-8-uitgang kan lichamelijk slagen en politiek rampzalig zijn. De speler verlaat misschien de oceaan en komt toch in een kamer waar elke vraag zijn lichaam behandelt als het enige overgebleven routelog.",
-          "field_note": "Dossier na uitgang: biologische redding wordt vóór vrijheid quarantaine, verhoor, route-extractie en payloadbewaring."
-        }
-      }
+    "ja_JP": {
+     "title": "物資退出領収監査",
+     "scanner": "退出領収は回収質量を有効と認める。証拠保管は破綻し、作業員名簿は未承認のまま。",
+     "terminal": "AFTER-ACTION 領収: 回収可能質量と契約危険に対するサルベージ支払いを解除。座標の真実は未解決。Deep Reach の責任状態は不変。作業員名簿は非保管証拠として拒否。退出は許可、案件はキャリア所有のまま。",
+     "audio": "金は出た。きれいに出られたという意味ではない。",
+     "in_game_wiki": "物資退出領収監査は、金銭エンディングを正当で苦いものにする。プレイヤーは価値を持ち出し契約を生き残ったが、組織はなお記録、名前、災害の公式な形を所有している。",
+     "external_site": "HECTON-8 の偽出口は偽の失敗画面ではない。質量、証拠、名前、自由、逃亡後に物語を誰が所有するか。そのどれをプレイヤーが重んじたかを露出する、本物の結末だ。",
+     "field_note": "報酬は通るが倫理的には未完の退出用 after-action 記録。報酬は精算、証拠連鎖は失敗、名前は公式保管の外に残る。"
     },
-    {
-      "packet_id": "P339_CORPORATE_COORDINATE_CAPTURE_RECORD",
-      "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
-      "article_id": "applied_lore.corporate_coordinate_capture_record",
-      "title_key": "applied_lore.corporate_coordinate_capture_record.title",
-      "unlock": {
-        "primary": "unlock.corporate_coordinate_capture_record",
-        "poi_tags": [
-          "poi.coordinate_capture_record",
-          "poi.deep_reach_receiver_stamp",
-          "poi.route_erasure_warning"
-        ],
-        "biome_tags": [
-          "biome.ending",
-          "biome.deep_reach"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Corporate Coordinate Capture Record",
-          "scanner": "Coordinate payload accepted. Deep Reach receiver priority restored; public report unchanged.",
-          "terminal": "COORDINATE CAPTURE: Atlas basin vector transferred to Deep Reach receiver. Recovery granted under cooperation note. Public accident record unchanged. Future operations regain corporate route authority.",
-          "audio": "You opened the door from the inside.",
-          "in_game_wiki": "Corporate Coordinate Capture Record is the cleanest sellout route. The player may escape, but the disaster site returns to the institution that failed it and now owns a better map.",
-          "external_site": "The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave, and whether survival was bought by giving the old owner a way back in.",
-          "field_note": "Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach control."
-        },
-        "ru_RU": {
-          "title": "Запись корпоративного захвата координат",
-          "scanner": "Координатный payload принят. Приоритет приемника Deep Reach восстановлен; публичный отчет не изменен.",
-          "terminal": "ЗАХВАТ КООРДИНАТ: вектор бассейна Atlas передан приемнику Deep Reach. Извлечение разрешено по отметке сотрудничества. Публичная запись аварии не изменена. Будущие операции возвращают корпоративный маршрутный приоритет.",
-          "audio": "Ты открыл дверь изнутри.",
-          "in_game_wiki": "Эта запись — самый чистый маршрут продажи. Игрок может сбежать, но место катастрофы возвращается институту, который ее провалил, и теперь у него есть карта лучше прежней.",
-          "external_site": "Вопрос не только в том, покинул ли игрок HECTON-8. Вопрос в том, кто получает карту после его ухода и была ли выживаемость куплена тем, что старому владельцу дали путь обратно.",
-          "field_note": "Корпоративная частичная концовка: координаты покупают эвакуацию, заново открывая место преступления под контроль Deep Reach."
-        },
-        "ja_JP": {
-          "title": "企業座標取得記録",
-          "scanner": "座標ペイロード受理。Deep Reach 受信優先度復旧。公開報告は不変。",
-          "terminal": "COORDINATE CAPTURE: Atlas 盆地ベクトルを Deep Reach 受信機へ転送。協力記録に基づき回収を許可。公開事故記録は不変。将来作戦は企業ルート権限を回復。",
-          "audio": "君は内側から扉を開けた。",
-          "in_game_wiki": "企業座標取得記録は、最も明確な売却ルートだ。プレイヤーは脱出できるかもしれないが、災害現場は失敗した組織へ戻り、その組織は以前より良い地図を持つ。",
-          "external_site": "問題はプレイヤーが HECTON-8 を出るかだけではない。去ったあと誰が地図を受け取るのか、そして生存が旧所有者に戻り道を渡すことで買われたのかだ。",
-          "field_note": "企業側の部分エンディング記録: 座標は回収を買い、犯罪現場を Deep Reach 支配へ開き直す。"
-        },
-        "zh_CN": {
-          "title": "企业坐标捕获记录",
-          "scanner": "坐标载荷已接受。Deep Reach 接收优先级恢复；公开报告未改变。",
-          "terminal": "COORDINATE CAPTURE：Atlas 盆地矢量已传送至 Deep Reach 接收器。按合作备注准许回收。公开事故记录未改变。未来行动恢复企业路线权限。",
-          "audio": "你从里面打开了门。",
-          "in_game_wiki": "企业坐标捕获记录是最清晰的出卖路线。玩家也许能逃脱，但灾难现场回到那个失败的机构手里，而且它现在拥有更好的地图。",
-          "external_site": "问题不只是玩家是否离开 HECTON-8。问题是他们离开后谁接收地图，以及生存是否是通过给旧主人一条回来的路买下的。",
-          "field_note": "企业部分结局记录：坐标通过把犯罪现场重新交给 Deep Reach 控制来购买回收。"
-        },
-        "fr_FR": {
-          "title": "Dossier de capture corporative des coordonnées",
-          "scanner": "Charge de coordonnées acceptée. Priorité récepteur Deep Reach restaurée ; rapport public inchangé.",
-          "terminal": "COORDINATE CAPTURE : vecteur du bassin Atlas transféré au récepteur Deep Reach. Récupération accordée sous note de coopération. Rapport public d'accident inchangé. Les opérations futures récupèrent l'autorité de route corporative.",
-          "audio": "Tu as ouvert la porte de l'intérieur.",
-          "in_game_wiki": "Ce dossier est la route de vente la plus nette. Le joueur peut s'échapper, mais le site du désastre revient à l'institution qui l'a raté et possède désormais une meilleure carte.",
-          "external_site": "La question n'est pas seulement de savoir si le joueur quitte HECTON-8. C'est de savoir qui reçoit la carte après son départ, et si la survie a été achetée en donnant à l'ancien propriétaire un chemin de retour.",
-          "field_note": "Fin partielle corporative : les coordonnées achètent la récupération en rouvrant la scène de crime au contrôle de Deep Reach."
-        },
-        "es_ES": {
-          "title": "Registro de captura corporativa de coordenadas",
-          "scanner": "Carga de coordenadas aceptada. Prioridad de receptor Deep Reach restaurada; informe público sin cambios.",
-          "terminal": "COORDINATE CAPTURE: vector de cuenca Atlas transferido al receptor Deep Reach. Recuperación concedida bajo nota de cooperación. Registro público del accidente sin cambios. Operaciones futuras recuperan autoridad corporativa de ruta.",
-          "audio": "Abriste la puerta desde dentro.",
-          "in_game_wiki": "Este registro es la ruta de venta más clara. El jugador puede escapar, pero el sitio del desastre vuelve a la institución que lo falló y ahora posee un mapa mejor.",
-          "external_site": "La pregunta no es solo si el jugador deja HECTON-8. Es quién recibe el mapa después de que se marche, y si la supervivencia se compró dándole al viejo dueño un camino de vuelta.",
-          "field_note": "Registro de final corporativo parcial: las coordenadas compran recuperación reabriendo la escena del crimen al control de Deep Reach."
-        },
-        "de_DE": {
-          "title": "Konzern-Koordinatenerfassungsakte",
-          "scanner": "Koordinatenpayload akzeptiert. Deep-Reach-Empfängerpriorität wiederhergestellt; öffentlicher Bericht unverändert.",
-          "terminal": "COORDINATE CAPTURE: Atlas-Beckenvektor an Deep-Reach-Empfänger übertragen. Bergung unter Kooperationsvermerk gewährt. Öffentlicher Unfallbericht unverändert. Künftige Operationen erhalten Konzern-Routenautorität zurück.",
-          "audio": "Du hast die Tür von innen geöffnet.",
-          "in_game_wiki": "Diese Akte ist die sauberste Ausverkaufsroute. Der Spieler kann entkommen, aber der Katastrophenort kehrt zu der Institution zurück, die versagt hat und nun eine bessere Karte besitzt.",
-          "external_site": "Die Frage ist nicht nur, ob der Spieler HECTON-8 verlässt. Sie lautet, wer die Karte danach erhält und ob Überleben damit erkauft wurde, dem alten Besitzer einen Weg zurück zu geben.",
-          "field_note": "Konzern-Teilausgang: Koordinaten kaufen Bergung, indem sie den Tatort wieder für Deep-Reach-Kontrolle öffnen."
-        },
-        "pl_PL": {
-          "title": "Rejestr korporacyjnego przejęcia współrzędnych",
-          "scanner": "Payload współrzędnych przyjęty. Priorytet odbiornika Deep Reach przywrócony; raport publiczny bez zmian.",
-          "terminal": "COORDINATE CAPTURE: wektor basenu Atlas przekazany do odbiornika Deep Reach. Odzysk przyznany pod notą współpracy. Publiczny zapis wypadku bez zmian. Przyszłe operacje odzyskują korporacyjną władzę nad trasą.",
-          "audio": "Otworzyłeś drzwi od środka.",
-          "in_game_wiki": "Ten rejestr to najczystsza droga sprzedania. Gracz może uciec, ale miejsce katastrofy wraca do instytucji, która je zawiodła i ma teraz lepszą mapę.",
-          "external_site": "Pytanie nie brzmi tylko, czy gracz opuszcza HECTON-8. Chodzi o to, kto otrzyma mapę po jego odejściu i czy przetrwanie kupiono, dając staremu właścicielowi drogę powrotu.",
-          "field_note": "Korporacyjna częściowa końcówka: współrzędne kupują odzysk, ponownie otwierając miejsce zbrodni pod kontrolę Deep Reach."
-        },
-        "uk_UA": {
-          "title": "Запис корпоративного захоплення координат",
-          "scanner": "Координатний payload прийнято. Пріоритет приймача Deep Reach відновлено; публічний звіт не змінено.",
-          "terminal": "COORDINATE CAPTURE: вектор басейну Atlas передано приймачу Deep Reach. Вилучення дозволено за позначкою співпраці. Публічний запис аварії не змінено. Майбутні операції повертають корпоративну маршрутну владу.",
-          "audio": "Ти відкрив двері зсередини.",
-          "in_game_wiki": "Цей запис — найчистіший маршрут продажу. Гравець може втекти, але місце катастрофи повертається інституції, що його провалила, і тепер вона має кращу карту.",
-          "external_site": "Питання не лише в тому, чи залишив гравець HECTON-8. Питання в тому, хто отримує карту після його відходу і чи було виживання куплене тим, що старому власнику дали шлях назад.",
-          "field_note": "Корпоративна часткова кінцівка: координати купують евакуацію, знову відкриваючи місце злочину під контроль Deep Reach."
-        },
-        "ar_SA": {
-          "title": "سجل التقاط الإحداثيات المؤسسي",
-          "scanner": "حمولة الإحداثيات مقبولة. أولوية مستقبل Deep Reach مستعادة؛ التقرير العام بلا تغيير.",
-          "terminal": "COORDINATE CAPTURE: نقل متجه حوض Atlas إلى مستقبل Deep Reach. منحت الاستعادة بموجب ملاحظة تعاون. سجل الحادث العام بلا تغيير. تستعيد العمليات المستقبلية سلطة المسار المؤسسية.",
-          "audio": "لقد فتحت الباب من الداخل.",
-          "in_game_wiki": "هذا السجل هو أوضح طريق للبيع. قد يهرب اللاعب، لكن موقع الكارثة يعود إلى المؤسسة التي أفشلته، وهي تملك الآن خريطة أفضل.",
-          "external_site": "السؤال ليس فقط هل يغادر اللاعب HECTON-8. السؤال هو من يتلقى الخريطة بعد رحيله، وهل اشترى النجاة بإعطاء المالك القديم طريقا للعودة.",
-          "field_note": "نهاية جزئية مؤسسية: تشتري الإحداثيات الاستعادة بإعادة فتح مسرح الجريمة لسيطرة Deep Reach."
-        },
-        "id_ID": {
-          "title": "Catatan Penangkapan Koordinat Korporat",
-          "scanner": "Payload koordinat diterima. Prioritas penerima Deep Reach dipulihkan; laporan publik tidak berubah.",
-          "terminal": "COORDINATE CAPTURE: vektor cekungan Atlas ditransfer ke penerima Deep Reach. Pemulihan diberikan di bawah catatan kerja sama. Catatan kecelakaan publik tidak berubah. Operasi masa depan memulihkan otoritas rute korporat.",
-          "audio": "Kau membuka pintu dari dalam.",
-          "in_game_wiki": "Catatan ini adalah rute jual diri yang paling jelas. Pemain mungkin lolos, tetapi lokasi bencana kembali ke institusi yang menggagalkannya dan kini memiliki peta yang lebih baik.",
-          "external_site": "Pertanyaannya bukan hanya apakah pemain meninggalkan HECTON-8. Pertanyaannya siapa yang menerima peta setelah mereka pergi, dan apakah bertahan hidup dibeli dengan memberi pemilik lama jalan masuk kembali.",
-          "field_note": "Catatan akhir parsial korporat: koordinat membeli pemulihan dengan membuka kembali tempat kejahatan ke kendali Deep Reach."
-        },
-        "ko_KR": {
-          "title": "기업 좌표 포획 기록",
-          "scanner": "좌표 payload 수락. Deep Reach 수신자 우선순위 복구. 공개 보고서는 변경 없음.",
-          "terminal": "COORDINATE CAPTURE: Atlas 분지 벡터가 Deep Reach 수신기로 전송됨. 협조 기록 아래 회수 승인. 공개 사고 기록 변경 없음. 미래 작전은 기업 경로 권한을 되찾는다.",
-          "audio": "너는 안쪽에서 문을 열었다.",
-          "in_game_wiki": "이 기록은 가장 명확한 매각 루트다. 플레이어는 탈출할 수 있지만, 재난 현장은 실패했던 기관으로 돌아가며 그 기관은 더 나은 지도를 갖게 된다.",
-          "external_site": "질문은 플레이어가 HECTON-8을 떠나는지뿐만이 아니다. 떠난 뒤 누가 지도를 받는가, 그리고 생존이 옛 주인에게 되돌아올 길을 주는 대가로 산 것인가가 문제다.",
-          "field_note": "기업 부분 엔딩 기록: 좌표는 범죄 현장을 Deep Reach 통제로 다시 열어 회수를 산다."
-        },
-        "he_IL": {
-          "title": "רשומת לכידת קואורדינטות תאגידית",
-          "scanner": "Payload קואורדינטות התקבל. עדיפות מקלט Deep Reach שוחזרה; הדוח הציבורי ללא שינוי.",
-          "terminal": "COORDINATE CAPTURE: וקטור אגן Atlas הועבר למקלט Deep Reach. חילוץ אושר תחת הערת שיתוף פעולה. רשומת התאונה הציבורית ללא שינוי. פעולות עתידיות משיבות סמכות מסלול תאגידית.",
-          "audio": "פתחת את הדלת מבפנים.",
-          "in_game_wiki": "הרשומה הזאת היא מסלול המכירה הברור ביותר. השחקן עשוי לברוח, אבל אתר האסון חוזר למוסד שנכשל בו, ועכשיו יש לו מפה טובה יותר.",
-          "external_site": "השאלה אינה רק אם השחקן עוזב את HECTON-8. השאלה היא מי מקבל את המפה אחרי שהוא עוזב, והאם ההישרדות נקנתה בכך שנתנו לבעלים הישן דרך חזרה.",
-          "field_note": "רשומת סוף חלקי תאגידי: קואורדינטות קונות חילוץ על ידי פתיחת זירת הפשע מחדש לשליטת Deep Reach."
-        },
-        "pt_BR": {
-          "title": "Registro de Captura Corporativa de Coordenadas",
-          "scanner": "Payload de coordenadas aceito. Prioridade do receptor Deep Reach restaurada; relatório público inalterado.",
-          "terminal": "COORDINATE CAPTURE: vetor da bacia Atlas transferido ao receptor Deep Reach. Recuperação concedida sob nota de cooperação. Registro público do acidente inalterado. Operações futuras recuperam autoridade corporativa de rota.",
-          "audio": "Você abriu a porta por dentro.",
-          "in_game_wiki": "Este registro é a rota de venda mais clara. O jogador pode escapar, mas o local do desastre retorna à instituição que falhou com ele e agora possui um mapa melhor.",
-          "external_site": "A pergunta não é apenas se o jogador deixa HECTON-8. É quem recebe o mapa depois que ele sai, e se a sobrevivência foi comprada dando ao antigo dono um caminho de volta.",
-          "field_note": "Registro de final corporativo parcial: coordenadas compram recuperação ao reabrir a cena do crime ao controle da Deep Reach."
-        },
-        "nl_NL": {
-          "title": "Record van corporate coördinatenvangst",
-          "scanner": "Coördinaten-payload geaccepteerd. Deep Reach-ontvangerprioriteit hersteld; openbaar rapport ongewijzigd.",
-          "terminal": "COORDINATE CAPTURE: Atlas-bekkenvector overgedragen aan Deep Reach-ontvanger. Berging toegekend onder samenwerkingsnotitie. Openbaar ongevalsrapport ongewijzigd. Toekomstige operaties krijgen corporate routeautoriteit terug.",
-          "audio": "Je opende de deur van binnenuit.",
-          "in_game_wiki": "Dit record is de zuiverste verkooproute. De speler kan ontsnappen, maar de rampsite keert terug naar de instelling die faalde en nu een betere kaart bezit.",
-          "external_site": "De vraag is niet alleen of de speler HECTON-8 verlaat. Het gaat erom wie de kaart ontvangt nadat hij vertrekt, en of overleven is gekocht door de oude eigenaar een weg terug naar binnen te geven.",
-          "field_note": "Corporate gedeeltelijk einde: coördinaten kopen berging door de plaats delict opnieuw onder Deep Reach-controle te openen."
-        }
-      }
+    "zh_CN": {
+     "title": "物资脱离收据审计",
+     "scanner": "脱离收据确认回收质量。证据监管链断裂；工人姓名仍未被接受。",
+     "terminal": "AFTER-ACTION 收据：已按可回收质量和合同风险释放打捞付款。坐标真相未解决。Deep Reach 责任状态未改变。工人姓名账册因不在监管链内被拒绝为证据。准许脱离；案件仍由载舰拥有。",
+     "audio": "你拿到了钱。这不等于干净离开。",
+     "in_game_wiki": "物资脱离收据审计让金钱结局既真实又苦涩。玩家提取了价值并活过合同，但机构仍拥有记录、姓名，以及灾难的官方形状。",
+     "external_site": "HECTON-8 的假出口不是假的失败界面。它们是真实结果，暴露玩家选择重视什么：质量、证据、姓名、自由，或逃离后由谁拥有这个故事的权利。",
+     "field_note": "用于已付款但道德上未完成的退出记录：奖励结清，证据链失败，姓名仍在官方监管之外。"
     },
-    {
-      "packet_id": "P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD",
-      "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
-      "article_id": "applied_lore.public_ledger_aftershock_record",
-      "title_key": "applied_lore.public_ledger_aftershock_record.title",
-      "unlock": {
-        "primary": "unlock.public_ledger_aftershock_record",
-        "poi_tags": [
-          "poi.public_ledger_aftershock",
-          "poi.evidence_mirror_notice",
-          "poi.no_control_warning"
-        ],
-        "biome_tags": [
-          "biome.ending",
-          "biome.truth"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Public Ledger Aftershock Record",
-          "scanner": "Ledger mirrors accepted. Evidence is no longer removable; consequence is no longer steerable.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: evidence released outside Deep Reach custody. Worker names, Atlas vector fragments, and liability tags mirrored across public receivers. Player authority over interpretation terminated.",
-          "audio": "Truth left the room. It did not ask where to go next.",
-          "in_game_wiki": "Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over panic, exploitation, retaliation, and what strangers build from the proof.",
-          "external_site": "HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence: grief, markets, lawsuits, cult readings, rescue efforts, and revenge using the same released facts.",
-          "field_note": "Public truth record: mirrored evidence prevents erasure, but ends the player's control over interpretation and retaliation."
-        },
-        "ru_RU": {
-          "title": "Запись афтершока публичного реестра",
-          "scanner": "Зеркала реестра приняты. Доказательство больше нельзя убрать; последствия больше нельзя направлять.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: доказательства выпущены вне хранения Deep Reach. Имена рабочих, фрагменты вектора Atlas и теги ответственности зеркалированы по публичным приемникам. Полномочия игрока на трактовку прекращены.",
-          "audio": "Правда вышла из комнаты. Она не спросила, куда ей идти.",
-          "in_game_wiki": "Эта запись не дает правде стать чистой кнопкой победы. Публикация ломает стирание, но игрок теряет контроль над паникой, эксплуатацией, местью и тем, что чужие люди построят из доказательства.",
-          "external_site": "Истинная концовка HECTON-8 не про чистоту. Это решение усложнить сокрытие и принять неконтролируемые последствия: горе, рынки, иски, культовые чтения, спасательные усилия и месть, использующие одни и те же опубликованные факты.",
-          "field_note": "Запись публичной правды: зеркальные доказательства мешают стиранию, но прекращают контроль игрока над трактовкой и ответным ударом."
-        },
-        "ja_JP": {
-          "title": "公開台帳余震記録",
-          "scanner": "台帳ミラー受理。証拠はもう取り除けず、結果はもう操れない。",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: 証拠が Deep Reach 保管外へ公開。作業員名、Atlas ベクトル断片、責任タグが公開受信機へミラー化。解釈に対するプレイヤー権限は終了。",
-          "audio": "真実は部屋を出た。次にどこへ行くかは尋ねなかった。",
-          "in_game_wiki": "公開台帳余震記録は、真実をきれいな勝利ボタンにしない。公開は抹消を壊すが、プレイヤーはパニック、搾取、報復、そして見知らぬ者が証拠から作るものを制御できなくなる。",
-          "external_site": "HECTON-8 の真実エンディングは純粋さではない。隠蔽を難しくすると同時に、悲嘆、市場、訴訟、カルト的解釈、救助活動、復讐が同じ公開事実を使うことを受け入れる決断だ。",
-          "field_note": "公開真実記録: ミラー証拠は抹消を防ぐが、解釈と報復に対するプレイヤーの制御を終わらせる。"
-        },
-        "zh_CN": {
-          "title": "公共账册余震记录",
-          "scanner": "账册镜像已接受。证据不再可移除；后果不再可操控。",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK：证据已释放到 Deep Reach 监管之外。工人姓名、Atlas 矢量碎片和责任标签镜像至公共接收器。玩家对解释的权限终止。",
-          "audio": "真相离开了房间。它没有问下一站去哪。",
-          "in_game_wiki": "公共账册余震记录避免让真相变成干净的胜利按钮。公开打破抹除，但玩家失去对恐慌、利用、报复，以及陌生人会用证据建造什么的控制。",
-          "external_site": "HECTON-8 的真相结局不是纯净。它是一个决定：让隐瞒更困难，同时接受失控后果，包括悲伤、市场、诉讼、邪教式解读、救援努力和用同一批事实发动的复仇。",
-          "field_note": "公共真相记录：镜像证据阻止抹除，但终止玩家对解释和报复的控制。"
-        },
-        "fr_FR": {
-          "title": "Dossier de contrecoup du registre public",
-          "scanner": "Miroirs de registre acceptés. Les preuves ne sont plus retirables ; la conséquence n'est plus pilotable.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK : preuves libérées hors garde Deep Reach. Noms d'ouvriers, fragments de vecteur Atlas et marqueurs de responsabilité copiés vers des récepteurs publics. Autorité du joueur sur l'interprétation terminée.",
-          "audio": "La vérité a quitté la pièce. Elle n'a pas demandé où aller.",
-          "in_game_wiki": "Ce dossier empêche la vérité de devenir un bouton de victoire propre. La publication brise l'effacement, mais le joueur perd le contrôle de la panique, de l'exploitation, des représailles et de ce que des inconnus construiront avec la preuve.",
-          "external_site": "La fin vérité de HECTON-8 n'est pas la pureté. C'est décider de rendre la dissimulation plus difficile tout en acceptant une conséquence incontrôlée : deuil, marchés, procès, lectures sectaires, efforts de sauvetage et vengeance fondés sur les mêmes faits publiés.",
-          "field_note": "Dossier de vérité publique : les preuves miroir empêchent l'effacement, mais retirent au joueur le contrôle de l'interprétation et des représailles."
-        },
-        "es_ES": {
-          "title": "Registro de réplica del libro público",
-          "scanner": "Espejos del libro aceptados. La evidencia ya no se puede retirar; la consecuencia ya no se puede dirigir.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: pruebas liberadas fuera de custodia Deep Reach. Nombres de trabajadores, fragmentos de vector Atlas y etiquetas de responsabilidad replicados en receptores públicos. Autoridad del jugador sobre la interpretación terminada.",
-          "audio": "La verdad salió de la sala. No preguntó adónde ir.",
-          "in_game_wiki": "El registro impide que la verdad sea un botón limpio de victoria. La publicación rompe el borrado, pero el jugador pierde control sobre pánico, explotación, represalia y lo que desconocidos construirán con la prueba.",
-          "external_site": "El final de verdad de HECTON-8 no es pureza. Es decidir hacer más difícil el ocultamiento aceptando consecuencias sin control: duelo, mercados, demandas, lecturas de culto, esfuerzos de rescate y venganza usando los mismos hechos liberados.",
-          "field_note": "Registro de verdad pública: la evidencia replicada impide el borrado, pero termina el control del jugador sobre interpretación y represalia."
-        },
-        "de_DE": {
-          "title": "Nachbebenakte des öffentlichen Ledgers",
-          "scanner": "Ledger-Spiegel akzeptiert. Beweise sind nicht mehr entfernbar; Folgen nicht mehr steuerbar.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: Beweise außerhalb der Deep-Reach-Verwahrung veröffentlicht. Arbeiternamen, Atlas-Vektorfragmente und Haftungstags über öffentliche Empfänger gespiegelt. Spielerautorität über Interpretation beendet.",
-          "audio": "Die Wahrheit verließ den Raum. Sie fragte nicht, wohin als Nächstes.",
-          "in_game_wiki": "Diese Akte verhindert, dass Wahrheit ein sauberer Siegknopf wird. Veröffentlichung bricht Auslöschung, aber der Spieler verliert Kontrolle über Panik, Ausbeutung, Vergeltung und das, was Fremde aus dem Beweis bauen.",
-          "external_site": "HECTON-8s Wahrheitsende ist keine Reinheit. Es ist die Entscheidung, Vertuschung schwerer zu machen und unkontrollierte Folgen zu akzeptieren: Trauer, Märkte, Klagen, kultische Lesarten, Rettungsversuche und Rache aus denselben veröffentlichten Fakten.",
-          "field_note": "Öffentliche Wahrheitsakte: gespiegelte Beweise verhindern Löschung, beenden aber die Kontrolle des Spielers über Deutung und Vergeltung."
-        },
-        "pl_PL": {
-          "title": "Rejestr wstrząsu po publicznej księdze",
-          "scanner": "Lustra księgi przyjęte. Dowodu nie da się już usunąć; konsekwencji nie da się już prowadzić.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: dowody uwolnione poza dozór Deep Reach. Nazwiska pracowników, fragmenty wektora Atlas i tagi odpowiedzialności odbite w publicznych odbiornikach. Władza gracza nad interpretacją zakończona.",
-          "audio": "Prawda wyszła z pokoju. Nie zapytała, dokąd iść dalej.",
-          "in_game_wiki": "Ten rejestr nie pozwala prawdzie stać się czystym przyciskiem zwycięstwa. Publikacja łamie wymazanie, ale gracz traci kontrolę nad paniką, wyzyskiem, odwetem i tym, co obcy zbudują z dowodu.",
-          "external_site": "Prawdziwe zakończenie HECTON-8 nie jest czystością. To decyzja, by utrudnić ukrywanie i przyjąć niekontrolowane skutki: żałobę, rynki, pozwy, sekciarskie odczytania, akcje ratunkowe i zemstę opartą na tych samych ujawnionych faktach.",
-          "field_note": "Publiczny rejestr prawdy: kopie dowodów zapobiegają wymazaniu, ale kończą kontrolę gracza nad interpretacją i odwetem."
-        },
-        "uk_UA": {
-          "title": "Запис афтершоку публічного реєстру",
-          "scanner": "Дзеркала реєстру прийнято. Доказ більше не можна прибрати; наслідок більше не можна спрямувати.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: докази випущено поза зберігання Deep Reach. Імена працівників, фрагменти вектора Atlas і теги відповідальності віддзеркалено на публічних приймачах. Повноваження гравця на тлумачення припинено.",
-          "audio": "Правда вийшла з кімнати. Вона не спитала, куди йти далі.",
-          "in_game_wiki": "Цей запис не дає правді стати чистою кнопкою перемоги. Публікація ламає стирання, але гравець втрачає контроль над панікою, експлуатацією, помстою і тим, що чужі люди збудують із доказу.",
-          "external_site": "Правдива кінцівка HECTON-8 не про чистоту. Це рішення ускладнити приховування й прийняти неконтрольовані наслідки: горе, ринки, позови, культові прочитання, рятувальні зусилля і помсту, що користуються тими самими оприлюдненими фактами.",
-          "field_note": "Запис публічної правди: дзеркальні докази заважають стиранню, але завершують контроль гравця над тлумаченням і помстою."
-        },
-        "ar_SA": {
-          "title": "سجل ارتداد الدفتر العام",
-          "scanner": "مرايا الدفتر مقبولة. لم تعد الأدلة قابلة للإزالة؛ ولم تعد العواقب قابلة للتوجيه.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: أفرج عن الأدلة خارج حيازة Deep Reach. أسماء العمال وشظايا متجه Atlas ووسوم المسؤولية منسوخة عبر مستقبلات عامة. انتهت سلطة اللاعب على التأويل.",
-          "audio": "غادرت الحقيقة الغرفة. لم تسأل إلى أين تذهب.",
-          "in_game_wiki": "يمنع هذا السجل الحقيقة من أن تصبح زر فوز نظيفا. النشر يكسر المحو، لكن اللاعب يفقد السيطرة على الذعر والاستغلال والانتقام وما سيبنيه الغرباء من الدليل.",
-          "external_site": "نهاية الحقيقة في HECTON-8 ليست نقاء. إنها قرار يجعل الإخفاء أصعب مع قبول عواقب بلا سيطرة: حزن وأسواق ودعاوى وقراءات طائفية وجهود إنقاذ وانتقام يستخدم الحقائق نفسها.",
-          "field_note": "سجل حقيقة عام: الأدلة المنسوخة تمنع المحو، لكنها تنهي تحكم اللاعب في التأويل والانتقام."
-        },
-        "id_ID": {
-          "title": "Catatan Guncangan Buku Besar Publik",
-          "scanner": "Cermin ledger diterima. Bukti tidak lagi bisa dihapus; konsekuensi tidak lagi bisa diarahkan.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: bukti dilepas di luar kustodi Deep Reach. Nama pekerja, fragmen vektor Atlas, dan tag liabilitas dicerminkan ke penerima publik. Otoritas pemain atas interpretasi dihentikan.",
-          "audio": "Kebenaran meninggalkan ruangan. Ia tidak bertanya harus ke mana.",
-          "in_game_wiki": "Catatan ini mencegah kebenaran menjadi tombol menang yang bersih. Publikasi mematahkan penghapusan, tetapi pemain kehilangan kendali atas panik, eksploitasi, pembalasan, dan apa yang dibangun orang asing dari bukti itu.",
-          "external_site": "Akhir kebenaran HECTON-8 bukan kemurnian. Itu keputusan membuat penyembunyian lebih sulit sambil menerima konsekuensi tak terkendali: duka, pasar, gugatan, pembacaan kultus, upaya penyelamatan, dan balas dendam memakai fakta yang sama.",
-          "field_note": "Catatan kebenaran publik: bukti bercermin mencegah penghapusan, tetapi mengakhiri kontrol pemain atas penafsiran dan pembalasan."
-        },
-        "ko_KR": {
-          "title": "공개 장부 여파 기록",
-          "scanner": "장부 미러 수락. 증거는 더 이상 제거할 수 없고, 결과는 더 이상 조종할 수 없다.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: 증거가 Deep Reach 보관 밖으로 공개됨. 작업자 이름, Atlas 벡터 파편, 책임 태그가 공개 수신기에 미러링됨. 해석에 대한 플레이어 권한 종료.",
-          "audio": "진실은 방을 떠났다. 다음 목적지를 묻지 않았다.",
-          "in_game_wiki": "이 기록은 진실이 깨끗한 승리 버튼이 되는 것을 막는다. 공개는 삭제를 깨뜨리지만, 플레이어는 공황, 착취, 보복, 그리고 낯선 이들이 증거로 무엇을 만들지 통제하지 못한다.",
-          "external_site": "HECTON-8의 진실 엔딩은 순수함이 아니다. 은폐를 어렵게 만들기로 결정하면서, 슬픔, 시장, 소송, 종교적 해석, 구조 시도, 같은 공개 사실을 이용한 복수까지 통제 불가능한 결과를 받아들이는 것이다.",
-          "field_note": "공개 진실 기록: 미러링된 증거는 삭제를 막지만, 해석과 보복에 대한 플레이어의 통제를 끝낸다."
-        },
-        "he_IL": {
-          "title": "רשומת הדף של ספר ציבורי",
-          "scanner": "מראות הספר התקבלו. ראיות כבר אינן ניתנות להסרה; התוצאה כבר אינה ניתנת להכוונה.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: ראיות שוחררו מחוץ למשמורת Deep Reach. שמות עובדים, שברי וקטור Atlas ותגי אחריות שוכפלו למקלטים ציבוריים. סמכות השחקן על הפרשנות הסתיימה.",
-          "audio": "האמת יצאה מהחדר. היא לא שאלה לאן ללכת.",
-          "in_game_wiki": "הרשומה הזאת מונעת מן האמת להיות כפתור ניצחון נקי. הפרסום שובר מחיקה, אבל השחקן מאבד שליטה על פאניקה, ניצול, נקמה ומה שזרים יבנו מן הראיה.",
-          "external_site": "סוף האמת של HECTON-8 אינו טוהר. זו החלטה להקשות על הסתרה תוך קבלת תוצאה ללא שליטה: אבל, שווקים, תביעות, קריאות כתתיות, מאמצי חילוץ ונקמה המשתמשים באותן עובדות ששוחררו.",
-          "field_note": "רשומת אמת ציבורית: ראיות משוכפלות מונעות מחיקה, אך מסיימות את שליטת השחקן בפרשנות ובנקמה."
-        },
-        "pt_BR": {
-          "title": "Registro de Aftershock do Livro Público",
-          "scanner": "Espelhos do ledger aceitos. A prova não pode mais ser removida; a consequência não pode mais ser conduzida.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: provas liberadas fora da custódia da Deep Reach. Nomes de trabalhadores, fragmentos de vetor Atlas e tags de responsabilidade espelhados em receptores públicos. Autoridade do jogador sobre interpretação encerrada.",
-          "audio": "A verdade saiu da sala. Não perguntou para onde ir.",
-          "in_game_wiki": "O registro impede que a verdade vire um botão limpo de vitória. A publicação quebra o apagamento, mas o jogador perde controle sobre pânico, exploração, retaliação e o que desconhecidos construirão a partir da prova.",
-          "external_site": "O final de verdade de HECTON-8 não é pureza. É a decisão de dificultar o encobrimento aceitando consequências sem controle: luto, mercados, processos, leituras de culto, esforços de resgate e vingança usando os mesmos fatos liberados.",
-          "field_note": "Registro de verdade pública: provas espelhadas impedem apagamento, mas encerram o controle do jogador sobre interpretação e retaliação."
-        },
-        "nl_NL": {
-          "title": "Naschokrecord van openbaar ledger",
-          "scanner": "Ledgerspiegels geaccepteerd. Bewijs is niet meer verwijderbaar; gevolg niet meer bestuurbaar.",
-          "terminal": "PUBLIC LEDGER AFTERSHOCK: bewijs vrijgegeven buiten Deep Reach-bewaring. Werknamen, Atlas-vectorfragmenten en aansprakelijkheidstags gespiegeld over publieke ontvangers. Spelerautoriteit over interpretatie beëindigd.",
-          "audio": "De waarheid verliet de kamer. Ze vroeg niet waarheen.",
-          "in_game_wiki": "Dit record voorkomt dat waarheid een schone overwinningsknop wordt. Publicatie breekt uitwissing, maar de speler verliest controle over paniek, uitbuiting, vergelding en wat vreemden met het bewijs bouwen.",
-          "external_site": "Het waarheids einde van HECTON-8 is geen zuiverheid. Het is besluiten verhulling moeilijker te maken terwijl je onbeheerste gevolgen accepteert: rouw, markten, rechtszaken, sektarische lezingen, reddingspogingen en wraak met dezelfde vrijgegeven feiten.",
-          "field_note": "Publiek waarheidsrecord: gespiegeld bewijs voorkomt wissen, maar beëindigt de controle van de speler over interpretatie en vergelding."
-        }
-      }
+    "fr_FR": {
+     "title": "Audit du reçu de sortie matérielle",
+     "scanner": "Le reçu de sortie valide la masse récupérée. La garde des preuves est brisée ; les noms des ouvriers restent refusés.",
+     "terminal": "REÇU AFTER-ACTION : paiement de sauvetage libéré pour masse récupérable et risque contractuel. Vérité des coordonnées non résolue. Statut de responsabilité Deep Reach inchangé. Registre des noms d'ouvriers rejeté comme preuve hors garde. Sortie accordée ; le dossier reste propriété du transporteur.",
+     "audio": "Tu as été payé. Ce n'est pas sortir propre.",
+     "in_game_wiki": "L'audit du reçu rend la fin argent légitime et amère. Le joueur a extrait de la valeur et survécu au contrat, mais l'institution possède encore le dossier, les noms et la forme officielle du désastre.",
+     "external_site": "Les fausses sorties de HECTON-8 ne sont pas des écrans d'échec déguisés. Ce sont de vrais résultats qui montrent ce que le joueur a choisi de valoriser : masse, preuve, noms, liberté ou droit de décider à qui appartient l'histoire après la fuite.",
+     "field_note": "Dossier d'après-action pour une sortie payée mais moralement incomplète : la récompense passe, la chaîne de preuve échoue, les noms restent hors garde officielle."
+    },
+    "es_ES": {
+     "title": "Auditoría del recibo de salida material",
+     "scanner": "El recibo de salida valida la masa recuperada. La custodia de pruebas está rota; los nombres de trabajadores siguen sin aceptarse.",
+     "terminal": "RECIBO AFTER-ACTION: pago de salvamento liberado por masa recuperable y riesgo contratado. Verdad de coordenadas sin resolver. Estado de responsabilidad de Deep Reach sin cambios. Libro de nombres de trabajadores rechazado como prueba no custodiada. Salida concedida; el caso sigue siendo propiedad del portador.",
+     "audio": "Te pagaron. Eso no es lo mismo que salir limpio.",
+     "in_game_wiki": "La auditoría del recibo hace que el final de dinero sea legítimo y amargo. El jugador extrajo valor y sobrevivió al contrato, pero la institución aún posee el registro, los nombres y la forma oficial del desastre.",
+     "external_site": "Las falsas salidas de HECTON-8 no son pantallas falsas de fracaso. Son resultados reales que exponen qué eligió valorar el jugador: masa, prueba, nombres, libertad o el derecho a decidir quién posee la historia tras escapar.",
+     "field_note": "Registro posterior a la acción para una salida pagada pero moralmente incompleta: la recompensa se liquida, la cadena de pruebas falla, los nombres quedan fuera de custodia oficial."
+    },
+    "de_DE": {
+     "title": "Audit der Materialausgangsquittung",
+     "scanner": "Ausgangsquittung bestätigt geborgene Masse. Beweisverwahrung ist gebrochen; Arbeiternamen bleiben unangenommen.",
+     "terminal": "AFTER-ACTION-QUITTUNG: Bergungszahlung für rückholbare Masse und Vertragsgefahr freigegeben. Koordinatenwahrheit ungelöst. Haftungsstatus von Deep Reach unverändert. Arbeiternamen-Ledger als nicht verwahrter Beweis zurückgewiesen. Ausgang gewährt; der Fall bleibt Eigentum des Trägers.",
+     "audio": "Du wurdest bezahlt. Das heißt nicht, dass du sauber raus bist.",
+     "in_game_wiki": "Das Audit der Materialausgangsquittung macht das Geldende legitim und bitter. Der Spieler hat Wert geborgen und den Vertrag überlebt, doch die Institution besitzt weiter die Akte, die Namen und die offizielle Form der Katastrophe.",
+     "external_site": "HECTON-8s falsche Ausgänge sind keine falschen Fail-Screens. Es sind echte Ergebnisse, die zeigen, was der Spieler wertgeschätzt hat: Masse, Beweis, Namen, Freiheit oder das Recht zu entscheiden, wem die Geschichte nach der Flucht gehört.",
+     "field_note": "Nachaktionsdatensatz für einen bezahlten, aber moralisch unvollständigen Ausgang: Belohnung wird freigegeben, Beweiskette scheitert, Namen bleiben außerhalb offizieller Verwahrung."
+    },
+    "pl_PL": {
+     "title": "Audyt kwitu wyjścia materiałowego",
+     "scanner": "Kwit wyjścia potwierdza odzyskaną masę. Dozór dowodów jest przerwany; nazwiska pracowników nie zostały przyjęte.",
+     "terminal": "KWIT AFTER-ACTION: wypłata salvage zwolniona za odzyskiwalną masę i ryzyko kontraktowe. Prawda współrzędnych nierozstrzygnięta. Status odpowiedzialności Deep Reach bez zmian. Rejestr nazwisk pracowników odrzucony jako dowód poza dozorem. Wyjście przyznane; sprawa pozostaje własnością nośnika.",
+     "audio": "Zapłacili ci. To nie znaczy, że wyszedłeś czysto.",
+     "in_game_wiki": "Audyt kwitu sprawia, że zakończenie za pieniądze jest prawdziwe i gorzkie. Gracz wydobył wartość i przetrwał kontrakt, ale instytucja nadal posiada zapis, nazwiska i oficjalny kształt katastrofy.",
+     "external_site": "Fałszywe wyjścia HECTON-8 nie są udawanymi ekranami porażki. To realne wyniki ujawniające, co gracz wybrał jako wartość: masę, dowód, nazwiska, wolność albo prawo decydowania, kto po ucieczce posiada tę historię.",
+     "field_note": "Raport poakcyjny dla płatnego, ale moralnie niepełnego wyjścia: nagroda przechodzi, łańcuch dowodowy zawodzi, nazwiska pozostają poza oficjalnym dozorem."
+    },
+    "uk_UA": {
+     "title": "Аудит квитанції матеріального виходу",
+     "scanner": "Квитанція виходу підтверджує вилучену масу. Ланцюг доказів зламаний; імена працівників не прийняті.",
+     "terminal": "КВИТАНЦІЯ AFTER-ACTION: сальважну виплату видано за вилучувану масу й контрактний ризик. Правда координат не вирішена. Статус відповідальності Deep Reach не змінено. Реєстр імен працівників відхилено як доказ поза ланцюгом зберігання. Вихід дозволено; справа лишається власністю носія.",
+     "audio": "Тобі заплатили. Це не означає, що ти вийшов чисто.",
+     "in_game_wiki": "Аудит квитанції робить грошову кінцівку справжньою й гіркою. Гравець виніс цінність і пережив контракт, але інституція все ще володіє записом, іменами й офіційною формою катастрофи.",
+     "external_site": "Хибні виходи HECTON-8 не є фальшивими екранами поразки. Це реальні наслідки, які показують, що гравець вирішив цінувати: масу, доказ, імена, свободу або право визначити, кому належить історія після втечі.",
+     "field_note": "Післядійний запис для оплаченого, але морально незавершеного виходу: винагорода закрита, evidence chain провалена, імена лишаються поза офіційним зберіганням."
+    },
+    "ar_SA": {
+     "title": "تدقيق إيصال الخروج المادي",
+     "scanner": "إيصال الخروج يثبت الكتلة المستعادة. حيازة الأدلة مكسورة؛ أسماء العمال لا تزال غير مقبولة.",
+     "terminal": "إيصال AFTER-ACTION: أفرج عن دفعة الإنقاذ للكتلة القابلة للاستعادة والخطر المتعاقد عليه. حقيقة الإحداثيات غير محسومة. حالة مسؤولية Deep Reach بلا تغيير. رفض دفتر أسماء العمال كدليل خارج الحيازة. الخروج ممنوح؛ القضية تبقى ملكا للناقل.",
+     "audio": "لقد قبضت المال. هذا لا يعني أنك خرجت نظيفا.",
+     "in_game_wiki": "يجعل تدقيق الإيصال نهاية المال شرعية ومرة. استخرج اللاعب قيمة ونجا من العقد، لكن المؤسسة ما زالت تملك السجل والأسماء والشكل الرسمي للكارثة.",
+     "external_site": "خروجات HECTON-8 الزائفة ليست شاشات فشل وهمية. إنها نتائج حقيقية تكشف ما اختار اللاعب تقديره: الكتلة، الدليل، الأسماء، الحرية، أو حق تقرير من يملك القصة بعد الهرب.",
+     "field_note": "سجل ما بعد الفعل لخروج مدفوع لكنه ناقص أخلاقيا: المكافأة تصفى، سلسلة الأدلة تفشل، والأسماء تبقى خارج الحيازة الرسمية."
+    },
+    "id_ID": {
+     "title": "Audit Tanda Terima Keluar Material",
+     "scanner": "Tanda terima keluar memvalidasi massa yang dipulihkan. Rantai bukti rusak; nama pekerja tetap tidak diterima.",
+     "terminal": "TANDA TERIMA AFTER-ACTION: pembayaran salvage dilepas untuk massa yang dapat dipulihkan dan bahaya kontrak. Kebenaran koordinat belum terselesaikan. Status liabilitas Deep Reach tidak berubah. Buku nama pekerja ditolak sebagai bukti non-kustodial. Keluar diizinkan; kasus tetap dimiliki carrier.",
+     "audio": "Kau dibayar. Itu tidak sama dengan keluar bersih.",
+     "in_game_wiki": "Audit ini membuat akhir uang terasa sah dan pahit. Pemain mengekstrak nilai dan bertahan dari kontrak, tetapi institusi masih memiliki catatan, nama, dan bentuk resmi bencana.",
+     "external_site": "Keluar palsu HECTON-8 bukan layar gagal palsu. Itu hasil nyata yang memperlihatkan apa yang dipilih pemain untuk dihargai: massa, bukti, nama, kebebasan, atau hak menentukan siapa yang memiliki cerita setelah kabur.",
+     "field_note": "Catatan pasca-aksi untuk keluar yang dibayar tetapi belum selesai secara moral: hadiah cair, rantai bukti gagal, nama tetap di luar kustodi resmi."
+    },
+    "ko_KR": {
+     "title": "물자 탈출 영수 감사",
+     "scanner": "탈출 영수증이 회수 질량을 검증했다. 증거 보관은 끊겼고, 작업자 이름은 아직 인정되지 않았다.",
+     "terminal": "AFTER-ACTION 영수: 회수 가능 질량과 계약 위험에 대한 salvage 지급 해제. 좌표 진실 미해결. Deep Reach 책임 상태 변화 없음. 작업자 이름 장부는 비보관 증거로 거부. 탈출 승인. 사건은 carrier 소유로 유지된다.",
+     "audio": "돈은 받았다. 깨끗이 나온 것과는 다르다.",
+     "in_game_wiki": "물자 탈출 영수 감사는 돈 엔딩을 정당하고도 씁쓸하게 만든다. 플레이어는 가치를 빼내고 계약에서 살아남았지만, 기관은 여전히 기록과 이름, 재난의 공식 형태를 소유한다.",
+     "external_site": "HECTON-8의 거짓 탈출은 가짜 실패 화면이 아니다. 그것은 플레이어가 무엇을 가치로 삼았는지 드러내는 실제 결과다. 질량, 증거, 이름, 자유, 또는 탈출 뒤 이야기를 누가 소유할지 정할 권리.",
+     "field_note": "돈은 받았지만 도덕적으로 미완인 탈출을 위한 사후 기록. 보상은 정산되고, 증거 연쇄는 실패하며, 이름들은 공식 보관 밖에 남는다."
+    },
+    "he_IL": {
+     "title": "ביקורת קבלת יציאה חומרית",
+     "scanner": "קבלת היציאה מאשרת מסה שחולצה. משמורת הראיות שבורה; שמות העובדים עדיין לא התקבלו.",
+     "terminal": "קבלת AFTER-ACTION: תשלום salvage שוחרר עבור מסה ברת חילוץ וסיכון חוזי. אמת הקואורדינטות לא נפתרה. מצב האחריות של Deep Reach לא השתנה. פנקס שמות העובדים נדחה כראיה שאינה במשמורת. יציאה אושרה; התיק נשאר בבעלות הנשא.",
+     "audio": "קיבלת כסף. זה לא אותו דבר כמו לצאת נקי.",
+     "in_game_wiki": "ביקורת הקבלה הופכת את סוף הכסף ללגיטימי ומר. השחקן הוציא ערך ושרד את החוזה, אבל המוסד עדיין מחזיק ברשומה, בשמות ובצורה הרשמית של האסון.",
+     "external_site": "היציאות השקריות של HECTON-8 אינן מסכי כישלון מזויפים. הן תוצאות אמיתיות שחושפות מה השחקן בחר להעריך: מסה, הוכחה, שמות, חירות או הזכות לקבוע למי שייך הסיפור אחרי הבריחה.",
+     "field_note": "רשומת אחרי פעולה ליציאה ששולמה אך אינה שלמה מוסרית: התגמול עובר, שרשרת הראיות נכשלת, השמות נשארים מחוץ למשמורת רשמית."
+    },
+    "pt_BR": {
+     "title": "Auditoria do Recibo de Saída Material",
+     "scanner": "O recibo de saída valida a massa recuperada. A custódia de provas está quebrada; nomes de trabalhadores continuam não aceitos.",
+     "terminal": "RECIBO AFTER-ACTION: pagamento de salvage liberado por massa recuperável e risco contratado. Verdade das coordenadas não resolvida. Status de responsabilidade da Deep Reach inalterado. Livro de nomes de trabalhadores rejeitado como prova sem custódia. Saída concedida; o caso permanece propriedade do carrier.",
+     "audio": "Você recebeu. Não é o mesmo que sair limpo.",
+     "in_game_wiki": "A auditoria torna o final do dinheiro legítimo e amargo. O jogador extraiu valor e sobreviveu ao contrato, mas a instituição ainda possui o registro, os nomes e a forma oficial do desastre.",
+     "external_site": "As falsas saídas de HECTON-8 não são telas falsas de fracasso. São resultados reais que expõem o que o jogador escolheu valorizar: massa, prova, nomes, liberdade ou o direito de decidir quem possui a história depois da fuga.",
+     "field_note": "Registro pós-ação para uma saída paga, mas moralmente incompleta: recompensa liberada, cadeia de provas falha, nomes ficam fora da custódia oficial."
+    },
+    "nl_NL": {
+     "title": "Audit van materiaaluitgangsbon",
+     "scanner": "Uitgangsbon valideert geborgen massa. Bewijsbewaring is verbroken; werknamen blijven onaanvaard.",
+     "terminal": "AFTER-ACTION-BON: salvagebetaling vrijgegeven voor terugwinbare massa en contractueel gevaar. Coördinatenwaarheid onopgelost. Aansprakelijkheidsstatus Deep Reach ongewijzigd. Werknamenregister afgewezen als niet-bewaard bewijs. Uitgang verleend; zaak blijft eigendom van de carrier.",
+     "audio": "Je bent betaald. Dat is niet hetzelfde als schoon wegkomen.",
+     "in_game_wiki": "De audit maakt het geldeinde legitiem en bitter. De speler heeft waarde gewonnen en het contract overleefd, maar de instelling bezit nog steeds het dossier, de namen en de officiële vorm van de ramp.",
+     "external_site": "De valse uitgangen van HECTON-8 zijn geen nepfaalschermen. Het zijn echte uitkomsten die tonen wat de speler waardeerde: massa, bewijs, namen, vrijheid of het recht te bepalen wie het verhaal na ontsnapping bezit.",
+     "field_note": "Na-actieverslag voor een betaalde maar moreel onvolledige uitgang: beloning gaat door, bewijsketen faalt, namen blijven buiten officiële bewaring."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P337_PARTIAL_RETURN_LIEN_EXTENSION",
+   "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
+   "article_id": "applied_lore.partial_return_lien_extension",
+   "title_key": "applied_lore.partial_return_lien_extension.title",
+   "unlock": {
+    "primary": "unlock.partial_return_lien_extension",
+    "poi_tags": [
+     "poi.partial_return_lien_notice",
+     "poi.same_seed_return_stamp",
+     "poi.carrier_reentry_clause"
+    ],
+    "biome_tags": [
+     "biome.ending",
+     "biome.replay"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Partial Return Lien Extension",
+     "scanner": "Return approved under extended lien. Knowledge flags persist; equipment inventory is quarantined and stripped.",
+     "terminal": "PARTIAL RETURN ORDER: same-seed reentry permitted under extended lien, revised storm window, and retained knowledge dossier. Physical inventory reset by custody quarantine; tools remain carrier property until evidence review closes.",
+     "audio": "The route remembers what you proved. The ocean keeps the rest.",
+     "in_game_wiki": "Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player returns because the dossier and debt changed, not because HECTON-8 became easier.",
+     "external_site": "HECTON-8 replay structure treats partial exits as records, not resets. A failed escape can still move the campaign forward by changing what is known, who is owed, and which window opens next.",
+     "field_note": "Reentry record: same-seed return carries knowledge, debt pressure, storm changes, and custody reset instead of inherited equipment."
+    },
+    "ru_RU": {
+     "title": "Продление удержания для частичного возврата",
+     "scanner": "Возврат одобрен под продленным удержанием. Флаги знания сохраняются; инвентарь помещен в карантин и снят.",
+     "terminal": "ПРИКАЗ ЧАСТИЧНОГО ВОЗВРАТА: повторный вход в тот же seed разрешен под продленным удержанием, пересчитанным штормовым окном и сохраненным досье знаний. Физический инвентарь сброшен карантином хранения; инструменты остаются собственностью носителя до закрытия проверки доказательств.",
+     "audio": "Маршрут помнит, что ты доказал. Океан оставляет себе остальное.",
+     "in_game_wiki": "Продление удержания фиксирует replay-постоянство как знание, а не как силу снаряжения. Игрок возвращается потому, что изменились досье и долг, а не потому, что HECTON-8 стала проще.",
+     "external_site": "Структура replay в HECTON-8 относится к частичным выходам как к записям, а не сбросам. Неудачный побег все еще может двигать кампанию вперед, меняя известное, задолженное и следующее открывающееся окно.",
+     "field_note": "Запись повторного входа: same-seed возврат несет знание, давление долга, изменения шторма и custody reset вместо унаследованного снаряжения."
+    },
+    "ja_JP": {
+     "title": "部分帰還先取特権延長",
+     "scanner": "延長先取特権の下で帰還承認。知識フラグは残り、装備在庫は隔離され剥奪される。",
+     "terminal": "PARTIAL RETURN 命令: 延長先取特権、改訂された嵐窓、保持知識ドシエの下で同一 seed 再突入を許可。物理インベントリは保管隔離でリセット。工具は証拠審査終了までキャリア所有物。",
+     "audio": "ルートは君が証明したことを覚えている。海は残りを持っていく。",
+     "in_game_wiki": "部分帰還先取特権延長は、リプレイの持続性を装備力ではなく知識として固定する。プレイヤーが戻れるのは、ドシエと債務が変わったからで、HECTON-8 が易しくなったからではない。",
+     "external_site": "HECTON-8 のリプレイ構造は、部分出口をリセットではなく記録として扱う。失敗した脱出でも、何が知られ、誰に負債があり、次にどの窓が開くかを変えることでキャンペーンを進める。",
+     "field_note": "再突入記録: 同一 seed 帰還は、継承装備ではなく知識、債務圧、嵐の変化、保管リセットを運ぶ。"
+    },
+    "zh_CN": {
+     "title": "部分返回留置权延长",
+     "scanner": "返回在延长留置权下获准。知识标记保留；装备库存被隔离并剥离。",
+     "terminal": "PARTIAL RETURN 命令：在延长留置权、修订风暴窗口和保留知识档案下，允许同 seed 重入。实体库存由监管隔离重置；工具在证据审查结束前仍属载舰财产。",
+     "audio": "路线记得你证明过什么。海洋留下其余的一切。",
+     "in_game_wiki": "部分返回留置权延长把重玩持续性锁定为知识，而不是装备强度。玩家能返回，是因为档案和债务改变了，不是因为 HECTON-8 变简单了。",
+     "external_site": "HECTON-8 的重玩结构把部分出口视为记录，而不是重置。失败的逃离仍能推动战役，因为它改变了已知信息、欠债对象，以及下一次打开的窗口。",
+     "field_note": "重入记录：同 seed 返回携带知识、债务压力、风暴变化和监管重置，而不是继承装备。"
+    },
+    "fr_FR": {
+     "title": "Prolongation de privilège pour retour partiel",
+     "scanner": "Retour approuvé sous privilège prolongé. Les marqueurs de connaissance persistent ; l'inventaire est mis en quarantaine et retiré.",
+     "terminal": "ORDRE PARTIAL RETURN : réentrée même seed autorisée sous privilège prolongé, fenêtre de tempête révisée et dossier de connaissance conservé. Inventaire physique remis à zéro par quarantaine de garde ; les outils restent propriété du transporteur jusqu'à clôture de l'examen des preuves.",
+     "audio": "La route se souvient de ce que tu as prouvé. L'océan garde le reste.",
+     "in_game_wiki": "La prolongation verrouille la persistance de replay comme connaissance, pas comme puissance d'équipement. Le joueur revient parce que le dossier et la dette ont changé, pas parce que HECTON-8 est devenue plus facile.",
+     "external_site": "La structure de replay de HECTON-8 traite les sorties partielles comme des dossiers, pas des remises à zéro. Une fuite ratée peut encore faire avancer la campagne en changeant ce qui est su, ce qui est dû et quelle fenêtre s'ouvre ensuite.",
+     "field_note": "Dossier de réentrée : retour même seed avec connaissance, dette, variations de tempête et remise à zéro de garde plutôt qu'équipement hérité."
+    },
+    "es_ES": {
+     "title": "Extensión de gravamen de retorno parcial",
+     "scanner": "Retorno aprobado bajo gravamen extendido. Las marcas de conocimiento persisten; el inventario queda en cuarentena y retirado.",
+     "terminal": "ORDEN PARTIAL RETURN: reentrada al mismo seed permitida bajo gravamen extendido, ventana de tormenta revisada y dossier de conocimiento retenido. Inventario físico reiniciado por cuarentena de custodia; las herramientas siguen siendo propiedad del portador hasta cerrar la revisión de pruebas.",
+     "audio": "La ruta recuerda lo que probaste. El océano se queda lo demás.",
+     "in_game_wiki": "La extensión fija la persistencia de repetición como conocimiento, no como poder de equipo. El jugador vuelve porque cambiaron el dossier y la deuda, no porque HECTON-8 se volviera más fácil.",
+     "external_site": "La estructura de repetición de HECTON-8 trata las salidas parciales como registros, no reinicios. Un escape fallido aún puede mover la campaña al cambiar lo que se sabe, a quién se debe y qué ventana se abre después.",
+     "field_note": "Registro de reentrada: retorno mismo seed con conocimiento, presión de deuda, cambios de tormenta y reinicio de custodia en lugar de equipo heredado."
+    },
+    "de_DE": {
+     "title": "Teilrückkehr-Pfandrechtsverlängerung",
+     "scanner": "Rückkehr unter verlängertem Pfandrecht genehmigt. Wissensflags bleiben; Ausrüstungsinventar wird quarantänisiert und entzogen.",
+     "terminal": "PARTIAL-RETURN-BEFEHL: Wiedereintritt in denselben Seed unter verlängertem Pfandrecht, revidiertem Sturmfenster und behaltenem Wissensdossier erlaubt. Physisches Inventar durch Verwahrungsquarantäne zurückgesetzt; Werkzeuge bleiben Trägereigentum bis Abschluss der Beweisprüfung.",
+     "audio": "Die Route merkt sich, was du bewiesen hast. Der Ozean behält den Rest.",
+     "in_game_wiki": "Die Verlängerung verankert Replay-Persistenz als Wissen, nicht als Ausrüstungsmacht. Der Spieler kehrt zurück, weil Dossier und Schuld sich geändert haben, nicht weil HECTON-8 leichter wurde.",
+     "external_site": "HECTON-8s Replay-Struktur behandelt Teilausgänge als Akten, nicht als Resets. Eine gescheiterte Flucht kann die Kampagne weiterbewegen, indem sie ändert, was bekannt ist, wem etwas geschuldet wird und welches Fenster sich als Nächstes öffnet.",
+     "field_note": "Wiedereintrittsdatensatz: same-seed-Rückkehr trägt Wissen, Schuldendruck, Sturmänderungen und Verwahrungsreset statt geerbter Ausrüstung."
+    },
+    "pl_PL": {
+     "title": "Przedłużenie zastawu dla częściowego powrotu",
+     "scanner": "Powrót zatwierdzony pod przedłużonym zastawem. Flagi wiedzy trwają; ekwipunek jest objęty kwarantanną i zdjęty.",
+     "terminal": "ROZKAZ PARTIAL RETURN: ponowne wejście w ten sam seed dozwolone pod przedłużonym zastawem, zmienionym oknem burzy i zachowanym dossier wiedzy. Fizyczny ekwipunek resetowany przez kwarantannę dozoru; narzędzia pozostają własnością nośnika do zamknięcia przeglądu dowodów.",
+     "audio": "Trasa pamięta, co udowodniłeś. Ocean zatrzymuje resztę.",
+     "in_game_wiki": "Przedłużenie zastawu ustawia trwałość powtórek jako wiedzę, nie siłę sprzętu. Gracz wraca, bo zmieniły się dossier i dług, nie dlatego, że HECTON-8 stała się łatwiejsza.",
+     "external_site": "Struktura replay HECTON-8 traktuje częściowe wyjścia jak zapisy, nie resety. Nieudana ucieczka nadal może pchnąć kampanię naprzód, zmieniając to, co wiadomo, komu się należy i które okno otworzy się następne.",
+     "field_note": "Rejestr ponownego wejścia: powrót w tym samym seed niesie wiedzę, presję długu, zmiany burzy i reset dozoru zamiast dziedziczonego sprzętu."
+    },
+    "uk_UA": {
+     "title": "Продовження утримання для часткового повернення",
+     "scanner": "Повернення схвалено під продовженим утриманням. Прапори знання зберігаються; інвентар ізольовано й знято.",
+     "terminal": "НАКАЗ PARTIAL RETURN: повторний вхід у той самий seed дозволено під продовженим утриманням, переглянутим штормовим вікном і збереженим досьє знань. Фізичний інвентар скинуто карантином зберігання; інструменти лишаються власністю носія до закриття перевірки доказів.",
+     "audio": "Маршрут пам'ятає, що ти довів. Океан залишає решту собі.",
+     "in_game_wiki": "Продовження утримання закріплює replay-постійність як знання, а не силу спорядження. Гравець повертається, бо змінилися досьє й борг, а не тому, що HECTON-8 стала легшою.",
+     "external_site": "Структура replay у HECTON-8 трактує часткові виходи як записи, а не скидання. Невдала втеча все одно може рухати кампанію вперед, змінюючи відоме, борги й наступне відкрите вікно.",
+     "field_note": "Запис повторного входу: same-seed повернення несе знання, борговий тиск, зміни шторму й custody reset замість успадкованого спорядження."
+    },
+    "ar_SA": {
+     "title": "تمديد امتياز العودة الجزئية",
+     "scanner": "العودة موافق عليها تحت امتياز ممدد. تبقى علامات المعرفة؛ يصادر جرد المعدات بعد الحجر.",
+     "terminal": "أمر PARTIAL RETURN: يسمح بإعادة الدخول إلى seed نفسه تحت امتياز ممدد ونافذة عاصفة معدلة وملف معرفة محتفظ به. يعاد ضبط الجرد المادي بحجر الحيازة؛ تبقى الأدوات ملكا للناقل حتى إغلاق مراجعة الأدلة.",
+     "audio": "يتذكر المسار ما أثبته. يحتفظ المحيط بالباقي.",
+     "in_game_wiki": "يثبت تمديد الامتياز استمرارية الإعادة كمعرفة لا كقوة معدات. يعود اللاعب لأن الملف والدين تغيرا، لا لأن HECTON-8 أصبحت أسهل.",
+     "external_site": "تعامل بنية الإعادة في HECTON-8 الخروجات الجزئية كسجلات لا كإعادة ضبط. يمكن لهروب فاشل أن يدفع الحملة إلى الأمام بتغيير ما هو معروف، ومن له الدين، وأي نافذة ستفتح لاحقا.",
+     "field_note": "سجل إعادة دخول: عودة بنفس seed تحمل المعرفة وضغط الدين وتغيرات العاصفة وإعادة ضبط الحيازة بدلا من معدات موروثة."
+    },
+    "id_ID": {
+     "title": "Perpanjangan Hak Gadai Kembali Parsial",
+     "scanner": "Kembali disetujui di bawah hak gadai yang diperpanjang. Flag pengetahuan bertahan; inventaris peralatan dikarantina dan dicabut.",
+     "terminal": "PERINTAH PARTIAL RETURN: reentry same-seed diizinkan di bawah hak gadai diperpanjang, jendela badai revisi, dan dossier pengetahuan tersimpan. Inventaris fisik direset oleh karantina kustodi; alat tetap milik carrier sampai tinjauan bukti ditutup.",
+     "audio": "Rute mengingat apa yang kau buktikan. Laut menyimpan sisanya.",
+     "in_game_wiki": "Perpanjangan ini mengunci persistensi replay sebagai pengetahuan, bukan kekuatan peralatan. Pemain kembali karena dossier dan utang berubah, bukan karena HECTON-8 menjadi lebih mudah.",
+     "external_site": "Struktur replay HECTON-8 memperlakukan keluar parsial sebagai catatan, bukan reset. Pelarian gagal masih dapat mendorong kampanye maju dengan mengubah apa yang diketahui, siapa yang ditagih, dan jendela mana yang terbuka berikutnya.",
+     "field_note": "Catatan masuk ulang: kembali same-seed membawa pengetahuan, tekanan utang, perubahan badai, dan reset kustodi alih-alih peralatan warisan."
+    },
+    "ko_KR": {
+     "title": "부분 귀환 유치권 연장",
+     "scanner": "연장 유치권 아래 귀환 승인. 지식 플래그는 유지되며 장비 인벤토리는 격리되고 회수된다.",
+     "terminal": "PARTIAL RETURN 명령: 연장 유치권, 수정된 폭풍 창, 보존된 지식 dossier 아래 같은 seed 재진입 허가. 물리 인벤토리는 보관 격리로 초기화. 도구는 증거 검토 종료 전까지 carrier 재산으로 남는다.",
+     "audio": "루트는 네가 증명한 것을 기억한다. 바다는 나머지를 가져간다.",
+     "in_game_wiki": "부분 귀환 유치권 연장은 리플레이 지속성을 장비 힘이 아니라 지식으로 고정한다. 플레이어가 돌아오는 이유는 dossier와 빚이 바뀌었기 때문이지, HECTON-8이 쉬워졌기 때문이 아니다.",
+     "external_site": "HECTON-8의 리플레이 구조는 부분 탈출을 리셋이 아니라 기록으로 다룬다. 실패한 탈출도 무엇을 알게 되었는지, 누구에게 빚졌는지, 다음 어떤 창이 열리는지를 바꾸며 캠페인을 전진시킬 수 있다.",
+     "field_note": "재진입 기록: 같은 seed 귀환은 상속 장비가 아니라 지식, 채무 압박, 폭풍 변화, 보관 리셋을 운반한다."
+    },
+    "he_IL": {
+     "title": "הארכת שעבוד לחזרה חלקית",
+     "scanner": "חזרה אושרה תחת שעבוד מוארך. דגלי ידע נשמרים; מלאי הציוד מוכנס להסגר ומוסר.",
+     "terminal": "פקודת PARTIAL RETURN: כניסה מחדש לאותו seed מותרת תחת שעבוד מוארך, חלון סערה מעודכן ותיק ידע שמור. מלאי פיזי מאופס בהסגר משמורת; הכלים נשארים רכוש הנשא עד סגירת בדיקת הראיות.",
+     "audio": "המסלול זוכר מה הוכחת. האוקיינוס שומר את השאר.",
+     "in_game_wiki": "הארכת השעבוד מקבעת התמדה של replay כידע, לא ככוח ציוד. השחקן חוזר כי התיק והחוב השתנו, לא כי HECTON-8 נעשתה קלה יותר.",
+     "external_site": "מבנה ה-replay של HECTON-8 מתייחס ליציאות חלקיות כרשומות, לא כאיפוסים. בריחה כושלת עדיין יכולה לקדם את הקמפיין דרך שינוי מה שידוע, למי חייבים ואיזה חלון נפתח אחר כך.",
+     "field_note": "רשומת כניסה מחדש: חזרה באותו seed נושאת ידע, לחץ חוב, שינויי סערה ואיפוס משמורת במקום ציוד שעובר בירושה."
+    },
+    "pt_BR": {
+     "title": "Extensão de Gravame de Retorno Parcial",
+     "scanner": "Retorno aprovado sob gravame estendido. Flags de conhecimento persistem; inventário de equipamentos é quarentenado e removido.",
+     "terminal": "ORDEM PARTIAL RETURN: reentrada no mesmo seed permitida sob gravame estendido, janela de tempestade revisada e dossier de conhecimento retido. Inventário físico resetado por quarentena de custódia; ferramentas continuam propriedade do carrier até o fim da revisão de provas.",
+     "audio": "A rota lembra o que você provou. O oceano fica com o resto.",
+     "in_game_wiki": "A extensão fixa a persistência de replay como conhecimento, não como poder de equipamento. O jogador retorna porque o dossier e a dívida mudaram, não porque HECTON-8 ficou mais fácil.",
+     "external_site": "A estrutura de replay de HECTON-8 trata saídas parciais como registros, não resets. Uma fuga falha ainda pode mover a campanha adiante ao mudar o que se sabe, quem cobra a dívida e qual janela se abre depois.",
+     "field_note": "Registro de reentrada: retorno same-seed carrega conhecimento, pressão de dívida, mudanças de tempestade e reset de custódia em vez de equipamento herdado."
+    },
+    "nl_NL": {
+     "title": "Verlenging retentierecht voor gedeeltelijke terugkeer",
+     "scanner": "Terugkeer goedgekeurd onder verlengd retentierecht. Kennisflags blijven; uitrustingsinventaris wordt in quarantaine gezet en gestript.",
+     "terminal": "PARTIAL RETURN-ORDER: herintrede in dezelfde seed toegestaan onder verlengd retentierecht, herzien stormvenster en behouden kennisdossier. Fysieke inventaris gereset door bewaringsquarantaine; gereedschap blijft carrier-eigendom tot bewijsreview sluit.",
+     "audio": "De route onthoudt wat je bewees. De oceaan houdt de rest.",
+     "in_game_wiki": "De verlenging legt replaypersistentie vast als kennis, niet als uitrustingsmacht. De speler keert terug omdat dossier en schuld veranderden, niet omdat HECTON-8 makkelijker werd.",
+     "external_site": "De replaystructuur van HECTON-8 behandelt gedeeltelijke uitgangen als dossiers, niet als resets. Een mislukte ontsnapping kan de campagne nog steeds vooruitduwen door te veranderen wat bekend is, wie iets tegoed heeft en welk venster daarna opengaat.",
+     "field_note": "Herintredingsrecord: same-seed-terugkeer draagt kennis, schulddruk, stormwijzigingen en bewaringsreset in plaats van geërfde uitrusting."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P338_QUARANTINE_HOLD_INTERROGATION_RECORD",
+   "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
+   "article_id": "applied_lore.quarantine_hold_interrogation_record",
+   "title_key": "applied_lore.quarantine_hold_interrogation_record.title",
+   "unlock": {
+    "primary": "unlock.quarantine_hold_interrogation_record",
+    "poi_tags": [
+     "poi.quarantine_hold_record",
+     "poi.biological_custody_tag",
+     "poi.receiver_interrogation_clip"
+    ],
+    "biome_tags": [
+     "biome.ending",
+     "biome.quarantine"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Quarantine Hold Interrogation Record",
+     "scanner": "Recovered claimant alive. Quarantine flag overrides rescue language; evidence payload isolated.",
+     "terminal": "QUARANTINE HOLD RECORD: biological claimant recovered alive. Movement restricted pending contamination scan, pressure exposure interview, and evidence custody review. Receiver interrogation prioritizes Atlas access vector before medical clearance.",
+     "audio": "They saved the body first because the body knew the route.",
+     "in_game_wiki": "Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but the player exits as witness, contamination risk, map carrier, and disputed evidence before becoming a free person again.",
+     "external_site": "A HECTON-8 exit can be physically successful and politically catastrophic. The player may leave the ocean and still enter a room where every question treats their body as the only surviving route log.",
+     "field_note": "Post-exit dossier: biological rescue becomes quarantine, interrogation, route extraction, and payload custody before freedom."
+    },
+    "ru_RU": {
+     "title": "Протокол допроса в карантинном удержании",
+     "scanner": "Извлеченный заявитель жив. Флаг карантина перекрывает язык спасения; доказательный payload изолирован.",
+     "terminal": "ЗАПИСЬ QUARANTINE HOLD: биологический заявитель извлечен живым. Передвижение ограничено до скана заражения, интервью о давлении и проверки цепочки доказательств. Допрос приемника ставит вектор доступа Atlas выше медицинского допуска.",
+     "audio": "Сначала они спасли тело, потому что тело знало маршрут.",
+     "in_game_wiki": "Протокол делает спасение неприятным. Выживание реально, но игрок выходит как свидетель, риск заражения, носитель карты и спорное доказательство, прежде чем снова стать свободным человеком.",
+     "external_site": "Выход из HECTON-8 может быть физически успешным и политически катастрофичным. Игрок покидает океан, но попадает в комнату, где каждый вопрос обращается с его телом как с единственным уцелевшим журналом маршрута.",
+     "field_note": "Post-exit досье: биологическое спасение до свободы становится карантином, допросом, извлечением маршрута и удержанием payload."
+    },
+    "ja_JP": {
+     "title": "隔離拘束尋問記録",
+     "scanner": "回収された請求者は生存。隔離フラグが救助文言を上書きし、証拠ペイロードは隔離された。",
+     "terminal": "QUARANTINE HOLD 記録: 生物学的請求者を生存回収。汚染スキャン、圧力曝露面談、証拠保管レビュー完了まで移動制限。受信側尋問は医療許可より先に Atlas アクセスベクトルを優先。",
+     "audio": "彼らが先に身体を救ったのは、身体がルートを知っていたからだ。",
+     "in_game_wiki": "隔離拘束尋問記録は救助を不穏にする。生存は本物だが、プレイヤーは自由人に戻る前に、証人、汚染リスク、地図運搬者、係争中の証拠として退出する。",
+     "external_site": "HECTON-8 の出口は、肉体的には成功しても政治的には破滅になり得る。プレイヤーは海を出ても、身体を唯一残ったルートログとして扱う質問室に入る。",
+     "field_note": "退出後ドシエ: 生物学的救助は自由の前に、隔離、尋問、ルート抽出、ペイロード保管へ変わる。"
+    },
+    "zh_CN": {
+     "title": "隔离留置审讯记录",
+     "scanner": "已回收申领者存活。隔离标记覆盖救援措辞；证据载荷已隔离。",
+     "terminal": "QUARANTINE HOLD 记录：生物申领者已存活回收。移动受限，等待污染扫描、压力暴露访谈和证据监管审查。接收方审讯在医疗许可前优先索取 Atlas 接入矢量。",
+     "audio": "他们先救身体，因为身体知道路线。",
+     "in_game_wiki": "隔离留置审讯记录让救援变得不舒服。生存是真的，但玩家在重新成为自由人之前，会先作为证人、污染风险、地图载体和争议证据离开。",
+     "external_site": "HECTON-8 的出口可以在肉体上成功，却在政治上灾难性。玩家可能离开海洋，却进入一个把其身体当作唯一幸存路线日志来提问的房间。",
+     "field_note": "退出后档案：生物救援在自由之前变成隔离、审讯、路线提取和载荷监管。"
+    },
+    "fr_FR": {
+     "title": "Dossier d'interrogatoire en rétention sanitaire",
+     "scanner": "Réclamant récupéré vivant. Le marqueur de quarantaine écrase le langage de sauvetage ; la charge de preuve est isolée.",
+     "terminal": "DOSSIER QUARANTINE HOLD : réclamant biologique récupéré vivant. Déplacement restreint en attente de scan de contamination, entretien d'exposition à la pression et revue de garde des preuves. L'interrogatoire récepteur priorise le vecteur d'accès Atlas avant l'autorisation médicale.",
+     "audio": "Ils ont sauvé le corps d'abord, parce que le corps connaissait la route.",
+     "in_game_wiki": "Ce dossier rend le sauvetage inconfortable. La survie est réelle, mais le joueur sort comme témoin, risque de contamination, porteur de carte et preuve disputée avant de redevenir une personne libre.",
+     "external_site": "Une sortie de HECTON-8 peut réussir physiquement et être catastrophique politiquement. Le joueur quitte peut-être l'océan pour entrer dans une pièce où chaque question traite son corps comme le seul journal de route survivant.",
+     "field_note": "Dossier post-sortie : le sauvetage biologique devient quarantaine, interrogatoire, extraction de route et garde de payload avant la liberté."
+    },
+    "es_ES": {
+     "title": "Registro de interrogatorio en retención de cuarentena",
+     "scanner": "Reclamante recuperado con vida. La marca de cuarentena invalida el lenguaje de rescate; la carga de evidencia queda aislada.",
+     "terminal": "REGISTRO QUARANTINE HOLD: reclamante biológico recuperado con vida. Movimiento restringido pendiente de escaneo de contaminación, entrevista de exposición a presión y revisión de custodia de pruebas. El interrogatorio del receptor prioriza el vector de acceso Atlas antes del alta médica.",
+     "audio": "Salvaron primero el cuerpo porque el cuerpo conocía la ruta.",
+     "in_game_wiki": "El registro vuelve incómodo el rescate. La supervivencia es real, pero el jugador sale como testigo, riesgo de contaminación, portador de mapa y prueba disputada antes de volver a ser una persona libre.",
+     "external_site": "Una salida de HECTON-8 puede tener éxito físico y ser una catástrofe política. El jugador puede dejar el océano y aun así entrar en una sala donde cada pregunta trata su cuerpo como el único registro de ruta superviviente.",
+     "field_note": "Dossier posterior a la salida: el rescate biológico se convierte en cuarentena, interrogatorio, extracción de ruta y custodia de payload antes de la libertad."
+    },
+    "de_DE": {
+     "title": "Verhörakte der Quarantänehaltung",
+     "scanner": "Geborgener Anspruchsteller lebt. Quarantäneflag überschreibt Rettungssprache; Beweispayload isoliert.",
+     "terminal": "QUARANTINE-HOLD-AKTE: biologischer Anspruchsteller lebend geborgen. Bewegung eingeschränkt bis Kontaminationsscan, Druckexpositionsinterview und Prüfung der Beweisverwahrung. Empfängerverhör priorisiert Atlas-Zugangsvektor vor medizinischer Freigabe.",
+     "audio": "Sie retteten zuerst den Körper, weil der Körper die Route kannte.",
+     "in_game_wiki": "Die Verhörakte macht Rettung unbequem. Überleben ist echt, aber der Spieler verlässt als Zeuge, Kontaminationsrisiko, Kartenträger und umstrittener Beweis, bevor er wieder freie Person wird.",
+     "external_site": "Ein HECTON-8-Ausgang kann körperlich erfolgreich und politisch katastrophal sein. Der Spieler verlässt vielleicht den Ozean und betritt doch einen Raum, in dem jede Frage seinen Körper als einzig überlebendes Routenlog behandelt.",
+     "field_note": "Nachausgangsdossier: biologische Rettung wird vor Freiheit zu Quarantäne, Verhör, Routenextraktion und Payload-Verwahrung."
+    },
+    "pl_PL": {
+     "title": "Protokół przesłuchania w zatrzymaniu kwarantannowym",
+     "scanner": "Odzyskany roszczący żyje. Flaga kwarantanny nadpisuje język ratunku; payload dowodowy odizolowany.",
+     "terminal": "REJESTR QUARANTINE HOLD: biologiczny roszczący odzyskany żywy. Ruch ograniczony do czasu skanu skażenia, wywiadu ekspozycji ciśnieniowej i przeglądu dozoru dowodów. Przesłuchanie odbiornika priorytetuje wektor dostępu Atlas przed zgodą medyczną.",
+     "audio": "Najpierw uratowali ciało, bo ciało znało trasę.",
+     "in_game_wiki": "Protokół czyni ratunek niewygodnym. Przetrwanie jest prawdziwe, ale gracz wychodzi jako świadek, ryzyko skażenia, nośnik mapy i sporny dowód, zanim znów stanie się wolną osobą.",
+     "external_site": "Wyjście z HECTON-8 może być fizycznym sukcesem i polityczną katastrofą. Gracz może opuścić ocean i wciąż wejść do pokoju, gdzie każde pytanie traktuje jego ciało jak jedyny ocalały dziennik trasy.",
+     "field_note": "Dossier po wyjściu: biologiczny ratunek przed wolnością zmienia się w kwarantannę, przesłuchanie, wydobycie trasy i dozór payloadu."
+    },
+    "uk_UA": {
+     "title": "Протокол допиту в карантинному утриманні",
+     "scanner": "Вилучений заявник живий. Прапор карантину перекриває мову порятунку; доказовий payload ізольовано.",
+     "terminal": "ЗАПИС QUARANTINE HOLD: біологічного заявника вилучено живим. Пересування обмежено до скану зараження, інтерв'ю про тиск і перевірки ланцюга доказів. Допит приймача ставить вектор доступу Atlas вище за медичний допуск.",
+     "audio": "Спершу вони врятували тіло, бо тіло знало маршрут.",
+     "in_game_wiki": "Протокол робить порятунок незручним. Виживання справжнє, але гравець виходить як свідок, ризик зараження, носій карти й спірний доказ, перш ніж знову стати вільною людиною.",
+     "external_site": "Вихід із HECTON-8 може бути фізично успішним і політично катастрофічним. Гравець може покинути океан і все одно потрапити в кімнату, де кожне питання трактує його тіло як єдиний уцілілий журнал маршруту.",
+     "field_note": "Post-exit досьє: біологічний порятунок до свободи стає карантином, допитом, вилученням маршруту й утриманням payload."
+    },
+    "ar_SA": {
+     "title": "سجل استجواب احتجاز الحجر",
+     "scanner": "المطالب المستعاد حي. علامة الحجر تتجاوز لغة الإنقاذ؛ حمولة الأدلة معزولة.",
+     "terminal": "سجل QUARANTINE HOLD: المطالب البيولوجي استعيد حيا. الحركة مقيدة بانتظار فحص التلوث، ومقابلة التعرض للضغط، ومراجعة حيازة الأدلة. يستبق استجواب المستقبل متجه وصول Atlas قبل التصريح الطبي.",
+     "audio": "أنقذوا الجسد أولا لأن الجسد عرف الطريق.",
+     "in_game_wiki": "يجعل هذا السجل الإنقاذ غير مريح. النجاة حقيقية، لكن اللاعب يخرج كشاهد وخطر تلوث وحامل خريطة ودليل متنازع عليه قبل أن يصبح حرا مرة أخرى.",
+     "external_site": "يمكن لخروج HECTON-8 أن يكون ناجحا جسديا وكارثيا سياسيا. قد يغادر اللاعب المحيط ويدخل غرفة يعامل فيها كل سؤال جسده كآخر سجل مسار باق.",
+     "field_note": "ملف ما بعد الخروج: يتحول الإنقاذ البيولوجي قبل الحرية إلى حجر واستجواب واستخراج مسار وحيازة payload."
+    },
+    "id_ID": {
+     "title": "Catatan Interogasi Tahanan Karantina",
+     "scanner": "Pengklaim pulih dalam keadaan hidup. Flag karantina menimpa bahasa penyelamatan; payload bukti diisolasi.",
+     "terminal": "CATATAN QUARANTINE HOLD: pengklaim biologis dipulihkan hidup. Gerak dibatasi menunggu scan kontaminasi, wawancara paparan tekanan, dan tinjauan kustodi bukti. Interogasi penerima memprioritaskan vektor akses Atlas sebelum izin medis.",
+     "audio": "Mereka menyelamatkan tubuh dulu karena tubuh tahu rutenya.",
+     "in_game_wiki": "Catatan ini membuat penyelamatan terasa tidak nyaman. Bertahan hidup itu nyata, tetapi pemain keluar sebagai saksi, risiko kontaminasi, pembawa peta, dan bukti yang diperdebatkan sebelum kembali menjadi orang bebas.",
+     "external_site": "Keluar dari HECTON-8 bisa berhasil secara fisik dan hancur secara politik. Pemain mungkin meninggalkan laut tetapi memasuki ruangan tempat setiap pertanyaan memperlakukan tubuhnya sebagai satu-satunya log rute yang selamat.",
+     "field_note": "Dossier pasca-keluar: penyelamatan biologis menjadi karantina, interogasi, ekstraksi rute, dan kustodi payload sebelum kebebasan."
+    },
+    "ko_KR": {
+     "title": "격리 보류 심문 기록",
+     "scanner": "회수된 청구자는 생존. 격리 플래그가 구조 언어를 덮어쓰고, 증거 payload는 격리되었다.",
+     "terminal": "QUARANTINE HOLD 기록: 생물학적 청구자 생존 회수. 오염 스캔, 압력 노출 면담, 증거 보관 검토 전까지 이동 제한. 수신자 심문은 의료 허가보다 Atlas 접근 벡터를 우선한다.",
+     "audio": "그들은 몸이 경로를 알고 있었기 때문에 몸을 먼저 구했다.",
+     "in_game_wiki": "이 기록은 구조를 불편하게 만든다. 생존은 진짜지만, 플레이어는 다시 자유인이 되기 전까지 증인, 오염 위험, 지도 운반자, 분쟁 증거로 탈출한다.",
+     "external_site": "HECTON-8의 탈출은 육체적으로 성공하고도 정치적으로 재앙일 수 있다. 플레이어는 바다를 떠나도 자신의 몸을 유일한 생존 경로 로그로 취급하는 방에 들어갈 수 있다.",
+     "field_note": "탈출 후 dossier: 생물학적 구조는 자유에 앞서 격리, 심문, 경로 추출, payload 보관이 된다."
+    },
+    "he_IL": {
+     "title": "רשומת חקירה בהחזקת הסגר",
+     "scanner": "התובע חולץ חי. דגל הסגר גובר על שפת החילוץ; payload הראיות מבודד.",
+     "terminal": "רשומת QUARANTINE HOLD: תובע ביולוגי חולץ חי. תנועה מוגבלת עד סריקת זיהום, ראיון חשיפה ללחץ ובדיקת משמורת ראיות. חקירת המקלט מעדיפה את וקטור הגישה Atlas לפני אישור רפואי.",
+     "audio": "הם הצילו את הגוף קודם כי הגוף ידע את המסלול.",
+     "in_game_wiki": "הרשומה הזאת הופכת חילוץ ללא נוח. ההישרדות אמיתית, אבל השחקן יוצא כעד, סיכון זיהום, נושא מפה וראיה שנויה במחלוקת לפני שהוא חוזר להיות אדם חופשי.",
+     "external_site": "יציאה מ-HECTON-8 יכולה להצליח פיזית ולהיות אסון פוליטי. השחקן עשוי לעזוב את האוקיינוס ועדיין להיכנס לחדר שבו כל שאלה מתייחסת לגופו כאל יומן המסלול היחיד ששרד.",
+     "field_note": "תיק לאחר יציאה: חילוץ ביולוגי הופך לפני חירות להסגר, חקירה, חילוץ מסלול ומשמורת payload."
+    },
+    "pt_BR": {
+     "title": "Registro de Interrogatório em Retenção de Quarentena",
+     "scanner": "Reclamante recuperado vivo. Flag de quarentena sobrepõe linguagem de resgate; payload de provas isolado.",
+     "terminal": "REGISTRO QUARANTINE HOLD: reclamante biológico recuperado vivo. Movimento restrito aguardando scan de contaminação, entrevista de exposição à pressão e revisão de custódia de provas. Interrogatório do receptor prioriza vetor de acesso Atlas antes de liberação médica.",
+     "audio": "Eles salvaram o corpo primeiro porque o corpo sabia a rota.",
+     "in_game_wiki": "O registro torna o resgate desconfortável. A sobrevivência é real, mas o jogador sai como testemunha, risco de contaminação, portador de mapa e prova disputada antes de voltar a ser livre.",
+     "external_site": "Uma saída de HECTON-8 pode ser fisicamente bem-sucedida e politicamente catastrófica. O jogador pode deixar o oceano e ainda entrar numa sala onde cada pergunta trata seu corpo como o único log de rota sobrevivente.",
+     "field_note": "Dossier pós-saída: resgate biológico vira quarentena, interrogatório, extração de rota e custódia de payload antes da liberdade."
+    },
+    "nl_NL": {
+     "title": "Verhoorrecord van quarantainebewaring",
+     "scanner": "Geborgen claimant leeft. Quarantaineflag overschrijft reddingstaal; bewijs-payload geïsoleerd.",
+     "terminal": "QUARANTINE HOLD-RECORD: biologische claimant levend geborgen. Beweging beperkt tot besmettingsscan, drukblootstellingsgesprek en bewijsbewaringsreview. Ontvangerverhoor geeft Atlas-toegangsvector prioriteit boven medische vrijgave.",
+     "audio": "Ze redden eerst het lichaam omdat het lichaam de route kende.",
+     "in_game_wiki": "Het record maakt redding ongemakkelijk. Overleven is echt, maar de speler vertrekt als getuige, besmettingsrisico, kaartdrager en betwist bewijs voordat hij weer vrij persoon wordt.",
+     "external_site": "Een HECTON-8-uitgang kan lichamelijk slagen en politiek rampzalig zijn. De speler verlaat misschien de oceaan en komt toch in een kamer waar elke vraag zijn lichaam behandelt als het enige overgebleven routelog.",
+     "field_note": "Dossier na uitgang: biologische redding wordt vóór vrijheid quarantaine, verhoor, route-extractie en payloadbewaring."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P339_CORPORATE_COORDINATE_CAPTURE_RECORD",
+   "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
+   "article_id": "applied_lore.corporate_coordinate_capture_record",
+   "title_key": "applied_lore.corporate_coordinate_capture_record.title",
+   "unlock": {
+    "primary": "unlock.corporate_coordinate_capture_record",
+    "poi_tags": [
+     "poi.coordinate_capture_record",
+     "poi.deep_reach_receiver_stamp",
+     "poi.route_erasure_warning"
+    ],
+    "biome_tags": [
+     "biome.ending",
+     "biome.deep_reach"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Corporate Coordinate Capture Record",
+     "scanner": "Coordinate payload accepted. Deep Reach receiver priority restored; public report unchanged.",
+     "terminal": "COORDINATE CAPTURE: Atlas basin vector transferred to Deep Reach receiver. Recovery granted under cooperation note. Public accident record unchanged. Future operations regain corporate route authority.",
+     "audio": "You opened the door from the inside.",
+     "in_game_wiki": "Corporate Coordinate Capture Record is the cleanest sellout route. The player may escape, but the disaster site returns to the institution that failed it and now owns a better map.",
+     "external_site": "The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave, and whether survival was bought by giving the old owner a way back in.",
+     "field_note": "Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach control."
+    },
+    "ru_RU": {
+     "title": "Запись корпоративного захвата координат",
+     "scanner": "Координатный payload принят. Приоритет приемника Deep Reach восстановлен; публичный отчет не изменен.",
+     "terminal": "ЗАХВАТ КООРДИНАТ: вектор бассейна Atlas передан приемнику Deep Reach. Извлечение разрешено по отметке сотрудничества. Публичная запись аварии не изменена. Будущие операции возвращают корпоративный маршрутный приоритет.",
+     "audio": "Ты открыл дверь изнутри.",
+     "in_game_wiki": "Эта запись — самый чистый маршрут продажи. Игрок может сбежать, но место катастрофы возвращается институту, который ее провалил, и теперь у него есть карта лучше прежней.",
+     "external_site": "Вопрос не только в том, покинул ли игрок HECTON-8. Вопрос в том, кто получает карту после его ухода и была ли выживаемость куплена тем, что старому владельцу дали путь обратно.",
+     "field_note": "Корпоративная частичная концовка: координаты покупают эвакуацию, заново открывая место преступления под контроль Deep Reach."
+    },
+    "ja_JP": {
+     "title": "企業座標取得記録",
+     "scanner": "座標ペイロード受理。Deep Reach 受信優先度復旧。公開報告は不変。",
+     "terminal": "COORDINATE CAPTURE: Atlas 盆地ベクトルを Deep Reach 受信機へ転送。協力記録に基づき回収を許可。公開事故記録は不変。将来作戦は企業ルート権限を回復。",
+     "audio": "君は内側から扉を開けた。",
+     "in_game_wiki": "企業座標取得記録は、最も明確な売却ルートだ。プレイヤーは脱出できるかもしれないが、災害現場は失敗した組織へ戻り、その組織は以前より良い地図を持つ。",
+     "external_site": "問題はプレイヤーが HECTON-8 を出るかだけではない。去ったあと誰が地図を受け取るのか、そして生存が旧所有者に戻り道を渡すことで買われたのかだ。",
+     "field_note": "企業側の部分エンディング記録: 座標は回収を買い、犯罪現場を Deep Reach 支配へ開き直す。"
+    },
+    "zh_CN": {
+     "title": "企业坐标捕获记录",
+     "scanner": "坐标载荷已接受。Deep Reach 接收优先级恢复；公开报告未改变。",
+     "terminal": "COORDINATE CAPTURE：Atlas 盆地矢量已传送至 Deep Reach 接收器。按合作备注准许回收。公开事故记录未改变。未来行动恢复企业路线权限。",
+     "audio": "你从里面打开了门。",
+     "in_game_wiki": "企业坐标捕获记录是最清晰的出卖路线。玩家也许能逃脱，但灾难现场回到那个失败的机构手里，而且它现在拥有更好的地图。",
+     "external_site": "问题不只是玩家是否离开 HECTON-8。问题是他们离开后谁接收地图，以及生存是否是通过给旧主人一条回来的路买下的。",
+     "field_note": "企业部分结局记录：坐标通过把犯罪现场重新交给 Deep Reach 控制来购买回收。"
+    },
+    "fr_FR": {
+     "title": "Dossier de capture corporative des coordonnées",
+     "scanner": "Charge de coordonnées acceptée. Priorité récepteur Deep Reach restaurée ; rapport public inchangé.",
+     "terminal": "COORDINATE CAPTURE : vecteur du bassin Atlas transféré au récepteur Deep Reach. Récupération accordée sous note de coopération. Rapport public d'accident inchangé. Les opérations futures récupèrent l'autorité de route corporative.",
+     "audio": "Tu as ouvert la porte de l'intérieur.",
+     "in_game_wiki": "Ce dossier est la route de vente la plus nette. Le joueur peut s'échapper, mais le site du désastre revient à l'institution qui l'a raté et possède désormais une meilleure carte.",
+     "external_site": "La question n'est pas seulement de savoir si le joueur quitte HECTON-8. C'est de savoir qui reçoit la carte après son départ, et si la survie a été achetée en donnant à l'ancien propriétaire un chemin de retour.",
+     "field_note": "Fin partielle corporative : les coordonnées achètent la récupération en rouvrant la scène de crime au contrôle de Deep Reach."
+    },
+    "es_ES": {
+     "title": "Registro de captura corporativa de coordenadas",
+     "scanner": "Carga de coordenadas aceptada. Prioridad de receptor Deep Reach restaurada; informe público sin cambios.",
+     "terminal": "COORDINATE CAPTURE: vector de cuenca Atlas transferido al receptor Deep Reach. Recuperación concedida bajo nota de cooperación. Registro público del accidente sin cambios. Operaciones futuras recuperan autoridad corporativa de ruta.",
+     "audio": "Abriste la puerta desde dentro.",
+     "in_game_wiki": "Este registro es la ruta de venta más clara. El jugador puede escapar, pero el sitio del desastre vuelve a la institución que lo falló y ahora posee un mapa mejor.",
+     "external_site": "La pregunta no es solo si el jugador deja HECTON-8. Es quién recibe el mapa después de que se marche, y si la supervivencia se compró dándole al viejo dueño un camino de vuelta.",
+     "field_note": "Registro de final corporativo parcial: las coordenadas compran recuperación reabriendo la escena del crimen al control de Deep Reach."
+    },
+    "de_DE": {
+     "title": "Konzern-Koordinatenerfassungsakte",
+     "scanner": "Koordinatenpayload akzeptiert. Deep-Reach-Empfängerpriorität wiederhergestellt; öffentlicher Bericht unverändert.",
+     "terminal": "COORDINATE CAPTURE: Atlas-Beckenvektor an Deep-Reach-Empfänger übertragen. Bergung unter Kooperationsvermerk gewährt. Öffentlicher Unfallbericht unverändert. Künftige Operationen erhalten Konzern-Routenautorität zurück.",
+     "audio": "Du hast die Tür von innen geöffnet.",
+     "in_game_wiki": "Diese Akte ist die sauberste Ausverkaufsroute. Der Spieler kann entkommen, aber der Katastrophenort kehrt zu der Institution zurück, die versagt hat und nun eine bessere Karte besitzt.",
+     "external_site": "Die Frage ist nicht nur, ob der Spieler HECTON-8 verlässt. Sie lautet, wer die Karte danach erhält und ob Überleben damit erkauft wurde, dem alten Besitzer einen Weg zurück zu geben.",
+     "field_note": "Konzern-Teilausgang: Koordinaten kaufen Bergung, indem sie den Tatort wieder für Deep-Reach-Kontrolle öffnen."
+    },
+    "pl_PL": {
+     "title": "Rejestr korporacyjnego przejęcia współrzędnych",
+     "scanner": "Payload współrzędnych przyjęty. Priorytet odbiornika Deep Reach przywrócony; raport publiczny bez zmian.",
+     "terminal": "COORDINATE CAPTURE: wektor basenu Atlas przekazany do odbiornika Deep Reach. Odzysk przyznany pod notą współpracy. Publiczny zapis wypadku bez zmian. Przyszłe operacje odzyskują korporacyjną władzę nad trasą.",
+     "audio": "Otworzyłeś drzwi od środka.",
+     "in_game_wiki": "Ten rejestr to najczystsza droga sprzedania. Gracz może uciec, ale miejsce katastrofy wraca do instytucji, która je zawiodła i ma teraz lepszą mapę.",
+     "external_site": "Pytanie nie brzmi tylko, czy gracz opuszcza HECTON-8. Chodzi o to, kto otrzyma mapę po jego odejściu i czy przetrwanie kupiono, dając staremu właścicielowi drogę powrotu.",
+     "field_note": "Korporacyjna częściowa końcówka: współrzędne kupują odzysk, ponownie otwierając miejsce zbrodni pod kontrolę Deep Reach."
+    },
+    "uk_UA": {
+     "title": "Запис корпоративного захоплення координат",
+     "scanner": "Координатний payload прийнято. Пріоритет приймача Deep Reach відновлено; публічний звіт не змінено.",
+     "terminal": "COORDINATE CAPTURE: вектор басейну Atlas передано приймачу Deep Reach. Вилучення дозволено за позначкою співпраці. Публічний запис аварії не змінено. Майбутні операції повертають корпоративну маршрутну владу.",
+     "audio": "Ти відкрив двері зсередини.",
+     "in_game_wiki": "Цей запис — найчистіший маршрут продажу. Гравець може втекти, але місце катастрофи повертається інституції, що його провалила, і тепер вона має кращу карту.",
+     "external_site": "Питання не лише в тому, чи залишив гравець HECTON-8. Питання в тому, хто отримує карту після його відходу і чи було виживання куплене тим, що старому власнику дали шлях назад.",
+     "field_note": "Корпоративна часткова кінцівка: координати купують евакуацію, знову відкриваючи місце злочину під контроль Deep Reach."
+    },
+    "ar_SA": {
+     "title": "سجل التقاط الإحداثيات المؤسسي",
+     "scanner": "حمولة الإحداثيات مقبولة. أولوية مستقبل Deep Reach مستعادة؛ التقرير العام بلا تغيير.",
+     "terminal": "COORDINATE CAPTURE: نقل متجه حوض Atlas إلى مستقبل Deep Reach. منحت الاستعادة بموجب ملاحظة تعاون. سجل الحادث العام بلا تغيير. تستعيد العمليات المستقبلية سلطة المسار المؤسسية.",
+     "audio": "لقد فتحت الباب من الداخل.",
+     "in_game_wiki": "هذا السجل هو أوضح طريق للبيع. قد يهرب اللاعب، لكن موقع الكارثة يعود إلى المؤسسة التي أفشلته، وهي تملك الآن خريطة أفضل.",
+     "external_site": "السؤال ليس فقط هل يغادر اللاعب HECTON-8. السؤال هو من يتلقى الخريطة بعد رحيله، وهل اشترى النجاة بإعطاء المالك القديم طريقا للعودة.",
+     "field_note": "نهاية جزئية مؤسسية: تشتري الإحداثيات الاستعادة بإعادة فتح مسرح الجريمة لسيطرة Deep Reach."
+    },
+    "id_ID": {
+     "title": "Catatan Penangkapan Koordinat Korporat",
+     "scanner": "Payload koordinat diterima. Prioritas penerima Deep Reach dipulihkan; laporan publik tidak berubah.",
+     "terminal": "COORDINATE CAPTURE: vektor cekungan Atlas ditransfer ke penerima Deep Reach. Pemulihan diberikan di bawah catatan kerja sama. Catatan kecelakaan publik tidak berubah. Operasi masa depan memulihkan otoritas rute korporat.",
+     "audio": "Kau membuka pintu dari dalam.",
+     "in_game_wiki": "Catatan ini adalah rute jual diri yang paling jelas. Pemain mungkin lolos, tetapi lokasi bencana kembali ke institusi yang menggagalkannya dan kini memiliki peta yang lebih baik.",
+     "external_site": "Pertanyaannya bukan hanya apakah pemain meninggalkan HECTON-8. Pertanyaannya siapa yang menerima peta setelah mereka pergi, dan apakah bertahan hidup dibeli dengan memberi pemilik lama jalan masuk kembali.",
+     "field_note": "Catatan akhir parsial korporat: koordinat membeli pemulihan dengan membuka kembali tempat kejahatan ke kendali Deep Reach."
+    },
+    "ko_KR": {
+     "title": "기업 좌표 포획 기록",
+     "scanner": "좌표 payload 수락. Deep Reach 수신자 우선순위 복구. 공개 보고서는 변경 없음.",
+     "terminal": "COORDINATE CAPTURE: Atlas 분지 벡터가 Deep Reach 수신기로 전송됨. 협조 기록 아래 회수 승인. 공개 사고 기록 변경 없음. 미래 작전은 기업 경로 권한을 되찾는다.",
+     "audio": "너는 안쪽에서 문을 열었다.",
+     "in_game_wiki": "이 기록은 가장 명확한 매각 루트다. 플레이어는 탈출할 수 있지만, 재난 현장은 실패했던 기관으로 돌아가며 그 기관은 더 나은 지도를 갖게 된다.",
+     "external_site": "질문은 플레이어가 HECTON-8을 떠나는지뿐만이 아니다. 떠난 뒤 누가 지도를 받는가, 그리고 생존이 옛 주인에게 되돌아올 길을 주는 대가로 산 것인가가 문제다.",
+     "field_note": "기업 부분 엔딩 기록: 좌표는 범죄 현장을 Deep Reach 통제로 다시 열어 회수를 산다."
+    },
+    "he_IL": {
+     "title": "רשומת לכידת קואורדינטות תאגידית",
+     "scanner": "Payload קואורדינטות התקבל. עדיפות מקלט Deep Reach שוחזרה; הדוח הציבורי ללא שינוי.",
+     "terminal": "COORDINATE CAPTURE: וקטור אגן Atlas הועבר למקלט Deep Reach. חילוץ אושר תחת הערת שיתוף פעולה. רשומת התאונה הציבורית ללא שינוי. פעולות עתידיות משיבות סמכות מסלול תאגידית.",
+     "audio": "פתחת את הדלת מבפנים.",
+     "in_game_wiki": "הרשומה הזאת היא מסלול המכירה הברור ביותר. השחקן עשוי לברוח, אבל אתר האסון חוזר למוסד שנכשל בו, ועכשיו יש לו מפה טובה יותר.",
+     "external_site": "השאלה אינה רק אם השחקן עוזב את HECTON-8. השאלה היא מי מקבל את המפה אחרי שהוא עוזב, והאם ההישרדות נקנתה בכך שנתנו לבעלים הישן דרך חזרה.",
+     "field_note": "רשומת סוף חלקי תאגידי: קואורדינטות קונות חילוץ על ידי פתיחת זירת הפשע מחדש לשליטת Deep Reach."
+    },
+    "pt_BR": {
+     "title": "Registro de Captura Corporativa de Coordenadas",
+     "scanner": "Payload de coordenadas aceito. Prioridade do receptor Deep Reach restaurada; relatório público inalterado.",
+     "terminal": "COORDINATE CAPTURE: vetor da bacia Atlas transferido ao receptor Deep Reach. Recuperação concedida sob nota de cooperação. Registro público do acidente inalterado. Operações futuras recuperam autoridade corporativa de rota.",
+     "audio": "Você abriu a porta por dentro.",
+     "in_game_wiki": "Este registro é a rota de venda mais clara. O jogador pode escapar, mas o local do desastre retorna à instituição que falhou com ele e agora possui um mapa melhor.",
+     "external_site": "A pergunta não é apenas se o jogador deixa HECTON-8. É quem recebe o mapa depois que ele sai, e se a sobrevivência foi comprada dando ao antigo dono um caminho de volta.",
+     "field_note": "Registro de final corporativo parcial: coordenadas compram recuperação ao reabrir a cena do crime ao controle da Deep Reach."
+    },
+    "nl_NL": {
+     "title": "Record van corporate coördinatenvangst",
+     "scanner": "Coördinaten-payload geaccepteerd. Deep Reach-ontvangerprioriteit hersteld; openbaar rapport ongewijzigd.",
+     "terminal": "COORDINATE CAPTURE: Atlas-bekkenvector overgedragen aan Deep Reach-ontvanger. Berging toegekend onder samenwerkingsnotitie. Openbaar ongevalsrapport ongewijzigd. Toekomstige operaties krijgen corporate routeautoriteit terug.",
+     "audio": "Je opende de deur van binnenuit.",
+     "in_game_wiki": "Dit record is de zuiverste verkooproute. De speler kan ontsnappen, maar de rampsite keert terug naar de instelling die faalde en nu een betere kaart bezit.",
+     "external_site": "De vraag is niet alleen of de speler HECTON-8 verlaat. Het gaat erom wie de kaart ontvangt nadat hij vertrekt, en of overleven is gekocht door de oude eigenaar een weg terug naar binnen te geven.",
+     "field_note": "Corporate gedeeltelijk einde: coördinaten kopen berging door de plaats delict opnieuw onder Deep Reach-controle te openen."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD",
+   "release_set_id": "RS068_FALSE_EXIT_AFTER_ACTION_RECORDS",
+   "article_id": "applied_lore.public_ledger_aftershock_record",
+   "title_key": "applied_lore.public_ledger_aftershock_record.title",
+   "unlock": {
+    "primary": "unlock.public_ledger_aftershock_record",
+    "poi_tags": [
+     "poi.public_ledger_aftershock",
+     "poi.evidence_mirror_notice",
+     "poi.no_control_warning"
+    ],
+    "biome_tags": [
+     "biome.ending",
+     "biome.truth"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Public Ledger Aftershock Record",
+     "scanner": "Ledger mirrors accepted. Evidence is no longer removable; consequence is no longer steerable.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: evidence released outside Deep Reach custody. Worker names, Atlas vector fragments, and liability tags mirrored across public receivers. Player authority over interpretation terminated.",
+     "audio": "Truth left the room. It did not ask where to go next.",
+     "in_game_wiki": "Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over panic, exploitation, retaliation, and what strangers build from the proof.",
+     "external_site": "HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence: grief, markets, lawsuits, cult readings, rescue efforts, and revenge using the same released facts.",
+     "field_note": "Public truth record: mirrored evidence prevents erasure, but ends the player's control over interpretation and retaliation."
+    },
+    "ru_RU": {
+     "title": "Запись афтершока публичного реестра",
+     "scanner": "Зеркала реестра приняты. Доказательство больше нельзя убрать; последствия больше нельзя направлять.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: доказательства выпущены вне хранения Deep Reach. Имена рабочих, фрагменты вектора Atlas и теги ответственности зеркалированы по публичным приемникам. Полномочия игрока на трактовку прекращены.",
+     "audio": "Правда вышла из комнаты. Она не спросила, куда ей идти.",
+     "in_game_wiki": "Эта запись не дает правде стать чистой кнопкой победы. Публикация ломает стирание, но игрок теряет контроль над паникой, эксплуатацией, местью и тем, что чужие люди построят из доказательства.",
+     "external_site": "Истинная концовка HECTON-8 не про чистоту. Это решение усложнить сокрытие и принять неконтролируемые последствия: горе, рынки, иски, культовые чтения, спасательные усилия и месть, использующие одни и те же опубликованные факты.",
+     "field_note": "Запись публичной правды: зеркальные доказательства мешают стиранию, но прекращают контроль игрока над трактовкой и ответным ударом."
+    },
+    "ja_JP": {
+     "title": "公開台帳余震記録",
+     "scanner": "台帳ミラー受理。証拠はもう取り除けず、結果はもう操れない。",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: 証拠が Deep Reach 保管外へ公開。作業員名、Atlas ベクトル断片、責任タグが公開受信機へミラー化。解釈に対するプレイヤー権限は終了。",
+     "audio": "真実は部屋を出た。次にどこへ行くかは尋ねなかった。",
+     "in_game_wiki": "公開台帳余震記録は、真実をきれいな勝利ボタンにしない。公開は抹消を壊すが、プレイヤーはパニック、搾取、報復、そして見知らぬ者が証拠から作るものを制御できなくなる。",
+     "external_site": "HECTON-8 の真実エンディングは純粋さではない。隠蔽を難しくすると同時に、悲嘆、市場、訴訟、カルト的解釈、救助活動、復讐が同じ公開事実を使うことを受け入れる決断だ。",
+     "field_note": "公開真実記録: ミラー証拠は抹消を防ぐが、解釈と報復に対するプレイヤーの制御を終わらせる。"
+    },
+    "zh_CN": {
+     "title": "公共账册余震记录",
+     "scanner": "账册镜像已接受。证据不再可移除；后果不再可操控。",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK：证据已释放到 Deep Reach 监管之外。工人姓名、Atlas 矢量碎片和责任标签镜像至公共接收器。玩家对解释的权限终止。",
+     "audio": "真相离开了房间。它没有问下一站去哪。",
+     "in_game_wiki": "公共账册余震记录避免让真相变成干净的胜利按钮。公开打破抹除，但玩家失去对恐慌、利用、报复，以及陌生人会用证据建造什么的控制。",
+     "external_site": "HECTON-8 的真相结局不是纯净。它是一个决定：让隐瞒更困难，同时接受失控后果，包括悲伤、市场、诉讼、邪教式解读、救援努力和用同一批事实发动的复仇。",
+     "field_note": "公共真相记录：镜像证据阻止抹除，但终止玩家对解释和报复的控制。"
+    },
+    "fr_FR": {
+     "title": "Dossier de contrecoup du registre public",
+     "scanner": "Miroirs de registre acceptés. Les preuves ne sont plus retirables ; la conséquence n'est plus pilotable.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK : preuves libérées hors garde Deep Reach. Noms d'ouvriers, fragments de vecteur Atlas et marqueurs de responsabilité copiés vers des récepteurs publics. Autorité du joueur sur l'interprétation terminée.",
+     "audio": "La vérité a quitté la pièce. Elle n'a pas demandé où aller.",
+     "in_game_wiki": "Ce dossier empêche la vérité de devenir un bouton de victoire propre. La publication brise l'effacement, mais le joueur perd le contrôle de la panique, de l'exploitation, des représailles et de ce que des inconnus construiront avec la preuve.",
+     "external_site": "La fin vérité de HECTON-8 n'est pas la pureté. C'est décider de rendre la dissimulation plus difficile tout en acceptant une conséquence incontrôlée : deuil, marchés, procès, lectures sectaires, efforts de sauvetage et vengeance fondés sur les mêmes faits publiés.",
+     "field_note": "Dossier de vérité publique : les preuves miroir empêchent l'effacement, mais retirent au joueur le contrôle de l'interprétation et des représailles."
+    },
+    "es_ES": {
+     "title": "Registro de réplica del libro público",
+     "scanner": "Espejos del libro aceptados. La evidencia ya no se puede retirar; la consecuencia ya no se puede dirigir.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: pruebas liberadas fuera de custodia Deep Reach. Nombres de trabajadores, fragmentos de vector Atlas y etiquetas de responsabilidad replicados en receptores públicos. Autoridad del jugador sobre la interpretación terminada.",
+     "audio": "La verdad salió de la sala. No preguntó adónde ir.",
+     "in_game_wiki": "El registro impide que la verdad sea un botón limpio de victoria. La publicación rompe el borrado, pero el jugador pierde control sobre pánico, explotación, represalia y lo que desconocidos construirán con la prueba.",
+     "external_site": "El final de verdad de HECTON-8 no es pureza. Es decidir hacer más difícil el ocultamiento aceptando consecuencias sin control: duelo, mercados, demandas, lecturas de culto, esfuerzos de rescate y venganza usando los mismos hechos liberados.",
+     "field_note": "Registro de verdad pública: la evidencia replicada impide el borrado, pero termina el control del jugador sobre interpretación y represalia."
+    },
+    "de_DE": {
+     "title": "Nachbebenakte des öffentlichen Ledgers",
+     "scanner": "Ledger-Spiegel akzeptiert. Beweise sind nicht mehr entfernbar; Folgen nicht mehr steuerbar.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: Beweise außerhalb der Deep-Reach-Verwahrung veröffentlicht. Arbeiternamen, Atlas-Vektorfragmente und Haftungstags über öffentliche Empfänger gespiegelt. Spielerautorität über Interpretation beendet.",
+     "audio": "Die Wahrheit verließ den Raum. Sie fragte nicht, wohin als Nächstes.",
+     "in_game_wiki": "Diese Akte verhindert, dass Wahrheit ein sauberer Siegknopf wird. Veröffentlichung bricht Auslöschung, aber der Spieler verliert Kontrolle über Panik, Ausbeutung, Vergeltung und das, was Fremde aus dem Beweis bauen.",
+     "external_site": "HECTON-8s Wahrheitsende ist keine Reinheit. Es ist die Entscheidung, Vertuschung schwerer zu machen und unkontrollierte Folgen zu akzeptieren: Trauer, Märkte, Klagen, kultische Lesarten, Rettungsversuche und Rache aus denselben veröffentlichten Fakten.",
+     "field_note": "Öffentliche Wahrheitsakte: gespiegelte Beweise verhindern Löschung, beenden aber die Kontrolle des Spielers über Deutung und Vergeltung."
+    },
+    "pl_PL": {
+     "title": "Rejestr wstrząsu po publicznej księdze",
+     "scanner": "Lustra księgi przyjęte. Dowodu nie da się już usunąć; konsekwencji nie da się już prowadzić.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: dowody uwolnione poza dozór Deep Reach. Nazwiska pracowników, fragmenty wektora Atlas i tagi odpowiedzialności odbite w publicznych odbiornikach. Władza gracza nad interpretacją zakończona.",
+     "audio": "Prawda wyszła z pokoju. Nie zapytała, dokąd iść dalej.",
+     "in_game_wiki": "Ten rejestr nie pozwala prawdzie stać się czystym przyciskiem zwycięstwa. Publikacja łamie wymazanie, ale gracz traci kontrolę nad paniką, wyzyskiem, odwetem i tym, co obcy zbudują z dowodu.",
+     "external_site": "Prawdziwe zakończenie HECTON-8 nie jest czystością. To decyzja, by utrudnić ukrywanie i przyjąć niekontrolowane skutki: żałobę, rynki, pozwy, sekciarskie odczytania, akcje ratunkowe i zemstę opartą na tych samych ujawnionych faktach.",
+     "field_note": "Publiczny rejestr prawdy: kopie dowodów zapobiegają wymazaniu, ale kończą kontrolę gracza nad interpretacją i odwetem."
+    },
+    "uk_UA": {
+     "title": "Запис афтершоку публічного реєстру",
+     "scanner": "Дзеркала реєстру прийнято. Доказ більше не можна прибрати; наслідок більше не можна спрямувати.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: докази випущено поза зберігання Deep Reach. Імена працівників, фрагменти вектора Atlas і теги відповідальності віддзеркалено на публічних приймачах. Повноваження гравця на тлумачення припинено.",
+     "audio": "Правда вийшла з кімнати. Вона не спитала, куди йти далі.",
+     "in_game_wiki": "Цей запис не дає правді стати чистою кнопкою перемоги. Публікація ламає стирання, але гравець втрачає контроль над панікою, експлуатацією, помстою і тим, що чужі люди збудують із доказу.",
+     "external_site": "Правдива кінцівка HECTON-8 не про чистоту. Це рішення ускладнити приховування й прийняти неконтрольовані наслідки: горе, ринки, позови, культові прочитання, рятувальні зусилля і помсту, що користуються тими самими оприлюдненими фактами.",
+     "field_note": "Запис публічної правди: дзеркальні докази заважають стиранню, але завершують контроль гравця над тлумаченням і помстою."
+    },
+    "ar_SA": {
+     "title": "سجل ارتداد الدفتر العام",
+     "scanner": "مرايا الدفتر مقبولة. لم تعد الأدلة قابلة للإزالة؛ ولم تعد العواقب قابلة للتوجيه.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: أفرج عن الأدلة خارج حيازة Deep Reach. أسماء العمال وشظايا متجه Atlas ووسوم المسؤولية منسوخة عبر مستقبلات عامة. انتهت سلطة اللاعب على التأويل.",
+     "audio": "غادرت الحقيقة الغرفة. لم تسأل إلى أين تذهب.",
+     "in_game_wiki": "يمنع هذا السجل الحقيقة من أن تصبح زر فوز نظيفا. النشر يكسر المحو، لكن اللاعب يفقد السيطرة على الذعر والاستغلال والانتقام وما سيبنيه الغرباء من الدليل.",
+     "external_site": "نهاية الحقيقة في HECTON-8 ليست نقاء. إنها قرار يجعل الإخفاء أصعب مع قبول عواقب بلا سيطرة: حزن وأسواق ودعاوى وقراءات طائفية وجهود إنقاذ وانتقام يستخدم الحقائق نفسها.",
+     "field_note": "سجل حقيقة عام: الأدلة المنسوخة تمنع المحو، لكنها تنهي تحكم اللاعب في التأويل والانتقام."
+    },
+    "id_ID": {
+     "title": "Catatan Guncangan Buku Besar Publik",
+     "scanner": "Cermin ledger diterima. Bukti tidak lagi bisa dihapus; konsekuensi tidak lagi bisa diarahkan.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: bukti dilepas di luar kustodi Deep Reach. Nama pekerja, fragmen vektor Atlas, dan tag liabilitas dicerminkan ke penerima publik. Otoritas pemain atas interpretasi dihentikan.",
+     "audio": "Kebenaran meninggalkan ruangan. Ia tidak bertanya harus ke mana.",
+     "in_game_wiki": "Catatan ini mencegah kebenaran menjadi tombol menang yang bersih. Publikasi mematahkan penghapusan, tetapi pemain kehilangan kendali atas panik, eksploitasi, pembalasan, dan apa yang dibangun orang asing dari bukti itu.",
+     "external_site": "Akhir kebenaran HECTON-8 bukan kemurnian. Itu keputusan membuat penyembunyian lebih sulit sambil menerima konsekuensi tak terkendali: duka, pasar, gugatan, pembacaan kultus, upaya penyelamatan, dan balas dendam memakai fakta yang sama.",
+     "field_note": "Catatan kebenaran publik: bukti bercermin mencegah penghapusan, tetapi mengakhiri kontrol pemain atas penafsiran dan pembalasan."
+    },
+    "ko_KR": {
+     "title": "공개 장부 여파 기록",
+     "scanner": "장부 미러 수락. 증거는 더 이상 제거할 수 없고, 결과는 더 이상 조종할 수 없다.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: 증거가 Deep Reach 보관 밖으로 공개됨. 작업자 이름, Atlas 벡터 파편, 책임 태그가 공개 수신기에 미러링됨. 해석에 대한 플레이어 권한 종료.",
+     "audio": "진실은 방을 떠났다. 다음 목적지를 묻지 않았다.",
+     "in_game_wiki": "이 기록은 진실이 깨끗한 승리 버튼이 되는 것을 막는다. 공개는 삭제를 깨뜨리지만, 플레이어는 공황, 착취, 보복, 그리고 낯선 이들이 증거로 무엇을 만들지 통제하지 못한다.",
+     "external_site": "HECTON-8의 진실 엔딩은 순수함이 아니다. 은폐를 어렵게 만들기로 결정하면서, 슬픔, 시장, 소송, 종교적 해석, 구조 시도, 같은 공개 사실을 이용한 복수까지 통제 불가능한 결과를 받아들이는 것이다.",
+     "field_note": "공개 진실 기록: 미러링된 증거는 삭제를 막지만, 해석과 보복에 대한 플레이어의 통제를 끝낸다."
+    },
+    "he_IL": {
+     "title": "רשומת הדף של ספר ציבורי",
+     "scanner": "מראות הספר התקבלו. ראיות כבר אינן ניתנות להסרה; התוצאה כבר אינה ניתנת להכוונה.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: ראיות שוחררו מחוץ למשמורת Deep Reach. שמות עובדים, שברי וקטור Atlas ותגי אחריות שוכפלו למקלטים ציבוריים. סמכות השחקן על הפרשנות הסתיימה.",
+     "audio": "האמת יצאה מהחדר. היא לא שאלה לאן ללכת.",
+     "in_game_wiki": "הרשומה הזאת מונעת מן האמת להיות כפתור ניצחון נקי. הפרסום שובר מחיקה, אבל השחקן מאבד שליטה על פאניקה, ניצול, נקמה ומה שזרים יבנו מן הראיה.",
+     "external_site": "סוף האמת של HECTON-8 אינו טוהר. זו החלטה להקשות על הסתרה תוך קבלת תוצאה ללא שליטה: אבל, שווקים, תביעות, קריאות כתתיות, מאמצי חילוץ ונקמה המשתמשים באותן עובדות ששוחררו.",
+     "field_note": "רשומת אמת ציבורית: ראיות משוכפלות מונעות מחיקה, אך מסיימות את שליטת השחקן בפרשנות ובנקמה."
+    },
+    "pt_BR": {
+     "title": "Registro de Aftershock do Livro Público",
+     "scanner": "Espelhos do ledger aceitos. A prova não pode mais ser removida; a consequência não pode mais ser conduzida.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: provas liberadas fora da custódia da Deep Reach. Nomes de trabalhadores, fragmentos de vetor Atlas e tags de responsabilidade espelhados em receptores públicos. Autoridade do jogador sobre interpretação encerrada.",
+     "audio": "A verdade saiu da sala. Não perguntou para onde ir.",
+     "in_game_wiki": "O registro impede que a verdade vire um botão limpo de vitória. A publicação quebra o apagamento, mas o jogador perde controle sobre pânico, exploração, retaliação e o que desconhecidos construirão a partir da prova.",
+     "external_site": "O final de verdade de HECTON-8 não é pureza. É a decisão de dificultar o encobrimento aceitando consequências sem controle: luto, mercados, processos, leituras de culto, esforços de resgate e vingança usando os mesmos fatos liberados.",
+     "field_note": "Registro de verdade pública: provas espelhadas impedem apagamento, mas encerram o controle do jogador sobre interpretação e retaliação."
+    },
+    "nl_NL": {
+     "title": "Naschokrecord van openbaar ledger",
+     "scanner": "Ledgerspiegels geaccepteerd. Bewijs is niet meer verwijderbaar; gevolg niet meer bestuurbaar.",
+     "terminal": "PUBLIC LEDGER AFTERSHOCK: bewijs vrijgegeven buiten Deep Reach-bewaring. Werknamen, Atlas-vectorfragmenten en aansprakelijkheidstags gespiegeld over publieke ontvangers. Spelerautoriteit over interpretatie beëindigd.",
+     "audio": "De waarheid verliet de kamer. Ze vroeg niet waarheen.",
+     "in_game_wiki": "Dit record voorkomt dat waarheid een schone overwinningsknop wordt. Publicatie breekt uitwissing, maar de speler verliest controle over paniek, uitbuiting, vergelding en wat vreemden met het bewijs bouwen.",
+     "external_site": "Het waarheids einde van HECTON-8 is geen zuiverheid. Het is besluiten verhulling moeilijker te maken terwijl je onbeheerste gevolgen accepteert: rouw, markten, rechtszaken, sektarische lezingen, reddingspogingen en wraak met dezelfde vrijgegeven feiten.",
+     "field_note": "Publiek waarheidsrecord: gespiegeld bewijs voorkomt wissen, maar beëindigt de controle van de speler over interpretatie en vergelding."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

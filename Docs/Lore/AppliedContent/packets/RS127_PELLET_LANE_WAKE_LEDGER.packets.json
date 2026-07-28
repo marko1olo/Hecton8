@@ -1,229 +1,230 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS127_PELLET_LANE_WAKE_LEDGER",
-  "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS127_PELLET_LANE_WAKE_LEDGER",
+ "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P623_PELLET_LANE_WAKE_LEDGER",
+   "release_set_id": "RS127_PELLET_LANE_WAKE_LEDGER",
+   "article_id": "applied_lore.pellet_lane_wake_ledger",
+   "title_key": "LORE_PELLET_LANE_WAKE_LEDGER_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Humanity_2190_Game_Texture.md",
+    "Docs/Lore/Ships_Transit_Game_Texture.md",
+    "PROJECT_BIBLES.md",
+    ".agents-skills/celestial.md",
+    ".agents-skills/world.md",
+    ".agents-skills/writing.md",
+    ".agents-skills/localization.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P623_PELLET_LANE_WAKE_LEDGER",
-      "release_set_id": "RS127_PELLET_LANE_WAKE_LEDGER",
-      "article_id": "applied_lore.pellet_lane_wake_ledger",
-      "title_key": "LORE_PELLET_LANE_WAKE_LEDGER_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Humanity_2190_Game_Texture.md",
-        "Docs/Lore/Ships_Transit_Game_Texture.md",
-        "PROJECT_BIBLES.md",
-        ".agents-skills/celestial.md",
-        ".agents-skills/world.md",
-        ".agents-skills/writing.md",
-        ".agents-skills/localization.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.pellet_lane_wake_ledger",
-        "secondary": [
-          "unlock.first_freight_drive_plate",
-          "unlock.no_ftl_route_economy",
-          "unlock.seed_ship_manifest"
-        ],
-        "poi_tags": [
-          "poi.freight_drive_plate",
-          "poi.seed_ship_manifest",
-          "poi.luyten_packet_buffer",
-          "poi.black_keel_window_clock"
-        ],
-        "biome_tags": [
-          "biome.carrier_link",
-          "biome.relay_shadow",
-          "biome.publication",
-          "biome.codex"
-        ],
-        "first_20_boundary": "This packet can appear as public route context or a recovered drive-plate record; it explains how Aegir was reached without making interstellar travel feel easy or heroic."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Drive Plate Scan",
-          "terminal": "Luyten Freight Receipt",
-          "audio": "Black Keel Archive",
-          "in_game_wiki": "Recovered Transit Ledger",
-          "external_site": "Field Archive Longform",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "public_route_context",
-        "route_moment": "first_freight_drive_plate_or_site_transit_article",
-        "truth_payload": "Nearlight freight is infrastructure and accounting: pellet lanes made Aegir reachable without making rescue quick.",
-        "player_question": "How did humanity reach Aegir if there is no FTL, and why does that not help the player now?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Pellet Lane Wake Ledger",
-          "scanner": "DRIVE WAKE PLATE // Pitted ledger strip from a pellet-lane freighter. Each impact scar records who paid to push mass across the dark.",
-          "terminal": "LUYTEN FREIGHT RECEIPT // Beam-sail boost complete. Pellet-fusion handoff accepted. Coast mass, shield erosion, braking allotment, torpor seats and claim cargo locked until Aegir capture.",
-          "audio": "Black Keel archive: interstellar drives do not save people. They move debts so old that people are born inside the invoice.",
-          "in_game_wiki": "A recovered wake ledger explains near-light freight without FTL. Beam sails opened the route; pellet-fed fusion and staged braking carried seed payloads, heavy cargo and later human contracts toward Aegir. Every burn left accounting behind: pellets spent, shield loss, coast mass, braking rights, torpor berths and claim priority.",
-          "external_site": "Pellet lanes are not roads. They are promises made by infrastructure years before a ship arrives. A launch array, depot or route station throws streams of reaction pellets along a predicted path; a freighter catches the stream, feeds fusion pulses, rides behind shielding, coasts for years, then depends on braking architecture that may have changed owners before the ship reaches Aegir. That machinery built the route in layers: needleprobes first, seed machines after them, then heavy cargo, sleeper contracts, system carriers and local tenders like Black Keel. It also explains the cruelty of the present. A message can cross the route before useful mass can obey it. A rescue request may be fresh while the ship, propellant, brake slot, quarantine berth and survivor seat belong to schedules bought before the emergency existed. By 2190, drive plates read less like adventure and more like legal scar tissue. The Marauder can scan one pitted wake ledger and see who had enough money to throw metal through ten light years, and who was expected to pay for stopping it.",
-          "field_note": "A clean burn mark is not romance. It means somebody paid for the push and made somebody else pay for the stop."
-        },
-        "ru_RU": {
-          "title": "Реестр следа пеллетной трассы",
-          "scanner": "ПЛАСТИНА СЛЕДА ДВИГАТЕЛЯ // Изъеденная реестровая полоса с грузовика пеллетной трассы. Каждый шрам от удара записывает, кто заплатил за толчок массы через темноту.",
-          "terminal": "ГРУЗОВАЯ КВИТАНЦИЯ LUYTEN // Разгон на лучевом парусе завершён. Передача на пеллетно-термоядерный режим принята. Масса дрейфа, износ защиты, доля торможения, места в торпоре и претензионный груз зафиксированы до захвата Aegir.",
-          "audio": "Архив Black Keel: межзвёздные двигатели не спасают людей. Они двигают долги, такие старые, что люди рождаются уже внутри счёта.",
-          "in_game_wiki": "Найденный реестр следа объясняет околосветовые грузовые рейсы без FTL. Лучевые паруса открыли маршрут; пеллетное термоядерное питание и staged-торможение вели к Aegir seed-грузы, тяжёлые партии и поздние человеческие контракты. Каждый импульс оставлял учёт: потраченные пеллеты, потерю щита, массу дрейфа, права торможения, торпорные койки и приоритет претензий.",
-          "external_site": "Пеллетные трассы не дороги. Это обещания инфраструктуры, данные за годы до прибытия корабля. Пусковой массив, депо или маршрутная станция бросает потоки реакционных пеллет по рассчитанной траектории; грузовик ловит поток, кормит им термоядерные импульсы, идёт за защитой, дрейфует годами, а потом зависит от тормозной архитектуры, которая могла сменить владельца до прихода корабля к Aegir. Эта машина строила маршрут слоями: сначала needleprobe-зонды, за ними seed-машины, потом тяжёлый груз, контракты спящих пассажиров, системные носители и локальные тендеры вроде Black Keel. Она же объясняет жестокость настоящего. Сообщение может пересечь маршрут раньше, чем полезная масса сможет ему подчиниться. Запрос на спасение может быть свежим, пока корабль, реакционная масса, тормозной слот, карантинная койка и место выжившего принадлежат расписаниям, купленным до появления аварии. К 2190 году пластины двигателей читаются не как приключение, а как юридическая рубцовая ткань. Мародёр может просканировать один изъеденный реестр следа и понять, у кого хватило денег бросить металл через десять световых лет, и кто должен был заплатить за остановку.",
-          "field_note": "Чистый след разгона это не романтика. Это значит, что кто-то оплатил толчок и заставил кого-то другого оплатить остановку."
-        },
-        "ja_JP": {
-          "title": "ペレットレーン航跡台帳",
-          "scanner": "航跡プレート // ペレットレーン貨物船の孔食した台帳片。衝突痕の一つ一つが、暗闇を越えて質量を押す金を誰が払ったかを記録する。",
-          "terminal": "LUYTEN貨物受領書 // ビームセイル加速完了。ペレット核融合ハンドオフ承認。巡航質量、遮蔽摩耗、制動割当、トーパー席、請求貨物はAegir捕獲まで固定。",
-          "audio": "Black Keelアーカイブ: 恒星間ドライブは人を救わない。人が請求書の中に生まれるほど古い負債を動かす。",
-          "in_game_wiki": "回収された航跡台帳は、FTLなしの近光速貨物を説明する。ビームセイルが航路を開き、ペレット供給式核融合と段階制動がseed payload、重貨物、後の人間契約をAegirへ運んだ。燃焼ごとに記録が残る。使ったペレット、遮蔽損失、巡航質量、制動権、トーパー寝台、請求優先だ。",
-          "external_site": "ペレットレーンは道路ではない。船が到着する何年も前にインフラが交わす約束である。発射アレイ、デポ、航路ステーションが予測経路に反応ペレットの流れを投げる。貨物船はその流れを捕まえ、核融合パルスに食わせ、遮蔽の後ろを走り、何年も巡航し、Aegirに着く前に所有者が変わっているかもしれない制動設備に頼る。その機械は層ごとに航路を作った。最初にneedleprobe、次にseed機械、その後に重貨物、スリーパー契約、システムキャリア、Black Keelのような現地テンダーだ。同じ仕組みが現在の残酷さも説明する。メッセージは、有用な質量がそれに従うより早く航路を渡れる。救助要請は新しくても、船、推進材、制動枠、検疫寝台、生存者席は事故が起こる前に買われた予定表に属している。2190年には、ドライブプレートは冒険よりも法的な瘢痕組織として読まれる。マローダーは孔食した航跡台帳を一枚スキャンするだけで、十光年へ金属を投げる金を誰が持ち、その停止費用を誰に払わせるつもりだったかを読める。",
-          "field_note": "きれいな燃焼痕はロマンではない。誰かが押す金を払い、別の誰かに止める金を払わせたという意味だ。"
-        },
-        "zh_CN": {
-          "title": "弹丸航道尾迹账本",
-          "scanner": "驱动尾迹板 // 来自弹丸航道货船的蚀坑账本条。每一道撞击疤都记录谁付钱把质量推过黑暗。",
-          "terminal": "LUYTEN 货运收据 // 光束帆加速完成。弹丸聚变交接已接受。巡航质量、护盾磨耗、制动配额、冬眠席位和索赔货物锁定至 Aegir 捕获。",
-          "audio": "Black Keel 档案：星际驱动器不救人。它们移动的是古老到让人出生在账单里的债务。",
-          "in_game_wiki": "回收的尾迹账本解释了没有 FTL 的近光速货运。光束帆打开航线；弹丸供料聚变和分阶段制动把 seed 载荷、重货物以及后来的人员合同送向 Aegir。每次燃烧都留下账目：消耗弹丸、护盾损失、巡航质量、制动权、冬眠床位和索赔优先级。",
-          "external_site": "弹丸航道不是道路。它们是基础设施在飞船抵达多年前作出的承诺。发射阵列、仓站或航线站把反应弹丸流抛向预测轨迹；货船接住这条流，把它喂给聚变脉冲，在护盾后航行，巡航多年，然后依赖一套在船抵达 Aegir 前可能已经换过主人的制动架构。这套机器分层建起航线：先是 needleprobe 探针，再是 seed 机器，之后是重货物、冬眠合同、系统航母和 Black Keel 这样的本地驳运船。它也解释了当下的残酷。信息能在有用质量服从它之前穿过航线。救援请求可以是新的，但飞船、推进剂、制动槽、隔离床位和幸存者座位可能属于事故发生前就买好的时间表。到 2190 年，驱动板读起来不像冒险，更像法律疤痕组织。Marauder 扫描一条蚀坑尾迹账本，就能看出谁有钱把金属扔过十光年，又打算让谁为停下它付账。",
-          "field_note": "干净的燃烧痕不是浪漫。它说明有人付了推动的钱，又让别人付停止的钱。"
-        },
-        "fr_FR": {
-          "title": "Registre de sillage de voie à pellets",
-          "scanner": "PLAQUE DE SILLAGE MOTEUR // Bande de registre piquée d'un cargo de voie à pellets. Chaque cicatrice d'impact note qui a payé pour pousser de la masse dans le noir.",
-          "terminal": "REÇU DE FRET LUYTEN // Accélération par voile à faisceau terminée. Relais fusion à pellets accepté. Masse de dérive, érosion du blindage, allocation de freinage, sièges de torpeur et cargaison de réclamation verrouillés jusqu'à capture Aegir.",
-          "audio": "Archive Black Keel : les moteurs interstellaires ne sauvent pas les gens. Ils déplacent des dettes si anciennes que des gens naissent déjà dans la facture.",
-          "in_game_wiki": "Un registre de sillage récupéré explique le fret quasi luminique sans FTL. Les voiles à faisceau ont ouvert la route ; la fusion nourrie aux pellets et le freinage étagé ont porté charges seed, fret lourd et contrats humains vers Aegir. Chaque poussée laisse une comptabilité : pellets dépensés, perte de blindage, masse de dérive, droits de freinage, couchettes de torpeur et priorité de réclamation.",
-          "external_site": "Les voies à pellets ne sont pas des routes. Ce sont des promesses faites par l'infrastructure des années avant l'arrivée d'un navire. Un réseau de lancement, un dépôt ou une station de route jette des flux de pellets réactifs sur une trajectoire prévue ; un cargo capte le flux, nourrit ses impulsions de fusion, file derrière son blindage, dérive pendant des années puis dépend d'une architecture de freinage qui a peut-être changé de propriétaire avant son arrivée à Aegir. Cette machine a construit la route par couches : needleprobes d'abord, machines seed ensuite, puis fret lourd, contrats de dormeurs, transporteurs de système et tenders locaux comme Black Keel. Elle explique aussi la cruauté du présent. Un message peut traverser la route avant que la masse utile puisse lui obéir. Une demande de secours peut être fraîche alors que le navire, le propergol, le créneau de freinage, la couchette de quarantaine et le siège survivant appartiennent à des calendriers achetés avant l'urgence. En 2190, les plaques moteur se lisent moins comme de l'aventure que comme du tissu cicatriciel juridique. Le Marauder peut scanner un registre de sillage piqué et voir qui avait assez d'argent pour lancer du métal à travers dix années-lumière, et qui devait payer pour l'arrêter.",
-          "field_note": "Une marque de poussée propre n'est pas romantique. Elle veut dire que quelqu'un a payé la poussée et fait payer l'arrêt à quelqu'un d'autre."
-        },
-        "es_ES": {
-          "title": "Libro de estela de carril de pellets",
-          "scanner": "PLACA DE ESTELA DE MOTOR // Tira de registro picada de un carguero de carril de pellets. Cada cicatriz de impacto registra quién pagó por empujar masa a través de la oscuridad.",
-          "terminal": "RECIBO DE FLETE LUYTEN // Impulso de vela de haz completo. Traspaso a fusión por pellets aceptado. Masa de deriva, erosión de escudo, asignación de frenado, asientos de letargo y carga de reclamación bloqueados hasta captura Aegir.",
-          "audio": "Archivo Black Keel: los motores interestelares no salvan personas. Mueven deudas tan viejas que la gente nace dentro de la factura.",
-          "in_game_wiki": "Un libro de estela recuperado explica el flete casi lumínico sin FTL. Las velas de haz abrieron la ruta; la fusión alimentada por pellets y el frenado escalonado llevaron cargas seed, flete pesado y contratos humanos hacia Aegir. Cada quemado dejó contabilidad: pellets gastados, pérdida de escudo, masa de deriva, derechos de frenado, literas de letargo y prioridad de reclamación.",
-          "external_site": "Los carriles de pellets no son carreteras. Son promesas hechas por infraestructura años antes de que llegue una nave. Una matriz de lanzamiento, depósito o estación de ruta arroja corrientes de pellets reactivos por una trayectoria prevista; un carguero captura la corriente, alimenta pulsos de fusión, viaja tras el blindaje, deriva durante años y luego depende de una arquitectura de frenado que quizá cambió de dueño antes de llegar a Aegir. Esa maquinaria construyó la ruta por capas: primero needleprobes, luego máquinas seed, después flete pesado, contratos de durmientes, portadores de sistema y tenders locales como Black Keel. También explica la crueldad del presente. Un mensaje puede cruzar la ruta antes de que la masa útil pueda obedecerlo. Una petición de rescate puede ser nueva mientras la nave, el propelente, la ranura de frenado, la litera de cuarentena y el asiento de superviviente pertenecen a calendarios comprados antes de que existiera la emergencia. En 2190, las placas de motor se leen menos como aventura y más como tejido cicatricial legal. El Marauder puede escanear un libro de estela picado y ver quién tuvo dinero para lanzar metal por diez años luz, y quién debía pagar por detenerlo.",
-          "field_note": "Una marca de impulso limpia no es romance. Significa que alguien pagó el empuje e hizo que otro pagara la parada."
-        },
-        "de_DE": {
-          "title": "Pelletbahn-Wake-Ledger",
-          "scanner": "ANTRIEBSWAKE-PLATTE // Narbiger Ledgerstreifen eines Pelletbahn-Frachters. Jede Einschlagspur verzeichnet, wer bezahlt hat, Masse durch die Dunkelheit zu schieben.",
-          "terminal": "LUYTEN FRACHTBELEG // Strahlsegel-Boost abgeschlossen. Pelletfusions-Übergabe akzeptiert. Driftmasse, Schildabrieb, Bremszuteilung, Torporplätze und Anspruchsfracht bis Aegir-Einfang gesperrt.",
-          "audio": "Black-Keel-Archiv: Interstellare Antriebe retten keine Menschen. Sie bewegen Schulden, die so alt sind, dass Menschen in der Rechnung geboren werden.",
-          "in_game_wiki": "Ein geborgenes Wake-Ledger erklärt nahlichtschnelle Fracht ohne FTL. Strahlsegel öffneten die Route; pelletgespeiste Fusion und gestaffeltes Bremsen trugen Seed-Nutzlasten, Schwerfracht und spätere Menschenverträge nach Aegir. Jeder Burn hinterließ Buchhaltung: verbrauchte Pellets, Schildverlust, Driftmasse, Bremsrechte, Torporplätze und Anspruchspriorität.",
-          "external_site": "Pelletbahnen sind keine Straßen. Sie sind Versprechen, die Infrastruktur Jahre vor der Ankunft eines Schiffes abgibt. Ein Startarray, Depot oder eine Routenstation wirft Ströme reaktiver Pellets auf eine berechnete Bahn; ein Frachter fängt den Strom, füttert Fusionspulse, fährt hinter Abschirmung, driftet jahrelang und hängt dann an Bremsarchitektur, die vor seiner Ankunft in Aegir längst den Besitzer gewechselt haben kann. Diese Maschine baute die Route in Schichten: zuerst Needleprobes, dann Seed-Maschinen, danach Schwerfracht, Schläferverträge, Systemträger und lokale Tender wie Black Keel. Sie erklärt auch die Grausamkeit der Gegenwart. Eine Nachricht kann die Route überqueren, bevor nützliche Masse ihr gehorchen kann. Ein Rettungsantrag kann frisch sein, während Schiff, Reaktionsmasse, Bremsslot, Quarantäneplatz und Überlebendensitz zu Fahrplänen gehören, die vor dem Notfall gekauft wurden. Im Jahr 2190 lesen sich Antriebsplatten weniger wie Abenteuer als wie juristisches Narbengewebe. Der Marauder kann ein narbiges Wake-Ledger scannen und sehen, wer genug Geld hatte, Metall durch zehn Lichtjahre zu werfen, und wer fürs Anhalten zahlen sollte.",
-          "field_note": "Eine saubere Burnspur ist keine Romantik. Sie bedeutet, dass jemand den Schub bezahlt und jemand anderen fürs Stoppen zahlen ließ."
-        },
-        "pl_PL": {
-          "title": "Rejestr śladu toru pelletowego",
-          "scanner": "PŁYTA ŚLADU NAPĘDU // Wżarty pasek rejestru z frachtowca toru pelletowego. Każda blizna po uderzeniu zapisuje, kto zapłacił za pchnięcie masy przez ciemność.",
-          "terminal": "KWIT FRACHTOWY LUYTEN // Rozpęd żaglem wiązkowym zakończony. Przekazanie na fuzję pelletową przyjęte. Masa dryfu, erozja osłony, przydział hamowania, miejsca torporu i ładunek roszczeniowy zablokowane do przechwycenia Aegir.",
-          "audio": "Archiwum Black Keel: napędy międzygwiezdne nie ratują ludzi. Przesuwają długi tak stare, że ludzie rodzą się już wewnątrz faktury.",
-          "in_game_wiki": "Odzyskany rejestr śladu wyjaśnia fracht bliskoluminalny bez FTL. Żagle wiązkowe otworzyły trasę; fuzja karmiona pelletami i etapowane hamowanie niosły ładunki seed, ciężki fracht i późniejsze kontrakty ludzkie ku Aegir. Każde odpalenie zostawiało księgowość: zużyte pellety, utratę osłony, masę dryfu, prawa hamowania, koje torporu i priorytet roszczeń.",
-          "external_site": "Tory pelletowe nie są drogami. To obietnice składane przez infrastrukturę wiele lat przed przybyciem statku. Macierz startowa, depozyt albo stacja trasy rzuca strumienie pelletów reakcyjnych po przewidzianej ścieżce; frachtowiec łapie strumień, karmi nim impulsy fuzyjne, leci za osłoną, dryfuje latami, a potem zależy od architektury hamowania, która mogła zmienić właściciela przed dotarciem do Aegir. Ta maszyna budowała trasę warstwami: najpierw needleprobes, potem maszyny seed, następnie ciężki fracht, kontrakty śpiących, nośniki systemowe i lokalne tendry jak Black Keel. Wyjaśnia też okrucieństwo teraźniejszości. Wiadomość może przejść trasę wcześniej, niż użyteczna masa zdoła jej posłuchać. Prośba o ratunek może być świeża, podczas gdy statek, masa reakcyjna, slot hamowania, koja kwarantanny i miejsce ocalałego należą do harmonogramów kupionych przed awarią. W 2190 roku płyty napędów czyta się mniej jak przygodę, a bardziej jak prawną tkankę bliznowatą. Marauder może zeskanować jeden wżarty rejestr śladu i zobaczyć, kto miał dość pieniędzy, by rzucić metal przez dziesięć lat świetlnych, oraz kto miał zapłacić za jego zatrzymanie.",
-          "field_note": "Czysty ślad odpalenia to nie romantyzm. To znaczy, że ktoś zapłacił za pchnięcie i kazał komuś innemu zapłacić za zatrzymanie."
-        },
-        "uk_UA": {
-          "title": "Реєстр сліду пелетної траси",
-          "scanner": "ПЛАСТИНА СЛІДУ ДВИГУНА // Поїдена реєстрова смуга з вантажника пелетної траси. Кожен шрам від удару записує, хто заплатив за поштовх маси крізь темряву.",
-          "terminal": "ВАНТАЖНА КВИТАНЦІЯ LUYTEN // Розгін променевим вітрилом завершено. Передачу на пелетно-термоядерний режим прийнято. Маса дрейфу, знос захисту, частка гальмування, місця торпору і претензійний вантаж зафіксовані до захоплення Aegir.",
-          "audio": "Архів Black Keel: міжзоряні двигуни не рятують людей. Вони рухають борги, такі старі, що люди народжуються вже всередині рахунку.",
-          "in_game_wiki": "Знайдений реєстр сліду пояснює навколосвітлові вантажні рейси без FTL. Променеві вітрила відкрили маршрут; пелетне термоядерне живлення і staged-гальмування несли до Aegir seed-вантажі, важкі партії і пізні людські контракти. Кожен імпульс лишав облік: витрачені пелети, втрату щита, масу дрейфу, права гальмування, торпорні койки і пріоритет претензій.",
-          "external_site": "Пелетні траси не дороги. Це обіцянки інфраструктури, дані за роки до прибуття корабля. Пусковий масив, депо або маршрутна станція кидає потоки реакційних пелет по розрахованій траєкторії; вантажник ловить потік, годує ним термоядерні імпульси, іде за захистом, дрейфує роками, а потім залежить від гальмівної архітектури, що могла змінити власника до приходу корабля в Aegir. Ця машина будувала маршрут шарами: спершу needleprobe-зонди, за ними seed-машини, потім важкий вантаж, контракти сплячих пасажирів, системні носії і локальні тендери на кшталт Black Keel. Вона ж пояснює жорстокість теперішнього. Повідомлення може перетнути маршрут раніше, ніж корисна маса зможе йому підкоритися. Запит на порятунок може бути свіжим, поки корабель, реакційна маса, гальмівний слот, карантинна койка і місце вцілілого належать розкладам, купленим до появи аварії. У 2190 році пластини двигунів читаються не як пригода, а як юридична рубцева тканина. Мародер може просканувати один поїдений реєстр сліду і зрозуміти, у кого вистачило грошей кинути метал через десять світлових років, і хто мав заплатити за зупинку.",
-          "field_note": "Чистий слід розгону це не романтика. Це означає, що хтось оплатив поштовх і змусив когось іншого оплатити зупинку."
-        },
-        "ar_SA": {
-          "title": "سجل أثر مسار الحبيبات",
-          "scanner": "صفيحة أثر الدفع // شريط سجل مثقوب من سفينة شحن في مسار الحبيبات. كل ندبة اصطدام تسجل من دفع المال لدفع الكتلة عبر الظلام.",
-          "terminal": "إيصال شحن LUYTEN // اكتمل دفع الشراع الشعاعي. تم قبول تسليم الاندماج المغذى بالحبيبات. كتلة الانجراف، وتآكل الدرع، وحصة الكبح، ومقاعد السبات، وشحنة المطالبة مقفلة حتى التقاط Aegir.",
-          "audio": "أرشيف Black Keel: المحركات بين النجمية لا تنقذ الناس. إنها تنقل ديوناً قديمة إلى درجة أن الناس يولدون داخل الفاتورة.",
-          "in_game_wiki": "يشرح سجل أثر مستعاد الشحن القريب من سرعة الضوء من دون FTL. فتحت الأشرعة الشعاعية الطريق؛ وحملت الاندماجات المغذاة بالحبيبات والكبح المرحلي حمولات seed والشحن الثقيل ثم عقود البشر نحو Aegir. كل دفعة تركت حساباً: حبيبات مصروفة، خسارة درع، كتلة انجراف، حقوق كبح، أسرّة سبات وأولوية مطالبة.",
-          "external_site": "مسارات الحبيبات ليست طرقاً. إنها وعود تقدمها البنية التحتية قبل وصول السفينة بسنوات. مصفوفة إطلاق أو مستودع أو محطة مسار تقذف تيارات من حبيبات التفاعل على مسار محسوب؛ تلتقط سفينة الشحن التيار، وتغذي به نبضات الاندماج، وتسير خلف الدرع، وتنجرف لسنوات، ثم تعتمد على بنية كبح ربما غيرت مالكها قبل وصول السفينة إلى Aegir. بنت هذه الآلة الطريق في طبقات: needleprobes أولاً، ثم آلات seed، ثم الشحن الثقيل، وعقود النائمين، وحاملات النظام، والتندرات المحلية مثل Black Keel. وهي تشرح قسوة الحاضر أيضاً. يمكن لرسالة أن تعبر الطريق قبل أن تستطيع الكتلة المفيدة طاعتها. قد يكون طلب الإنقاذ جديداً بينما السفينة، وكتلة الدفع، وفتحة الكبح، وسرير الحجر، ومقعد الناجي تخص جداول اشتريت قبل وجود الطارئ. بحلول 2190، لا تُقرأ صفائح الدفع كمغامرة بل كنسيج ندبي قانوني. يستطيع Marauder أن يمسح سجل أثر مثقوباً واحداً ويرى من امتلك المال الكافي لرمي معدن عبر عشر سنوات ضوئية، ومن كان متوقعاً أن يدفع ثمن إيقافه.",
-          "field_note": "أثر دفع نظيف ليس رومانسية. إنه يعني أن أحدهم دفع ثمن الدفع وجعل شخصاً آخر يدفع ثمن التوقف."
-        },
-        "id_ID": {
-          "title": "Buku Jejak Jalur Pelet",
-          "scanner": "PELAT JEJAK PENGGERAK // Pita buku yang bopeng dari kapal barang jalur pelet. Setiap bekas tumbukan mencatat siapa yang membayar untuk mendorong massa menembus gelap.",
-          "terminal": "RESI KARGO LUYTEN // Dorongan layar berkas selesai. Serah-terima fusi pelet diterima. Massa luncur, erosi perisai, jatah pengereman, kursi torpor, dan kargo klaim terkunci sampai tangkapan Aegir.",
-          "audio": "Arsip Black Keel: penggerak antarbintang tidak menyelamatkan orang. Mereka memindahkan utang begitu tua hingga orang lahir di dalam tagihan.",
-          "in_game_wiki": "Buku jejak yang ditemukan menjelaskan kargo nyaris cahaya tanpa FTL. Layar berkas membuka rute; fusi makan pelet dan pengereman bertahap membawa muatan seed, kargo berat, dan kontrak manusia kemudian menuju Aegir. Setiap pembakaran meninggalkan akuntansi: pelet terpakai, kehilangan perisai, massa luncur, hak pengereman, ranjang torpor, dan prioritas klaim.",
-          "external_site": "Jalur pelet bukan jalan. Itu janji yang dibuat infrastruktur bertahun-tahun sebelum kapal tiba. Larik peluncur, depo, atau stasiun rute melempar aliran pelet reaksi di sepanjang lintasan terhitung; kapal barang menangkap aliran itu, memberi makan pulsa fusi, melaju di balik perisai, meluncur selama bertahun-tahun, lalu bergantung pada arsitektur pengereman yang mungkin sudah berganti pemilik sebelum kapal mencapai Aegir. Mesin itu membangun rute berlapis: needleprobe lebih dulu, lalu mesin seed, kemudian kargo berat, kontrak penidur, pengangkut sistem, dan tender lokal seperti Black Keel. Itu juga menjelaskan kekejaman masa kini. Pesan dapat menyeberangi rute sebelum massa berguna bisa mematuhinya. Permintaan penyelamatan bisa masih baru sementara kapal, massa reaksi, slot pengereman, ranjang karantina, dan kursi penyintas milik jadwal yang dibeli sebelum keadaan darurat ada. Pada 2190, pelat penggerak terbaca bukan sebagai petualangan, melainkan jaringan parut hukum. Marauder dapat memindai satu buku jejak bopeng dan melihat siapa yang punya cukup uang untuk melempar logam melintasi sepuluh tahun cahaya, serta siapa yang diharapkan membayar penghentiannya.",
-          "field_note": "Bekas dorong yang bersih bukan romansa. Itu berarti seseorang membayar dorongan dan membuat orang lain membayar penghentian."
-        },
-        "ko_KR": {
-          "title": "펠릿 항로 항적 장부",
-          "scanner": "추진 항적판 // 펠릿 항로 화물선에서 나온 패인 장부 띠. 각각의 충돌 자국은 누가 어둠 너머로 질량을 밀 돈을 냈는지 기록한다.",
-          "terminal": "LUYTEN 화물 영수증 // 빔 세일 가속 완료. 펠릿 핵융합 인계 승인. 순항 질량, 차폐 침식, 제동 배정, 토퍼 좌석, 청구 화물은 Aegir 포획까지 잠금.",
-          "audio": "Black Keel 기록: 항성간 드라이브는 사람을 구하지 않는다. 사람이 청구서 안에서 태어날 만큼 오래된 빚을 움직인다.",
-          "in_game_wiki": "회수된 항적 장부는 FTL 없는 근광속 화물을 설명한다. 빔 세일이 항로를 열었고, 펠릿 공급 핵융합과 단계 제동이 seed 적재물, 중화물, 이후 인간 계약을 Aegir로 실어 보냈다. 모든 연소는 회계를 남겼다. 소모된 펠릿, 차폐 손실, 순항 질량, 제동권, 토퍼 침상, 청구 우선순위다.",
-          "external_site": "펠릿 항로는 길이 아니다. 배가 도착하기 몇 년 전에 인프라가 건 약속이다. 발사 배열, 보급고, 항로 정거장이 계산된 경로를 따라 반응 펠릿의 흐름을 던진다. 화물선은 그 흐름을 붙잡고 핵융합 펄스에 먹이며, 차폐 뒤에서 달리고, 몇 년 동안 순항한 뒤, Aegir에 도착하기 전에 주인이 바뀌었을 수도 있는 제동 구조에 의존한다. 그 기계는 층을 쌓아 항로를 만들었다. 처음에는 needleprobe, 그 뒤에 seed 기계, 그 다음 중화물, 수면자 계약, 시스템 운반선, Black Keel 같은 현지 텐더가 왔다. 그것은 현재의 잔혹함도 설명한다. 메시지는 유용한 질량이 그 명령에 따르기 전에 항로를 건널 수 있다. 구조 요청은 신선해도, 배와 반응 질량, 제동 슬롯, 검역 침상, 생존자 좌석은 비상사태가 생기기 전에 산 일정표에 속할 수 있다. 2190년에 추진판은 모험보다 법적 흉터 조직처럼 읽힌다. Marauder는 패인 항적 장부 하나를 스캔하고 누가 십 광년 너머로 금속을 던질 돈이 있었는지, 그리고 누가 그것을 멈추는 비용을 내야 했는지 읽을 수 있다.",
-          "field_note": "깨끗한 연소 자국은 낭만이 아니다. 누군가 밀어내는 값을 냈고, 다른 누군가에게 멈추는 값을 물렸다는 뜻이다."
-        },
-        "he_IL": {
-          "title": "פנקס שובל נתיב הכדוריות",
-          "scanner": "לוח שובל הנעה // רצועת פנקס מחוררת ממובילת נתיב כדוריות. כל צלקת פגיעה רושמת מי שילם כדי לדחוף מסה דרך החושך.",
-          "terminal": "קבלת מטען LUYTEN // האצת מפרש קרן הושלמה. מסירת היתוך כדוריות התקבלה. מסת שיוט, שחיקת מגן, הקצאת בלימה, מושבי טורפור ומטען תביעה נעולים עד לכידת Aegir.",
-          "audio": "ארכיון Black Keel: מנועים בין-כוכביים אינם מצילים אנשים. הם מזיזים חובות ישנים כל כך שאנשים נולדים בתוך החשבונית.",
-          "in_game_wiki": "פנקס שובל שנמצא מסביר הובלת מטען קרובה למהירות האור בלי FTL. מפרשי קרן פתחו את הנתיב; היתוך מוזן כדוריות ובלימה מדורגת נשאו מטעני seed, מטען כבד וחוזים אנושיים מאוחרים אל Aegir. כל בערה הותירה חשבונאות: כדוריות שנצרכו, אובדן מגן, מסת שיוט, זכויות בלימה, דרגשי טורפור ועדיפות תביעה.",
-          "external_site": "נתיבי כדוריות אינם כבישים. הם הבטחות שתשתית נותנת שנים לפני שספינה מגיעה. מערך שיגור, מחסן או תחנת נתיב מטילים זרמי כדוריות תגובה לאורך מסלול חזוי; מובילת מטען לוכדת את הזרם, מזינה פולסי היתוך, נוסעת מאחורי מיגון, משייטת שנים ואז תלויה בארכיטקטורת בלימה שאולי החליפה בעלים לפני שהספינה מגיעה אל Aegir. המכונה הזאת בנתה את הנתיב בשכבות: קודם needleprobes, אחריהם מכונות seed, ואז מטען כבד, חוזי ישנים, נושאי מערכת וטנדרים מקומיים כמו Black Keel. היא גם מסבירה את האכזריות של ההווה. הודעה יכולה לחצות את הנתיב לפני שמסה שימושית מסוגלת לציית לה. בקשת חילוץ עשויה להיות טרייה בזמן שהספינה, מסת התגובה, חריץ הבלימה, דרגש ההסגר ומושב הניצול שייכים ללוחות זמנים שנקנו לפני שהחירום היה קיים. ב-2190, לוחות הנעה נקראים פחות כהרפתקה ויותר כרקמת צלקת משפטית. Marauder יכול לסרוק פנקס שובל מחורר אחד ולראות למי היה מספיק כסף לזרוק מתכת דרך עשר שנות אור, ומי היה אמור לשלם על עצירתה.",
-          "field_note": "סימן בערה נקי אינו רומנטיקה. הוא אומר שמישהו שילם על הדחיפה וגרם למישהו אחר לשלם על העצירה."
-        },
-        "pt_BR": {
-          "title": "Livro de esteira da via de pellets",
-          "scanner": "PLACA DE ESTEIRA DO MOTOR // Tira de livro corroída de um cargueiro de via de pellets. Cada cicatriz de impacto registra quem pagou para empurrar massa pelo escuro.",
-          "terminal": "RECIBO DE FRETE LUYTEN // Impulso de vela de feixe concluído. Entrega para fusão por pellets aceita. Massa de deriva, erosão de escudo, cota de frenagem, assentos de torpor e carga de reivindicação travados até captura Aegir.",
-          "audio": "Arquivo Black Keel: motores interestelares não salvam pessoas. Eles movem dívidas tão antigas que pessoas nascem dentro da fatura.",
-          "in_game_wiki": "Um livro de esteira recuperado explica frete quase-luz sem FTL. Velas de feixe abriram a rota; fusão alimentada por pellets e frenagem em estágios levaram cargas seed, carga pesada e contratos humanos posteriores rumo a Aegir. Cada queima deixou contabilidade: pellets gastos, perda de escudo, massa de deriva, direitos de frenagem, leitos de torpor e prioridade de reivindicação.",
-          "external_site": "Vias de pellets não são estradas. São promessas feitas por infraestrutura anos antes de uma nave chegar. Um arranjo de lançamento, depósito ou estação de rota lança fluxos de pellets reativos por uma trajetória prevista; um cargueiro captura o fluxo, alimenta pulsos de fusão, viaja atrás de blindagem, deriva por anos e depois depende de uma arquitetura de frenagem que pode ter mudado de dono antes de a nave alcançar Aegir. Essa máquina construiu a rota em camadas: primeiro needleprobes, depois máquinas seed, em seguida carga pesada, contratos de dormentes, cargueiros de sistema e tenders locais como Black Keel. Ela também explica a crueldade do presente. Uma mensagem pode cruzar a rota antes que massa útil consiga obedecer. Um pedido de resgate pode ser recente enquanto a nave, a massa reativa, a vaga de frenagem, o leito de quarentena e o assento de sobrevivente pertencem a cronogramas comprados antes da emergência existir. Em 2190, placas de motor parecem menos aventura e mais tecido cicatricial jurídico. O Marauder pode escanear um livro de esteira corroído e ver quem teve dinheiro para lançar metal por dez anos-luz, e quem deveria pagar para pará-lo.",
-          "field_note": "Uma marca limpa de queima não é romance. Significa que alguém pagou pelo empurrão e fez outra pessoa pagar pela parada."
-        },
-        "nl_NL": {
-          "title": "Wakeledger van de pelletbaan",
-          "scanner": "AANDRIJFWAKE-PLAAT // Aangevreten ledgerstrip van een pelletbaanvrachter. Elk inslaglitteken legt vast wie betaalde om massa door het donker te duwen.",
-          "terminal": "LUYTEN VRACHTBEWIJS // Straalzeilboost voltooid. Pelletfusie-overdracht geaccepteerd. Driftmassa, schildslijtage, remtoewijzing, torporstoelen en claimvracht vergrendeld tot Aegir-invang.",
-          "audio": "Black Keel-archief: interstellaire aandrijvingen redden geen mensen. Ze verplaatsen schulden zo oud dat mensen in de factuur worden geboren.",
-          "in_game_wiki": "Een geborgen wakeledger verklaart bijna-lichtsnel vrachtverkeer zonder FTL. Straalzeilen openden de route; pelletgevoede fusie en gefaseerd remmen droegen seed-ladingen, zware vracht en latere menselijke contracten richting Aegir. Elke burn liet boekhouding achter: verbruikte pellets, schildverlies, driftmassa, remrechten, torporbedden en claimprioriteit.",
-          "external_site": "Pelletbanen zijn geen wegen. Het zijn beloften die infrastructuur jaren voor aankomst van een schip doet. Een lanceerarray, depot of routestation werpt stromen reactiepellets langs een voorspeld pad; een vrachter vangt de stroom, voedt fusiepulsen, rijdt achter afscherming, drift jaren en hangt daarna af van remarchitectuur die van eigenaar kan zijn veranderd voordat het schip Aegir bereikt. Die machine bouwde de route in lagen: eerst needleprobes, daarna seed-machines, vervolgens zware vracht, slapercontracten, systeemdragers en lokale tenders zoals Black Keel. Ze verklaart ook de wreedheid van het heden. Een bericht kan de route kruisen voordat nuttige massa eraan kan gehoorzamen. Een reddingsverzoek kan vers zijn terwijl het schip, reactiemassa, remslot, quarantainebed en overlevendenstoel behoren tot schema's die voor de noodsituatie zijn gekocht. In 2190 lezen aandrijfplaten minder als avontuur en meer als juridisch littekenweefsel. De Marauder kan één aangevreten wakeledger scannen en zien wie genoeg geld had om metaal door tien lichtjaar te werpen, en wie verwacht werd te betalen voor het stoppen ervan.",
-          "field_note": "Een schoon burnspoor is geen romantiek. Het betekent dat iemand voor de duw betaalde en iemand anders voor de stop liet betalen."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.pellet_lane_wake_ledger",
+    "secondary": [
+     "unlock.first_freight_drive_plate",
+     "unlock.no_ftl_route_economy",
+     "unlock.seed_ship_manifest"
+    ],
+    "poi_tags": [
+     "poi.freight_drive_plate",
+     "poi.seed_ship_manifest",
+     "poi.luyten_packet_buffer",
+     "poi.black_keel_window_clock"
+    ],
+    "biome_tags": [
+     "biome.carrier_link",
+     "biome.relay_shadow",
+     "biome.publication",
+     "biome.codex"
+    ],
+    "first_20_boundary": "This packet can appear as public route context or a recovered drive-plate record; it explains how Aegir was reached without making interstellar travel feel easy or heroic."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Drive Plate Scan",
+     "terminal": "Luyten Freight Receipt",
+     "audio": "Black Keel Archive",
+     "in_game_wiki": "Recovered Transit Ledger",
+     "external_site": "Field Archive Longform",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "public_route_context",
+    "route_moment": "first_freight_drive_plate_or_site_transit_article",
+    "truth_payload": "Nearlight freight is infrastructure and accounting: pellet lanes made Aegir reachable without making rescue quick.",
+    "player_question": "How did humanity reach Aegir if there is no FTL, and why does that not help the player now?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Pellet Lane Wake Ledger",
+     "scanner": "DRIVE WAKE PLATE // Pitted ledger strip from a pellet-lane freighter. Each impact scar records who paid to push mass across the dark.",
+     "terminal": "LUYTEN FREIGHT RECEIPT // Beam-sail boost complete. Pellet-fusion handoff accepted. Coast mass, shield erosion, braking allotment, torpor seats and claim cargo locked until Aegir capture.",
+     "audio": "Black Keel archive: interstellar drives do not save people. They move debts so old that people are born inside the invoice.",
+     "in_game_wiki": "A recovered wake ledger explains near-light freight without FTL. Beam sails opened the route; pellet-fed fusion and staged braking carried seed payloads, heavy cargo and later human contracts toward Aegir. Every burn left accounting behind: pellets spent, shield loss, coast mass, braking rights, torpor berths and claim priority.",
+     "external_site": "Pellet lanes are not roads. They are promises made by infrastructure years before a ship arrives. A launch array, depot or route station throws streams of reaction pellets along a predicted path; a freighter catches the stream, feeds fusion pulses, rides behind shielding, coasts for years, then depends on braking architecture that may have changed owners before the ship reaches Aegir. That machinery built the route in layers: needleprobes first, seed machines after them, then heavy cargo, sleeper contracts, system carriers and local tenders like Black Keel. It also explains the cruelty of the present. A message can cross the route before useful mass can obey it. A rescue request may be fresh while the ship, propellant, brake slot, quarantine berth and survivor seat belong to schedules bought before the emergency existed. By 2190, drive plates read less like adventure and more like legal scar tissue. The Marauder can scan one pitted wake ledger and see who had enough money to throw metal through ten light years, and who was expected to pay for stopping it.",
+     "field_note": "A clean burn mark is not romance. It means somebody paid for the push and made somebody else pay for the stop."
+    },
+    "ru_RU": {
+     "title": "Реестр следа пеллетной трассы",
+     "scanner": "ПЛАСТИНА СЛЕДА ДВИГАТЕЛЯ // Изъеденная реестровая полоса с грузовика пеллетной трассы. Каждый шрам от удара записывает, кто заплатил за толчок массы через темноту.",
+     "terminal": "ГРУЗОВАЯ КВИТАНЦИЯ LUYTEN // Разгон на лучевом парусе завершён. Передача на пеллетно-термоядерный режим принята. Масса дрейфа, износ защиты, доля торможения, места в торпоре и претензионный груз зафиксированы до захвата Aegir.",
+     "audio": "Архив Black Keel: межзвёздные двигатели не спасают людей. Они двигают долги, такие старые, что люди рождаются уже внутри счёта.",
+     "in_game_wiki": "Найденный реестр следа объясняет околосветовые грузовые рейсы без FTL. Лучевые паруса открыли маршрут; пеллетное термоядерное питание и staged-торможение вели к Aegir seed-грузы, тяжёлые партии и поздние человеческие контракты. Каждый импульс оставлял учёт: потраченные пеллеты, потерю щита, массу дрейфа, права торможения, торпорные койки и приоритет претензий.",
+     "external_site": "Пеллетные трассы не дороги. Это обещания инфраструктуры, данные за годы до прибытия корабля. Пусковой массив, депо или маршрутная станция бросает потоки реакционных пеллет по рассчитанной траектории; грузовик ловит поток, кормит им термоядерные импульсы, идёт за защитой, дрейфует годами, а потом зависит от тормозной архитектуры, которая могла сменить владельца до прихода корабля к Aegir. Эта машина строила маршрут слоями: сначала needleprobe-зонды, за ними seed-машины, потом тяжёлый груз, контракты спящих пассажиров, системные носители и локальные тендеры вроде Black Keel. Она же объясняет жестокость настоящего. Сообщение может пересечь маршрут раньше, чем полезная масса сможет ему подчиниться. Запрос на спасение может быть свежим, пока корабль, реакционная масса, тормозной слот, карантинная койка и место выжившего принадлежат расписаниям, купленным до появления аварии. К 2190 году пластины двигателей читаются не как приключение, а как юридическая рубцовая ткань. Мародёр может просканировать один изъеденный реестр следа и понять, у кого хватило денег бросить металл через десять световых лет, и кто должен был заплатить за остановку.",
+     "field_note": "Чистый след разгона это не романтика. Это значит, что кто-то оплатил толчок и заставил кого-то другого оплатить остановку."
+    },
+    "ja_JP": {
+     "title": "ペレットレーン航跡台帳",
+     "scanner": "航跡プレート // ペレットレーン貨物船の孔食した台帳片。衝突痕の一つ一つが、暗闇を越えて質量を押す金を誰が払ったかを記録する。",
+     "terminal": "LUYTEN貨物受領書 // ビームセイル加速完了。ペレット核融合ハンドオフ承認。巡航質量、遮蔽摩耗、制動割当、トーパー席、請求貨物はAegir捕獲まで固定。",
+     "audio": "Black Keelアーカイブ: 恒星間ドライブは人を救わない。人が請求書の中に生まれるほど古い負債を動かす。",
+     "in_game_wiki": "回収された航跡台帳は、FTLなしの近光速貨物を説明する。ビームセイルが航路を開き、ペレット供給式核融合と段階制動がseed payload、重貨物、後の人間契約をAegirへ運んだ。燃焼ごとに記録が残る。使ったペレット、遮蔽損失、巡航質量、制動権、トーパー寝台、請求優先だ。",
+     "external_site": "ペレットレーンは道路ではない。船が到着する何年も前にインフラが交わす約束である。発射アレイ、デポ、航路ステーションが予測経路に反応ペレットの流れを投げる。貨物船はその流れを捕まえ、核融合パルスに食わせ、遮蔽の後ろを走り、何年も巡航し、Aegirに着く前に所有者が変わっているかもしれない制動設備に頼る。その機械は層ごとに航路を作った。最初にneedleprobe、次にseed機械、その後に重貨物、スリーパー契約、システムキャリア、Black Keelのような現地テンダーだ。同じ仕組みが現在の残酷さも説明する。メッセージは、有用な質量がそれに従うより早く航路を渡れる。救助要請は新しくても、船、推進材、制動枠、検疫寝台、生存者席は事故が起こる前に買われた予定表に属している。2190年には、ドライブプレートは冒険よりも法的な瘢痕組織として読まれる。マローダーは孔食した航跡台帳を一枚スキャンするだけで、十光年へ金属を投げる金を誰が持ち、その停止費用を誰に払わせるつもりだったかを読める。",
+     "field_note": "きれいな燃焼痕はロマンではない。誰かが押す金を払い、別の誰かに止める金を払わせたという意味だ。"
+    },
+    "zh_CN": {
+     "title": "弹丸航道尾迹账本",
+     "scanner": "驱动尾迹板 // 来自弹丸航道货船的蚀坑账本条。每一道撞击疤都记录谁付钱把质量推过黑暗。",
+     "terminal": "LUYTEN 货运收据 // 光束帆加速完成。弹丸聚变交接已接受。巡航质量、护盾磨耗、制动配额、冬眠席位和索赔货物锁定至 Aegir 捕获。",
+     "audio": "Black Keel 档案：星际驱动器不救人。它们移动的是古老到让人出生在账单里的债务。",
+     "in_game_wiki": "回收的尾迹账本解释了没有 FTL 的近光速货运。光束帆打开航线；弹丸供料聚变和分阶段制动把 seed 载荷、重货物以及后来的人员合同送向 Aegir。每次燃烧都留下账目：消耗弹丸、护盾损失、巡航质量、制动权、冬眠床位和索赔优先级。",
+     "external_site": "弹丸航道不是道路。它们是基础设施在飞船抵达多年前作出的承诺。发射阵列、仓站或航线站把反应弹丸流抛向预测轨迹；货船接住这条流，把它喂给聚变脉冲，在护盾后航行，巡航多年，然后依赖一套在船抵达 Aegir 前可能已经换过主人的制动架构。这套机器分层建起航线：先是 needleprobe 探针，再是 seed 机器，之后是重货物、冬眠合同、系统航母和 Black Keel 这样的本地驳运船。它也解释了当下的残酷。信息能在有用质量服从它之前穿过航线。救援请求可以是新的，但飞船、推进剂、制动槽、隔离床位和幸存者座位可能属于事故发生前就买好的时间表。到 2190 年，驱动板读起来不像冒险，更像法律疤痕组织。Marauder 扫描一条蚀坑尾迹账本，就能看出谁有钱把金属扔过十光年，又打算让谁为停下它付账。",
+     "field_note": "干净的燃烧痕不是浪漫。它说明有人付了推动的钱，又让别人付停止的钱。"
+    },
+    "fr_FR": {
+     "title": "Registre de sillage de voie à pellets",
+     "scanner": "PLAQUE DE SILLAGE MOTEUR // Bande de registre piquée d'un cargo de voie à pellets. Chaque cicatrice d'impact note qui a payé pour pousser de la masse dans le noir.",
+     "terminal": "REÇU DE FRET LUYTEN // Accélération par voile à faisceau terminée. Relais fusion à pellets accepté. Masse de dérive, érosion du blindage, allocation de freinage, sièges de torpeur et cargaison de réclamation verrouillés jusqu'à capture Aegir.",
+     "audio": "Archive Black Keel : les moteurs interstellaires ne sauvent pas les gens. Ils déplacent des dettes si anciennes que des gens naissent déjà dans la facture.",
+     "in_game_wiki": "Un registre de sillage récupéré explique le fret quasi luminique sans FTL. Les voiles à faisceau ont ouvert la route ; la fusion nourrie aux pellets et le freinage étagé ont porté charges seed, fret lourd et contrats humains vers Aegir. Chaque poussée laisse une comptabilité : pellets dépensés, perte de blindage, masse de dérive, droits de freinage, couchettes de torpeur et priorité de réclamation.",
+     "external_site": "Les voies à pellets ne sont pas des routes. Ce sont des promesses faites par l'infrastructure des années avant l'arrivée d'un navire. Un réseau de lancement, un dépôt ou une station de route jette des flux de pellets réactifs sur une trajectoire prévue ; un cargo capte le flux, nourrit ses impulsions de fusion, file derrière son blindage, dérive pendant des années puis dépend d'une architecture de freinage qui a peut-être changé de propriétaire avant son arrivée à Aegir. Cette machine a construit la route par couches : needleprobes d'abord, machines seed ensuite, puis fret lourd, contrats de dormeurs, transporteurs de système et tenders locaux comme Black Keel. Elle explique aussi la cruauté du présent. Un message peut traverser la route avant que la masse utile puisse lui obéir. Une demande de secours peut être fraîche alors que le navire, le propergol, le créneau de freinage, la couchette de quarantaine et le siège survivant appartiennent à des calendriers achetés avant l'urgence. En 2190, les plaques moteur se lisent moins comme de l'aventure que comme du tissu cicatriciel juridique. Le Marauder peut scanner un registre de sillage piqué et voir qui avait assez d'argent pour lancer du métal à travers dix années-lumière, et qui devait payer pour l'arrêter.",
+     "field_note": "Une marque de poussée propre n'est pas romantique. Elle veut dire que quelqu'un a payé la poussée et fait payer l'arrêt à quelqu'un d'autre."
+    },
+    "es_ES": {
+     "title": "Libro de estela de carril de pellets",
+     "scanner": "PLACA DE ESTELA DE MOTOR // Tira de registro picada de un carguero de carril de pellets. Cada cicatriz de impacto registra quién pagó por empujar masa a través de la oscuridad.",
+     "terminal": "RECIBO DE FLETE LUYTEN // Impulso de vela de haz completo. Traspaso a fusión por pellets aceptado. Masa de deriva, erosión de escudo, asignación de frenado, asientos de letargo y carga de reclamación bloqueados hasta captura Aegir.",
+     "audio": "Archivo Black Keel: los motores interestelares no salvan personas. Mueven deudas tan viejas que la gente nace dentro de la factura.",
+     "in_game_wiki": "Un libro de estela recuperado explica el flete casi lumínico sin FTL. Las velas de haz abrieron la ruta; la fusión alimentada por pellets y el frenado escalonado llevaron cargas seed, flete pesado y contratos humanos hacia Aegir. Cada quemado dejó contabilidad: pellets gastados, pérdida de escudo, masa de deriva, derechos de frenado, literas de letargo y prioridad de reclamación.",
+     "external_site": "Los carriles de pellets no son carreteras. Son promesas hechas por infraestructura años antes de que llegue una nave. Una matriz de lanzamiento, depósito o estación de ruta arroja corrientes de pellets reactivos por una trayectoria prevista; un carguero captura la corriente, alimenta pulsos de fusión, viaja tras el blindaje, deriva durante años y luego depende de una arquitectura de frenado que quizá cambió de dueño antes de llegar a Aegir. Esa maquinaria construyó la ruta por capas: primero needleprobes, luego máquinas seed, después flete pesado, contratos de durmientes, portadores de sistema y tenders locales como Black Keel. También explica la crueldad del presente. Un mensaje puede cruzar la ruta antes de que la masa útil pueda obedecerlo. Una petición de rescate puede ser nueva mientras la nave, el propelente, la ranura de frenado, la litera de cuarentena y el asiento de superviviente pertenecen a calendarios comprados antes de que existiera la emergencia. En 2190, las placas de motor se leen menos como aventura y más como tejido cicatricial legal. El Marauder puede escanear un libro de estela picado y ver quién tuvo dinero para lanzar metal por diez años luz, y quién debía pagar por detenerlo.",
+     "field_note": "Una marca de impulso limpia no es romance. Significa que alguien pagó el empuje e hizo que otro pagara la parada."
+    },
+    "de_DE": {
+     "title": "Pelletbahn-Wake-Ledger",
+     "scanner": "ANTRIEBSWAKE-PLATTE // Narbiger Ledgerstreifen eines Pelletbahn-Frachters. Jede Einschlagspur verzeichnet, wer bezahlt hat, Masse durch die Dunkelheit zu schieben.",
+     "terminal": "LUYTEN FRACHTBELEG // Strahlsegel-Boost abgeschlossen. Pelletfusions-Übergabe akzeptiert. Driftmasse, Schildabrieb, Bremszuteilung, Torporplätze und Anspruchsfracht bis Aegir-Einfang gesperrt.",
+     "audio": "Black-Keel-Archiv: Interstellare Antriebe retten keine Menschen. Sie bewegen Schulden, die so alt sind, dass Menschen in der Rechnung geboren werden.",
+     "in_game_wiki": "Ein geborgenes Wake-Ledger erklärt nahlichtschnelle Fracht ohne FTL. Strahlsegel öffneten die Route; pelletgespeiste Fusion und gestaffeltes Bremsen trugen Seed-Nutzlasten, Schwerfracht und spätere Menschenverträge nach Aegir. Jeder Burn hinterließ Buchhaltung: verbrauchte Pellets, Schildverlust, Driftmasse, Bremsrechte, Torporplätze und Anspruchspriorität.",
+     "external_site": "Pelletbahnen sind keine Straßen. Sie sind Versprechen, die Infrastruktur Jahre vor der Ankunft eines Schiffes abgibt. Ein Startarray, Depot oder eine Routenstation wirft Ströme reaktiver Pellets auf eine berechnete Bahn; ein Frachter fängt den Strom, füttert Fusionspulse, fährt hinter Abschirmung, driftet jahrelang und hängt dann an Bremsarchitektur, die vor seiner Ankunft in Aegir längst den Besitzer gewechselt haben kann. Diese Maschine baute die Route in Schichten: zuerst Needleprobes, dann Seed-Maschinen, danach Schwerfracht, Schläferverträge, Systemträger und lokale Tender wie Black Keel. Sie erklärt auch die Grausamkeit der Gegenwart. Eine Nachricht kann die Route überqueren, bevor nützliche Masse ihr gehorchen kann. Ein Rettungsantrag kann frisch sein, während Schiff, Reaktionsmasse, Bremsslot, Quarantäneplatz und Überlebendensitz zu Fahrplänen gehören, die vor dem Notfall gekauft wurden. Im Jahr 2190 lesen sich Antriebsplatten weniger wie Abenteuer als wie juristisches Narbengewebe. Der Marauder kann ein narbiges Wake-Ledger scannen und sehen, wer genug Geld hatte, Metall durch zehn Lichtjahre zu werfen, und wer fürs Anhalten zahlen sollte.",
+     "field_note": "Eine saubere Burnspur ist keine Romantik. Sie bedeutet, dass jemand den Schub bezahlt und jemand anderen fürs Stoppen zahlen ließ."
+    },
+    "pl_PL": {
+     "title": "Rejestr śladu toru pelletowego",
+     "scanner": "PŁYTA ŚLADU NAPĘDU // Wżarty pasek rejestru z frachtowca toru pelletowego. Każda blizna po uderzeniu zapisuje, kto zapłacił za pchnięcie masy przez ciemność.",
+     "terminal": "KWIT FRACHTOWY LUYTEN // Rozpęd żaglem wiązkowym zakończony. Przekazanie na fuzję pelletową przyjęte. Masa dryfu, erozja osłony, przydział hamowania, miejsca torporu i ładunek roszczeniowy zablokowane do przechwycenia Aegir.",
+     "audio": "Archiwum Black Keel: napędy międzygwiezdne nie ratują ludzi. Przesuwają długi tak stare, że ludzie rodzą się już wewnątrz faktury.",
+     "in_game_wiki": "Odzyskany rejestr śladu wyjaśnia fracht bliskoluminalny bez FTL. Żagle wiązkowe otworzyły trasę; fuzja karmiona pelletami i etapowane hamowanie niosły ładunki seed, ciężki fracht i późniejsze kontrakty ludzkie ku Aegir. Każde odpalenie zostawiało księgowość: zużyte pellety, utratę osłony, masę dryfu, prawa hamowania, koje torporu i priorytet roszczeń.",
+     "external_site": "Tory pelletowe nie są drogami. To obietnice składane przez infrastrukturę wiele lat przed przybyciem statku. Macierz startowa, depozyt albo stacja trasy rzuca strumienie pelletów reakcyjnych po przewidzianej ścieżce; frachtowiec łapie strumień, karmi nim impulsy fuzyjne, leci za osłoną, dryfuje latami, a potem zależy od architektury hamowania, która mogła zmienić właściciela przed dotarciem do Aegir. Ta maszyna budowała trasę warstwami: najpierw needleprobes, potem maszyny seed, następnie ciężki fracht, kontrakty śpiących, nośniki systemowe i lokalne tendry jak Black Keel. Wyjaśnia też okrucieństwo teraźniejszości. Wiadomość może przejść trasę wcześniej, niż użyteczna masa zdoła jej posłuchać. Prośba o ratunek może być świeża, podczas gdy statek, masa reakcyjna, slot hamowania, koja kwarantanny i miejsce ocalałego należą do harmonogramów kupionych przed awarią. W 2190 roku płyty napędów czyta się mniej jak przygodę, a bardziej jak prawną tkankę bliznowatą. Marauder może zeskanować jeden wżarty rejestr śladu i zobaczyć, kto miał dość pieniędzy, by rzucić metal przez dziesięć lat świetlnych, oraz kto miał zapłacić za jego zatrzymanie.",
+     "field_note": "Czysty ślad odpalenia to nie romantyzm. To znaczy, że ktoś zapłacił za pchnięcie i kazał komuś innemu zapłacić za zatrzymanie."
+    },
+    "uk_UA": {
+     "title": "Реєстр сліду пелетної траси",
+     "scanner": "ПЛАСТИНА СЛІДУ ДВИГУНА // Поїдена реєстрова смуга з вантажника пелетної траси. Кожен шрам від удару записує, хто заплатив за поштовх маси крізь темряву.",
+     "terminal": "ВАНТАЖНА КВИТАНЦІЯ LUYTEN // Розгін променевим вітрилом завершено. Передачу на пелетно-термоядерний режим прийнято. Маса дрейфу, знос захисту, частка гальмування, місця торпору і претензійний вантаж зафіксовані до захоплення Aegir.",
+     "audio": "Архів Black Keel: міжзоряні двигуни не рятують людей. Вони рухають борги, такі старі, що люди народжуються вже всередині рахунку.",
+     "in_game_wiki": "Знайдений реєстр сліду пояснює навколосвітлові вантажні рейси без FTL. Променеві вітрила відкрили маршрут; пелетне термоядерне живлення і staged-гальмування несли до Aegir seed-вантажі, важкі партії і пізні людські контракти. Кожен імпульс лишав облік: витрачені пелети, втрату щита, масу дрейфу, права гальмування, торпорні койки і пріоритет претензій.",
+     "external_site": "Пелетні траси не дороги. Це обіцянки інфраструктури, дані за роки до прибуття корабля. Пусковий масив, депо або маршрутна станція кидає потоки реакційних пелет по розрахованій траєкторії; вантажник ловить потік, годує ним термоядерні імпульси, іде за захистом, дрейфує роками, а потім залежить від гальмівної архітектури, що могла змінити власника до приходу корабля в Aegir. Ця машина будувала маршрут шарами: спершу needleprobe-зонди, за ними seed-машини, потім важкий вантаж, контракти сплячих пасажирів, системні носії і локальні тендери на кшталт Black Keel. Вона ж пояснює жорстокість теперішнього. Повідомлення може перетнути маршрут раніше, ніж корисна маса зможе йому підкоритися. Запит на порятунок може бути свіжим, поки корабель, реакційна маса, гальмівний слот, карантинна койка і місце вцілілого належать розкладам, купленим до появи аварії. У 2190 році пластини двигунів читаються не як пригода, а як юридична рубцева тканина. Мародер може просканувати один поїдений реєстр сліду і зрозуміти, у кого вистачило грошей кинути метал через десять світлових років, і хто мав заплатити за зупинку.",
+     "field_note": "Чистий слід розгону це не романтика. Це означає, що хтось оплатив поштовх і змусив когось іншого оплатити зупинку."
+    },
+    "ar_SA": {
+     "title": "سجل أثر مسار الحبيبات",
+     "scanner": "صفيحة أثر الدفع // شريط سجل مثقوب من سفينة شحن في مسار الحبيبات. كل ندبة اصطدام تسجل من دفع المال لدفع الكتلة عبر الظلام.",
+     "terminal": "إيصال شحن LUYTEN // اكتمل دفع الشراع الشعاعي. تم قبول تسليم الاندماج المغذى بالحبيبات. كتلة الانجراف، وتآكل الدرع، وحصة الكبح، ومقاعد السبات، وشحنة المطالبة مقفلة حتى التقاط Aegir.",
+     "audio": "أرشيف Black Keel: المحركات بين النجمية لا تنقذ الناس. إنها تنقل ديوناً قديمة إلى درجة أن الناس يولدون داخل الفاتورة.",
+     "in_game_wiki": "يشرح سجل أثر مستعاد الشحن القريب من سرعة الضوء من دون FTL. فتحت الأشرعة الشعاعية الطريق؛ وحملت الاندماجات المغذاة بالحبيبات والكبح المرحلي حمولات seed والشحن الثقيل ثم عقود البشر نحو Aegir. كل دفعة تركت حساباً: حبيبات مصروفة، خسارة درع، كتلة انجراف، حقوق كبح، أسرّة سبات وأولوية مطالبة.",
+     "external_site": "مسارات الحبيبات ليست طرقاً. إنها وعود تقدمها البنية التحتية قبل وصول السفينة بسنوات. مصفوفة إطلاق أو مستودع أو محطة مسار تقذف تيارات من حبيبات التفاعل على مسار محسوب؛ تلتقط سفينة الشحن التيار، وتغذي به نبضات الاندماج، وتسير خلف الدرع، وتنجرف لسنوات، ثم تعتمد على بنية كبح ربما غيرت مالكها قبل وصول السفينة إلى Aegir. بنت هذه الآلة الطريق في طبقات: needleprobes أولاً، ثم آلات seed، ثم الشحن الثقيل، وعقود النائمين، وحاملات النظام، والتندرات المحلية مثل Black Keel. وهي تشرح قسوة الحاضر أيضاً. يمكن لرسالة أن تعبر الطريق قبل أن تستطيع الكتلة المفيدة طاعتها. قد يكون طلب الإنقاذ جديداً بينما السفينة، وكتلة الدفع، وفتحة الكبح، وسرير الحجر، ومقعد الناجي تخص جداول اشتريت قبل وجود الطارئ. بحلول 2190، لا تُقرأ صفائح الدفع كمغامرة بل كنسيج ندبي قانوني. يستطيع Marauder أن يمسح سجل أثر مثقوباً واحداً ويرى من امتلك المال الكافي لرمي معدن عبر عشر سنوات ضوئية، ومن كان متوقعاً أن يدفع ثمن إيقافه.",
+     "field_note": "أثر دفع نظيف ليس رومانسية. إنه يعني أن أحدهم دفع ثمن الدفع وجعل شخصاً آخر يدفع ثمن التوقف."
+    },
+    "id_ID": {
+     "title": "Buku Jejak Jalur Pelet",
+     "scanner": "PELAT JEJAK PENGGERAK // Pita buku yang bopeng dari kapal barang jalur pelet. Setiap bekas tumbukan mencatat siapa yang membayar untuk mendorong massa menembus gelap.",
+     "terminal": "RESI KARGO LUYTEN // Dorongan layar berkas selesai. Serah-terima fusi pelet diterima. Massa luncur, erosi perisai, jatah pengereman, kursi torpor, dan kargo klaim terkunci sampai tangkapan Aegir.",
+     "audio": "Arsip Black Keel: penggerak antarbintang tidak menyelamatkan orang. Mereka memindahkan utang begitu tua hingga orang lahir di dalam tagihan.",
+     "in_game_wiki": "Buku jejak yang ditemukan menjelaskan kargo nyaris cahaya tanpa FTL. Layar berkas membuka rute; fusi makan pelet dan pengereman bertahap membawa muatan seed, kargo berat, dan kontrak manusia kemudian menuju Aegir. Setiap pembakaran meninggalkan akuntansi: pelet terpakai, kehilangan perisai, massa luncur, hak pengereman, ranjang torpor, dan prioritas klaim.",
+     "external_site": "Jalur pelet bukan jalan. Itu janji yang dibuat infrastruktur bertahun-tahun sebelum kapal tiba. Larik peluncur, depo, atau stasiun rute melempar aliran pelet reaksi di sepanjang lintasan terhitung; kapal barang menangkap aliran itu, memberi makan pulsa fusi, melaju di balik perisai, meluncur selama bertahun-tahun, lalu bergantung pada arsitektur pengereman yang mungkin sudah berganti pemilik sebelum kapal mencapai Aegir. Mesin itu membangun rute berlapis: needleprobe lebih dulu, lalu mesin seed, kemudian kargo berat, kontrak penidur, pengangkut sistem, dan tender lokal seperti Black Keel. Itu juga menjelaskan kekejaman masa kini. Pesan dapat menyeberangi rute sebelum massa berguna bisa mematuhinya. Permintaan penyelamatan bisa masih baru sementara kapal, massa reaksi, slot pengereman, ranjang karantina, dan kursi penyintas milik jadwal yang dibeli sebelum keadaan darurat ada. Pada 2190, pelat penggerak terbaca bukan sebagai petualangan, melainkan jaringan parut hukum. Marauder dapat memindai satu buku jejak bopeng dan melihat siapa yang punya cukup uang untuk melempar logam melintasi sepuluh tahun cahaya, serta siapa yang diharapkan membayar penghentiannya.",
+     "field_note": "Bekas dorong yang bersih bukan romansa. Itu berarti seseorang membayar dorongan dan membuat orang lain membayar penghentian."
+    },
+    "ko_KR": {
+     "title": "펠릿 항로 항적 장부",
+     "scanner": "추진 항적판 // 펠릿 항로 화물선에서 나온 패인 장부 띠. 각각의 충돌 자국은 누가 어둠 너머로 질량을 밀 돈을 냈는지 기록한다.",
+     "terminal": "LUYTEN 화물 영수증 // 빔 세일 가속 완료. 펠릿 핵융합 인계 승인. 순항 질량, 차폐 침식, 제동 배정, 토퍼 좌석, 청구 화물은 Aegir 포획까지 잠금.",
+     "audio": "Black Keel 기록: 항성간 드라이브는 사람을 구하지 않는다. 사람이 청구서 안에서 태어날 만큼 오래된 빚을 움직인다.",
+     "in_game_wiki": "회수된 항적 장부는 FTL 없는 근광속 화물을 설명한다. 빔 세일이 항로를 열었고, 펠릿 공급 핵융합과 단계 제동이 seed 적재물, 중화물, 이후 인간 계약을 Aegir로 실어 보냈다. 모든 연소는 회계를 남겼다. 소모된 펠릿, 차폐 손실, 순항 질량, 제동권, 토퍼 침상, 청구 우선순위다.",
+     "external_site": "펠릿 항로는 길이 아니다. 배가 도착하기 몇 년 전에 인프라가 건 약속이다. 발사 배열, 보급고, 항로 정거장이 계산된 경로를 따라 반응 펠릿의 흐름을 던진다. 화물선은 그 흐름을 붙잡고 핵융합 펄스에 먹이며, 차폐 뒤에서 달리고, 몇 년 동안 순항한 뒤, Aegir에 도착하기 전에 주인이 바뀌었을 수도 있는 제동 구조에 의존한다. 그 기계는 층을 쌓아 항로를 만들었다. 처음에는 needleprobe, 그 뒤에 seed 기계, 그 다음 중화물, 수면자 계약, 시스템 운반선, Black Keel 같은 현지 텐더가 왔다. 그것은 현재의 잔혹함도 설명한다. 메시지는 유용한 질량이 그 명령에 따르기 전에 항로를 건널 수 있다. 구조 요청은 신선해도, 배와 반응 질량, 제동 슬롯, 검역 침상, 생존자 좌석은 비상사태가 생기기 전에 산 일정표에 속할 수 있다. 2190년에 추진판은 모험보다 법적 흉터 조직처럼 읽힌다. Marauder는 패인 항적 장부 하나를 스캔하고 누가 십 광년 너머로 금속을 던질 돈이 있었는지, 그리고 누가 그것을 멈추는 비용을 내야 했는지 읽을 수 있다.",
+     "field_note": "깨끗한 연소 자국은 낭만이 아니다. 누군가 밀어내는 값을 냈고, 다른 누군가에게 멈추는 값을 물렸다는 뜻이다."
+    },
+    "he_IL": {
+     "title": "פנקס שובל נתיב הכדוריות",
+     "scanner": "לוח שובל הנעה // רצועת פנקס מחוררת ממובילת נתיב כדוריות. כל צלקת פגיעה רושמת מי שילם כדי לדחוף מסה דרך החושך.",
+     "terminal": "קבלת מטען LUYTEN // האצת מפרש קרן הושלמה. מסירת היתוך כדוריות התקבלה. מסת שיוט, שחיקת מגן, הקצאת בלימה, מושבי טורפור ומטען תביעה נעולים עד לכידת Aegir.",
+     "audio": "ארכיון Black Keel: מנועים בין-כוכביים אינם מצילים אנשים. הם מזיזים חובות ישנים כל כך שאנשים נולדים בתוך החשבונית.",
+     "in_game_wiki": "פנקס שובל שנמצא מסביר הובלת מטען קרובה למהירות האור בלי FTL. מפרשי קרן פתחו את הנתיב; היתוך מוזן כדוריות ובלימה מדורגת נשאו מטעני seed, מטען כבד וחוזים אנושיים מאוחרים אל Aegir. כל בערה הותירה חשבונאות: כדוריות שנצרכו, אובדן מגן, מסת שיוט, זכויות בלימה, דרגשי טורפור ועדיפות תביעה.",
+     "external_site": "נתיבי כדוריות אינם כבישים. הם הבטחות שתשתית נותנת שנים לפני שספינה מגיעה. מערך שיגור, מחסן או תחנת נתיב מטילים זרמי כדוריות תגובה לאורך מסלול חזוי; מובילת מטען לוכדת את הזרם, מזינה פולסי היתוך, נוסעת מאחורי מיגון, משייטת שנים ואז תלויה בארכיטקטורת בלימה שאולי החליפה בעלים לפני שהספינה מגיעה אל Aegir. המכונה הזאת בנתה את הנתיב בשכבות: קודם needleprobes, אחריהם מכונות seed, ואז מטען כבד, חוזי ישנים, נושאי מערכת וטנדרים מקומיים כמו Black Keel. היא גם מסבירה את האכזריות של ההווה. הודעה יכולה לחצות את הנתיב לפני שמסה שימושית מסוגלת לציית לה. בקשת חילוץ עשויה להיות טרייה בזמן שהספינה, מסת התגובה, חריץ הבלימה, דרגש ההסגר ומושב הניצול שייכים ללוחות זמנים שנקנו לפני שהחירום היה קיים. ב-2190, לוחות הנעה נקראים פחות כהרפתקה ויותר כרקמת צלקת משפטית. Marauder יכול לסרוק פנקס שובל מחורר אחד ולראות למי היה מספיק כסף לזרוק מתכת דרך עשר שנות אור, ומי היה אמור לשלם על עצירתה.",
+     "field_note": "סימן בערה נקי אינו רומנטיקה. הוא אומר שמישהו שילם על הדחיפה וגרם למישהו אחר לשלם על העצירה."
+    },
+    "pt_BR": {
+     "title": "Livro de esteira da via de pellets",
+     "scanner": "PLACA DE ESTEIRA DO MOTOR // Tira de livro corroída de um cargueiro de via de pellets. Cada cicatriz de impacto registra quem pagou para empurrar massa pelo escuro.",
+     "terminal": "RECIBO DE FRETE LUYTEN // Impulso de vela de feixe concluído. Entrega para fusão por pellets aceita. Massa de deriva, erosão de escudo, cota de frenagem, assentos de torpor e carga de reivindicação travados até captura Aegir.",
+     "audio": "Arquivo Black Keel: motores interestelares não salvam pessoas. Eles movem dívidas tão antigas que pessoas nascem dentro da fatura.",
+     "in_game_wiki": "Um livro de esteira recuperado explica frete quase-luz sem FTL. Velas de feixe abriram a rota; fusão alimentada por pellets e frenagem em estágios levaram cargas seed, carga pesada e contratos humanos posteriores rumo a Aegir. Cada queima deixou contabilidade: pellets gastos, perda de escudo, massa de deriva, direitos de frenagem, leitos de torpor e prioridade de reivindicação.",
+     "external_site": "Vias de pellets não são estradas. São promessas feitas por infraestrutura anos antes de uma nave chegar. Um arranjo de lançamento, depósito ou estação de rota lança fluxos de pellets reativos por uma trajetória prevista; um cargueiro captura o fluxo, alimenta pulsos de fusão, viaja atrás de blindagem, deriva por anos e depois depende de uma arquitetura de frenagem que pode ter mudado de dono antes de a nave alcançar Aegir. Essa máquina construiu a rota em camadas: primeiro needleprobes, depois máquinas seed, em seguida carga pesada, contratos de dormentes, cargueiros de sistema e tenders locais como Black Keel. Ela também explica a crueldade do presente. Uma mensagem pode cruzar a rota antes que massa útil consiga obedecer. Um pedido de resgate pode ser recente enquanto a nave, a massa reativa, a vaga de frenagem, o leito de quarentena e o assento de sobrevivente pertencem a cronogramas comprados antes da emergência existir. Em 2190, placas de motor parecem menos aventura e mais tecido cicatricial jurídico. O Marauder pode escanear um livro de esteira corroído e ver quem teve dinheiro para lançar metal por dez anos-luz, e quem deveria pagar para pará-lo.",
+     "field_note": "Uma marca limpa de queima não é romance. Significa que alguém pagou pelo empurrão e fez outra pessoa pagar pela parada."
+    },
+    "nl_NL": {
+     "title": "Wakeledger van de pelletbaan",
+     "scanner": "AANDRIJFWAKE-PLAAT // Aangevreten ledgerstrip van een pelletbaanvrachter. Elk inslaglitteken legt vast wie betaalde om massa door het donker te duwen.",
+     "terminal": "LUYTEN VRACHTBEWIJS // Straalzeilboost voltooid. Pelletfusie-overdracht geaccepteerd. Driftmassa, schildslijtage, remtoewijzing, torporstoelen en claimvracht vergrendeld tot Aegir-invang.",
+     "audio": "Black Keel-archief: interstellaire aandrijvingen redden geen mensen. Ze verplaatsen schulden zo oud dat mensen in de factuur worden geboren.",
+     "in_game_wiki": "Een geborgen wakeledger verklaart bijna-lichtsnel vrachtverkeer zonder FTL. Straalzeilen openden de route; pelletgevoede fusie en gefaseerd remmen droegen seed-ladingen, zware vracht en latere menselijke contracten richting Aegir. Elke burn liet boekhouding achter: verbruikte pellets, schildverlies, driftmassa, remrechten, torporbedden en claimprioriteit.",
+     "external_site": "Pelletbanen zijn geen wegen. Het zijn beloften die infrastructuur jaren voor aankomst van een schip doet. Een lanceerarray, depot of routestation werpt stromen reactiepellets langs een voorspeld pad; een vrachter vangt de stroom, voedt fusiepulsen, rijdt achter afscherming, drift jaren en hangt daarna af van remarchitectuur die van eigenaar kan zijn veranderd voordat het schip Aegir bereikt. Die machine bouwde de route in lagen: eerst needleprobes, daarna seed-machines, vervolgens zware vracht, slapercontracten, systeemdragers en lokale tenders zoals Black Keel. Ze verklaart ook de wreedheid van het heden. Een bericht kan de route kruisen voordat nuttige massa eraan kan gehoorzamen. Een reddingsverzoek kan vers zijn terwijl het schip, reactiemassa, remslot, quarantainebed en overlevendenstoel behoren tot schema's die voor de noodsituatie zijn gekocht. In 2190 lezen aandrijfplaten minder als avontuur en meer als juridisch littekenweefsel. De Marauder kan één aangevreten wakeledger scannen en zien wie genoeg geld had om metaal door tien lichtjaar te werpen, en wie verwacht werd te betalen voor het stoppen ervan.",
+     "field_note": "Een schoon burnspoor is geen romantiek. Het betekent dat iemand voor de duw betaalde en iemand anders voor de stop liet betalen."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

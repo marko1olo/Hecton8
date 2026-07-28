@@ -1,11 +1,54 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS244_DROWNED_CONCRETE_PRESSURE_RUBBLE_ARTICLE",
-  "title": "Drowned Concrete Pressure Rubble Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS244_DROWNED_CONCRETE_PRESSURE_RUBBLE_ARTICLE",
+ "title": "Drowned Concrete Pressure Rubble Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1414_DROWNED_CONCRETE_PRESSURE_RUBBLE_LEDGER",
+   "release_set_id": "RS244_DROWNED_CONCRETE_PRESSURE_RUBBLE_ARTICLE",
+   "article_id": "applied_lore.drowned_concrete_pressure_rubble_ledger",
+   "title_key": "LORE_DROWNED_CONCRETE_PRESSURE_RUBBLE_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/WriterScenarioAgentPrompt.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,261 +56,219 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1414_DROWNED_CONCRETE_PRESSURE_RUBBLE_LEDGER",
-      "release_set_id": "RS244_DROWNED_CONCRETE_PRESSURE_RUBBLE_ARTICLE",
-      "article_id": "applied_lore.drowned_concrete_pressure_rubble_ledger",
-      "title_key": "LORE_DROWNED_CONCRETE_PRESSURE_RUBBLE_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/WriterScenarioAgentPrompt.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.drowned_concrete_pressure_rubble_ledger",
-        "secondary": [
-          "unlock.first_drowned_concrete_scan",
-          "unlock.first_colony_rubble_route_read",
-          "unlock.first_pressure_door_gasket_trace"
-        ],
-        "poi_tags": [
-          "poi.drowned_concrete_rubble_slab",
-          "poi.pressure_door_gasket_trace",
-          "poi.rust_shadow_reinforcement_mark",
-          "poi.shell_sand_buried_route_board"
-        ],
-        "biome_tags": [
-          "biome.photic_shelf",
-          "biome.industrial_shelf",
-          "biome.old_colony_ruins"
-        ],
-        "first_20_boundary": "Readable in early colony ruins after the first scanner pass; teaches human-made material evidence without exposing ending truth."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Structural Material Scanner",
-          "terminal": "Old Colony Structural Readout",
-          "audio": "Marauder Salvage Instructor",
-          "in_game_wiki": "PDA Ruin Material Field Guide",
-          "external_site": "Public Site Drowned Concrete Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_drowned_concrete_scan_or_colony_rubble_route",
-        "truth_payload": "Drowned pressure concrete is a readable colony artifact: stains, aggregate, gasket dust and fracture freshness reveal former rooms, dry sides, pressure doors and unsafe cuts.",
-        "player_question": "When is a pale rubble field a room instead of geology?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Drowned Concrete Pressure Rubble Ledger",
-          "scanner": "DROWNED CONCRETE // Pressure-rated colony aggregate, not natural limestone. Rebar is gone; rust shadow remains. Shell sand in fractures marks long flooding, while clean shear faces mark recent collapse or salvage cut.",
-          "terminal": "STRUCTURAL READ / OLD COLONY SLAB // Do not mine as generic stone. Concrete rubble marks a built room, pipe chase or load path. White ceramic aggregate means compression wall. Orange rust shadow means former reinforcement. Green-black lower stain means the piece stood in pooled water before collapse.",
-          "audio": "Natural rock breaks like weather. Colony concrete breaks like somebody paid for a shape and the ocean collected late.",
-          "in_game_wiki": "Drowned concrete is one of the easiest materials on HECTON-8 to underestimate. It looks like pale rock until the scanner catches the pattern: ceramic aggregate, gasket stains, bolt dust, rust shadows where reinforcement used to be, and shell sand packed into cracks after years underwater. Natural limestone breaks around bedding. Pressure concrete breaks around a job.\n\nThat distinction matters in play. A concrete fragment can point to a buried corridor, a crushed pump room, a hatch frame or a load path that still holds pressure on the other side. It can also be a trap. Concrete that failed slowly grows algae along the lower edge and collects shell grit in quiet cracks. Concrete that failed recently shows sharp pale faces, fresh mineral dust and cable scrapes. A Marauder reads those signs before cutting, because the wrong slab can be the last thing keeping a room from becoming ocean.\n\nDeep Reach sold the colony as clean engineering. The rubble is less flattering. It remembers rushed pours, repair patches, flood lines, unauthorized cuts and the places where workers used industrial material as shelter. Good salvage takes the metal, yes, but good evidence keeps the shape. A wall fragment with rust shadow and gasket stain can say where a door was, what side held pressure, and whether someone opened it, reinforced it or abandoned it before the water arrived.",
-          "external_site": "A field article on drowned pressure concrete: how to tell colony rubble from geology, why fracture stains matter, and how old slabs become route evidence instead of background debris.",
-          "external_site_article": "Drowned concrete is not scenery on HECTON-8. It is a dead building still speaking in material grammar. A pale chunk on the seabed might be ordinary stone, but pressure-rated colony concrete carries human geometry even after the room is gone: straight voids where gasket frames sat, orange shadows where reinforcement corroded away, ceramic aggregate that catches light differently from limestone, and shell sand packed into cracks by years of slow flooding.\n\nThe first useful question is not 'can I harvest it?' but 'what did it hold back?' A slab with lower green staining stood in pooled water before collapse. A clean shear face may be recent salvage, quake break or pressure failure. Rust without visible rods often means the reinforcing metal was stripped, dissolved or torn out by previous crews. Gasket dust around an edge tells you a hatch or pressure door used to bite there. These are route facts. They tell the player where a room was, where a pipe chase ran, what side was dry, and whether the next cut releases loot or ocean.\n\nThe material also carries labor history without a speech. Rushed concrete has different aggregate bands. Patch pours show colder color and worse bonding. Utility decks collect anti-slip grit at the edges. Living rooms collect warmer ceramic flakes and food-water stains. Deep Reach could rename an accident, but it could not make a bad pour age like a good one. When a Marauder scans rubble carefully, the ruined colony stops being a backdrop and becomes a readable body.\n\nThat is the intended fantasy: not picking up generic 'scrap concrete', but learning to see construction as evidence. The player can follow a rust shadow to a maintenance spine, avoid cutting the last compression piece, find a buried route board under shell sand, or decide that an intact wall fragment is more valuable as proof than as aggregate. The ocean erased the room. It did not erase the way the room failed.",
-          "field_note": "If it has a straight edge underwater, ask who needed the line straight."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал утонувшего напорного бетона",
-          "scanner": "УТОНУВШИЙ БЕТОН // Колониальный напорный заполнитель, не природный известняк. Арматура исчезла; осталась ржавая тень. Ракушечный песок в трещинах означает долгий затопленный срок, чистые срезы - свежий обвал или разрез salvage.",
-          "terminal": "СТРУКТУРНОЕ ЧТЕНИЕ / СТАРАЯ КОЛОНИАЛЬНАЯ ПЛИТА // Не добывать как обычный камень. Бетонный обломок отмечает комнату, трубный канал или несущую линию. Белый керамический заполнитель - компрессионная стена. Оранжевая тень - бывшее усиление. Зеленовато-черный низ - стоячая вода до обвала.",
-          "audio": "Природный камень ломается как погода. Колониальный бетон ломается так, будто кто-то заплатил за форму, а океан забрал долг позже.",
-          "in_game_wiki": "Утонувший бетон на HECTON-8 легко принять за бледный камень. Сканер быстро рушит эту иллюзию: керамический заполнитель, следы прокладок, пыль от болтов, ржавые тени там, где раньше держалась арматура, и ракушечный песок, набитый в трещины годами воды. Известняк ломается по слоям. Напорный бетон ломается по работе, для которой его залили.\n\nВ игре это различие полезно. Обломок может указать на погребенный коридор, смятую насосную, рамку люка или несущую линию, которая все еще держит давление с другой стороны. Он может быть и ловушкой. Медленно умерший бетон обрастает нижним краем и собирает песок в тихих щелях. Свежий отказ показывает чистые бледные сколы, минеральную пыль и царапины кабеля. Мародер читает это до реза: неправильная плита может быть последним, что отделяет комнату от океана.\n\nDeep Reach продавал колонию как чистую инженерию. Обломки говорят грязнее: спешные заливки, ремонтные заплаты, линии затопления, неразрешенные разрезы и места, где рабочие превращали промышленный материал в укрытие. Хороший salvage забирает металл, но хорошее доказательство сохраняет форму. Фрагмент стены с ржавой тенью и следом прокладки может сказать, где была дверь, какая сторона держала давление и бросили ли ее до прихода воды.",
-          "external_site": "Полевой материал про утонувший напорный бетон: как отличать колониальный обломок от геологии, почему важны пятна трещин и как старые плиты становятся доказательством маршрута.",
-          "external_site_article": "Утонувший бетон - не декорация HECTON-8. Это мертвое здание, которое еще говорит языком материала. Бледный кусок на дне может выглядеть камнем, но напорный бетон несет человеческую геометрию даже после исчезновения комнаты: прямые пустоты от прокладочных рам, оранжевые тени от арматуры, керамический заполнитель, светящийся иначе, чем известняк, и ракушечный песок, втянутый в трещины долгим затоплением.\n\nПервый вопрос не 'можно ли добыть', а 'что это удерживало'. Плита с зеленым низом стояла в воде до обвала. Чистый срез может быть свежим salvage, сейсмическим разломом или отказом давления. Ржавчина без прутка означает, что металл уже вытащили, растворили или вырвали предыдущие команды. Пыль прокладки по краю говорит, где раньше кусалась дверь. Это маршрутные факты: где была комната, где шел трубный канал, какая сторона оставалась сухой, и выпустит ли следующий рез добычу или океан.\n\nМатериал хранит трудовую историю без монолога. Спешный бетон показывает полосы заполнителя. Ремонтная заливка холоднее по цвету и хуже держит сцепление. Сервисные палубы собирают противоскользящую крошку по краям. Жилые отсеки держат теплые керамические хлопья и пятна водного пайка. Deep Reach мог переименовать аварию, но плохая заливка не стареет как хорошая.\n\nТакой лор должен играться: не абстрактный 'scrap concrete', а умение видеть строительство как доказательство. Игрок идет по ржавой тени к сервисному хребту, не режет последнюю сжатую плиту, находит маршрутный щит под песком или решает, что целый фрагмент стены ценнее как улика, чем как заполнитель. Океан стер комнату. Он не стер то, как она умерла.",
-          "field_note": "Если под водой есть прямая грань, спроси, кому понадобилась прямая линия."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "沈没圧力コンクリート台帳",
-          "scanner": "沈没コンクリート // 自然石ではなく、植民地の耐圧骨材。鉄筋は消え、錆の影だけが残る。割れ目の貝砂は長い浸水、白い新しい面は最近の崩落か salvage cut を示す。",
-          "terminal": "古い植民地スラブ // 普通の石として掘るな。コンクリート片は部屋、配管溝、荷重線を示す。白いセラミック骨材は圧縮壁。橙の影はかつての補強。下の緑黒い染みは崩落前の滞留水。",
-          "audio": "自然岩は天気のように割れる。植民地コンクリートは、誰かが形に金を払い、海が遅れて回収したように割れる。",
-          "in_game_wiki": "HECTON-8 の沈没コンクリートは背景ではない。ガスケット跡、錆の影、セラミック骨材、貝砂の詰まった割れ目が、消えた部屋の形を残す。石として掘る前に、何を支えていたかを読む。\n\n緑に染まった下端は崩落前の水たまりを示す。きれいなせん断面は最近の salvage、地震、圧力破壊のどれかだ。見える鉄筋がなくても錆影があれば、金属はすでに剥がされたか腐食した。縁のガスケット粉はハッチや圧力扉の位置を示す。\n\nMarauder は rubble を loot だけとして見ない。錆影をたどって配管 spine を探し、最後の圧縮片を切らず、砂に埋もれた route board を見つける。海は部屋を消したが、壊れ方は消していない。",
-          "external_site": "沈没した耐圧コンクリートを読む記事。自然地形と植民地の残骸を分け、ひび割れや錆影をルート証拠として使う。",
-          "external_site_article": "沈没コンクリートは死んだ建物の文法だ。白い塊は岩に見えるが、直線、ガスケット跡、錆影、骨材の帯が人間の設計を残している。\n\n最初の問いは採取できるかではなく、何を押さえていたか。下の汚れ、割れ方、ケーブル傷、ボルト粉は、乾いた側と浸水した側を教える。\n\nDeep Reach は事故名を変えられても、悪い打設の老い方は変えられない。プレイヤーは建設を証拠として読む。",
-          "field_note": "水中の直線には、必ず誰かの都合がある。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "沉没压力混凝土账本",
-          "scanner": "沉没混凝土 // 殖民地耐压骨料，不是天然石灰岩。钢筋已无，只剩锈影。裂缝里的贝砂代表长期进水；干净断面代表近期坍塌或 salvage 切割。",
-          "terminal": "旧殖民地板块 // 不要当普通石头开采。混凝土碎块标出房间、管线槽或承重路径。白色陶瓷骨料是受压墙，橙色锈影是旧加固，下缘绿黑污迹说明坍塌前曾泡水。",
-          "audio": "天然岩石像天气一样破。殖民地混凝土像有人为形状付过钱，而海洋后来收账。",
-          "in_game_wiki": "沉没混凝土不是背景。垫圈痕、锈影、陶瓷骨料和塞满贝砂的裂缝，都保留着已经消失的房间形状。开采前先问：它原来挡住了什么。\n\n绿色下缘表示坍塌前长期积水。干净剪切面可能是新 salvage、震裂或压力失效。没有钢筋但有锈影，说明金属已被拆走、腐蚀或撕出。边缘的垫圈尘能指出舱门或压力门的位置。\n\nMarauder 不只把碎块当 loot。玩家可以沿锈影找到维护脊线，避免切掉最后受压板，或在贝砂下找出航路板。海抹掉了房间，却没抹掉房间失败的方式。",
-          "external_site": "关于沉没耐压混凝土的野外文章：如何区分殖民地碎块和地质，如何把裂缝、锈影和垫圈痕读成路线证据。",
-          "external_site_article": "沉没混凝土是一座死建筑的材料语法。白色碎块可能像石头，但直线空洞、垫圈印、锈影和骨料带都暴露了人的设计。\n\n第一个问题不是能不能采，而是它曾挡住什么。污迹、断面、缆线刮痕和螺栓尘告诉玩家哪边曾经干燥，下一刀会放出资源还是放出海。\n\nDeep Reach 可以改事故名，却不能让坏浇筑像好浇筑一样老去。玩家读的是建筑作为证据。",
-          "field_note": "水下的直线，先问是谁需要它直。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre du béton pressurisé noyé",
-          "scanner": "BETON NOYE // Agrégat colonial pressurisé, pas calcaire naturel. Les armatures ont disparu; l'ombre de rouille reste. Sable coquillier dans les fissures: longue immersion. Face nette: effondrement récent ou coupe salvage.",
-          "terminal": "DALLE COLONIALE // Ne pas miner comme pierre. Le béton marque pièce, conduite ou charge. Agrégat céramique blanc: mur en compression. Ombre orange: renfort ancien. Bas vert-noir: eau stagnante avant rupture.",
-          "audio": "La roche casse comme le temps. Le béton colonial casse comme une forme payée puis facturée par l'océan.",
-          "in_game_wiki": "Le béton noyé n'est pas décor. Traces de joints, ombres de rouille, agrégat céramique et sable coquillier gardent la forme de pièces disparues. Avant de couper, il faut demander ce que la dalle retenait.\n\nUn bord bas verdi indique une inondation lente avant rupture. Une face claire peut être coupe récente, séisme ou échec de pression. Rouille sans barre visible: métal retiré, dissous ou arraché. La poussière de joint indique l'ancienne morsure d'une porte.\n\nUn Marauder peut suivre l'ombre de rouille vers une gaine technique, éviter la dernière pièce en compression ou trouver un panneau de route sous le sable. L'océan a effacé la salle, pas sa manière de céder.",
-          "external_site": "Article de terrain sur le béton pressurisé noyé: distinguer ruine coloniale et géologie, lire rouille, joint et fracture comme preuve de route.",
-          "external_site_article": "Le béton noyé est la grammaire matérielle d'un bâtiment mort. Une masse pâle peut sembler naturelle, mais les lignes droites, les vides de joint et les bandes d'agrégat gardent une intention humaine.\n\nLa bonne question n'est pas la récolte, mais ce que la dalle retenait. Taches, cassures, rayures de câble et poussière de boulon disent quel côté était sec.\n\nDeep Reach pouvait renommer un accident; il ne pouvait pas faire vieillir une mauvaise coulée comme une bonne. Le joueur lit la construction comme une preuve.",
-          "field_note": "Sous l'eau, une arête droite a toujours servi quelqu'un."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de hormigón presurizado ahogado",
-          "scanner": "HORMIGON AHOGADO // Agregado colonial de presión, no caliza natural. La armadura se fue; queda sombra de óxido. Arena de concha en grietas: inundación larga. Cara limpia: colapso reciente o corte salvage.",
-          "terminal": "LOSA COLONIAL // No extraer como piedra común. El hormigón marca sala, conducto o carga. Agregado cerámico blanco: muro de compresión. Sombra naranja: refuerzo antiguo. Mancha verde-negra baja: agua estancada antes de caer.",
-          "audio": "La roca natural rompe como clima. El hormigón colonial rompe como una forma pagada y cobrada tarde por el océano.",
-          "in_game_wiki": "El hormigón ahogado no es fondo. Marcas de junta, sombras de óxido, agregado cerámico y arena en grietas guardan la forma de salas perdidas. Antes de cortar, pregunta qué retenía.\n\nBorde verde bajo: agua acumulada antes del colapso. Cara clara: salvage reciente, sismo o fallo de presión. Óxido sin barras: metal retirado o corroído. Polvo de junta en un borde señala una puerta de presión.\n\nUn Marauder sigue sombras de óxido hacia una espina de mantenimiento, evita cortar la última pieza de compresión o encuentra un tablero de ruta bajo arena. El océano borró la sala, no su modo de fallar.",
-          "external_site": "Artículo de campo sobre hormigón de presión ahogado: cómo separar ruina colonial de geología y leer manchas como prueba de ruta.",
-          "external_site_article": "El hormigón ahogado es gramática material de un edificio muerto. Un bloque pálido puede parecer piedra, pero líneas rectas, huecos de junta y bandas de agregado delatan diseño humano.\n\nLa primera pregunta no es si se cosecha, sino qué sostenía. Manchas, fracturas, raspados de cable y polvo de perno dicen qué lado estuvo seco.\n\nDeep Reach podía renombrar el accidente; no podía hacer que una mala colada envejeciera como una buena. El jugador lee construcción como evidencia.",
-          "field_note": "Bajo el agua, una arista recta siempre tuvo dueño."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ledger für ertrunkenen Druckbeton",
-          "scanner": "ERTRUNKENER BETON // Druckfähiger Kolonie-Zuschlag, kein Kalkstein. Bewehrung ist weg; Rostschatten bleiben. Muschelsand in Rissen zeigt lange Flutung, saubere Bruchflächen frischen Einsturz oder Salvage-Schnitt.",
-          "terminal": "ALTE KOLONIEPLATTE // Nicht als Stein abbauen. Beton markiert Raum, Rohrgang oder Lastlinie. Weißer Keramikzuschlag: Druckwand. Oranger Schatten: frühere Verstärkung. Grün-schwarzer Rand: stehendes Wasser vor Bruch.",
-          "audio": "Naturstein bricht wie Wetter. Koloniebeton bricht wie eine bezahlte Form, deren Rechnung das Meer später einzieht.",
-          "in_game_wiki": "Ertrunkener Beton ist keine Kulisse. Dichtungsspuren, Rostschatten, Keramikzuschlag und Muschelsand in Rissen halten die Form verschwundener Räume. Vor dem Schneiden zählt die Frage: Was hielt diese Platte zurück?\n\nGrüne Unterkante heißt langsame Flutung vor dem Kollaps. Saubere Fläche kann frischer Salvage, Beben oder Druckversagen sein. Rost ohne Stab bedeutet entferntes oder gelöstes Metall. Dichtungsstaub zeigt, wo eine Drucktür biss.\n\nMarauder folgen Rostschatten zu Wartungsschächten, schneiden nicht die letzte Druckplatte und finden Routentafeln unter Sand. Der Ozean löschte den Raum, nicht seine Art zu sterben.",
-          "external_site": "Feldartikel über ertrunkenen Druckbeton: Kolonieruine von Geologie trennen und Flecken, Rost und Dichtungen als Routenbeweis lesen.",
-          "external_site_article": "Ertrunkener Beton ist die Materialsprache eines toten Gebäudes. Ein heller Block wirkt natürlich, doch gerade Linien, Dichtungshohlräume und Zuschlagbänder verraten menschliche Absicht.\n\nDie erste Frage ist nicht Ernte, sondern Last. Flecken, Bruch, Kabelschrammen und Bolzenstaub zeigen, welche Seite trocken war.\n\nDeep Reach konnte den Unfall umbenennen; schlechte Güsse altern trotzdem schlecht. Der Spieler liest Bauwerk als Beweis.",
-          "field_note": "Unter Wasser hat jede gerade Kante einen Grund."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr zatopionego betonu ciśnieniowego",
-          "scanner": "ZATOPIONY BETON // Kolonialne kruszywo ciśnieniowe, nie wapień. Zbrojenia nie ma; został cień rdzy. Muszlowy piasek w pęknięciach: długie zalanie. Czysta twarz: świeży zawal lub cięcie salvage.",
-          "terminal": "STARA PŁYTA KOLONII // Nie wydobywać jak kamień. Beton znaczy pokój, kanał rur albo linię obciążenia. Białe kruszywo ceramiczne: ściana ściskana. Pomarańczowy cień: dawne zbrojenie. Zielono-czarny dół: stojąca woda.",
-          "audio": "Naturalna skała pęka jak pogoda. Beton kolonii pęka jak kształt opłacony, a potem odebrany przez ocean.",
-          "in_game_wiki": "Zatopiony beton nie jest tłem. Ślady uszczelek, cienie rdzy, ceramiczne kruszywo i piasek w szczelinach trzymają kształt znikłych pomieszczeń. Przed cięciem pytaj, co płyta powstrzymywała.\n\nZielony dolny brzeg oznacza wodę przed zawalem. Czysta płaszczyzna to świeże salvage, wstrząs albo awaria ciśnienia. Rdza bez pręta znaczy metal wyrwany lub rozpuszczony. Pył uszczelki wskazuje starą krawędź drzwi.\n\nMarauder idzie po cieniu rdzy do serwisowego kręgosłupa, nie tnie ostatniej płyty ściskanej i znajduje tablicę trasy pod piaskiem. Ocean skasował pokój, nie sposób jego śmierci.",
-          "external_site": "Artykuł terenowy o zatopionym betonie ciśnieniowym: jak odróżnić ruinę od geologii i czytać plamy jako dowód trasy.",
-          "external_site_article": "Zatopiony beton to gramatyka martwego budynku. Blady blok może wyglądać jak kamień, lecz proste linie, pustki uszczelek i pasma kruszywa zdradzają projekt.\n\nPierwsze pytanie nie brzmi 'czy zbierać', tylko 'co trzymał'. Plamy, pęknięcia, rysy kabla i pył śrub mówią, gdzie była sucha strona.\n\nDeep Reach mógł zmienić nazwę wypadku, ale zła wylewka starzeje się źle. Gracz czyta budowę jako dowód.",
-          "field_note": "Pod wodą prosta krawędź zawsze ma powód."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал затонулого напірного бетону",
-          "scanner": "ЗАТОНУЛИЙ БЕТОН // Колоніальний напірний заповнювач, не вапняк. Арматури вже нема; лишилася іржава тінь. Мушлевий пісок у тріщинах означає довге затоплення, чисті грані - свіжий обвал або salvage-різ.",
-          "terminal": "СТАРА КОЛОНІАЛЬНА ПЛИТА // Не добувати як камінь. Бетон позначає кімнату, трубний канал або лінію навантаження. Білий керамічний заповнювач - стіна стиску. Помаранчева тінь - давнє підсилення. Зелено-чорний низ - стояча вода.",
-          "audio": "Природний камінь ламається як погода. Колоніальний бетон ламається як форма, за яку заплатили, а океан потім виставив рахунок.",
-          "in_game_wiki": "Затонулій бетон не є фоном. Сліди прокладок, іржаві тіні, керамічний заповнювач і мушлевий пісок у тріщинах тримають форму зниклих кімнат. Перед різом питають, що ця плита стримувала.\n\nЗелений нижній край показує воду до обвалу. Чиста грань може бути свіжим salvage, поштовхом або відмовою тиску. Іржа без прута означає, що метал витягли чи розчинили. Пил прокладки показує старий край дверей.\n\nMarauder читає тінь іржі до сервісного хребта, не ріже останню плиту стиску і знаходить маршрутну дошку під піском. Океан стер кімнату, але не спосіб її загибелі.",
-          "external_site": "Польова стаття про затонулій напірний бетон: як відрізнити руїну від геології та читати плями як доказ маршруту.",
-          "external_site_article": "Затонулій бетон - матеріальна граматика мертвої будівлі. Блідий блок може здаватися каменем, але прямі лінії, порожнини прокладок і смуги заповнювача видають людський задум.\n\nПерше питання не 'чи добувати', а 'що тримало'. Плями, злами, подряпини кабелю і пил болтів показують суху сторону.\n\nDeep Reach міг перейменувати аварію, але погана заливка старіє погано. Гравець читає будівництво як доказ.",
-          "field_note": "Під водою пряма грань завжди комусь була потрібна."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل الخرسانة المضغوطة الغارقة",
-          "scanner": "خرسانة غارقة // ركام استعماري مصنف للضغط، لا حجر جيري طبيعي. اختفت القضبان وبقي ظل الصدأ. رمل الأصداف في الشقوق يعني غمرا طويلا؛ الوجه النظيف يعني انهيارا حديثا أو قطع salvage.",
-          "terminal": "لوح مستعمرة قديم // لا تعدنه كحجر عادي. الخرسانة تدل على غرفة أو قناة أنابيب أو خط حمل. الركام الخزفي الأبيض جدار ضغط. الظل البرتقالي تقوية سابقة. القاع الأخضر الأسود ماء راكد قبل الانهيار.",
-          "audio": "الصخر الطبيعي ينكسر كالطقس. خرسانة المستعمرة تنكسر كأن أحدا دفع ثمن شكل ثم جاء البحر ليقبضه.",
-          "in_game_wiki": "الخرسانة الغارقة ليست خلفية. آثار الحشيات وظلال الصدأ والركام الخزفي ورمل الأصداف في الشقوق تحفظ شكل غرف اختفت. قبل القطع، اسأل: ماذا كانت هذه البلاطة تمنع؟\n\nالحافة الخضراء السفلية تعني ماء راكدا قبل الانهيار. الوجه النظيف قد يكون salvage حديثا أو زلزالا أو فشل ضغط. الصدأ بلا قضيب يعني معدنا أزيل أو ذاب. غبار الحشية يكشف موضع باب ضغط.\n\nيتبع Marauder ظل الصدأ إلى عصب صيانة، ويتجنب قطع آخر قطعة ضغط، ويجد لوحة مسار تحت الرمل. محا المحيط الغرفة، لا طريقة موتها.",
-          "external_site": "مقال ميداني عن الخرسانة المضغوطة الغارقة: كيف تفرق بين ركام المستعمرة والجيولوجيا وتقرأ البقع كدليل مسار.",
-          "external_site_article": "الخرسانة الغارقة هي نحو مبنى ميت. قد يبدو الحجر الباهت طبيعيا، لكن الخطوط المستقيمة وفراغات الحشيات وأشرطة الركام تكشف قصدا بشريا.\n\nالسؤال الأول ليس هل نأخذها، بل ماذا كانت تحمل. البقع والكسور وخدوش الكابل وغبار البراغي تخبر أي جانب كان جافا.\n\nقد تغير Deep Reach اسم الحادث، لكنها لا تجعل صبة سيئة تشيخ كصبة جيدة. اللاعب يقرأ البناء كدليل.",
-          "field_note": "تحت الماء، كل حافة مستقيمة كانت تخدم أحدا."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ledger Beton Tekanan Tenggelam",
-          "scanner": "BETON TENGGELAM // Agregat koloni tahan tekanan, bukan batu kapur. Rebar hilang; bayang karat tersisa. Pasir cangkang di retak berarti banjir lama, muka bersih berarti runtuh baru atau potongan salvage.",
-          "terminal": "SLAB KOLONI LAMA // Jangan tambang sebagai batu. Beton menandai ruangan, jalur pipa, atau garis beban. Agregat keramik putih: dinding kompresi. Bayang oranye: penguat lama. Noda hijau-hitam bawah: air diam sebelum runtuh.",
-          "audio": "Batu alam pecah seperti cuaca. Beton koloni pecah seperti bentuk yang dibayar, lalu ditagih laut belakangan.",
-          "in_game_wiki": "Beton tenggelam bukan latar. Jejak gasket, bayang karat, agregat keramik, dan pasir cangkang di retakan menyimpan bentuk ruangan hilang. Sebelum memotong, tanyakan apa yang dulu ditahan slab itu.\n\nTepi bawah hijau berarti air diam sebelum runtuh. Muka bersih bisa salvage baru, gempa, atau gagal tekanan. Karat tanpa batang berarti logam dicabut atau larut. Debu gasket menunjukkan bekas pintu tekanan.\n\nMarauder mengikuti bayang karat ke tulang servis, menghindari memotong bagian kompresi terakhir, dan menemukan papan rute di bawah pasir. Laut menghapus ruangan, bukan cara ruangan gagal.",
-          "external_site": "Artikel lapangan tentang beton tekanan tenggelam: membedakan reruntuhan koloni dari geologi dan membaca noda sebagai bukti rute.",
-          "external_site_article": "Beton tenggelam adalah tata bahasa material bangunan mati. Bongkah pucat bisa tampak seperti batu, tapi garis lurus, rongga gasket, dan pita agregat menunjukkan rancangan manusia.\n\nPertanyaan pertama bukan panen, melainkan beban. Noda, patahan, gores kabel, dan debu baut memberi tahu sisi mana yang dulu kering.\n\nDeep Reach bisa mengganti nama kecelakaan, tapi cor buruk tetap menua buruk. Pemain membaca konstruksi sebagai bukti.",
-          "field_note": "Di bawah air, tepi lurus selalu punya alasan."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "침수 압력 콘크리트 장부",
-          "scanner": "침수 콘크리트 // 자연 석회암이 아닌 식민지 압력 골재. 철근은 사라지고 녹 그림자만 남았다. 균열의 조개모래는 긴 침수, 깨끗한 면은 최근 붕괴나 salvage 절단을 뜻한다.",
-          "terminal": "옛 식민지 슬래브 // 일반 돌처럼 채굴하지 말 것. 콘크리트는 방, 배관 통로, 하중선을 표시한다. 흰 세라믹 골재는 압축벽. 주황 그림자는 옛 보강. 아래 녹흑색 얼룩은 붕괴 전 고인 물.",
-          "audio": "자연암은 날씨처럼 부서진다. 식민지 콘크리트는 누군가 모양값을 냈고 바다가 늦게 청구한 것처럼 부서진다.",
-          "in_game_wiki": "침수 콘크리트는 배경이 아니다. 가스켓 자국, 녹 그림자, 세라믹 골재, 균열의 조개모래가 사라진 방의 모양을 보존한다. 자르기 전, 이 슬래브가 무엇을 막았는지 읽어야 한다.\n\n초록빛 아래 모서리는 붕괴 전 고인 물을 뜻한다. 깨끗한 전단면은 최근 salvage, 지진, 압력 실패일 수 있다. 막대 없는 녹은 금속이 제거되거나 녹았다는 뜻이다. 가장자리의 가스켓 먼지는 압력문 위치를 말한다.\n\nMarauder 는 녹 그림자를 따라 정비 spine 을 찾고, 마지막 압축편을 자르지 않으며, 모래 아래 route board 를 찾는다. 바다는 방을 지웠지만 실패 방식은 지우지 않았다.",
-          "external_site": "침수 압력 콘크리트 현장 글: 식민지 잔해와 지질을 구분하고 얼룩을 경로 증거로 읽는 법.",
-          "external_site_article": "침수 콘크리트는 죽은 건물의 물질 문법이다. 창백한 덩어리는 돌처럼 보이지만 직선, 가스켓 빈자리, 골재 띠가 인간 설계를 드러낸다.\n\n첫 질문은 수확이 아니라 무엇을 버텼는가다. 얼룩, 파단, 케이블 긁힘, 볼트 먼지가 어느 쪽이 마른 쪽이었는지 말한다.\n\nDeep Reach 는 사고 이름을 바꿀 수 있었지만 나쁜 타설을 좋게 늙게 만들 수는 없었다. 플레이어는 건설을 증거로 읽는다.",
-          "field_note": "물속의 직선 모서리에는 항상 이유가 있다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן בטון לחץ שטבע",
-          "scanner": "בטון טבוע // אגרגט מושבתי מדורג ללחץ, לא אבן גיר. הזיון נעלם; צל חלודה נשאר. חול צדפים בסדקים משמעו הצפה ארוכה; פנים נקיים משמעם קריסה טרייה או חתך salvage.",
-          "terminal": "לוח מושבה ישן // לא לכרות כאבן. בטון מסמן חדר, תעלת צינורות או קו עומס. אגרגט קרמי לבן: קיר דחיסה. צל כתום: חיזוק קודם. כתם ירוק-שחור תחתון: מים עומדים לפני קריסה.",
-          "audio": "סלע טבעי נשבר כמו מזג אוויר. בטון מושבה נשבר כמו צורה שמישהו שילם עליה והים גבה מאוחר.",
-          "in_game_wiki": "בטון טבוע אינו רקע. סימני אטם, צללי חלודה, אגרגט קרמי וחול צדפים בסדקים שומרים צורה של חדרים שנעלמו. לפני חיתוך צריך לשאול מה הלוח עצר.\n\nשפה תחתונה ירוקה משמעה מים עומדים לפני קריסה. פנים נקיים יכולים להיות salvage טרי, רעידה או כשל לחץ. חלודה בלי מוט אומרת שהמתכת הוסרה או התמוססה. אבק אטם מצביע על דלת לחץ ישנה.\n\nMarauder עוקב אחרי צל חלודה לעמוד שדרה תחזוקתי, לא חותך את חלק הדחיסה האחרון ומוצא לוח מסלול מתחת לחול. האוקיינוס מחק את החדר, לא את דרך הכשל שלו.",
-          "external_site": "מאמר שדה על בטון לחץ שטבע: איך להבדיל חורבה מושבתית מגיאולוגיה ולקרוא כתמים כראיית מסלול.",
-          "external_site_article": "בטון טבוע הוא דקדוק חומרי של בניין מת. גוש חיוור יכול להיראות טבעי, אבל קווים ישרים, חללי אטם ורצועות אגרגט חושפים תכנון אנושי.\n\nהשאלה הראשונה אינה קציר אלא עומס. כתמים, שברים, שריטות כבל ואבק ברגים מספרים איזה צד היה יבש.\n\nDeep Reach יכלה לשנות שם לתאונה, אבל יציקה גרועה מזדקנת גרוע. השחקן קורא בנייה כראיה.",
-          "field_note": "מתחת למים, לכל קצה ישר הייתה סיבה."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de concreto pressurizado afogado",
-          "scanner": "CONCRETO AFOGADO // Agregado colonial de pressão, não calcário natural. A armação sumiu; sombra de ferrugem ficou. Areia de concha em fendas: inundação longa. Face limpa: colapso recente ou corte salvage.",
-          "terminal": "LAJE COLONIAL ANTIGA // Não minerar como pedra. Concreto marca sala, duto ou linha de carga. Agregado cerâmico branco: parede em compressão. Sombra laranja: reforço antigo. Mancha verde-preta baixa: água parada antes da queda.",
-          "audio": "Rocha natural quebra como clima. Concreto colonial quebra como forma paga e cobrada tarde pelo oceano.",
-          "in_game_wiki": "Concreto afogado não é fundo. Marcas de gasket, sombras de ferrugem, agregado cerâmico e areia de concha guardam salas desaparecidas. Antes de cortar, pergunte o que a laje segurava.\n\nBorda inferior verde significa água parada antes do colapso. Face limpa pode ser salvage recente, tremor ou falha de pressão. Ferrugem sem barra significa metal removido ou dissolvido. Pó de gasket marca uma antiga porta de pressão.\n\nMarauder segue sombra de ferrugem até a espinha de manutenção, evita cortar a última peça em compressão e acha quadro de rota sob areia. O oceano apagou a sala, não seu modo de falhar.",
-          "external_site": "Artigo de campo sobre concreto pressurizado afogado: distinguir ruína colonial de geologia e ler manchas como prova de rota.",
-          "external_site_article": "Concreto afogado é a gramática material de um prédio morto. Um bloco claro pode parecer pedra, mas linhas retas, vazios de gasket e faixas de agregado denunciam intenção humana.\n\nA primeira pergunta não é coleta, mas carga. Manchas, fraturas, raspões de cabo e pó de parafuso dizem qual lado foi seco.\n\nDeep Reach podia renomear o acidente, mas uma concretagem ruim envelhece mal. O jogador lê construção como evidência.",
-          "field_note": "Debaixo d'água, toda borda reta teve motivo."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Logboek van verdronken drukbeton",
-          "scanner": "VERDRONKEN BETON // Koloniaal drukaggregaat, geen kalksteen. Wapening is weg; roestschaduw blijft. Schelpzand in scheuren betekent lange overstroming, schoon vlak recente instorting of salvage-snede.",
-          "terminal": "OUDE KOLONIEPLAAT // Niet als steen mijnen. Beton markeert kamer, leidinggang of lastlijn. Wit keramisch aggregaat: compressiewand. Oranje schaduw: oude versterking. Groen-zwarte onderrand: stilstaand water voor breuk.",
-          "audio": "Natuursteen breekt als weer. Koloniebeton breekt als een betaalde vorm die de oceaan later incasseerde.",
-          "in_game_wiki": "Verdronken beton is geen achtergrond. Pakking sporen, roestschaduwen, keramisch aggregaat en schelpzand bewaren verdwenen kamers. Voor het snijden vraag je wat de plaat tegenhield.\n\nGroene onderrand betekent stilstaand water voor instorting. Een schoon vlak kan recente salvage, beving of drukfalen zijn. Roest zonder staaf betekent verwijderd of opgelost metaal. Pakkingstof toont een oude drukdeur.\n\nEen Marauder volgt roestschaduw naar onderhoudsruggengraat, snijdt niet de laatste compressieplaat en vindt een routebord onder zand. De oceaan wiste de kamer, niet hoe die faalde.",
-          "external_site": "Veldartikel over verdronken drukbeton: kolonieruïne van geologie scheiden en vlekken als routebewijs lezen.",
-          "external_site_article": "Verdronken beton is de materiaalgrammatica van een dood gebouw. Een bleke klomp lijkt steen, maar rechte lijnen, pakkingleegtes en aggregaatbanden verraden menselijke bedoeling.\n\nDe eerste vraag is geen oogst, maar belasting. Vlekken, breuken, kabelkrassen en boutstof tonen welke kant droog was.\n\nDeep Reach kon een ongeluk hernoemen, maar slecht gestort beton blijft slecht oud worden. De speler leest bouw als bewijs.",
-          "field_note": "Onder water heeft elke rechte rand een reden."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.drowned_concrete_pressure_rubble_ledger",
+    "secondary": [
+     "unlock.first_drowned_concrete_scan",
+     "unlock.first_colony_rubble_route_read",
+     "unlock.first_pressure_door_gasket_trace"
+    ],
+    "poi_tags": [
+     "poi.drowned_concrete_rubble_slab",
+     "poi.pressure_door_gasket_trace",
+     "poi.rust_shadow_reinforcement_mark",
+     "poi.shell_sand_buried_route_board"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.industrial_shelf",
+     "biome.old_colony_ruins"
+    ],
+    "first_20_boundary": "Readable in early colony ruins after the first scanner pass; teaches human-made material evidence without exposing ending truth."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Structural Material Scanner",
+     "terminal": "Old Colony Structural Readout",
+     "audio": "Marauder Salvage Instructor",
+     "in_game_wiki": "PDA Ruin Material Field Guide",
+     "external_site": "Public Site Drowned Concrete Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_drowned_concrete_scan_or_colony_rubble_route",
+    "truth_payload": "Drowned pressure concrete is a readable colony artifact: stains, aggregate, gasket dust and fracture freshness reveal former rooms, dry sides, pressure doors and unsafe cuts.",
+    "player_question": "When is a pale rubble field a room instead of geology?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Drowned Concrete Pressure Rubble Ledger",
+     "scanner": "DROWNED CONCRETE // Pressure-rated colony aggregate, not natural limestone. Rebar is gone; rust shadow remains. Shell sand in fractures marks long flooding, while clean shear faces mark recent collapse or salvage cut.",
+     "terminal": "STRUCTURAL READ / OLD COLONY SLAB // Do not mine as generic stone. Concrete rubble marks a built room, pipe chase or load path. White ceramic aggregate means compression wall. Orange rust shadow means former reinforcement. Green-black lower stain means the piece stood in pooled water before collapse.",
+     "audio": "Natural rock breaks like weather. Colony concrete breaks like somebody paid for a shape and the ocean collected late.",
+     "in_game_wiki": "Drowned concrete is one of the easiest materials on HECTON-8 to underestimate. It looks like pale rock until the scanner catches the pattern: ceramic aggregate, gasket stains, bolt dust, rust shadows where reinforcement used to be, and shell sand packed into cracks after years underwater. Natural limestone breaks around bedding. Pressure concrete breaks around a job.\n\nThat distinction matters in play. A concrete fragment can point to a buried corridor, a crushed pump room, a hatch frame or a load path that still holds pressure on the other side. It can also be a trap. Concrete that failed slowly grows algae along the lower edge and collects shell grit in quiet cracks. Concrete that failed recently shows sharp pale faces, fresh mineral dust and cable scrapes. A Marauder reads those signs before cutting, because the wrong slab can be the last thing keeping a room from becoming ocean.\n\nDeep Reach sold the colony as clean engineering. The rubble is less flattering. It remembers rushed pours, repair patches, flood lines, unauthorized cuts and the places where workers used industrial material as shelter. Good salvage takes the metal, yes, but good evidence keeps the shape. A wall fragment with rust shadow and gasket stain can say where a door was, what side held pressure, and whether someone opened it, reinforced it or abandoned it before the water arrived.",
+     "external_site": "A field article on drowned pressure concrete: how to tell colony rubble from geology, why fracture stains matter, and how old slabs become route evidence instead of background debris.",
+     "external_site_article": "Drowned concrete is not scenery on HECTON-8. It is a dead building still speaking in material grammar. A pale chunk on the seabed might be ordinary stone, but pressure-rated colony concrete carries human geometry even after the room is gone: straight voids where gasket frames sat, orange shadows where reinforcement corroded away, ceramic aggregate that catches light differently from limestone, and shell sand packed into cracks by years of slow flooding.\n\nThe first useful question is not 'can I harvest it?' but 'what did it hold back?' A slab with lower green staining stood in pooled water before collapse. A clean shear face may be recent salvage, quake break or pressure failure. Rust without visible rods often means the reinforcing metal was stripped, dissolved or torn out by previous crews. Gasket dust around an edge tells you a hatch or pressure door used to bite there. These are route facts. They tell the player where a room was, where a pipe chase ran, what side was dry, and whether the next cut releases loot or ocean.\n\nThe material also carries labor history without a speech. Rushed concrete has different aggregate bands. Patch pours show colder color and worse bonding. Utility decks collect anti-slip grit at the edges. Living rooms collect warmer ceramic flakes and food-water stains. Deep Reach could rename an accident, but it could not make a bad pour age like a good one. When a Marauder scans rubble carefully, the ruined colony stops being a backdrop and becomes a readable body.\n\nThat is the intended fantasy: not picking up generic 'scrap concrete', but learning to see construction as evidence. The player can follow a rust shadow to a maintenance spine, avoid cutting the last compression piece, find a buried route board under shell sand, or decide that an intact wall fragment is more valuable as proof than as aggregate. The ocean erased the room. It did not erase the way the room failed.",
+     "field_note": "If it has a straight edge underwater, ask who needed the line straight."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал утонувшего напорного бетона",
+     "scanner": "УТОНУВШИЙ БЕТОН // Колониальный напорный заполнитель, не природный известняк. Арматура исчезла; осталась ржавая тень. Ракушечный песок в трещинах означает долгий затопленный срок, чистые срезы - свежий обвал или разрез salvage.",
+     "terminal": "СТРУКТУРНОЕ ЧТЕНИЕ / СТАРАЯ КОЛОНИАЛЬНАЯ ПЛИТА // Не добывать как обычный камень. Бетонный обломок отмечает комнату, трубный канал или несущую линию. Белый керамический заполнитель - компрессионная стена. Оранжевая тень - бывшее усиление. Зеленовато-черный низ - стоячая вода до обвала.",
+     "audio": "Природный камень ломается как погода. Колониальный бетон ломается так, будто кто-то заплатил за форму, а океан забрал долг позже.",
+     "in_game_wiki": "Утонувший бетон на HECTON-8 легко принять за бледный камень. Сканер быстро рушит эту иллюзию: керамический заполнитель, следы прокладок, пыль от болтов, ржавые тени там, где раньше держалась арматура, и ракушечный песок, набитый в трещины годами воды. Известняк ломается по слоям. Напорный бетон ломается по работе, для которой его залили.\n\nВ игре это различие полезно. Обломок может указать на погребенный коридор, смятую насосную, рамку люка или несущую линию, которая все еще держит давление с другой стороны. Он может быть и ловушкой. Медленно умерший бетон обрастает нижним краем и собирает песок в тихих щелях. Свежий отказ показывает чистые бледные сколы, минеральную пыль и царапины кабеля. Мародер читает это до реза: неправильная плита может быть последним, что отделяет комнату от океана.\n\nDeep Reach продавал колонию как чистую инженерию. Обломки говорят грязнее: спешные заливки, ремонтные заплаты, линии затопления, неразрешенные разрезы и места, где рабочие превращали промышленный материал в укрытие. Хороший salvage забирает металл, но хорошее доказательство сохраняет форму. Фрагмент стены с ржавой тенью и следом прокладки может сказать, где была дверь, какая сторона держала давление и бросили ли ее до прихода воды.",
+     "external_site": "Полевой материал про утонувший напорный бетон: как отличать колониальный обломок от геологии, почему важны пятна трещин и как старые плиты становятся доказательством маршрута.",
+     "external_site_article": "Утонувший бетон - не декорация HECTON-8. Это мертвое здание, которое еще говорит языком материала. Бледный кусок на дне может выглядеть камнем, но напорный бетон несет человеческую геометрию даже после исчезновения комнаты: прямые пустоты от прокладочных рам, оранжевые тени от арматуры, керамический заполнитель, светящийся иначе, чем известняк, и ракушечный песок, втянутый в трещины долгим затоплением.\n\nПервый вопрос не 'можно ли добыть', а 'что это удерживало'. Плита с зеленым низом стояла в воде до обвала. Чистый срез может быть свежим salvage, сейсмическим разломом или отказом давления. Ржавчина без прутка означает, что металл уже вытащили, растворили или вырвали предыдущие команды. Пыль прокладки по краю говорит, где раньше кусалась дверь. Это маршрутные факты: где была комната, где шел трубный канал, какая сторона оставалась сухой, и выпустит ли следующий рез добычу или океан.\n\nМатериал хранит трудовую историю без монолога. Спешный бетон показывает полосы заполнителя. Ремонтная заливка холоднее по цвету и хуже держит сцепление. Сервисные палубы собирают противоскользящую крошку по краям. Жилые отсеки держат теплые керамические хлопья и пятна водного пайка. Deep Reach мог переименовать аварию, но плохая заливка не стареет как хорошая.\n\nТакой лор должен играться: не абстрактный 'scrap concrete', а умение видеть строительство как доказательство. Игрок идет по ржавой тени к сервисному хребту, не режет последнюю сжатую плиту, находит маршрутный щит под песком или решает, что целый фрагмент стены ценнее как улика, чем как заполнитель. Океан стер комнату. Он не стер то, как она умерла.",
+     "field_note": "Если под водой есть прямая грань, спроси, кому понадобилась прямая линия."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "沈没圧力コンクリート台帳",
+     "scanner": "沈没コンクリート // 自然石ではなく、植民地の耐圧骨材。鉄筋は消え、錆の影だけが残る。割れ目の貝砂は長い浸水、白い新しい面は最近の崩落か salvage cut を示す。",
+     "terminal": "古い植民地スラブ // 普通の石として掘るな。コンクリート片は部屋、配管溝、荷重線を示す。白いセラミック骨材は圧縮壁。橙の影はかつての補強。下の緑黒い染みは崩落前の滞留水。",
+     "audio": "自然岩は天気のように割れる。植民地コンクリートは、誰かが形に金を払い、海が遅れて回収したように割れる。",
+     "in_game_wiki": "HECTON-8 の沈没コンクリートは背景ではない。ガスケット跡、錆の影、セラミック骨材、貝砂の詰まった割れ目が、消えた部屋の形を残す。石として掘る前に、何を支えていたかを読む。\n\n緑に染まった下端は崩落前の水たまりを示す。きれいなせん断面は最近の salvage、地震、圧力破壊のどれかだ。見える鉄筋がなくても錆影があれば、金属はすでに剥がされたか腐食した。縁のガスケット粉はハッチや圧力扉の位置を示す。\n\nMarauder は rubble を loot だけとして見ない。錆影をたどって配管 spine を探し、最後の圧縮片を切らず、砂に埋もれた route board を見つける。海は部屋を消したが、壊れ方は消していない。",
+     "external_site": "沈没した耐圧コンクリートを読む記事。自然地形と植民地の残骸を分け、ひび割れや錆影をルート証拠として使う。",
+     "external_site_article": "沈没コンクリートは死んだ建物の文法だ。白い塊は岩に見えるが、直線、ガスケット跡、錆影、骨材の帯が人間の設計を残している。\n\n最初の問いは採取できるかではなく、何を押さえていたか。下の汚れ、割れ方、ケーブル傷、ボルト粉は、乾いた側と浸水した側を教える。\n\nDeep Reach は事故名を変えられても、悪い打設の老い方は変えられない。プレイヤーは建設を証拠として読む。",
+     "field_note": "水中の直線には、必ず誰かの都合がある。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "沉没压力混凝土账本",
+     "scanner": "沉没混凝土 // 殖民地耐压骨料，不是天然石灰岩。钢筋已无，只剩锈影。裂缝里的贝砂代表长期进水；干净断面代表近期坍塌或 salvage 切割。",
+     "terminal": "旧殖民地板块 // 不要当普通石头开采。混凝土碎块标出房间、管线槽或承重路径。白色陶瓷骨料是受压墙，橙色锈影是旧加固，下缘绿黑污迹说明坍塌前曾泡水。",
+     "audio": "天然岩石像天气一样破。殖民地混凝土像有人为形状付过钱，而海洋后来收账。",
+     "in_game_wiki": "沉没混凝土不是背景。垫圈痕、锈影、陶瓷骨料和塞满贝砂的裂缝，都保留着已经消失的房间形状。开采前先问：它原来挡住了什么。\n\n绿色下缘表示坍塌前长期积水。干净剪切面可能是新 salvage、震裂或压力失效。没有钢筋但有锈影，说明金属已被拆走、腐蚀或撕出。边缘的垫圈尘能指出舱门或压力门的位置。\n\nMarauder 不只把碎块当 loot。玩家可以沿锈影找到维护脊线，避免切掉最后受压板，或在贝砂下找出航路板。海抹掉了房间，却没抹掉房间失败的方式。",
+     "external_site": "关于沉没耐压混凝土的野外文章：如何区分殖民地碎块和地质，如何把裂缝、锈影和垫圈痕读成路线证据。",
+     "external_site_article": "沉没混凝土是一座死建筑的材料语法。白色碎块可能像石头，但直线空洞、垫圈印、锈影和骨料带都暴露了人的设计。\n\n第一个问题不是能不能采，而是它曾挡住什么。污迹、断面、缆线刮痕和螺栓尘告诉玩家哪边曾经干燥，下一刀会放出资源还是放出海。\n\nDeep Reach 可以改事故名，却不能让坏浇筑像好浇筑一样老去。玩家读的是建筑作为证据。",
+     "field_note": "水下的直线，先问是谁需要它直。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre du béton pressurisé noyé",
+     "scanner": "BETON NOYE // Agrégat colonial pressurisé, pas calcaire naturel. Les armatures ont disparu; l'ombre de rouille reste. Sable coquillier dans les fissures: longue immersion. Face nette: effondrement récent ou coupe salvage.",
+     "terminal": "DALLE COLONIALE // Ne pas miner comme pierre. Le béton marque pièce, conduite ou charge. Agrégat céramique blanc: mur en compression. Ombre orange: renfort ancien. Bas vert-noir: eau stagnante avant rupture.",
+     "audio": "La roche casse comme le temps. Le béton colonial casse comme une forme payée puis facturée par l'océan.",
+     "in_game_wiki": "Le béton noyé n'est pas décor. Traces de joints, ombres de rouille, agrégat céramique et sable coquillier gardent la forme de pièces disparues. Avant de couper, il faut demander ce que la dalle retenait.\n\nUn bord bas verdi indique une inondation lente avant rupture. Une face claire peut être coupe récente, séisme ou échec de pression. Rouille sans barre visible: métal retiré, dissous ou arraché. La poussière de joint indique l'ancienne morsure d'une porte.\n\nUn Marauder peut suivre l'ombre de rouille vers une gaine technique, éviter la dernière pièce en compression ou trouver un panneau de route sous le sable. L'océan a effacé la salle, pas sa manière de céder.",
+     "external_site": "Article de terrain sur le béton pressurisé noyé: distinguer ruine coloniale et géologie, lire rouille, joint et fracture comme preuve de route.",
+     "external_site_article": "Le béton noyé est la grammaire matérielle d'un bâtiment mort. Une masse pâle peut sembler naturelle, mais les lignes droites, les vides de joint et les bandes d'agrégat gardent une intention humaine.\n\nLa bonne question n'est pas la récolte, mais ce que la dalle retenait. Taches, cassures, rayures de câble et poussière de boulon disent quel côté était sec.\n\nDeep Reach pouvait renommer un accident; il ne pouvait pas faire vieillir une mauvaise coulée comme une bonne. Le joueur lit la construction comme une preuve.",
+     "field_note": "Sous l'eau, une arête droite a toujours servi quelqu'un."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de hormigón presurizado ahogado",
+     "scanner": "HORMIGON AHOGADO // Agregado colonial de presión, no caliza natural. La armadura se fue; queda sombra de óxido. Arena de concha en grietas: inundación larga. Cara limpia: colapso reciente o corte salvage.",
+     "terminal": "LOSA COLONIAL // No extraer como piedra común. El hormigón marca sala, conducto o carga. Agregado cerámico blanco: muro de compresión. Sombra naranja: refuerzo antiguo. Mancha verde-negra baja: agua estancada antes de caer.",
+     "audio": "La roca natural rompe como clima. El hormigón colonial rompe como una forma pagada y cobrada tarde por el océano.",
+     "in_game_wiki": "El hormigón ahogado no es fondo. Marcas de junta, sombras de óxido, agregado cerámico y arena en grietas guardan la forma de salas perdidas. Antes de cortar, pregunta qué retenía.\n\nBorde verde bajo: agua acumulada antes del colapso. Cara clara: salvage reciente, sismo o fallo de presión. Óxido sin barras: metal retirado o corroído. Polvo de junta en un borde señala una puerta de presión.\n\nUn Marauder sigue sombras de óxido hacia una espina de mantenimiento, evita cortar la última pieza de compresión o encuentra un tablero de ruta bajo arena. El océano borró la sala, no su modo de fallar.",
+     "external_site": "Artículo de campo sobre hormigón de presión ahogado: cómo separar ruina colonial de geología y leer manchas como prueba de ruta.",
+     "external_site_article": "El hormigón ahogado es gramática material de un edificio muerto. Un bloque pálido puede parecer piedra, pero líneas rectas, huecos de junta y bandas de agregado delatan diseño humano.\n\nLa primera pregunta no es si se cosecha, sino qué sostenía. Manchas, fracturas, raspados de cable y polvo de perno dicen qué lado estuvo seco.\n\nDeep Reach podía renombrar el accidente; no podía hacer que una mala colada envejeciera como una buena. El jugador lee construcción como evidencia.",
+     "field_note": "Bajo el agua, una arista recta siempre tuvo dueño."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ledger für ertrunkenen Druckbeton",
+     "scanner": "ERTRUNKENER BETON // Druckfähiger Kolonie-Zuschlag, kein Kalkstein. Bewehrung ist weg; Rostschatten bleiben. Muschelsand in Rissen zeigt lange Flutung, saubere Bruchflächen frischen Einsturz oder Salvage-Schnitt.",
+     "terminal": "ALTE KOLONIEPLATTE // Nicht als Stein abbauen. Beton markiert Raum, Rohrgang oder Lastlinie. Weißer Keramikzuschlag: Druckwand. Oranger Schatten: frühere Verstärkung. Grün-schwarzer Rand: stehendes Wasser vor Bruch.",
+     "audio": "Naturstein bricht wie Wetter. Koloniebeton bricht wie eine bezahlte Form, deren Rechnung das Meer später einzieht.",
+     "in_game_wiki": "Ertrunkener Beton ist keine Kulisse. Dichtungsspuren, Rostschatten, Keramikzuschlag und Muschelsand in Rissen halten die Form verschwundener Räume. Vor dem Schneiden zählt die Frage: Was hielt diese Platte zurück?\n\nGrüne Unterkante heißt langsame Flutung vor dem Kollaps. Saubere Fläche kann frischer Salvage, Beben oder Druckversagen sein. Rost ohne Stab bedeutet entferntes oder gelöstes Metall. Dichtungsstaub zeigt, wo eine Drucktür biss.\n\nMarauder folgen Rostschatten zu Wartungsschächten, schneiden nicht die letzte Druckplatte und finden Routentafeln unter Sand. Der Ozean löschte den Raum, nicht seine Art zu sterben.",
+     "external_site": "Feldartikel über ertrunkenen Druckbeton: Kolonieruine von Geologie trennen und Flecken, Rost und Dichtungen als Routenbeweis lesen.",
+     "external_site_article": "Ertrunkener Beton ist die Materialsprache eines toten Gebäudes. Ein heller Block wirkt natürlich, doch gerade Linien, Dichtungshohlräume und Zuschlagbänder verraten menschliche Absicht.\n\nDie erste Frage ist nicht Ernte, sondern Last. Flecken, Bruch, Kabelschrammen und Bolzenstaub zeigen, welche Seite trocken war.\n\nDeep Reach konnte den Unfall umbenennen; schlechte Güsse altern trotzdem schlecht. Der Spieler liest Bauwerk als Beweis.",
+     "field_note": "Unter Wasser hat jede gerade Kante einen Grund."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr zatopionego betonu ciśnieniowego",
+     "scanner": "ZATOPIONY BETON // Kolonialne kruszywo ciśnieniowe, nie wapień. Zbrojenia nie ma; został cień rdzy. Muszlowy piasek w pęknięciach: długie zalanie. Czysta twarz: świeży zawal lub cięcie salvage.",
+     "terminal": "STARA PŁYTA KOLONII // Nie wydobywać jak kamień. Beton znaczy pokój, kanał rur albo linię obciążenia. Białe kruszywo ceramiczne: ściana ściskana. Pomarańczowy cień: dawne zbrojenie. Zielono-czarny dół: stojąca woda.",
+     "audio": "Naturalna skała pęka jak pogoda. Beton kolonii pęka jak kształt opłacony, a potem odebrany przez ocean.",
+     "in_game_wiki": "Zatopiony beton nie jest tłem. Ślady uszczelek, cienie rdzy, ceramiczne kruszywo i piasek w szczelinach trzymają kształt znikłych pomieszczeń. Przed cięciem pytaj, co płyta powstrzymywała.\n\nZielony dolny brzeg oznacza wodę przed zawalem. Czysta płaszczyzna to świeże salvage, wstrząs albo awaria ciśnienia. Rdza bez pręta znaczy metal wyrwany lub rozpuszczony. Pył uszczelki wskazuje starą krawędź drzwi.\n\nMarauder idzie po cieniu rdzy do serwisowego kręgosłupa, nie tnie ostatniej płyty ściskanej i znajduje tablicę trasy pod piaskiem. Ocean skasował pokój, nie sposób jego śmierci.",
+     "external_site": "Artykuł terenowy o zatopionym betonie ciśnieniowym: jak odróżnić ruinę od geologii i czytać plamy jako dowód trasy.",
+     "external_site_article": "Zatopiony beton to gramatyka martwego budynku. Blady blok może wyglądać jak kamień, lecz proste linie, pustki uszczelek i pasma kruszywa zdradzają projekt.\n\nPierwsze pytanie nie brzmi 'czy zbierać', tylko 'co trzymał'. Plamy, pęknięcia, rysy kabla i pył śrub mówią, gdzie była sucha strona.\n\nDeep Reach mógł zmienić nazwę wypadku, ale zła wylewka starzeje się źle. Gracz czyta budowę jako dowód.",
+     "field_note": "Pod wodą prosta krawędź zawsze ma powód."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал затонулого напірного бетону",
+     "scanner": "ЗАТОНУЛИЙ БЕТОН // Колоніальний напірний заповнювач, не вапняк. Арматури вже нема; лишилася іржава тінь. Мушлевий пісок у тріщинах означає довге затоплення, чисті грані - свіжий обвал або salvage-різ.",
+     "terminal": "СТАРА КОЛОНІАЛЬНА ПЛИТА // Не добувати як камінь. Бетон позначає кімнату, трубний канал або лінію навантаження. Білий керамічний заповнювач - стіна стиску. Помаранчева тінь - давнє підсилення. Зелено-чорний низ - стояча вода.",
+     "audio": "Природний камінь ламається як погода. Колоніальний бетон ламається як форма, за яку заплатили, а океан потім виставив рахунок.",
+     "in_game_wiki": "Затонулій бетон не є фоном. Сліди прокладок, іржаві тіні, керамічний заповнювач і мушлевий пісок у тріщинах тримають форму зниклих кімнат. Перед різом питають, що ця плита стримувала.\n\nЗелений нижній край показує воду до обвалу. Чиста грань може бути свіжим salvage, поштовхом або відмовою тиску. Іржа без прута означає, що метал витягли чи розчинили. Пил прокладки показує старий край дверей.\n\nMarauder читає тінь іржі до сервісного хребта, не ріже останню плиту стиску і знаходить маршрутну дошку під піском. Океан стер кімнату, але не спосіб її загибелі.",
+     "external_site": "Польова стаття про затонулій напірний бетон: як відрізнити руїну від геології та читати плями як доказ маршруту.",
+     "external_site_article": "Затонулій бетон - матеріальна граматика мертвої будівлі. Блідий блок може здаватися каменем, але прямі лінії, порожнини прокладок і смуги заповнювача видають людський задум.\n\nПерше питання не 'чи добувати', а 'що тримало'. Плями, злами, подряпини кабелю і пил болтів показують суху сторону.\n\nDeep Reach міг перейменувати аварію, але погана заливка старіє погано. Гравець читає будівництво як доказ.",
+     "field_note": "Під водою пряма грань завжди комусь була потрібна."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل الخرسانة المضغوطة الغارقة",
+     "scanner": "خرسانة غارقة // ركام استعماري مصنف للضغط، لا حجر جيري طبيعي. اختفت القضبان وبقي ظل الصدأ. رمل الأصداف في الشقوق يعني غمرا طويلا؛ الوجه النظيف يعني انهيارا حديثا أو قطع salvage.",
+     "terminal": "لوح مستعمرة قديم // لا تعدنه كحجر عادي. الخرسانة تدل على غرفة أو قناة أنابيب أو خط حمل. الركام الخزفي الأبيض جدار ضغط. الظل البرتقالي تقوية سابقة. القاع الأخضر الأسود ماء راكد قبل الانهيار.",
+     "audio": "الصخر الطبيعي ينكسر كالطقس. خرسانة المستعمرة تنكسر كأن أحدا دفع ثمن شكل ثم جاء البحر ليقبضه.",
+     "in_game_wiki": "الخرسانة الغارقة ليست خلفية. آثار الحشيات وظلال الصدأ والركام الخزفي ورمل الأصداف في الشقوق تحفظ شكل غرف اختفت. قبل القطع، اسأل: ماذا كانت هذه البلاطة تمنع؟\n\nالحافة الخضراء السفلية تعني ماء راكدا قبل الانهيار. الوجه النظيف قد يكون salvage حديثا أو زلزالا أو فشل ضغط. الصدأ بلا قضيب يعني معدنا أزيل أو ذاب. غبار الحشية يكشف موضع باب ضغط.\n\nيتبع Marauder ظل الصدأ إلى عصب صيانة، ويتجنب قطع آخر قطعة ضغط، ويجد لوحة مسار تحت الرمل. محا المحيط الغرفة، لا طريقة موتها.",
+     "external_site": "مقال ميداني عن الخرسانة المضغوطة الغارقة: كيف تفرق بين ركام المستعمرة والجيولوجيا وتقرأ البقع كدليل مسار.",
+     "external_site_article": "الخرسانة الغارقة هي نحو مبنى ميت. قد يبدو الحجر الباهت طبيعيا، لكن الخطوط المستقيمة وفراغات الحشيات وأشرطة الركام تكشف قصدا بشريا.\n\nالسؤال الأول ليس هل نأخذها، بل ماذا كانت تحمل. البقع والكسور وخدوش الكابل وغبار البراغي تخبر أي جانب كان جافا.\n\nقد تغير Deep Reach اسم الحادث، لكنها لا تجعل صبة سيئة تشيخ كصبة جيدة. اللاعب يقرأ البناء كدليل.",
+     "field_note": "تحت الماء، كل حافة مستقيمة كانت تخدم أحدا."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ledger Beton Tekanan Tenggelam",
+     "scanner": "BETON TENGGELAM // Agregat koloni tahan tekanan, bukan batu kapur. Rebar hilang; bayang karat tersisa. Pasir cangkang di retak berarti banjir lama, muka bersih berarti runtuh baru atau potongan salvage.",
+     "terminal": "SLAB KOLONI LAMA // Jangan tambang sebagai batu. Beton menandai ruangan, jalur pipa, atau garis beban. Agregat keramik putih: dinding kompresi. Bayang oranye: penguat lama. Noda hijau-hitam bawah: air diam sebelum runtuh.",
+     "audio": "Batu alam pecah seperti cuaca. Beton koloni pecah seperti bentuk yang dibayar, lalu ditagih laut belakangan.",
+     "in_game_wiki": "Beton tenggelam bukan latar. Jejak gasket, bayang karat, agregat keramik, dan pasir cangkang di retakan menyimpan bentuk ruangan hilang. Sebelum memotong, tanyakan apa yang dulu ditahan slab itu.\n\nTepi bawah hijau berarti air diam sebelum runtuh. Muka bersih bisa salvage baru, gempa, atau gagal tekanan. Karat tanpa batang berarti logam dicabut atau larut. Debu gasket menunjukkan bekas pintu tekanan.\n\nMarauder mengikuti bayang karat ke tulang servis, menghindari memotong bagian kompresi terakhir, dan menemukan papan rute di bawah pasir. Laut menghapus ruangan, bukan cara ruangan gagal.",
+     "external_site": "Artikel lapangan tentang beton tekanan tenggelam: membedakan reruntuhan koloni dari geologi dan membaca noda sebagai bukti rute.",
+     "external_site_article": "Beton tenggelam adalah tata bahasa material bangunan mati. Bongkah pucat bisa tampak seperti batu, tapi garis lurus, rongga gasket, dan pita agregat menunjukkan rancangan manusia.\n\nPertanyaan pertama bukan panen, melainkan beban. Noda, patahan, gores kabel, dan debu baut memberi tahu sisi mana yang dulu kering.\n\nDeep Reach bisa mengganti nama kecelakaan, tapi cor buruk tetap menua buruk. Pemain membaca konstruksi sebagai bukti.",
+     "field_note": "Di bawah air, tepi lurus selalu punya alasan."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "침수 압력 콘크리트 장부",
+     "scanner": "침수 콘크리트 // 자연 석회암이 아닌 식민지 압력 골재. 철근은 사라지고 녹 그림자만 남았다. 균열의 조개모래는 긴 침수, 깨끗한 면은 최근 붕괴나 salvage 절단을 뜻한다.",
+     "terminal": "옛 식민지 슬래브 // 일반 돌처럼 채굴하지 말 것. 콘크리트는 방, 배관 통로, 하중선을 표시한다. 흰 세라믹 골재는 압축벽. 주황 그림자는 옛 보강. 아래 녹흑색 얼룩은 붕괴 전 고인 물.",
+     "audio": "자연암은 날씨처럼 부서진다. 식민지 콘크리트는 누군가 모양값을 냈고 바다가 늦게 청구한 것처럼 부서진다.",
+     "in_game_wiki": "침수 콘크리트는 배경이 아니다. 가스켓 자국, 녹 그림자, 세라믹 골재, 균열의 조개모래가 사라진 방의 모양을 보존한다. 자르기 전, 이 슬래브가 무엇을 막았는지 읽어야 한다.\n\n초록빛 아래 모서리는 붕괴 전 고인 물을 뜻한다. 깨끗한 전단면은 최근 salvage, 지진, 압력 실패일 수 있다. 막대 없는 녹은 금속이 제거되거나 녹았다는 뜻이다. 가장자리의 가스켓 먼지는 압력문 위치를 말한다.\n\nMarauder 는 녹 그림자를 따라 정비 spine 을 찾고, 마지막 압축편을 자르지 않으며, 모래 아래 route board 를 찾는다. 바다는 방을 지웠지만 실패 방식은 지우지 않았다.",
+     "external_site": "침수 압력 콘크리트 현장 글: 식민지 잔해와 지질을 구분하고 얼룩을 경로 증거로 읽는 법.",
+     "external_site_article": "침수 콘크리트는 죽은 건물의 물질 문법이다. 창백한 덩어리는 돌처럼 보이지만 직선, 가스켓 빈자리, 골재 띠가 인간 설계를 드러낸다.\n\n첫 질문은 수확이 아니라 무엇을 버텼는가다. 얼룩, 파단, 케이블 긁힘, 볼트 먼지가 어느 쪽이 마른 쪽이었는지 말한다.\n\nDeep Reach 는 사고 이름을 바꿀 수 있었지만 나쁜 타설을 좋게 늙게 만들 수는 없었다. 플레이어는 건설을 증거로 읽는다.",
+     "field_note": "물속의 직선 모서리에는 항상 이유가 있다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן בטון לחץ שטבע",
+     "scanner": "בטון טבוע // אגרגט מושבתי מדורג ללחץ, לא אבן גיר. הזיון נעלם; צל חלודה נשאר. חול צדפים בסדקים משמעו הצפה ארוכה; פנים נקיים משמעם קריסה טרייה או חתך salvage.",
+     "terminal": "לוח מושבה ישן // לא לכרות כאבן. בטון מסמן חדר, תעלת צינורות או קו עומס. אגרגט קרמי לבן: קיר דחיסה. צל כתום: חיזוק קודם. כתם ירוק-שחור תחתון: מים עומדים לפני קריסה.",
+     "audio": "סלע טבעי נשבר כמו מזג אוויר. בטון מושבה נשבר כמו צורה שמישהו שילם עליה והים גבה מאוחר.",
+     "in_game_wiki": "בטון טבוע אינו רקע. סימני אטם, צללי חלודה, אגרגט קרמי וחול צדפים בסדקים שומרים צורה של חדרים שנעלמו. לפני חיתוך צריך לשאול מה הלוח עצר.\n\nשפה תחתונה ירוקה משמעה מים עומדים לפני קריסה. פנים נקיים יכולים להיות salvage טרי, רעידה או כשל לחץ. חלודה בלי מוט אומרת שהמתכת הוסרה או התמוססה. אבק אטם מצביע על דלת לחץ ישנה.\n\nMarauder עוקב אחרי צל חלודה לעמוד שדרה תחזוקתי, לא חותך את חלק הדחיסה האחרון ומוצא לוח מסלול מתחת לחול. האוקיינוס מחק את החדר, לא את דרך הכשל שלו.",
+     "external_site": "מאמר שדה על בטון לחץ שטבע: איך להבדיל חורבה מושבתית מגיאולוגיה ולקרוא כתמים כראיית מסלול.",
+     "external_site_article": "בטון טבוע הוא דקדוק חומרי של בניין מת. גוש חיוור יכול להיראות טבעי, אבל קווים ישרים, חללי אטם ורצועות אגרגט חושפים תכנון אנושי.\n\nהשאלה הראשונה אינה קציר אלא עומס. כתמים, שברים, שריטות כבל ואבק ברגים מספרים איזה צד היה יבש.\n\nDeep Reach יכלה לשנות שם לתאונה, אבל יציקה גרועה מזדקנת גרוע. השחקן קורא בנייה כראיה.",
+     "field_note": "מתחת למים, לכל קצה ישר הייתה סיבה."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de concreto pressurizado afogado",
+     "scanner": "CONCRETO AFOGADO // Agregado colonial de pressão, não calcário natural. A armação sumiu; sombra de ferrugem ficou. Areia de concha em fendas: inundação longa. Face limpa: colapso recente ou corte salvage.",
+     "terminal": "LAJE COLONIAL ANTIGA // Não minerar como pedra. Concreto marca sala, duto ou linha de carga. Agregado cerâmico branco: parede em compressão. Sombra laranja: reforço antigo. Mancha verde-preta baixa: água parada antes da queda.",
+     "audio": "Rocha natural quebra como clima. Concreto colonial quebra como forma paga e cobrada tarde pelo oceano.",
+     "in_game_wiki": "Concreto afogado não é fundo. Marcas de gasket, sombras de ferrugem, agregado cerâmico e areia de concha guardam salas desaparecidas. Antes de cortar, pergunte o que a laje segurava.\n\nBorda inferior verde significa água parada antes do colapso. Face limpa pode ser salvage recente, tremor ou falha de pressão. Ferrugem sem barra significa metal removido ou dissolvido. Pó de gasket marca uma antiga porta de pressão.\n\nMarauder segue sombra de ferrugem até a espinha de manutenção, evita cortar a última peça em compressão e acha quadro de rota sob areia. O oceano apagou a sala, não seu modo de falhar.",
+     "external_site": "Artigo de campo sobre concreto pressurizado afogado: distinguir ruína colonial de geologia e ler manchas como prova de rota.",
+     "external_site_article": "Concreto afogado é a gramática material de um prédio morto. Um bloco claro pode parecer pedra, mas linhas retas, vazios de gasket e faixas de agregado denunciam intenção humana.\n\nA primeira pergunta não é coleta, mas carga. Manchas, fraturas, raspões de cabo e pó de parafuso dizem qual lado foi seco.\n\nDeep Reach podia renomear o acidente, mas uma concretagem ruim envelhece mal. O jogador lê construção como evidência.",
+     "field_note": "Debaixo d'água, toda borda reta teve motivo."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Logboek van verdronken drukbeton",
+     "scanner": "VERDRONKEN BETON // Koloniaal drukaggregaat, geen kalksteen. Wapening is weg; roestschaduw blijft. Schelpzand in scheuren betekent lange overstroming, schoon vlak recente instorting of salvage-snede.",
+     "terminal": "OUDE KOLONIEPLAAT // Niet als steen mijnen. Beton markeert kamer, leidinggang of lastlijn. Wit keramisch aggregaat: compressiewand. Oranje schaduw: oude versterking. Groen-zwarte onderrand: stilstaand water voor breuk.",
+     "audio": "Natuursteen breekt als weer. Koloniebeton breekt als een betaalde vorm die de oceaan later incasseerde.",
+     "in_game_wiki": "Verdronken beton is geen achtergrond. Pakking sporen, roestschaduwen, keramisch aggregaat en schelpzand bewaren verdwenen kamers. Voor het snijden vraag je wat de plaat tegenhield.\n\nGroene onderrand betekent stilstaand water voor instorting. Een schoon vlak kan recente salvage, beving of drukfalen zijn. Roest zonder staaf betekent verwijderd of opgelost metaal. Pakkingstof toont een oude drukdeur.\n\nEen Marauder volgt roestschaduw naar onderhoudsruggengraat, snijdt niet de laatste compressieplaat en vindt een routebord onder zand. De oceaan wiste de kamer, niet hoe die faalde.",
+     "external_site": "Veldartikel over verdronken drukbeton: kolonieruïne van geologie scheiden en vlekken als routebewijs lezen.",
+     "external_site_article": "Verdronken beton is de materiaalgrammatica van een dood gebouw. Een bleke klomp lijkt steen, maar rechte lijnen, pakkingleegtes en aggregaatbanden verraden menselijke bedoeling.\n\nDe eerste vraag is geen oogst, maar belasting. Vlekken, breuken, kabelkrassen en boutstof tonen welke kant droog was.\n\nDeep Reach kon een ongeluk hernoemen, maar slecht gestort beton blijft slecht oud worden. De speler leest bouw als bewijs.",
+     "field_note": "Onder water heeft elke rechte rand een reden."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

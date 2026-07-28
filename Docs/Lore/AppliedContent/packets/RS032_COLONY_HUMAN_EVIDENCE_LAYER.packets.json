@@ -1,788 +1,793 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P156_SHIFT_CREWS_NOT_HEROES",
-      "article_id": "colony_human.shift_crews_not_heroes",
-      "title_key": "applied_lore.shift_crews_not_heroes.title",
-      "unlock": {
-        "primary": "unlock.shift_crews_not_heroes",
-        "poi_tags": [
-          "poi.shift_roster_wall",
-          "poi.crew_rotation_tags",
-          "poi.work_order_nameplate"
-        ],
-        "biome_tags": [
-          "biome.industrial_shelf",
-          "biome.shallow_annex"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Shift Crews, Not Heroes",
-          "scanner": "HUMAN LAYER // The colony becomes real through schedules, worn tools, missed returns, and names on duty boards. Not speeches.",
-          "terminal": "WRITING RULE: record workers as pump techs, medics, route clerks, divers, cooks, fabricator operators, and tired supervisors. A roster with one missing return can hurt more than a monument.",
-          "audio": "They were not symbols. They were late for shift.",
-          "in_game_wiki": "HECTON-8 should make the colony human through work before tragedy. A pressure tech who swaps a valve gasket, a cook who tracks water tokens, a route clerk who stamps the wrong return, a diver who signs out a cutter and never signs it back in: these details make people legible without forcing a family-revenge hook. The drowned colony is strongest when it feels like a place interrupted during routine, not a museum built after death.",
-          "external_site": "Shift Crews, Not Heroes is the human writing rule for HECTON-8: workers become memorable through jobs, fatigue, habits, and procedural failures.",
-          "field_note": "People are more believable as workers than as memorial statues."
-        },
-        "ru_RU": {
-          "title": "Сменные бригады, не герои",
-          "scanner": "ЧЕЛОВЕЧЕСКИЙ СЛОЙ // Колония становится настоящей через графики, стертые инструменты, пропущенные возвраты и имена на досках смен. Не через речи.",
-          "terminal": "ПРАВИЛО ПИСЬМА: записывать рабочих как техников насосов, медиков, маршрутных клерков, водолазов, поваров, операторов фабрикатора и усталых старших смен. Роспись с одним пропущенным возвратом ранит сильнее памятника.",
-          "audio": "Они не были символами. Они опаздывали на смену.",
-          "in_game_wiki": "HECTON-8 должен очеловечивать колонию через работу раньше, чем через трагедию. Техник давления меняет прокладку клапана, повар считает водные жетоны, маршрутный клерк ставит не тот штамп возврата, водолаз берет резак и уже не возвращает его в журнал: такие детали делают людей читаемыми без обязательной семейной мести. Утонувшая колония сильнее всего, когда кажется местом, прерванным посреди рутины, а не музеем, построенным после смерти.",
-          "external_site": "Сменные бригады, не герои - правило человеческого письма для HECTON-8: рабочие запоминаются через работу, усталость, привычки и процедурные сбои.",
-          "field_note": "Люди правдоподобнее как работники, чем как памятные статуи."
-        },
-        "ja_JP": {
-          "title": "英雄ではなく交代班",
-          "scanner": "人間層 // コロニーは勤務表、使い込まれた工具、戻らない帰還、当番板の名前で本物になる。演説ではない。",
-          "terminal": "記述規則: 作業員をポンプ技師、衛生兵、経路係、潜水員、調理員、ファブリケータ操作員、疲れた班長として記録する。ひとつの未帰還がある勤務表は、記念碑より痛い。",
-          "audio": "彼らは象徴ではなかった。交代に遅れていただけだ。",
-          "in_game_wiki": "HECTON-8は悲劇より先に仕事でコロニーを人間にするべきだ。圧力技師が弁のガスケットを替える。調理員が水トークンを数える。経路係が間違った帰還印を押す。潜水員がカッターを持ち出し、返却欄に戻らない。そうした細部は、家族復讐の筋を押し付けなくても人を読めるようにする。沈んだコロニーは、死後に建てられた博物館ではなく、日常の途中で途切れた場所に見えるとき最も強い。",
-          "external_site": "英雄ではなく交代班はHECTON-8の人間描写規則だ。作業員は仕事、疲労、癖、手続きの失敗で記憶に残る。",
-          "field_note": "人は記念像より、働いていた人間としてのほうが信じられる。"
-        },
-        "zh_CN": {
-          "title": "轮班队，不是英雄",
-          "scanner": "人性层 // 殖民地通过排班、磨损工具、未返回记录和执勤板上的名字变得真实。不是靠演讲。",
-          "terminal": "写作规则：把工人写成泵技师、医护、路线文员、潜水员、厨工、制造机操作员和疲惫的班长。一个缺失返回的排班表比纪念碑更痛。",
-          "audio": "他们不是象征。他们只是上班迟到了。",
-          "in_game_wiki": "HECTON-8 应先通过工作而非悲剧让殖民地具有人性。压力技师更换阀门垫圈，厨工记录水代币，路线文员盖错返回戳，潜水员签出切割器后再也没有签回：这些细节让人可读，不需要强行塞入家庭复仇线。沉没殖民地最有力的时候，是它像一个在日常中被打断的地方，而不是死后修建的博物馆。",
-          "external_site": "轮班队，不是英雄，是 HECTON-8 的人性写作规则：工人通过工作、疲惫、习惯和程序失败被记住。",
-          "field_note": "人作为工作者比作为纪念雕像更可信。"
-        },
-        "fr_FR": {
-          "title": "Équipes de quart, pas héros",
-          "scanner": "COUCHE HUMAINE // La colonie devient réelle par les horaires, les outils usés, les retours manqués et les noms sur les tableaux. Pas par les discours.",
-          "terminal": "RÈGLE D'ÉCRITURE : noter les travailleurs comme techniciens de pompe, médecins, commis de route, plongeurs, cuisiniers, opérateurs de fabricateur et superviseurs épuisés. Un planning avec un retour manquant blesse plus qu'un monument.",
-          "audio": "Ils n'étaient pas des symboles. Ils étaient en retard pour le quart.",
-          "in_game_wiki": "HECTON-8 doit rendre la colonie humaine par le travail avant la tragédie. Un technicien pression change un joint de valve, une cuisinière compte les jetons d'eau, un commis de route tamponne le mauvais retour, un plongeur sort un cutter et ne le rend jamais au registre : ces détails rendent les gens lisibles sans imposer un motif de vengeance familiale. La colonie noyée est plus forte quand elle ressemble à un lieu interrompu dans sa routine, pas à un musée construit après la mort.",
-          "external_site": "Équipes de quart, pas héros est la règle d'écriture humaine de HECTON-8 : les travailleurs restent en mémoire par le métier, la fatigue, les habitudes et les échecs procéduraux.",
-          "field_note": "Les gens sont plus crédibles comme travailleurs que comme statues mémorielles."
-        },
-        "es_ES": {
-          "title": "Cuadrillas de turno, no héroes",
-          "scanner": "CAPA HUMANA // La colonia se vuelve real con horarios, herramientas gastadas, retornos perdidos y nombres en tableros de turno. No con discursos.",
-          "terminal": "REGLA DE ESCRITURA: registrar trabajadores como técnicos de bomba, médicos, oficinistas de ruta, buzos, cocineros, operadores de fabricador y supervisores cansados. Un turno con un retorno ausente duele más que un monumento.",
-          "audio": "No eran símbolos. Llegaban tarde al turno.",
-          "in_game_wiki": "HECTON-8 debe volver humana la colonia mediante trabajo antes que tragedia. Un técnico de presión cambia una junta de válvula, una cocinera cuenta fichas de agua, un oficinista de ruta sella el retorno equivocado, un buzo firma un cortador y nunca lo devuelve al registro: esos detalles hacen legible a la gente sin forzar una venganza familiar. La colonia ahogada funciona mejor cuando parece un lugar interrumpido en plena rutina, no un museo construido después de la muerte.",
-          "external_site": "Cuadrillas de turno, no héroes es la regla humana de escritura de HECTON-8: los trabajadores se recuerdan por empleo, fatiga, hábitos y fallos de procedimiento.",
-          "field_note": "La gente resulta más creíble como trabajadora que como estatua conmemorativa."
-        },
-        "de_DE": {
-          "title": "Schichtcrews, keine Helden",
-          "scanner": "MENSCHLICHE SCHICHT // Die Kolonie wird durch Pläne, abgenutzte Werkzeuge, fehlende Rückkehr und Namen auf Diensttafeln real. Nicht durch Reden.",
-          "terminal": "SCHREIBREGEL: Arbeiter als Pumpentechniker, Medics, Routenangestellte, Taucher, Köche, Fabrikatorbediener und müde Vorgesetzte erfassen. Ein Dienstplan mit einer fehlenden Rückkehr schmerzt mehr als ein Denkmal.",
-          "audio": "Sie waren keine Symbole. Sie kamen zu spät zur Schicht.",
-          "in_game_wiki": "HECTON-8 sollte die Kolonie durch Arbeit menschlich machen, bevor Tragödie spricht. Ein Drucktechniker tauscht eine Ventildichtung, eine Köchin zählt Wassermarken, ein Routenangestellter stempelt die falsche Rückkehr, ein Taucher trägt einen Cutter aus und gibt ihn nie zurück. Solche Details machen Menschen lesbar, ohne einen Familienrache-Hook zu erzwingen. Die ertrunkene Kolonie ist am stärksten, wenn sie wie ein Ort wirkt, der mitten in Routine unterbrochen wurde, nicht wie ein Museum nach dem Tod.",
-          "external_site": "Schichtcrews, keine Helden ist HECTON-8s Regel für menschliches Schreiben: Arbeiter bleiben durch Jobs, Müdigkeit, Gewohnheiten und Verfahrensfehler im Gedächtnis.",
-          "field_note": "Menschen sind als Arbeiter glaubwürdiger als als Gedenkstatuen."
-        },
-        "pl_PL": {
-          "title": "Brygady zmianowe, nie bohaterowie",
-          "scanner": "WARSTWA LUDZKA // Kolonia staje się prawdziwa przez grafiki, zużyte narzędzia, brakujące powroty i nazwiska na tablicach zmian. Nie przez przemowy.",
-          "terminal": "REGUŁA PISANIA: zapisywać pracowników jako techników pomp, medyków, urzędników tras, nurków, kucharzy, operatorów fabricatora i zmęczonych nadzorców. Grafik z jednym brakującym powrotem boli bardziej niż pomnik.",
-          "audio": "Nie byli symbolami. Spóźniali się na zmianę.",
-          "in_game_wiki": "HECTON-8 powinno uczłowieczać kolonię pracą przed tragedią. Technik ciśnienia wymienia uszczelkę zaworu, kucharka liczy żetony wody, urzędnik trasy przybija zły stempel powrotu, nurek wypisuje przecinak i nigdy nie wpisuje go z powrotem: takie szczegóły czynią ludzi czytelnymi bez wymuszonego wątku rodzinnej zemsty. Zatopiona kolonia działa najmocniej, gdy wygląda jak miejsce przerwane w rutynie, nie muzeum zbudowane po śmierci.",
-          "external_site": "Brygady zmianowe, nie bohaterowie to reguła ludzkiego pisania HECTON-8: pracownicy zostają w pamięci przez pracę, zmęczenie, nawyki i proceduralne awarie.",
-          "field_note": "Ludzie są bardziej wiarygodni jako pracownicy niż jako pomnikowe figury."
-        },
-        "uk_UA": {
-          "title": "Змінні бригади, не герої",
-          "scanner": "ЛЮДСЬКИЙ ШАР // Колонія стає справжньою через графіки, стерті інструменти, пропущені повернення й імена на дошках змін. Не через промови.",
-          "terminal": "ПРАВИЛО ПИСЬМА: записувати працівників як техніків насосів, медиків, маршрутних клерків, водолазів, кухарів, операторів фабрикатора й утомлених старших змін. Розклад з одним пропущеним поверненням болить сильніше за пам'ятник.",
-          "audio": "Вони не були символами. Вони запізнювалися на зміну.",
-          "in_game_wiki": "HECTON-8 має робити колонію людською через роботу раніше, ніж через трагедію. Технік тиску міняє прокладку клапана, кухар рахує водні жетони, маршрутний клерк ставить не той штамп повернення, водолаз бере різак і вже не повертає його в журнал: такі деталі роблять людей читабельними без примусового сімейного revenge-hook. Потонула колонія найсильніша тоді, коли здається місцем, перерваним посеред рутини, а не музеєм після смерті.",
-          "external_site": "Змінні бригади, не герої - правило людського письма для HECTON-8: працівники запам'ятовуються через роботу, втому, звички й процедурні збої.",
-          "field_note": "Люди правдоподібніші як працівники, ніж як меморіальні статуї."
-        },
-        "ar_SA": {
-          "title": "طواقم ورديات لا أبطال",
-          "scanner": "طبقة بشرية // تصير المستعمرة حقيقية عبر الجداول، الأدوات البالية، العودات المفقودة، والأسماء على لوحات الوردية. لا عبر الخطب.",
-          "terminal": "قاعدة كتابة: سجّل العمال كتقنيي مضخات، مسعفين، كتبة مسار، غواصين، طهاة، مشغلي fabricator ومشرفين متعبين. جدول وردية فيه عودة واحدة مفقودة يؤلم أكثر من نصب.",
-          "audio": "لم يكونوا رموزا. كانوا متأخرين عن الوردية.",
-          "in_game_wiki": "يجب أن يجعل HECTON-8 المستعمرة بشرية عبر العمل قبل المأساة. تقني ضغط يبدل حشية صمام، طاهية تعد رموز الماء، كاتب مسار يختم عودة خاطئة، غواص يوقّع لأخذ قاطع ولا يرده إلى السجل: هذه التفاصيل تجعل الناس مقروئين من دون فرض حبكة ثأر عائلية. تكون المستعمرة الغارقة أقوى عندما تبدو كمكان قوطع في منتصف روتينه، لا كمتحف بُني بعد الموت.",
-          "external_site": "طواقم ورديات لا أبطال هي قاعدة الكتابة البشرية في HECTON-8: يتذكر اللاعب العمال عبر الوظائف والتعب والعادات والفشل الإجرائي.",
-          "field_note": "البشر أصدق كعمال منهم كتماثيل تذكارية."
-        },
-        "id_ID": {
-          "title": "Kru Giliran, Bukan Pahlawan",
-          "scanner": "LAPIS MANUSIA // Koloni terasa nyata lewat jadwal, alat aus, kepulangan hilang, dan nama di papan giliran. Bukan pidato.",
-          "terminal": "ATURAN TULIS: catat pekerja sebagai teknisi pompa, medik, juru rute, penyelam, juru masak, operator fabricator, dan supervisor lelah. Roster dengan satu kepulangan hilang bisa lebih menyakitkan daripada monumen.",
-          "audio": "Mereka bukan simbol. Mereka terlambat giliran kerja.",
-          "in_game_wiki": "HECTON-8 harus memanusiakan koloni melalui pekerjaan sebelum tragedi. Teknisi tekanan mengganti gasket katup, juru masak menghitung token air, juru rute mencap kepulangan yang salah, penyelam menandatangani cutter dan tidak pernah mengembalikannya ke ledger: detail seperti itu membuat orang terbaca tanpa memaksa kait balas dendam keluarga. Koloni tenggelam paling kuat saat terasa seperti tempat yang terputus di tengah rutinitas, bukan museum setelah kematian.",
-          "external_site": "Kru Giliran, Bukan Pahlawan adalah aturan penulisan manusia HECTON-8: pekerja diingat lewat pekerjaan, lelah, kebiasaan, dan kegagalan prosedural.",
-          "field_note": "Orang lebih meyakinkan sebagai pekerja daripada patung memorial."
-        },
-        "ko_KR": {
-          "title": "영웅이 아니라 교대조",
-          "scanner": "인간층 // 식민지는 일정표, 닳은 도구, 돌아오지 않은 귀환, 근무판의 이름으로 실제가 된다. 연설이 아니다.",
-          "terminal": "작성 규칙: 노동자를 펌프 기술자, 의무병, 경로 서기, 잠수부, 조리원, fabricator 조작원, 지친 감독으로 기록한다. 하나의 미귀환이 있는 근무표는 기념비보다 아프다.",
-          "audio": "그들은 상징이 아니었다. 교대에 늦었을 뿐이다.",
-          "in_game_wiki": "HECTON-8은 비극보다 먼저 일을 통해 식민지를 인간적으로 보여줘야 한다. 압력 기술자가 밸브 개스킷을 갈고, 조리원이 물 토큰을 세고, 경로 서기가 잘못된 귀환 도장을 찍고, 잠수부가 커터를 반출한 뒤 다시 입고하지 않는다. 이런 디테일은 가족 복수 서사를 강요하지 않아도 사람을 읽히게 한다. 가라앉은 식민지는 죽음 뒤에 지은 박물관이 아니라 일상 중간에 끊긴 장소처럼 느껴질 때 가장 강하다.",
-          "external_site": "영웅이 아니라 교대조는 HECTON-8의 인간 쓰기 규칙이다. 노동자는 일, 피로, 습관, 절차 실패로 기억된다.",
-          "field_note": "사람은 추모 조각상보다 노동자로서 더 믿을 만하다."
-        },
-        "he_IL": {
-          "title": "צוותי משמרת, לא גיבורים",
-          "scanner": "שכבה אנושית // המושבה נעשית אמיתית דרך לוחות זמנים, כלים שחוקים, חזרות חסרות ושמות על לוחות תורנות. לא דרך נאומים.",
-          "terminal": "כלל כתיבה: לרשום עובדים כטכנאי משאבות, חובשים, פקידי מסלול, צוללים, טבחים, מפעילי fabricator ומפקחים עייפים. סידור עם חזרה חסרה אחת יכול לכאוב יותר מאנדרטה.",
-          "audio": "הם לא היו סמלים. הם איחרו למשמרת.",
-          "in_game_wiki": "HECTON-8 צריך להפוך את המושבה לאנושית דרך עבודה לפני טרגדיה. טכנאי לחץ מחליף אטם שסתום, טבחית סופרת אסימוני מים, פקיד מסלול חותם חזרה לא נכונה, צולל חותם על cutter ולא מחזיר אותו לרישום: פרטים כאלה הופכים אנשים לקריאים בלי לכפות עלילת נקמה משפחתית. המושבה הטבועה חזקה ביותר כשהיא מרגישה כמו מקום שנקטע באמצע שגרה, לא מוזיאון שנבנה אחרי המוות.",
-          "external_site": "צוותי משמרת, לא גיבורים הוא כלל הכתיבה האנושית של HECTON-8: עובדים נזכרים דרך עבודה, עייפות, הרגלים וכשלי הליך.",
-          "field_note": "אנשים אמינים יותר כעובדים מאשר כפסלי זיכרון."
-        },
-        "pt_BR": {
-          "title": "Equipes de turno, não heróis",
-          "scanner": "CAMADA HUMANA // A colônia fica real por escalas, ferramentas gastas, retornos ausentes e nomes em quadros de turno. Não por discursos.",
-          "terminal": "REGRA DE ESCRITA: registrar trabalhadores como técnicos de bomba, médicos, escriturários de rota, mergulhadores, cozinheiros, operadores de fabricator e supervisores cansados. Uma escala com um retorno perdido fere mais que um monumento.",
-          "audio": "Eles não eram símbolos. Estavam atrasados para o turno.",
-          "in_game_wiki": "HECTON-8 deve humanizar a colônia por trabalho antes da tragédia. Um técnico de pressão troca uma junta de válvula, uma cozinheira conta fichas de água, um escriturário de rota carimba o retorno errado, um mergulhador assina a retirada de um cutter e nunca devolve no registro: esses detalhes tornam pessoas legíveis sem forçar uma vingança familiar. A colônia afogada é mais forte quando parece um lugar interrompido na rotina, não um museu construído depois da morte.",
-          "external_site": "Equipes de turno, não heróis é a regra de escrita humana de HECTON-8: trabalhadores ficam memoráveis por funções, cansaço, hábitos e falhas procedurais.",
-          "field_note": "Pessoas são mais críveis como trabalhadores do que como estátuas memoriais."
-        },
-        "nl_NL": {
-          "title": "Ploegen, geen helden",
-          "scanner": "MENSELIJKE LAAG // De kolonie wordt echt via roosters, versleten gereedschap, gemiste terugkeer en namen op dienstborden. Niet via toespraken.",
-          "terminal": "SCHRIJFREGEL: noteer werkers als pomptechnici, medici, routeklerken, duikers, koks, fabricator-operators en vermoeide supervisors. Een rooster met één gemiste terugkeer kan harder raken dan een monument.",
-          "audio": "Ze waren geen symbolen. Ze waren te laat voor dienst.",
-          "in_game_wiki": "HECTON-8 moet de kolonie menselijk maken via werk vóór tragedie. Een druktechnicus vervangt een kleppakking, een kok telt watertokens, een routeklerk zet de verkeerde terugkeerstempel, een duiker tekent een cutter uit en tekent hem nooit terug in. Zulke details maken mensen leesbaar zonder een familie-wraakhaak op te dringen. De verdronken kolonie is het sterkst wanneer ze voelt als een plek die midden in routine werd onderbroken, niet als een museum na de dood.",
-          "external_site": "Ploegen, geen helden is HECTON-8s menselijke schrijfregel: werkers blijven hangen door werk, vermoeidheid, gewoonten en procedurefouten.",
-          "field_note": "Mensen zijn geloofwaardiger als werkers dan als gedenkbeelden."
-        }
-      },
-      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P156_SHIFT_CREWS_NOT_HEROES",
+   "article_id": "colony_human.shift_crews_not_heroes",
+   "title_key": "applied_lore.shift_crews_not_heroes.title",
+   "unlock": {
+    "primary": "unlock.shift_crews_not_heroes",
+    "poi_tags": [
+     "poi.shift_roster_wall",
+     "poi.crew_rotation_tags",
+     "poi.work_order_nameplate"
+    ],
+    "biome_tags": [
+     "biome.industrial_shelf",
+     "biome.shallow_annex"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Shift Crews, Not Heroes",
+     "scanner": "HUMAN LAYER // The colony becomes real through schedules, worn tools, missed returns, and names on duty boards. Not speeches.",
+     "terminal": "WRITING RULE: record workers as pump techs, medics, route clerks, divers, cooks, fabricator operators, and tired supervisors. A roster with one missing return can hurt more than a monument.",
+     "audio": "They were not symbols. They were late for shift.",
+     "in_game_wiki": "HECTON-8 should make the colony human through work before tragedy. A pressure tech who swaps a valve gasket, a cook who tracks water tokens, a route clerk who stamps the wrong return, a diver who signs out a cutter and never signs it back in: these details make people legible without forcing a family-revenge hook. The drowned colony is strongest when it feels like a place interrupted during routine, not a museum built after death.",
+     "external_site": "Shift Crews, Not Heroes is the human writing rule for HECTON-8: workers become memorable through jobs, fatigue, habits, and procedural failures.",
+     "field_note": "People are more believable as workers than as memorial statues."
     },
-    {
-      "packet_id": "P157_WORKER_JOB_CARDS",
-      "article_id": "colony_human.worker_job_cards",
-      "title_key": "applied_lore.worker_job_cards.title",
-      "unlock": {
-        "primary": "unlock.worker_job_cards",
-        "poi_tags": [
-          "poi.worker_job_card_stack",
-          "poi.flooded_id_clip",
-          "poi.task_certification_stamp"
-        ],
-        "biome_tags": [
-          "biome.shallow_annex",
-          "biome.industrial_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Worker Job Cards",
-          "scanner": "JOB CARD // Name, role, last task, route permission, tool certification. A face the budget could read.",
-          "terminal": "EVIDENCE RULE: every recovered name should attach to something done: pump route, kitchen ledger, med bay call, cutter custody, pressure check, fabrication batch. A task turns a name into proof.",
-          "audio": "A name without a task becomes a shrine. A task makes it evidence.",
-          "in_game_wiki": "A job card is the colony's smallest biography. It does not need childhood, romance, or a speech to matter. It needs a role, a permission stamp, a last task, and the thing the worker expected to finish after the next tone. When the player finds these cards, people stop being background casualties and become route evidence: someone held the pump key, delayed a hatch, cooked for a crew, signed a cutter out, certified a seal, or missed the return because the system made help wait.",
-          "external_site": "Worker Job Cards turn names into evidence objects: playable clues that make the colony human without stopping the survival loop.",
-          "field_note": "Make names useful before making them tragic."
-        },
-        "ru_RU": {
-          "title": "Рабочие job cards",
-          "scanner": "JOB CARD // Имя, роль, последняя задача, маршрутное разрешение, сертификат инструмента. Лицо, которое бюджет мог прочитать.",
-          "terminal": "ПРАВИЛО УЛИКИ: каждое найденное имя должно быть привязано к сделанному делу: маршрут насоса, столовый ledger, вызов медблока, хранение резака, проверка давления, партия фабрикации. Задача превращает имя в доказательство.",
-          "audio": "Имя без задачи становится святыней. Задача делает его уликой.",
-          "in_game_wiki": "Job card - самая маленькая биография колонии. Ей не нужны детство, роман или речь, чтобы иметь вес. Нужны роль, штамп допуска, последняя задача и то, что рабочий собирался закончить после следующего сигнала. Когда игрок находит такие карточки, люди перестают быть фоновыми жертвами и становятся маршрутными уликами: кто-то держал ключ насоса, задержал люк, готовил для смены, подписал выдачу резака, сертифицировал уплотнение или не вернулся, потому что система заставила помощь ждать.",
-          "external_site": "Рабочие job cards превращают имена в объекты доказательства: игровые улики, которые очеловечивают колонию, не останавливая survival loop.",
-          "field_note": "Сначала сделай имена полезными. Потом трагичными."
-        },
-        "ja_JP": {
-          "title": "作業員ジョブカード",
-          "scanner": "JOB CARD // 名前、役割、最後の作業、経路許可、工具認証。予算が読める顔。",
-          "terminal": "証拠規則: 回収された名前は、実行された何かに結びつくべきだ。ポンプ経路、厨房台帳、医療呼び出し、カッター保管、圧力確認、製造バッチ。作業が名前を証拠にする。",
-          "audio": "作業のない名前は祭壇になる。作業はそれを証拠にする。",
-          "in_game_wiki": "ジョブカードはコロニーで最も小さな伝記だ。重みを持つために幼少期や恋愛や演説はいらない。必要なのは役割、許可印、最後の作業、そして次の音のあとに終えるはずだったものだ。プレイヤーがカードを見つけると、人々は背景の犠牲者ではなく経路証拠になる。誰かがポンプキーを持ち、ハッチを遅らせ、班の食事を作り、カッターを持ち出し、シールを認証し、あるいはシステムが救助を待たせたせいで戻れなかった。",
-          "external_site": "作業員ジョブカードは名前を証拠オブジェクトに変える。サバイバルループを止めずにコロニーを人間にする、プレイ可能な手がかりだ。",
-          "field_note": "名前を悲劇にする前に、役に立つものにする。"
-        },
-        "zh_CN": {
-          "title": "工人 job cards",
-          "scanner": "JOB CARD // 姓名、角色、最后任务、路线许可、工具认证。预算能读懂的一张脸。",
-          "terminal": "证据规则：每个找回的姓名都应连接到某件做过的事：泵路线、厨房 ledger、医疗呼叫、切割器保管、压力检查、制造批次。任务把姓名变成证明。",
-          "audio": "没有任务的名字会变成神龛。任务让它成为证据。",
-          "in_game_wiki": "Job card 是殖民地最小的传记。它不需要童年、爱情或演讲才有重量。它需要角色、许可戳、最后任务，以及工人以为下一声提示后还会完成的事。当玩家找到这些卡片时，人们不再是背景伤亡，而是路线证据：有人握着泵钥匙，有人拖延了舱门，有人为一队人做饭，有人签出切割器，有人认证密封，也有人因为系统让救援等待而没能返回。",
-          "external_site": "工人 job cards 把姓名变成证据物件：可玩的线索，让殖民地具有人性，同时不打断生存循环。",
-          "field_note": "先让名字有用，再让它们悲伤。"
-        },
-        "fr_FR": {
-          "title": "Cartes de poste ouvrier",
-          "scanner": "JOB CARD // Nom, rôle, dernière tâche, permission de route, certification d'outil. Un visage que le budget pouvait lire.",
-          "terminal": "RÈGLE DE PREUVE : chaque nom récupéré doit s'attacher à une action : route de pompe, ledger cuisine, appel médical, garde de cutter, contrôle pression, lot de fabrication. Une tâche transforme un nom en preuve.",
-          "audio": "Un nom sans tâche devient sanctuaire. Une tâche en fait une preuve.",
-          "in_game_wiki": "Une carte de poste est la plus petite biographie de la colonie. Elle n'a pas besoin d'enfance, de romance ou de discours pour compter. Il lui faut un rôle, un tampon de permission, une dernière tâche et la chose que l'ouvrier pensait finir après le prochain ton. Quand le joueur trouve ces cartes, les gens cessent d'être des victimes de fond et deviennent des preuves de route : quelqu'un tenait la clé de pompe, retardait une écoutille, cuisinait pour une équipe, sortait un cutter, certifiait un joint, ou ratait le retour parce que le système faisait attendre l'aide.",
-          "external_site": "Les cartes de poste ouvrier transforment les noms en objets de preuve : des indices jouables qui humanisent la colonie sans arrêter la boucle de survie.",
-          "field_note": "Rends les noms utiles avant de les rendre tragiques."
-        },
-        "es_ES": {
-          "title": "Tarjetas de trabajo obrero",
-          "scanner": "JOB CARD // Nombre, rol, última tarea, permiso de ruta, certificación de herramienta. Un rostro que el presupuesto podía leer.",
-          "terminal": "REGLA DE EVIDENCIA: cada nombre recuperado debe unirse a algo hecho: ruta de bomba, ledger de cocina, llamada médica, custodia de cortador, revisión de presión, lote de fabricación. Una tarea convierte un nombre en prueba.",
-          "audio": "Un nombre sin tarea se vuelve santuario. Una tarea lo vuelve evidencia.",
-          "in_game_wiki": "Una tarjeta de trabajo es la biografía más pequeña de la colonia. No necesita infancia, romance ni discurso para importar. Necesita rol, sello de permiso, última tarea y aquello que el trabajador esperaba terminar tras el siguiente tono. Cuando el jugador encuentra estas tarjetas, las personas dejan de ser bajas de fondo y se vuelven evidencia de ruta: alguien tenía la llave de bomba, retrasó una escotilla, cocinó para una cuadrilla, firmó un cortador, certificó un sello o perdió el retorno porque el sistema hizo esperar la ayuda.",
-          "external_site": "Las tarjetas de trabajo obrero convierten nombres en objetos de evidencia: pistas jugables que humanizan la colonia sin detener el bucle de supervivencia.",
-          "field_note": "Haz útiles los nombres antes de hacerlos trágicos."
-        },
-        "de_DE": {
-          "title": "Arbeitskarten der Arbeiter",
-          "scanner": "JOB CARD // Name, Rolle, letzte Aufgabe, Routenerlaubnis, Werkzeugzertifikat. Ein Gesicht, das das Budget lesen konnte.",
-          "terminal": "BEWEISREGEL: Jeder geborgene Name soll an eine Handlung gebunden sein: Pumpenroute, Küchenledger, Med-Bay-Ruf, Cutterverwahrung, Druckcheck, Fabrikationscharge. Eine Aufgabe macht einen Namen zum Beweis.",
-          "audio": "Ein Name ohne Aufgabe wird zum Schrein. Eine Aufgabe macht ihn zum Beweis.",
-          "in_game_wiki": "Eine Arbeitskarte ist die kleinste Biografie der Kolonie. Sie braucht keine Kindheit, Romanze oder Rede, um zu zählen. Sie braucht Rolle, Erlaubnisstempel, letzte Aufgabe und das, was der Arbeiter nach dem nächsten Ton beenden wollte. Wenn der Spieler diese Karten findet, hören Menschen auf, Hintergrundopfer zu sein, und werden Routenbeweise: Jemand hielt den Pumpenschlüssel, verzögerte eine Luke, kochte für eine Crew, trug einen Cutter aus, zertifizierte eine Dichtung oder verpasste die Rückkehr, weil das System Hilfe warten ließ.",
-          "external_site": "Arbeitskarten der Arbeiter verwandeln Namen in Beweisobjekte: spielbare Hinweise, die die Kolonie menschlich machen, ohne die Survival-Schleife zu stoppen.",
-          "field_note": "Mach Namen nützlich, bevor du sie tragisch machst."
-        },
-        "pl_PL": {
-          "title": "Karty pracy robotników",
-          "scanner": "JOB CARD // Imię, rola, ostatnie zadanie, pozwolenie trasy, certyfikat narzędzia. Twarz, którą budżet potrafił przeczytać.",
-          "terminal": "REGUŁA DOWODU: każde odzyskane imię powinno łączyć się z czymś wykonanym: trasą pompy, ledger kuchni, wezwaniem medycznym, depozytem przecinaka, kontrolą ciśnienia, partią fabrykacji. Zadanie zmienia imię w dowód.",
-          "audio": "Imię bez zadania staje się kapliczką. Zadanie czyni je dowodem.",
-          "in_game_wiki": "Karta pracy to najmniejsza biografia kolonii. Nie potrzebuje dzieciństwa, romansu ani przemowy, żeby mieć wagę. Potrzebuje roli, stempla pozwolenia, ostatniego zadania i rzeczy, którą pracownik spodziewał się skończyć po następnym tonie. Gdy gracz znajduje takie karty, ludzie przestają być tłem strat i stają się dowodami trasy: ktoś trzymał klucz pompy, opóźnił właz, gotował dla brygady, wypisał przecinak, certyfikował uszczelkę albo nie wrócił, bo system kazał pomocy czekać.",
-          "external_site": "Karty pracy robotników zmieniają imiona w obiekty dowodowe: grywalne tropy, które uczłowieczają kolonię bez zatrzymywania pętli survivalu.",
-          "field_note": "Uczyń imiona użytecznymi, zanim uczynisz je tragicznymi."
-        },
-        "uk_UA": {
-          "title": "Робочі job cards",
-          "scanner": "JOB CARD // Ім'я, роль, остання задача, маршрутний дозвіл, сертифікат інструмента. Обличчя, яке бюджет міг прочитати.",
-          "terminal": "ПРАВИЛО ДОКАЗУ: кожне знайдене ім'я має прив'язуватися до зробленої справи: маршрут насоса, кухонний ledger, виклик медблоку, зберігання різака, перевірка тиску, партія фабрикації. Задача перетворює ім'я на доказ.",
-          "audio": "Ім'я без задачі стає святинею. Задача робить його доказом.",
-          "in_game_wiki": "Job card - найменша біографія колонії. Їй не потрібні дитинство, роман чи промова, щоб мати вагу. Потрібні роль, штамп допуску, остання задача й те, що працівник збирався закінчити після наступного сигналу. Коли гравець знаходить такі картки, люди перестають бути фоновими втратами й стають маршрутними доказами: хтось тримав ключ насоса, затримав люк, готував для бригади, підписав видачу різака, сертифікував ущільнення або не повернувся, бо система змусила допомогу чекати.",
-          "external_site": "Робочі job cards перетворюють імена на об'єкти доказу: ігрові зачіпки, які людянять колонію, не зупиняючи survival loop.",
-          "field_note": "Спершу зроби імена корисними. Потім трагічними."
-        },
-        "ar_SA": {
-          "title": "بطاقات عمل العمال",
-          "scanner": "JOB CARD // اسم، دور، آخر مهمة، إذن مسار، شهادة أداة. وجه يستطيع الميزان قراءته.",
-          "terminal": "قاعدة دليل: يجب أن يرتبط كل اسم مستعاد بشيء تم عمله: مسار مضخة، ledger مطبخ، نداء طبي، عهدة cutter، فحص ضغط، دفعة تصنيع. المهمة تحول الاسم إلى دليل.",
-          "audio": "اسم بلا مهمة يصبح مزارا. المهمة تجعله دليلا.",
-          "in_game_wiki": "بطاقة العمل هي أصغر سيرة في المستعمرة. لا تحتاج إلى طفولة أو قصة حب أو خطاب كي تهم. تحتاج إلى دور، ختم إذن، آخر مهمة، والشيء الذي توقع العامل إنهاءه بعد النغمة التالية. عندما يجد اللاعب هذه البطاقات، يكف الناس عن كونهم ضحايا خلفية ويصيرون أدلة مسار: شخص حمل مفتاح المضخة، أخر hatch، طبخ لطاقم، وقع لأخذ cutter، اعتمد ختما، أو فقد العودة لأن النظام جعل النجدة تنتظر.",
-          "external_site": "بطاقات عمل العمال تحول الأسماء إلى أجسام دليل: خيوط قابلة للعب تجعل المستعمرة بشرية من دون إيقاف حلقة البقاء.",
-          "field_note": "اجعل الأسماء مفيدة قبل أن تجعلها مأساوية."
-        },
-        "id_ID": {
-          "title": "Kartu Kerja Pekerja",
-          "scanner": "JOB CARD // Nama, peran, tugas terakhir, izin rute, sertifikasi alat. Wajah yang bisa dibaca anggaran.",
-          "terminal": "ATURAN BUKTI: tiap nama yang ditemukan harus melekat pada sesuatu yang dikerjakan: rute pompa, ledger dapur, panggilan med bay, kustodi cutter, cek tekanan, batch fabrikasi. Tugas mengubah nama menjadi bukti.",
-          "audio": "Nama tanpa tugas menjadi tempat suci. Tugas membuatnya bukti.",
-          "in_game_wiki": "Kartu kerja adalah biografi terkecil koloni. Ia tidak butuh masa kecil, romansa, atau pidato untuk berarti. Ia butuh peran, cap izin, tugas terakhir, dan hal yang pekerja kira akan selesai setelah nada berikutnya. Saat pemain menemukan kartu ini, orang berhenti menjadi korban latar dan menjadi bukti rute: seseorang memegang kunci pompa, menunda hatch, memasak untuk kru, menandatangani cutter, mensertifikasi segel, atau gagal kembali karena sistem membuat bantuan menunggu.",
-          "external_site": "Kartu Kerja Pekerja mengubah nama menjadi objek bukti: petunjuk yang bisa dimainkan dan memanusiakan koloni tanpa menghentikan survival loop.",
-          "field_note": "Buat nama berguna sebelum membuatnya tragis."
-        },
-        "ko_KR": {
-          "title": "노동자 작업 카드",
-          "scanner": "JOB CARD // 이름, 역할, 마지막 작업, 경로 허가, 도구 인증. 예산이 읽을 수 있는 얼굴.",
-          "terminal": "증거 규칙: 회수된 모든 이름은 수행된 무언가와 붙어야 한다. 펌프 경로, 주방 ledger, 의무실 호출, cutter 보관, 압력 점검, 제작 배치. 작업이 이름을 증거로 만든다.",
-          "audio": "작업 없는 이름은 성지가 된다. 작업은 그것을 증거로 만든다.",
-          "in_game_wiki": "작업 카드는 식민지의 가장 작은 전기다. 의미를 갖기 위해 어린 시절, 연애, 연설이 필요하지 않다. 역할, 허가 도장, 마지막 작업, 그리고 다음 음 뒤에 끝낼 거라고 믿은 일이 필요하다. 플레이어가 이 카드를 찾으면 사람들은 배경 희생자가 아니라 경로 증거가 된다. 누군가는 펌프 키를 들고, 해치를 지연시키고, 승무원을 위해 요리하고, cutter를 반출하고, 씰을 인증하고, 시스템이 도움을 기다리게 해서 돌아오지 못했다.",
-          "external_site": "노동자 작업 카드는 이름을 증거 오브젝트로 바꾼다. survival loop를 멈추지 않고 식민지를 인간적으로 만드는 플레이 가능한 단서다.",
-          "field_note": "이름을 비극으로 만들기 전에 쓸모 있게 만들어라."
-        },
-        "he_IL": {
-          "title": "כרטיסי עבודה של עובדים",
-          "scanner": "JOB CARD // שם, תפקיד, משימה אחרונה, הרשאת מסלול, אישור כלי. פנים שהתקציב יכול לקרוא.",
-          "terminal": "כלל ראיה: כל שם שנמצא צריך להיצמד לדבר שנעשה: מסלול משאבה, ledger מטבח, קריאת מד-ביי, משמורת cutter, בדיקת לחץ, אצוות ייצור. משימה הופכת שם לראיה.",
-          "audio": "שם בלי משימה הופך למקדש. משימה עושה ממנו ראיה.",
-          "in_game_wiki": "כרטיס עבודה הוא הביוגרפיה הקטנה ביותר של המושבה. הוא לא צריך ילדות, רומן או נאום כדי להיות חשוב. הוא צריך תפקיד, חותמת הרשאה, משימה אחרונה ואת הדבר שהעובד ציפה לסיים אחרי הצליל הבא. כשהשחקן מוצא את הכרטיסים האלה, אנשים מפסיקים להיות נפגעי רקע והופכים לראיות מסלול: מישהו החזיק מפתח משאבה, עיכב hatch, בישל לצוות, חתם על cutter, אישר אטם או החמיץ חזרה כי המערכת גרמה לעזרה לחכות.",
-          "external_site": "כרטיסי עבודה של עובדים הופכים שמות לאובייקטי ראיה: רמזים משחקיים שמאנישים את המושבה בלי לעצור את לולאת ההישרדות.",
-          "field_note": "הפוך שמות לשימושיים לפני שאתה הופך אותם לטרגיים."
-        },
-        "pt_BR": {
-          "title": "Cartões de trabalho dos operários",
-          "scanner": "JOB CARD // Nome, função, última tarefa, permissão de rota, certificação de ferramenta. Um rosto que o orçamento conseguia ler.",
-          "terminal": "REGRA DE EVIDÊNCIA: cada nome recuperado deve se ligar a algo feito: rota de bomba, ledger da cozinha, chamada médica, custódia de cutter, checagem de pressão, lote de fabricação. Uma tarefa transforma nome em prova.",
-          "audio": "Um nome sem tarefa vira santuário. Uma tarefa o torna evidência.",
-          "in_game_wiki": "Um cartão de trabalho é a menor biografia da colônia. Não precisa de infância, romance ou discurso para importar. Precisa de função, carimbo de permissão, última tarefa e aquilo que o trabalhador esperava terminar depois do próximo tom. Quando o jogador encontra esses cartões, pessoas deixam de ser baixas de fundo e viram evidência de rota: alguém segurou a chave da bomba, atrasou uma escotilha, cozinhou para a equipe, assinou um cutter, certificou um selo ou perdeu o retorno porque o sistema fez a ajuda esperar.",
-          "external_site": "Cartões de trabalho dos operários transformam nomes em objetos de evidência: pistas jogáveis que humanizam a colônia sem parar o survival loop.",
-          "field_note": "Torne nomes úteis antes de torná-los trágicos."
-        },
-        "nl_NL": {
-          "title": "Werkkaarten van arbeiders",
-          "scanner": "JOB CARD // Naam, rol, laatste taak, routetoestemming, gereedschapscertificaat. Een gezicht dat het budget kon lezen.",
-          "terminal": "BEWIJSREGEL: elke teruggevonden naam moet vastzitten aan iets dat gedaan werd: pomproute, keukenledger, medbay-oproep, cutterbewaring, drukcontrole, fabricagebatch. Een taak maakt van een naam bewijs.",
-          "audio": "Een naam zonder taak wordt een altaar. Een taak maakt er bewijs van.",
-          "in_game_wiki": "Een werkkaart is de kleinste biografie van de kolonie. Ze heeft geen jeugd, romance of toespraak nodig om te tellen. Ze heeft een rol nodig, een toestemmingsstempel, een laatste taak en datgene wat de werker na de volgende toon dacht af te maken. Wanneer de speler deze kaarten vindt, zijn mensen geen achtergrondslachtoffers meer maar routebewijs: iemand hield de pompsleutel, vertraagde een luik, kookte voor een ploeg, tekende een cutter uit, certificeerde een afdichting of miste de terugkeer omdat het systeem hulp liet wachten.",
-          "external_site": "Werkkaarten van arbeiders veranderen namen in bewijsobjecten: speelbare aanwijzingen die de kolonie menselijk maken zonder de survival loop te stoppen.",
-          "field_note": "Maak namen nuttig voordat je ze tragisch maakt."
-        }
-      },
-      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    "ru_RU": {
+     "title": "Сменные бригады, не герои",
+     "scanner": "ЧЕЛОВЕЧЕСКИЙ СЛОЙ // Колония становится настоящей через графики, стертые инструменты, пропущенные возвраты и имена на досках смен. Не через речи.",
+     "terminal": "ПРАВИЛО ПИСЬМА: записывать рабочих как техников насосов, медиков, маршрутных клерков, водолазов, поваров, операторов фабрикатора и усталых старших смен. Роспись с одним пропущенным возвратом ранит сильнее памятника.",
+     "audio": "Они не были символами. Они опаздывали на смену.",
+     "in_game_wiki": "HECTON-8 должен очеловечивать колонию через работу раньше, чем через трагедию. Техник давления меняет прокладку клапана, повар считает водные жетоны, маршрутный клерк ставит не тот штамп возврата, водолаз берет резак и уже не возвращает его в журнал: такие детали делают людей читаемыми без обязательной семейной мести. Утонувшая колония сильнее всего, когда кажется местом, прерванным посреди рутины, а не музеем, построенным после смерти.",
+     "external_site": "Сменные бригады, не герои - правило человеческого письма для HECTON-8: рабочие запоминаются через работу, усталость, привычки и процедурные сбои.",
+     "field_note": "Люди правдоподобнее как работники, чем как памятные статуи."
     },
-    {
-      "packet_id": "P158_LOCKER_NAME_PROTOCOL",
-      "article_id": "colony_human.locker_name_protocol",
-      "title_key": "applied_lore.locker_name_protocol.title",
-      "unlock": {
-        "primary": "unlock.locker_name_protocol",
-        "poi_tags": [
-          "poi.locker_name_strip",
-          "poi.marauder_preserved_label",
-          "poi.deep_reach_removed_payroll"
-        ],
-        "biome_tags": [
-          "biome.shallow_annex",
-          "biome.industrial_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Locker Name Protocol",
-          "scanner": "LOCKER TRACE // Name plate, tool wear, pressure tape, correction note, route sticker. Personal evidence without a family plot.",
-          "terminal": "LOCKER RULE: preserve names Deep Reach removed from payroll. A locker should bind badge, role, route permission, repair habit, and the unfinished thing left inside.",
-          "audio": "The company deleted the employee. The rust kept the label.",
-          "in_game_wiki": "A locker is personal because it was used, not because it explains a whole life. The best locker evidence is practical: a badge rubbed bright at one edge, tape over a cracked seal, a route sticker, a correction note in a worker's shorthand, a name plate that payroll later erased. These objects let the Marauder restore people through use marks and unfinished tasks. The colony does not need melodrama to feel human. It needs enough small traces that corporate cleanup failed to scrape away.",
-          "external_site": "Locker Name Protocol makes personal evidence playable: names survive through objects, wear, route permission, and Marauder annotation.",
-          "field_note": "The smallest human trace should survive corporate cleanup."
-        },
-        "ru_RU": {
-          "title": "Протокол именных шкафчиков",
-          "scanner": "СЛЕД ШКАФЧИКА // Табличка имени, износ инструмента, pressure tape, правка, маршрутная наклейка. Личная улика без семейной мелодрамы.",
-          "terminal": "ПРАВИЛО ШКАФЧИКА: сохранять имена, которые Deep Reach убрал из payroll. Шкафчик должен связывать бейдж, роль, маршрутный допуск, привычку ремонта и незавершенную вещь внутри.",
-          "audio": "Компания удалила сотрудника. Ржавчина сохранила ярлык.",
-          "in_game_wiki": "Шкафчик личный потому, что им пользовались, а не потому, что он объясняет всю жизнь. Лучшая улика шкафчика практична: бейдж, стертый по одному краю, лента на треснувшем уплотнении, маршрутная наклейка, правка рабочей скорописью, табличка имени, которую payroll позже стер. Эти предметы позволяют Marauder возвращать людей через следы использования и незаконченные задачи. Колонии не нужна мелодрама, чтобы быть человеческой. Ей нужны маленькие следы, которые корпоративная зачистка не смогла соскоблить.",
-          "external_site": "Протокол именных шкафчиков делает личные улики игровыми: имена выживают через предметы, износ, маршрутный допуск и пометки Marauder.",
-          "field_note": "Самый маленький человеческий след должен пережить корпоративную зачистку."
-        },
-        "ja_JP": {
-          "title": "ロッカー名プロトコル",
-          "scanner": "LOCKER TRACE // 名札、工具摩耗、pressure tape、修正メモ、経路ステッカー。家族劇なしの個人的証拠。",
-          "terminal": "ロッカー規則: Deep Reachがpayrollから消した名前を保存する。ロッカーはバッジ、役割、経路許可、修理癖、中に残った未完の物を結ぶべきだ。",
-          "audio": "会社は従業員を消した。錆はラベルを残した。",
-          "in_game_wiki": "ロッカーが個人的なのは、人生を丸ごと説明するからではなく、使われていたからだ。最良の証拠は実用的だ。片側だけ光ったバッジ、割れたシールの上のテープ、経路ステッカー、作業員の略記で書かれた修正メモ、後にpayrollが消した名札。Marauderは使用痕と未完の作業から人を取り戻す。コロニーに人間味を持たせるのにメロドラマはいらない。企業清掃が削り切れなかった小さな痕跡が必要だ。",
-          "external_site": "ロッカー名プロトコルは個人的証拠をプレイ可能にする。名前は物、摩耗、経路許可、Marauder注釈で残る。",
-          "field_note": "最小の人間の痕跡こそ企業清掃を生き残るべきだ。"
-        },
-        "zh_CN": {
-          "title": "储物柜姓名协议",
-          "scanner": "储物柜痕迹 // 姓名牌、工具磨损、pressure tape、修正便条、路线贴纸。没有家庭剧情的个人证据。",
-          "terminal": "储物柜规则：保存 Deep Reach 从 payroll 中移除的名字。储物柜应绑定徽章、角色、路线许可、维修习惯和留在里面的未完成之物。",
-          "audio": "公司删除了员工。锈迹留下了标签。",
-          "in_game_wiki": "储物柜之所以个人化，是因为有人使用过它，而不是因为它解释了一整个人生。最好的储物柜证据很实用：一侧被磨亮的徽章、裂开的密封上贴的胶带、路线贴纸、工人速记写下的修正便条、后来被 payroll 抹掉的姓名牌。Marauder 通过使用痕迹和未完成任务把人找回来。殖民地不需要煽情才像人住过。它需要企业清理没能刮掉的小痕迹。",
-          "external_site": "储物柜姓名协议让个人证据可玩：姓名通过物件、磨损、路线许可和 Marauder 注释存活。",
-          "field_note": "最小的人类痕迹也应该熬过企业清理。"
-        },
-        "fr_FR": {
-          "title": "Protocole de nom de casier",
-          "scanner": "TRACE CASIER // Plaque de nom, usure d'outil, pressure tape, note de correction, sticker de route. Preuve personnelle sans drame familial.",
-          "terminal": "RÈGLE CASIER : préserver les noms que Deep Reach a retirés du payroll. Un casier doit lier badge, rôle, permission de route, habitude de réparation et chose inachevée laissée dedans.",
-          "audio": "La compagnie a supprimé l'employé. La rouille a gardé l'étiquette.",
-          "in_game_wiki": "Un casier est personnel parce qu'il a servi, pas parce qu'il explique toute une vie. La meilleure preuve est pratique : badge poli sur un bord, ruban sur un joint fendu, sticker de route, note de correction en sténographie ouvrière, plaque de nom plus tard effacée du payroll. Ces objets permettent au Marauder de rendre les gens par marques d'usage et tâches inachevées. La colonie n'a pas besoin de mélodrame pour être humaine. Elle a besoin de petites traces que le nettoyage corpo n'a pas grattées.",
-          "external_site": "Le protocole de nom de casier rend la preuve personnelle jouable : les noms survivent par objets, usure, permission de route et annotation Marauder.",
-          "field_note": "La plus petite trace humaine doit survivre au nettoyage corpo."
-        },
-        "es_ES": {
-          "title": "Protocolo de nombre en casillero",
-          "scanner": "RASTRO DE CASILLERO // Placa de nombre, desgaste de herramienta, pressure tape, nota de corrección, etiqueta de ruta. Evidencia personal sin trama familiar.",
-          "terminal": "REGLA DE CASILLERO: preservar nombres que Deep Reach retiró de payroll. Un casillero debe unir placa, rol, permiso de ruta, hábito de reparación y lo inconcluso que quedó dentro.",
-          "audio": "La compañía borró al empleado. El óxido conservó la etiqueta.",
-          "in_game_wiki": "Un casillero es personal porque se usó, no porque explique una vida entera. La mejor evidencia es práctica: una placa gastada en un borde, cinta sobre un sello agrietado, etiqueta de ruta, nota de corrección en taquigrafía obrera, nombre que payroll borró después. Esos objetos permiten al Marauder restaurar personas por marcas de uso y tareas inconclusas. La colonia no necesita melodrama para sentirse humana. Necesita rastros pequeños que la limpieza corporativa no logró raspar.",
-          "external_site": "El Protocolo de nombre en casillero vuelve jugable la evidencia personal: los nombres sobreviven en objetos, desgaste, permiso de ruta y anotación Marauder.",
-          "field_note": "El rastro humano más pequeño debe sobrevivir a la limpieza corporativa."
-        },
-        "de_DE": {
-          "title": "Locker-Namenprotokoll",
-          "scanner": "LOCKERSPUR // Namensplatte, Werkzeugverschleiß, pressure tape, Korrekturzettel, Routensticker. Persönlicher Beweis ohne Familienplot.",
-          "terminal": "LOCKERREGEL: Namen bewahren, die Deep Reach aus payroll entfernte. Ein Locker soll Badge, Rolle, Routenerlaubnis, Reparaturgewohnheit und das Unfertige darin verbinden.",
-          "audio": "Die Firma löschte den Angestellten. Der Rost behielt das Etikett.",
-          "in_game_wiki": "Ein Locker ist persönlich, weil er benutzt wurde, nicht weil er ein ganzes Leben erklärt. Der beste Beweis ist praktisch: ein Badge mit blanker Kante, Band über einer gerissenen Dichtung, Routensticker, Korrektur in Arbeitershorthand, eine Namensplatte, die payroll später löschte. Diese Objekte lassen den Marauder Menschen durch Gebrauchsspuren und unfertige Aufgaben wiederherstellen. Die Kolonie braucht kein Melodrama, um menschlich zu wirken. Sie braucht kleine Spuren, die Konzernreinigung nicht abkratzen konnte.",
-          "external_site": "Locker-Namenprotokoll macht persönlichen Beweis spielbar: Namen überleben durch Objekte, Verschleiß, Routenerlaubnis und Marauder-Annotation.",
-          "field_note": "Die kleinste menschliche Spur soll Konzernreinigung überleben."
-        },
-        "pl_PL": {
-          "title": "Protokół nazw na szafkach",
-          "scanner": "ŚLAD SZAFKI // Tabliczka imienna, zużycie narzędzia, pressure tape, notatka korekty, naklejka trasy. Osobisty dowód bez rodzinnej fabuły.",
-          "terminal": "REGUŁA SZAFKI: zachować imiona, które Deep Reach usunęło z payroll. Szafka ma łączyć plakietkę, rolę, pozwolenie trasy, nawyk naprawy i niedokończoną rzecz w środku.",
-          "audio": "Firma usunęła pracownika. Rdza zachowała etykietę.",
-          "in_game_wiki": "Szafka jest osobista, bo była używana, nie dlatego, że tłumaczy całe życie. Najlepszy dowód jest praktyczny: plakietka starta na krawędzi, taśma na pękniętej uszczelce, naklejka trasy, korekta skrótem pracownika, tabliczka imienna, którą payroll później skasował. Te przedmioty pozwalają Marauderowi przywracać ludzi przez ślady użycia i niedokończone zadania. Kolonia nie potrzebuje melodramatu, by być ludzka. Potrzebuje drobnych śladów, których korporacyjne czyszczenie nie zdrapało.",
-          "external_site": "Protokół nazw na szafkach czyni osobisty dowód grywalnym: imiona trwają przez przedmioty, zużycie, pozwolenie trasy i adnotację Maraudera.",
-          "field_note": "Najmniejszy ludzki ślad powinien przetrwać korporacyjne czyszczenie."
-        },
-        "uk_UA": {
-          "title": "Протокол іменних шафок",
-          "scanner": "СЛІД ШАФКИ // Табличка імені, знос інструмента, pressure tape, правка, маршрутна наліпка. Особистий доказ без сімейної мелодрами.",
-          "terminal": "ПРАВИЛО ШАФКИ: берегти імена, які Deep Reach прибрала з payroll. Шафка має зв'язувати бейдж, роль, маршрутний дозвіл, звичку ремонту й незавершену річ усередині.",
-          "audio": "Компанія видалила працівника. Іржа зберегла ярлик.",
-          "in_game_wiki": "Шафка особиста тому, що нею користувалися, а не тому, що вона пояснює ціле життя. Найкращий доказ практичний: бейдж, стертий з одного краю, стрічка на тріснутому ущільненні, маршрутна наліпка, правка робочим скорописом, табличка імені, яку payroll потім стер. Ці предмети дозволяють Marauder повертати людей через сліди використання й незакінчені задачі. Колонії не потрібна мелодрама, щоб бути людською. Їй потрібні малі сліди, які корпоративне прибирання не змогло зішкребти.",
-          "external_site": "Протокол іменних шафок робить особисті докази ігровими: імена виживають через предмети, знос, маршрутний дозвіл і помітки Marauder.",
-          "field_note": "Найменший людський слід має пережити корпоративне прибирання."
-        },
-        "ar_SA": {
-          "title": "بروتوكول اسم الخزانة",
-          "scanner": "أثر خزانة // لوحة اسم، تآكل أداة، pressure tape، ملاحظة تصحيح، ملصق مسار. دليل شخصي بلا حبكة عائلية.",
-          "terminal": "قاعدة الخزانة: احفظ الأسماء التي أزالتها Deep Reach من payroll. يجب أن تربط الخزانة الشارة، الدور، إذن المسار، عادة الإصلاح والشيء غير المكتمل داخلها.",
-          "audio": "حذفت الشركة الموظف. الصدأ أبقى الملصق.",
-          "in_game_wiki": "الخزانة شخصية لأنها استُخدمت، لا لأنها تشرح حياة كاملة. أفضل دليل عملي: شارة مصقولة من حافة، شريط فوق ختم متشقق، ملصق مسار، ملاحظة تصحيح باختزال عامل، ولوحة اسم محاها payroll لاحقا. هذه الأشياء تسمح لـ Marauder بإعادة الناس عبر آثار الاستخدام والمهام غير المكتملة. لا تحتاج المستعمرة إلى ميلودراما كي تبدو بشرية. تحتاج إلى آثار صغيرة فشل تنظيف الشركة في كشطها.",
-          "external_site": "بروتوكول اسم الخزانة يجعل الدليل الشخصي قابلا للعب: الأسماء تنجو عبر الأشياء والتآكل وإذن المسار وتعليق Marauder.",
-          "field_note": "أصغر أثر بشري يجب أن ينجو من تنظيف الشركة."
-        },
-        "id_ID": {
-          "title": "Protokol Nama Loker",
-          "scanner": "JEJAK LOKER // Pelat nama, aus alat, pressure tape, catatan koreksi, stiker rute. Bukti pribadi tanpa plot keluarga.",
-          "terminal": "ATURAN LOKER: simpan nama yang dihapus Deep Reach dari payroll. Loker harus mengikat badge, peran, izin rute, kebiasaan perbaikan, dan hal belum selesai di dalamnya.",
-          "audio": "Perusahaan menghapus pegawai. Karat menjaga label.",
-          "in_game_wiki": "Loker bersifat pribadi karena dipakai, bukan karena menjelaskan seluruh hidup. Bukti terbaik itu praktis: badge yang mengilap di satu sisi, tape di atas segel retak, stiker rute, catatan koreksi dalam singkatan pekerja, pelat nama yang kemudian dihapus payroll. Benda-benda ini membantu Marauder memulihkan orang lewat bekas pakai dan tugas belum selesai. Koloni tidak perlu melodrama agar terasa manusiawi. Ia butuh jejak kecil yang gagal dikikis pembersihan korporat.",
-          "external_site": "Protokol Nama Loker membuat bukti pribadi bisa dimainkan: nama bertahan lewat benda, aus, izin rute, dan anotasi Marauder.",
-          "field_note": "Jejak manusia terkecil harus selamat dari pembersihan korporat."
-        },
-        "ko_KR": {
-          "title": "사물함 이름 프로토콜",
-          "scanner": "사물함 흔적 // 이름판, 도구 마모, pressure tape, 수정 메모, 경로 스티커. 가족 서사 없는 개인 증거.",
-          "terminal": "사물함 규칙: Deep Reach가 payroll에서 지운 이름을 보존한다. 사물함은 배지, 역할, 경로 허가, 수리 습관, 안에 남은 미완의 것을 묶어야 한다.",
-          "audio": "회사는 직원을 삭제했다. 녹은 라벨을 남겼다.",
-          "in_game_wiki": "사물함은 한 삶 전체를 설명해서가 아니라 사용되었기 때문에 개인적이다. 가장 좋은 증거는 실용적이다. 한쪽이 닳아 반짝이는 배지, 갈라진 씰 위 테이프, 경로 스티커, 노동자식 약어로 쓴 수정 메모, payroll이 나중에 지운 이름판. 이런 물건들은 Marauder가 사용 흔적과 미완 작업으로 사람을 되찾게 한다. 식민지가 인간적으로 느껴지려면 멜로드라마가 필요하지 않다. 기업 청소가 긁어내지 못한 작은 흔적이 필요하다.",
-          "external_site": "사물함 이름 프로토콜은 개인 증거를 플레이 가능하게 한다. 이름은 물건, 마모, 경로 허가, Marauder 주석으로 살아남는다.",
-          "field_note": "가장 작은 인간 흔적도 기업 청소에서 살아남아야 한다."
-        },
-        "he_IL": {
-          "title": "פרוטוקול שם ארונית",
-          "scanner": "עקבת ארונית // לוחית שם, שחיקת כלי, pressure tape, פתק תיקון, מדבקת מסלול. ראיה אישית בלי עלילת משפחה.",
-          "terminal": "כלל ארונית: לשמר שמות ש-Deep Reach הסירה מ-payroll. ארונית צריכה לחבר תג, תפקיד, הרשאת מסלול, הרגל תיקון והדבר הלא גמור שנשאר בפנים.",
-          "audio": "החברה מחקה את העובד. החלודה שמרה את התווית.",
-          "in_game_wiki": "ארונית היא אישית כי השתמשו בה, לא כי היא מסבירה חיים שלמים. הראיה הטובה ביותר מעשית: תג שחוק בקצה אחד, סרט על אטם סדוק, מדבקת מסלול, פתק תיקון בקיצור של עובד, לוחית שם ש-payroll מחק אחר כך. החפצים האלה מאפשרים ל-Marauder להשיב אנשים דרך סימני שימוש ומשימות לא גמורות. המושבה לא צריכה מלודרמה כדי להרגיש אנושית. היא צריכה עקבות קטנים שניקוי תאגידי לא הצליח לגרד.",
-          "external_site": "פרוטוקול שם ארונית הופך ראיה אישית למשחקית: שמות שורדים דרך חפצים, שחיקה, הרשאת מסלול והערת Marauder.",
-          "field_note": "העקבה האנושית הקטנה ביותר צריכה לשרוד ניקוי תאגידי."
-        },
-        "pt_BR": {
-          "title": "Protocolo de nome de armário",
-          "scanner": "RASTRO DE ARMÁRIO // Placa de nome, desgaste de ferramenta, pressure tape, nota de correção, adesivo de rota. Evidência pessoal sem trama familiar.",
-          "terminal": "REGRA DE ARMÁRIO: preservar nomes que a Deep Reach removeu do payroll. Um armário deve ligar crachá, função, permissão de rota, hábito de reparo e a coisa inacabada deixada dentro.",
-          "audio": "A empresa apagou o empregado. A ferrugem guardou a etiqueta.",
-          "in_game_wiki": "Um armário é pessoal porque foi usado, não porque explica uma vida inteira. A melhor evidência é prática: crachá gasto numa borda, fita sobre um selo rachado, adesivo de rota, nota de correção em abreviação de trabalhador, placa de nome que o payroll apagou depois. Esses objetos deixam o Marauder restaurar pessoas por marcas de uso e tarefas inacabadas. A colônia não precisa de melodrama para parecer humana. Precisa de rastros pequenos que a limpeza corporativa não conseguiu raspar.",
-          "external_site": "O Protocolo de nome de armário torna evidência pessoal jogável: nomes sobrevivem por objetos, desgaste, permissão de rota e anotação Marauder.",
-          "field_note": "O menor rastro humano deve sobreviver à limpeza corporativa."
-        },
-        "nl_NL": {
-          "title": "Locker-naamprotocol",
-          "scanner": "LOCKERSPOOR // Naamplaat, gereedschapsslijtage, pressure tape, correctienotitie, routesticker. Persoonlijk bewijs zonder familieplot.",
-          "terminal": "LOCKERREGEL: bewaar namen die Deep Reach uit payroll verwijderde. Een locker moet badge, rol, routetoestemming, reparatiegewoonte en het onafgemaakte ding binnenin verbinden.",
-          "audio": "Het bedrijf verwijderde de werknemer. De roest behield het label.",
-          "in_game_wiki": "Een locker is persoonlijk omdat hij gebruikt werd, niet omdat hij een heel leven uitlegt. Het beste bewijs is praktisch: een badge met één gladde rand, tape over een gebarsten afdichting, routesticker, correctienotitie in werkerskortschrift, naamplaat die payroll later wiste. Deze objecten laten de Marauder mensen herstellen via gebruikssporen en onafgemaakte taken. De kolonie heeft geen melodrama nodig om menselijk te voelen. Ze heeft kleine sporen nodig die bedrijfsopruiming niet wegschraapte.",
-          "external_site": "Locker-naamprotocol maakt persoonlijk bewijs speelbaar: namen overleven via objecten, slijtage, routetoestemming en Marauder-annotatie.",
-          "field_note": "Het kleinste menselijke spoor moet bedrijfsopruiming overleven."
-        }
-      },
-      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    "ja_JP": {
+     "title": "英雄ではなく交代班",
+     "scanner": "人間層 // コロニーは勤務表、使い込まれた工具、戻らない帰還、当番板の名前で本物になる。演説ではない。",
+     "terminal": "記述規則: 作業員をポンプ技師、衛生兵、経路係、潜水員、調理員、ファブリケータ操作員、疲れた班長として記録する。ひとつの未帰還がある勤務表は、記念碑より痛い。",
+     "audio": "彼らは象徴ではなかった。交代に遅れていただけだ。",
+     "in_game_wiki": "HECTON-8は悲劇より先に仕事でコロニーを人間にするべきだ。圧力技師が弁のガスケットを替える。調理員が水トークンを数える。経路係が間違った帰還印を押す。潜水員がカッターを持ち出し、返却欄に戻らない。そうした細部は、家族復讐の筋を押し付けなくても人を読めるようにする。沈んだコロニーは、死後に建てられた博物館ではなく、日常の途中で途切れた場所に見えるとき最も強い。",
+     "external_site": "英雄ではなく交代班はHECTON-8の人間描写規則だ。作業員は仕事、疲労、癖、手続きの失敗で記憶に残る。",
+     "field_note": "人は記念像より、働いていた人間としてのほうが信じられる。"
     },
-    {
-      "packet_id": "P159_MEDICAL_TRIAGE_LEDGER",
-      "article_id": "colony_human.medical_triage_ledger",
-      "title_key": "applied_lore.medical_triage_ledger.title",
-      "unlock": {
-        "primary": "unlock.medical_triage_ledger",
-        "poi_tags": [
-          "poi.medical_triage_ledger",
-          "poi.pressure_injury_tag",
-          "poi.delayed_extraction_note"
-        ],
-        "biome_tags": [
-          "biome.industrial_shelf",
-          "biome.brine_canyon"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Medical Triage Ledger",
-          "scanner": "TRIAGE LEDGER // Pressure injury, hypoxia, lock delay, missing route, certification hold. The horror is how neatly help waited.",
-          "terminal": "MEDICAL RULE: count bodies without gore. Use pressure-state, oxygen debt, route delay, triage priority, and signoff hold to show how procedure made patients faster than medics could treat them.",
-          "audio": "The cleanest handwriting is on the worst page.",
-          "in_game_wiki": "The medical ledger should not turn HECTON-8 into spectacle gore. Its power is colder. A patient becomes a pressure-state, then an oxygen debt, then a lock delay, then a certification hold. Medics can know the right treatment and still lose the patient because a hatch, route clock, or Deep Reach signoff makes help arrive late. The ledger is human because it shows people trying to be precise while the system makes precision useless.",
-          "external_site": "Medical Triage Ledger turns delayed evacuation into human evidence: clean categories, waiting help, and workers counted before they are mourned.",
-          "field_note": "Medical text should count bodies without becoming gore."
-        },
-        "ru_RU": {
-          "title": "Медицинский triage ledger",
-          "scanner": "TRIAGE LEDGER // Травма давления, гипоксия, задержка шлюза, пропавший маршрут, hold сертификации. Ужас в том, как аккуратно помощь ждала.",
-          "terminal": "МЕДИЦИНСКОЕ ПРАВИЛО: считать тела без gore. Использовать pressure-state, кислородный долг, задержку маршрута, приоритет triage и signoff hold, чтобы показать, как процедура делала пациентов быстрее, чем медики могли лечить.",
-          "audio": "Самый чистый почерк стоит на худшей странице.",
-          "in_game_wiki": "Медицинский ledger не должен превращать HECTON-8 в зрелищный gore. Его сила холоднее. Пациент становится pressure-state, затем кислородным долгом, затем задержкой шлюза, затем hold сертификации. Медики могут знать правильное лечение и всё равно терять пациента, потому что люк, маршрутные часы или signoff Deep Reach задерживают помощь. Ledger человеческий потому, что показывает людей, пытающихся быть точными, пока система делает точность бесполезной.",
-          "external_site": "Медицинский triage ledger превращает задержанную эвакуацию в человеческую улику: чистые категории, ожидающая помощь и рабочие, подсчитанные раньше, чем оплаканные.",
-          "field_note": "Медицинский текст должен считать тела, не становясь gore."
-        },
-        "ja_JP": {
-          "title": "医療トリアージ台帳",
-          "scanner": "TRIAGE LEDGER // 圧力傷害、低酸素、ロック遅延、消えた経路、認証保留。恐怖は、助けが整然と待たされたことだ。",
-          "terminal": "医療規則: ゴアにせず身体を数える。pressure-state、酸素負債、経路遅延、トリアージ優先度、signoff holdで、手順が医療者より速く患者を増やしたことを示す。",
-          "audio": "最もきれいな筆跡は、最悪のページにある。",
-          "in_game_wiki": "医療台帳はHECTON-8を見世物のゴアにしてはいけない。力はもっと冷たい。患者はpressure-stateになり、酸素負債になり、ロック遅延になり、認証保留になる。医療者は正しい処置を知っていても、ハッチ、経路時計、Deep Reachのsignoffが助けを遅らせるため患者を失う。台帳が人間的なのは、システムが正確さを無意味にしていく中で、人々が正確であろうとする姿を示すからだ。",
-          "external_site": "医療トリアージ台帳は遅れた避難を人間の証拠にする。清潔な分類、待たされる助け、悼まれる前に数えられる作業員。",
-          "field_note": "医療文はゴアにならずに身体を数えるべきだ。"
-        },
-        "zh_CN": {
-          "title": "医疗 triage ledger",
-          "scanner": "TRIAGE LEDGER // 压力伤、缺氧、舱锁延迟、路线缺失、认证 hold。恐怖在于救援等待得多么整齐。",
-          "terminal": "医疗规则：计数身体，但不要写成 gore。用 pressure-state、氧债、路线延迟、triage 优先级和 signoff hold 表现程序如何比医护更快制造病人。",
-          "audio": "最干净的字迹写在最糟的一页。",
-          "in_game_wiki": "医疗 ledger 不应把 HECTON-8 变成猎奇 gore。它的力量更冷。病人先变成 pressure-state，再变成氧债，再变成舱锁延迟，再变成认证 hold。医护可以知道正确治疗，却仍然失去病人，因为舱门、路线钟或 Deep Reach signoff 让帮助迟到。这个 ledger 之所以有人味，是因为它展示人在系统让精确变得无用时仍试图精确。",
-          "external_site": "医疗 triage ledger 把延迟撤离变成人类证据：干净类别、等待中的救援，以及被哀悼前先被计数的工人。",
-          "field_note": "医疗文本应该计数身体，而不是变成 gore."
-        },
-        "fr_FR": {
-          "title": "Ledger de triage médical",
-          "scanner": "TRIAGE LEDGER // Blessure pression, hypoxie, délai de sas, route manquante, hold de certification. L'horreur est l'ordre avec lequel l'aide attend.",
-          "terminal": "RÈGLE MÉDICALE : compter les corps sans gore. Utiliser pressure-state, dette oxygène, délai de route, priorité triage et signoff hold pour montrer comment la procédure fabrique des patients plus vite que les médecins ne traitent.",
-          "audio": "L'écriture la plus propre est sur la pire page.",
-          "in_game_wiki": "Le ledger médical ne doit pas transformer HECTON-8 en gore de spectacle. Sa force est plus froide. Un patient devient pressure-state, puis dette d'oxygène, puis délai de sas, puis hold de certification. Les médecins peuvent connaître le bon traitement et perdre quand même le patient parce qu'une écoutille, une horloge de route ou un signoff Deep Reach fait arriver l'aide trop tard. Le ledger est humain parce qu'il montre des gens cherchant la précision pendant que le système la rend inutile.",
-          "external_site": "Le Ledger de triage médical transforme l'évacuation retardée en preuve humaine : catégories propres, aide en attente et ouvriers comptés avant d'être pleurés.",
-          "field_note": "Le texte médical doit compter les corps sans devenir gore."
-        },
-        "es_ES": {
-          "title": "Ledger de triaje médico",
-          "scanner": "TRIAGE LEDGER // Lesión por presión, hipoxia, demora de esclusa, ruta perdida, hold de certificación. El horror es lo limpiamente que esperó la ayuda.",
-          "terminal": "REGLA MÉDICA: contar cuerpos sin gore. Usar pressure-state, deuda de oxígeno, demora de ruta, prioridad de triage y signoff hold para mostrar cómo el procedimiento hizo pacientes más rápido que los médicos podían tratarlos.",
-          "audio": "La letra más limpia está en la peor página.",
-          "in_game_wiki": "El ledger médico no debe convertir HECTON-8 en gore de espectáculo. Su fuerza es más fría. Un paciente se vuelve pressure-state, luego deuda de oxígeno, luego demora de esclusa, luego hold de certificación. Los médicos pueden saber el tratamiento correcto y aun así perder al paciente porque una escotilla, reloj de ruta o signoff de Deep Reach retrasa la ayuda. El ledger es humano porque muestra gente intentando ser precisa mientras el sistema vuelve inútil la precisión.",
-          "external_site": "El Ledger de triaje médico convierte la evacuación demorada en evidencia humana: categorías limpias, ayuda en espera y trabajadores contados antes de ser llorados.",
-          "field_note": "El texto médico debe contar cuerpos sin volverse gore."
-        },
-        "de_DE": {
-          "title": "Medizinisches Triage-Ledger",
-          "scanner": "TRIAGE LEDGER // Druckverletzung, Hypoxie, Schleusenverzug, fehlende Route, Zertifizierungshold. Der Schrecken ist, wie ordentlich Hilfe wartete.",
-          "terminal": "MEDIZINREGEL: Körper zählen ohne Gore. pressure-state, Sauerstoffschuld, Routenverzug, Triagepriorität und signoff hold zeigen, wie Verfahren Patienten schneller erzeugten, als Medics behandeln konnten.",
-          "audio": "Die sauberste Handschrift steht auf der schlimmsten Seite.",
-          "in_game_wiki": "Das medizinische Ledger soll HECTON-8 nicht zu Schau-Gore machen. Seine Kraft ist kälter. Ein Patient wird pressure-state, dann Sauerstoffschuld, dann Schleusenverzug, dann Zertifizierungshold. Medics können die richtige Behandlung kennen und trotzdem verlieren, weil Luke, Routenuhr oder Deep-Reach-signoff Hilfe verspätet. Das Ledger ist menschlich, weil es Menschen zeigt, die präzise sein wollen, während das System Präzision nutzlos macht.",
-          "external_site": "Das Medizinische Triage-Ledger macht verzögerte Evakuierung zu menschlichem Beweis: saubere Kategorien, wartende Hilfe, gezählte Arbeiter vor der Trauer.",
-          "field_note": "Medizinischer Text soll Körper zählen, ohne Gore zu werden."
-        },
-        "pl_PL": {
-          "title": "Medyczny ledger triage",
-          "scanner": "TRIAGE LEDGER // Uraz ciśnieniowy, hipoksja, opóźnienie śluzy, brak trasy, hold certyfikacji. Groza tkwi w tym, jak schludnie pomoc czekała.",
-          "terminal": "REGUŁA MEDYCZNA: liczyć ciała bez gore. Używaj pressure-state, długu tlenu, opóźnienia trasy, priorytetu triage i signoff hold, by pokazać, jak procedura tworzyła pacjentów szybciej, niż medycy leczyli.",
-          "audio": "Najczystsze pismo jest na najgorszej stronie.",
-          "in_game_wiki": "Medyczny ledger nie powinien robić z HECTON-8 widowiskowego gore. Jego siła jest chłodniejsza. Pacjent staje się pressure-state, potem długiem tlenu, opóźnieniem śluzy, holdem certyfikacji. Medycy mogą znać właściwe leczenie i nadal stracić pacjenta, bo właz, zegar trasy albo signoff Deep Reach opóźnia pomoc. Ledger jest ludzki, bo pokazuje ludzi próbujących być precyzyjnymi, gdy system czyni precyzję bezużyteczną.",
-          "external_site": "Medyczny ledger triage zmienia opóźnioną ewakuację w ludzki dowód: czyste kategorie, czekającą pomoc i pracowników policzonych przed żałobą.",
-          "field_note": "Tekst medyczny powinien liczyć ciała, nie stawać się gore."
-        },
-        "uk_UA": {
-          "title": "Медичний triage ledger",
-          "scanner": "TRIAGE LEDGER // Травма тиску, гіпоксія, затримка шлюзу, зниклий маршрут, hold сертифікації. Жах у тому, як акуратно допомога чекала.",
-          "terminal": "МЕДИЧНЕ ПРАВИЛО: рахувати тіла без gore. Використовувати pressure-state, кисневий борг, затримку маршруту, пріоритет triage і signoff hold, щоб показати, як процедура робила пацієнтів швидше, ніж медики лікували.",
-          "audio": "Найчистіший почерк стоїть на найгіршій сторінці.",
-          "in_game_wiki": "Медичний ledger не має перетворювати HECTON-8 на видовищний gore. Його сила холодніша. Пацієнт стає pressure-state, потім кисневим боргом, потім затримкою шлюзу, потім hold сертифікації. Медики можуть знати правильне лікування й усе одно втратити пацієнта, бо люк, маршрутний годинник або signoff Deep Reach затримує допомогу. Ledger людський тому, що показує людей, які намагаються бути точними, поки система робить точність марною.",
-          "external_site": "Медичний triage ledger перетворює затриману евакуацію на людський доказ: чисті категорії, допомогу в очікуванні й працівників, порахованих раніше, ніж оплаканих.",
-          "field_note": "Медичний текст має рахувати тіла, не стаючи gore."
-        },
-        "ar_SA": {
-          "title": "دفتر الفرز الطبي",
-          "scanner": "TRIAGE LEDGER // إصابة ضغط، نقص أكسجين، تأخير قفل، مسار مفقود، hold اعتماد. الرعب في دقة انتظار المساعدة.",
-          "terminal": "قاعدة طبية: احسب الأجساد بلا gore. استخدم pressure-state، دين الأكسجين، تأخير المسار، أولوية triage وsignoff hold لإظهار كيف جعل الإجراء المرضى أسرع من قدرة الأطباء.",
-          "audio": "أنظف خط يد على أسوأ صفحة.",
-          "in_game_wiki": "لا يجب أن يحول الدفتر الطبي HECTON-8 إلى gore استعراضي. قوته أبرد. يصير المريض pressure-state، ثم دين أكسجين، ثم تأخير قفل، ثم hold اعتماد. قد يعرف المسعفون العلاج الصحيح ويخسرون المريض لأن hatch أو ساعة مسار أو signoff من Deep Reach جعل المساعدة تصل متأخرة. الدفتر بشري لأنه يعرض أناسا يحاولون الدقة بينما يجعل النظام الدقة بلا فائدة.",
-          "external_site": "دفتر الفرز الطبي يحول الإخلاء المتأخر إلى دليل بشري: فئات نظيفة، مساعدة تنتظر، وعمال عُدوا قبل أن يُرثوا.",
-          "field_note": "يجب أن يحسب النص الطبي الأجساد من دون أن يصبح gore."
-        },
-        "id_ID": {
-          "title": "Ledger Triage Medis",
-          "scanner": "TRIAGE LEDGER // Cedera tekanan, hipoksia, delay lock, rute hilang, hold sertifikasi. Horornya adalah betapa rapi bantuan menunggu.",
-          "terminal": "ATURAN MEDIS: hitung tubuh tanpa gore. Pakai pressure-state, utang oksigen, delay rute, prioritas triage, dan signoff hold untuk menunjukkan prosedur membuat pasien lebih cepat daripada medik merawat.",
-          "audio": "Tulisan tangan paling bersih ada di halaman terburuk.",
-          "in_game_wiki": "Ledger medis tidak boleh mengubah HECTON-8 menjadi gore tontonan. Kekuatannya lebih dingin. Pasien menjadi pressure-state, lalu utang oksigen, lalu delay lock, lalu hold sertifikasi. Medik bisa tahu perawatan yang benar dan tetap kehilangan pasien karena hatch, jam rute, atau signoff Deep Reach membuat bantuan terlambat. Ledger terasa manusiawi karena menunjukkan orang mencoba presisi saat sistem membuat presisi tidak berguna.",
-          "external_site": "Ledger Triage Medis mengubah evakuasi tertunda menjadi bukti manusia: kategori bersih, bantuan menunggu, dan pekerja dihitung sebelum diratapi.",
-          "field_note": "Teks medis harus menghitung tubuh tanpa menjadi gore."
-        },
-        "ko_KR": {
-          "title": "의료 분류 ledger",
-          "scanner": "TRIAGE LEDGER // 압력 손상, 저산소, 락 지연, 사라진 경로, 인증 hold. 공포는 도움이 얼마나 깔끔하게 기다렸는가다.",
-          "terminal": "의료 규칙: gore 없이 몸을 센다. pressure-state, 산소 부채, 경로 지연, triage 우선도, signoff hold로 절차가 의료진보다 빠르게 환자를 만들었음을 보여준다.",
-          "audio": "가장 깨끗한 글씨는 최악의 페이지에 있다.",
-          "in_game_wiki": "의료 ledger는 HECTON-8을 구경거리 gore로 만들면 안 된다. 힘은 더 차갑다. 환자는 pressure-state가 되고, 산소 부채가 되고, 락 지연이 되고, 인증 hold가 된다. 의료진은 올바른 처치를 알아도 해치, 경로 시계, Deep Reach signoff가 도움을 늦게 도착하게 해서 환자를 잃을 수 있다. ledger가 인간적인 이유는 시스템이 정확성을 무의미하게 만드는 동안 사람들이 정확하려 애쓰는 모습을 보여주기 때문이다.",
-          "external_site": "의료 분류 ledger는 지연된 대피를 인간 증거로 바꾼다. 깨끗한 범주, 기다리는 도움, 애도되기 전에 세어진 노동자들.",
-          "field_note": "의료 문장은 gore가 되지 않고 몸을 세야 한다."
-        },
-        "he_IL": {
-          "title": "ledger טריאז' רפואי",
-          "scanner": "TRIAGE LEDGER // פגיעת לחץ, היפוקסיה, עיכוב מנעול, מסלול חסר, hold אישור. האימה היא כמה מסודר העזרה חיכתה.",
-          "terminal": "כלל רפואי: לספור גופים בלי gore. השתמש ב-pressure-state, חוב חמצן, עיכוב מסלול, עדיפות triage ו-signoff hold כדי להראות איך הליך יצר מטופלים מהר יותר משהחובשים טיפלו.",
-          "audio": "כתב היד הנקי ביותר נמצא בעמוד הגרוע ביותר.",
-          "in_game_wiki": "ה-ledger הרפואי לא צריך להפוך את HECTON-8 ל-gore ראוותני. הכוח שלו קר יותר. מטופל הופך ל-pressure-state, אחר כך לחוב חמצן, לעיכוב מנעול, ל-hold אישור. חובשים יכולים לדעת את הטיפול הנכון ועדיין לאבד מטופל כי hatch, שעון מסלול או signoff של Deep Reach מעכבים עזרה. ה-ledger אנושי כי הוא מראה אנשים מנסים לדייק בזמן שהמערכת הופכת דיוק לחסר תועלת.",
-          "external_site": "ledger טריאז' רפואי הופך פינוי מעוכב לראיה אנושית: קטגוריות נקיות, עזרה שמחכה ועובדים שנספרו לפני שהתאבלו עליהם.",
-          "field_note": "טקסט רפואי צריך לספור גופים בלי להפוך ל-gore."
-        },
-        "pt_BR": {
-          "title": "Ledger de triagem médica",
-          "scanner": "TRIAGE LEDGER // Lesão por pressão, hipóxia, atraso de lock, rota ausente, hold de certificação. O horror é a limpeza com que a ajuda esperou.",
-          "terminal": "REGRA MÉDICA: contar corpos sem gore. Usar pressure-state, dívida de oxigênio, atraso de rota, prioridade triage e signoff hold para mostrar como o procedimento fez pacientes mais rápido do que médicos tratavam.",
-          "audio": "A caligrafia mais limpa está na pior página.",
-          "in_game_wiki": "O ledger médico não deve transformar HECTON-8 em gore de espetáculo. Sua força é mais fria. Um paciente vira pressure-state, depois dívida de oxigênio, atraso de lock, hold de certificação. Médicos podem saber o tratamento certo e ainda perder o paciente porque uma escotilha, relógio de rota ou signoff da Deep Reach faz a ajuda chegar tarde. O ledger é humano porque mostra pessoas tentando ser precisas enquanto o sistema torna a precisão inútil.",
-          "external_site": "O Ledger de triagem médica transforma evacuação atrasada em evidência humana: categorias limpas, ajuda esperando e trabalhadores contados antes do luto.",
-          "field_note": "Texto médico deve contar corpos sem virar gore."
-        },
-        "nl_NL": {
-          "title": "Medisch triage-ledger",
-          "scanner": "TRIAGE LEDGER // Drukletsel, hypoxie, lockvertraging, ontbrekende route, certificatiehold. De horror is hoe netjes hulp wachtte.",
-          "terminal": "MEDISCHE REGEL: tel lichamen zonder gore. Gebruik pressure-state, zuurstofschuld, routevertraging, triageprioriteit en signoff hold om te tonen hoe procedure sneller patiënten maakte dan medici konden behandelen.",
-          "audio": "Het schoonste handschrift staat op de ergste pagina.",
-          "in_game_wiki": "Het medische ledger moet HECTON-8 geen spektakel-gore maken. De kracht is kouder. Een patiënt wordt pressure-state, dan zuurstofschuld, dan lockvertraging, dan certificatiehold. Medici kunnen de juiste behandeling kennen en toch verliezen omdat een luik, routeklok of Deep Reach-signoff hulp te laat laat komen. Het ledger is menselijk omdat het mensen toont die precies proberen te zijn terwijl het systeem precisie nutteloos maakt.",
-          "external_site": "Medisch triage-ledger maakt vertraagde evacuatie menselijk bewijs: schone categorieën, wachtende hulp en werkers die geteld worden vóór ze worden betreurd.",
-          "field_note": "Medische tekst moet lichamen tellen zonder gore te worden."
-        }
-      },
-      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    "zh_CN": {
+     "title": "轮班队，不是英雄",
+     "scanner": "人性层 // 殖民地通过排班、磨损工具、未返回记录和执勤板上的名字变得真实。不是靠演讲。",
+     "terminal": "写作规则：把工人写成泵技师、医护、路线文员、潜水员、厨工、制造机操作员和疲惫的班长。一个缺失返回的排班表比纪念碑更痛。",
+     "audio": "他们不是象征。他们只是上班迟到了。",
+     "in_game_wiki": "HECTON-8 应先通过工作而非悲剧让殖民地具有人性。压力技师更换阀门垫圈，厨工记录水代币，路线文员盖错返回戳，潜水员签出切割器后再也没有签回：这些细节让人可读，不需要强行塞入家庭复仇线。沉没殖民地最有力的时候，是它像一个在日常中被打断的地方，而不是死后修建的博物馆。",
+     "external_site": "轮班队，不是英雄，是 HECTON-8 的人性写作规则：工人通过工作、疲惫、习惯和程序失败被记住。",
+     "field_note": "人作为工作者比作为纪念雕像更可信。"
     },
-    {
-      "packet_id": "P160_MARAUDER_CORRECTION_LAYER",
-      "article_id": "colony_human.marauder_correction_layer",
-      "title_key": "applied_lore.marauder_correction_layer.title",
-      "unlock": {
-        "primary": "unlock.marauder_correction_layer",
-        "poi_tags": [
-          "poi.marauder_correction_note",
-          "poi.crossed_corporate_label",
-          "poi.field_translation_mark"
-        ],
-        "biome_tags": [
-          "biome.shallow_annex",
-          "biome.industrial_shelf",
-          "biome.brine_canyon"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Marauder Correction Note",
-          "scanner": "Grease-pencil correction over Deep Reach label. Corp: TEMP ATM VARIANCE. Note: CO2 slows hands first. Check hatch timer.",
-          "terminal": "FIELD CORRECTION MC-04\nSource label: TEMPORARY ATMOSPHERIC VARIANCE\nRejected cause: weather\nCheck: CO2 alarm history; hatch clock; seal tape bend; body count before claim stamp\nAction: mark route unsafe until vent fan turns.",
-          "audio": "Read the label, then read the room. If they disagree, write on the label.",
-          "in_game_wiki": "Marauder correction notes are grease-pencil edits left on Deep Reach labels, warning boards and claim forms. They are not commentary. They turn clean corporate words into immediate survival checks. Variance becomes CO2 in the lock. Custody becomes do not open the sample bag. Hold becomes the hatch will not answer you in time.\n\nThe useful note names one hazard, one object and one action. It does not explain the politics. It keeps the next diver from trusting a clean form over a wet room.",
-          "external_site": "Marauder correction notes are field edits on official labels. They preserve the lie and write the survival check beside it: gas, timer, seal, route, body count.",
-          "field_note": "Do not translate the whole form. Circle the word that gets a diver killed. Write the fix beside it: vent before entry, count two breaths after the hiss, do not trust the clean hatch."
-        },
-        "ru_RU": {
-          "title": "Слой правок Marauder",
-          "scanner": "СЛОЙ ПРАВОК // Корпоративная метка: temporary atmospheric variance. Пометка Marauder: CO2 первым съедает суждение.",
-          "terminal": "ПРАВИЛО АННОТАЦИИ: переводить язык Deep Reach обратно в факты выживания. Держать заметки короткими, практичными, злыми и полезными под давлением.",
-          "audio": "Хорошая заметка не звучит умно. Она держит кого-то живым.",
-          "in_game_wiki": "Слой правок Marauder - место, где старый корпоративный язык теряет власть. Deep Reach пишет variance, custody, hold, asset, exposure. Marauder пишет то, что нужно водолазу до следующего вдоха: CO2 замедляет руки, brine прячет ступень, seal tape рвется на изгибе, чистому люку не верь. Эти пометки должны ощущаться как культура, заново собранная людьми, которых система обучила, а потом заставила ненавидеть ее словарь.",
-          "external_site": "Слой правок Marauder соединяет процедуру Deep Reach и агентность игрока: короткие аннотации превращают официальный язык в правду выживания.",
-          "field_note": "Игрок должен чувствовать, как старый язык Deep Reach переводится в счет тел."
-        },
-        "ja_JP": {
-          "title": "Marauder修正レイヤー",
-          "scanner": "CORRECTION LAYER // 企業ラベル: temporary atmospheric variance。Marauderメモ: CO2は判断を最初に食う。",
-          "terminal": "注釈規則: Deep Reach語を生存事実へ戻す。メモは短く、実用的で、怒っていて、圧力下で役に立つものにする。",
-          "audio": "良いメモは賢く聞こえない。誰かを生かす。",
-          "in_game_wiki": "Marauder修正レイヤーは、古い企業語が権威を失う場所だ。Deep Reachはvariance、custody、hold、asset、exposureと書く。Marauderは次の呼吸までに潜水員が必要なことを書く。CO2は手を遅くする。brineは段差を隠す。seal tapeは曲がりで死ぬ。きれいなハッチを信じるな。これらのメモは、システムに訓練され、その語彙を憎むことを覚えた人々が文化を再構築しているように感じるべきだ。",
-          "external_site": "Marauder修正レイヤーはDeep Reach手順とプレイヤー行為をつなぐ。短い注釈が公式語を生存の真実へ変える。",
-          "field_note": "古いDeep Reach語が死者数へ翻訳される感覚をプレイヤーに持たせる。"
-        },
-        "zh_CN": {
-          "title": "Marauder 修正层",
-          "scanner": "修正层 // 企业标签：temporary atmospheric variance。Marauder 备注：CO2 最先吞掉判断。",
-          "terminal": "注释规则：把 Deep Reach 语言翻译回生存事实。备注要短、实用、愤怒，并且在压力下有用。",
-          "audio": "好备注听起来不聪明。它让人活着。",
-          "in_game_wiki": "Marauder 修正层是旧企业语言失去权威的地方。Deep Reach 写 variance、custody、hold、asset、exposure。Marauder 写潜水员下一口气前需要知道的东西：CO2 先让手变慢；brine 会藏住台阶；seal tape 在弯折处失效；别信干净舱门。这些备注应该像一种文化在重建自身，由那些被系统训练过、又学会憎恨它词汇的人写成。",
-          "external_site": "Marauder 修正层连接 Deep Reach 程序和玩家能动性：短注释把官方语言变成生存真相。",
-          "field_note": "玩家应该感到旧 Deep Reach 语言正在被翻译成死亡人数。"
-        },
-        "fr_FR": {
-          "title": "Couche de correction Marauder",
-          "scanner": "COUCHE CORRECTION // Étiquette corpo : temporary atmospheric variance. Note Marauder : le CO2 mange le jugement d'abord.",
-          "terminal": "RÈGLE D'ANNOTATION : retraduire la langue Deep Reach en faits de survie. Notes courtes, pratiques, en colère et utiles sous pression.",
-          "audio": "Une bonne note n'a pas l'air brillante. Elle garde quelqu'un vivant.",
-          "in_game_wiki": "La couche de correction Marauder est l'endroit où l'ancien langage corpo perd son autorité. Deep Reach écrit variance, custody, hold, asset, exposure. Les Marauders écrivent ce dont un plongeur a besoin avant le prochain souffle : le CO2 ralentit les mains, la brine cache la marche, le seal tape lâche au coude, ne fais pas confiance à l'écoutille propre. Ces notes doivent sentir une culture qui se reconstruit chez des gens formés par le système puis forcés à haïr son vocabulaire.",
-          "external_site": "La couche de correction Marauder relie procédure Deep Reach et agency du joueur : des annotations courtes changent la langue officielle en vérité de survie.",
-          "field_note": "Le joueur doit sentir l'ancienne langue Deep Reach traduite en compte de corps."
-        },
-        "es_ES": {
-          "title": "Capa de corrección Marauder",
-          "scanner": "CAPA DE CORRECCIÓN // Etiqueta corporativa: temporary atmospheric variance. Nota Marauder: el CO2 se come primero el juicio.",
-          "terminal": "REGLA DE ANOTACIÓN: traducir lenguaje Deep Reach de vuelta a hechos de supervivencia. Notas cortas, prácticas, furiosas y útiles bajo presión.",
-          "audio": "Una buena nota no suena lista. Mantiene vivo a alguien.",
-          "in_game_wiki": "La capa de corrección Marauder es donde el viejo lenguaje corporativo pierde autoridad. Deep Reach escribe variance, custody, hold, asset, exposure. Los Marauders escriben lo que un buzo necesita antes de la próxima respiración: el CO2 vuelve lentas las manos, la brine esconde el escalón, el seal tape falla en la curva, no confíes en la escotilla limpia. Esas notas deben sentirse como una cultura reconstruyéndose con gente entrenada por el sistema que aprendió a odiar su vocabulario.",
-          "external_site": "La Capa de corrección Marauder une procedimiento Deep Reach y agencia del jugador: anotaciones cortas convierten lenguaje oficial en verdad de supervivencia.",
-          "field_note": "El jugador debe sentir cómo el viejo lenguaje Deep Reach se traduce en conteo de cuerpos."
-        },
-        "de_DE": {
-          "title": "Marauder-Korrekturschicht",
-          "scanner": "KORREKTURSCHICHT // Konzernlabel: temporary atmospheric variance. Marauder-Notiz: CO2 frisst zuerst das Urteilsvermögen.",
-          "terminal": "ANNOTATIONSREGEL: Deep-Reach-Sprache in Überlebensfakten zurückübersetzen. Notizen kurz, praktisch, wütend und unter Druck nützlich halten.",
-          "audio": "Eine gute Notiz klingt nicht klug. Sie hält jemanden am Leben.",
-          "in_game_wiki": "Die Marauder-Korrekturschicht ist der Ort, an dem alte Konzernsprache Autorität verliert. Deep Reach schreibt variance, custody, hold, asset, exposure. Marauder schreiben, was ein Taucher vor dem nächsten Atemzug braucht: CO2 macht Hände langsam, brine verbirgt die Stufe, seal tape versagt an der Biegung, trau der sauberen Luke nicht. Diese Notizen sollen wie eine Kultur wirken, die sich aus Menschen neu aufbaut, die vom System geschult wurden und dann lernten, seinen Wortschatz zu hassen.",
-          "external_site": "Die Marauder-Korrekturschicht verbindet Deep-Reach-Verfahren und Spielerhandeln: kurze Anmerkungen machen offizielle Sprache zu Überlebenswahrheit.",
-          "field_note": "Der Spieler soll spüren, wie alte Deep-Reach-Sprache in Körperzahlen übersetzt wird."
-        },
-        "pl_PL": {
-          "title": "Warstwa korekt Maraudera",
-          "scanner": "WARSTWA KOREKT // Etykieta korpo: temporary atmospheric variance. Notatka Maraudera: CO2 najpierw zjada osąd.",
-          "terminal": "REGUŁA ADNOTACJI: tłumaczyć język Deep Reach z powrotem na fakty przetrwania. Notatki krótkie, praktyczne, wściekłe i użyteczne pod ciśnieniem.",
-          "audio": "Dobra notatka nie brzmi mądrze. Utrzymuje kogoś przy życiu.",
-          "in_game_wiki": "Warstwa korekt Maraudera to miejsce, gdzie dawny język korporacyjny traci władzę. Deep Reach pisze variance, custody, hold, asset, exposure. Marauderzy piszą to, czego nurek potrzebuje przed następnym oddechem: CO2 spowalnia ręce, brine ukrywa stopień, seal tape puszcza na zgięciu, nie ufaj czystemu włazowi. Te notatki mają brzmieć jak kultura odbudowywana przez ludzi wyszkolonych przez system, którzy nauczyli się nienawidzić jego słownika.",
-          "external_site": "Warstwa korekt Maraudera łączy procedurę Deep Reach i sprawczość gracza: krótkie adnotacje zamieniają język oficjalny w prawdę przetrwania.",
-          "field_note": "Gracz powinien czuć, jak stary język Deep Reach tłumaczy się na liczbę ciał."
-        },
-        "uk_UA": {
-          "title": "Шар правок Marauder",
-          "scanner": "ШАР ПРАВОК // Корпоративна мітка: temporary atmospheric variance. Помітка Marauder: CO2 першим з'їдає судження.",
-          "terminal": "ПРАВИЛО АНОТАЦІЇ: перекладати мову Deep Reach назад у факти виживання. Нотатки мають бути короткі, практичні, злі й корисні під тиском.",
-          "audio": "Добра нотатка не звучить розумно. Вона тримає когось живим.",
-          "in_game_wiki": "Шар правок Marauder - місце, де стара корпоративна мова втрачає владу. Deep Reach пише variance, custody, hold, asset, exposure. Marauder пише те, що водолаз має знати до наступного вдиху: CO2 спершу сповільнює руки, brine ховає сходинку, seal tape ламається на згині, чистому люку не вір. Ці помітки мають відчуватися як культура, що збирає себе заново з людей, навчених системою, а потім змушених ненавидіти її словник.",
-          "external_site": "Шар правок Marauder з'єднує процедуру Deep Reach і дію гравця: короткі анотації перетворюють офіційну мову на правду виживання.",
-          "field_note": "Гравець має відчувати, як стара мова Deep Reach перекладається в рахунок тіл."
-        },
-        "ar_SA": {
-          "title": "طبقة تصحيح Marauder",
-          "scanner": "طبقة تصحيح // وسم الشركة: temporary atmospheric variance. ملاحظة Marauder: CO2 يأكل الحكم أولا.",
-          "terminal": "قاعدة تعليق: ترجم لغة Deep Reach مرة أخرى إلى حقائق نجاة. أبق الملاحظات قصيرة، عملية، غاضبة، ونافعة تحت الضغط.",
-          "audio": "الملاحظة الجيدة لا تبدو ذكية. إنها تبقي شخصا حيا.",
-          "in_game_wiki": "طبقة تصحيح Marauder هي المكان الذي تفقد فيه لغة الشركة القديمة سلطتها. تكتب Deep Reach كلمات مثل variance وcustody وhold وasset وexposure. يكتب Marauders ما يحتاجه الغواص قبل النفس التالي: CO2 يبطئ اليدين، brine يخفي الدرجة، seal tape يفشل عند الانحناء، لا تثق بالـ hatch النظيف. يجب أن تبدو هذه الملاحظات كثقافة تعيد بناء نفسها من أشخاص دربهم النظام ثم تعلموا كره مفرداته.",
-          "external_site": "طبقة تصحيح Marauder تربط إجراء Deep Reach بقدرة اللاعب: تعليقات قصيرة تحول اللغة الرسمية إلى حقيقة نجاة.",
-          "field_note": "يجب أن يشعر اللاعب بأن لغة Deep Reach القديمة تُترجم إلى عدد أجساد."
-        },
-        "id_ID": {
-          "title": "Lapisan Koreksi Marauder",
-          "scanner": "LAPISAN KOREKSI // Label korporat: temporary atmospheric variance. Catatan Marauder: CO2 memakan penilaian lebih dulu.",
-          "terminal": "ATURAN ANOTASI: terjemahkan bahasa Deep Reach kembali menjadi fakta bertahan hidup. Catatan harus pendek, praktis, marah, dan berguna di bawah tekanan.",
-          "audio": "Catatan bagus tidak terdengar pintar. Ia membuat seseorang tetap hidup.",
-          "in_game_wiki": "Lapisan koreksi Marauder adalah tempat bahasa korporat lama kehilangan otoritas. Deep Reach menulis variance, custody, hold, asset, exposure. Marauder menulis apa yang dibutuhkan penyelam sebelum napas berikutnya: CO2 membuat tangan lambat, brine menyembunyikan pijakan, seal tape gagal di tekukan, jangan percaya hatch bersih. Catatan ini harus terasa seperti budaya yang membangun diri ulang dari orang yang dilatih sistem lalu belajar membenci kosakatanya.",
-          "external_site": "Lapisan Koreksi Marauder menjembatani prosedur Deep Reach dan agensi pemain: anotasi pendek mengubah bahasa resmi menjadi kebenaran survival.",
-          "field_note": "Pemain harus merasakan bahasa lama Deep Reach diterjemahkan menjadi hitungan tubuh."
-        },
-        "ko_KR": {
-          "title": "Marauder 수정층",
-          "scanner": "수정층 // 기업 라벨: temporary atmospheric variance. Marauder 메모: CO2는 판단을 먼저 먹는다.",
-          "terminal": "주석 규칙: Deep Reach 언어를 다시 생존 사실로 번역한다. 메모는 짧고, 실용적이고, 화가 나 있으며, 압력 아래에서 유용해야 한다.",
-          "audio": "좋은 메모는 영리하게 들리지 않는다. 누군가를 살려 둔다.",
-          "in_game_wiki": "Marauder 수정층은 오래된 기업 언어가 권위를 잃는 곳이다. Deep Reach는 variance, custody, hold, asset, exposure라고 쓴다. Marauder는 다음 숨 전에 잠수부가 알아야 할 것을 쓴다. CO2는 손을 먼저 느리게 한다. brine은 계단을 숨긴다. seal tape는 굽은 곳에서 실패한다. 깨끗한 hatch를 믿지 마라. 이 메모들은 시스템에 훈련받은 사람들이 그 어휘를 미워하는 법을 배운 뒤 문화를 다시 만드는 것처럼 느껴져야 한다.",
-          "external_site": "Marauder 수정층은 Deep Reach 절차와 플레이어 agency를 잇는다. 짧은 주석이 공식 언어를 생존의 진실로 바꾼다.",
-          "field_note": "플레이어는 오래된 Deep Reach 언어가 시신 수로 번역되는 느낌을 받아야 한다."
-        },
-        "he_IL": {
-          "title": "שכבת תיקון Marauder",
-          "scanner": "שכבת תיקון // תווית תאגידית: temporary atmospheric variance. הערת Marauder: CO2 אוכל קודם את שיקול הדעת.",
-          "terminal": "כלל הערה: לתרגם שפת Deep Reach בחזרה לעובדות הישרדות. לשמור הערות קצרות, מעשיות, כועסות ושימושיות תחת לחץ.",
-          "audio": "הערה טובה לא נשמעת חכמה. היא משאירה מישהו חי.",
-          "in_game_wiki": "שכבת תיקון Marauder היא המקום שבו שפה תאגידית ישנה מאבדת סמכות. Deep Reach כותבת variance, custody, hold, asset, exposure. Marauders כותבים מה שצולל צריך לפני הנשימה הבאה: CO2 מאט קודם את הידיים, brine מסתיר מדרגה, seal tape נכשל בכיפוף, אל תסמוך על hatch נקי. ההערות צריכות להרגיש כמו תרבות שבונה את עצמה מחדש מאנשים שהמערכת אימנה ואז לימדה לשנוא את אוצר המילים שלה.",
-          "external_site": "שכבת תיקון Marauder מחברת בין הליך Deep Reach לסוכנות השחקן: הערות קצרות הופכות שפה רשמית לאמת הישרדות.",
-          "field_note": "השחקן צריך להרגיש שפת Deep Reach ישנה מתורגמת לספירת גופות."
-        },
-        "pt_BR": {
-          "title": "Camada de correção Marauder",
-          "scanner": "CAMADA DE CORREÇÃO // Rótulo corporativo: temporary atmospheric variance. Nota Marauder: CO2 come julgamento primeiro.",
-          "terminal": "REGRA DE ANOTAÇÃO: traduzir a linguagem Deep Reach de volta em fatos de sobrevivência. Notas curtas, práticas, furiosas e úteis sob pressão.",
-          "audio": "Uma boa nota não soa inteligente. Mantém alguém vivo.",
-          "in_game_wiki": "A camada de correção Marauder é onde a velha linguagem corporativa perde autoridade. A Deep Reach escreve variance, custody, hold, asset, exposure. Marauders escrevem o que um mergulhador precisa antes da próxima respiração: CO2 deixa mãos lentas, brine esconde o degrau, seal tape falha na dobra, não confie na escotilha limpa. Essas notas devem parecer uma cultura se reconstruindo a partir de pessoas treinadas pelo sistema que aprenderam a odiar seu vocabulário.",
-          "external_site": "A Camada de correção Marauder liga procedimento Deep Reach e agência do jogador: anotações curtas transformam linguagem oficial em verdade de sobrevivência.",
-          "field_note": "O jogador deve sentir a antiga linguagem Deep Reach sendo traduzida em contagem de corpos."
-        },
-        "nl_NL": {
-          "title": "Marauder-correctielaag",
-          "scanner": "CORRECTIELAAG // Bedrijfslabel: temporary atmospheric variance. Marauder-notitie: CO2 vreet eerst oordeel.",
-          "terminal": "ANNOTATIEREGEL: vertaal Deep Reach-taal terug naar overlevingsfeiten. Houd notities kort, praktisch, kwaad en bruikbaar onder druk.",
-          "audio": "Een goede notitie klinkt niet slim. Ze houdt iemand in leven.",
-          "in_game_wiki": "De Marauder-correctielaag is waar oude bedrijfstaal autoriteit verliest. Deep Reach schrijft variance, custody, hold, asset, exposure. Marauders schrijven wat een duiker vóór de volgende adem nodig heeft: CO2 maakt handen traag, brine verbergt de stap, seal tape faalt in de bocht, vertrouw het schone hatch niet. Deze notities moeten voelen als een cultuur die zichzelf herbouwt uit mensen die door het systeem zijn getraind en daarna leerden zijn woordenschat te haten.",
-          "external_site": "Marauder-correctielaag overbrugt Deep Reach-procedure en speleragency: korte annotaties veranderen officiële taal in overlevingswaarheid.",
-          "field_note": "De speler moet voelen hoe oude Deep Reach-taal wordt vertaald naar lichaamstelling."
-        }
-      },
-      "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER"
+    "fr_FR": {
+     "title": "Équipes de quart, pas héros",
+     "scanner": "COUCHE HUMAINE // La colonie devient réelle par les horaires, les outils usés, les retours manqués et les noms sur les tableaux. Pas par les discours.",
+     "terminal": "RÈGLE D'ÉCRITURE : noter les travailleurs comme techniciens de pompe, médecins, commis de route, plongeurs, cuisiniers, opérateurs de fabricateur et superviseurs épuisés. Un planning avec un retour manquant blesse plus qu'un monument.",
+     "audio": "Ils n'étaient pas des symboles. Ils étaient en retard pour le quart.",
+     "in_game_wiki": "HECTON-8 doit rendre la colonie humaine par le travail avant la tragédie. Un technicien pression change un joint de valve, une cuisinière compte les jetons d'eau, un commis de route tamponne le mauvais retour, un plongeur sort un cutter et ne le rend jamais au registre : ces détails rendent les gens lisibles sans imposer un motif de vengeance familiale. La colonie noyée est plus forte quand elle ressemble à un lieu interrompu dans sa routine, pas à un musée construit après la mort.",
+     "external_site": "Équipes de quart, pas héros est la règle d'écriture humaine de HECTON-8 : les travailleurs restent en mémoire par le métier, la fatigue, les habitudes et les échecs procéduraux.",
+     "field_note": "Les gens sont plus crédibles comme travailleurs que comme statues mémorielles."
+    },
+    "es_ES": {
+     "title": "Cuadrillas de turno, no héroes",
+     "scanner": "CAPA HUMANA // La colonia se vuelve real con horarios, herramientas gastadas, retornos perdidos y nombres en tableros de turno. No con discursos.",
+     "terminal": "REGLA DE ESCRITURA: registrar trabajadores como técnicos de bomba, médicos, oficinistas de ruta, buzos, cocineros, operadores de fabricador y supervisores cansados. Un turno con un retorno ausente duele más que un monumento.",
+     "audio": "No eran símbolos. Llegaban tarde al turno.",
+     "in_game_wiki": "HECTON-8 debe volver humana la colonia mediante trabajo antes que tragedia. Un técnico de presión cambia una junta de válvula, una cocinera cuenta fichas de agua, un oficinista de ruta sella el retorno equivocado, un buzo firma un cortador y nunca lo devuelve al registro: esos detalles hacen legible a la gente sin forzar una venganza familiar. La colonia ahogada funciona mejor cuando parece un lugar interrumpido en plena rutina, no un museo construido después de la muerte.",
+     "external_site": "Cuadrillas de turno, no héroes es la regla humana de escritura de HECTON-8: los trabajadores se recuerdan por empleo, fatiga, hábitos y fallos de procedimiento.",
+     "field_note": "La gente resulta más creíble como trabajadora que como estatua conmemorativa."
+    },
+    "de_DE": {
+     "title": "Schichtcrews, keine Helden",
+     "scanner": "MENSCHLICHE SCHICHT // Die Kolonie wird durch Pläne, abgenutzte Werkzeuge, fehlende Rückkehr und Namen auf Diensttafeln real. Nicht durch Reden.",
+     "terminal": "SCHREIBREGEL: Arbeiter als Pumpentechniker, Medics, Routenangestellte, Taucher, Köche, Fabrikatorbediener und müde Vorgesetzte erfassen. Ein Dienstplan mit einer fehlenden Rückkehr schmerzt mehr als ein Denkmal.",
+     "audio": "Sie waren keine Symbole. Sie kamen zu spät zur Schicht.",
+     "in_game_wiki": "HECTON-8 sollte die Kolonie durch Arbeit menschlich machen, bevor Tragödie spricht. Ein Drucktechniker tauscht eine Ventildichtung, eine Köchin zählt Wassermarken, ein Routenangestellter stempelt die falsche Rückkehr, ein Taucher trägt einen Cutter aus und gibt ihn nie zurück. Solche Details machen Menschen lesbar, ohne einen Familienrache-Hook zu erzwingen. Die ertrunkene Kolonie ist am stärksten, wenn sie wie ein Ort wirkt, der mitten in Routine unterbrochen wurde, nicht wie ein Museum nach dem Tod.",
+     "external_site": "Schichtcrews, keine Helden ist HECTON-8s Regel für menschliches Schreiben: Arbeiter bleiben durch Jobs, Müdigkeit, Gewohnheiten und Verfahrensfehler im Gedächtnis.",
+     "field_note": "Menschen sind als Arbeiter glaubwürdiger als als Gedenkstatuen."
+    },
+    "pl_PL": {
+     "title": "Brygady zmianowe, nie bohaterowie",
+     "scanner": "WARSTWA LUDZKA // Kolonia staje się prawdziwa przez grafiki, zużyte narzędzia, brakujące powroty i nazwiska na tablicach zmian. Nie przez przemowy.",
+     "terminal": "REGUŁA PISANIA: zapisywać pracowników jako techników pomp, medyków, urzędników tras, nurków, kucharzy, operatorów fabricatora i zmęczonych nadzorców. Grafik z jednym brakującym powrotem boli bardziej niż pomnik.",
+     "audio": "Nie byli symbolami. Spóźniali się na zmianę.",
+     "in_game_wiki": "HECTON-8 powinno uczłowieczać kolonię pracą przed tragedią. Technik ciśnienia wymienia uszczelkę zaworu, kucharka liczy żetony wody, urzędnik trasy przybija zły stempel powrotu, nurek wypisuje przecinak i nigdy nie wpisuje go z powrotem: takie szczegóły czynią ludzi czytelnymi bez wymuszonego wątku rodzinnej zemsty. Zatopiona kolonia działa najmocniej, gdy wygląda jak miejsce przerwane w rutynie, nie muzeum zbudowane po śmierci.",
+     "external_site": "Brygady zmianowe, nie bohaterowie to reguła ludzkiego pisania HECTON-8: pracownicy zostają w pamięci przez pracę, zmęczenie, nawyki i proceduralne awarie.",
+     "field_note": "Ludzie są bardziej wiarygodni jako pracownicy niż jako pomnikowe figury."
+    },
+    "uk_UA": {
+     "title": "Змінні бригади, не герої",
+     "scanner": "ЛЮДСЬКИЙ ШАР // Колонія стає справжньою через графіки, стерті інструменти, пропущені повернення й імена на дошках змін. Не через промови.",
+     "terminal": "ПРАВИЛО ПИСЬМА: записувати працівників як техніків насосів, медиків, маршрутних клерків, водолазів, кухарів, операторів фабрикатора й утомлених старших змін. Розклад з одним пропущеним поверненням болить сильніше за пам'ятник.",
+     "audio": "Вони не були символами. Вони запізнювалися на зміну.",
+     "in_game_wiki": "HECTON-8 має робити колонію людською через роботу раніше, ніж через трагедію. Технік тиску міняє прокладку клапана, кухар рахує водні жетони, маршрутний клерк ставить не той штамп повернення, водолаз бере різак і вже не повертає його в журнал: такі деталі роблять людей читабельними без примусового сімейного revenge-hook. Потонула колонія найсильніша тоді, коли здається місцем, перерваним посеред рутини, а не музеєм після смерті.",
+     "external_site": "Змінні бригади, не герої - правило людського письма для HECTON-8: працівники запам'ятовуються через роботу, втому, звички й процедурні збої.",
+     "field_note": "Люди правдоподібніші як працівники, ніж як меморіальні статуї."
+    },
+    "ar_SA": {
+     "title": "طواقم ورديات لا أبطال",
+     "scanner": "طبقة بشرية // تصير المستعمرة حقيقية عبر الجداول، الأدوات البالية، العودات المفقودة، والأسماء على لوحات الوردية. لا عبر الخطب.",
+     "terminal": "قاعدة كتابة: سجّل العمال كتقنيي مضخات، مسعفين، كتبة مسار، غواصين، طهاة، مشغلي fabricator ومشرفين متعبين. جدول وردية فيه عودة واحدة مفقودة يؤلم أكثر من نصب.",
+     "audio": "لم يكونوا رموزا. كانوا متأخرين عن الوردية.",
+     "in_game_wiki": "يجب أن يجعل HECTON-8 المستعمرة بشرية عبر العمل قبل المأساة. تقني ضغط يبدل حشية صمام، طاهية تعد رموز الماء، كاتب مسار يختم عودة خاطئة، غواص يوقّع لأخذ قاطع ولا يرده إلى السجل: هذه التفاصيل تجعل الناس مقروئين من دون فرض حبكة ثأر عائلية. تكون المستعمرة الغارقة أقوى عندما تبدو كمكان قوطع في منتصف روتينه، لا كمتحف بُني بعد الموت.",
+     "external_site": "طواقم ورديات لا أبطال هي قاعدة الكتابة البشرية في HECTON-8: يتذكر اللاعب العمال عبر الوظائف والتعب والعادات والفشل الإجرائي.",
+     "field_note": "البشر أصدق كعمال منهم كتماثيل تذكارية."
+    },
+    "id_ID": {
+     "title": "Kru Giliran, Bukan Pahlawan",
+     "scanner": "LAPIS MANUSIA // Koloni terasa nyata lewat jadwal, alat aus, kepulangan hilang, dan nama di papan giliran. Bukan pidato.",
+     "terminal": "ATURAN TULIS: catat pekerja sebagai teknisi pompa, medik, juru rute, penyelam, juru masak, operator fabricator, dan supervisor lelah. Roster dengan satu kepulangan hilang bisa lebih menyakitkan daripada monumen.",
+     "audio": "Mereka bukan simbol. Mereka terlambat giliran kerja.",
+     "in_game_wiki": "HECTON-8 harus memanusiakan koloni melalui pekerjaan sebelum tragedi. Teknisi tekanan mengganti gasket katup, juru masak menghitung token air, juru rute mencap kepulangan yang salah, penyelam menandatangani cutter dan tidak pernah mengembalikannya ke ledger: detail seperti itu membuat orang terbaca tanpa memaksa kait balas dendam keluarga. Koloni tenggelam paling kuat saat terasa seperti tempat yang terputus di tengah rutinitas, bukan museum setelah kematian.",
+     "external_site": "Kru Giliran, Bukan Pahlawan adalah aturan penulisan manusia HECTON-8: pekerja diingat lewat pekerjaan, lelah, kebiasaan, dan kegagalan prosedural.",
+     "field_note": "Orang lebih meyakinkan sebagai pekerja daripada patung memorial."
+    },
+    "ko_KR": {
+     "title": "영웅이 아니라 교대조",
+     "scanner": "인간층 // 식민지는 일정표, 닳은 도구, 돌아오지 않은 귀환, 근무판의 이름으로 실제가 된다. 연설이 아니다.",
+     "terminal": "작성 규칙: 노동자를 펌프 기술자, 의무병, 경로 서기, 잠수부, 조리원, fabricator 조작원, 지친 감독으로 기록한다. 하나의 미귀환이 있는 근무표는 기념비보다 아프다.",
+     "audio": "그들은 상징이 아니었다. 교대에 늦었을 뿐이다.",
+     "in_game_wiki": "HECTON-8은 비극보다 먼저 일을 통해 식민지를 인간적으로 보여줘야 한다. 압력 기술자가 밸브 개스킷을 갈고, 조리원이 물 토큰을 세고, 경로 서기가 잘못된 귀환 도장을 찍고, 잠수부가 커터를 반출한 뒤 다시 입고하지 않는다. 이런 디테일은 가족 복수 서사를 강요하지 않아도 사람을 읽히게 한다. 가라앉은 식민지는 죽음 뒤에 지은 박물관이 아니라 일상 중간에 끊긴 장소처럼 느껴질 때 가장 강하다.",
+     "external_site": "영웅이 아니라 교대조는 HECTON-8의 인간 쓰기 규칙이다. 노동자는 일, 피로, 습관, 절차 실패로 기억된다.",
+     "field_note": "사람은 추모 조각상보다 노동자로서 더 믿을 만하다."
+    },
+    "he_IL": {
+     "title": "צוותי משמרת, לא גיבורים",
+     "scanner": "שכבה אנושית // המושבה נעשית אמיתית דרך לוחות זמנים, כלים שחוקים, חזרות חסרות ושמות על לוחות תורנות. לא דרך נאומים.",
+     "terminal": "כלל כתיבה: לרשום עובדים כטכנאי משאבות, חובשים, פקידי מסלול, צוללים, טבחים, מפעילי fabricator ומפקחים עייפים. סידור עם חזרה חסרה אחת יכול לכאוב יותר מאנדרטה.",
+     "audio": "הם לא היו סמלים. הם איחרו למשמרת.",
+     "in_game_wiki": "HECTON-8 צריך להפוך את המושבה לאנושית דרך עבודה לפני טרגדיה. טכנאי לחץ מחליף אטם שסתום, טבחית סופרת אסימוני מים, פקיד מסלול חותם חזרה לא נכונה, צולל חותם על cutter ולא מחזיר אותו לרישום: פרטים כאלה הופכים אנשים לקריאים בלי לכפות עלילת נקמה משפחתית. המושבה הטבועה חזקה ביותר כשהיא מרגישה כמו מקום שנקטע באמצע שגרה, לא מוזיאון שנבנה אחרי המוות.",
+     "external_site": "צוותי משמרת, לא גיבורים הוא כלל הכתיבה האנושית של HECTON-8: עובדים נזכרים דרך עבודה, עייפות, הרגלים וכשלי הליך.",
+     "field_note": "אנשים אמינים יותר כעובדים מאשר כפסלי זיכרון."
+    },
+    "pt_BR": {
+     "title": "Equipes de turno, não heróis",
+     "scanner": "CAMADA HUMANA // A colônia fica real por escalas, ferramentas gastas, retornos ausentes e nomes em quadros de turno. Não por discursos.",
+     "terminal": "REGRA DE ESCRITA: registrar trabalhadores como técnicos de bomba, médicos, escriturários de rota, mergulhadores, cozinheiros, operadores de fabricator e supervisores cansados. Uma escala com um retorno perdido fere mais que um monumento.",
+     "audio": "Eles não eram símbolos. Estavam atrasados para o turno.",
+     "in_game_wiki": "HECTON-8 deve humanizar a colônia por trabalho antes da tragédia. Um técnico de pressão troca uma junta de válvula, uma cozinheira conta fichas de água, um escriturário de rota carimba o retorno errado, um mergulhador assina a retirada de um cutter e nunca devolve no registro: esses detalhes tornam pessoas legíveis sem forçar uma vingança familiar. A colônia afogada é mais forte quando parece um lugar interrompido na rotina, não um museu construído depois da morte.",
+     "external_site": "Equipes de turno, não heróis é a regra de escrita humana de HECTON-8: trabalhadores ficam memoráveis por funções, cansaço, hábitos e falhas procedurais.",
+     "field_note": "Pessoas são mais críveis como trabalhadores do que como estátuas memoriais."
+    },
+    "nl_NL": {
+     "title": "Ploegen, geen helden",
+     "scanner": "MENSELIJKE LAAG // De kolonie wordt echt via roosters, versleten gereedschap, gemiste terugkeer en namen op dienstborden. Niet via toespraken.",
+     "terminal": "SCHRIJFREGEL: noteer werkers als pomptechnici, medici, routeklerken, duikers, koks, fabricator-operators en vermoeide supervisors. Een rooster met één gemiste terugkeer kan harder raken dan een monument.",
+     "audio": "Ze waren geen symbolen. Ze waren te laat voor dienst.",
+     "in_game_wiki": "HECTON-8 moet de kolonie menselijk maken via werk vóór tragedie. Een druktechnicus vervangt een kleppakking, een kok telt watertokens, een routeklerk zet de verkeerde terugkeerstempel, een duiker tekent een cutter uit en tekent hem nooit terug in. Zulke details maken mensen leesbaar zonder een familie-wraakhaak op te dringen. De verdronken kolonie is het sterkst wanneer ze voelt als een plek die midden in routine werd onderbroken, niet als een museum na de dood.",
+     "external_site": "Ploegen, geen helden is HECTON-8s menselijke schrijfregel: werkers blijven hangen door werk, vermoeidheid, gewoonten en procedurefouten.",
+     "field_note": "Mensen zijn geloofwaardiger als werkers dan als gedenkbeelden."
     }
-  ]
+   },
+   "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER",
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P157_WORKER_JOB_CARDS",
+   "article_id": "colony_human.worker_job_cards",
+   "title_key": "applied_lore.worker_job_cards.title",
+   "unlock": {
+    "primary": "unlock.worker_job_cards",
+    "poi_tags": [
+     "poi.worker_job_card_stack",
+     "poi.flooded_id_clip",
+     "poi.task_certification_stamp"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.industrial_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Worker Job Cards",
+     "scanner": "JOB CARD // Name, role, last task, route permission, tool certification. A face the budget could read.",
+     "terminal": "EVIDENCE RULE: every recovered name should attach to something done: pump route, kitchen ledger, med bay call, cutter custody, pressure check, fabrication batch. A task turns a name into proof.",
+     "audio": "A name without a task becomes a shrine. A task makes it evidence.",
+     "in_game_wiki": "A job card is the colony's smallest biography. It does not need childhood, romance, or a speech to matter. It needs a role, a permission stamp, a last task, and the thing the worker expected to finish after the next tone. When the player finds these cards, people stop being background casualties and become route evidence: someone held the pump key, delayed a hatch, cooked for a crew, signed a cutter out, certified a seal, or missed the return because the system made help wait.",
+     "external_site": "Worker Job Cards turn names into evidence objects: playable clues that make the colony human without stopping the survival loop.",
+     "field_note": "Make names useful before making them tragic."
+    },
+    "ru_RU": {
+     "title": "Рабочие job cards",
+     "scanner": "JOB CARD // Имя, роль, последняя задача, маршрутное разрешение, сертификат инструмента. Лицо, которое бюджет мог прочитать.",
+     "terminal": "ПРАВИЛО УЛИКИ: каждое найденное имя должно быть привязано к сделанному делу: маршрут насоса, столовый ledger, вызов медблока, хранение резака, проверка давления, партия фабрикации. Задача превращает имя в доказательство.",
+     "audio": "Имя без задачи становится святыней. Задача делает его уликой.",
+     "in_game_wiki": "Job card - самая маленькая биография колонии. Ей не нужны детство, роман или речь, чтобы иметь вес. Нужны роль, штамп допуска, последняя задача и то, что рабочий собирался закончить после следующего сигнала. Когда игрок находит такие карточки, люди перестают быть фоновыми жертвами и становятся маршрутными уликами: кто-то держал ключ насоса, задержал люк, готовил для смены, подписал выдачу резака, сертифицировал уплотнение или не вернулся, потому что система заставила помощь ждать.",
+     "external_site": "Рабочие job cards превращают имена в объекты доказательства: игровые улики, которые очеловечивают колонию, не останавливая survival loop.",
+     "field_note": "Сначала сделай имена полезными. Потом трагичными."
+    },
+    "ja_JP": {
+     "title": "作業員ジョブカード",
+     "scanner": "JOB CARD // 名前、役割、最後の作業、経路許可、工具認証。予算が読める顔。",
+     "terminal": "証拠規則: 回収された名前は、実行された何かに結びつくべきだ。ポンプ経路、厨房台帳、医療呼び出し、カッター保管、圧力確認、製造バッチ。作業が名前を証拠にする。",
+     "audio": "作業のない名前は祭壇になる。作業はそれを証拠にする。",
+     "in_game_wiki": "ジョブカードはコロニーで最も小さな伝記だ。重みを持つために幼少期や恋愛や演説はいらない。必要なのは役割、許可印、最後の作業、そして次の音のあとに終えるはずだったものだ。プレイヤーがカードを見つけると、人々は背景の犠牲者ではなく経路証拠になる。誰かがポンプキーを持ち、ハッチを遅らせ、班の食事を作り、カッターを持ち出し、シールを認証し、あるいはシステムが救助を待たせたせいで戻れなかった。",
+     "external_site": "作業員ジョブカードは名前を証拠オブジェクトに変える。サバイバルループを止めずにコロニーを人間にする、プレイ可能な手がかりだ。",
+     "field_note": "名前を悲劇にする前に、役に立つものにする。"
+    },
+    "zh_CN": {
+     "title": "工人 job cards",
+     "scanner": "JOB CARD // 姓名、角色、最后任务、路线许可、工具认证。预算能读懂的一张脸。",
+     "terminal": "证据规则：每个找回的姓名都应连接到某件做过的事：泵路线、厨房 ledger、医疗呼叫、切割器保管、压力检查、制造批次。任务把姓名变成证明。",
+     "audio": "没有任务的名字会变成神龛。任务让它成为证据。",
+     "in_game_wiki": "Job card 是殖民地最小的传记。它不需要童年、爱情或演讲才有重量。它需要角色、许可戳、最后任务，以及工人以为下一声提示后还会完成的事。当玩家找到这些卡片时，人们不再是背景伤亡，而是路线证据：有人握着泵钥匙，有人拖延了舱门，有人为一队人做饭，有人签出切割器，有人认证密封，也有人因为系统让救援等待而没能返回。",
+     "external_site": "工人 job cards 把姓名变成证据物件：可玩的线索，让殖民地具有人性，同时不打断生存循环。",
+     "field_note": "先让名字有用，再让它们悲伤。"
+    },
+    "fr_FR": {
+     "title": "Cartes de poste ouvrier",
+     "scanner": "JOB CARD // Nom, rôle, dernière tâche, permission de route, certification d'outil. Un visage que le budget pouvait lire.",
+     "terminal": "RÈGLE DE PREUVE : chaque nom récupéré doit s'attacher à une action : route de pompe, ledger cuisine, appel médical, garde de cutter, contrôle pression, lot de fabrication. Une tâche transforme un nom en preuve.",
+     "audio": "Un nom sans tâche devient sanctuaire. Une tâche en fait une preuve.",
+     "in_game_wiki": "Une carte de poste est la plus petite biographie de la colonie. Elle n'a pas besoin d'enfance, de romance ou de discours pour compter. Il lui faut un rôle, un tampon de permission, une dernière tâche et la chose que l'ouvrier pensait finir après le prochain ton. Quand le joueur trouve ces cartes, les gens cessent d'être des victimes de fond et deviennent des preuves de route : quelqu'un tenait la clé de pompe, retardait une écoutille, cuisinait pour une équipe, sortait un cutter, certifiait un joint, ou ratait le retour parce que le système faisait attendre l'aide.",
+     "external_site": "Les cartes de poste ouvrier transforment les noms en objets de preuve : des indices jouables qui humanisent la colonie sans arrêter la boucle de survie.",
+     "field_note": "Rends les noms utiles avant de les rendre tragiques."
+    },
+    "es_ES": {
+     "title": "Tarjetas de trabajo obrero",
+     "scanner": "JOB CARD // Nombre, rol, última tarea, permiso de ruta, certificación de herramienta. Un rostro que el presupuesto podía leer.",
+     "terminal": "REGLA DE EVIDENCIA: cada nombre recuperado debe unirse a algo hecho: ruta de bomba, ledger de cocina, llamada médica, custodia de cortador, revisión de presión, lote de fabricación. Una tarea convierte un nombre en prueba.",
+     "audio": "Un nombre sin tarea se vuelve santuario. Una tarea lo vuelve evidencia.",
+     "in_game_wiki": "Una tarjeta de trabajo es la biografía más pequeña de la colonia. No necesita infancia, romance ni discurso para importar. Necesita rol, sello de permiso, última tarea y aquello que el trabajador esperaba terminar tras el siguiente tono. Cuando el jugador encuentra estas tarjetas, las personas dejan de ser bajas de fondo y se vuelven evidencia de ruta: alguien tenía la llave de bomba, retrasó una escotilla, cocinó para una cuadrilla, firmó un cortador, certificó un sello o perdió el retorno porque el sistema hizo esperar la ayuda.",
+     "external_site": "Las tarjetas de trabajo obrero convierten nombres en objetos de evidencia: pistas jugables que humanizan la colonia sin detener el bucle de supervivencia.",
+     "field_note": "Haz útiles los nombres antes de hacerlos trágicos."
+    },
+    "de_DE": {
+     "title": "Arbeitskarten der Arbeiter",
+     "scanner": "JOB CARD // Name, Rolle, letzte Aufgabe, Routenerlaubnis, Werkzeugzertifikat. Ein Gesicht, das das Budget lesen konnte.",
+     "terminal": "BEWEISREGEL: Jeder geborgene Name soll an eine Handlung gebunden sein: Pumpenroute, Küchenledger, Med-Bay-Ruf, Cutterverwahrung, Druckcheck, Fabrikationscharge. Eine Aufgabe macht einen Namen zum Beweis.",
+     "audio": "Ein Name ohne Aufgabe wird zum Schrein. Eine Aufgabe macht ihn zum Beweis.",
+     "in_game_wiki": "Eine Arbeitskarte ist die kleinste Biografie der Kolonie. Sie braucht keine Kindheit, Romanze oder Rede, um zu zählen. Sie braucht Rolle, Erlaubnisstempel, letzte Aufgabe und das, was der Arbeiter nach dem nächsten Ton beenden wollte. Wenn der Spieler diese Karten findet, hören Menschen auf, Hintergrundopfer zu sein, und werden Routenbeweise: Jemand hielt den Pumpenschlüssel, verzögerte eine Luke, kochte für eine Crew, trug einen Cutter aus, zertifizierte eine Dichtung oder verpasste die Rückkehr, weil das System Hilfe warten ließ.",
+     "external_site": "Arbeitskarten der Arbeiter verwandeln Namen in Beweisobjekte: spielbare Hinweise, die die Kolonie menschlich machen, ohne die Survival-Schleife zu stoppen.",
+     "field_note": "Mach Namen nützlich, bevor du sie tragisch machst."
+    },
+    "pl_PL": {
+     "title": "Karty pracy robotników",
+     "scanner": "JOB CARD // Imię, rola, ostatnie zadanie, pozwolenie trasy, certyfikat narzędzia. Twarz, którą budżet potrafił przeczytać.",
+     "terminal": "REGUŁA DOWODU: każde odzyskane imię powinno łączyć się z czymś wykonanym: trasą pompy, ledger kuchni, wezwaniem medycznym, depozytem przecinaka, kontrolą ciśnienia, partią fabrykacji. Zadanie zmienia imię w dowód.",
+     "audio": "Imię bez zadania staje się kapliczką. Zadanie czyni je dowodem.",
+     "in_game_wiki": "Karta pracy to najmniejsza biografia kolonii. Nie potrzebuje dzieciństwa, romansu ani przemowy, żeby mieć wagę. Potrzebuje roli, stempla pozwolenia, ostatniego zadania i rzeczy, którą pracownik spodziewał się skończyć po następnym tonie. Gdy gracz znajduje takie karty, ludzie przestają być tłem strat i stają się dowodami trasy: ktoś trzymał klucz pompy, opóźnił właz, gotował dla brygady, wypisał przecinak, certyfikował uszczelkę albo nie wrócił, bo system kazał pomocy czekać.",
+     "external_site": "Karty pracy robotników zmieniają imiona w obiekty dowodowe: grywalne tropy, które uczłowieczają kolonię bez zatrzymywania pętli survivalu.",
+     "field_note": "Uczyń imiona użytecznymi, zanim uczynisz je tragicznymi."
+    },
+    "uk_UA": {
+     "title": "Робочі job cards",
+     "scanner": "JOB CARD // Ім'я, роль, остання задача, маршрутний дозвіл, сертифікат інструмента. Обличчя, яке бюджет міг прочитати.",
+     "terminal": "ПРАВИЛО ДОКАЗУ: кожне знайдене ім'я має прив'язуватися до зробленої справи: маршрут насоса, кухонний ledger, виклик медблоку, зберігання різака, перевірка тиску, партія фабрикації. Задача перетворює ім'я на доказ.",
+     "audio": "Ім'я без задачі стає святинею. Задача робить його доказом.",
+     "in_game_wiki": "Job card - найменша біографія колонії. Їй не потрібні дитинство, роман чи промова, щоб мати вагу. Потрібні роль, штамп допуску, остання задача й те, що працівник збирався закінчити після наступного сигналу. Коли гравець знаходить такі картки, люди перестають бути фоновими втратами й стають маршрутними доказами: хтось тримав ключ насоса, затримав люк, готував для бригади, підписав видачу різака, сертифікував ущільнення або не повернувся, бо система змусила допомогу чекати.",
+     "external_site": "Робочі job cards перетворюють імена на об'єкти доказу: ігрові зачіпки, які людянять колонію, не зупиняючи survival loop.",
+     "field_note": "Спершу зроби імена корисними. Потім трагічними."
+    },
+    "ar_SA": {
+     "title": "بطاقات عمل العمال",
+     "scanner": "JOB CARD // اسم، دور، آخر مهمة، إذن مسار، شهادة أداة. وجه يستطيع الميزان قراءته.",
+     "terminal": "قاعدة دليل: يجب أن يرتبط كل اسم مستعاد بشيء تم عمله: مسار مضخة، ledger مطبخ، نداء طبي، عهدة cutter، فحص ضغط، دفعة تصنيع. المهمة تحول الاسم إلى دليل.",
+     "audio": "اسم بلا مهمة يصبح مزارا. المهمة تجعله دليلا.",
+     "in_game_wiki": "بطاقة العمل هي أصغر سيرة في المستعمرة. لا تحتاج إلى طفولة أو قصة حب أو خطاب كي تهم. تحتاج إلى دور، ختم إذن، آخر مهمة، والشيء الذي توقع العامل إنهاءه بعد النغمة التالية. عندما يجد اللاعب هذه البطاقات، يكف الناس عن كونهم ضحايا خلفية ويصيرون أدلة مسار: شخص حمل مفتاح المضخة، أخر hatch، طبخ لطاقم، وقع لأخذ cutter، اعتمد ختما، أو فقد العودة لأن النظام جعل النجدة تنتظر.",
+     "external_site": "بطاقات عمل العمال تحول الأسماء إلى أجسام دليل: خيوط قابلة للعب تجعل المستعمرة بشرية من دون إيقاف حلقة البقاء.",
+     "field_note": "اجعل الأسماء مفيدة قبل أن تجعلها مأساوية."
+    },
+    "id_ID": {
+     "title": "Kartu Kerja Pekerja",
+     "scanner": "JOB CARD // Nama, peran, tugas terakhir, izin rute, sertifikasi alat. Wajah yang bisa dibaca anggaran.",
+     "terminal": "ATURAN BUKTI: tiap nama yang ditemukan harus melekat pada sesuatu yang dikerjakan: rute pompa, ledger dapur, panggilan med bay, kustodi cutter, cek tekanan, batch fabrikasi. Tugas mengubah nama menjadi bukti.",
+     "audio": "Nama tanpa tugas menjadi tempat suci. Tugas membuatnya bukti.",
+     "in_game_wiki": "Kartu kerja adalah biografi terkecil koloni. Ia tidak butuh masa kecil, romansa, atau pidato untuk berarti. Ia butuh peran, cap izin, tugas terakhir, dan hal yang pekerja kira akan selesai setelah nada berikutnya. Saat pemain menemukan kartu ini, orang berhenti menjadi korban latar dan menjadi bukti rute: seseorang memegang kunci pompa, menunda hatch, memasak untuk kru, menandatangani cutter, mensertifikasi segel, atau gagal kembali karena sistem membuat bantuan menunggu.",
+     "external_site": "Kartu Kerja Pekerja mengubah nama menjadi objek bukti: petunjuk yang bisa dimainkan dan memanusiakan koloni tanpa menghentikan survival loop.",
+     "field_note": "Buat nama berguna sebelum membuatnya tragis."
+    },
+    "ko_KR": {
+     "title": "노동자 작업 카드",
+     "scanner": "JOB CARD // 이름, 역할, 마지막 작업, 경로 허가, 도구 인증. 예산이 읽을 수 있는 얼굴.",
+     "terminal": "증거 규칙: 회수된 모든 이름은 수행된 무언가와 붙어야 한다. 펌프 경로, 주방 ledger, 의무실 호출, cutter 보관, 압력 점검, 제작 배치. 작업이 이름을 증거로 만든다.",
+     "audio": "작업 없는 이름은 성지가 된다. 작업은 그것을 증거로 만든다.",
+     "in_game_wiki": "작업 카드는 식민지의 가장 작은 전기다. 의미를 갖기 위해 어린 시절, 연애, 연설이 필요하지 않다. 역할, 허가 도장, 마지막 작업, 그리고 다음 음 뒤에 끝낼 거라고 믿은 일이 필요하다. 플레이어가 이 카드를 찾으면 사람들은 배경 희생자가 아니라 경로 증거가 된다. 누군가는 펌프 키를 들고, 해치를 지연시키고, 승무원을 위해 요리하고, cutter를 반출하고, 씰을 인증하고, 시스템이 도움을 기다리게 해서 돌아오지 못했다.",
+     "external_site": "노동자 작업 카드는 이름을 증거 오브젝트로 바꾼다. survival loop를 멈추지 않고 식민지를 인간적으로 만드는 플레이 가능한 단서다.",
+     "field_note": "이름을 비극으로 만들기 전에 쓸모 있게 만들어라."
+    },
+    "he_IL": {
+     "title": "כרטיסי עבודה של עובדים",
+     "scanner": "JOB CARD // שם, תפקיד, משימה אחרונה, הרשאת מסלול, אישור כלי. פנים שהתקציב יכול לקרוא.",
+     "terminal": "כלל ראיה: כל שם שנמצא צריך להיצמד לדבר שנעשה: מסלול משאבה, ledger מטבח, קריאת מד-ביי, משמורת cutter, בדיקת לחץ, אצוות ייצור. משימה הופכת שם לראיה.",
+     "audio": "שם בלי משימה הופך למקדש. משימה עושה ממנו ראיה.",
+     "in_game_wiki": "כרטיס עבודה הוא הביוגרפיה הקטנה ביותר של המושבה. הוא לא צריך ילדות, רומן או נאום כדי להיות חשוב. הוא צריך תפקיד, חותמת הרשאה, משימה אחרונה ואת הדבר שהעובד ציפה לסיים אחרי הצליל הבא. כשהשחקן מוצא את הכרטיסים האלה, אנשים מפסיקים להיות נפגעי רקע והופכים לראיות מסלול: מישהו החזיק מפתח משאבה, עיכב hatch, בישל לצוות, חתם על cutter, אישר אטם או החמיץ חזרה כי המערכת גרמה לעזרה לחכות.",
+     "external_site": "כרטיסי עבודה של עובדים הופכים שמות לאובייקטי ראיה: רמזים משחקיים שמאנישים את המושבה בלי לעצור את לולאת ההישרדות.",
+     "field_note": "הפוך שמות לשימושיים לפני שאתה הופך אותם לטרגיים."
+    },
+    "pt_BR": {
+     "title": "Cartões de trabalho dos operários",
+     "scanner": "JOB CARD // Nome, função, última tarefa, permissão de rota, certificação de ferramenta. Um rosto que o orçamento conseguia ler.",
+     "terminal": "REGRA DE EVIDÊNCIA: cada nome recuperado deve se ligar a algo feito: rota de bomba, ledger da cozinha, chamada médica, custódia de cutter, checagem de pressão, lote de fabricação. Uma tarefa transforma nome em prova.",
+     "audio": "Um nome sem tarefa vira santuário. Uma tarefa o torna evidência.",
+     "in_game_wiki": "Um cartão de trabalho é a menor biografia da colônia. Não precisa de infância, romance ou discurso para importar. Precisa de função, carimbo de permissão, última tarefa e aquilo que o trabalhador esperava terminar depois do próximo tom. Quando o jogador encontra esses cartões, pessoas deixam de ser baixas de fundo e viram evidência de rota: alguém segurou a chave da bomba, atrasou uma escotilha, cozinhou para a equipe, assinou um cutter, certificou um selo ou perdeu o retorno porque o sistema fez a ajuda esperar.",
+     "external_site": "Cartões de trabalho dos operários transformam nomes em objetos de evidência: pistas jogáveis que humanizam a colônia sem parar o survival loop.",
+     "field_note": "Torne nomes úteis antes de torná-los trágicos."
+    },
+    "nl_NL": {
+     "title": "Werkkaarten van arbeiders",
+     "scanner": "JOB CARD // Naam, rol, laatste taak, routetoestemming, gereedschapscertificaat. Een gezicht dat het budget kon lezen.",
+     "terminal": "BEWIJSREGEL: elke teruggevonden naam moet vastzitten aan iets dat gedaan werd: pomproute, keukenledger, medbay-oproep, cutterbewaring, drukcontrole, fabricagebatch. Een taak maakt van een naam bewijs.",
+     "audio": "Een naam zonder taak wordt een altaar. Een taak maakt er bewijs van.",
+     "in_game_wiki": "Een werkkaart is de kleinste biografie van de kolonie. Ze heeft geen jeugd, romance of toespraak nodig om te tellen. Ze heeft een rol nodig, een toestemmingsstempel, een laatste taak en datgene wat de werker na de volgende toon dacht af te maken. Wanneer de speler deze kaarten vindt, zijn mensen geen achtergrondslachtoffers meer maar routebewijs: iemand hield de pompsleutel, vertraagde een luik, kookte voor een ploeg, tekende een cutter uit, certificeerde een afdichting of miste de terugkeer omdat het systeem hulp liet wachten.",
+     "external_site": "Werkkaarten van arbeiders veranderen namen in bewijsobjecten: speelbare aanwijzingen die de kolonie menselijk maken zonder de survival loop te stoppen.",
+     "field_note": "Maak namen nuttig voordat je ze tragisch maakt."
+    }
+   },
+   "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER",
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P158_LOCKER_NAME_PROTOCOL",
+   "article_id": "colony_human.locker_name_protocol",
+   "title_key": "applied_lore.locker_name_protocol.title",
+   "unlock": {
+    "primary": "unlock.locker_name_protocol",
+    "poi_tags": [
+     "poi.locker_name_strip",
+     "poi.marauder_preserved_label",
+     "poi.deep_reach_removed_payroll"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.industrial_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Locker Name Protocol",
+     "scanner": "LOCKER TRACE // Name plate, tool wear, pressure tape, correction note, route sticker. Personal evidence without a family plot.",
+     "terminal": "LOCKER RULE: preserve names Deep Reach removed from payroll. A locker should bind badge, role, route permission, repair habit, and the unfinished thing left inside.",
+     "audio": "The company deleted the employee. The rust kept the label.",
+     "in_game_wiki": "A locker is personal because it was used, not because it explains a whole life. The best locker evidence is practical: a badge rubbed bright at one edge, tape over a cracked seal, a route sticker, a correction note in a worker's shorthand, a name plate that payroll later erased. These objects let the Marauder restore people through use marks and unfinished tasks. The colony does not need melodrama to feel human. It needs enough small traces that corporate cleanup failed to scrape away.",
+     "external_site": "Locker Name Protocol makes personal evidence playable: names survive through objects, wear, route permission, and Marauder annotation.",
+     "field_note": "The smallest human trace should survive corporate cleanup."
+    },
+    "ru_RU": {
+     "title": "Протокол именных шкафчиков",
+     "scanner": "СЛЕД ШКАФЧИКА // Табличка имени, износ инструмента, pressure tape, правка, маршрутная наклейка. Личная улика без семейной мелодрамы.",
+     "terminal": "ПРАВИЛО ШКАФЧИКА: сохранять имена, которые Deep Reach убрал из payroll. Шкафчик должен связывать бейдж, роль, маршрутный допуск, привычку ремонта и незавершенную вещь внутри.",
+     "audio": "Компания удалила сотрудника. Ржавчина сохранила ярлык.",
+     "in_game_wiki": "Шкафчик личный потому, что им пользовались, а не потому, что он объясняет всю жизнь. Лучшая улика шкафчика практична: бейдж, стертый по одному краю, лента на треснувшем уплотнении, маршрутная наклейка, правка рабочей скорописью, табличка имени, которую payroll позже стер. Эти предметы позволяют Marauder возвращать людей через следы использования и незаконченные задачи. Колонии не нужна мелодрама, чтобы быть человеческой. Ей нужны маленькие следы, которые корпоративная зачистка не смогла соскоблить.",
+     "external_site": "Протокол именных шкафчиков делает личные улики игровыми: имена выживают через предметы, износ, маршрутный допуск и пометки Marauder.",
+     "field_note": "Самый маленький человеческий след должен пережить корпоративную зачистку."
+    },
+    "ja_JP": {
+     "title": "ロッカー名プロトコル",
+     "scanner": "LOCKER TRACE // 名札、工具摩耗、pressure tape、修正メモ、経路ステッカー。家族劇なしの個人的証拠。",
+     "terminal": "ロッカー規則: Deep Reachがpayrollから消した名前を保存する。ロッカーはバッジ、役割、経路許可、修理癖、中に残った未完の物を結ぶべきだ。",
+     "audio": "会社は従業員を消した。錆はラベルを残した。",
+     "in_game_wiki": "ロッカーが個人的なのは、人生を丸ごと説明するからではなく、使われていたからだ。最良の証拠は実用的だ。片側だけ光ったバッジ、割れたシールの上のテープ、経路ステッカー、作業員の略記で書かれた修正メモ、後にpayrollが消した名札。Marauderは使用痕と未完の作業から人を取り戻す。コロニーに人間味を持たせるのにメロドラマはいらない。企業清掃が削り切れなかった小さな痕跡が必要だ。",
+     "external_site": "ロッカー名プロトコルは個人的証拠をプレイ可能にする。名前は物、摩耗、経路許可、Marauder注釈で残る。",
+     "field_note": "最小の人間の痕跡こそ企業清掃を生き残るべきだ。"
+    },
+    "zh_CN": {
+     "title": "储物柜姓名协议",
+     "scanner": "储物柜痕迹 // 姓名牌、工具磨损、pressure tape、修正便条、路线贴纸。没有家庭剧情的个人证据。",
+     "terminal": "储物柜规则：保存 Deep Reach 从 payroll 中移除的名字。储物柜应绑定徽章、角色、路线许可、维修习惯和留在里面的未完成之物。",
+     "audio": "公司删除了员工。锈迹留下了标签。",
+     "in_game_wiki": "储物柜之所以个人化，是因为有人使用过它，而不是因为它解释了一整个人生。最好的储物柜证据很实用：一侧被磨亮的徽章、裂开的密封上贴的胶带、路线贴纸、工人速记写下的修正便条、后来被 payroll 抹掉的姓名牌。Marauder 通过使用痕迹和未完成任务把人找回来。殖民地不需要煽情才像人住过。它需要企业清理没能刮掉的小痕迹。",
+     "external_site": "储物柜姓名协议让个人证据可玩：姓名通过物件、磨损、路线许可和 Marauder 注释存活。",
+     "field_note": "最小的人类痕迹也应该熬过企业清理。"
+    },
+    "fr_FR": {
+     "title": "Protocole de nom de casier",
+     "scanner": "TRACE CASIER // Plaque de nom, usure d'outil, pressure tape, note de correction, sticker de route. Preuve personnelle sans drame familial.",
+     "terminal": "RÈGLE CASIER : préserver les noms que Deep Reach a retirés du payroll. Un casier doit lier badge, rôle, permission de route, habitude de réparation et chose inachevée laissée dedans.",
+     "audio": "La compagnie a supprimé l'employé. La rouille a gardé l'étiquette.",
+     "in_game_wiki": "Un casier est personnel parce qu'il a servi, pas parce qu'il explique toute une vie. La meilleure preuve est pratique : badge poli sur un bord, ruban sur un joint fendu, sticker de route, note de correction en sténographie ouvrière, plaque de nom plus tard effacée du payroll. Ces objets permettent au Marauder de rendre les gens par marques d'usage et tâches inachevées. La colonie n'a pas besoin de mélodrame pour être humaine. Elle a besoin de petites traces que le nettoyage corpo n'a pas grattées.",
+     "external_site": "Le protocole de nom de casier rend la preuve personnelle jouable : les noms survivent par objets, usure, permission de route et annotation Marauder.",
+     "field_note": "La plus petite trace humaine doit survivre au nettoyage corpo."
+    },
+    "es_ES": {
+     "title": "Protocolo de nombre en casillero",
+     "scanner": "RASTRO DE CASILLERO // Placa de nombre, desgaste de herramienta, pressure tape, nota de corrección, etiqueta de ruta. Evidencia personal sin trama familiar.",
+     "terminal": "REGLA DE CASILLERO: preservar nombres que Deep Reach retiró de payroll. Un casillero debe unir placa, rol, permiso de ruta, hábito de reparación y lo inconcluso que quedó dentro.",
+     "audio": "La compañía borró al empleado. El óxido conservó la etiqueta.",
+     "in_game_wiki": "Un casillero es personal porque se usó, no porque explique una vida entera. La mejor evidencia es práctica: una placa gastada en un borde, cinta sobre un sello agrietado, etiqueta de ruta, nota de corrección en taquigrafía obrera, nombre que payroll borró después. Esos objetos permiten al Marauder restaurar personas por marcas de uso y tareas inconclusas. La colonia no necesita melodrama para sentirse humana. Necesita rastros pequeños que la limpieza corporativa no logró raspar.",
+     "external_site": "El Protocolo de nombre en casillero vuelve jugable la evidencia personal: los nombres sobreviven en objetos, desgaste, permiso de ruta y anotación Marauder.",
+     "field_note": "El rastro humano más pequeño debe sobrevivir a la limpieza corporativa."
+    },
+    "de_DE": {
+     "title": "Locker-Namenprotokoll",
+     "scanner": "LOCKERSPUR // Namensplatte, Werkzeugverschleiß, pressure tape, Korrekturzettel, Routensticker. Persönlicher Beweis ohne Familienplot.",
+     "terminal": "LOCKERREGEL: Namen bewahren, die Deep Reach aus payroll entfernte. Ein Locker soll Badge, Rolle, Routenerlaubnis, Reparaturgewohnheit und das Unfertige darin verbinden.",
+     "audio": "Die Firma löschte den Angestellten. Der Rost behielt das Etikett.",
+     "in_game_wiki": "Ein Locker ist persönlich, weil er benutzt wurde, nicht weil er ein ganzes Leben erklärt. Der beste Beweis ist praktisch: ein Badge mit blanker Kante, Band über einer gerissenen Dichtung, Routensticker, Korrektur in Arbeitershorthand, eine Namensplatte, die payroll später löschte. Diese Objekte lassen den Marauder Menschen durch Gebrauchsspuren und unfertige Aufgaben wiederherstellen. Die Kolonie braucht kein Melodrama, um menschlich zu wirken. Sie braucht kleine Spuren, die Konzernreinigung nicht abkratzen konnte.",
+     "external_site": "Locker-Namenprotokoll macht persönlichen Beweis spielbar: Namen überleben durch Objekte, Verschleiß, Routenerlaubnis und Marauder-Annotation.",
+     "field_note": "Die kleinste menschliche Spur soll Konzernreinigung überleben."
+    },
+    "pl_PL": {
+     "title": "Protokół nazw na szafkach",
+     "scanner": "ŚLAD SZAFKI // Tabliczka imienna, zużycie narzędzia, pressure tape, notatka korekty, naklejka trasy. Osobisty dowód bez rodzinnej fabuły.",
+     "terminal": "REGUŁA SZAFKI: zachować imiona, które Deep Reach usunęło z payroll. Szafka ma łączyć plakietkę, rolę, pozwolenie trasy, nawyk naprawy i niedokończoną rzecz w środku.",
+     "audio": "Firma usunęła pracownika. Rdza zachowała etykietę.",
+     "in_game_wiki": "Szafka jest osobista, bo była używana, nie dlatego, że tłumaczy całe życie. Najlepszy dowód jest praktyczny: plakietka starta na krawędzi, taśma na pękniętej uszczelce, naklejka trasy, korekta skrótem pracownika, tabliczka imienna, którą payroll później skasował. Te przedmioty pozwalają Marauderowi przywracać ludzi przez ślady użycia i niedokończone zadania. Kolonia nie potrzebuje melodramatu, by być ludzka. Potrzebuje drobnych śladów, których korporacyjne czyszczenie nie zdrapało.",
+     "external_site": "Protokół nazw na szafkach czyni osobisty dowód grywalnym: imiona trwają przez przedmioty, zużycie, pozwolenie trasy i adnotację Maraudera.",
+     "field_note": "Najmniejszy ludzki ślad powinien przetrwać korporacyjne czyszczenie."
+    },
+    "uk_UA": {
+     "title": "Протокол іменних шафок",
+     "scanner": "СЛІД ШАФКИ // Табличка імені, знос інструмента, pressure tape, правка, маршрутна наліпка. Особистий доказ без сімейної мелодрами.",
+     "terminal": "ПРАВИЛО ШАФКИ: берегти імена, які Deep Reach прибрала з payroll. Шафка має зв'язувати бейдж, роль, маршрутний дозвіл, звичку ремонту й незавершену річ усередині.",
+     "audio": "Компанія видалила працівника. Іржа зберегла ярлик.",
+     "in_game_wiki": "Шафка особиста тому, що нею користувалися, а не тому, що вона пояснює ціле життя. Найкращий доказ практичний: бейдж, стертий з одного краю, стрічка на тріснутому ущільненні, маршрутна наліпка, правка робочим скорописом, табличка імені, яку payroll потім стер. Ці предмети дозволяють Marauder повертати людей через сліди використання й незакінчені задачі. Колонії не потрібна мелодрама, щоб бути людською. Їй потрібні малі сліди, які корпоративне прибирання не змогло зішкребти.",
+     "external_site": "Протокол іменних шафок робить особисті докази ігровими: імена виживають через предмети, знос, маршрутний дозвіл і помітки Marauder.",
+     "field_note": "Найменший людський слід має пережити корпоративне прибирання."
+    },
+    "ar_SA": {
+     "title": "بروتوكول اسم الخزانة",
+     "scanner": "أثر خزانة // لوحة اسم، تآكل أداة، pressure tape، ملاحظة تصحيح، ملصق مسار. دليل شخصي بلا حبكة عائلية.",
+     "terminal": "قاعدة الخزانة: احفظ الأسماء التي أزالتها Deep Reach من payroll. يجب أن تربط الخزانة الشارة، الدور، إذن المسار، عادة الإصلاح والشيء غير المكتمل داخلها.",
+     "audio": "حذفت الشركة الموظف. الصدأ أبقى الملصق.",
+     "in_game_wiki": "الخزانة شخصية لأنها استُخدمت، لا لأنها تشرح حياة كاملة. أفضل دليل عملي: شارة مصقولة من حافة، شريط فوق ختم متشقق، ملصق مسار، ملاحظة تصحيح باختزال عامل، ولوحة اسم محاها payroll لاحقا. هذه الأشياء تسمح لـ Marauder بإعادة الناس عبر آثار الاستخدام والمهام غير المكتملة. لا تحتاج المستعمرة إلى ميلودراما كي تبدو بشرية. تحتاج إلى آثار صغيرة فشل تنظيف الشركة في كشطها.",
+     "external_site": "بروتوكول اسم الخزانة يجعل الدليل الشخصي قابلا للعب: الأسماء تنجو عبر الأشياء والتآكل وإذن المسار وتعليق Marauder.",
+     "field_note": "أصغر أثر بشري يجب أن ينجو من تنظيف الشركة."
+    },
+    "id_ID": {
+     "title": "Protokol Nama Loker",
+     "scanner": "JEJAK LOKER // Pelat nama, aus alat, pressure tape, catatan koreksi, stiker rute. Bukti pribadi tanpa plot keluarga.",
+     "terminal": "ATURAN LOKER: simpan nama yang dihapus Deep Reach dari payroll. Loker harus mengikat badge, peran, izin rute, kebiasaan perbaikan, dan hal belum selesai di dalamnya.",
+     "audio": "Perusahaan menghapus pegawai. Karat menjaga label.",
+     "in_game_wiki": "Loker bersifat pribadi karena dipakai, bukan karena menjelaskan seluruh hidup. Bukti terbaik itu praktis: badge yang mengilap di satu sisi, tape di atas segel retak, stiker rute, catatan koreksi dalam singkatan pekerja, pelat nama yang kemudian dihapus payroll. Benda-benda ini membantu Marauder memulihkan orang lewat bekas pakai dan tugas belum selesai. Koloni tidak perlu melodrama agar terasa manusiawi. Ia butuh jejak kecil yang gagal dikikis pembersihan korporat.",
+     "external_site": "Protokol Nama Loker membuat bukti pribadi bisa dimainkan: nama bertahan lewat benda, aus, izin rute, dan anotasi Marauder.",
+     "field_note": "Jejak manusia terkecil harus selamat dari pembersihan korporat."
+    },
+    "ko_KR": {
+     "title": "사물함 이름 프로토콜",
+     "scanner": "사물함 흔적 // 이름판, 도구 마모, pressure tape, 수정 메모, 경로 스티커. 가족 서사 없는 개인 증거.",
+     "terminal": "사물함 규칙: Deep Reach가 payroll에서 지운 이름을 보존한다. 사물함은 배지, 역할, 경로 허가, 수리 습관, 안에 남은 미완의 것을 묶어야 한다.",
+     "audio": "회사는 직원을 삭제했다. 녹은 라벨을 남겼다.",
+     "in_game_wiki": "사물함은 한 삶 전체를 설명해서가 아니라 사용되었기 때문에 개인적이다. 가장 좋은 증거는 실용적이다. 한쪽이 닳아 반짝이는 배지, 갈라진 씰 위 테이프, 경로 스티커, 노동자식 약어로 쓴 수정 메모, payroll이 나중에 지운 이름판. 이런 물건들은 Marauder가 사용 흔적과 미완 작업으로 사람을 되찾게 한다. 식민지가 인간적으로 느껴지려면 멜로드라마가 필요하지 않다. 기업 청소가 긁어내지 못한 작은 흔적이 필요하다.",
+     "external_site": "사물함 이름 프로토콜은 개인 증거를 플레이 가능하게 한다. 이름은 물건, 마모, 경로 허가, Marauder 주석으로 살아남는다.",
+     "field_note": "가장 작은 인간 흔적도 기업 청소에서 살아남아야 한다."
+    },
+    "he_IL": {
+     "title": "פרוטוקול שם ארונית",
+     "scanner": "עקבת ארונית // לוחית שם, שחיקת כלי, pressure tape, פתק תיקון, מדבקת מסלול. ראיה אישית בלי עלילת משפחה.",
+     "terminal": "כלל ארונית: לשמר שמות ש-Deep Reach הסירה מ-payroll. ארונית צריכה לחבר תג, תפקיד, הרשאת מסלול, הרגל תיקון והדבר הלא גמור שנשאר בפנים.",
+     "audio": "החברה מחקה את העובד. החלודה שמרה את התווית.",
+     "in_game_wiki": "ארונית היא אישית כי השתמשו בה, לא כי היא מסבירה חיים שלמים. הראיה הטובה ביותר מעשית: תג שחוק בקצה אחד, סרט על אטם סדוק, מדבקת מסלול, פתק תיקון בקיצור של עובד, לוחית שם ש-payroll מחק אחר כך. החפצים האלה מאפשרים ל-Marauder להשיב אנשים דרך סימני שימוש ומשימות לא גמורות. המושבה לא צריכה מלודרמה כדי להרגיש אנושית. היא צריכה עקבות קטנים שניקוי תאגידי לא הצליח לגרד.",
+     "external_site": "פרוטוקול שם ארונית הופך ראיה אישית למשחקית: שמות שורדים דרך חפצים, שחיקה, הרשאת מסלול והערת Marauder.",
+     "field_note": "העקבה האנושית הקטנה ביותר צריכה לשרוד ניקוי תאגידי."
+    },
+    "pt_BR": {
+     "title": "Protocolo de nome de armário",
+     "scanner": "RASTRO DE ARMÁRIO // Placa de nome, desgaste de ferramenta, pressure tape, nota de correção, adesivo de rota. Evidência pessoal sem trama familiar.",
+     "terminal": "REGRA DE ARMÁRIO: preservar nomes que a Deep Reach removeu do payroll. Um armário deve ligar crachá, função, permissão de rota, hábito de reparo e a coisa inacabada deixada dentro.",
+     "audio": "A empresa apagou o empregado. A ferrugem guardou a etiqueta.",
+     "in_game_wiki": "Um armário é pessoal porque foi usado, não porque explica uma vida inteira. A melhor evidência é prática: crachá gasto numa borda, fita sobre um selo rachado, adesivo de rota, nota de correção em abreviação de trabalhador, placa de nome que o payroll apagou depois. Esses objetos deixam o Marauder restaurar pessoas por marcas de uso e tarefas inacabadas. A colônia não precisa de melodrama para parecer humana. Precisa de rastros pequenos que a limpeza corporativa não conseguiu raspar.",
+     "external_site": "O Protocolo de nome de armário torna evidência pessoal jogável: nomes sobrevivem por objetos, desgaste, permissão de rota e anotação Marauder.",
+     "field_note": "O menor rastro humano deve sobreviver à limpeza corporativa."
+    },
+    "nl_NL": {
+     "title": "Locker-naamprotocol",
+     "scanner": "LOCKERSPOOR // Naamplaat, gereedschapsslijtage, pressure tape, correctienotitie, routesticker. Persoonlijk bewijs zonder familieplot.",
+     "terminal": "LOCKERREGEL: bewaar namen die Deep Reach uit payroll verwijderde. Een locker moet badge, rol, routetoestemming, reparatiegewoonte en het onafgemaakte ding binnenin verbinden.",
+     "audio": "Het bedrijf verwijderde de werknemer. De roest behield het label.",
+     "in_game_wiki": "Een locker is persoonlijk omdat hij gebruikt werd, niet omdat hij een heel leven uitlegt. Het beste bewijs is praktisch: een badge met één gladde rand, tape over een gebarsten afdichting, routesticker, correctienotitie in werkerskortschrift, naamplaat die payroll later wiste. Deze objecten laten de Marauder mensen herstellen via gebruikssporen en onafgemaakte taken. De kolonie heeft geen melodrama nodig om menselijk te voelen. Ze heeft kleine sporen nodig die bedrijfsopruiming niet wegschraapte.",
+     "external_site": "Locker-naamprotocol maakt persoonlijk bewijs speelbaar: namen overleven via objecten, slijtage, routetoestemming en Marauder-annotatie.",
+     "field_note": "Het kleinste menselijke spoor moet bedrijfsopruiming overleven."
+    }
+   },
+   "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER",
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P159_MEDICAL_TRIAGE_LEDGER",
+   "article_id": "colony_human.medical_triage_ledger",
+   "title_key": "applied_lore.medical_triage_ledger.title",
+   "unlock": {
+    "primary": "unlock.medical_triage_ledger",
+    "poi_tags": [
+     "poi.medical_triage_ledger",
+     "poi.pressure_injury_tag",
+     "poi.delayed_extraction_note"
+    ],
+    "biome_tags": [
+     "biome.industrial_shelf",
+     "biome.brine_canyon"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Medical Triage Ledger",
+     "scanner": "TRIAGE LEDGER // Pressure injury, hypoxia, lock delay, missing route, certification hold. The horror is how neatly help waited.",
+     "terminal": "MEDICAL RULE: count bodies without gore. Use pressure-state, oxygen debt, route delay, triage priority, and signoff hold to show how procedure made patients faster than medics could treat them.",
+     "audio": "The cleanest handwriting is on the worst page.",
+     "in_game_wiki": "The medical ledger should not turn HECTON-8 into spectacle gore. Its power is colder. A patient becomes a pressure-state, then an oxygen debt, then a lock delay, then a certification hold. Medics can know the right treatment and still lose the patient because a hatch, route clock, or Deep Reach signoff makes help arrive late. The ledger is human because it shows people trying to be precise while the system makes precision useless.",
+     "external_site": "Medical Triage Ledger turns delayed evacuation into human evidence: clean categories, waiting help, and workers counted before they are mourned.",
+     "field_note": "Medical text should count bodies without becoming gore."
+    },
+    "ru_RU": {
+     "title": "Медицинский triage ledger",
+     "scanner": "TRIAGE LEDGER // Травма давления, гипоксия, задержка шлюза, пропавший маршрут, hold сертификации. Ужас в том, как аккуратно помощь ждала.",
+     "terminal": "МЕДИЦИНСКОЕ ПРАВИЛО: считать тела без gore. Использовать pressure-state, кислородный долг, задержку маршрута, приоритет triage и signoff hold, чтобы показать, как процедура делала пациентов быстрее, чем медики могли лечить.",
+     "audio": "Самый чистый почерк стоит на худшей странице.",
+     "in_game_wiki": "Медицинский ledger не должен превращать HECTON-8 в зрелищный gore. Его сила холоднее. Пациент становится pressure-state, затем кислородным долгом, затем задержкой шлюза, затем hold сертификации. Медики могут знать правильное лечение и всё равно терять пациента, потому что люк, маршрутные часы или signoff Deep Reach задерживают помощь. Ledger человеческий потому, что показывает людей, пытающихся быть точными, пока система делает точность бесполезной.",
+     "external_site": "Медицинский triage ledger превращает задержанную эвакуацию в человеческую улику: чистые категории, ожидающая помощь и рабочие, подсчитанные раньше, чем оплаканные.",
+     "field_note": "Медицинский текст должен считать тела, не становясь gore."
+    },
+    "ja_JP": {
+     "title": "医療トリアージ台帳",
+     "scanner": "TRIAGE LEDGER // 圧力傷害、低酸素、ロック遅延、消えた経路、認証保留。恐怖は、助けが整然と待たされたことだ。",
+     "terminal": "医療規則: ゴアにせず身体を数える。pressure-state、酸素負債、経路遅延、トリアージ優先度、signoff holdで、手順が医療者より速く患者を増やしたことを示す。",
+     "audio": "最もきれいな筆跡は、最悪のページにある。",
+     "in_game_wiki": "医療台帳はHECTON-8を見世物のゴアにしてはいけない。力はもっと冷たい。患者はpressure-stateになり、酸素負債になり、ロック遅延になり、認証保留になる。医療者は正しい処置を知っていても、ハッチ、経路時計、Deep Reachのsignoffが助けを遅らせるため患者を失う。台帳が人間的なのは、システムが正確さを無意味にしていく中で、人々が正確であろうとする姿を示すからだ。",
+     "external_site": "医療トリアージ台帳は遅れた避難を人間の証拠にする。清潔な分類、待たされる助け、悼まれる前に数えられる作業員。",
+     "field_note": "医療文はゴアにならずに身体を数えるべきだ。"
+    },
+    "zh_CN": {
+     "title": "医疗 triage ledger",
+     "scanner": "TRIAGE LEDGER // 压力伤、缺氧、舱锁延迟、路线缺失、认证 hold。恐怖在于救援等待得多么整齐。",
+     "terminal": "医疗规则：计数身体，但不要写成 gore。用 pressure-state、氧债、路线延迟、triage 优先级和 signoff hold 表现程序如何比医护更快制造病人。",
+     "audio": "最干净的字迹写在最糟的一页。",
+     "in_game_wiki": "医疗 ledger 不应把 HECTON-8 变成猎奇 gore。它的力量更冷。病人先变成 pressure-state，再变成氧债，再变成舱锁延迟，再变成认证 hold。医护可以知道正确治疗，却仍然失去病人，因为舱门、路线钟或 Deep Reach signoff 让帮助迟到。这个 ledger 之所以有人味，是因为它展示人在系统让精确变得无用时仍试图精确。",
+     "external_site": "医疗 triage ledger 把延迟撤离变成人类证据：干净类别、等待中的救援，以及被哀悼前先被计数的工人。",
+     "field_note": "医疗文本应该计数身体，而不是变成 gore."
+    },
+    "fr_FR": {
+     "title": "Ledger de triage médical",
+     "scanner": "TRIAGE LEDGER // Blessure pression, hypoxie, délai de sas, route manquante, hold de certification. L'horreur est l'ordre avec lequel l'aide attend.",
+     "terminal": "RÈGLE MÉDICALE : compter les corps sans gore. Utiliser pressure-state, dette oxygène, délai de route, priorité triage et signoff hold pour montrer comment la procédure fabrique des patients plus vite que les médecins ne traitent.",
+     "audio": "L'écriture la plus propre est sur la pire page.",
+     "in_game_wiki": "Le ledger médical ne doit pas transformer HECTON-8 en gore de spectacle. Sa force est plus froide. Un patient devient pressure-state, puis dette d'oxygène, puis délai de sas, puis hold de certification. Les médecins peuvent connaître le bon traitement et perdre quand même le patient parce qu'une écoutille, une horloge de route ou un signoff Deep Reach fait arriver l'aide trop tard. Le ledger est humain parce qu'il montre des gens cherchant la précision pendant que le système la rend inutile.",
+     "external_site": "Le Ledger de triage médical transforme l'évacuation retardée en preuve humaine : catégories propres, aide en attente et ouvriers comptés avant d'être pleurés.",
+     "field_note": "Le texte médical doit compter les corps sans devenir gore."
+    },
+    "es_ES": {
+     "title": "Ledger de triaje médico",
+     "scanner": "TRIAGE LEDGER // Lesión por presión, hipoxia, demora de esclusa, ruta perdida, hold de certificación. El horror es lo limpiamente que esperó la ayuda.",
+     "terminal": "REGLA MÉDICA: contar cuerpos sin gore. Usar pressure-state, deuda de oxígeno, demora de ruta, prioridad de triage y signoff hold para mostrar cómo el procedimiento hizo pacientes más rápido que los médicos podían tratarlos.",
+     "audio": "La letra más limpia está en la peor página.",
+     "in_game_wiki": "El ledger médico no debe convertir HECTON-8 en gore de espectáculo. Su fuerza es más fría. Un paciente se vuelve pressure-state, luego deuda de oxígeno, luego demora de esclusa, luego hold de certificación. Los médicos pueden saber el tratamiento correcto y aun así perder al paciente porque una escotilla, reloj de ruta o signoff de Deep Reach retrasa la ayuda. El ledger es humano porque muestra gente intentando ser precisa mientras el sistema vuelve inútil la precisión.",
+     "external_site": "El Ledger de triaje médico convierte la evacuación demorada en evidencia humana: categorías limpias, ayuda en espera y trabajadores contados antes de ser llorados.",
+     "field_note": "El texto médico debe contar cuerpos sin volverse gore."
+    },
+    "de_DE": {
+     "title": "Medizinisches Triage-Ledger",
+     "scanner": "TRIAGE LEDGER // Druckverletzung, Hypoxie, Schleusenverzug, fehlende Route, Zertifizierungshold. Der Schrecken ist, wie ordentlich Hilfe wartete.",
+     "terminal": "MEDIZINREGEL: Körper zählen ohne Gore. pressure-state, Sauerstoffschuld, Routenverzug, Triagepriorität und signoff hold zeigen, wie Verfahren Patienten schneller erzeugten, als Medics behandeln konnten.",
+     "audio": "Die sauberste Handschrift steht auf der schlimmsten Seite.",
+     "in_game_wiki": "Das medizinische Ledger soll HECTON-8 nicht zu Schau-Gore machen. Seine Kraft ist kälter. Ein Patient wird pressure-state, dann Sauerstoffschuld, dann Schleusenverzug, dann Zertifizierungshold. Medics können die richtige Behandlung kennen und trotzdem verlieren, weil Luke, Routenuhr oder Deep-Reach-signoff Hilfe verspätet. Das Ledger ist menschlich, weil es Menschen zeigt, die präzise sein wollen, während das System Präzision nutzlos macht.",
+     "external_site": "Das Medizinische Triage-Ledger macht verzögerte Evakuierung zu menschlichem Beweis: saubere Kategorien, wartende Hilfe, gezählte Arbeiter vor der Trauer.",
+     "field_note": "Medizinischer Text soll Körper zählen, ohne Gore zu werden."
+    },
+    "pl_PL": {
+     "title": "Medyczny ledger triage",
+     "scanner": "TRIAGE LEDGER // Uraz ciśnieniowy, hipoksja, opóźnienie śluzy, brak trasy, hold certyfikacji. Groza tkwi w tym, jak schludnie pomoc czekała.",
+     "terminal": "REGUŁA MEDYCZNA: liczyć ciała bez gore. Używaj pressure-state, długu tlenu, opóźnienia trasy, priorytetu triage i signoff hold, by pokazać, jak procedura tworzyła pacjentów szybciej, niż medycy leczyli.",
+     "audio": "Najczystsze pismo jest na najgorszej stronie.",
+     "in_game_wiki": "Medyczny ledger nie powinien robić z HECTON-8 widowiskowego gore. Jego siła jest chłodniejsza. Pacjent staje się pressure-state, potem długiem tlenu, opóźnieniem śluzy, holdem certyfikacji. Medycy mogą znać właściwe leczenie i nadal stracić pacjenta, bo właz, zegar trasy albo signoff Deep Reach opóźnia pomoc. Ledger jest ludzki, bo pokazuje ludzi próbujących być precyzyjnymi, gdy system czyni precyzję bezużyteczną.",
+     "external_site": "Medyczny ledger triage zmienia opóźnioną ewakuację w ludzki dowód: czyste kategorie, czekającą pomoc i pracowników policzonych przed żałobą.",
+     "field_note": "Tekst medyczny powinien liczyć ciała, nie stawać się gore."
+    },
+    "uk_UA": {
+     "title": "Медичний triage ledger",
+     "scanner": "TRIAGE LEDGER // Травма тиску, гіпоксія, затримка шлюзу, зниклий маршрут, hold сертифікації. Жах у тому, як акуратно допомога чекала.",
+     "terminal": "МЕДИЧНЕ ПРАВИЛО: рахувати тіла без gore. Використовувати pressure-state, кисневий борг, затримку маршруту, пріоритет triage і signoff hold, щоб показати, як процедура робила пацієнтів швидше, ніж медики лікували.",
+     "audio": "Найчистіший почерк стоїть на найгіршій сторінці.",
+     "in_game_wiki": "Медичний ledger не має перетворювати HECTON-8 на видовищний gore. Його сила холодніша. Пацієнт стає pressure-state, потім кисневим боргом, потім затримкою шлюзу, потім hold сертифікації. Медики можуть знати правильне лікування й усе одно втратити пацієнта, бо люк, маршрутний годинник або signoff Deep Reach затримує допомогу. Ledger людський тому, що показує людей, які намагаються бути точними, поки система робить точність марною.",
+     "external_site": "Медичний triage ledger перетворює затриману евакуацію на людський доказ: чисті категорії, допомогу в очікуванні й працівників, порахованих раніше, ніж оплаканих.",
+     "field_note": "Медичний текст має рахувати тіла, не стаючи gore."
+    },
+    "ar_SA": {
+     "title": "دفتر الفرز الطبي",
+     "scanner": "TRIAGE LEDGER // إصابة ضغط، نقص أكسجين، تأخير قفل، مسار مفقود، hold اعتماد. الرعب في دقة انتظار المساعدة.",
+     "terminal": "قاعدة طبية: احسب الأجساد بلا gore. استخدم pressure-state، دين الأكسجين، تأخير المسار، أولوية triage وsignoff hold لإظهار كيف جعل الإجراء المرضى أسرع من قدرة الأطباء.",
+     "audio": "أنظف خط يد على أسوأ صفحة.",
+     "in_game_wiki": "لا يجب أن يحول الدفتر الطبي HECTON-8 إلى gore استعراضي. قوته أبرد. يصير المريض pressure-state، ثم دين أكسجين، ثم تأخير قفل، ثم hold اعتماد. قد يعرف المسعفون العلاج الصحيح ويخسرون المريض لأن hatch أو ساعة مسار أو signoff من Deep Reach جعل المساعدة تصل متأخرة. الدفتر بشري لأنه يعرض أناسا يحاولون الدقة بينما يجعل النظام الدقة بلا فائدة.",
+     "external_site": "دفتر الفرز الطبي يحول الإخلاء المتأخر إلى دليل بشري: فئات نظيفة، مساعدة تنتظر، وعمال عُدوا قبل أن يُرثوا.",
+     "field_note": "يجب أن يحسب النص الطبي الأجساد من دون أن يصبح gore."
+    },
+    "id_ID": {
+     "title": "Ledger Triage Medis",
+     "scanner": "TRIAGE LEDGER // Cedera tekanan, hipoksia, delay lock, rute hilang, hold sertifikasi. Horornya adalah betapa rapi bantuan menunggu.",
+     "terminal": "ATURAN MEDIS: hitung tubuh tanpa gore. Pakai pressure-state, utang oksigen, delay rute, prioritas triage, dan signoff hold untuk menunjukkan prosedur membuat pasien lebih cepat daripada medik merawat.",
+     "audio": "Tulisan tangan paling bersih ada di halaman terburuk.",
+     "in_game_wiki": "Ledger medis tidak boleh mengubah HECTON-8 menjadi gore tontonan. Kekuatannya lebih dingin. Pasien menjadi pressure-state, lalu utang oksigen, lalu delay lock, lalu hold sertifikasi. Medik bisa tahu perawatan yang benar dan tetap kehilangan pasien karena hatch, jam rute, atau signoff Deep Reach membuat bantuan terlambat. Ledger terasa manusiawi karena menunjukkan orang mencoba presisi saat sistem membuat presisi tidak berguna.",
+     "external_site": "Ledger Triage Medis mengubah evakuasi tertunda menjadi bukti manusia: kategori bersih, bantuan menunggu, dan pekerja dihitung sebelum diratapi.",
+     "field_note": "Teks medis harus menghitung tubuh tanpa menjadi gore."
+    },
+    "ko_KR": {
+     "title": "의료 분류 ledger",
+     "scanner": "TRIAGE LEDGER // 압력 손상, 저산소, 락 지연, 사라진 경로, 인증 hold. 공포는 도움이 얼마나 깔끔하게 기다렸는가다.",
+     "terminal": "의료 규칙: gore 없이 몸을 센다. pressure-state, 산소 부채, 경로 지연, triage 우선도, signoff hold로 절차가 의료진보다 빠르게 환자를 만들었음을 보여준다.",
+     "audio": "가장 깨끗한 글씨는 최악의 페이지에 있다.",
+     "in_game_wiki": "의료 ledger는 HECTON-8을 구경거리 gore로 만들면 안 된다. 힘은 더 차갑다. 환자는 pressure-state가 되고, 산소 부채가 되고, 락 지연이 되고, 인증 hold가 된다. 의료진은 올바른 처치를 알아도 해치, 경로 시계, Deep Reach signoff가 도움을 늦게 도착하게 해서 환자를 잃을 수 있다. ledger가 인간적인 이유는 시스템이 정확성을 무의미하게 만드는 동안 사람들이 정확하려 애쓰는 모습을 보여주기 때문이다.",
+     "external_site": "의료 분류 ledger는 지연된 대피를 인간 증거로 바꾼다. 깨끗한 범주, 기다리는 도움, 애도되기 전에 세어진 노동자들.",
+     "field_note": "의료 문장은 gore가 되지 않고 몸을 세야 한다."
+    },
+    "he_IL": {
+     "title": "ledger טריאז' רפואי",
+     "scanner": "TRIAGE LEDGER // פגיעת לחץ, היפוקסיה, עיכוב מנעול, מסלול חסר, hold אישור. האימה היא כמה מסודר העזרה חיכתה.",
+     "terminal": "כלל רפואי: לספור גופים בלי gore. השתמש ב-pressure-state, חוב חמצן, עיכוב מסלול, עדיפות triage ו-signoff hold כדי להראות איך הליך יצר מטופלים מהר יותר משהחובשים טיפלו.",
+     "audio": "כתב היד הנקי ביותר נמצא בעמוד הגרוע ביותר.",
+     "in_game_wiki": "ה-ledger הרפואי לא צריך להפוך את HECTON-8 ל-gore ראוותני. הכוח שלו קר יותר. מטופל הופך ל-pressure-state, אחר כך לחוב חמצן, לעיכוב מנעול, ל-hold אישור. חובשים יכולים לדעת את הטיפול הנכון ועדיין לאבד מטופל כי hatch, שעון מסלול או signoff של Deep Reach מעכבים עזרה. ה-ledger אנושי כי הוא מראה אנשים מנסים לדייק בזמן שהמערכת הופכת דיוק לחסר תועלת.",
+     "external_site": "ledger טריאז' רפואי הופך פינוי מעוכב לראיה אנושית: קטגוריות נקיות, עזרה שמחכה ועובדים שנספרו לפני שהתאבלו עליהם.",
+     "field_note": "טקסט רפואי צריך לספור גופים בלי להפוך ל-gore."
+    },
+    "pt_BR": {
+     "title": "Ledger de triagem médica",
+     "scanner": "TRIAGE LEDGER // Lesão por pressão, hipóxia, atraso de lock, rota ausente, hold de certificação. O horror é a limpeza com que a ajuda esperou.",
+     "terminal": "REGRA MÉDICA: contar corpos sem gore. Usar pressure-state, dívida de oxigênio, atraso de rota, prioridade triage e signoff hold para mostrar como o procedimento fez pacientes mais rápido do que médicos tratavam.",
+     "audio": "A caligrafia mais limpa está na pior página.",
+     "in_game_wiki": "O ledger médico não deve transformar HECTON-8 em gore de espetáculo. Sua força é mais fria. Um paciente vira pressure-state, depois dívida de oxigênio, atraso de lock, hold de certificação. Médicos podem saber o tratamento certo e ainda perder o paciente porque uma escotilha, relógio de rota ou signoff da Deep Reach faz a ajuda chegar tarde. O ledger é humano porque mostra pessoas tentando ser precisas enquanto o sistema torna a precisão inútil.",
+     "external_site": "O Ledger de triagem médica transforma evacuação atrasada em evidência humana: categorias limpas, ajuda esperando e trabalhadores contados antes do luto.",
+     "field_note": "Texto médico deve contar corpos sem virar gore."
+    },
+    "nl_NL": {
+     "title": "Medisch triage-ledger",
+     "scanner": "TRIAGE LEDGER // Drukletsel, hypoxie, lockvertraging, ontbrekende route, certificatiehold. De horror is hoe netjes hulp wachtte.",
+     "terminal": "MEDISCHE REGEL: tel lichamen zonder gore. Gebruik pressure-state, zuurstofschuld, routevertraging, triageprioriteit en signoff hold om te tonen hoe procedure sneller patiënten maakte dan medici konden behandelen.",
+     "audio": "Het schoonste handschrift staat op de ergste pagina.",
+     "in_game_wiki": "Het medische ledger moet HECTON-8 geen spektakel-gore maken. De kracht is kouder. Een patiënt wordt pressure-state, dan zuurstofschuld, dan lockvertraging, dan certificatiehold. Medici kunnen de juiste behandeling kennen en toch verliezen omdat een luik, routeklok of Deep Reach-signoff hulp te laat laat komen. Het ledger is menselijk omdat het mensen toont die precies proberen te zijn terwijl het systeem precisie nutteloos maakt.",
+     "external_site": "Medisch triage-ledger maakt vertraagde evacuatie menselijk bewijs: schone categorieën, wachtende hulp en werkers die geteld worden vóór ze worden betreurd.",
+     "field_note": "Medische tekst moet lichamen tellen zonder gore te worden."
+    }
+   },
+   "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER",
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P160_MARAUDER_CORRECTION_LAYER",
+   "article_id": "colony_human.marauder_correction_layer",
+   "title_key": "applied_lore.marauder_correction_layer.title",
+   "unlock": {
+    "primary": "unlock.marauder_correction_layer",
+    "poi_tags": [
+     "poi.marauder_correction_note",
+     "poi.crossed_corporate_label",
+     "poi.field_translation_mark"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.industrial_shelf",
+     "biome.brine_canyon"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Marauder Correction Note",
+     "scanner": "Grease-pencil correction over Deep Reach label. Corp: TEMP ATM VARIANCE. Note: CO2 slows hands first. Check hatch timer.",
+     "terminal": "FIELD CORRECTION MC-04\nSource label: TEMPORARY ATMOSPHERIC VARIANCE\nRejected cause: weather\nCheck: CO2 alarm history; hatch clock; seal tape bend; body count before claim stamp\nAction: mark route unsafe until vent fan turns.",
+     "audio": "Read the label, then read the room. If they disagree, write on the label.",
+     "in_game_wiki": "Marauder correction notes are grease-pencil edits left on Deep Reach labels, warning boards and claim forms. They are not commentary. They turn clean corporate words into immediate survival checks. Variance becomes CO2 in the lock. Custody becomes do not open the sample bag. Hold becomes the hatch will not answer you in time.\n\nThe useful note names one hazard, one object and one action. It does not explain the politics. It keeps the next diver from trusting a clean form over a wet room.",
+     "external_site": "Marauder correction notes are field edits on official labels. They preserve the lie and write the survival check beside it: gas, timer, seal, route, body count.",
+     "field_note": "Do not translate the whole form. Circle the word that gets a diver killed. Write the fix beside it: vent before entry, count two breaths after the hiss, do not trust the clean hatch."
+    },
+    "ru_RU": {
+     "title": "Слой правок Marauder",
+     "scanner": "СЛОЙ ПРАВОК // Корпоративная метка: temporary atmospheric variance. Пометка Marauder: CO2 первым съедает суждение.",
+     "terminal": "ПРАВИЛО АННОТАЦИИ: переводить язык Deep Reach обратно в факты выживания. Держать заметки короткими, практичными, злыми и полезными под давлением.",
+     "audio": "Хорошая заметка не звучит умно. Она держит кого-то живым.",
+     "in_game_wiki": "Слой правок Marauder - место, где старый корпоративный язык теряет власть. Deep Reach пишет variance, custody, hold, asset, exposure. Marauder пишет то, что нужно водолазу до следующего вдоха: CO2 замедляет руки, brine прячет ступень, seal tape рвется на изгибе, чистому люку не верь. Эти пометки должны ощущаться как культура, заново собранная людьми, которых система обучила, а потом заставила ненавидеть ее словарь.",
+     "external_site": "Слой правок Marauder соединяет процедуру Deep Reach и агентность игрока: короткие аннотации превращают официальный язык в правду выживания.",
+     "field_note": "Игрок должен чувствовать, как старый язык Deep Reach переводится в счет тел."
+    },
+    "ja_JP": {
+     "title": "Marauder修正レイヤー",
+     "scanner": "CORRECTION LAYER // 企業ラベル: temporary atmospheric variance。Marauderメモ: CO2は判断を最初に食う。",
+     "terminal": "注釈規則: Deep Reach語を生存事実へ戻す。メモは短く、実用的で、怒っていて、圧力下で役に立つものにする。",
+     "audio": "良いメモは賢く聞こえない。誰かを生かす。",
+     "in_game_wiki": "Marauder修正レイヤーは、古い企業語が権威を失う場所だ。Deep Reachはvariance、custody、hold、asset、exposureと書く。Marauderは次の呼吸までに潜水員が必要なことを書く。CO2は手を遅くする。brineは段差を隠す。seal tapeは曲がりで死ぬ。きれいなハッチを信じるな。これらのメモは、システムに訓練され、その語彙を憎むことを覚えた人々が文化を再構築しているように感じるべきだ。",
+     "external_site": "Marauder修正レイヤーはDeep Reach手順とプレイヤー行為をつなぐ。短い注釈が公式語を生存の真実へ変える。",
+     "field_note": "古いDeep Reach語が死者数へ翻訳される感覚をプレイヤーに持たせる。"
+    },
+    "zh_CN": {
+     "title": "Marauder 修正层",
+     "scanner": "修正层 // 企业标签：temporary atmospheric variance。Marauder 备注：CO2 最先吞掉判断。",
+     "terminal": "注释规则：把 Deep Reach 语言翻译回生存事实。备注要短、实用、愤怒，并且在压力下有用。",
+     "audio": "好备注听起来不聪明。它让人活着。",
+     "in_game_wiki": "Marauder 修正层是旧企业语言失去权威的地方。Deep Reach 写 variance、custody、hold、asset、exposure。Marauder 写潜水员下一口气前需要知道的东西：CO2 先让手变慢；brine 会藏住台阶；seal tape 在弯折处失效；别信干净舱门。这些备注应该像一种文化在重建自身，由那些被系统训练过、又学会憎恨它词汇的人写成。",
+     "external_site": "Marauder 修正层连接 Deep Reach 程序和玩家能动性：短注释把官方语言变成生存真相。",
+     "field_note": "玩家应该感到旧 Deep Reach 语言正在被翻译成死亡人数。"
+    },
+    "fr_FR": {
+     "title": "Couche de correction Marauder",
+     "scanner": "COUCHE CORRECTION // Étiquette corpo : temporary atmospheric variance. Note Marauder : le CO2 mange le jugement d'abord.",
+     "terminal": "RÈGLE D'ANNOTATION : retraduire la langue Deep Reach en faits de survie. Notes courtes, pratiques, en colère et utiles sous pression.",
+     "audio": "Une bonne note n'a pas l'air brillante. Elle garde quelqu'un vivant.",
+     "in_game_wiki": "La couche de correction Marauder est l'endroit où l'ancien langage corpo perd son autorité. Deep Reach écrit variance, custody, hold, asset, exposure. Les Marauders écrivent ce dont un plongeur a besoin avant le prochain souffle : le CO2 ralentit les mains, la brine cache la marche, le seal tape lâche au coude, ne fais pas confiance à l'écoutille propre. Ces notes doivent sentir une culture qui se reconstruit chez des gens formés par le système puis forcés à haïr son vocabulaire.",
+     "external_site": "La couche de correction Marauder relie procédure Deep Reach et agency du joueur : des annotations courtes changent la langue officielle en vérité de survie.",
+     "field_note": "Le joueur doit sentir l'ancienne langue Deep Reach traduite en compte de corps."
+    },
+    "es_ES": {
+     "title": "Capa de corrección Marauder",
+     "scanner": "CAPA DE CORRECCIÓN // Etiqueta corporativa: temporary atmospheric variance. Nota Marauder: el CO2 se come primero el juicio.",
+     "terminal": "REGLA DE ANOTACIÓN: traducir lenguaje Deep Reach de vuelta a hechos de supervivencia. Notas cortas, prácticas, furiosas y útiles bajo presión.",
+     "audio": "Una buena nota no suena lista. Mantiene vivo a alguien.",
+     "in_game_wiki": "La capa de corrección Marauder es donde el viejo lenguaje corporativo pierde autoridad. Deep Reach escribe variance, custody, hold, asset, exposure. Los Marauders escriben lo que un buzo necesita antes de la próxima respiración: el CO2 vuelve lentas las manos, la brine esconde el escalón, el seal tape falla en la curva, no confíes en la escotilla limpia. Esas notas deben sentirse como una cultura reconstruyéndose con gente entrenada por el sistema que aprendió a odiar su vocabulario.",
+     "external_site": "La Capa de corrección Marauder une procedimiento Deep Reach y agencia del jugador: anotaciones cortas convierten lenguaje oficial en verdad de supervivencia.",
+     "field_note": "El jugador debe sentir cómo el viejo lenguaje Deep Reach se traduce en conteo de cuerpos."
+    },
+    "de_DE": {
+     "title": "Marauder-Korrekturschicht",
+     "scanner": "KORREKTURSCHICHT // Konzernlabel: temporary atmospheric variance. Marauder-Notiz: CO2 frisst zuerst das Urteilsvermögen.",
+     "terminal": "ANNOTATIONSREGEL: Deep-Reach-Sprache in Überlebensfakten zurückübersetzen. Notizen kurz, praktisch, wütend und unter Druck nützlich halten.",
+     "audio": "Eine gute Notiz klingt nicht klug. Sie hält jemanden am Leben.",
+     "in_game_wiki": "Die Marauder-Korrekturschicht ist der Ort, an dem alte Konzernsprache Autorität verliert. Deep Reach schreibt variance, custody, hold, asset, exposure. Marauder schreiben, was ein Taucher vor dem nächsten Atemzug braucht: CO2 macht Hände langsam, brine verbirgt die Stufe, seal tape versagt an der Biegung, trau der sauberen Luke nicht. Diese Notizen sollen wie eine Kultur wirken, die sich aus Menschen neu aufbaut, die vom System geschult wurden und dann lernten, seinen Wortschatz zu hassen.",
+     "external_site": "Die Marauder-Korrekturschicht verbindet Deep-Reach-Verfahren und Spielerhandeln: kurze Anmerkungen machen offizielle Sprache zu Überlebenswahrheit.",
+     "field_note": "Der Spieler soll spüren, wie alte Deep-Reach-Sprache in Körperzahlen übersetzt wird."
+    },
+    "pl_PL": {
+     "title": "Warstwa korekt Maraudera",
+     "scanner": "WARSTWA KOREKT // Etykieta korpo: temporary atmospheric variance. Notatka Maraudera: CO2 najpierw zjada osąd.",
+     "terminal": "REGUŁA ADNOTACJI: tłumaczyć język Deep Reach z powrotem na fakty przetrwania. Notatki krótkie, praktyczne, wściekłe i użyteczne pod ciśnieniem.",
+     "audio": "Dobra notatka nie brzmi mądrze. Utrzymuje kogoś przy życiu.",
+     "in_game_wiki": "Warstwa korekt Maraudera to miejsce, gdzie dawny język korporacyjny traci władzę. Deep Reach pisze variance, custody, hold, asset, exposure. Marauderzy piszą to, czego nurek potrzebuje przed następnym oddechem: CO2 spowalnia ręce, brine ukrywa stopień, seal tape puszcza na zgięciu, nie ufaj czystemu włazowi. Te notatki mają brzmieć jak kultura odbudowywana przez ludzi wyszkolonych przez system, którzy nauczyli się nienawidzić jego słownika.",
+     "external_site": "Warstwa korekt Maraudera łączy procedurę Deep Reach i sprawczość gracza: krótkie adnotacje zamieniają język oficjalny w prawdę przetrwania.",
+     "field_note": "Gracz powinien czuć, jak stary język Deep Reach tłumaczy się na liczbę ciał."
+    },
+    "uk_UA": {
+     "title": "Шар правок Marauder",
+     "scanner": "ШАР ПРАВОК // Корпоративна мітка: temporary atmospheric variance. Помітка Marauder: CO2 першим з'їдає судження.",
+     "terminal": "ПРАВИЛО АНОТАЦІЇ: перекладати мову Deep Reach назад у факти виживання. Нотатки мають бути короткі, практичні, злі й корисні під тиском.",
+     "audio": "Добра нотатка не звучить розумно. Вона тримає когось живим.",
+     "in_game_wiki": "Шар правок Marauder - місце, де стара корпоративна мова втрачає владу. Deep Reach пише variance, custody, hold, asset, exposure. Marauder пише те, що водолаз має знати до наступного вдиху: CO2 спершу сповільнює руки, brine ховає сходинку, seal tape ламається на згині, чистому люку не вір. Ці помітки мають відчуватися як культура, що збирає себе заново з людей, навчених системою, а потім змушених ненавидіти її словник.",
+     "external_site": "Шар правок Marauder з'єднує процедуру Deep Reach і дію гравця: короткі анотації перетворюють офіційну мову на правду виживання.",
+     "field_note": "Гравець має відчувати, як стара мова Deep Reach перекладається в рахунок тіл."
+    },
+    "ar_SA": {
+     "title": "طبقة تصحيح Marauder",
+     "scanner": "طبقة تصحيح // وسم الشركة: temporary atmospheric variance. ملاحظة Marauder: CO2 يأكل الحكم أولا.",
+     "terminal": "قاعدة تعليق: ترجم لغة Deep Reach مرة أخرى إلى حقائق نجاة. أبق الملاحظات قصيرة، عملية، غاضبة، ونافعة تحت الضغط.",
+     "audio": "الملاحظة الجيدة لا تبدو ذكية. إنها تبقي شخصا حيا.",
+     "in_game_wiki": "طبقة تصحيح Marauder هي المكان الذي تفقد فيه لغة الشركة القديمة سلطتها. تكتب Deep Reach كلمات مثل variance وcustody وhold وasset وexposure. يكتب Marauders ما يحتاجه الغواص قبل النفس التالي: CO2 يبطئ اليدين، brine يخفي الدرجة، seal tape يفشل عند الانحناء، لا تثق بالـ hatch النظيف. يجب أن تبدو هذه الملاحظات كثقافة تعيد بناء نفسها من أشخاص دربهم النظام ثم تعلموا كره مفرداته.",
+     "external_site": "طبقة تصحيح Marauder تربط إجراء Deep Reach بقدرة اللاعب: تعليقات قصيرة تحول اللغة الرسمية إلى حقيقة نجاة.",
+     "field_note": "يجب أن يشعر اللاعب بأن لغة Deep Reach القديمة تُترجم إلى عدد أجساد."
+    },
+    "id_ID": {
+     "title": "Lapisan Koreksi Marauder",
+     "scanner": "LAPISAN KOREKSI // Label korporat: temporary atmospheric variance. Catatan Marauder: CO2 memakan penilaian lebih dulu.",
+     "terminal": "ATURAN ANOTASI: terjemahkan bahasa Deep Reach kembali menjadi fakta bertahan hidup. Catatan harus pendek, praktis, marah, dan berguna di bawah tekanan.",
+     "audio": "Catatan bagus tidak terdengar pintar. Ia membuat seseorang tetap hidup.",
+     "in_game_wiki": "Lapisan koreksi Marauder adalah tempat bahasa korporat lama kehilangan otoritas. Deep Reach menulis variance, custody, hold, asset, exposure. Marauder menulis apa yang dibutuhkan penyelam sebelum napas berikutnya: CO2 membuat tangan lambat, brine menyembunyikan pijakan, seal tape gagal di tekukan, jangan percaya hatch bersih. Catatan ini harus terasa seperti budaya yang membangun diri ulang dari orang yang dilatih sistem lalu belajar membenci kosakatanya.",
+     "external_site": "Lapisan Koreksi Marauder menjembatani prosedur Deep Reach dan agensi pemain: anotasi pendek mengubah bahasa resmi menjadi kebenaran survival.",
+     "field_note": "Pemain harus merasakan bahasa lama Deep Reach diterjemahkan menjadi hitungan tubuh."
+    },
+    "ko_KR": {
+     "title": "Marauder 수정층",
+     "scanner": "수정층 // 기업 라벨: temporary atmospheric variance. Marauder 메모: CO2는 판단을 먼저 먹는다.",
+     "terminal": "주석 규칙: Deep Reach 언어를 다시 생존 사실로 번역한다. 메모는 짧고, 실용적이고, 화가 나 있으며, 압력 아래에서 유용해야 한다.",
+     "audio": "좋은 메모는 영리하게 들리지 않는다. 누군가를 살려 둔다.",
+     "in_game_wiki": "Marauder 수정층은 오래된 기업 언어가 권위를 잃는 곳이다. Deep Reach는 variance, custody, hold, asset, exposure라고 쓴다. Marauder는 다음 숨 전에 잠수부가 알아야 할 것을 쓴다. CO2는 손을 먼저 느리게 한다. brine은 계단을 숨긴다. seal tape는 굽은 곳에서 실패한다. 깨끗한 hatch를 믿지 마라. 이 메모들은 시스템에 훈련받은 사람들이 그 어휘를 미워하는 법을 배운 뒤 문화를 다시 만드는 것처럼 느껴져야 한다.",
+     "external_site": "Marauder 수정층은 Deep Reach 절차와 플레이어 agency를 잇는다. 짧은 주석이 공식 언어를 생존의 진실로 바꾼다.",
+     "field_note": "플레이어는 오래된 Deep Reach 언어가 시신 수로 번역되는 느낌을 받아야 한다."
+    },
+    "he_IL": {
+     "title": "שכבת תיקון Marauder",
+     "scanner": "שכבת תיקון // תווית תאגידית: temporary atmospheric variance. הערת Marauder: CO2 אוכל קודם את שיקול הדעת.",
+     "terminal": "כלל הערה: לתרגם שפת Deep Reach בחזרה לעובדות הישרדות. לשמור הערות קצרות, מעשיות, כועסות ושימושיות תחת לחץ.",
+     "audio": "הערה טובה לא נשמעת חכמה. היא משאירה מישהו חי.",
+     "in_game_wiki": "שכבת תיקון Marauder היא המקום שבו שפה תאגידית ישנה מאבדת סמכות. Deep Reach כותבת variance, custody, hold, asset, exposure. Marauders כותבים מה שצולל צריך לפני הנשימה הבאה: CO2 מאט קודם את הידיים, brine מסתיר מדרגה, seal tape נכשל בכיפוף, אל תסמוך על hatch נקי. ההערות צריכות להרגיש כמו תרבות שבונה את עצמה מחדש מאנשים שהמערכת אימנה ואז לימדה לשנוא את אוצר המילים שלה.",
+     "external_site": "שכבת תיקון Marauder מחברת בין הליך Deep Reach לסוכנות השחקן: הערות קצרות הופכות שפה רשמית לאמת הישרדות.",
+     "field_note": "השחקן צריך להרגיש שפת Deep Reach ישנה מתורגמת לספירת גופות."
+    },
+    "pt_BR": {
+     "title": "Camada de correção Marauder",
+     "scanner": "CAMADA DE CORREÇÃO // Rótulo corporativo: temporary atmospheric variance. Nota Marauder: CO2 come julgamento primeiro.",
+     "terminal": "REGRA DE ANOTAÇÃO: traduzir a linguagem Deep Reach de volta em fatos de sobrevivência. Notas curtas, práticas, furiosas e úteis sob pressão.",
+     "audio": "Uma boa nota não soa inteligente. Mantém alguém vivo.",
+     "in_game_wiki": "A camada de correção Marauder é onde a velha linguagem corporativa perde autoridade. A Deep Reach escreve variance, custody, hold, asset, exposure. Marauders escrevem o que um mergulhador precisa antes da próxima respiração: CO2 deixa mãos lentas, brine esconde o degrau, seal tape falha na dobra, não confie na escotilha limpa. Essas notas devem parecer uma cultura se reconstruindo a partir de pessoas treinadas pelo sistema que aprenderam a odiar seu vocabulário.",
+     "external_site": "A Camada de correção Marauder liga procedimento Deep Reach e agência do jogador: anotações curtas transformam linguagem oficial em verdade de sobrevivência.",
+     "field_note": "O jogador deve sentir a antiga linguagem Deep Reach sendo traduzida em contagem de corpos."
+    },
+    "nl_NL": {
+     "title": "Marauder-correctielaag",
+     "scanner": "CORRECTIELAAG // Bedrijfslabel: temporary atmospheric variance. Marauder-notitie: CO2 vreet eerst oordeel.",
+     "terminal": "ANNOTATIEREGEL: vertaal Deep Reach-taal terug naar overlevingsfeiten. Houd notities kort, praktisch, kwaad en bruikbaar onder druk.",
+     "audio": "Een goede notitie klinkt niet slim. Ze houdt iemand in leven.",
+     "in_game_wiki": "De Marauder-correctielaag is waar oude bedrijfstaal autoriteit verliest. Deep Reach schrijft variance, custody, hold, asset, exposure. Marauders schrijven wat een duiker vóór de volgende adem nodig heeft: CO2 maakt handen traag, brine verbergt de stap, seal tape faalt in de bocht, vertrouw het schone hatch niet. Deze notities moeten voelen als een cultuur die zichzelf herbouwt uit mensen die door het systeem zijn getraind en daarna leerden zijn woordenschat te haten.",
+     "external_site": "Marauder-correctielaag overbrugt Deep Reach-procedure en speleragency: korte annotaties veranderen officiële taal in overlevingswaarheid.",
+     "field_note": "De speler moet voelen hoe oude Deep Reach-taal wordt vertaald naar lichaamstelling."
+    }
+   },
+   "release_set_id": "RS032_COLONY_HUMAN_EVIDENCE_LAYER",
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

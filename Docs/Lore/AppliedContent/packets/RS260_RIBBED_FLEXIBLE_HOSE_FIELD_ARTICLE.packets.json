@@ -1,254 +1,255 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS260_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS260_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1319_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE",
+   "release_set_id": "RS260_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE",
+   "article_id": "applied_lore.ribbed_flexible_hose_field_article",
+   "title_key": "LORE_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/03_TECHNOLOGY_AND_PRESSURE_SYSTEMS_en_US.md",
+    "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1319_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE",
-      "release_set_id": "RS260_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE",
-      "article_id": "applied_lore.ribbed_flexible_hose_field_article",
-      "title_key": "LORE_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/03_TECHNOLOGY_AND_PRESSURE_SYSTEMS_en_US.md",
-        "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.ribbed_flexible_hose_field_article",
-        "secondary": [
-          "unlock.first_ribbed_flexible_hose",
-          "unlock.first_temporary_coolant_bypass",
-          "unlock.first_oxygen_hose_salt_trace"
-        ],
-        "poi_tags": [
-          "poi.ribbed_flexible_hose",
-          "poi.oxygen_hose_run",
-          "poi.coolant_bypass_line",
-          "poi.wet_hose_trough",
-          "poi.salt_dusted_hose_ridge",
-          "poi.cyan_paint_fleck_hose"
-        ],
-        "biome_tags": [
-          "biome.pressure_base_interior",
-          "biome.service_corridor",
-          "biome.flooded_machine_room",
-          "biome.marauder_salvage_cache"
-        ],
-        "first_20_boundary": "Makes flexible hoses readable as system state: ridge salt, wet troughs, abrasion arcs, clamp flats and paint flecks reveal oxygen, coolant and improvised bypass routes."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Pressure Hose Scanner",
-          "terminal": "Maintenance Bypass Note",
-          "audio": "Machine Room Recorder Fragment",
-          "in_game_wiki": "PDA Hose Reading Primer",
-          "external_site": "Public Site Flexible Hose Article",
-          "field_note": "Marauder Field Annotation"
-        },
-        "writer_note": "Keep hoses physical and readable. They are not generic cables: distinguish oxygen, coolant, tool tether and improvised bypass through wear, routing, clamps, salt and residue."
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ribbed Flexible Hose",
-          "scanner": "RIBBED FLEXIBLE HOSE // Pressure-rated rubber line. Salt on ridge tops, wet troughs and flattened clamp bands suggest recent flow. Trace both ends before cutting; a dead-looking hose can still be the only thing feeding air, coolant or proof.",
-          "terminal": "Bypass note: hoses routed after the evacuation order are not tidy. If the ribs are polished on one side, someone dragged the line under load. If the troughs stay wet, the line carried pressure after the room flooded.",
-          "audio": "You can hear the room through the hose if you put your glove on it. Air sounds sharp. Coolant sounds tired. A cut line sounds like debt arriving.",
-          "in_game_wiki": "Flexible ribbed hoses connect the soft systems of a pressure base: oxygen, coolant, pump priming, tool power, suit service and emergency bypasses. The ribs protect the line from crushing, but they also make the surface readable. Salt dust catches on the high ridges after dry cycles. Wet troughs hold the last seep long after a pipe stops dripping. Flat bands mark clamps, door crushes or desperate anchors. Abrasion on one side means the hose was dragged, not installed. A small cyan paint fleck can identify a coolant line even when the label is gone. Before cutting or looting, follow the hose with the scanner and by hand. A hose can be dead, live, pressurized, contaminated, or deliberately staged to look harmless.",
-          "external_site": "On HECTON-8, a ribbed hose is a corridor sentence written in rubber: what moved, who rerouted it, and whether the base survived by design or by somebody's last ugly workaround.",
-          "external_site_article": "The flexible hose is the humble part that keeps a pressure base from becoming a monument. It crosses places rigid pipe cannot cross: moving hatches, service drawers, suit racks, pump cradles, temporary salvage rigs and machine-room bypasses made during the last hour of panic. Its ribs are not decoration. They let the hose bend without folding, give gloves purchase in wet corridors, and leave a high-low pattern that catches residue like a slow recorder.\n\nReading begins with direction. Ridge tops collect dry salt and abrasion. Troughs hold water, oil sheen and fine silt. A hose with clean ridges and dark troughs probably breathed with the room. A hose with one polished side was dragged or rubbed by current after installation. Flattened rings show clamp points; a clamp over old salt means a late repair, while salt over clamp edges means the clamp was present before the room started breathing wet air. Paint flecks matter. Cyan often marks coolant service, off-white marks life-support routing, graphite black marks generic pressure sheath, and bare gray tape means field repair.\n\nPlayers should not treat hoses as background clutter. A cut oxygen hose can change a room from recoverable to hostile. A coolant bypass can explain why one machine stayed warm after the rest of the corridor died. A tool tether can lead to the person who used a cutter in the wrong direction. A staged hose can mislead scavengers toward an easy door and away from the real powered junction. The rule is simple: read both ends, read the ribs, then decide whether to cut. Rubber remembers pressure better than most people remember guilt.",
-          "field_note": "Ridges tell you what dried. Troughs tell you what kept moving. Clamp flats tell you who got desperate.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Рифленый гибкий шланг",
-          "scanner": "РИФЛЕНЫЙ ГИБКИЙ ШЛАНГ // Резиновая линия под давление. Соль на вершинах ребер, мокрые впадины и сплющенные следы хомутов говорят о недавнем потоке. Перед резом найди оба конца: мертвый на вид шланг может еще кормить воздух, охлаждение или улику.",
-          "terminal": "Заметка обходной линии: шланги, проложенные после приказа эвакуации, не выглядят аккуратно. Если ребра отполированы с одной стороны, линию тащили под нагрузкой. Если впадины остаются мокрыми, давление шло уже после затопления комнаты.",
-          "audio": "Если положить перчатку на шланг, комнату слышно через резину. Воздух звучит резко. Охлаждение звучит устало. Разрезанная линия звучит как долг, который уже пришел.",
-          "in_game_wiki": "Рифленые гибкие шланги связывают мягкие системы гермобазы: кислород, охлаждение, запуск насосов, питание инструмента, обслуживание костюмов и аварийные обходы. Ребра защищают линию от смятия, но делают поверхность читаемой. Сухие циклы оставляют соль на верхах ребер. Впадины держат последнюю воду дольше, чем капает труба. Плоские кольца показывают хомуты, дверные зажимы или отчаянные анкеры. Истирание с одной стороны означает, что шланг волокли, а не ставили по проекту. Маленькая голубая крапина может выдать линию охлаждения, когда маркировка уже стерта. Перед резом или добычей иди по шлангу сканером и рукой. Он может быть мертвым, живым, под давлением, зараженным или специально уложенным так, чтобы казаться безопасным.",
-          "external_site": "На HECTON-8 рифленый шланг — это предложение, написанное резиной по коридору: что двигалось, кто перенаправил поток и чем база выживала — проектом или чьей-то последней грубой заплатой.",
-          "external_site_article": "Гибкий шланг — незаметная деталь, которая не дает гермобазе стать памятником. Он пересекает места, где жесткая труба не пройдет: движущиеся люки, сервисные ящики, стойки костюмов, колыбели насосов, временные установки мародеров и обходы машинных залов, сделанные в последний час паники. Ребра на нем не для красоты. Они дают шлангу гнуться без перелома, помогают держать его мокрой перчаткой и оставляют рисунок верхов и впадин, где оседает остаток.\n\nЧтение начинается с направления. Верхи ребер собирают сухую соль и истирание. Впадины держат воду, масляную пленку и тонкий ил. Шланг с чистыми ребрами и темными впадинами, вероятно, дышал вместе с комнатой. Шланг, отполированный с одной стороны, тащили или терло течением уже после установки. Сплющенные кольца показывают точки хомутов; хомут поверх старой соли значит поздний ремонт, соль поверх краев хомута значит, что хомут стоял до мокрого дыхания комнаты. Крапины краски важны: голубая часто означает охлаждение, грязно-белая — жизнеобеспечение, графитовая — общую защитную оболочку, серая лента — полевой ремонт.\n\nИгрок не должен считать шланги фоном. Разрезанный кислородный шланг может превратить комнату из восстанавливаемой в враждебную. Обход охлаждения объясняет, почему одна машина оставалась теплой после смерти коридора. Трос инструмента может привести к человеку, который резал не в ту сторону. Специально уложенный шланг может вести мародера к легкой двери и уводить от настоящего силового узла. Правило простое: прочитай оба конца, прочитай ребра, потом решай, резать ли. Резина помнит давление лучше, чем люди помнят вину.",
-          "field_note": "Ребра говорят, что высохло. Впадины говорят, что продолжало идти. Плоские кольца говорят, кто сорвался на времянку.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Рифлений гнучкий шланг",
-          "scanner": "РИФЛЕНИЙ ГНУЧКИЙ ШЛАНГ // Гумова лінія під тиск. Сіль на вершинах ребер, мокрі жолобки і сплющені сліди хомутів натякають на недавній потік. Перед різанням знайди обидва кінці: мертвий на вигляд шланг може ще годувати повітря, охолодження або доказ.",
-          "terminal": "Нотатка обходу: шланги, прокладені після наказу евакуації, не бувають охайними. Якщо ребра відполіровані з одного боку, лінію тягнули під навантаженням. Якщо жолобки мокрі, тиск ішов уже після затоплення кімнати.",
-          "audio": "Поклади рукавицю на шланг — і почуєш кімнату крізь гуму. Повітря звучить різко. Охолодження звучить втомлено. Розрізана лінія звучить як борг, що вже прийшов.",
-          "in_game_wiki": "Рифлені гнучкі шланги з'єднують м'які системи гермобази: кисень, охолодження, запуск насосів, живлення інструментів, сервіс костюмів і аварійні обходи. Ребра захищають лінію від зминання, але роблять поверхню читабельною. Сухі цикли лишають сіль на верхівках. Жолобки тримають останню воду довше, ніж капає труба. Пласкі кільця показують хомути, дверні затиски або відчайдушні анкери. Стирання з одного боку означає, що шланг тягнули, а не монтували за проєктом. Мала блакитна крапка може видати лінію охолодження, коли напис уже стертий. Перед різанням веди сканер і руку вздовж шланга. Він може бути мертвим, живим, під тиском, забрудненим або навмисно покладеним так, щоб здаватися безпечним.",
-          "external_site": "На HECTON-8 рифлений шланг — це речення, написане гумою по коридору: що рухалося, хто перенаправив потік і як база виживала — конструкцією чи останнім грубим обходом.",
-          "external_site_article": "Гнучкий шланг — тиха деталь, яка не дає гермобазі стати пам'ятником. Він проходить там, де жорстка труба не пройде: рухомі люки, сервісні ящики, стійки костюмів, колиски насосів, тимчасові установки мародерів і машинні обходи, зроблені в останню годину паніки. Ребра не декоративні. Вони дають згин без перелому, тримання мокрою рукавицею і малюнок, де збирається залишок.\n\nЧитання починається з напряму. Верхи ребер збирають суху сіль і стирання. Жолобки тримають воду, масляну плівку і тонкий мул. Шланг із чистими ребрами та темними жолобками, імовірно, дихав із кімнатою. Відполірований з одного боку шланг тягнули або терло течією після монтажу. Сплющені кільця показують хомути; хомут поверх старої солі означає пізній ремонт, сіль поверх хомута — що він стояв до мокрого дихання кімнати.\n\nГравець не має сприймати шланги як фон. Розрізаний кисневий шланг може зробити кімнату ворожою. Обхід охолодження пояснює, чому одна машина залишалась теплою. Трос інструмента може привести до того, хто різав не туди. Правило просте: прочитай обидва кінці, прочитай ребра, тоді вирішуй, чи різати.",
-          "field_note": "Ребра кажуть, що висохло. Жолобки кажуть, що ще рухалось. Пласкі кільця кажуть, де почалась паніка.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Gerippter flexibler Schlauch",
-          "scanner": "GERIPPTER FLEX-SCHLAUCH // Druckfeste Gummileitung. Salz auf den Rippen, nasse Täler und flache Klemmbänder deuten auf jüngsten Fluss. Beide Enden verfolgen, bevor du schneidest; ein tot wirkender Schlauch kann noch Luft, Kühlung oder Beweis führen.",
-          "terminal": "Bypass-Notiz: Nach dem Evakuierungsbefehl verlegte Schläuche sind nicht ordentlich. Polierte Rippen auf einer Seite bedeuten Ziehen unter Last. Nasse Täler bedeuten Druckfluss nach der Flutung.",
-          "audio": "Leg den Handschuh auf den Schlauch, dann hörst du den Raum durch Gummi. Luft klingt scharf. Kühlmittel klingt müde. Eine geschnittene Leitung klingt wie ankommende Schuld.",
-          "in_game_wiki": "Flexible gerippte Schläuche verbinden die weichen Systeme einer Druckbasis: Sauerstoff, Kühlung, Pumpenstart, Werkzeugstrom, Anzugservice und Not-Bypässe. Die Rippen schützen vor Knicken und machen die Oberfläche lesbar. Trockene Zyklen lassen Salz auf den Kämmen. Täler halten Wasser, Ölfilm und feinen Schlamm. Flache Ringe zeigen Klemmen, Türquetschungen oder hastige Anker. Abrieb auf einer Seite bedeutet Ziehen statt planmäßige Installation. Ein kleiner cyanfarbener Farbfleck kann eine Kühlleitung verraten, wenn die Beschriftung fort ist. Vor Schnitt oder Bergung dem Schlauch mit Scanner und Hand folgen.",
-          "external_site": "Auf HECTON-8 ist ein gerippter Schlauch ein Satz aus Gummi: was floss, wer umleitete und ob die Basis durch Planung oder durch letzte hässliche Improvisation überlebte.",
-          "external_site_article": "Der flexible Schlauch ist das unscheinbare Teil, das eine Druckbasis am Leben hält. Er kreuzt Stellen, die starre Rohre nicht erreichen: bewegliche Luken, Serviceladen, Anzugständer, Pumpenwiegen, provisorische Bergungsgeräte und Maschinenraum-Bypässe aus der letzten Panikstunde. Seine Rippen sind kein Dekor. Sie erlauben Biegung ohne Falten, geben nassen Handschuhen Halt und fangen Rückstände wie ein langsamer Recorder.\n\nGelesen wird zuerst die Richtung. Rippenkämme sammeln trockenes Salz und Abrieb. Täler halten Wasser, Öl und Silt. Ein Schlauch mit sauberen Kämmen und dunklen Tälern atmete vermutlich mit dem Raum. Eine polierte Seite bedeutet Ziehen oder Strömungsreibung nach der Installation. Flache Ringe zeigen Klemmpunkte; eine Klemme über altem Salz bedeutet späte Reparatur, Salz über Klemmenkanten bedeutet ältere Montage.\n\nSchläuche sind kein Hintergrund. Ein geschnittener Sauerstoffschlauch macht einen Raum feindlich. Ein Kühlbypass erklärt eine warme Maschine in einem toten Gang. Eine Werkzeugleine führt zu der Person, die falsch herum schnitt. Erst beide Enden lesen, dann schneiden.",
-          "field_note": "Rippen sagen, was trocknete. Täler sagen, was weiterlief. Flache Ringe sagen, wer improvisierte.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Manguera flexible estriada",
-          "scanner": "MANGUERA FLEXIBLE ESTRIADA // Línea de goma apta para presión. Sal en las crestas, surcos mojados y bandas aplastadas de abrazadera sugieren flujo reciente. Sigue ambos extremos antes de cortar; una manguera muerta puede alimentar aire, refrigerante o prueba.",
-          "terminal": "Nota de bypass: las mangueras tendidas tras la orden de evacuación no son limpias. Si las estrías están pulidas por un lado, alguien arrastró la línea con carga. Si los surcos siguen mojados, transportó presión después de la inundación.",
-          "audio": "Pon el guante sobre la manguera y oirás la sala a través de la goma. El aire suena afilado. El refrigerante suena cansado. Una línea cortada suena como deuda llegando.",
-          "in_game_wiki": "Las mangueras estriadas flexibles conectan los sistemas blandos de una base presurizada: oxígeno, refrigerante, cebado de bombas, energía de herramientas, servicio de trajes y bypasses de emergencia. Las estrías protegen contra aplastamiento y hacen legible la superficie. La sal seca se queda en las crestas. Los surcos retienen agua, aceite y limo fino. Los anillos planos marcan abrazaderas, puertas o anclajes desesperados. Abrasión en un lado significa arrastre, no instalación. Una mota cian puede delatar refrigerante cuando la etiqueta desapareció.",
-          "external_site": "En HECTON-8, una manguera estriada es una frase escrita en goma: qué se movió, quién lo desvió y si la base sobrevivió por diseño o por un último apaño feo.",
-          "external_site_article": "La manguera flexible es la pieza humilde que evita que una base presurizada se convierta en monumento. Cruza lugares donde la tubería rígida no puede: compuertas móviles, cajones de servicio, bastidores de trajes, cunas de bombas, equipos provisionales de saqueo y bypasses de sala de máquinas hechos en la última hora de pánico. Sus estrías no son decoración. Permiten doblar sin plegar, dan agarre a guantes mojados y atrapan residuos como una grabadora lenta.\n\nLa lectura empieza por la dirección. Las crestas juntan sal seca y abrasión. Los surcos retienen agua, película de aceite y limo. Una manguera con crestas limpias y surcos oscuros probablemente respiró con la sala. Un lado pulido fue arrastrado o rozado por corriente. Anillos aplastados marcan abrazaderas; abrazadera sobre sal vieja significa reparación tardía, sal sobre el borde de la abrazadera significa montaje anterior.\n\nNo son decorado. Cortar oxígeno cambia una sala recuperable en hostil. Un bypass de refrigerante explica una máquina caliente en un pasillo muerto. Un cable de herramienta lleva a quien cortó en la dirección equivocada. Lee ambos extremos, lee las estrías y luego decide si cortas.",
-          "field_note": "Las crestas dicen qué se secó. Los surcos dicen qué siguió moviéndose. Los planos de abrazadera dicen quién improvisó.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Tuyau flexible nervuré",
-          "scanner": "TUYAU FLEXIBLE NERVURÉ // Ligne de caoutchouc certifiée pression. Sel sur les crêtes, creux humides et bandes de collier aplaties suggèrent un flux récent. Suis les deux bouts avant de couper; un tuyau mort peut encore porter air, refroidissement ou preuve.",
-          "terminal": "Note de dérivation : les tuyaux posés après l'ordre d'évacuation ne sont pas propres. Des nervures polies d'un côté indiquent une ligne tirée en charge. Des creux humides indiquent un flux sous pression après l'inondation.",
-          "audio": "Pose ton gant sur le tuyau et tu entends la pièce dans le caoutchouc. L'air sonne net. Le refroidissement sonne fatigué. Une ligne coupée sonne comme une dette qui arrive.",
-          "in_game_wiki": "Les tuyaux flexibles nervurés relient les systèmes souples d'une base pressurisée : oxygène, refroidissement, amorçage de pompe, alimentation d'outil, service de combinaison et dérivations d'urgence. Les nervures protègent l'écrasement et rendent la surface lisible. Le sel sec reste sur les crêtes. Les creux gardent eau, huile et limon. Les anneaux plats marquent colliers, portes ou ancres hâtives. Une abrasion d'un seul côté indique un traînage. Une tache cyan peut révéler une ligne de refroidissement quand l'étiquette a disparu.",
-          "external_site": "Sur HECTON-8, un tuyau nervuré est une phrase écrite en caoutchouc : ce qui a circulé, qui l'a dérivé et si la base a survécu par plan ou par dernier bricolage brutal.",
-          "external_site_article": "Le tuyau flexible est la pièce humble qui empêche une base pressurisée de devenir un monument. Il traverse les endroits où le tube rigide échoue : sas mobiles, tiroirs de service, racks de combinaison, berceaux de pompe, montages provisoires et dérivations de salle machine faites pendant la dernière heure de panique. Ses nervures ne décorent rien. Elles permettent la courbure sans pli, donnent prise aux gants mouillés et piègent les résidus comme un enregistreur lent.\n\nLa lecture commence par la direction. Les crêtes prennent le sel sec et l'abrasion. Les creux gardent eau, film d'huile et limon. Un tuyau aux crêtes propres et creux sombres a probablement respiré avec la pièce. Un côté poli a été traîné ou frotté par le courant. Des anneaux aplatis montrent les points de collier; un collier sur sel ancien indique une réparation tardive, le sel sur le bord du collier une pose plus ancienne.\n\nLe joueur ne doit pas voir ces tuyaux comme décor. Couper l'oxygène peut rendre une pièce hostile. Une dérivation de refroidissement explique une machine encore chaude. Une laisse d'outil mène à celui qui a coupé du mauvais côté. Lis les deux bouts, lis les nervures, puis décide.",
-          "field_note": "Les crêtes disent ce qui a séché. Les creux disent ce qui bougeait encore. Les plats de collier disent qui a improvisé.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Żebrowany elastyczny przewód",
-          "scanner": "ŻEBROWANY ELASTYCZNY PRZEWÓD // Gumowa linia ciśnieniowa. Sól na grzbietach, mokre doliny i spłaszczone pasy zacisków sugerują niedawny przepływ. Prześledź oba końce przed cięciem; martwy przewód może nadal nieść powietrze, chłodzenie albo dowód.",
-          "terminal": "Notatka obejścia: przewody po rozkazie ewakuacji nie są schludne. Wypolerowane żebra po jednej stronie znaczą, że linię ciągnięto pod obciążeniem. Mokre doliny znaczą przepływ po zalaniu.",
-          "audio": "Połóż rękawicę na przewodzie, a usłyszysz pokój przez gumę. Powietrze brzmi ostro. Chłodziwo brzmi zmęczone. Przecięta linia brzmi jak nadchodzący dług.",
-          "in_game_wiki": "Żebrowane elastyczne przewody łączą miękkie systemy bazy ciśnieniowej: tlen, chłodzenie, zalewanie pomp, zasilanie narzędzi, serwis skafandrów i awaryjne obejścia. Żebra chronią przed zgnieceniem i czynią powierzchnię czytelną. Sól osiada na grzbietach. Doliny trzymają wodę, olej i muł. Płaskie pierścienie znaczą zaciski, drzwi albo desperackie kotwy. Ścieranie po jednej stronie oznacza przeciąganie. Cyjanowa plamka może zdradzić chłodziwo, gdy etykieta znikła.",
-          "external_site": "Na HECTON-8 żebrowany przewód jest zdaniem zapisanym gumą: co płynęło, kto zmienił trasę i czy baza przeżyła dzięki projektowi, czy ostatniej brzydkiej prowizorce.",
-          "external_site_article": "Elastyczny przewód to skromna część, która nie pozwala bazie ciśnieniowej zostać pomnikiem. Przechodzi tam, gdzie sztywna rura nie przejdzie: ruchome włazy, szuflady serwisowe, stojaki skafandrów, pompy, tymczasowe zestawy złomiarzy i obejścia maszynowni zrobione w ostatniej godzinie paniki. Żebra nie są dekoracją. Pozwalają zginać bez załamania, dają chwyt mokrym rękawicom i łapią osad jak powolny rejestrator.\n\nCzytanie zaczyna się od kierunku. Grzbiety zbierają suchą sól i ścieranie. Doliny trzymają wodę, film oleju i muł. Przewód z czystymi grzbietami i ciemnymi dolinami prawdopodobnie oddychał z pokojem. Wypolerowana jedna strona była ciągnięta lub tarła o prąd. Spłaszczone pierścienie pokazują zaciski; zacisk na starej soli to późna naprawa, sól na krawędziach zacisku to starszy montaż.\n\nTo nie tło. Przecięty tlen robi z pokoju zagrożenie. Obejście chłodzenia tłumaczy ciepłą maszynę w martwym korytarzu. Linka narzędzia prowadzi do osoby, która cięła w złą stronę. Czytaj oba końce, czytaj żebra, potem tnij.",
-          "field_note": "Grzbiety mówią, co wyschło. Doliny mówią, co płynęło. Płaskie pierścienie mówią, kto improwizował.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Mangueira flexível estriada",
-          "scanner": "MANGUEIRA FLEXÍVEL ESTRIADA // Linha de borracha para pressão. Sal no topo das estrias, vales úmidos e marcas achatadas de braçadeira sugerem fluxo recente. Siga as duas pontas antes de cortar; uma mangueira morta pode levar ar, resfriamento ou prova.",
-          "terminal": "Nota de bypass: mangueiras passadas depois da evacuação não ficam bonitas. Estrias polidas de um lado indicam linha arrastada sob carga. Vales úmidos indicam pressão depois da inundação.",
-          "audio": "Ponha a luva na mangueira e você ouve a sala pela borracha. Ar soa agudo. Resfriamento soa cansado. Linha cortada soa como dívida chegando.",
-          "in_game_wiki": "Mangueiras flexíveis estriadas ligam sistemas macios de uma base pressurizada: oxigênio, resfriamento, escorva de bomba, energia de ferramenta, serviço de traje e bypasses de emergência. As estrias protegem contra esmagamento e tornam a superfície legível. Sal seco fica nos topos. Vales guardam água, óleo e lodo. Anéis chatos mostram braçadeiras, portas ou ancoragens desesperadas. Abrasão de um lado indica arrasto. Uma pinta ciano pode revelar resfriamento quando a etiqueta sumiu.",
-          "external_site": "Em HECTON-8, uma mangueira estriada é uma frase escrita em borracha: o que se moveu, quem desviou e se a base sobreviveu por projeto ou por gambiarra final.",
-          "external_site_article": "A mangueira flexível é a peça humilde que impede uma base pressurizada de virar monumento. Ela atravessa onde tubo rígido não passa: escotilhas móveis, gavetas de serviço, racks de traje, berços de bomba, plataformas provisórias de saque e bypasses de sala de máquinas feitos na última hora de pânico. As estrias não são decoração. Elas dobram sem colapsar, dão pega a luvas molhadas e capturam resíduos como um gravador lento.\n\nA leitura começa pela direção. Os topos juntam sal seco e abrasão. Os vales guardam água, filme de óleo e lodo fino. Uma mangueira com topos limpos e vales escuros provavelmente respirou com a sala. Um lado polido foi arrastado ou esfregado pela corrente. Anéis achatados mostram braçadeiras; braçadeira sobre sal velho significa reparo tardio, sal por cima da braçadeira significa montagem antiga.\n\nMangueiras não são fundo. Cortar oxigênio pode tornar uma sala hostil. Um bypass de resfriamento explica uma máquina quente num corredor morto. Um cabo de ferramenta leva a quem cortou na direção errada. Leia as duas pontas, leia as estrias e só então corte.",
-          "field_note": "Topos dizem o que secou. Vales dizem o que continuou passando. Marcas chatas dizem quem improvisou.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Geribbelde flexibele slang",
-          "scanner": "GERIBBELDE FLEXIBELE SLANG // Drukbestendige rubberlijn. Zout op ribtoppen, natte dalen en platte klembandsporen wijzen op recente stroming. Volg beide uiteinden voor je snijdt; een dode slang kan nog lucht, koeling of bewijs voeren.",
-          "terminal": "Bypassnotitie: slangen na een evacuatiebevel liggen niet netjes. Gepolijste ribben aan één kant betekenen slepen onder belasting. Natte dalen betekenen drukstroom na overstroming.",
-          "audio": "Leg je handschoen op de slang en je hoort de kamer door rubber. Lucht klinkt scherp. Koelmiddel klinkt moe. Een gesneden lijn klinkt als schuld die aankomt.",
-          "in_game_wiki": "Geribbelde flexibele slangen verbinden de zachte systemen van een drukbasis: zuurstof, koeling, pompaanzuiging, gereedschapstroom, pakservice en nood-bypasses. De ribben beschermen tegen knikken en maken het oppervlak leesbaar. Droge cycli laten zout op de toppen. Dalen houden water, olie en slib vast. Platte ringen markeren klemmen, deurknellingen of noodankers. Slijtage aan één kant betekent slepen. Een cyaan verfvlek kan koeling verraden wanneer het label weg is.",
-          "external_site": "Op HECTON-8 is een geribbelde slang een zin in rubber: wat bewoog, wie het omleidde en of de basis overleefde door ontwerp of door laatste noodgreep.",
-          "external_site_article": "De flexibele slang is het nederige onderdeel dat een drukbasis uit de monumentenstand houdt. Ze kruist plaatsen waar vaste buis niet past: bewegende luiken, serviceladen, pakkenrekken, pompwiegjes, tijdelijke bergingssets en machinekamer-bypasses uit het laatste paniekuur. De ribben zijn geen decor. Ze buigen zonder dicht te vouwen, geven natte handschoenen grip en vangen residu als een trage recorder.\n\nLezen begint met richting. Ribtoppen verzamelen droog zout en slijtage. Dalen houden water, olie en fijn slib. Een slang met schone toppen en donkere dalen ademde waarschijnlijk met de kamer. Een gepolijste kant werd gesleept of door stroming geschuurd. Platte ringen tonen klempunten; een klem over oud zout is late reparatie, zout over klemranden is oudere montage.\n\nSlangen zijn geen achtergrond. Een doorgesneden zuurstofslang maakt een kamer vijandig. Een koelbypass verklaart een warme machine in een dode gang. Een gereedschapslijn leidt naar de persoon die verkeerd sneed. Lees beide uiteinden, lees de ribben, beslis dan.",
-          "field_note": "Toppen zeggen wat droogde. Dalen zeggen wat bleef bewegen. Platte ringen zeggen wie improviseerde.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Selang Fleksibel Berusuk",
-          "scanner": "SELANG FLEKSIBEL BERUSUK // Jalur karet bertekanan. Garam di puncak rusuk, lembah basah, dan bekas klem pipih menunjukkan aliran baru. Ikuti kedua ujung sebelum memotong; selang mati bisa masih membawa udara, pendingin, atau bukti.",
-          "terminal": "Catatan bypass: selang yang dipasang setelah perintah evakuasi tidak rapi. Rusuk mengilap di satu sisi berarti jalur ditarik saat berbeban. Lembah tetap basah berarti tekanan masih mengalir setelah ruangan banjir.",
-          "audio": "Tempelkan sarung tangan ke selang dan kau bisa mendengar ruangan lewat karet. Udara terdengar tajam. Pendingin terdengar lelah. Jalur terpotong terdengar seperti utang datang.",
-          "in_game_wiki": "Selang fleksibel berusuk menghubungkan sistem lunak basis bertekanan: oksigen, pendingin, priming pompa, daya alat, servis suit, dan bypass darurat. Rusuk melindungi dari remuk dan membuat permukaan bisa dibaca. Siklus kering meninggalkan garam di puncak. Lembah menahan air, minyak, dan lumpur halus. Cincin pipih menandai klem, pintu, atau jangkar putus asa. Abrasi satu sisi berarti diseret. Bintik cat sian bisa menandai pendingin saat label hilang.",
-          "external_site": "Di HECTON-8, selang berusuk adalah kalimat dalam karet: apa yang bergerak, siapa mengalihkannya, dan apakah basis selamat karena rancangan atau akal-akalan terakhir.",
-          "external_site_article": "Selang fleksibel adalah bagian rendah hati yang mencegah basis bertekanan menjadi monumen. Ia melewati tempat pipa kaku tidak bisa: palka bergerak, laci servis, rak suit, dudukan pompa, rig penyelamatan sementara, dan bypass ruang mesin yang dibuat pada jam panik terakhir. Rusuknya bukan hiasan. Ia menekuk tanpa melipat, memberi pegangan pada sarung tangan basah, dan menangkap residu seperti perekam lambat.\n\nPembacaan dimulai dari arah. Puncak rusuk mengumpulkan garam kering dan abrasi. Lembah menyimpan air, lapisan minyak, dan lumpur. Selang dengan puncak bersih dan lembah gelap mungkin bernapas bersama ruangan. Satu sisi mengilap berarti diseret atau tergesek arus. Cincin pipih menunjukkan titik klem; klem di atas garam lama berarti perbaikan terlambat, garam di atas tepi klem berarti pemasangan lebih tua.\n\nSelang bukan latar. Memotong oksigen bisa membuat ruangan berbahaya. Bypass pendingin menjelaskan mesin hangat di koridor mati. Tether alat bisa membawa ke orang yang memotong arah salah. Baca dua ujungnya, baca rusuknya, lalu putuskan.",
-          "field_note": "Puncak memberi tahu apa yang kering. Lembah memberi tahu apa yang masih bergerak. Cincin pipih memberi tahu siapa yang berimprovisasi.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "リブ付き柔軟ホース",
-          "scanner": "リブ付き柔軟ホース // 圧力対応のゴムライン。リブ上の塩、濡れた谷、平たいクランプ跡は最近の流れを示す。切る前に両端を追え。死んだように見えるホースが空気、冷却、証拠を運んでいることがある。",
-          "terminal": "バイパスメモ: 避難命令後に引かれたホースは整っていない。片側のリブが磨かれていれば、荷重下で引きずられた。谷が濡れたままなら、浸水後にも圧力が通った。",
-          "audio": "手袋をホースに置くと、ゴム越しに部屋が聞こえる。空気は鋭く、冷却液は疲れて聞こえる。切られたラインは、到着した負債の音がする。",
-          "in_game_wiki": "リブ付き柔軟ホースは、加圧基地の柔らかい系統をつなぐ。酸素、冷却、ポンプ始動、工具電力、スーツ整備、緊急バイパス。リブは潰れを防ぎ、表面を読めるものにする。乾燥周期はリブの頂点に塩を残す。谷は水、油膜、細かいシルトを保持する。平たい輪はクランプ、扉の圧迫、急ごしらえの固定点を示す。片側だけの摩耗は設置ではなく引きずりを示す。小さなシアンの塗料片は、ラベルが消えても冷却ラインを示すことがある。",
-          "external_site": "HECTON-8のリブ付きホースは、ゴムで書かれた廊下の文章だ。何が流れ、誰が迂回させ、基地が設計で生きたのか最後の醜い応急処置で生きたのかを示す。",
-          "external_site_article": "柔軟ホースは、加圧基地をただの記念碑にしない地味な部品だ。硬い配管が通れない場所を横切る。動くハッチ、整備引き出し、スーツラック、ポンプ架台、仮設の回収リグ、最後の混乱で作られた機械室バイパス。リブは飾りではない。折れずに曲がり、濡れた手袋に握りを与え、残留物をゆっくり記録する。\n\n読み取りは方向から始まる。リブの頂点は乾いた塩と摩耗を集める。谷は水、油、シルトを抱える。頂点がきれいで谷が暗いホースは、部屋と一緒に呼吸した可能性が高い。片側だけ磨かれていれば、引きずられたか流れに擦られた。平たい輪はクランプ位置を示す。古い塩の上のクランプは遅い修理、クランプ縁の上の塩は古い設置を示す。\n\nホースは背景ではない。酸素ホースを切れば部屋は敵になる。冷却バイパスは、死んだ廊下で一台だけ温かい機械を説明する。工具テザーは、逆方向に切った人物へ続く。両端を読み、リブを読み、それから切れ。",
-          "field_note": "頂点は乾いたものを語る。谷は動き続けたものを語る。平たい輪は即席仕事を語る。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "리브형 유연 호스",
-          "scanner": "리브형 유연 호스 // 압력 등급 고무 라인. 리브 위의 소금, 젖은 골, 납작한 클램프 자국은 최근 흐름을 뜻한다. 자르기 전에 양끝을 따라가라. 죽어 보이는 호스가 공기, 냉각, 증거를 먹일 수 있다.",
-          "terminal": "우회 기록: 대피 명령 뒤에 깔린 호스는 깔끔하지 않다. 한쪽 리브가 닳아 반짝이면 하중을 받으며 끌린 것이다. 골이 계속 젖어 있으면 침수 뒤에도 압력이 흘렀다.",
-          "audio": "장갑을 호스에 대면 고무 너머로 방이 들린다. 공기는 날카롭다. 냉각수는 지쳐 들린다. 잘린 라인은 도착한 빚처럼 들린다.",
-          "in_game_wiki": "리브형 유연 호스는 압력 기지의 부드러운 시스템을 잇는다. 산소, 냉각, 펌프 프라이밍, 도구 전원, 슈트 정비, 비상 우회. 리브는 압궤를 막고 표면을 읽게 만든다. 마른 주기는 리브 꼭대기에 소금을 남긴다. 골은 물, 기름막, 고운 실트를 잡는다. 납작한 고리는 클램프, 문에 눌린 곳, 급한 고정점을 뜻한다. 한쪽 마모는 설치가 아니라 끌림이다. 작은 시안 페인트 조각은 라벨이 사라져도 냉각 라인을 알려준다.",
-          "external_site": "HECTON-8에서 리브 호스는 고무로 쓰인 문장이다. 무엇이 흘렀고, 누가 돌렸고, 기지가 설계로 버텼는지 마지막 임시방편으로 버텼는지를 말한다.",
-          "external_site_article": "유연 호스는 압력 기지를 기념비로 만들지 않는 조용한 부품이다. 단단한 파이프가 지나갈 수 없는 곳을 지난다. 움직이는 해치, 정비 서랍, 슈트 랙, 펌프 받침, 임시 회수 장비, 마지막 공포의 시간에 만든 기계실 우회로. 리브는 장식이 아니다. 접히지 않고 휘며, 젖은 장갑에 잡힘을 주고, 잔류물을 느린 기록기처럼 붙잡는다.\n\n읽기는 방향에서 시작한다. 리브 꼭대기는 마른 소금과 마모를 모은다. 골은 물, 기름, 실트를 붙잡는다. 꼭대기가 깨끗하고 골이 어두운 호스는 방과 함께 숨 쉬었을 가능성이 크다. 한쪽이 닳아 빛나면 끌렸거나 흐름에 쓸렸다. 납작한 고리는 클램프 위치다. 오래된 소금 위의 클램프는 늦은 수리이고, 클램프 가장자리 위의 소금은 오래된 설치다.\n\n호스는 배경이 아니다. 산소 호스를 자르면 방이 적대적으로 변한다. 냉각 우회는 죽은 복도에서 혼자 따뜻한 기계를 설명한다. 도구 테더는 잘못된 방향으로 자른 사람에게 이어진다. 양끝을 읽고, 리브를 읽고, 그 다음 자르라.",
-          "field_note": "꼭대기는 마른 것을 말한다. 골은 계속 움직인 것을 말한다. 납작한 고리는 누가 임시로 버텼는지 말한다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "肋纹柔性压力软管",
-          "scanner": "肋纹柔性软管 // 压力级橡胶管线。肋顶的盐、潮湿沟槽和压扁的卡箍痕说明近期仍有流动。切割前追踪两端；看似死亡的软管仍可能输送空气、冷却剂或证据。",
-          "terminal": "旁路记录：撤离命令后铺设的软管不会整齐。一侧肋纹被磨亮，说明它在受力下被拖动。沟槽仍潮湿，说明房间进水后仍有压力通过。",
-          "audio": "把手套按在软管上，你能隔着橡胶听见房间。空气声尖，冷却剂声疲惫。被切开的管线听起来像债务抵达。",
-          "in_game_wiki": "肋纹柔性软管连接加压基地的软系统：氧气、冷却、泵启动、工具供能、潜服维护和应急旁路。肋纹防止压扁，也让表面可读。干燥循环会在肋顶留下盐。沟槽会保留水、油膜和细泥。扁平环痕表示卡箍、门压或临时锚固。一侧磨损表示拖拽而非正常安装。小小的青色漆点即使在标签消失后，也可能暴露冷却管线身份。",
-          "external_site": "在 HECTON-8，肋纹软管是一句写在橡胶上的走廊文字：什么流过、谁改了路线、基地靠设计还是最后的丑陋补救活了下来。",
-          "external_site_article": "柔性软管是让加压基地不至于变成纪念碑的小部件。它穿过硬管无法穿过的地方：活动舱门、维修抽屉、潜服架、泵座、临时打捞设备，以及最后一小时恐慌中接出的机房旁路。肋纹不是装饰。它让软管弯曲而不折死，让湿手套能抓住，也像慢速记录器一样捕捉残留物。\n\n读取从方向开始。肋顶收集干盐和磨损。沟槽保留水、油膜和细泥。肋顶干净而沟槽发暗的软管，可能和房间一起呼吸过。一侧被磨亮，说明它被拖拽或被水流摩擦。压扁的环显示卡箍位置；旧盐上的卡箍表示晚期修理，卡箍边缘上的盐表示更早安装。\n\n软管不是背景。切断氧气会让房间变得敌对。冷却旁路能解释死走廊里为什么有一台机器仍然温热。工具牵引线能引向那个朝错误方向切割的人。先读两端，再读肋纹，然后决定是否切割。",
-          "field_note": "肋顶说明什么干了。沟槽说明什么还在流。扁平环说明谁在临时补救。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "خرطوم مرن مضلع",
-          "scanner": "خرطوم مرن مضلع // خط مطاطي مصنف للضغط. الملح على قمم الأضلاع، والأخاديد الرطبة، وآثار المشابك المسطحة تشير إلى تدفق حديث. اتبع الطرفين قبل القطع؛ خرطوم يبدو ميتا قد يحمل هواء أو تبريدا أو دليلا.",
-          "terminal": "ملاحظة تحويل: الخراطيم الموضوعة بعد أمر الإخلاء لا تكون مرتبة. إذا صقلت الأضلاع من جهة واحدة فهذا يعني أن الخط سحب تحت حمل. إذا بقيت الأخاديد رطبة فقد حمل الخط ضغطا بعد غرق الغرفة.",
-          "audio": "ضع قفازك على الخرطوم وستسمع الغرفة عبر المطاط. الهواء حاد. التبريد متعب. الخط المقطوع صوته كالدين حين يصل.",
-          "in_game_wiki": "الخراطيم المرنة المضلعة تصل الأنظمة اللينة في قاعدة الضغط: الأكسجين، التبريد، تجهيز المضخات، طاقة الأدوات، خدمة البدلات، والتحويلات الطارئة. الأضلاع تمنع السحق وتجعل السطح قابلا للقراءة. دورات الجفاف تترك الملح على القمم. الأخاديد تحفظ الماء والزيت والطمي. الحلقات المسطحة تدل على مشابك أو أبواب أو مراس يائسة. التآكل من جهة واحدة يعني السحب. نقطة طلاء سماوية قد تكشف خط تبريد بعد اختفاء الملصق.",
-          "external_site": "في HECTON-8 الخرطوم المضلع جملة مكتوبة بالمطاط: ما الذي تحرك، من حوله، وهل نجت القاعدة بالتصميم أم بآخر حل قبيح.",
-          "external_site_article": "الخرطوم المرن جزء متواضع يمنع قاعدة الضغط من أن تصبح نصبا. يعبر أماكن لا تستطيع الأنابيب الصلبة عبورها: فتحات متحركة، أدراج خدمة، رفوف بدلات، حوامل مضخات، معدات إنقاذ مؤقتة، وتحويلات غرفة آلات صنعت في ساعة الذعر الأخيرة. الأضلاع ليست زينة. تسمح بالانحناء بلا انطواء، وتعطي القفازات المبللة قبضة، وتلتقط البقايا كمسجل بطيء.\n\nتبدأ القراءة بالاتجاه. القمم تجمع الملح الجاف والتآكل. الأخاديد تحفظ الماء والزيت والطمي الناعم. خرطوم بقمم نظيفة وأخاديد داكنة ربما تنفس مع الغرفة. جهة مصقولة تعني أنه سحب أو حكه تيار. الحلقات المسطحة تكشف نقاط المشابك؛ مشبك فوق ملح قديم يعني إصلاحا متأخرا، والملح فوق حافة المشبك يعني تركيبا أقدم.\n\nالخراطيم ليست خلفية. قطع خرطوم أكسجين يحول غرفة قابلة للاسترداد إلى خطر. تحويل التبريد يفسر آلة بقيت دافئة في ممر ميت. رباط أداة يقود إلى الشخص الذي قطع في الاتجاه الخطأ. اقرأ الطرفين، اقرأ الأضلاع، ثم قرر.",
-          "field_note": "القمم تقول ما جف. الأخاديد تقول ما استمر في الحركة. الحلقات المسطحة تقول من ارتجل.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "צינור גמיש מצולע",
-          "scanner": "צינור גמיש מצולע // קו גומי מדורג ללחץ. מלח על ראשי הצלעות, שקעים רטובים וטבעות מהדק שטוחות מצביעים על זרימה אחרונה. עקוב אחרי שני הקצוות לפני חיתוך; צינור מת למראה יכול עדיין לשאת אוויר, קירור או ראיה.",
-          "terminal": "הערת מעקף: צינורות שהונחו אחרי פקודת פינוי אינם מסודרים. צלעות מלוטשות בצד אחד אומרות שהקו נגרר תחת עומס. שקעים רטובים אומרים שהקו נשא לחץ אחרי ההצפה.",
-          "audio": "שים כפפה על הצינור ותשמע את החדר דרך הגומי. אוויר נשמע חד. קירור נשמע עייף. קו חתוך נשמע כמו חוב שמגיע.",
-          "in_game_wiki": "צינורות גמישים מצולעים מחברים את המערכות הרכות של בסיס לחץ: חמצן, קירור, אתחול משאבות, כוח לכלים, שירות חליפות ומעקפי חירום. הצלעות מגינות ממעיכה וגם הופכות את המשטח לקריא. מלח יבש נשאר על הראשים. שקעים שומרים מים, שמן וסחף. טבעות שטוחות מסמנות מהדקים, לחיצות דלת או עוגנים נואשים. שחיקה בצד אחד אומרת גרירה. נקודת צבע ציאן יכולה לחשוף קו קירור אחרי שהתווית נעלמה.",
-          "external_site": "ב-HECTON-8 צינור מצולע הוא משפט שנכתב בגומי: מה זרם, מי הסיט אותו, והאם הבסיס שרד בזכות תכנון או בזכות אלתור אחרון ומכוער.",
-          "external_site_article": "הצינור הגמיש הוא החלק הצנוע שמונע מבסיס לחץ להפוך לאנדרטה. הוא חוצה מקומות שצינור קשיח לא יכול: פתחים נעים, מגירות שירות, מדפי חליפות, עריסות משאבה, מתקני חילוץ זמניים ומעקפי חדר מכונות שנעשו בשעת הפאניקה האחרונה. הצלעות אינן קישוט. הן מאפשרות כיפוף בלי קיפול, נותנות אחיזה לכפפות רטובות ותופסות שאריות כמו מקליט איטי.\n\nהקריאה מתחילה בכיוון. ראשי הצלעות אוספים מלח יבש ושחיקה. השקעים שומרים מים, שמן וסחף דק. צינור עם ראשים נקיים ושקעים כהים כנראה נשם עם החדר. צד מלוטש נגרר או נשחק בזרם. טבעות שטוחות מראות נקודות מהדק; מהדק על מלח ישן אומר תיקון מאוחר, מלח על שפת מהדק אומר התקנה ישנה יותר.\n\nצינורות אינם רקע. חיתוך חמצן הופך חדר לעוין. מעקף קירור מסביר מכונה חמה במסדרון מת. כבל כלי מוביל אל מי שחתך בכיוון הלא נכון. קרא את שני הקצוות, קרא את הצלעות, ואז חתוך.",
-          "field_note": "הראשים אומרים מה התייבש. השקעים אומרים מה המשיך לנוע. הטבעות השטוחות אומרות מי אילתר.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.ribbed_flexible_hose_field_article",
+    "secondary": [
+     "unlock.first_ribbed_flexible_hose",
+     "unlock.first_temporary_coolant_bypass",
+     "unlock.first_oxygen_hose_salt_trace"
+    ],
+    "poi_tags": [
+     "poi.ribbed_flexible_hose",
+     "poi.oxygen_hose_run",
+     "poi.coolant_bypass_line",
+     "poi.wet_hose_trough",
+     "poi.salt_dusted_hose_ridge",
+     "poi.cyan_paint_fleck_hose"
+    ],
+    "biome_tags": [
+     "biome.pressure_base_interior",
+     "biome.service_corridor",
+     "biome.flooded_machine_room",
+     "biome.marauder_salvage_cache"
+    ],
+    "first_20_boundary": "Makes flexible hoses readable as system state: ridge salt, wet troughs, abrasion arcs, clamp flats and paint flecks reveal oxygen, coolant and improvised bypass routes."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Pressure Hose Scanner",
+     "terminal": "Maintenance Bypass Note",
+     "audio": "Machine Room Recorder Fragment",
+     "in_game_wiki": "PDA Hose Reading Primer",
+     "external_site": "Public Site Flexible Hose Article",
+     "field_note": "Marauder Field Annotation"
+    },
+    "writer_note": "Keep hoses physical and readable. They are not generic cables: distinguish oxygen, coolant, tool tether and improvised bypass through wear, routing, clamps, salt and residue."
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ribbed Flexible Hose",
+     "scanner": "RIBBED FLEXIBLE HOSE // Pressure-rated rubber line. Salt on ridge tops, wet troughs and flattened clamp bands suggest recent flow. Trace both ends before cutting; a dead-looking hose can still be the only thing feeding air, coolant or proof.",
+     "terminal": "Bypass note: hoses routed after the evacuation order are not tidy. If the ribs are polished on one side, someone dragged the line under load. If the troughs stay wet, the line carried pressure after the room flooded.",
+     "audio": "You can hear the room through the hose if you put your glove on it. Air sounds sharp. Coolant sounds tired. A cut line sounds like debt arriving.",
+     "in_game_wiki": "Flexible ribbed hoses connect the soft systems of a pressure base: oxygen, coolant, pump priming, tool power, suit service and emergency bypasses. The ribs protect the line from crushing, but they also make the surface readable. Salt dust catches on the high ridges after dry cycles. Wet troughs hold the last seep long after a pipe stops dripping. Flat bands mark clamps, door crushes or desperate anchors. Abrasion on one side means the hose was dragged, not installed. A small cyan paint fleck can identify a coolant line even when the label is gone. Before cutting or looting, follow the hose with the scanner and by hand. A hose can be dead, live, pressurized, contaminated, or deliberately staged to look harmless.",
+     "external_site": "On HECTON-8, a ribbed hose is a corridor sentence written in rubber: what moved, who rerouted it, and whether the base survived by design or by somebody's last ugly workaround.",
+     "external_site_article": "The flexible hose is the humble part that keeps a pressure base from becoming a monument. It crosses places rigid pipe cannot cross: moving hatches, service drawers, suit racks, pump cradles, temporary salvage rigs and machine-room bypasses made during the last hour of panic. Its ribs are not decoration. They let the hose bend without folding, give gloves purchase in wet corridors, and leave a high-low pattern that catches residue like a slow recorder.\n\nReading begins with direction. Ridge tops collect dry salt and abrasion. Troughs hold water, oil sheen and fine silt. A hose with clean ridges and dark troughs probably breathed with the room. A hose with one polished side was dragged or rubbed by current after installation. Flattened rings show clamp points; a clamp over old salt means a late repair, while salt over clamp edges means the clamp was present before the room started breathing wet air. Paint flecks matter. Cyan often marks coolant service, off-white marks life-support routing, graphite black marks generic pressure sheath, and bare gray tape means field repair.\n\nPlayers should not treat hoses as background clutter. A cut oxygen hose can change a room from recoverable to hostile. A coolant bypass can explain why one machine stayed warm after the rest of the corridor died. A tool tether can lead to the person who used a cutter in the wrong direction. A staged hose can mislead scavengers toward an easy door and away from the real powered junction. The rule is simple: read both ends, read the ribs, then decide whether to cut. Rubber remembers pressure better than most people remember guilt.",
+     "field_note": "Ridges tell you what dried. Troughs tell you what kept moving. Clamp flats tell you who got desperate.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Рифленый гибкий шланг",
+     "scanner": "РИФЛЕНЫЙ ГИБКИЙ ШЛАНГ // Резиновая линия под давление. Соль на вершинах ребер, мокрые впадины и сплющенные следы хомутов говорят о недавнем потоке. Перед резом найди оба конца: мертвый на вид шланг может еще кормить воздух, охлаждение или улику.",
+     "terminal": "Заметка обходной линии: шланги, проложенные после приказа эвакуации, не выглядят аккуратно. Если ребра отполированы с одной стороны, линию тащили под нагрузкой. Если впадины остаются мокрыми, давление шло уже после затопления комнаты.",
+     "audio": "Если положить перчатку на шланг, комнату слышно через резину. Воздух звучит резко. Охлаждение звучит устало. Разрезанная линия звучит как долг, который уже пришел.",
+     "in_game_wiki": "Рифленые гибкие шланги связывают мягкие системы гермобазы: кислород, охлаждение, запуск насосов, питание инструмента, обслуживание костюмов и аварийные обходы. Ребра защищают линию от смятия, но делают поверхность читаемой. Сухие циклы оставляют соль на верхах ребер. Впадины держат последнюю воду дольше, чем капает труба. Плоские кольца показывают хомуты, дверные зажимы или отчаянные анкеры. Истирание с одной стороны означает, что шланг волокли, а не ставили по проекту. Маленькая голубая крапина может выдать линию охлаждения, когда маркировка уже стерта. Перед резом или добычей иди по шлангу сканером и рукой. Он может быть мертвым, живым, под давлением, зараженным или специально уложенным так, чтобы казаться безопасным.",
+     "external_site": "На HECTON-8 рифленый шланг — это предложение, написанное резиной по коридору: что двигалось, кто перенаправил поток и чем база выживала — проектом или чьей-то последней грубой заплатой.",
+     "external_site_article": "Гибкий шланг — незаметная деталь, которая не дает гермобазе стать памятником. Он пересекает места, где жесткая труба не пройдет: движущиеся люки, сервисные ящики, стойки костюмов, колыбели насосов, временные установки мародеров и обходы машинных залов, сделанные в последний час паники. Ребра на нем не для красоты. Они дают шлангу гнуться без перелома, помогают держать его мокрой перчаткой и оставляют рисунок верхов и впадин, где оседает остаток.\n\nЧтение начинается с направления. Верхи ребер собирают сухую соль и истирание. Впадины держат воду, масляную пленку и тонкий ил. Шланг с чистыми ребрами и темными впадинами, вероятно, дышал вместе с комнатой. Шланг, отполированный с одной стороны, тащили или терло течением уже после установки. Сплющенные кольца показывают точки хомутов; хомут поверх старой соли значит поздний ремонт, соль поверх краев хомута значит, что хомут стоял до мокрого дыхания комнаты. Крапины краски важны: голубая часто означает охлаждение, грязно-белая — жизнеобеспечение, графитовая — общую защитную оболочку, серая лента — полевой ремонт.\n\nИгрок не должен считать шланги фоном. Разрезанный кислородный шланг может превратить комнату из восстанавливаемой в враждебную. Обход охлаждения объясняет, почему одна машина оставалась теплой после смерти коридора. Трос инструмента может привести к человеку, который резал не в ту сторону. Специально уложенный шланг может вести мародера к легкой двери и уводить от настоящего силового узла. Правило простое: прочитай оба конца, прочитай ребра, потом решай, резать ли. Резина помнит давление лучше, чем люди помнят вину.",
+     "field_note": "Ребра говорят, что высохло. Впадины говорят, что продолжало идти. Плоские кольца говорят, кто сорвался на времянку.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Рифлений гнучкий шланг",
+     "scanner": "РИФЛЕНИЙ ГНУЧКИЙ ШЛАНГ // Гумова лінія під тиск. Сіль на вершинах ребер, мокрі жолобки і сплющені сліди хомутів натякають на недавній потік. Перед різанням знайди обидва кінці: мертвий на вигляд шланг може ще годувати повітря, охолодження або доказ.",
+     "terminal": "Нотатка обходу: шланги, прокладені після наказу евакуації, не бувають охайними. Якщо ребра відполіровані з одного боку, лінію тягнули під навантаженням. Якщо жолобки мокрі, тиск ішов уже після затоплення кімнати.",
+     "audio": "Поклади рукавицю на шланг — і почуєш кімнату крізь гуму. Повітря звучить різко. Охолодження звучить втомлено. Розрізана лінія звучить як борг, що вже прийшов.",
+     "in_game_wiki": "Рифлені гнучкі шланги з'єднують м'які системи гермобази: кисень, охолодження, запуск насосів, живлення інструментів, сервіс костюмів і аварійні обходи. Ребра захищають лінію від зминання, але роблять поверхню читабельною. Сухі цикли лишають сіль на верхівках. Жолобки тримають останню воду довше, ніж капає труба. Пласкі кільця показують хомути, дверні затиски або відчайдушні анкери. Стирання з одного боку означає, що шланг тягнули, а не монтували за проєктом. Мала блакитна крапка може видати лінію охолодження, коли напис уже стертий. Перед різанням веди сканер і руку вздовж шланга. Він може бути мертвим, живим, під тиском, забрудненим або навмисно покладеним так, щоб здаватися безпечним.",
+     "external_site": "На HECTON-8 рифлений шланг — це речення, написане гумою по коридору: що рухалося, хто перенаправив потік і як база виживала — конструкцією чи останнім грубим обходом.",
+     "external_site_article": "Гнучкий шланг — тиха деталь, яка не дає гермобазі стати пам'ятником. Він проходить там, де жорстка труба не пройде: рухомі люки, сервісні ящики, стійки костюмів, колиски насосів, тимчасові установки мародерів і машинні обходи, зроблені в останню годину паніки. Ребра не декоративні. Вони дають згин без перелому, тримання мокрою рукавицею і малюнок, де збирається залишок.\n\nЧитання починається з напряму. Верхи ребер збирають суху сіль і стирання. Жолобки тримають воду, масляну плівку і тонкий мул. Шланг із чистими ребрами та темними жолобками, імовірно, дихав із кімнатою. Відполірований з одного боку шланг тягнули або терло течією після монтажу. Сплющені кільця показують хомути; хомут поверх старої солі означає пізній ремонт, сіль поверх хомута — що він стояв до мокрого дихання кімнати.\n\nГравець не має сприймати шланги як фон. Розрізаний кисневий шланг може зробити кімнату ворожою. Обхід охолодження пояснює, чому одна машина залишалась теплою. Трос інструмента може привести до того, хто різав не туди. Правило просте: прочитай обидва кінці, прочитай ребра, тоді вирішуй, чи різати.",
+     "field_note": "Ребра кажуть, що висохло. Жолобки кажуть, що ще рухалось. Пласкі кільця кажуть, де почалась паніка.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Gerippter flexibler Schlauch",
+     "scanner": "GERIPPTER FLEX-SCHLAUCH // Druckfeste Gummileitung. Salz auf den Rippen, nasse Täler und flache Klemmbänder deuten auf jüngsten Fluss. Beide Enden verfolgen, bevor du schneidest; ein tot wirkender Schlauch kann noch Luft, Kühlung oder Beweis führen.",
+     "terminal": "Bypass-Notiz: Nach dem Evakuierungsbefehl verlegte Schläuche sind nicht ordentlich. Polierte Rippen auf einer Seite bedeuten Ziehen unter Last. Nasse Täler bedeuten Druckfluss nach der Flutung.",
+     "audio": "Leg den Handschuh auf den Schlauch, dann hörst du den Raum durch Gummi. Luft klingt scharf. Kühlmittel klingt müde. Eine geschnittene Leitung klingt wie ankommende Schuld.",
+     "in_game_wiki": "Flexible gerippte Schläuche verbinden die weichen Systeme einer Druckbasis: Sauerstoff, Kühlung, Pumpenstart, Werkzeugstrom, Anzugservice und Not-Bypässe. Die Rippen schützen vor Knicken und machen die Oberfläche lesbar. Trockene Zyklen lassen Salz auf den Kämmen. Täler halten Wasser, Ölfilm und feinen Schlamm. Flache Ringe zeigen Klemmen, Türquetschungen oder hastige Anker. Abrieb auf einer Seite bedeutet Ziehen statt planmäßige Installation. Ein kleiner cyanfarbener Farbfleck kann eine Kühlleitung verraten, wenn die Beschriftung fort ist. Vor Schnitt oder Bergung dem Schlauch mit Scanner und Hand folgen.",
+     "external_site": "Auf HECTON-8 ist ein gerippter Schlauch ein Satz aus Gummi: was floss, wer umleitete und ob die Basis durch Planung oder durch letzte hässliche Improvisation überlebte.",
+     "external_site_article": "Der flexible Schlauch ist das unscheinbare Teil, das eine Druckbasis am Leben hält. Er kreuzt Stellen, die starre Rohre nicht erreichen: bewegliche Luken, Serviceladen, Anzugständer, Pumpenwiegen, provisorische Bergungsgeräte und Maschinenraum-Bypässe aus der letzten Panikstunde. Seine Rippen sind kein Dekor. Sie erlauben Biegung ohne Falten, geben nassen Handschuhen Halt und fangen Rückstände wie ein langsamer Recorder.\n\nGelesen wird zuerst die Richtung. Rippenkämme sammeln trockenes Salz und Abrieb. Täler halten Wasser, Öl und Silt. Ein Schlauch mit sauberen Kämmen und dunklen Tälern atmete vermutlich mit dem Raum. Eine polierte Seite bedeutet Ziehen oder Strömungsreibung nach der Installation. Flache Ringe zeigen Klemmpunkte; eine Klemme über altem Salz bedeutet späte Reparatur, Salz über Klemmenkanten bedeutet ältere Montage.\n\nSchläuche sind kein Hintergrund. Ein geschnittener Sauerstoffschlauch macht einen Raum feindlich. Ein Kühlbypass erklärt eine warme Maschine in einem toten Gang. Eine Werkzeugleine führt zu der Person, die falsch herum schnitt. Erst beide Enden lesen, dann schneiden.",
+     "field_note": "Rippen sagen, was trocknete. Täler sagen, was weiterlief. Flache Ringe sagen, wer improvisierte.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Manguera flexible estriada",
+     "scanner": "MANGUERA FLEXIBLE ESTRIADA // Línea de goma apta para presión. Sal en las crestas, surcos mojados y bandas aplastadas de abrazadera sugieren flujo reciente. Sigue ambos extremos antes de cortar; una manguera muerta puede alimentar aire, refrigerante o prueba.",
+     "terminal": "Nota de bypass: las mangueras tendidas tras la orden de evacuación no son limpias. Si las estrías están pulidas por un lado, alguien arrastró la línea con carga. Si los surcos siguen mojados, transportó presión después de la inundación.",
+     "audio": "Pon el guante sobre la manguera y oirás la sala a través de la goma. El aire suena afilado. El refrigerante suena cansado. Una línea cortada suena como deuda llegando.",
+     "in_game_wiki": "Las mangueras estriadas flexibles conectan los sistemas blandos de una base presurizada: oxígeno, refrigerante, cebado de bombas, energía de herramientas, servicio de trajes y bypasses de emergencia. Las estrías protegen contra aplastamiento y hacen legible la superficie. La sal seca se queda en las crestas. Los surcos retienen agua, aceite y limo fino. Los anillos planos marcan abrazaderas, puertas o anclajes desesperados. Abrasión en un lado significa arrastre, no instalación. Una mota cian puede delatar refrigerante cuando la etiqueta desapareció.",
+     "external_site": "En HECTON-8, una manguera estriada es una frase escrita en goma: qué se movió, quién lo desvió y si la base sobrevivió por diseño o por un último apaño feo.",
+     "external_site_article": "La manguera flexible es la pieza humilde que evita que una base presurizada se convierta en monumento. Cruza lugares donde la tubería rígida no puede: compuertas móviles, cajones de servicio, bastidores de trajes, cunas de bombas, equipos provisionales de saqueo y bypasses de sala de máquinas hechos en la última hora de pánico. Sus estrías no son decoración. Permiten doblar sin plegar, dan agarre a guantes mojados y atrapan residuos como una grabadora lenta.\n\nLa lectura empieza por la dirección. Las crestas juntan sal seca y abrasión. Los surcos retienen agua, película de aceite y limo. Una manguera con crestas limpias y surcos oscuros probablemente respiró con la sala. Un lado pulido fue arrastrado o rozado por corriente. Anillos aplastados marcan abrazaderas; abrazadera sobre sal vieja significa reparación tardía, sal sobre el borde de la abrazadera significa montaje anterior.\n\nNo son decorado. Cortar oxígeno cambia una sala recuperable en hostil. Un bypass de refrigerante explica una máquina caliente en un pasillo muerto. Un cable de herramienta lleva a quien cortó en la dirección equivocada. Lee ambos extremos, lee las estrías y luego decide si cortas.",
+     "field_note": "Las crestas dicen qué se secó. Los surcos dicen qué siguió moviéndose. Los planos de abrazadera dicen quién improvisó.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Tuyau flexible nervuré",
+     "scanner": "TUYAU FLEXIBLE NERVURÉ // Ligne de caoutchouc certifiée pression. Sel sur les crêtes, creux humides et bandes de collier aplaties suggèrent un flux récent. Suis les deux bouts avant de couper; un tuyau mort peut encore porter air, refroidissement ou preuve.",
+     "terminal": "Note de dérivation : les tuyaux posés après l'ordre d'évacuation ne sont pas propres. Des nervures polies d'un côté indiquent une ligne tirée en charge. Des creux humides indiquent un flux sous pression après l'inondation.",
+     "audio": "Pose ton gant sur le tuyau et tu entends la pièce dans le caoutchouc. L'air sonne net. Le refroidissement sonne fatigué. Une ligne coupée sonne comme une dette qui arrive.",
+     "in_game_wiki": "Les tuyaux flexibles nervurés relient les systèmes souples d'une base pressurisée : oxygène, refroidissement, amorçage de pompe, alimentation d'outil, service de combinaison et dérivations d'urgence. Les nervures protègent l'écrasement et rendent la surface lisible. Le sel sec reste sur les crêtes. Les creux gardent eau, huile et limon. Les anneaux plats marquent colliers, portes ou ancres hâtives. Une abrasion d'un seul côté indique un traînage. Une tache cyan peut révéler une ligne de refroidissement quand l'étiquette a disparu.",
+     "external_site": "Sur HECTON-8, un tuyau nervuré est une phrase écrite en caoutchouc : ce qui a circulé, qui l'a dérivé et si la base a survécu par plan ou par dernier bricolage brutal.",
+     "external_site_article": "Le tuyau flexible est la pièce humble qui empêche une base pressurisée de devenir un monument. Il traverse les endroits où le tube rigide échoue : sas mobiles, tiroirs de service, racks de combinaison, berceaux de pompe, montages provisoires et dérivations de salle machine faites pendant la dernière heure de panique. Ses nervures ne décorent rien. Elles permettent la courbure sans pli, donnent prise aux gants mouillés et piègent les résidus comme un enregistreur lent.\n\nLa lecture commence par la direction. Les crêtes prennent le sel sec et l'abrasion. Les creux gardent eau, film d'huile et limon. Un tuyau aux crêtes propres et creux sombres a probablement respiré avec la pièce. Un côté poli a été traîné ou frotté par le courant. Des anneaux aplatis montrent les points de collier; un collier sur sel ancien indique une réparation tardive, le sel sur le bord du collier une pose plus ancienne.\n\nLe joueur ne doit pas voir ces tuyaux comme décor. Couper l'oxygène peut rendre une pièce hostile. Une dérivation de refroidissement explique une machine encore chaude. Une laisse d'outil mène à celui qui a coupé du mauvais côté. Lis les deux bouts, lis les nervures, puis décide.",
+     "field_note": "Les crêtes disent ce qui a séché. Les creux disent ce qui bougeait encore. Les plats de collier disent qui a improvisé.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Żebrowany elastyczny przewód",
+     "scanner": "ŻEBROWANY ELASTYCZNY PRZEWÓD // Gumowa linia ciśnieniowa. Sól na grzbietach, mokre doliny i spłaszczone pasy zacisków sugerują niedawny przepływ. Prześledź oba końce przed cięciem; martwy przewód może nadal nieść powietrze, chłodzenie albo dowód.",
+     "terminal": "Notatka obejścia: przewody po rozkazie ewakuacji nie są schludne. Wypolerowane żebra po jednej stronie znaczą, że linię ciągnięto pod obciążeniem. Mokre doliny znaczą przepływ po zalaniu.",
+     "audio": "Połóż rękawicę na przewodzie, a usłyszysz pokój przez gumę. Powietrze brzmi ostro. Chłodziwo brzmi zmęczone. Przecięta linia brzmi jak nadchodzący dług.",
+     "in_game_wiki": "Żebrowane elastyczne przewody łączą miękkie systemy bazy ciśnieniowej: tlen, chłodzenie, zalewanie pomp, zasilanie narzędzi, serwis skafandrów i awaryjne obejścia. Żebra chronią przed zgnieceniem i czynią powierzchnię czytelną. Sól osiada na grzbietach. Doliny trzymają wodę, olej i muł. Płaskie pierścienie znaczą zaciski, drzwi albo desperackie kotwy. Ścieranie po jednej stronie oznacza przeciąganie. Cyjanowa plamka może zdradzić chłodziwo, gdy etykieta znikła.",
+     "external_site": "Na HECTON-8 żebrowany przewód jest zdaniem zapisanym gumą: co płynęło, kto zmienił trasę i czy baza przeżyła dzięki projektowi, czy ostatniej brzydkiej prowizorce.",
+     "external_site_article": "Elastyczny przewód to skromna część, która nie pozwala bazie ciśnieniowej zostać pomnikiem. Przechodzi tam, gdzie sztywna rura nie przejdzie: ruchome włazy, szuflady serwisowe, stojaki skafandrów, pompy, tymczasowe zestawy złomiarzy i obejścia maszynowni zrobione w ostatniej godzinie paniki. Żebra nie są dekoracją. Pozwalają zginać bez załamania, dają chwyt mokrym rękawicom i łapią osad jak powolny rejestrator.\n\nCzytanie zaczyna się od kierunku. Grzbiety zbierają suchą sól i ścieranie. Doliny trzymają wodę, film oleju i muł. Przewód z czystymi grzbietami i ciemnymi dolinami prawdopodobnie oddychał z pokojem. Wypolerowana jedna strona była ciągnięta lub tarła o prąd. Spłaszczone pierścienie pokazują zaciski; zacisk na starej soli to późna naprawa, sól na krawędziach zacisku to starszy montaż.\n\nTo nie tło. Przecięty tlen robi z pokoju zagrożenie. Obejście chłodzenia tłumaczy ciepłą maszynę w martwym korytarzu. Linka narzędzia prowadzi do osoby, która cięła w złą stronę. Czytaj oba końce, czytaj żebra, potem tnij.",
+     "field_note": "Grzbiety mówią, co wyschło. Doliny mówią, co płynęło. Płaskie pierścienie mówią, kto improwizował.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Mangueira flexível estriada",
+     "scanner": "MANGUEIRA FLEXÍVEL ESTRIADA // Linha de borracha para pressão. Sal no topo das estrias, vales úmidos e marcas achatadas de braçadeira sugerem fluxo recente. Siga as duas pontas antes de cortar; uma mangueira morta pode levar ar, resfriamento ou prova.",
+     "terminal": "Nota de bypass: mangueiras passadas depois da evacuação não ficam bonitas. Estrias polidas de um lado indicam linha arrastada sob carga. Vales úmidos indicam pressão depois da inundação.",
+     "audio": "Ponha a luva na mangueira e você ouve a sala pela borracha. Ar soa agudo. Resfriamento soa cansado. Linha cortada soa como dívida chegando.",
+     "in_game_wiki": "Mangueiras flexíveis estriadas ligam sistemas macios de uma base pressurizada: oxigênio, resfriamento, escorva de bomba, energia de ferramenta, serviço de traje e bypasses de emergência. As estrias protegem contra esmagamento e tornam a superfície legível. Sal seco fica nos topos. Vales guardam água, óleo e lodo. Anéis chatos mostram braçadeiras, portas ou ancoragens desesperadas. Abrasão de um lado indica arrasto. Uma pinta ciano pode revelar resfriamento quando a etiqueta sumiu.",
+     "external_site": "Em HECTON-8, uma mangueira estriada é uma frase escrita em borracha: o que se moveu, quem desviou e se a base sobreviveu por projeto ou por gambiarra final.",
+     "external_site_article": "A mangueira flexível é a peça humilde que impede uma base pressurizada de virar monumento. Ela atravessa onde tubo rígido não passa: escotilhas móveis, gavetas de serviço, racks de traje, berços de bomba, plataformas provisórias de saque e bypasses de sala de máquinas feitos na última hora de pânico. As estrias não são decoração. Elas dobram sem colapsar, dão pega a luvas molhadas e capturam resíduos como um gravador lento.\n\nA leitura começa pela direção. Os topos juntam sal seco e abrasão. Os vales guardam água, filme de óleo e lodo fino. Uma mangueira com topos limpos e vales escuros provavelmente respirou com a sala. Um lado polido foi arrastado ou esfregado pela corrente. Anéis achatados mostram braçadeiras; braçadeira sobre sal velho significa reparo tardio, sal por cima da braçadeira significa montagem antiga.\n\nMangueiras não são fundo. Cortar oxigênio pode tornar uma sala hostil. Um bypass de resfriamento explica uma máquina quente num corredor morto. Um cabo de ferramenta leva a quem cortou na direção errada. Leia as duas pontas, leia as estrias e só então corte.",
+     "field_note": "Topos dizem o que secou. Vales dizem o que continuou passando. Marcas chatas dizem quem improvisou.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Geribbelde flexibele slang",
+     "scanner": "GERIBBELDE FLEXIBELE SLANG // Drukbestendige rubberlijn. Zout op ribtoppen, natte dalen en platte klembandsporen wijzen op recente stroming. Volg beide uiteinden voor je snijdt; een dode slang kan nog lucht, koeling of bewijs voeren.",
+     "terminal": "Bypassnotitie: slangen na een evacuatiebevel liggen niet netjes. Gepolijste ribben aan één kant betekenen slepen onder belasting. Natte dalen betekenen drukstroom na overstroming.",
+     "audio": "Leg je handschoen op de slang en je hoort de kamer door rubber. Lucht klinkt scherp. Koelmiddel klinkt moe. Een gesneden lijn klinkt als schuld die aankomt.",
+     "in_game_wiki": "Geribbelde flexibele slangen verbinden de zachte systemen van een drukbasis: zuurstof, koeling, pompaanzuiging, gereedschapstroom, pakservice en nood-bypasses. De ribben beschermen tegen knikken en maken het oppervlak leesbaar. Droge cycli laten zout op de toppen. Dalen houden water, olie en slib vast. Platte ringen markeren klemmen, deurknellingen of noodankers. Slijtage aan één kant betekent slepen. Een cyaan verfvlek kan koeling verraden wanneer het label weg is.",
+     "external_site": "Op HECTON-8 is een geribbelde slang een zin in rubber: wat bewoog, wie het omleidde en of de basis overleefde door ontwerp of door laatste noodgreep.",
+     "external_site_article": "De flexibele slang is het nederige onderdeel dat een drukbasis uit de monumentenstand houdt. Ze kruist plaatsen waar vaste buis niet past: bewegende luiken, serviceladen, pakkenrekken, pompwiegjes, tijdelijke bergingssets en machinekamer-bypasses uit het laatste paniekuur. De ribben zijn geen decor. Ze buigen zonder dicht te vouwen, geven natte handschoenen grip en vangen residu als een trage recorder.\n\nLezen begint met richting. Ribtoppen verzamelen droog zout en slijtage. Dalen houden water, olie en fijn slib. Een slang met schone toppen en donkere dalen ademde waarschijnlijk met de kamer. Een gepolijste kant werd gesleept of door stroming geschuurd. Platte ringen tonen klempunten; een klem over oud zout is late reparatie, zout over klemranden is oudere montage.\n\nSlangen zijn geen achtergrond. Een doorgesneden zuurstofslang maakt een kamer vijandig. Een koelbypass verklaart een warme machine in een dode gang. Een gereedschapslijn leidt naar de persoon die verkeerd sneed. Lees beide uiteinden, lees de ribben, beslis dan.",
+     "field_note": "Toppen zeggen wat droogde. Dalen zeggen wat bleef bewegen. Platte ringen zeggen wie improviseerde.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Selang Fleksibel Berusuk",
+     "scanner": "SELANG FLEKSIBEL BERUSUK // Jalur karet bertekanan. Garam di puncak rusuk, lembah basah, dan bekas klem pipih menunjukkan aliran baru. Ikuti kedua ujung sebelum memotong; selang mati bisa masih membawa udara, pendingin, atau bukti.",
+     "terminal": "Catatan bypass: selang yang dipasang setelah perintah evakuasi tidak rapi. Rusuk mengilap di satu sisi berarti jalur ditarik saat berbeban. Lembah tetap basah berarti tekanan masih mengalir setelah ruangan banjir.",
+     "audio": "Tempelkan sarung tangan ke selang dan kau bisa mendengar ruangan lewat karet. Udara terdengar tajam. Pendingin terdengar lelah. Jalur terpotong terdengar seperti utang datang.",
+     "in_game_wiki": "Selang fleksibel berusuk menghubungkan sistem lunak basis bertekanan: oksigen, pendingin, priming pompa, daya alat, servis suit, dan bypass darurat. Rusuk melindungi dari remuk dan membuat permukaan bisa dibaca. Siklus kering meninggalkan garam di puncak. Lembah menahan air, minyak, dan lumpur halus. Cincin pipih menandai klem, pintu, atau jangkar putus asa. Abrasi satu sisi berarti diseret. Bintik cat sian bisa menandai pendingin saat label hilang.",
+     "external_site": "Di HECTON-8, selang berusuk adalah kalimat dalam karet: apa yang bergerak, siapa mengalihkannya, dan apakah basis selamat karena rancangan atau akal-akalan terakhir.",
+     "external_site_article": "Selang fleksibel adalah bagian rendah hati yang mencegah basis bertekanan menjadi monumen. Ia melewati tempat pipa kaku tidak bisa: palka bergerak, laci servis, rak suit, dudukan pompa, rig penyelamatan sementara, dan bypass ruang mesin yang dibuat pada jam panik terakhir. Rusuknya bukan hiasan. Ia menekuk tanpa melipat, memberi pegangan pada sarung tangan basah, dan menangkap residu seperti perekam lambat.\n\nPembacaan dimulai dari arah. Puncak rusuk mengumpulkan garam kering dan abrasi. Lembah menyimpan air, lapisan minyak, dan lumpur. Selang dengan puncak bersih dan lembah gelap mungkin bernapas bersama ruangan. Satu sisi mengilap berarti diseret atau tergesek arus. Cincin pipih menunjukkan titik klem; klem di atas garam lama berarti perbaikan terlambat, garam di atas tepi klem berarti pemasangan lebih tua.\n\nSelang bukan latar. Memotong oksigen bisa membuat ruangan berbahaya. Bypass pendingin menjelaskan mesin hangat di koridor mati. Tether alat bisa membawa ke orang yang memotong arah salah. Baca dua ujungnya, baca rusuknya, lalu putuskan.",
+     "field_note": "Puncak memberi tahu apa yang kering. Lembah memberi tahu apa yang masih bergerak. Cincin pipih memberi tahu siapa yang berimprovisasi.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "リブ付き柔軟ホース",
+     "scanner": "リブ付き柔軟ホース // 圧力対応のゴムライン。リブ上の塩、濡れた谷、平たいクランプ跡は最近の流れを示す。切る前に両端を追え。死んだように見えるホースが空気、冷却、証拠を運んでいることがある。",
+     "terminal": "バイパスメモ: 避難命令後に引かれたホースは整っていない。片側のリブが磨かれていれば、荷重下で引きずられた。谷が濡れたままなら、浸水後にも圧力が通った。",
+     "audio": "手袋をホースに置くと、ゴム越しに部屋が聞こえる。空気は鋭く、冷却液は疲れて聞こえる。切られたラインは、到着した負債の音がする。",
+     "in_game_wiki": "リブ付き柔軟ホースは、加圧基地の柔らかい系統をつなぐ。酸素、冷却、ポンプ始動、工具電力、スーツ整備、緊急バイパス。リブは潰れを防ぎ、表面を読めるものにする。乾燥周期はリブの頂点に塩を残す。谷は水、油膜、細かいシルトを保持する。平たい輪はクランプ、扉の圧迫、急ごしらえの固定点を示す。片側だけの摩耗は設置ではなく引きずりを示す。小さなシアンの塗料片は、ラベルが消えても冷却ラインを示すことがある。",
+     "external_site": "HECTON-8のリブ付きホースは、ゴムで書かれた廊下の文章だ。何が流れ、誰が迂回させ、基地が設計で生きたのか最後の醜い応急処置で生きたのかを示す。",
+     "external_site_article": "柔軟ホースは、加圧基地をただの記念碑にしない地味な部品だ。硬い配管が通れない場所を横切る。動くハッチ、整備引き出し、スーツラック、ポンプ架台、仮設の回収リグ、最後の混乱で作られた機械室バイパス。リブは飾りではない。折れずに曲がり、濡れた手袋に握りを与え、残留物をゆっくり記録する。\n\n読み取りは方向から始まる。リブの頂点は乾いた塩と摩耗を集める。谷は水、油、シルトを抱える。頂点がきれいで谷が暗いホースは、部屋と一緒に呼吸した可能性が高い。片側だけ磨かれていれば、引きずられたか流れに擦られた。平たい輪はクランプ位置を示す。古い塩の上のクランプは遅い修理、クランプ縁の上の塩は古い設置を示す。\n\nホースは背景ではない。酸素ホースを切れば部屋は敵になる。冷却バイパスは、死んだ廊下で一台だけ温かい機械を説明する。工具テザーは、逆方向に切った人物へ続く。両端を読み、リブを読み、それから切れ。",
+     "field_note": "頂点は乾いたものを語る。谷は動き続けたものを語る。平たい輪は即席仕事を語る。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "리브형 유연 호스",
+     "scanner": "리브형 유연 호스 // 압력 등급 고무 라인. 리브 위의 소금, 젖은 골, 납작한 클램프 자국은 최근 흐름을 뜻한다. 자르기 전에 양끝을 따라가라. 죽어 보이는 호스가 공기, 냉각, 증거를 먹일 수 있다.",
+     "terminal": "우회 기록: 대피 명령 뒤에 깔린 호스는 깔끔하지 않다. 한쪽 리브가 닳아 반짝이면 하중을 받으며 끌린 것이다. 골이 계속 젖어 있으면 침수 뒤에도 압력이 흘렀다.",
+     "audio": "장갑을 호스에 대면 고무 너머로 방이 들린다. 공기는 날카롭다. 냉각수는 지쳐 들린다. 잘린 라인은 도착한 빚처럼 들린다.",
+     "in_game_wiki": "리브형 유연 호스는 압력 기지의 부드러운 시스템을 잇는다. 산소, 냉각, 펌프 프라이밍, 도구 전원, 슈트 정비, 비상 우회. 리브는 압궤를 막고 표면을 읽게 만든다. 마른 주기는 리브 꼭대기에 소금을 남긴다. 골은 물, 기름막, 고운 실트를 잡는다. 납작한 고리는 클램프, 문에 눌린 곳, 급한 고정점을 뜻한다. 한쪽 마모는 설치가 아니라 끌림이다. 작은 시안 페인트 조각은 라벨이 사라져도 냉각 라인을 알려준다.",
+     "external_site": "HECTON-8에서 리브 호스는 고무로 쓰인 문장이다. 무엇이 흘렀고, 누가 돌렸고, 기지가 설계로 버텼는지 마지막 임시방편으로 버텼는지를 말한다.",
+     "external_site_article": "유연 호스는 압력 기지를 기념비로 만들지 않는 조용한 부품이다. 단단한 파이프가 지나갈 수 없는 곳을 지난다. 움직이는 해치, 정비 서랍, 슈트 랙, 펌프 받침, 임시 회수 장비, 마지막 공포의 시간에 만든 기계실 우회로. 리브는 장식이 아니다. 접히지 않고 휘며, 젖은 장갑에 잡힘을 주고, 잔류물을 느린 기록기처럼 붙잡는다.\n\n읽기는 방향에서 시작한다. 리브 꼭대기는 마른 소금과 마모를 모은다. 골은 물, 기름, 실트를 붙잡는다. 꼭대기가 깨끗하고 골이 어두운 호스는 방과 함께 숨 쉬었을 가능성이 크다. 한쪽이 닳아 빛나면 끌렸거나 흐름에 쓸렸다. 납작한 고리는 클램프 위치다. 오래된 소금 위의 클램프는 늦은 수리이고, 클램프 가장자리 위의 소금은 오래된 설치다.\n\n호스는 배경이 아니다. 산소 호스를 자르면 방이 적대적으로 변한다. 냉각 우회는 죽은 복도에서 혼자 따뜻한 기계를 설명한다. 도구 테더는 잘못된 방향으로 자른 사람에게 이어진다. 양끝을 읽고, 리브를 읽고, 그 다음 자르라.",
+     "field_note": "꼭대기는 마른 것을 말한다. 골은 계속 움직인 것을 말한다. 납작한 고리는 누가 임시로 버텼는지 말한다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "肋纹柔性压力软管",
+     "scanner": "肋纹柔性软管 // 压力级橡胶管线。肋顶的盐、潮湿沟槽和压扁的卡箍痕说明近期仍有流动。切割前追踪两端；看似死亡的软管仍可能输送空气、冷却剂或证据。",
+     "terminal": "旁路记录：撤离命令后铺设的软管不会整齐。一侧肋纹被磨亮，说明它在受力下被拖动。沟槽仍潮湿，说明房间进水后仍有压力通过。",
+     "audio": "把手套按在软管上，你能隔着橡胶听见房间。空气声尖，冷却剂声疲惫。被切开的管线听起来像债务抵达。",
+     "in_game_wiki": "肋纹柔性软管连接加压基地的软系统：氧气、冷却、泵启动、工具供能、潜服维护和应急旁路。肋纹防止压扁，也让表面可读。干燥循环会在肋顶留下盐。沟槽会保留水、油膜和细泥。扁平环痕表示卡箍、门压或临时锚固。一侧磨损表示拖拽而非正常安装。小小的青色漆点即使在标签消失后，也可能暴露冷却管线身份。",
+     "external_site": "在 HECTON-8，肋纹软管是一句写在橡胶上的走廊文字：什么流过、谁改了路线、基地靠设计还是最后的丑陋补救活了下来。",
+     "external_site_article": "柔性软管是让加压基地不至于变成纪念碑的小部件。它穿过硬管无法穿过的地方：活动舱门、维修抽屉、潜服架、泵座、临时打捞设备，以及最后一小时恐慌中接出的机房旁路。肋纹不是装饰。它让软管弯曲而不折死，让湿手套能抓住，也像慢速记录器一样捕捉残留物。\n\n读取从方向开始。肋顶收集干盐和磨损。沟槽保留水、油膜和细泥。肋顶干净而沟槽发暗的软管，可能和房间一起呼吸过。一侧被磨亮，说明它被拖拽或被水流摩擦。压扁的环显示卡箍位置；旧盐上的卡箍表示晚期修理，卡箍边缘上的盐表示更早安装。\n\n软管不是背景。切断氧气会让房间变得敌对。冷却旁路能解释死走廊里为什么有一台机器仍然温热。工具牵引线能引向那个朝错误方向切割的人。先读两端，再读肋纹，然后决定是否切割。",
+     "field_note": "肋顶说明什么干了。沟槽说明什么还在流。扁平环说明谁在临时补救。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "خرطوم مرن مضلع",
+     "scanner": "خرطوم مرن مضلع // خط مطاطي مصنف للضغط. الملح على قمم الأضلاع، والأخاديد الرطبة، وآثار المشابك المسطحة تشير إلى تدفق حديث. اتبع الطرفين قبل القطع؛ خرطوم يبدو ميتا قد يحمل هواء أو تبريدا أو دليلا.",
+     "terminal": "ملاحظة تحويل: الخراطيم الموضوعة بعد أمر الإخلاء لا تكون مرتبة. إذا صقلت الأضلاع من جهة واحدة فهذا يعني أن الخط سحب تحت حمل. إذا بقيت الأخاديد رطبة فقد حمل الخط ضغطا بعد غرق الغرفة.",
+     "audio": "ضع قفازك على الخرطوم وستسمع الغرفة عبر المطاط. الهواء حاد. التبريد متعب. الخط المقطوع صوته كالدين حين يصل.",
+     "in_game_wiki": "الخراطيم المرنة المضلعة تصل الأنظمة اللينة في قاعدة الضغط: الأكسجين، التبريد، تجهيز المضخات، طاقة الأدوات، خدمة البدلات، والتحويلات الطارئة. الأضلاع تمنع السحق وتجعل السطح قابلا للقراءة. دورات الجفاف تترك الملح على القمم. الأخاديد تحفظ الماء والزيت والطمي. الحلقات المسطحة تدل على مشابك أو أبواب أو مراس يائسة. التآكل من جهة واحدة يعني السحب. نقطة طلاء سماوية قد تكشف خط تبريد بعد اختفاء الملصق.",
+     "external_site": "في HECTON-8 الخرطوم المضلع جملة مكتوبة بالمطاط: ما الذي تحرك، من حوله، وهل نجت القاعدة بالتصميم أم بآخر حل قبيح.",
+     "external_site_article": "الخرطوم المرن جزء متواضع يمنع قاعدة الضغط من أن تصبح نصبا. يعبر أماكن لا تستطيع الأنابيب الصلبة عبورها: فتحات متحركة، أدراج خدمة، رفوف بدلات، حوامل مضخات، معدات إنقاذ مؤقتة، وتحويلات غرفة آلات صنعت في ساعة الذعر الأخيرة. الأضلاع ليست زينة. تسمح بالانحناء بلا انطواء، وتعطي القفازات المبللة قبضة، وتلتقط البقايا كمسجل بطيء.\n\nتبدأ القراءة بالاتجاه. القمم تجمع الملح الجاف والتآكل. الأخاديد تحفظ الماء والزيت والطمي الناعم. خرطوم بقمم نظيفة وأخاديد داكنة ربما تنفس مع الغرفة. جهة مصقولة تعني أنه سحب أو حكه تيار. الحلقات المسطحة تكشف نقاط المشابك؛ مشبك فوق ملح قديم يعني إصلاحا متأخرا، والملح فوق حافة المشبك يعني تركيبا أقدم.\n\nالخراطيم ليست خلفية. قطع خرطوم أكسجين يحول غرفة قابلة للاسترداد إلى خطر. تحويل التبريد يفسر آلة بقيت دافئة في ممر ميت. رباط أداة يقود إلى الشخص الذي قطع في الاتجاه الخطأ. اقرأ الطرفين، اقرأ الأضلاع، ثم قرر.",
+     "field_note": "القمم تقول ما جف. الأخاديد تقول ما استمر في الحركة. الحلقات المسطحة تقول من ارتجل.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "צינור גמיש מצולע",
+     "scanner": "צינור גמיש מצולע // קו גומי מדורג ללחץ. מלח על ראשי הצלעות, שקעים רטובים וטבעות מהדק שטוחות מצביעים על זרימה אחרונה. עקוב אחרי שני הקצוות לפני חיתוך; צינור מת למראה יכול עדיין לשאת אוויר, קירור או ראיה.",
+     "terminal": "הערת מעקף: צינורות שהונחו אחרי פקודת פינוי אינם מסודרים. צלעות מלוטשות בצד אחד אומרות שהקו נגרר תחת עומס. שקעים רטובים אומרים שהקו נשא לחץ אחרי ההצפה.",
+     "audio": "שים כפפה על הצינור ותשמע את החדר דרך הגומי. אוויר נשמע חד. קירור נשמע עייף. קו חתוך נשמע כמו חוב שמגיע.",
+     "in_game_wiki": "צינורות גמישים מצולעים מחברים את המערכות הרכות של בסיס לחץ: חמצן, קירור, אתחול משאבות, כוח לכלים, שירות חליפות ומעקפי חירום. הצלעות מגינות ממעיכה וגם הופכות את המשטח לקריא. מלח יבש נשאר על הראשים. שקעים שומרים מים, שמן וסחף. טבעות שטוחות מסמנות מהדקים, לחיצות דלת או עוגנים נואשים. שחיקה בצד אחד אומרת גרירה. נקודת צבע ציאן יכולה לחשוף קו קירור אחרי שהתווית נעלמה.",
+     "external_site": "ב-HECTON-8 צינור מצולע הוא משפט שנכתב בגומי: מה זרם, מי הסיט אותו, והאם הבסיס שרד בזכות תכנון או בזכות אלתור אחרון ומכוער.",
+     "external_site_article": "הצינור הגמיש הוא החלק הצנוע שמונע מבסיס לחץ להפוך לאנדרטה. הוא חוצה מקומות שצינור קשיח לא יכול: פתחים נעים, מגירות שירות, מדפי חליפות, עריסות משאבה, מתקני חילוץ זמניים ומעקפי חדר מכונות שנעשו בשעת הפאניקה האחרונה. הצלעות אינן קישוט. הן מאפשרות כיפוף בלי קיפול, נותנות אחיזה לכפפות רטובות ותופסות שאריות כמו מקליט איטי.\n\nהקריאה מתחילה בכיוון. ראשי הצלעות אוספים מלח יבש ושחיקה. השקעים שומרים מים, שמן וסחף דק. צינור עם ראשים נקיים ושקעים כהים כנראה נשם עם החדר. צד מלוטש נגרר או נשחק בזרם. טבעות שטוחות מראות נקודות מהדק; מהדק על מלח ישן אומר תיקון מאוחר, מלח על שפת מהדק אומר התקנה ישנה יותר.\n\nצינורות אינם רקע. חיתוך חמצן הופך חדר לעוין. מעקף קירור מסביר מכונה חמה במסדרון מת. כבל כלי מוביל אל מי שחתך בכיוון הלא נכון. קרא את שני הקצוות, קרא את הצלעות, ואז חתוך.",
+     "field_note": "הראשים אומרים מה התייבש. השקעים אומרים מה המשיך לנוע. הטבעות השטוחות אומרות מי אילתר.",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

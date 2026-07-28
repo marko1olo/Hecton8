@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P241_LIEN_SEVERITY_SEED_CLASS",
-      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
-      "article_id": "applied_lore.lien_severity_seed_class",
-      "title_key": "applied_lore.lien_severity_seed_class.title",
-      "unlock": {
-        "primary": "unlock.lien_severity_seed_class",
-        "poi_tags": [
-          "poi.claim_card_lien_strip",
-          "poi.black_keel_tariff_stamp",
-          "poi.contract_seed_panel"
-        ],
-        "biome_tags": [
-          "biome.claim_admin",
-          "biome.carrier_interface"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Lien Severity Seed Class",
-          "scanner": "The contract has a debt class before it has a destination.",
-          "field_note": "Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "Debt picks the weather before you see the water.",
-          "in_game_wiki": "Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "ru_RU": {
-          "title": "Класс долгового давления seed",
-          "scanner": "Сканер: The contract has a debt class before it has a destination.",
-          "field_note": "Полевая заметка: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "Терминал: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "Аудио: Debt picks the weather before you see the water.",
-          "in_game_wiki": "Внутриигровая вики: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "Публичная статья: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Lien Severity Seed Class",
-          "scanner": "JP LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "JP LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "JP LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "JP LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "JP LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "JP LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Lien Severity Seed Class",
-          "scanner": "CN LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "CN LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "CN LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "CN LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "CN LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "CN LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Lien Severity Seed Class",
-          "scanner": "FR LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "FR LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "FR LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "FR LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "FR LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "FR LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Lien Severity Seed Class",
-          "scanner": "ES LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "ES LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "ES LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "ES LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "ES LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "ES LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Lien Severity Seed Class",
-          "scanner": "DE LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "DE LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "DE LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "DE LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "DE LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "DE LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Lien Severity Seed Class",
-          "scanner": "PL LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "PL LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "PL LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "PL LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "PL LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "PL LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Lien Severity Seed Class",
-          "scanner": "UA LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "UA LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "UA LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "UA LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "UA LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "UA LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Lien Severity Seed Class",
-          "scanner": "AR LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "AR LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "AR LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "AR LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "AR LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "AR LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Lien Severity Seed Class",
-          "scanner": "ID LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "ID LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "ID LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "ID LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "ID LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "ID LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Lien Severity Seed Class",
-          "scanner": "KR LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "KR LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "KR LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "KR LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "KR LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "KR LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Lien Severity Seed Class",
-          "scanner": "HE LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "HE LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "HE LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "HE LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "HE LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "HE LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Lien Severity Seed Class",
-          "scanner": "PT-BR LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "PT-BR LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "PT-BR LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "PT-BR LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "PT-BR LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "PT-BR LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Lien Severity Seed Class",
-          "scanner": "NL LOC HOLD: The contract has a debt class before it has a destination.",
-          "field_note": "NL LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
-          "terminal": "NL LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
-          "audio": "NL LOC HOLD: Debt picks the weather before you see the water.",
-          "in_game_wiki": "NL LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
-          "external_site": "NL LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P241_LIEN_SEVERITY_SEED_CLASS",
+   "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+   "article_id": "applied_lore.lien_severity_seed_class",
+   "title_key": "applied_lore.lien_severity_seed_class.title",
+   "unlock": {
+    "primary": "unlock.lien_severity_seed_class",
+    "poi_tags": [
+     "poi.claim_card_lien_strip",
+     "poi.black_keel_tariff_stamp",
+     "poi.contract_seed_panel"
+    ],
+    "biome_tags": [
+     "biome.claim_admin",
+     "biome.carrier_interface"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Lien Severity Seed Class",
+     "scanner": "The contract has a debt class before it has a destination.",
+     "field_note": "Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "Debt picks the weather before you see the water.",
+     "in_game_wiki": "Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
     },
-    {
-      "packet_id": "P242_STORM_WINDOW_RISK_CARD",
-      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
-      "article_id": "applied_lore.storm_window_risk_card",
-      "title_key": "applied_lore.storm_window_risk_card.title",
-      "unlock": {
-        "primary": "unlock.storm_window_risk_card",
-        "poi_tags": [
-          "poi.aegir_window_timer",
-          "poi.storm_clause_card",
-          "poi.relay_weather_ledger"
-        ],
-        "biome_tags": [
-          "biome.aegir_orbital_pressure",
-          "biome.surface_storm"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Storm Window Risk Card",
-          "scanner": "The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "You signed for the cheap sky.",
-          "in_game_wiki": "Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "ru_RU": {
-          "title": "Карта риска штормового окна",
-          "scanner": "Сканер: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "Полевая заметка: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "Терминал: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "Аудио: You signed for the cheap sky.",
-          "in_game_wiki": "Внутриигровая вики: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "Публичная статья: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Storm Window Risk Card",
-          "scanner": "JP LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "JP LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "JP LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "JP LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "JP LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "JP LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Storm Window Risk Card",
-          "scanner": "CN LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "CN LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "CN LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "CN LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "CN LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "CN LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Storm Window Risk Card",
-          "scanner": "FR LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "FR LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "FR LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "FR LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "FR LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "FR LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Storm Window Risk Card",
-          "scanner": "ES LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "ES LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "ES LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "ES LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "ES LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "ES LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Storm Window Risk Card",
-          "scanner": "DE LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "DE LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "DE LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "DE LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "DE LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "DE LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Storm Window Risk Card",
-          "scanner": "PL LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "PL LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "PL LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "PL LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "PL LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "PL LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Storm Window Risk Card",
-          "scanner": "UA LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "UA LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "UA LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "UA LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "UA LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "UA LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Storm Window Risk Card",
-          "scanner": "AR LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "AR LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "AR LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "AR LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "AR LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "AR LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Storm Window Risk Card",
-          "scanner": "ID LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "ID LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "ID LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "ID LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "ID LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "ID LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Storm Window Risk Card",
-          "scanner": "KR LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "KR LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "KR LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "KR LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "KR LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "KR LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Storm Window Risk Card",
-          "scanner": "HE LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "HE LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "HE LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "HE LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "HE LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "HE LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Storm Window Risk Card",
-          "scanner": "PT-BR LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "PT-BR LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "PT-BR LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "PT-BR LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "PT-BR LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "PT-BR LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Storm Window Risk Card",
-          "scanner": "NL LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
-          "field_note": "NL LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
-          "terminal": "NL LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
-          "audio": "NL LOC HOLD: You signed for the cheap sky.",
-          "in_game_wiki": "NL LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
-          "external_site": "NL LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
-        }
-      }
+    "ru_RU": {
+     "title": "Класс долгового давления seed",
+     "scanner": "Сканер: The contract has a debt class before it has a destination.",
+     "field_note": "Полевая заметка: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "Терминал: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "Аудио: Debt picks the weather before you see the water.",
+     "in_game_wiki": "Внутриигровая вики: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "Публичная статья: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
     },
-    {
-      "packet_id": "P243_SAMPLE_CUSTODY_GRADE_CARD",
-      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
-      "article_id": "applied_lore.sample_custody_grade_card",
-      "title_key": "applied_lore.sample_custody_grade_card.title",
-      "unlock": {
-        "primary": "unlock.sample_custody_grade_card",
-        "poi_tags": [
-          "poi.sample_custody_tag",
-          "poi.blue_debt_case",
-          "poi.keelmark_evidence_seal"
-        ],
-        "biome_tags": [
-          "biome.resource_custody",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Sample Custody Grade Card",
-          "scanner": "The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "Do not call it loot on a recorded line.",
-          "in_game_wiki": "Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "ru_RU": {
-          "title": "Карта класса хранения образцов",
-          "scanner": "Сканер: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "Полевая заметка: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "Терминал: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "Аудио: Do not call it loot on a recorded line.",
-          "in_game_wiki": "Внутриигровая вики: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "Публичная статья: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Sample Custody Grade Card",
-          "scanner": "JP LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "JP LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "JP LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "JP LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "JP LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "JP LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Sample Custody Grade Card",
-          "scanner": "CN LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "CN LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "CN LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "CN LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "CN LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "CN LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Sample Custody Grade Card",
-          "scanner": "FR LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "FR LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "FR LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "FR LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "FR LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "FR LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Sample Custody Grade Card",
-          "scanner": "ES LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "ES LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "ES LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "ES LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "ES LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "ES LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Sample Custody Grade Card",
-          "scanner": "DE LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "DE LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "DE LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "DE LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "DE LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "DE LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Sample Custody Grade Card",
-          "scanner": "PL LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "PL LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "PL LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "PL LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "PL LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "PL LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Sample Custody Grade Card",
-          "scanner": "UA LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "UA LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "UA LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "UA LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "UA LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "UA LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Sample Custody Grade Card",
-          "scanner": "AR LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "AR LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "AR LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "AR LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "AR LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "AR LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Sample Custody Grade Card",
-          "scanner": "ID LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "ID LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "ID LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "ID LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "ID LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "ID LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Sample Custody Grade Card",
-          "scanner": "KR LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "KR LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "KR LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "KR LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "KR LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "KR LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Sample Custody Grade Card",
-          "scanner": "HE LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "HE LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "HE LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "HE LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "HE LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "HE LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Sample Custody Grade Card",
-          "scanner": "PT-BR LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "PT-BR LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "PT-BR LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "PT-BR LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "PT-BR LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "PT-BR LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Sample Custody Grade Card",
-          "scanner": "NL LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
-          "field_note": "NL LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
-          "terminal": "NL LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
-          "audio": "NL LOC HOLD: Do not call it loot on a recorded line.",
-          "in_game_wiki": "NL LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
-          "external_site": "NL LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
-        }
-      }
+    "ja_JP": {
+     "title": "JP LOC HOLD: Lien Severity Seed Class",
+     "scanner": "JP LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "JP LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "JP LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "JP LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "JP LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "JP LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
     },
-    {
-      "packet_id": "P244_EVIDENCE_ORDER_DEPTH_CARD",
-      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
-      "article_id": "applied_lore.evidence_order_depth_card",
-      "title_key": "applied_lore.evidence_order_depth_card.title",
-      "unlock": {
-        "primary": "unlock.evidence_order_depth_card",
-        "poi_tags": [
-          "poi.evidence_order_card",
-          "poi.dossier_route_strip",
-          "poi.dead_claim_index"
-        ],
-        "biome_tags": [
-          "biome.dossier",
-          "biome.colony_ruins"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Evidence Order Depth Card",
-          "scanner": "The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "Same drowning. Different first name.",
-          "in_game_wiki": "Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "ru_RU": {
-          "title": "Карта глубины цепочки доказательств",
-          "scanner": "Сканер: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "Полевая заметка: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "Терминал: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "Аудио: Same drowning. Different first name.",
-          "in_game_wiki": "Внутриигровая вики: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "Публичная статья: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Evidence Order Depth Card",
-          "scanner": "JP LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "JP LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "JP LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "JP LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "JP LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "JP LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Evidence Order Depth Card",
-          "scanner": "CN LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "CN LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "CN LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "CN LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "CN LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "CN LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Evidence Order Depth Card",
-          "scanner": "FR LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "FR LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "FR LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "FR LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "FR LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "FR LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Evidence Order Depth Card",
-          "scanner": "ES LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "ES LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "ES LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "ES LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "ES LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "ES LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Evidence Order Depth Card",
-          "scanner": "DE LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "DE LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "DE LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "DE LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "DE LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "DE LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Evidence Order Depth Card",
-          "scanner": "PL LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "PL LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "PL LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "PL LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "PL LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "PL LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Evidence Order Depth Card",
-          "scanner": "UA LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "UA LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "UA LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "UA LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "UA LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "UA LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Evidence Order Depth Card",
-          "scanner": "AR LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "AR LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "AR LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "AR LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "AR LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "AR LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Evidence Order Depth Card",
-          "scanner": "ID LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "ID LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "ID LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "ID LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "ID LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "ID LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Evidence Order Depth Card",
-          "scanner": "KR LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "KR LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "KR LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "KR LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "KR LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "KR LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Evidence Order Depth Card",
-          "scanner": "HE LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "HE LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "HE LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "HE LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "HE LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "HE LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Evidence Order Depth Card",
-          "scanner": "PT-BR LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "PT-BR LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "PT-BR LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "PT-BR LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "PT-BR LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "PT-BR LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Evidence Order Depth Card",
-          "scanner": "NL LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
-          "field_note": "NL LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
-          "terminal": "NL LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
-          "audio": "NL LOC HOLD: Same drowning. Different first name.",
-          "in_game_wiki": "NL LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
-          "external_site": "NL LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
-        }
-      }
+    "zh_CN": {
+     "title": "CN LOC HOLD: Lien Severity Seed Class",
+     "scanner": "CN LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "CN LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "CN LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "CN LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "CN LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "CN LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
     },
-    {
-      "packet_id": "P245_DEEP_REACH_CLAUSE_WEIGHT_CARD",
-      "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
-      "article_id": "applied_lore.deep_reach_clause_weight_card",
-      "title_key": "applied_lore.deep_reach_clause_weight_card.title",
-      "unlock": {
-        "primary": "unlock.deep_reach_clause_weight_card",
-        "poi_tags": [
-          "poi.deep_reach_clause_stamp",
-          "poi.recovery_compliance_packet",
-          "poi.quarantine_bargain_card"
-        ],
-        "biome_tags": [
-          "biome.deep_reach_pressure",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Deep Reach Clause Weight Card",
-          "scanner": "The clause is not a message. It is a hand on the airlock.",
-          "field_note": "Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "They do not need to answer you if the clause already did.",
-          "in_game_wiki": "Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "ru_RU": {
-          "title": "Карта веса условий Deep Reach",
-          "scanner": "Сканер: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "Полевая заметка: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "Терминал: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "Аудио: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "Внутриигровая вики: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "Публичная статья: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "JP LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "JP LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "JP LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "JP LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "JP LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "JP LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "CN LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "CN LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "CN LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "CN LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "CN LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "CN LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "FR LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "FR LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "FR LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "FR LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "FR LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "FR LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "ES LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "ES LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "ES LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "ES LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "ES LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "ES LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "DE LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "DE LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "DE LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "DE LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "DE LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "DE LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "PL LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "PL LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "PL LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "PL LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "PL LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "PL LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "UA LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "UA LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "UA LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "UA LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "UA LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "UA LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "AR LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "AR LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "AR LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "AR LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "AR LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "AR LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "ID LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "ID LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "ID LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "ID LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "ID LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "ID LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "ko_KR": {
-          "title": "KR LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "KR LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "KR LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "KR LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "KR LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "KR LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "KR LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "HE LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "HE LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "HE LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "HE LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "HE LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "HE LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "PT-BR LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "PT-BR LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "PT-BR LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "PT-BR LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "PT-BR LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "PT-BR LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Deep Reach Clause Weight Card",
-          "scanner": "NL LOC HOLD: The clause is not a message. It is a hand on the airlock.",
-          "field_note": "NL LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
-          "terminal": "NL LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
-          "audio": "NL LOC HOLD: They do not need to answer you if the clause already did.",
-          "in_game_wiki": "NL LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
-          "external_site": "NL LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Lien Severity Seed Class",
+     "scanner": "FR LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "FR LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "FR LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "FR LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "FR LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "FR LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Lien Severity Seed Class",
+     "scanner": "ES LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "ES LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "ES LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "ES LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "ES LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "ES LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Lien Severity Seed Class",
+     "scanner": "DE LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "DE LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "DE LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "DE LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "DE LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "DE LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Lien Severity Seed Class",
+     "scanner": "PL LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "PL LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "PL LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "PL LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "PL LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "PL LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Lien Severity Seed Class",
+     "scanner": "UA LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "UA LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "UA LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "UA LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "UA LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "UA LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Lien Severity Seed Class",
+     "scanner": "AR LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "AR LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "AR LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "AR LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "AR LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "AR LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Lien Severity Seed Class",
+     "scanner": "ID LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "ID LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "ID LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "ID LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "ID LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "ID LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Lien Severity Seed Class",
+     "scanner": "KR LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "KR LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "KR LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "KR LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "KR LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "KR LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Lien Severity Seed Class",
+     "scanner": "HE LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "HE LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "HE LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "HE LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "HE LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "HE LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Lien Severity Seed Class",
+     "scanner": "PT-BR LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "PT-BR LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "PT-BR LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "PT-BR LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "PT-BR LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "PT-BR LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Lien Severity Seed Class",
+     "scanner": "NL LOC HOLD: The contract has a debt class before it has a destination.",
+     "field_note": "NL LOC HOLD: Lien severity is the seed's pressure valve: it changes terms, not the player's inherited strength.",
+     "terminal": "NL LOC HOLD: SEED CLASS: lien severity modifies payout pressure, sample custody and rescue tolerance.",
+     "audio": "NL LOC HOLD: Debt picks the weather before you see the water.",
+     "in_game_wiki": "NL LOC HOLD: Lien Severity Seed Class defines replay as pressure context. The player does not keep power between campaigns; they keep knowledge and choose harder or stranger contract terms.",
+     "external_site": "NL LOC HOLD: Lien Severity Seed Class is the foundation of HECTON-8's replay contract system. It turns debt, blacklist risk and rescue tolerance into authored seed pressure without turning the game into a power-carrying roguelite."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P242_STORM_WINDOW_RISK_CARD",
+   "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+   "article_id": "applied_lore.storm_window_risk_card",
+   "title_key": "applied_lore.storm_window_risk_card.title",
+   "unlock": {
+    "primary": "unlock.storm_window_risk_card",
+    "poi_tags": [
+     "poi.aegir_window_timer",
+     "poi.storm_clause_card",
+     "poi.relay_weather_ledger"
+    ],
+    "biome_tags": [
+     "biome.aegir_orbital_pressure",
+     "biome.surface_storm"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Storm Window Risk Card",
+     "scanner": "The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "You signed for the cheap sky.",
+     "in_game_wiki": "Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "ru_RU": {
+     "title": "Карта риска штормового окна",
+     "scanner": "Сканер: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "Полевая заметка: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "Терминал: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "Аудио: You signed for the cheap sky.",
+     "in_game_wiki": "Внутриигровая вики: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "Публичная статья: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Storm Window Risk Card",
+     "scanner": "JP LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "JP LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "JP LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "JP LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "JP LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "JP LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Storm Window Risk Card",
+     "scanner": "CN LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "CN LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "CN LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "CN LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "CN LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "CN LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Storm Window Risk Card",
+     "scanner": "FR LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "FR LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "FR LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "FR LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "FR LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "FR LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Storm Window Risk Card",
+     "scanner": "ES LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "ES LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "ES LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "ES LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "ES LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "ES LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Storm Window Risk Card",
+     "scanner": "DE LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "DE LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "DE LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "DE LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "DE LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "DE LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Storm Window Risk Card",
+     "scanner": "PL LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "PL LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "PL LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "PL LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "PL LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "PL LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Storm Window Risk Card",
+     "scanner": "UA LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "UA LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "UA LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "UA LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "UA LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "UA LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Storm Window Risk Card",
+     "scanner": "AR LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "AR LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "AR LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "AR LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "AR LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "AR LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Storm Window Risk Card",
+     "scanner": "ID LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "ID LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "ID LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "ID LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "ID LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "ID LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Storm Window Risk Card",
+     "scanner": "KR LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "KR LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "KR LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "KR LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "KR LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "KR LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Storm Window Risk Card",
+     "scanner": "HE LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "HE LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "HE LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "HE LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "HE LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "HE LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Storm Window Risk Card",
+     "scanner": "PT-BR LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "PT-BR LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "PT-BR LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "PT-BR LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "PT-BR LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "PT-BR LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Storm Window Risk Card",
+     "scanner": "NL LOC HOLD: The storm card marks what the carrier can hear and what it will pretend not to hear.",
+     "field_note": "NL LOC HOLD: Storm risk is a contract term because orbital geometry and Aegir weather are expensive to wait out.",
+     "terminal": "NL LOC HOLD: WINDOW RISK: relay delay, entry scatter, ascent tolerance and pinger drift may vary.",
+     "audio": "NL LOC HOLD: You signed for the cheap sky.",
+     "in_game_wiki": "NL LOC HOLD: Storm Window Risk Cards let new campaigns alter communication windows, shallow visibility and return pressure while keeping the Aegir system canon stable.",
+     "external_site": "NL LOC HOLD: Storm Window Risk Cards make HECTON-8 replayable through believable orbital and weather constraints. They are not random darkness; they are contract-visible risk terms around Aegir's radiation, storm and relay windows."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P243_SAMPLE_CUSTODY_GRADE_CARD",
+   "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+   "article_id": "applied_lore.sample_custody_grade_card",
+   "title_key": "applied_lore.sample_custody_grade_card.title",
+   "unlock": {
+    "primary": "unlock.sample_custody_grade_card",
+    "poi_tags": [
+     "poi.sample_custody_tag",
+     "poi.blue_debt_case",
+     "poi.keelmark_evidence_seal"
+    ],
+    "biome_tags": [
+     "biome.resource_custody",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Sample Custody Grade Card",
+     "scanner": "The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "Do not call it loot on a recorded line.",
+     "in_game_wiki": "Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "ru_RU": {
+     "title": "Карта класса хранения образцов",
+     "scanner": "Сканер: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "Полевая заметка: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "Терминал: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "Аудио: Do not call it loot on a recorded line.",
+     "in_game_wiki": "Внутриигровая вики: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "Публичная статья: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Sample Custody Grade Card",
+     "scanner": "JP LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "JP LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "JP LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "JP LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "JP LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "JP LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Sample Custody Grade Card",
+     "scanner": "CN LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "CN LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "CN LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "CN LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "CN LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "CN LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Sample Custody Grade Card",
+     "scanner": "FR LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "FR LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "FR LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "FR LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "FR LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "FR LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Sample Custody Grade Card",
+     "scanner": "ES LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "ES LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "ES LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "ES LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "ES LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "ES LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Sample Custody Grade Card",
+     "scanner": "DE LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "DE LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "DE LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "DE LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "DE LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "DE LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Sample Custody Grade Card",
+     "scanner": "PL LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "PL LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "PL LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "PL LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "PL LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "PL LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Sample Custody Grade Card",
+     "scanner": "UA LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "UA LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "UA LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "UA LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "UA LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "UA LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Sample Custody Grade Card",
+     "scanner": "AR LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "AR LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "AR LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "AR LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "AR LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "AR LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Sample Custody Grade Card",
+     "scanner": "ID LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "ID LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "ID LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "ID LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "ID LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "ID LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Sample Custody Grade Card",
+     "scanner": "KR LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "KR LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "KR LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "KR LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "KR LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "KR LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Sample Custody Grade Card",
+     "scanner": "HE LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "HE LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "HE LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "HE LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "HE LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "HE LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Sample Custody Grade Card",
+     "scanner": "PT-BR LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "PT-BR LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "PT-BR LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "PT-BR LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "PT-BR LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "PT-BR LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Sample Custody Grade Card",
+     "scanner": "NL LOC HOLD: The label decides whether the sample is cargo, evidence or debt.",
+     "field_note": "NL LOC HOLD: Blue debt is valuable because it is unstable, certified and owned before it is touched.",
+     "terminal": "NL LOC HOLD: CUSTODY GRADE: uncertified containers reduce payout and raise quarantine pressure.",
+     "audio": "NL LOC HOLD: Do not call it loot on a recorded line.",
+     "in_game_wiki": "NL LOC HOLD: Sample Custody Grade Cards make resources part of the story. A sample can be money, legal proof, contamination risk or a bargaining chip.",
+     "external_site": "NL LOC HOLD: Sample Custody Grade Cards connect HECTON-8's resource game to Deep Reach liability and Black Keel debt. The same blue debt case can be a payout, a quarantine problem or proof of what happened below."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P244_EVIDENCE_ORDER_DEPTH_CARD",
+   "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+   "article_id": "applied_lore.evidence_order_depth_card",
+   "title_key": "applied_lore.evidence_order_depth_card.title",
+   "unlock": {
+    "primary": "unlock.evidence_order_depth_card",
+    "poi_tags": [
+     "poi.evidence_order_card",
+     "poi.dossier_route_strip",
+     "poi.dead_claim_index"
+    ],
+    "biome_tags": [
+     "biome.dossier",
+     "biome.colony_ruins"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Evidence Order Depth Card",
+     "scanner": "The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "Same drowning. Different first name.",
+     "in_game_wiki": "Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "ru_RU": {
+     "title": "Карта глубины цепочки доказательств",
+     "scanner": "Сканер: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "Полевая заметка: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "Терминал: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "Аудио: Same drowning. Different first name.",
+     "in_game_wiki": "Внутриигровая вики: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "Публичная статья: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Evidence Order Depth Card",
+     "scanner": "JP LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "JP LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "JP LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "JP LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "JP LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "JP LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Evidence Order Depth Card",
+     "scanner": "CN LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "CN LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "CN LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "CN LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "CN LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "CN LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Evidence Order Depth Card",
+     "scanner": "FR LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "FR LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "FR LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "FR LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "FR LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "FR LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Evidence Order Depth Card",
+     "scanner": "ES LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "ES LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "ES LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "ES LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "ES LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "ES LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Evidence Order Depth Card",
+     "scanner": "DE LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "DE LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "DE LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "DE LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "DE LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "DE LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Evidence Order Depth Card",
+     "scanner": "PL LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "PL LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "PL LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "PL LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "PL LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "PL LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Evidence Order Depth Card",
+     "scanner": "UA LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "UA LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "UA LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "UA LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "UA LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "UA LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Evidence Order Depth Card",
+     "scanner": "AR LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "AR LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "AR LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "AR LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "AR LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "AR LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Evidence Order Depth Card",
+     "scanner": "ID LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "ID LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "ID LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "ID LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "ID LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "ID LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Evidence Order Depth Card",
+     "scanner": "KR LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "KR LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "KR LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "KR LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "KR LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "KR LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Evidence Order Depth Card",
+     "scanner": "HE LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "HE LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "HE LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "HE LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "HE LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "HE LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Evidence Order Depth Card",
+     "scanner": "PT-BR LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "PT-BR LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "PT-BR LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "PT-BR LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "PT-BR LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "PT-BR LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Evidence Order Depth Card",
+     "scanner": "NL LOC HOLD: The card does not change the crime. It changes the first proof you can afford to believe.",
+     "field_note": "NL LOC HOLD: Evidence-order depth keeps repeated campaigns investigative without rewriting the core event.",
+     "terminal": "NL LOC HOLD: DOSSIER ROUTE: clue order may vary; packet truth and dependency hashes remain stable.",
+     "audio": "NL LOC HOLD: Same drowning. Different first name.",
+     "in_game_wiki": "NL LOC HOLD: Evidence Order Depth Cards let the game reshuffle discovery order. They do not randomize the truth; they alter which rooms and objects make the player understand it first.",
+     "external_site": "NL LOC HOLD: Evidence Order Depth Cards are a replay tool for HECTON-8's mystery structure. They preserve canon but vary route, proof type and emotional arrival."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P245_DEEP_REACH_CLAUSE_WEIGHT_CARD",
+   "release_set_id": "RS049_CONTRACT_SEED_RISK_REWARD_SURFACES",
+   "article_id": "applied_lore.deep_reach_clause_weight_card",
+   "title_key": "applied_lore.deep_reach_clause_weight_card.title",
+   "unlock": {
+    "primary": "unlock.deep_reach_clause_weight_card",
+    "poi_tags": [
+     "poi.deep_reach_clause_stamp",
+     "poi.recovery_compliance_packet",
+     "poi.quarantine_bargain_card"
+    ],
+    "biome_tags": [
+     "biome.deep_reach_pressure",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Deep Reach Clause Weight Card",
+     "scanner": "The clause is not a message. It is a hand on the airlock.",
+     "field_note": "Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "They do not need to answer you if the clause already did.",
+     "in_game_wiki": "Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "ru_RU": {
+     "title": "Карта веса условий Deep Reach",
+     "scanner": "Сканер: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "Полевая заметка: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "Терминал: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "Аудио: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "Внутриигровая вики: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "Публичная статья: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "JP LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "JP LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "JP LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "JP LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "JP LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "JP LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "CN LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "CN LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "CN LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "CN LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "CN LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "CN LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "FR LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "FR LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "FR LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "FR LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "FR LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "FR LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "ES LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "ES LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "ES LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "ES LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "ES LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "ES LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "DE LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "DE LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "DE LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "DE LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "DE LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "DE LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "PL LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "PL LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "PL LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "PL LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "PL LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "PL LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "UA LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "UA LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "UA LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "UA LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "UA LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "UA LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "AR LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "AR LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "AR LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "AR LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "AR LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "AR LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "ID LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "ID LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "ID LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "ID LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "ID LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "ID LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "ko_KR": {
+     "title": "KR LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "KR LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "KR LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "KR LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "KR LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "KR LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "KR LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "HE LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "HE LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "HE LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "HE LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "HE LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "HE LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "PT-BR LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "PT-BR LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "PT-BR LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "PT-BR LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "PT-BR LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "PT-BR LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Deep Reach Clause Weight Card",
+     "scanner": "NL LOC HOLD: The clause is not a message. It is a hand on the airlock.",
+     "field_note": "NL LOC HOLD: Recovery Compliance can be quiet for hours and still shape every route through contract language.",
+     "terminal": "NL LOC HOLD: CLAUSE WEIGHT: payload priority, quarantine delay and rescue response may vary by contract seed.",
+     "audio": "NL LOC HOLD: They do not need to answer you if the clause already did.",
+     "in_game_wiki": "NL LOC HOLD: Deep Reach Clause Weight Cards define present-time corporate pressure. The company speaks through packet law, relay windows and salvage terms.",
+     "external_site": "NL LOC HOLD: Deep Reach Clause Weight Cards keep the antagonist systemic. Recovery Compliance can shape an expedition through contract language even when no one is speaking over the radio."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

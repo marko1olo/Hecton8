@@ -1,11 +1,54 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS249_CABLE_JACKET_REPAIR_WRAP_ARTICLE",
-  "title": "Cable Jacket Repair Wrap Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS249_CABLE_JACKET_REPAIR_WRAP_ARTICLE",
+ "title": "Cable Jacket Repair Wrap Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1419_CABLE_REPAIR_WRAP_LEDGER",
+   "release_set_id": "RS249_CABLE_JACKET_REPAIR_WRAP_ARTICLE",
+   "article_id": "applied_lore.cable_jacket_repair_wrap_ledger",
+   "title_key": "LORE_CABLE_REPAIR_WRAP_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/HECTON8_Field_Atlas.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/WriterScenarioAgentPrompt.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,261 +56,219 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1419_CABLE_REPAIR_WRAP_LEDGER",
-      "release_set_id": "RS249_CABLE_JACKET_REPAIR_WRAP_ARTICLE",
-      "article_id": "applied_lore.cable_jacket_repair_wrap_ledger",
-      "title_key": "LORE_CABLE_REPAIR_WRAP_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/HECTON8_Field_Atlas.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/WriterScenarioAgentPrompt.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.cable_jacket_repair_wrap_ledger",
-        "secondary": [
-          "unlock.first_repair_wrap_scan",
-          "unlock.first_live_route_cable_read",
-          "unlock.first_late_power_trace"
-        ],
-        "poi_tags": [
-          "poi.cable_repair_wrap",
-          "poi.salt_under_tape_lip",
-          "poi.clamp_pressure_mark",
-          "poi.exposed_fiber_drag_trace"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.service_corridor",
-          "biome.pressure_route"
-        ],
-        "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Cable Repair Scanner",
-          "terminal": "Old Colony Cable Maintenance Readout",
-          "audio": "Marauder Power Trace Instructor",
-          "in_game_wiki": "PDA Cable Repair Field Guide",
-          "external_site": "Public Site Cable Repair Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_repair_wrap_scan_or_late_power_trace",
-        "truth_payload": "Cable jacket repair wraps reveal live routes, late repair order, load direction and machines kept alive after collapse.",
-        "player_question": "Which repaired line still points to something worth saving?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Cable Jacket Repair Wrap Ledger",
-          "scanner": "REPAIR WRAP // Black rubber cable jacket, gray tape bands, diagonal fiber underlayer, salt in seams, clamp-pressure marks. Abrasion is strongest on one side: the line was dragged while powered, not stored.",
-          "terminal": "CABLE READ // Count repair bands before cutting. Wide tape with salt under the lip is old. Tight clamp dents without salt are late. Exposed fiber under a clean scratch means recent abrasion. A cable tied high and rubbed low carried load while the room moved.",
-          "audio": "A dead cable is easy. A repaired cable means somebody still needed the other end.",
-          "in_game_wiki": "Cables in HECTON-8 are not background noodles. A pressure cable is a promise that two places still mattered to each other: power, signal, pump control, sensor feed, hatch actuation, emergency light. When the jacket fails, the repair wrap becomes a short history of who refused to let that connection die.\n\nThe order of marks matters. Gray tape bands with salt under the lip are old repairs that breathed with the sea. Tight clamp dents with clean rubber are late interventions. Diagonal fiber showing under a scratch means the outer jacket was cut or dragged recently. Abrasion on one side means the line worked under tension, not in storage. A cable rubbed low while tied high tells you the room moved after the repair was made.\n\nA Marauder should treat wrapped cable as route evidence. It can lead toward a working pump, a hidden terminal, a powered hatch, a trap that still has current, or a dead room someone tried to keep alive. Cutting every cable for scrap is fast. Reading which cable was repaired last is how a Marauder finds what the colony still cared about.",
-          "external_site": "A field article on cable jacket repair wraps: tape, fiber, salt and clamp dents reveal live routes, late repairs and machines kept alive after collapse.",
-          "external_site_article": "Good cable dressing is ugly in a useful way. It is layered with panic, skill and bad lighting. A worker did not wrap a line because the line looked important on a diagram. They wrapped it because something on the other end still mattered: a pump refusing to die, a door that had to cycle once more, a sensor warning that nobody wanted to hear aloud.\n\nHECTON-8 cable wrap reads through pressure and handling. Salt inside a tape seam says the repair is old enough to breathe water. Salt outside a clean clamp says the clamp came later. Fiber exposed under a shallow scrape means recent movement. Deep flattened bands mean a tool or bracket held the cable under load. If the abrasion sits only on the lower side, the line dragged across the deck after being tied above it.\n\nThat gives the world a practical grammar. A repaired cable can be loot, but it can also be a route marker, a hazard warning, a proof of late operation or the only honest arrow in a corridor full of dead signage. A Marauder who reads cable wrap does not just find copper. They find intention.",
-          "field_note": "Never cut the newest wrap first. It usually points to the thing someone saved last."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал ремонтной обмотки кабельной оболочки",
-          "scanner": "РЕМОНТНАЯ ОБМОТКА // Черная резиновая оболочка кабеля, серые ленты, диагональный волоконный слой, соль в швах, следы давления хомутов. Сильнейшая потертость с одной стороны: линию тащили под нагрузкой, а не хранили.",
-          "terminal": "ЧТЕНИЕ КАБЕЛЯ // Считай ремонтные ленты до реза. Широкая лента с солью под краем - старая. Тесная вмятина хомута без соли - поздняя. Волокно под чистой царапиной значит свежую потертость. Кабель, подвязанный высоко и стертый снизу, нес нагрузку, пока комната двигалась.",
-          "audio": "Мертвый кабель прост. Ремонтированный кабель значит, что кому-то еще был нужен второй конец.",
-          "in_game_wiki": "Кабели HECTON-8 - не фоновые шланги. Напорный кабель обещает, что два места еще были важны друг другу: питание, сигнал, управление насосом, датчик, привод люка, аварийный свет. Когда оболочка умирает, ремонтная обмотка становится короткой историей тех, кто отказался дать связи умереть.\n\nПорядок следов важен. Серые ленты с солью под краем - старый ремонт, дышавший морем. Жесткие вмятины хомутов на чистой резине - позднее вмешательство. Диагональное волокно под царапиной значит, что внешнюю оболочку недавно резали или тащили. Потертость с одной стороны значит, что линия работала под натяжением. Кабель, стертый снизу при верхней подвязке, говорит, что комната двигалась уже после ремонта.\n\nМародер должен читать обмотанный кабель как маршрутное доказательство. Он может вести к работающему насосу, скрытому терминалу, питаемому люку, ловушке с остаточным током или мертвой комнате, которую пытались удержать живой. Резать все кабели на лом быстро. Читать, какой ремонт был последним, - так мародер находит то, что колония еще пыталась спасти.",
-          "external_site": "Полевой материал о ремонтной обмотке кабелей: ленты, волокна, соль и следы хомутов раскрывают живые маршруты, поздний ремонт и машины, которые держали после обвала.",
-          "external_site_article": "Хорошая кабельная обмотка полезно некрасива. В ней слои паники, навыка и плохого света. Рабочий обматывал линию не потому, что она красиво выглядела на схеме. Он делал это потому, что на другом конце что-то еще имело значение: насос, который нельзя терять, дверь, которую надо открыть еще раз, датчик с предупреждением, которое никто не хотел произносить.\n\nОбмотка HECTON-8 читается через давление и обращение. Соль внутри шва ленты говорит, что ремонт старый и уже дышал водой. Соль снаружи чистого хомута говорит, что хомут поставили позже. Волокно под неглубокой царапиной - свежая протяжка. Глубоко сплющенные полосы означают инструмент или скобу, державшую кабель под нагрузкой. Потертость только снизу значит, что линию волокли по палубе после верхней подвязки.\n\nЭто дает миру практический язык. Ремонтированный кабель может быть добычей, но может быть и указателем маршрута, предупреждением об остаточном токе, доказательством поздней работы или единственной честной стрелкой в коридоре с мертвыми знаками. Мародер, читающий обмотку, находит не только медь. Он находит намерение.",
-          "field_note": "Не режь самую новую обмотку первой. Обычно она указывает на то, что спасали последним."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "ケーブル外装補修巻き台帳",
-          "scanner": "補修巻き // 黒いゴム外装、灰色テープ帯、斜めの繊維下地、継ぎ目の塩、クランプ圧痕。片側だけ強く擦れている。保管ではなく通電中に引きずられた線だ。",
-          "terminal": "ケーブル読取 // 切る前に補修帯を数える。縁の下に塩がある幅広テープは古い。塩のない強いクランプ跡は遅い介入。きれいな傷の下に繊維が見えるなら最近の摩耗。高く結ばれ低く擦れた線は、部屋が動く間も荷重を持った。",
-          "audio": "死んだケーブルは簡単だ。補修されたケーブルは、誰かがまだ向こう側を必要としていた印だ。",
-          "in_game_wiki": "HECTON-8のケーブルは背景の紐ではない。圧力ケーブルは二つの場所がまだ互いを必要としていた証拠だ。電力、信号、ポンプ制御、センサー、ハッチ駆動、非常灯。外装が傷むと、補修巻きはその接続を死なせまいとした人間の短い履歴になる。\n\n跡の順序が重要だ。縁の下に塩を含む灰色テープは古い修理。きれいなゴムに強いクランプ跡があれば後日の介入だ。浅い傷の下に斜め繊維が見えれば最近引きずった。片側だけの摩耗は、保管ではなく張力下で働いた線を示す。\n\nプレイヤーは補修ケーブルを経路証拠として扱える。動くポンプ、隠れ端末、まだ電気のあるハッチ、残留電流の罠、または生かそうとした死室へ導く。すべて切るのは早い。最後に巻かれた線を読むのが、コロニーが最後まで気にしたものを探す方法だ。",
-          "external_site": "ケーブル外装補修巻きの記事。テープ、繊維、塩、クランプ跡から生きた経路、遅い修理、崩壊後も維持された機械を読む。",
-          "external_site_article": "良いケーブル補修は、役に立つ形で醜い。そこには焦り、技術、悪い照明が重なっている。作業者は図面で重要に見えたから巻いたのではない。向こう側にまだ意味があったから巻いたのだ。死なせたくないポンプ、もう一度だけ動かす扉、声に出したくない警告を送るセンサー。\n\n補修巻きは圧力と扱いで読める。テープ継ぎ目の内側の塩は古い修理を示す。きれいなクランプの外側の塩は、クランプが後から来たことを示す。浅い擦れ下の繊維は最近の移動だ。深い平帯は工具やブラケットが荷重を持った印になる。\n\n補修ケーブルは資源だけでなく、経路、危険、遅い稼働の証拠になる。銅を見つけるだけではない。意図を見つける。",
-          "field_note": "一番新しい巻きを最初に切るな。最後に救ったものを指していることが多い。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "电缆外护套维修缠绕账本",
-          "scanner": "维修缠绕 // 黑色橡胶电缆外护套、灰色胶带带、斜向纤维底层、缝里的盐、夹具压力痕。磨损集中在一侧：这条线是在供电时被拖动，不是库存。",
-          "terminal": "电缆读取 // 切割前先数维修带。边缘下有盐的宽胶带是旧维修。没有盐的紧夹痕是后期干预。干净划痕下露出纤维，说明近期磨损。高处绑住、低处磨损的电缆说明房间移动时它仍在承载。",
-          "audio": "死电缆很简单。维修过的电缆说明还有人需要另一端。",
-          "in_game_wiki": "HECTON-8的电缆不是背景绳子。耐压电缆承诺两个地点仍然彼此重要：电力、信号、泵控制、传感器、舱门驱动、应急灯。当外护套失败，维修缠绕就变成了人们拒绝让连接死亡的短历史。\n\n痕迹顺序很重要。边缘下有盐的灰色胶带是老维修，已经随海水呼吸。干净橡胶上的紧夹痕是后期干预。划痕下露出斜向纤维说明近期切割或拖拽。只有一侧磨损说明线路在张力下工作，而不是储存。高处固定、低处磨损的电缆说明维修后房间还移动过。\n\n玩家应把包扎电缆当作路线证据。它可能指向仍工作的泵、隐藏终端、带电舱门、残余电流陷阱，或一间有人试图维持生命的死房间。把所有电缆切成废料很快。读出最后维修的是哪条，才是找到殖民地最后在意之物的方法。",
-          "external_site": "关于电缆外护套维修缠绕的现场文章：胶带、纤维、盐和夹具痕揭示活线路、后期维修和崩塌后仍被维持的机器。",
-          "external_site_article": "好的电缆包扎有一种有用的丑。里面有恐慌、技术和糟糕照明的层次。工人包住一条线，不是因为它在图纸上显得重要，而是因为另一端还有东西重要：不许死掉的泵、必须再循环一次的门、没人愿意大声说出的传感器警告。\n\nHECTON-8的电缆缠绕通过压力和处理痕迹来读。胶带缝内的盐说明维修足够老，已经吸入海水。干净夹具外的盐说明夹具更晚。浅擦痕下露出的纤维说明近期移动。深压扁的带状痕说明工具或支架曾在负载下固定电缆。\n\n维修电缆可以是战利品，也可以是路线标记、危险警告、后期运行证据，或死标牌走廊里唯一诚实的箭头。读缠绕的玩家找到的不只是铜，而是意图。",
-          "field_note": "不要先切最新的缠绕。它通常指向最后被拯救的东西。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre des gaines de câble réparées",
-          "scanner": "BANDE DE RÉPARATION // Gaine noire, bandes grises, sous-couche fibreuse diagonale, sel dans les joints, marques de serrage. L'abrasion est plus forte d'un côté : la ligne fut traînée sous charge, pas stockée.",
-          "terminal": "LECTURE CÂBLE // Compter les bandes avant de couper. Bande large avec sel sous le bord : ancienne. Marque de collier nette sans sel : tardive. Fibre visible sous rayure propre : abrasion récente. Câble attaché haut et usé bas : charge pendant mouvement de la salle.",
-          "audio": "Un câble mort est simple. Un câble réparé signifie que quelqu'un avait encore besoin de l'autre bout.",
-          "in_game_wiki": "Les câbles de HECTON-8 ne sont pas des cordes de décor. Un câble pressurisé promet que deux lieux comptaient encore l'un pour l'autre : courant, signal, pompe, capteur, trappe, lumière d'urgence. Quand la gaine cède, la bande de réparation devient l'histoire courte de ceux qui ont refusé la mort de la liaison.\n\nL'ordre des marques compte. Les bandes grises avec sel sous le bord sont anciennes. Les marques de collier propres sont tardives. La fibre diagonale sous une rayure indique traction récente. Une abrasion d'un seul côté signifie ligne sous tension, pas stockage. Un câble attaché haut mais usé bas indique que la pièce a bougé après réparation.\n\nPour un maraudeur, un câble réparé est une preuve de route. Il peut mener vers une pompe active, un terminal caché, une trappe alimentée, un piège sous courant ou une salle morte qu'on a tenté de garder vivante.",
-          "external_site": "Article de terrain sur les gaines de câble réparées : bande, fibre, sel et colliers révèlent routes actives, réparations tardives et machines maintenues.",
-          "external_site_article": "Une bonne réparation de câble est laide d'une façon utile. Elle porte panique, compétence et mauvaise lumière. Un ouvrier ne l'a pas faite pour suivre un schéma, mais parce que l'autre bout comptait encore : une pompe, une porte, un capteur.\n\nLa gaine réparée se lit par pression et manipulation. Le sel dans la bande indique une réparation ancienne. Le sel autour d'un collier propre indique un collier plus tardif. La fibre sous une éraflure montre un mouvement récent. Une bande écrasée montre un câble tenu sous charge.\n\nCe câble peut être butin, mais aussi marqueur de route, danger électrique, preuve d'opération tardive ou seule flèche honnête d'un couloir de panneaux morts.",
-          "field_note": "Ne coupe jamais d'abord la bande la plus récente. Elle pointe souvent vers ce qu'on a sauvé en dernier."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de envoltura de reparación de cable",
-          "scanner": "ENVOLTURA DE REPARACIÓN // Cubierta negra de goma, bandas grises, fibra diagonal bajo la capa, sal en uniones, marcas de presión de abrazaderas. Abrasión fuerte en un lado: la línea fue arrastrada con carga, no guardada.",
-          "terminal": "LECTURA DE CABLE // Cuenta bandas antes de cortar. Cinta ancha con sal bajo el borde: vieja. Abolladura de abrazadera sin sal: tardía. Fibra bajo raya limpia: abrasión reciente. Cable atado alto y gastado abajo: cargó peso mientras la sala se movía.",
-          "audio": "Un cable muerto es fácil. Un cable reparado dice que alguien aún necesitaba el otro extremo.",
-          "in_game_wiki": "Los cables de HECTON-8 no son decoración. Un cable de presión promete que dos lugares seguían importándose: energía, señal, bomba, sensor, compuerta, luz de emergencia. Cuando falla la cubierta, la envoltura de reparación cuenta quién se negó a dejar morir esa conexión.\n\nEl orden de marcas importa. Bandas grises con sal bajo el borde son reparaciones viejas. Marcas limpias de abrazadera son intervenciones tardías. Fibra diagonal bajo una raya indica arrastre reciente. Abrasión en un solo lado significa línea trabajando bajo tensión. Si estaba atado arriba y gastado abajo, la sala se movió después de repararlo.\n\nUn saqueador debe tratar el cable envuelto como prueba de ruta. Puede llevar a una bomba activa, terminal oculto, compuerta con energía, trampa con corriente o sala muerta que alguien intentó mantener viva.",
-          "external_site": "Artículo de campo sobre envolturas de reparación de cable: cinta, fibra, sal y abrazaderas revelan rutas activas, reparaciones tardías y máquinas mantenidas tras el colapso.",
-          "external_site_article": "Una buena reparación de cable es fea de manera útil. Tiene capas de pánico, habilidad y mala luz. Nadie envolvió la línea porque el diagrama se veía importante, sino porque el otro extremo todavía importaba: una bomba, una puerta, un sensor.\n\nLa envoltura se lee por presión y manejo. Sal dentro de la cinta: reparación vieja. Sal fuera de una abrazadera limpia: abrazadera posterior. Fibra bajo raspón: movimiento reciente. Bandas aplastadas: cable sujeto con carga.\n\nAsí el mundo gana una gramática práctica. Un cable reparado puede ser botín, ruta, advertencia eléctrica, prueba de operación tardía o la única flecha honesta en un corredor de señales muertas.",
-          "field_note": "Nunca cortes primero la envoltura más nueva. Suele apuntar a lo último que alguien salvó."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Protokoll für Kabelmantel-Reparaturwickel",
-          "scanner": "REPARATURWICKEL // Schwarzer Gummikabelmantel, graue Bandstreifen, diagonale Faserlage, Salz in Nähten, Klemmdruckspuren. Abrieb ist einseitig stärker: Die Leitung wurde unter Last gezogen, nicht gelagert.",
-          "terminal": "KABELLESUNG // Reparaturbänder vor dem Schnitt zählen. Breites Band mit Salz unter der Lippe ist alt. Saubere Klemmdelle ohne Salz ist spät. Faser unter sauberem Kratzer bedeutet frischen Abrieb. Hoch gebunden und unten gerieben heißt Last während Raumbewegung.",
-          "audio": "Ein totes Kabel ist einfach. Ein repariertes Kabel bedeutet: Jemand brauchte das andere Ende noch.",
-          "in_game_wiki": "Kabel in HECTON-8 sind keine Hintergrundschläuche. Ein Druckkabel verspricht, dass zwei Orte einander noch brauchten: Strom, Signal, Pumpe, Sensor, Luke, Notlicht. Wenn der Mantel stirbt, wird der Reparaturwickel zur kurzen Geschichte einer Verbindung, die jemand nicht aufgeben wollte.\n\nDie Reihenfolge der Spuren zählt. Graues Band mit Salz unter der Kante ist alt. Saubere Klemmdellen sind spät. Diagonale Faser unter einem Kratzer bedeutet jüngste Bewegung. Einseitiger Abrieb zeigt Arbeit unter Zug. Hoch gebunden und unten abgerieben heißt: Der Raum bewegte sich nach der Reparatur.\n\nEin Marauder kann gewickelte Kabel als Routenbeweis lesen. Sie führen zu Pumpe, Terminal, versorgter Luke, Stromfalle oder totem Raum, den jemand lebendig halten wollte.",
-          "external_site": "Feldartikel über Kabelmantel-Reparaturen: Band, Faser, Salz und Klemmen zeigen aktive Routen, späte Eingriffe und Maschinen nach dem Kollaps.",
-          "external_site_article": "Gute Kabelreparatur ist nützlich hässlich. Sie besteht aus Panik, Können und schlechtem Licht. Eine Leitung wurde nicht gewickelt, weil sie im Plan wichtig aussah, sondern weil am anderen Ende noch etwas zählte: Pumpe, Tür, Sensor.\n\nDer Wickel liest sich durch Druck und Handhabung. Salz in der Bandnaht bedeutet alte Reparatur. Salz außerhalb einer sauberen Klemme bedeutet spätere Klemme. Faser unter flachem Abrieb bedeutet neue Bewegung. Plattgedrückte Bänder zeigen Last.\n\nReparierte Kabel sind Beute, Route, Stromwarnung, Beweis später Aktivität oder einziger ehrlicher Pfeil in einem Korridor toter Beschilderung.",
-          "field_note": "Schneide nie zuerst den neuesten Wickel. Er zeigt oft auf das, was zuletzt gerettet wurde."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr naprawczej owijki płaszcza kabla",
-          "scanner": "OWIJKA NAPRAWCZA // Czarny gumowy płaszcz kabla, szare taśmy, ukośna warstwa włókna, sól w szwach, ślady nacisku obejm. Największe otarcie z jednej strony: linię ciągnięto pod obciążeniem, nie magazynowano.",
-          "terminal": "ODCZYT KABLA // Policz taśmy przed cięciem. Szeroka taśma z solą pod brzegiem jest stara. Czyste wgnioty obejm bez soli są późne. Włókno pod czystą rysą oznacza świeże tarcie. Kabel wysoko związany i starty na dole niósł obciążenie podczas ruchu pomieszczenia.",
-          "audio": "Martwy kabel jest prosty. Naprawiony kabel znaczy, że ktoś wciąż potrzebował drugiego końca.",
-          "in_game_wiki": "Kable HECTON-8 nie są tłem. Kabel ciśnieniowy mówi, że dwa miejsca nadal były sobie potrzebne: prąd, sygnał, pompa, czujnik, właz, światło awaryjne. Gdy płaszcz zawodzi, owijka naprawcza staje się krótką historią ludzi, którzy nie chcieli zerwać połączenia.\n\nKolejność śladów ma znaczenie. Szare taśmy z solą pod krawędzią są stare. Czyste wgnioty obejm są późne. Ukośne włókno pod rysą oznacza niedawne ciągnięcie. Otarcie z jednej strony mówi o pracy pod napięciem. Kabel związany wysoko i starty nisko oznacza ruch pokoju po naprawie.\n\nGracz czyta owinięty kabel jako dowód trasy. Może prowadzić do działającej pompy, ukrytego terminala, zasilanego włazu, pułapki z prądem albo martwej sali, którą ktoś próbował utrzymać przy życiu.",
-          "external_site": "Artykuł o owijkach naprawczych kabli: taśma, włókno, sól i obejmy ujawniają aktywne trasy, późne naprawy i maszyny utrzymywane po katastrofie.",
-          "external_site_article": "Dobra naprawa kabla jest brzydka w użyteczny sposób. Ma warstwy paniki, umiejętności i złego światła. Pracownik nie owijał linii dla schematu. Owijał ją, bo drugi koniec nadal był ważny: pompa, drzwi, czujnik.\n\nOwijkę czyta się przez nacisk i obchodzenie. Sól w szwie taśmy mówi o starej naprawie. Sól poza czystą obejmą mówi o późnej obejmie. Włókno pod płytkim otarciem mówi o świeżym ruchu. Spłaszczone pasma pokazują obciążenie.\n\nNaprawiony kabel może być łupem, drogą, ostrzeżeniem elektrycznym, dowodem późnej pracy lub jedyną uczciwą strzałką w korytarzu martwych znaków.",
-          "field_note": "Nie tnij najpierw najnowszej owijki. Zwykle wskazuje to, co ratowano ostatnie."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал ремонтної обмотки кабельної оболонки",
-          "scanner": "РЕМОНТНА ОБМОТКА // Чорна гумова оболонка кабелю, сірі стрічки, діагональний волоконний шар, сіль у швах, сліди тиску хомутів. Найсильніша потертість з одного боку: лінію тягли під навантаженням, а не зберігали.",
-          "terminal": "ЧИТАННЯ КАБЕЛЮ // Рахуй ремонтні стрічки перед різом. Широка стрічка з сіллю під краєм стара. Тісна вм'ятина хомута без солі пізня. Волокно під чистою подряпиною означає свіже тертя. Кабель, підв'язаний високо й стертий знизу, ніс навантаження під час руху кімнати.",
-          "audio": "Мертвий кабель простий. Ремонтований кабель означає, що комусь ще був потрібен другий кінець.",
-          "in_game_wiki": "Кабелі HECTON-8 - не фон. Напірний кабель обіцяє, що два місця ще були потрібні одне одному: живлення, сигнал, насос, датчик, люк, аварійне світло. Коли оболонка здається, ремонтна обмотка стає короткою історією тих, хто не дав зв'язку померти.\n\nПорядок слідів важливий. Сірі стрічки з сіллю під краєм - старий ремонт. Чисті вм'ятини хомутів - пізні. Діагональне волокно під подряпиною означає нещодавнє тягнення. Потертість з одного боку означає роботу під натягом. Кабель, прив'язаний високо й стертий знизу, говорить про рух кімнати після ремонту.\n\nГравець читає обмотаний кабель як доказ маршруту. Він може вести до робочого насоса, прихованого термінала, живого люка, пастки з струмом або мертвої кімнати, яку хтось намагався втримати живою.",
-          "external_site": "Польова стаття про ремонтні обмотки кабелів: стрічка, волокно, сіль і хомути показують активні маршрути, пізні ремонти та машини, які тримали після катастрофи.",
-          "external_site_article": "Добра кабельна обмотка корисно негарна. У ній шари паніки, навички й поганого світла. Працівник обмотував лінію не через схему, а тому що на іншому кінці щось ще мало значення: насос, двері, датчик.\n\nОбмотка читається через тиск і поводження. Сіль у шві стрічки означає старий ремонт. Сіль зовні чистого хомута означає пізніший хомут. Волокно під мілкою потертістю означає новий рух. Сплющені смуги показують навантаження.\n\nРемонтований кабель може бути здобиччю, маршрутом, електричним попередженням, доказом пізньої роботи або єдиною чесною стрілкою в коридорі мертвих знаків.",
-          "field_note": "Не ріж найновішу обмотку першою. Вона часто вказує на те, що рятували останнім."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل لف إصلاح غلاف الكابل",
-          "scanner": "لف إصلاح // غلاف كابل مطاطي أسود، أشرطة رمادية، طبقة ألياف مائلة، ملح في الشقوق، آثار ضغط مشابك. الاهتراء أقوى على جانب واحد: الخط سحب وهو تحت حمل، لا أثناء تخزينه.",
-          "terminal": "قراءة الكابل // عد أشرطة الإصلاح قبل القطع. شريط عريض مع ملح تحت الحافة قديم. انبعاج مشبك نظيف بلا ملح متأخر. ألياف تحت خدش نظيف تعني احتكاكا حديثا. كابل مربوط عاليا ومهترئ أسفل حمل وزنا أثناء حركة الغرفة.",
-          "audio": "الكابل الميت بسيط. الكابل المصلح يعني أن شخصا ما ما زال يحتاج الطرف الآخر.",
-          "in_game_wiki": "الكابلات في HECTON-8 ليست خلفية. كابل الضغط وعد بأن مكانين ما زالا مهمين لبعضهما: طاقة، إشارة، مضخة، حساس، فتحة، ضوء طوارئ. عندما يفشل الغلاف، يصبح لف الإصلاح تاريخا قصيرا لمن رفض موت الاتصال.\n\nترتيب العلامات مهم. الأشرطة الرمادية مع ملح تحت الحافة إصلاح قديم. آثار المشابك النظيفة متأخرة. الألياف المائلة تحت خدش تعني سحبا حديثا. اهتراء جانب واحد يعني أن الخط عمل تحت شد. كابل مربوط عاليا وممسوح أسفل يعني أن الغرفة تحركت بعد الإصلاح.\n\nيجب أن يقرأ اللاعب الكابل الملفوف كدليل طريق. قد يقود إلى مضخة عاملة، طرفية مخفية، فتحة مزودة بالطاقة، فخ تيار باق، أو غرفة ميتة حاول أحدهم إبقاءها حية.",
-          "external_site": "مقال ميداني عن لف إصلاح الكابلات: الشريط والألياف والملح وآثار المشابك تكشف طرقا حية وإصلاحات متأخرة وآلات أبقيت بعد الانهيار.",
-          "external_site_article": "إصلاح الكابل الجيد قبيح بطريقة مفيدة. فيه طبقات من الذعر والمهارة والضوء السيئ. لم يلف العامل الخط لأنه مهم في الرسم، بل لأن الطرف الآخر كان ما زال مهما: مضخة، باب، حساس.\n\nيقرأ اللف عبر الضغط والتعامل. الملح داخل شق الشريط يعني إصلاحا قديما. الملح خارج مشبك نظيف يعني أن المشبك جاء لاحقا. الألياف تحت خدش ضحل تعني حركة حديثة. الأشرطة المسطحة تعني حملا.\n\nالكابل المصلح قد يكون غنيمة، أو طريقا، أو تحذير كهرباء، أو دليلا على عمل متأخر، أو السهم الصادق الوحيد في ممر ماتت لافتاته.",
-          "field_note": "لا تقطع أحدث لف أولا. غالبا يشير إلى ما حاولوا إنقاذه أخيرا."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Catatan Bungkus Perbaikan Jaket Kabel",
-          "scanner": "BUNGKUS PERBAIKAN // Jaket kabel karet hitam, pita abu-abu, lapisan serat diagonal, garam di sambungan, bekas tekanan klem. Abrasi paling kuat di satu sisi: jalur diseret saat berbeban, bukan disimpan.",
-          "terminal": "BACAAN KABEL // Hitung pita perbaikan sebelum memotong. Pita lebar dengan garam di bawah bibir berarti lama. Bekas klem rapat tanpa garam berarti terlambat. Serat di bawah gores bersih berarti abrasi baru. Kabel diikat tinggi dan aus bawahnya membawa beban saat ruangan bergerak.",
-          "audio": "Kabel mati mudah dibaca. Kabel diperbaiki berarti seseorang masih membutuhkan ujung lainnya.",
-          "in_game_wiki": "Kabel HECTON-8 bukan latar. Kabel tekanan adalah janji bahwa dua tempat masih saling penting: daya, sinyal, pompa, sensor, palka, lampu darurat. Saat jaket gagal, bungkus perbaikan menjadi sejarah pendek orang yang menolak koneksi itu mati.\n\nUrutan tanda penting. Pita abu-abu dengan garam di bawah tepi berarti perbaikan lama. Lekuk klem bersih berarti intervensi terlambat. Serat diagonal di bawah gores berarti tarikan baru. Abrasi satu sisi berarti jalur bekerja dalam tegangan. Kabel diikat tinggi tetapi aus bawahnya berarti ruangan bergerak setelah perbaikan.\n\nPemain harus membaca kabel terbungkus sebagai bukti rute. Ia bisa mengarah ke pompa aktif, terminal tersembunyi, palka bertenaga, perangkap arus sisa, atau ruangan mati yang coba dipertahankan hidup.",
-          "external_site": "Artikel lapangan tentang bungkus perbaikan kabel: pita, serat, garam, dan klem mengungkap rute hidup, perbaikan terlambat, dan mesin yang dipertahankan.",
-          "external_site_article": "Perbaikan kabel yang baik tampak buruk dengan cara yang berguna. Ada lapisan panik, keterampilan, dan cahaya buruk. Pekerja tidak membungkus jalur karena diagram terlihat penting, tetapi karena ujung lainnya masih berarti: pompa, pintu, sensor.\n\nBungkus dibaca melalui tekanan dan perlakuan. Garam di sambungan pita berarti perbaikan lama. Garam di luar klem bersih berarti klem datang kemudian. Serat di bawah lecet dangkal berarti gerak baru. Pita pipih berarti beban.\n\nKabel diperbaiki bisa menjadi rampasan, rute, peringatan listrik, bukti operasi terlambat, atau panah jujur terakhir di koridor penanda mati.",
-          "field_note": "Jangan potong bungkus terbaru lebih dulu. Biasanya ia menunjuk hal yang terakhir mereka selamatkan."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "케이블 외피 보수 감김 장부",
-          "scanner": "보수 감김 // 검은 고무 케이블 외피, 회색 테이프 띠, 사선 섬유층, 이음의 소금, 클램프 압흔. 한쪽 마모가 가장 강하다. 보관된 것이 아니라 전원이 있거나 하중을 받을 때 끌린 선이다.",
-          "terminal": "케이블 판독 // 자르기 전에 보수 띠를 세어라. 가장자리 아래 소금이 있는 넓은 테이프는 오래됐다. 소금 없는 조인 클램프 자국은 늦다. 깨끗한 긁힘 아래 섬유는 최근 마모다. 높게 묶이고 아래가 닳은 케이블은 방이 움직일 때 하중을 가졌다.",
-          "audio": "죽은 케이블은 쉽다. 보수된 케이블은 누군가 아직 다른 끝을 필요로 했다는 뜻이다.",
-          "in_game_wiki": "HECTON-8의 케이블은 배경 줄이 아니다. 압력 케이블은 두 장소가 아직 서로를 필요로 했다는 약속이다. 전력, 신호, 펌프 제어, 센서, 해치 구동, 비상등. 외피가 실패하면 보수 감김은 연결을 죽이지 않으려 한 사람들의 짧은 역사가 된다.\n\n흔적의 순서가 중요하다. 가장자리 아래 소금이 있는 회색 테이프는 오래된 수리다. 깨끗한 고무의 클램프 자국은 늦은 개입이다. 긁힘 아래 사선 섬유는 최근 끌림이다. 한쪽 마모는 보관이 아니라 장력 아래 작동한 선을 뜻한다.\n\n마라우더는 감긴 케이블을 경로 증거로 읽어야 한다. 작동 중인 펌프, 숨은 터미널, 전원이 남은 해치, 잔류 전류 함정, 또는 누군가 살려 두려 한 죽은 방으로 이어질 수 있다.",
-          "external_site": "케이블 외피 보수 감김에 대한 현장 글. 테이프, 섬유, 소금, 클램프 자국이 살아 있는 경로와 늦은 수리, 유지된 기계를 드러낸다.",
-          "external_site_article": "좋은 케이블 보수는 쓸모 있게 못생겼다. 그 안에는 공황, 기술, 나쁜 조명의 층이 있다. 작업자는 도면에서 중요해 보여서 감은 것이 아니라, 다른 끝이 아직 중요했기 때문에 감았다. 펌프, 문, 센서.\n\n감김은 압력과 취급으로 읽힌다. 테이프 이음 안의 소금은 오래된 수리다. 깨끗한 클램프 바깥의 소금은 클램프가 나중임을 말한다. 얕은 마모 아래 섬유는 최근 움직임이다. 납작한 띠는 하중을 뜻한다.\n\n보수된 케이블은 전리품, 경로, 전기 위험, 늦은 작동의 증거, 죽은 표지판 복도에서 유일한 정직한 화살표가 될 수 있다.",
-          "field_note": "가장 새 감김을 먼저 자르지 마라. 보통 마지막으로 구하려던 것을 가리킨다."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן עטיפת תיקון למעטפת כבל",
-          "scanner": "עטיפת תיקון // מעטפת גומי שחורה, רצועות אפורות, שכבת סיבים אלכסונית, מלח בתפרים, סימני לחץ של מהדקים. השחיקה חזקה בצד אחד: הקו נגרר תחת עומס, לא אוחסן.",
-          "terminal": "קריאת כבל // ספור רצועות תיקון לפני חיתוך. סרט רחב עם מלח מתחת לשפה ישן. שקיעת מהדק נקייה בלי מלח מאוחרת. סיבים תחת שריטה נקייה אומרים שחיקה חדשה. כבל קשור גבוה ושחוק נמוך נשא עומס כשהחדר זז.",
-          "audio": "כבל מת פשוט. כבל מתוקן אומר שמישהו עדיין נזקק לקצה השני.",
-          "in_game_wiki": "כבלים ב-HECTON-8 אינם רקע. כבל לחץ הוא הבטחה ששני מקומות עדיין היו חשובים זה לזה: חשמל, אות, משאבה, חיישן, פתח, אור חירום. כשהמעטפת נכשלת, עטיפת התיקון הופכת להיסטוריה קצרה של מי שסירב לתת לחיבור למות.\n\nסדר הסימנים חשוב. רצועות אפורות עם מלח תחת הקצה הן תיקון ישן. סימני מהדק נקיים הם התערבות מאוחרת. סיב אלכסוני תחת שריטה אומר גרירה חדשה. שחיקה מצד אחד אומרת שהקו עבד במתח. כבל קשור גבוה ושחוק נמוך אומר שהחדר זז אחרי התיקון.\n\nמראודר צריך לקרוא כבל עטוף כראיית נתיב. הוא יכול להוביל למשאבה עובדת, מסוף נסתר, פתח מוזן, מלכודת זרם שארי, או חדר מת שמישהו ניסה להשאיר חי.",
-          "external_site": "מאמר שטח על עטיפות תיקון כבלים: סרט, סיבים, מלח ומהדקים חושפים נתיבים חיים, תיקונים מאוחרים ומכונות שהוחזקו אחרי הקריסה.",
-          "external_site_article": "תיקון כבל טוב מכוער בדרך שימושית. יש בו שכבות של פאניקה, מיומנות ואור רע. עובד לא עטף קו בגלל תרשים, אלא מפני שהקצה השני עדיין היה חשוב: משאבה, דלת, חיישן.\n\nהעטיפה נקראת דרך לחץ וטיפול. מלח בתפר הסרט אומר תיקון ישן. מלח מחוץ למהדק נקי אומר שהמהדק מאוחר. סיבים תחת שפשוף רדוד אומרים תנועה חדשה. רצועות שטוחות אומרות עומס.\n\nכבל מתוקן יכול להיות שלל, נתיב, אזהרת חשמל, ראיה להפעלה מאוחרת או החץ הישר היחיד במסדרון שלטים מתים.",
-          "field_note": "אל תחתוך קודם את העטיפה החדשה ביותר. לרוב היא מצביעה על מה שניסו להציל אחרון."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de envoltório de reparo da capa de cabo",
-          "scanner": "ENVOLTÓRIO DE REPARO // Capa preta de borracha, faixas cinzas, camada de fibra diagonal, sal nas emendas, marcas de pressão de abraçadeiras. Abrasão mais forte de um lado: a linha foi arrastada sob carga, não guardada.",
-          "terminal": "LEITURA DE CABO // Conte faixas antes de cortar. Fita larga com sal sob a borda é antiga. Marca de abraçadeira limpa sem sal é tardia. Fibra sob risco limpo significa abrasão recente. Cabo preso alto e gasto embaixo carregou peso enquanto a sala se movia.",
-          "audio": "Cabo morto é fácil. Cabo reparado significa que alguém ainda precisava da outra ponta.",
-          "in_game_wiki": "Cabos em HECTON-8 não são fundo. Um cabo de pressão promete que dois lugares ainda importavam um ao outro: energia, sinal, bomba, sensor, escotilha, luz de emergência. Quando a capa falha, o envoltório de reparo vira a história curta de quem recusou deixar a conexão morrer.\n\nA ordem das marcas importa. Faixas cinzas com sal sob a borda são reparos antigos. Amassados limpos de abraçadeira são intervenções tardias. Fibra diagonal sob um risco indica arrasto recente. Abrasão de um lado significa linha trabalhando sob tensão. Cabo preso alto e gasto embaixo indica movimento da sala após reparo.\n\nUm saqueador deve ler cabo envolto como prova de rota. Pode levar a uma bomba ativa, terminal oculto, escotilha energizada, armadilha com corrente residual ou sala morta que alguém tentou manter viva.",
-          "external_site": "Artigo de campo sobre envoltórios de reparo de cabos: fita, fibra, sal e abraçadeiras revelam rotas vivas, reparos tardios e máquinas mantidas após colapso.",
-          "external_site_article": "Bom reparo de cabo é feio de um jeito útil. Tem camadas de pânico, habilidade e luz ruim. Um trabalhador não enrolou a linha pelo diagrama, mas porque a outra ponta ainda importava: bomba, porta, sensor.\n\nO envoltório é lido por pressão e manuseio. Sal na emenda da fita indica reparo antigo. Sal fora de abraçadeira limpa indica abraçadeira posterior. Fibra sob raspão raso indica movimento novo. Faixas achatadas indicam carga.\n\nCabo reparado pode ser saque, rota, aviso elétrico, prova de operação tardia ou a única seta honesta num corredor de placas mortas.",
-          "field_note": "Nunca corte primeiro o envoltório mais novo. Ele costuma apontar para o que salvaram por último."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Logboek voor kabelmantel-reparatiewikkel",
-          "scanner": "REPARATIEWIKKEL // Zwarte rubberen kabelmantel, grijze banden, diagonale vezellaag, zout in naden, klemsporen. Slijtage is het sterkst aan één kant: de lijn werd onder belasting gesleept, niet opgeslagen.",
-          "terminal": "KABELLEZING // Tel reparatiebanden vóór het snijden. Brede tape met zout onder de lip is oud. Strakke klemdeuk zonder zout is laat. Vezel onder schone kras betekent recente slijtage. Hoog gebonden en laag afgesleten kabel droeg last terwijl de kamer bewoog.",
-          "audio": "Een dode kabel is simpel. Een gerepareerde kabel betekent dat iemand het andere einde nog nodig had.",
-          "in_game_wiki": "Kabels in HECTON-8 zijn geen achtergrond. Een drukkabel belooft dat twee plaatsen elkaar nog nodig hadden: stroom, signaal, pomp, sensor, luik, noodlicht. Als de mantel faalt, wordt de reparatiewikkel een korte geschiedenis van mensen die de verbinding niet lieten sterven.\n\nDe volgorde van sporen telt. Grijze banden met zout onder de rand zijn oud. Schone klemsporen zijn laat. Diagonale vezel onder kras betekent recent slepen. Slijtage aan één kant betekent werken onder spanning. Hoog gebonden en laag afgesleten betekent kamerbeweging na reparatie.\n\nEen marauder leest gewikkelde kabel als routebewijs. Die kan leiden naar pomp, verborgen terminal, gevoed luik, stroomval of dode kamer die iemand levend probeerde te houden.",
-          "external_site": "Veldartikel over kabelmantel-reparaties: tape, vezel, zout en klemsporen tonen levende routes, late reparaties en machines die na instorting bleven werken.",
-          "external_site_article": "Goede kabelreparatie is nuttig lelijk. Ze heeft lagen paniek, vaardigheid en slecht licht. Een werker wikkelde de lijn niet omdat het schema belangrijk leek, maar omdat het andere uiteinde nog telde: pomp, deur, sensor.\n\nDe wikkel leest via druk en behandeling. Zout in tapenaad betekent oude reparatie. Zout buiten schone klem betekent latere klem. Vezel onder oppervlakkige slijtage betekent nieuwe beweging. Platte banden tonen belasting.\n\nGerepareerde kabel kan buit zijn, route, elektrische waarschuwing, bewijs van late werking of de enige eerlijke pijl in een gang van dode borden.",
-          "field_note": "Snijd nooit eerst de nieuwste wikkel. Die wijst vaak naar wat het laatst werd gered."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.cable_jacket_repair_wrap_ledger",
+    "secondary": [
+     "unlock.first_repair_wrap_scan",
+     "unlock.first_live_route_cable_read",
+     "unlock.first_late_power_trace"
+    ],
+    "poi_tags": [
+     "poi.cable_repair_wrap",
+     "poi.salt_under_tape_lip",
+     "poi.clamp_pressure_mark",
+     "poi.exposed_fiber_drag_trace"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.service_corridor",
+     "biome.pressure_route"
+    ],
+    "first_20_boundary": "Player-visible applied lore; teaches material reading without ending spoilers."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Cable Repair Scanner",
+     "terminal": "Old Colony Cable Maintenance Readout",
+     "audio": "Marauder Power Trace Instructor",
+     "in_game_wiki": "PDA Cable Repair Field Guide",
+     "external_site": "Public Site Cable Repair Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_repair_wrap_scan_or_late_power_trace",
+    "truth_payload": "Cable jacket repair wraps reveal live routes, late repair order, load direction and machines kept alive after collapse.",
+    "player_question": "Which repaired line still points to something worth saving?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Cable Jacket Repair Wrap Ledger",
+     "scanner": "REPAIR WRAP // Black rubber cable jacket, gray tape bands, diagonal fiber underlayer, salt in seams, clamp-pressure marks. Abrasion is strongest on one side: the line was dragged while powered, not stored.",
+     "terminal": "CABLE READ // Count repair bands before cutting. Wide tape with salt under the lip is old. Tight clamp dents without salt are late. Exposed fiber under a clean scratch means recent abrasion. A cable tied high and rubbed low carried load while the room moved.",
+     "audio": "A dead cable is easy. A repaired cable means somebody still needed the other end.",
+     "in_game_wiki": "Cables in HECTON-8 are not background noodles. A pressure cable is a promise that two places still mattered to each other: power, signal, pump control, sensor feed, hatch actuation, emergency light. When the jacket fails, the repair wrap becomes a short history of who refused to let that connection die.\n\nThe order of marks matters. Gray tape bands with salt under the lip are old repairs that breathed with the sea. Tight clamp dents with clean rubber are late interventions. Diagonal fiber showing under a scratch means the outer jacket was cut or dragged recently. Abrasion on one side means the line worked under tension, not in storage. A cable rubbed low while tied high tells you the room moved after the repair was made.\n\nA Marauder should treat wrapped cable as route evidence. It can lead toward a working pump, a hidden terminal, a powered hatch, a trap that still has current, or a dead room someone tried to keep alive. Cutting every cable for scrap is fast. Reading which cable was repaired last is how a Marauder finds what the colony still cared about.",
+     "external_site": "A field article on cable jacket repair wraps: tape, fiber, salt and clamp dents reveal live routes, late repairs and machines kept alive after collapse.",
+     "external_site_article": "Good cable dressing is ugly in a useful way. It is layered with panic, skill and bad lighting. A worker did not wrap a line because the line looked important on a diagram. They wrapped it because something on the other end still mattered: a pump refusing to die, a door that had to cycle once more, a sensor warning that nobody wanted to hear aloud.\n\nHECTON-8 cable wrap reads through pressure and handling. Salt inside a tape seam says the repair is old enough to breathe water. Salt outside a clean clamp says the clamp came later. Fiber exposed under a shallow scrape means recent movement. Deep flattened bands mean a tool or bracket held the cable under load. If the abrasion sits only on the lower side, the line dragged across the deck after being tied above it.\n\nThat gives the world a practical grammar. A repaired cable can be loot, but it can also be a route marker, a hazard warning, a proof of late operation or the only honest arrow in a corridor full of dead signage. A Marauder who reads cable wrap does not just find copper. They find intention.",
+     "field_note": "Never cut the newest wrap first. It usually points to the thing someone saved last."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал ремонтной обмотки кабельной оболочки",
+     "scanner": "РЕМОНТНАЯ ОБМОТКА // Черная резиновая оболочка кабеля, серые ленты, диагональный волоконный слой, соль в швах, следы давления хомутов. Сильнейшая потертость с одной стороны: линию тащили под нагрузкой, а не хранили.",
+     "terminal": "ЧТЕНИЕ КАБЕЛЯ // Считай ремонтные ленты до реза. Широкая лента с солью под краем - старая. Тесная вмятина хомута без соли - поздняя. Волокно под чистой царапиной значит свежую потертость. Кабель, подвязанный высоко и стертый снизу, нес нагрузку, пока комната двигалась.",
+     "audio": "Мертвый кабель прост. Ремонтированный кабель значит, что кому-то еще был нужен второй конец.",
+     "in_game_wiki": "Кабели HECTON-8 - не фоновые шланги. Напорный кабель обещает, что два места еще были важны друг другу: питание, сигнал, управление насосом, датчик, привод люка, аварийный свет. Когда оболочка умирает, ремонтная обмотка становится короткой историей тех, кто отказался дать связи умереть.\n\nПорядок следов важен. Серые ленты с солью под краем - старый ремонт, дышавший морем. Жесткие вмятины хомутов на чистой резине - позднее вмешательство. Диагональное волокно под царапиной значит, что внешнюю оболочку недавно резали или тащили. Потертость с одной стороны значит, что линия работала под натяжением. Кабель, стертый снизу при верхней подвязке, говорит, что комната двигалась уже после ремонта.\n\nМародер должен читать обмотанный кабель как маршрутное доказательство. Он может вести к работающему насосу, скрытому терминалу, питаемому люку, ловушке с остаточным током или мертвой комнате, которую пытались удержать живой. Резать все кабели на лом быстро. Читать, какой ремонт был последним, - так мародер находит то, что колония еще пыталась спасти.",
+     "external_site": "Полевой материал о ремонтной обмотке кабелей: ленты, волокна, соль и следы хомутов раскрывают живые маршруты, поздний ремонт и машины, которые держали после обвала.",
+     "external_site_article": "Хорошая кабельная обмотка полезно некрасива. В ней слои паники, навыка и плохого света. Рабочий обматывал линию не потому, что она красиво выглядела на схеме. Он делал это потому, что на другом конце что-то еще имело значение: насос, который нельзя терять, дверь, которую надо открыть еще раз, датчик с предупреждением, которое никто не хотел произносить.\n\nОбмотка HECTON-8 читается через давление и обращение. Соль внутри шва ленты говорит, что ремонт старый и уже дышал водой. Соль снаружи чистого хомута говорит, что хомут поставили позже. Волокно под неглубокой царапиной - свежая протяжка. Глубоко сплющенные полосы означают инструмент или скобу, державшую кабель под нагрузкой. Потертость только снизу значит, что линию волокли по палубе после верхней подвязки.\n\nЭто дает миру практический язык. Ремонтированный кабель может быть добычей, но может быть и указателем маршрута, предупреждением об остаточном токе, доказательством поздней работы или единственной честной стрелкой в коридоре с мертвыми знаками. Мародер, читающий обмотку, находит не только медь. Он находит намерение.",
+     "field_note": "Не режь самую новую обмотку первой. Обычно она указывает на то, что спасали последним."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "ケーブル外装補修巻き台帳",
+     "scanner": "補修巻き // 黒いゴム外装、灰色テープ帯、斜めの繊維下地、継ぎ目の塩、クランプ圧痕。片側だけ強く擦れている。保管ではなく通電中に引きずられた線だ。",
+     "terminal": "ケーブル読取 // 切る前に補修帯を数える。縁の下に塩がある幅広テープは古い。塩のない強いクランプ跡は遅い介入。きれいな傷の下に繊維が見えるなら最近の摩耗。高く結ばれ低く擦れた線は、部屋が動く間も荷重を持った。",
+     "audio": "死んだケーブルは簡単だ。補修されたケーブルは、誰かがまだ向こう側を必要としていた印だ。",
+     "in_game_wiki": "HECTON-8のケーブルは背景の紐ではない。圧力ケーブルは二つの場所がまだ互いを必要としていた証拠だ。電力、信号、ポンプ制御、センサー、ハッチ駆動、非常灯。外装が傷むと、補修巻きはその接続を死なせまいとした人間の短い履歴になる。\n\n跡の順序が重要だ。縁の下に塩を含む灰色テープは古い修理。きれいなゴムに強いクランプ跡があれば後日の介入だ。浅い傷の下に斜め繊維が見えれば最近引きずった。片側だけの摩耗は、保管ではなく張力下で働いた線を示す。\n\nプレイヤーは補修ケーブルを経路証拠として扱える。動くポンプ、隠れ端末、まだ電気のあるハッチ、残留電流の罠、または生かそうとした死室へ導く。すべて切るのは早い。最後に巻かれた線を読むのが、コロニーが最後まで気にしたものを探す方法だ。",
+     "external_site": "ケーブル外装補修巻きの記事。テープ、繊維、塩、クランプ跡から生きた経路、遅い修理、崩壊後も維持された機械を読む。",
+     "external_site_article": "良いケーブル補修は、役に立つ形で醜い。そこには焦り、技術、悪い照明が重なっている。作業者は図面で重要に見えたから巻いたのではない。向こう側にまだ意味があったから巻いたのだ。死なせたくないポンプ、もう一度だけ動かす扉、声に出したくない警告を送るセンサー。\n\n補修巻きは圧力と扱いで読める。テープ継ぎ目の内側の塩は古い修理を示す。きれいなクランプの外側の塩は、クランプが後から来たことを示す。浅い擦れ下の繊維は最近の移動だ。深い平帯は工具やブラケットが荷重を持った印になる。\n\n補修ケーブルは資源だけでなく、経路、危険、遅い稼働の証拠になる。銅を見つけるだけではない。意図を見つける。",
+     "field_note": "一番新しい巻きを最初に切るな。最後に救ったものを指していることが多い。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "电缆外护套维修缠绕账本",
+     "scanner": "维修缠绕 // 黑色橡胶电缆外护套、灰色胶带带、斜向纤维底层、缝里的盐、夹具压力痕。磨损集中在一侧：这条线是在供电时被拖动，不是库存。",
+     "terminal": "电缆读取 // 切割前先数维修带。边缘下有盐的宽胶带是旧维修。没有盐的紧夹痕是后期干预。干净划痕下露出纤维，说明近期磨损。高处绑住、低处磨损的电缆说明房间移动时它仍在承载。",
+     "audio": "死电缆很简单。维修过的电缆说明还有人需要另一端。",
+     "in_game_wiki": "HECTON-8的电缆不是背景绳子。耐压电缆承诺两个地点仍然彼此重要：电力、信号、泵控制、传感器、舱门驱动、应急灯。当外护套失败，维修缠绕就变成了人们拒绝让连接死亡的短历史。\n\n痕迹顺序很重要。边缘下有盐的灰色胶带是老维修，已经随海水呼吸。干净橡胶上的紧夹痕是后期干预。划痕下露出斜向纤维说明近期切割或拖拽。只有一侧磨损说明线路在张力下工作，而不是储存。高处固定、低处磨损的电缆说明维修后房间还移动过。\n\n玩家应把包扎电缆当作路线证据。它可能指向仍工作的泵、隐藏终端、带电舱门、残余电流陷阱，或一间有人试图维持生命的死房间。把所有电缆切成废料很快。读出最后维修的是哪条，才是找到殖民地最后在意之物的方法。",
+     "external_site": "关于电缆外护套维修缠绕的现场文章：胶带、纤维、盐和夹具痕揭示活线路、后期维修和崩塌后仍被维持的机器。",
+     "external_site_article": "好的电缆包扎有一种有用的丑。里面有恐慌、技术和糟糕照明的层次。工人包住一条线，不是因为它在图纸上显得重要，而是因为另一端还有东西重要：不许死掉的泵、必须再循环一次的门、没人愿意大声说出的传感器警告。\n\nHECTON-8的电缆缠绕通过压力和处理痕迹来读。胶带缝内的盐说明维修足够老，已经吸入海水。干净夹具外的盐说明夹具更晚。浅擦痕下露出的纤维说明近期移动。深压扁的带状痕说明工具或支架曾在负载下固定电缆。\n\n维修电缆可以是战利品，也可以是路线标记、危险警告、后期运行证据，或死标牌走廊里唯一诚实的箭头。读缠绕的玩家找到的不只是铜，而是意图。",
+     "field_note": "不要先切最新的缠绕。它通常指向最后被拯救的东西。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre des gaines de câble réparées",
+     "scanner": "BANDE DE RÉPARATION // Gaine noire, bandes grises, sous-couche fibreuse diagonale, sel dans les joints, marques de serrage. L'abrasion est plus forte d'un côté : la ligne fut traînée sous charge, pas stockée.",
+     "terminal": "LECTURE CÂBLE // Compter les bandes avant de couper. Bande large avec sel sous le bord : ancienne. Marque de collier nette sans sel : tardive. Fibre visible sous rayure propre : abrasion récente. Câble attaché haut et usé bas : charge pendant mouvement de la salle.",
+     "audio": "Un câble mort est simple. Un câble réparé signifie que quelqu'un avait encore besoin de l'autre bout.",
+     "in_game_wiki": "Les câbles de HECTON-8 ne sont pas des cordes de décor. Un câble pressurisé promet que deux lieux comptaient encore l'un pour l'autre : courant, signal, pompe, capteur, trappe, lumière d'urgence. Quand la gaine cède, la bande de réparation devient l'histoire courte de ceux qui ont refusé la mort de la liaison.\n\nL'ordre des marques compte. Les bandes grises avec sel sous le bord sont anciennes. Les marques de collier propres sont tardives. La fibre diagonale sous une rayure indique traction récente. Une abrasion d'un seul côté signifie ligne sous tension, pas stockage. Un câble attaché haut mais usé bas indique que la pièce a bougé après réparation.\n\nPour un maraudeur, un câble réparé est une preuve de route. Il peut mener vers une pompe active, un terminal caché, une trappe alimentée, un piège sous courant ou une salle morte qu'on a tenté de garder vivante.",
+     "external_site": "Article de terrain sur les gaines de câble réparées : bande, fibre, sel et colliers révèlent routes actives, réparations tardives et machines maintenues.",
+     "external_site_article": "Une bonne réparation de câble est laide d'une façon utile. Elle porte panique, compétence et mauvaise lumière. Un ouvrier ne l'a pas faite pour suivre un schéma, mais parce que l'autre bout comptait encore : une pompe, une porte, un capteur.\n\nLa gaine réparée se lit par pression et manipulation. Le sel dans la bande indique une réparation ancienne. Le sel autour d'un collier propre indique un collier plus tardif. La fibre sous une éraflure montre un mouvement récent. Une bande écrasée montre un câble tenu sous charge.\n\nCe câble peut être butin, mais aussi marqueur de route, danger électrique, preuve d'opération tardive ou seule flèche honnête d'un couloir de panneaux morts.",
+     "field_note": "Ne coupe jamais d'abord la bande la plus récente. Elle pointe souvent vers ce qu'on a sauvé en dernier."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de envoltura de reparación de cable",
+     "scanner": "ENVOLTURA DE REPARACIÓN // Cubierta negra de goma, bandas grises, fibra diagonal bajo la capa, sal en uniones, marcas de presión de abrazaderas. Abrasión fuerte en un lado: la línea fue arrastrada con carga, no guardada.",
+     "terminal": "LECTURA DE CABLE // Cuenta bandas antes de cortar. Cinta ancha con sal bajo el borde: vieja. Abolladura de abrazadera sin sal: tardía. Fibra bajo raya limpia: abrasión reciente. Cable atado alto y gastado abajo: cargó peso mientras la sala se movía.",
+     "audio": "Un cable muerto es fácil. Un cable reparado dice que alguien aún necesitaba el otro extremo.",
+     "in_game_wiki": "Los cables de HECTON-8 no son decoración. Un cable de presión promete que dos lugares seguían importándose: energía, señal, bomba, sensor, compuerta, luz de emergencia. Cuando falla la cubierta, la envoltura de reparación cuenta quién se negó a dejar morir esa conexión.\n\nEl orden de marcas importa. Bandas grises con sal bajo el borde son reparaciones viejas. Marcas limpias de abrazadera son intervenciones tardías. Fibra diagonal bajo una raya indica arrastre reciente. Abrasión en un solo lado significa línea trabajando bajo tensión. Si estaba atado arriba y gastado abajo, la sala se movió después de repararlo.\n\nUn saqueador debe tratar el cable envuelto como prueba de ruta. Puede llevar a una bomba activa, terminal oculto, compuerta con energía, trampa con corriente o sala muerta que alguien intentó mantener viva.",
+     "external_site": "Artículo de campo sobre envolturas de reparación de cable: cinta, fibra, sal y abrazaderas revelan rutas activas, reparaciones tardías y máquinas mantenidas tras el colapso.",
+     "external_site_article": "Una buena reparación de cable es fea de manera útil. Tiene capas de pánico, habilidad y mala luz. Nadie envolvió la línea porque el diagrama se veía importante, sino porque el otro extremo todavía importaba: una bomba, una puerta, un sensor.\n\nLa envoltura se lee por presión y manejo. Sal dentro de la cinta: reparación vieja. Sal fuera de una abrazadera limpia: abrazadera posterior. Fibra bajo raspón: movimiento reciente. Bandas aplastadas: cable sujeto con carga.\n\nAsí el mundo gana una gramática práctica. Un cable reparado puede ser botín, ruta, advertencia eléctrica, prueba de operación tardía o la única flecha honesta en un corredor de señales muertas.",
+     "field_note": "Nunca cortes primero la envoltura más nueva. Suele apuntar a lo último que alguien salvó."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Protokoll für Kabelmantel-Reparaturwickel",
+     "scanner": "REPARATURWICKEL // Schwarzer Gummikabelmantel, graue Bandstreifen, diagonale Faserlage, Salz in Nähten, Klemmdruckspuren. Abrieb ist einseitig stärker: Die Leitung wurde unter Last gezogen, nicht gelagert.",
+     "terminal": "KABELLESUNG // Reparaturbänder vor dem Schnitt zählen. Breites Band mit Salz unter der Lippe ist alt. Saubere Klemmdelle ohne Salz ist spät. Faser unter sauberem Kratzer bedeutet frischen Abrieb. Hoch gebunden und unten gerieben heißt Last während Raumbewegung.",
+     "audio": "Ein totes Kabel ist einfach. Ein repariertes Kabel bedeutet: Jemand brauchte das andere Ende noch.",
+     "in_game_wiki": "Kabel in HECTON-8 sind keine Hintergrundschläuche. Ein Druckkabel verspricht, dass zwei Orte einander noch brauchten: Strom, Signal, Pumpe, Sensor, Luke, Notlicht. Wenn der Mantel stirbt, wird der Reparaturwickel zur kurzen Geschichte einer Verbindung, die jemand nicht aufgeben wollte.\n\nDie Reihenfolge der Spuren zählt. Graues Band mit Salz unter der Kante ist alt. Saubere Klemmdellen sind spät. Diagonale Faser unter einem Kratzer bedeutet jüngste Bewegung. Einseitiger Abrieb zeigt Arbeit unter Zug. Hoch gebunden und unten abgerieben heißt: Der Raum bewegte sich nach der Reparatur.\n\nEin Marauder kann gewickelte Kabel als Routenbeweis lesen. Sie führen zu Pumpe, Terminal, versorgter Luke, Stromfalle oder totem Raum, den jemand lebendig halten wollte.",
+     "external_site": "Feldartikel über Kabelmantel-Reparaturen: Band, Faser, Salz und Klemmen zeigen aktive Routen, späte Eingriffe und Maschinen nach dem Kollaps.",
+     "external_site_article": "Gute Kabelreparatur ist nützlich hässlich. Sie besteht aus Panik, Können und schlechtem Licht. Eine Leitung wurde nicht gewickelt, weil sie im Plan wichtig aussah, sondern weil am anderen Ende noch etwas zählte: Pumpe, Tür, Sensor.\n\nDer Wickel liest sich durch Druck und Handhabung. Salz in der Bandnaht bedeutet alte Reparatur. Salz außerhalb einer sauberen Klemme bedeutet spätere Klemme. Faser unter flachem Abrieb bedeutet neue Bewegung. Plattgedrückte Bänder zeigen Last.\n\nReparierte Kabel sind Beute, Route, Stromwarnung, Beweis später Aktivität oder einziger ehrlicher Pfeil in einem Korridor toter Beschilderung.",
+     "field_note": "Schneide nie zuerst den neuesten Wickel. Er zeigt oft auf das, was zuletzt gerettet wurde."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr naprawczej owijki płaszcza kabla",
+     "scanner": "OWIJKA NAPRAWCZA // Czarny gumowy płaszcz kabla, szare taśmy, ukośna warstwa włókna, sól w szwach, ślady nacisku obejm. Największe otarcie z jednej strony: linię ciągnięto pod obciążeniem, nie magazynowano.",
+     "terminal": "ODCZYT KABLA // Policz taśmy przed cięciem. Szeroka taśma z solą pod brzegiem jest stara. Czyste wgnioty obejm bez soli są późne. Włókno pod czystą rysą oznacza świeże tarcie. Kabel wysoko związany i starty na dole niósł obciążenie podczas ruchu pomieszczenia.",
+     "audio": "Martwy kabel jest prosty. Naprawiony kabel znaczy, że ktoś wciąż potrzebował drugiego końca.",
+     "in_game_wiki": "Kable HECTON-8 nie są tłem. Kabel ciśnieniowy mówi, że dwa miejsca nadal były sobie potrzebne: prąd, sygnał, pompa, czujnik, właz, światło awaryjne. Gdy płaszcz zawodzi, owijka naprawcza staje się krótką historią ludzi, którzy nie chcieli zerwać połączenia.\n\nKolejność śladów ma znaczenie. Szare taśmy z solą pod krawędzią są stare. Czyste wgnioty obejm są późne. Ukośne włókno pod rysą oznacza niedawne ciągnięcie. Otarcie z jednej strony mówi o pracy pod napięciem. Kabel związany wysoko i starty nisko oznacza ruch pokoju po naprawie.\n\nGracz czyta owinięty kabel jako dowód trasy. Może prowadzić do działającej pompy, ukrytego terminala, zasilanego włazu, pułapki z prądem albo martwej sali, którą ktoś próbował utrzymać przy życiu.",
+     "external_site": "Artykuł o owijkach naprawczych kabli: taśma, włókno, sól i obejmy ujawniają aktywne trasy, późne naprawy i maszyny utrzymywane po katastrofie.",
+     "external_site_article": "Dobra naprawa kabla jest brzydka w użyteczny sposób. Ma warstwy paniki, umiejętności i złego światła. Pracownik nie owijał linii dla schematu. Owijał ją, bo drugi koniec nadal był ważny: pompa, drzwi, czujnik.\n\nOwijkę czyta się przez nacisk i obchodzenie. Sól w szwie taśmy mówi o starej naprawie. Sól poza czystą obejmą mówi o późnej obejmie. Włókno pod płytkim otarciem mówi o świeżym ruchu. Spłaszczone pasma pokazują obciążenie.\n\nNaprawiony kabel może być łupem, drogą, ostrzeżeniem elektrycznym, dowodem późnej pracy lub jedyną uczciwą strzałką w korytarzu martwych znaków.",
+     "field_note": "Nie tnij najpierw najnowszej owijki. Zwykle wskazuje to, co ratowano ostatnie."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал ремонтної обмотки кабельної оболонки",
+     "scanner": "РЕМОНТНА ОБМОТКА // Чорна гумова оболонка кабелю, сірі стрічки, діагональний волоконний шар, сіль у швах, сліди тиску хомутів. Найсильніша потертість з одного боку: лінію тягли під навантаженням, а не зберігали.",
+     "terminal": "ЧИТАННЯ КАБЕЛЮ // Рахуй ремонтні стрічки перед різом. Широка стрічка з сіллю під краєм стара. Тісна вм'ятина хомута без солі пізня. Волокно під чистою подряпиною означає свіже тертя. Кабель, підв'язаний високо й стертий знизу, ніс навантаження під час руху кімнати.",
+     "audio": "Мертвий кабель простий. Ремонтований кабель означає, що комусь ще був потрібен другий кінець.",
+     "in_game_wiki": "Кабелі HECTON-8 - не фон. Напірний кабель обіцяє, що два місця ще були потрібні одне одному: живлення, сигнал, насос, датчик, люк, аварійне світло. Коли оболонка здається, ремонтна обмотка стає короткою історією тих, хто не дав зв'язку померти.\n\nПорядок слідів важливий. Сірі стрічки з сіллю під краєм - старий ремонт. Чисті вм'ятини хомутів - пізні. Діагональне волокно під подряпиною означає нещодавнє тягнення. Потертість з одного боку означає роботу під натягом. Кабель, прив'язаний високо й стертий знизу, говорить про рух кімнати після ремонту.\n\nГравець читає обмотаний кабель як доказ маршруту. Він може вести до робочого насоса, прихованого термінала, живого люка, пастки з струмом або мертвої кімнати, яку хтось намагався втримати живою.",
+     "external_site": "Польова стаття про ремонтні обмотки кабелів: стрічка, волокно, сіль і хомути показують активні маршрути, пізні ремонти та машини, які тримали після катастрофи.",
+     "external_site_article": "Добра кабельна обмотка корисно негарна. У ній шари паніки, навички й поганого світла. Працівник обмотував лінію не через схему, а тому що на іншому кінці щось ще мало значення: насос, двері, датчик.\n\nОбмотка читається через тиск і поводження. Сіль у шві стрічки означає старий ремонт. Сіль зовні чистого хомута означає пізніший хомут. Волокно під мілкою потертістю означає новий рух. Сплющені смуги показують навантаження.\n\nРемонтований кабель може бути здобиччю, маршрутом, електричним попередженням, доказом пізньої роботи або єдиною чесною стрілкою в коридорі мертвих знаків.",
+     "field_note": "Не ріж найновішу обмотку першою. Вона часто вказує на те, що рятували останнім."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل لف إصلاح غلاف الكابل",
+     "scanner": "لف إصلاح // غلاف كابل مطاطي أسود، أشرطة رمادية، طبقة ألياف مائلة، ملح في الشقوق، آثار ضغط مشابك. الاهتراء أقوى على جانب واحد: الخط سحب وهو تحت حمل، لا أثناء تخزينه.",
+     "terminal": "قراءة الكابل // عد أشرطة الإصلاح قبل القطع. شريط عريض مع ملح تحت الحافة قديم. انبعاج مشبك نظيف بلا ملح متأخر. ألياف تحت خدش نظيف تعني احتكاكا حديثا. كابل مربوط عاليا ومهترئ أسفل حمل وزنا أثناء حركة الغرفة.",
+     "audio": "الكابل الميت بسيط. الكابل المصلح يعني أن شخصا ما ما زال يحتاج الطرف الآخر.",
+     "in_game_wiki": "الكابلات في HECTON-8 ليست خلفية. كابل الضغط وعد بأن مكانين ما زالا مهمين لبعضهما: طاقة، إشارة، مضخة، حساس، فتحة، ضوء طوارئ. عندما يفشل الغلاف، يصبح لف الإصلاح تاريخا قصيرا لمن رفض موت الاتصال.\n\nترتيب العلامات مهم. الأشرطة الرمادية مع ملح تحت الحافة إصلاح قديم. آثار المشابك النظيفة متأخرة. الألياف المائلة تحت خدش تعني سحبا حديثا. اهتراء جانب واحد يعني أن الخط عمل تحت شد. كابل مربوط عاليا وممسوح أسفل يعني أن الغرفة تحركت بعد الإصلاح.\n\nيجب أن يقرأ اللاعب الكابل الملفوف كدليل طريق. قد يقود إلى مضخة عاملة، طرفية مخفية، فتحة مزودة بالطاقة، فخ تيار باق، أو غرفة ميتة حاول أحدهم إبقاءها حية.",
+     "external_site": "مقال ميداني عن لف إصلاح الكابلات: الشريط والألياف والملح وآثار المشابك تكشف طرقا حية وإصلاحات متأخرة وآلات أبقيت بعد الانهيار.",
+     "external_site_article": "إصلاح الكابل الجيد قبيح بطريقة مفيدة. فيه طبقات من الذعر والمهارة والضوء السيئ. لم يلف العامل الخط لأنه مهم في الرسم، بل لأن الطرف الآخر كان ما زال مهما: مضخة، باب، حساس.\n\nيقرأ اللف عبر الضغط والتعامل. الملح داخل شق الشريط يعني إصلاحا قديما. الملح خارج مشبك نظيف يعني أن المشبك جاء لاحقا. الألياف تحت خدش ضحل تعني حركة حديثة. الأشرطة المسطحة تعني حملا.\n\nالكابل المصلح قد يكون غنيمة، أو طريقا، أو تحذير كهرباء، أو دليلا على عمل متأخر، أو السهم الصادق الوحيد في ممر ماتت لافتاته.",
+     "field_note": "لا تقطع أحدث لف أولا. غالبا يشير إلى ما حاولوا إنقاذه أخيرا."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Catatan Bungkus Perbaikan Jaket Kabel",
+     "scanner": "BUNGKUS PERBAIKAN // Jaket kabel karet hitam, pita abu-abu, lapisan serat diagonal, garam di sambungan, bekas tekanan klem. Abrasi paling kuat di satu sisi: jalur diseret saat berbeban, bukan disimpan.",
+     "terminal": "BACAAN KABEL // Hitung pita perbaikan sebelum memotong. Pita lebar dengan garam di bawah bibir berarti lama. Bekas klem rapat tanpa garam berarti terlambat. Serat di bawah gores bersih berarti abrasi baru. Kabel diikat tinggi dan aus bawahnya membawa beban saat ruangan bergerak.",
+     "audio": "Kabel mati mudah dibaca. Kabel diperbaiki berarti seseorang masih membutuhkan ujung lainnya.",
+     "in_game_wiki": "Kabel HECTON-8 bukan latar. Kabel tekanan adalah janji bahwa dua tempat masih saling penting: daya, sinyal, pompa, sensor, palka, lampu darurat. Saat jaket gagal, bungkus perbaikan menjadi sejarah pendek orang yang menolak koneksi itu mati.\n\nUrutan tanda penting. Pita abu-abu dengan garam di bawah tepi berarti perbaikan lama. Lekuk klem bersih berarti intervensi terlambat. Serat diagonal di bawah gores berarti tarikan baru. Abrasi satu sisi berarti jalur bekerja dalam tegangan. Kabel diikat tinggi tetapi aus bawahnya berarti ruangan bergerak setelah perbaikan.\n\nPemain harus membaca kabel terbungkus sebagai bukti rute. Ia bisa mengarah ke pompa aktif, terminal tersembunyi, palka bertenaga, perangkap arus sisa, atau ruangan mati yang coba dipertahankan hidup.",
+     "external_site": "Artikel lapangan tentang bungkus perbaikan kabel: pita, serat, garam, dan klem mengungkap rute hidup, perbaikan terlambat, dan mesin yang dipertahankan.",
+     "external_site_article": "Perbaikan kabel yang baik tampak buruk dengan cara yang berguna. Ada lapisan panik, keterampilan, dan cahaya buruk. Pekerja tidak membungkus jalur karena diagram terlihat penting, tetapi karena ujung lainnya masih berarti: pompa, pintu, sensor.\n\nBungkus dibaca melalui tekanan dan perlakuan. Garam di sambungan pita berarti perbaikan lama. Garam di luar klem bersih berarti klem datang kemudian. Serat di bawah lecet dangkal berarti gerak baru. Pita pipih berarti beban.\n\nKabel diperbaiki bisa menjadi rampasan, rute, peringatan listrik, bukti operasi terlambat, atau panah jujur terakhir di koridor penanda mati.",
+     "field_note": "Jangan potong bungkus terbaru lebih dulu. Biasanya ia menunjuk hal yang terakhir mereka selamatkan."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "케이블 외피 보수 감김 장부",
+     "scanner": "보수 감김 // 검은 고무 케이블 외피, 회색 테이프 띠, 사선 섬유층, 이음의 소금, 클램프 압흔. 한쪽 마모가 가장 강하다. 보관된 것이 아니라 전원이 있거나 하중을 받을 때 끌린 선이다.",
+     "terminal": "케이블 판독 // 자르기 전에 보수 띠를 세어라. 가장자리 아래 소금이 있는 넓은 테이프는 오래됐다. 소금 없는 조인 클램프 자국은 늦다. 깨끗한 긁힘 아래 섬유는 최근 마모다. 높게 묶이고 아래가 닳은 케이블은 방이 움직일 때 하중을 가졌다.",
+     "audio": "죽은 케이블은 쉽다. 보수된 케이블은 누군가 아직 다른 끝을 필요로 했다는 뜻이다.",
+     "in_game_wiki": "HECTON-8의 케이블은 배경 줄이 아니다. 압력 케이블은 두 장소가 아직 서로를 필요로 했다는 약속이다. 전력, 신호, 펌프 제어, 센서, 해치 구동, 비상등. 외피가 실패하면 보수 감김은 연결을 죽이지 않으려 한 사람들의 짧은 역사가 된다.\n\n흔적의 순서가 중요하다. 가장자리 아래 소금이 있는 회색 테이프는 오래된 수리다. 깨끗한 고무의 클램프 자국은 늦은 개입이다. 긁힘 아래 사선 섬유는 최근 끌림이다. 한쪽 마모는 보관이 아니라 장력 아래 작동한 선을 뜻한다.\n\n마라우더는 감긴 케이블을 경로 증거로 읽어야 한다. 작동 중인 펌프, 숨은 터미널, 전원이 남은 해치, 잔류 전류 함정, 또는 누군가 살려 두려 한 죽은 방으로 이어질 수 있다.",
+     "external_site": "케이블 외피 보수 감김에 대한 현장 글. 테이프, 섬유, 소금, 클램프 자국이 살아 있는 경로와 늦은 수리, 유지된 기계를 드러낸다.",
+     "external_site_article": "좋은 케이블 보수는 쓸모 있게 못생겼다. 그 안에는 공황, 기술, 나쁜 조명의 층이 있다. 작업자는 도면에서 중요해 보여서 감은 것이 아니라, 다른 끝이 아직 중요했기 때문에 감았다. 펌프, 문, 센서.\n\n감김은 압력과 취급으로 읽힌다. 테이프 이음 안의 소금은 오래된 수리다. 깨끗한 클램프 바깥의 소금은 클램프가 나중임을 말한다. 얕은 마모 아래 섬유는 최근 움직임이다. 납작한 띠는 하중을 뜻한다.\n\n보수된 케이블은 전리품, 경로, 전기 위험, 늦은 작동의 증거, 죽은 표지판 복도에서 유일한 정직한 화살표가 될 수 있다.",
+     "field_note": "가장 새 감김을 먼저 자르지 마라. 보통 마지막으로 구하려던 것을 가리킨다."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן עטיפת תיקון למעטפת כבל",
+     "scanner": "עטיפת תיקון // מעטפת גומי שחורה, רצועות אפורות, שכבת סיבים אלכסונית, מלח בתפרים, סימני לחץ של מהדקים. השחיקה חזקה בצד אחד: הקו נגרר תחת עומס, לא אוחסן.",
+     "terminal": "קריאת כבל // ספור רצועות תיקון לפני חיתוך. סרט רחב עם מלח מתחת לשפה ישן. שקיעת מהדק נקייה בלי מלח מאוחרת. סיבים תחת שריטה נקייה אומרים שחיקה חדשה. כבל קשור גבוה ושחוק נמוך נשא עומס כשהחדר זז.",
+     "audio": "כבל מת פשוט. כבל מתוקן אומר שמישהו עדיין נזקק לקצה השני.",
+     "in_game_wiki": "כבלים ב-HECTON-8 אינם רקע. כבל לחץ הוא הבטחה ששני מקומות עדיין היו חשובים זה לזה: חשמל, אות, משאבה, חיישן, פתח, אור חירום. כשהמעטפת נכשלת, עטיפת התיקון הופכת להיסטוריה קצרה של מי שסירב לתת לחיבור למות.\n\nסדר הסימנים חשוב. רצועות אפורות עם מלח תחת הקצה הן תיקון ישן. סימני מהדק נקיים הם התערבות מאוחרת. סיב אלכסוני תחת שריטה אומר גרירה חדשה. שחיקה מצד אחד אומרת שהקו עבד במתח. כבל קשור גבוה ושחוק נמוך אומר שהחדר זז אחרי התיקון.\n\nמראודר צריך לקרוא כבל עטוף כראיית נתיב. הוא יכול להוביל למשאבה עובדת, מסוף נסתר, פתח מוזן, מלכודת זרם שארי, או חדר מת שמישהו ניסה להשאיר חי.",
+     "external_site": "מאמר שטח על עטיפות תיקון כבלים: סרט, סיבים, מלח ומהדקים חושפים נתיבים חיים, תיקונים מאוחרים ומכונות שהוחזקו אחרי הקריסה.",
+     "external_site_article": "תיקון כבל טוב מכוער בדרך שימושית. יש בו שכבות של פאניקה, מיומנות ואור רע. עובד לא עטף קו בגלל תרשים, אלא מפני שהקצה השני עדיין היה חשוב: משאבה, דלת, חיישן.\n\nהעטיפה נקראת דרך לחץ וטיפול. מלח בתפר הסרט אומר תיקון ישן. מלח מחוץ למהדק נקי אומר שהמהדק מאוחר. סיבים תחת שפשוף רדוד אומרים תנועה חדשה. רצועות שטוחות אומרות עומס.\n\nכבל מתוקן יכול להיות שלל, נתיב, אזהרת חשמל, ראיה להפעלה מאוחרת או החץ הישר היחיד במסדרון שלטים מתים.",
+     "field_note": "אל תחתוך קודם את העטיפה החדשה ביותר. לרוב היא מצביעה על מה שניסו להציל אחרון."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de envoltório de reparo da capa de cabo",
+     "scanner": "ENVOLTÓRIO DE REPARO // Capa preta de borracha, faixas cinzas, camada de fibra diagonal, sal nas emendas, marcas de pressão de abraçadeiras. Abrasão mais forte de um lado: a linha foi arrastada sob carga, não guardada.",
+     "terminal": "LEITURA DE CABO // Conte faixas antes de cortar. Fita larga com sal sob a borda é antiga. Marca de abraçadeira limpa sem sal é tardia. Fibra sob risco limpo significa abrasão recente. Cabo preso alto e gasto embaixo carregou peso enquanto a sala se movia.",
+     "audio": "Cabo morto é fácil. Cabo reparado significa que alguém ainda precisava da outra ponta.",
+     "in_game_wiki": "Cabos em HECTON-8 não são fundo. Um cabo de pressão promete que dois lugares ainda importavam um ao outro: energia, sinal, bomba, sensor, escotilha, luz de emergência. Quando a capa falha, o envoltório de reparo vira a história curta de quem recusou deixar a conexão morrer.\n\nA ordem das marcas importa. Faixas cinzas com sal sob a borda são reparos antigos. Amassados limpos de abraçadeira são intervenções tardias. Fibra diagonal sob um risco indica arrasto recente. Abrasão de um lado significa linha trabalhando sob tensão. Cabo preso alto e gasto embaixo indica movimento da sala após reparo.\n\nUm saqueador deve ler cabo envolto como prova de rota. Pode levar a uma bomba ativa, terminal oculto, escotilha energizada, armadilha com corrente residual ou sala morta que alguém tentou manter viva.",
+     "external_site": "Artigo de campo sobre envoltórios de reparo de cabos: fita, fibra, sal e abraçadeiras revelam rotas vivas, reparos tardios e máquinas mantidas após colapso.",
+     "external_site_article": "Bom reparo de cabo é feio de um jeito útil. Tem camadas de pânico, habilidade e luz ruim. Um trabalhador não enrolou a linha pelo diagrama, mas porque a outra ponta ainda importava: bomba, porta, sensor.\n\nO envoltório é lido por pressão e manuseio. Sal na emenda da fita indica reparo antigo. Sal fora de abraçadeira limpa indica abraçadeira posterior. Fibra sob raspão raso indica movimento novo. Faixas achatadas indicam carga.\n\nCabo reparado pode ser saque, rota, aviso elétrico, prova de operação tardia ou a única seta honesta num corredor de placas mortas.",
+     "field_note": "Nunca corte primeiro o envoltório mais novo. Ele costuma apontar para o que salvaram por último."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Logboek voor kabelmantel-reparatiewikkel",
+     "scanner": "REPARATIEWIKKEL // Zwarte rubberen kabelmantel, grijze banden, diagonale vezellaag, zout in naden, klemsporen. Slijtage is het sterkst aan één kant: de lijn werd onder belasting gesleept, niet opgeslagen.",
+     "terminal": "KABELLEZING // Tel reparatiebanden vóór het snijden. Brede tape met zout onder de lip is oud. Strakke klemdeuk zonder zout is laat. Vezel onder schone kras betekent recente slijtage. Hoog gebonden en laag afgesleten kabel droeg last terwijl de kamer bewoog.",
+     "audio": "Een dode kabel is simpel. Een gerepareerde kabel betekent dat iemand het andere einde nog nodig had.",
+     "in_game_wiki": "Kabels in HECTON-8 zijn geen achtergrond. Een drukkabel belooft dat twee plaatsen elkaar nog nodig hadden: stroom, signaal, pomp, sensor, luik, noodlicht. Als de mantel faalt, wordt de reparatiewikkel een korte geschiedenis van mensen die de verbinding niet lieten sterven.\n\nDe volgorde van sporen telt. Grijze banden met zout onder de rand zijn oud. Schone klemsporen zijn laat. Diagonale vezel onder kras betekent recent slepen. Slijtage aan één kant betekent werken onder spanning. Hoog gebonden en laag afgesleten betekent kamerbeweging na reparatie.\n\nEen marauder leest gewikkelde kabel als routebewijs. Die kan leiden naar pomp, verborgen terminal, gevoed luik, stroomval of dode kamer die iemand levend probeerde te houden.",
+     "external_site": "Veldartikel over kabelmantel-reparaties: tape, vezel, zout en klemsporen tonen levende routes, late reparaties en machines die na instorting bleven werken.",
+     "external_site_article": "Goede kabelreparatie is nuttig lelijk. Ze heeft lagen paniek, vaardigheid en slecht licht. Een werker wikkelde de lijn niet omdat het schema belangrijk leek, maar omdat het andere uiteinde nog telde: pomp, deur, sensor.\n\nDe wikkel leest via druk en behandeling. Zout in tapenaad betekent oude reparatie. Zout buiten schone klem betekent latere klem. Vezel onder oppervlakkige slijtage betekent nieuwe beweging. Platte banden tonen belasting.\n\nGerepareerde kabel kan buit zijn, route, elektrische waarschuwing, bewijs van late werking of de enige eerlijke pijl in een gang van dode borden.",
+     "field_note": "Snijd nooit eerst de nieuwste wikkel. Die wijst vaak naar wat het laatst werd gered."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

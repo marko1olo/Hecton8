@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS011_COMM_TARIFF_GRAFFITI_MASKS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P051_LIGHT_DELAY_AUTHORITY",
-      "article_id": "hecton8.light_delay_authority",
-      "title_key": "applied_lore.light_delay_authority.title",
-      "unlock": {
-        "primary": "unlock.first_light_delay_authority",
-        "poi_tags": [
-          "poi.relay_mast",
-          "poi.signal_buffer",
-          "poi.storm_window"
-        ],
-        "biome_tags": [
-          "biome.storm_shelf",
-          "biome.surface_relay",
-          "biome.drowned_infrastructure"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Light-Delay Authority",
-          "scanner": "Relay mast cache. The call left clean, then waited behind light, queue law, storm scatter, and Aegir line-of-sight.",
-          "field_note": "Nobody censored the first scream. Physics moved slowly enough for policy to catch up.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active until fresh signal window confirms override.",
-          "audio": "The reply is coming. That does not make it rescue.",
-          "in_game_wiki": "HECTON-8 has no ansible, no friendly voice leaning over orbit, and no way to make ten light-years feel merciful. Messages move at light speed, then lose more time to relay geometry, storm scatter, buffer law, and Black Keel custody queues. A transmission can be honest and still be too old to obey. That is the rule the surface teaches early: every remote answer is evidence first, instruction second, and comfort never. If the wall, the water, and the pressure disagree with the message, the local world wins.",
-          "external_site": "Light-Delay Authority defines HECTON-8 communication as physical, delayed, and contract-filtered: distance, weather, relay buffers, and custody queues decide when a signal becomes usable."
-        },
-        "ru_RU": {
-          "title": "Власть световой задержки",
-          "scanner": "Relay mast cache. Вызов ушел чисто, потом застрял за light, queue law, storm scatter и Aegir line-of-sight.",
-          "field_note": "Первый scream никто не цензурировал. Physics двигалась достаточно медленно, чтобы policy успела догнать.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active до fresh signal window confirms override.",
-          "audio": "Ответ идет. Это еще не rescue.",
-          "in_game_wiki": "У HECTON-8 нет ansible, нет дружеского голоса, склонившегося над орбитой, и нет способа сделать десять световых лет милосердными. Сообщения идут со скоростью света, потом теряют еще время на relay geometry, storm scatter, buffer law и custody queues Black Keel. Transmission может быть честной и все равно слишком старой, чтобы ей подчиняться. Поверхность учит этому рано: каждый remote answer сначала evidence, потом instruction, и никогда comfort. Если стена, вода и pressure спорят с message, выигрывает local world.",
-          "external_site": "Власть световой задержки задает связь HECTON-8 как физическую, запоздалую и contract-filtered: distance, weather, relay buffers и custody queues решают, когда signal становится usable."
-        },
-        "ja_JP": {
-          "title": "光遅延の権限",
-          "scanner": "relay mast cache。callはきれいに出たが、light、queue law、storm scatter、Aegir line-of-sightの後ろで待たされた。",
-          "field_note": "最初のscreamは誰にも検閲されていない。physicsがpolicyに追いつくだけの遅さで運んだ。",
-          "terminal": "COMM AUTHORITY: one-way delay verified。Storm scatter high。Relay queue under custody priority。fresh signal windowがoverrideを確認するまでLocal survival authority remains active。",
-          "audio": "返信は来ている。それはrescueではない。",
-          "in_game_wiki": "HECTON-8にはansibleも、軌道上から身を乗り出す友好的な声も、十光年を慈悲深くする方法もない。messagesは光速で進み、その後relay geometry、storm scatter、buffer law、Black Keelのcustody queuesでさらに時間を失う。transmissionは正直であっても、従うには古すぎることがある。表面は早い段階でその規則を教える。すべてのremote answerはまずevidence、次にinstructionであり、comfortではない。壁、水、pressureがmessageと矛盾するなら、local worldが勝つ。",
-          "external_site": "光遅延の権限は、HECTON-8の通信を物理的で遅延しcontract-filteredなものとして定義する。distance、weather、relay buffers、custody queuesがsignalの有用性を決める。"
-        },
-        "zh_CN": {
-          "title": "光延迟权限",
-          "scanner": "relay mast cache。call离开发射端时很干净，然后被light、queue law、storm scatter和Aegir line-of-sight压在后面。",
-          "field_note": "第一声scream没有被审查。只是physics慢到足以让policy追上来。",
-          "terminal": "COMM AUTHORITY: one-way delay verified。Storm scatter high。Relay queue under custody priority。Local survival authority remains active，直到fresh signal window确认override。",
-          "audio": "回复正在路上。那不等于rescue。",
-          "in_game_wiki": "HECTON-8没有ansible，没有轨道上俯身关照的友好声音，也没有办法让十光年变得仁慈。messages以光速移动，然后又在relay geometry、storm scatter、buffer law和Black Keel custody queues里损失时间。transmission可以诚实，却仍然老到不值得服从。地表很早就教会这条规则：每一个remote answer首先是evidence，其次才是instruction，永远不是comfort。如果墙、水和pressure与message相冲突，local world胜出。",
-          "external_site": "光延迟权限把HECTON-8通信定义为物理、延迟且contract-filtered：distance、weather、relay buffers和custody queues决定signal何时可用。"
-        },
-        "fr_FR": {
-          "title": "Autorite du delai-lumiere",
-          "scanner": "Cache de relay mast. L'appel est parti propre, puis a attendu derriere light, queue law, storm scatter et Aegir line-of-sight.",
-          "field_note": "Personne n'a censure le premier scream. La physics l'a porte assez lentement pour que la policy le rattrape.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active jusqu'a confirmation d'override par fresh signal window.",
-          "audio": "La reponse arrive. Cela n'en fait pas un rescue.",
-          "in_game_wiki": "HECTON-8 n'a pas d'ansible, pas de voix amicale penchee depuis l'orbite, et aucun moyen de rendre dix annees-lumiere misericordieuses. Les messages se deplacent a la vitesse de la lumiere, puis perdent encore du temps dans relay geometry, storm scatter, buffer law et les custody queues de Black Keel. Une transmission peut etre honnete et deja trop vieille pour etre suivie. La surface l'apprend tot: chaque remote answer est d'abord evidence, ensuite instruction, jamais comfort. Si le mur, l'eau et la pressure contredisent le message, le local world gagne.",
-          "external_site": "L'autorite du delai-lumiere definit la communication de HECTON-8 comme physique, retardee et contract-filtered: distance, weather, relay buffers et custody queues decident quand un signal devient usable."
-        },
-        "es_ES": {
-          "title": "Autoridad de retraso-luz",
-          "scanner": "Cache de relay mast. La llamada salio limpia, luego espero tras light, queue law, storm scatter y Aegir line-of-sight.",
-          "field_note": "Nadie censuro el primer scream. La physics lo movio lo bastante despacio para que la policy lo alcanzara.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active hasta que fresh signal window confirme override.",
-          "audio": "La respuesta viene. Eso no la convierte en rescue.",
-          "in_game_wiki": "HECTON-8 no tiene ansible, ni una voz amistosa inclinada desde la orbita, ni una forma de volver misericordiosos diez anos luz. Los messages viajan a velocidad de la luz, luego pierden mas tiempo en relay geometry, storm scatter, buffer law y custody queues de Black Keel. Una transmission puede ser honesta y aun asi demasiado vieja para obedecerla. La superficie ensena pronto esa regla: cada remote answer es evidence primero, instruction despues, y nunca comfort. Si la pared, el agua y la pressure contradicen el message, gana el local world.",
-          "external_site": "La autoridad de retraso-luz define la comunicacion de HECTON-8 como fisica, demorada y contract-filtered: distance, weather, relay buffers y custody queues deciden cuando una signal se vuelve usable."
-        },
-        "de_DE": {
-          "title": "Lichtverzogerungs-Autoritat",
-          "scanner": "Relay mast cache. Der Ruf ging sauber hinaus, dann wartete er hinter light, queue law, storm scatter und Aegir line-of-sight.",
-          "field_note": "Niemand zensierte den ersten scream. Physics trug ihn langsam genug, damit policy aufholen konnte.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active bis fresh signal window override bestatigt.",
-          "audio": "Die Antwort kommt. Das macht sie nicht zu rescue.",
-          "in_game_wiki": "HECTON-8 hat kein ansible, keine freundliche Stimme, die sich aus dem Orbit hinunterbeugt, und keine Moglichkeit, zehn Lichtjahre barmherzig zu machen. Messages bewegen sich mit Lichtgeschwindigkeit und verlieren dann weitere Zeit an relay geometry, storm scatter, buffer law und Black Keels custody queues. Eine transmission kann ehrlich sein und trotzdem zu alt zum Befolgen. Die Oberflache lehrt diese Regel fruh: Jede remote answer ist zuerst evidence, danach instruction und niemals comfort. Wenn Wand, Wasser und pressure der message widersprechen, gewinnt die local world.",
-          "external_site": "Lichtverzogerungs-Autoritat definiert HECTON-8-Kommunikation als physisch, verzogert und contract-filtered: distance, weather, relay buffers und custody queues bestimmen, wann ein signal usable wird."
-        },
-        "pl_PL": {
-          "title": "Autorytet opoznienia swiatla",
-          "scanner": "Relay mast cache. Call wyszedl czysto, potem czekal za light, queue law, storm scatter i Aegir line-of-sight.",
-          "field_note": "Nikt nie ocenzurowal pierwszego scream. Physics niosla go dosc wolno, by policy zdazyla dogonic.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active do czasu gdy fresh signal window potwierdzi override.",
-          "audio": "Odpowiedz nadchodzi. To nie czyni jej rescue.",
-          "in_game_wiki": "HECTON-8 nie ma ansible, przyjaznego glosu pochylonego z orbity ani sposobu, by dziesiec lat swietlnych stalo sie milosierne. Messages ida z predkoscia swiatla, potem traca czas przez relay geometry, storm scatter, buffer law i custody queues Black Keel. Transmission moze byc szczera i wciaz za stara, by jej sluchac. Powierzchnia uczy tego szybko: kazda remote answer jest najpierw evidence, potem instruction, nigdy comfort. Jesli sciana, woda i pressure zaprzeczaja message, wygrywa local world.",
-          "external_site": "Autorytet opoznienia swiatla definiuje komunikacje HECTON-8 jako fizyczna, spozniona i contract-filtered: distance, weather, relay buffers i custody queues decyduja, kiedy signal staje sie usable."
-        },
-        "uk_UA": {
-          "title": "Влада світлової затримки",
-          "scanner": "Relay mast cache. Виклик вийшов чисто, а тоді чекав за light, queue law, storm scatter і Aegir line-of-sight.",
-          "field_note": "Перший scream ніхто не цензурував. Physics несла його досить повільно, щоб policy встигла наздогнати.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active до fresh signal window confirms override.",
-          "audio": "Відповідь іде. Це ще не rescue.",
-          "in_game_wiki": "HECTON-8 не має ansible, дружнього голосу, що нахилився з орбіти, і способу зробити десять світлових років милосердними. Messages рухаються зі швидкістю світла, а потім втрачають ще час на relay geometry, storm scatter, buffer law і custody queues Black Keel. Transmission може бути чесною й водночас надто старою, щоб їй коритися. Поверхня рано вчить правилу: кожна remote answer спершу evidence, потім instruction, і ніколи comfort. Якщо стіна, вода й pressure суперечать message, перемагає local world.",
-          "external_site": "Влада світлової затримки визначає зв'язок HECTON-8 як фізичний, запізнілий і contract-filtered: distance, weather, relay buffers і custody queues вирішують, коли signal стає usable."
-        },
-        "ar_SA": {
-          "title": "سلطة تأخير الضوء",
-          "scanner": "Relay mast cache. خرج call نظيفا، ثم انتظر خلف light وqueue law وstorm scatter وAegir line-of-sight.",
-          "field_note": "لم يراقب أحد أول scream. حملته physics ببطء كاف لتلحق به policy.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active حتى تؤكد fresh signal window أي override.",
-          "audio": "الرد قادم. هذا لا يجعله rescue.",
-          "in_game_wiki": "لا يملك HECTON-8 أي ansible، ولا صوتا ودودا منحنيا من المدار، ولا وسيلة تجعل عشر سنوات ضوئية رحيمة. تتحرك messages بسرعة الضوء، ثم تخسر مزيدا من الوقت في relay geometry وstorm scatter وbuffer law وcustody queues الخاصة بBlack Keel. يمكن أن تكون transmission صادقة، ومع ذلك قديمة جدا على الطاعة. يعلّم السطح هذه القاعدة مبكرا: كل remote answer هو evidence أولا، ثم instruction، وليس comfort أبدا. إذا اختلف الجدار والماء وpressure مع message، ينتصر local world.",
-          "external_site": "تعرف سلطة تأخير الضوء اتصالات HECTON-8 كشيء مادي ومتأخر وcontract-filtered: distance وweather وrelay buffers وcustody queues تقرر متى تصبح signal usable."
-        },
-        "id_ID": {
-          "title": "Otoritas Tunda-Cahaya",
-          "scanner": "Relay mast cache. Call keluar bersih, lalu menunggu di balik light, queue law, storm scatter, dan Aegir line-of-sight.",
-          "field_note": "Tidak ada yang menyensor scream pertama. Physics membawanya cukup lambat sampai policy sempat mengejar.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active sampai fresh signal window mengonfirmasi override.",
-          "audio": "Balasannya sedang datang. Itu tidak menjadikannya rescue.",
-          "in_game_wiki": "HECTON-8 tidak punya ansible, tidak ada suara ramah yang menunduk dari orbit, dan tidak ada cara membuat sepuluh tahun cahaya terasa penuh belas kasih. Messages bergerak dengan kecepatan cahaya, lalu kehilangan lebih banyak waktu pada relay geometry, storm scatter, buffer law, dan custody queues Black Keel. Transmission bisa jujur dan tetap terlalu tua untuk dipatuhi. Permukaan mengajarkan aturan itu sejak awal: setiap remote answer adalah evidence dulu, instruction kemudian, dan tidak pernah comfort. Jika dinding, air, dan pressure tidak setuju dengan message, local world menang.",
-          "external_site": "Otoritas Tunda-Cahaya mendefinisikan komunikasi HECTON-8 sebagai fisik, tertunda, dan contract-filtered: distance, weather, relay buffers, dan custody queues menentukan kapan signal menjadi usable."
-        },
-        "ko_KR": {
-          "title": "광지연 권한",
-          "scanner": "relay mast cache. call은 깨끗하게 떠났지만 light, queue law, storm scatter, Aegir line-of-sight 뒤에서 기다렸다.",
-          "field_note": "첫 scream을 검열한 사람은 없었다. physics가 policy가 따라잡을 만큼 천천히 옮겼다.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. fresh signal window가 override를 확인할 때까지 Local survival authority remains active.",
-          "audio": "응답은 오고 있다. 그렇다고 rescue는 아니다.",
-          "in_game_wiki": "HECTON-8에는 ansible도, 궤도에서 몸을 숙이는 다정한 목소리도, 10광년을 자비롭게 만들 방법도 없다. messages는 빛의 속도로 움직인 뒤 relay geometry, storm scatter, buffer law, Black Keel의 custody queues에서 더 많은 시간을 잃는다. transmission은 정직하면서도 따르기엔 너무 오래될 수 있다. 표면은 그 규칙을 일찍 가르친다. 모든 remote answer는 먼저 evidence이고, 다음이 instruction이며, comfort는 아니다. 벽과 물과 pressure가 message와 다르면 local world가 이긴다.",
-          "external_site": "광지연 권한은 HECTON-8 통신을 물리적이고 지연되며 contract-filtered된 것으로 정의한다. distance, weather, relay buffers, custody queues가 signal의 사용 가능 시점을 결정한다."
-        },
-        "he_IL": {
-          "title": "סמכות עיכוב-אור",
-          "scanner": "Relay mast cache. ה-call יצא נקי, ואז המתין מאחורי light, queue law, storm scatter ו-Aegir line-of-sight.",
-          "field_note": "אף אחד לא צינזר את ה-scream הראשון. ה-physics נשאה אותו לאט מספיק כדי ש-policy תדביק אותו.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active עד ש-fresh signal window מאשר override.",
-          "audio": "התשובה בדרך. זה לא הופך אותה ל-rescue.",
-          "in_game_wiki": "ל-HECTON-8 אין ansible, אין קול ידידותי שנשען מהמסלול, ואין דרך להפוך עשר שנות אור לרחומות. Messages נעים במהירות האור, ואז מאבדים עוד זמן ב-relay geometry, storm scatter, buffer law ו-custody queues של Black Keel. Transmission יכולה להיות כנה ועדיין ישנה מדי מכדי לציית לה. פני השטח מלמדים מוקדם: כל remote answer היא קודם evidence, אחר כך instruction, ולעולם לא comfort. אם הקיר, המים וה-pressure סותרים את ה-message, ה-local world מנצח.",
-          "external_site": "סמכות עיכוב-אור מגדירה את תקשורת HECTON-8 כפיזית, מאוחרת ו-contract-filtered: distance, weather, relay buffers ו-custody queues קובעים מתי signal נעשה usable."
-        },
-        "pt_BR": {
-          "title": "Autoridade de Atraso-Luz",
-          "scanner": "Relay mast cache. O call saiu limpo, depois esperou atras de light, queue law, storm scatter e Aegir line-of-sight.",
-          "field_note": "Ninguem censurou o primeiro scream. A physics o moveu devagar o bastante para a policy alcancar.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active ate fresh signal window confirmar override.",
-          "audio": "A resposta esta vindo. Isso nao a torna rescue.",
-          "in_game_wiki": "HECTON-8 nao tem ansible, nenhuma voz amiga inclinada da orbita, e nenhum modo de fazer dez anos-luz parecerem misericordiosos. Messages se movem a velocidade da luz, depois perdem mais tempo em relay geometry, storm scatter, buffer law e custody queues da Black Keel. Uma transmission pode ser honesta e ainda assim velha demais para obedecer. A superficie ensina cedo essa regra: todo remote answer e evidence primeiro, instruction depois, e nunca comfort. Se a parede, a agua e a pressure discordam do message, o local world vence.",
-          "external_site": "A Autoridade de Atraso-Luz define a comunicacao de HECTON-8 como fisica, atrasada e contract-filtered: distance, weather, relay buffers e custody queues decidem quando uma signal se torna usable."
-        },
-        "nl_NL": {
-          "title": "Lichtvertragingsautoriteit",
-          "scanner": "Relay mast cache. De call vertrok schoon, wachtte daarna achter light, queue law, storm scatter en Aegir line-of-sight.",
-          "field_note": "Niemand censureerde de eerste scream. Physics droeg hem traag genoeg zodat policy kon inhalen.",
-          "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active tot fresh signal window override bevestigt.",
-          "audio": "Het antwoord komt eraan. Dat maakt het geen rescue.",
-          "in_game_wiki": "HECTON-8 heeft geen ansible, geen vriendelijke stem die uit de baan neerbuigt, en geen manier om tien lichtjaar barmhartig te maken. Messages reizen met lichtsnelheid en verliezen daarna meer tijd aan relay geometry, storm scatter, buffer law en Black Keels custody queues. Een transmission kan eerlijk zijn en toch te oud om op te volgen. Het oppervlak leert die regel vroeg: elk remote answer is eerst evidence, daarna instruction, en nooit comfort. Als de muur, het water en de pressure de message tegenspreken, wint de local world.",
-          "external_site": "Lichtvertragingsautoriteit definieert HECTON-8-communicatie als fysiek, vertraagd en contract-filtered: distance, weather, relay buffers en custody queues bepalen wanneer een signal usable wordt."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS011_COMM_TARIFF_GRAFFITI_MASKS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P051_LIGHT_DELAY_AUTHORITY",
+   "article_id": "hecton8.light_delay_authority",
+   "title_key": "applied_lore.light_delay_authority.title",
+   "unlock": {
+    "primary": "unlock.first_light_delay_authority",
+    "poi_tags": [
+     "poi.relay_mast",
+     "poi.signal_buffer",
+     "poi.storm_window"
+    ],
+    "biome_tags": [
+     "biome.storm_shelf",
+     "biome.surface_relay",
+     "biome.drowned_infrastructure"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Light-Delay Authority",
+     "scanner": "Relay mast cache. The call left clean, then waited behind light, queue law, storm scatter, and Aegir line-of-sight.",
+     "field_note": "Nobody censored the first scream. Physics moved slowly enough for policy to catch up.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active until fresh signal window confirms override.",
+     "audio": "The reply is coming. That does not make it rescue.",
+     "in_game_wiki": "HECTON-8 has no ansible, no friendly voice leaning over orbit, and no way to make ten light-years feel merciful. Messages move at light speed, then lose more time to relay geometry, storm scatter, buffer law, and Black Keel custody queues. A transmission can be honest and still be too old to obey. That is the rule the surface teaches early: every remote answer is evidence first, instruction second, and comfort never. If the wall, the water, and the pressure disagree with the message, the local world wins.",
+     "external_site": "Light-Delay Authority defines HECTON-8 communication as physical, delayed, and contract-filtered: distance, weather, relay buffers, and custody queues decide when a signal becomes usable."
     },
-    {
-      "packet_id": "P052_BLACK_KEEL_TARIFF_TABLE",
-      "article_id": "hecton8.black_keel_tariff_table",
-      "title_key": "applied_lore.black_keel_tariff_table.title",
-      "unlock": {
-        "primary": "unlock.first_black_keel_tariff_table",
-        "poi_tags": [
-          "poi.tariff_plate",
-          "poi.claim_terminal",
-          "poi.sample_lockbox"
-        ],
-        "biome_tags": [
-          "biome.corporate_wreck",
-          "biome.salvage_route",
-          "biome.service_corridor"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Black Keel Tariff Table",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage, and body recovery sit on separate lines.",
-          "field_note": "The fastest class is not rescue. It is verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies until lien arbitration resolves.",
-          "audio": "There is a discount for evidence and a surcharge for breathing.",
-          "in_game_wiki": "Black Keel support is useful because the carrier really does move gear, cache oxygen, pass warnings, and open route options. It is never neutral because every support action enters a tariff table before it becomes help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, and body recovery are different line items with different priority speeds. The table is not hidden evil. It is worse in practice: a readable price list for moments that should not have prices.",
-          "external_site": "Black Keel Tariff Table exposes the carrier economy around HECTON-8, where distress traffic competes with sample custody, oxygen, debt, proof, and asset protection."
-        },
-        "ru_RU": {
-          "title": "Тарифная таблица Black Keel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage и body recovery стоят отдельными строками.",
-          "field_note": "Самый быстрый class - не rescue. Это verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies до lien arbitration resolves.",
-          "audio": "На evidence есть discount, на breathing - surcharge.",
-          "in_game_wiki": "Поддержка Black Keel полезна, потому что carrier действительно двигает gear, прячет oxygen, передает warnings и открывает route options. Она никогда не нейтральна, потому что каждое support action попадает в tariff table раньше, чем становится help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery и body recovery - разные line items с разной priority speed. Таблица не скрытое зло. На практике хуже: читаемый price list для моментов, у которых не должно быть цены.",
-          "external_site": "Тарифная таблица Black Keel раскрывает carrier economy вокруг HECTON-8, где distress traffic конкурирует с sample custody, oxygen, debt, proof и asset protection."
-        },
-        "ja_JP": {
-          "title": "Black Keel料金表",
-          "scanner": "tariff plate。distress、oxygen、sample custody、pressure gear、hull damage、body recoveryが別々の行に並ぶ。",
-          "field_note": "最速のclassはrescueではない。verified property moving upwardだ。",
-          "terminal": "TARIFF CLASS: salvage emergency。Welfare addendum pending。Verified sample custody advances outbound priority by two billing tiers。lien arbitration resolvesまでBreathing mass surcharge applies。",
-          "audio": "evidenceにはdiscountがあり、breathingにはsurchargeがある。",
-          "in_game_wiki": "Black Keelのsupportは有用だ。carrierは実際にgearを動かし、oxygenをcacheし、warningsを渡し、route optionsを開く。だが中立ではない。すべてのsupport actionはhelpになる前にtariff tableへ入るからだ。Distress、sealed samples、oxygen reserve、pressure gear、hull damage、operator recovery、body recoveryは、それぞれpriority speedの違うline itemsである。表は隠された悪ではない。実務上はもっと悪い。本来値段を持つべきでない瞬間のための、読めるprice listだ。",
-          "external_site": "Black Keel料金表はHECTON-8周辺のcarrier economyを見せる。distress trafficはsample custody、oxygen、debt、proof、asset protectionと競合する。"
-        },
-        "zh_CN": {
-          "title": "Black Keel费率表",
-          "scanner": "tariff plate。distress、oxygen、sample custody、pressure gear、hull damage和body recovery被列成不同项目。",
-          "field_note": "最快的class不是rescue，而是verified property moving upward。",
-          "terminal": "TARIFF CLASS: salvage emergency。Welfare addendum pending。Verified sample custody advances outbound priority by two billing tiers。Breathing mass surcharge applies，直到lien arbitration resolves。",
-          "audio": "evidence有discount，breathing有surcharge。",
-          "in_game_wiki": "Black Keel的support有用，因为carrier确实会移动gear、cache oxygen、传递warnings并打开route options。它从不中立，因为每一个support action在成为help之前都会先进入tariff table。Distress、sealed samples、oxygen reserve、pressure gear、hull damage、operator recovery和body recovery都是不同line items，有不同priority speed。表格不是隐藏的邪恶。实际更糟：那是一张给不该有价格的时刻准备的可读price list。",
-          "external_site": "Black Keel费率表揭示HECTON-8周围的carrier economy：distress traffic与sample custody、oxygen、debt、proof和asset protection竞争。"
-        },
-        "fr_FR": {
-          "title": "Table tarifaire de Black Keel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage et body recovery sont sur des lignes separees.",
-          "field_note": "La classe la plus rapide n'est pas rescue. C'est verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies jusqu'a resolution de lien arbitration.",
-          "audio": "Il y a un discount pour evidence et un surcharge pour breathing.",
-          "in_game_wiki": "Le support de Black Keel est utile parce que le carrier deplace vraiment du gear, cache de l'oxygen, transmet des warnings et ouvre des route options. Il n'est jamais neutre parce que chaque support action entre dans une tariff table avant de devenir help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery et body recovery sont des line items differents avec des priority speeds differentes. La table n'est pas un mal cache. En pratique, c'est pire: une price list lisible pour des moments qui ne devraient pas avoir de prix.",
-          "external_site": "La table tarifaire de Black Keel expose la carrier economy autour de HECTON-8, ou distress traffic concurrence sample custody, oxygen, debt, proof et asset protection."
-        },
-        "es_ES": {
-          "title": "Tabla tarifaria de Black Keel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage y body recovery figuran en lineas separadas.",
-          "field_note": "La clase mas rapida no es rescue. Es verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies hasta que lien arbitration resolves.",
-          "audio": "Hay discount para evidence y surcharge por breathing.",
-          "in_game_wiki": "El support de Black Keel es util porque el carrier de verdad mueve gear, cachea oxygen, transmite warnings y abre route options. Nunca es neutral porque cada support action entra en una tariff table antes de convertirse en help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery y body recovery son line items distintos con priority speeds distintas. La tabla no es mal oculto. En la practica es peor: una price list legible para momentos que no deberian tener precio.",
-          "external_site": "La tabla tarifaria de Black Keel expone la carrier economy alrededor de HECTON-8, donde distress traffic compite con sample custody, oxygen, debt, proof y asset protection."
-        },
-        "de_DE": {
-          "title": "Black Keel Tariftabelle",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage und body recovery stehen auf getrennten Zeilen.",
-          "field_note": "Die schnellste class ist nicht rescue. Sie ist verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies bis lien arbitration resolves.",
-          "audio": "Es gibt discount fur evidence und surcharge fur breathing.",
-          "in_game_wiki": "Black Keel support ist nutzlich, weil der Carrier wirklich gear bewegt, oxygen cached, warnings weitergibt und route options offnet. Er ist nie neutral, weil jede support action in eine tariff table eintritt, bevor sie help wird. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery und body recovery sind verschiedene line items mit verschiedenen priority speeds. Die Tabelle ist kein verborgenes Bose. Praktisch ist sie schlimmer: eine lesbare price list fur Momente, die keinen Preis haben sollten.",
-          "external_site": "Black Keel Tariftabelle zeigt die carrier economy um HECTON-8, wo distress traffic mit sample custody, oxygen, debt, proof und asset protection konkurriert."
-        },
-        "pl_PL": {
-          "title": "Tabela taryf Black Keel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage i body recovery sa w osobnych liniach.",
-          "field_note": "Najszybsza class to nie rescue. To verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies do czasu az lien arbitration resolves.",
-          "audio": "Jest discount za evidence i surcharge za breathing.",
-          "in_game_wiki": "Black Keel support jest uzyteczny, bo carrier naprawde przenosi gear, cache'uje oxygen, przekazuje warnings i otwiera route options. Nigdy nie jest neutralny, bo kazde support action trafia do tariff table, zanim stanie sie help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery i body recovery to rozne line items z roznymi priority speeds. Tabela nie jest ukrytym zlem. W praktyce jest gorsza: czytelna price list dla chwil, ktore nie powinny miec ceny.",
-          "external_site": "Tabela taryf Black Keel pokazuje carrier economy wokol HECTON-8, gdzie distress traffic konkuruje z sample custody, oxygen, debt, proof i asset protection."
-        },
-        "uk_UA": {
-          "title": "Тарифна таблиця Black Keel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage і body recovery стоять окремими рядками.",
-          "field_note": "Найшвидший class - не rescue. Це verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies до lien arbitration resolves.",
-          "audio": "На evidence є discount, на breathing - surcharge.",
-          "in_game_wiki": "Black Keel support корисний, бо carrier справді рухає gear, cache'ує oxygen, передає warnings і відкриває route options. Він ніколи не нейтральний, бо кожне support action потрапляє в tariff table раніше, ніж стає help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery і body recovery - різні line items з різними priority speeds. Таблиця не приховане зло. На практиці гірше: читабельний price list для митей, які не повинні мати ціни.",
-          "external_site": "Тарифна таблиця Black Keel розкриває carrier economy навколо HECTON-8, де distress traffic конкурує з sample custody, oxygen, debt, proof і asset protection."
-        },
-        "ar_SA": {
-          "title": "جدول تعرفة Black Keel",
-          "scanner": "Tariff plate. توضع distress وoxygen وsample custody وpressure gear وhull damage وbody recovery في أسطر منفصلة.",
-          "field_note": "أسرع class ليست rescue. إنها verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies حتى lien arbitration resolves.",
-          "audio": "هناك discount على evidence وsurcharge على breathing.",
-          "in_game_wiki": "إن support من Black Keel مفيد لأن carrier ينقل gear فعلا، ويخزن oxygen، ويمرر warnings، ويفتح route options. لكنه ليس محايدا أبدا، لأن كل support action يدخل tariff table قبل أن يصبح help. Distress وsealed samples وoxygen reserve وpressure gear وhull damage وoperator recovery وbody recovery هي line items مختلفة بسرعات priority مختلفة. الجدول ليس شرا مخفيا. عمليا هو أسوأ: price list مقروء للحظات لا ينبغي أن يكون لها سعر.",
-          "external_site": "يكشف جدول تعرفة Black Keel عن carrier economy حول HECTON-8، حيث تنافس distress traffic كل sample custody وoxygen وdebt وproof وasset protection."
-        },
-        "id_ID": {
-          "title": "Tabel Tarif Black Keel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage, dan body recovery berada pada baris terpisah.",
-          "field_note": "Class tercepat bukan rescue. Itu verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies sampai lien arbitration resolves.",
-          "audio": "Ada discount untuk evidence dan surcharge untuk breathing.",
-          "in_game_wiki": "Black Keel support berguna karena carrier benar-benar memindahkan gear, menyimpan oxygen, mengirim warnings, dan membuka route options. Ia tidak pernah netral karena setiap support action masuk ke tariff table sebelum menjadi help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, dan body recovery adalah line items berbeda dengan priority speeds berbeda. Tabel itu bukan kejahatan tersembunyi. Dalam praktiknya lebih buruk: price list yang bisa dibaca untuk momen yang seharusnya tidak punya harga.",
-          "external_site": "Tabel Tarif Black Keel membuka carrier economy di sekitar HECTON-8, tempat distress traffic bersaing dengan sample custody, oxygen, debt, proof, dan asset protection."
-        },
-        "ko_KR": {
-          "title": "Black Keel 요율표",
-          "scanner": "tariff plate. distress, oxygen, sample custody, pressure gear, hull damage, body recovery가 별도 줄에 놓여 있다.",
-          "field_note": "가장 빠른 class는 rescue가 아니다. verified property moving upward다.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. lien arbitration resolves까지 Breathing mass surcharge applies.",
-          "audio": "evidence에는 discount가 있고 breathing에는 surcharge가 있다.",
-          "in_game_wiki": "Black Keel support는 유용하다. carrier가 실제로 gear를 옮기고, oxygen을 cache하고, warnings를 전달하며, route options를 열기 때문이다. 하지만 중립적이지 않다. 모든 support action은 help가 되기 전에 tariff table에 들어간다. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, body recovery는 서로 다른 priority speeds를 가진 별도 line items다. 그 표는 숨은 악이 아니다. 실제로는 더 나쁘다. 가격이 없어야 할 순간을 위한 읽을 수 있는 price list다.",
-          "external_site": "Black Keel 요율표는 HECTON-8 주변 carrier economy를 드러낸다. distress traffic은 sample custody, oxygen, debt, proof, asset protection과 경쟁한다."
-        },
-        "he_IL": {
-          "title": "טבלת התעריפים של Black Keel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage ו-body recovery יושבים בשורות נפרדות.",
-          "field_note": "ה-class המהיר ביותר אינו rescue. הוא verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies עד ש-lien arbitration resolves.",
-          "audio": "יש discount עבור evidence ו-surcharge עבור breathing.",
-          "in_game_wiki": "Black Keel support מועיל מפני שה-carrier באמת מזיז gear, שומר oxygen, מעביר warnings ופותח route options. הוא לעולם לא ניטרלי כי כל support action נכנס ל-tariff table לפני שהוא הופך ל-help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery ו-body recovery הם line items נפרדים עם priority speeds שונות. הטבלה אינה רוע נסתר. בפועל היא גרועה יותר: price list קריא לרגעים שלא אמור להיות להם מחיר.",
-          "external_site": "טבלת התעריפים של Black Keel חושפת את ה-carrier economy סביב HECTON-8, שבה distress traffic מתחרה עם sample custody, oxygen, debt, proof ו-asset protection."
-        },
-        "pt_BR": {
-          "title": "Tabela Tarifaria da Black Keel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage e body recovery ficam em linhas separadas.",
-          "field_note": "A classe mais rapida nao e rescue. E verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies ate lien arbitration resolves.",
-          "audio": "Existe discount para evidence e surcharge para breathing.",
-          "in_game_wiki": "O support da Black Keel e util porque o carrier realmente move gear, guarda oxygen, passa warnings e abre route options. Nunca e neutro porque cada support action entra numa tariff table antes de virar help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery e body recovery sao line items diferentes com priority speeds diferentes. A tabela nao e mal oculto. Na pratica e pior: uma price list legivel para momentos que nao deveriam ter preco.",
-          "external_site": "A Tabela Tarifaria da Black Keel expõe a carrier economy ao redor de HECTON-8, onde distress traffic compete com sample custody, oxygen, debt, proof e asset protection."
-        },
-        "nl_NL": {
-          "title": "Black Keel Tarieftabel",
-          "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage en body recovery staan op aparte regels.",
-          "field_note": "De snelste class is geen rescue. Het is verified property moving upward.",
-          "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies tot lien arbitration resolves.",
-          "audio": "Er is discount voor evidence en surcharge voor breathing.",
-          "in_game_wiki": "Black Keel support is nuttig omdat de carrier echt gear verplaatst, oxygen cached, warnings doorgeeft en route options opent. Het is nooit neutraal omdat elke support action een tariff table ingaat voordat het help wordt. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery en body recovery zijn verschillende line items met verschillende priority speeds. De tabel is geen verborgen kwaad. In de praktijk is hij erger: een leesbare price list voor momenten die geen prijs zouden mogen hebben.",
-          "external_site": "Black Keel Tarieftabel toont de carrier economy rond HECTON-8, waar distress traffic concurreert met sample custody, oxygen, debt, proof en asset protection."
-        }
-      }
+    "ru_RU": {
+     "title": "Власть световой задержки",
+     "scanner": "Relay mast cache. Вызов ушел чисто, потом застрял за light, queue law, storm scatter и Aegir line-of-sight.",
+     "field_note": "Первый scream никто не цензурировал. Physics двигалась достаточно медленно, чтобы policy успела догнать.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active до fresh signal window confirms override.",
+     "audio": "Ответ идет. Это еще не rescue.",
+     "in_game_wiki": "У HECTON-8 нет ansible, нет дружеского голоса, склонившегося над орбитой, и нет способа сделать десять световых лет милосердными. Сообщения идут со скоростью света, потом теряют еще время на relay geometry, storm scatter, buffer law и custody queues Black Keel. Transmission может быть честной и все равно слишком старой, чтобы ей подчиняться. Поверхность учит этому рано: каждый remote answer сначала evidence, потом instruction, и никогда comfort. Если стена, вода и pressure спорят с message, выигрывает local world.",
+     "external_site": "Власть световой задержки задает связь HECTON-8 как физическую, запоздалую и contract-filtered: distance, weather, relay buffers и custody queues решают, когда signal становится usable."
     },
-    {
-      "packet_id": "P053_MARAUDER_GRAFFITI_MASKS",
-      "article_id": "hecton8.marauder_graffiti_masks",
-      "title_key": "applied_lore.marauder_graffiti_masks.title",
-      "unlock": {
-        "primary": "unlock.first_marauder_graffiti_masks",
-        "poi_tags": [
-          "poi.graffiti_mask",
-          "poi.scavenger_route",
-          "poi.signal_blind"
-        ],
-        "biome_tags": [
-          "biome.service_corridor",
-          "biome.salvage_route",
-          "biome.flooded_habitat"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Marauder Graffiti Masks",
-          "scanner": "Paint code. Slash count marks noise discipline; black rings mark carrier-ping danger; broken arrows mark pressure drift.",
-          "field_note": "Marauders wrote for people who could not trust radios and could not afford maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "If the wall looks angry, read it as weather.",
-          "in_game_wiki": "Marauder graffiti is not decoration. It is field navigation, social warning, and anti-surveillance language scratched into places where radios betray, maps expire, and official signage lies by being too old. The marks look rough because they had to survive water, bad lamps, glove tremor, and cameras that could punish readable intent. A slash can mean silence. A black ring can mean Black Keel ping. A broken arrow can mean the pressure changed after the last route survey. The colony left labels; the marauders left weather.",
-          "external_site": "Marauder Graffiti Masks turn scavenger writing into readable ocean infrastructure: route hints, comm silence, pressure drift, cache risk, and mistrust of carrier surveillance."
-        },
-        "ru_RU": {
-          "title": "Граффити-маски мародеров",
-          "scanner": "Paint code. Slash count отмечает noise discipline; black rings - carrier-ping danger; broken arrows - pressure drift.",
-          "field_note": "Marauders писали для тех, кто не мог доверять radios и не мог позволить себе maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Если wall выглядит злой, читай ее как weather.",
-          "in_game_wiki": "Граффити marauders - не decoration. Это field navigation, social warning и anti-surveillance language, выцарапанный там, где radios предают, maps истекают, а official signage лжет уже потому, что слишком старый. Marks выглядят грубо, потому что должны были пережить water, bad lamps, glove tremor и cameras, которые могли наказать readable intent. Slash может значить silence. Black ring - Black Keel ping. Broken arrow - pressure changed после последнего route survey. Colony оставила labels; marauders оставили weather.",
-          "external_site": "Граффити-маски мародеров превращают scavenger writing в readable ocean infrastructure: route hints, comm silence, pressure drift, cache risk и недоверие к carrier surveillance."
-        },
-        "ja_JP": {
-          "title": "Marauderグラフィティ・マスク",
-          "scanner": "paint code。slash countはnoise discipline、black ringsはcarrier-ping danger、broken arrowsはpressure driftを示す。",
-          "field_note": "maraudersはradiosを信用できずmapsを買えない者たちのために書いた。",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only。Black ring: carrier sweep。Broken arrow: pressure changed since last mark。Salt bloom: cache compromised。Double hook: official route no longer honest。",
-          "audio": "壁が怒って見えるなら、それをweatherとして読め。",
-          "in_game_wiki": "Marauder graffitiは装飾ではない。radiosが裏切り、mapsが期限切れになり、official signageが古すぎるせいで嘘になる場所に刻まれたfield navigation、social warning、anti-surveillance languageである。marksが粗いのは、water、bad lamps、glove tremor、そしてreadable intentを罰しうるcamerasに耐える必要があったからだ。slashはsilenceを意味することがある。black ringはBlack Keel ping。broken arrowは最後のroute survey後にpressure changedした印。colonyはlabelsを残し、maraudersはweatherを残した。",
-          "external_site": "Marauderグラフィティ・マスクはscavenger writingを読み取れるocean infrastructureへ変える。route hints、comm silence、pressure drift、cache risk、carrier surveillanceへの不信。"
-        },
-        "zh_CN": {
-          "title": "Marauder涂鸦掩码",
-          "scanner": "paint code。slash count标记noise discipline；black rings标记carrier-ping danger；broken arrows标记pressure drift。",
-          "field_note": "marauders写给那些不能信任radios、也买不起maps的人。",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only。Black ring: carrier sweep。Broken arrow: pressure changed since last mark。Salt bloom: cache compromised。Double hook: official route no longer honest。",
-          "audio": "如果wall看起来愤怒，就把它当weather读。",
-          "in_game_wiki": "Marauder graffiti不是装饰。它是在radios会背叛、maps会过期、official signage因太旧而撒谎的地方刻下的field navigation、social warning和anti-surveillance language。这些marks粗糙，是因为它们必须扛过water、bad lamps、glove tremor，以及会惩罚readable intent的cameras。slash可能意味着silence。black ring可能意味着Black Keel ping。broken arrow可能意味着最后一次route survey之后pressure changed。colony留下labels；marauders留下weather。",
-          "external_site": "Marauder涂鸦掩码把scavenger writing变成可读的ocean infrastructure：route hints、comm silence、pressure drift、cache risk以及对carrier surveillance的不信任。"
-        },
-        "fr_FR": {
-          "title": "Masques graffiti des marauders",
-          "scanner": "Paint code. Slash count marque noise discipline; black rings marquent carrier-ping danger; broken arrows marquent pressure drift.",
-          "field_note": "Les marauders ecrivaient pour des gens qui ne pouvaient pas faire confiance aux radios ni se payer des maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Si le mur a l'air en colere, lis-le comme weather.",
-          "in_game_wiki": "Le marauder graffiti n'est pas une decoration. C'est field navigation, social warning et anti-surveillance language grave la ou les radios trahissent, les maps expirent, et l'official signage ment parce qu'il est trop vieux. Les marks sont rudes parce qu'ils devaient survivre a water, bad lamps, glove tremor et cameras capables de punir une readable intent. Un slash peut vouloir dire silence. Un black ring peut vouloir dire Black Keel ping. Une broken arrow peut dire pressure changed depuis le dernier route survey. La colony a laisse des labels; les marauders ont laisse weather.",
-          "external_site": "Les masques graffiti des marauders transforment scavenger writing en ocean infrastructure lisible: route hints, comm silence, pressure drift, cache risk et mefiance envers carrier surveillance."
-        },
-        "es_ES": {
-          "title": "Mascaras de grafiti marauder",
-          "scanner": "Paint code. Slash count marca noise discipline; black rings marcan carrier-ping danger; broken arrows marcan pressure drift.",
-          "field_note": "Los marauders escribian para gente que no podia confiar en radios ni pagar maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Si la pared parece enfadada, leela como weather.",
-          "in_game_wiki": "El marauder graffiti no es decoracion. Es field navigation, social warning y anti-surveillance language rayado en lugares donde las radios traicionan, los maps caducan y el official signage miente por ser demasiado viejo. Los marks parecen toscos porque tenian que sobrevivir a water, bad lamps, glove tremor y cameras capaces de castigar una readable intent. Un slash puede significar silence. Un black ring puede significar Black Keel ping. Una broken arrow puede indicar pressure changed desde el ultimo route survey. La colony dejo labels; los marauders dejaron weather.",
-          "external_site": "Las mascaras de grafiti marauder convierten scavenger writing en ocean infrastructure legible: route hints, comm silence, pressure drift, cache risk y desconfianza hacia carrier surveillance."
-        },
-        "de_DE": {
-          "title": "Marauder-Graffiti-Masken",
-          "scanner": "Paint code. Slash count markiert noise discipline; black rings markieren carrier-ping danger; broken arrows markieren pressure drift.",
-          "field_note": "Marauders schrieben fur Menschen, die radios nicht trauen und sich maps nicht leisten konnten.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Wenn die Wand wutend aussieht, lies sie als weather.",
-          "in_game_wiki": "Marauder graffiti ist keine Dekoration. Es ist field navigation, social warning und anti-surveillance language, eingeritzt an Orten, wo radios verraten, maps ablaufen und official signage lugt, weil sie zu alt ist. Die marks wirken roh, weil sie water, bad lamps, glove tremor und cameras uberleben mussten, die readable intent bestrafen konnten. Ein slash kann silence bedeuten. Ein black ring kann Black Keel ping bedeuten. Ein broken arrow kann zeigen, dass pressure changed seit dem letzten route survey. Die colony hinterliess labels; marauders hinterliessen weather.",
-          "external_site": "Marauder-Graffiti-Masken machen scavenger writing zu lesbarer ocean infrastructure: route hints, comm silence, pressure drift, cache risk und Misstrauen gegen carrier surveillance."
-        },
-        "pl_PL": {
-          "title": "Maski graffiti marauderow",
-          "scanner": "Paint code. Slash count oznacza noise discipline; black rings oznaczaja carrier-ping danger; broken arrows oznaczaja pressure drift.",
-          "field_note": "Marauders pisali dla ludzi, ktorzy nie mogli ufac radios i nie mogli pozwolic sobie na maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Jesli sciana wyglada na zla, czytaj ja jak weather.",
-          "in_game_wiki": "Marauder graffiti nie jest dekoracja. To field navigation, social warning i anti-surveillance language wydrapany tam, gdzie radios zdradzaja, maps wygasaja, a official signage klamie przez starosc. Marks sa surowe, bo musialy przetrwac water, bad lamps, glove tremor i cameras, ktore mogly karac readable intent. Slash moze znaczyc silence. Black ring moze znaczyc Black Keel ping. Broken arrow moze znaczyc pressure changed po ostatnim route survey. Colony zostawila labels; marauders zostawili weather.",
-          "external_site": "Maski graffiti marauderow zmieniaja scavenger writing w czytelna ocean infrastructure: route hints, comm silence, pressure drift, cache risk i nieufnosc wobec carrier surveillance."
-        },
-        "uk_UA": {
-          "title": "Графіті-маски мародерів",
-          "scanner": "Paint code. Slash count позначає noise discipline; black rings - carrier-ping danger; broken arrows - pressure drift.",
-          "field_note": "Marauders писали для тих, хто не міг довіряти radios і не міг дозволити собі maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Якщо wall виглядає злою, читай її як weather.",
-          "in_game_wiki": "Marauder graffiti - не decoration. Це field navigation, social warning і anti-surveillance language, видряпаний там, де radios зраджують, maps прострочуються, а official signage бреше вже тому, що надто старий. Marks грубі, бо мусили пережити water, bad lamps, glove tremor і cameras, які могли карати readable intent. Slash може означати silence. Black ring - Black Keel ping. Broken arrow - pressure changed після останнього route survey. Colony лишила labels; marauders лишили weather.",
-          "external_site": "Графіті-маски мародерів перетворюють scavenger writing на readable ocean infrastructure: route hints, comm silence, pressure drift, cache risk і недовіру до carrier surveillance."
-        },
-        "ar_SA": {
-          "title": "أقنعة غرافيتي marauder",
-          "scanner": "Paint code. يشير slash count إلى noise discipline؛ وتشير black rings إلى carrier-ping danger؛ وتشير broken arrows إلى pressure drift.",
-          "field_note": "كتب marauders لأناس لا يستطيعون الثقة بradios ولا دفع ثمن maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "إذا بدا wall غاضبا، فاقرأه كweather.",
-          "in_game_wiki": "Marauder graffiti ليس decoration. إنه field navigation وsocial warning وanti-surveillance language محفور في أماكن تخون فيها radios، وتنتهي maps، ويكذب official signage لأنه قديم جدا. تبدو marks خشنة لأنها كان عليها أن تنجو من water وbad lamps وglove tremor وcameras تستطيع معاقبة readable intent. قد يعني slash صمتا. وقد تعني black ring إشارة Black Keel ping. وقد تعني broken arrow أن pressure changed بعد آخر route survey. تركت colony labels؛ وترك marauders weather.",
-          "external_site": "تحول أقنعة غرافيتي marauder كتابة scavenger إلى ocean infrastructure مقروءة: route hints وcomm silence وpressure drift وcache risk وانعدام الثقة في carrier surveillance."
-        },
-        "id_ID": {
-          "title": "Masker Grafiti Marauder",
-          "scanner": "Paint code. Slash count menandai noise discipline; black rings menandai carrier-ping danger; broken arrows menandai pressure drift.",
-          "field_note": "Marauders menulis untuk orang yang tidak bisa percaya radios dan tidak mampu membeli maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Jika wall terlihat marah, bacalah sebagai weather.",
-          "in_game_wiki": "Marauder graffiti bukan dekorasi. Itu field navigation, social warning, dan anti-surveillance language yang digoreskan di tempat radios berkhianat, maps kedaluwarsa, dan official signage berbohong karena terlalu tua. Marks terlihat kasar karena harus bertahan dari water, bad lamps, glove tremor, dan cameras yang bisa menghukum readable intent. Slash bisa berarti silence. Black ring bisa berarti Black Keel ping. Broken arrow bisa berarti pressure changed sejak route survey terakhir. Colony meninggalkan labels; marauders meninggalkan weather.",
-          "external_site": "Masker Grafiti Marauder mengubah scavenger writing menjadi ocean infrastructure yang terbaca: route hints, comm silence, pressure drift, cache risk, dan ketidakpercayaan pada carrier surveillance."
-        },
-        "ko_KR": {
-          "title": "Marauder 그래피티 마스크",
-          "scanner": "paint code. slash count는 noise discipline, black rings는 carrier-ping danger, broken arrows는 pressure drift를 표시한다.",
-          "field_note": "marauders는 radios를 믿을 수 없고 maps를 살 수 없는 사람들을 위해 썼다.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "벽이 화나 보이면 weather로 읽어라.",
-          "in_game_wiki": "Marauder graffiti는 장식이 아니다. radios가 배신하고, maps가 만료되고, official signage가 너무 오래되어 거짓말이 되는 곳에 긁힌 field navigation, social warning, anti-surveillance language다. marks가 거친 이유는 water, bad lamps, glove tremor, 그리고 readable intent를 처벌할 수 있는 cameras를 견뎌야 했기 때문이다. slash는 silence를 뜻할 수 있다. black ring은 Black Keel ping일 수 있다. broken arrow는 마지막 route survey 뒤 pressure changed를 뜻할 수 있다. colony는 labels를 남겼고 marauders는 weather를 남겼다.",
-          "external_site": "Marauder 그래피티 마스크는 scavenger writing을 읽을 수 있는 ocean infrastructure로 바꾼다. route hints, comm silence, pressure drift, cache risk, carrier surveillance에 대한 불신."
-        },
-        "he_IL": {
-          "title": "מסכות גרפיטי של marauders",
-          "scanner": "Paint code. Slash count מסמן noise discipline; black rings מסמנים carrier-ping danger; broken arrows מסמנים pressure drift.",
-          "field_note": "Marauders כתבו לאנשים שלא יכלו לסמוך על radios ולא יכלו להרשות לעצמם maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "אם ה-wall נראה כועס, קרא אותו כ-weather.",
-          "in_game_wiki": "Marauder graffiti אינו decoration. הוא field navigation, social warning ו-anti-surveillance language שנחרט במקומות שבהם radios בוגדים, maps פגים, ו-official signage משקר מפני שהוא ישן מדי. ה-marks נראים גסים כי הם היו צריכים לשרוד water, bad lamps, glove tremor ו-cameras שיכלו להעניש readable intent. Slash יכול להיות silence. Black ring יכול להיות Black Keel ping. Broken arrow יכול להיות pressure changed מאז ה-route survey האחרון. ה-colony השאירה labels; ה-marauders השאירו weather.",
-          "external_site": "מסכות גרפיטי של marauders הופכות scavenger writing ל-ocean infrastructure קריאה: route hints, comm silence, pressure drift, cache risk וחוסר אמון ב-carrier surveillance."
-        },
-        "pt_BR": {
-          "title": "Mascaras de Grafite Marauder",
-          "scanner": "Paint code. Slash count marca noise discipline; black rings marcam carrier-ping danger; broken arrows marcam pressure drift.",
-          "field_note": "Marauders escreviam para gente que nao podia confiar em radios nem pagar maps.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Se a wall parece irritada, leia como weather.",
-          "in_game_wiki": "Marauder graffiti nao e decoration. E field navigation, social warning e anti-surveillance language riscada em lugares onde radios traem, maps expiram e official signage mente por ser antigo demais. As marks parecem brutas porque precisavam sobreviver a water, bad lamps, glove tremor e cameras capazes de punir readable intent. Slash pode significar silence. Black ring pode significar Black Keel ping. Broken arrow pode significar pressure changed desde o ultimo route survey. A colony deixou labels; marauders deixaram weather.",
-          "external_site": "Mascaras de Grafite Marauder transformam scavenger writing em ocean infrastructure legivel: route hints, comm silence, pressure drift, cache risk e desconfiança de carrier surveillance."
-        },
-        "nl_NL": {
-          "title": "Marauder Graffiti Masks",
-          "scanner": "Paint code. Slash count markeert noise discipline; black rings markeren carrier-ping danger; broken arrows markeren pressure drift.",
-          "field_note": "Marauders schreven voor mensen die radios niet konden vertrouwen en maps niet konden betalen.",
-          "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
-          "audio": "Als de wall boos lijkt, lees hem als weather.",
-          "in_game_wiki": "Marauder graffiti is geen decoration. Het is field navigation, social warning en anti-surveillance language, gekrast op plekken waar radios verraden, maps verlopen en official signage liegt omdat het te oud is. De marks zien er ruw uit omdat ze water, bad lamps, glove tremor en cameras moesten overleven die readable intent konden straffen. Een slash kan silence betekenen. Een black ring kan Black Keel ping betekenen. Een broken arrow kan betekenen dat pressure changed sinds de laatste route survey. De colony liet labels achter; marauders lieten weather achter.",
-          "external_site": "Marauder Graffiti Masks maken scavenger writing tot leesbare ocean infrastructure: route hints, comm silence, pressure drift, cache risk en wantrouwen tegenover carrier surveillance."
-        }
-      }
+    "ja_JP": {
+     "title": "光遅延の権限",
+     "scanner": "relay mast cache。callはきれいに出たが、light、queue law、storm scatter、Aegir line-of-sightの後ろで待たされた。",
+     "field_note": "最初のscreamは誰にも検閲されていない。physicsがpolicyに追いつくだけの遅さで運んだ。",
+     "terminal": "COMM AUTHORITY: one-way delay verified。Storm scatter high。Relay queue under custody priority。fresh signal windowがoverrideを確認するまでLocal survival authority remains active。",
+     "audio": "返信は来ている。それはrescueではない。",
+     "in_game_wiki": "HECTON-8にはansibleも、軌道上から身を乗り出す友好的な声も、十光年を慈悲深くする方法もない。messagesは光速で進み、その後relay geometry、storm scatter、buffer law、Black Keelのcustody queuesでさらに時間を失う。transmissionは正直であっても、従うには古すぎることがある。表面は早い段階でその規則を教える。すべてのremote answerはまずevidence、次にinstructionであり、comfortではない。壁、水、pressureがmessageと矛盾するなら、local worldが勝つ。",
+     "external_site": "光遅延の権限は、HECTON-8の通信を物理的で遅延しcontract-filteredなものとして定義する。distance、weather、relay buffers、custody queuesがsignalの有用性を決める。"
     },
-    {
-      "packet_id": "P054_RELAY_QUEUE_DRIFT",
-      "article_id": "hecton8.relay_queue_drift",
-      "title_key": "applied_lore.relay_queue_drift.title",
-      "unlock": {
-        "primary": "unlock.first_relay_queue_drift",
-        "poi_tags": [
-          "poi.relay_buffer",
-          "poi.packet_stamp",
-          "poi.route_warning"
-        ],
-        "biome_tags": [
-          "biome.surface_relay",
-          "biome.storm_shelf",
-          "biome.return_route"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Relay Queue Drift",
-          "scanner": "Relay stamp older than the leak it names. The instruction was true for a room that no longer exists.",
-          "field_note": "A late truth can still kill.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until fresh relay window opens. Treat delayed route orders as archival unless pressure, door state, and waterline match.",
-          "audio": "The message is correct. That is the problem.",
-          "in_game_wiki": "Relay queue drift is the deadliest kind of honesty on HECTON-8. A delayed carrier packet can describe a real valve, a real safe door, a real low-current corridor, and a real leak that has already moved. The order is not fake; it belongs to a room changed by pressure, flooding, silt, heat, or collapse. Good field practice is not disobedience for its own sake. It is comparing packet age against wet paint, fresh salt, door strain, pump sound, and the direction loose debris wants to travel.",
-          "external_site": "Relay Queue Drift makes message age a survival variable: remote orders may be true, stale, and lethal at the same time."
-        },
-        "ru_RU": {
-          "title": "Дрейф relay-очереди",
-          "scanner": "Relay stamp старше leak, который он называет. Instruction была верна для room, которой больше нет.",
-          "field_note": "Поздняя truth все еще может убить.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction до fresh relay window opens. Treat delayed route orders as archival, если pressure, door state и waterline не совпадают.",
-          "audio": "Message верное. В этом и проблема.",
-          "in_game_wiki": "Relay queue drift - самая смертельная форма честности на HECTON-8. Delayed carrier packet может описывать real valve, real safe door, real low-current corridor и real leak, который уже ушел дальше. Order не фальшивый; он принадлежит комнате, измененной pressure, flooding, silt, heat или collapse. Хорошая field practice - не неповиновение ради неповиновения. Это сравнение packet age с wet paint, fresh salt, door strain, pump sound и направлением, куда хочет катиться loose debris.",
-          "external_site": "Дрейф relay-очереди делает message age переменной выживания: remote orders могут быть true, stale и lethal одновременно."
-        },
-        "ja_JP": {
-          "title": "Relay Queue Drift",
-          "scanner": "relay stampは名指しするleakより古い。instructionはもう存在しないroomに対して正しかった。",
-          "field_note": "遅れて届くtruthでも殺せる。",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity。fresh relay window opensまでLocal evidence outranks carrier instruction。pressure、door state、waterlineが一致しない限りdelayed route ordersはarchivalとして扱うこと。",
-          "audio": "messageは正しい。それが問題だ。",
-          "in_game_wiki": "Relay queue driftはHECTON-8で最も致命的な正直さである。delayed carrier packetはreal valve、real safe door、real low-current corridor、そしてすでに移動したreal leakを描写しうる。orderは偽物ではない。pressure、flooding、silt、heat、collapseによって変わった部屋に属しているだけだ。良いfield practiceとは反抗そのものではない。packet ageをwet paint、fresh salt、door strain、pump sound、loose debrisが転がりたがる方向と比べることだ。",
-          "external_site": "Relay Queue Driftはmessage ageを生存変数にする。remote ordersは同時にtrue、stale、lethalになりうる。"
-        },
-        "zh_CN": {
-          "title": "中继队列漂移",
-          "scanner": "relay stamp比它命名的leak还老。instruction对一个已经不存在的room曾经正确。",
-          "field_note": "迟到的truth仍然能杀人。",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity。fresh relay window opens之前，Local evidence outranks carrier instruction。除非pressure、door state和waterline一致，否则将delayed route orders视作archival。",
-          "audio": "message是正确的。这正是问题。",
-          "in_game_wiki": "Relay queue drift是HECTON-8上最致命的诚实。delayed carrier packet可以描述一个real valve、real safe door、real low-current corridor，以及一个已经移动的real leak。order不是假的；它属于一个被pressure、flooding、silt、heat或collapse改变的房间。好的field practice不是为了违抗而违抗，而是把packet age与wet paint、fresh salt、door strain、pump sound，以及loose debris想要滚动的方向进行比较。",
-          "external_site": "中继队列漂移让message age成为生存变量：remote orders可能同时true、stale和lethal。"
-        },
-        "fr_FR": {
-          "title": "Derive de relay queue",
-          "scanner": "Relay stamp plus ancien que la leak qu'il nomme. L'instruction etait vraie pour une room qui n'existe plus.",
-          "field_note": "Une truth tardive peut encore tuer.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction jusqu'a ouverture d'une fresh relay window. Treat delayed route orders as archival sauf si pressure, door state et waterline correspondent.",
-          "audio": "Le message est correct. C'est le probleme.",
-          "in_game_wiki": "Relay queue drift est la forme d'honnetete la plus mortelle sur HECTON-8. Un delayed carrier packet peut decrire une real valve, une real safe door, un real low-current corridor et une real leak qui a deja bouge. L'order n'est pas faux; il appartient a une piece changee par pressure, flooding, silt, heat ou collapse. La bonne field practice n'est pas la desobeissance pour elle-meme. C'est comparer packet age a wet paint, fresh salt, door strain, pump sound et a la direction que loose debris veut prendre.",
-          "external_site": "Relay Queue Drift fait de message age une variable de survie: remote orders peuvent etre true, stale et lethal en meme temps."
-        },
-        "es_ES": {
-          "title": "Deriva de relay queue",
-          "scanner": "Relay stamp mas viejo que la leak que nombra. La instruction era cierta para una room que ya no existe.",
-          "field_note": "Una truth tardia todavia puede matar.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction hasta que se abra fresh relay window. Treat delayed route orders as archival salvo que pressure, door state y waterline coincidan.",
-          "audio": "El message es correcto. Ese es el problema.",
-          "in_game_wiki": "Relay queue drift es la forma mas mortal de honestidad en HECTON-8. Un delayed carrier packet puede describir una real valve, una real safe door, un real low-current corridor y una real leak que ya se movio. La order no es falsa; pertenece a una sala cambiada por pressure, flooding, silt, heat o collapse. La buena field practice no es desobediencia por si misma. Es comparar packet age con wet paint, fresh salt, door strain, pump sound y la direccion hacia la que quiere viajar loose debris.",
-          "external_site": "Relay Queue Drift convierte message age en variable de supervivencia: remote orders pueden ser true, stale y lethal al mismo tiempo."
-        },
-        "de_DE": {
-          "title": "Relay Queue Drift",
-          "scanner": "Relay stamp alter als das leak, das er nennt. Die instruction war wahr fur einen room, den es nicht mehr gibt.",
-          "field_note": "Eine spate truth kann immer noch toten.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction bis fresh relay window opens. Treat delayed route orders as archival, sofern pressure, door state und waterline nicht passen.",
-          "audio": "Die message ist korrekt. Das ist das Problem.",
-          "in_game_wiki": "Relay queue drift ist die todlichste Art von Ehrlichkeit auf HECTON-8. Ein delayed carrier packet kann eine real valve, eine real safe door, einen real low-current corridor und ein real leak beschreiben, das sich bereits bewegt hat. Die order ist nicht falsch; sie gehort zu einem Raum, den pressure, flooding, silt, heat oder collapse verandert haben. Gute field practice ist nicht Ungehorsam um seiner selbst willen. Sie vergleicht packet age mit wet paint, fresh salt, door strain, pump sound und der Richtung, in die loose debris reisen will.",
-          "external_site": "Relay Queue Drift macht message age zu einer Uberlebensvariable: remote orders konnen gleichzeitig true, stale und lethal sein."
-        },
-        "pl_PL": {
-          "title": "Dryf relay queue",
-          "scanner": "Relay stamp starszy niz leak, ktory nazywa. Instruction byla prawdziwa dla room, ktory juz nie istnieje.",
-          "field_note": "Spozniona truth wciaz moze zabic.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction do otwarcia fresh relay window. Treat delayed route orders as archival, jesli pressure, door state i waterline nie pasuja.",
-          "audio": "Message jest poprawne. To jest problem.",
-          "in_game_wiki": "Relay queue drift to najbardziej smiertelny rodzaj uczciwosci na HECTON-8. Delayed carrier packet moze opisywac real valve, real safe door, real low-current corridor i real leak, ktory juz sie przesunal. Order nie jest falszywy; nalezy do pomieszczenia zmienionego przez pressure, flooding, silt, heat albo collapse. Dobra field practice to nie nieposluszenstwo dla zasady. To porownanie packet age z wet paint, fresh salt, door strain, pump sound i kierunkiem, w ktory chce leciec loose debris.",
-          "external_site": "Relay Queue Drift czyni message age zmienna przetrwania: remote orders moga byc true, stale i lethal jednoczesnie."
-        },
-        "uk_UA": {
-          "title": "Дрейф relay-черги",
-          "scanner": "Relay stamp старіший за leak, який називає. Instruction була правдивою для room, якої вже немає.",
-          "field_note": "Запізніла truth все ще може вбити.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction до fresh relay window opens. Treat delayed route orders as archival, якщо pressure, door state і waterline не збігаються.",
-          "audio": "Message правильне. У цьому й проблема.",
-          "in_game_wiki": "Relay queue drift - найсмертельніший різновид чесності на HECTON-8. Delayed carrier packet може описувати real valve, real safe door, real low-current corridor і real leak, який уже змістився. Order не фальшивий; він належить кімнаті, зміненій pressure, flooding, silt, heat або collapse. Добра field practice - не непокора заради непокори. Це порівняння packet age з wet paint, fresh salt, door strain, pump sound і напрямком, у який прагне рухатися loose debris.",
-          "external_site": "Дрейф relay-черги робить message age змінною виживання: remote orders можуть бути true, stale і lethal одночасно."
-        },
-        "ar_SA": {
-          "title": "انجراف relay queue",
-          "scanner": "Relay stamp أقدم من leak التي يسميها. كانت instruction صحيحة لغرفة لم تعد موجودة.",
-          "field_note": "يمكن لtruth متأخرة أن تقتل أيضا.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction حتى تفتح fresh relay window. Treat delayed route orders as archival ما لم تتطابق pressure وdoor state وwaterline.",
-          "audio": "إن message صحيحة. هذه هي المشكلة.",
-          "in_game_wiki": "Relay queue drift هو أخطر أنواع الصدق على HECTON-8. يمكن لdelayed carrier packet أن يصف real valve وreal safe door وreal low-current corridor وreal leak انتقلت بالفعل. الorder ليست كاذبة؛ إنها تنتمي إلى room غيرتها pressure أوflooding أوsilt أوheat أوcollapse. field practice الجيدة ليست عصيانا من أجل العصيان. إنها مقارنة packet age مع wet paint وfresh salt وdoor strain وpump sound والاتجاه الذي يريد loose debris أن يتحرك فيه.",
-          "external_site": "يجعل Relay Queue Drift من message age متغير نجاة: يمكن أن تكون remote orders true وstale وlethal في الوقت نفسه."
-        },
-        "id_ID": {
-          "title": "Relay Queue Drift",
-          "scanner": "Relay stamp lebih tua daripada leak yang disebutnya. Instruction itu benar untuk room yang sudah tidak ada.",
-          "field_note": "Truth yang terlambat masih bisa membunuh.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction sampai fresh relay window terbuka. Treat delayed route orders as archival kecuali pressure, door state, dan waterline cocok.",
-          "audio": "Message itu benar. Itulah masalahnya.",
-          "in_game_wiki": "Relay queue drift adalah bentuk kejujuran paling mematikan di HECTON-8. Delayed carrier packet bisa menjelaskan real valve, real safe door, real low-current corridor, dan real leak yang sudah bergerak. Order itu tidak palsu; ia milik ruangan yang telah diubah pressure, flooding, silt, heat, atau collapse. Field practice yang baik bukan pembangkangan demi pembangkangan. Itu membandingkan packet age dengan wet paint, fresh salt, door strain, pump sound, dan arah yang ingin ditempuh loose debris.",
-          "external_site": "Relay Queue Drift menjadikan message age variabel survival: remote orders dapat true, stale, dan lethal pada saat yang sama."
-        },
-        "ko_KR": {
-          "title": "Relay Queue Drift",
-          "scanner": "relay stamp가 그것이 부르는 leak보다 오래되었다. instruction은 더 이상 존재하지 않는 room에 대해 맞았다.",
-          "field_note": "늦은 truth도 여전히 죽일 수 있다.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. fresh relay window가 열릴 때까지 Local evidence outranks carrier instruction. pressure, door state, waterline이 맞지 않으면 delayed route orders는 archival로 취급.",
-          "audio": "message는 정확하다. 그것이 문제다.",
-          "in_game_wiki": "Relay queue drift는 HECTON-8에서 가장 치명적인 정직함이다. delayed carrier packet은 real valve, real safe door, real low-current corridor, 그리고 이미 움직인 real leak를 설명할 수 있다. order는 가짜가 아니다. pressure, flooding, silt, heat, collapse로 변한 방에 속해 있을 뿐이다. 좋은 field practice는 반항 자체가 아니다. packet age를 wet paint, fresh salt, door strain, pump sound, loose debris가 움직이려는 방향과 비교하는 것이다.",
-          "external_site": "Relay Queue Drift는 message age를 생존 변수로 만든다. remote orders는 동시에 true, stale, lethal일 수 있다."
-        },
-        "he_IL": {
-          "title": "סטיית relay queue",
-          "scanner": "Relay stamp ישן יותר מה-leak שהוא מציין. ה-instruction היה נכון עבור room שכבר אינו קיים.",
-          "field_note": "Truth מאוחרת עדיין יכולה להרוג.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction עד ש-fresh relay window נפתח. Treat delayed route orders as archival אלא אם pressure, door state ו-waterline תואמים.",
-          "audio": "ה-message נכון. זו הבעיה.",
-          "in_game_wiki": "Relay queue drift הוא סוג הכנות הקטלני ביותר ב-HECTON-8. Delayed carrier packet יכול לתאר real valve, real safe door, real low-current corridor ו-real leak שכבר זז. ה-order אינו מזויף; הוא שייך לחדר ששונה בידי pressure, flooding, silt, heat או collapse. Field practice טובה אינה אי-ציות לשם אי-ציות. היא השוואת packet age אל wet paint, fresh salt, door strain, pump sound והכיוון שבו loose debris רוצה לנוע.",
-          "external_site": "Relay Queue Drift הופך message age למשתנה הישרדות: remote orders יכולות להיות true, stale ו-lethal בו זמנית."
-        },
-        "pt_BR": {
-          "title": "Deriva de Relay Queue",
-          "scanner": "Relay stamp mais velho que a leak que ele nomeia. A instruction era verdadeira para uma room que nao existe mais.",
-          "field_note": "Uma truth atrasada ainda pode matar.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction ate uma fresh relay window abrir. Treat delayed route orders as archival a menos que pressure, door state e waterline coincidam.",
-          "audio": "O message esta correto. Esse e o problema.",
-          "in_game_wiki": "Relay queue drift e o tipo mais mortal de honestidade em HECTON-8. Um delayed carrier packet pode descrever uma real valve, uma real safe door, um real low-current corridor e uma real leak que ja se moveu. A order nao e falsa; pertence a uma sala mudada por pressure, flooding, silt, heat ou collapse. Boa field practice nao e desobediencia por si so. E comparar packet age com wet paint, fresh salt, door strain, pump sound e a direcao para onde loose debris quer viajar.",
-          "external_site": "Relay Queue Drift torna message age uma variavel de sobrevivencia: remote orders podem ser true, stale e lethal ao mesmo tempo."
-        },
-        "nl_NL": {
-          "title": "Relay Queue Drift",
-          "scanner": "Relay stamp ouder dan de leak die hij benoemt. De instruction was waar voor een room die niet meer bestaat.",
-          "field_note": "Een late truth kan nog steeds doden.",
-          "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction tot fresh relay window opent. Treat delayed route orders as archival tenzij pressure, door state en waterline overeenkomen.",
-          "audio": "De message is correct. Dat is het probleem.",
-          "in_game_wiki": "Relay queue drift is de dodelijkste vorm van eerlijkheid op HECTON-8. Een delayed carrier packet kan een real valve, een real safe door, een real low-current corridor en een real leak beschrijven die al is verplaatst. De order is niet nep; hij hoort bij een ruimte die door pressure, flooding, silt, heat of collapse is veranderd. Goede field practice is geen ongehoorzaamheid om zichzelf. Het is packet age vergelijken met wet paint, fresh salt, door strain, pump sound en de richting waarin loose debris wil reizen.",
-          "external_site": "Relay Queue Drift maakt message age tot overlevingsvariabele: remote orders kunnen tegelijk true, stale en lethal zijn."
-        }
-      }
+    "zh_CN": {
+     "title": "光延迟权限",
+     "scanner": "relay mast cache。call离开发射端时很干净，然后被light、queue law、storm scatter和Aegir line-of-sight压在后面。",
+     "field_note": "第一声scream没有被审查。只是physics慢到足以让policy追上来。",
+     "terminal": "COMM AUTHORITY: one-way delay verified。Storm scatter high。Relay queue under custody priority。Local survival authority remains active，直到fresh signal window确认override。",
+     "audio": "回复正在路上。那不等于rescue。",
+     "in_game_wiki": "HECTON-8没有ansible，没有轨道上俯身关照的友好声音，也没有办法让十光年变得仁慈。messages以光速移动，然后又在relay geometry、storm scatter、buffer law和Black Keel custody queues里损失时间。transmission可以诚实，却仍然老到不值得服从。地表很早就教会这条规则：每一个remote answer首先是evidence，其次才是instruction，永远不是comfort。如果墙、水和pressure与message相冲突，local world胜出。",
+     "external_site": "光延迟权限把HECTON-8通信定义为物理、延迟且contract-filtered：distance、weather、relay buffers和custody queues决定signal何时可用。"
     },
-    {
-      "packet_id": "P055_CORPORATE_RESPONSE_LEDGER",
-      "article_id": "hecton8.corporate_response_ledger",
-      "title_key": "applied_lore.corporate_response_ledger.title",
-      "unlock": {
-        "primary": "unlock.first_corporate_response_ledger",
-        "poi_tags": [
-          "poi.response_ledger",
-          "poi.liability_seal",
-          "poi.operator_recovery"
-        ],
-        "biome_tags": [
-          "biome.corporate_wreck",
-          "biome.return_route",
-          "biome.deep_salvage"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Corporate Response Ledger",
-          "scanner": "Every reply arrives in contract language: asset custody, liability lock, sample route, hull risk, then operator recovery.",
-          "field_note": "Immediate response is not immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, and evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "The reply was automatic. The rescue was conditional.",
-          "in_game_wiki": "The corporate response ledger is how Black Keel speaks when nobody is improvising. It can acknowledge distress instantly, open a route queue, preserve a claim, demand sample custody, log hull risk, and still leave a living operator waiting behind asset rules. The ledger is valuable because it exposes what the system knows. It is hostile because knowing is not the same as acting. On HECTON-8, the first reply is often proof that the machine heard everything and promised almost nothing.",
-          "external_site": "Corporate Response Ledger records the hard limit of Black Keel assistance: response speed, rescue priority, evidence custody, asset preservation, and debt settlement remain separate systems."
-        },
-        "ru_RU": {
-          "title": "Corporate response ledger",
-          "scanner": "Каждый reply приходит contract language: asset custody, liability lock, sample route, hull risk, потом operator recovery.",
-          "field_note": "Immediate response - не immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route и evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "Reply был automatic. Rescue был conditional.",
-          "in_game_wiki": "Corporate response ledger - язык Black Keel в моменты, когда никто не improvising. Он может мгновенно acknowledge distress, открыть route queue, preserve a claim, demand sample custody, log hull risk и все равно оставить living operator ждать за asset rules. Ledger ценен тем, что показывает, что system знает. Он враждебен тем, что knowing не равно acting. На HECTON-8 первый reply часто является доказательством: machine услышала все и почти ничего не обещала.",
-          "external_site": "Corporate response ledger фиксирует жесткий предел помощи Black Keel: response speed, rescue priority, evidence custody, asset preservation и debt settlement остаются отдельными systems."
-        },
-        "ja_JP": {
-          "title": "Corporate Response Ledger",
-          "scanner": "すべてのreplyはcontract languageで届く。asset custody、liability lock、sample route、hull risk、その後operator recovery。",
-          "field_note": "immediate responseはimmediate rescueではない。",
-          "terminal": "RESPONSE CLASS: asset-preservation。Operator recovery appended after sample custody、liability seal、hull audit、payment route、evidence retention。Automated acknowledgement valid。Rescue priority unresolved。",
-          "audio": "replyはautomaticだった。rescueはconditionalだった。",
-          "in_game_wiki": "corporate response ledgerは、誰もimprovisingしていない時にBlack Keelが話す方法である。即座にdistressをacknowledgeし、route queueを開き、claimをpreserveし、sample custodyを要求し、hull riskをlogし、それでもliving operatorをasset rulesの後ろに待たせることができる。ledgerが価値を持つのはsystemが何を知っているかを暴くからだ。敵対的なのはknowingがactingと同じではないからだ。HECTON-8で最初のreplyはしばしば、machineがすべてを聞き、ほとんど何も約束しなかった証拠になる。",
-          "external_site": "Corporate Response LedgerはBlack Keel支援の硬い限界を記録する。response speed、rescue priority、evidence custody、asset preservation、debt settlementは別々のsystemsであり続ける。"
-        },
-        "zh_CN": {
-          "title": "企业响应账本",
-          "scanner": "每个reply都以contract language抵达：asset custody、liability lock、sample route、hull risk，然后才是operator recovery。",
-          "field_note": "Immediate response不是immediate rescue。",
-          "terminal": "RESPONSE CLASS: asset-preservation。Operator recovery appended after sample custody、liability seal、hull audit、payment route和evidence retention。Automated acknowledgement valid。Rescue priority unresolved。",
-          "audio": "reply是automatic。rescue是conditional。",
-          "in_game_wiki": "corporate response ledger是无人improvising时Black Keel说话的方式。它可以立刻acknowledge distress，打开route queue，preserve a claim，demand sample custody，log hull risk，同时仍让living operator在asset rules后面等待。ledger有价值，因为它暴露system知道什么。它带有敌意，因为knowing并不等于acting。在HECTON-8，第一条reply常常证明machine听见了一切，却几乎什么都没有承诺。",
-          "external_site": "企业响应账本记录Black Keel援助的硬边界：response speed、rescue priority、evidence custody、asset preservation和debt settlement仍是分离systems。"
-        },
-        "fr_FR": {
-          "title": "Ledger de reponse corporate",
-          "scanner": "Chaque reply arrive en contract language: asset custody, liability lock, sample route, hull risk, puis operator recovery.",
-          "field_note": "Immediate response n'est pas immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route et evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "La reply etait automatic. Le rescue etait conditional.",
-          "in_game_wiki": "Le corporate response ledger est la facon dont Black Keel parle quand personne n'improvise. Il peut acknowledge distress instantanement, ouvrir une route queue, preserve a claim, demand sample custody, log hull risk, et laisser quand meme un living operator attendre derriere asset rules. Le ledger a de la valeur parce qu'il expose ce que le system sait. Il est hostile parce que knowing n'est pas acting. Sur HECTON-8, la premiere reply prouve souvent que la machine a tout entendu et n'a presque rien promis.",
-          "external_site": "Le Corporate Response Ledger enregistre la limite dure de l'aide Black Keel: response speed, rescue priority, evidence custody, asset preservation et debt settlement restent des systems separes."
-        },
-        "es_ES": {
-          "title": "Ledger de respuesta corporativa",
-          "scanner": "Cada reply llega en contract language: asset custody, liability lock, sample route, hull risk, luego operator recovery.",
-          "field_note": "Immediate response no es immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route y evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "La reply fue automatic. El rescue fue conditional.",
-          "in_game_wiki": "El corporate response ledger es como habla Black Keel cuando nadie improvisa. Puede acknowledge distress al instante, abrir una route queue, preserve a claim, demand sample custody, log hull risk y aun dejar a un living operator esperando detras de asset rules. El ledger es valioso porque expone lo que el system sabe. Es hostil porque knowing no es acting. En HECTON-8, la primera reply suele ser prueba de que la machine oyo todo y prometio casi nada.",
-          "external_site": "El Corporate Response Ledger registra el limite duro de la ayuda de Black Keel: response speed, rescue priority, evidence custody, asset preservation y debt settlement siguen siendo systems separados."
-        },
-        "de_DE": {
-          "title": "Corporate Response Ledger",
-          "scanner": "Jede reply kommt in contract language: asset custody, liability lock, sample route, hull risk, dann operator recovery.",
-          "field_note": "Immediate response ist nicht immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route und evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "Die reply war automatic. Der rescue war conditional.",
-          "in_game_wiki": "Das corporate response ledger ist Black Keels Sprache, wenn niemand improvisiert. Es kann distress sofort acknowledge, eine route queue offnen, preserve a claim, demand sample custody, log hull risk und trotzdem einen living operator hinter asset rules warten lassen. Das ledger ist wertvoll, weil es offenlegt, was das system weiss. Es ist feindlich, weil knowing nicht acting ist. Auf HECTON-8 ist die erste reply oft der Beweis, dass die machine alles gehort und fast nichts versprochen hat.",
-          "external_site": "Corporate Response Ledger halt die harte Grenze der Black-Keel-Hilfe fest: response speed, rescue priority, evidence custody, asset preservation und debt settlement bleiben getrennte systems."
-        },
-        "pl_PL": {
-          "title": "Corporate response ledger",
-          "scanner": "Kazda reply przychodzi w contract language: asset custody, liability lock, sample route, hull risk, potem operator recovery.",
-          "field_note": "Immediate response to nie immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route i evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "Reply byla automatic. Rescue byl conditional.",
-          "in_game_wiki": "Corporate response ledger to sposob, w jaki Black Keel mowi, gdy nikt nie improwizuje. Moze natychmiast acknowledge distress, otworzyc route queue, preserve a claim, demand sample custody, log hull risk i nadal zostawic living operator za asset rules. Ledger jest wartosciowy, bo pokazuje, co system wie. Jest wrogi, bo knowing to nie acting. Na HECTON-8 pierwsza reply czesto dowodzi, ze machine uslyszala wszystko i obiecala prawie nic.",
-          "external_site": "Corporate Response Ledger zapisuje twardy limit pomocy Black Keel: response speed, rescue priority, evidence custody, asset preservation i debt settlement pozostaja osobnymi systems."
-        },
-        "uk_UA": {
-          "title": "Corporate response ledger",
-          "scanner": "Кожен reply приходить contract language: asset custody, liability lock, sample route, hull risk, потім operator recovery.",
-          "field_note": "Immediate response - не immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route і evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "Reply був automatic. Rescue був conditional.",
-          "in_game_wiki": "Corporate response ledger - це мова Black Keel, коли ніхто не improvising. Він може миттєво acknowledge distress, відкрити route queue, preserve a claim, demand sample custody, log hull risk і все одно лишити living operator чекати за asset rules. Ledger цінний, бо показує, що system знає. Він ворожий, бо knowing не дорівнює acting. На HECTON-8 перший reply часто доводить, що machine почула все й майже нічого не пообіцяла.",
-          "external_site": "Corporate Response Ledger фіксує жорстку межу допомоги Black Keel: response speed, rescue priority, evidence custody, asset preservation і debt settlement лишаються окремими systems."
-        },
-        "ar_SA": {
-          "title": "سجل الاستجابة corporate",
-          "scanner": "كل reply يصل بلغة contract language: asset custody وliability lock وsample route وhull risk، ثم operator recovery.",
-          "field_note": "Immediate response ليست immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody وliability seal وhull audit وpayment route وevidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "كانت reply automatic. وكان rescue conditional.",
-          "in_game_wiki": "Corporate response ledger هو الطريقة التي يتكلم بها Black Keel عندما لا يرتجل أحد. يمكنه acknowledge distress فورا، وفتح route queue، وpreserve a claim، وdemand sample custody، وlog hull risk، ومع ذلك يترك living operator ينتظر خلف asset rules. للledger قيمة لأنه يكشف ما يعرفه system. وهو عدائي لأن knowing ليس acting. على HECTON-8، تكون أول reply غالبا دليلا على أن machine سمعت كل شيء ووعدت تقريبا بلا شيء.",
-          "external_site": "يسجل Corporate Response Ledger الحد الصلب لمساعدة Black Keel: response speed وrescue priority وevidence custody وasset preservation وdebt settlement تبقى systems منفصلة."
-        },
-        "id_ID": {
-          "title": "Corporate Response Ledger",
-          "scanner": "Setiap reply tiba dalam contract language: asset custody, liability lock, sample route, hull risk, lalu operator recovery.",
-          "field_note": "Immediate response bukan immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, dan evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "Reply itu automatic. Rescue itu conditional.",
-          "in_game_wiki": "Corporate response ledger adalah cara Black Keel berbicara ketika tidak ada yang improvising. Ia bisa langsung acknowledge distress, membuka route queue, preserve a claim, demand sample custody, log hull risk, dan tetap membiarkan living operator menunggu di belakang asset rules. Ledger itu berharga karena memperlihatkan apa yang diketahui system. Ia bermusuhan karena knowing tidak sama dengan acting. Di HECTON-8, reply pertama sering menjadi bukti bahwa machine mendengar semuanya dan hampir tidak menjanjikan apa pun.",
-          "external_site": "Corporate Response Ledger mencatat batas keras bantuan Black Keel: response speed, rescue priority, evidence custody, asset preservation, dan debt settlement tetap menjadi systems terpisah."
-        },
-        "ko_KR": {
-          "title": "Corporate Response Ledger",
-          "scanner": "모든 reply는 contract language로 도착한다. asset custody, liability lock, sample route, hull risk, 그 다음 operator recovery.",
-          "field_note": "Immediate response는 immediate rescue가 아니다.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "reply는 automatic이었다. rescue는 conditional이었다.",
-          "in_game_wiki": "corporate response ledger는 아무도 improvising하지 않을 때 Black Keel이 말하는 방식이다. 그것은 즉시 distress를 acknowledge하고, route queue를 열고, preserve a claim, demand sample custody, log hull risk를 수행하면서도 living operator를 asset rules 뒤에 기다리게 할 수 있다. ledger는 system이 무엇을 아는지 드러내기 때문에 가치가 있다. 하지만 hostile하다. knowing은 acting과 같지 않기 때문이다. HECTON-8에서 첫 reply는 machine이 모든 것을 들었고 거의 아무것도 약속하지 않았다는 증거가 되곤 한다.",
-          "external_site": "Corporate Response Ledger는 Black Keel 지원의 단단한 한계를 기록한다. response speed, rescue priority, evidence custody, asset preservation, debt settlement는 별도의 systems로 남는다."
-        },
-        "he_IL": {
-          "title": "Corporate Response Ledger",
-          "scanner": "כל reply מגיעה ב-contract language: asset custody, liability lock, sample route, hull risk, ואז operator recovery.",
-          "field_note": "Immediate response אינו immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route ו-evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "ה-reply הייתה automatic. ה-rescue היה conditional.",
-          "in_game_wiki": "Corporate response ledger הוא האופן שבו Black Keel מדברת כשאף אחד אינו improvising. הוא יכול acknowledge distress מיד, לפתוח route queue, preserve a claim, demand sample custody, log hull risk, ועדיין להשאיר living operator מחכה מאחורי asset rules. ה-ledger בעל ערך מפני שהוא חושף מה ה-system יודע. הוא עוין מפני ש-knowing אינו acting. ב-HECTON-8, ה-reply הראשונה היא לעיתים קרובות הוכחה שה-machine שמעה הכול והבטיחה כמעט כלום.",
-          "external_site": "Corporate Response Ledger מתעד את הגבול הקשה של עזרת Black Keel: response speed, rescue priority, evidence custody, asset preservation ו-debt settlement נשארים systems נפרדים."
-        },
-        "pt_BR": {
-          "title": "Corporate Response Ledger",
-          "scanner": "Toda reply chega em contract language: asset custody, liability lock, sample route, hull risk, depois operator recovery.",
-          "field_note": "Immediate response nao e immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route e evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "A reply foi automatic. O rescue foi conditional.",
-          "in_game_wiki": "O corporate response ledger e como a Black Keel fala quando ninguem improvisa. Ele pode acknowledge distress instantaneamente, abrir route queue, preserve a claim, demand sample custody, log hull risk e ainda deixar um living operator esperando atras de asset rules. O ledger e valioso porque expoe o que o system sabe. E hostil porque knowing nao e acting. Em HECTON-8, a primeira reply muitas vezes prova que a machine ouviu tudo e prometeu quase nada.",
-          "external_site": "Corporate Response Ledger registra o limite duro da ajuda da Black Keel: response speed, rescue priority, evidence custody, asset preservation e debt settlement continuam systems separados."
-        },
-        "nl_NL": {
-          "title": "Corporate Response Ledger",
-          "scanner": "Elke reply komt in contract language: asset custody, liability lock, sample route, hull risk, daarna operator recovery.",
-          "field_note": "Immediate response is geen immediate rescue.",
-          "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route en evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
-          "audio": "De reply was automatic. De rescue was conditional.",
-          "in_game_wiki": "Het corporate response ledger is hoe Black Keel spreekt wanneer niemand improviseert. Het kan distress direct acknowledge, een route queue openen, preserve a claim, demand sample custody, log hull risk en toch een living operator achter asset rules laten wachten. Het ledger is waardevol omdat het toont wat het system weet. Het is vijandig omdat knowing niet hetzelfde is als acting. Op HECTON-8 bewijst de eerste reply vaak dat de machine alles hoorde en bijna niets beloofde.",
-          "external_site": "Corporate Response Ledger registreert de harde limiet van Black Keel-hulp: response speed, rescue priority, evidence custody, asset preservation en debt settlement blijven aparte systems."
-        }
-      }
+    "fr_FR": {
+     "title": "Autorite du delai-lumiere",
+     "scanner": "Cache de relay mast. L'appel est parti propre, puis a attendu derriere light, queue law, storm scatter et Aegir line-of-sight.",
+     "field_note": "Personne n'a censure le premier scream. La physics l'a porte assez lentement pour que la policy le rattrape.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active jusqu'a confirmation d'override par fresh signal window.",
+     "audio": "La reponse arrive. Cela n'en fait pas un rescue.",
+     "in_game_wiki": "HECTON-8 n'a pas d'ansible, pas de voix amicale penchee depuis l'orbite, et aucun moyen de rendre dix annees-lumiere misericordieuses. Les messages se deplacent a la vitesse de la lumiere, puis perdent encore du temps dans relay geometry, storm scatter, buffer law et les custody queues de Black Keel. Une transmission peut etre honnete et deja trop vieille pour etre suivie. La surface l'apprend tot: chaque remote answer est d'abord evidence, ensuite instruction, jamais comfort. Si le mur, l'eau et la pressure contredisent le message, le local world gagne.",
+     "external_site": "L'autorite du delai-lumiere definit la communication de HECTON-8 comme physique, retardee et contract-filtered: distance, weather, relay buffers et custody queues decident quand un signal devient usable."
+    },
+    "es_ES": {
+     "title": "Autoridad de retraso-luz",
+     "scanner": "Cache de relay mast. La llamada salio limpia, luego espero tras light, queue law, storm scatter y Aegir line-of-sight.",
+     "field_note": "Nadie censuro el primer scream. La physics lo movio lo bastante despacio para que la policy lo alcanzara.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active hasta que fresh signal window confirme override.",
+     "audio": "La respuesta viene. Eso no la convierte en rescue.",
+     "in_game_wiki": "HECTON-8 no tiene ansible, ni una voz amistosa inclinada desde la orbita, ni una forma de volver misericordiosos diez anos luz. Los messages viajan a velocidad de la luz, luego pierden mas tiempo en relay geometry, storm scatter, buffer law y custody queues de Black Keel. Una transmission puede ser honesta y aun asi demasiado vieja para obedecerla. La superficie ensena pronto esa regla: cada remote answer es evidence primero, instruction despues, y nunca comfort. Si la pared, el agua y la pressure contradicen el message, gana el local world.",
+     "external_site": "La autoridad de retraso-luz define la comunicacion de HECTON-8 como fisica, demorada y contract-filtered: distance, weather, relay buffers y custody queues deciden cuando una signal se vuelve usable."
+    },
+    "de_DE": {
+     "title": "Lichtverzogerungs-Autoritat",
+     "scanner": "Relay mast cache. Der Ruf ging sauber hinaus, dann wartete er hinter light, queue law, storm scatter und Aegir line-of-sight.",
+     "field_note": "Niemand zensierte den ersten scream. Physics trug ihn langsam genug, damit policy aufholen konnte.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active bis fresh signal window override bestatigt.",
+     "audio": "Die Antwort kommt. Das macht sie nicht zu rescue.",
+     "in_game_wiki": "HECTON-8 hat kein ansible, keine freundliche Stimme, die sich aus dem Orbit hinunterbeugt, und keine Moglichkeit, zehn Lichtjahre barmherzig zu machen. Messages bewegen sich mit Lichtgeschwindigkeit und verlieren dann weitere Zeit an relay geometry, storm scatter, buffer law und Black Keels custody queues. Eine transmission kann ehrlich sein und trotzdem zu alt zum Befolgen. Die Oberflache lehrt diese Regel fruh: Jede remote answer ist zuerst evidence, danach instruction und niemals comfort. Wenn Wand, Wasser und pressure der message widersprechen, gewinnt die local world.",
+     "external_site": "Lichtverzogerungs-Autoritat definiert HECTON-8-Kommunikation als physisch, verzogert und contract-filtered: distance, weather, relay buffers und custody queues bestimmen, wann ein signal usable wird."
+    },
+    "pl_PL": {
+     "title": "Autorytet opoznienia swiatla",
+     "scanner": "Relay mast cache. Call wyszedl czysto, potem czekal za light, queue law, storm scatter i Aegir line-of-sight.",
+     "field_note": "Nikt nie ocenzurowal pierwszego scream. Physics niosla go dosc wolno, by policy zdazyla dogonic.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active do czasu gdy fresh signal window potwierdzi override.",
+     "audio": "Odpowiedz nadchodzi. To nie czyni jej rescue.",
+     "in_game_wiki": "HECTON-8 nie ma ansible, przyjaznego glosu pochylonego z orbity ani sposobu, by dziesiec lat swietlnych stalo sie milosierne. Messages ida z predkoscia swiatla, potem traca czas przez relay geometry, storm scatter, buffer law i custody queues Black Keel. Transmission moze byc szczera i wciaz za stara, by jej sluchac. Powierzchnia uczy tego szybko: kazda remote answer jest najpierw evidence, potem instruction, nigdy comfort. Jesli sciana, woda i pressure zaprzeczaja message, wygrywa local world.",
+     "external_site": "Autorytet opoznienia swiatla definiuje komunikacje HECTON-8 jako fizyczna, spozniona i contract-filtered: distance, weather, relay buffers i custody queues decyduja, kiedy signal staje sie usable."
+    },
+    "uk_UA": {
+     "title": "Влада світлової затримки",
+     "scanner": "Relay mast cache. Виклик вийшов чисто, а тоді чекав за light, queue law, storm scatter і Aegir line-of-sight.",
+     "field_note": "Перший scream ніхто не цензурував. Physics несла його досить повільно, щоб policy встигла наздогнати.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active до fresh signal window confirms override.",
+     "audio": "Відповідь іде. Це ще не rescue.",
+     "in_game_wiki": "HECTON-8 не має ansible, дружнього голосу, що нахилився з орбіти, і способу зробити десять світлових років милосердними. Messages рухаються зі швидкістю світла, а потім втрачають ще час на relay geometry, storm scatter, buffer law і custody queues Black Keel. Transmission може бути чесною й водночас надто старою, щоб їй коритися. Поверхня рано вчить правилу: кожна remote answer спершу evidence, потім instruction, і ніколи comfort. Якщо стіна, вода й pressure суперечать message, перемагає local world.",
+     "external_site": "Влада світлової затримки визначає зв'язок HECTON-8 як фізичний, запізнілий і contract-filtered: distance, weather, relay buffers і custody queues вирішують, коли signal стає usable."
+    },
+    "ar_SA": {
+     "title": "سلطة تأخير الضوء",
+     "scanner": "Relay mast cache. خرج call نظيفا، ثم انتظر خلف light وqueue law وstorm scatter وAegir line-of-sight.",
+     "field_note": "لم يراقب أحد أول scream. حملته physics ببطء كاف لتلحق به policy.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active حتى تؤكد fresh signal window أي override.",
+     "audio": "الرد قادم. هذا لا يجعله rescue.",
+     "in_game_wiki": "لا يملك HECTON-8 أي ansible، ولا صوتا ودودا منحنيا من المدار، ولا وسيلة تجعل عشر سنوات ضوئية رحيمة. تتحرك messages بسرعة الضوء، ثم تخسر مزيدا من الوقت في relay geometry وstorm scatter وbuffer law وcustody queues الخاصة بBlack Keel. يمكن أن تكون transmission صادقة، ومع ذلك قديمة جدا على الطاعة. يعلّم السطح هذه القاعدة مبكرا: كل remote answer هو evidence أولا، ثم instruction، وليس comfort أبدا. إذا اختلف الجدار والماء وpressure مع message، ينتصر local world.",
+     "external_site": "تعرف سلطة تأخير الضوء اتصالات HECTON-8 كشيء مادي ومتأخر وcontract-filtered: distance وweather وrelay buffers وcustody queues تقرر متى تصبح signal usable."
+    },
+    "id_ID": {
+     "title": "Otoritas Tunda-Cahaya",
+     "scanner": "Relay mast cache. Call keluar bersih, lalu menunggu di balik light, queue law, storm scatter, dan Aegir line-of-sight.",
+     "field_note": "Tidak ada yang menyensor scream pertama. Physics membawanya cukup lambat sampai policy sempat mengejar.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active sampai fresh signal window mengonfirmasi override.",
+     "audio": "Balasannya sedang datang. Itu tidak menjadikannya rescue.",
+     "in_game_wiki": "HECTON-8 tidak punya ansible, tidak ada suara ramah yang menunduk dari orbit, dan tidak ada cara membuat sepuluh tahun cahaya terasa penuh belas kasih. Messages bergerak dengan kecepatan cahaya, lalu kehilangan lebih banyak waktu pada relay geometry, storm scatter, buffer law, dan custody queues Black Keel. Transmission bisa jujur dan tetap terlalu tua untuk dipatuhi. Permukaan mengajarkan aturan itu sejak awal: setiap remote answer adalah evidence dulu, instruction kemudian, dan tidak pernah comfort. Jika dinding, air, dan pressure tidak setuju dengan message, local world menang.",
+     "external_site": "Otoritas Tunda-Cahaya mendefinisikan komunikasi HECTON-8 sebagai fisik, tertunda, dan contract-filtered: distance, weather, relay buffers, dan custody queues menentukan kapan signal menjadi usable."
+    },
+    "ko_KR": {
+     "title": "광지연 권한",
+     "scanner": "relay mast cache. call은 깨끗하게 떠났지만 light, queue law, storm scatter, Aegir line-of-sight 뒤에서 기다렸다.",
+     "field_note": "첫 scream을 검열한 사람은 없었다. physics가 policy가 따라잡을 만큼 천천히 옮겼다.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. fresh signal window가 override를 확인할 때까지 Local survival authority remains active.",
+     "audio": "응답은 오고 있다. 그렇다고 rescue는 아니다.",
+     "in_game_wiki": "HECTON-8에는 ansible도, 궤도에서 몸을 숙이는 다정한 목소리도, 10광년을 자비롭게 만들 방법도 없다. messages는 빛의 속도로 움직인 뒤 relay geometry, storm scatter, buffer law, Black Keel의 custody queues에서 더 많은 시간을 잃는다. transmission은 정직하면서도 따르기엔 너무 오래될 수 있다. 표면은 그 규칙을 일찍 가르친다. 모든 remote answer는 먼저 evidence이고, 다음이 instruction이며, comfort는 아니다. 벽과 물과 pressure가 message와 다르면 local world가 이긴다.",
+     "external_site": "광지연 권한은 HECTON-8 통신을 물리적이고 지연되며 contract-filtered된 것으로 정의한다. distance, weather, relay buffers, custody queues가 signal의 사용 가능 시점을 결정한다."
+    },
+    "he_IL": {
+     "title": "סמכות עיכוב-אור",
+     "scanner": "Relay mast cache. ה-call יצא נקי, ואז המתין מאחורי light, queue law, storm scatter ו-Aegir line-of-sight.",
+     "field_note": "אף אחד לא צינזר את ה-scream הראשון. ה-physics נשאה אותו לאט מספיק כדי ש-policy תדביק אותו.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active עד ש-fresh signal window מאשר override.",
+     "audio": "התשובה בדרך. זה לא הופך אותה ל-rescue.",
+     "in_game_wiki": "ל-HECTON-8 אין ansible, אין קול ידידותי שנשען מהמסלול, ואין דרך להפוך עשר שנות אור לרחומות. Messages נעים במהירות האור, ואז מאבדים עוד זמן ב-relay geometry, storm scatter, buffer law ו-custody queues של Black Keel. Transmission יכולה להיות כנה ועדיין ישנה מדי מכדי לציית לה. פני השטח מלמדים מוקדם: כל remote answer היא קודם evidence, אחר כך instruction, ולעולם לא comfort. אם הקיר, המים וה-pressure סותרים את ה-message, ה-local world מנצח.",
+     "external_site": "סמכות עיכוב-אור מגדירה את תקשורת HECTON-8 כפיזית, מאוחרת ו-contract-filtered: distance, weather, relay buffers ו-custody queues קובעים מתי signal נעשה usable."
+    },
+    "pt_BR": {
+     "title": "Autoridade de Atraso-Luz",
+     "scanner": "Relay mast cache. O call saiu limpo, depois esperou atras de light, queue law, storm scatter e Aegir line-of-sight.",
+     "field_note": "Ninguem censurou o primeiro scream. A physics o moveu devagar o bastante para a policy alcancar.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active ate fresh signal window confirmar override.",
+     "audio": "A resposta esta vindo. Isso nao a torna rescue.",
+     "in_game_wiki": "HECTON-8 nao tem ansible, nenhuma voz amiga inclinada da orbita, e nenhum modo de fazer dez anos-luz parecerem misericordiosos. Messages se movem a velocidade da luz, depois perdem mais tempo em relay geometry, storm scatter, buffer law e custody queues da Black Keel. Uma transmission pode ser honesta e ainda assim velha demais para obedecer. A superficie ensina cedo essa regra: todo remote answer e evidence primeiro, instruction depois, e nunca comfort. Se a parede, a agua e a pressure discordam do message, o local world vence.",
+     "external_site": "A Autoridade de Atraso-Luz define a comunicacao de HECTON-8 como fisica, atrasada e contract-filtered: distance, weather, relay buffers e custody queues decidem quando uma signal se torna usable."
+    },
+    "nl_NL": {
+     "title": "Lichtvertragingsautoriteit",
+     "scanner": "Relay mast cache. De call vertrok schoon, wachtte daarna achter light, queue law, storm scatter en Aegir line-of-sight.",
+     "field_note": "Niemand censureerde de eerste scream. Physics droeg hem traag genoeg zodat policy kon inhalen.",
+     "terminal": "COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active tot fresh signal window override bevestigt.",
+     "audio": "Het antwoord komt eraan. Dat maakt het geen rescue.",
+     "in_game_wiki": "HECTON-8 heeft geen ansible, geen vriendelijke stem die uit de baan neerbuigt, en geen manier om tien lichtjaar barmhartig te maken. Messages reizen met lichtsnelheid en verliezen daarna meer tijd aan relay geometry, storm scatter, buffer law en Black Keels custody queues. Een transmission kan eerlijk zijn en toch te oud om op te volgen. Het oppervlak leert die regel vroeg: elk remote answer is eerst evidence, daarna instruction, en nooit comfort. Als de muur, het water en de pressure de message tegenspreken, wint de local world.",
+     "external_site": "Lichtvertragingsautoriteit definieert HECTON-8-communicatie als fysiek, vertraagd en contract-filtered: distance, weather, relay buffers en custody queues bepalen wanneer een signal usable wordt."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P052_BLACK_KEEL_TARIFF_TABLE",
+   "article_id": "hecton8.black_keel_tariff_table",
+   "title_key": "applied_lore.black_keel_tariff_table.title",
+   "unlock": {
+    "primary": "unlock.first_black_keel_tariff_table",
+    "poi_tags": [
+     "poi.tariff_plate",
+     "poi.claim_terminal",
+     "poi.sample_lockbox"
+    ],
+    "biome_tags": [
+     "biome.corporate_wreck",
+     "biome.salvage_route",
+     "biome.service_corridor"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Black Keel Tariff Table",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage, and body recovery sit on separate lines.",
+     "field_note": "The fastest class is not rescue. It is verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies until lien arbitration resolves.",
+     "audio": "There is a discount for evidence and a surcharge for breathing.",
+     "in_game_wiki": "Black Keel support is useful because the carrier really does move gear, cache oxygen, pass warnings, and open route options. It is never neutral because every support action enters a tariff table before it becomes help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, and body recovery are different line items with different priority speeds. The table is not hidden evil. It is worse in practice: a readable price list for moments that should not have prices.",
+     "external_site": "Black Keel Tariff Table exposes the carrier economy around HECTON-8, where distress traffic competes with sample custody, oxygen, debt, proof, and asset protection."
+    },
+    "ru_RU": {
+     "title": "Тарифная таблица Black Keel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage и body recovery стоят отдельными строками.",
+     "field_note": "Самый быстрый class - не rescue. Это verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies до lien arbitration resolves.",
+     "audio": "На evidence есть discount, на breathing - surcharge.",
+     "in_game_wiki": "Поддержка Black Keel полезна, потому что carrier действительно двигает gear, прячет oxygen, передает warnings и открывает route options. Она никогда не нейтральна, потому что каждое support action попадает в tariff table раньше, чем становится help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery и body recovery - разные line items с разной priority speed. Таблица не скрытое зло. На практике хуже: читаемый price list для моментов, у которых не должно быть цены.",
+     "external_site": "Тарифная таблица Black Keel раскрывает carrier economy вокруг HECTON-8, где distress traffic конкурирует с sample custody, oxygen, debt, proof и asset protection."
+    },
+    "ja_JP": {
+     "title": "Black Keel料金表",
+     "scanner": "tariff plate。distress、oxygen、sample custody、pressure gear、hull damage、body recoveryが別々の行に並ぶ。",
+     "field_note": "最速のclassはrescueではない。verified property moving upwardだ。",
+     "terminal": "TARIFF CLASS: salvage emergency。Welfare addendum pending。Verified sample custody advances outbound priority by two billing tiers。lien arbitration resolvesまでBreathing mass surcharge applies。",
+     "audio": "evidenceにはdiscountがあり、breathingにはsurchargeがある。",
+     "in_game_wiki": "Black Keelのsupportは有用だ。carrierは実際にgearを動かし、oxygenをcacheし、warningsを渡し、route optionsを開く。だが中立ではない。すべてのsupport actionはhelpになる前にtariff tableへ入るからだ。Distress、sealed samples、oxygen reserve、pressure gear、hull damage、operator recovery、body recoveryは、それぞれpriority speedの違うline itemsである。表は隠された悪ではない。実務上はもっと悪い。本来値段を持つべきでない瞬間のための、読めるprice listだ。",
+     "external_site": "Black Keel料金表はHECTON-8周辺のcarrier economyを見せる。distress trafficはsample custody、oxygen、debt、proof、asset protectionと競合する。"
+    },
+    "zh_CN": {
+     "title": "Black Keel费率表",
+     "scanner": "tariff plate。distress、oxygen、sample custody、pressure gear、hull damage和body recovery被列成不同项目。",
+     "field_note": "最快的class不是rescue，而是verified property moving upward。",
+     "terminal": "TARIFF CLASS: salvage emergency。Welfare addendum pending。Verified sample custody advances outbound priority by two billing tiers。Breathing mass surcharge applies，直到lien arbitration resolves。",
+     "audio": "evidence有discount，breathing有surcharge。",
+     "in_game_wiki": "Black Keel的support有用，因为carrier确实会移动gear、cache oxygen、传递warnings并打开route options。它从不中立，因为每一个support action在成为help之前都会先进入tariff table。Distress、sealed samples、oxygen reserve、pressure gear、hull damage、operator recovery和body recovery都是不同line items，有不同priority speed。表格不是隐藏的邪恶。实际更糟：那是一张给不该有价格的时刻准备的可读price list。",
+     "external_site": "Black Keel费率表揭示HECTON-8周围的carrier economy：distress traffic与sample custody、oxygen、debt、proof和asset protection竞争。"
+    },
+    "fr_FR": {
+     "title": "Table tarifaire de Black Keel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage et body recovery sont sur des lignes separees.",
+     "field_note": "La classe la plus rapide n'est pas rescue. C'est verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies jusqu'a resolution de lien arbitration.",
+     "audio": "Il y a un discount pour evidence et un surcharge pour breathing.",
+     "in_game_wiki": "Le support de Black Keel est utile parce que le carrier deplace vraiment du gear, cache de l'oxygen, transmet des warnings et ouvre des route options. Il n'est jamais neutre parce que chaque support action entre dans une tariff table avant de devenir help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery et body recovery sont des line items differents avec des priority speeds differentes. La table n'est pas un mal cache. En pratique, c'est pire: une price list lisible pour des moments qui ne devraient pas avoir de prix.",
+     "external_site": "La table tarifaire de Black Keel expose la carrier economy autour de HECTON-8, ou distress traffic concurrence sample custody, oxygen, debt, proof et asset protection."
+    },
+    "es_ES": {
+     "title": "Tabla tarifaria de Black Keel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage y body recovery figuran en lineas separadas.",
+     "field_note": "La clase mas rapida no es rescue. Es verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies hasta que lien arbitration resolves.",
+     "audio": "Hay discount para evidence y surcharge por breathing.",
+     "in_game_wiki": "El support de Black Keel es util porque el carrier de verdad mueve gear, cachea oxygen, transmite warnings y abre route options. Nunca es neutral porque cada support action entra en una tariff table antes de convertirse en help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery y body recovery son line items distintos con priority speeds distintas. La tabla no es mal oculto. En la practica es peor: una price list legible para momentos que no deberian tener precio.",
+     "external_site": "La tabla tarifaria de Black Keel expone la carrier economy alrededor de HECTON-8, donde distress traffic compite con sample custody, oxygen, debt, proof y asset protection."
+    },
+    "de_DE": {
+     "title": "Black Keel Tariftabelle",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage und body recovery stehen auf getrennten Zeilen.",
+     "field_note": "Die schnellste class ist nicht rescue. Sie ist verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies bis lien arbitration resolves.",
+     "audio": "Es gibt discount fur evidence und surcharge fur breathing.",
+     "in_game_wiki": "Black Keel support ist nutzlich, weil der Carrier wirklich gear bewegt, oxygen cached, warnings weitergibt und route options offnet. Er ist nie neutral, weil jede support action in eine tariff table eintritt, bevor sie help wird. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery und body recovery sind verschiedene line items mit verschiedenen priority speeds. Die Tabelle ist kein verborgenes Bose. Praktisch ist sie schlimmer: eine lesbare price list fur Momente, die keinen Preis haben sollten.",
+     "external_site": "Black Keel Tariftabelle zeigt die carrier economy um HECTON-8, wo distress traffic mit sample custody, oxygen, debt, proof und asset protection konkurriert."
+    },
+    "pl_PL": {
+     "title": "Tabela taryf Black Keel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage i body recovery sa w osobnych liniach.",
+     "field_note": "Najszybsza class to nie rescue. To verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies do czasu az lien arbitration resolves.",
+     "audio": "Jest discount za evidence i surcharge za breathing.",
+     "in_game_wiki": "Black Keel support jest uzyteczny, bo carrier naprawde przenosi gear, cache'uje oxygen, przekazuje warnings i otwiera route options. Nigdy nie jest neutralny, bo kazde support action trafia do tariff table, zanim stanie sie help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery i body recovery to rozne line items z roznymi priority speeds. Tabela nie jest ukrytym zlem. W praktyce jest gorsza: czytelna price list dla chwil, ktore nie powinny miec ceny.",
+     "external_site": "Tabela taryf Black Keel pokazuje carrier economy wokol HECTON-8, gdzie distress traffic konkuruje z sample custody, oxygen, debt, proof i asset protection."
+    },
+    "uk_UA": {
+     "title": "Тарифна таблиця Black Keel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage і body recovery стоять окремими рядками.",
+     "field_note": "Найшвидший class - не rescue. Це verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies до lien arbitration resolves.",
+     "audio": "На evidence є discount, на breathing - surcharge.",
+     "in_game_wiki": "Black Keel support корисний, бо carrier справді рухає gear, cache'ує oxygen, передає warnings і відкриває route options. Він ніколи не нейтральний, бо кожне support action потрапляє в tariff table раніше, ніж стає help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery і body recovery - різні line items з різними priority speeds. Таблиця не приховане зло. На практиці гірше: читабельний price list для митей, які не повинні мати ціни.",
+     "external_site": "Тарифна таблиця Black Keel розкриває carrier economy навколо HECTON-8, де distress traffic конкурує з sample custody, oxygen, debt, proof і asset protection."
+    },
+    "ar_SA": {
+     "title": "جدول تعرفة Black Keel",
+     "scanner": "Tariff plate. توضع distress وoxygen وsample custody وpressure gear وhull damage وbody recovery في أسطر منفصلة.",
+     "field_note": "أسرع class ليست rescue. إنها verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies حتى lien arbitration resolves.",
+     "audio": "هناك discount على evidence وsurcharge على breathing.",
+     "in_game_wiki": "إن support من Black Keel مفيد لأن carrier ينقل gear فعلا، ويخزن oxygen، ويمرر warnings، ويفتح route options. لكنه ليس محايدا أبدا، لأن كل support action يدخل tariff table قبل أن يصبح help. Distress وsealed samples وoxygen reserve وpressure gear وhull damage وoperator recovery وbody recovery هي line items مختلفة بسرعات priority مختلفة. الجدول ليس شرا مخفيا. عمليا هو أسوأ: price list مقروء للحظات لا ينبغي أن يكون لها سعر.",
+     "external_site": "يكشف جدول تعرفة Black Keel عن carrier economy حول HECTON-8، حيث تنافس distress traffic كل sample custody وoxygen وdebt وproof وasset protection."
+    },
+    "id_ID": {
+     "title": "Tabel Tarif Black Keel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage, dan body recovery berada pada baris terpisah.",
+     "field_note": "Class tercepat bukan rescue. Itu verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies sampai lien arbitration resolves.",
+     "audio": "Ada discount untuk evidence dan surcharge untuk breathing.",
+     "in_game_wiki": "Black Keel support berguna karena carrier benar-benar memindahkan gear, menyimpan oxygen, mengirim warnings, dan membuka route options. Ia tidak pernah netral karena setiap support action masuk ke tariff table sebelum menjadi help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, dan body recovery adalah line items berbeda dengan priority speeds berbeda. Tabel itu bukan kejahatan tersembunyi. Dalam praktiknya lebih buruk: price list yang bisa dibaca untuk momen yang seharusnya tidak punya harga.",
+     "external_site": "Tabel Tarif Black Keel membuka carrier economy di sekitar HECTON-8, tempat distress traffic bersaing dengan sample custody, oxygen, debt, proof, dan asset protection."
+    },
+    "ko_KR": {
+     "title": "Black Keel 요율표",
+     "scanner": "tariff plate. distress, oxygen, sample custody, pressure gear, hull damage, body recovery가 별도 줄에 놓여 있다.",
+     "field_note": "가장 빠른 class는 rescue가 아니다. verified property moving upward다.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. lien arbitration resolves까지 Breathing mass surcharge applies.",
+     "audio": "evidence에는 discount가 있고 breathing에는 surcharge가 있다.",
+     "in_game_wiki": "Black Keel support는 유용하다. carrier가 실제로 gear를 옮기고, oxygen을 cache하고, warnings를 전달하며, route options를 열기 때문이다. 하지만 중립적이지 않다. 모든 support action은 help가 되기 전에 tariff table에 들어간다. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, body recovery는 서로 다른 priority speeds를 가진 별도 line items다. 그 표는 숨은 악이 아니다. 실제로는 더 나쁘다. 가격이 없어야 할 순간을 위한 읽을 수 있는 price list다.",
+     "external_site": "Black Keel 요율표는 HECTON-8 주변 carrier economy를 드러낸다. distress traffic은 sample custody, oxygen, debt, proof, asset protection과 경쟁한다."
+    },
+    "he_IL": {
+     "title": "טבלת התעריפים של Black Keel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage ו-body recovery יושבים בשורות נפרדות.",
+     "field_note": "ה-class המהיר ביותר אינו rescue. הוא verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies עד ש-lien arbitration resolves.",
+     "audio": "יש discount עבור evidence ו-surcharge עבור breathing.",
+     "in_game_wiki": "Black Keel support מועיל מפני שה-carrier באמת מזיז gear, שומר oxygen, מעביר warnings ופותח route options. הוא לעולם לא ניטרלי כי כל support action נכנס ל-tariff table לפני שהוא הופך ל-help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery ו-body recovery הם line items נפרדים עם priority speeds שונות. הטבלה אינה רוע נסתר. בפועל היא גרועה יותר: price list קריא לרגעים שלא אמור להיות להם מחיר.",
+     "external_site": "טבלת התעריפים של Black Keel חושפת את ה-carrier economy סביב HECTON-8, שבה distress traffic מתחרה עם sample custody, oxygen, debt, proof ו-asset protection."
+    },
+    "pt_BR": {
+     "title": "Tabela Tarifaria da Black Keel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage e body recovery ficam em linhas separadas.",
+     "field_note": "A classe mais rapida nao e rescue. E verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies ate lien arbitration resolves.",
+     "audio": "Existe discount para evidence e surcharge para breathing.",
+     "in_game_wiki": "O support da Black Keel e util porque o carrier realmente move gear, guarda oxygen, passa warnings e abre route options. Nunca e neutro porque cada support action entra numa tariff table antes de virar help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery e body recovery sao line items diferentes com priority speeds diferentes. A tabela nao e mal oculto. Na pratica e pior: uma price list legivel para momentos que nao deveriam ter preco.",
+     "external_site": "A Tabela Tarifaria da Black Keel expõe a carrier economy ao redor de HECTON-8, onde distress traffic compete com sample custody, oxygen, debt, proof e asset protection."
+    },
+    "nl_NL": {
+     "title": "Black Keel Tarieftabel",
+     "scanner": "Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage en body recovery staan op aparte regels.",
+     "field_note": "De snelste class is geen rescue. Het is verified property moving upward.",
+     "terminal": "TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies tot lien arbitration resolves.",
+     "audio": "Er is discount voor evidence en surcharge voor breathing.",
+     "in_game_wiki": "Black Keel support is nuttig omdat de carrier echt gear verplaatst, oxygen cached, warnings doorgeeft en route options opent. Het is nooit neutraal omdat elke support action een tariff table ingaat voordat het help wordt. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery en body recovery zijn verschillende line items met verschillende priority speeds. De tabel is geen verborgen kwaad. In de praktijk is hij erger: een leesbare price list voor momenten die geen prijs zouden mogen hebben.",
+     "external_site": "Black Keel Tarieftabel toont de carrier economy rond HECTON-8, waar distress traffic concurreert met sample custody, oxygen, debt, proof en asset protection."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P053_MARAUDER_GRAFFITI_MASKS",
+   "article_id": "hecton8.marauder_graffiti_masks",
+   "title_key": "applied_lore.marauder_graffiti_masks.title",
+   "unlock": {
+    "primary": "unlock.first_marauder_graffiti_masks",
+    "poi_tags": [
+     "poi.graffiti_mask",
+     "poi.scavenger_route",
+     "poi.signal_blind"
+    ],
+    "biome_tags": [
+     "biome.service_corridor",
+     "biome.salvage_route",
+     "biome.flooded_habitat"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Marauder Graffiti Masks",
+     "scanner": "Paint code. Slash count marks noise discipline; black rings mark carrier-ping danger; broken arrows mark pressure drift.",
+     "field_note": "Marauders wrote for people who could not trust radios and could not afford maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "If the wall looks angry, read it as weather.",
+     "in_game_wiki": "Marauder graffiti is not decoration. It is field navigation, social warning, and anti-surveillance language scratched into places where radios betray, maps expire, and official signage lies by being too old. The marks look rough because they had to survive water, bad lamps, glove tremor, and cameras that could punish readable intent. A slash can mean silence. A black ring can mean Black Keel ping. A broken arrow can mean the pressure changed after the last route survey. The colony left labels; the marauders left weather.",
+     "external_site": "Marauder Graffiti Masks turn scavenger writing into readable ocean infrastructure: route hints, comm silence, pressure drift, cache risk, and mistrust of carrier surveillance."
+    },
+    "ru_RU": {
+     "title": "Граффити-маски мародеров",
+     "scanner": "Paint code. Slash count отмечает noise discipline; black rings - carrier-ping danger; broken arrows - pressure drift.",
+     "field_note": "Marauders писали для тех, кто не мог доверять radios и не мог позволить себе maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Если wall выглядит злой, читай ее как weather.",
+     "in_game_wiki": "Граффити marauders - не decoration. Это field navigation, social warning и anti-surveillance language, выцарапанный там, где radios предают, maps истекают, а official signage лжет уже потому, что слишком старый. Marks выглядят грубо, потому что должны были пережить water, bad lamps, glove tremor и cameras, которые могли наказать readable intent. Slash может значить silence. Black ring - Black Keel ping. Broken arrow - pressure changed после последнего route survey. Colony оставила labels; marauders оставили weather.",
+     "external_site": "Граффити-маски мародеров превращают scavenger writing в readable ocean infrastructure: route hints, comm silence, pressure drift, cache risk и недоверие к carrier surveillance."
+    },
+    "ja_JP": {
+     "title": "Marauderグラフィティ・マスク",
+     "scanner": "paint code。slash countはnoise discipline、black ringsはcarrier-ping danger、broken arrowsはpressure driftを示す。",
+     "field_note": "maraudersはradiosを信用できずmapsを買えない者たちのために書いた。",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only。Black ring: carrier sweep。Broken arrow: pressure changed since last mark。Salt bloom: cache compromised。Double hook: official route no longer honest。",
+     "audio": "壁が怒って見えるなら、それをweatherとして読め。",
+     "in_game_wiki": "Marauder graffitiは装飾ではない。radiosが裏切り、mapsが期限切れになり、official signageが古すぎるせいで嘘になる場所に刻まれたfield navigation、social warning、anti-surveillance languageである。marksが粗いのは、water、bad lamps、glove tremor、そしてreadable intentを罰しうるcamerasに耐える必要があったからだ。slashはsilenceを意味することがある。black ringはBlack Keel ping。broken arrowは最後のroute survey後にpressure changedした印。colonyはlabelsを残し、maraudersはweatherを残した。",
+     "external_site": "Marauderグラフィティ・マスクはscavenger writingを読み取れるocean infrastructureへ変える。route hints、comm silence、pressure drift、cache risk、carrier surveillanceへの不信。"
+    },
+    "zh_CN": {
+     "title": "Marauder涂鸦掩码",
+     "scanner": "paint code。slash count标记noise discipline；black rings标记carrier-ping danger；broken arrows标记pressure drift。",
+     "field_note": "marauders写给那些不能信任radios、也买不起maps的人。",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only。Black ring: carrier sweep。Broken arrow: pressure changed since last mark。Salt bloom: cache compromised。Double hook: official route no longer honest。",
+     "audio": "如果wall看起来愤怒，就把它当weather读。",
+     "in_game_wiki": "Marauder graffiti不是装饰。它是在radios会背叛、maps会过期、official signage因太旧而撒谎的地方刻下的field navigation、social warning和anti-surveillance language。这些marks粗糙，是因为它们必须扛过water、bad lamps、glove tremor，以及会惩罚readable intent的cameras。slash可能意味着silence。black ring可能意味着Black Keel ping。broken arrow可能意味着最后一次route survey之后pressure changed。colony留下labels；marauders留下weather。",
+     "external_site": "Marauder涂鸦掩码把scavenger writing变成可读的ocean infrastructure：route hints、comm silence、pressure drift、cache risk以及对carrier surveillance的不信任。"
+    },
+    "fr_FR": {
+     "title": "Masques graffiti des marauders",
+     "scanner": "Paint code. Slash count marque noise discipline; black rings marquent carrier-ping danger; broken arrows marquent pressure drift.",
+     "field_note": "Les marauders ecrivaient pour des gens qui ne pouvaient pas faire confiance aux radios ni se payer des maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Si le mur a l'air en colere, lis-le comme weather.",
+     "in_game_wiki": "Le marauder graffiti n'est pas une decoration. C'est field navigation, social warning et anti-surveillance language grave la ou les radios trahissent, les maps expirent, et l'official signage ment parce qu'il est trop vieux. Les marks sont rudes parce qu'ils devaient survivre a water, bad lamps, glove tremor et cameras capables de punir une readable intent. Un slash peut vouloir dire silence. Un black ring peut vouloir dire Black Keel ping. Une broken arrow peut dire pressure changed depuis le dernier route survey. La colony a laisse des labels; les marauders ont laisse weather.",
+     "external_site": "Les masques graffiti des marauders transforment scavenger writing en ocean infrastructure lisible: route hints, comm silence, pressure drift, cache risk et mefiance envers carrier surveillance."
+    },
+    "es_ES": {
+     "title": "Mascaras de grafiti marauder",
+     "scanner": "Paint code. Slash count marca noise discipline; black rings marcan carrier-ping danger; broken arrows marcan pressure drift.",
+     "field_note": "Los marauders escribian para gente que no podia confiar en radios ni pagar maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Si la pared parece enfadada, leela como weather.",
+     "in_game_wiki": "El marauder graffiti no es decoracion. Es field navigation, social warning y anti-surveillance language rayado en lugares donde las radios traicionan, los maps caducan y el official signage miente por ser demasiado viejo. Los marks parecen toscos porque tenian que sobrevivir a water, bad lamps, glove tremor y cameras capaces de castigar una readable intent. Un slash puede significar silence. Un black ring puede significar Black Keel ping. Una broken arrow puede indicar pressure changed desde el ultimo route survey. La colony dejo labels; los marauders dejaron weather.",
+     "external_site": "Las mascaras de grafiti marauder convierten scavenger writing en ocean infrastructure legible: route hints, comm silence, pressure drift, cache risk y desconfianza hacia carrier surveillance."
+    },
+    "de_DE": {
+     "title": "Marauder-Graffiti-Masken",
+     "scanner": "Paint code. Slash count markiert noise discipline; black rings markieren carrier-ping danger; broken arrows markieren pressure drift.",
+     "field_note": "Marauders schrieben fur Menschen, die radios nicht trauen und sich maps nicht leisten konnten.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Wenn die Wand wutend aussieht, lies sie als weather.",
+     "in_game_wiki": "Marauder graffiti ist keine Dekoration. Es ist field navigation, social warning und anti-surveillance language, eingeritzt an Orten, wo radios verraten, maps ablaufen und official signage lugt, weil sie zu alt ist. Die marks wirken roh, weil sie water, bad lamps, glove tremor und cameras uberleben mussten, die readable intent bestrafen konnten. Ein slash kann silence bedeuten. Ein black ring kann Black Keel ping bedeuten. Ein broken arrow kann zeigen, dass pressure changed seit dem letzten route survey. Die colony hinterliess labels; marauders hinterliessen weather.",
+     "external_site": "Marauder-Graffiti-Masken machen scavenger writing zu lesbarer ocean infrastructure: route hints, comm silence, pressure drift, cache risk und Misstrauen gegen carrier surveillance."
+    },
+    "pl_PL": {
+     "title": "Maski graffiti marauderow",
+     "scanner": "Paint code. Slash count oznacza noise discipline; black rings oznaczaja carrier-ping danger; broken arrows oznaczaja pressure drift.",
+     "field_note": "Marauders pisali dla ludzi, ktorzy nie mogli ufac radios i nie mogli pozwolic sobie na maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Jesli sciana wyglada na zla, czytaj ja jak weather.",
+     "in_game_wiki": "Marauder graffiti nie jest dekoracja. To field navigation, social warning i anti-surveillance language wydrapany tam, gdzie radios zdradzaja, maps wygasaja, a official signage klamie przez starosc. Marks sa surowe, bo musialy przetrwac water, bad lamps, glove tremor i cameras, ktore mogly karac readable intent. Slash moze znaczyc silence. Black ring moze znaczyc Black Keel ping. Broken arrow moze znaczyc pressure changed po ostatnim route survey. Colony zostawila labels; marauders zostawili weather.",
+     "external_site": "Maski graffiti marauderow zmieniaja scavenger writing w czytelna ocean infrastructure: route hints, comm silence, pressure drift, cache risk i nieufnosc wobec carrier surveillance."
+    },
+    "uk_UA": {
+     "title": "Графіті-маски мародерів",
+     "scanner": "Paint code. Slash count позначає noise discipline; black rings - carrier-ping danger; broken arrows - pressure drift.",
+     "field_note": "Marauders писали для тих, хто не міг довіряти radios і не міг дозволити собі maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Якщо wall виглядає злою, читай її як weather.",
+     "in_game_wiki": "Marauder graffiti - не decoration. Це field navigation, social warning і anti-surveillance language, видряпаний там, де radios зраджують, maps прострочуються, а official signage бреше вже тому, що надто старий. Marks грубі, бо мусили пережити water, bad lamps, glove tremor і cameras, які могли карати readable intent. Slash може означати silence. Black ring - Black Keel ping. Broken arrow - pressure changed після останнього route survey. Colony лишила labels; marauders лишили weather.",
+     "external_site": "Графіті-маски мародерів перетворюють scavenger writing на readable ocean infrastructure: route hints, comm silence, pressure drift, cache risk і недовіру до carrier surveillance."
+    },
+    "ar_SA": {
+     "title": "أقنعة غرافيتي marauder",
+     "scanner": "Paint code. يشير slash count إلى noise discipline؛ وتشير black rings إلى carrier-ping danger؛ وتشير broken arrows إلى pressure drift.",
+     "field_note": "كتب marauders لأناس لا يستطيعون الثقة بradios ولا دفع ثمن maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "إذا بدا wall غاضبا، فاقرأه كweather.",
+     "in_game_wiki": "Marauder graffiti ليس decoration. إنه field navigation وsocial warning وanti-surveillance language محفور في أماكن تخون فيها radios، وتنتهي maps، ويكذب official signage لأنه قديم جدا. تبدو marks خشنة لأنها كان عليها أن تنجو من water وbad lamps وglove tremor وcameras تستطيع معاقبة readable intent. قد يعني slash صمتا. وقد تعني black ring إشارة Black Keel ping. وقد تعني broken arrow أن pressure changed بعد آخر route survey. تركت colony labels؛ وترك marauders weather.",
+     "external_site": "تحول أقنعة غرافيتي marauder كتابة scavenger إلى ocean infrastructure مقروءة: route hints وcomm silence وpressure drift وcache risk وانعدام الثقة في carrier surveillance."
+    },
+    "id_ID": {
+     "title": "Masker Grafiti Marauder",
+     "scanner": "Paint code. Slash count menandai noise discipline; black rings menandai carrier-ping danger; broken arrows menandai pressure drift.",
+     "field_note": "Marauders menulis untuk orang yang tidak bisa percaya radios dan tidak mampu membeli maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Jika wall terlihat marah, bacalah sebagai weather.",
+     "in_game_wiki": "Marauder graffiti bukan dekorasi. Itu field navigation, social warning, dan anti-surveillance language yang digoreskan di tempat radios berkhianat, maps kedaluwarsa, dan official signage berbohong karena terlalu tua. Marks terlihat kasar karena harus bertahan dari water, bad lamps, glove tremor, dan cameras yang bisa menghukum readable intent. Slash bisa berarti silence. Black ring bisa berarti Black Keel ping. Broken arrow bisa berarti pressure changed sejak route survey terakhir. Colony meninggalkan labels; marauders meninggalkan weather.",
+     "external_site": "Masker Grafiti Marauder mengubah scavenger writing menjadi ocean infrastructure yang terbaca: route hints, comm silence, pressure drift, cache risk, dan ketidakpercayaan pada carrier surveillance."
+    },
+    "ko_KR": {
+     "title": "Marauder 그래피티 마스크",
+     "scanner": "paint code. slash count는 noise discipline, black rings는 carrier-ping danger, broken arrows는 pressure drift를 표시한다.",
+     "field_note": "marauders는 radios를 믿을 수 없고 maps를 살 수 없는 사람들을 위해 썼다.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "벽이 화나 보이면 weather로 읽어라.",
+     "in_game_wiki": "Marauder graffiti는 장식이 아니다. radios가 배신하고, maps가 만료되고, official signage가 너무 오래되어 거짓말이 되는 곳에 긁힌 field navigation, social warning, anti-surveillance language다. marks가 거친 이유는 water, bad lamps, glove tremor, 그리고 readable intent를 처벌할 수 있는 cameras를 견뎌야 했기 때문이다. slash는 silence를 뜻할 수 있다. black ring은 Black Keel ping일 수 있다. broken arrow는 마지막 route survey 뒤 pressure changed를 뜻할 수 있다. colony는 labels를 남겼고 marauders는 weather를 남겼다.",
+     "external_site": "Marauder 그래피티 마스크는 scavenger writing을 읽을 수 있는 ocean infrastructure로 바꾼다. route hints, comm silence, pressure drift, cache risk, carrier surveillance에 대한 불신."
+    },
+    "he_IL": {
+     "title": "מסכות גרפיטי של marauders",
+     "scanner": "Paint code. Slash count מסמן noise discipline; black rings מסמנים carrier-ping danger; broken arrows מסמנים pressure drift.",
+     "field_note": "Marauders כתבו לאנשים שלא יכלו לסמוך על radios ולא יכלו להרשות לעצמם maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "אם ה-wall נראה כועס, קרא אותו כ-weather.",
+     "in_game_wiki": "Marauder graffiti אינו decoration. הוא field navigation, social warning ו-anti-surveillance language שנחרט במקומות שבהם radios בוגדים, maps פגים, ו-official signage משקר מפני שהוא ישן מדי. ה-marks נראים גסים כי הם היו צריכים לשרוד water, bad lamps, glove tremor ו-cameras שיכלו להעניש readable intent. Slash יכול להיות silence. Black ring יכול להיות Black Keel ping. Broken arrow יכול להיות pressure changed מאז ה-route survey האחרון. ה-colony השאירה labels; ה-marauders השאירו weather.",
+     "external_site": "מסכות גרפיטי של marauders הופכות scavenger writing ל-ocean infrastructure קריאה: route hints, comm silence, pressure drift, cache risk וחוסר אמון ב-carrier surveillance."
+    },
+    "pt_BR": {
+     "title": "Mascaras de Grafite Marauder",
+     "scanner": "Paint code. Slash count marca noise discipline; black rings marcam carrier-ping danger; broken arrows marcam pressure drift.",
+     "field_note": "Marauders escreviam para gente que nao podia confiar em radios nem pagar maps.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Se a wall parece irritada, leia como weather.",
+     "in_game_wiki": "Marauder graffiti nao e decoration. E field navigation, social warning e anti-surveillance language riscada em lugares onde radios traem, maps expiram e official signage mente por ser antigo demais. As marks parecem brutas porque precisavam sobreviver a water, bad lamps, glove tremor e cameras capazes de punir readable intent. Slash pode significar silence. Black ring pode significar Black Keel ping. Broken arrow pode significar pressure changed desde o ultimo route survey. A colony deixou labels; marauders deixaram weather.",
+     "external_site": "Mascaras de Grafite Marauder transformam scavenger writing em ocean infrastructure legivel: route hints, comm silence, pressure drift, cache risk e desconfiança de carrier surveillance."
+    },
+    "nl_NL": {
+     "title": "Marauder Graffiti Masks",
+     "scanner": "Paint code. Slash count markeert noise discipline; black rings markeren carrier-ping danger; broken arrows markeren pressure drift.",
+     "field_note": "Marauders schreven voor mensen die radios niet konden vertrouwen en maps niet konden betalen.",
+     "terminal": "ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.",
+     "audio": "Als de wall boos lijkt, lees hem als weather.",
+     "in_game_wiki": "Marauder graffiti is geen decoration. Het is field navigation, social warning en anti-surveillance language, gekrast op plekken waar radios verraden, maps verlopen en official signage liegt omdat het te oud is. De marks zien er ruw uit omdat ze water, bad lamps, glove tremor en cameras moesten overleven die readable intent konden straffen. Een slash kan silence betekenen. Een black ring kan Black Keel ping betekenen. Een broken arrow kan betekenen dat pressure changed sinds de laatste route survey. De colony liet labels achter; marauders lieten weather achter.",
+     "external_site": "Marauder Graffiti Masks maken scavenger writing tot leesbare ocean infrastructure: route hints, comm silence, pressure drift, cache risk en wantrouwen tegenover carrier surveillance."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P054_RELAY_QUEUE_DRIFT",
+   "article_id": "hecton8.relay_queue_drift",
+   "title_key": "applied_lore.relay_queue_drift.title",
+   "unlock": {
+    "primary": "unlock.first_relay_queue_drift",
+    "poi_tags": [
+     "poi.relay_buffer",
+     "poi.packet_stamp",
+     "poi.route_warning"
+    ],
+    "biome_tags": [
+     "biome.surface_relay",
+     "biome.storm_shelf",
+     "biome.return_route"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Relay Queue Drift",
+     "scanner": "Relay stamp older than the leak it names. The instruction was true for a room that no longer exists.",
+     "field_note": "A late truth can still kill.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until fresh relay window opens. Treat delayed route orders as archival unless pressure, door state, and waterline match.",
+     "audio": "The message is correct. That is the problem.",
+     "in_game_wiki": "Relay queue drift is the deadliest kind of honesty on HECTON-8. A delayed carrier packet can describe a real valve, a real safe door, a real low-current corridor, and a real leak that has already moved. The order is not fake; it belongs to a room changed by pressure, flooding, silt, heat, or collapse. Good field practice is not disobedience for its own sake. It is comparing packet age against wet paint, fresh salt, door strain, pump sound, and the direction loose debris wants to travel.",
+     "external_site": "Relay Queue Drift makes message age a survival variable: remote orders may be true, stale, and lethal at the same time."
+    },
+    "ru_RU": {
+     "title": "Дрейф relay-очереди",
+     "scanner": "Relay stamp старше leak, который он называет. Instruction была верна для room, которой больше нет.",
+     "field_note": "Поздняя truth все еще может убить.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction до fresh relay window opens. Treat delayed route orders as archival, если pressure, door state и waterline не совпадают.",
+     "audio": "Message верное. В этом и проблема.",
+     "in_game_wiki": "Relay queue drift - самая смертельная форма честности на HECTON-8. Delayed carrier packet может описывать real valve, real safe door, real low-current corridor и real leak, который уже ушел дальше. Order не фальшивый; он принадлежит комнате, измененной pressure, flooding, silt, heat или collapse. Хорошая field practice - не неповиновение ради неповиновения. Это сравнение packet age с wet paint, fresh salt, door strain, pump sound и направлением, куда хочет катиться loose debris.",
+     "external_site": "Дрейф relay-очереди делает message age переменной выживания: remote orders могут быть true, stale и lethal одновременно."
+    },
+    "ja_JP": {
+     "title": "Relay Queue Drift",
+     "scanner": "relay stampは名指しするleakより古い。instructionはもう存在しないroomに対して正しかった。",
+     "field_note": "遅れて届くtruthでも殺せる。",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity。fresh relay window opensまでLocal evidence outranks carrier instruction。pressure、door state、waterlineが一致しない限りdelayed route ordersはarchivalとして扱うこと。",
+     "audio": "messageは正しい。それが問題だ。",
+     "in_game_wiki": "Relay queue driftはHECTON-8で最も致命的な正直さである。delayed carrier packetはreal valve、real safe door、real low-current corridor、そしてすでに移動したreal leakを描写しうる。orderは偽物ではない。pressure、flooding、silt、heat、collapseによって変わった部屋に属しているだけだ。良いfield practiceとは反抗そのものではない。packet ageをwet paint、fresh salt、door strain、pump sound、loose debrisが転がりたがる方向と比べることだ。",
+     "external_site": "Relay Queue Driftはmessage ageを生存変数にする。remote ordersは同時にtrue、stale、lethalになりうる。"
+    },
+    "zh_CN": {
+     "title": "中继队列漂移",
+     "scanner": "relay stamp比它命名的leak还老。instruction对一个已经不存在的room曾经正确。",
+     "field_note": "迟到的truth仍然能杀人。",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity。fresh relay window opens之前，Local evidence outranks carrier instruction。除非pressure、door state和waterline一致，否则将delayed route orders视作archival。",
+     "audio": "message是正确的。这正是问题。",
+     "in_game_wiki": "Relay queue drift是HECTON-8上最致命的诚实。delayed carrier packet可以描述一个real valve、real safe door、real low-current corridor，以及一个已经移动的real leak。order不是假的；它属于一个被pressure、flooding、silt、heat或collapse改变的房间。好的field practice不是为了违抗而违抗，而是把packet age与wet paint、fresh salt、door strain、pump sound，以及loose debris想要滚动的方向进行比较。",
+     "external_site": "中继队列漂移让message age成为生存变量：remote orders可能同时true、stale和lethal。"
+    },
+    "fr_FR": {
+     "title": "Derive de relay queue",
+     "scanner": "Relay stamp plus ancien que la leak qu'il nomme. L'instruction etait vraie pour une room qui n'existe plus.",
+     "field_note": "Une truth tardive peut encore tuer.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction jusqu'a ouverture d'une fresh relay window. Treat delayed route orders as archival sauf si pressure, door state et waterline correspondent.",
+     "audio": "Le message est correct. C'est le probleme.",
+     "in_game_wiki": "Relay queue drift est la forme d'honnetete la plus mortelle sur HECTON-8. Un delayed carrier packet peut decrire une real valve, une real safe door, un real low-current corridor et une real leak qui a deja bouge. L'order n'est pas faux; il appartient a une piece changee par pressure, flooding, silt, heat ou collapse. La bonne field practice n'est pas la desobeissance pour elle-meme. C'est comparer packet age a wet paint, fresh salt, door strain, pump sound et a la direction que loose debris veut prendre.",
+     "external_site": "Relay Queue Drift fait de message age une variable de survie: remote orders peuvent etre true, stale et lethal en meme temps."
+    },
+    "es_ES": {
+     "title": "Deriva de relay queue",
+     "scanner": "Relay stamp mas viejo que la leak que nombra. La instruction era cierta para una room que ya no existe.",
+     "field_note": "Una truth tardia todavia puede matar.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction hasta que se abra fresh relay window. Treat delayed route orders as archival salvo que pressure, door state y waterline coincidan.",
+     "audio": "El message es correcto. Ese es el problema.",
+     "in_game_wiki": "Relay queue drift es la forma mas mortal de honestidad en HECTON-8. Un delayed carrier packet puede describir una real valve, una real safe door, un real low-current corridor y una real leak que ya se movio. La order no es falsa; pertenece a una sala cambiada por pressure, flooding, silt, heat o collapse. La buena field practice no es desobediencia por si misma. Es comparar packet age con wet paint, fresh salt, door strain, pump sound y la direccion hacia la que quiere viajar loose debris.",
+     "external_site": "Relay Queue Drift convierte message age en variable de supervivencia: remote orders pueden ser true, stale y lethal al mismo tiempo."
+    },
+    "de_DE": {
+     "title": "Relay Queue Drift",
+     "scanner": "Relay stamp alter als das leak, das er nennt. Die instruction war wahr fur einen room, den es nicht mehr gibt.",
+     "field_note": "Eine spate truth kann immer noch toten.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction bis fresh relay window opens. Treat delayed route orders as archival, sofern pressure, door state und waterline nicht passen.",
+     "audio": "Die message ist korrekt. Das ist das Problem.",
+     "in_game_wiki": "Relay queue drift ist die todlichste Art von Ehrlichkeit auf HECTON-8. Ein delayed carrier packet kann eine real valve, eine real safe door, einen real low-current corridor und ein real leak beschreiben, das sich bereits bewegt hat. Die order ist nicht falsch; sie gehort zu einem Raum, den pressure, flooding, silt, heat oder collapse verandert haben. Gute field practice ist nicht Ungehorsam um seiner selbst willen. Sie vergleicht packet age mit wet paint, fresh salt, door strain, pump sound und der Richtung, in die loose debris reisen will.",
+     "external_site": "Relay Queue Drift macht message age zu einer Uberlebensvariable: remote orders konnen gleichzeitig true, stale und lethal sein."
+    },
+    "pl_PL": {
+     "title": "Dryf relay queue",
+     "scanner": "Relay stamp starszy niz leak, ktory nazywa. Instruction byla prawdziwa dla room, ktory juz nie istnieje.",
+     "field_note": "Spozniona truth wciaz moze zabic.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction do otwarcia fresh relay window. Treat delayed route orders as archival, jesli pressure, door state i waterline nie pasuja.",
+     "audio": "Message jest poprawne. To jest problem.",
+     "in_game_wiki": "Relay queue drift to najbardziej smiertelny rodzaj uczciwosci na HECTON-8. Delayed carrier packet moze opisywac real valve, real safe door, real low-current corridor i real leak, ktory juz sie przesunal. Order nie jest falszywy; nalezy do pomieszczenia zmienionego przez pressure, flooding, silt, heat albo collapse. Dobra field practice to nie nieposluszenstwo dla zasady. To porownanie packet age z wet paint, fresh salt, door strain, pump sound i kierunkiem, w ktory chce leciec loose debris.",
+     "external_site": "Relay Queue Drift czyni message age zmienna przetrwania: remote orders moga byc true, stale i lethal jednoczesnie."
+    },
+    "uk_UA": {
+     "title": "Дрейф relay-черги",
+     "scanner": "Relay stamp старіший за leak, який називає. Instruction була правдивою для room, якої вже немає.",
+     "field_note": "Запізніла truth все ще може вбити.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction до fresh relay window opens. Treat delayed route orders as archival, якщо pressure, door state і waterline не збігаються.",
+     "audio": "Message правильне. У цьому й проблема.",
+     "in_game_wiki": "Relay queue drift - найсмертельніший різновид чесності на HECTON-8. Delayed carrier packet може описувати real valve, real safe door, real low-current corridor і real leak, який уже змістився. Order не фальшивий; він належить кімнаті, зміненій pressure, flooding, silt, heat або collapse. Добра field practice - не непокора заради непокори. Це порівняння packet age з wet paint, fresh salt, door strain, pump sound і напрямком, у який прагне рухатися loose debris.",
+     "external_site": "Дрейф relay-черги робить message age змінною виживання: remote orders можуть бути true, stale і lethal одночасно."
+    },
+    "ar_SA": {
+     "title": "انجراف relay queue",
+     "scanner": "Relay stamp أقدم من leak التي يسميها. كانت instruction صحيحة لغرفة لم تعد موجودة.",
+     "field_note": "يمكن لtruth متأخرة أن تقتل أيضا.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction حتى تفتح fresh relay window. Treat delayed route orders as archival ما لم تتطابق pressure وdoor state وwaterline.",
+     "audio": "إن message صحيحة. هذه هي المشكلة.",
+     "in_game_wiki": "Relay queue drift هو أخطر أنواع الصدق على HECTON-8. يمكن لdelayed carrier packet أن يصف real valve وreal safe door وreal low-current corridor وreal leak انتقلت بالفعل. الorder ليست كاذبة؛ إنها تنتمي إلى room غيرتها pressure أوflooding أوsilt أوheat أوcollapse. field practice الجيدة ليست عصيانا من أجل العصيان. إنها مقارنة packet age مع wet paint وfresh salt وdoor strain وpump sound والاتجاه الذي يريد loose debris أن يتحرك فيه.",
+     "external_site": "يجعل Relay Queue Drift من message age متغير نجاة: يمكن أن تكون remote orders true وstale وlethal في الوقت نفسه."
+    },
+    "id_ID": {
+     "title": "Relay Queue Drift",
+     "scanner": "Relay stamp lebih tua daripada leak yang disebutnya. Instruction itu benar untuk room yang sudah tidak ada.",
+     "field_note": "Truth yang terlambat masih bisa membunuh.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction sampai fresh relay window terbuka. Treat delayed route orders as archival kecuali pressure, door state, dan waterline cocok.",
+     "audio": "Message itu benar. Itulah masalahnya.",
+     "in_game_wiki": "Relay queue drift adalah bentuk kejujuran paling mematikan di HECTON-8. Delayed carrier packet bisa menjelaskan real valve, real safe door, real low-current corridor, dan real leak yang sudah bergerak. Order itu tidak palsu; ia milik ruangan yang telah diubah pressure, flooding, silt, heat, atau collapse. Field practice yang baik bukan pembangkangan demi pembangkangan. Itu membandingkan packet age dengan wet paint, fresh salt, door strain, pump sound, dan arah yang ingin ditempuh loose debris.",
+     "external_site": "Relay Queue Drift menjadikan message age variabel survival: remote orders dapat true, stale, dan lethal pada saat yang sama."
+    },
+    "ko_KR": {
+     "title": "Relay Queue Drift",
+     "scanner": "relay stamp가 그것이 부르는 leak보다 오래되었다. instruction은 더 이상 존재하지 않는 room에 대해 맞았다.",
+     "field_note": "늦은 truth도 여전히 죽일 수 있다.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. fresh relay window가 열릴 때까지 Local evidence outranks carrier instruction. pressure, door state, waterline이 맞지 않으면 delayed route orders는 archival로 취급.",
+     "audio": "message는 정확하다. 그것이 문제다.",
+     "in_game_wiki": "Relay queue drift는 HECTON-8에서 가장 치명적인 정직함이다. delayed carrier packet은 real valve, real safe door, real low-current corridor, 그리고 이미 움직인 real leak를 설명할 수 있다. order는 가짜가 아니다. pressure, flooding, silt, heat, collapse로 변한 방에 속해 있을 뿐이다. 좋은 field practice는 반항 자체가 아니다. packet age를 wet paint, fresh salt, door strain, pump sound, loose debris가 움직이려는 방향과 비교하는 것이다.",
+     "external_site": "Relay Queue Drift는 message age를 생존 변수로 만든다. remote orders는 동시에 true, stale, lethal일 수 있다."
+    },
+    "he_IL": {
+     "title": "סטיית relay queue",
+     "scanner": "Relay stamp ישן יותר מה-leak שהוא מציין. ה-instruction היה נכון עבור room שכבר אינו קיים.",
+     "field_note": "Truth מאוחרת עדיין יכולה להרוג.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction עד ש-fresh relay window נפתח. Treat delayed route orders as archival אלא אם pressure, door state ו-waterline תואמים.",
+     "audio": "ה-message נכון. זו הבעיה.",
+     "in_game_wiki": "Relay queue drift הוא סוג הכנות הקטלני ביותר ב-HECTON-8. Delayed carrier packet יכול לתאר real valve, real safe door, real low-current corridor ו-real leak שכבר זז. ה-order אינו מזויף; הוא שייך לחדר ששונה בידי pressure, flooding, silt, heat או collapse. Field practice טובה אינה אי-ציות לשם אי-ציות. היא השוואת packet age אל wet paint, fresh salt, door strain, pump sound והכיוון שבו loose debris רוצה לנוע.",
+     "external_site": "Relay Queue Drift הופך message age למשתנה הישרדות: remote orders יכולות להיות true, stale ו-lethal בו זמנית."
+    },
+    "pt_BR": {
+     "title": "Deriva de Relay Queue",
+     "scanner": "Relay stamp mais velho que a leak que ele nomeia. A instruction era verdadeira para uma room que nao existe mais.",
+     "field_note": "Uma truth atrasada ainda pode matar.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction ate uma fresh relay window abrir. Treat delayed route orders as archival a menos que pressure, door state e waterline coincidam.",
+     "audio": "O message esta correto. Esse e o problema.",
+     "in_game_wiki": "Relay queue drift e o tipo mais mortal de honestidade em HECTON-8. Um delayed carrier packet pode descrever uma real valve, uma real safe door, um real low-current corridor e uma real leak que ja se moveu. A order nao e falsa; pertence a uma sala mudada por pressure, flooding, silt, heat ou collapse. Boa field practice nao e desobediencia por si so. E comparar packet age com wet paint, fresh salt, door strain, pump sound e a direcao para onde loose debris quer viajar.",
+     "external_site": "Relay Queue Drift torna message age uma variavel de sobrevivencia: remote orders podem ser true, stale e lethal ao mesmo tempo."
+    },
+    "nl_NL": {
+     "title": "Relay Queue Drift",
+     "scanner": "Relay stamp ouder dan de leak die hij benoemt. De instruction was waar voor een room die niet meer bestaat.",
+     "field_note": "Een late truth kan nog steeds doden.",
+     "terminal": "QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction tot fresh relay window opent. Treat delayed route orders as archival tenzij pressure, door state en waterline overeenkomen.",
+     "audio": "De message is correct. Dat is het probleem.",
+     "in_game_wiki": "Relay queue drift is de dodelijkste vorm van eerlijkheid op HECTON-8. Een delayed carrier packet kan een real valve, een real safe door, een real low-current corridor en een real leak beschrijven die al is verplaatst. De order is niet nep; hij hoort bij een ruimte die door pressure, flooding, silt, heat of collapse is veranderd. Goede field practice is geen ongehoorzaamheid om zichzelf. Het is packet age vergelijken met wet paint, fresh salt, door strain, pump sound en de richting waarin loose debris wil reizen.",
+     "external_site": "Relay Queue Drift maakt message age tot overlevingsvariabele: remote orders kunnen tegelijk true, stale en lethal zijn."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P055_CORPORATE_RESPONSE_LEDGER",
+   "article_id": "hecton8.corporate_response_ledger",
+   "title_key": "applied_lore.corporate_response_ledger.title",
+   "unlock": {
+    "primary": "unlock.first_corporate_response_ledger",
+    "poi_tags": [
+     "poi.response_ledger",
+     "poi.liability_seal",
+     "poi.operator_recovery"
+    ],
+    "biome_tags": [
+     "biome.corporate_wreck",
+     "biome.return_route",
+     "biome.deep_salvage"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Corporate Response Ledger",
+     "scanner": "Every reply arrives in contract language: asset custody, liability lock, sample route, hull risk, then operator recovery.",
+     "field_note": "Immediate response is not immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, and evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "The reply was automatic. The rescue was conditional.",
+     "in_game_wiki": "The corporate response ledger is how Black Keel speaks when nobody is improvising. It can acknowledge distress instantly, open a route queue, preserve a claim, demand sample custody, log hull risk, and still leave a living operator waiting behind asset rules. The ledger is valuable because it exposes what the system knows. It is hostile because knowing is not the same as acting. On HECTON-8, the first reply is often proof that the machine heard everything and promised almost nothing.",
+     "external_site": "Corporate Response Ledger records the hard limit of Black Keel assistance: response speed, rescue priority, evidence custody, asset preservation, and debt settlement remain separate systems."
+    },
+    "ru_RU": {
+     "title": "Corporate response ledger",
+     "scanner": "Каждый reply приходит contract language: asset custody, liability lock, sample route, hull risk, потом operator recovery.",
+     "field_note": "Immediate response - не immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route и evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "Reply был automatic. Rescue был conditional.",
+     "in_game_wiki": "Corporate response ledger - язык Black Keel в моменты, когда никто не improvising. Он может мгновенно acknowledge distress, открыть route queue, preserve a claim, demand sample custody, log hull risk и все равно оставить living operator ждать за asset rules. Ledger ценен тем, что показывает, что system знает. Он враждебен тем, что knowing не равно acting. На HECTON-8 первый reply часто является доказательством: machine услышала все и почти ничего не обещала.",
+     "external_site": "Corporate response ledger фиксирует жесткий предел помощи Black Keel: response speed, rescue priority, evidence custody, asset preservation и debt settlement остаются отдельными systems."
+    },
+    "ja_JP": {
+     "title": "Corporate Response Ledger",
+     "scanner": "すべてのreplyはcontract languageで届く。asset custody、liability lock、sample route、hull risk、その後operator recovery。",
+     "field_note": "immediate responseはimmediate rescueではない。",
+     "terminal": "RESPONSE CLASS: asset-preservation。Operator recovery appended after sample custody、liability seal、hull audit、payment route、evidence retention。Automated acknowledgement valid。Rescue priority unresolved。",
+     "audio": "replyはautomaticだった。rescueはconditionalだった。",
+     "in_game_wiki": "corporate response ledgerは、誰もimprovisingしていない時にBlack Keelが話す方法である。即座にdistressをacknowledgeし、route queueを開き、claimをpreserveし、sample custodyを要求し、hull riskをlogし、それでもliving operatorをasset rulesの後ろに待たせることができる。ledgerが価値を持つのはsystemが何を知っているかを暴くからだ。敵対的なのはknowingがactingと同じではないからだ。HECTON-8で最初のreplyはしばしば、machineがすべてを聞き、ほとんど何も約束しなかった証拠になる。",
+     "external_site": "Corporate Response LedgerはBlack Keel支援の硬い限界を記録する。response speed、rescue priority、evidence custody、asset preservation、debt settlementは別々のsystemsであり続ける。"
+    },
+    "zh_CN": {
+     "title": "企业响应账本",
+     "scanner": "每个reply都以contract language抵达：asset custody、liability lock、sample route、hull risk，然后才是operator recovery。",
+     "field_note": "Immediate response不是immediate rescue。",
+     "terminal": "RESPONSE CLASS: asset-preservation。Operator recovery appended after sample custody、liability seal、hull audit、payment route和evidence retention。Automated acknowledgement valid。Rescue priority unresolved。",
+     "audio": "reply是automatic。rescue是conditional。",
+     "in_game_wiki": "corporate response ledger是无人improvising时Black Keel说话的方式。它可以立刻acknowledge distress，打开route queue，preserve a claim，demand sample custody，log hull risk，同时仍让living operator在asset rules后面等待。ledger有价值，因为它暴露system知道什么。它带有敌意，因为knowing并不等于acting。在HECTON-8，第一条reply常常证明machine听见了一切，却几乎什么都没有承诺。",
+     "external_site": "企业响应账本记录Black Keel援助的硬边界：response speed、rescue priority、evidence custody、asset preservation和debt settlement仍是分离systems。"
+    },
+    "fr_FR": {
+     "title": "Ledger de reponse corporate",
+     "scanner": "Chaque reply arrive en contract language: asset custody, liability lock, sample route, hull risk, puis operator recovery.",
+     "field_note": "Immediate response n'est pas immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route et evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "La reply etait automatic. Le rescue etait conditional.",
+     "in_game_wiki": "Le corporate response ledger est la facon dont Black Keel parle quand personne n'improvise. Il peut acknowledge distress instantanement, ouvrir une route queue, preserve a claim, demand sample custody, log hull risk, et laisser quand meme un living operator attendre derriere asset rules. Le ledger a de la valeur parce qu'il expose ce que le system sait. Il est hostile parce que knowing n'est pas acting. Sur HECTON-8, la premiere reply prouve souvent que la machine a tout entendu et n'a presque rien promis.",
+     "external_site": "Le Corporate Response Ledger enregistre la limite dure de l'aide Black Keel: response speed, rescue priority, evidence custody, asset preservation et debt settlement restent des systems separes."
+    },
+    "es_ES": {
+     "title": "Ledger de respuesta corporativa",
+     "scanner": "Cada reply llega en contract language: asset custody, liability lock, sample route, hull risk, luego operator recovery.",
+     "field_note": "Immediate response no es immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route y evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "La reply fue automatic. El rescue fue conditional.",
+     "in_game_wiki": "El corporate response ledger es como habla Black Keel cuando nadie improvisa. Puede acknowledge distress al instante, abrir una route queue, preserve a claim, demand sample custody, log hull risk y aun dejar a un living operator esperando detras de asset rules. El ledger es valioso porque expone lo que el system sabe. Es hostil porque knowing no es acting. En HECTON-8, la primera reply suele ser prueba de que la machine oyo todo y prometio casi nada.",
+     "external_site": "El Corporate Response Ledger registra el limite duro de la ayuda de Black Keel: response speed, rescue priority, evidence custody, asset preservation y debt settlement siguen siendo systems separados."
+    },
+    "de_DE": {
+     "title": "Corporate Response Ledger",
+     "scanner": "Jede reply kommt in contract language: asset custody, liability lock, sample route, hull risk, dann operator recovery.",
+     "field_note": "Immediate response ist nicht immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route und evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "Die reply war automatic. Der rescue war conditional.",
+     "in_game_wiki": "Das corporate response ledger ist Black Keels Sprache, wenn niemand improvisiert. Es kann distress sofort acknowledge, eine route queue offnen, preserve a claim, demand sample custody, log hull risk und trotzdem einen living operator hinter asset rules warten lassen. Das ledger ist wertvoll, weil es offenlegt, was das system weiss. Es ist feindlich, weil knowing nicht acting ist. Auf HECTON-8 ist die erste reply oft der Beweis, dass die machine alles gehort und fast nichts versprochen hat.",
+     "external_site": "Corporate Response Ledger halt die harte Grenze der Black-Keel-Hilfe fest: response speed, rescue priority, evidence custody, asset preservation und debt settlement bleiben getrennte systems."
+    },
+    "pl_PL": {
+     "title": "Corporate response ledger",
+     "scanner": "Kazda reply przychodzi w contract language: asset custody, liability lock, sample route, hull risk, potem operator recovery.",
+     "field_note": "Immediate response to nie immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route i evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "Reply byla automatic. Rescue byl conditional.",
+     "in_game_wiki": "Corporate response ledger to sposob, w jaki Black Keel mowi, gdy nikt nie improwizuje. Moze natychmiast acknowledge distress, otworzyc route queue, preserve a claim, demand sample custody, log hull risk i nadal zostawic living operator za asset rules. Ledger jest wartosciowy, bo pokazuje, co system wie. Jest wrogi, bo knowing to nie acting. Na HECTON-8 pierwsza reply czesto dowodzi, ze machine uslyszala wszystko i obiecala prawie nic.",
+     "external_site": "Corporate Response Ledger zapisuje twardy limit pomocy Black Keel: response speed, rescue priority, evidence custody, asset preservation i debt settlement pozostaja osobnymi systems."
+    },
+    "uk_UA": {
+     "title": "Corporate response ledger",
+     "scanner": "Кожен reply приходить contract language: asset custody, liability lock, sample route, hull risk, потім operator recovery.",
+     "field_note": "Immediate response - не immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route і evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "Reply був automatic. Rescue був conditional.",
+     "in_game_wiki": "Corporate response ledger - це мова Black Keel, коли ніхто не improvising. Він може миттєво acknowledge distress, відкрити route queue, preserve a claim, demand sample custody, log hull risk і все одно лишити living operator чекати за asset rules. Ledger цінний, бо показує, що system знає. Він ворожий, бо knowing не дорівнює acting. На HECTON-8 перший reply часто доводить, що machine почула все й майже нічого не пообіцяла.",
+     "external_site": "Corporate Response Ledger фіксує жорстку межу допомоги Black Keel: response speed, rescue priority, evidence custody, asset preservation і debt settlement лишаються окремими systems."
+    },
+    "ar_SA": {
+     "title": "سجل الاستجابة corporate",
+     "scanner": "كل reply يصل بلغة contract language: asset custody وliability lock وsample route وhull risk، ثم operator recovery.",
+     "field_note": "Immediate response ليست immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody وliability seal وhull audit وpayment route وevidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "كانت reply automatic. وكان rescue conditional.",
+     "in_game_wiki": "Corporate response ledger هو الطريقة التي يتكلم بها Black Keel عندما لا يرتجل أحد. يمكنه acknowledge distress فورا، وفتح route queue، وpreserve a claim، وdemand sample custody، وlog hull risk، ومع ذلك يترك living operator ينتظر خلف asset rules. للledger قيمة لأنه يكشف ما يعرفه system. وهو عدائي لأن knowing ليس acting. على HECTON-8، تكون أول reply غالبا دليلا على أن machine سمعت كل شيء ووعدت تقريبا بلا شيء.",
+     "external_site": "يسجل Corporate Response Ledger الحد الصلب لمساعدة Black Keel: response speed وrescue priority وevidence custody وasset preservation وdebt settlement تبقى systems منفصلة."
+    },
+    "id_ID": {
+     "title": "Corporate Response Ledger",
+     "scanner": "Setiap reply tiba dalam contract language: asset custody, liability lock, sample route, hull risk, lalu operator recovery.",
+     "field_note": "Immediate response bukan immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, dan evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "Reply itu automatic. Rescue itu conditional.",
+     "in_game_wiki": "Corporate response ledger adalah cara Black Keel berbicara ketika tidak ada yang improvising. Ia bisa langsung acknowledge distress, membuka route queue, preserve a claim, demand sample custody, log hull risk, dan tetap membiarkan living operator menunggu di belakang asset rules. Ledger itu berharga karena memperlihatkan apa yang diketahui system. Ia bermusuhan karena knowing tidak sama dengan acting. Di HECTON-8, reply pertama sering menjadi bukti bahwa machine mendengar semuanya dan hampir tidak menjanjikan apa pun.",
+     "external_site": "Corporate Response Ledger mencatat batas keras bantuan Black Keel: response speed, rescue priority, evidence custody, asset preservation, dan debt settlement tetap menjadi systems terpisah."
+    },
+    "ko_KR": {
+     "title": "Corporate Response Ledger",
+     "scanner": "모든 reply는 contract language로 도착한다. asset custody, liability lock, sample route, hull risk, 그 다음 operator recovery.",
+     "field_note": "Immediate response는 immediate rescue가 아니다.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "reply는 automatic이었다. rescue는 conditional이었다.",
+     "in_game_wiki": "corporate response ledger는 아무도 improvising하지 않을 때 Black Keel이 말하는 방식이다. 그것은 즉시 distress를 acknowledge하고, route queue를 열고, preserve a claim, demand sample custody, log hull risk를 수행하면서도 living operator를 asset rules 뒤에 기다리게 할 수 있다. ledger는 system이 무엇을 아는지 드러내기 때문에 가치가 있다. 하지만 hostile하다. knowing은 acting과 같지 않기 때문이다. HECTON-8에서 첫 reply는 machine이 모든 것을 들었고 거의 아무것도 약속하지 않았다는 증거가 되곤 한다.",
+     "external_site": "Corporate Response Ledger는 Black Keel 지원의 단단한 한계를 기록한다. response speed, rescue priority, evidence custody, asset preservation, debt settlement는 별도의 systems로 남는다."
+    },
+    "he_IL": {
+     "title": "Corporate Response Ledger",
+     "scanner": "כל reply מגיעה ב-contract language: asset custody, liability lock, sample route, hull risk, ואז operator recovery.",
+     "field_note": "Immediate response אינו immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route ו-evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "ה-reply הייתה automatic. ה-rescue היה conditional.",
+     "in_game_wiki": "Corporate response ledger הוא האופן שבו Black Keel מדברת כשאף אחד אינו improvising. הוא יכול acknowledge distress מיד, לפתוח route queue, preserve a claim, demand sample custody, log hull risk, ועדיין להשאיר living operator מחכה מאחורי asset rules. ה-ledger בעל ערך מפני שהוא חושף מה ה-system יודע. הוא עוין מפני ש-knowing אינו acting. ב-HECTON-8, ה-reply הראשונה היא לעיתים קרובות הוכחה שה-machine שמעה הכול והבטיחה כמעט כלום.",
+     "external_site": "Corporate Response Ledger מתעד את הגבול הקשה של עזרת Black Keel: response speed, rescue priority, evidence custody, asset preservation ו-debt settlement נשארים systems נפרדים."
+    },
+    "pt_BR": {
+     "title": "Corporate Response Ledger",
+     "scanner": "Toda reply chega em contract language: asset custody, liability lock, sample route, hull risk, depois operator recovery.",
+     "field_note": "Immediate response nao e immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route e evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "A reply foi automatic. O rescue foi conditional.",
+     "in_game_wiki": "O corporate response ledger e como a Black Keel fala quando ninguem improvisa. Ele pode acknowledge distress instantaneamente, abrir route queue, preserve a claim, demand sample custody, log hull risk e ainda deixar um living operator esperando atras de asset rules. O ledger e valioso porque expoe o que o system sabe. E hostil porque knowing nao e acting. Em HECTON-8, a primeira reply muitas vezes prova que a machine ouviu tudo e prometeu quase nada.",
+     "external_site": "Corporate Response Ledger registra o limite duro da ajuda da Black Keel: response speed, rescue priority, evidence custody, asset preservation e debt settlement continuam systems separados."
+    },
+    "nl_NL": {
+     "title": "Corporate Response Ledger",
+     "scanner": "Elke reply komt in contract language: asset custody, liability lock, sample route, hull risk, daarna operator recovery.",
+     "field_note": "Immediate response is geen immediate rescue.",
+     "terminal": "RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route en evidence retention. Automated acknowledgement valid. Rescue priority unresolved.",
+     "audio": "De reply was automatic. De rescue was conditional.",
+     "in_game_wiki": "Het corporate response ledger is hoe Black Keel spreekt wanneer niemand improviseert. Het kan distress direct acknowledge, een route queue openen, preserve a claim, demand sample custody, log hull risk en toch een living operator achter asset rules laten wachten. Het ledger is waardevol omdat het toont wat het system weet. Het is vijandig omdat knowing niet hetzelfde is als acting. Op HECTON-8 bewijst de eerste reply vaak dat de machine alles hoorde en bijna niets beloofde.",
+     "external_site": "Corporate Response Ledger registreert de harde limiet van Black Keel-hulp: response speed, rescue priority, evidence custody, asset preservation en debt settlement blijven aparte systems."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

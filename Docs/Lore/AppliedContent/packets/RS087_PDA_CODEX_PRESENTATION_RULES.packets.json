@@ -1,787 +1,797 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P431_PDA_EVIDENCE_TIER_LABEL_RULE",
-      "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
-      "article_id": "applied_lore.pda_evidence_tier_label_rule",
-      "title_key": "applied_lore.pda_evidence_tier_label_rule.title",
-      "unlock": {
-        "primary": "unlock.pda_evidence_tier_label_rule",
-        "poi_tags": [
-          "poi.pda_evidence_tier_rule",
-          "poi.codex_filter_label",
-          "poi.proof_stage_badge"
-        ],
-        "biome_tags": [
-          "biome.codex",
-          "biome.ui_rules"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "PDA Evidence Tier Label Rule",
-          "scanner": "Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "RU LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "RU LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "RU LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "RU LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "RU LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "RU LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "JA LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "JA LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "JA LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "JA LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "JA LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "JA LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "ZH LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "ZH LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "ZH LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "ZH LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "ZH LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "ZH LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "FR LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "FR LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "FR LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "FR LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "FR LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "FR LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "ES LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "ES LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "ES LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "ES LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "ES LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "ES LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "DE LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "DE LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "DE LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "DE LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "DE LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "DE LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "PL LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "PL LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "PL LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "PL LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "PL LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "PL LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "UK LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "UK LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "UK LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "UK LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "UK LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "UK LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "AR LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "AR LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "AR LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "AR LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "AR LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "AR LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "ID LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "ID LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "ID LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "ID LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "ID LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "ID LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "KO LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "KO LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "KO LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "KO LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "KO LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "KO LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "HE LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "HE LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "HE LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "HE LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "HE LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "HE LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "PT LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "PT LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "PT LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "PT LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "PT LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "PT LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: PDA Evidence Tier Label Rule",
-          "scanner": "NL LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
-          "terminal": "NL LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
-          "audio": "NL LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
-          "in_game_wiki": "NL LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
-          "external_site": "NL LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
-          "field_note": "NL LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P431_PDA_EVIDENCE_TIER_LABEL_RULE",
+   "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
+   "article_id": "applied_lore.pda_evidence_tier_label_rule",
+   "title_key": "applied_lore.pda_evidence_tier_label_rule.title",
+   "unlock": {
+    "primary": "unlock.pda_evidence_tier_label_rule",
+    "poi_tags": [
+     "poi.pda_evidence_tier_rule",
+     "poi.codex_filter_label",
+     "poi.proof_stage_badge"
+    ],
+    "biome_tags": [
+     "biome.codex",
+     "biome.ui_rules"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "PDA Evidence Tier Label Rule",
+     "scanner": "Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
     },
-    {
-      "packet_id": "P432_SCANNER_STAGE_COPY_ESCALATION_RULE",
-      "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
-      "article_id": "applied_lore.scanner_stage_copy_escalation_rule",
-      "title_key": "applied_lore.scanner_stage_copy_escalation_rule.title",
-      "unlock": {
-        "primary": "unlock.scanner_stage_copy_escalation_rule",
-        "poi_tags": [
-          "poi.scanner_stage_rule",
-          "poi.scan_stage_badge",
-          "poi.fauna_risk_copy"
-        ],
-        "biome_tags": [
-          "biome.scanner_ui",
-          "biome.deep_ecology"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Scanner Stage Copy Escalation Rule",
-          "scanner": "Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "RU LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "RU LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "RU LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "RU LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "RU LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "RU LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "JA LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "JA LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "JA LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "JA LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "JA LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "JA LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "ZH LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "ZH LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "ZH LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "ZH LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "ZH LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "ZH LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "FR LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "FR LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "FR LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "FR LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "FR LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "FR LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "ES LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "ES LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "ES LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "ES LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "ES LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "ES LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "DE LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "DE LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "DE LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "DE LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "DE LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "DE LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "PL LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "PL LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "PL LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "PL LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "PL LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "PL LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "UK LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "UK LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "UK LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "UK LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "UK LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "UK LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "AR LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "AR LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "AR LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "AR LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "AR LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "AR LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "ID LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "ID LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "ID LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "ID LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "ID LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "ID LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "KO LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "KO LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "KO LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "KO LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "KO LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "KO LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "HE LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "HE LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "HE LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "HE LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "HE LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "HE LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "PT LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "PT LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "PT LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "PT LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "PT LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "PT LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Scanner Stage Copy Escalation Rule",
-          "scanner": "NL LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
-          "terminal": "NL LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
-          "audio": "NL LOC HOLD: A scanner should get scared slowly and for reasons.",
-          "in_game_wiki": "NL LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
-          "external_site": "NL LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
-          "field_note": "NL LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "RU LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "RU LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "RU LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "RU LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "RU LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "RU LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
     },
-    {
-      "packet_id": "P433_TERMINAL_OPERATOR_SURFACE_RULE",
-      "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
-      "article_id": "applied_lore.terminal_operator_surface_rule",
-      "title_key": "applied_lore.terminal_operator_surface_rule.title",
-      "unlock": {
-        "primary": "unlock.terminal_operator_surface_rule",
-        "poi_tags": [
-          "poi.terminal_operator_rule",
-          "poi.legal_boilerplate_style",
-          "poi.operator_log_surface"
-        ],
-        "biome_tags": [
-          "biome.terminal_ui",
-          "biome.colony_infrastructure"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Terminal Operator Surface Rule",
-          "scanner": "Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "RU LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "RU LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "RU LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "RU LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "RU LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "RU LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "JA LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "JA LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "JA LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "JA LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "JA LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "JA LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "ZH LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "ZH LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "ZH LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "ZH LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "ZH LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "ZH LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "FR LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "FR LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "FR LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "FR LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "FR LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "FR LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "ES LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "ES LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "ES LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "ES LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "ES LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "ES LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "DE LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "DE LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "DE LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "DE LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "DE LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "DE LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "PL LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "PL LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "PL LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "PL LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "PL LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "PL LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "UK LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "UK LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "UK LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "UK LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "UK LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "UK LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "AR LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "AR LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "AR LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "AR LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "AR LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "AR LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "ID LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "ID LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "ID LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "ID LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "ID LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "ID LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "KO LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "KO LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "KO LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "KO LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "KO LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "KO LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "HE LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "HE LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "HE LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "HE LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "HE LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "HE LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "PT LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "PT LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "PT LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "PT LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "PT LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "PT LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Terminal Operator Surface Rule",
-          "scanner": "NL LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
-          "terminal": "NL LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
-          "audio": "NL LOC HOLD: A terminal should sound like it was used by tired people.",
-          "in_game_wiki": "NL LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
-          "external_site": "NL LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
-          "field_note": "NL LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
-        }
-      }
+    "ja_JP": {
+     "title": "JA LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "JA LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "JA LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "JA LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "JA LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "JA LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "JA LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
     },
-    {
-      "packet_id": "P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE",
-      "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
-      "article_id": "applied_lore.dossier_ending_record_layout_rule",
-      "title_key": "applied_lore.dossier_ending_record_layout_rule.title",
-      "unlock": {
-        "primary": "unlock.dossier_ending_record_layout_rule",
-        "poi_tags": [
-          "poi.ending_record_layout",
-          "poi.receiver_badge_set",
-          "poi.dossier_outcome_grid"
-        ],
-        "biome_tags": [
-          "biome.codex",
-          "biome.spoiler_gate"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Dossier Ending Record Layout Rule",
-          "scanner": "Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "RU LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "RU LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "RU LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "RU LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "RU LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "RU LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "JA LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "JA LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "JA LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "JA LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "JA LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "JA LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "ZH LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "ZH LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "ZH LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "ZH LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "ZH LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "ZH LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "FR LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "FR LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "FR LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "FR LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "FR LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "FR LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "ES LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "ES LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "ES LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "ES LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "ES LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "ES LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "DE LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "DE LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "DE LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "DE LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "DE LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "DE LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "PL LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "PL LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "PL LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "PL LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "PL LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "PL LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "UK LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "UK LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "UK LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "UK LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "UK LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "UK LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "AR LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "AR LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "AR LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "AR LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "AR LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "AR LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "ID LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "ID LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "ID LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "ID LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "ID LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "ID LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "KO LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "KO LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "KO LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "KO LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "KO LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "KO LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "HE LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "HE LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "HE LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "HE LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "HE LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "HE LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "PT LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "PT LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "PT LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "PT LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "PT LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "PT LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Dossier Ending Record Layout Rule",
-          "scanner": "NL LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
-          "terminal": "NL LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
-          "audio": "NL LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
-          "in_game_wiki": "NL LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
-          "external_site": "NL LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
-          "field_note": "NL LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
-        }
-      }
+    "zh_CN": {
+     "title": "ZH LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "ZH LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "ZH LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "ZH LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "ZH LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "ZH LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "ZH LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
     },
-    {
-      "packet_id": "P435_LOCALIZED_OVERFLOW_PRESENTATION_RULE",
-      "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
-      "article_id": "applied_lore.localized_overflow_presentation_rule",
-      "title_key": "applied_lore.localized_overflow_presentation_rule.title",
-      "unlock": {
-        "primary": "unlock.localized_overflow_presentation_rule",
-        "poi_tags": [
-          "poi.localization_overflow_rule",
-          "poi.rtl_cjk_review_badge",
-          "poi.codex_layout_guard"
-        ],
-        "biome_tags": [
-          "biome.localization",
-          "biome.ui_rules"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Localized Overflow Presentation Rule",
-          "scanner": "Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "Localization layout records keep long or directional text from changing packet truth."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "RU LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "RU LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "RU LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "RU LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "RU LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "RU LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "JP LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "JP LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "JA LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "JP LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "JP LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "JP LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "CN LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "CN LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "ZH LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "CN LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "CN LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "CN LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "FR LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "FR LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "FR LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "FR LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "FR LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "FR LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "ES LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "ES LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "ES LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "ES LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "ES LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "ES LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "DE LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "DE LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "DE LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "DE LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "DE LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "DE LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "PL LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "PL LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "PL LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "PL LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "PL LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "PL LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "UA LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "UA LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "UK LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "UA LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "UA LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "UA LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "AR LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "AR LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "AR LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "AR LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "AR LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "AR LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "ID LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "ID LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "ID LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "ID LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "ID LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "ID LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "KO LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "KO LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "KO LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "KO LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "KO LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "KO LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "HE LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "HE LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "HE LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "HE LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "HE LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "HE LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "PT LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "PT LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "PT LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "PT LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "PT LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "PT LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Localized Overflow Presentation Rule",
-          "scanner": "NL LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
-          "terminal": "NL LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
-          "audio": "NL LOC HOLD: A language can take more room. It cannot take a different truth.",
-          "in_game_wiki": "NL LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
-          "external_site": "NL LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
-          "field_note": "NL LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "FR LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "FR LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "FR LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "FR LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "FR LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "FR LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "ES LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "ES LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "ES LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "ES LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "ES LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "ES LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "DE LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "DE LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "DE LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "DE LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "DE LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "DE LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "PL LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "PL LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "PL LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "PL LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "PL LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "PL LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "UK LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "UK LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "UK LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "UK LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "UK LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "UK LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "AR LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "AR LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "AR LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "AR LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "AR LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "AR LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "ID LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "ID LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "ID LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "ID LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "ID LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "ID LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "KO LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "KO LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "KO LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "KO LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "KO LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "KO LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "HE LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "HE LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "HE LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "HE LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "HE LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "HE LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "PT LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "PT LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "PT LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "PT LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "PT LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "PT LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: PDA Evidence Tier Label Rule",
+     "scanner": "NL LOC HOLD: Presentation rule: PDA evidence uses tier labels for rumor, artifact, physical proof, receiver authority and ending record.",
+     "terminal": "NL LOC HOLD: PDA LABELS: do not color truth as good/bad. Label custody strength, proof stage, spoiler gate and receiver pressure.",
+     "audio": "NL LOC HOLD: The PDA should tell you how strong the proof is, not what to feel.",
+     "in_game_wiki": "NL LOC HOLD: Evidence tier labels keep the codex readable across long campaigns without turning mystery into checklist morality.",
+     "external_site": "NL LOC HOLD: In-game documents are organized by evidence strength and custody, not by quest-good or quest-bad labels.",
+     "field_note": "NL LOC HOLD: PDA label record: evidence tier labels and glossary terms must remain readable, stable, and localization-safe."
     }
-  ]
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P432_SCANNER_STAGE_COPY_ESCALATION_RULE",
+   "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
+   "article_id": "applied_lore.scanner_stage_copy_escalation_rule",
+   "title_key": "applied_lore.scanner_stage_copy_escalation_rule.title",
+   "unlock": {
+    "primary": "unlock.scanner_stage_copy_escalation_rule",
+    "poi_tags": [
+     "poi.scanner_stage_rule",
+     "poi.scan_stage_badge",
+     "poi.fauna_risk_copy"
+    ],
+    "biome_tags": [
+     "biome.scanner_ui",
+     "biome.deep_ecology"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Scanner Stage Copy Escalation Rule",
+     "scanner": "Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "RU LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "RU LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "RU LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "RU LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "RU LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "RU LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "JA LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "JA LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "JA LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "JA LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "JA LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "JA LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "ZH LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "ZH LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "ZH LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "ZH LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "ZH LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "ZH LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "FR LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "FR LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "FR LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "FR LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "FR LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "FR LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "ES LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "ES LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "ES LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "ES LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "ES LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "ES LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "DE LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "DE LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "DE LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "DE LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "DE LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "DE LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "PL LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "PL LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "PL LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "PL LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "PL LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "PL LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "UK LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "UK LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "UK LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "UK LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "UK LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "UK LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "AR LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "AR LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "AR LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "AR LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "AR LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "AR LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "ID LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "ID LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "ID LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "ID LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "ID LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "ID LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "KO LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "KO LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "KO LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "KO LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "KO LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "KO LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "HE LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "HE LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "HE LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "HE LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "HE LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "HE LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "PT LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "PT LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "PT LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "PT LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "PT LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "PT LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Scanner Stage Copy Escalation Rule",
+     "scanner": "NL LOC HOLD: Scanner copy escalates from safe classification to route risk to Atlas contamination only when evidence supports it.",
+     "terminal": "NL LOC HOLD: SCAN STAGES: stage 0 classify, stage 1 route hint, stage 2 hazard, stage 3 custody, stage 4 Atlas repair-network relation.",
+     "audio": "NL LOC HOLD: A scanner should get scared slowly and for reasons.",
+     "in_game_wiki": "NL LOC HOLD: Scanner writing keeps horror earned: the same object becomes stranger only as the player's tool chain improves.",
+     "external_site": "NL LOC HOLD: HECTON-8 reveals ecology and machine contamination through staged evidence, not instant lore dumps.",
+     "field_note": "NL LOC HOLD: Scanner copy record: scan stages escalate from contact to evidence without dumping omniscient exposition."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P433_TERMINAL_OPERATOR_SURFACE_RULE",
+   "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
+   "article_id": "applied_lore.terminal_operator_surface_rule",
+   "title_key": "applied_lore.terminal_operator_surface_rule.title",
+   "unlock": {
+    "primary": "unlock.terminal_operator_surface_rule",
+    "poi_tags": [
+     "poi.terminal_operator_rule",
+     "poi.legal_boilerplate_style",
+     "poi.operator_log_surface"
+    ],
+    "biome_tags": [
+     "biome.terminal_ui",
+     "biome.colony_infrastructure"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Terminal Operator Surface Rule",
+     "scanner": "Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "RU LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "RU LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "RU LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "RU LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "RU LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "RU LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "JA LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "JA LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "JA LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "JA LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "JA LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "JA LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "ZH LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "ZH LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "ZH LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "ZH LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "ZH LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "ZH LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "FR LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "FR LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "FR LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "FR LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "FR LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "FR LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "ES LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "ES LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "ES LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "ES LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "ES LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "ES LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "DE LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "DE LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "DE LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "DE LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "DE LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "DE LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "PL LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "PL LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "PL LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "PL LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "PL LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "PL LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "UK LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "UK LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "UK LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "UK LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "UK LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "UK LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "AR LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "AR LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "AR LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "AR LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "AR LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "AR LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "ID LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "ID LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "ID LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "ID LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "ID LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "ID LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "KO LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "KO LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "KO LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "KO LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "KO LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "KO LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "HE LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "HE LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "HE LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "HE LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "HE LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "HE LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "PT LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "PT LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "PT LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "PT LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "PT LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "PT LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Terminal Operator Surface Rule",
+     "scanner": "NL LOC HOLD: Terminal rule: old colony terminals speak as operators, logs and systems, not omniscient lore narrators.",
+     "terminal": "NL LOC HOLD: TERMINAL VOICE: clipped procedure, worn jokes, legal boilerplate, sensor confidence and failure stamps. No villain monologue.",
+     "audio": "NL LOC HOLD: A terminal should sound like it was used by tired people.",
+     "in_game_wiki": "NL LOC HOLD: Terminal surfaces carry human texture through procedure, not exposition speeches.",
+     "external_site": "NL LOC HOLD: The colony is understood through work systems: pumps, queues, certifications and broken legal packets.",
+     "field_note": "NL LOC HOLD: Terminal voice record: operator surfaces stay short, local, procedural, and tied to physical context."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P434_DOSSIER_ENDING_RECORD_LAYOUT_RULE",
+   "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
+   "article_id": "applied_lore.dossier_ending_record_layout_rule",
+   "title_key": "applied_lore.dossier_ending_record_layout_rule.title",
+   "unlock": {
+    "primary": "unlock.dossier_ending_record_layout_rule",
+    "poi_tags": [
+     "poi.ending_record_layout",
+     "poi.receiver_badge_set",
+     "poi.dossier_outcome_grid"
+    ],
+    "biome_tags": [
+     "biome.codex",
+     "biome.spoiler_gate"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Dossier Ending Record Layout Rule",
+     "scanner": "Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "RU LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "RU LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "RU LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "RU LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "RU LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "RU LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "JA LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "JA LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "JA LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "JA LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "JA LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "JA LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "ZH LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "ZH LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "ZH LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "ZH LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "ZH LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "ZH LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "FR LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "FR LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "FR LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "FR LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "FR LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "FR LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "ES LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "ES LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "ES LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "ES LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "ES LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "ES LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "DE LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "DE LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "DE LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "DE LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "DE LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "DE LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "PL LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "PL LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "PL LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "PL LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "PL LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "PL LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "UK LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "UK LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "UK LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "UK LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "UK LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "UK LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "AR LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "AR LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "AR LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "AR LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "AR LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "AR LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "ID LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "ID LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "ID LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "ID LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "ID LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "ID LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "KO LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "KO LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "KO LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "KO LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "KO LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "KO LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "HE LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "HE LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "HE LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "HE LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "HE LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "HE LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "PT LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "PT LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "PT LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "PT LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "PT LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "PT LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Dossier Ending Record Layout Rule",
+     "scanner": "NL LOC HOLD: Dossier rule: ending records show receiver, custody, proof state, Atlas continuity, player survival and debt outcome.",
+     "terminal": "NL LOC HOLD: ENDING RECORD: never show a clean victory stamp. Show payload receiver, suppressed/open evidence, survival route and unresolved cost.",
+     "audio": "NL LOC HOLD: The record does not congratulate you. It itemizes what changed hands.",
+     "in_game_wiki": "NL LOC HOLD: Ending dossier layout makes outcomes comparable without reducing them to good/bad endings.",
+     "external_site": "NL LOC HOLD: Spoiler pages should describe endings through custody and consequence, not moral score.",
+     "field_note": "NL LOC HOLD: Dossier layout record: ending records preserve knowledge and consequence without turning into gear progression."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P435_LOCALIZED_OVERFLOW_PRESENTATION_RULE",
+   "release_set_id": "RS087_PDA_CODEX_PRESENTATION_RULES",
+   "article_id": "applied_lore.localized_overflow_presentation_rule",
+   "title_key": "applied_lore.localized_overflow_presentation_rule.title",
+   "unlock": {
+    "primary": "unlock.localized_overflow_presentation_rule",
+    "poi_tags": [
+     "poi.localization_overflow_rule",
+     "poi.rtl_cjk_review_badge",
+     "poi.codex_layout_guard"
+    ],
+    "biome_tags": [
+     "biome.localization",
+     "biome.ui_rules"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Localized Overflow Presentation Rule",
+     "scanner": "Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "Localization layout records keep long or directional text from changing packet truth."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "RU LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "RU LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "RU LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "RU LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "RU LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "RU LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "JP LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "JP LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "JA LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "JP LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "JP LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "JP LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "CN LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "CN LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "ZH LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "CN LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "CN LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "CN LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "FR LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "FR LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "FR LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "FR LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "FR LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "FR LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "ES LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "ES LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "ES LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "ES LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "ES LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "ES LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "DE LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "DE LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "DE LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "DE LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "DE LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "DE LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "PL LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "PL LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "PL LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "PL LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "PL LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "PL LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "UA LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "UA LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "UK LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "UA LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "UA LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "UA LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "AR LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "AR LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "AR LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "AR LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "AR LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "AR LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "ID LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "ID LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "ID LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "ID LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "ID LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "ID LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "KO LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "KO LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "KO LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "KO LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "KO LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "KO LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "HE LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "HE LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "HE LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "HE LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "HE LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "HE LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "PT LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "PT LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "PT LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "PT LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "PT LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "PT LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Localized Overflow Presentation Rule",
+     "scanner": "NL LOC HOLD: Localization rule: long translations collapse, page, or scroll inside UI; they never shrink truth or change authority.",
+     "terminal": "NL LOC HOLD: OVERFLOW: packet identity, receiver labels, units, and evidence tiers survive all locales. Layout adapts; facts do not.",
+     "audio": "NL LOC HOLD: A language can take more room. It cannot take a different truth.",
+     "in_game_wiki": "NL LOC HOLD: This presentation rule prepares the codex for world languages and RTL/CJK review without live translation.",
+     "external_site": "NL LOC HOLD: Localization is authored data. The UI absorbs length and directionality without changing content identity.",
+     "field_note": "NL LOC HOLD: Localization layout records keep long or directional text from changing packet truth."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  }
+ ]
 }

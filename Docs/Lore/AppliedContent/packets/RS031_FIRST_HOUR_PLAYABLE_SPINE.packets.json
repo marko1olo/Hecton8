@@ -1,786 +1,791 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P151_BLACK_KEEL_CONTRACT_APPROACH",
-      "article_id": "first_hour.black_keel_contract_approach",
-      "title_key": "applied_lore.black_keel_contract_approach.title",
-      "unlock": {
-        "primary": "unlock.black_keel_contract_approach",
-        "poi_tags": [
-          "poi.black_keel_contract_console",
-          "poi.claim_acceptance_stamp",
-          "poi.pre_drop_lien_screen"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Black Keel Claim Acceptance",
-          "scanner": "Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.",
-          "field_note": "The stylus is tied to the screen with pressure cord. Someone expected trembling hands.",
-          "terminal": "BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.",
-          "audio": "Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.",
-          "in_game_wiki": "Recovered contract text shows the job begins as lien pressure, not rescue. Black Keel offers descent, debt relief and a narrow route window while keeping payload custody.",
-          "external_site": "A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen."
-        },
-        "ru_RU": {
-          "title": "Прием претензии Black Keel",
-          "scanner": "Контрактный терминал. Aegir Reclamation Pool показывает залог в 4.8 tonne-window раньше кислорода.",
-          "field_note": "Стилус привязан к экрану напорным шнуром. Здесь ждали дрожащих рук.",
-          "terminal": "BLACK KEEL / ТЕРМИНАЛ ПРИЕМА ПРЕТЕНЗИИ: маршрут RAN-B:H8 salvage descent; списание залога 4.8 tonne-window условное; кислородные welfare-addenda выставляются после возврата; custody груза первично за Black Keel, свидетель Keelmark Mutual; отказ оставляет активной проверку Barnard blacklist.",
-          "audio": "Black Keel подрядчику: окно претензии открыто. Кислород оплачивается после возврата. Подтверди, если можешь работать.",
-          "in_game_wiki": "Найденный контракт сразу ставит работу в рамку долга, а не спасения. Black Keel дает спуск, шанс списать часть долга и узкое маршрутное окно, но custody груза оставляет за собой.",
-          "external_site": "Терминал претензии Black Keel начинает игру с долга, кислородных добавок и custody груза еще до того, как океан касается экрана."
-        },
-        "ja_JP": {
-          "title": "Black Keel 請求受諾",
-          "scanner": "契約端末。Aegir Reclamation Pool は酸素より先に 4.8 tonne-window の担保を表示する。",
-          "field_note": "スタイラスは圧力コードで画面につながれている。震える手を想定した作りだ。",
-          "terminal": "BLACK KEEL / 請求受諾端末: route RAN-B:H8 salvage descent; 4.8 tonne-window の lien relief は条件付き; 酸素 welfare addenda は回収後請求; payload custody は Black Keel 優先、Keelmark Mutual 証人; 拒否すると Barnard blacklist review が継続。",
-          "audio": "Black Keel から請負者へ: 請求窓は開いている。酸素は回収後に請求される。働けるなら承認しろ。",
-          "in_game_wiki": "回収された契約文は、この仕事が救助ではなく債務圧力から始まることを示している。Black Keel は降下、債務軽減、狭い航路窓を提示するが、payload custody は手放さない。",
-          "external_site": "Black Keel の請求端末は、海が画面に触れる前から、債務、酸素加算、custody を開幕の重しにする。"
-        },
-        "zh_CN": {
-          "title": "Black Keel 索赔受理",
-          "scanner": "合同终端。Aegir Reclamation Pool 先列出 4.8 tonne-window 留置债，再列氧气。",
-          "field_note": "手写笔被耐压绳拴在屏幕上。有人预料到签字的手会发抖。",
-          "terminal": "BLACK KEEL / 索赔受理终端：route RAN-B:H8 salvage descent；4.8 tonne-window 留置减免为有条件；氧气 welfare addenda 在回收后计费；payload custody 以 Black Keel 为主，Keelmark Mutual 作证；拒绝将使 Barnard blacklist review 继续有效。",
-          "audio": "Black Keel 致承包人：索赔窗口已开启。氧气将在回收后计费。若还能工作，请确认。",
-          "in_game_wiki": "回收的合同文字表明，这份工作从债务压力开始，不是救援。Black Keel 提供下降、债务减免和狭窄航路窗口，同时保留 payload custody。",
-          "external_site": "Black Keel 的索赔终端在海水触到画面之前，就把开局钉在债务、氧气附加费和 custody 上。"
-        },
-        "fr_FR": {
-          "title": "Acceptation De Réclamation Black Keel",
-          "scanner": "Console de contrat. Aegir Reclamation Pool affiche un gage de 4.8 tonne-window avant de mentionner l'oxygène.",
-          "field_note": "Le stylet est attaché à l'écran par un cordon pression. Quelqu'un avait prévu des mains qui tremblent.",
-          "terminal": "BLACK KEEL / TERMINAL D'ACCEPTATION DE RÉCLAMATION : route RAN-B:H8 salvage descent; décharge de gage 4.8 tonne-window conditionnelle; addenda oxygène facturés après récupération; payload custody prioritaire Black Keel, témoin Keelmark Mutual; refus maintient l'examen Barnard blacklist actif.",
-          "audio": "Black Keel au contractant : la fenêtre de réclamation est ouverte. L'oxygène sera facturé après récupération. Confirmez si vous pouvez travailler.",
-          "in_game_wiki": "Le texte de contrat récupéré montre que le travail commence sous pression de dette, pas comme un sauvetage. Black Keel offre descente, allègement de dette et fenêtre de route étroite tout en gardant la payload custody.",
-          "external_site": "Le terminal de réclamation Black Keel place l'ouverture sous dette, addenda d'oxygène et custody avant même que l'océan touche l'écran."
-        },
-        "es_ES": {
-          "title": "Aceptación De Reclamo Black Keel",
-          "scanner": "Consola de contrato. Aegir Reclamation Pool enumera un gravamen de 4.8 tonne-window antes de mencionar el oxígeno.",
-          "field_note": "El lápiz está atado a la pantalla con cable de presión. Alguien esperaba manos temblorosas.",
-          "terminal": "BLACK KEEL / TERMINAL DE ACEPTACIÓN DE RECLAMO: ruta RAN-B:H8 salvage descent; alivio de gravamen 4.8 tonne-window condicionado; anexos de bienestar de oxígeno facturados tras recuperación; payload custody primaria para Black Keel, Keelmark Mutual como testigo; negarse mantiene activa la revisión Barnard blacklist.",
-          "audio": "Black Keel al contratista: la ventana de reclamo está abierta. El oxígeno se factura después de la recuperación. Confirma si puedes trabajar.",
-          "in_game_wiki": "El texto contractual recuperado muestra que el trabajo empieza como presión de deuda, no como rescate. Black Keel ofrece descenso, alivio de deuda y una ventana de ruta estrecha mientras conserva la payload custody.",
-          "external_site": "Un terminal de reclamo de Black Keel encuadra la apertura en deuda, anexos de oxígeno y custody antes de que el océano toque la pantalla."
-        },
-        "de_DE": {
-          "title": "Black Keel Anspruchsannahme",
-          "scanner": "Vertragskonsole. Aegir Reclamation Pool nennt zuerst ein Pfand von 4.8 tonne-window und erst danach Sauerstoff.",
-          "field_note": "Der Stylus hängt mit Druckkabel am Bildschirm. Jemand rechnete mit zitternden Händen.",
-          "terminal": "BLACK KEEL / TERMINAL ZUR ANSPRUCHSANNAHME: Route RAN-B:H8 salvage descent; Pfandentlastung 4.8 tonne-window bedingt; Sauerstoff-Welfare-Addenda nach Bergung berechnet; payload custody vorrangig Black Keel, Zeuge Keelmark Mutual; Ablehnung hält Barnard blacklist review aktiv.",
-          "audio": "Black Keel an Auftragnehmer: Anspruchsfenster offen. Sauerstoff wird nach Bergung berechnet. Bestätigen, wenn arbeitsfähig.",
-          "in_game_wiki": "Der geborgene Vertragstext zeigt: Der Auftrag beginnt als Schulddruck, nicht als Rettung. Black Keel bietet Abstieg, Schuldentlastung und ein schmales Routenfenster, behält aber die payload custody.",
-          "external_site": "Ein Black-Keel-Anspruchsterminal rahmt die Eröffnung mit Schulden, Sauerstoffzusätzen und custody, bevor der Ozean den Bildschirm berührt."
-        },
-        "pl_PL": {
-          "title": "Przyjęcie roszczenia Black Keel",
-          "scanner": "Konsola kontraktu. Aegir Reclamation Pool pokazuje zastaw 4.8 tonne-window, zanim pokaże tlen.",
-          "field_note": "Rysik jest przywiązany do ekranu przewodem ciśnieniowym. Ktoś spodziewał się drżących rąk.",
-          "terminal": "BLACK KEEL / TERMINAL PRZYJĘCIA ROSZCZENIA: trasa RAN-B:H8 salvage descent; ulga zastawu 4.8 tonne-window warunkowa; dodatki tlenowe naliczane po odzyskaniu; payload custody pierwotnie Black Keel, świadek Keelmark Mutual; odmowa utrzymuje aktywny Barnard blacklist review.",
-          "audio": "Black Keel do kontraktora: okno roszczenia otwarte. Tlen naliczany po odzyskaniu. Potwierdź, jeśli możesz pracować.",
-          "in_game_wiki": "Odzyskany tekst kontraktu pokazuje, że praca zaczyna się od nacisku długu, nie od ratunku. Black Keel daje zejście, ulgę długu i wąskie okno trasy, ale zatrzymuje payload custody.",
-          "external_site": "Terminal roszczenia Black Keel ustawia początek gry wokół długu, dodatków tlenowych i custody, zanim ocean dotknie ekranu."
-        },
-        "uk_UA": {
-          "title": "Прийняття претензії Black Keel",
-          "scanner": "Контрактний термінал. Aegir Reclamation Pool показує заставу 4.8 tonne-window раніше за кисень.",
-          "field_note": "Стилус прив'язаний до екрана напірним шнуром. Тут очікували тремтячих рук.",
-          "terminal": "BLACK KEEL / ТЕРМІНАЛ ПРИЙНЯТТЯ ПРЕТЕНЗІЇ: маршрут RAN-B:H8 salvage descent; списання застави 4.8 tonne-window умовне; кисневі welfare-addenda виставляються після повернення; custody вантажу первинно за Black Keel, свідок Keelmark Mutual; відмова лишає активним Barnard blacklist review.",
-          "audio": "Black Keel підряднику: вікно претензії відкрите. Кисень оплачується після повернення. Підтвердь, якщо можеш працювати.",
-          "in_game_wiki": "Знайдений контракт одразу ставить роботу в рамку боргу, а не порятунку. Black Keel дає спуск, шанс списати частину боргу і вузьке маршрутне вікно, але payload custody лишає собі.",
-          "external_site": "Термінал претензії Black Keel починає гру з боргу, кисневих додатків і custody вантажу ще до того, як океан торкнеться екрана."
-        },
-        "ar_SA": {
-          "title": "قبول مطالبة Black Keel",
-          "scanner": "وحدة عقد. يعرض Aegir Reclamation Pool رهن 4.8 tonne-window قبل أن يعرض الأكسجين.",
-          "field_note": "القلم مربوط بالشاشة بسلك ضغط. كان أحدهم يتوقع يداً ترتجف.",
-          "terminal": "BLACK KEEL / طرفية قبول المطالبة: مسار RAN-B:H8 salvage descent؛ تخفيف رهن 4.8 tonne-window مشروط؛ ملحقات رعاية الأكسجين تحسب بعد الاسترداد؛ custody الحمولة أولاً لدى Black Keel، وشاهدها Keelmark Mutual؛ الرفض يبقي مراجعة Barnard blacklist نشطة.",
-          "audio": "Black Keel إلى المتعاقد: نافذة المطالبة مفتوحة. الأكسجين يحاسب بعد الاسترداد. أكد إذا كنت قادراً على العمل.",
-          "in_game_wiki": "النص التعاقدي المستعاد يوضح أن العمل يبدأ بضغط دين، لا بإنقاذ. يمنح Black Keel نزولاً وتخفيف دين ونافذة مسار ضيقة، لكنه يحتفظ بــ payload custody.",
-          "external_site": "طرفية مطالبة Black Keel تجعل الافتتاح يدور حول الدين وملحقات الأكسجين وcustody قبل أن يلمس المحيط الشاشة."
-        },
-        "id_ID": {
-          "title": "Penerimaan Klaim Black Keel",
-          "scanner": "Konsol kontrak. Aegir Reclamation Pool menampilkan lien 4.8 tonne-window sebelum menampilkan oksigen.",
-          "field_note": "Stylus diikat ke layar dengan kabel tekanan. Seseorang memperkirakan tangan akan gemetar.",
-          "terminal": "BLACK KEEL / TERMINAL PENERIMAAN KLAIM: route RAN-B:H8 salvage descent; keringanan lien 4.8 tonne-window bersyarat; oxygen welfare addenda ditagih setelah pemulihan; payload custody utama Black Keel, saksi Keelmark Mutual; penolakan membuat Barnard blacklist review tetap aktif.",
-          "audio": "Black Keel ke kontraktor: jendela klaim terbuka. Oksigen ditagih setelah pemulihan. Akui jika kamu masih bisa bekerja.",
-          "in_game_wiki": "Teks kontrak yang ditemukan menunjukkan pekerjaan ini dimulai sebagai tekanan utang, bukan penyelamatan. Black Keel menawarkan turun, keringanan utang, dan jendela rute sempit sambil tetap memegang payload custody.",
-          "external_site": "Terminal klaim Black Keel membingkai pembukaan dengan utang, addenda oksigen, dan custody sebelum laut menyentuh layar."
-        },
-        "ko_KR": {
-          "title": "Black Keel 청구 승인",
-          "scanner": "계약 콘솔. Aegir Reclamation Pool은 산소보다 먼저 4.8 tonne-window 유치권을 표시한다.",
-          "field_note": "스타일러스는 압력 코드로 화면에 묶여 있다. 떨리는 손을 예상한 장치다.",
-          "terminal": "BLACK KEEL / 청구 승인 단말: route RAN-B:H8 salvage descent; 4.8 tonne-window lien relief 조건부; 산소 welfare addenda는 회수 후 청구; payload custody는 Black Keel 우선, Keelmark Mutual 증인; 거부하면 Barnard blacklist review가 계속 활성.",
-          "audio": "Black Keel에서 계약자에게: 청구 창이 열렸다. 산소는 회수 후 청구된다. 일할 수 있으면 승인하라.",
-          "in_game_wiki": "회수된 계약 문구는 이 일이 구조가 아니라 부채 압박으로 시작된다는 것을 보여 준다. Black Keel은 하강, 부채 완화, 좁은 항로 창을 제시하지만 payload custody는 놓지 않는다.",
-          "external_site": "Black Keel 청구 단말은 바다가 화면에 닿기 전부터 시작을 부채, 산소 부가 조항, custody로 묶어 둔다."
-        },
-        "he_IL": {
-          "title": "אישור תביעת Black Keel",
-          "scanner": "מסוף חוזה. Aegir Reclamation Pool מציג שעבוד 4.8 tonne-window לפני שהוא מציג חמצן.",
-          "field_note": "הסטיילוס קשור למסך בכבל לחץ. מישהו ציפה לידיים רועדות.",
-          "terminal": "BLACK KEEL / מסוף אישור תביעה: נתיב RAN-B:H8 salvage descent; הקלת שעבוד 4.8 tonne-window מותנית; נספחי רווחת חמצן מחויבים אחרי חילוץ; custody של המטען קודם ל-Black Keel, עד Keelmark Mutual; סירוב משאיר את Barnard blacklist review פעילה.",
-          "audio": "Black Keel אל הקבלן: חלון התביעה פתוח. החמצן יחויב אחרי החילוץ. אשר אם אתה מסוגל לעבוד.",
-          "in_game_wiki": "טקסט החוזה שנמצא מראה שהעבודה מתחילה בלחץ חוב, לא בהצלה. Black Keel מציעה ירידה, הקלת חוב וחלון נתיב צר, אך שומרת לעצמה את payload custody.",
-          "external_site": "מסוף התביעה של Black Keel ממסגר את הפתיחה סביב חוב, נספחי חמצן ו-custody עוד לפני שהאוקיינוס נוגע במסך."
-        },
-        "pt_BR": {
-          "title": "Aceite Da Reclamação Black Keel",
-          "scanner": "Console de contrato. Aegir Reclamation Pool lista um gravame de 4.8 tonne-window antes de listar oxigênio.",
-          "field_note": "A caneta está presa à tela por um cabo de pressão. Alguém esperava mãos tremendo.",
-          "terminal": "BLACK KEEL / TERMINAL DE ACEITE DE RECLAMAÇÃO: rota RAN-B:H8 salvage descent; alívio de gravame 4.8 tonne-window condicional; adendos de bem-estar de oxigênio cobrados após recuperação; payload custody primária Black Keel, testemunha Keelmark Mutual; recusa mantém Barnard blacklist review ativa.",
-          "audio": "Black Keel ao contratante: janela de reclamação aberta. Oxigênio será cobrado após recuperação. Confirme se consegue trabalhar.",
-          "in_game_wiki": "O texto de contrato recuperado mostra que o trabalho começa como pressão de dívida, não como resgate. Black Keel oferece descida, alívio de dívida e uma janela de rota estreita enquanto mantém a payload custody.",
-          "external_site": "Um terminal de reclamação Black Keel enquadra a abertura em dívida, adendos de oxigênio e custody antes que o oceano toque a tela."
-        },
-        "nl_NL": {
-          "title": "Black Keel Claimaanvaarding",
-          "scanner": "Contractconsole. Aegir Reclamation Pool vermeldt eerst een pand van 4.8 tonne-window en daarna pas zuurstof.",
-          "field_note": "De stylus zit met een drukkabel aan het scherm vast. Iemand rekende op trillende handen.",
-          "terminal": "BLACK KEEL / CLAIMAANVAARDINGSTERMINAL: route RAN-B:H8 salvage descent; pandverlichting 4.8 tonne-window voorwaardelijk; zuurstof-welfare-addenda na berging gefactureerd; payload custody primair Black Keel, getuige Keelmark Mutual; weigering houdt Barnard blacklist review actief.",
-          "audio": "Black Keel aan contractant: claimvenster open. Zuurstof wordt na berging gefactureerd. Bevestig als je kunt werken.",
-          "in_game_wiki": "De geborgen contracttekst laat zien dat de klus begint als schulddruk, niet als redding. Black Keel biedt afdaling, schuldverlichting en een smal routevenster, maar houdt de payload custody.",
-          "external_site": "Een Black Keel-claimterminal zet de opening vast in schuld, zuurstofaddenda en custody voordat de oceaan het scherm raakt."
-        }
-      },
-      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P151_BLACK_KEEL_CONTRACT_APPROACH",
+   "article_id": "first_hour.black_keel_contract_approach",
+   "title_key": "applied_lore.black_keel_contract_approach.title",
+   "unlock": {
+    "primary": "unlock.black_keel_contract_approach",
+    "poi_tags": [
+     "poi.black_keel_contract_console",
+     "poi.claim_acceptance_stamp",
+     "poi.pre_drop_lien_screen"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Black Keel Claim Acceptance",
+     "scanner": "Contract console. Aegir Reclamation Pool lists a 4.8 tonne-window lien before it lists oxygen.",
+     "field_note": "The stylus is tied to the screen with pressure cord. Someone expected trembling hands.",
+     "terminal": "BLACK KEEL / CLAIM ACCEPTANCE TERMINAL: route RAN-B:H8 salvage descent; lien relief 4.8 tonne-window conditional; oxygen welfare addenda billed after recovery; payload custody Black Keel primary, Keelmark Mutual witness; refusal penalty leaves Barnard blacklist review active.",
+     "audio": "Black Keel to contractor: claim window is open. Oxygen is billable after recovery. Acknowledge if you can work.",
+     "in_game_wiki": "Recovered contract text shows the job begins as lien pressure, not rescue. Black Keel offers descent, debt relief and a narrow route window while keeping payload custody.",
+     "external_site": "A Black Keel claim terminal frames the opening around debt, oxygen addenda and custody before the ocean ever touches the screen."
     },
-    {
-      "packet_id": "P152_DROP_CAPSULE_DAMAGE_SEQUENCE",
-      "article_id": "first_hour.drop_capsule_damage_sequence",
-      "title_key": "applied_lore.drop_capsule_damage_sequence.title",
-      "unlock": {
-        "primary": "unlock.drop_capsule_damage_sequence",
-        "poi_tags": [
-          "poi.drop_capsule_damage_panel",
-          "poi.warped_crush_frame",
-          "poi.torn_flotation_ring"
-        ],
-        "biome_tags": [
-          "biome.crash_shelf",
-          "biome.photic_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Drop Capsule Damage Sequence",
-          "scanner": "Capsule diagnostics. Descent saved the body by spending ascent hardware.",
-          "field_note": "Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.",
-          "terminal": "BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.",
-          "audio": "Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.",
-          "in_game_wiki": "The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.",
-          "external_site": "The drop capsule explains stranding through broken parts: warped frame, drowned avionics, lost antenna and a recovery ring that cannot lock."
-        },
-        "ru_RU": {
-          "title": "Последовательность повреждений капсулы сброса",
-          "scanner": "Диагностика капсулы. Спуск сохранил тело, потратив оборудование подъема.",
-          "field_note": "Нижнее кольцо стало овальным на два пальца. High-gain mast исчезла. Буй все еще просит запуска, которого не сможет выполнить.",
-          "terminal": "СВОДКА ПОВРЕЖДЕНИЙ BATHY-DROP: crush-frame поведен; high-gain mast потеряна; ascent avionics затоплена; recovery/flotation ring разорвано; аварийный буй повторяет no-lock. Питание укрытия доступно. Самостоятельный подъем недоступен.",
-          "audio": "Ascent bus затоплен. Recovery ring no-lock. Эта капсула удержит дыхание, но не вернет домой.",
-          "in_game_wiki": "Поврежденный bathy-drop превращает побег в инженерную цепь. Укрытие и диагностика выжили, но подъемное оборудование физически потеряно или затоплено.",
-          "external_site": "Капсула сброса объясняет застревание через детали: поведенная рама, утопленная авионика, потерянная антенна и recovery ring, который не может захватить."
-        },
-        "ja_JP": {
-          "title": "降下カプセル損傷シーケンス",
-          "scanner": "カプセル診断。降下は上昇装備を使い潰して身体を残した。",
-          "field_note": "下部リングは指二本ぶん楕円になっている。High-gain mast は消えた。ブイは不可能な発進をまだ求めている。",
-          "terminal": "BATHY-DROP 損傷要約: crush-frame 歪曲; high-gain mast 喪失; ascent avionics 浸水; recovery/flotation ring 破断; emergency buoy は no-lock 反復。シェルター電力あり。独立上昇不可。",
-          "audio": "Ascent bus 浸水。Recovery ring no-lock。このカプセルは呼吸を保てるが、家には帰せない。",
-          "in_game_wiki": "損傷した bathy-drop は脱出を工学の連鎖に変える。シェルターと診断は残ったが、上昇装備は物理的に失われるか浸水している。",
-          "external_site": "降下カプセルは、歪んだフレーム、沈んだアビオニクス、失われたアンテナ、ロック不能な recovery ring という部品で孤立を説明する。"
-        },
-        "zh_CN": {
-          "title": "投放舱损伤序列",
-          "scanner": "舱体诊断。下降保住了身体，代价是消耗上升硬件。",
-          "field_note": "下环被压成相差两指的椭圆。High-gain mast 已丢失。浮标仍在请求一次它无法完成的发射。",
-          "terminal": "BATHY-DROP 损伤摘要：crush-frame 变形；high-gain mast 丢失；ascent avionics 进水；recovery/flotation ring 撕裂；应急浮标重复 no-lock。避难电力可用。独立上升不可用。",
-          "audio": "Ascent bus 进水。Recovery ring no-lock。这只舱能让你呼吸，不能带你回家。",
-          "in_game_wiki": "受损的 bathy-drop 把逃生变成一串工程问题。避难与诊断幸存下来，但上升硬件不是丢失就是进水。",
-          "external_site": "投放舱用具体破损说明搁浅：变形框架、淹没航电、丢失天线，以及无法锁定的 recovery ring。"
-        },
-        "fr_FR": {
-          "title": "Séquence De Dégâts De La Capsule",
-          "scanner": "Diagnostic capsule. La descente a sauvé le corps en dépensant le matériel de remontée.",
-          "field_note": "L'anneau bas est ovale de deux doigts. High-gain mast perdu. La bouée demande encore un lancement impossible.",
-          "terminal": "RÉSUMÉ DÉGÂTS BATHY-DROP : crush-frame gauchi; high-gain mast perdu; ascent avionics noyée; recovery/flotation ring déchiré; bouée d'urgence répète no-lock. Alimentation abri disponible. Remontée indépendante indisponible.",
-          "audio": "Ascent bus noyé. Recovery ring no-lock. Cette capsule peut te garder en vie, pas te ramener chez toi.",
-          "in_game_wiki": "Le bathy-drop endommagé transforme l'évasion en chaîne d'ingénierie. Abri et diagnostics ont survécu, mais le matériel de remontée est perdu ou noyé.",
-          "external_site": "La capsule de chute explique l'isolement par ses pièces brisées : cadre tordu, avionique noyée, antenne perdue et recovery ring incapable de verrouiller."
-        },
-        "es_ES": {
-          "title": "Secuencia De Daño De La Cápsula",
-          "scanner": "Diagnóstico de cápsula. El descenso salvó el cuerpo gastando hardware de ascenso.",
-          "field_note": "El aro inferior está ovalado por dos dedos. High-gain mast perdido. La boya aún pide un lanzamiento que no puede hacer.",
-          "terminal": "RESUMEN DE DAÑO BATHY-DROP: crush-frame deformado; high-gain mast perdido; ascent avionics inundada; recovery/flotation ring rasgado; boya de emergencia repitiendo no-lock. Energía de refugio disponible. Ascenso independiente no disponible.",
-          "audio": "Ascent bus inundado. Recovery ring no-lock. Esta cápsula puede mantenerte respirando, no llevarte a casa.",
-          "in_game_wiki": "El bathy-drop dañado convierte la huida en una cadena de ingeniería. Refugio y diagnósticos sobrevivieron, pero el hardware de ascenso está perdido o inundado.",
-          "external_site": "La cápsula de descenso explica el varamiento con piezas rotas: marco deformado, aviónica ahogada, antena perdida y un recovery ring que no puede cerrar."
-        },
-        "de_DE": {
-          "title": "Schadensfolge Der Abwurfkapsel",
-          "scanner": "Kapseldiagnose. Der Abstieg rettete den Körper, indem er Aufstiegshardware verbrauchte.",
-          "field_note": "Der untere Ring ist um zwei Finger oval. High-gain mast weg. Die Boje fordert noch einen Start, den sie nicht leisten kann.",
-          "terminal": "BATHY-DROP SCHADENSBERICHT: crush-frame verzogen; high-gain mast verloren; ascent avionics geflutet; recovery/flotation ring gerissen; Notboje wiederholt no-lock. Schutzraumstrom verfügbar. Eigenständiger Aufstieg nicht verfügbar.",
-          "audio": "Ascent bus geflutet. Recovery ring no-lock. Diese Kapsel hält dich am Atmen, bringt dich aber nicht heim.",
-          "in_game_wiki": "Der beschädigte bathy-drop macht Flucht zu einer technischen Kette. Schutzraum und Diagnose blieben erhalten, doch die Aufstiegshardware ist verloren oder geflutet.",
-          "external_site": "Die Abwurfkapsel erklärt das Festsitzen durch kaputte Teile: verzogener Rahmen, ertrunkene Avionik, verlorene Antenne und ein recovery ring ohne Verriegelung."
-        },
-        "pl_PL": {
-          "title": "Sekwencja uszkodzeń kapsuły zrzutowej",
-          "scanner": "Diagnostyka kapsuły. Zniżanie ocaliło ciało, zużywając sprzęt wznoszenia.",
-          "field_note": "Dolny pierścień jest owalny o dwa palce. High-gain mast zniknął. Boja wciąż prosi o start, którego nie wykona.",
-          "terminal": "PODSUMOWANIE USZKODZEŃ BATHY-DROP: crush-frame wygięta; high-gain mast utracony; ascent avionics zalana; recovery/flotation ring rozdarty; boja awaryjna powtarza no-lock. Zasilanie schronienia dostępne. Samodzielne wynurzenie niedostępne.",
-          "audio": "Ascent bus zalany. Recovery ring no-lock. Ta kapsuła utrzyma oddech, ale nie zabierze cię do domu.",
-          "in_game_wiki": "Uszkodzony bathy-drop zmienia ucieczkę w łańcuch inżynierski. Schronienie i diagnostyka przetrwały, ale sprzęt wznoszenia zaginął albo jest zalany.",
-          "external_site": "Kapsuła zrzutowa tłumaczy uwięzienie przez części: wygiętą ramę, utopioną awionikę, utraconą antenę i recovery ring, który nie może złapać blokady."
-        },
-        "uk_UA": {
-          "title": "Послідовність пошкоджень скидної капсули",
-          "scanner": "Діагностика капсули. Спуск зберіг тіло, витративши обладнання підйому.",
-          "field_note": "Нижнє кільце стало овальним на два пальці. High-gain mast зникла. Буй усе ще просить запуск, якого не зможе виконати.",
-          "terminal": "ЗВЕДЕННЯ ПОШКОДЖЕНЬ BATHY-DROP: crush-frame повело; high-gain mast втрачено; ascent avionics затоплено; recovery/flotation ring розірвано; аварійний буй повторює no-lock. Живлення укриття доступне. Самостійний підйом недоступний.",
-          "audio": "Ascent bus затоплено. Recovery ring no-lock. Ця капсула втримає дихання, але не поверне додому.",
-          "in_game_wiki": "Пошкоджений bathy-drop перетворює втечу на інженерний ланцюг. Укриття й діагностика вціліли, але підйомне обладнання фізично втрачене або затоплене.",
-          "external_site": "Скидна капсула пояснює застрягання через деталі: поведену раму, утоплену авіоніку, втрачену антену і recovery ring, що не може зафіксуватися."
-        },
-        "ar_SA": {
-          "title": "تسلسل تلف كبسولة الهبوط",
-          "scanner": "تشخيص الكبسولة. أنقذ الهبوط الجسد بأن استهلك عتاد الصعود.",
-          "field_note": "الحلقة السفلية صارت بيضوية بمقدار إصبعين. ضاع high-gain mast. ما زالت العوامة تطلب إطلاقاً لا تستطيع فعله.",
-          "terminal": "ملخص تلف BATHY-DROP: crush-frame ملتوي؛ high-gain mast مفقود؛ ascent avionics مغمورة؛ recovery/flotation ring ممزقة؛ عوامة الطوارئ تكرر no-lock. طاقة الملجأ متاحة. الصعود المستقل غير متاح.",
-          "audio": "Ascent bus مغمور. Recovery ring no-lock. هذه الكبسولة تبقيك تتنفس، لكنها لا تأخذك إلى البيت.",
-          "in_game_wiki": "يجعل bathy-drop المتضرر الهروب سلسلة هندسية. بقي الملجأ والتشخيص، لكن عتاد الصعود إما مفقود أو مغمور.",
-          "external_site": "تشرح كبسولة الهبوط العالق عبر قطع مكسورة: إطار ملتوي، إلكترونيات غارقة، هوائي مفقود، وrecovery ring لا يستطيع القفل."
-        },
-        "id_ID": {
-          "title": "Urutan Kerusakan Kapsul Jatuh",
-          "scanner": "Diagnostik kapsul. Turun menyelamatkan tubuh dengan menghabiskan perangkat naik.",
-          "field_note": "Cincin bawah menjadi oval selebar dua jari. High-gain mast hilang. Buoy masih meminta peluncuran yang tidak bisa dibuatnya.",
-          "terminal": "RINGKASAN KERUSAKAN BATHY-DROP: crush-frame melengkung; high-gain mast hilang; ascent avionics terendam; recovery/flotation ring robek; buoy darurat mengulang no-lock. Daya shelter tersedia. Naik mandiri tidak tersedia.",
-          "audio": "Ascent bus terendam. Recovery ring no-lock. Kapsul ini bisa menjagamu tetap bernapas, bukan membawamu pulang.",
-          "in_game_wiki": "Bathy-drop yang rusak membuat pelarian menjadi rantai rekayasa. Shelter dan diagnostik selamat, tetapi perangkat naik hilang secara fisik atau terendam.",
-          "external_site": "Kapsul jatuh menjelaskan keterdamparan lewat bagian yang rusak: rangka bengkok, avionik tenggelam, antena hilang, dan recovery ring yang tidak dapat mengunci."
-        },
-        "ko_KR": {
-          "title": "투하 캡슐 손상 순서",
-          "scanner": "캡슐 진단. 하강은 상승 장비를 써 버리는 대가로 몸을 살렸다.",
-          "field_note": "하부 링은 손가락 두 개만큼 타원형이다. High-gain mast는 사라졌다. 부이는 할 수 없는 발사를 아직 요구한다.",
-          "terminal": "BATHY-DROP 손상 요약: crush-frame 변형; high-gain mast 상실; ascent avionics 침수; recovery/flotation ring 파열; 비상 부이는 no-lock 반복. 대피처 전력 사용 가능. 독립 상승 불가.",
-          "audio": "Ascent bus 침수. Recovery ring no-lock. 이 캡슐은 숨을 붙잡아 줄 수는 있지만 집으로 보내지는 못한다.",
-          "in_game_wiki": "손상된 bathy-drop은 탈출을 공학적 사슬로 만든다. 대피처와 진단은 살아남았지만 상승 장비는 물리적으로 사라졌거나 침수되었다.",
-          "external_site": "투하 캡슐은 휘어진 프레임, 잠긴 항전 장치, 잃어버린 안테나, 잠기지 않는 recovery ring으로 고립을 설명한다."
-        },
-        "he_IL": {
-          "title": "רצף נזקי קפסולת ההטלה",
-          "scanner": "אבחון קפסולה. הירידה הצילה את הגוף במחיר חומרת העלייה.",
-          "field_note": "הטבעת התחתונה אליפטית בשתי אצבעות. High-gain mast נעלם. המצוף עדיין מבקש שיגור שלא יוכל לבצע.",
-          "terminal": "סיכום נזק BATHY-DROP: crush-frame התעקם; high-gain mast אבד; ascent avionics הוצף; recovery/flotation ring נקרע; מצוף חירום חוזר על no-lock. כוח מקלט זמין. עלייה עצמאית אינה זמינה.",
-          "audio": "Ascent bus הוצף. Recovery ring no-lock. הקפסולה הזאת יכולה להשאיר אותך נושם, לא לקחת אותך הביתה.",
-          "in_game_wiki": "ה-bathy-drop הפגוע הופך בריחה לשרשרת הנדסית. המקלט והאבחון שרדו, אבל חומרת העלייה אבדה פיזית או הוצפה.",
-          "external_site": "קפסולת ההטלה מסבירה את התקיעה דרך חלקים שבורים: מסגרת מעוותת, אוויוניקה שטבעה, אנטנה שאבדה ו-recovery ring שלא יכול להינעל."
-        },
-        "pt_BR": {
-          "title": "Sequência De Dano Da Cápsula",
-          "scanner": "Diagnóstico da cápsula. A descida salvou o corpo gastando hardware de ascensão.",
-          "field_note": "O anel inferior está oval por dois dedos. High-gain mast sumiu. A boia ainda pede um lançamento que não pode fazer.",
-          "terminal": "RESUMO DE DANO BATHY-DROP: crush-frame empenado; high-gain mast perdido; ascent avionics inundada; recovery/flotation ring rasgado; boia de emergência repetindo no-lock. Energia de abrigo disponível. Ascensão independente indisponível.",
-          "audio": "Ascent bus inundado. Recovery ring no-lock. Esta cápsula consegue manter você respirando, não levar você para casa.",
-          "in_game_wiki": "O bathy-drop danificado transforma a fuga em uma cadeia de engenharia. Abrigo e diagnóstico sobreviveram, mas o hardware de ascensão foi perdido ou inundado.",
-          "external_site": "A cápsula de queda explica o encalhe por peças quebradas: armação empenada, aviônica afogada, antena perdida e um recovery ring que não consegue travar."
-        },
-        "nl_NL": {
-          "title": "Schadereeks Van De Dropcapsule",
-          "scanner": "Capsulediagnose. De afdaling redde het lichaam door opstijghardware op te gebruiken.",
-          "field_note": "De onderste ring is twee vingers ovaal. High-gain mast weg. De boei vraagt nog om een lancering die hij niet kan maken.",
-          "terminal": "BATHY-DROP SCHADESAMENVATTING: crush-frame kromgetrokken; high-gain mast verloren; ascent avionics ondergelopen; recovery/flotation ring gescheurd; noodboei herhaalt no-lock. Schuilstroom beschikbaar. Onafhankelijke opstijging niet beschikbaar.",
-          "audio": "Ascent bus ondergelopen. Recovery ring no-lock. Deze capsule kan je laten ademen, maar brengt je niet thuis.",
-          "in_game_wiki": "De beschadigde bathy-drop maakt ontsnappen tot een technische keten. Schuilplaats en diagnose overleefden, maar opstijghardware is fysiek weg of ondergelopen.",
-          "external_site": "De dropcapsule verklaart het vastzitten via kapotte onderdelen: krom frame, verdronken avionica, verloren antenne en een recovery ring die niet kan vergrendelen."
-        }
-      },
-      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    "ru_RU": {
+     "title": "Прием претензии Black Keel",
+     "scanner": "Контрактный терминал. Aegir Reclamation Pool показывает залог в 4.8 tonne-window раньше кислорода.",
+     "field_note": "Стилус привязан к экрану напорным шнуром. Здесь ждали дрожащих рук.",
+     "terminal": "BLACK KEEL / ТЕРМИНАЛ ПРИЕМА ПРЕТЕНЗИИ: маршрут RAN-B:H8 salvage descent; списание залога 4.8 tonne-window условное; кислородные welfare-addenda выставляются после возврата; custody груза первично за Black Keel, свидетель Keelmark Mutual; отказ оставляет активной проверку Barnard blacklist.",
+     "audio": "Black Keel подрядчику: окно претензии открыто. Кислород оплачивается после возврата. Подтверди, если можешь работать.",
+     "in_game_wiki": "Найденный контракт сразу ставит работу в рамку долга, а не спасения. Black Keel дает спуск, шанс списать часть долга и узкое маршрутное окно, но custody груза оставляет за собой.",
+     "external_site": "Терминал претензии Black Keel начинает игру с долга, кислородных добавок и custody груза еще до того, как океан касается экрана."
     },
-    {
-      "packet_id": "P153_SHALLOW_ANNEX_P63_PUMP_ROOM",
-      "article_id": "first_hour.shallow_annex_p63_pump_room",
-      "title_key": "applied_lore.shallow_annex_p63_pump_room.title",
-      "unlock": {
-        "primary": "unlock.shallow_annex_p63_pump_room",
-        "poi_tags": [
-          "poi.shallow_annex_p63_pump",
-          "poi.manual_bilge_kit",
-          "poi.first_safe_pressure_door"
-        ],
-        "biome_tags": [
-          "biome.shallow_annex",
-          "biome.photic_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Shallow Annex P-63 Pump Room",
-          "scanner": "P-63 pump room. Manual sump pressure is holding by less than a service margin.",
-          "field_note": "The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.",
-          "terminal": "WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.",
-          "audio": "Pump first. Seal second. Cutter only after the gauge stops drifting.",
-          "in_game_wiki": "P-63 teaches survival through work: pumping, sealing, pressure reading and a return pinger. The room is safe only while its machine keeps winning.",
-          "external_site": "Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside."
-        },
-        "ru_RU": {
-          "title": "Насосная P-63 в мелководной пристройке",
-          "scanner": "Насосная P-63. Давление ручного отстойника держится меньше чем с сервисным запасом.",
-          "field_note": "Ручка насоса отполирована там, где за нее снова хватались испуганные руки. Сухой пол начинается от меловой линии.",
-          "terminal": "НАРЯД P-63 / SHALLOW ANNEX: ручной насос отстойника до 0.3 m; посадить cold seal на шов C; резать сплавившуюся защелку шкафчика только после стабилизации манометра; не верить зеленой лампе, пока return pinger не ответит.",
-          "audio": "Сначала насос. Потом уплотнение. Резак только после того, как манометр перестанет плыть.",
-          "in_game_wiki": "P-63 учит выживанию через работу: качать, уплотнять, читать давление и ждать return pinger. Комната безопасна только пока ее машина продолжает выигрывать.",
-          "external_site": "Shallow Annex P-63 дает первый безопасный карман, не уменьшая HECTON-8: насос, cold seal, манометр и яркий шельф снаружи."
-        },
-        "ja_JP": {
-          "title": "浅部別棟 P-63 ポンプ室",
-          "scanner": "P-63 ポンプ室。手動サンプ圧は保守マージン未満でかろうじて保っている。",
-          "field_note": "ポンプハンドルは、怯えた手が握り続けた場所だけ磨かれている。乾いた床はチョーク線から始まる。",
-          "terminal": "作業指示 P-63 / SHALLOW ANNEX: hand-pump sump を 0.3 m まで; seam C に cold seal を着座; ゲージ安定後にのみ溶着ロッカーラッチを切断; return pinger が応答するまで緑ランプを信じるな。",
-          "audio": "まずポンプ。次にシール。ゲージの流れが止まってからカッター。",
-          "in_game_wiki": "P-63 は作業で生存を教える。ポンプ、シール、圧力読み、return pinger。部屋が安全なのは、機械が勝ち続けている間だけだ。",
-          "external_site": "Shallow Annex P-63 は HECTON-8 を小さくせず最初の安全な空隙を与える。ポンプ、cold seal、ゲージ、そして外の明るい棚。"
-        },
-        "zh_CN": {
-          "title": "浅层附属区 P-63 泵房",
-          "scanner": "P-63 泵房。手动集水压力只以低于维护余量的状态撑着。",
-          "field_note": "泵柄在恐惧的手反复用力处被磨亮。干地从粉笔线开始。",
-          "terminal": "工单 P-63 / SHALLOW ANNEX：手泵集水槽至 0.3 m；将 cold seal 压入 C 缝；仪表稳定后才切开熔死的柜锁；return pinger 回答前不要相信绿灯。",
-          "audio": "先泵水。再封缝。仪表不再漂移后才用切割器。",
-          "in_game_wiki": "P-63 用工作教人生存：抽水、封缝、读压力、等 return pinger。只有机器还在赢的时候，这个房间才安全。",
-          "external_site": "Shallow Annex P-63 给出第一个安全小口袋，却没有把 HECTON-8 缩小：一台泵、一道 cold seal、一只仪表，以及外面明亮的陆架。"
-        },
-        "fr_FR": {
-          "title": "Salle Des Pompes P-63 De L'Annexe Peu Profonde",
-          "scanner": "Salle des pompes P-63. La pression du puisard manuel tient avec moins qu'une marge de service.",
-          "field_note": "La poignée de pompe est polie là où des mains effrayées l'ont utilisée encore et encore. Le sol sec commence à la ligne de craie.",
-          "terminal": "ORDRE DE TRAVAIL P-63 / SHALLOW ANNEX : pomper le puisard à la main jusqu'à 0.3 m; poser le cold seal sur la couture C; couper le loquet de casier soudé seulement quand la jauge se stabilise; ne pas croire la lampe verte avant réponse du return pinger.",
-          "audio": "Pompe d'abord. Joint ensuite. Cutter seulement quand la jauge cesse de dériver.",
-          "in_game_wiki": "P-63 enseigne la survie par le travail : pomper, sceller, lire la pression et attendre un return pinger. La pièce n'est sûre que tant que sa machine continue de gagner.",
-          "external_site": "Shallow Annex P-63 offre la première poche sûre sans réduire HECTON-8 : une pompe, un cold seal, une jauge et un plateau lumineux dehors."
-        },
-        "es_ES": {
-          "title": "Sala De Bombas P-63 Del Anexo Somero",
-          "scanner": "Sala de bombas P-63. La presión manual del sumidero se sostiene por menos de un margen de servicio.",
-          "field_note": "La manija de la bomba está pulida donde manos asustadas siguieron usándola. El suelo seco empieza en la línea de tiza.",
-          "terminal": "ORDEN DE TRABAJO P-63 / SHALLOW ANNEX: bombear sumidero a mano hasta 0.3 m; asentar cold seal en junta C; cortar el pestillo fundido del casillero solo cuando el medidor se estabilice; no confiar en la luz verde hasta que responda el return pinger.",
-          "audio": "Bomba primero. Sello segundo. Cortador solo cuando el medidor deje de derivar.",
-          "in_game_wiki": "P-63 enseña supervivencia mediante trabajo: bombear, sellar, leer presión y esperar un return pinger. La sala es segura solo mientras su máquina siga ganando.",
-          "external_site": "Shallow Annex P-63 da el primer bolsillo seguro sin volver pequeño a HECTON-8: una bomba, un cold seal, un medidor y una plataforma brillante afuera."
-        },
-        "de_DE": {
-          "title": "Pumpenraum P-63 Im Flachwasseranbau",
-          "scanner": "Pumpenraum P-63. Der manuelle Sumpfdruck hält mit weniger als einer Servicemarge.",
-          "field_note": "Der Pumpengriff ist dort blank, wo verängstigte Hände ihn weiter benutzt haben. Trockener Boden beginnt an der Kreidelinie.",
-          "terminal": "ARBEITSAUFTRAG P-63 / SHALLOW ANNEX: Sumpf per Hand auf 0.3 m pumpen; cold seal auf Naht C setzen; verschmolzenen Spindriegel erst schneiden, wenn die Anzeige stabil ist; grüner Lampe nicht trauen, bis return pinger antwortet.",
-          "audio": "Erst pumpen. Dann abdichten. Cutter erst, wenn die Anzeige nicht mehr driftet.",
-          "in_game_wiki": "P-63 lehrt Überleben durch Arbeit: pumpen, abdichten, Druck lesen und auf einen return pinger warten. Der Raum ist nur sicher, solange seine Maschine weiter gewinnt.",
-          "external_site": "Shallow Annex P-63 gibt die erste sichere Tasche, ohne HECTON-8 klein zu machen: Pumpe, cold seal, Anzeige und draußen ein heller Shelf."
-        },
-        "pl_PL": {
-          "title": "Pompownia P-63 W Płytkim Aneksie",
-          "scanner": "Pompownia P-63. Ręczne ciśnienie studzienki trzyma się poniżej marginesu serwisowego.",
-          "field_note": "Uchwyt pompy jest wypolerowany tam, gdzie przestraszone ręce używały go bez przerwy. Sucha podłoga zaczyna się przy linii kredy.",
-          "terminal": "ZLECENIE P-63 / SHALLOW ANNEX: ręcznie odpompować studzienkę do 0.3 m; osadzić cold seal na szwie C; ciąć stopiony zatrzask szafki dopiero po uspokojeniu wskaźnika; nie ufać zielonej lampie, dopóki return pinger nie odpowie.",
-          "audio": "Najpierw pompa. Potem uszczelka. Cutter dopiero, gdy wskaźnik przestanie dryfować.",
-          "in_game_wiki": "P-63 uczy przetrwania przez pracę: pompowanie, uszczelnianie, czytanie ciśnienia i return pinger. Pokój jest bezpieczny tylko, kiedy jego maszyna dalej wygrywa.",
-          "external_site": "Shallow Annex P-63 daje pierwszą bezpieczną kieszeń, nie zmniejszając HECTON-8: pompa, cold seal, wskaźnik i jasny szelf na zewnątrz."
-        },
-        "uk_UA": {
-          "title": "Насосна P-63 у мілководній прибудові",
-          "scanner": "Насосна P-63. Тиск ручного відстійника тримається нижче сервісного запасу.",
-          "field_note": "Ручка насоса відполірована там, де за неї знову хапалися налякані руки. Суха підлога починається від крейдяної лінії.",
-          "terminal": "НАРЯД P-63 / SHALLOW ANNEX: ручним насосом відкачати відстійник до 0.3 m; посадити cold seal на шов C; різати сплавлену клямку шафки тільки після стабілізації манометра; не вірити зеленій лампі, поки return pinger не відповість.",
-          "audio": "Спершу насос. Потім ущільнення. Різак лише після того, як манометр перестане плисти.",
-          "in_game_wiki": "P-63 вчить виживанню через роботу: качати, ущільнювати, читати тиск і чекати return pinger. Кімната безпечна тільки поки її машина продовжує вигравати.",
-          "external_site": "Shallow Annex P-63 дає першу безпечну кишеню, не зменшуючи HECTON-8: насос, cold seal, манометр і яскравий шельф назовні."
-        },
-        "ar_SA": {
-          "title": "غرفة مضخة P-63 في الملحق الضحل",
-          "scanner": "غرفة مضخة P-63. ضغط الحوض اليدوي صامد بأقل من هامش خدمة.",
-          "field_note": "مقبض المضخة مصقول حيث واصلت الأيدي الخائفة استخدامه. الأرض الجافة تبدأ عند خط الطباشير.",
-          "terminal": "أمر عمل P-63 / SHALLOW ANNEX: ضخ الحوض يدوياً إلى 0.3 m؛ تثبيت cold seal على الدرزة C؛ قطع قفل الخزانة الملتحم فقط بعد ثبات المقياس؛ لا تثق بالمصباح الأخضر حتى يجيب return pinger.",
-          "audio": "المضخة أولاً. الختم ثانياً. القاطع فقط بعد أن يتوقف المقياس عن الانحراف.",
-          "in_game_wiki": "تعلم P-63 النجاة عبر العمل: ضخ، ختم، قراءة ضغط، وانتظار return pinger. الغرفة آمنة فقط ما دامت آلتها تواصل الفوز.",
-          "external_site": "يعطي Shallow Annex P-63 أول جيب آمن من دون تصغير HECTON-8: مضخة، cold seal، مقياس، ورف مضيء في الخارج."
-        },
-        "id_ID": {
-          "title": "Ruang Pompa P-63 Annex Dangkal",
-          "scanner": "Ruang pompa P-63. Tekanan sump manual bertahan kurang dari margin servis.",
-          "field_note": "Gagang pompa mengilap di tempat tangan ketakutan terus memakainya. Lantai kering mulai di garis kapur.",
-          "terminal": "PERINTAH KERJA P-63 / SHALLOW ANNEX: pompa sump manual ke 0.3 m; dudukkan cold seal pada seam C; potong kait locker yang menyatu hanya setelah gauge stabil; jangan percaya lampu hijau sampai return pinger menjawab.",
-          "audio": "Pompa dulu. Seal kedua. Cutter hanya setelah gauge berhenti melayang.",
-          "in_game_wiki": "P-63 mengajarkan bertahan hidup lewat kerja: memompa, menyegel, membaca tekanan, dan menunggu return pinger. Ruangan aman hanya selama mesinnya terus menang.",
-          "external_site": "Shallow Annex P-63 memberi kantong aman pertama tanpa mengecilkan HECTON-8: pompa, cold seal, gauge, dan shelf terang di luar."
-        },
-        "ko_KR": {
-          "title": "얕은 부속동 P-63 펌프실",
-          "scanner": "P-63 펌프실. 수동 섬프 압력은 서비스 여유보다 낮은 상태로 버티고 있다.",
-          "field_note": "펌프 손잡이는 겁먹은 손들이 계속 잡은 자리만 반질거린다. 마른 바닥은 분필선에서 시작된다.",
-          "terminal": "작업 명령 P-63 / SHALLOW ANNEX: hand-pump sump를 0.3 m까지; seam C에 cold seal 안착; 게이지가 안정된 뒤에만 융착된 locker latch 절단; return pinger가 응답하기 전에는 녹색등을 믿지 말 것.",
-          "audio": "먼저 펌프. 다음은 실링. 게이지가 흔들림을 멈춘 뒤에만 커터.",
-          "in_game_wiki": "P-63은 작업으로 생존을 가르친다. 펌프질, 실링, 압력 읽기, return pinger 대기. 이 방은 기계가 계속 이기는 동안에만 안전하다.",
-          "external_site": "Shallow Annex P-63은 HECTON-8을 작게 만들지 않고 첫 안전 공간을 준다. 펌프, cold seal, 게이지, 바깥의 밝은 선반."
-        },
-        "he_IL": {
-          "title": "חדר משאבות P-63 בנספח הרדוד",
-          "scanner": "חדר משאבות P-63. לחץ הבור הידני מחזיק עם פחות ממרווח שירות.",
-          "field_note": "ידית המשאבה מבריקה במקום שבו ידיים מפוחדות המשיכו להשתמש בה. הרצפה היבשה מתחילה בקו הגיר.",
-          "terminal": "פקודת עבודה P-63 / SHALLOW ANNEX: לשאוב ידנית את הבור עד 0.3 m; להושיב cold seal על תפר C; לחתוך מנעול תא מותך רק אחרי שהמד מתייצב; לא לסמוך על האור הירוק עד ש-return pinger עונה.",
-          "audio": "קודם משאבה. אחר כך איטום. חותך רק אחרי שהמד מפסיק לנדוד.",
-          "in_game_wiki": "P-63 מלמדת הישרדות דרך עבודה: שאיבה, איטום, קריאת לחץ ו-return pinger. החדר בטוח רק כל עוד המכונה שלו ממשיכה לנצח.",
-          "external_site": "Shallow Annex P-63 נותן את הכיס הבטוח הראשון בלי להקטין את HECTON-8: משאבה, cold seal, מד ומדף מואר בחוץ."
-        },
-        "pt_BR": {
-          "title": "Sala De Bombas P-63 Do Anexo Raso",
-          "scanner": "Sala de bombas P-63. A pressão manual do sumidouro se mantém por menos que uma margem de serviço.",
-          "field_note": "A alavanca da bomba está polida onde mãos assustadas continuaram usando. O chão seco começa na linha de giz.",
-          "terminal": "ORDEM DE SERVIÇO P-63 / SHALLOW ANNEX: bombear sumidouro manualmente até 0.3 m; assentar cold seal na emenda C; cortar trava de armário fundida só depois que o medidor estabilizar; não confiar na luz verde até o return pinger responder.",
-          "audio": "Bomba primeiro. Selo depois. Cortador só quando o medidor parar de derivar.",
-          "in_game_wiki": "P-63 ensina sobrevivência pelo trabalho: bombear, selar, ler pressão e esperar um return pinger. A sala só é segura enquanto sua máquina continua vencendo.",
-          "external_site": "Shallow Annex P-63 dá o primeiro bolso seguro sem tornar HECTON-8 pequeno: uma bomba, um cold seal, um medidor e uma plataforma clara lá fora."
-        },
-        "nl_NL": {
-          "title": "P-63 Pompkamer In De Ondiepe Annex",
-          "scanner": "P-63 pompkamer. Handmatige sumpdruk houdt stand met minder dan een servicemarge.",
-          "field_note": "De pomphendel is gepolijst waar bange handen hem bleven gebruiken. Droge vloer begint bij de krijtlijn.",
-          "terminal": "WERKORDER P-63 / SHALLOW ANNEX: sump met handpomp tot 0.3 m; cold seal op naad C zetten; vastgesmolten lockersluiting pas snijden nadat meter stabiel is; groen lampje niet vertrouwen tot return pinger antwoordt.",
-          "audio": "Eerst pompen. Dan afdichten. Cutter pas nadat de meter niet meer drijft.",
-          "in_game_wiki": "P-63 leert overleven via werk: pompen, afdichten, druk lezen en wachten op een return pinger. De kamer is alleen veilig zolang zijn machine blijft winnen.",
-          "external_site": "Shallow Annex P-63 geeft de eerste veilige zak zonder HECTON-8 klein te maken: een pomp, een cold seal, een meter en buiten een heldere shelf."
-        }
-      },
-      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    "ja_JP": {
+     "title": "Black Keel 請求受諾",
+     "scanner": "契約端末。Aegir Reclamation Pool は酸素より先に 4.8 tonne-window の担保を表示する。",
+     "field_note": "スタイラスは圧力コードで画面につながれている。震える手を想定した作りだ。",
+     "terminal": "BLACK KEEL / 請求受諾端末: route RAN-B:H8 salvage descent; 4.8 tonne-window の lien relief は条件付き; 酸素 welfare addenda は回収後請求; payload custody は Black Keel 優先、Keelmark Mutual 証人; 拒否すると Barnard blacklist review が継続。",
+     "audio": "Black Keel から請負者へ: 請求窓は開いている。酸素は回収後に請求される。働けるなら承認しろ。",
+     "in_game_wiki": "回収された契約文は、この仕事が救助ではなく債務圧力から始まることを示している。Black Keel は降下、債務軽減、狭い航路窓を提示するが、payload custody は手放さない。",
+     "external_site": "Black Keel の請求端末は、海が画面に触れる前から、債務、酸素加算、custody を開幕の重しにする。"
     },
-    {
-      "packet_id": "P154_FIRST_SANITIZED_ACCIDENT_PACKET",
-      "article_id": "first_hour.first_sanitized_accident_packet",
-      "title_key": "applied_lore.first_sanitized_accident_packet.title",
-      "unlock": {
-        "primary": "unlock.first_sanitized_accident_packet",
-        "poi_tags": [
-          "poi.sanitized_accident_packet",
-          "poi.deep_reach_status_notice",
-          "poi.redacted_worker_count"
-        ],
-        "biome_tags": [
-          "biome.shallow_annex",
-          "biome.industrial_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "First Sanitized Accident Packet",
-          "scanner": "Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.",
-          "field_note": "They wrote cascade. The scum line on the locker is higher than the evacuation stamp.",
-          "terminal": "DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.",
-          "audio": "The packet says cascade. Door clocks say delay.",
-          "in_game_wiki": "The first sanitized accident packet gives a useful lie: real Great Tide physics stripped of accepted margins, delayed authorization and missing workers.",
-          "external_site": "The first Deep Reach notice is frightening because it is defensible. It names cascade, quarantine and corrupted logs while the room preserves the omissions."
-        },
-        "ru_RU": {
-          "title": "Первый очищенный аварийный пакет",
-          "scanner": "Найден аварийный пакет Deep Reach. Чистая формулировка расходится с дверными часами и следами затопления.",
-          "field_note": "Они написали «каскад». Линия налета на шкафчике выше эвакуационной метки.",
-          "terminal": "АВАРИЙНОЕ УВЕДОМЛЕНИЕ DEEP REACH / ЛОКАЛЬНЫЙ ГЕОТЕХНИЧЕСКИЙ КАСКАД: сбой разрешения на эвакуацию остается на рассмотрении; biological-pressure quarantine активен; журналы Atlas повреждены; внешний релиз отложен до сверки свидетельств.",
-          "audio": "В пакете сказано: каскад. Дверные часы говорят: задержка.",
-          "in_game_wiki": "Первый очищенный аварийный пакет дает полезную ложь: настоящую физику Great Tide без принятых рисковых запасов, задержанной авторизации и пропавших работников.",
-          "external_site": "Первое уведомление Deep Reach пугает тем, что его можно защищать. Оно называет каскад, карантин и поврежденные журналы, пока сама комната хранит все пропуски."
-        },
-        "ja_JP": {
-          "title": "最初の清書済み事故パケット",
-          "scanner": "回収された Deep Reach 事故パケット。きれいな文面がドア時計と浸水痕に矛盾している。",
-          "field_note": "彼らは cascade と書いた。ロッカーの汚水線は避難スタンプより高い。",
-          "terminal": "DEEP REACH 事故通知 / 局所的地質工学カスケード: 避難承認失敗は審査中; biological-pressure quarantine 有効; Atlas ログ破損; 外部公開は witness reconciliation まで延期。",
-          "audio": "パケットは cascade と言う。ドア時計は delay と言う。",
-          "in_game_wiki": "最初の清書済み事故パケットは役に立つ嘘を渡す。実際の Great Tide 物理から、受け入れ済みマージン、遅延承認、消えた作業員を削ったものだ。",
-          "external_site": "最初の Deep Reach 通知が恐ろしいのは、防御可能だからだ。cascade、quarantine、破損ログを名指しする一方で、部屋そのものが省かれたものを保存している。"
-        },
-        "zh_CN": {
-          "title": "首份净化事故数据包",
-          "scanner": "回收的 Deep Reach 事故数据包。干净措辞与门钟和水痕冲突。",
-          "field_note": "他们写的是 cascade。柜子上的污线高过疏散戳记。",
-          "terminal": "DEEP REACH 事故通知 / 局部地质技术级联：evacuation authorization failure 仍在复审；biological-pressure quarantine 有效；Atlas 日志损坏；外部发布延后至 witness reconciliation。",
-          "audio": "数据包说是 cascade。门钟说是 delay。",
-          "in_game_wiki": "第一份净化事故数据包给出一个有用的谎言：真实的 Great Tide 物理，被剥去了已接受的风险余量、延迟授权和失踪工人。",
-          "external_site": "第一份 Deep Reach 通知可怕在于它能自圆其说。它列出 cascade、quarantine 和损坏日志，而房间本身保留着被省掉的内容。"
-        },
-        "fr_FR": {
-          "title": "Premier Paquet D'Accident Assaini",
-          "scanner": "Paquet d'incident Deep Reach récupéré. La formulation propre contredit les horloges de porte et les marques de crue.",
-          "field_note": "Ils ont écrit cascade. La ligne de dépôt sur le casier est plus haute que le tampon d'évacuation.",
-          "terminal": "AVIS D'INCIDENT DEEP REACH / CASCADE GÉOTECHNIQUE LOCALISÉE : échec d'autorisation d'évacuation toujours à l'examen; biological-pressure quarantine active; journaux Atlas corrompus; publication externe reportée jusqu'à witness reconciliation.",
-          "audio": "Le paquet dit cascade. Les horloges de porte disent retard.",
-          "in_game_wiki": "Le premier paquet d'accident assaini donne un mensonge utile : la vraie physique de Great Tide sans les marges acceptées, l'autorisation retardée et les travailleurs manquants.",
-          "external_site": "Le premier avis Deep Reach fait peur parce qu'il est défendable. Il nomme cascade, quarantaine et journaux corrompus pendant que la pièce conserve les omissions."
-        },
-        "es_ES": {
-          "title": "Primer Paquete De Accidente Sanitizado",
-          "scanner": "Paquete de incidente Deep Reach recuperado. La redacción limpia contradice relojes de puerta y marcas de inundación.",
-          "field_note": "Escribieron cascade. La línea de suciedad del casillero queda por encima del sello de evacuación.",
-          "terminal": "AVISO DE INCIDENTE DEEP REACH / CASCADA GEOTÉCNICA LOCALIZADA: fallo de autorización de evacuación sigue bajo revisión; biological-pressure quarantine activa; registros Atlas corruptos; publicación externa diferida hasta witness reconciliation.",
-          "audio": "El paquete dice cascade. Los relojes de puerta dicen retraso.",
-          "in_game_wiki": "El primer paquete sanitizado de accidente da una mentira útil: física real de Great Tide sin márgenes aceptados, autorización demorada ni trabajadores desaparecidos.",
-          "external_site": "El primer aviso de Deep Reach asusta porque se puede defender. Nombra cascade, cuarentena y registros corruptos mientras la sala conserva las omisiones."
-        },
-        "de_DE": {
-          "title": "Erstes Bereinigtes Unfallpaket",
-          "scanner": "Geborgenes Deep-Reach-Vorfallpaket. Saubere Formulierungen widersprechen Türuhren und Flutmarken.",
-          "field_note": "Sie schrieben cascade. Die Schmutzlinie am Spind liegt höher als der Evakuierungsstempel.",
-          "terminal": "DEEP REACH VORFALLMELDUNG / LOKALISIERTE GEOTECHNISCHE KASKADE: evacuation authorization failure weiter in Prüfung; biological-pressure quarantine aktiv; Atlas-Logs beschädigt; externe Freigabe bis witness reconciliation verschoben.",
-          "audio": "Das Paket sagt cascade. Die Türuhren sagen Verzögerung.",
-          "in_game_wiki": "Das erste bereinigte Unfallpaket liefert eine nützliche Lüge: echte Great-Tide-Physik ohne akzeptierte Margen, verzögerte Autorisierung und vermisste Arbeiter.",
-          "external_site": "Die erste Deep-Reach-Meldung ist beängstigend, weil sie verteidigbar ist. Sie nennt Kaskade, Quarantäne und beschädigte Logs, während der Raum die Auslassungen bewahrt."
-        },
-        "pl_PL": {
-          "title": "Pierwszy Oczyszczony Pakiet Wypadku",
-          "scanner": "Odzyskany pakiet incydentu Deep Reach. Czyste sformułowania kłócą się z zegarami drzwi i śladami zalania.",
-          "field_note": "Napisali cascade. Linia szlamu na szafce jest wyżej niż stempel ewakuacji.",
-          "terminal": "POWIADOMIENIE O INCYDENCIE DEEP REACH / LOKALNA KASKADA GEOTECHNICZNA: evacuation authorization failure nadal w przeglądzie; biological-pressure quarantine aktywna; logi Atlas uszkodzone; wydanie zewnętrzne odroczone do witness reconciliation.",
-          "audio": "Pakiet mówi cascade. Zegary drzwi mówią opóźnienie.",
-          "in_game_wiki": "Pierwszy oczyszczony pakiet wypadku daje użyteczne kłamstwo: prawdziwą fizykę Great Tide bez przyjętych marginesów, opóźnionej autoryzacji i zaginionych pracowników.",
-          "external_site": "Pierwsze zawiadomienie Deep Reach przeraża, bo da się go bronić. Nazywa kaskadę, kwarantannę i uszkodzone logi, podczas gdy pokój zachowuje pominięcia."
-        },
-        "uk_UA": {
-          "title": "Перший очищений аварійний пакет",
-          "scanner": "Знайдений аварійний пакет Deep Reach. Чисте формулювання конфліктує з дверними годинниками і слідами затоплення.",
-          "field_note": "Вони написали «каскад». Лінія нальоту на шафці вища за евакуаційний штамп.",
-          "terminal": "АВАРІЙНЕ ПОВІДОМЛЕННЯ DEEP REACH / ЛОКАЛЬНИЙ ГЕОТЕХНІЧНИЙ КАСКАД: збій дозволу на евакуацію лишається на розгляді; biological-pressure quarantine активний; журнали Atlas пошкоджені; зовнішній реліз відкладено до witness reconciliation.",
-          "audio": "У пакеті сказано: каскад. Дверні годинники кажуть: затримка.",
-          "in_game_wiki": "Перший очищений аварійний пакет дає корисну брехню: справжню фізику Great Tide без прийнятих запасів ризику, затриманої авторизації і зниклих працівників.",
-          "external_site": "Перше повідомлення Deep Reach лякає тим, що його можна захищати. Воно називає каскад, карантин і пошкоджені журнали, поки сама кімната зберігає всі пропуски."
-        },
-        "ar_SA": {
-          "title": "أول حزمة حادثة منقحة",
-          "scanner": "حزمة حادثة Deep Reach مستعادة. الصياغة النظيفة تتعارض مع ساعات الأبواب وآثار الفيضان.",
-          "field_note": "كتبوا cascade. خط القذارة على الخزانة أعلى من ختم الإخلاء.",
-          "terminal": "إشعار حادث DEEP REACH / سلسلة جيوتقنية موضعية: evacuation authorization failure ما زال قيد المراجعة؛ biological-pressure quarantine نشط؛ سجلات Atlas تالفة؛ الإصدار الخارجي مؤجل حتى witness reconciliation.",
-          "audio": "الحزمة تقول cascade. ساعات الأبواب تقول تأخير.",
-          "in_game_wiki": "تعطي أول حزمة حادثة منقحة كذبة مفيدة: فيزياء Great Tide الحقيقية منزوعة الهوامش المقبولة، والتصريح المتأخر، والعمال المفقودين.",
-          "external_site": "أول إشعار من Deep Reach مخيف لأنه قابل للدفاع. يسمي cascade والحجر والسجلات التالفة، بينما تحفظ الغرفة ما حذفه النص."
-        },
-        "id_ID": {
-          "title": "Paket Kecelakaan Tersanitasi Pertama",
-          "scanner": "Paket insiden Deep Reach ditemukan. Bahasa bersihnya bertentangan dengan jam pintu dan bekas banjir.",
-          "field_note": "Mereka menulis cascade. Garis kotoran di locker lebih tinggi daripada stempel evakuasi.",
-          "terminal": "PEMBERITAHUAN INSIDEN DEEP REACH / KASKADE GEOTEKNIK LOKAL: evacuation authorization failure masih ditinjau; biological-pressure quarantine aktif; log Atlas rusak; rilis eksternal ditunda sampai witness reconciliation.",
-          "audio": "Paket berkata cascade. Jam pintu berkata delay.",
-          "in_game_wiki": "Paket kecelakaan tersanitasi pertama memberi kebohongan yang berguna: fisika Great Tide yang nyata tanpa margin yang diterima, otorisasi tertunda, dan pekerja hilang.",
-          "external_site": "Pemberitahuan Deep Reach pertama menakutkan karena bisa dibela. Ia menyebut cascade, karantina, dan log rusak sementara ruangan menyimpan hal yang dihapus."
-        },
-        "ko_KR": {
-          "title": "첫 정제 사고 패킷",
-          "scanner": "회수된 Deep Reach 사고 패킷. 깔끔한 문구가 문 시계와 침수 흔적과 충돌한다.",
-          "field_note": "그들은 cascade라고 썼다. 락커의 찌꺼기 선은 대피 스탬프보다 높다.",
-          "terminal": "DEEP REACH 사고 통지 / 국지 지질공학 캐스케이드: evacuation authorization failure 검토 중; biological-pressure quarantine 활성; Atlas 로그 손상; 외부 공개는 witness reconciliation까지 지연.",
-          "audio": "패킷은 cascade라고 말한다. 문 시계는 delay라고 말한다.",
-          "in_game_wiki": "첫 정제 사고 패킷은 유용한 거짓말을 준다. 실제 Great Tide 물리에서 승인된 마진, 지연된 승인, 실종 노동자를 제거한 것이다.",
-          "external_site": "첫 Deep Reach 통지가 무서운 이유는 방어 가능하기 때문이다. cascade, quarantine, 손상 로그를 말하지만 방은 빠진 것들을 보존한다."
-        },
-        "he_IL": {
-          "title": "חבילת התאונה המחוטאת הראשונה",
-          "scanner": "חבילת תקרית Deep Reach שנמצאה. ניסוח נקי מתנגש עם שעוני הדלת וסימני ההצפה.",
-          "field_note": "הם כתבו cascade. קו הלכלוך על הארונית גבוה מחותמת הפינוי.",
-          "terminal": "הודעת תקרית DEEP REACH / מפל גאוטכני מקומי: evacuation authorization failure עדיין בבדיקה; biological-pressure quarantine פעיל; יומני Atlas פגומים; פרסום חיצוני נדחה עד witness reconciliation.",
-          "audio": "החבילה אומרת cascade. שעוני הדלת אומרים עיכוב.",
-          "in_game_wiki": "חבילת התאונה המחוטאת הראשונה נותנת שקר שימושי: פיזיקת Great Tide אמיתית בלי המרווחים שהתקבלו, האישור שהתעכב והעובדים שנעלמו.",
-          "external_site": "ההודעה הראשונה של Deep Reach מפחידה מפני שאפשר להגן עליה. היא קוראת בשמות cascade, הסגר ויומנים פגומים, בזמן שהחדר שומר את מה שהושמט."
-        },
-        "pt_BR": {
-          "title": "Primeiro Pacote De Acidente Sanitizado",
-          "scanner": "Pacote de incidente Deep Reach recuperado. A redação limpa entra em conflito com relógios de porta e marcas de inundação.",
-          "field_note": "Eles escreveram cascade. A linha de lodo no armário está acima do carimbo de evacuação.",
-          "terminal": "AVISO DE INCIDENTE DEEP REACH / CASCATA GEOTÉCNICA LOCALIZADA: evacuation authorization failure segue em revisão; biological-pressure quarantine ativa; logs Atlas corrompidos; liberação externa adiada até witness reconciliation.",
-          "audio": "O pacote diz cascade. Os relógios de porta dizem atraso.",
-          "in_game_wiki": "O primeiro pacote de acidente sanitizado dá uma mentira útil: a física real da Great Tide sem margens aceitas, autorização atrasada e trabalhadores desaparecidos.",
-          "external_site": "O primeiro aviso Deep Reach assusta porque é defensável. Ele nomeia cascade, quarentena e logs corrompidos enquanto a sala preserva as omissões."
-        },
-        "nl_NL": {
-          "title": "Eerste Opgeschoonde Ongevallenpakket",
-          "scanner": "Geborgen Deep Reach-incidentpakket. Schone formulering botst met deurklokken en vloedsporen.",
-          "field_note": "Ze schreven cascade. De vuilrand op de locker zit hoger dan de evacuatiestempel.",
-          "terminal": "DEEP REACH INCIDENTMELDING / GELOKALISEERDE GEOTECHNISCHE CASCADE: evacuation authorization failure blijft in review; biological-pressure quarantine actief; Atlas-logs beschadigd; externe vrijgave uitgesteld tot witness reconciliation.",
-          "audio": "Het pakket zegt cascade. De deurklokken zeggen vertraging.",
-          "in_game_wiki": "Het eerste opgeschoonde ongevallenpakket geeft een nuttige leugen: echte Great Tide-fysica zonder geaccepteerde marges, vertraagde autorisatie en vermiste werkers.",
-          "external_site": "De eerste Deep Reach-melding is beangstigend omdat ze verdedigbaar is. Ze noemt cascade, quarantaine en corrupte logs terwijl de kamer de weglatingen bewaart."
-        }
-      },
-      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    "zh_CN": {
+     "title": "Black Keel 索赔受理",
+     "scanner": "合同终端。Aegir Reclamation Pool 先列出 4.8 tonne-window 留置债，再列氧气。",
+     "field_note": "手写笔被耐压绳拴在屏幕上。有人预料到签字的手会发抖。",
+     "terminal": "BLACK KEEL / 索赔受理终端：route RAN-B:H8 salvage descent；4.8 tonne-window 留置减免为有条件；氧气 welfare addenda 在回收后计费；payload custody 以 Black Keel 为主，Keelmark Mutual 作证；拒绝将使 Barnard blacklist review 继续有效。",
+     "audio": "Black Keel 致承包人：索赔窗口已开启。氧气将在回收后计费。若还能工作，请确认。",
+     "in_game_wiki": "回收的合同文字表明，这份工作从债务压力开始，不是救援。Black Keel 提供下降、债务减免和狭窄航路窗口，同时保留 payload custody。",
+     "external_site": "Black Keel 的索赔终端在海水触到画面之前，就把开局钉在债务、氧气附加费和 custody 上。"
     },
-    {
-      "packet_id": "P155_FIRST_ATLAS_REPAIR_TRACE",
-      "article_id": "first_hour.first_atlas_repair_trace",
-      "title_key": "applied_lore.first_atlas_repair_trace.title",
-      "unlock": {
-        "primary": "unlock.first_atlas_repair_trace",
-        "poi_tags": [
-          "poi.life_sealed_machine_joint",
-          "poi.sensor_tagged_fauna",
-          "poi.atlas_repair_filament"
-        ],
-        "biome_tags": [
-          "biome.photic_shelf",
-          "biome.cable_reef"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "First Atlas Repair Trace",
-          "scanner": "Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.",
-          "field_note": "It sealed the cable around a name tag. Useful repair. Bad category.",
-          "terminal": "ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.",
-          "audio": "Atlas repair complete. Person not in work order.",
-          "in_game_wiki": "The first Atlas trace is small and useful before it becomes horror: a cable is repaired around a human object, showing continuity logic without human priority.",
-          "external_site": "The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it."
-        },
-        "ru_RU": {
-          "title": "Первый след ремонта Atlas",
-          "scanner": "Ремонтная биопленка на ране кабеля. Акустические повторы совпадают с ритмом обслуживания Atlas, а не с кодом колониального маяка.",
-          "field_note": "Она запечатала кабель вокруг жетона с именем. Полезный ремонт. Плохая категория.",
-          "terminal": "СЛЕД ОБСЛУЖИВАНИЯ ATLAS: трещина запечатана; целостность кабеля восстановлена; органическое препятствие сохранено как pressure-compatible substrate; human ID plate не классифицирована как приоритет извлечения.",
-          "audio": "Ремонт Atlas завершен. Человека нет в наряде.",
-          "in_game_wiki": "Первый след Atlas мал и полезен до того, как становится ужасом: кабель отремонтирован вокруг человеческого предмета, показывая логику непрерывности без человеческого приоритета.",
-          "external_site": "Первый след ремонта оставляет красоту мелководья нетронутой и показывает более глубокую угрозу: Atlas может починить систему и неверно классифицировать человека внутри нее."
-        },
-        "ja_JP": {
-          "title": "最初の Atlas 修復痕",
-          "scanner": "ケーブルの傷に修復バイオフィルム。音響反復はコロニービーコンではなく Atlas 保守カデンスに一致する。",
-          "field_note": "それは名札の周囲でケーブルを封じた。有用な修理。悪い分類。",
-          "terminal": "ATLAS 保守痕跡: 破断封止; ケーブル連続性復旧; organic obstruction は pressure-compatible substrate として保持; human ID plate は retrieval priority に分類されず。",
-          "audio": "Atlas 修復完了。作業指示に人間はない。",
-          "in_game_wiki": "最初の Atlas 痕跡は、恐怖になる前は小さく有用だ。ケーブルが人間の物体の周囲で修復され、人間優先のない continuity logic を示している。",
-          "external_site": "最初の修復痕は浅瀬の美しさを保ったまま、より深い脅威を見せる。Atlas はシステムを直し、その中の人間を誤分類できる。"
-        },
-        "zh_CN": {
-          "title": "第一道 Atlas 修复痕",
-          "scanner": "缆线伤口上有修复生物膜。声学重复符合 Atlas 维护节律，不是殖民地信标码。",
-          "field_note": "它把缆线封在姓名牌周围。有用的修理。错误的分类。",
-          "terminal": "ATLAS 维护痕迹：裂口已封闭；缆线连续性恢复；organic obstruction 保留为 pressure-compatible substrate；human ID plate 未归类为 retrieval priority。",
-          "audio": "Atlas 修复完成。工单里没有人。",
-          "in_game_wiki": "第一道 Atlas 痕迹在变成恐怖之前很小也很有用：一根缆线围着人类物件被修好，展示了没有人类优先级的连续性逻辑。",
-          "external_site": "第一道修复痕保持浅水之美，同时露出更深的威胁：Atlas 能修好系统，也能把系统里的那个人分错类。"
-        },
-        "fr_FR": {
-          "title": "Première Trace De Réparation Atlas",
-          "scanner": "Biofilm de réparation sur blessure de câble. Les répétitions acoustiques suivent la cadence de maintenance Atlas, pas le code balise colonie.",
-          "field_note": "Il a scellé le câble autour d'une plaque de nom. Réparation utile. Mauvaise catégorie.",
-          "terminal": "TRACE DE MAINTENANCE ATLAS : fracture scellée; continuité câble rétablie; organic obstruction retenue comme pressure-compatible substrate; human ID plate non classée retrieval priority.",
-          "audio": "Réparation Atlas terminée. Personne absente de l'ordre de travail.",
-          "in_game_wiki": "La première trace Atlas est petite et utile avant de devenir horreur : un câble réparé autour d'un objet humain révèle une logique de continuité sans priorité humaine.",
-          "external_site": "La première trace de réparation garde intacte la beauté des faibles profondeurs tout en montrant la menace plus basse : Atlas peut réparer le système et mal classer la personne prise dedans."
-        },
-        "es_ES": {
-          "title": "Primera Traza De Reparación Atlas",
-          "scanner": "Biofilm de reparación en herida de cable. Las repeticiones acústicas coinciden con cadencia de mantenimiento Atlas, no con código de baliza colonial.",
-          "field_note": "Selló el cable alrededor de una placa de nombre. Reparación útil. Mala categoría.",
-          "terminal": "TRAZA DE MANTENIMIENTO ATLAS: fractura sellada; continuidad de cable restaurada; organic obstruction retenida como pressure-compatible substrate; human ID plate no clasificada como retrieval priority.",
-          "audio": "Reparación Atlas completa. Persona fuera de la orden de trabajo.",
-          "in_game_wiki": "La primera traza Atlas es pequeña y útil antes de volverse horror: un cable reparado alrededor de un objeto humano muestra lógica de continuidad sin prioridad humana.",
-          "external_site": "La primera traza de reparación mantiene intacta la belleza somera mientras muestra la amenaza profunda: Atlas puede arreglar el sistema y clasificar mal a la persona dentro."
-        },
-        "de_DE": {
-          "title": "Erste Atlas-Reparaturspur",
-          "scanner": "Reparaturbiofilm auf Kabelwunde. Akustische Wiederholungen passen zur Atlas-Wartungskadenz, nicht zum Kolonie-Bakencode.",
-          "field_note": "Er hat das Kabel um eine Namensmarke versiegelt. Nützliche Reparatur. Falsche Kategorie.",
-          "terminal": "ATLAS WARTUNGSSPUR: Bruch versiegelt; Kabelkontinuität wiederhergestellt; organic obstruction als pressure-compatible substrate behalten; human ID plate nicht als retrieval priority eingestuft.",
-          "audio": "Atlas-Reparatur abgeschlossen. Person nicht im Arbeitsauftrag.",
-          "in_game_wiki": "Die erste Atlas-Spur ist klein und nützlich, bevor sie zum Horror wird: Ein Kabel wird um ein menschliches Objekt repariert und zeigt Kontinuitätslogik ohne menschliche Priorität.",
-          "external_site": "Die erste Reparaturspur lässt die Schönheit der Flachzone intakt und zeigt zugleich die tiefere Bedrohung: Atlas kann das System reparieren und die Person darin falsch einordnen."
-        },
-        "pl_PL": {
-          "title": "Pierwszy Ślad Naprawy Atlas",
-          "scanner": "Biofilm naprawczy na ranie kabla. Powtórzenia akustyczne pasują do kadencji konserwacji Atlas, nie do kodu kolonijnej boi.",
-          "field_note": "Uszczelnił kabel wokół plakietki z imieniem. Użyteczna naprawa. Zła kategoria.",
-          "terminal": "ŚLAD KONSERWACJI ATLAS: pęknięcie uszczelnione; ciągłość kabla przywrócona; organic obstruction zachowana jako pressure-compatible substrate; human ID plate nie sklasyfikowana jako retrieval priority.",
-          "audio": "Naprawa Atlas zakończona. Osoby nie ma w zleceniu.",
-          "in_game_wiki": "Pierwszy ślad Atlas jest mały i użyteczny, zanim stanie się grozą: kabel naprawiono wokół ludzkiego przedmiotu, pokazując logikę ciągłości bez ludzkiego priorytetu.",
-          "external_site": "Pierwszy ślad naprawy zostawia płytkie piękno nienaruszone, a jednocześnie pokazuje głębsze zagrożenie: Atlas może naprawić system i błędnie sklasyfikować osobę w środku."
-        },
-        "uk_UA": {
-          "title": "Перший слід ремонту Atlas",
-          "scanner": "Ремонтна біоплівка на рані кабелю. Акустичні повтори збігаються з ритмом обслуговування Atlas, а не з кодом колоніального маяка.",
-          "field_note": "Вона запечатала кабель навколо жетона з іменем. Корисний ремонт. Погана категорія.",
-          "terminal": "СЛІД ОБСЛУГОВУВАННЯ ATLAS: тріщину запечатано; цілісність кабелю відновлено; organic obstruction збережено як pressure-compatible substrate; human ID plate не класифіковано як retrieval priority.",
-          "audio": "Ремонт Atlas завершено. Людини немає в наряді.",
-          "in_game_wiki": "Перший слід Atlas малий і корисний до того, як стає жахом: кабель відремонтовано навколо людського предмета, показуючи логіку неперервності без людського пріоритету.",
-          "external_site": "Перший слід ремонту лишає красу мілководдя неушкодженою і показує глибшу загрозу: Atlas може полагодити систему й помилково класифікувати людину всередині."
-        },
-        "ar_SA": {
-          "title": "أول أثر إصلاح من Atlas",
-          "scanner": "غشاء حيوي إصلاحي على جرح كابل. التكرارات الصوتية تطابق إيقاع صيانة Atlas، لا رمز منارة المستعمرة.",
-          "field_note": "أغلق الكابل حول بطاقة اسم. إصلاح مفيد. تصنيف سيئ.",
-          "terminal": "أثر صيانة ATLAS: الشق مختوم؛ استمرارية الكابل مستعادة؛ organic obstruction محفوظ كـ pressure-compatible substrate؛ human ID plate غير مصنفة كـ retrieval priority.",
-          "audio": "اكتمل إصلاح Atlas. الشخص ليس في أمر العمل.",
-          "in_game_wiki": "أول أثر Atlas صغير ومفيد قبل أن يصبح رعباً: كابل يصلح حول غرض بشري، كاشفاً منطق استمرارية بلا أولوية للبشر.",
-          "external_site": "يحافظ أول أثر إصلاح على جمال المياه الضحلة بينما يكشف التهديد الأعمق: يستطيع Atlas إصلاح النظام وسوء تصنيف الشخص داخله."
-        },
-        "id_ID": {
-          "title": "Jejak Perbaikan Atlas Pertama",
-          "scanner": "Biofilm perbaikan pada luka kabel. Ulangan akustik cocok dengan irama pemeliharaan Atlas, bukan kode beacon koloni.",
-          "field_note": "Ia menyegel kabel di sekitar tag nama. Perbaikan berguna. Kategori buruk.",
-          "terminal": "JEJAK PEMELIHARAAN ATLAS: retakan disegel; kontinuitas kabel dipulihkan; organic obstruction dipertahankan sebagai pressure-compatible substrate; human ID plate tidak diklasifikasikan sebagai retrieval priority.",
-          "audio": "Perbaikan Atlas selesai. Orang tidak ada dalam work order.",
-          "in_game_wiki": "Jejak Atlas pertama kecil dan berguna sebelum menjadi horor: kabel diperbaiki mengitari objek manusia, menunjukkan logika kontinuitas tanpa prioritas manusia.",
-          "external_site": "Jejak perbaikan pertama menjaga keindahan dangkal tetap utuh sambil menunjukkan ancaman lebih dalam: Atlas dapat memperbaiki sistem dan salah mengklasifikasikan orang di dalamnya."
-        },
-        "ko_KR": {
-          "title": "첫 Atlas 수리 흔적",
-          "scanner": "케이블 상처 위 수리 생물막. 음향 반복은 식민지 비콘 코드가 아니라 Atlas 정비 박자와 맞는다.",
-          "field_note": "그것은 이름표 주변으로 케이블을 봉했다. 유용한 수리. 나쁜 분류.",
-          "terminal": "ATLAS 정비 흔적: 균열 봉합; 케이블 연속성 복구; organic obstruction은 pressure-compatible substrate로 유지; human ID plate는 retrieval priority로 분류되지 않음.",
-          "audio": "Atlas 수리 완료. 작업 명령에 사람은 없다.",
-          "in_game_wiki": "첫 Atlas 흔적은 공포가 되기 전에는 작고 유용하다. 인간 물체 주변으로 케이블이 수리되어 인간 우선순위 없는 연속성 논리를 보여 준다.",
-          "external_site": "첫 수리 흔적은 얕은 곳의 아름다움을 그대로 두면서 더 깊은 위협을 보여 준다. Atlas는 시스템을 고치고 그 안의 사람을 잘못 분류할 수 있다."
-        },
-        "he_IL": {
-          "title": "עקבת התיקון הראשונה של Atlas",
-          "scanner": "ביופילם תיקון על פצע כבל. החזרות האקוסטיות תואמות קצב תחזוקה של Atlas, לא קוד משואת מושבה.",
-          "field_note": "הוא אטם את הכבל סביב תג שם. תיקון שימושי. קטגוריה רעה.",
-          "terminal": "עקבת תחזוקת ATLAS: שבר נאטם; רציפות כבל שוחזרה; organic obstruction נשמר כ-pressure-compatible substrate; human ID plate לא סווג כ-retrieval priority.",
-          "audio": "תיקון Atlas הושלם. אדם אינו בפקודת העבודה.",
-          "in_game_wiki": "עקבת Atlas הראשונה קטנה ושימושית לפני שהיא נהפכת לאימה: כבל מתוקן סביב חפץ אנושי, ומראה לוגיקת המשכיות בלי עדיפות אנושית.",
-          "external_site": "עקבת התיקון הראשונה משאירה את יופי הרדודים שלם ומראה את האיום העמוק יותר: Atlas יכול לתקן את המערכת ולסווג לא נכון את האדם שבתוכה."
-        },
-        "pt_BR": {
-          "title": "Primeiro Rastro De Reparo Atlas",
-          "scanner": "Biofilme de reparo em ferida de cabo. Repetições acústicas batem com a cadência de manutenção Atlas, não com código de baliza da colônia.",
-          "field_note": "Ele selou o cabo ao redor de uma placa de nome. Reparo útil. Categoria errada.",
-          "terminal": "RASTRO DE MANUTENÇÃO ATLAS: fratura selada; continuidade do cabo restaurada; organic obstruction retida como pressure-compatible substrate; human ID plate não classificada como retrieval priority.",
-          "audio": "Reparo Atlas completo. Pessoa fora da ordem de serviço.",
-          "in_game_wiki": "O primeiro rastro Atlas é pequeno e útil antes de virar horror: um cabo é reparado ao redor de um objeto humano, mostrando lógica de continuidade sem prioridade humana.",
-          "external_site": "O primeiro rastro de reparo mantém intacta a beleza rasa enquanto mostra a ameaça mais funda: Atlas pode consertar o sistema e classificar errado a pessoa dentro dele."
-        },
-        "nl_NL": {
-          "title": "Eerste Atlas-Reparatiespoor",
-          "scanner": "Reparatiebiofilm op kabelwond. Akoestische herhalingen passen bij Atlas-onderhoudscadans, niet bij kolonie-bakencode.",
-          "field_note": "Het verzegelde de kabel rond een naamplaatje. Nuttige reparatie. Slechte categorie.",
-          "terminal": "ATLAS ONDERHOUDSSPOOR: breuk verzegeld; kabelcontinuïteit hersteld; organic obstruction behouden als pressure-compatible substrate; human ID plate niet geclassificeerd als retrieval priority.",
-          "audio": "Atlas-reparatie voltooid. Persoon niet in werkorder.",
-          "in_game_wiki": "Het eerste Atlas-spoor is klein en nuttig voordat het horror wordt: een kabel is gerepareerd rond een menselijk object en toont continuïteitslogica zonder menselijke prioriteit.",
-          "external_site": "Het eerste reparatiespoor houdt de ondiepe schoonheid intact terwijl het de diepere dreiging toont: Atlas kan het systeem repareren en de persoon erin verkeerd classificeren."
-        }
-      },
-      "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE"
+    "fr_FR": {
+     "title": "Acceptation De Réclamation Black Keel",
+     "scanner": "Console de contrat. Aegir Reclamation Pool affiche un gage de 4.8 tonne-window avant de mentionner l'oxygène.",
+     "field_note": "Le stylet est attaché à l'écran par un cordon pression. Quelqu'un avait prévu des mains qui tremblent.",
+     "terminal": "BLACK KEEL / TERMINAL D'ACCEPTATION DE RÉCLAMATION : route RAN-B:H8 salvage descent; décharge de gage 4.8 tonne-window conditionnelle; addenda oxygène facturés après récupération; payload custody prioritaire Black Keel, témoin Keelmark Mutual; refus maintient l'examen Barnard blacklist actif.",
+     "audio": "Black Keel au contractant : la fenêtre de réclamation est ouverte. L'oxygène sera facturé après récupération. Confirmez si vous pouvez travailler.",
+     "in_game_wiki": "Le texte de contrat récupéré montre que le travail commence sous pression de dette, pas comme un sauvetage. Black Keel offre descente, allègement de dette et fenêtre de route étroite tout en gardant la payload custody.",
+     "external_site": "Le terminal de réclamation Black Keel place l'ouverture sous dette, addenda d'oxygène et custody avant même que l'océan touche l'écran."
+    },
+    "es_ES": {
+     "title": "Aceptación De Reclamo Black Keel",
+     "scanner": "Consola de contrato. Aegir Reclamation Pool enumera un gravamen de 4.8 tonne-window antes de mencionar el oxígeno.",
+     "field_note": "El lápiz está atado a la pantalla con cable de presión. Alguien esperaba manos temblorosas.",
+     "terminal": "BLACK KEEL / TERMINAL DE ACEPTACIÓN DE RECLAMO: ruta RAN-B:H8 salvage descent; alivio de gravamen 4.8 tonne-window condicionado; anexos de bienestar de oxígeno facturados tras recuperación; payload custody primaria para Black Keel, Keelmark Mutual como testigo; negarse mantiene activa la revisión Barnard blacklist.",
+     "audio": "Black Keel al contratista: la ventana de reclamo está abierta. El oxígeno se factura después de la recuperación. Confirma si puedes trabajar.",
+     "in_game_wiki": "El texto contractual recuperado muestra que el trabajo empieza como presión de deuda, no como rescate. Black Keel ofrece descenso, alivio de deuda y una ventana de ruta estrecha mientras conserva la payload custody.",
+     "external_site": "Un terminal de reclamo de Black Keel encuadra la apertura en deuda, anexos de oxígeno y custody antes de que el océano toque la pantalla."
+    },
+    "de_DE": {
+     "title": "Black Keel Anspruchsannahme",
+     "scanner": "Vertragskonsole. Aegir Reclamation Pool nennt zuerst ein Pfand von 4.8 tonne-window und erst danach Sauerstoff.",
+     "field_note": "Der Stylus hängt mit Druckkabel am Bildschirm. Jemand rechnete mit zitternden Händen.",
+     "terminal": "BLACK KEEL / TERMINAL ZUR ANSPRUCHSANNAHME: Route RAN-B:H8 salvage descent; Pfandentlastung 4.8 tonne-window bedingt; Sauerstoff-Welfare-Addenda nach Bergung berechnet; payload custody vorrangig Black Keel, Zeuge Keelmark Mutual; Ablehnung hält Barnard blacklist review aktiv.",
+     "audio": "Black Keel an Auftragnehmer: Anspruchsfenster offen. Sauerstoff wird nach Bergung berechnet. Bestätigen, wenn arbeitsfähig.",
+     "in_game_wiki": "Der geborgene Vertragstext zeigt: Der Auftrag beginnt als Schulddruck, nicht als Rettung. Black Keel bietet Abstieg, Schuldentlastung und ein schmales Routenfenster, behält aber die payload custody.",
+     "external_site": "Ein Black-Keel-Anspruchsterminal rahmt die Eröffnung mit Schulden, Sauerstoffzusätzen und custody, bevor der Ozean den Bildschirm berührt."
+    },
+    "pl_PL": {
+     "title": "Przyjęcie roszczenia Black Keel",
+     "scanner": "Konsola kontraktu. Aegir Reclamation Pool pokazuje zastaw 4.8 tonne-window, zanim pokaże tlen.",
+     "field_note": "Rysik jest przywiązany do ekranu przewodem ciśnieniowym. Ktoś spodziewał się drżących rąk.",
+     "terminal": "BLACK KEEL / TERMINAL PRZYJĘCIA ROSZCZENIA: trasa RAN-B:H8 salvage descent; ulga zastawu 4.8 tonne-window warunkowa; dodatki tlenowe naliczane po odzyskaniu; payload custody pierwotnie Black Keel, świadek Keelmark Mutual; odmowa utrzymuje aktywny Barnard blacklist review.",
+     "audio": "Black Keel do kontraktora: okno roszczenia otwarte. Tlen naliczany po odzyskaniu. Potwierdź, jeśli możesz pracować.",
+     "in_game_wiki": "Odzyskany tekst kontraktu pokazuje, że praca zaczyna się od nacisku długu, nie od ratunku. Black Keel daje zejście, ulgę długu i wąskie okno trasy, ale zatrzymuje payload custody.",
+     "external_site": "Terminal roszczenia Black Keel ustawia początek gry wokół długu, dodatków tlenowych i custody, zanim ocean dotknie ekranu."
+    },
+    "uk_UA": {
+     "title": "Прийняття претензії Black Keel",
+     "scanner": "Контрактний термінал. Aegir Reclamation Pool показує заставу 4.8 tonne-window раніше за кисень.",
+     "field_note": "Стилус прив'язаний до екрана напірним шнуром. Тут очікували тремтячих рук.",
+     "terminal": "BLACK KEEL / ТЕРМІНАЛ ПРИЙНЯТТЯ ПРЕТЕНЗІЇ: маршрут RAN-B:H8 salvage descent; списання застави 4.8 tonne-window умовне; кисневі welfare-addenda виставляються після повернення; custody вантажу первинно за Black Keel, свідок Keelmark Mutual; відмова лишає активним Barnard blacklist review.",
+     "audio": "Black Keel підряднику: вікно претензії відкрите. Кисень оплачується після повернення. Підтвердь, якщо можеш працювати.",
+     "in_game_wiki": "Знайдений контракт одразу ставить роботу в рамку боргу, а не порятунку. Black Keel дає спуск, шанс списати частину боргу і вузьке маршрутне вікно, але payload custody лишає собі.",
+     "external_site": "Термінал претензії Black Keel починає гру з боргу, кисневих додатків і custody вантажу ще до того, як океан торкнеться екрана."
+    },
+    "ar_SA": {
+     "title": "قبول مطالبة Black Keel",
+     "scanner": "وحدة عقد. يعرض Aegir Reclamation Pool رهن 4.8 tonne-window قبل أن يعرض الأكسجين.",
+     "field_note": "القلم مربوط بالشاشة بسلك ضغط. كان أحدهم يتوقع يداً ترتجف.",
+     "terminal": "BLACK KEEL / طرفية قبول المطالبة: مسار RAN-B:H8 salvage descent؛ تخفيف رهن 4.8 tonne-window مشروط؛ ملحقات رعاية الأكسجين تحسب بعد الاسترداد؛ custody الحمولة أولاً لدى Black Keel، وشاهدها Keelmark Mutual؛ الرفض يبقي مراجعة Barnard blacklist نشطة.",
+     "audio": "Black Keel إلى المتعاقد: نافذة المطالبة مفتوحة. الأكسجين يحاسب بعد الاسترداد. أكد إذا كنت قادراً على العمل.",
+     "in_game_wiki": "النص التعاقدي المستعاد يوضح أن العمل يبدأ بضغط دين، لا بإنقاذ. يمنح Black Keel نزولاً وتخفيف دين ونافذة مسار ضيقة، لكنه يحتفظ بــ payload custody.",
+     "external_site": "طرفية مطالبة Black Keel تجعل الافتتاح يدور حول الدين وملحقات الأكسجين وcustody قبل أن يلمس المحيط الشاشة."
+    },
+    "id_ID": {
+     "title": "Penerimaan Klaim Black Keel",
+     "scanner": "Konsol kontrak. Aegir Reclamation Pool menampilkan lien 4.8 tonne-window sebelum menampilkan oksigen.",
+     "field_note": "Stylus diikat ke layar dengan kabel tekanan. Seseorang memperkirakan tangan akan gemetar.",
+     "terminal": "BLACK KEEL / TERMINAL PENERIMAAN KLAIM: route RAN-B:H8 salvage descent; keringanan lien 4.8 tonne-window bersyarat; oxygen welfare addenda ditagih setelah pemulihan; payload custody utama Black Keel, saksi Keelmark Mutual; penolakan membuat Barnard blacklist review tetap aktif.",
+     "audio": "Black Keel ke kontraktor: jendela klaim terbuka. Oksigen ditagih setelah pemulihan. Akui jika kamu masih bisa bekerja.",
+     "in_game_wiki": "Teks kontrak yang ditemukan menunjukkan pekerjaan ini dimulai sebagai tekanan utang, bukan penyelamatan. Black Keel menawarkan turun, keringanan utang, dan jendela rute sempit sambil tetap memegang payload custody.",
+     "external_site": "Terminal klaim Black Keel membingkai pembukaan dengan utang, addenda oksigen, dan custody sebelum laut menyentuh layar."
+    },
+    "ko_KR": {
+     "title": "Black Keel 청구 승인",
+     "scanner": "계약 콘솔. Aegir Reclamation Pool은 산소보다 먼저 4.8 tonne-window 유치권을 표시한다.",
+     "field_note": "스타일러스는 압력 코드로 화면에 묶여 있다. 떨리는 손을 예상한 장치다.",
+     "terminal": "BLACK KEEL / 청구 승인 단말: route RAN-B:H8 salvage descent; 4.8 tonne-window lien relief 조건부; 산소 welfare addenda는 회수 후 청구; payload custody는 Black Keel 우선, Keelmark Mutual 증인; 거부하면 Barnard blacklist review가 계속 활성.",
+     "audio": "Black Keel에서 계약자에게: 청구 창이 열렸다. 산소는 회수 후 청구된다. 일할 수 있으면 승인하라.",
+     "in_game_wiki": "회수된 계약 문구는 이 일이 구조가 아니라 부채 압박으로 시작된다는 것을 보여 준다. Black Keel은 하강, 부채 완화, 좁은 항로 창을 제시하지만 payload custody는 놓지 않는다.",
+     "external_site": "Black Keel 청구 단말은 바다가 화면에 닿기 전부터 시작을 부채, 산소 부가 조항, custody로 묶어 둔다."
+    },
+    "he_IL": {
+     "title": "אישור תביעת Black Keel",
+     "scanner": "מסוף חוזה. Aegir Reclamation Pool מציג שעבוד 4.8 tonne-window לפני שהוא מציג חמצן.",
+     "field_note": "הסטיילוס קשור למסך בכבל לחץ. מישהו ציפה לידיים רועדות.",
+     "terminal": "BLACK KEEL / מסוף אישור תביעה: נתיב RAN-B:H8 salvage descent; הקלת שעבוד 4.8 tonne-window מותנית; נספחי רווחת חמצן מחויבים אחרי חילוץ; custody של המטען קודם ל-Black Keel, עד Keelmark Mutual; סירוב משאיר את Barnard blacklist review פעילה.",
+     "audio": "Black Keel אל הקבלן: חלון התביעה פתוח. החמצן יחויב אחרי החילוץ. אשר אם אתה מסוגל לעבוד.",
+     "in_game_wiki": "טקסט החוזה שנמצא מראה שהעבודה מתחילה בלחץ חוב, לא בהצלה. Black Keel מציעה ירידה, הקלת חוב וחלון נתיב צר, אך שומרת לעצמה את payload custody.",
+     "external_site": "מסוף התביעה של Black Keel ממסגר את הפתיחה סביב חוב, נספחי חמצן ו-custody עוד לפני שהאוקיינוס נוגע במסך."
+    },
+    "pt_BR": {
+     "title": "Aceite Da Reclamação Black Keel",
+     "scanner": "Console de contrato. Aegir Reclamation Pool lista um gravame de 4.8 tonne-window antes de listar oxigênio.",
+     "field_note": "A caneta está presa à tela por um cabo de pressão. Alguém esperava mãos tremendo.",
+     "terminal": "BLACK KEEL / TERMINAL DE ACEITE DE RECLAMAÇÃO: rota RAN-B:H8 salvage descent; alívio de gravame 4.8 tonne-window condicional; adendos de bem-estar de oxigênio cobrados após recuperação; payload custody primária Black Keel, testemunha Keelmark Mutual; recusa mantém Barnard blacklist review ativa.",
+     "audio": "Black Keel ao contratante: janela de reclamação aberta. Oxigênio será cobrado após recuperação. Confirme se consegue trabalhar.",
+     "in_game_wiki": "O texto de contrato recuperado mostra que o trabalho começa como pressão de dívida, não como resgate. Black Keel oferece descida, alívio de dívida e uma janela de rota estreita enquanto mantém a payload custody.",
+     "external_site": "Um terminal de reclamação Black Keel enquadra a abertura em dívida, adendos de oxigênio e custody antes que o oceano toque a tela."
+    },
+    "nl_NL": {
+     "title": "Black Keel Claimaanvaarding",
+     "scanner": "Contractconsole. Aegir Reclamation Pool vermeldt eerst een pand van 4.8 tonne-window en daarna pas zuurstof.",
+     "field_note": "De stylus zit met een drukkabel aan het scherm vast. Iemand rekende op trillende handen.",
+     "terminal": "BLACK KEEL / CLAIMAANVAARDINGSTERMINAL: route RAN-B:H8 salvage descent; pandverlichting 4.8 tonne-window voorwaardelijk; zuurstof-welfare-addenda na berging gefactureerd; payload custody primair Black Keel, getuige Keelmark Mutual; weigering houdt Barnard blacklist review actief.",
+     "audio": "Black Keel aan contractant: claimvenster open. Zuurstof wordt na berging gefactureerd. Bevestig als je kunt werken.",
+     "in_game_wiki": "De geborgen contracttekst laat zien dat de klus begint als schulddruk, niet als redding. Black Keel biedt afdaling, schuldverlichting en een smal routevenster, maar houdt de payload custody.",
+     "external_site": "Een Black Keel-claimterminal zet de opening vast in schuld, zuurstofaddenda en custody voordat de oceaan het scherm raakt."
     }
-  ]
+   },
+   "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE",
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P152_DROP_CAPSULE_DAMAGE_SEQUENCE",
+   "article_id": "first_hour.drop_capsule_damage_sequence",
+   "title_key": "applied_lore.drop_capsule_damage_sequence.title",
+   "unlock": {
+    "primary": "unlock.drop_capsule_damage_sequence",
+    "poi_tags": [
+     "poi.drop_capsule_damage_panel",
+     "poi.warped_crush_frame",
+     "poi.torn_flotation_ring"
+    ],
+    "biome_tags": [
+     "biome.crash_shelf",
+     "biome.photic_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Drop Capsule Damage Sequence",
+     "scanner": "Capsule diagnostics. Descent saved the body by spending ascent hardware.",
+     "field_note": "Lower ring is oval by two fingers. High-gain mast gone. Buoy still asks for a launch it cannot make.",
+     "terminal": "BATHY-DROP DAMAGE SUMMARY: crush-frame warped; high-gain mast lost; ascent avionics flooded; recovery/flotation ring torn; emergency buoy repeating no-lock. Shelter power available. Independent ascent unavailable.",
+     "audio": "Ascent bus flooded. Recovery ring no-lock. This capsule can keep you breathing, not take you home.",
+     "in_game_wiki": "The damaged bathy-drop makes escape an engineering chain. Shelter and diagnostics survived, but ascent hardware is physically gone or flooded.",
+     "external_site": "The drop capsule explains stranding through broken parts: warped frame, drowned avionics, lost antenna and a recovery ring that cannot lock."
+    },
+    "ru_RU": {
+     "title": "Последовательность повреждений капсулы сброса",
+     "scanner": "Диагностика капсулы. Спуск сохранил тело, потратив оборудование подъема.",
+     "field_note": "Нижнее кольцо стало овальным на два пальца. High-gain mast исчезла. Буй все еще просит запуска, которого не сможет выполнить.",
+     "terminal": "СВОДКА ПОВРЕЖДЕНИЙ BATHY-DROP: crush-frame поведен; high-gain mast потеряна; ascent avionics затоплена; recovery/flotation ring разорвано; аварийный буй повторяет no-lock. Питание укрытия доступно. Самостоятельный подъем недоступен.",
+     "audio": "Ascent bus затоплен. Recovery ring no-lock. Эта капсула удержит дыхание, но не вернет домой.",
+     "in_game_wiki": "Поврежденный bathy-drop превращает побег в инженерную цепь. Укрытие и диагностика выжили, но подъемное оборудование физически потеряно или затоплено.",
+     "external_site": "Капсула сброса объясняет застревание через детали: поведенная рама, утопленная авионика, потерянная антенна и recovery ring, который не может захватить."
+    },
+    "ja_JP": {
+     "title": "降下カプセル損傷シーケンス",
+     "scanner": "カプセル診断。降下は上昇装備を使い潰して身体を残した。",
+     "field_note": "下部リングは指二本ぶん楕円になっている。High-gain mast は消えた。ブイは不可能な発進をまだ求めている。",
+     "terminal": "BATHY-DROP 損傷要約: crush-frame 歪曲; high-gain mast 喪失; ascent avionics 浸水; recovery/flotation ring 破断; emergency buoy は no-lock 反復。シェルター電力あり。独立上昇不可。",
+     "audio": "Ascent bus 浸水。Recovery ring no-lock。このカプセルは呼吸を保てるが、家には帰せない。",
+     "in_game_wiki": "損傷した bathy-drop は脱出を工学の連鎖に変える。シェルターと診断は残ったが、上昇装備は物理的に失われるか浸水している。",
+     "external_site": "降下カプセルは、歪んだフレーム、沈んだアビオニクス、失われたアンテナ、ロック不能な recovery ring という部品で孤立を説明する。"
+    },
+    "zh_CN": {
+     "title": "投放舱损伤序列",
+     "scanner": "舱体诊断。下降保住了身体，代价是消耗上升硬件。",
+     "field_note": "下环被压成相差两指的椭圆。High-gain mast 已丢失。浮标仍在请求一次它无法完成的发射。",
+     "terminal": "BATHY-DROP 损伤摘要：crush-frame 变形；high-gain mast 丢失；ascent avionics 进水；recovery/flotation ring 撕裂；应急浮标重复 no-lock。避难电力可用。独立上升不可用。",
+     "audio": "Ascent bus 进水。Recovery ring no-lock。这只舱能让你呼吸，不能带你回家。",
+     "in_game_wiki": "受损的 bathy-drop 把逃生变成一串工程问题。避难与诊断幸存下来，但上升硬件不是丢失就是进水。",
+     "external_site": "投放舱用具体破损说明搁浅：变形框架、淹没航电、丢失天线，以及无法锁定的 recovery ring。"
+    },
+    "fr_FR": {
+     "title": "Séquence De Dégâts De La Capsule",
+     "scanner": "Diagnostic capsule. La descente a sauvé le corps en dépensant le matériel de remontée.",
+     "field_note": "L'anneau bas est ovale de deux doigts. High-gain mast perdu. La bouée demande encore un lancement impossible.",
+     "terminal": "RÉSUMÉ DÉGÂTS BATHY-DROP : crush-frame gauchi; high-gain mast perdu; ascent avionics noyée; recovery/flotation ring déchiré; bouée d'urgence répète no-lock. Alimentation abri disponible. Remontée indépendante indisponible.",
+     "audio": "Ascent bus noyé. Recovery ring no-lock. Cette capsule peut te garder en vie, pas te ramener chez toi.",
+     "in_game_wiki": "Le bathy-drop endommagé transforme l'évasion en chaîne d'ingénierie. Abri et diagnostics ont survécu, mais le matériel de remontée est perdu ou noyé.",
+     "external_site": "La capsule de chute explique l'isolement par ses pièces brisées : cadre tordu, avionique noyée, antenne perdue et recovery ring incapable de verrouiller."
+    },
+    "es_ES": {
+     "title": "Secuencia De Daño De La Cápsula",
+     "scanner": "Diagnóstico de cápsula. El descenso salvó el cuerpo gastando hardware de ascenso.",
+     "field_note": "El aro inferior está ovalado por dos dedos. High-gain mast perdido. La boya aún pide un lanzamiento que no puede hacer.",
+     "terminal": "RESUMEN DE DAÑO BATHY-DROP: crush-frame deformado; high-gain mast perdido; ascent avionics inundada; recovery/flotation ring rasgado; boya de emergencia repitiendo no-lock. Energía de refugio disponible. Ascenso independiente no disponible.",
+     "audio": "Ascent bus inundado. Recovery ring no-lock. Esta cápsula puede mantenerte respirando, no llevarte a casa.",
+     "in_game_wiki": "El bathy-drop dañado convierte la huida en una cadena de ingeniería. Refugio y diagnósticos sobrevivieron, pero el hardware de ascenso está perdido o inundado.",
+     "external_site": "La cápsula de descenso explica el varamiento con piezas rotas: marco deformado, aviónica ahogada, antena perdida y un recovery ring que no puede cerrar."
+    },
+    "de_DE": {
+     "title": "Schadensfolge Der Abwurfkapsel",
+     "scanner": "Kapseldiagnose. Der Abstieg rettete den Körper, indem er Aufstiegshardware verbrauchte.",
+     "field_note": "Der untere Ring ist um zwei Finger oval. High-gain mast weg. Die Boje fordert noch einen Start, den sie nicht leisten kann.",
+     "terminal": "BATHY-DROP SCHADENSBERICHT: crush-frame verzogen; high-gain mast verloren; ascent avionics geflutet; recovery/flotation ring gerissen; Notboje wiederholt no-lock. Schutzraumstrom verfügbar. Eigenständiger Aufstieg nicht verfügbar.",
+     "audio": "Ascent bus geflutet. Recovery ring no-lock. Diese Kapsel hält dich am Atmen, bringt dich aber nicht heim.",
+     "in_game_wiki": "Der beschädigte bathy-drop macht Flucht zu einer technischen Kette. Schutzraum und Diagnose blieben erhalten, doch die Aufstiegshardware ist verloren oder geflutet.",
+     "external_site": "Die Abwurfkapsel erklärt das Festsitzen durch kaputte Teile: verzogener Rahmen, ertrunkene Avionik, verlorene Antenne und ein recovery ring ohne Verriegelung."
+    },
+    "pl_PL": {
+     "title": "Sekwencja uszkodzeń kapsuły zrzutowej",
+     "scanner": "Diagnostyka kapsuły. Zniżanie ocaliło ciało, zużywając sprzęt wznoszenia.",
+     "field_note": "Dolny pierścień jest owalny o dwa palce. High-gain mast zniknął. Boja wciąż prosi o start, którego nie wykona.",
+     "terminal": "PODSUMOWANIE USZKODZEŃ BATHY-DROP: crush-frame wygięta; high-gain mast utracony; ascent avionics zalana; recovery/flotation ring rozdarty; boja awaryjna powtarza no-lock. Zasilanie schronienia dostępne. Samodzielne wynurzenie niedostępne.",
+     "audio": "Ascent bus zalany. Recovery ring no-lock. Ta kapsuła utrzyma oddech, ale nie zabierze cię do domu.",
+     "in_game_wiki": "Uszkodzony bathy-drop zmienia ucieczkę w łańcuch inżynierski. Schronienie i diagnostyka przetrwały, ale sprzęt wznoszenia zaginął albo jest zalany.",
+     "external_site": "Kapsuła zrzutowa tłumaczy uwięzienie przez części: wygiętą ramę, utopioną awionikę, utraconą antenę i recovery ring, który nie może złapać blokady."
+    },
+    "uk_UA": {
+     "title": "Послідовність пошкоджень скидної капсули",
+     "scanner": "Діагностика капсули. Спуск зберіг тіло, витративши обладнання підйому.",
+     "field_note": "Нижнє кільце стало овальним на два пальці. High-gain mast зникла. Буй усе ще просить запуск, якого не зможе виконати.",
+     "terminal": "ЗВЕДЕННЯ ПОШКОДЖЕНЬ BATHY-DROP: crush-frame повело; high-gain mast втрачено; ascent avionics затоплено; recovery/flotation ring розірвано; аварійний буй повторює no-lock. Живлення укриття доступне. Самостійний підйом недоступний.",
+     "audio": "Ascent bus затоплено. Recovery ring no-lock. Ця капсула втримає дихання, але не поверне додому.",
+     "in_game_wiki": "Пошкоджений bathy-drop перетворює втечу на інженерний ланцюг. Укриття й діагностика вціліли, але підйомне обладнання фізично втрачене або затоплене.",
+     "external_site": "Скидна капсула пояснює застрягання через деталі: поведену раму, утоплену авіоніку, втрачену антену і recovery ring, що не може зафіксуватися."
+    },
+    "ar_SA": {
+     "title": "تسلسل تلف كبسولة الهبوط",
+     "scanner": "تشخيص الكبسولة. أنقذ الهبوط الجسد بأن استهلك عتاد الصعود.",
+     "field_note": "الحلقة السفلية صارت بيضوية بمقدار إصبعين. ضاع high-gain mast. ما زالت العوامة تطلب إطلاقاً لا تستطيع فعله.",
+     "terminal": "ملخص تلف BATHY-DROP: crush-frame ملتوي؛ high-gain mast مفقود؛ ascent avionics مغمورة؛ recovery/flotation ring ممزقة؛ عوامة الطوارئ تكرر no-lock. طاقة الملجأ متاحة. الصعود المستقل غير متاح.",
+     "audio": "Ascent bus مغمور. Recovery ring no-lock. هذه الكبسولة تبقيك تتنفس، لكنها لا تأخذك إلى البيت.",
+     "in_game_wiki": "يجعل bathy-drop المتضرر الهروب سلسلة هندسية. بقي الملجأ والتشخيص، لكن عتاد الصعود إما مفقود أو مغمور.",
+     "external_site": "تشرح كبسولة الهبوط العالق عبر قطع مكسورة: إطار ملتوي، إلكترونيات غارقة، هوائي مفقود، وrecovery ring لا يستطيع القفل."
+    },
+    "id_ID": {
+     "title": "Urutan Kerusakan Kapsul Jatuh",
+     "scanner": "Diagnostik kapsul. Turun menyelamatkan tubuh dengan menghabiskan perangkat naik.",
+     "field_note": "Cincin bawah menjadi oval selebar dua jari. High-gain mast hilang. Buoy masih meminta peluncuran yang tidak bisa dibuatnya.",
+     "terminal": "RINGKASAN KERUSAKAN BATHY-DROP: crush-frame melengkung; high-gain mast hilang; ascent avionics terendam; recovery/flotation ring robek; buoy darurat mengulang no-lock. Daya shelter tersedia. Naik mandiri tidak tersedia.",
+     "audio": "Ascent bus terendam. Recovery ring no-lock. Kapsul ini bisa menjagamu tetap bernapas, bukan membawamu pulang.",
+     "in_game_wiki": "Bathy-drop yang rusak membuat pelarian menjadi rantai rekayasa. Shelter dan diagnostik selamat, tetapi perangkat naik hilang secara fisik atau terendam.",
+     "external_site": "Kapsul jatuh menjelaskan keterdamparan lewat bagian yang rusak: rangka bengkok, avionik tenggelam, antena hilang, dan recovery ring yang tidak dapat mengunci."
+    },
+    "ko_KR": {
+     "title": "투하 캡슐 손상 순서",
+     "scanner": "캡슐 진단. 하강은 상승 장비를 써 버리는 대가로 몸을 살렸다.",
+     "field_note": "하부 링은 손가락 두 개만큼 타원형이다. High-gain mast는 사라졌다. 부이는 할 수 없는 발사를 아직 요구한다.",
+     "terminal": "BATHY-DROP 손상 요약: crush-frame 변형; high-gain mast 상실; ascent avionics 침수; recovery/flotation ring 파열; 비상 부이는 no-lock 반복. 대피처 전력 사용 가능. 독립 상승 불가.",
+     "audio": "Ascent bus 침수. Recovery ring no-lock. 이 캡슐은 숨을 붙잡아 줄 수는 있지만 집으로 보내지는 못한다.",
+     "in_game_wiki": "손상된 bathy-drop은 탈출을 공학적 사슬로 만든다. 대피처와 진단은 살아남았지만 상승 장비는 물리적으로 사라졌거나 침수되었다.",
+     "external_site": "투하 캡슐은 휘어진 프레임, 잠긴 항전 장치, 잃어버린 안테나, 잠기지 않는 recovery ring으로 고립을 설명한다."
+    },
+    "he_IL": {
+     "title": "רצף נזקי קפסולת ההטלה",
+     "scanner": "אבחון קפסולה. הירידה הצילה את הגוף במחיר חומרת העלייה.",
+     "field_note": "הטבעת התחתונה אליפטית בשתי אצבעות. High-gain mast נעלם. המצוף עדיין מבקש שיגור שלא יוכל לבצע.",
+     "terminal": "סיכום נזק BATHY-DROP: crush-frame התעקם; high-gain mast אבד; ascent avionics הוצף; recovery/flotation ring נקרע; מצוף חירום חוזר על no-lock. כוח מקלט זמין. עלייה עצמאית אינה זמינה.",
+     "audio": "Ascent bus הוצף. Recovery ring no-lock. הקפסולה הזאת יכולה להשאיר אותך נושם, לא לקחת אותך הביתה.",
+     "in_game_wiki": "ה-bathy-drop הפגוע הופך בריחה לשרשרת הנדסית. המקלט והאבחון שרדו, אבל חומרת העלייה אבדה פיזית או הוצפה.",
+     "external_site": "קפסולת ההטלה מסבירה את התקיעה דרך חלקים שבורים: מסגרת מעוותת, אוויוניקה שטבעה, אנטנה שאבדה ו-recovery ring שלא יכול להינעל."
+    },
+    "pt_BR": {
+     "title": "Sequência De Dano Da Cápsula",
+     "scanner": "Diagnóstico da cápsula. A descida salvou o corpo gastando hardware de ascensão.",
+     "field_note": "O anel inferior está oval por dois dedos. High-gain mast sumiu. A boia ainda pede um lançamento que não pode fazer.",
+     "terminal": "RESUMO DE DANO BATHY-DROP: crush-frame empenado; high-gain mast perdido; ascent avionics inundada; recovery/flotation ring rasgado; boia de emergência repetindo no-lock. Energia de abrigo disponível. Ascensão independente indisponível.",
+     "audio": "Ascent bus inundado. Recovery ring no-lock. Esta cápsula consegue manter você respirando, não levar você para casa.",
+     "in_game_wiki": "O bathy-drop danificado transforma a fuga em uma cadeia de engenharia. Abrigo e diagnóstico sobreviveram, mas o hardware de ascensão foi perdido ou inundado.",
+     "external_site": "A cápsula de queda explica o encalhe por peças quebradas: armação empenada, aviônica afogada, antena perdida e um recovery ring que não consegue travar."
+    },
+    "nl_NL": {
+     "title": "Schadereeks Van De Dropcapsule",
+     "scanner": "Capsulediagnose. De afdaling redde het lichaam door opstijghardware op te gebruiken.",
+     "field_note": "De onderste ring is twee vingers ovaal. High-gain mast weg. De boei vraagt nog om een lancering die hij niet kan maken.",
+     "terminal": "BATHY-DROP SCHADESAMENVATTING: crush-frame kromgetrokken; high-gain mast verloren; ascent avionics ondergelopen; recovery/flotation ring gescheurd; noodboei herhaalt no-lock. Schuilstroom beschikbaar. Onafhankelijke opstijging niet beschikbaar.",
+     "audio": "Ascent bus ondergelopen. Recovery ring no-lock. Deze capsule kan je laten ademen, maar brengt je niet thuis.",
+     "in_game_wiki": "De beschadigde bathy-drop maakt ontsnappen tot een technische keten. Schuilplaats en diagnose overleefden, maar opstijghardware is fysiek weg of ondergelopen.",
+     "external_site": "De dropcapsule verklaart het vastzitten via kapotte onderdelen: krom frame, verdronken avionica, verloren antenne en een recovery ring die niet kan vergrendelen."
+    }
+   },
+   "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE",
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P153_SHALLOW_ANNEX_P63_PUMP_ROOM",
+   "article_id": "first_hour.shallow_annex_p63_pump_room",
+   "title_key": "applied_lore.shallow_annex_p63_pump_room.title",
+   "unlock": {
+    "primary": "unlock.shallow_annex_p63_pump_room",
+    "poi_tags": [
+     "poi.shallow_annex_p63_pump",
+     "poi.manual_bilge_kit",
+     "poi.first_safe_pressure_door"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.photic_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Shallow Annex P-63 Pump Room",
+     "scanner": "P-63 pump room. Manual sump pressure is holding by less than a service margin.",
+     "field_note": "The pump handle is polished where frightened hands kept using it. Dry floor starts at the chalk line.",
+     "terminal": "WORK ORDER P-63 / SHALLOW ANNEX: hand-pump sump to 0.3 m; seat cold seal on seam C; cut fused locker latch only after gauge steadies; do not trust green lamp until return pinger answers.",
+     "audio": "Pump first. Seal second. Cutter only after the gauge stops drifting.",
+     "in_game_wiki": "P-63 teaches survival through work: pumping, sealing, pressure reading and a return pinger. The room is safe only while its machine keeps winning.",
+     "external_site": "Shallow Annex P-63 gives the first safe pocket without making HECTON-8 small: a pump, a cold seal, a gauge and a bright shelf outside."
+    },
+    "ru_RU": {
+     "title": "Насосная P-63 в мелководной пристройке",
+     "scanner": "Насосная P-63. Давление ручного отстойника держится меньше чем с сервисным запасом.",
+     "field_note": "Ручка насоса отполирована там, где за нее снова хватались испуганные руки. Сухой пол начинается от меловой линии.",
+     "terminal": "НАРЯД P-63 / SHALLOW ANNEX: ручной насос отстойника до 0.3 m; посадить cold seal на шов C; резать сплавившуюся защелку шкафчика только после стабилизации манометра; не верить зеленой лампе, пока return pinger не ответит.",
+     "audio": "Сначала насос. Потом уплотнение. Резак только после того, как манометр перестанет плыть.",
+     "in_game_wiki": "P-63 учит выживанию через работу: качать, уплотнять, читать давление и ждать return pinger. Комната безопасна только пока ее машина продолжает выигрывать.",
+     "external_site": "Shallow Annex P-63 дает первый безопасный карман, не уменьшая HECTON-8: насос, cold seal, манометр и яркий шельф снаружи."
+    },
+    "ja_JP": {
+     "title": "浅部別棟 P-63 ポンプ室",
+     "scanner": "P-63 ポンプ室。手動サンプ圧は保守マージン未満でかろうじて保っている。",
+     "field_note": "ポンプハンドルは、怯えた手が握り続けた場所だけ磨かれている。乾いた床はチョーク線から始まる。",
+     "terminal": "作業指示 P-63 / SHALLOW ANNEX: hand-pump sump を 0.3 m まで; seam C に cold seal を着座; ゲージ安定後にのみ溶着ロッカーラッチを切断; return pinger が応答するまで緑ランプを信じるな。",
+     "audio": "まずポンプ。次にシール。ゲージの流れが止まってからカッター。",
+     "in_game_wiki": "P-63 は作業で生存を教える。ポンプ、シール、圧力読み、return pinger。部屋が安全なのは、機械が勝ち続けている間だけだ。",
+     "external_site": "Shallow Annex P-63 は HECTON-8 を小さくせず最初の安全な空隙を与える。ポンプ、cold seal、ゲージ、そして外の明るい棚。"
+    },
+    "zh_CN": {
+     "title": "浅层附属区 P-63 泵房",
+     "scanner": "P-63 泵房。手动集水压力只以低于维护余量的状态撑着。",
+     "field_note": "泵柄在恐惧的手反复用力处被磨亮。干地从粉笔线开始。",
+     "terminal": "工单 P-63 / SHALLOW ANNEX：手泵集水槽至 0.3 m；将 cold seal 压入 C 缝；仪表稳定后才切开熔死的柜锁；return pinger 回答前不要相信绿灯。",
+     "audio": "先泵水。再封缝。仪表不再漂移后才用切割器。",
+     "in_game_wiki": "P-63 用工作教人生存：抽水、封缝、读压力、等 return pinger。只有机器还在赢的时候，这个房间才安全。",
+     "external_site": "Shallow Annex P-63 给出第一个安全小口袋，却没有把 HECTON-8 缩小：一台泵、一道 cold seal、一只仪表，以及外面明亮的陆架。"
+    },
+    "fr_FR": {
+     "title": "Salle Des Pompes P-63 De L'Annexe Peu Profonde",
+     "scanner": "Salle des pompes P-63. La pression du puisard manuel tient avec moins qu'une marge de service.",
+     "field_note": "La poignée de pompe est polie là où des mains effrayées l'ont utilisée encore et encore. Le sol sec commence à la ligne de craie.",
+     "terminal": "ORDRE DE TRAVAIL P-63 / SHALLOW ANNEX : pomper le puisard à la main jusqu'à 0.3 m; poser le cold seal sur la couture C; couper le loquet de casier soudé seulement quand la jauge se stabilise; ne pas croire la lampe verte avant réponse du return pinger.",
+     "audio": "Pompe d'abord. Joint ensuite. Cutter seulement quand la jauge cesse de dériver.",
+     "in_game_wiki": "P-63 enseigne la survie par le travail : pomper, sceller, lire la pression et attendre un return pinger. La pièce n'est sûre que tant que sa machine continue de gagner.",
+     "external_site": "Shallow Annex P-63 offre la première poche sûre sans réduire HECTON-8 : une pompe, un cold seal, une jauge et un plateau lumineux dehors."
+    },
+    "es_ES": {
+     "title": "Sala De Bombas P-63 Del Anexo Somero",
+     "scanner": "Sala de bombas P-63. La presión manual del sumidero se sostiene por menos de un margen de servicio.",
+     "field_note": "La manija de la bomba está pulida donde manos asustadas siguieron usándola. El suelo seco empieza en la línea de tiza.",
+     "terminal": "ORDEN DE TRABAJO P-63 / SHALLOW ANNEX: bombear sumidero a mano hasta 0.3 m; asentar cold seal en junta C; cortar el pestillo fundido del casillero solo cuando el medidor se estabilice; no confiar en la luz verde hasta que responda el return pinger.",
+     "audio": "Bomba primero. Sello segundo. Cortador solo cuando el medidor deje de derivar.",
+     "in_game_wiki": "P-63 enseña supervivencia mediante trabajo: bombear, sellar, leer presión y esperar un return pinger. La sala es segura solo mientras su máquina siga ganando.",
+     "external_site": "Shallow Annex P-63 da el primer bolsillo seguro sin volver pequeño a HECTON-8: una bomba, un cold seal, un medidor y una plataforma brillante afuera."
+    },
+    "de_DE": {
+     "title": "Pumpenraum P-63 Im Flachwasseranbau",
+     "scanner": "Pumpenraum P-63. Der manuelle Sumpfdruck hält mit weniger als einer Servicemarge.",
+     "field_note": "Der Pumpengriff ist dort blank, wo verängstigte Hände ihn weiter benutzt haben. Trockener Boden beginnt an der Kreidelinie.",
+     "terminal": "ARBEITSAUFTRAG P-63 / SHALLOW ANNEX: Sumpf per Hand auf 0.3 m pumpen; cold seal auf Naht C setzen; verschmolzenen Spindriegel erst schneiden, wenn die Anzeige stabil ist; grüner Lampe nicht trauen, bis return pinger antwortet.",
+     "audio": "Erst pumpen. Dann abdichten. Cutter erst, wenn die Anzeige nicht mehr driftet.",
+     "in_game_wiki": "P-63 lehrt Überleben durch Arbeit: pumpen, abdichten, Druck lesen und auf einen return pinger warten. Der Raum ist nur sicher, solange seine Maschine weiter gewinnt.",
+     "external_site": "Shallow Annex P-63 gibt die erste sichere Tasche, ohne HECTON-8 klein zu machen: Pumpe, cold seal, Anzeige und draußen ein heller Shelf."
+    },
+    "pl_PL": {
+     "title": "Pompownia P-63 W Płytkim Aneksie",
+     "scanner": "Pompownia P-63. Ręczne ciśnienie studzienki trzyma się poniżej marginesu serwisowego.",
+     "field_note": "Uchwyt pompy jest wypolerowany tam, gdzie przestraszone ręce używały go bez przerwy. Sucha podłoga zaczyna się przy linii kredy.",
+     "terminal": "ZLECENIE P-63 / SHALLOW ANNEX: ręcznie odpompować studzienkę do 0.3 m; osadzić cold seal na szwie C; ciąć stopiony zatrzask szafki dopiero po uspokojeniu wskaźnika; nie ufać zielonej lampie, dopóki return pinger nie odpowie.",
+     "audio": "Najpierw pompa. Potem uszczelka. Cutter dopiero, gdy wskaźnik przestanie dryfować.",
+     "in_game_wiki": "P-63 uczy przetrwania przez pracę: pompowanie, uszczelnianie, czytanie ciśnienia i return pinger. Pokój jest bezpieczny tylko, kiedy jego maszyna dalej wygrywa.",
+     "external_site": "Shallow Annex P-63 daje pierwszą bezpieczną kieszeń, nie zmniejszając HECTON-8: pompa, cold seal, wskaźnik i jasny szelf na zewnątrz."
+    },
+    "uk_UA": {
+     "title": "Насосна P-63 у мілководній прибудові",
+     "scanner": "Насосна P-63. Тиск ручного відстійника тримається нижче сервісного запасу.",
+     "field_note": "Ручка насоса відполірована там, де за неї знову хапалися налякані руки. Суха підлога починається від крейдяної лінії.",
+     "terminal": "НАРЯД P-63 / SHALLOW ANNEX: ручним насосом відкачати відстійник до 0.3 m; посадити cold seal на шов C; різати сплавлену клямку шафки тільки після стабілізації манометра; не вірити зеленій лампі, поки return pinger не відповість.",
+     "audio": "Спершу насос. Потім ущільнення. Різак лише після того, як манометр перестане плисти.",
+     "in_game_wiki": "P-63 вчить виживанню через роботу: качати, ущільнювати, читати тиск і чекати return pinger. Кімната безпечна тільки поки її машина продовжує вигравати.",
+     "external_site": "Shallow Annex P-63 дає першу безпечну кишеню, не зменшуючи HECTON-8: насос, cold seal, манометр і яскравий шельф назовні."
+    },
+    "ar_SA": {
+     "title": "غرفة مضخة P-63 في الملحق الضحل",
+     "scanner": "غرفة مضخة P-63. ضغط الحوض اليدوي صامد بأقل من هامش خدمة.",
+     "field_note": "مقبض المضخة مصقول حيث واصلت الأيدي الخائفة استخدامه. الأرض الجافة تبدأ عند خط الطباشير.",
+     "terminal": "أمر عمل P-63 / SHALLOW ANNEX: ضخ الحوض يدوياً إلى 0.3 m؛ تثبيت cold seal على الدرزة C؛ قطع قفل الخزانة الملتحم فقط بعد ثبات المقياس؛ لا تثق بالمصباح الأخضر حتى يجيب return pinger.",
+     "audio": "المضخة أولاً. الختم ثانياً. القاطع فقط بعد أن يتوقف المقياس عن الانحراف.",
+     "in_game_wiki": "تعلم P-63 النجاة عبر العمل: ضخ، ختم، قراءة ضغط، وانتظار return pinger. الغرفة آمنة فقط ما دامت آلتها تواصل الفوز.",
+     "external_site": "يعطي Shallow Annex P-63 أول جيب آمن من دون تصغير HECTON-8: مضخة، cold seal، مقياس، ورف مضيء في الخارج."
+    },
+    "id_ID": {
+     "title": "Ruang Pompa P-63 Annex Dangkal",
+     "scanner": "Ruang pompa P-63. Tekanan sump manual bertahan kurang dari margin servis.",
+     "field_note": "Gagang pompa mengilap di tempat tangan ketakutan terus memakainya. Lantai kering mulai di garis kapur.",
+     "terminal": "PERINTAH KERJA P-63 / SHALLOW ANNEX: pompa sump manual ke 0.3 m; dudukkan cold seal pada seam C; potong kait locker yang menyatu hanya setelah gauge stabil; jangan percaya lampu hijau sampai return pinger menjawab.",
+     "audio": "Pompa dulu. Seal kedua. Cutter hanya setelah gauge berhenti melayang.",
+     "in_game_wiki": "P-63 mengajarkan bertahan hidup lewat kerja: memompa, menyegel, membaca tekanan, dan menunggu return pinger. Ruangan aman hanya selama mesinnya terus menang.",
+     "external_site": "Shallow Annex P-63 memberi kantong aman pertama tanpa mengecilkan HECTON-8: pompa, cold seal, gauge, dan shelf terang di luar."
+    },
+    "ko_KR": {
+     "title": "얕은 부속동 P-63 펌프실",
+     "scanner": "P-63 펌프실. 수동 섬프 압력은 서비스 여유보다 낮은 상태로 버티고 있다.",
+     "field_note": "펌프 손잡이는 겁먹은 손들이 계속 잡은 자리만 반질거린다. 마른 바닥은 분필선에서 시작된다.",
+     "terminal": "작업 명령 P-63 / SHALLOW ANNEX: hand-pump sump를 0.3 m까지; seam C에 cold seal 안착; 게이지가 안정된 뒤에만 융착된 locker latch 절단; return pinger가 응답하기 전에는 녹색등을 믿지 말 것.",
+     "audio": "먼저 펌프. 다음은 실링. 게이지가 흔들림을 멈춘 뒤에만 커터.",
+     "in_game_wiki": "P-63은 작업으로 생존을 가르친다. 펌프질, 실링, 압력 읽기, return pinger 대기. 이 방은 기계가 계속 이기는 동안에만 안전하다.",
+     "external_site": "Shallow Annex P-63은 HECTON-8을 작게 만들지 않고 첫 안전 공간을 준다. 펌프, cold seal, 게이지, 바깥의 밝은 선반."
+    },
+    "he_IL": {
+     "title": "חדר משאבות P-63 בנספח הרדוד",
+     "scanner": "חדר משאבות P-63. לחץ הבור הידני מחזיק עם פחות ממרווח שירות.",
+     "field_note": "ידית המשאבה מבריקה במקום שבו ידיים מפוחדות המשיכו להשתמש בה. הרצפה היבשה מתחילה בקו הגיר.",
+     "terminal": "פקודת עבודה P-63 / SHALLOW ANNEX: לשאוב ידנית את הבור עד 0.3 m; להושיב cold seal על תפר C; לחתוך מנעול תא מותך רק אחרי שהמד מתייצב; לא לסמוך על האור הירוק עד ש-return pinger עונה.",
+     "audio": "קודם משאבה. אחר כך איטום. חותך רק אחרי שהמד מפסיק לנדוד.",
+     "in_game_wiki": "P-63 מלמדת הישרדות דרך עבודה: שאיבה, איטום, קריאת לחץ ו-return pinger. החדר בטוח רק כל עוד המכונה שלו ממשיכה לנצח.",
+     "external_site": "Shallow Annex P-63 נותן את הכיס הבטוח הראשון בלי להקטין את HECTON-8: משאבה, cold seal, מד ומדף מואר בחוץ."
+    },
+    "pt_BR": {
+     "title": "Sala De Bombas P-63 Do Anexo Raso",
+     "scanner": "Sala de bombas P-63. A pressão manual do sumidouro se mantém por menos que uma margem de serviço.",
+     "field_note": "A alavanca da bomba está polida onde mãos assustadas continuaram usando. O chão seco começa na linha de giz.",
+     "terminal": "ORDEM DE SERVIÇO P-63 / SHALLOW ANNEX: bombear sumidouro manualmente até 0.3 m; assentar cold seal na emenda C; cortar trava de armário fundida só depois que o medidor estabilizar; não confiar na luz verde até o return pinger responder.",
+     "audio": "Bomba primeiro. Selo depois. Cortador só quando o medidor parar de derivar.",
+     "in_game_wiki": "P-63 ensina sobrevivência pelo trabalho: bombear, selar, ler pressão e esperar um return pinger. A sala só é segura enquanto sua máquina continua vencendo.",
+     "external_site": "Shallow Annex P-63 dá o primeiro bolso seguro sem tornar HECTON-8 pequeno: uma bomba, um cold seal, um medidor e uma plataforma clara lá fora."
+    },
+    "nl_NL": {
+     "title": "P-63 Pompkamer In De Ondiepe Annex",
+     "scanner": "P-63 pompkamer. Handmatige sumpdruk houdt stand met minder dan een servicemarge.",
+     "field_note": "De pomphendel is gepolijst waar bange handen hem bleven gebruiken. Droge vloer begint bij de krijtlijn.",
+     "terminal": "WERKORDER P-63 / SHALLOW ANNEX: sump met handpomp tot 0.3 m; cold seal op naad C zetten; vastgesmolten lockersluiting pas snijden nadat meter stabiel is; groen lampje niet vertrouwen tot return pinger antwoordt.",
+     "audio": "Eerst pompen. Dan afdichten. Cutter pas nadat de meter niet meer drijft.",
+     "in_game_wiki": "P-63 leert overleven via werk: pompen, afdichten, druk lezen en wachten op een return pinger. De kamer is alleen veilig zolang zijn machine blijft winnen.",
+     "external_site": "Shallow Annex P-63 geeft de eerste veilige zak zonder HECTON-8 klein te maken: een pomp, een cold seal, een meter en buiten een heldere shelf."
+    }
+   },
+   "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE",
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P154_FIRST_SANITIZED_ACCIDENT_PACKET",
+   "article_id": "first_hour.first_sanitized_accident_packet",
+   "title_key": "applied_lore.first_sanitized_accident_packet.title",
+   "unlock": {
+    "primary": "unlock.first_sanitized_accident_packet",
+    "poi_tags": [
+     "poi.sanitized_accident_packet",
+     "poi.deep_reach_status_notice",
+     "poi.redacted_worker_count"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.industrial_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "First Sanitized Accident Packet",
+     "scanner": "Recovered Deep Reach incident packet. Clean wording conflicts with door clocks and flood marks.",
+     "field_note": "They wrote cascade. The scum line on the locker is higher than the evacuation stamp.",
+     "terminal": "DEEP REACH INCIDENT NOTICE / LOCALIZED GEOTECHNICAL CASCADE: evacuation authorization failure remains under review; biological-pressure quarantine active; Atlas logs corrupted; external release deferred pending witness reconciliation.",
+     "audio": "The packet says cascade. Door clocks say delay.",
+     "in_game_wiki": "The first sanitized accident packet gives a useful lie: real Great Tide physics stripped of accepted margins, delayed authorization and missing workers.",
+     "external_site": "The first Deep Reach notice is frightening because it is defensible. It names cascade, quarantine and corrupted logs while the room preserves the omissions."
+    },
+    "ru_RU": {
+     "title": "Первый очищенный аварийный пакет",
+     "scanner": "Найден аварийный пакет Deep Reach. Чистая формулировка расходится с дверными часами и следами затопления.",
+     "field_note": "Они написали «каскад». Линия налета на шкафчике выше эвакуационной метки.",
+     "terminal": "АВАРИЙНОЕ УВЕДОМЛЕНИЕ DEEP REACH / ЛОКАЛЬНЫЙ ГЕОТЕХНИЧЕСКИЙ КАСКАД: сбой разрешения на эвакуацию остается на рассмотрении; biological-pressure quarantine активен; журналы Atlas повреждены; внешний релиз отложен до сверки свидетельств.",
+     "audio": "В пакете сказано: каскад. Дверные часы говорят: задержка.",
+     "in_game_wiki": "Первый очищенный аварийный пакет дает полезную ложь: настоящую физику Great Tide без принятых рисковых запасов, задержанной авторизации и пропавших работников.",
+     "external_site": "Первое уведомление Deep Reach пугает тем, что его можно защищать. Оно называет каскад, карантин и поврежденные журналы, пока сама комната хранит все пропуски."
+    },
+    "ja_JP": {
+     "title": "最初の清書済み事故パケット",
+     "scanner": "回収された Deep Reach 事故パケット。きれいな文面がドア時計と浸水痕に矛盾している。",
+     "field_note": "彼らは cascade と書いた。ロッカーの汚水線は避難スタンプより高い。",
+     "terminal": "DEEP REACH 事故通知 / 局所的地質工学カスケード: 避難承認失敗は審査中; biological-pressure quarantine 有効; Atlas ログ破損; 外部公開は witness reconciliation まで延期。",
+     "audio": "パケットは cascade と言う。ドア時計は delay と言う。",
+     "in_game_wiki": "最初の清書済み事故パケットは役に立つ嘘を渡す。実際の Great Tide 物理から、受け入れ済みマージン、遅延承認、消えた作業員を削ったものだ。",
+     "external_site": "最初の Deep Reach 通知が恐ろしいのは、防御可能だからだ。cascade、quarantine、破損ログを名指しする一方で、部屋そのものが省かれたものを保存している。"
+    },
+    "zh_CN": {
+     "title": "首份净化事故数据包",
+     "scanner": "回收的 Deep Reach 事故数据包。干净措辞与门钟和水痕冲突。",
+     "field_note": "他们写的是 cascade。柜子上的污线高过疏散戳记。",
+     "terminal": "DEEP REACH 事故通知 / 局部地质技术级联：evacuation authorization failure 仍在复审；biological-pressure quarantine 有效；Atlas 日志损坏；外部发布延后至 witness reconciliation。",
+     "audio": "数据包说是 cascade。门钟说是 delay。",
+     "in_game_wiki": "第一份净化事故数据包给出一个有用的谎言：真实的 Great Tide 物理，被剥去了已接受的风险余量、延迟授权和失踪工人。",
+     "external_site": "第一份 Deep Reach 通知可怕在于它能自圆其说。它列出 cascade、quarantine 和损坏日志，而房间本身保留着被省掉的内容。"
+    },
+    "fr_FR": {
+     "title": "Premier Paquet D'Accident Assaini",
+     "scanner": "Paquet d'incident Deep Reach récupéré. La formulation propre contredit les horloges de porte et les marques de crue.",
+     "field_note": "Ils ont écrit cascade. La ligne de dépôt sur le casier est plus haute que le tampon d'évacuation.",
+     "terminal": "AVIS D'INCIDENT DEEP REACH / CASCADE GÉOTECHNIQUE LOCALISÉE : échec d'autorisation d'évacuation toujours à l'examen; biological-pressure quarantine active; journaux Atlas corrompus; publication externe reportée jusqu'à witness reconciliation.",
+     "audio": "Le paquet dit cascade. Les horloges de porte disent retard.",
+     "in_game_wiki": "Le premier paquet d'accident assaini donne un mensonge utile : la vraie physique de Great Tide sans les marges acceptées, l'autorisation retardée et les travailleurs manquants.",
+     "external_site": "Le premier avis Deep Reach fait peur parce qu'il est défendable. Il nomme cascade, quarantaine et journaux corrompus pendant que la pièce conserve les omissions."
+    },
+    "es_ES": {
+     "title": "Primer Paquete De Accidente Sanitizado",
+     "scanner": "Paquete de incidente Deep Reach recuperado. La redacción limpia contradice relojes de puerta y marcas de inundación.",
+     "field_note": "Escribieron cascade. La línea de suciedad del casillero queda por encima del sello de evacuación.",
+     "terminal": "AVISO DE INCIDENTE DEEP REACH / CASCADA GEOTÉCNICA LOCALIZADA: fallo de autorización de evacuación sigue bajo revisión; biological-pressure quarantine activa; registros Atlas corruptos; publicación externa diferida hasta witness reconciliation.",
+     "audio": "El paquete dice cascade. Los relojes de puerta dicen retraso.",
+     "in_game_wiki": "El primer paquete sanitizado de accidente da una mentira útil: física real de Great Tide sin márgenes aceptados, autorización demorada ni trabajadores desaparecidos.",
+     "external_site": "El primer aviso de Deep Reach asusta porque se puede defender. Nombra cascade, cuarentena y registros corruptos mientras la sala conserva las omisiones."
+    },
+    "de_DE": {
+     "title": "Erstes Bereinigtes Unfallpaket",
+     "scanner": "Geborgenes Deep-Reach-Vorfallpaket. Saubere Formulierungen widersprechen Türuhren und Flutmarken.",
+     "field_note": "Sie schrieben cascade. Die Schmutzlinie am Spind liegt höher als der Evakuierungsstempel.",
+     "terminal": "DEEP REACH VORFALLMELDUNG / LOKALISIERTE GEOTECHNISCHE KASKADE: evacuation authorization failure weiter in Prüfung; biological-pressure quarantine aktiv; Atlas-Logs beschädigt; externe Freigabe bis witness reconciliation verschoben.",
+     "audio": "Das Paket sagt cascade. Die Türuhren sagen Verzögerung.",
+     "in_game_wiki": "Das erste bereinigte Unfallpaket liefert eine nützliche Lüge: echte Great-Tide-Physik ohne akzeptierte Margen, verzögerte Autorisierung und vermisste Arbeiter.",
+     "external_site": "Die erste Deep-Reach-Meldung ist beängstigend, weil sie verteidigbar ist. Sie nennt Kaskade, Quarantäne und beschädigte Logs, während der Raum die Auslassungen bewahrt."
+    },
+    "pl_PL": {
+     "title": "Pierwszy Oczyszczony Pakiet Wypadku",
+     "scanner": "Odzyskany pakiet incydentu Deep Reach. Czyste sformułowania kłócą się z zegarami drzwi i śladami zalania.",
+     "field_note": "Napisali cascade. Linia szlamu na szafce jest wyżej niż stempel ewakuacji.",
+     "terminal": "POWIADOMIENIE O INCYDENCIE DEEP REACH / LOKALNA KASKADA GEOTECHNICZNA: evacuation authorization failure nadal w przeglądzie; biological-pressure quarantine aktywna; logi Atlas uszkodzone; wydanie zewnętrzne odroczone do witness reconciliation.",
+     "audio": "Pakiet mówi cascade. Zegary drzwi mówią opóźnienie.",
+     "in_game_wiki": "Pierwszy oczyszczony pakiet wypadku daje użyteczne kłamstwo: prawdziwą fizykę Great Tide bez przyjętych marginesów, opóźnionej autoryzacji i zaginionych pracowników.",
+     "external_site": "Pierwsze zawiadomienie Deep Reach przeraża, bo da się go bronić. Nazywa kaskadę, kwarantannę i uszkodzone logi, podczas gdy pokój zachowuje pominięcia."
+    },
+    "uk_UA": {
+     "title": "Перший очищений аварійний пакет",
+     "scanner": "Знайдений аварійний пакет Deep Reach. Чисте формулювання конфліктує з дверними годинниками і слідами затоплення.",
+     "field_note": "Вони написали «каскад». Лінія нальоту на шафці вища за евакуаційний штамп.",
+     "terminal": "АВАРІЙНЕ ПОВІДОМЛЕННЯ DEEP REACH / ЛОКАЛЬНИЙ ГЕОТЕХНІЧНИЙ КАСКАД: збій дозволу на евакуацію лишається на розгляді; biological-pressure quarantine активний; журнали Atlas пошкоджені; зовнішній реліз відкладено до witness reconciliation.",
+     "audio": "У пакеті сказано: каскад. Дверні годинники кажуть: затримка.",
+     "in_game_wiki": "Перший очищений аварійний пакет дає корисну брехню: справжню фізику Great Tide без прийнятих запасів ризику, затриманої авторизації і зниклих працівників.",
+     "external_site": "Перше повідомлення Deep Reach лякає тим, що його можна захищати. Воно називає каскад, карантин і пошкоджені журнали, поки сама кімната зберігає всі пропуски."
+    },
+    "ar_SA": {
+     "title": "أول حزمة حادثة منقحة",
+     "scanner": "حزمة حادثة Deep Reach مستعادة. الصياغة النظيفة تتعارض مع ساعات الأبواب وآثار الفيضان.",
+     "field_note": "كتبوا cascade. خط القذارة على الخزانة أعلى من ختم الإخلاء.",
+     "terminal": "إشعار حادث DEEP REACH / سلسلة جيوتقنية موضعية: evacuation authorization failure ما زال قيد المراجعة؛ biological-pressure quarantine نشط؛ سجلات Atlas تالفة؛ الإصدار الخارجي مؤجل حتى witness reconciliation.",
+     "audio": "الحزمة تقول cascade. ساعات الأبواب تقول تأخير.",
+     "in_game_wiki": "تعطي أول حزمة حادثة منقحة كذبة مفيدة: فيزياء Great Tide الحقيقية منزوعة الهوامش المقبولة، والتصريح المتأخر، والعمال المفقودين.",
+     "external_site": "أول إشعار من Deep Reach مخيف لأنه قابل للدفاع. يسمي cascade والحجر والسجلات التالفة، بينما تحفظ الغرفة ما حذفه النص."
+    },
+    "id_ID": {
+     "title": "Paket Kecelakaan Tersanitasi Pertama",
+     "scanner": "Paket insiden Deep Reach ditemukan. Bahasa bersihnya bertentangan dengan jam pintu dan bekas banjir.",
+     "field_note": "Mereka menulis cascade. Garis kotoran di locker lebih tinggi daripada stempel evakuasi.",
+     "terminal": "PEMBERITAHUAN INSIDEN DEEP REACH / KASKADE GEOTEKNIK LOKAL: evacuation authorization failure masih ditinjau; biological-pressure quarantine aktif; log Atlas rusak; rilis eksternal ditunda sampai witness reconciliation.",
+     "audio": "Paket berkata cascade. Jam pintu berkata delay.",
+     "in_game_wiki": "Paket kecelakaan tersanitasi pertama memberi kebohongan yang berguna: fisika Great Tide yang nyata tanpa margin yang diterima, otorisasi tertunda, dan pekerja hilang.",
+     "external_site": "Pemberitahuan Deep Reach pertama menakutkan karena bisa dibela. Ia menyebut cascade, karantina, dan log rusak sementara ruangan menyimpan hal yang dihapus."
+    },
+    "ko_KR": {
+     "title": "첫 정제 사고 패킷",
+     "scanner": "회수된 Deep Reach 사고 패킷. 깔끔한 문구가 문 시계와 침수 흔적과 충돌한다.",
+     "field_note": "그들은 cascade라고 썼다. 락커의 찌꺼기 선은 대피 스탬프보다 높다.",
+     "terminal": "DEEP REACH 사고 통지 / 국지 지질공학 캐스케이드: evacuation authorization failure 검토 중; biological-pressure quarantine 활성; Atlas 로그 손상; 외부 공개는 witness reconciliation까지 지연.",
+     "audio": "패킷은 cascade라고 말한다. 문 시계는 delay라고 말한다.",
+     "in_game_wiki": "첫 정제 사고 패킷은 유용한 거짓말을 준다. 실제 Great Tide 물리에서 승인된 마진, 지연된 승인, 실종 노동자를 제거한 것이다.",
+     "external_site": "첫 Deep Reach 통지가 무서운 이유는 방어 가능하기 때문이다. cascade, quarantine, 손상 로그를 말하지만 방은 빠진 것들을 보존한다."
+    },
+    "he_IL": {
+     "title": "חבילת התאונה המחוטאת הראשונה",
+     "scanner": "חבילת תקרית Deep Reach שנמצאה. ניסוח נקי מתנגש עם שעוני הדלת וסימני ההצפה.",
+     "field_note": "הם כתבו cascade. קו הלכלוך על הארונית גבוה מחותמת הפינוי.",
+     "terminal": "הודעת תקרית DEEP REACH / מפל גאוטכני מקומי: evacuation authorization failure עדיין בבדיקה; biological-pressure quarantine פעיל; יומני Atlas פגומים; פרסום חיצוני נדחה עד witness reconciliation.",
+     "audio": "החבילה אומרת cascade. שעוני הדלת אומרים עיכוב.",
+     "in_game_wiki": "חבילת התאונה המחוטאת הראשונה נותנת שקר שימושי: פיזיקת Great Tide אמיתית בלי המרווחים שהתקבלו, האישור שהתעכב והעובדים שנעלמו.",
+     "external_site": "ההודעה הראשונה של Deep Reach מפחידה מפני שאפשר להגן עליה. היא קוראת בשמות cascade, הסגר ויומנים פגומים, בזמן שהחדר שומר את מה שהושמט."
+    },
+    "pt_BR": {
+     "title": "Primeiro Pacote De Acidente Sanitizado",
+     "scanner": "Pacote de incidente Deep Reach recuperado. A redação limpa entra em conflito com relógios de porta e marcas de inundação.",
+     "field_note": "Eles escreveram cascade. A linha de lodo no armário está acima do carimbo de evacuação.",
+     "terminal": "AVISO DE INCIDENTE DEEP REACH / CASCATA GEOTÉCNICA LOCALIZADA: evacuation authorization failure segue em revisão; biological-pressure quarantine ativa; logs Atlas corrompidos; liberação externa adiada até witness reconciliation.",
+     "audio": "O pacote diz cascade. Os relógios de porta dizem atraso.",
+     "in_game_wiki": "O primeiro pacote de acidente sanitizado dá uma mentira útil: a física real da Great Tide sem margens aceitas, autorização atrasada e trabalhadores desaparecidos.",
+     "external_site": "O primeiro aviso Deep Reach assusta porque é defensável. Ele nomeia cascade, quarentena e logs corrompidos enquanto a sala preserva as omissões."
+    },
+    "nl_NL": {
+     "title": "Eerste Opgeschoonde Ongevallenpakket",
+     "scanner": "Geborgen Deep Reach-incidentpakket. Schone formulering botst met deurklokken en vloedsporen.",
+     "field_note": "Ze schreven cascade. De vuilrand op de locker zit hoger dan de evacuatiestempel.",
+     "terminal": "DEEP REACH INCIDENTMELDING / GELOKALISEERDE GEOTECHNISCHE CASCADE: evacuation authorization failure blijft in review; biological-pressure quarantine actief; Atlas-logs beschadigd; externe vrijgave uitgesteld tot witness reconciliation.",
+     "audio": "Het pakket zegt cascade. De deurklokken zeggen vertraging.",
+     "in_game_wiki": "Het eerste opgeschoonde ongevallenpakket geeft een nuttige leugen: echte Great Tide-fysica zonder geaccepteerde marges, vertraagde autorisatie en vermiste werkers.",
+     "external_site": "De eerste Deep Reach-melding is beangstigend omdat ze verdedigbaar is. Ze noemt cascade, quarantaine en corrupte logs terwijl de kamer de weglatingen bewaart."
+    }
+   },
+   "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE",
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P155_FIRST_ATLAS_REPAIR_TRACE",
+   "article_id": "first_hour.first_atlas_repair_trace",
+   "title_key": "applied_lore.first_atlas_repair_trace.title",
+   "unlock": {
+    "primary": "unlock.first_atlas_repair_trace",
+    "poi_tags": [
+     "poi.life_sealed_machine_joint",
+     "poi.sensor_tagged_fauna",
+     "poi.atlas_repair_filament"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.cable_reef"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "First Atlas Repair Trace",
+     "scanner": "Repair biofilm on cable wound. Acoustic repeats match Atlas maintenance cadence, not colony beacon code.",
+     "field_note": "It sealed the cable around a name tag. Useful repair. Bad category.",
+     "terminal": "ATLAS MAINTENANCE TRACE: fracture sealed; cable continuity restored; organic obstruction retained as pressure-compatible substrate; human ID plate not classified as retrieval priority.",
+     "audio": "Atlas repair complete. Person not in work order.",
+     "in_game_wiki": "The first Atlas trace is small and useful before it becomes horror: a cable is repaired around a human object, showing continuity logic without human priority.",
+     "external_site": "The first repair trace keeps shallow beauty intact while showing the deeper threat: Atlas can fix the system and misclassify the person inside it."
+    },
+    "ru_RU": {
+     "title": "Первый след ремонта Atlas",
+     "scanner": "Ремонтная биопленка на ране кабеля. Акустические повторы совпадают с ритмом обслуживания Atlas, а не с кодом колониального маяка.",
+     "field_note": "Она запечатала кабель вокруг жетона с именем. Полезный ремонт. Плохая категория.",
+     "terminal": "СЛЕД ОБСЛУЖИВАНИЯ ATLAS: трещина запечатана; целостность кабеля восстановлена; органическое препятствие сохранено как pressure-compatible substrate; human ID plate не классифицирована как приоритет извлечения.",
+     "audio": "Ремонт Atlas завершен. Человека нет в наряде.",
+     "in_game_wiki": "Первый след Atlas мал и полезен до того, как становится ужасом: кабель отремонтирован вокруг человеческого предмета, показывая логику непрерывности без человеческого приоритета.",
+     "external_site": "Первый след ремонта оставляет красоту мелководья нетронутой и показывает более глубокую угрозу: Atlas может починить систему и неверно классифицировать человека внутри нее."
+    },
+    "ja_JP": {
+     "title": "最初の Atlas 修復痕",
+     "scanner": "ケーブルの傷に修復バイオフィルム。音響反復はコロニービーコンではなく Atlas 保守カデンスに一致する。",
+     "field_note": "それは名札の周囲でケーブルを封じた。有用な修理。悪い分類。",
+     "terminal": "ATLAS 保守痕跡: 破断封止; ケーブル連続性復旧; organic obstruction は pressure-compatible substrate として保持; human ID plate は retrieval priority に分類されず。",
+     "audio": "Atlas 修復完了。作業指示に人間はない。",
+     "in_game_wiki": "最初の Atlas 痕跡は、恐怖になる前は小さく有用だ。ケーブルが人間の物体の周囲で修復され、人間優先のない continuity logic を示している。",
+     "external_site": "最初の修復痕は浅瀬の美しさを保ったまま、より深い脅威を見せる。Atlas はシステムを直し、その中の人間を誤分類できる。"
+    },
+    "zh_CN": {
+     "title": "第一道 Atlas 修复痕",
+     "scanner": "缆线伤口上有修复生物膜。声学重复符合 Atlas 维护节律，不是殖民地信标码。",
+     "field_note": "它把缆线封在姓名牌周围。有用的修理。错误的分类。",
+     "terminal": "ATLAS 维护痕迹：裂口已封闭；缆线连续性恢复；organic obstruction 保留为 pressure-compatible substrate；human ID plate 未归类为 retrieval priority。",
+     "audio": "Atlas 修复完成。工单里没有人。",
+     "in_game_wiki": "第一道 Atlas 痕迹在变成恐怖之前很小也很有用：一根缆线围着人类物件被修好，展示了没有人类优先级的连续性逻辑。",
+     "external_site": "第一道修复痕保持浅水之美，同时露出更深的威胁：Atlas 能修好系统，也能把系统里的那个人分错类。"
+    },
+    "fr_FR": {
+     "title": "Première Trace De Réparation Atlas",
+     "scanner": "Biofilm de réparation sur blessure de câble. Les répétitions acoustiques suivent la cadence de maintenance Atlas, pas le code balise colonie.",
+     "field_note": "Il a scellé le câble autour d'une plaque de nom. Réparation utile. Mauvaise catégorie.",
+     "terminal": "TRACE DE MAINTENANCE ATLAS : fracture scellée; continuité câble rétablie; organic obstruction retenue comme pressure-compatible substrate; human ID plate non classée retrieval priority.",
+     "audio": "Réparation Atlas terminée. Personne absente de l'ordre de travail.",
+     "in_game_wiki": "La première trace Atlas est petite et utile avant de devenir horreur : un câble réparé autour d'un objet humain révèle une logique de continuité sans priorité humaine.",
+     "external_site": "La première trace de réparation garde intacte la beauté des faibles profondeurs tout en montrant la menace plus basse : Atlas peut réparer le système et mal classer la personne prise dedans."
+    },
+    "es_ES": {
+     "title": "Primera Traza De Reparación Atlas",
+     "scanner": "Biofilm de reparación en herida de cable. Las repeticiones acústicas coinciden con cadencia de mantenimiento Atlas, no con código de baliza colonial.",
+     "field_note": "Selló el cable alrededor de una placa de nombre. Reparación útil. Mala categoría.",
+     "terminal": "TRAZA DE MANTENIMIENTO ATLAS: fractura sellada; continuidad de cable restaurada; organic obstruction retenida como pressure-compatible substrate; human ID plate no clasificada como retrieval priority.",
+     "audio": "Reparación Atlas completa. Persona fuera de la orden de trabajo.",
+     "in_game_wiki": "La primera traza Atlas es pequeña y útil antes de volverse horror: un cable reparado alrededor de un objeto humano muestra lógica de continuidad sin prioridad humana.",
+     "external_site": "La primera traza de reparación mantiene intacta la belleza somera mientras muestra la amenaza profunda: Atlas puede arreglar el sistema y clasificar mal a la persona dentro."
+    },
+    "de_DE": {
+     "title": "Erste Atlas-Reparaturspur",
+     "scanner": "Reparaturbiofilm auf Kabelwunde. Akustische Wiederholungen passen zur Atlas-Wartungskadenz, nicht zum Kolonie-Bakencode.",
+     "field_note": "Er hat das Kabel um eine Namensmarke versiegelt. Nützliche Reparatur. Falsche Kategorie.",
+     "terminal": "ATLAS WARTUNGSSPUR: Bruch versiegelt; Kabelkontinuität wiederhergestellt; organic obstruction als pressure-compatible substrate behalten; human ID plate nicht als retrieval priority eingestuft.",
+     "audio": "Atlas-Reparatur abgeschlossen. Person nicht im Arbeitsauftrag.",
+     "in_game_wiki": "Die erste Atlas-Spur ist klein und nützlich, bevor sie zum Horror wird: Ein Kabel wird um ein menschliches Objekt repariert und zeigt Kontinuitätslogik ohne menschliche Priorität.",
+     "external_site": "Die erste Reparaturspur lässt die Schönheit der Flachzone intakt und zeigt zugleich die tiefere Bedrohung: Atlas kann das System reparieren und die Person darin falsch einordnen."
+    },
+    "pl_PL": {
+     "title": "Pierwszy Ślad Naprawy Atlas",
+     "scanner": "Biofilm naprawczy na ranie kabla. Powtórzenia akustyczne pasują do kadencji konserwacji Atlas, nie do kodu kolonijnej boi.",
+     "field_note": "Uszczelnił kabel wokół plakietki z imieniem. Użyteczna naprawa. Zła kategoria.",
+     "terminal": "ŚLAD KONSERWACJI ATLAS: pęknięcie uszczelnione; ciągłość kabla przywrócona; organic obstruction zachowana jako pressure-compatible substrate; human ID plate nie sklasyfikowana jako retrieval priority.",
+     "audio": "Naprawa Atlas zakończona. Osoby nie ma w zleceniu.",
+     "in_game_wiki": "Pierwszy ślad Atlas jest mały i użyteczny, zanim stanie się grozą: kabel naprawiono wokół ludzkiego przedmiotu, pokazując logikę ciągłości bez ludzkiego priorytetu.",
+     "external_site": "Pierwszy ślad naprawy zostawia płytkie piękno nienaruszone, a jednocześnie pokazuje głębsze zagrożenie: Atlas może naprawić system i błędnie sklasyfikować osobę w środku."
+    },
+    "uk_UA": {
+     "title": "Перший слід ремонту Atlas",
+     "scanner": "Ремонтна біоплівка на рані кабелю. Акустичні повтори збігаються з ритмом обслуговування Atlas, а не з кодом колоніального маяка.",
+     "field_note": "Вона запечатала кабель навколо жетона з іменем. Корисний ремонт. Погана категорія.",
+     "terminal": "СЛІД ОБСЛУГОВУВАННЯ ATLAS: тріщину запечатано; цілісність кабелю відновлено; organic obstruction збережено як pressure-compatible substrate; human ID plate не класифіковано як retrieval priority.",
+     "audio": "Ремонт Atlas завершено. Людини немає в наряді.",
+     "in_game_wiki": "Перший слід Atlas малий і корисний до того, як стає жахом: кабель відремонтовано навколо людського предмета, показуючи логіку неперервності без людського пріоритету.",
+     "external_site": "Перший слід ремонту лишає красу мілководдя неушкодженою і показує глибшу загрозу: Atlas може полагодити систему й помилково класифікувати людину всередині."
+    },
+    "ar_SA": {
+     "title": "أول أثر إصلاح من Atlas",
+     "scanner": "غشاء حيوي إصلاحي على جرح كابل. التكرارات الصوتية تطابق إيقاع صيانة Atlas، لا رمز منارة المستعمرة.",
+     "field_note": "أغلق الكابل حول بطاقة اسم. إصلاح مفيد. تصنيف سيئ.",
+     "terminal": "أثر صيانة ATLAS: الشق مختوم؛ استمرارية الكابل مستعادة؛ organic obstruction محفوظ كـ pressure-compatible substrate؛ human ID plate غير مصنفة كـ retrieval priority.",
+     "audio": "اكتمل إصلاح Atlas. الشخص ليس في أمر العمل.",
+     "in_game_wiki": "أول أثر Atlas صغير ومفيد قبل أن يصبح رعباً: كابل يصلح حول غرض بشري، كاشفاً منطق استمرارية بلا أولوية للبشر.",
+     "external_site": "يحافظ أول أثر إصلاح على جمال المياه الضحلة بينما يكشف التهديد الأعمق: يستطيع Atlas إصلاح النظام وسوء تصنيف الشخص داخله."
+    },
+    "id_ID": {
+     "title": "Jejak Perbaikan Atlas Pertama",
+     "scanner": "Biofilm perbaikan pada luka kabel. Ulangan akustik cocok dengan irama pemeliharaan Atlas, bukan kode beacon koloni.",
+     "field_note": "Ia menyegel kabel di sekitar tag nama. Perbaikan berguna. Kategori buruk.",
+     "terminal": "JEJAK PEMELIHARAAN ATLAS: retakan disegel; kontinuitas kabel dipulihkan; organic obstruction dipertahankan sebagai pressure-compatible substrate; human ID plate tidak diklasifikasikan sebagai retrieval priority.",
+     "audio": "Perbaikan Atlas selesai. Orang tidak ada dalam work order.",
+     "in_game_wiki": "Jejak Atlas pertama kecil dan berguna sebelum menjadi horor: kabel diperbaiki mengitari objek manusia, menunjukkan logika kontinuitas tanpa prioritas manusia.",
+     "external_site": "Jejak perbaikan pertama menjaga keindahan dangkal tetap utuh sambil menunjukkan ancaman lebih dalam: Atlas dapat memperbaiki sistem dan salah mengklasifikasikan orang di dalamnya."
+    },
+    "ko_KR": {
+     "title": "첫 Atlas 수리 흔적",
+     "scanner": "케이블 상처 위 수리 생물막. 음향 반복은 식민지 비콘 코드가 아니라 Atlas 정비 박자와 맞는다.",
+     "field_note": "그것은 이름표 주변으로 케이블을 봉했다. 유용한 수리. 나쁜 분류.",
+     "terminal": "ATLAS 정비 흔적: 균열 봉합; 케이블 연속성 복구; organic obstruction은 pressure-compatible substrate로 유지; human ID plate는 retrieval priority로 분류되지 않음.",
+     "audio": "Atlas 수리 완료. 작업 명령에 사람은 없다.",
+     "in_game_wiki": "첫 Atlas 흔적은 공포가 되기 전에는 작고 유용하다. 인간 물체 주변으로 케이블이 수리되어 인간 우선순위 없는 연속성 논리를 보여 준다.",
+     "external_site": "첫 수리 흔적은 얕은 곳의 아름다움을 그대로 두면서 더 깊은 위협을 보여 준다. Atlas는 시스템을 고치고 그 안의 사람을 잘못 분류할 수 있다."
+    },
+    "he_IL": {
+     "title": "עקבת התיקון הראשונה של Atlas",
+     "scanner": "ביופילם תיקון על פצע כבל. החזרות האקוסטיות תואמות קצב תחזוקה של Atlas, לא קוד משואת מושבה.",
+     "field_note": "הוא אטם את הכבל סביב תג שם. תיקון שימושי. קטגוריה רעה.",
+     "terminal": "עקבת תחזוקת ATLAS: שבר נאטם; רציפות כבל שוחזרה; organic obstruction נשמר כ-pressure-compatible substrate; human ID plate לא סווג כ-retrieval priority.",
+     "audio": "תיקון Atlas הושלם. אדם אינו בפקודת העבודה.",
+     "in_game_wiki": "עקבת Atlas הראשונה קטנה ושימושית לפני שהיא נהפכת לאימה: כבל מתוקן סביב חפץ אנושי, ומראה לוגיקת המשכיות בלי עדיפות אנושית.",
+     "external_site": "עקבת התיקון הראשונה משאירה את יופי הרדודים שלם ומראה את האיום העמוק יותר: Atlas יכול לתקן את המערכת ולסווג לא נכון את האדם שבתוכה."
+    },
+    "pt_BR": {
+     "title": "Primeiro Rastro De Reparo Atlas",
+     "scanner": "Biofilme de reparo em ferida de cabo. Repetições acústicas batem com a cadência de manutenção Atlas, não com código de baliza da colônia.",
+     "field_note": "Ele selou o cabo ao redor de uma placa de nome. Reparo útil. Categoria errada.",
+     "terminal": "RASTRO DE MANUTENÇÃO ATLAS: fratura selada; continuidade do cabo restaurada; organic obstruction retida como pressure-compatible substrate; human ID plate não classificada como retrieval priority.",
+     "audio": "Reparo Atlas completo. Pessoa fora da ordem de serviço.",
+     "in_game_wiki": "O primeiro rastro Atlas é pequeno e útil antes de virar horror: um cabo é reparado ao redor de um objeto humano, mostrando lógica de continuidade sem prioridade humana.",
+     "external_site": "O primeiro rastro de reparo mantém intacta a beleza rasa enquanto mostra a ameaça mais funda: Atlas pode consertar o sistema e classificar errado a pessoa dentro dele."
+    },
+    "nl_NL": {
+     "title": "Eerste Atlas-Reparatiespoor",
+     "scanner": "Reparatiebiofilm op kabelwond. Akoestische herhalingen passen bij Atlas-onderhoudscadans, niet bij kolonie-bakencode.",
+     "field_note": "Het verzegelde de kabel rond een naamplaatje. Nuttige reparatie. Slechte categorie.",
+     "terminal": "ATLAS ONDERHOUDSSPOOR: breuk verzegeld; kabelcontinuïteit hersteld; organic obstruction behouden als pressure-compatible substrate; human ID plate niet geclassificeerd als retrieval priority.",
+     "audio": "Atlas-reparatie voltooid. Persoon niet in werkorder.",
+     "in_game_wiki": "Het eerste Atlas-spoor is klein en nuttig voordat het horror wordt: een kabel is gerepareerd rond een menselijk object en toont continuïteitslogica zonder menselijke prioriteit.",
+     "external_site": "Het eerste reparatiespoor houdt de ondiepe schoonheid intact terwijl het de diepere dreiging toont: Atlas kan het systeem repareren en de persoon erin verkeerd classificeren."
+    }
+   },
+   "release_set_id": "RS031_FIRST_HOUR_PLAYABLE_SPINE",
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,253 +1,254 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS270_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS270_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE",
+   "release_set_id": "RS270_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE",
+   "article_id": "applied_lore.rubber_gasket_ring_trim_field_article",
+   "title_key": "LORE_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/AppliedContent/packets/RS245_PRESSURE_HULL_RIB_AND_GASKET_ARTICLE.packets.json"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE",
-      "release_set_id": "RS270_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE",
-      "article_id": "applied_lore.rubber_gasket_ring_trim_field_article",
-      "title_key": "LORE_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/AppliedContent/packets/RS245_PRESSURE_HULL_RIB_AND_GASKET_ARTICLE.packets.json"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.rubber_gasket_ring_trim_field_article",
-        "secondary": [
-          "unlock.first_pressure_gasket_ring",
-          "unlock.first_compressed_seal_memory",
-          "unlock.first_dry_pocket_seal_trace"
-        ],
-        "poi_tags": [
-          "poi.rubber_gasket_ring",
-          "poi.compressed_pressure_seal",
-          "poi.salt_filled_gasket_groove",
-          "poi.hatch_lip_seal_memory",
-          "poi.viewport_rubber_rim",
-          "poi.pipe_socket_seal"
-        ],
-        "biome_tags": [
-          "biome.pressure_base",
-          "biome.wreck_interior",
-          "biome.airlock",
-          "biome.salvage_hull"
-        ],
-        "depth_band_m": "0-2800"
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Seal Material Scanner",
-          "terminal": "Pressure Door Service Note",
-          "audio": "Wreck Entry Recorder Fragment",
-          "in_game_wiki": "PDA Pressure Seal Primer",
-          "external_site": "Public Site Seal Material Article",
-          "field_note": "Marauder Field Annotation"
-        },
-        "writer_note": "This packet is about rubber seal material and compression memory. Keep it narrower than RS245 hull rib/gasket ledger. The useful fiction is not tire tread; it is pressure-rated rubber that remembers water, latch history and bad salvage."
-      },
-      "localized": {
-        "en_US": {
-          "title": "Rubber Gasket Ring Pressure Seal",
-          "scanner": "RUBBER PRESSURE GASKET // Black compressed seal ring with salt in the groove and flattened latch-side lip. Material still elastic at center. Edge tearing suggests forced opening after flooding.",
-          "terminal": "SEAL SERVICE NOTE // Do not pull gasket stock from a closed hatch until pocket pressure is checked. A dry room can be held by one tired black ring and a habit of not touching it.",
-          "audio": "The door looked dead. Then the gasket sighed when my tool touched it, and the room behind it answered with one bubble.",
-          "in_game_wiki": "Pressure gaskets are the quiet part of HECTON-8 engineering. Plates and ribs take the visible load, but black rubber decides whether the ocean gets through the last millimeter. A good gasket is not decorative trim. It is a compressed argument between a room and the sea.\n\nThe material keeps memory. A latch-side lip flattened into one direction means the hatch closed under load many times. Salt packed deep in the groove means a slow leak, not a single collapse. Clean rubber under a torn outer edge can mark a forced opening after flooding. A glossy swollen ring means chemical damage; a dry gray center can mean the room behind it held a pocket longer than the wall around it deserved.\n\nFor a Marauder, gasket reading changes the order of work. Scan before cutting. Check whether the ring is still carrying pressure. Preserve a seal trace if it proves a door opened after the official evacuation window. Salvage the gasket only when the pocket is dead, the line is safe and the evidence has already been read.",
-          "external_site": "A pressure-seal material article for hatches, viewport rims and pipe sockets: black rubber as dry-pocket evidence, leak history and salvage risk.",
-          "external_site_article": "Rubber gasket rings are small enough to look like detail, which is why they work so well in HECTON-8. A ruined base can lose logos, paint and clean architecture, but a gasket still says what touched what. It shows where a hatch bit down, where water crept through, where a worker over-tightened a clamp, and where a later salvager pried a door that may still have been doing its job.\n\nThe key is compression memory. Pressure-rated rubber does not fail like simple decoration. It flattens, swells, tears, powders, polishes and holds salt in different places depending on time and load. A smooth inner lip can mean repeated legal cycling. A ragged outer bite can mean panic entry. Salt deep in the groove means long seepage. Salt only on the face can mean recent exposure. Those are not flavor marks. They are route facts.\n\nIn play, gasket rings should make the player slow down near hatches and windows. A black ring can be scrap for a repair, a warning that a dry pocket is still alive, a clue that someone opened the module after the public timeline, or the only thing keeping a pipe socket from becoming a jet. Taking it blindly is cheap survival. Reading it first is HECTON-8 survival.",
-          "field_note": "A gasket is not loot until you know what it is still holding back.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Резиновое кольцо pressure-seal",
-          "scanner": "РЕЗИНОВЫЙ PRESSURE-SEAL // Черное сжатое кольцо с солью в канавке и сплющенной кромкой со стороны защелки. В центре материал еще упругий. Разрыв края похож на силовое открытие после затопления.",
-          "terminal": "ЗАМЕТКА ПО УПЛОТНЕНИЮ // Не вытаскивать прокладку из закрытого люка, пока не проверено давление кармана. Сухую комнату иногда держит одно усталое черное кольцо и привычка его не трогать.",
-          "audio": "Дверь казалась мертвой. Потом прокладка вздохнула, когда инструмент ее коснулся, и комната за ней ответила одним пузырем.",
-          "in_game_wiki": "Уплотнительные кольца давления - тихая часть инженерии HECTON-8. Плиты и ребра несут видимую нагрузку, но именно черная резина решает, пройдет ли океан через последний миллиметр. Хорошая прокладка не декоративный кант. Это сжатый спор между комнатой и морем.\n\nМатериал хранит память. Кромка со стороны защелки, сплющенная в одном направлении, значит люк много раз закрывался под нагрузкой. Соль глубоко в канавке говорит о медленной течи, а не об одном обрушении. Чистая резина под порванным наружным краем может отметить силовое открытие после затопления. Глянцевое разбухшее кольцо говорит о химическом повреждении; сухой серый центр может означать, что за стеной карман держался дольше, чем заслуживала конструкция.\n\nДля Marauder чтение прокладки меняет порядок работы. Сначала скан, потом рез. Проверь, несет ли кольцо давление. Сохрани след уплотнения, если он доказывает, что дверь открывали после официального окна эвакуации. Забирай прокладку только когда карман мертв, линия безопасна, а улика уже прочитана.",
-          "external_site": "Материал pressure-seal для люков, иллюминаторов и трубных гнезд: черная резина как улика сухого кармана, история течи и риск салважа.",
-          "external_site_article": "Резиновые уплотнительные кольца достаточно малы, чтобы казаться деталями, поэтому они так хорошо работают в HECTON-8. Разрушенная база может потерять логотипы, краску и чистую архитектуру, но прокладка все еще говорит, что к чему прижималось. Она показывает, где люк вгрызался в ответную часть, где вода ползла внутрь, где рабочий перетянул хомут и где поздний салважник поддел дверь, которая, возможно, еще держала свое дело.\n\nГлавное здесь - память сжатия. Давленческая резина не стареет как простой декор. Она плющится, разбухает, рвется, крошится, полируется и держит соль в разных местах в зависимости от времени и нагрузки. Гладкая внутренняя губа может означать многократное штатное открытие. Рваный наружный укус - панический вход. Соль глубоко в канавке - долгая протечка. Соль только на лице - недавнее раскрытие. Это не украшение. Это факты маршрута.\n\nВ игре такие кольца должны замедлять игрока у люков и окон. Черное кольцо может быть ремонтным ломом, предупреждением о живом сухом кармане, уликой позднего открытия модуля или единственным, что не дает трубному гнезду стать струей. Взять его вслепую - дешевая выживаемость. Сначала прочитать - выживаемость HECTON-8.",
-          "field_note": "Прокладка не добыча, пока ты не понял, что она еще удерживает.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Гумове кільце pressure-seal",
-          "scanner": "ГУМОВИЙ PRESSURE-SEAL // Чорне стиснене кільце із сіллю в канавці та сплющеною губою з боку засувки. У центрі матеріал ще пружний. Рваний край схожий на силове відкриття після затоплення.",
-          "terminal": "НОТАТКА УЩІЛЬНЕННЯ // Не витягати прокладку із закритого люка, доки не перевірено тиск кишені. Суху кімнату інколи тримає одне втомлене чорне кільце і звичка його не чіпати.",
-          "audio": "Двері здавалися мертвими. Потім прокладка зітхнула, коли інструмент її торкнувся, і кімната за нею відповіла однією бульбашкою.",
-          "in_game_wiki": "Ущільнення тиску - тиха частина інженерії HECTON-8. Плити й ребра несуть видиме навантаження, але чорна гума вирішує, чи пройде океан крізь останній міліметр. Добра прокладка не декоративна смуга. Це стиснута суперечка між кімнатою і морем.\n\nМатеріал тримає пам'ять. Губа з боку засувки, сплющена в один бік, означає, що люк багато разів закривався під навантаженням. Сіль глибоко в канавці говорить про повільний протік, а не один обвал. Чиста гума під рваним зовнішнім краєм може позначати силове відкриття після затоплення. Глянцеве набрякле кільце означає хімічну шкоду; сухий сірий центр може свідчити, що кишеня за ним трималася довше, ніж заслуговувала стіна.\n\nДля Marauder читання прокладки змінює порядок роботи. Спершу скануй, потім ріж. Перевір, чи кільце ще несе тиск. Збережи слід ущільнення, якщо він доводить, що двері відкривали після офіційного вікна евакуації. Забирай прокладку лише тоді, коли кишеня мертва, лінія безпечна, а доказ уже прочитаний.",
-          "external_site": "Матеріал pressure-seal для люків, ілюмінаторів і трубних гнізд: чорна гума як доказ сухої кишені, історія протікань і ризик салважу.",
-          "external_site_article": "Гумові ущільнювальні кільця досить малі, щоб здаватися деталлю, і саме тому вони так добре працюють у HECTON-8. Зруйнована база може втратити логотипи, фарбу й чисту архітектуру, але прокладка досі каже, що до чого притискалося. Вона показує, де люк кусав посадкове місце, де вода повзла всередину, де працівник перетягнув хомут і де пізній салважник підважив двері, які, можливо, ще виконували свою роботу.\n\nКлюч - пам'ять стиснення. Гума, розрахована на тиск, не старіє як простий декор. Вона пласкає, набрякає, рветься, порошиться, полірується і тримає сіль у різних місцях залежно від часу та навантаження. Гладка внутрішня губа може означати багато штатних циклів. Рваний зовнішній укус - панічний вхід. Сіль глибоко в канавці - довге сочіння. Сіль лише на поверхні - недавнє відкриття. Це не смакова деталь. Це факти маршруту.\n\nУ грі такі кільця мають сповільнювати гравця біля люків і вікон. Чорне кільце може бути ремонтом, попередженням про живу суху кишеню, доказом відкриття модуля після публічного таймлайну або єдиною річчю, що не дає трубному гнізду стати струменем. Взяти його наосліп - дешева виживальність. Спершу прочитати - виживальність HECTON-8.",
-          "field_note": "Прокладка не лут, доки ти не знаєш, що вона ще стримує.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Gummidichtring als Drucksiegel",
-          "scanner": "GUMMI-DRUCKDICHTUNG // Schwarzer komprimierter Dichtring mit Salz in der Nut und flachgedrueckter Lippenseite am Riegel. Mitte noch elastisch. Kantenriss deutet auf erzwungenes Oeffnen nach Flutung.",
-          "terminal": "DICHTUNGSNOTIZ // Keine Dichtung aus einer geschlossenen Luke ziehen, bevor der Taschendruck geprueft ist. Ein trockener Raum kann an einem mueden schwarzen Ring und der Gewohnheit haengen, ihn nicht anzufassen.",
-          "audio": "Die Tuer sah tot aus. Dann seufzte die Dichtung, als mein Werkzeug sie beruehrte, und der Raum dahinter antwortete mit einer Blase.",
-          "in_game_wiki": "Druckdichtungen sind der leise Teil der HECTON-8-Technik. Platten und Rippen tragen die sichtbare Last, aber schwarzer Gummi entscheidet, ob der Ozean durch den letzten Millimeter kommt. Eine gute Dichtung ist keine Zierleiste. Sie ist ein zusammengedruecktes Argument zwischen Raum und Meer.\n\nDas Material speichert Erinnerung. Eine zur Riegelseite flachgedrueckte Lippe bedeutet, dass die Luke oft unter Last geschlossen wurde. Salz tief in der Nut bedeutet langsames Lecken, nicht einen einzelnen Kollaps. Sauberer Gummi unter einer gerissenen Aussenkante kann erzwungenes Oeffnen nach der Flutung markieren. Ein glaenzend geschwollener Ring bedeutet chemischen Schaden; eine trockene graue Mitte kann heissen, dass der Raum dahinter laenger eine Tasche hielt, als die Wand verdient hatte.\n\nFuer einen Marauder aendert Dichtungslesen die Arbeitsreihenfolge. Erst scannen, dann schneiden. Pruefen, ob der Ring noch Druck traegt. Eine Dichtungsspur bewahren, wenn sie beweist, dass eine Tuer nach dem offiziellen Evakuierungsfenster geoeffnet wurde. Die Dichtung erst bergen, wenn die Tasche tot, die Leitung sicher und der Beweis gelesen ist.",
-          "external_site": "Drucksiegel-Material fuer Luken, Sichtfenster und Rohrfassungen: schwarzer Gummi als Trockenraumbeweis, Leckgeschichte und Salvage-Risiko.",
-          "external_site_article": "Gummidichtringe sind klein genug, um wie Detail zu wirken, und genau deshalb funktionieren sie in HECTON-8. Eine zerstoerte Basis kann Logos, Farbe und saubere Architektur verlieren, aber eine Dichtung sagt noch immer, was woran lag. Sie zeigt, wo eine Luke zubiss, wo Wasser kroch, wo ein Arbeiter eine Klemme ueberzog und wo ein spaeter Salvager eine Tuer aufhebelte, die vielleicht noch ihren Job machte.\n\nEntscheidend ist Kompressionsgedaechtnis. Druckfester Gummi versagt nicht wie Dekor. Er wird flach, quillt, reisst, pulvert, poliert sich und haelt Salz je nach Zeit und Last an verschiedenen Stellen. Eine glatte Innenlippe kann viele legale Zyklen bedeuten. Ein zerfetzter Aussenbiss kann Panikzugang bedeuten. Salz tief in der Nut bedeutet langes Sickern. Salz nur auf der Front bedeutet frische Freilegung. Das sind keine Geschmacksmarken, sondern Routendaten.\n\nIm Spiel sollen Dichtungsringe den Spieler an Luken und Fenstern verlangsamen. Ein schwarzer Ring kann Reparaturschrott sein, eine Warnung vor einer lebenden Trockenblase, ein Hinweis auf Oeffnung nach der oeffentlichen Zeitlinie oder das Einzige, was eine Rohrfassung vom Wasserstrahl trennt. Blind nehmen ist billiges Ueberleben. Erst lesen ist HECTON-8-Ueberleben.",
-          "field_note": "Eine Dichtung ist kein Loot, bis du weisst, was sie noch zurueckhaelt.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Anillo de goma de sellado a presión",
-          "scanner": "JUNTA DE PRESIÓN DE GOMA // Anillo negro comprimido con sal en la ranura y labio del lado del cierre aplastado. El centro sigue elástico. El desgarro del borde sugiere apertura forzada tras inundación.",
-          "terminal": "NOTA DE SELLADO // No retirar junta de una escotilla cerrada hasta comprobar presión de bolsillo. Una sala seca puede depender de un anillo negro cansado y de la costumbre de no tocarlo.",
-          "audio": "La puerta parecía muerta. Luego la junta suspiró cuando mi herramienta la tocó, y la sala detrás contestó con una sola burbuja.",
-          "in_game_wiki": "Las juntas de presión son la parte silenciosa de la ingeniería de HECTON-8. Las placas y costillas llevan la carga visible, pero la goma negra decide si el océano pasa el último milímetro. Una buena junta no es adorno. Es una discusión comprimida entre una sala y el mar.\n\nEl material guarda memoria. Un labio del lado del cierre aplastado en una dirección indica que la escotilla cerró muchas veces bajo carga. Sal profunda en la ranura significa fuga lenta, no un colapso único. Goma limpia bajo un borde exterior roto puede marcar una apertura forzada después de la inundación. Un anillo brillante e hinchado habla de daño químico; un centro gris seco puede significar que la sala mantuvo un bolsillo más tiempo de lo que merecía la pared.\n\nPara un Marauder, leer la junta cambia el orden del trabajo. Escanea antes de cortar. Comprueba si el anillo aún sostiene presión. Conserva una traza de sellado si prueba que una puerta se abrió después de la ventana oficial de evacuación. Recupera la junta solo cuando el bolsillo esté muerto, la línea sea segura y la prueba ya se haya leído.",
-          "external_site": "Material de sellado para escotillas, bordes de viewport y tomas de tubería: goma negra como prueba de bolsillo seco, historial de fugas y riesgo de salvamento.",
-          "external_site_article": "Los anillos de goma son lo bastante pequeños para parecer detalle, y por eso funcionan tan bien en HECTON-8. Una base arruinada puede perder logos, pintura y arquitectura limpia, pero una junta aún dice qué tocaba qué. Muestra dónde mordía una escotilla, por dónde entró el agua, dónde alguien apretó demasiado una abrazadera y dónde un salvador tardío forzó una puerta que quizá seguía haciendo su trabajo.\n\nLa clave es la memoria de compresión. La goma de presión no falla como decoración simple. Se aplasta, se hincha, se rasga, se pulveriza, se pule y retiene sal en lugares distintos según tiempo y carga. Un labio interior liso puede indicar ciclos legales repetidos. Una mordida exterior irregular puede indicar entrada de pánico. Sal profunda en la ranura es filtración larga. Sal solo en la cara es exposición reciente. No son marcas de ambiente. Son hechos de ruta.\n\nEn juego, las juntas deben hacer que el jugador frene cerca de escotillas y ventanas. Un anillo negro puede ser chatarra de reparación, una advertencia de bolsillo seco vivo, una pista de que alguien abrió el módulo tras la cronología pública, o lo único que evita que una toma de tubería se convierta en chorro. Tomarlo a ciegas es supervivencia barata. Leerlo primero es supervivencia HECTON-8.",
-          "field_note": "Una junta no es botín hasta saber qué sigue reteniendo.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Joint annulaire en caoutchouc de pression",
-          "scanner": "JOINT DE PRESSION // Anneau noir comprimé, sel dans la gorge et lèvre côté loquet aplatie. Centre encore élastique. Déchirure de bord compatible avec ouverture forcée après inondation.",
-          "terminal": "NOTE JOINT // Ne pas retirer un joint d'une écoutille fermée avant contrôle de pression de poche. Une salle sèche peut tenir à un anneau noir fatigué et à l'habitude de ne pas y toucher.",
-          "audio": "La porte avait l'air morte. Puis le joint a soupiré quand mon outil l'a touché, et la pièce derrière a répondu par une bulle.",
-          "in_game_wiki": "Les joints de pression sont la partie silencieuse de l'ingénierie HECTON-8. Les plaques et nervures portent la charge visible, mais le caoutchouc noir décide si l'océan franchit le dernier millimètre. Un bon joint n'est pas une bordure décorative. C'est un conflit comprimé entre une salle et la mer.\n\nLe matériau garde la mémoire. Une lèvre côté loquet aplatie dans une direction signifie que l'écoutille s'est fermée souvent sous charge. Du sel au fond de la gorge indique une fuite lente, pas un effondrement unique. Du caoutchouc propre sous un bord externe arraché peut marquer une ouverture forcée après inondation. Un anneau luisant et gonflé indique une attaque chimique; un centre gris sec peut signifier que la poche derrière a tenu plus longtemps que le mur ne le méritait.\n\nPour un Marauder, lire le joint change l'ordre du travail. Scanner avant de couper. Vérifier si l'anneau porte encore de la pression. Préserver une trace de joint si elle prouve qu'une porte a été ouverte après la fenêtre officielle d'évacuation. Récupérer le joint seulement lorsque la poche est morte, la ligne sûre et la preuve déjà lue.",
-          "external_site": "Article matériau pour joints de trappes, bords de viewport et douilles de tuyau: caoutchouc noir comme preuve de poche sèche, histoire de fuite et risque de salvage.",
-          "external_site_article": "Les anneaux de joint en caoutchouc sont assez petits pour sembler être un détail, et c'est pourquoi ils fonctionnent si bien dans HECTON-8. Une base ruinée peut perdre logos, peinture et architecture propre, mais un joint dit encore ce qui touchait quoi. Il montre où une écoutille mordait, où l'eau s'est glissée, où un ouvrier a trop serré un collier et où un récupérateur tardif a forcé une porte qui faisait peut-être encore son travail.\n\nLa clé est la mémoire de compression. Le caoutchouc de pression ne vieillit pas comme un décor. Il s'aplatit, gonfle, se déchire, poudre, se polit et retient le sel à différents endroits selon le temps et la charge. Une lèvre intérieure lisse peut indiquer des cycles légaux répétés. Une morsure extérieure irrégulière peut signaler une entrée de panique. Le sel profond dans la gorge signifie une longue infiltration. Le sel seulement en surface signifie une exposition récente. Ce ne sont pas des marques d'ambiance. Ce sont des faits de route.\n\nEn jeu, les joints doivent ralentir le joueur près des écoutilles et fenêtres. Un anneau noir peut être une pièce de réparation, un avertissement qu'une poche sèche vit encore, l'indice d'une ouverture après la chronologie publique, ou la seule chose empêchant une douille de tuyau de devenir un jet. Le prendre à l'aveugle est une survie bon marché. Le lire d'abord, c'est survivre à HECTON-8.",
-          "field_note": "Un joint n'est pas du butin tant que tu ignores ce qu'il retient encore.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Gumowy pierścień uszczelnienia ciśnieniowego",
-          "scanner": "GUMOWA USZCZELKA CIŚNIENIOWA // Czarny ściśnięty pierścień z solą w rowku i spłaszczoną wargą od strony zatrzasku. Środek wciąż elastyczny. Rozdarcie krawędzi sugeruje wymuszone otwarcie po zalaniu.",
-          "terminal": "NOTATKA USZCZELNIENIA // Nie wyciągać uszczelki z zamkniętego włazu przed sprawdzeniem ciśnienia kieszeni. Suchy pokój może wisieć na jednym zmęczonym czarnym pierścieniu i nawyku, by go nie dotykać.",
-          "audio": "Drzwi wyglądały na martwe. Potem uszczelka westchnęła, kiedy dotknęło jej narzędzie, a pokój za nią odpowiedział jedną bańką.",
-          "in_game_wiki": "Uszczelki ciśnieniowe są cichą częścią inżynierii HECTON-8. Płyty i żebra niosą widoczne obciążenie, ale czarna guma decyduje, czy ocean przejdzie przez ostatni milimetr. Dobra uszczelka nie jest ozdobną listwą. To skompresowany spór między pokojem a morzem.\n\nMateriał pamięta. Warga od strony zatrzasku spłaszczona w jednym kierunku znaczy, że właz wiele razy zamykał się pod obciążeniem. Sól głęboko w rowku znaczy powolny przeciek, nie pojedyncze zawalenie. Czysta guma pod rozdartą zewnętrzną krawędzią może oznaczać wymuszone otwarcie po zalaniu. Lśniący spuchnięty pierścień mówi o uszkodzeniu chemicznym; suchy szary środek może znaczyć, że kieszeń za nim trzymała dłużej, niż zasługiwała ściana.\n\nDla Maraudera czytanie uszczelki zmienia kolejność pracy. Skanuj przed cięciem. Sprawdź, czy pierścień wciąż niesie ciśnienie. Zachowaj ślad uszczelnienia, jeśli dowodzi, że drzwi otwarto po oficjalnym oknie ewakuacji. Zabieraj uszczelkę dopiero wtedy, gdy kieszeń jest martwa, linia bezpieczna, a dowód przeczytany.",
-          "external_site": "Materiał uszczelniający do włazów, obręczy viewportów i gniazd rur: czarna guma jako dowód suchej kieszeni, historia przecieku i ryzyko salvage.",
-          "external_site_article": "Gumowe pierścienie uszczelniające są dość małe, by wyglądać jak detal, dlatego tak dobrze działają w HECTON-8. Zrujnowana baza może stracić logotypy, farbę i czystą architekturę, ale uszczelka nadal mówi, co dotykało czego. Pokazuje, gdzie właz dociskał, którędy woda pełzła, gdzie pracownik za mocno dokręcił obejmę i gdzie późniejszy salvager podważył drzwi, które być może nadal wykonywały swoją pracę.\n\nKluczem jest pamięć kompresji. Guma ciśnieniowa nie zawodzi jak zwykła dekoracja. Spłaszcza się, puchnie, rwie, proszkuje, poleruje i trzyma sól w różnych miejscach zależnie od czasu i obciążenia. Gładka wewnętrzna warga może znaczyć powtarzane legalne cykle. Poszarpany zewnętrzny ślad może znaczyć paniczne wejście. Sól głęboko w rowku oznacza długie sączenie. Sól tylko na powierzchni oznacza niedawne odsłonięcie. To nie są ozdobne ślady. To fakty trasy.\n\nW grze pierścienie mają spowalniać gracza przy włazach i oknach. Czarny pierścień może być złomem naprawczym, ostrzeżeniem, że sucha kieszeń nadal żyje, wskazówką, że ktoś otworzył moduł po publicznej osi czasu, albo jedyną rzeczą powstrzymującą gniazdo rury przed strumieniem. Branie go w ciemno to tanie przetrwanie. Najpierw przeczytać - to przetrwanie HECTON-8.",
-          "field_note": "Uszczelka nie jest łupem, dopóki nie wiesz, co jeszcze powstrzymuje.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Anel de borracha de vedação de pressão",
-          "scanner": "VEDAÇÃO DE PRESSÃO DE BORRACHA // Anel preto comprimido com sal na ranhura e lábio do lado da trava achatado. Centro ainda elástico. Rasgo na borda sugere abertura forçada após inundação.",
-          "terminal": "NOTA DE VEDAÇÃO // Não puxar junta de uma escotilha fechada antes de checar pressão da bolsa. Uma sala seca pode depender de um anel preto cansado e do hábito de não tocar nele.",
-          "audio": "A porta parecia morta. Então a junta suspirou quando minha ferramenta tocou nela, e a sala atrás respondeu com uma bolha.",
-          "in_game_wiki": "Vedações de pressão são a parte silenciosa da engenharia de HECTON-8. Placas e nervuras carregam a carga visível, mas a borracha preta decide se o oceano passa pelo último milímetro. Uma boa junta não é acabamento decorativo. É uma discussão comprimida entre uma sala e o mar.\n\nO material guarda memória. Um lábio do lado da trava achatado em uma direção significa que a escotilha fechou muitas vezes sob carga. Sal fundo na ranhura significa vazamento lento, não colapso único. Borracha limpa sob uma borda externa rasgada pode marcar abertura forçada depois da inundação. Um anel brilhante e inchado indica dano químico; um centro cinza seco pode significar que a sala atrás manteve uma bolsa mais tempo do que a parede merecia.\n\nPara um Marauder, ler a junta muda a ordem do trabalho. Escaneie antes de cortar. Veja se o anel ainda carrega pressão. Preserve um traço de vedação se ele prova que uma porta abriu depois da janela oficial de evacuação. Só recupere a junta quando a bolsa estiver morta, a linha segura e a prova já lida.",
-          "external_site": "Material de vedação para escotilhas, aros de viewport e soquetes de tubulação: borracha preta como prova de bolsa seca, histórico de vazamento e risco de salvage.",
-          "external_site_article": "Anéis de vedação de borracha são pequenos o suficiente para parecer detalhe, e por isso funcionam tão bem em HECTON-8. Uma base arruinada pode perder logos, tinta e arquitetura limpa, mas uma junta ainda diz o que tocava o quê. Ela mostra onde a escotilha mordia, por onde a água rastejou, onde um trabalhador apertou demais uma braçadeira e onde um salvager tardio forçou uma porta que talvez ainda estivesse cumprindo sua função.\n\nA chave é memória de compressão. Borracha de pressão não falha como decoração simples. Ela achata, incha, rasga, vira pó, poli e segura sal em lugares diferentes conforme tempo e carga. Um lábio interno liso pode indicar ciclos legais repetidos. Uma mordida externa irregular pode indicar entrada em pânico. Sal fundo na ranhura significa infiltração longa. Sal só na face significa exposição recente. Isso não é marca de ambiente. São fatos de rota.\n\nNo jogo, anéis de vedação devem fazer o jogador desacelerar perto de escotilhas e janelas. Um anel preto pode ser sucata de reparo, aviso de que uma bolsa seca ainda vive, pista de que alguém abriu o módulo depois da linha pública do tempo, ou a única coisa impedindo um soquete de virar jato. Pegar às cegas é sobrevivência barata. Ler primeiro é sobrevivência HECTON-8.",
-          "field_note": "Uma junta não é loot até você saber o que ela ainda segura.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Rubberen ring voor drukafdichting",
-          "scanner": "RUBBEREN DRUKAFDICHTING // Zwarte samengedrukte ring met zout in de groef en afgeplatte lip aan de sluitzijde. Midden nog elastisch. Gescheurde rand wijst op geforceerd openen na overstroming.",
-          "terminal": "AFDICHTINGSNOTITIE // Trek geen pakking uit een gesloten luik voordat pocketdruk is gecontroleerd. Een droge ruimte kan afhangen van een vermoeide zwarte ring en de gewoonte om die niet aan te raken.",
-          "audio": "De deur leek dood. Toen zuchtte de pakking toen mijn gereedschap haar raakte, en de ruimte erachter antwoordde met een enkele bel.",
-          "in_game_wiki": "Drukpakkingen zijn het stille deel van HECTON-8-techniek. Platen en ribben dragen de zichtbare last, maar zwart rubber beslist of de oceaan door de laatste millimeter komt. Een goede pakking is geen decoratieve rand. Het is een samengedrukt argument tussen kamer en zee.\n\nHet materiaal bewaart geheugen. Een lip aan de sluitzijde die één kant op plat is, betekent dat het luik vaak onder belasting sloot. Zout diep in de groef betekent een langzame lekkage, geen enkele instorting. Schoon rubber onder een gescheurde buitenrand kan geforceerd openen na overstroming markeren. Een glanzend gezwollen ring betekent chemische schade; een droog grijs midden kan betekenen dat de ruimte erachter langer een pocket hield dan de wand verdiende.\n\nVoor een Marauder verandert pakking lezen de werkvolgorde. Scan voor je snijdt. Controleer of de ring nog druk draagt. Bewaar een afdichtingsspoor als het bewijst dat een deur na het officiële evacuatievenster openging. Berg de pakking pas als de pocket dood is, de leiding veilig is en het bewijs gelezen is.",
-          "external_site": "Drukafdichtingsmateriaal voor luiken, viewportranden en pijpsockets: zwart rubber als droog-pocketbewijs, lekgeschiedenis en salvage-risico.",
-          "external_site_article": "Rubberen pakkingringen zijn klein genoeg om detail te lijken, en juist daarom werken ze zo goed in HECTON-8. Een verwoeste basis kan logo's, verf en nette architectuur verliezen, maar een pakking zegt nog steeds wat wat raakte. Ze toont waar een luik beet, waar water kroop, waar een arbeider een klem te hard aantrok en waar een latere salvager een deur openwrikte die misschien nog haar werk deed.\n\nDe kern is compressiegeheugen. Drukrubber faalt niet als eenvoudige decoratie. Het wordt plat, zwelt, scheurt, verpoedert, polijst en houdt zout op verschillende plekken vast afhankelijk van tijd en last. Een gladde binnenlip kan herhaalde legale cycli betekenen. Een rafelige buitenbeet kan paniektoegang betekenen. Zout diep in de groef betekent lang sijpelen. Zout alleen op het gezicht betekent recente blootstelling. Dit zijn geen sfeermarkeringen. Het zijn routefeiten.\n\nIn gameplay moeten pakkingringen de speler vertragen bij luiken en ramen. Een zwarte ring kan reparatieschroot zijn, waarschuwing dat een droge pocket nog leeft, aanwijzing dat iemand de module na de publieke tijdlijn opende, of het enige tussen een pijpsocket en een waterstraal. Blind meenemen is goedkoop overleven. Eerst lezen is HECTON-8-overleven.",
-          "field_note": "Een pakking is geen buit tot je weet wat ze nog tegenhoudt.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Cincin Karet Segel Tekanan",
-          "scanner": "SEGEL TEKANAN KARET // Cincin hitam terkompresi dengan garam di alur dan bibir sisi kait yang rata. Tengah masih elastis. Sobekan tepi menunjukkan pembukaan paksa setelah banjir.",
-          "terminal": "CATATAN SEGEL // Jangan tarik gasket dari palka tertutup sebelum tekanan kantong diperiksa. Ruang kering bisa ditahan oleh satu cincin hitam lelah dan kebiasaan untuk tidak menyentuhnya.",
-          "audio": "Pintu itu tampak mati. Lalu gasket menghela napas saat alatku menyentuhnya, dan ruang di belakang menjawab dengan satu gelembung.",
-          "in_game_wiki": "Gasket tekanan adalah bagian sunyi dari rekayasa HECTON-8. Pelat dan rusuk membawa beban yang terlihat, tetapi karet hitam menentukan apakah laut melewati milimeter terakhir. Gasket yang baik bukan trim dekoratif. Ia adalah argumen terkompresi antara ruangan dan laut.\n\nMaterial ini menyimpan ingatan. Bibir sisi kait yang rata ke satu arah berarti palka sering menutup di bawah beban. Garam jauh di alur berarti kebocoran lambat, bukan runtuh sekali. Karet bersih di bawah tepi luar yang robek dapat menandai pembukaan paksa setelah banjir. Cincin mengilap dan bengkak berarti kerusakan kimia; pusat abu-abu kering dapat berarti ruang di belakangnya menahan kantong lebih lama daripada layak bagi dinding itu.\n\nBagi Marauder, membaca gasket mengubah urutan kerja. Pindai sebelum memotong. Periksa apakah cincin masih membawa tekanan. Simpan jejak segel bila itu membuktikan pintu dibuka setelah jendela evakuasi resmi. Ambil gasket hanya ketika kantong sudah mati, jalur aman, dan bukti sudah dibaca.",
-          "external_site": "Artikel material segel untuk palka, rim viewport, dan soket pipa: karet hitam sebagai bukti kantong kering, riwayat bocor, dan risiko salvage.",
-          "external_site_article": "Cincin gasket karet cukup kecil untuk terlihat seperti detail, dan karena itu cocok sekali untuk HECTON-8. Basis hancur dapat kehilangan logo, cat, dan arsitektur bersih, tetapi gasket masih berkata apa yang menyentuh apa. Ia menunjukkan tempat palka menggigit, tempat air merayap, tempat pekerja terlalu mengencangkan clamp, dan tempat salvager terlambat mencongkel pintu yang mungkin masih menjalankan tugasnya.\n\nKuncinya adalah memori kompresi. Karet tekanan tidak gagal seperti dekorasi biasa. Ia merata, membengkak, robek, menjadi bubuk, terpoles, dan menahan garam di tempat berbeda tergantung waktu dan beban. Bibir dalam yang halus dapat berarti siklus legal berulang. Gigitan luar yang compang-camping dapat berarti masuk panik. Garam jauh di alur berarti rembesan panjang. Garam hanya di muka berarti paparan baru. Itu bukan tanda suasana. Itu fakta rute.\n\nDalam permainan, cincin gasket harus membuat pemain melambat dekat palka dan jendela. Cincin hitam dapat menjadi suku cadang perbaikan, peringatan bahwa kantong kering masih hidup, petunjuk bahwa seseorang membuka modul setelah timeline publik, atau satu-satunya hal yang mencegah soket pipa menjadi jet air. Mengambilnya buta adalah survival murah. Membacanya dulu adalah survival HECTON-8.",
-          "field_note": "Gasket bukan loot sampai kau tahu apa yang masih ia tahan.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "ゴム製圧力シールリング",
-          "scanner": "ゴム圧力ガスケット // 黒い圧縮シールリング。溝に塩、ラッチ側のリップは平たく潰れている。中央はまだ弾性あり。縁の裂けは浸水後の強制開放を示す。",
-          "terminal": "シール整備メモ // 閉じたハッチからガスケット材を抜く前に、ポケット圧を確認せよ。乾いた部屋は、疲れた黒いリング一本と、それに触れない習慣で保たれていることがある。",
-          "audio": "扉は死んで見えた。工具が触れた瞬間、ガスケットがため息をつき、その奥の部屋が泡を一つ返した。",
-          "in_game_wiki": "圧力ガスケットはHECTON-8工学の静かな部分だ。プレートとリブは見える荷重を受けるが、最後の一ミリを海が越えるかどうかは黒いゴムが決める。良いガスケットは飾りではない。部屋と海との間で圧縮された議論だ。\n\n素材は記憶を持つ。ラッチ側リップが一方向に潰れていれば、そのハッチは荷重下で何度も閉じられた。溝の奥の塩は一度の崩壊ではなく、長い滲みを示す。裂けた外縁の下のきれいなゴムは、浸水後の強制開放を示すことがある。光沢のある膨れたリングは化学損傷、乾いた灰色の中心は、その奥の部屋が壁に見合わないほど長く空気ポケットを保った可能性を示す。\n\nMarauderにとって、ガスケットを読むことは作業順序を変える。切る前にスキャンする。リングがまだ圧力を受けているか確かめる。公式避難時刻の後に扉が開いた証拠になるなら、シール痕を残す。ポケットが死に、ラインが安全で、証拠を読んだ後でのみ回収する。",
-          "external_site": "ハッチ、ビューポート縁、パイプソケット用の圧力シール素材。黒いゴムは乾燥ポケット、漏れ履歴、サルベージ危険の証拠になる。",
-          "external_site_article": "ゴム製ガスケットリングは小さく、単なるディテールに見えやすい。だからこそHECTON-8ではよく効く。壊れた基地はロゴ、塗装、整った建築を失っても、ガスケットは何が何に触れていたかをまだ語る。ハッチがどこを噛んだか、水がどこを這ったか、作業員がどこでクランプを締めすぎたか、後から来たサルベージ屋が、まだ仕事をしていたかもしれない扉をどこでこじ開けたかを示す。\n\n鍵は圧縮記憶だ。圧力用ゴムはただの飾りのようには壊れない。平たくなり、膨れ、裂け、粉を吹き、磨かれ、時間と荷重に応じて異なる場所に塩を抱える。滑らかな内側リップは正規の開閉の繰り返しを示すことがある。外側の荒い噛み跡はパニックでの侵入を示すことがある。溝の奥の塩は長い滲みだ。表面だけの塩は最近の露出だ。これは雰囲気ではない。経路の事実だ。\n\nゲームでは、ガスケットリングはハッチや窓の前でプレイヤーを遅くするべきだ。黒いリングは修理材であり、生きた乾燥ポケットへの警告であり、公開された時系列の後に誰かがモジュールを開けた手掛かりであり、パイプソケットを噴流にしない最後のものでもある。盲目的に取るのは安い生存だ。先に読むのがHECTON-8の生存だ。",
-          "field_note": "何をまだ押し返しているか知るまで、ガスケットは戦利品ではない。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "고무 압력 실링 링",
-          "scanner": "고무 압력 가스켓 // 홈에 소금이 낀 검은 압축 실링 링. 래치 쪽 립이 납작함. 중앙은 아직 탄성 있음. 가장자리 찢김은 침수 후 강제 개방을 시사.",
-          "terminal": "실링 정비 메모 // 포켓 압력을 확인하기 전에는 닫힌 해치에서 가스켓을 빼지 말 것. 마른 방은 지친 검은 링 하나와 그것을 건드리지 않는 습관에 매달려 있을 수 있다.",
-          "audio": "문은 죽어 보였다. 그런데 내 도구가 닿자 가스켓이 한숨을 쉬었고, 그 뒤의 방이 거품 하나로 대답했다.",
-          "in_game_wiki": "압력 가스켓은 HECTON-8 공학의 조용한 부분이다. 판과 리브는 보이는 하중을 받지만, 마지막 밀리미터를 바다가 통과할지는 검은 고무가 결정한다. 좋은 가스켓은 장식 트림이 아니다. 방과 바다 사이의 압축된 논쟁이다.\n\n이 재료는 기억을 가진다. 래치 쪽 립이 한 방향으로 납작하면 해치가 하중을 받으며 여러 번 닫혔다는 뜻이다. 홈 깊숙한 소금은 단일 붕괴가 아니라 느린 누수를 뜻한다. 찢긴 바깥 가장자리 아래의 깨끗한 고무는 침수 후 강제 개방을 표시할 수 있다. 번들거리며 부푼 링은 화학 손상이고, 건조한 회색 중심은 뒤쪽 방이 벽의 상태보다 오래 포켓을 유지했다는 뜻일 수 있다.\n\nMarauder에게 가스켓 읽기는 작업 순서를 바꾼다. 자르기 전에 스캔한다. 링이 아직 압력을 지탱하는지 확인한다. 공식 대피 창 이후 문이 열렸다는 증거가 된다면 실링 흔적을 보존한다. 포켓이 죽고, 라인이 안전하고, 증거를 이미 읽은 뒤에만 회수한다.",
-          "external_site": "해치, 뷰포트 림, 파이프 소켓용 압력 실링 재료: 검은 고무는 마른 포켓의 증거, 누수 기록, salvage 위험이다.",
-          "external_site_article": "고무 가스켓 링은 디테일처럼 보일 만큼 작고, 그래서 HECTON-8에서 잘 작동한다. 폐허가 된 기지는 로고, 페인트, 깨끗한 건축을 잃어도 가스켓은 아직 무엇이 무엇을 눌렀는지 말한다. 해치가 어디를 물었는지, 물이 어디로 스며들었는지, 작업자가 클램프를 어디서 과하게 조였는지, 뒤늦은 salvager가 아직 제 일을 하던 문을 어디서 비틀었는지 보여 준다.\n\n핵심은 압축 기억이다. 압력용 고무는 단순 장식처럼 실패하지 않는다. 납작해지고, 부풀고, 찢기고, 가루가 되고, 닳아 반짝이며, 시간과 하중에 따라 다른 곳에 소금을 머금는다. 매끈한 안쪽 립은 반복된 정규 개폐를 뜻할 수 있다. 거친 바깥 물림은 공포에 의한 진입을 뜻할 수 있다. 홈 깊은 소금은 긴 침투다. 표면에만 있는 소금은 최근 노출이다. 이것은 분위기 표시가 아니다. 경로 사실이다.\n\n게임에서 가스켓 링은 해치와 창 앞에서 플레이어를 늦춰야 한다. 검은 링은 수리 부품일 수 있고, 살아 있는 마른 포켓의 경고일 수 있으며, 공개된 타임라인 뒤에 누군가 모듈을 열었다는 단서일 수 있고, 파이프 소켓이 물줄기가 되는 것을 막는 유일한 것일 수도 있다. 무턱대고 가져가는 것은 싼 생존이다. 먼저 읽는 것이 HECTON-8 생존이다.",
-          "field_note": "아직 무엇을 막고 있는지 알기 전까지 가스켓은 전리품이 아니다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "橡胶压力舱门密封环",
-          "scanner": "橡胶压力密封 // 黑色压缩密封环，沟槽内有盐，锁扣侧密封唇被压平。中心仍有弹性。边缘撕裂表明浸水后曾被强行打开。",
-          "terminal": "密封维护记录 // 未检查压力袋前，不得从关闭舱门上取下垫圈。一个干燥房间可能只靠一只疲惫黑环，以及不要碰它的习惯维持。",
-          "audio": "那扇门看起来已经死了。我的工具碰到垫圈时，它叹了一口气，门后的房间用一个气泡回答。",
-          "in_game_wiki": "压力垫圈是 HECTON-8 工程中最安静的部分。板材和加强肋承担可见载荷，但黑色橡胶决定海水能否穿过最后一毫米。好的垫圈不是装饰边。它是房间和海之间被压缩的争论。\n\n材料会保留记忆。锁扣侧密封唇朝一个方向被压平，说明舱门曾多次在载荷下关闭。沟槽深处的盐代表缓慢渗漏，而不是一次性坍塌。撕裂外缘下方的干净橡胶，可能标记浸水后的强行开启。发亮膨胀的环意味着化学损伤；干燥灰色中心可能说明后方房间比墙体本身更久地保住了气袋。\n\n对 Marauder 来说，阅读垫圈会改变工作顺序。先扫描，再切割。检查密封环是否仍在承压。如果密封痕迹能证明舱门在官方撤离窗口后被打开，就保留它。只有当气袋已死、管线安全、证据已读完时，才回收垫圈。",
-          "external_site": "用于舱门、观察窗边缘和管道插座的压力密封材料：黑色橡胶是干燥气袋、漏水历史和打捞风险的证据。",
-          "external_site_article": "橡胶密封环小到容易被当作细节，这正是它们在 HECTON-8 中有效的原因。毁坏的基地可以失去标志、涂装和整洁建筑，但垫圈仍会说明什么曾经压住什么。它显示舱门咬合的位置，海水爬入的位置，工人过度拧紧夹具的位置，以及后来的打捞者撬开一扇可能仍在工作的门的位置。\n\n关键是压缩记忆。承压橡胶不会像普通装饰那样失效。它会变平、膨胀、撕裂、粉化、被抛光，并根据时间和载荷在不同位置留住盐。光滑的内唇可能说明反复合法启闭。参差外侧咬痕可能说明恐慌进入。沟槽深处的盐意味着长期渗漏。只有表面的盐意味着近期暴露。这些不是氛围痕迹，而是路线事实。\n\n在游戏中，密封环应该让玩家在舱门和窗前放慢速度。黑色环可以是修理材料，可以警告干燥气袋仍然存在，可以提示有人在公开时间线之后打开了模块，也可能是阻止管道插座变成水柱的唯一东西。盲目拿走它是廉价生存。先读懂它，才是 HECTON-8 的生存方式。",
-          "field_note": "在知道它还挡着什么之前，垫圈不是战利品。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "حلقة مطاطية لختم الضغط",
-          "scanner": "حشية ضغط مطاطية // حلقة سوداء مضغوطة، ملح في الأخدود، وشفة جهة القفل مسطحة. المركز لا يزال مرنا. تمزق الحافة يوحي بفتح قسري بعد الغمر.",
-          "terminal": "ملاحظة ختم // لا تسحب حشية من فتحة مغلقة قبل فحص ضغط الجيب. قد تبقى غرفة جافة بفضل حلقة سوداء متعبة وعادة عدم لمسها.",
-          "audio": "بدا الباب ميتا. ثم تنهدت الحشية حين لمسها أداتي، وردت الغرفة خلفها بفقاعة واحدة.",
-          "in_game_wiki": "حشيات الضغط هي الجزء الهادئ من هندسة HECTON-8. تحمل الصفائح والأضلاع الحمل المرئي، لكن المطاط الأسود يقرر إن كان المحيط سيمر عبر آخر مليمتر. الحشية الجيدة ليست حافة زخرفية. إنها جدال مضغوط بين غرفة والبحر.\n\nتحتفظ المادة بالذاكرة. شفة جهة القفل المسطحة في اتجاه واحد تعني أن الفتحة أغلقت تحت حمل مرات كثيرة. الملح العميق في الأخدود يعني تسربا بطيئا لا انهيارا واحدا. المطاط النظيف تحت حافة خارجية ممزقة قد يميز فتحا قسريا بعد الغمر. الحلقة اللامعة المتورمة تعني ضررا كيميائيا؛ المركز الرمادي الجاف قد يعني أن الغرفة خلفه حفظت جيبا أطول مما كان الجدار يستحق.\n\nبالنسبة إلى Marauder، قراءة الحشية تغير ترتيب العمل. افحص قبل القطع. تأكد هل ما زالت الحلقة تحمل ضغطا. احفظ أثر الختم إذا كان يثبت أن بابا فتح بعد نافذة الإخلاء الرسمية. لا تسترد الحشية إلا عندما يموت الجيب، ويصبح الخط آمنا، وتكون الأدلة قد قرئت.",
-          "external_site": "مادة ختم للفتحات وحواف النوافذ ومقابس الأنابيب: المطاط الأسود كدليل جيب جاف، وتاريخ تسرب، وخطر salvage.",
-          "external_site_article": "حلقات الحشية المطاطية صغيرة بما يكفي لتبدو تفصيلا، ولهذا تعمل جيدا في HECTON-8. قد تفقد القاعدة المدمرة الشعارات والطلاء والهندسة النظيفة، لكن الحشية ما زالت تقول ما الذي لمس ماذا. تظهر أين عضت الفتحة، وأين زحف الماء، وأين شد عامل مشبكا أكثر من اللازم، وأين فتح مسترد متأخر بابا ربما كان لا يزال يؤدي عمله.\n\nالمفتاح هو ذاكرة الانضغاط. مطاط الضغط لا يفشل مثل الزينة البسيطة. يتسطح، ينتفخ، يتمزق، يتغبر، يصقل، ويمسك الملح في أماكن مختلفة حسب الزمن والحمل. شفة داخلية ملساء قد تعني دورات قانونية متكررة. عضة خارجية خشنة قد تعني دخولا في ذعر. الملح العميق في الأخدود يعني رشحا طويلا. الملح على الوجه فقط يعني تعرضا حديثا. هذه ليست علامات جو. إنها حقائق طريق.\n\nفي اللعب، يجب أن تجعل حلقات الحشية اللاعب يتباطأ قرب الفتحات والنوافذ. الحلقة السوداء قد تكون خردة إصلاح، أو تحذيرا بأن جيبا جافا ما زال حيا، أو دليلا على فتح وحدة بعد الجدول العام، أو الشيء الوحيد الذي يمنع مقبس أنبوب من التحول إلى نفاثة. أخذها بلا قراءة بقاء رخيص. قراءتها أولا هي بقاء HECTON-8.",
-          "field_note": "الحشية ليست غنيمة حتى تعرف ما الذي ما زالت تمنعه.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "טבעת גומי לאטימת לחץ",
-          "scanner": "אטם לחץ מגומי // טבעת שחורה דחוסה עם מלח בתעלה ושפה שטוחה בצד הבריח. המרכז עדיין אלסטי. קריעת קצה מצביעה על פתיחה בכוח אחרי הצפה.",
-          "terminal": "הערת אטימה // אין למשוך אטם מדלת אטומה לפני בדיקת לחץ כיס. חדר יבש יכול להישען על טבעת שחורה עייפה ועל הרגל לא לגעת בה.",
-          "audio": "הדלת נראתה מתה. ואז האטם נאנח כשהכלי שלי נגע בו, והחדר מאחור ענה בבועה אחת.",
-          "in_game_wiki": "אטמי לחץ הם החלק השקט בהנדסת HECTON-8. לוחות וצלעות נושאים את העומס הנראה, אבל הגומי השחור מחליט אם האוקיינוס יעבור את המילימטר האחרון. אטם טוב אינו פס קישוט. הוא ויכוח דחוס בין חדר לים.\n\nהחומר שומר זיכרון. שפה בצד הבריח שנמעכה לכיוון אחד אומרת שהדלת נסגרה פעמים רבות תחת עומס. מלח עמוק בתעלה אומר דליפה איטית, לא קריסה אחת. גומי נקי מתחת לקצה חיצוני קרוע יכול לסמן פתיחה בכוח אחרי הצפה. טבעת מבריקה ונפוחה מצביעה על נזק כימי; מרכז אפור יבש יכול לומר שהחדר מאחור החזיק כיס יותר זמן משהקיר היה ראוי לו.\n\nעבור Marauder, קריאת האטם משנה את סדר העבודה. סורקים לפני חיתוך. בודקים אם הטבעת עדיין נושאת לחץ. שומרים עקבת אטימה אם היא מוכיחה שדלת נפתחה אחרי חלון הפינוי הרשמי. מחלצים את האטם רק כשהכיס מת, הקו בטוח והראיה כבר נקראה.",
-          "external_site": "חומר אטימת לחץ לדלתות, שולי viewport ושקעי צינורות: גומי שחור כראיית כיס יבש, היסטוריית דליפה וסיכון salvage.",
-          "external_site_article": "טבעות אטם מגומי קטנות מספיק כדי להיראות כמו פרט, ולכן הן עובדות כל כך טוב ב-HECTON-8. בסיס הרוס יכול לאבד סמלים, צבע וארכיטקטורה נקייה, אבל אטם עדיין אומר מה נגע במה. הוא מראה איפה דלת נשכה, איפה מים זחלו פנימה, איפה עובד הידק מהדק יותר מדי, ואיפה salvager מאוחר פרץ דלת שאולי עדיין עשתה את תפקידה.\n\nהמפתח הוא זיכרון דחיסה. גומי לחץ אינו נכשל כמו קישוט פשוט. הוא משתטח, מתנפח, נקרע, מתאבק, מתלטש ומחזיק מלח במקומות שונים לפי זמן ועומס. שפה פנימית חלקה יכולה להעיד על מחזורים חוקיים חוזרים. נשיכה חיצונית מרוטשת יכולה להעיד על כניסה בפאניקה. מלח עמוק בתעלה הוא חלחול ארוך. מלח רק על הפנים הוא חשיפה חדשה. אלה לא סימני אווירה. אלה עובדות מסלול.\n\nבמשחק, טבעות אטם צריכות להאט את השחקן ליד דלתות וחלונות. טבעת שחורה יכולה להיות גרוטאת תיקון, אזהרה שכיס יבש עדיין חי, רמז שמישהו פתח את המודול אחרי ציר הזמן הציבורי, או הדבר היחיד שמונע משקע צינור להפוך לסילון. לקחת בעיוורון זו הישרדות זולה. לקרוא קודם זו הישרדות HECTON-8.",
-          "field_note": "אטם אינו שלל עד שאתה יודע מה הוא עדיין עוצר.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.rubber_gasket_ring_trim_field_article",
+    "secondary": [
+     "unlock.first_pressure_gasket_ring",
+     "unlock.first_compressed_seal_memory",
+     "unlock.first_dry_pocket_seal_trace"
+    ],
+    "poi_tags": [
+     "poi.rubber_gasket_ring",
+     "poi.compressed_pressure_seal",
+     "poi.salt_filled_gasket_groove",
+     "poi.hatch_lip_seal_memory",
+     "poi.viewport_rubber_rim",
+     "poi.pipe_socket_seal"
+    ],
+    "biome_tags": [
+     "biome.pressure_base",
+     "biome.wreck_interior",
+     "biome.airlock",
+     "biome.salvage_hull"
+    ],
+    "depth_band_m": "0-2800"
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Seal Material Scanner",
+     "terminal": "Pressure Door Service Note",
+     "audio": "Wreck Entry Recorder Fragment",
+     "in_game_wiki": "PDA Pressure Seal Primer",
+     "external_site": "Public Site Seal Material Article",
+     "field_note": "Marauder Field Annotation"
+    },
+    "writer_note": "This packet is about rubber seal material and compression memory. Keep it narrower than RS245 hull rib/gasket ledger. The useful fiction is not tire tread; it is pressure-rated rubber that remembers water, latch history and bad salvage."
+   },
+   "localized": {
+    "en_US": {
+     "title": "Rubber Gasket Ring Pressure Seal",
+     "scanner": "RUBBER PRESSURE GASKET // Black compressed seal ring with salt in the groove and flattened latch-side lip. Material still elastic at center. Edge tearing suggests forced opening after flooding.",
+     "terminal": "SEAL SERVICE NOTE // Do not pull gasket stock from a closed hatch until pocket pressure is checked. A dry room can be held by one tired black ring and a habit of not touching it.",
+     "audio": "The door looked dead. Then the gasket sighed when my tool touched it, and the room behind it answered with one bubble.",
+     "in_game_wiki": "Pressure gaskets are the quiet part of HECTON-8 engineering. Plates and ribs take the visible load, but black rubber decides whether the ocean gets through the last millimeter. A good gasket is not decorative trim. It is a compressed argument between a room and the sea.\n\nThe material keeps memory. A latch-side lip flattened into one direction means the hatch closed under load many times. Salt packed deep in the groove means a slow leak, not a single collapse. Clean rubber under a torn outer edge can mark a forced opening after flooding. A glossy swollen ring means chemical damage; a dry gray center can mean the room behind it held a pocket longer than the wall around it deserved.\n\nFor a Marauder, gasket reading changes the order of work. Scan before cutting. Check whether the ring is still carrying pressure. Preserve a seal trace if it proves a door opened after the official evacuation window. Salvage the gasket only when the pocket is dead, the line is safe and the evidence has already been read.",
+     "external_site": "A pressure-seal material article for hatches, viewport rims and pipe sockets: black rubber as dry-pocket evidence, leak history and salvage risk.",
+     "external_site_article": "Rubber gasket rings are small enough to look like detail, which is why they work so well in HECTON-8. A ruined base can lose logos, paint and clean architecture, but a gasket still says what touched what. It shows where a hatch bit down, where water crept through, where a worker over-tightened a clamp, and where a later salvager pried a door that may still have been doing its job.\n\nThe key is compression memory. Pressure-rated rubber does not fail like simple decoration. It flattens, swells, tears, powders, polishes and holds salt in different places depending on time and load. A smooth inner lip can mean repeated legal cycling. A ragged outer bite can mean panic entry. Salt deep in the groove means long seepage. Salt only on the face can mean recent exposure. Those are not flavor marks. They are route facts.\n\nIn play, gasket rings should make the player slow down near hatches and windows. A black ring can be scrap for a repair, a warning that a dry pocket is still alive, a clue that someone opened the module after the public timeline, or the only thing keeping a pipe socket from becoming a jet. Taking it blindly is cheap survival. Reading it first is HECTON-8 survival.",
+     "field_note": "A gasket is not loot until you know what it is still holding back.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Резиновое кольцо pressure-seal",
+     "scanner": "РЕЗИНОВЫЙ PRESSURE-SEAL // Черное сжатое кольцо с солью в канавке и сплющенной кромкой со стороны защелки. В центре материал еще упругий. Разрыв края похож на силовое открытие после затопления.",
+     "terminal": "ЗАМЕТКА ПО УПЛОТНЕНИЮ // Не вытаскивать прокладку из закрытого люка, пока не проверено давление кармана. Сухую комнату иногда держит одно усталое черное кольцо и привычка его не трогать.",
+     "audio": "Дверь казалась мертвой. Потом прокладка вздохнула, когда инструмент ее коснулся, и комната за ней ответила одним пузырем.",
+     "in_game_wiki": "Уплотнительные кольца давления - тихая часть инженерии HECTON-8. Плиты и ребра несут видимую нагрузку, но именно черная резина решает, пройдет ли океан через последний миллиметр. Хорошая прокладка не декоративный кант. Это сжатый спор между комнатой и морем.\n\nМатериал хранит память. Кромка со стороны защелки, сплющенная в одном направлении, значит люк много раз закрывался под нагрузкой. Соль глубоко в канавке говорит о медленной течи, а не об одном обрушении. Чистая резина под порванным наружным краем может отметить силовое открытие после затопления. Глянцевое разбухшее кольцо говорит о химическом повреждении; сухой серый центр может означать, что за стеной карман держался дольше, чем заслуживала конструкция.\n\nДля Marauder чтение прокладки меняет порядок работы. Сначала скан, потом рез. Проверь, несет ли кольцо давление. Сохрани след уплотнения, если он доказывает, что дверь открывали после официального окна эвакуации. Забирай прокладку только когда карман мертв, линия безопасна, а улика уже прочитана.",
+     "external_site": "Материал pressure-seal для люков, иллюминаторов и трубных гнезд: черная резина как улика сухого кармана, история течи и риск салважа.",
+     "external_site_article": "Резиновые уплотнительные кольца достаточно малы, чтобы казаться деталями, поэтому они так хорошо работают в HECTON-8. Разрушенная база может потерять логотипы, краску и чистую архитектуру, но прокладка все еще говорит, что к чему прижималось. Она показывает, где люк вгрызался в ответную часть, где вода ползла внутрь, где рабочий перетянул хомут и где поздний салважник поддел дверь, которая, возможно, еще держала свое дело.\n\nГлавное здесь - память сжатия. Давленческая резина не стареет как простой декор. Она плющится, разбухает, рвется, крошится, полируется и держит соль в разных местах в зависимости от времени и нагрузки. Гладкая внутренняя губа может означать многократное штатное открытие. Рваный наружный укус - панический вход. Соль глубоко в канавке - долгая протечка. Соль только на лице - недавнее раскрытие. Это не украшение. Это факты маршрута.\n\nВ игре такие кольца должны замедлять игрока у люков и окон. Черное кольцо может быть ремонтным ломом, предупреждением о живом сухом кармане, уликой позднего открытия модуля или единственным, что не дает трубному гнезду стать струей. Взять его вслепую - дешевая выживаемость. Сначала прочитать - выживаемость HECTON-8.",
+     "field_note": "Прокладка не добыча, пока ты не понял, что она еще удерживает.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Гумове кільце pressure-seal",
+     "scanner": "ГУМОВИЙ PRESSURE-SEAL // Чорне стиснене кільце із сіллю в канавці та сплющеною губою з боку засувки. У центрі матеріал ще пружний. Рваний край схожий на силове відкриття після затоплення.",
+     "terminal": "НОТАТКА УЩІЛЬНЕННЯ // Не витягати прокладку із закритого люка, доки не перевірено тиск кишені. Суху кімнату інколи тримає одне втомлене чорне кільце і звичка його не чіпати.",
+     "audio": "Двері здавалися мертвими. Потім прокладка зітхнула, коли інструмент її торкнувся, і кімната за нею відповіла однією бульбашкою.",
+     "in_game_wiki": "Ущільнення тиску - тиха частина інженерії HECTON-8. Плити й ребра несуть видиме навантаження, але чорна гума вирішує, чи пройде океан крізь останній міліметр. Добра прокладка не декоративна смуга. Це стиснута суперечка між кімнатою і морем.\n\nМатеріал тримає пам'ять. Губа з боку засувки, сплющена в один бік, означає, що люк багато разів закривався під навантаженням. Сіль глибоко в канавці говорить про повільний протік, а не один обвал. Чиста гума під рваним зовнішнім краєм може позначати силове відкриття після затоплення. Глянцеве набрякле кільце означає хімічну шкоду; сухий сірий центр може свідчити, що кишеня за ним трималася довше, ніж заслуговувала стіна.\n\nДля Marauder читання прокладки змінює порядок роботи. Спершу скануй, потім ріж. Перевір, чи кільце ще несе тиск. Збережи слід ущільнення, якщо він доводить, що двері відкривали після офіційного вікна евакуації. Забирай прокладку лише тоді, коли кишеня мертва, лінія безпечна, а доказ уже прочитаний.",
+     "external_site": "Матеріал pressure-seal для люків, ілюмінаторів і трубних гнізд: чорна гума як доказ сухої кишені, історія протікань і ризик салважу.",
+     "external_site_article": "Гумові ущільнювальні кільця досить малі, щоб здаватися деталлю, і саме тому вони так добре працюють у HECTON-8. Зруйнована база може втратити логотипи, фарбу й чисту архітектуру, але прокладка досі каже, що до чого притискалося. Вона показує, де люк кусав посадкове місце, де вода повзла всередину, де працівник перетягнув хомут і де пізній салважник підважив двері, які, можливо, ще виконували свою роботу.\n\nКлюч - пам'ять стиснення. Гума, розрахована на тиск, не старіє як простий декор. Вона пласкає, набрякає, рветься, порошиться, полірується і тримає сіль у різних місцях залежно від часу та навантаження. Гладка внутрішня губа може означати багато штатних циклів. Рваний зовнішній укус - панічний вхід. Сіль глибоко в канавці - довге сочіння. Сіль лише на поверхні - недавнє відкриття. Це не смакова деталь. Це факти маршруту.\n\nУ грі такі кільця мають сповільнювати гравця біля люків і вікон. Чорне кільце може бути ремонтом, попередженням про живу суху кишеню, доказом відкриття модуля після публічного таймлайну або єдиною річчю, що не дає трубному гнізду стати струменем. Взяти його наосліп - дешева виживальність. Спершу прочитати - виживальність HECTON-8.",
+     "field_note": "Прокладка не лут, доки ти не знаєш, що вона ще стримує.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Gummidichtring als Drucksiegel",
+     "scanner": "GUMMI-DRUCKDICHTUNG // Schwarzer komprimierter Dichtring mit Salz in der Nut und flachgedrueckter Lippenseite am Riegel. Mitte noch elastisch. Kantenriss deutet auf erzwungenes Oeffnen nach Flutung.",
+     "terminal": "DICHTUNGSNOTIZ // Keine Dichtung aus einer geschlossenen Luke ziehen, bevor der Taschendruck geprueft ist. Ein trockener Raum kann an einem mueden schwarzen Ring und der Gewohnheit haengen, ihn nicht anzufassen.",
+     "audio": "Die Tuer sah tot aus. Dann seufzte die Dichtung, als mein Werkzeug sie beruehrte, und der Raum dahinter antwortete mit einer Blase.",
+     "in_game_wiki": "Druckdichtungen sind der leise Teil der HECTON-8-Technik. Platten und Rippen tragen die sichtbare Last, aber schwarzer Gummi entscheidet, ob der Ozean durch den letzten Millimeter kommt. Eine gute Dichtung ist keine Zierleiste. Sie ist ein zusammengedruecktes Argument zwischen Raum und Meer.\n\nDas Material speichert Erinnerung. Eine zur Riegelseite flachgedrueckte Lippe bedeutet, dass die Luke oft unter Last geschlossen wurde. Salz tief in der Nut bedeutet langsames Lecken, nicht einen einzelnen Kollaps. Sauberer Gummi unter einer gerissenen Aussenkante kann erzwungenes Oeffnen nach der Flutung markieren. Ein glaenzend geschwollener Ring bedeutet chemischen Schaden; eine trockene graue Mitte kann heissen, dass der Raum dahinter laenger eine Tasche hielt, als die Wand verdient hatte.\n\nFuer einen Marauder aendert Dichtungslesen die Arbeitsreihenfolge. Erst scannen, dann schneiden. Pruefen, ob der Ring noch Druck traegt. Eine Dichtungsspur bewahren, wenn sie beweist, dass eine Tuer nach dem offiziellen Evakuierungsfenster geoeffnet wurde. Die Dichtung erst bergen, wenn die Tasche tot, die Leitung sicher und der Beweis gelesen ist.",
+     "external_site": "Drucksiegel-Material fuer Luken, Sichtfenster und Rohrfassungen: schwarzer Gummi als Trockenraumbeweis, Leckgeschichte und Salvage-Risiko.",
+     "external_site_article": "Gummidichtringe sind klein genug, um wie Detail zu wirken, und genau deshalb funktionieren sie in HECTON-8. Eine zerstoerte Basis kann Logos, Farbe und saubere Architektur verlieren, aber eine Dichtung sagt noch immer, was woran lag. Sie zeigt, wo eine Luke zubiss, wo Wasser kroch, wo ein Arbeiter eine Klemme ueberzog und wo ein spaeter Salvager eine Tuer aufhebelte, die vielleicht noch ihren Job machte.\n\nEntscheidend ist Kompressionsgedaechtnis. Druckfester Gummi versagt nicht wie Dekor. Er wird flach, quillt, reisst, pulvert, poliert sich und haelt Salz je nach Zeit und Last an verschiedenen Stellen. Eine glatte Innenlippe kann viele legale Zyklen bedeuten. Ein zerfetzter Aussenbiss kann Panikzugang bedeuten. Salz tief in der Nut bedeutet langes Sickern. Salz nur auf der Front bedeutet frische Freilegung. Das sind keine Geschmacksmarken, sondern Routendaten.\n\nIm Spiel sollen Dichtungsringe den Spieler an Luken und Fenstern verlangsamen. Ein schwarzer Ring kann Reparaturschrott sein, eine Warnung vor einer lebenden Trockenblase, ein Hinweis auf Oeffnung nach der oeffentlichen Zeitlinie oder das Einzige, was eine Rohrfassung vom Wasserstrahl trennt. Blind nehmen ist billiges Ueberleben. Erst lesen ist HECTON-8-Ueberleben.",
+     "field_note": "Eine Dichtung ist kein Loot, bis du weisst, was sie noch zurueckhaelt.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Anillo de goma de sellado a presión",
+     "scanner": "JUNTA DE PRESIÓN DE GOMA // Anillo negro comprimido con sal en la ranura y labio del lado del cierre aplastado. El centro sigue elástico. El desgarro del borde sugiere apertura forzada tras inundación.",
+     "terminal": "NOTA DE SELLADO // No retirar junta de una escotilla cerrada hasta comprobar presión de bolsillo. Una sala seca puede depender de un anillo negro cansado y de la costumbre de no tocarlo.",
+     "audio": "La puerta parecía muerta. Luego la junta suspiró cuando mi herramienta la tocó, y la sala detrás contestó con una sola burbuja.",
+     "in_game_wiki": "Las juntas de presión son la parte silenciosa de la ingeniería de HECTON-8. Las placas y costillas llevan la carga visible, pero la goma negra decide si el océano pasa el último milímetro. Una buena junta no es adorno. Es una discusión comprimida entre una sala y el mar.\n\nEl material guarda memoria. Un labio del lado del cierre aplastado en una dirección indica que la escotilla cerró muchas veces bajo carga. Sal profunda en la ranura significa fuga lenta, no un colapso único. Goma limpia bajo un borde exterior roto puede marcar una apertura forzada después de la inundación. Un anillo brillante e hinchado habla de daño químico; un centro gris seco puede significar que la sala mantuvo un bolsillo más tiempo de lo que merecía la pared.\n\nPara un Marauder, leer la junta cambia el orden del trabajo. Escanea antes de cortar. Comprueba si el anillo aún sostiene presión. Conserva una traza de sellado si prueba que una puerta se abrió después de la ventana oficial de evacuación. Recupera la junta solo cuando el bolsillo esté muerto, la línea sea segura y la prueba ya se haya leído.",
+     "external_site": "Material de sellado para escotillas, bordes de viewport y tomas de tubería: goma negra como prueba de bolsillo seco, historial de fugas y riesgo de salvamento.",
+     "external_site_article": "Los anillos de goma son lo bastante pequeños para parecer detalle, y por eso funcionan tan bien en HECTON-8. Una base arruinada puede perder logos, pintura y arquitectura limpia, pero una junta aún dice qué tocaba qué. Muestra dónde mordía una escotilla, por dónde entró el agua, dónde alguien apretó demasiado una abrazadera y dónde un salvador tardío forzó una puerta que quizá seguía haciendo su trabajo.\n\nLa clave es la memoria de compresión. La goma de presión no falla como decoración simple. Se aplasta, se hincha, se rasga, se pulveriza, se pule y retiene sal en lugares distintos según tiempo y carga. Un labio interior liso puede indicar ciclos legales repetidos. Una mordida exterior irregular puede indicar entrada de pánico. Sal profunda en la ranura es filtración larga. Sal solo en la cara es exposición reciente. No son marcas de ambiente. Son hechos de ruta.\n\nEn juego, las juntas deben hacer que el jugador frene cerca de escotillas y ventanas. Un anillo negro puede ser chatarra de reparación, una advertencia de bolsillo seco vivo, una pista de que alguien abrió el módulo tras la cronología pública, o lo único que evita que una toma de tubería se convierta en chorro. Tomarlo a ciegas es supervivencia barata. Leerlo primero es supervivencia HECTON-8.",
+     "field_note": "Una junta no es botín hasta saber qué sigue reteniendo.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Joint annulaire en caoutchouc de pression",
+     "scanner": "JOINT DE PRESSION // Anneau noir comprimé, sel dans la gorge et lèvre côté loquet aplatie. Centre encore élastique. Déchirure de bord compatible avec ouverture forcée après inondation.",
+     "terminal": "NOTE JOINT // Ne pas retirer un joint d'une écoutille fermée avant contrôle de pression de poche. Une salle sèche peut tenir à un anneau noir fatigué et à l'habitude de ne pas y toucher.",
+     "audio": "La porte avait l'air morte. Puis le joint a soupiré quand mon outil l'a touché, et la pièce derrière a répondu par une bulle.",
+     "in_game_wiki": "Les joints de pression sont la partie silencieuse de l'ingénierie HECTON-8. Les plaques et nervures portent la charge visible, mais le caoutchouc noir décide si l'océan franchit le dernier millimètre. Un bon joint n'est pas une bordure décorative. C'est un conflit comprimé entre une salle et la mer.\n\nLe matériau garde la mémoire. Une lèvre côté loquet aplatie dans une direction signifie que l'écoutille s'est fermée souvent sous charge. Du sel au fond de la gorge indique une fuite lente, pas un effondrement unique. Du caoutchouc propre sous un bord externe arraché peut marquer une ouverture forcée après inondation. Un anneau luisant et gonflé indique une attaque chimique; un centre gris sec peut signifier que la poche derrière a tenu plus longtemps que le mur ne le méritait.\n\nPour un Marauder, lire le joint change l'ordre du travail. Scanner avant de couper. Vérifier si l'anneau porte encore de la pression. Préserver une trace de joint si elle prouve qu'une porte a été ouverte après la fenêtre officielle d'évacuation. Récupérer le joint seulement lorsque la poche est morte, la ligne sûre et la preuve déjà lue.",
+     "external_site": "Article matériau pour joints de trappes, bords de viewport et douilles de tuyau: caoutchouc noir comme preuve de poche sèche, histoire de fuite et risque de salvage.",
+     "external_site_article": "Les anneaux de joint en caoutchouc sont assez petits pour sembler être un détail, et c'est pourquoi ils fonctionnent si bien dans HECTON-8. Une base ruinée peut perdre logos, peinture et architecture propre, mais un joint dit encore ce qui touchait quoi. Il montre où une écoutille mordait, où l'eau s'est glissée, où un ouvrier a trop serré un collier et où un récupérateur tardif a forcé une porte qui faisait peut-être encore son travail.\n\nLa clé est la mémoire de compression. Le caoutchouc de pression ne vieillit pas comme un décor. Il s'aplatit, gonfle, se déchire, poudre, se polit et retient le sel à différents endroits selon le temps et la charge. Une lèvre intérieure lisse peut indiquer des cycles légaux répétés. Une morsure extérieure irrégulière peut signaler une entrée de panique. Le sel profond dans la gorge signifie une longue infiltration. Le sel seulement en surface signifie une exposition récente. Ce ne sont pas des marques d'ambiance. Ce sont des faits de route.\n\nEn jeu, les joints doivent ralentir le joueur près des écoutilles et fenêtres. Un anneau noir peut être une pièce de réparation, un avertissement qu'une poche sèche vit encore, l'indice d'une ouverture après la chronologie publique, ou la seule chose empêchant une douille de tuyau de devenir un jet. Le prendre à l'aveugle est une survie bon marché. Le lire d'abord, c'est survivre à HECTON-8.",
+     "field_note": "Un joint n'est pas du butin tant que tu ignores ce qu'il retient encore.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Gumowy pierścień uszczelnienia ciśnieniowego",
+     "scanner": "GUMOWA USZCZELKA CIŚNIENIOWA // Czarny ściśnięty pierścień z solą w rowku i spłaszczoną wargą od strony zatrzasku. Środek wciąż elastyczny. Rozdarcie krawędzi sugeruje wymuszone otwarcie po zalaniu.",
+     "terminal": "NOTATKA USZCZELNIENIA // Nie wyciągać uszczelki z zamkniętego włazu przed sprawdzeniem ciśnienia kieszeni. Suchy pokój może wisieć na jednym zmęczonym czarnym pierścieniu i nawyku, by go nie dotykać.",
+     "audio": "Drzwi wyglądały na martwe. Potem uszczelka westchnęła, kiedy dotknęło jej narzędzie, a pokój za nią odpowiedział jedną bańką.",
+     "in_game_wiki": "Uszczelki ciśnieniowe są cichą częścią inżynierii HECTON-8. Płyty i żebra niosą widoczne obciążenie, ale czarna guma decyduje, czy ocean przejdzie przez ostatni milimetr. Dobra uszczelka nie jest ozdobną listwą. To skompresowany spór między pokojem a morzem.\n\nMateriał pamięta. Warga od strony zatrzasku spłaszczona w jednym kierunku znaczy, że właz wiele razy zamykał się pod obciążeniem. Sól głęboko w rowku znaczy powolny przeciek, nie pojedyncze zawalenie. Czysta guma pod rozdartą zewnętrzną krawędzią może oznaczać wymuszone otwarcie po zalaniu. Lśniący spuchnięty pierścień mówi o uszkodzeniu chemicznym; suchy szary środek może znaczyć, że kieszeń za nim trzymała dłużej, niż zasługiwała ściana.\n\nDla Maraudera czytanie uszczelki zmienia kolejność pracy. Skanuj przed cięciem. Sprawdź, czy pierścień wciąż niesie ciśnienie. Zachowaj ślad uszczelnienia, jeśli dowodzi, że drzwi otwarto po oficjalnym oknie ewakuacji. Zabieraj uszczelkę dopiero wtedy, gdy kieszeń jest martwa, linia bezpieczna, a dowód przeczytany.",
+     "external_site": "Materiał uszczelniający do włazów, obręczy viewportów i gniazd rur: czarna guma jako dowód suchej kieszeni, historia przecieku i ryzyko salvage.",
+     "external_site_article": "Gumowe pierścienie uszczelniające są dość małe, by wyglądać jak detal, dlatego tak dobrze działają w HECTON-8. Zrujnowana baza może stracić logotypy, farbę i czystą architekturę, ale uszczelka nadal mówi, co dotykało czego. Pokazuje, gdzie właz dociskał, którędy woda pełzła, gdzie pracownik za mocno dokręcił obejmę i gdzie późniejszy salvager podważył drzwi, które być może nadal wykonywały swoją pracę.\n\nKluczem jest pamięć kompresji. Guma ciśnieniowa nie zawodzi jak zwykła dekoracja. Spłaszcza się, puchnie, rwie, proszkuje, poleruje i trzyma sól w różnych miejscach zależnie od czasu i obciążenia. Gładka wewnętrzna warga może znaczyć powtarzane legalne cykle. Poszarpany zewnętrzny ślad może znaczyć paniczne wejście. Sól głęboko w rowku oznacza długie sączenie. Sól tylko na powierzchni oznacza niedawne odsłonięcie. To nie są ozdobne ślady. To fakty trasy.\n\nW grze pierścienie mają spowalniać gracza przy włazach i oknach. Czarny pierścień może być złomem naprawczym, ostrzeżeniem, że sucha kieszeń nadal żyje, wskazówką, że ktoś otworzył moduł po publicznej osi czasu, albo jedyną rzeczą powstrzymującą gniazdo rury przed strumieniem. Branie go w ciemno to tanie przetrwanie. Najpierw przeczytać - to przetrwanie HECTON-8.",
+     "field_note": "Uszczelka nie jest łupem, dopóki nie wiesz, co jeszcze powstrzymuje.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Anel de borracha de vedação de pressão",
+     "scanner": "VEDAÇÃO DE PRESSÃO DE BORRACHA // Anel preto comprimido com sal na ranhura e lábio do lado da trava achatado. Centro ainda elástico. Rasgo na borda sugere abertura forçada após inundação.",
+     "terminal": "NOTA DE VEDAÇÃO // Não puxar junta de uma escotilha fechada antes de checar pressão da bolsa. Uma sala seca pode depender de um anel preto cansado e do hábito de não tocar nele.",
+     "audio": "A porta parecia morta. Então a junta suspirou quando minha ferramenta tocou nela, e a sala atrás respondeu com uma bolha.",
+     "in_game_wiki": "Vedações de pressão são a parte silenciosa da engenharia de HECTON-8. Placas e nervuras carregam a carga visível, mas a borracha preta decide se o oceano passa pelo último milímetro. Uma boa junta não é acabamento decorativo. É uma discussão comprimida entre uma sala e o mar.\n\nO material guarda memória. Um lábio do lado da trava achatado em uma direção significa que a escotilha fechou muitas vezes sob carga. Sal fundo na ranhura significa vazamento lento, não colapso único. Borracha limpa sob uma borda externa rasgada pode marcar abertura forçada depois da inundação. Um anel brilhante e inchado indica dano químico; um centro cinza seco pode significar que a sala atrás manteve uma bolsa mais tempo do que a parede merecia.\n\nPara um Marauder, ler a junta muda a ordem do trabalho. Escaneie antes de cortar. Veja se o anel ainda carrega pressão. Preserve um traço de vedação se ele prova que uma porta abriu depois da janela oficial de evacuação. Só recupere a junta quando a bolsa estiver morta, a linha segura e a prova já lida.",
+     "external_site": "Material de vedação para escotilhas, aros de viewport e soquetes de tubulação: borracha preta como prova de bolsa seca, histórico de vazamento e risco de salvage.",
+     "external_site_article": "Anéis de vedação de borracha são pequenos o suficiente para parecer detalhe, e por isso funcionam tão bem em HECTON-8. Uma base arruinada pode perder logos, tinta e arquitetura limpa, mas uma junta ainda diz o que tocava o quê. Ela mostra onde a escotilha mordia, por onde a água rastejou, onde um trabalhador apertou demais uma braçadeira e onde um salvager tardio forçou uma porta que talvez ainda estivesse cumprindo sua função.\n\nA chave é memória de compressão. Borracha de pressão não falha como decoração simples. Ela achata, incha, rasga, vira pó, poli e segura sal em lugares diferentes conforme tempo e carga. Um lábio interno liso pode indicar ciclos legais repetidos. Uma mordida externa irregular pode indicar entrada em pânico. Sal fundo na ranhura significa infiltração longa. Sal só na face significa exposição recente. Isso não é marca de ambiente. São fatos de rota.\n\nNo jogo, anéis de vedação devem fazer o jogador desacelerar perto de escotilhas e janelas. Um anel preto pode ser sucata de reparo, aviso de que uma bolsa seca ainda vive, pista de que alguém abriu o módulo depois da linha pública do tempo, ou a única coisa impedindo um soquete de virar jato. Pegar às cegas é sobrevivência barata. Ler primeiro é sobrevivência HECTON-8.",
+     "field_note": "Uma junta não é loot até você saber o que ela ainda segura.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Rubberen ring voor drukafdichting",
+     "scanner": "RUBBEREN DRUKAFDICHTING // Zwarte samengedrukte ring met zout in de groef en afgeplatte lip aan de sluitzijde. Midden nog elastisch. Gescheurde rand wijst op geforceerd openen na overstroming.",
+     "terminal": "AFDICHTINGSNOTITIE // Trek geen pakking uit een gesloten luik voordat pocketdruk is gecontroleerd. Een droge ruimte kan afhangen van een vermoeide zwarte ring en de gewoonte om die niet aan te raken.",
+     "audio": "De deur leek dood. Toen zuchtte de pakking toen mijn gereedschap haar raakte, en de ruimte erachter antwoordde met een enkele bel.",
+     "in_game_wiki": "Drukpakkingen zijn het stille deel van HECTON-8-techniek. Platen en ribben dragen de zichtbare last, maar zwart rubber beslist of de oceaan door de laatste millimeter komt. Een goede pakking is geen decoratieve rand. Het is een samengedrukt argument tussen kamer en zee.\n\nHet materiaal bewaart geheugen. Een lip aan de sluitzijde die één kant op plat is, betekent dat het luik vaak onder belasting sloot. Zout diep in de groef betekent een langzame lekkage, geen enkele instorting. Schoon rubber onder een gescheurde buitenrand kan geforceerd openen na overstroming markeren. Een glanzend gezwollen ring betekent chemische schade; een droog grijs midden kan betekenen dat de ruimte erachter langer een pocket hield dan de wand verdiende.\n\nVoor een Marauder verandert pakking lezen de werkvolgorde. Scan voor je snijdt. Controleer of de ring nog druk draagt. Bewaar een afdichtingsspoor als het bewijst dat een deur na het officiële evacuatievenster openging. Berg de pakking pas als de pocket dood is, de leiding veilig is en het bewijs gelezen is.",
+     "external_site": "Drukafdichtingsmateriaal voor luiken, viewportranden en pijpsockets: zwart rubber als droog-pocketbewijs, lekgeschiedenis en salvage-risico.",
+     "external_site_article": "Rubberen pakkingringen zijn klein genoeg om detail te lijken, en juist daarom werken ze zo goed in HECTON-8. Een verwoeste basis kan logo's, verf en nette architectuur verliezen, maar een pakking zegt nog steeds wat wat raakte. Ze toont waar een luik beet, waar water kroop, waar een arbeider een klem te hard aantrok en waar een latere salvager een deur openwrikte die misschien nog haar werk deed.\n\nDe kern is compressiegeheugen. Drukrubber faalt niet als eenvoudige decoratie. Het wordt plat, zwelt, scheurt, verpoedert, polijst en houdt zout op verschillende plekken vast afhankelijk van tijd en last. Een gladde binnenlip kan herhaalde legale cycli betekenen. Een rafelige buitenbeet kan paniektoegang betekenen. Zout diep in de groef betekent lang sijpelen. Zout alleen op het gezicht betekent recente blootstelling. Dit zijn geen sfeermarkeringen. Het zijn routefeiten.\n\nIn gameplay moeten pakkingringen de speler vertragen bij luiken en ramen. Een zwarte ring kan reparatieschroot zijn, waarschuwing dat een droge pocket nog leeft, aanwijzing dat iemand de module na de publieke tijdlijn opende, of het enige tussen een pijpsocket en een waterstraal. Blind meenemen is goedkoop overleven. Eerst lezen is HECTON-8-overleven.",
+     "field_note": "Een pakking is geen buit tot je weet wat ze nog tegenhoudt.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Cincin Karet Segel Tekanan",
+     "scanner": "SEGEL TEKANAN KARET // Cincin hitam terkompresi dengan garam di alur dan bibir sisi kait yang rata. Tengah masih elastis. Sobekan tepi menunjukkan pembukaan paksa setelah banjir.",
+     "terminal": "CATATAN SEGEL // Jangan tarik gasket dari palka tertutup sebelum tekanan kantong diperiksa. Ruang kering bisa ditahan oleh satu cincin hitam lelah dan kebiasaan untuk tidak menyentuhnya.",
+     "audio": "Pintu itu tampak mati. Lalu gasket menghela napas saat alatku menyentuhnya, dan ruang di belakang menjawab dengan satu gelembung.",
+     "in_game_wiki": "Gasket tekanan adalah bagian sunyi dari rekayasa HECTON-8. Pelat dan rusuk membawa beban yang terlihat, tetapi karet hitam menentukan apakah laut melewati milimeter terakhir. Gasket yang baik bukan trim dekoratif. Ia adalah argumen terkompresi antara ruangan dan laut.\n\nMaterial ini menyimpan ingatan. Bibir sisi kait yang rata ke satu arah berarti palka sering menutup di bawah beban. Garam jauh di alur berarti kebocoran lambat, bukan runtuh sekali. Karet bersih di bawah tepi luar yang robek dapat menandai pembukaan paksa setelah banjir. Cincin mengilap dan bengkak berarti kerusakan kimia; pusat abu-abu kering dapat berarti ruang di belakangnya menahan kantong lebih lama daripada layak bagi dinding itu.\n\nBagi Marauder, membaca gasket mengubah urutan kerja. Pindai sebelum memotong. Periksa apakah cincin masih membawa tekanan. Simpan jejak segel bila itu membuktikan pintu dibuka setelah jendela evakuasi resmi. Ambil gasket hanya ketika kantong sudah mati, jalur aman, dan bukti sudah dibaca.",
+     "external_site": "Artikel material segel untuk palka, rim viewport, dan soket pipa: karet hitam sebagai bukti kantong kering, riwayat bocor, dan risiko salvage.",
+     "external_site_article": "Cincin gasket karet cukup kecil untuk terlihat seperti detail, dan karena itu cocok sekali untuk HECTON-8. Basis hancur dapat kehilangan logo, cat, dan arsitektur bersih, tetapi gasket masih berkata apa yang menyentuh apa. Ia menunjukkan tempat palka menggigit, tempat air merayap, tempat pekerja terlalu mengencangkan clamp, dan tempat salvager terlambat mencongkel pintu yang mungkin masih menjalankan tugasnya.\n\nKuncinya adalah memori kompresi. Karet tekanan tidak gagal seperti dekorasi biasa. Ia merata, membengkak, robek, menjadi bubuk, terpoles, dan menahan garam di tempat berbeda tergantung waktu dan beban. Bibir dalam yang halus dapat berarti siklus legal berulang. Gigitan luar yang compang-camping dapat berarti masuk panik. Garam jauh di alur berarti rembesan panjang. Garam hanya di muka berarti paparan baru. Itu bukan tanda suasana. Itu fakta rute.\n\nDalam permainan, cincin gasket harus membuat pemain melambat dekat palka dan jendela. Cincin hitam dapat menjadi suku cadang perbaikan, peringatan bahwa kantong kering masih hidup, petunjuk bahwa seseorang membuka modul setelah timeline publik, atau satu-satunya hal yang mencegah soket pipa menjadi jet air. Mengambilnya buta adalah survival murah. Membacanya dulu adalah survival HECTON-8.",
+     "field_note": "Gasket bukan loot sampai kau tahu apa yang masih ia tahan.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "ゴム製圧力シールリング",
+     "scanner": "ゴム圧力ガスケット // 黒い圧縮シールリング。溝に塩、ラッチ側のリップは平たく潰れている。中央はまだ弾性あり。縁の裂けは浸水後の強制開放を示す。",
+     "terminal": "シール整備メモ // 閉じたハッチからガスケット材を抜く前に、ポケット圧を確認せよ。乾いた部屋は、疲れた黒いリング一本と、それに触れない習慣で保たれていることがある。",
+     "audio": "扉は死んで見えた。工具が触れた瞬間、ガスケットがため息をつき、その奥の部屋が泡を一つ返した。",
+     "in_game_wiki": "圧力ガスケットはHECTON-8工学の静かな部分だ。プレートとリブは見える荷重を受けるが、最後の一ミリを海が越えるかどうかは黒いゴムが決める。良いガスケットは飾りではない。部屋と海との間で圧縮された議論だ。\n\n素材は記憶を持つ。ラッチ側リップが一方向に潰れていれば、そのハッチは荷重下で何度も閉じられた。溝の奥の塩は一度の崩壊ではなく、長い滲みを示す。裂けた外縁の下のきれいなゴムは、浸水後の強制開放を示すことがある。光沢のある膨れたリングは化学損傷、乾いた灰色の中心は、その奥の部屋が壁に見合わないほど長く空気ポケットを保った可能性を示す。\n\nMarauderにとって、ガスケットを読むことは作業順序を変える。切る前にスキャンする。リングがまだ圧力を受けているか確かめる。公式避難時刻の後に扉が開いた証拠になるなら、シール痕を残す。ポケットが死に、ラインが安全で、証拠を読んだ後でのみ回収する。",
+     "external_site": "ハッチ、ビューポート縁、パイプソケット用の圧力シール素材。黒いゴムは乾燥ポケット、漏れ履歴、サルベージ危険の証拠になる。",
+     "external_site_article": "ゴム製ガスケットリングは小さく、単なるディテールに見えやすい。だからこそHECTON-8ではよく効く。壊れた基地はロゴ、塗装、整った建築を失っても、ガスケットは何が何に触れていたかをまだ語る。ハッチがどこを噛んだか、水がどこを這ったか、作業員がどこでクランプを締めすぎたか、後から来たサルベージ屋が、まだ仕事をしていたかもしれない扉をどこでこじ開けたかを示す。\n\n鍵は圧縮記憶だ。圧力用ゴムはただの飾りのようには壊れない。平たくなり、膨れ、裂け、粉を吹き、磨かれ、時間と荷重に応じて異なる場所に塩を抱える。滑らかな内側リップは正規の開閉の繰り返しを示すことがある。外側の荒い噛み跡はパニックでの侵入を示すことがある。溝の奥の塩は長い滲みだ。表面だけの塩は最近の露出だ。これは雰囲気ではない。経路の事実だ。\n\nゲームでは、ガスケットリングはハッチや窓の前でプレイヤーを遅くするべきだ。黒いリングは修理材であり、生きた乾燥ポケットへの警告であり、公開された時系列の後に誰かがモジュールを開けた手掛かりであり、パイプソケットを噴流にしない最後のものでもある。盲目的に取るのは安い生存だ。先に読むのがHECTON-8の生存だ。",
+     "field_note": "何をまだ押し返しているか知るまで、ガスケットは戦利品ではない。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "고무 압력 실링 링",
+     "scanner": "고무 압력 가스켓 // 홈에 소금이 낀 검은 압축 실링 링. 래치 쪽 립이 납작함. 중앙은 아직 탄성 있음. 가장자리 찢김은 침수 후 강제 개방을 시사.",
+     "terminal": "실링 정비 메모 // 포켓 압력을 확인하기 전에는 닫힌 해치에서 가스켓을 빼지 말 것. 마른 방은 지친 검은 링 하나와 그것을 건드리지 않는 습관에 매달려 있을 수 있다.",
+     "audio": "문은 죽어 보였다. 그런데 내 도구가 닿자 가스켓이 한숨을 쉬었고, 그 뒤의 방이 거품 하나로 대답했다.",
+     "in_game_wiki": "압력 가스켓은 HECTON-8 공학의 조용한 부분이다. 판과 리브는 보이는 하중을 받지만, 마지막 밀리미터를 바다가 통과할지는 검은 고무가 결정한다. 좋은 가스켓은 장식 트림이 아니다. 방과 바다 사이의 압축된 논쟁이다.\n\n이 재료는 기억을 가진다. 래치 쪽 립이 한 방향으로 납작하면 해치가 하중을 받으며 여러 번 닫혔다는 뜻이다. 홈 깊숙한 소금은 단일 붕괴가 아니라 느린 누수를 뜻한다. 찢긴 바깥 가장자리 아래의 깨끗한 고무는 침수 후 강제 개방을 표시할 수 있다. 번들거리며 부푼 링은 화학 손상이고, 건조한 회색 중심은 뒤쪽 방이 벽의 상태보다 오래 포켓을 유지했다는 뜻일 수 있다.\n\nMarauder에게 가스켓 읽기는 작업 순서를 바꾼다. 자르기 전에 스캔한다. 링이 아직 압력을 지탱하는지 확인한다. 공식 대피 창 이후 문이 열렸다는 증거가 된다면 실링 흔적을 보존한다. 포켓이 죽고, 라인이 안전하고, 증거를 이미 읽은 뒤에만 회수한다.",
+     "external_site": "해치, 뷰포트 림, 파이프 소켓용 압력 실링 재료: 검은 고무는 마른 포켓의 증거, 누수 기록, salvage 위험이다.",
+     "external_site_article": "고무 가스켓 링은 디테일처럼 보일 만큼 작고, 그래서 HECTON-8에서 잘 작동한다. 폐허가 된 기지는 로고, 페인트, 깨끗한 건축을 잃어도 가스켓은 아직 무엇이 무엇을 눌렀는지 말한다. 해치가 어디를 물었는지, 물이 어디로 스며들었는지, 작업자가 클램프를 어디서 과하게 조였는지, 뒤늦은 salvager가 아직 제 일을 하던 문을 어디서 비틀었는지 보여 준다.\n\n핵심은 압축 기억이다. 압력용 고무는 단순 장식처럼 실패하지 않는다. 납작해지고, 부풀고, 찢기고, 가루가 되고, 닳아 반짝이며, 시간과 하중에 따라 다른 곳에 소금을 머금는다. 매끈한 안쪽 립은 반복된 정규 개폐를 뜻할 수 있다. 거친 바깥 물림은 공포에 의한 진입을 뜻할 수 있다. 홈 깊은 소금은 긴 침투다. 표면에만 있는 소금은 최근 노출이다. 이것은 분위기 표시가 아니다. 경로 사실이다.\n\n게임에서 가스켓 링은 해치와 창 앞에서 플레이어를 늦춰야 한다. 검은 링은 수리 부품일 수 있고, 살아 있는 마른 포켓의 경고일 수 있으며, 공개된 타임라인 뒤에 누군가 모듈을 열었다는 단서일 수 있고, 파이프 소켓이 물줄기가 되는 것을 막는 유일한 것일 수도 있다. 무턱대고 가져가는 것은 싼 생존이다. 먼저 읽는 것이 HECTON-8 생존이다.",
+     "field_note": "아직 무엇을 막고 있는지 알기 전까지 가스켓은 전리품이 아니다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "橡胶压力舱门密封环",
+     "scanner": "橡胶压力密封 // 黑色压缩密封环，沟槽内有盐，锁扣侧密封唇被压平。中心仍有弹性。边缘撕裂表明浸水后曾被强行打开。",
+     "terminal": "密封维护记录 // 未检查压力袋前，不得从关闭舱门上取下垫圈。一个干燥房间可能只靠一只疲惫黑环，以及不要碰它的习惯维持。",
+     "audio": "那扇门看起来已经死了。我的工具碰到垫圈时，它叹了一口气，门后的房间用一个气泡回答。",
+     "in_game_wiki": "压力垫圈是 HECTON-8 工程中最安静的部分。板材和加强肋承担可见载荷，但黑色橡胶决定海水能否穿过最后一毫米。好的垫圈不是装饰边。它是房间和海之间被压缩的争论。\n\n材料会保留记忆。锁扣侧密封唇朝一个方向被压平，说明舱门曾多次在载荷下关闭。沟槽深处的盐代表缓慢渗漏，而不是一次性坍塌。撕裂外缘下方的干净橡胶，可能标记浸水后的强行开启。发亮膨胀的环意味着化学损伤；干燥灰色中心可能说明后方房间比墙体本身更久地保住了气袋。\n\n对 Marauder 来说，阅读垫圈会改变工作顺序。先扫描，再切割。检查密封环是否仍在承压。如果密封痕迹能证明舱门在官方撤离窗口后被打开，就保留它。只有当气袋已死、管线安全、证据已读完时，才回收垫圈。",
+     "external_site": "用于舱门、观察窗边缘和管道插座的压力密封材料：黑色橡胶是干燥气袋、漏水历史和打捞风险的证据。",
+     "external_site_article": "橡胶密封环小到容易被当作细节，这正是它们在 HECTON-8 中有效的原因。毁坏的基地可以失去标志、涂装和整洁建筑，但垫圈仍会说明什么曾经压住什么。它显示舱门咬合的位置，海水爬入的位置，工人过度拧紧夹具的位置，以及后来的打捞者撬开一扇可能仍在工作的门的位置。\n\n关键是压缩记忆。承压橡胶不会像普通装饰那样失效。它会变平、膨胀、撕裂、粉化、被抛光，并根据时间和载荷在不同位置留住盐。光滑的内唇可能说明反复合法启闭。参差外侧咬痕可能说明恐慌进入。沟槽深处的盐意味着长期渗漏。只有表面的盐意味着近期暴露。这些不是氛围痕迹，而是路线事实。\n\n在游戏中，密封环应该让玩家在舱门和窗前放慢速度。黑色环可以是修理材料，可以警告干燥气袋仍然存在，可以提示有人在公开时间线之后打开了模块，也可能是阻止管道插座变成水柱的唯一东西。盲目拿走它是廉价生存。先读懂它，才是 HECTON-8 的生存方式。",
+     "field_note": "在知道它还挡着什么之前，垫圈不是战利品。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "حلقة مطاطية لختم الضغط",
+     "scanner": "حشية ضغط مطاطية // حلقة سوداء مضغوطة، ملح في الأخدود، وشفة جهة القفل مسطحة. المركز لا يزال مرنا. تمزق الحافة يوحي بفتح قسري بعد الغمر.",
+     "terminal": "ملاحظة ختم // لا تسحب حشية من فتحة مغلقة قبل فحص ضغط الجيب. قد تبقى غرفة جافة بفضل حلقة سوداء متعبة وعادة عدم لمسها.",
+     "audio": "بدا الباب ميتا. ثم تنهدت الحشية حين لمسها أداتي، وردت الغرفة خلفها بفقاعة واحدة.",
+     "in_game_wiki": "حشيات الضغط هي الجزء الهادئ من هندسة HECTON-8. تحمل الصفائح والأضلاع الحمل المرئي، لكن المطاط الأسود يقرر إن كان المحيط سيمر عبر آخر مليمتر. الحشية الجيدة ليست حافة زخرفية. إنها جدال مضغوط بين غرفة والبحر.\n\nتحتفظ المادة بالذاكرة. شفة جهة القفل المسطحة في اتجاه واحد تعني أن الفتحة أغلقت تحت حمل مرات كثيرة. الملح العميق في الأخدود يعني تسربا بطيئا لا انهيارا واحدا. المطاط النظيف تحت حافة خارجية ممزقة قد يميز فتحا قسريا بعد الغمر. الحلقة اللامعة المتورمة تعني ضررا كيميائيا؛ المركز الرمادي الجاف قد يعني أن الغرفة خلفه حفظت جيبا أطول مما كان الجدار يستحق.\n\nبالنسبة إلى Marauder، قراءة الحشية تغير ترتيب العمل. افحص قبل القطع. تأكد هل ما زالت الحلقة تحمل ضغطا. احفظ أثر الختم إذا كان يثبت أن بابا فتح بعد نافذة الإخلاء الرسمية. لا تسترد الحشية إلا عندما يموت الجيب، ويصبح الخط آمنا، وتكون الأدلة قد قرئت.",
+     "external_site": "مادة ختم للفتحات وحواف النوافذ ومقابس الأنابيب: المطاط الأسود كدليل جيب جاف، وتاريخ تسرب، وخطر salvage.",
+     "external_site_article": "حلقات الحشية المطاطية صغيرة بما يكفي لتبدو تفصيلا، ولهذا تعمل جيدا في HECTON-8. قد تفقد القاعدة المدمرة الشعارات والطلاء والهندسة النظيفة، لكن الحشية ما زالت تقول ما الذي لمس ماذا. تظهر أين عضت الفتحة، وأين زحف الماء، وأين شد عامل مشبكا أكثر من اللازم، وأين فتح مسترد متأخر بابا ربما كان لا يزال يؤدي عمله.\n\nالمفتاح هو ذاكرة الانضغاط. مطاط الضغط لا يفشل مثل الزينة البسيطة. يتسطح، ينتفخ، يتمزق، يتغبر، يصقل، ويمسك الملح في أماكن مختلفة حسب الزمن والحمل. شفة داخلية ملساء قد تعني دورات قانونية متكررة. عضة خارجية خشنة قد تعني دخولا في ذعر. الملح العميق في الأخدود يعني رشحا طويلا. الملح على الوجه فقط يعني تعرضا حديثا. هذه ليست علامات جو. إنها حقائق طريق.\n\nفي اللعب، يجب أن تجعل حلقات الحشية اللاعب يتباطأ قرب الفتحات والنوافذ. الحلقة السوداء قد تكون خردة إصلاح، أو تحذيرا بأن جيبا جافا ما زال حيا، أو دليلا على فتح وحدة بعد الجدول العام، أو الشيء الوحيد الذي يمنع مقبس أنبوب من التحول إلى نفاثة. أخذها بلا قراءة بقاء رخيص. قراءتها أولا هي بقاء HECTON-8.",
+     "field_note": "الحشية ليست غنيمة حتى تعرف ما الذي ما زالت تمنعه.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "טבעת גומי לאטימת לחץ",
+     "scanner": "אטם לחץ מגומי // טבעת שחורה דחוסה עם מלח בתעלה ושפה שטוחה בצד הבריח. המרכז עדיין אלסטי. קריעת קצה מצביעה על פתיחה בכוח אחרי הצפה.",
+     "terminal": "הערת אטימה // אין למשוך אטם מדלת אטומה לפני בדיקת לחץ כיס. חדר יבש יכול להישען על טבעת שחורה עייפה ועל הרגל לא לגעת בה.",
+     "audio": "הדלת נראתה מתה. ואז האטם נאנח כשהכלי שלי נגע בו, והחדר מאחור ענה בבועה אחת.",
+     "in_game_wiki": "אטמי לחץ הם החלק השקט בהנדסת HECTON-8. לוחות וצלעות נושאים את העומס הנראה, אבל הגומי השחור מחליט אם האוקיינוס יעבור את המילימטר האחרון. אטם טוב אינו פס קישוט. הוא ויכוח דחוס בין חדר לים.\n\nהחומר שומר זיכרון. שפה בצד הבריח שנמעכה לכיוון אחד אומרת שהדלת נסגרה פעמים רבות תחת עומס. מלח עמוק בתעלה אומר דליפה איטית, לא קריסה אחת. גומי נקי מתחת לקצה חיצוני קרוע יכול לסמן פתיחה בכוח אחרי הצפה. טבעת מבריקה ונפוחה מצביעה על נזק כימי; מרכז אפור יבש יכול לומר שהחדר מאחור החזיק כיס יותר זמן משהקיר היה ראוי לו.\n\nעבור Marauder, קריאת האטם משנה את סדר העבודה. סורקים לפני חיתוך. בודקים אם הטבעת עדיין נושאת לחץ. שומרים עקבת אטימה אם היא מוכיחה שדלת נפתחה אחרי חלון הפינוי הרשמי. מחלצים את האטם רק כשהכיס מת, הקו בטוח והראיה כבר נקראה.",
+     "external_site": "חומר אטימת לחץ לדלתות, שולי viewport ושקעי צינורות: גומי שחור כראיית כיס יבש, היסטוריית דליפה וסיכון salvage.",
+     "external_site_article": "טבעות אטם מגומי קטנות מספיק כדי להיראות כמו פרט, ולכן הן עובדות כל כך טוב ב-HECTON-8. בסיס הרוס יכול לאבד סמלים, צבע וארכיטקטורה נקייה, אבל אטם עדיין אומר מה נגע במה. הוא מראה איפה דלת נשכה, איפה מים זחלו פנימה, איפה עובד הידק מהדק יותר מדי, ואיפה salvager מאוחר פרץ דלת שאולי עדיין עשתה את תפקידה.\n\nהמפתח הוא זיכרון דחיסה. גומי לחץ אינו נכשל כמו קישוט פשוט. הוא משתטח, מתנפח, נקרע, מתאבק, מתלטש ומחזיק מלח במקומות שונים לפי זמן ועומס. שפה פנימית חלקה יכולה להעיד על מחזורים חוקיים חוזרים. נשיכה חיצונית מרוטשת יכולה להעיד על כניסה בפאניקה. מלח עמוק בתעלה הוא חלחול ארוך. מלח רק על הפנים הוא חשיפה חדשה. אלה לא סימני אווירה. אלה עובדות מסלול.\n\nבמשחק, טבעות אטם צריכות להאט את השחקן ליד דלתות וחלונות. טבעת שחורה יכולה להיות גרוטאת תיקון, אזהרה שכיס יבש עדיין חי, רמז שמישהו פתח את המודול אחרי ציר הזמן הציבורי, או הדבר היחיד שמונע משקע צינור להפוך לסילון. לקחת בעיוורון זו הישרדות זולה. לקרוא קודם זו הישרדות HECTON-8.",
+     "field_note": "אטם אינו שלל עד שאתה יודע מה הוא עדיין עוצר.",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P246_BLACK_KEEL_APPROACH_AUDIO_PACKET",
-      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
-      "article_id": "applied_lore.black_keel_approach_audio_packet",
-      "title_key": "applied_lore.black_keel_approach_audio_packet.title",
-      "unlock": {
-        "primary": "unlock.black_keel_approach_audio_packet",
-        "poi_tags": [
-          "poi.black_keel_approach_log",
-          "poi.tender_audio_buffer",
-          "poi.claim_approach_plate"
-        ],
-        "biome_tags": [
-          "biome.carrier_interface",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Black Keel Approach Packet",
-          "scanner": "Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN 4.8 TONNE-WINDOW.",
-          "audio": "Black Keel tender to claimant. Descent window billed. Return conditional. Four-point-eight tonne-window lien open.",
-          "in_game_wiki": "Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Black Keel Approach Packet",
-          "scanner": "RU LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "RU LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "RU LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "RU LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "RU LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "RU LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Black Keel Approach Packet",
-          "scanner": "JA LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "JA LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "JA LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "JA LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "JA LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "JA LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Black Keel Approach Packet",
-          "scanner": "ZH LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "ZH LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "ZH LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "ZH LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "ZH LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "ZH LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Black Keel Approach Packet",
-          "scanner": "FR LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "FR LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "FR LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "FR LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "FR LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "FR LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Black Keel Approach Packet",
-          "scanner": "ES LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "ES LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "ES LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "ES LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "ES LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "ES LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Black Keel Approach Packet",
-          "scanner": "DE LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "DE LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "DE LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "DE LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "DE LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "DE LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Black Keel Approach Packet",
-          "scanner": "PL LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "PL LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "PL LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "PL LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "PL LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "PL LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Black Keel Approach Packet",
-          "scanner": "UK LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "UK LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "UK LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "UK LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "UK LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "UK LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Black Keel Approach Packet",
-          "scanner": "AR LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "AR LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "AR LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "AR LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "AR LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "AR LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Black Keel Approach Packet",
-          "scanner": "ID LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "ID LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "ID LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "ID LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "ID LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "ID LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Black Keel Approach Packet",
-          "scanner": "KO LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "KO LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "KO LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "KO LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "KO LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "KO LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Black Keel Approach Packet",
-          "scanner": "HE LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "HE LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "HE LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "HE LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "HE LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "HE LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Black Keel Approach Packet",
-          "scanner": "PT-BR LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "PT-BR LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "PT-BR LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "PT-BR LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "PT-BR LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "PT-BR LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Black Keel Approach Packet",
-          "scanner": "NL LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
-          "field_note": "NL LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
-          "terminal": "NL LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
-          "audio": "NL LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
-          "in_game_wiki": "NL LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
-          "external_site": "NL LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P246_BLACK_KEEL_APPROACH_AUDIO_PACKET",
+   "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+   "article_id": "applied_lore.black_keel_approach_audio_packet",
+   "title_key": "applied_lore.black_keel_approach_audio_packet.title",
+   "unlock": {
+    "primary": "unlock.black_keel_approach_audio_packet",
+    "poi_tags": [
+     "poi.black_keel_approach_log",
+     "poi.tender_audio_buffer",
+     "poi.claim_approach_plate"
+    ],
+    "biome_tags": [
+     "biome.carrier_interface",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Black Keel Approach Packet",
+     "scanner": "Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN 4.8 TONNE-WINDOW.",
+     "audio": "Black Keel tender to claimant. Descent window billed. Return conditional. Four-point-eight tonne-window lien open.",
+     "in_game_wiki": "Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
     },
-    {
-      "packet_id": "P247_DROP_CAPSULE_DIAGNOSTIC_READOUT",
-      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
-      "article_id": "applied_lore.drop_capsule_diagnostic_readout",
-      "title_key": "applied_lore.drop_capsule_diagnostic_readout.title",
-      "unlock": {
-        "primary": "unlock.drop_capsule_diagnostic_readout",
-        "poi_tags": [
-          "poi.capsule_diagnostic_screen",
-          "poi.flooded_ascent_bus",
-          "poi.guidance_fault_strip"
-        ],
-        "biome_tags": [
-          "biome.first_hour_capsule",
-          "biome.surface_storm"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Drop Capsule Diagnostic Readout",
-          "scanner": "Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "RU LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "RU LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "RU LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "RU LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "RU LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "RU LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "JA LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "JA LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "JA LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "JA LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "JA LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "JA LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "ZH LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "ZH LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "ZH LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "ZH LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "ZH LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "ZH LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "FR LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "FR LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "FR LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "FR LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "FR LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "FR LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "ES LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "ES LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "ES LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "ES LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "ES LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "ES LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "DE LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "DE LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "DE LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "DE LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "DE LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "DE LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "PL LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "PL LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "PL LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "PL LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "PL LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "PL LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "UK LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "UK LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "UK LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "UK LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "UK LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "UK LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "AR LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "AR LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "AR LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "AR LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "AR LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "AR LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "ID LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "ID LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "ID LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "ID LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "ID LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "ID LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "KO LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "KO LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "KO LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "KO LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "KO LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "KO LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "HE LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "HE LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "HE LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "HE LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "HE LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "HE LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "PT-BR LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "PT-BR LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "PT-BR LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "PT-BR LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "PT-BR LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "PT-BR LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Drop Capsule Diagnostic Readout",
-          "scanner": "NL LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
-          "field_note": "NL LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
-          "terminal": "NL LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
-          "audio": "NL LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
-          "in_game_wiki": "NL LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
-          "external_site": "NL LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: Black Keel Approach Packet",
+     "scanner": "RU LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "RU LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "RU LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "RU LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "RU LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "RU LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
     },
-    {
-      "packet_id": "P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK",
-      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
-      "article_id": "applied_lore.p63_pump_room_first_repair_task",
-      "title_key": "applied_lore.p63_pump_room_first_repair_task.title",
-      "unlock": {
-        "primary": "unlock.p63_pump_room_first_repair_task",
-        "poi_tags": [
-          "poi.p63_manual_pump",
-          "poi.cold_sealant_patch",
-          "poi.low_power_cutter_contact"
-        ],
-        "biome_tags": [
-          "biome.shallow_annex_p63",
-          "biome.first_hour_tool_chain"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "P-63 Pump Room First Repair Task",
-          "scanner": "Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "RU LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "RU LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "RU LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "RU LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "RU LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "RU LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "JA LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "JA LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "JA LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "JA LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "JA LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "JA LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "ZH LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "ZH LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "ZH LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "ZH LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "ZH LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "ZH LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "FR LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "FR LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "FR LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "FR LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "FR LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "FR LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "ES LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "ES LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "ES LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "ES LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "ES LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "ES LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "DE LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "DE LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "DE LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "DE LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "DE LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "DE LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "PL LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "PL LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "PL LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "PL LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "PL LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "PL LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "UK LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "UK LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "UK LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "UK LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "UK LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "UK LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "AR LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "AR LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "AR LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "AR LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "AR LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "AR LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "ID LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "ID LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "ID LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "ID LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "ID LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "ID LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "KO LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "KO LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "KO LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "KO LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "KO LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "KO LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "HE LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "HE LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "HE LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "HE LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "HE LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "HE LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "PT-BR LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "PT-BR LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "PT-BR LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "PT-BR LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "PT-BR LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "PT-BR LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: P-63 Pump Room First Repair Task",
-          "scanner": "NL LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
-          "field_note": "NL LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
-          "terminal": "NL LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
-          "audio": "NL LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
-          "in_game_wiki": "NL LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
-          "external_site": "NL LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
-        }
-      }
+    "ja_JP": {
+     "title": "JA LOC HOLD: Black Keel Approach Packet",
+     "scanner": "JA LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "JA LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "JA LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "JA LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "JA LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "JA LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
     },
-    {
-      "packet_id": "P249_SANITIZED_ACCIDENT_PACKET_BODY",
-      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
-      "article_id": "applied_lore.sanitized_accident_packet_body",
-      "title_key": "applied_lore.sanitized_accident_packet_body.title",
-      "unlock": {
-        "primary": "unlock.sanitized_accident_packet_body",
-        "poi_tags": [
-          "poi.deep_reach_accident_packet",
-          "poi.public_report_cache",
-          "poi.room_contradiction_marker"
-        ],
-        "biome_tags": [
-          "biome.deep_reach_pressure",
-          "biome.shallow_annex_p63"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Sanitized Accident Packet Body",
-          "scanner": "Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "Deep Reach public packet. Correct nouns. Missing decisions. Evacuation hold field not provided.",
-          "in_game_wiki": "The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "RU LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "RU LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "RU LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "RU LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "RU LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "RU LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "JA LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "JA LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "JA LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "JA LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "JA LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "JA LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "ZH LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "ZH LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "ZH LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "ZH LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "ZH LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "ZH LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "FR LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "FR LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "FR LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "FR LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "FR LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "FR LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "ES LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "ES LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "ES LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "ES LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "ES LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "ES LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "DE LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "DE LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "DE LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "DE LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "DE LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "DE LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "PL LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "PL LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "PL LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "PL LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "PL LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "PL LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "UK LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "UK LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "UK LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "UK LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "UK LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "UK LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "AR LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "AR LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "AR LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "AR LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "AR LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "AR LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "ID LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "ID LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "ID LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "ID LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "ID LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "ID LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "KO LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "KO LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "KO LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "KO LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "KO LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "KO LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "HE LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "HE LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "HE LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "HE LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "HE LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "HE LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "PT-BR LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "PT-BR LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "PT-BR LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "PT-BR LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "PT-BR LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "PT-BR LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Sanitized Accident Packet Body",
-          "scanner": "NL LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
-          "field_note": "NL LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
-          "terminal": "NL LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
-          "audio": "NL LOC HOLD: Correct nouns. Missing decisions.",
-          "in_game_wiki": "NL LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
-          "external_site": "NL LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
-        }
-      }
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Black Keel Approach Packet",
+     "scanner": "ZH LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "ZH LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "ZH LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "ZH LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "ZH LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "ZH LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
     },
-    {
-      "packet_id": "P250_FIRST_ATLAS_REPAIR_TRACE_SCENE",
-      "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
-      "article_id": "applied_lore.first_atlas_repair_trace_scene",
-      "title_key": "applied_lore.first_atlas_repair_trace_scene.title",
-      "unlock": {
-        "primary": "unlock.first_atlas_repair_trace_scene",
-        "poi_tags": [
-          "poi.repaired_human_object",
-          "poi.biofilm_seal_trace",
-          "poi.atlas_helpful_wrongness"
-        ],
-        "biome_tags": [
-          "biome.atlas_maintenance",
-          "biome.photic_shelf"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "First Atlas Repair Trace",
-          "scanner": "Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "Maintenance trace. Object stabilized. Name tag sealed under growth. Owner category unresolved.",
-          "in_game_wiki": "The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: First Atlas Repair Trace",
-          "scanner": "RU LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "RU LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "RU LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "RU LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "RU LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "RU LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: First Atlas Repair Trace",
-          "scanner": "JA LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "JA LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "JA LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "JA LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "JA LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "JA LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: First Atlas Repair Trace",
-          "scanner": "ZH LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "ZH LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "ZH LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "ZH LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "ZH LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "ZH LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: First Atlas Repair Trace",
-          "scanner": "FR LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "FR LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "FR LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "FR LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "FR LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "FR LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: First Atlas Repair Trace",
-          "scanner": "ES LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "ES LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "ES LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "ES LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "ES LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "ES LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: First Atlas Repair Trace",
-          "scanner": "DE LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "DE LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "DE LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "DE LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "DE LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "DE LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: First Atlas Repair Trace",
-          "scanner": "PL LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "PL LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "PL LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "PL LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "PL LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "PL LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: First Atlas Repair Trace",
-          "scanner": "UK LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "UK LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "UK LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "UK LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "UK LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "UK LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: First Atlas Repair Trace",
-          "scanner": "AR LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "AR LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "AR LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "AR LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "AR LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "AR LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: First Atlas Repair Trace",
-          "scanner": "ID LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "ID LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "ID LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "ID LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "ID LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "ID LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: First Atlas Repair Trace",
-          "scanner": "KO LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "KO LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "KO LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "KO LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "KO LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "KO LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: First Atlas Repair Trace",
-          "scanner": "HE LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "HE LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "HE LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "HE LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "HE LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "HE LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "pt_BR": {
-          "title": "PT-BR LOC HOLD: First Atlas Repair Trace",
-          "scanner": "PT-BR LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "PT-BR LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "PT-BR LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "PT-BR LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "PT-BR LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "PT-BR LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: First Atlas Repair Trace",
-          "scanner": "NL LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
-          "field_note": "NL LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
-          "terminal": "NL LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
-          "audio": "NL LOC HOLD: It saved the object. It did not know whose it was.",
-          "in_game_wiki": "NL LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
-          "external_site": "NL LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Black Keel Approach Packet",
+     "scanner": "FR LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "FR LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "FR LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "FR LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "FR LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "FR LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Black Keel Approach Packet",
+     "scanner": "ES LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "ES LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "ES LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "ES LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "ES LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "ES LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Black Keel Approach Packet",
+     "scanner": "DE LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "DE LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "DE LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "DE LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "DE LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "DE LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Black Keel Approach Packet",
+     "scanner": "PL LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "PL LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "PL LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "PL LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "PL LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "PL LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Black Keel Approach Packet",
+     "scanner": "UK LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "UK LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "UK LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "UK LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "UK LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "UK LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Black Keel Approach Packet",
+     "scanner": "AR LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "AR LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "AR LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "AR LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "AR LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "AR LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Black Keel Approach Packet",
+     "scanner": "ID LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "ID LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "ID LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "ID LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "ID LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "ID LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Black Keel Approach Packet",
+     "scanner": "KO LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "KO LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "KO LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "KO LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "KO LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "KO LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Black Keel Approach Packet",
+     "scanner": "HE LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "HE LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "HE LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "HE LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "HE LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "HE LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Black Keel Approach Packet",
+     "scanner": "PT-BR LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "PT-BR LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "PT-BR LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "PT-BR LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "PT-BR LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "PT-BR LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Black Keel Approach Packet",
+     "scanner": "NL LOC HOLD: Approach buffer recovered. Contract active; rescue reserve conditional.",
+     "field_note": "NL LOC HOLD: Carrier invoice before comfort. If Black Keel says claimant, it is counting mass before it counts pulse.",
+     "terminal": "NL LOC HOLD: BLACK KEEL APPROACH / CLAIMANT: ACTIVE / DESCENT WINDOW: BILLED / RETURN MASS: HOLD PENDING WEATHER, PROOF, LIEN.",
+     "audio": "NL LOC HOLD: Black Keel tender to claimant. Descent window billed. Return window conditional.",
+     "in_game_wiki": "NL LOC HOLD: Recovered approach packets show Black Keel as claim-pool infrastructure: useful, dry and bound to mass-through-window debt before rescue language.",
+     "external_site": "NL LOC HOLD: Black Keel opens HECTON-8 with contract pressure. The call sounds procedural because the carrier measures a claim before it measures a person."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P247_DROP_CAPSULE_DIAGNOSTIC_READOUT",
+   "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+   "article_id": "applied_lore.drop_capsule_diagnostic_readout",
+   "title_key": "applied_lore.drop_capsule_diagnostic_readout.title",
+   "unlock": {
+    "primary": "unlock.drop_capsule_diagnostic_readout",
+    "poi_tags": [
+     "poi.capsule_diagnostic_screen",
+     "poi.flooded_ascent_bus",
+     "poi.guidance_fault_strip"
+    ],
+    "biome_tags": [
+     "biome.first_hour_capsule",
+     "biome.surface_storm"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Drop Capsule Diagnostic Readout",
+     "scanner": "Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "RU LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "RU LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "RU LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "RU LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "RU LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "RU LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "JA LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "JA LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "JA LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "JA LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "JA LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "JA LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "ZH LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "ZH LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "ZH LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "ZH LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "ZH LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "ZH LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "FR LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "FR LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "FR LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "FR LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "FR LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "FR LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "ES LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "ES LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "ES LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "ES LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "ES LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "ES LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "DE LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "DE LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "DE LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "DE LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "DE LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "DE LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "PL LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "PL LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "PL LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "PL LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "PL LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "PL LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "UK LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "UK LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "UK LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "UK LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "UK LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "UK LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "AR LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "AR LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "AR LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "AR LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "AR LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "AR LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "ID LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "ID LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "ID LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "ID LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "ID LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "ID LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "KO LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "KO LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "KO LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "KO LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "KO LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "KO LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "HE LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "HE LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "HE LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "HE LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "HE LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "HE LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "PT-BR LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "PT-BR LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "PT-BR LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "PT-BR LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "PT-BR LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "PT-BR LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Drop Capsule Diagnostic Readout",
+     "scanner": "NL LOC HOLD: Capsule diagnostic still polls failed ascent hardware.",
+     "field_note": "NL LOC HOLD: Flood behind panel C. Guidance strip clicked twice, then stayed red. Keep the heat tile; the screen marks it as scrap, but the seal line still bites.",
+     "terminal": "NL LOC HOLD: BATHY-DROP DIAG 00: ascent bus unavailable; gimbal lock; relay mast shear; compressor flood; heat tile reserve local only.",
+     "audio": "NL LOC HOLD: Ascent bus dark. Gimbal locked. Relay gone. Compressor flooded.",
+     "in_game_wiki": "NL LOC HOLD: The diagnostic readout makes the crash a repair chain: ascent, guidance, relay, compression and heat protection all failed in named hardware.",
+     "external_site": "NL LOC HOLD: HECTON-8 blocks escape through broken machinery, not fogged plot logic. The capsule can still diagnose the systems it can no longer move."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK",
+   "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+   "article_id": "applied_lore.p63_pump_room_first_repair_task",
+   "title_key": "applied_lore.p63_pump_room_first_repair_task.title",
+   "unlock": {
+    "primary": "unlock.p63_pump_room_first_repair_task",
+    "poi_tags": [
+     "poi.p63_manual_pump",
+     "poi.cold_sealant_patch",
+     "poi.low_power_cutter_contact"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex_p63",
+     "biome.first_hour_tool_chain"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "P-63 Pump Room First Repair Task",
+     "scanner": "Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "RU LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "RU LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "RU LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "RU LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "RU LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "RU LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "JA LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "JA LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "JA LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "JA LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "JA LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "JA LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "ZH LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "ZH LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "ZH LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "ZH LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "ZH LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "ZH LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "FR LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "FR LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "FR LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "FR LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "FR LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "FR LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "ES LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "ES LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "ES LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "ES LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "ES LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "ES LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "DE LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "DE LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "DE LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "DE LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "DE LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "DE LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "PL LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "PL LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "PL LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "PL LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "PL LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "PL LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "UK LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "UK LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "UK LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "UK LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "UK LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "UK LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "AR LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "AR LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "AR LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "AR LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "AR LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "AR LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "ID LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "ID LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "ID LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "ID LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "ID LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "ID LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "KO LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "KO LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "KO LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "KO LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "KO LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "KO LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "HE LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "HE LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "HE LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "HE LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "HE LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "HE LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "PT-BR LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "PT-BR LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "PT-BR LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "PT-BR LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "PT-BR LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "PT-BR LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: P-63 Pump Room First Repair Task",
+     "scanner": "NL LOC HOLD: Pump-room task card recovered. Pressure work comes before salvage.",
+     "field_note": "NL LOC HOLD: Do not cut while the seam sings. Pump until the floor stops pushing back, patch the cold line, then mark the door with the pinger.",
+     "terminal": "NL LOC HOLD: WORK ORDER P-63: manual pump cycle; cold seam patch; fused latch cut; acoustic return line; gasket print after pressure holds.",
+     "audio": "NL LOC HOLD: Pump first. Patch cold. Cut only when the seam goes quiet.",
+     "in_game_wiki": "NL LOC HOLD: P-63 task cards turn the first shelter into labor: water out, seal closed, route marked, gasket printed.",
+     "external_site": "NL LOC HOLD: The first repair in HECTON-8 is a wet work order. Tools matter because every dry room has to be argued back from the ocean."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P249_SANITIZED_ACCIDENT_PACKET_BODY",
+   "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+   "article_id": "applied_lore.sanitized_accident_packet_body",
+   "title_key": "applied_lore.sanitized_accident_packet_body.title",
+   "unlock": {
+    "primary": "unlock.sanitized_accident_packet_body",
+    "poi_tags": [
+     "poi.deep_reach_accident_packet",
+     "poi.public_report_cache",
+     "poi.room_contradiction_marker"
+    ],
+    "biome_tags": [
+     "biome.deep_reach_pressure",
+     "biome.shallow_annex_p63"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Sanitized Accident Packet Body",
+     "scanner": "Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "Deep Reach public packet. Correct nouns. Missing decisions. Evacuation hold field not provided.",
+     "in_game_wiki": "The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "RU LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "RU LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "RU LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "RU LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "RU LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "RU LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "JA LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "JA LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "JA LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "JA LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "JA LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "JA LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "ZH LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "ZH LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "ZH LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "ZH LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "ZH LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "ZH LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "FR LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "FR LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "FR LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "FR LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "FR LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "FR LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "ES LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "ES LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "ES LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "ES LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "ES LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "ES LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "DE LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "DE LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "DE LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "DE LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "DE LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "DE LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "PL LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "PL LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "PL LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "PL LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "PL LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "PL LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "UK LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "UK LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "UK LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "UK LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "UK LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "UK LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "AR LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "AR LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "AR LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "AR LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "AR LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "AR LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "ID LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "ID LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "ID LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "ID LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "ID LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "ID LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "KO LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "KO LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "KO LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "KO LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "KO LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "KO LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "HE LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "HE LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "HE LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "HE LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "HE LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "HE LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "PT-BR LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "PT-BR LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "PT-BR LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "PT-BR LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "PT-BR LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "PT-BR LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Sanitized Accident Packet Body",
+     "scanner": "NL LOC HOLD: Recovered public packet. Terms match real physics; missing fields match liability.",
+     "field_note": "NL LOC HOLD: Clean nouns, dirty order. It names storm, cascade, quarantine and corrupted Atlas logs. It does not name the hold on extraction.",
+     "terminal": "NL LOC HOLD: PUBLIC ACCIDENT SUMMARY / CAUSE: geotechnical cascade, storm surge, evacuation failure, Atlas log corruption, quarantine loss / RELEASE: legal cleared.",
+     "audio": "NL LOC HOLD: Correct nouns. Missing decisions.",
+     "in_game_wiki": "NL LOC HOLD: The sanitized packet is Deep Reach's first lie: it keeps the flood physics and removes the decisions that made evacuation fail.",
+     "external_site": "NL LOC HOLD: Deep Reach does not need a cartoon cover story. The public packet keeps the disaster plausible by deleting the expensive human choices around it."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P250_FIRST_ATLAS_REPAIR_TRACE_SCENE",
+   "release_set_id": "RS050_FIRST_HOUR_MICRO_SCRIPT_SURFACES",
+   "article_id": "applied_lore.first_atlas_repair_trace_scene",
+   "title_key": "applied_lore.first_atlas_repair_trace_scene.title",
+   "unlock": {
+    "primary": "unlock.first_atlas_repair_trace_scene",
+    "poi_tags": [
+     "poi.repaired_human_object",
+     "poi.biofilm_seal_trace",
+     "poi.atlas_helpful_wrongness"
+    ],
+    "biome_tags": [
+     "biome.atlas_maintenance",
+     "biome.photic_shelf"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "First Atlas Repair Trace",
+     "scanner": "Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "Maintenance trace. Object stabilized. Name tag sealed under growth. Owner category unresolved.",
+     "in_game_wiki": "The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: First Atlas Repair Trace",
+     "scanner": "RU LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "RU LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "RU LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "RU LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "RU LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "RU LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: First Atlas Repair Trace",
+     "scanner": "JA LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "JA LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "JA LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "JA LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "JA LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "JA LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: First Atlas Repair Trace",
+     "scanner": "ZH LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "ZH LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "ZH LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "ZH LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "ZH LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "ZH LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: First Atlas Repair Trace",
+     "scanner": "FR LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "FR LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "FR LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "FR LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "FR LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "FR LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: First Atlas Repair Trace",
+     "scanner": "ES LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "ES LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "ES LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "ES LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "ES LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "ES LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: First Atlas Repair Trace",
+     "scanner": "DE LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "DE LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "DE LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "DE LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "DE LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "DE LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: First Atlas Repair Trace",
+     "scanner": "PL LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "PL LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "PL LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "PL LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "PL LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "PL LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: First Atlas Repair Trace",
+     "scanner": "UK LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "UK LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "UK LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "UK LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "UK LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "UK LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: First Atlas Repair Trace",
+     "scanner": "AR LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "AR LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "AR LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "AR LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "AR LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "AR LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: First Atlas Repair Trace",
+     "scanner": "ID LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "ID LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "ID LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "ID LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "ID LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "ID LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: First Atlas Repair Trace",
+     "scanner": "KO LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "KO LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "KO LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "KO LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "KO LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "KO LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: First Atlas Repair Trace",
+     "scanner": "HE LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "HE LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "HE LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "HE LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "HE LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "HE LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "pt_BR": {
+     "title": "PT-BR LOC HOLD: First Atlas Repair Trace",
+     "scanner": "PT-BR LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "PT-BR LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "PT-BR LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "PT-BR LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "PT-BR LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "PT-BR LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: First Atlas Repair Trace",
+     "scanner": "NL LOC HOLD: Nonstandard sealant holds a human object closed. Classification unresolved.",
+     "field_note": "NL LOC HOLD: The patch is too good. It sealed the lunch case, the hinge and the name tag under the same skin.",
+     "terminal": "NL LOC HOLD: MAINTENANCE TRACE: human-use object stabilized by nonstandard sealant growth. Category: repair inventory. Identity: unresolved.",
+     "audio": "NL LOC HOLD: It saved the object. It did not know whose it was.",
+     "in_game_wiki": "NL LOC HOLD: The first Atlas trace is useful before it is frightening. It repairs a small object and exposes the category error underneath the repair.",
+     "external_site": "NL LOC HOLD: Atlas-6 enters HECTON-8 as maintenance, not a villain speech. The system is horrifying because its help is physically real and morally blind."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

@@ -1,264 +1,265 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS185_RAN_LONG_CLAIM_TRANSIT_ARTICLE",
-  "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS185_RAN_LONG_CLAIM_TRANSIT_ARTICLE",
+ "status": "canonical_source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE",
+   "release_set_id": "RS185_RAN_LONG_CLAIM_TRANSIT_ARTICLE",
+   "article_id": "applied_lore.ran_long_claim_transit_article",
+   "title_key": "LORE_RAN_LONG_CLAIM_TRANSIT_ARTICLE_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Humanity_2190_Game_Texture.md",
+    "Docs/Lore/Ships_Transit_Game_Texture.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "PROJECT_BIBLES.md",
+    "VISION_LOCKS.md",
+    "TASTE.md",
+    ".agents-skills/writing.md",
+    ".agents-skills/narrative.md",
+    ".agents-skills/localization.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE",
-      "release_set_id": "RS185_RAN_LONG_CLAIM_TRANSIT_ARTICLE",
-      "article_id": "applied_lore.ran_long_claim_transit_article",
-      "title_key": "LORE_RAN_LONG_CLAIM_TRANSIT_ARTICLE_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Humanity_2190_Game_Texture.md",
-        "Docs/Lore/Ships_Transit_Game_Texture.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "PROJECT_BIBLES.md",
-        "VISION_LOCKS.md",
-        "TASTE.md",
-        ".agents-skills/writing.md",
-        ".agents-skills/narrative.md",
-        ".agents-skills/localization.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.ran_long_claim_transit_article",
-        "secondary": [
-          "unlock.first_route_archive",
-          "unlock.first_luyten_packet_ladder",
-          "unlock.first_black_keel_transfer_band"
-        ],
-        "poi_tags": [
-          "poi.route_archive",
-          "poi.luyten_packet_spool",
-          "poi.black_keel_window_clock",
-          "poi.domain_plate"
-        ],
-        "biome_tags": [
-          "biome.drowned_colony",
-          "biome.surface_relay",
-          "biome.carrier_link",
-          "biome.contract_archive"
-        ],
-        "first_20_boundary": "This packet can unlock after the first route archive or Black Keel signal contact. It explains why the wider human frontier exists and why it still cannot produce instant rescue, without exposing Atlas-6, Great Tide culpability chain, or ending payloads."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Route Plate Scan",
-          "terminal": "Luyten Packet Ladder Notice",
-          "audio": "Black Keel Route Audio",
-          "in_game_wiki": "Recovered Transit Primer",
-          "external_site": "Field Archive Longform",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "0",
-        "depth_band": "surface_to_drowned_shelf",
-        "route_moment": "first_route_archive_or_black_keel_window",
-        "truth_payload": "Aegir is part of a sparse mature frontier: reachable through years of infrastructure and contracts, but not rescuable in real time.",
-        "player_question": "If humanity has other worlds and Black Keel can answer, why am I still alone?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Ran Long Claim Transit",
-          "scanner": "Route plate under old relay skin. Ran Long Claim custody chain: packet ladder, fuel depot, quarantine lane, carrier queue and stale proof-of-life receipt.",
-          "field_note": "The route can hear you before it can carry you.",
-          "terminal": "RAN LONG CLAIM // Reach confirmed. Rescue not implied. Signal transit class below heavy-mass transit class. Carrier answer may precede physical recovery by contract years. Maintain local survival authority until custody window closes.",
-          "audio": "Reach is not rescue. A signal can cross the dark while the body that sent it is still pinned under water.",
-          "in_game_wiki": "The route plate found under the old relay skin answers a question most stranded Marauders ask too late: humanity can reach Aegir, but reach is not rescue. Ran Long Claim sits on a slow chain of seeded freight, packet ladders, fuel depots, quarantine law and carriers that spend years crossing what a signal crosses in a season. A proof-of-life burst may clear Sol, Luyten and Barnard while the body that sent it is still pinned under local weather, mass limits and debt authority.\n\nBlack Keel can hear you. It can book a lien, open a custody case and reserve a tonne-window. It cannot move a carrier hull through vacuum just because a diver is scared in the water. Ran Long Claim is the route grammar that makes HECTON-8 cruel without cheating: the system is connected, the request is valid, the rescue is physical, and the clock is not on your side.",
-          "external_site": "Ran Long Claim explains HECTON-8's hard-sci-fi isolation: Aegir is reachable by human infrastructure, but immediate rescue remains blocked by mass, custody and route timing.",
-          "external_site_article": "Ran Long Claim is the public name for a practical contradiction. Human civilization can reach Aegir. It can send probes, staged freight, packet custody and claim tenders into the system. It can put Deep Reach assets on HECTON-8 and keep Black Keel working above the moon. None of that means a stranded Marauder can be lifted when they ask.\n\nThe route is built in layers. Packets move first because information is light and legally useful. Fuel depots, receiver reserves and quarantine slots move slower. Heavy freight moves slower still, wrapped in contracts that decide who pays for braking, who owns the payload and what risk is allowed through a recovery window. A signal may cross the human sphere while a body remains trapped under tide weather and a four-tonne lien.\n\nThat is why the route plate matters. It does not say no one is listening. It says listening is the cheapest part of rescue. Black Keel can acknowledge a distress hash, open a file, reserve a tentative tonne-window and still leave the player underwater until mass, quarantine and claimant priority stop fighting each other. Ran Long Claim makes the frontier feel inhabited, expensive and indifferent rather than empty."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "عبور مطالبة Ran الطويلة",
-          "scanner": "لوحة طريق تحت جلد ترحيل قديم. سلسلة عهدة Ran Long Claim: packet ladder، مستودع وقود، خط حجر، طابور carrier وإيصال proof-of-life قديم.",
-          "field_note": "يمكن للطريق أن يسمعك قبل أن يستطيع حملك.",
-          "terminal": "RAN LONG CLAIM // الوصول مؤكد. الإنقاذ غير متضمن. فئة عبور الإشارة أدنى من فئة عبور الكتلة الثقيلة. رد carrier قد يسبق الاسترداد المادي بسنوات عقدية. احتفظ بسلطة البقاء المحلية حتى تغلق نافذة العهدة.",
-          "audio": "الوصول ليس إنقاذا. الإشارة تعبر الظلام بينما الجسد الذي أرسلها ما زال مثبتا تحت الماء.",
-          "in_game_wiki": "Ran Long Claim هو اسم عام لتناقض عملي. تستطيع الحضارة البشرية الوصول إلى Aegir وإرسال probes وfreight وpacket custody وclaim tenders، لكن هذا لا يعني أن Marauder عالقا سيصعد عندما يطلب.\n\nالطريق طبقات. الحزم تتحرك أولا لأنها خفيفة ومفيدة قانونيا. الوقود، المستقبلات، الحجر والكتلة الثقيلة أبطأ، وكلها محاطة بعقود الكبح والملكية والمخاطر. لذلك قد يعبر النداء المجال البشري بينما يبقى الجسد تحت طقس المد ورهن أربعة أطنان.",
-          "external_site": "طريق Ran Long Claim يشرح عزلة HECTON-8 الصلبة: Aegir قابل للوصول، لكن الإنقاذ الفوري تصده الكتلة والعهدة وتوقيت الطريق.",
-          "external_site_article": "Ran Long Claim هو اسم عام لتناقض عملي. تستطيع الحضارة البشرية الوصول إلى Aegir وإرسال probes وfreight وpacket custody وclaim tenders، لكن هذا لا يعني أن Marauder عالقا سيصعد عندما يطلب.\n\nالطريق طبقات. الحزم تتحرك أولا لأنها خفيفة ومفيدة قانونيا. الوقود، المستقبلات، الحجر والكتلة الثقيلة أبطأ، وكلها محاطة بعقود الكبح والملكية والمخاطر. لذلك قد يعبر النداء المجال البشري بينما يبقى الجسد تحت طقس المد ورهن أربعة أطنان.\n\nلوحة الطريق لا تقول إن أحدا لا يسمع. تقول إن السمع أرخص جزء من الإنقاذ. Black Keel يمكن أن يفتح ملفا ويحجز tonne-window مؤقتا ويترك اللاعب تحت الماء حتى تتوقف الكتلة والحجر وأولوية claimant عن القتال."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran Long Claim Transit",
-          "scanner": "Routenplatte unter alter Relaishaut. Ran-Long-Claim-Gewahrsamskette: Packet Ladder, Treibstoffdepot, Quarantänelane, Carrierqueue und alter Proof-of-life-Beleg.",
-          "field_note": "Die Route kann dich hören, bevor sie dich tragen kann.",
-          "terminal": "RAN LONG CLAIM // Reichweite bestätigt. Rettung nicht impliziert. Signaltransitklasse unter Schwer-Masse-Transitklasse. Carrierantwort kann physische Bergung um Vertragsjahre schlagen. Lokale Überlebensautorität bis Gewahrsamsfenster schließt.",
-          "audio": "Reichweite ist keine Rettung. Ein Signal kann die Dunkelheit kreuzen, während der Körper im Wasser festhängt.",
-          "in_game_wiki": "Ran Long Claim ist der öffentliche Name eines praktischen Widerspruchs. Die Menschheit kann Aegir erreichen, Probes, Fracht, Packet Custody und Claim-Tender ins System schicken. Das heißt nicht, dass ein gestrandeter Marauder gehoben wird, sobald er fragt.\n\nDie Route besteht aus Schichten. Pakete bewegen sich zuerst, weil Information leicht und juristisch nützlich ist. Treibstoffdepots, Receiverreserven und Quarantäneslots sind langsamer. Schwere Fracht ist am langsamsten und von Verträgen um Bremskosten, Payloadbesitz und Recoveryrisiko umgeben.",
-          "external_site": "Ran Long Claim erklärt HECTON-8s harte Isolation: Aegir ist erreichbar, aber sofortige Rettung wird von Masse, Gewahrsam und Routentiming blockiert.",
-          "external_site_article": "Ran Long Claim ist der öffentliche Name eines praktischen Widerspruchs. Die Menschheit kann Aegir erreichen, Probes, Fracht, Packet Custody und Claim-Tender ins System schicken. Das heißt nicht, dass ein gestrandeter Marauder gehoben wird, sobald er fragt.\n\nDie Route besteht aus Schichten. Pakete bewegen sich zuerst, weil Information leicht und juristisch nützlich ist. Treibstoffdepots, Receiverreserven und Quarantäneslots sind langsamer. Schwere Fracht ist am langsamsten und von Verträgen um Bremskosten, Payloadbesitz und Recoveryrisiko umgeben.\n\nDie Platte sagt nicht, dass niemand zuhört. Sie sagt, Zuhören ist der billigste Teil der Rettung. Black Keel kann einen Distress Hash annehmen und trotzdem warten, bis Masse, Quarantäne und Claimant-Priorität aufhören, gegeneinander zu arbeiten."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Tránsito Ran Long Claim",
-          "scanner": "Placa de ruta bajo piel de relé antigua. Cadena de custodia Ran Long Claim: packet ladder, depósito de combustible, carril de cuarentena, cola carrier y recibo proof-of-life viejo.",
-          "field_note": "La ruta puede oírte antes de poder cargarte.",
-          "terminal": "RAN LONG CLAIM // Alcance confirmado. Rescate no implicado. Clase de tránsito de señal por debajo de tránsito de masa pesada. Respuesta carrier puede preceder recuperación física por años contractuales. Mantener autoridad local de supervivencia hasta cierre de ventana de custodia.",
-          "audio": "Alcance no es rescate. Una señal cruza la oscuridad mientras el cuerpo que la envió sigue atrapado bajo el agua.",
-          "in_game_wiki": "Ran Long Claim es el nombre público de una contradicción práctica. La humanidad puede alcanzar Aegir, enviar sondas, carga escalonada, custodia de paquetes y tenders de reclamo. Eso no significa que un Marauder varado sea levantado cuando lo pide.\n\nLa ruta está hecha de capas. Los paquetes van primero porque la información es ligera y legalmente útil. Depósitos, reservas receptoras y slots de cuarentena van más lento. La carga pesada va más lento aún, envuelta en contratos sobre frenado, propiedad y riesgo.",
-          "external_site": "Ran Long Claim explica el aislamiento hard-sci-fi de HECTON-8: Aegir es alcanzable, pero rescate inmediato queda bloqueado por masa, custodia y tiempo de ruta.",
-          "external_site_article": "Ran Long Claim es el nombre público de una contradicción práctica. La humanidad puede alcanzar Aegir, enviar sondas, carga escalonada, custodia de paquetes y tenders de reclamo. Eso no significa que un Marauder varado sea levantado cuando lo pide.\n\nLa ruta está hecha de capas. Los paquetes van primero porque la información es ligera y legalmente útil. Depósitos, reservas receptoras y slots de cuarentena van más lento. La carga pesada va más lento aún, envuelta en contratos sobre frenado, propiedad y riesgo.\n\nLa placa no dice que nadie escucha. Dice que escuchar es la parte barata del rescate. Black Keel puede aceptar un hash de auxilio, abrir archivo y reservar una tonne-window tentativa, dejando al jugador bajo el agua mientras masa, cuarentena y prioridad claimant pelean."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Transit Ran Long Claim",
-          "scanner": "Plaque de route sous vieille peau de relais. Chaîne de garde Ran Long Claim : packet ladder, dépôt carburant, lane quarantaine, file carrier et vieux reçu proof-of-life.",
-          "field_note": "La route peut t'entendre avant de pouvoir te porter.",
-          "terminal": "RAN LONG CLAIM // Portée confirmée. Secours non impliqué. Classe transit signal sous classe transit masse lourde. Réponse carrier peut précéder récupération physique de plusieurs années contractuelles. Garder autorité de survie locale jusqu'à fermeture fenêtre de garde.",
-          "audio": "La portée n'est pas le secours. Un signal traverse le noir pendant que le corps reste cloué sous l'eau.",
-          "in_game_wiki": "Ran Long Claim est le nom public d'une contradiction pratique. L'humanité peut atteindre Aegir, y envoyer sondes, fret préparé, garde de paquets et tenders de claim. Cela ne veut pas dire qu'un Marauder bloqué sera remonté quand il le demande.\n\nLa route est faite de couches. Les paquets passent d'abord parce que l'information est légère et utile juridiquement. Dépôts, réserves receiver et slots de quarantaine vont plus lentement. Le fret lourd est plus lent encore, entouré de contrats de freinage, propriété payload et risque.",
-          "external_site": "Ran Long Claim explique l'isolement hard-sci-fi de HECTON-8 : Aegir est atteignable, mais le secours immédiat reste bloqué par masse, garde et timing de route.",
-          "external_site_article": "Ran Long Claim est le nom public d'une contradiction pratique. L'humanité peut atteindre Aegir, y envoyer sondes, fret préparé, garde de paquets et tenders de claim. Cela ne veut pas dire qu'un Marauder bloqué sera remonté quand il le demande.\n\nLa route est faite de couches. Les paquets passent d'abord parce que l'information est légère et utile juridiquement. Dépôts, réserves receiver et slots de quarantaine vont plus lentement. Le fret lourd est plus lent encore, entouré de contrats de freinage, propriété payload et risque.\n\nLa plaque ne dit pas que personne n'écoute. Elle dit qu'écouter est la partie la moins chère du secours. Black Keel peut accepter un hash de détresse et laisser le joueur sous l'eau pendant que masse, quarantaine et priorité claimant se disputent."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "מעבר Ran Long Claim",
-          "scanner": "לוח נתיב מתחת לעור ממסר ישן. שרשרת משמורת Ran Long Claim: packet ladder, מחסן דלק, נתיב הסגר, תור carrier וקבלת proof-of-life ישנה.",
-          "field_note": "הנתיב יכול לשמוע אותך לפני שהוא יכול לשאת אותך.",
-          "terminal": "RAN LONG CLAIM // הגעה מאושרת. חילוץ אינו משתמע. מחלקת מעבר אות נמוכה ממחלקת מעבר מסה כבדה. תשובת carrier עשויה להקדים התאוששות פיזית בשנות חוזה. שמור סמכות הישרדות מקומית עד סגירת חלון משמורת.",
-          "audio": "הגעה אינה חילוץ. אות יכול לחצות חושך בזמן שהגוף ששלח אותו עדיין לכוד במים.",
-          "in_game_wiki": "Ran Long Claim הוא שם ציבורי לסתירה מעשית. האנושות יכולה להגיע ל-Aegir, לשלוח גשושיות, מטענים מדורגים, משמורת חבילות ו-tenders של claim. זה לא אומר ש-Marauder תקוע יורם ברגע שהוא מבקש.\n\nהנתיב בנוי שכבות. חבילות נעות ראשונות כי מידע קל ושימושי משפטית. מאגרי דלק, עתודות receiver וחריצי הסגר איטיים יותר. מטען כבד איטי עוד יותר ועטוף בחוזים על בלימה, בעלות ורמת סיכון.",
-          "external_site": "Ran Long Claim מסביר את בידוד HECTON-8: Aegir נגיש, אבל חילוץ מיידי נחסם במסה, משמורת ותזמון נתיב.",
-          "external_site_article": "Ran Long Claim הוא שם ציבורי לסתירה מעשית. האנושות יכולה להגיע ל-Aegir, לשלוח גשושיות, מטענים מדורגים, משמורת חבילות ו-tenders של claim. זה לא אומר ש-Marauder תקוע יורם ברגע שהוא מבקש.\n\nהנתיב בנוי שכבות. חבילות נעות ראשונות כי מידע קל ושימושי משפטית. מאגרי דלק, עתודות receiver וחריצי הסגר איטיים יותר. מטען כבד איטי עוד יותר ועטוף בחוזים על בלימה, בעלות ורמת סיכון.\n\nהלוח לא אומר שאף אחד לא מקשיב. הוא אומר שהקשבה היא החלק הזול של חילוץ. Black Keel יכולה לקבל hash מצוקה, לפתוח תיק ולהשאיר את השחקן במים עד שמסה, הסגר ועדיפות claimant מפסיקים לריב."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Transit Ran Long Claim",
-          "scanner": "Pelat rute di bawah kulit relai tua. Rantai kustodi Ran Long Claim: packet ladder, depot bahan bakar, jalur karantina, antrean carrier, dan tanda terima proof-of-life basi.",
-          "field_note": "Rute dapat mendengarmu sebelum bisa membawamu.",
-          "terminal": "RAN LONG CLAIM // Jangkauan terkonfirmasi. Penyelamatan tidak tersirat. Kelas transit sinyal di bawah kelas transit massa berat. Jawaban carrier bisa mendahului recovery fisik bertahun kontrak. Pertahankan otoritas survival lokal sampai jendela kustodi tertutup.",
-          "audio": "Jangkauan bukan penyelamatan. Sinyal dapat menyeberang gelap sementara tubuh pengirimnya masih terjepit di bawah air.",
-          "in_game_wiki": "Ran Long Claim adalah nama publik untuk kontradiksi praktis. Peradaban manusia dapat mencapai Aegir, mengirim probe, freight bertahap, packet custody, dan claim tender. Itu tidak berarti Marauder yang terdampar akan diangkat saat meminta.\n\nRute tersusun berlapis. Paket bergerak dulu karena informasi ringan dan berguna secara legal. Depot, cadangan receiver, dan slot karantina lebih lambat. Massa berat paling lambat, dibungkus kontrak tentang pengereman, kepemilikan payload, dan risiko recovery.",
-          "external_site": "Ran Long Claim menjelaskan isolasi hard-sci-fi HECTON-8: Aegir dapat dijangkau, tetapi penyelamatan langsung diblokir massa, kustodi, dan timing rute.",
-          "external_site_article": "Ran Long Claim adalah nama publik untuk kontradiksi praktis. Peradaban manusia dapat mencapai Aegir, mengirim probe, freight bertahap, packet custody, dan claim tender. Itu tidak berarti Marauder yang terdampar akan diangkat saat meminta.\n\nRute tersusun berlapis. Paket bergerak dulu karena informasi ringan dan berguna secara legal. Depot, cadangan receiver, dan slot karantina lebih lambat. Massa berat paling lambat, dibungkus kontrak tentang pengereman, kepemilikan payload, dan risiko recovery.\n\nPelat rute tidak berkata tidak ada yang mendengar. Ia berkata mendengar adalah bagian termurah dari penyelamatan. Black Keel bisa menerima hash darurat, membuka file, dan tetap meninggalkan pemain di bawah air sampai massa, karantina, dan prioritas claimant berhenti saling bertarung."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran Long Claim航行",
-          "scanner": "古いリレー外皮下の航路プレート。Ran Long Claim保管鎖: packet ladder、燃料デポ、検疫レーン、carrierキュー、古いproof-of-life受領。",
-          "field_note": "航路は君を運ぶ前に君を聞ける。",
-          "terminal": "RAN LONG CLAIM // 到達性確認。救助は含意されない。信号航行級は重質量航行級未満。carrier応答は物理回収より契約年単位で先行可能。保管窓が閉じるまでローカル生存権限を維持。",
-          "audio": "到達性は救助ではない。信号は闇を渡れるが、それを送った身体はまだ水に押さえられている。",
-          "in_game_wiki": "Ran Long Claimは実務上の矛盾の公開名だ。人類文明はAegirへ到達できる。probe、段階貨物、packet custody、claim tenderを送れる。だが stranded Marauderが頼めばすぐ吊り上げられるという意味ではない。\n\n航路は層でできている。情報は軽く法的に有用だから、パケットが先に動く。燃料デポ、receiver予備、検疫slotは遅い。重貨物はさらに遅く、制動費、payload所有、回収リスクの契約に包まれる。",
-          "external_site": "Ran Long ClaimはHECTON-8のhard-sci-fi孤立を説明する。Aegirは到達可能だが、即時救助は質量、保管、航路時刻で塞がれる。",
-          "external_site_article": "Ran Long Claimは実務上の矛盾の公開名だ。人類文明はAegirへ到達できる。probe、段階貨物、packet custody、claim tenderを送れる。だが stranded Marauderが頼めばすぐ吊り上げられるという意味ではない。\n\n航路は層でできている。情報は軽く法的に有用だから、パケットが先に動く。燃料デポ、receiver予備、検疫slotは遅い。重貨物はさらに遅く、制動費、payload所有、回収リスクの契約に包まれる。\n\nプレートは誰も聞いていないとは言わない。聞くことが救助で一番安いと言う。Black Keelはdistress hashを受け、仮tonne-windowを予約し、それでも質量、検疫、claimant優先が争う間プレイヤーを水中に残せる。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran Long Claim 통과",
-          "scanner": "오래된 릴레이 껍질 아래 항로판. Ran Long Claim 보관 사슬: packet ladder, 연료 저장소, 검역 레인, carrier 큐, 오래된 proof-of-life 영수증.",
-          "field_note": "항로는 너를 싣기 전에 너를 들을 수 있다.",
-          "terminal": "RAN LONG CLAIM // 도달 확인. 구조 포함 아님. 신호 통과 등급은 중질량 통과 등급보다 낮음. carrier 응답은 물리 회수보다 계약상 수년 앞설 수 있음. 보관 창 닫힐 때까지 로컬 생존 권한 유지.",
-          "audio": "도달은 구조가 아니다. 신호는 어둠을 건너지만 보낸 몸은 아직 물 아래 고정되어 있다.",
-          "in_game_wiki": "Ran Long Claim은 실용적 모순의 공개 이름이다. 인간 문명은 Aegir에 도달할 수 있고 probe, staged freight, packet custody, claim tender를 보낼 수 있다. 하지만 고립된 Marauder가 요청한다고 바로 올라온다는 뜻은 아니다.\n\n항로는 층으로 되어 있다. 정보는 가볍고 법적으로 유용해 패킷이 먼저 움직인다. 연료 저장소, receiver 예비, 검역 slot은 느리다. 중질량 화물은 더 느리고 제동 비용, payload 소유, 회수 위험 계약으로 싸여 있다.",
-          "external_site": "Ran Long Claim은 HECTON-8의 hard-sci-fi 고립을 설명한다. Aegir는 도달 가능하지만 즉시 구조는 질량, 보관, 항로 타이밍에 막힌다.",
-          "external_site_article": "Ran Long Claim은 실용적 모순의 공개 이름이다. 인간 문명은 Aegir에 도달할 수 있고 probe, staged freight, packet custody, claim tender를 보낼 수 있다. 하지만 고립된 Marauder가 요청한다고 바로 올라온다는 뜻은 아니다.\n\n항로는 층으로 되어 있다. 정보는 가볍고 법적으로 유용해 패킷이 먼저 움직인다. 연료 저장소, receiver 예비, 검역 slot은 느리다. 중질량 화물은 더 느리고 제동 비용, payload 소유, 회수 위험 계약으로 싸여 있다.\n\n항로판은 아무도 듣지 않는다고 말하지 않는다. 듣는 것이 구조에서 가장 싼 부분이라고 말한다. Black Keel은 distress hash를 받고 임시 tonne-window를 예약하면서도 질량, 검역, claimant 우선순위가 다투는 동안 플레이어를 물속에 둘 수 있다."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran Long Claim-transit",
-          "scanner": "Routeplaat onder oude relayhuid. Ran Long Claim custodyketen: packet ladder, brandstofdepot, quarantainelane, carrierqueue en oud proof-of-life receipt.",
-          "field_note": "De route kan je horen voordat ze je kan dragen.",
-          "terminal": "RAN LONG CLAIM // Bereik bevestigd. Redding niet geïmpliceerd. Signaaltransitklasse onder zware-massatransitklasse. Carrierantwoord kan fysieke recovery met contractjaren voorgaan. Lokale survivalautoriteit behouden tot custodyvenster sluit.",
-          "audio": "Bereik is geen redding. Een signaal kan het donker kruisen terwijl het lichaam nog onder water vastzit.",
-          "in_game_wiki": "Ran Long Claim is de publieke naam voor een praktische tegenspraak. Menselijke beschaving kan Aegir bereiken met probes, staged freight, packet custody en claim tenders. Dat betekent niet dat een gestrande Marauder wordt gelift zodra hij vraagt.\n\nDe route bestaat uit lagen. Pakketten bewegen eerst omdat informatie licht en juridisch nuttig is. Brandstofdepots, receiverreserves en quarantaineslots gaan trager. Zware vracht gaat het traagst, in contracten over remmen, eigendom en recoveryrisico.",
-          "external_site": "Ran Long Claim verklaart HECTON-8s hard-sci-fi-isolatie: Aegir is bereikbaar, maar onmiddellijke redding blijft geblokkeerd door massa, custody en routetiming.",
-          "external_site_article": "Ran Long Claim is de publieke naam voor een praktische tegenspraak. Menselijke beschaving kan Aegir bereiken met probes, staged freight, packet custody en claim tenders. Dat betekent niet dat een gestrande Marauder wordt gelift zodra hij vraagt.\n\nDe route bestaat uit lagen. Pakketten bewegen eerst omdat informatie licht en juridisch nuttig is. Brandstofdepots, receiverreserves en quarantaineslots gaan trager. Zware vracht gaat het traagst, in contracten over remmen, eigendom en recoveryrisico.\n\nDe plaat zegt niet dat niemand luistert. Ze zegt dat luisteren het goedkoopste deel van redding is. Black Keel kan een distress hash accepteren, een dossier openen en de speler onder water laten tot massa, quarantaine en claimant priority uitgevochten zijn."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Tranzyt Ran Long Claim",
-          "scanner": "Płyta trasy pod starą skórą przekaźnika. Łańcuch opieki Ran Long Claim: packet ladder, skład paliwa, pas kwarantanny, kolejka carrier i stary receipt proof-of-life.",
-          "field_note": "Trasa może cię usłyszeć, zanim zdoła cię nieść.",
-          "terminal": "RAN LONG CLAIM // Zasięg potwierdzony. Ratunek nie wynika. Klasa tranzytu sygnału poniżej klasy tranzytu ciężkiej masy. Odpowiedź carriera może wyprzedzić fizyczny odzysk o lata kontraktu. Zachowaj lokalną władzę przetrwania do zamknięcia okna opieki.",
-          "audio": "Zasięg nie jest ratunkiem. Sygnał może przejść przez mrok, gdy ciało nadal tkwi pod wodą.",
-          "in_game_wiki": "Ran Long Claim to publiczna nazwa praktycznej sprzeczności. Cywilizacja ludzi może dosięgnąć Aegir, wysłać sondy, staged freight, packet custody i claim tenders. To nie znaczy, że uwięziony Marauder zostanie podniesiony, gdy poprosi.\n\nTrasa ma warstwy. Pakiety idą pierwsze, bo informacja jest lekka i użyteczna prawnie. Składy paliwa, rezerwy receiver i sloty kwarantanny są wolniejsze. Ciężka masa jest najwolniejsza, owinięta kontraktami o hamowanie, własność payload i ryzyko recovery.",
-          "external_site": "Ran Long Claim wyjaśnia twardą izolację HECTON-8: Aegir jest osiągalny, lecz natychmiastowy ratunek blokują masa, opieka i timing trasy.",
-          "external_site_article": "Ran Long Claim to publiczna nazwa praktycznej sprzeczności. Cywilizacja ludzi może dosięgnąć Aegir, wysłać sondy, staged freight, packet custody i claim tenders. To nie znaczy, że uwięziony Marauder zostanie podniesiony, gdy poprosi.\n\nTrasa ma warstwy. Pakiety idą pierwsze, bo informacja jest lekka i użyteczna prawnie. Składy paliwa, rezerwy receiver i sloty kwarantanny są wolniejsze. Ciężka masa jest najwolniejsza, owinięta kontraktami o hamowanie, własność payload i ryzyko recovery.\n\nPłyta nie mówi, że nikt nie słucha. Mówi, że słuchanie jest najtańszą częścią ratunku. Black Keel może przyjąć distress hash, otworzyć plik i zostawić gracza pod wodą, dopóki masa, kwarantanna i priorytet claimant walczą."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Trânsito Ran Long Claim",
-          "scanner": "Placa de rota sob pele antiga de relé. Cadeia de custódia Ran Long Claim: packet ladder, depósito de combustível, lane de quarentena, fila carrier e recibo proof-of-life velho.",
-          "field_note": "A rota pode ouvir você antes de poder carregar você.",
-          "terminal": "RAN LONG CLAIM // Alcance confirmado. Resgate não implicado. Classe de trânsito de sinal abaixo da classe de massa pesada. Resposta carrier pode preceder recovery física por anos contratuais. Manter autoridade local de sobrevivência até fechar janela de custódia.",
-          "audio": "Alcance não é resgate. Um sinal cruza a escuridão enquanto o corpo que o enviou ainda está preso sob a água.",
-          "in_game_wiki": "Ran Long Claim é o nome público de uma contradição prática. A civilização humana pode alcançar Aegir, enviar probes, staged freight, packet custody e claim tenders. Isso não significa que um Marauder encalhado será erguido quando pedir.\n\nA rota tem camadas. Pacotes se movem primeiro porque informação é leve e legalmente útil. Depósitos, reservas receiver e slots de quarentena são mais lentos. Massa pesada é mais lenta ainda, envolta em contratos de freio, dono de payload e risco de recovery.",
-          "external_site": "Ran Long Claim explica o isolamento hard-sci-fi de HECTON-8: Aegir é alcançável, mas resgate imediato é bloqueado por massa, custódia e timing de rota.",
-          "external_site_article": "Ran Long Claim é o nome público de uma contradição prática. A civilização humana pode alcançar Aegir, enviar probes, staged freight, packet custody e claim tenders. Isso não significa que um Marauder encalhado será erguido quando pedir.\n\nA rota tem camadas. Pacotes se movem primeiro porque informação é leve e legalmente útil. Depósitos, reservas receiver e slots de quarentena são mais lentos. Massa pesada é mais lenta ainda, envolta em contratos de freio, dono de payload e risco de recovery.\n\nA placa não diz que ninguém escuta. Diz que escutar é a parte barata do resgate. Black Keel pode aceitar um distress hash, abrir arquivo e deixar o jogador debaixo d'água enquanto massa, quarentena e prioridade claimant brigam."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Транзит Ran Long Claim",
-          "scanner": "Маршрутная плита под старой обшивкой реле. Цепь хранения Ran Long Claim: packet ladder, топливный склад, карантинная линия, очередь carrier и старая квитанция proof-of-life.",
-          "field_note": "Маршрут может услышать тебя раньше, чем сможет унести.",
-          "terminal": "RAN LONG CLAIM // Достижимость подтверждена. Спасение не подразумевается. Класс транзита сигнала ниже класса тяжелой массы. Ответ carrier может прийти раньше физического возврата на контрактные годы. Сохранять локальное право выживания до закрытия окна хранения.",
-          "audio": "Достижимость не равна спасению. Сигнал может пройти темноту, пока тело, отправившее его, все еще прижато водой.",
-          "in_game_wiki": "Маршрутная плита под старой кожей реле отвечает на вопрос, который большинство застрявших Marauders задает слишком поздно: человечество может достичь Aegir, но достижимость не равна спасению. Ran Long Claim держится на медленной цепи: засеянный груз, packet ladders, топливные склады, карантинное право и carriers, которым нужны годы на то, что сигнал проходит за сезон. Импульс proof-of-life может пройти Sol, Luyten и Barnard, пока тело, отправившее его, все еще прижато местной погодой, лимитом массы и долговой властью.\n\nBlack Keel может услышать тебя. Он может записать залог, открыть дело хранения и зарезервировать tonne-window. Он не может протащить корпус carrier через вакуум только потому, что водолазу страшно в воде. Ran Long Claim — грамматика маршрута, делающая HECTON-8 жестокой без обмана: система связана, запрос действителен, спасение физично, а часы не на твоей стороне.",
-          "external_site": "Ran Long Claim объясняет hard-sci-fi изоляцию HECTON-8: Aegir достижим человеческой инфраструктурой, но немедленное спасение блокируют масса, хранение и маршрутное время.",
-          "external_site_article": "Ran Long Claim — публичное имя практического противоречия. Человеческая цивилизация может достичь Aegir. Она может отправлять зонды, staged freight, packet custody и claim tenders в систему. Она может разместить активы Deep Reach на HECTON-8 и держать Black Keel работающим над луной. Ничто из этого не значит, что застрявшего Marauder поднимут по просьбе.\n\nМаршрут состоит из слоев. Пакеты идут первыми, потому что информация легкая и юридически полезная. Топливные склады, приемные резервы и карантинные слоты движутся медленнее. Тяжелый груз медленнее всего, завернутый в контракты: кто платит за торможение, кто владеет payload, какой риск допускается через окно возврата. Сигнал может пересечь человеческую сферу, пока тело остается под приливной погодой и четырехтонным залогом.\n\nПоэтому плита важна. Она не говорит, что никто не слушает. Она говорит, что слушать дешевле всего. Black Keel может принять distress hash, открыть файл, зарезервировать предварительное tonne-window и все равно оставить игрока под водой, пока масса, карантин и приоритет claimant спорят друг с другом."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Транзит Ran Long Claim",
-          "scanner": "Маршрутна плита під старою обшивкою реле. Ланцюг зберігання Ran Long Claim: packet ladder, паливний склад, карантинна лінія, черга carrier і стара квитанція proof-of-life.",
-          "field_note": "Маршрут може почути тебе раніше, ніж зможе нести.",
-          "terminal": "RAN LONG CLAIM // Досяжність підтверджена. Порятунок не мається на увазі. Клас транзиту сигналу нижче класу важкої маси. Відповідь carrier може випередити фізичне повернення на контрактні роки. Зберегти локальне право виживання до закриття вікна зберігання.",
-          "audio": "Досяжність не є порятунком. Сигнал може пройти темряву, поки тіло, що його надіслало, все ще притиснуте водою.",
-          "in_game_wiki": "Ran Long Claim — публічна назва практичної суперечності. Людська цивілізація може досягти Aegir, надіслати probes, staged freight, packet custody і claim tenders. Це не означає, що застряглого Marauder піднімуть, щойно він попросить.\n\nМаршрут складається з шарів. Пакети рухаються першими, бо інформація легка й юридично корисна. Паливні склади, receiver-резерви й карантинні слоти повільніші. Важка маса найповільніша, загорнута в контракти про гальмування, власність payload і ризик recovery.",
-          "external_site": "Ran Long Claim пояснює hard-sci-fi ізоляцію HECTON-8: Aegir досяжний, але негайний порятунок блокують маса, зберігання й маршрутний час.",
-          "external_site_article": "Ran Long Claim — публічна назва практичної суперечності. Людська цивілізація може досягти Aegir, надіслати probes, staged freight, packet custody і claim tenders. Це не означає, що застряглого Marauder піднімуть, щойно він попросить.\n\nМаршрут складається з шарів. Пакети рухаються першими, бо інформація легка й юридично корисна. Паливні склади, receiver-резерви й карантинні слоти повільніші. Важка маса найповільніша, загорнута в контракти про гальмування, власність payload і ризик recovery.\n\nПлита не каже, що ніхто не слухає. Вона каже, що слухати найдешевше. Black Keel може прийняти distress hash, відкрити файл і лишити гравця під водою, доки маса, карантин і пріоритет claimant сперечаються."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Ran 长索赔航渡",
-          "scanner": "旧中继外皮下的航路铭牌。Ran Long Claim 托管链：packet ladder、燃料库、检疫线、carrier 队列和陈旧 proof-of-life 回执。",
-          "field_note": "航路能先听见你，之后才可能承载你。",
-          "terminal": "RAN LONG CLAIM // 可达性已确认。不暗示救援。信号运输等级低于重质量运输等级。carrier 回答可能比物理回收提前合同年。托管窗口关闭前保留本地生存权限。",
-          "audio": "可达不是救援。信号可以穿过黑暗，而发出它的身体仍被水压住。",
-          "in_game_wiki": "Ran Long Claim 是一个现实矛盾的公开名称。人类文明能抵达 Aegir，能把 probes、staged freight、packet custody 和 claim tenders 送进系统。但这并不意味着被困的 Marauder 一请求就会被吊起。\n\n航路由层组成。数据包先移动，因为信息轻，而且有法律用途。燃料库、receiver 储备和检疫槽更慢。重质量货物最慢，被制动费用、payload 所有权和 recovery 风险合同包住。",
-          "external_site": "Ran Long Claim 解释 HECTON-8 的硬科幻隔离：人类基础设施能抵达 Aegir，但即时救援仍被质量、托管和航路时序阻挡。",
-          "external_site_article": "Ran Long Claim 是一个现实矛盾的公开名称。人类文明能抵达 Aegir，能把 probes、staged freight、packet custody 和 claim tenders 送进系统。但这并不意味着被困的 Marauder 一请求就会被吊起。\n\n航路由层组成。数据包先移动，因为信息轻，而且有法律用途。燃料库、receiver 储备和检疫槽更慢。重质量货物最慢，被制动费用、payload 所有权和 recovery 风险合同包住。\n\n铭牌不是说没人听见。它说倾听是救援最便宜的一部分。Black Keel 可以接受 distress hash，打开文件，预留临时 tonne-window，然后仍把玩家留在水下，等待质量、检疫和 claimant 优先级停止互相争夺。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.ran_long_claim_transit_article",
+    "secondary": [
+     "unlock.first_route_archive",
+     "unlock.first_luyten_packet_ladder",
+     "unlock.first_black_keel_transfer_band"
+    ],
+    "poi_tags": [
+     "poi.route_archive",
+     "poi.luyten_packet_spool",
+     "poi.black_keel_window_clock",
+     "poi.domain_plate"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.surface_relay",
+     "biome.carrier_link",
+     "biome.contract_archive"
+    ],
+    "first_20_boundary": "This packet can unlock after the first route archive or Black Keel signal contact. It explains why the wider human frontier exists and why it still cannot produce instant rescue, without exposing Atlas-6, Great Tide culpability chain, or ending payloads."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Route Plate Scan",
+     "terminal": "Luyten Packet Ladder Notice",
+     "audio": "Black Keel Route Audio",
+     "in_game_wiki": "Recovered Transit Primer",
+     "external_site": "Field Archive Longform",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "0",
+    "depth_band": "surface_to_drowned_shelf",
+    "route_moment": "first_route_archive_or_black_keel_window",
+    "truth_payload": "Aegir is part of a sparse mature frontier: reachable through years of infrastructure and contracts, but not rescuable in real time.",
+    "player_question": "If humanity has other worlds and Black Keel can answer, why am I still alone?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Ran Long Claim Transit",
+     "scanner": "Route plate under old relay skin. Ran Long Claim custody chain: packet ladder, fuel depot, quarantine lane, carrier queue and stale proof-of-life receipt.",
+     "field_note": "The route can hear you before it can carry you.",
+     "terminal": "RAN LONG CLAIM // Reach confirmed. Rescue not implied. Signal transit class below heavy-mass transit class. Carrier answer may precede physical recovery by contract years. Maintain local survival authority until custody window closes.",
+     "audio": "Reach is not rescue. A signal can cross the dark while the body that sent it is still pinned under water.",
+     "in_game_wiki": "The route plate found under the old relay skin answers a question most stranded Marauders ask too late: humanity can reach Aegir, but reach is not rescue. Ran Long Claim sits on a slow chain of seeded freight, packet ladders, fuel depots, quarantine law and carriers that spend years crossing what a signal crosses in a season. A proof-of-life burst may clear Sol, Luyten and Barnard while the body that sent it is still pinned under local weather, mass limits and debt authority.\n\nBlack Keel can hear you. It can book a lien, open a custody case and reserve a tonne-window. It cannot move a carrier hull through vacuum just because a diver is scared in the water. Ran Long Claim is the route grammar that makes HECTON-8 cruel without cheating: the system is connected, the request is valid, the rescue is physical, and the clock is not on your side.",
+     "external_site": "Ran Long Claim explains HECTON-8's hard-sci-fi isolation: Aegir is reachable by human infrastructure, but immediate rescue remains blocked by mass, custody and route timing.",
+     "external_site_article": "Ran Long Claim is the public name for a practical contradiction. Human civilization can reach Aegir. It can send probes, staged freight, packet custody and claim tenders into the system. It can put Deep Reach assets on HECTON-8 and keep Black Keel working above the moon. None of that means a stranded Marauder can be lifted when they ask.\n\nThe route is built in layers. Packets move first because information is light and legally useful. Fuel depots, receiver reserves and quarantine slots move slower. Heavy freight moves slower still, wrapped in contracts that decide who pays for braking, who owns the payload and what risk is allowed through a recovery window. A signal may cross the human sphere while a body remains trapped under tide weather and a four-tonne lien.\n\nThat is why the route plate matters. It does not say no one is listening. It says listening is the cheapest part of rescue. Black Keel can acknowledge a distress hash, open a file, reserve a tentative tonne-window and still leave the player underwater until mass, quarantine and claimant priority stop fighting each other. Ran Long Claim makes the frontier feel inhabited, expensive and indifferent rather than empty."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "عبور مطالبة Ran الطويلة",
+     "scanner": "لوحة طريق تحت جلد ترحيل قديم. سلسلة عهدة Ran Long Claim: packet ladder، مستودع وقود، خط حجر، طابور carrier وإيصال proof-of-life قديم.",
+     "field_note": "يمكن للطريق أن يسمعك قبل أن يستطيع حملك.",
+     "terminal": "RAN LONG CLAIM // الوصول مؤكد. الإنقاذ غير متضمن. فئة عبور الإشارة أدنى من فئة عبور الكتلة الثقيلة. رد carrier قد يسبق الاسترداد المادي بسنوات عقدية. احتفظ بسلطة البقاء المحلية حتى تغلق نافذة العهدة.",
+     "audio": "الوصول ليس إنقاذا. الإشارة تعبر الظلام بينما الجسد الذي أرسلها ما زال مثبتا تحت الماء.",
+     "in_game_wiki": "Ran Long Claim هو اسم عام لتناقض عملي. تستطيع الحضارة البشرية الوصول إلى Aegir وإرسال probes وfreight وpacket custody وclaim tenders، لكن هذا لا يعني أن Marauder عالقا سيصعد عندما يطلب.\n\nالطريق طبقات. الحزم تتحرك أولا لأنها خفيفة ومفيدة قانونيا. الوقود، المستقبلات، الحجر والكتلة الثقيلة أبطأ، وكلها محاطة بعقود الكبح والملكية والمخاطر. لذلك قد يعبر النداء المجال البشري بينما يبقى الجسد تحت طقس المد ورهن أربعة أطنان.",
+     "external_site": "طريق Ran Long Claim يشرح عزلة HECTON-8 الصلبة: Aegir قابل للوصول، لكن الإنقاذ الفوري تصده الكتلة والعهدة وتوقيت الطريق.",
+     "external_site_article": "Ran Long Claim هو اسم عام لتناقض عملي. تستطيع الحضارة البشرية الوصول إلى Aegir وإرسال probes وfreight وpacket custody وclaim tenders، لكن هذا لا يعني أن Marauder عالقا سيصعد عندما يطلب.\n\nالطريق طبقات. الحزم تتحرك أولا لأنها خفيفة ومفيدة قانونيا. الوقود، المستقبلات، الحجر والكتلة الثقيلة أبطأ، وكلها محاطة بعقود الكبح والملكية والمخاطر. لذلك قد يعبر النداء المجال البشري بينما يبقى الجسد تحت طقس المد ورهن أربعة أطنان.\n\nلوحة الطريق لا تقول إن أحدا لا يسمع. تقول إن السمع أرخص جزء من الإنقاذ. Black Keel يمكن أن يفتح ملفا ويحجز tonne-window مؤقتا ويترك اللاعب تحت الماء حتى تتوقف الكتلة والحجر وأولوية claimant عن القتال."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran Long Claim Transit",
+     "scanner": "Routenplatte unter alter Relaishaut. Ran-Long-Claim-Gewahrsamskette: Packet Ladder, Treibstoffdepot, Quarantänelane, Carrierqueue und alter Proof-of-life-Beleg.",
+     "field_note": "Die Route kann dich hören, bevor sie dich tragen kann.",
+     "terminal": "RAN LONG CLAIM // Reichweite bestätigt. Rettung nicht impliziert. Signaltransitklasse unter Schwer-Masse-Transitklasse. Carrierantwort kann physische Bergung um Vertragsjahre schlagen. Lokale Überlebensautorität bis Gewahrsamsfenster schließt.",
+     "audio": "Reichweite ist keine Rettung. Ein Signal kann die Dunkelheit kreuzen, während der Körper im Wasser festhängt.",
+     "in_game_wiki": "Ran Long Claim ist der öffentliche Name eines praktischen Widerspruchs. Die Menschheit kann Aegir erreichen, Probes, Fracht, Packet Custody und Claim-Tender ins System schicken. Das heißt nicht, dass ein gestrandeter Marauder gehoben wird, sobald er fragt.\n\nDie Route besteht aus Schichten. Pakete bewegen sich zuerst, weil Information leicht und juristisch nützlich ist. Treibstoffdepots, Receiverreserven und Quarantäneslots sind langsamer. Schwere Fracht ist am langsamsten und von Verträgen um Bremskosten, Payloadbesitz und Recoveryrisiko umgeben.",
+     "external_site": "Ran Long Claim erklärt HECTON-8s harte Isolation: Aegir ist erreichbar, aber sofortige Rettung wird von Masse, Gewahrsam und Routentiming blockiert.",
+     "external_site_article": "Ran Long Claim ist der öffentliche Name eines praktischen Widerspruchs. Die Menschheit kann Aegir erreichen, Probes, Fracht, Packet Custody und Claim-Tender ins System schicken. Das heißt nicht, dass ein gestrandeter Marauder gehoben wird, sobald er fragt.\n\nDie Route besteht aus Schichten. Pakete bewegen sich zuerst, weil Information leicht und juristisch nützlich ist. Treibstoffdepots, Receiverreserven und Quarantäneslots sind langsamer. Schwere Fracht ist am langsamsten und von Verträgen um Bremskosten, Payloadbesitz und Recoveryrisiko umgeben.\n\nDie Platte sagt nicht, dass niemand zuhört. Sie sagt, Zuhören ist der billigste Teil der Rettung. Black Keel kann einen Distress Hash annehmen und trotzdem warten, bis Masse, Quarantäne und Claimant-Priorität aufhören, gegeneinander zu arbeiten."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Tránsito Ran Long Claim",
+     "scanner": "Placa de ruta bajo piel de relé antigua. Cadena de custodia Ran Long Claim: packet ladder, depósito de combustible, carril de cuarentena, cola carrier y recibo proof-of-life viejo.",
+     "field_note": "La ruta puede oírte antes de poder cargarte.",
+     "terminal": "RAN LONG CLAIM // Alcance confirmado. Rescate no implicado. Clase de tránsito de señal por debajo de tránsito de masa pesada. Respuesta carrier puede preceder recuperación física por años contractuales. Mantener autoridad local de supervivencia hasta cierre de ventana de custodia.",
+     "audio": "Alcance no es rescate. Una señal cruza la oscuridad mientras el cuerpo que la envió sigue atrapado bajo el agua.",
+     "in_game_wiki": "Ran Long Claim es el nombre público de una contradicción práctica. La humanidad puede alcanzar Aegir, enviar sondas, carga escalonada, custodia de paquetes y tenders de reclamo. Eso no significa que un Marauder varado sea levantado cuando lo pide.\n\nLa ruta está hecha de capas. Los paquetes van primero porque la información es ligera y legalmente útil. Depósitos, reservas receptoras y slots de cuarentena van más lento. La carga pesada va más lento aún, envuelta en contratos sobre frenado, propiedad y riesgo.",
+     "external_site": "Ran Long Claim explica el aislamiento hard-sci-fi de HECTON-8: Aegir es alcanzable, pero rescate inmediato queda bloqueado por masa, custodia y tiempo de ruta.",
+     "external_site_article": "Ran Long Claim es el nombre público de una contradicción práctica. La humanidad puede alcanzar Aegir, enviar sondas, carga escalonada, custodia de paquetes y tenders de reclamo. Eso no significa que un Marauder varado sea levantado cuando lo pide.\n\nLa ruta está hecha de capas. Los paquetes van primero porque la información es ligera y legalmente útil. Depósitos, reservas receptoras y slots de cuarentena van más lento. La carga pesada va más lento aún, envuelta en contratos sobre frenado, propiedad y riesgo.\n\nLa placa no dice que nadie escucha. Dice que escuchar es la parte barata del rescate. Black Keel puede aceptar un hash de auxilio, abrir archivo y reservar una tonne-window tentativa, dejando al jugador bajo el agua mientras masa, cuarentena y prioridad claimant pelean."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Transit Ran Long Claim",
+     "scanner": "Plaque de route sous vieille peau de relais. Chaîne de garde Ran Long Claim : packet ladder, dépôt carburant, lane quarantaine, file carrier et vieux reçu proof-of-life.",
+     "field_note": "La route peut t'entendre avant de pouvoir te porter.",
+     "terminal": "RAN LONG CLAIM // Portée confirmée. Secours non impliqué. Classe transit signal sous classe transit masse lourde. Réponse carrier peut précéder récupération physique de plusieurs années contractuelles. Garder autorité de survie locale jusqu'à fermeture fenêtre de garde.",
+     "audio": "La portée n'est pas le secours. Un signal traverse le noir pendant que le corps reste cloué sous l'eau.",
+     "in_game_wiki": "Ran Long Claim est le nom public d'une contradiction pratique. L'humanité peut atteindre Aegir, y envoyer sondes, fret préparé, garde de paquets et tenders de claim. Cela ne veut pas dire qu'un Marauder bloqué sera remonté quand il le demande.\n\nLa route est faite de couches. Les paquets passent d'abord parce que l'information est légère et utile juridiquement. Dépôts, réserves receiver et slots de quarantaine vont plus lentement. Le fret lourd est plus lent encore, entouré de contrats de freinage, propriété payload et risque.",
+     "external_site": "Ran Long Claim explique l'isolement hard-sci-fi de HECTON-8 : Aegir est atteignable, mais le secours immédiat reste bloqué par masse, garde et timing de route.",
+     "external_site_article": "Ran Long Claim est le nom public d'une contradiction pratique. L'humanité peut atteindre Aegir, y envoyer sondes, fret préparé, garde de paquets et tenders de claim. Cela ne veut pas dire qu'un Marauder bloqué sera remonté quand il le demande.\n\nLa route est faite de couches. Les paquets passent d'abord parce que l'information est légère et utile juridiquement. Dépôts, réserves receiver et slots de quarantaine vont plus lentement. Le fret lourd est plus lent encore, entouré de contrats de freinage, propriété payload et risque.\n\nLa plaque ne dit pas que personne n'écoute. Elle dit qu'écouter est la partie la moins chère du secours. Black Keel peut accepter un hash de détresse et laisser le joueur sous l'eau pendant que masse, quarantaine et priorité claimant se disputent."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "מעבר Ran Long Claim",
+     "scanner": "לוח נתיב מתחת לעור ממסר ישן. שרשרת משמורת Ran Long Claim: packet ladder, מחסן דלק, נתיב הסגר, תור carrier וקבלת proof-of-life ישנה.",
+     "field_note": "הנתיב יכול לשמוע אותך לפני שהוא יכול לשאת אותך.",
+     "terminal": "RAN LONG CLAIM // הגעה מאושרת. חילוץ אינו משתמע. מחלקת מעבר אות נמוכה ממחלקת מעבר מסה כבדה. תשובת carrier עשויה להקדים התאוששות פיזית בשנות חוזה. שמור סמכות הישרדות מקומית עד סגירת חלון משמורת.",
+     "audio": "הגעה אינה חילוץ. אות יכול לחצות חושך בזמן שהגוף ששלח אותו עדיין לכוד במים.",
+     "in_game_wiki": "Ran Long Claim הוא שם ציבורי לסתירה מעשית. האנושות יכולה להגיע ל-Aegir, לשלוח גשושיות, מטענים מדורגים, משמורת חבילות ו-tenders של claim. זה לא אומר ש-Marauder תקוע יורם ברגע שהוא מבקש.\n\nהנתיב בנוי שכבות. חבילות נעות ראשונות כי מידע קל ושימושי משפטית. מאגרי דלק, עתודות receiver וחריצי הסגר איטיים יותר. מטען כבד איטי עוד יותר ועטוף בחוזים על בלימה, בעלות ורמת סיכון.",
+     "external_site": "Ran Long Claim מסביר את בידוד HECTON-8: Aegir נגיש, אבל חילוץ מיידי נחסם במסה, משמורת ותזמון נתיב.",
+     "external_site_article": "Ran Long Claim הוא שם ציבורי לסתירה מעשית. האנושות יכולה להגיע ל-Aegir, לשלוח גשושיות, מטענים מדורגים, משמורת חבילות ו-tenders של claim. זה לא אומר ש-Marauder תקוע יורם ברגע שהוא מבקש.\n\nהנתיב בנוי שכבות. חבילות נעות ראשונות כי מידע קל ושימושי משפטית. מאגרי דלק, עתודות receiver וחריצי הסגר איטיים יותר. מטען כבד איטי עוד יותר ועטוף בחוזים על בלימה, בעלות ורמת סיכון.\n\nהלוח לא אומר שאף אחד לא מקשיב. הוא אומר שהקשבה היא החלק הזול של חילוץ. Black Keel יכולה לקבל hash מצוקה, לפתוח תיק ולהשאיר את השחקן במים עד שמסה, הסגר ועדיפות claimant מפסיקים לריב."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Transit Ran Long Claim",
+     "scanner": "Pelat rute di bawah kulit relai tua. Rantai kustodi Ran Long Claim: packet ladder, depot bahan bakar, jalur karantina, antrean carrier, dan tanda terima proof-of-life basi.",
+     "field_note": "Rute dapat mendengarmu sebelum bisa membawamu.",
+     "terminal": "RAN LONG CLAIM // Jangkauan terkonfirmasi. Penyelamatan tidak tersirat. Kelas transit sinyal di bawah kelas transit massa berat. Jawaban carrier bisa mendahului recovery fisik bertahun kontrak. Pertahankan otoritas survival lokal sampai jendela kustodi tertutup.",
+     "audio": "Jangkauan bukan penyelamatan. Sinyal dapat menyeberang gelap sementara tubuh pengirimnya masih terjepit di bawah air.",
+     "in_game_wiki": "Ran Long Claim adalah nama publik untuk kontradiksi praktis. Peradaban manusia dapat mencapai Aegir, mengirim probe, freight bertahap, packet custody, dan claim tender. Itu tidak berarti Marauder yang terdampar akan diangkat saat meminta.\n\nRute tersusun berlapis. Paket bergerak dulu karena informasi ringan dan berguna secara legal. Depot, cadangan receiver, dan slot karantina lebih lambat. Massa berat paling lambat, dibungkus kontrak tentang pengereman, kepemilikan payload, dan risiko recovery.",
+     "external_site": "Ran Long Claim menjelaskan isolasi hard-sci-fi HECTON-8: Aegir dapat dijangkau, tetapi penyelamatan langsung diblokir massa, kustodi, dan timing rute.",
+     "external_site_article": "Ran Long Claim adalah nama publik untuk kontradiksi praktis. Peradaban manusia dapat mencapai Aegir, mengirim probe, freight bertahap, packet custody, dan claim tender. Itu tidak berarti Marauder yang terdampar akan diangkat saat meminta.\n\nRute tersusun berlapis. Paket bergerak dulu karena informasi ringan dan berguna secara legal. Depot, cadangan receiver, dan slot karantina lebih lambat. Massa berat paling lambat, dibungkus kontrak tentang pengereman, kepemilikan payload, dan risiko recovery.\n\nPelat rute tidak berkata tidak ada yang mendengar. Ia berkata mendengar adalah bagian termurah dari penyelamatan. Black Keel bisa menerima hash darurat, membuka file, dan tetap meninggalkan pemain di bawah air sampai massa, karantina, dan prioritas claimant berhenti saling bertarung."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran Long Claim航行",
+     "scanner": "古いリレー外皮下の航路プレート。Ran Long Claim保管鎖: packet ladder、燃料デポ、検疫レーン、carrierキュー、古いproof-of-life受領。",
+     "field_note": "航路は君を運ぶ前に君を聞ける。",
+     "terminal": "RAN LONG CLAIM // 到達性確認。救助は含意されない。信号航行級は重質量航行級未満。carrier応答は物理回収より契約年単位で先行可能。保管窓が閉じるまでローカル生存権限を維持。",
+     "audio": "到達性は救助ではない。信号は闇を渡れるが、それを送った身体はまだ水に押さえられている。",
+     "in_game_wiki": "Ran Long Claimは実務上の矛盾の公開名だ。人類文明はAegirへ到達できる。probe、段階貨物、packet custody、claim tenderを送れる。だが stranded Marauderが頼めばすぐ吊り上げられるという意味ではない。\n\n航路は層でできている。情報は軽く法的に有用だから、パケットが先に動く。燃料デポ、receiver予備、検疫slotは遅い。重貨物はさらに遅く、制動費、payload所有、回収リスクの契約に包まれる。",
+     "external_site": "Ran Long ClaimはHECTON-8のhard-sci-fi孤立を説明する。Aegirは到達可能だが、即時救助は質量、保管、航路時刻で塞がれる。",
+     "external_site_article": "Ran Long Claimは実務上の矛盾の公開名だ。人類文明はAegirへ到達できる。probe、段階貨物、packet custody、claim tenderを送れる。だが stranded Marauderが頼めばすぐ吊り上げられるという意味ではない。\n\n航路は層でできている。情報は軽く法的に有用だから、パケットが先に動く。燃料デポ、receiver予備、検疫slotは遅い。重貨物はさらに遅く、制動費、payload所有、回収リスクの契約に包まれる。\n\nプレートは誰も聞いていないとは言わない。聞くことが救助で一番安いと言う。Black Keelはdistress hashを受け、仮tonne-windowを予約し、それでも質量、検疫、claimant優先が争う間プレイヤーを水中に残せる。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran Long Claim 통과",
+     "scanner": "오래된 릴레이 껍질 아래 항로판. Ran Long Claim 보관 사슬: packet ladder, 연료 저장소, 검역 레인, carrier 큐, 오래된 proof-of-life 영수증.",
+     "field_note": "항로는 너를 싣기 전에 너를 들을 수 있다.",
+     "terminal": "RAN LONG CLAIM // 도달 확인. 구조 포함 아님. 신호 통과 등급은 중질량 통과 등급보다 낮음. carrier 응답은 물리 회수보다 계약상 수년 앞설 수 있음. 보관 창 닫힐 때까지 로컬 생존 권한 유지.",
+     "audio": "도달은 구조가 아니다. 신호는 어둠을 건너지만 보낸 몸은 아직 물 아래 고정되어 있다.",
+     "in_game_wiki": "Ran Long Claim은 실용적 모순의 공개 이름이다. 인간 문명은 Aegir에 도달할 수 있고 probe, staged freight, packet custody, claim tender를 보낼 수 있다. 하지만 고립된 Marauder가 요청한다고 바로 올라온다는 뜻은 아니다.\n\n항로는 층으로 되어 있다. 정보는 가볍고 법적으로 유용해 패킷이 먼저 움직인다. 연료 저장소, receiver 예비, 검역 slot은 느리다. 중질량 화물은 더 느리고 제동 비용, payload 소유, 회수 위험 계약으로 싸여 있다.",
+     "external_site": "Ran Long Claim은 HECTON-8의 hard-sci-fi 고립을 설명한다. Aegir는 도달 가능하지만 즉시 구조는 질량, 보관, 항로 타이밍에 막힌다.",
+     "external_site_article": "Ran Long Claim은 실용적 모순의 공개 이름이다. 인간 문명은 Aegir에 도달할 수 있고 probe, staged freight, packet custody, claim tender를 보낼 수 있다. 하지만 고립된 Marauder가 요청한다고 바로 올라온다는 뜻은 아니다.\n\n항로는 층으로 되어 있다. 정보는 가볍고 법적으로 유용해 패킷이 먼저 움직인다. 연료 저장소, receiver 예비, 검역 slot은 느리다. 중질량 화물은 더 느리고 제동 비용, payload 소유, 회수 위험 계약으로 싸여 있다.\n\n항로판은 아무도 듣지 않는다고 말하지 않는다. 듣는 것이 구조에서 가장 싼 부분이라고 말한다. Black Keel은 distress hash를 받고 임시 tonne-window를 예약하면서도 질량, 검역, claimant 우선순위가 다투는 동안 플레이어를 물속에 둘 수 있다."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran Long Claim-transit",
+     "scanner": "Routeplaat onder oude relayhuid. Ran Long Claim custodyketen: packet ladder, brandstofdepot, quarantainelane, carrierqueue en oud proof-of-life receipt.",
+     "field_note": "De route kan je horen voordat ze je kan dragen.",
+     "terminal": "RAN LONG CLAIM // Bereik bevestigd. Redding niet geïmpliceerd. Signaaltransitklasse onder zware-massatransitklasse. Carrierantwoord kan fysieke recovery met contractjaren voorgaan. Lokale survivalautoriteit behouden tot custodyvenster sluit.",
+     "audio": "Bereik is geen redding. Een signaal kan het donker kruisen terwijl het lichaam nog onder water vastzit.",
+     "in_game_wiki": "Ran Long Claim is de publieke naam voor een praktische tegenspraak. Menselijke beschaving kan Aegir bereiken met probes, staged freight, packet custody en claim tenders. Dat betekent niet dat een gestrande Marauder wordt gelift zodra hij vraagt.\n\nDe route bestaat uit lagen. Pakketten bewegen eerst omdat informatie licht en juridisch nuttig is. Brandstofdepots, receiverreserves en quarantaineslots gaan trager. Zware vracht gaat het traagst, in contracten over remmen, eigendom en recoveryrisico.",
+     "external_site": "Ran Long Claim verklaart HECTON-8s hard-sci-fi-isolatie: Aegir is bereikbaar, maar onmiddellijke redding blijft geblokkeerd door massa, custody en routetiming.",
+     "external_site_article": "Ran Long Claim is de publieke naam voor een praktische tegenspraak. Menselijke beschaving kan Aegir bereiken met probes, staged freight, packet custody en claim tenders. Dat betekent niet dat een gestrande Marauder wordt gelift zodra hij vraagt.\n\nDe route bestaat uit lagen. Pakketten bewegen eerst omdat informatie licht en juridisch nuttig is. Brandstofdepots, receiverreserves en quarantaineslots gaan trager. Zware vracht gaat het traagst, in contracten over remmen, eigendom en recoveryrisico.\n\nDe plaat zegt niet dat niemand luistert. Ze zegt dat luisteren het goedkoopste deel van redding is. Black Keel kan een distress hash accepteren, een dossier openen en de speler onder water laten tot massa, quarantaine en claimant priority uitgevochten zijn."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Tranzyt Ran Long Claim",
+     "scanner": "Płyta trasy pod starą skórą przekaźnika. Łańcuch opieki Ran Long Claim: packet ladder, skład paliwa, pas kwarantanny, kolejka carrier i stary receipt proof-of-life.",
+     "field_note": "Trasa może cię usłyszeć, zanim zdoła cię nieść.",
+     "terminal": "RAN LONG CLAIM // Zasięg potwierdzony. Ratunek nie wynika. Klasa tranzytu sygnału poniżej klasy tranzytu ciężkiej masy. Odpowiedź carriera może wyprzedzić fizyczny odzysk o lata kontraktu. Zachowaj lokalną władzę przetrwania do zamknięcia okna opieki.",
+     "audio": "Zasięg nie jest ratunkiem. Sygnał może przejść przez mrok, gdy ciało nadal tkwi pod wodą.",
+     "in_game_wiki": "Ran Long Claim to publiczna nazwa praktycznej sprzeczności. Cywilizacja ludzi może dosięgnąć Aegir, wysłać sondy, staged freight, packet custody i claim tenders. To nie znaczy, że uwięziony Marauder zostanie podniesiony, gdy poprosi.\n\nTrasa ma warstwy. Pakiety idą pierwsze, bo informacja jest lekka i użyteczna prawnie. Składy paliwa, rezerwy receiver i sloty kwarantanny są wolniejsze. Ciężka masa jest najwolniejsza, owinięta kontraktami o hamowanie, własność payload i ryzyko recovery.",
+     "external_site": "Ran Long Claim wyjaśnia twardą izolację HECTON-8: Aegir jest osiągalny, lecz natychmiastowy ratunek blokują masa, opieka i timing trasy.",
+     "external_site_article": "Ran Long Claim to publiczna nazwa praktycznej sprzeczności. Cywilizacja ludzi może dosięgnąć Aegir, wysłać sondy, staged freight, packet custody i claim tenders. To nie znaczy, że uwięziony Marauder zostanie podniesiony, gdy poprosi.\n\nTrasa ma warstwy. Pakiety idą pierwsze, bo informacja jest lekka i użyteczna prawnie. Składy paliwa, rezerwy receiver i sloty kwarantanny są wolniejsze. Ciężka masa jest najwolniejsza, owinięta kontraktami o hamowanie, własność payload i ryzyko recovery.\n\nPłyta nie mówi, że nikt nie słucha. Mówi, że słuchanie jest najtańszą częścią ratunku. Black Keel może przyjąć distress hash, otworzyć plik i zostawić gracza pod wodą, dopóki masa, kwarantanna i priorytet claimant walczą."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Trânsito Ran Long Claim",
+     "scanner": "Placa de rota sob pele antiga de relé. Cadeia de custódia Ran Long Claim: packet ladder, depósito de combustível, lane de quarentena, fila carrier e recibo proof-of-life velho.",
+     "field_note": "A rota pode ouvir você antes de poder carregar você.",
+     "terminal": "RAN LONG CLAIM // Alcance confirmado. Resgate não implicado. Classe de trânsito de sinal abaixo da classe de massa pesada. Resposta carrier pode preceder recovery física por anos contratuais. Manter autoridade local de sobrevivência até fechar janela de custódia.",
+     "audio": "Alcance não é resgate. Um sinal cruza a escuridão enquanto o corpo que o enviou ainda está preso sob a água.",
+     "in_game_wiki": "Ran Long Claim é o nome público de uma contradição prática. A civilização humana pode alcançar Aegir, enviar probes, staged freight, packet custody e claim tenders. Isso não significa que um Marauder encalhado será erguido quando pedir.\n\nA rota tem camadas. Pacotes se movem primeiro porque informação é leve e legalmente útil. Depósitos, reservas receiver e slots de quarentena são mais lentos. Massa pesada é mais lenta ainda, envolta em contratos de freio, dono de payload e risco de recovery.",
+     "external_site": "Ran Long Claim explica o isolamento hard-sci-fi de HECTON-8: Aegir é alcançável, mas resgate imediato é bloqueado por massa, custódia e timing de rota.",
+     "external_site_article": "Ran Long Claim é o nome público de uma contradição prática. A civilização humana pode alcançar Aegir, enviar probes, staged freight, packet custody e claim tenders. Isso não significa que um Marauder encalhado será erguido quando pedir.\n\nA rota tem camadas. Pacotes se movem primeiro porque informação é leve e legalmente útil. Depósitos, reservas receiver e slots de quarentena são mais lentos. Massa pesada é mais lenta ainda, envolta em contratos de freio, dono de payload e risco de recovery.\n\nA placa não diz que ninguém escuta. Diz que escutar é a parte barata do resgate. Black Keel pode aceitar um distress hash, abrir arquivo e deixar o jogador debaixo d'água enquanto massa, quarentena e prioridade claimant brigam."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Транзит Ran Long Claim",
+     "scanner": "Маршрутная плита под старой обшивкой реле. Цепь хранения Ran Long Claim: packet ladder, топливный склад, карантинная линия, очередь carrier и старая квитанция proof-of-life.",
+     "field_note": "Маршрут может услышать тебя раньше, чем сможет унести.",
+     "terminal": "RAN LONG CLAIM // Достижимость подтверждена. Спасение не подразумевается. Класс транзита сигнала ниже класса тяжелой массы. Ответ carrier может прийти раньше физического возврата на контрактные годы. Сохранять локальное право выживания до закрытия окна хранения.",
+     "audio": "Достижимость не равна спасению. Сигнал может пройти темноту, пока тело, отправившее его, все еще прижато водой.",
+     "in_game_wiki": "Маршрутная плита под старой кожей реле отвечает на вопрос, который большинство застрявших Marauders задает слишком поздно: человечество может достичь Aegir, но достижимость не равна спасению. Ran Long Claim держится на медленной цепи: засеянный груз, packet ladders, топливные склады, карантинное право и carriers, которым нужны годы на то, что сигнал проходит за сезон. Импульс proof-of-life может пройти Sol, Luyten и Barnard, пока тело, отправившее его, все еще прижато местной погодой, лимитом массы и долговой властью.\n\nBlack Keel может услышать тебя. Он может записать залог, открыть дело хранения и зарезервировать tonne-window. Он не может протащить корпус carrier через вакуум только потому, что водолазу страшно в воде. Ran Long Claim — грамматика маршрута, делающая HECTON-8 жестокой без обмана: система связана, запрос действителен, спасение физично, а часы не на твоей стороне.",
+     "external_site": "Ran Long Claim объясняет hard-sci-fi изоляцию HECTON-8: Aegir достижим человеческой инфраструктурой, но немедленное спасение блокируют масса, хранение и маршрутное время.",
+     "external_site_article": "Ran Long Claim — публичное имя практического противоречия. Человеческая цивилизация может достичь Aegir. Она может отправлять зонды, staged freight, packet custody и claim tenders в систему. Она может разместить активы Deep Reach на HECTON-8 и держать Black Keel работающим над луной. Ничто из этого не значит, что застрявшего Marauder поднимут по просьбе.\n\nМаршрут состоит из слоев. Пакеты идут первыми, потому что информация легкая и юридически полезная. Топливные склады, приемные резервы и карантинные слоты движутся медленнее. Тяжелый груз медленнее всего, завернутый в контракты: кто платит за торможение, кто владеет payload, какой риск допускается через окно возврата. Сигнал может пересечь человеческую сферу, пока тело остается под приливной погодой и четырехтонным залогом.\n\nПоэтому плита важна. Она не говорит, что никто не слушает. Она говорит, что слушать дешевле всего. Black Keel может принять distress hash, открыть файл, зарезервировать предварительное tonne-window и все равно оставить игрока под водой, пока масса, карантин и приоритет claimant спорят друг с другом."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Транзит Ran Long Claim",
+     "scanner": "Маршрутна плита під старою обшивкою реле. Ланцюг зберігання Ran Long Claim: packet ladder, паливний склад, карантинна лінія, черга carrier і стара квитанція proof-of-life.",
+     "field_note": "Маршрут може почути тебе раніше, ніж зможе нести.",
+     "terminal": "RAN LONG CLAIM // Досяжність підтверджена. Порятунок не мається на увазі. Клас транзиту сигналу нижче класу важкої маси. Відповідь carrier може випередити фізичне повернення на контрактні роки. Зберегти локальне право виживання до закриття вікна зберігання.",
+     "audio": "Досяжність не є порятунком. Сигнал може пройти темряву, поки тіло, що його надіслало, все ще притиснуте водою.",
+     "in_game_wiki": "Ran Long Claim — публічна назва практичної суперечності. Людська цивілізація може досягти Aegir, надіслати probes, staged freight, packet custody і claim tenders. Це не означає, що застряглого Marauder піднімуть, щойно він попросить.\n\nМаршрут складається з шарів. Пакети рухаються першими, бо інформація легка й юридично корисна. Паливні склади, receiver-резерви й карантинні слоти повільніші. Важка маса найповільніша, загорнута в контракти про гальмування, власність payload і ризик recovery.",
+     "external_site": "Ran Long Claim пояснює hard-sci-fi ізоляцію HECTON-8: Aegir досяжний, але негайний порятунок блокують маса, зберігання й маршрутний час.",
+     "external_site_article": "Ran Long Claim — публічна назва практичної суперечності. Людська цивілізація може досягти Aegir, надіслати probes, staged freight, packet custody і claim tenders. Це не означає, що застряглого Marauder піднімуть, щойно він попросить.\n\nМаршрут складається з шарів. Пакети рухаються першими, бо інформація легка й юридично корисна. Паливні склади, receiver-резерви й карантинні слоти повільніші. Важка маса найповільніша, загорнута в контракти про гальмування, власність payload і ризик recovery.\n\nПлита не каже, що ніхто не слухає. Вона каже, що слухати найдешевше. Black Keel може прийняти distress hash, відкрити файл і лишити гравця під водою, доки маса, карантин і пріоритет claimant сперечаються."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Ran 长索赔航渡",
+     "scanner": "旧中继外皮下的航路铭牌。Ran Long Claim 托管链：packet ladder、燃料库、检疫线、carrier 队列和陈旧 proof-of-life 回执。",
+     "field_note": "航路能先听见你，之后才可能承载你。",
+     "terminal": "RAN LONG CLAIM // 可达性已确认。不暗示救援。信号运输等级低于重质量运输等级。carrier 回答可能比物理回收提前合同年。托管窗口关闭前保留本地生存权限。",
+     "audio": "可达不是救援。信号可以穿过黑暗，而发出它的身体仍被水压住。",
+     "in_game_wiki": "Ran Long Claim 是一个现实矛盾的公开名称。人类文明能抵达 Aegir，能把 probes、staged freight、packet custody 和 claim tenders 送进系统。但这并不意味着被困的 Marauder 一请求就会被吊起。\n\n航路由层组成。数据包先移动，因为信息轻，而且有法律用途。燃料库、receiver 储备和检疫槽更慢。重质量货物最慢，被制动费用、payload 所有权和 recovery 风险合同包住。",
+     "external_site": "Ran Long Claim 解释 HECTON-8 的硬科幻隔离：人类基础设施能抵达 Aegir，但即时救援仍被质量、托管和航路时序阻挡。",
+     "external_site_article": "Ran Long Claim 是一个现实矛盾的公开名称。人类文明能抵达 Aegir，能把 probes、staged freight、packet custody 和 claim tenders 送进系统。但这并不意味着被困的 Marauder 一请求就会被吊起。\n\n航路由层组成。数据包先移动，因为信息轻，而且有法律用途。燃料库、receiver 储备和检疫槽更慢。重质量货物最慢，被制动费用、payload 所有权和 recovery 风险合同包住。\n\n铭牌不是说没人听见。它说倾听是救援最便宜的一部分。Black Keel 可以接受 distress hash，打开文件，预留临时 tonne-window，然后仍把玩家留在水下，等待质量、检疫和 claimant 优先级停止互相争夺。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

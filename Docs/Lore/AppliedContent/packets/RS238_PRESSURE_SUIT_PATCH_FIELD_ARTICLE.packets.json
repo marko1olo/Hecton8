@@ -1,258 +1,259 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS238_PRESSURE_SUIT_PATCH_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS238_PRESSURE_SUIT_PATCH_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1317_PRESSURE_SUIT_PATCH_FIELD_ARTICLE",
+   "release_set_id": "RS238_PRESSURE_SUIT_PATCH_FIELD_ARTICLE",
+   "article_id": "applied_lore.pressure_suit_patch_field_article",
+   "title_key": "LORE_PRESSURE_SUIT_PATCH_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
+    "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1317_PRESSURE_SUIT_PATCH_FIELD_ARTICLE",
-      "release_set_id": "RS238_PRESSURE_SUIT_PATCH_FIELD_ARTICLE",
-      "article_id": "applied_lore.pressure_suit_patch_field_article",
-      "title_key": "LORE_PRESSURE_SUIT_PATCH_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
-        "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.pressure_suit_patch_field_article",
-        "secondary": [
-          "unlock.first_stitched_suit_repair_patch",
-          "unlock.first_reinforced_suit_seam_band",
-          "unlock.first_salt_scuffed_suit_abrasion"
-        ],
-        "poi_tags": [
-          "poi.pressure_suit_patch",
-          "poi.stitched_repair_patch",
-          "poi.reinforced_suit_seam_band",
-          "poi.salt_scuffed_suit_abrasion",
-          "poi.muted_offwhite_textile_zone",
-          "poi.graphite_suit_fabric_zone"
-        ],
-        "biome_tags": [
-          "biome.old_colony_locker",
-          "biome.marauder_salvage_cache",
-          "biome.flooded_airlock",
-          "biome.pressure_suit_storage"
-        ],
-        "first_20_boundary": "Makes repaired suit fabric readable as survival evidence: seam tape, patch stitching, salt scuffs, abrasion arcs and mismatched textile zones show pressure compromise and human triage."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Suit Textile Scanner",
-          "terminal": "Suit Locker Maintenance Note",
-          "audio": "Suit Recorder Fragment",
-          "in_game_wiki": "PDA Suit Patch Primer",
-          "external_site": "Public Site Suit Repair Article",
-          "field_note": "Marauder Suit Check Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_repaired_pressure_suit_or_tool_pouch_patch",
-        "truth_payload": "Pressure suit repair patches record triage under pressure: seam tape, stitches, abrasion and salt scuffs reveal whether a suit was safe, borrowed, abandoned, or repaired only long enough to return.",
-        "player_question": "Did this patch save the diver, or only keep the suit sealed long enough to move the body and the claim?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Pressure Suit Patch Field Article",
-          "scanner": "PRESSURE SUIT PATCH // Dark neoprene-like textile, reinforced seam tape, stitched repair island, salt scuffs, abrasion-worn edge and muted off-white graphite fabric zones. Patch class unknown.",
-          "terminal": "SUIT LOCKER NOTE // Do not issue a patched suit without seam-pressure test. If stitch line crosses elbow, knee, hip ring or cuff gasket, mark suit return-only until a full pressure soak.",
-          "audio": "Patch held at one atmosphere. We never got the second test.",
-          "in_game_wiki": "A pressure suit patch is never neutral fabric. It is a decision made with air running down, a route still unfinished, or a body that had to come back through a hatch before anyone could argue over custody. The material may look simple: dark neoprene-like textile, reinforced seam tape, stitched repair islands, muted off-white panels, graphite bands, salt scuffs and worn abrasion arcs. The order of those marks matters more than the patch shape.\n\nA clean factory seam has even tape, regular stitching and no salt under the edge. A field patch is different. It may sit crooked because the worker patched while the sleeve was still on an arm. It may cross a bend where no proper shop would approve it. It may have two thread colors because the locker had one spool for suit fabric and another for tool pouches. A dull white rim around the stitch means salt dried after pressure cycling. A glossy dark crescent means the diver kept rubbing the same patched zone against a ladder, hatch lip or cable run.\n\nFor the player, repaired suit fabric is a small survival log. A patch near a cuff gasket can warn that a glove seal once failed. A patch over the chest bladder can mean the suit was condemned but reused anyway. Seam tape over a tool pouch may mark a Marauder habit: keep the pouch, trust the tool, distrust the suit. A repair island with no pressure-test tag should not be treated as safe equipment. It may be loot, evidence, or a warning from someone who had no better option.\n\nThe patch also separates human triage from automated repair. Atlas fiber can close wounds in ways that ignore human ownership. Conductive biofilm can bridge a line. A suit patch is uglier and clearer: somebody saw damage, found material, pressed it flat, stitched through a trembling layer and hoped the seam would hold long enough. That hope can be practical without being heroic.\n\nHECTON-8 suit culture is full of borrowed time. Deep Reach wrote clean locker procedures. Black Keel wrote payout custody around recovered gear. Marauders wrote corrections on the fabric with paint marker, knife notch, thread color and silence. A patched suit in a flooded locker can tell the player who came back, who left in a hurry and who could not afford a new seal.\n\nMarauder check: bend the patch before trusting it. If salt lifts from the stitch, the repair has cycled wet. If the edge shines, it has rubbed under load. If the patch crosses a joint, downgrade the suit. If the patch sits over clean fabric but the gasket beside it is scarred, somebody repaired the thing that looked cheap and ignored the thing that could kill them.",
-          "external_site": "Pressure suit patches make repaired gear readable: seam tape, stitching, salt scuffs, abrasion arcs and mismatched textile zones reveal field triage, pressure risk and post-flood custody.",
-          "external_site_article": "Pressure suit repair patches are small but dense evidence surfaces in HECTON-8. Dark technical fabric, reinforced seam tape, stitch islands, salt scuffs and abrasion arcs show whether a suit was maintained, borrowed, condemned, or pushed through one more return trip.\n\nThe practical reading is physical. Salt under a stitched edge means wet pressure cycling. A glossy crescent marks repeated contact with ladders, hatches or cable runs. A patch across a joint is worse than a patch on flat fabric. A missing pressure-test tag can turn apparent salvage into hazard.\n\nThe patch keeps human survival visible. It shows a technician or Marauder making a limited repair under bad conditions, not a perfect sci-fi heal. A suit patch may be useful, but it should never feel decorative.",
-          "field_note": "A patch can be honest and still unsafe. Trust the test tag, then distrust the seam."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "مقالة ميدانية عن رقعة بدلة الضغط",
-          "scanner": "رقعة بدلة ضغط // نسيج داكن شبيه بالنيوبرين، شريط درز مقوى، جزيرة إصلاح مخيطة، خدوش ملح، حافة مهترئة ومناطق قماش بيضاء باهتة وغرافيت. فئة الرقعة غير معروفة.",
-          "terminal": "ملاحظة خزانة البدلات // لا تصدر بدلة مرقعة بلا اختبار ضغط للدرز. إذا عبر خط الخياطة المرفق أو الركبة أو حلقة الورك أو حشية الكفة، علم البدلة كعودة فقط حتى اختبار غمر كامل.",
-          "audio": "الرقعة صمدت عند جو واحد. لم نصل إلى الاختبار الثاني.",
-          "in_game_wiki": "رقعة بدلة الضغط ليست قماشا محايدا. إنها قرار اتخذ بينما الهواء ينقص، أو الطريق لم يكتمل، أو كان يجب أن يعود جسد عبر فتحة قبل أن يتجادل أحد حول الحيازة. قد تبدو المادة بسيطة: نسيج تقني داكن، شريط درز مقوى، جزيرة خياطة، ألواح بيضاء باهتة، مناطق غرافيت، خدوش ملح وقوس احتكاك مهترئ. ترتيب هذه العلامات أهم من شكل الرقعة.\n\nالدرز المصنعي نظيف: شريط منتظم وخياطة متساوية ولا ملح تحت الحافة. رقعة الميدان مختلفة. قد تجلس مائلة لأن العامل رتبها والكم ما زال على ذراع. قد تعبر مفصلا لا توافق عليه أي ورشة. قد تحمل لونين من الخيط لأن الخزانة لم يبق فيها غير بكرة للبدلات وأخرى للحقائب. حافة بيضاء باهتة حول الخياطة تعني أن الملح جف بعد دورات ضغط. هلال داكن لامع يعني أن الغواص ظل يحتك بذلك الموضع بسلم أو حافة فتحة أو كابل.\n\nفي اللعب تصبح الرقعة سجل نجاة صغير. رقعة قرب حشية الكفة تحذر من فشل ختم قفاز سابق. رقعة فوق صدر البدلة قد تعني أن البدلة أدينت ثم أعيد استعمالها. شريط درز فوق جيب أداة قد يعلن عادة المغير: احتفظ بالجيب، ثق بالأداة، لا تثق بالبدلة. رقعة بلا بطاقة اختبار ضغط ليست معدات آمنة؛ قد تكون غنيمة أو دليلا أو تحذيرا.\n\nالرقعة تفصل الإسعاف البشري عن الإصلاح الآلي. قد تغلق ألياف Atlas الجروح بطريقة لا تفهم ملكية البشر، أما رقعة البدلة فهي أوضح وأقبح: شخص رأى الضرر، وجد مادة، ضغطها، وخاطها على طبقة ترتجف وتمنى أن تصمد.",
-          "external_site": "رقع بدلات الضغط تجعل العتاد المصلح مقروءا: شريط الدرز، الخياطة، خدوش الملح، قوس الاحتكاك واختلاف النسيج تكشف إسعافا ميدانيا ومخاطر ضغط وحيازة بعد الغمر.",
-          "external_site_article": "رقع إصلاح بدلات الضغط أسطح دليل صغيرة في HECTON-8. النسيج التقني الداكن، شريط الدرز، الخياطة، الملح والاحتكاك تبين هل صينت البدلة أو استعيرت أو أدينت أو دفعت في رحلة عودة أخيرة.\n\nالقراءة عملية: الملح تحت الحافة المخيطة يعني دورات ضغط مبللة. الهلال اللامع يعني احتكاكا متكررا بسلم أو فتحة أو كابل. الرقعة على مفصل أسوأ من رقعة على سطح مسطح. غياب بطاقة اختبار الضغط يحول الغنيمة إلى خطر.\n\nالرقعة تبقي بقاء البشر مرئيا: إصلاح محدود في ظروف سيئة، لا شفاء خياليا.",
-          "field_note": "قد تكون الرقعة صادقة وغير آمنة. ثق ببطاقة الاختبار، ثم لا تثق بالدرز."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Feldartikel: Druckanzug-Flicken",
-          "scanner": "DRUCKANZUG-FLICKEN // Dunkles neoprenartiges Textil, verstaerktes Nahtband, genaehte Reparaturinsel, Salzschrammen, abgeriebene Kante und mattweisse Graphitzonen. Flickenklasse unbekannt.",
-          "terminal": "ANZUGSCHRANK-NOTIZ // Gepatchten Anzug nicht ohne Nahtdrucktest ausgeben. Wenn die Naht Ellbogen, Knie, Hueftring oder Manschettendichtung kreuzt, nur Rueckkehrstatus bis zum Druckbad.",
-          "audio": "Der Flicken hielt bei einer Atmosphaere. Zum zweiten Test kamen wir nicht.",
-          "in_game_wiki": "Ein Druckanzug-Flicken ist nie neutrales Gewebe. Er ist eine Entscheidung bei fallender Luft, auf offener Route oder an einem Koerper, der durch eine Luke zurueck musste, bevor jemand ueber Custody streiten konnte. Das Material wirkt schlicht: dunkles neoprenartiges Textil, Nahtband, genaehte Inseln, matte weisse Paneele, Graphitzonen, Salzschrammen und Abriebboegen. Die Reihenfolge der Spuren zaehlt mehr als die Form.\n\nEine Werksnaht hat gleichmaessiges Band, regelmaessige Stiche und kein Salz unter der Kante. Ein Feldflicken ist schiefer. Er kann schief sitzen, weil jemand ihn auf einem getragenen Aermel aufdrueckte. Er kann ueber ein Gelenk laufen, das keine Werkstatt freigeben wuerde. Zwei Garnfarben bedeuten oft: eine Rolle fuer Anzuege, eine fuer Werkzeugtaschen. Ein matter weisser Rand am Stich zeigt Salz nach Druckzyklen. Ein glaenzender dunkler Halbmond zeigt dauernden Kontakt mit Leiter, Luke oder Kabel.\n\nFuer den Spieler ist repariertes Anzuggewebe ein kleines Ueberlebensprotokoll. Ein Flicken nahe der Manschette warnt vor einem frueheren Handschuhdichtungsfehler. Ein Flicken ueber der Brustblase kann bedeuten, dass der Anzug verworfen und trotzdem benutzt wurde. Nahtband ueber einer Werkzeugtasche sagt Marauder-Praxis: Tasche behalten, Werkzeug trauen, Anzug misstrauen.\n\nDer Flicken trennt menschliche Triage von automatischer Reparatur. Atlas-Faser kann Wunden schliessen, ohne Besitz zu verstehen. Ein Anzugflicken ist haesslicher und klarer: jemand sah den Schaden, fand Material, drueckte es flach und hoffte, dass die Naht lange genug haelt.",
-          "external_site": "Druckanzug-Flicken machen reparierte Ausruestung lesbar: Nahtband, Stiche, Salzschrammen, Abriebboegen und Mischtextil zeigen Feldtriage, Druckrisiko und Custody.",
-          "external_site_article": "Druckanzug-Flicken sind kleine, dichte Beweisflaechen. Dunkles technisches Gewebe, Nahtband, Stiche, Salzschrammen und Abrieb zeigen, ob ein Anzug gewartet, geliehen, verworfen oder fuer eine letzte Rueckkehr benutzt wurde.\n\nDie Lesart ist physisch. Salz unter einer Kante bedeutet feuchte Druckzyklen. Ein glaenzender Halbmond markiert wiederholten Kontakt mit Leitern, Luken oder Kabeln. Ein Flicken ueber einem Gelenk ist riskanter als einer auf flachem Stoff. Fehlt das Drucktest-Tag, kann Beute zur Gefahr werden.\n\nDer Flicken macht menschliches Ueberleben sichtbar, nicht perfekte Sci-Fi-Heilung.",
-          "field_note": "Ein Flicken kann ehrlich und trotzdem unsicher sein. Testtag vertrauen, dann der Naht misstrauen."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Articulo de campo sobre parche de traje de presion",
-          "scanner": "PARCHE DE TRAJE // Textil oscuro tipo neopreno, cinta de costura reforzada, isla de reparacion cosida, roces de sal, borde gastado y zonas de tela blanco apagado y grafito. Clase desconocida.",
-          "terminal": "NOTA DE TAQUILLA // No entregar traje parcheado sin prueba de presion de costura. Si la linea cruza codo, rodilla, aro de cadera o junta de puño, marcar retorno solo hasta baño de presion.",
-          "audio": "El parche aguantó a una atmosfera. Nunca hicimos la segunda prueba.",
-          "in_game_wiki": "Un parche de traje de presion nunca es tela neutral. Es una decision tomada con el aire bajando, una ruta sin cerrar o un cuerpo que debia volver por una escotilla antes de discutir la custodia. El material puede parecer simple: textil oscuro, cinta de costura, islas cosidas, paneles blanco apagado, bandas de grafito, roces de sal y arcos de abrasion. El orden de esas marcas importa mas que la forma.\n\nUna costura de fabrica tiene cinta regular, puntada uniforme y nada de sal bajo el borde. Un parche de campo es distinto. Puede estar torcido porque se coloco con la manga aun en un brazo. Puede cruzar una articulacion que ningun taller aprobaria. Dos colores de hilo suelen significar una bobina para trajes y otra para bolsas de herramienta. Un borde blanco opaco alrededor de la puntada indica sal tras ciclos de presion. Un creciente oscuro brillante indica roce repetido contra escalera, escotilla o cable.\n\nPara el jugador, la tela reparada es un pequeño registro de supervivencia. Un parche junto a una junta de puño advierte de fallo de guante. Un parche sobre el torax puede significar traje condenado y reutilizado. Cinta sobre una bolsa de herramienta puede marcar costumbre Marauder: conservar la bolsa, confiar en la herramienta, desconfiar del traje.\n\nEl parche separa la urgencia humana de la reparacion automatica. La fibra Atlas puede cerrar heridas sin entender propiedad. Un parche de traje es mas feo y mas claro: alguien vio el daño, encontro material, lo presiono y cosio esperando que el sello durara.",
-          "external_site": "Los parches de traje de presion hacen legible el equipo reparado: cinta, puntadas, sal, abrasion y telas desparejas revelan triage de campo, riesgo de presion y custodia.",
-          "external_site_article": "Los parches de traje de presion son pequeñas superficies de prueba. Tela tecnica oscura, cinta de costura, puntadas, sal y abrasion muestran si un traje fue mantenido, prestado, condenado o usado para un ultimo regreso.\n\nLa lectura es fisica. Sal bajo el borde cosido significa ciclos de presion humedos. Un creciente brillante marca roce repetido con escalera, escotilla o cable. Un parche sobre articulacion es peor que uno sobre tela plana. Sin etiqueta de prueba, el salvamento puede ser peligro.\n\nEl parche mantiene visible la supervivencia humana sin convertirla en curacion perfecta.",
-          "field_note": "Un parche puede ser honesto y seguir siendo inseguro. Confia en la etiqueta de prueba; luego desconfia de la costura."
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Article de terrain sur patch de combinaison pressurisee",
-          "scanner": "PATCH DE COMBINAISON // Textile sombre type neoprene, bande de couture renforcee, ile de reparation cousue, traces de sel, bord use et zones textile blanc eteint et graphite. Classe inconnue.",
-          "terminal": "NOTE DE CASIER // Ne pas delivrer combinaison patchee sans test pression couture. Si la couture croise coude, genou, anneau de hanche ou joint de manchette, statut retour seulement avant bain pression complet.",
-          "audio": "Le patch a tenu a une atmosphere. On n'a jamais eu le second test.",
-          "in_game_wiki": "Un patch de combinaison pressurisee n'est jamais un textile neutre. C'est une decision prise quand l'air baisse, quand la route reste ouverte ou quand un corps doit revenir par une ecoutille avant toute discussion de custody. La matiere peut paraitre simple: textile sombre, bande de couture, ilots cousus, panneaux blanc eteint, bandes graphite, traces de sel et arcs d'abrasion. L'ordre des marques compte plus que la forme.\n\nUne couture d'usine est reguliere: bande droite, points constants, pas de sel sous le bord. Un patch de terrain ne l'est pas. Il peut etre de travers parce qu'il a ete pose sur une manche encore portee. Il peut traverser une articulation qu'aucun atelier n'approuverait. Deux couleurs de fil indiquent souvent une bobine pour combinaisons et une autre pour poches d'outils. Un bord blanc terne autour du point signale du sel apres cycles de pression.\n\nPour le joueur, le tissu repare est un petit journal de survie. Un patch pres d'un joint de poignet avertit d'une fuite de gant. Un patch sur la vessie thoracique peut signaler une combinaison condamnee mais reutilisee. Une bande sur une poche d'outil peut dire: garder la poche, croire l'outil, se mefier de la combinaison.\n\nLe patch separe le tri humain de la reparation automatique. Les fibres Atlas peuvent fermer une plaie sans comprendre la propriete. Un patch de combinaison est plus laid et plus clair: quelqu'un a vu le dommage, trouve de la matiere, l'a plaquee et a espere que la couture tienne assez longtemps.",
-          "external_site": "Les patchs de combinaison rendent lisible l'equipement repare: bande de couture, points, sel, abrasion et textiles depares revelent triage de terrain, risque pression et custody.",
-          "external_site_article": "Les patchs de combinaison pressurisee sont de petites surfaces de preuve. Textile technique sombre, bande de couture, points, sel et abrasion montrent si une combinaison fut entretenue, empruntee, condamnee ou poussee vers un dernier retour.\n\nLa lecture est physique. Le sel sous un bord cousu indique des cycles pression humides. Un croissant brillant marque un frottement repete contre echelle, ecoutille ou cable. Un patch sur articulation est pire que sur tissu plat. Sans etiquette de test, le butin devient danger.\n\nLe patch garde visible la survie humaine, pas une guerison parfaite.",
-          "field_note": "Un patch peut etre honnete et dangereux. Crois l'etiquette de test, puis mefie-toi de la couture."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "מאמר שדה על טלאי חליפת לחץ",
-          "scanner": "טלאי חליפת לחץ // טקסטיל כהה דמוי ניאופרן, סרט תפר מחוזק, אי תיקון תפור, שפשופי מלח, קצה שחוק ואזורי בד לבן עמום וגרפיט. סיווג הטלאי לא ידוע.",
-          "terminal": "הערת ארונית חליפות // אין להנפיק חליפה מטולאת בלי בדיקת לחץ תפר. אם התפר חוצה מרפק, ברך, טבעת ירך או אטם שרוול, לסמן חזרה בלבד עד השריית לחץ מלאה.",
-          "audio": "הטלאי החזיק באטמוספרה אחת. למבחן השני לא הגענו.",
-          "in_game_wiki": "טלאי חליפת לחץ לעולם אינו בד נייטרלי. הוא החלטה שנעשתה כשהאוויר יורד, כשהמסלול לא הושלם, או כשהיה צריך להחזיר גוף דרך פתח לפני ויכוח על חזקה. החומר נראה פשוט: טקסטיל כהה, סרט תפר, איי תיקון תפורים, פנלים לבנים עמומים, אזורי גרפיט, שפשופי מלח וקשתות שחיקה. סדר הסימנים חשוב מן הצורה.\n\nתפר מפעל נקי הוא אחיד, עם סרט ישר וללא מלח מתחת לקצה. טלאי שדה שונה. הוא יכול לשבת עקום כי הונח על שרוול שהיה עדיין על יד. הוא יכול לחצות מפרק ששום סדנה לא היתה מאשרת. שני צבעי חוט אומרים לעיתים שסליל אחד נשאר לחליפות ואחד לכיסי כלים. שפה לבנה עמומה סביב התפר מצביעה על מלח אחרי מחזורי לחץ. סהר כהה מבריק אומר שהצולל שפשף שוב ושוב את האזור בסולם, פתח או כבל.\n\nלשחקן, בד מתוקן הוא יומן הישרדות קטן. טלאי ליד אטם שרוול מזהיר מכשל כפפה קודם. טלאי על שלפוחית החזה יכול לומר שהחליפה נפסלה והשתמשו בה בכל זאת. סרט תפר על כיס כלי מסמן הרגל Marauder: לשמור את הכיס, לסמוך על הכלי, לא על החליפה.\n\nהטלאי מפריד טיפול אנושי מתיקון אוטומטי. סיב Atlas יכול לסגור פצע בלי להבין בעלות. טלאי חליפה מכוער וברור יותר: מישהו ראה נזק, מצא חומר, לחץ אותו ותפר בתקווה שהתפר יחזיק מספיק זמן.",
-          "external_site": "טלאי חליפות לחץ הופכים ציוד מתוקן לקריא: סרט תפר, תפירה, שפשופי מלח, קשתות שחיקה ואזורי טקסטיל לא תואמים חושפים טיפול שדה, סיכון לחץ וחזקה.",
-          "external_site_article": "טלאי תיקון של חליפות לחץ הם משטחי ראיה קטנים. בד טכני כהה, סרט תפר, תפירה, מלח ושחיקה מראים אם חליפה תוחזקה, הושאלה, נפסלה או נדחפה לעוד חזרה אחת.\n\nהקריאה פיזית. מלח תחת קצה תפור אומר מחזורי לחץ רטובים. סהר מבריק מסמן מגע חוזר עם סולם, פתח או כבל. טלאי על מפרק מסוכן יותר מטלאי על בד שטוח. בלי תג בדיקת לחץ, שלל יכול להפוך לסכנה.\n\nהטלאי משאיר את ההישרדות האנושית גלויה.",
-          "field_note": "טלאי יכול להיות כן ועדיין לא בטוח. סמוך על תג הבדיקה, ואז חשוד בתפר."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artikel Lapangan Tambalan Pakaian Tekanan",
-          "scanner": "TAMBALAN PAKAIAN TEKANAN // Tekstil gelap seperti neoprene, pita jahitan diperkuat, pulau perbaikan dijahit, lecet garam, tepi aus, dan zona kain putih kusam serta grafit. Kelas tambalan tidak diketahui.",
-          "terminal": "CATATAN LOKER PAKAIAN // Jangan keluarkan pakaian tambalan tanpa uji tekanan jahitan. Jika garis jahit melintasi siku, lutut, cincin pinggul, atau gasket manset, tandai kembali-saja sampai rendam tekanan penuh.",
-          "audio": "Tambalan tahan di satu atmosfer. Kami tidak pernah sampai ke uji kedua.",
-          "in_game_wiki": "Tambalan pakaian tekanan tidak pernah menjadi kain netral. Itu keputusan saat udara menurun, rute belum selesai, atau tubuh harus kembali lewat palka sebelum orang berdebat soal custody. Bahannya tampak sederhana: tekstil gelap, pita jahitan, pulau tambalan, panel putih kusam, zona grafit, lecet garam, dan busur abrasi. Urutan bekasnya lebih penting daripada bentuk.\n\nJahitan pabrik rapi: pita rata, tusuk teratur, tanpa garam di bawah tepi. Tambalan lapangan berbeda. Ia bisa miring karena dipasang saat lengan masih dipakai. Ia bisa melintasi sendi yang tidak akan disetujui bengkel. Dua warna benang sering berarti satu gulungan untuk pakaian dan satu untuk kantong alat. Rim putih kusam di sekitar tusuk berarti garam kering setelah siklus tekanan. Bulan sabit gelap mengilap berarti area itu terus bergesek dengan tangga, palka, atau kabel.\n\nBagi pemain, kain yang diperbaiki adalah log bertahan hidup kecil. Tambalan dekat gasket manset memperingatkan kegagalan segel sarung tangan. Tambalan di kandung dada bisa berarti pakaian sudah dikutuk tapi dipakai lagi. Pita di kantong alat menandai kebiasaan Marauder: simpan kantongnya, percaya alatnya, curigai pakaiannya.\n\nTambalan memisahkan triase manusia dari perbaikan otomatis. Serat Atlas bisa menutup luka tanpa memahami kepemilikan. Tambalan pakaian lebih buruk rupa dan lebih jelas: seseorang melihat kerusakan, menemukan bahan, menekannya rata, lalu berharap jahitan cukup lama bertahan.",
-          "external_site": "Tambalan pakaian tekanan membuat gear perbaikan bisa dibaca: pita jahitan, tusuk, lecet garam, busur abrasi, dan zona tekstil berbeda mengungkap triase lapangan, risiko tekanan, dan custody.",
-          "external_site_article": "Tambalan pakaian tekanan adalah permukaan bukti kecil. Kain teknis gelap, pita jahitan, tusuk, garam, dan abrasi menunjukkan apakah pakaian dirawat, dipinjam, dikutuk, atau dipaksa untuk satu perjalanan pulang lagi.\n\nPembacaannya fisik. Garam di bawah tepi jahitan berarti siklus tekanan basah. Bulan sabit mengilap menandai gesekan berulang dengan tangga, palka, atau kabel. Tambalan di sendi lebih buruk daripada di kain datar. Tanpa tag uji tekanan, salvage bisa menjadi bahaya.\n\nTambalan menjaga bertahan hidup manusia tetap terlihat.",
-          "field_note": "Tambalan bisa jujur dan tetap tidak aman. Percaya tag uji, lalu curigai jahitan."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "耐圧スーツパッチ・フィールド記事",
-          "scanner": "耐圧スーツパッチ // 暗色のネオプレン状繊維、補強シームテープ、縫われた修理島、塩擦れ、摩耗した縁、くすんだ白とグラファイトの布領域。パッチ等級不明。",
-          "terminal": "スーツロッカー注記 // 縫い目圧力試験なしに補修スーツを支給しないこと。縫線が肘、膝、腰リング、袖口ガスケットを横切る場合、完全圧力浸漬まで帰還専用扱い。",
-          "audio": "パッチは一気圧で保った。二回目の試験には行けなかった。",
-          "in_game_wiki": "耐圧スーツのパッチは中立の布ではない。空気が減り、経路がまだ終わらず、誰かが所有権を論じる前に身体をハッチへ戻さねばならなかった時の決定だ。素材は単純に見える。暗色の技術布、補強シームテープ、縫われた修理島、くすんだ白いパネル、グラファイト帯、塩擦れ、摩耗の弧。形よりも痕跡の順序が重要だ。\n\n工場縫製は均一なテープ、規則的な縫い目、縁下に塩なし。現場パッチは違う。袖が腕にあるまま貼られたため傾いていることがある。正式な工房なら通さない関節を横切ることもある。糸が二色なら、スーツ用と工具ポーチ用の糸を混ぜた可能性が高い。縫い目周囲の鈍い白は圧力サイクル後の塩だ。光る暗い三日月は梯子、ハッチ、ケーブルとの反復接触を示す。\n\nプレイヤーにとって、補修布は小さな生存記録である。袖口ガスケット近くのパッチは、以前の手袋シール不良を示す。胸部袋の上のパッチは、廃棄判定のスーツが再使用されたことを示す。工具ポーチのシームテープは Marauder の癖を示す。ポーチは残す。工具は信じる。スーツは疑う。\n\nこのパッチは人間の応急処置と自動修理を分ける。Atlas 繊維は所有を理解せず傷を閉じることがある。スーツパッチは醜く、明確だ。誰かが損傷を見て、素材を見つけ、押さえ、縫い、縫い目が十分長く持つことを願った。",
-          "external_site": "耐圧スーツのパッチは修理装備を読める証拠にする。シームテープ、縫い目、塩擦れ、摩耗弧、不一致の布領域が現場処置、圧力リスク、回収権を示す。",
-          "external_site_article": "耐圧スーツ修理パッチは、小さく密度の高い証拠表面である。暗色の技術布、シームテープ、縫い目、塩擦れ、摩耗は、スーツが整備品か借用品か廃棄品か、最後の帰還のために押し出された物かを示す。\n\n読み方は物理的だ。縫い縁の下の塩は湿った圧力サイクルを示す。光る三日月は梯子、ハッチ、ケーブルとの反復接触を示す。関節を横切るパッチは平面上のパッチより悪い。圧力試験タグがなければ、戦利品は危険に変わる。\n\nパッチは人間の生存を見えるままにする。",
-          "field_note": "パッチは正直でも安全とは限らない。試験タグを信じ、その後で縫い目を疑え。"
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "압력복 패치 현장 문서",
-          "scanner": "압력복 패치 // 어두운 네오프렌 유사 직물, 강화 봉합 테이프, 봉합된 수리 섬, 소금 긁힘, 마모된 가장자리, 탁한 흰색과 흑연 직물 구역. 패치 등급 불명.",
-          "terminal": "수트 로커 메모 // 봉합 압력 시험 없이 패치 수트를 지급하지 말 것. 봉합선이 팔꿈치, 무릎, 엉덩이 링, 손목 가스켓을 가로지르면 완전 압력 침지 전까지 귀환 전용으로 표시.",
-          "audio": "패치는 1기압에서 버텼다. 두 번째 시험은 못 했다.",
-          "in_game_wiki": "압력복 패치는 중립적인 천이 아니다. 공기가 줄어들고, 길이 아직 끝나지 않았거나, 누군가 custody를 따지기 전에 몸을 해치 안으로 되돌려야 했을 때 내린 결정이다. 재료는 단순해 보인다. 어두운 기술 직물, 강화 봉합 테이프, 봉합된 수리 섬, 탁한 흰 패널, 흑연 띠, 소금 긁힘, 마모 호. 모양보다 흔적의 순서가 중요하다.\n\n공장 봉합은 테이프가 고르고 바느질이 규칙적이며 가장자리 밑에 소금이 없다. 현장 패치는 다르다. 소매가 아직 팔에 있는 상태로 붙였기 때문에 비뚤 수 있다. 어떤 작업장도 승인하지 않을 관절을 가로지를 수 있다. 실 색이 두 가지라면 로커에 수트용 한 타래와 도구 주머니용 한 타래만 남았다는 뜻일 수 있다. 봉합 주변의 탁한 흰 테두리는 압력 사이클 뒤 말라붙은 소금이다. 빛나는 어두운 초승달은 사다리, 해치, 케이블에 반복해서 문질린 자리다.\n\n플레이어에게 수리된 직물은 작은 생존 기록이다. 손목 가스켓 근처 패치는 장갑 씰 실패를 경고한다. 가슴 블래더 위 패치는 폐기 판정 수트가 재사용됐다는 뜻일 수 있다. 도구 주머니 위의 봉합 테이프는 Marauder 습관을 보인다. 주머니는 보존하고, 도구는 믿고, 수트는 의심한다.\n\n패치는 인간의 응급처치와 자동 수리를 나눈다. Atlas 섬유는 소유권을 모른 채 상처를 닫을 수 있다. 수트 패치는 더 추하고 더 명확하다. 누군가 손상을 보고, 재료를 찾고, 눌러 붙이고, 떨리는 층을 꿰매며 봉합이 충분히 오래 버티길 바랐다.",
-          "external_site": "압력복 패치는 수리 장비를 읽게 한다. 봉합 테이프, 바느질, 소금 긁힘, 마모 호, 맞지 않는 직물 구역이 현장 처치, 압력 위험, custody를 드러낸다.",
-          "external_site_article": "압력복 수리 패치는 작지만 밀도 높은 증거 표면이다. 어두운 기술 직물, 봉합 테이프, 바느질, 소금, 마모는 수트가 정비품인지, 빌린 물건인지, 폐기품인지, 마지막 귀환을 위해 밀어붙인 물건인지 보여 준다.\n\n읽기는 물리적이다. 봉합 가장자리 밑의 소금은 젖은 압력 사이클을 뜻한다. 빛나는 초승달은 사다리, 해치, 케이블과의 반복 접촉이다. 관절 위 패치는 평면 패치보다 나쁘다. 압력 시험 태그가 없으면 salvage가 위험이 된다.\n\n패치는 인간의 생존을 보이게 둔다.",
-          "field_note": "패치는 정직하면서도 안전하지 않을 수 있다. 시험 태그를 믿고, 그다음 봉합을 의심하라."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Veldartikel: drukpakreparatiepatch",
-          "scanner": "DRUKPAKPATCH // Donker neopreenachtig textiel, versterkte naadtape, genaaid reparatie-eiland, zoutschuur, afgesleten rand en matte off-white grafietzones. Patchklasse onbekend.",
-          "terminal": "PAKKENLOCKER // Geen gepatcht pak uitgeven zonder naaddruktest. Als steeklijn elleboog, knie, heuprand of manchetpakking kruist, markeer retour-alleen tot volledige drukweektest.",
-          "audio": "De patch hield op een atmosfeer. We haalden de tweede test nooit.",
-          "in_game_wiki": "Een drukpakpatch is nooit neutrale stof. Het is een beslissing genomen terwijl lucht afnam, een route open bleef of een lichaam door een luik terug moest voor iemand over custody kon twisten. Het materiaal lijkt eenvoudig: donker technisch textiel, naadtape, genaaide eilanden, matte witte panelen, grafietzones, zoutschuur en slijtboogjes. De volgorde van die sporen telt meer dan de vorm.\n\nEen fabrieksnaad heeft gelijkmatige tape, regelmatige steken en geen zout onder de rand. Een veldpatch is anders. Hij kan scheef zitten omdat hij op een gedragen mouw werd gezet. Hij kan een gewricht kruisen dat geen werkplaats zou goedkeuren. Twee garenkleuren betekenen vaak: een spoel voor pakken, een voor gereedschapstassen. Een matte witte rand rond de steek is zout na drukcycli. Een glanzende donkere maan toont herhaald contact met ladder, luik of kabel.\n\nVoor de speler is gerepareerde stof een klein overlevingslogboek. Een patch bij een manchetpakking waarschuwt voor handschoenfalen. Een patch over de borstblaas kan betekenen dat het pak werd afgekeurd en toch gebruikt. Tape over een gereedschapstas zegt Marauder-gewoonte: tas houden, gereedschap vertrouwen, pak wantrouwen.\n\nDe patch scheidt menselijke triage van automatische reparatie. Atlas-vezel kan wonden sluiten zonder eigendom te begrijpen. Een pakpatch is lelijker en duidelijker: iemand zag schade, vond materiaal, drukte het vlak en hoopte dat de naad lang genoeg hield.",
-          "external_site": "Drukpakpatches maken gerepareerde uitrusting leesbaar: naadtape, steken, zoutschuur, slijtboogjes en gemengd textiel tonen veldtriage, drukrisico en custody.",
-          "external_site_article": "Drukpakpatches zijn kleine maar dichte bewijsoppervlakken. Donker technisch textiel, naadtape, steken, zout en slijtage tonen of een pak onderhouden, geleend, afgekeurd of voor een laatste terugkeer gebruikt werd.\n\nDe lezing is fysiek. Zout onder een genaaide rand betekent natte drukcycli. Een glanzende boog markeert herhaald contact met ladders, luiken of kabels. Een patch over een gewricht is slechter dan een op vlak textiel. Zonder druktestlabel wordt buit gevaar.\n\nDe patch houdt menselijk overleven zichtbaar.",
-          "field_note": "Een patch kan eerlijk en toch onveilig zijn. Vertrouw het testlabel, wantrouw daarna de naad."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artykul terenowy: lata kombinezonu cisnieniowego",
-          "scanner": "LATA KOMBINEZONU // Ciemna tkanina podobna do neoprenu, wzmocniona tasma szwu, szyta wyspa naprawy, otarcia soli, zuzyta krawedz i matowe bialo-grafitowe strefy. Klasa laty nieznana.",
-          "terminal": "NOTA SZAFKI // Nie wydawac latanego kombinezonu bez testu cisnienia szwu. Jesli linia szycia przecina lokiec, kolano, pierscien biodrowy albo uszczelke mankietu, status tylko powrot do pelnej proby.",
-          "audio": "Lata trzymala przy jednej atmosferze. Drugiego testu nie zdazylismy zrobic.",
-          "in_game_wiki": "Lata kombinezonu cisnieniowego nigdy nie jest neutralna tkanina. To decyzja podjeta przy spadajacym powietrzu, niedokonczonej trasie albo ciele, ktore trzeba bylo wciagnac przez wlaz, zanim ktokolwiek zaczal spor o custody. Material wyglada prosto: ciemna tkanina techniczna, tasma szwu, szyte wyspy, matowe biale panele, grafitowe pasy, otarcia soli i luki zuzycia. Kolejnosc sladow jest wazniejsza niz ksztalt.\n\nSzew fabryczny ma rowna tasme, regularne nici i brak soli pod krawedzia. Lata polowa jest inna. Moze lezec krzywo, bo zakladano ja na rekaw wciaz na rece. Moze przecinac staw, ktorego warsztat by nie zatwierdzil. Dwa kolory nici czesto znacza jedna szpulke do kombinezonow i druga do kieszeni narzedzi. Matowa biala obwodka wokol sciegu to sol po cyklach cisnienia. Blyszczacy ciemny polksiezyc oznacza tarcie o drabine, wlaz albo kabel.\n\nDla gracza naprawiona tkanina to maly dziennik przetrwania. Lata przy mankiecie ostrzega przed awaria uszczelki rekawicy. Lata na pecherzu piersiowym moze znaczyc, ze kombinezon odrzucono i uzyto mimo to. Tasma na kieszeni narzedzi mowi zwyczaj Maraudera: zachowaj kieszen, ufaj narzedziu, nie ufaj kombinezonowi.\n\nLata oddziela ludzka triage od naprawy automatycznej. Wlokno Atlas moze zamknac rane bez rozumienia wlasnosci. Lata jest brzydsza i jasniejsza: ktos zobaczyl uszkodzenie, znalazl material, docisnal go i zszywal z nadzieja, ze szew wytrzyma.",
-          "external_site": "Laty kombinezonow cisnieniowych czynia naprawiony sprzet czytelnym: tasma, sciegi, sol, luki otarc i mieszane tekstylia ujawniaja triage polowy, ryzyko cisnienia i custody.",
-          "external_site_article": "Laty kombinezonow cisnieniowych to male powierzchnie dowodu. Ciemna tkanina techniczna, tasma szwu, sciegi, sol i przetarcia pokazuja, czy kombinezon serwisowano, pozyczono, odrzucono albo przepchnieto przez ostatni powrot.\n\nCzytanie jest fizyczne. Sol pod krawedzia oznacza mokre cykle cisnienia. Blyszczacy luk to powtarzany kontakt z drabina, wlazem lub kablem. Lata na stawie jest gorsza niz na plaskiej tkaninie. Bez znacznika testu lup moze byc zagrozeniem.\n\nLata zostawia ludzkie przetrwanie widoczne.",
-          "field_note": "Lata moze byc uczciwa i niebezpieczna. Ufaj znacznikowi testu, potem nie ufaj szwowi."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Artigo de campo sobre remendo de traje de pressão",
-          "scanner": "REMENDO DE TRAJE // Tecido escuro tipo neoprene, fita de costura reforçada, ilha de reparo costurada, riscos de sal, borda gasta e zonas têxteis branco-fosco e grafite. Classe do remendo desconhecida.",
-          "terminal": "NOTA DO ARMÁRIO // Não emitir traje remendado sem teste de pressão da costura. Se a linha cruza cotovelo, joelho, anel do quadril ou junta do punho, marcar retorno apenas até banho de pressão completo.",
-          "audio": "O remendo segurou a uma atmosfera. Nunca chegamos ao segundo teste.",
-          "in_game_wiki": "Um remendo de traje de pressão nunca é tecido neutro. É uma decisão tomada com o ar caindo, uma rota ainda aberta ou um corpo que precisava voltar por uma escotilha antes de alguém discutir custody. O material parece simples: tecido técnico escuro, fita de costura, ilhas costuradas, painéis branco-foscos, zonas grafite, riscos de sal e arcos de abrasão. A ordem dessas marcas importa mais que o formato.\n\nUma costura de fábrica tem fita regular, ponto uniforme e nada de sal sob a borda. Um remendo de campo é diferente. Pode ficar torto porque foi aplicado com a manga ainda no braço. Pode cruzar uma articulação que nenhuma oficina aprovaria. Duas cores de linha muitas vezes significam uma bobina para trajes e outra para bolsas de ferramentas. Uma borda branca ao redor do ponto indica sal depois de ciclos de pressão. Um crescente escuro brilhante indica atrito repetido contra escada, escotilha ou cabo.\n\nPara o jogador, tecido reparado é um pequeno registro de sobrevivência. Um remendo perto da junta do punho avisa de falha anterior da luva. Um remendo sobre a bexiga torácica pode significar traje condenado e reutilizado. Fita sobre bolsa de ferramenta marca hábito Marauder: guardar a bolsa, confiar na ferramenta, desconfiar do traje.\n\nO remendo separa triagem humana de reparo automático. Fibra Atlas pode fechar feridas sem entender propriedade. Um remendo de traje é mais feio e mais claro: alguém viu o dano, achou material, apertou, costurou e esperou que a costura segurasse tempo suficiente.",
-          "external_site": "Remendos de trajes de pressão tornam equipamento reparado legível: fita, pontos, sal, arcos de abrasão e tecidos desencontrados revelam triagem de campo, risco de pressão e custody.",
-          "external_site_article": "Remendos de trajes de pressão são pequenas superfícies de prova. Tecido técnico escuro, fita de costura, pontos, sal e abrasão mostram se um traje foi mantido, emprestado, condenado ou empurrado por mais uma volta.\n\nA leitura é física. Sal sob a borda costurada significa ciclos úmidos de pressão. Um crescente brilhante marca contato repetido com escadas, escotilhas ou cabos. Remendo sobre articulação é pior que remendo em tecido plano. Sem etiqueta de teste, salvamento vira perigo.\n\nO remendo mantém a sobrevivência humana visível.",
-          "field_note": "Um remendo pode ser honesto e ainda inseguro. Confie na etiqueta de teste, depois desconfie da costura."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Полевая статья о заплате на скафандре",
-          "scanner": "ЗАПЛАТА СКАФАНДРА // Темная неопреновая ткань, усиленная шовная лента, пришитый ремонтный остров, соляные потертости, стертая кромка и приглушенные бело-графитовые зоны ткани. Класс заплаты неизвестен.",
-          "terminal": "ЗАМЕТКА ШКАФА СКАФАНДРОВ // Не выдавать скафандр с заплатой без шовного теста давления. Если строчка пересекает локоть, колено, тазовое кольцо или манжету, пометить как только для возврата до полного теста.",
-          "audio": "Заплата держала на одной атмосфере. До второго теста мы не дошли.",
-          "in_game_wiki": "Заплата на скафандре никогда не бывает нейтральной тканью. Это решение, принятое при падающем воздухе, незавершенном маршруте или теле, которое нужно было вернуть через люк до спора о custody. Материал может выглядеть простым: темная техническая ткань, шовная лента, пришитые острова ремонта, тускло-белые панели, графитовые зоны, соляные потертости и дуги истирания. Порядок этих следов важнее формы.\n\nЗаводской шов ровный: одинаковая лента, регулярная строчка, нет соли под краем. Полевая заплата другая. Она может сидеть криво, потому что ее ставили на рукав, который все еще был на руке. Она может пересекать сустав, который не одобрила бы мастерская. Два цвета нитки часто означают, что в шкафу оставалась одна катушка для костюмов и одна для подсумков. Тусклый белый обод вокруг строчки - соль после циклов давления. Блестящий темный полумесяц - повторное трение о лестницу, люк или кабель.\n\nДля игрока ремонтная ткань - маленький журнал выживания. Заплата у манжеты предупреждает о старом отказе перчаточного уплотнения. Заплата на грудной камере может означать, что скафандр списали, но снова использовали. Лента поверх подсумка говорит о привычке мародера: сохранить карман, доверять инструменту, не доверять скафандру.\n\nЗаплата отделяет человеческий срочный ремонт от автоматического. Волокно Atlas может закрывать раны, не понимая собственности. Заплата скафандра грубее и яснее: кто-то увидел повреждение, нашел материал, прижал его, прошил дрожащий слой и надеялся, что шов продержится достаточно долго.",
-          "external_site": "Заплаты на скафандрах делают ремонтное снаряжение читаемым: шовная лента, строчка, соль, дуги истирания и разные зоны ткани показывают полевой ремонт, риск давления и custody.",
-          "external_site_article": "Заплаты на скафандрах - маленькие, но плотные поверхности доказательства. Темная техническая ткань, шовная лента, строчка, соль и истирание показывают, обслуживали скафандр, одолжили, списали или отправили в еще один возврат.\n\nЧтение физическое. Соль под пришитым краем означает мокрые циклы давления. Блестящий полумесяц отмечает повторный контакт с лестницей, люком или кабелем. Заплата на суставе хуже заплаты на плоской ткани. Без бирки теста трофей становится опасностью.\n\nЗаплата оставляет человеческое выживание видимым, без идеального фантастического лечения.",
-          "field_note": "Заплата может быть честной и все равно опасной. Доверься бирке теста, потом не доверяй шву."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Польова стаття про латку на скафандрі",
-          "scanner": "ЛАТКА СКАФАНДРА // Темна неопренова тканина, посилена шовна стрічка, пришитий ремонтний острів, соляні потертості, стерта кромка і приглушені біло-графітові зони тканини. Клас латки невідомий.",
-          "terminal": "НОТАТКА ШАФИ СКАФАНДРІВ // Не видавати скафандр із латкою без шовного тесту тиску. Якщо строчка перетинає лікоть, коліно, тазове кільце або манжету, позначити як тільки для повернення до повного тесту.",
-          "audio": "Латка тримала на одній атмосфері. До другого тесту ми не дійшли.",
-          "in_game_wiki": "Латка на скафандрі ніколи не є нейтральною тканиною. Це рішення, прийняте при падінні запасу повітря, незавершеному маршруті або тілі, яке треба було повернути через люк до суперечки про custody. Матеріал може здаватися простим: темна технічна тканина, шовна стрічка, пришиті острови ремонту, тьмяно-білі панелі, графітові зони, соляні потертості і дуги стирання. Порядок цих слідів важливіший за форму.\n\nЗаводський шов рівний: однакова стрічка, регулярна строчка, немає солі під краєм. Польова латка інша. Вона може сидіти криво, бо її ставили на рукав, який ще був на руці. Вона може перетинати суглоб, якого не схвалила б майстерня. Два кольори нитки часто означають, що в шафі лишилася одна котушка для костюмів і одна для підсумків. Тьмяний білий обід навколо строчки - сіль після циклів тиску. Блискучий темний півмісяць - повторне тертя об драбину, люк або кабель.\n\nДля гравця ремонтна тканина - малий журнал виживання. Латка біля манжети попереджає про стару відмову рукавичного ущільнення. Латка на грудній камері може означати, що скафандр списали, але використали знову. Стрічка поверх підсумка показує звичку мародера: зберегти кишеню, довіряти інструменту, не довіряти скафандру.\n\nЛатка відділяє людський терміновий ремонт від автоматичного. Волокно Atlas може закривати рани, не розуміючи власності. Латка скафандра грубіша і ясніша: хтось побачив пошкодження, знайшов матеріал, притиснув його, прошив тремтячий шар і сподівався, що шов витримає достатньо довго.",
-          "external_site": "Латки на скафандрах роблять ремонтне спорядження читаним: шовна стрічка, строчка, сіль, дуги стирання і різні зони тканини показують польовий ремонт, ризик тиску і custody.",
-          "external_site_article": "Латки на скафандрах - малі, але щільні поверхні доказу. Темна технічна тканина, шовна стрічка, строчка, сіль і стирання показують, чи обслуговували скафандр, позичили, списали або відправили в ще одне повернення.\n\nЧитання фізичне. Сіль під пришитим краєм означає мокрі цикли тиску. Блискучий півмісяць позначає повторний контакт із драбиною, люком або кабелем. Латка на суглобі гірша за латку на пласкій тканині. Без бірки тесту трофей стає небезпекою.\n\nЛатка лишає людське виживання видимим, без ідеального фантастичного лікування.",
-          "field_note": "Латка може бути чесною і все одно небезпечною. Довірся бірці тесту, потім не довіряй шву."
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "压力服补片现场条目",
-          "scanner": "压力服补片 // 深色类氯丁橡胶技术织物、加固缝带、缝合修补岛、盐磨痕、磨损边缘，以及暗白和石墨色织物区域。补片等级未知。",
-          "terminal": "服装柜备注 // 未做缝线压力测试，不得发放补片压力服。若缝线跨过肘、膝、髋环或袖口密封，标记为仅限返程，直到完成全压浸泡测试。",
-          "audio": "补片在一大气压下撑住了。我们没来得及做第二次测试。",
-          "in_game_wiki": "压力服补片从来不是中性的布。它是在空气下降、路线未完，或者尸体必须先穿过舱口再讨论 custody 时做出的决定。材料看起来简单：深色技术织物、加固缝带、缝合修补岛、暗白面板、石墨色区域、盐磨痕和磨损弧。痕迹顺序比补片形状更重要。\n\n工厂缝线应当胶带均匀、针脚规则、边缘下没有盐。现场补片不同。它可能歪着，因为工人是在袖子还套在手臂上时贴的。它可能跨过正规工坊绝不会批准的关节。两种线色通常意味着柜里只剩一卷给压力服、一卷给工具袋。针脚周围暗白边说明压力循环后盐分干结。发亮的深色月牙说明同一处反复摩擦梯子、舱口或线缆。\n\n对玩家来说，修过的织物是小型生存日志。袖口密封附近的补片警告手套密封曾经失效。胸部气囊上的补片可能说明压力服已被判废却再次使用。工具袋上的缝带显示 Marauder 习惯：保留袋子，相信工具，怀疑压力服。\n\n补片把人类应急处理和自动修复分开。Atlas 纤维可以在不理解所有权的情况下闭合伤口。压力服补片更丑也更清楚：有人看见损伤，找到材料，压平它，穿过颤动的层缝上去，然后希望缝线撑得够久。",
-          "external_site": "压力服补片让修复装备可读：缝带、针脚、盐磨痕、磨损弧和不匹配织物区域揭示现场应急处理、压力风险和 custody。",
-          "external_site_article": "压力服修补片是小而密集的证据表面。深色技术织物、缝带、针脚、盐和磨损显示一件压力服是被维护、借用、判废，还是被推去完成最后一次返程。\n\n读取方式是物理的。缝合边缘下的盐意味着潮湿压力循环。发亮月牙标记与梯子、舱口或线缆的反复接触。跨过关节的补片比平面布料上的补片更糟。没有压力测试标签，打捞品就可能变成危险。\n\n补片让人类的求生痕迹保持可见，而不是变成完美科幻自愈。",
-          "field_note": "补片可以诚实，但仍然不安全。先信测试标签，再怀疑缝线。"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.pressure_suit_patch_field_article",
+    "secondary": [
+     "unlock.first_stitched_suit_repair_patch",
+     "unlock.first_reinforced_suit_seam_band",
+     "unlock.first_salt_scuffed_suit_abrasion"
+    ],
+    "poi_tags": [
+     "poi.pressure_suit_patch",
+     "poi.stitched_repair_patch",
+     "poi.reinforced_suit_seam_band",
+     "poi.salt_scuffed_suit_abrasion",
+     "poi.muted_offwhite_textile_zone",
+     "poi.graphite_suit_fabric_zone"
+    ],
+    "biome_tags": [
+     "biome.old_colony_locker",
+     "biome.marauder_salvage_cache",
+     "biome.flooded_airlock",
+     "biome.pressure_suit_storage"
+    ],
+    "first_20_boundary": "Makes repaired suit fabric readable as survival evidence: seam tape, patch stitching, salt scuffs, abrasion arcs and mismatched textile zones show pressure compromise and human triage."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Suit Textile Scanner",
+     "terminal": "Suit Locker Maintenance Note",
+     "audio": "Suit Recorder Fragment",
+     "in_game_wiki": "PDA Suit Patch Primer",
+     "external_site": "Public Site Suit Repair Article",
+     "field_note": "Marauder Suit Check Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_repaired_pressure_suit_or_tool_pouch_patch",
+    "truth_payload": "Pressure suit repair patches record triage under pressure: seam tape, stitches, abrasion and salt scuffs reveal whether a suit was safe, borrowed, abandoned, or repaired only long enough to return.",
+    "player_question": "Did this patch save the diver, or only keep the suit sealed long enough to move the body and the claim?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Pressure Suit Patch Field Article",
+     "scanner": "PRESSURE SUIT PATCH // Dark neoprene-like textile, reinforced seam tape, stitched repair island, salt scuffs, abrasion-worn edge and muted off-white graphite fabric zones. Patch class unknown.",
+     "terminal": "SUIT LOCKER NOTE // Do not issue a patched suit without seam-pressure test. If stitch line crosses elbow, knee, hip ring or cuff gasket, mark suit return-only until a full pressure soak.",
+     "audio": "Patch held at one atmosphere. We never got the second test.",
+     "in_game_wiki": "A pressure suit patch is never neutral fabric. It is a decision made with air running down, a route still unfinished, or a body that had to come back through a hatch before anyone could argue over custody. The material may look simple: dark neoprene-like textile, reinforced seam tape, stitched repair islands, muted off-white panels, graphite bands, salt scuffs and worn abrasion arcs. The order of those marks matters more than the patch shape.\n\nA clean factory seam has even tape, regular stitching and no salt under the edge. A field patch is different. It may sit crooked because the worker patched while the sleeve was still on an arm. It may cross a bend where no proper shop would approve it. It may have two thread colors because the locker had one spool for suit fabric and another for tool pouches. A dull white rim around the stitch means salt dried after pressure cycling. A glossy dark crescent means the diver kept rubbing the same patched zone against a ladder, hatch lip or cable run.\n\nFor the player, repaired suit fabric is a small survival log. A patch near a cuff gasket can warn that a glove seal once failed. A patch over the chest bladder can mean the suit was condemned but reused anyway. Seam tape over a tool pouch may mark a Marauder habit: keep the pouch, trust the tool, distrust the suit. A repair island with no pressure-test tag should not be treated as safe equipment. It may be loot, evidence, or a warning from someone who had no better option.\n\nThe patch also separates human triage from automated repair. Atlas fiber can close wounds in ways that ignore human ownership. Conductive biofilm can bridge a line. A suit patch is uglier and clearer: somebody saw damage, found material, pressed it flat, stitched through a trembling layer and hoped the seam would hold long enough. That hope can be practical without being heroic.\n\nHECTON-8 suit culture is full of borrowed time. Deep Reach wrote clean locker procedures. Black Keel wrote payout custody around recovered gear. Marauders wrote corrections on the fabric with paint marker, knife notch, thread color and silence. A patched suit in a flooded locker can tell the player who came back, who left in a hurry and who could not afford a new seal.\n\nMarauder check: bend the patch before trusting it. If salt lifts from the stitch, the repair has cycled wet. If the edge shines, it has rubbed under load. If the patch crosses a joint, downgrade the suit. If the patch sits over clean fabric but the gasket beside it is scarred, somebody repaired the thing that looked cheap and ignored the thing that could kill them.",
+     "external_site": "Pressure suit patches make repaired gear readable: seam tape, stitching, salt scuffs, abrasion arcs and mismatched textile zones reveal field triage, pressure risk and post-flood custody.",
+     "external_site_article": "Pressure suit repair patches are small but dense evidence surfaces in HECTON-8. Dark technical fabric, reinforced seam tape, stitch islands, salt scuffs and abrasion arcs show whether a suit was maintained, borrowed, condemned, or pushed through one more return trip.\n\nThe practical reading is physical. Salt under a stitched edge means wet pressure cycling. A glossy crescent marks repeated contact with ladders, hatches or cable runs. A patch across a joint is worse than a patch on flat fabric. A missing pressure-test tag can turn apparent salvage into hazard.\n\nThe patch keeps human survival visible. It shows a technician or Marauder making a limited repair under bad conditions, not a perfect sci-fi heal. A suit patch may be useful, but it should never feel decorative.",
+     "field_note": "A patch can be honest and still unsafe. Trust the test tag, then distrust the seam."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "مقالة ميدانية عن رقعة بدلة الضغط",
+     "scanner": "رقعة بدلة ضغط // نسيج داكن شبيه بالنيوبرين، شريط درز مقوى، جزيرة إصلاح مخيطة، خدوش ملح، حافة مهترئة ومناطق قماش بيضاء باهتة وغرافيت. فئة الرقعة غير معروفة.",
+     "terminal": "ملاحظة خزانة البدلات // لا تصدر بدلة مرقعة بلا اختبار ضغط للدرز. إذا عبر خط الخياطة المرفق أو الركبة أو حلقة الورك أو حشية الكفة، علم البدلة كعودة فقط حتى اختبار غمر كامل.",
+     "audio": "الرقعة صمدت عند جو واحد. لم نصل إلى الاختبار الثاني.",
+     "in_game_wiki": "رقعة بدلة الضغط ليست قماشا محايدا. إنها قرار اتخذ بينما الهواء ينقص، أو الطريق لم يكتمل، أو كان يجب أن يعود جسد عبر فتحة قبل أن يتجادل أحد حول الحيازة. قد تبدو المادة بسيطة: نسيج تقني داكن، شريط درز مقوى، جزيرة خياطة، ألواح بيضاء باهتة، مناطق غرافيت، خدوش ملح وقوس احتكاك مهترئ. ترتيب هذه العلامات أهم من شكل الرقعة.\n\nالدرز المصنعي نظيف: شريط منتظم وخياطة متساوية ولا ملح تحت الحافة. رقعة الميدان مختلفة. قد تجلس مائلة لأن العامل رتبها والكم ما زال على ذراع. قد تعبر مفصلا لا توافق عليه أي ورشة. قد تحمل لونين من الخيط لأن الخزانة لم يبق فيها غير بكرة للبدلات وأخرى للحقائب. حافة بيضاء باهتة حول الخياطة تعني أن الملح جف بعد دورات ضغط. هلال داكن لامع يعني أن الغواص ظل يحتك بذلك الموضع بسلم أو حافة فتحة أو كابل.\n\nفي اللعب تصبح الرقعة سجل نجاة صغير. رقعة قرب حشية الكفة تحذر من فشل ختم قفاز سابق. رقعة فوق صدر البدلة قد تعني أن البدلة أدينت ثم أعيد استعمالها. شريط درز فوق جيب أداة قد يعلن عادة المغير: احتفظ بالجيب، ثق بالأداة، لا تثق بالبدلة. رقعة بلا بطاقة اختبار ضغط ليست معدات آمنة؛ قد تكون غنيمة أو دليلا أو تحذيرا.\n\nالرقعة تفصل الإسعاف البشري عن الإصلاح الآلي. قد تغلق ألياف Atlas الجروح بطريقة لا تفهم ملكية البشر، أما رقعة البدلة فهي أوضح وأقبح: شخص رأى الضرر، وجد مادة، ضغطها، وخاطها على طبقة ترتجف وتمنى أن تصمد.",
+     "external_site": "رقع بدلات الضغط تجعل العتاد المصلح مقروءا: شريط الدرز، الخياطة، خدوش الملح، قوس الاحتكاك واختلاف النسيج تكشف إسعافا ميدانيا ومخاطر ضغط وحيازة بعد الغمر.",
+     "external_site_article": "رقع إصلاح بدلات الضغط أسطح دليل صغيرة في HECTON-8. النسيج التقني الداكن، شريط الدرز، الخياطة، الملح والاحتكاك تبين هل صينت البدلة أو استعيرت أو أدينت أو دفعت في رحلة عودة أخيرة.\n\nالقراءة عملية: الملح تحت الحافة المخيطة يعني دورات ضغط مبللة. الهلال اللامع يعني احتكاكا متكررا بسلم أو فتحة أو كابل. الرقعة على مفصل أسوأ من رقعة على سطح مسطح. غياب بطاقة اختبار الضغط يحول الغنيمة إلى خطر.\n\nالرقعة تبقي بقاء البشر مرئيا: إصلاح محدود في ظروف سيئة، لا شفاء خياليا.",
+     "field_note": "قد تكون الرقعة صادقة وغير آمنة. ثق ببطاقة الاختبار، ثم لا تثق بالدرز."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Feldartikel: Druckanzug-Flicken",
+     "scanner": "DRUCKANZUG-FLICKEN // Dunkles neoprenartiges Textil, verstaerktes Nahtband, genaehte Reparaturinsel, Salzschrammen, abgeriebene Kante und mattweisse Graphitzonen. Flickenklasse unbekannt.",
+     "terminal": "ANZUGSCHRANK-NOTIZ // Gepatchten Anzug nicht ohne Nahtdrucktest ausgeben. Wenn die Naht Ellbogen, Knie, Hueftring oder Manschettendichtung kreuzt, nur Rueckkehrstatus bis zum Druckbad.",
+     "audio": "Der Flicken hielt bei einer Atmosphaere. Zum zweiten Test kamen wir nicht.",
+     "in_game_wiki": "Ein Druckanzug-Flicken ist nie neutrales Gewebe. Er ist eine Entscheidung bei fallender Luft, auf offener Route oder an einem Koerper, der durch eine Luke zurueck musste, bevor jemand ueber Custody streiten konnte. Das Material wirkt schlicht: dunkles neoprenartiges Textil, Nahtband, genaehte Inseln, matte weisse Paneele, Graphitzonen, Salzschrammen und Abriebboegen. Die Reihenfolge der Spuren zaehlt mehr als die Form.\n\nEine Werksnaht hat gleichmaessiges Band, regelmaessige Stiche und kein Salz unter der Kante. Ein Feldflicken ist schiefer. Er kann schief sitzen, weil jemand ihn auf einem getragenen Aermel aufdrueckte. Er kann ueber ein Gelenk laufen, das keine Werkstatt freigeben wuerde. Zwei Garnfarben bedeuten oft: eine Rolle fuer Anzuege, eine fuer Werkzeugtaschen. Ein matter weisser Rand am Stich zeigt Salz nach Druckzyklen. Ein glaenzender dunkler Halbmond zeigt dauernden Kontakt mit Leiter, Luke oder Kabel.\n\nFuer den Spieler ist repariertes Anzuggewebe ein kleines Ueberlebensprotokoll. Ein Flicken nahe der Manschette warnt vor einem frueheren Handschuhdichtungsfehler. Ein Flicken ueber der Brustblase kann bedeuten, dass der Anzug verworfen und trotzdem benutzt wurde. Nahtband ueber einer Werkzeugtasche sagt Marauder-Praxis: Tasche behalten, Werkzeug trauen, Anzug misstrauen.\n\nDer Flicken trennt menschliche Triage von automatischer Reparatur. Atlas-Faser kann Wunden schliessen, ohne Besitz zu verstehen. Ein Anzugflicken ist haesslicher und klarer: jemand sah den Schaden, fand Material, drueckte es flach und hoffte, dass die Naht lange genug haelt.",
+     "external_site": "Druckanzug-Flicken machen reparierte Ausruestung lesbar: Nahtband, Stiche, Salzschrammen, Abriebboegen und Mischtextil zeigen Feldtriage, Druckrisiko und Custody.",
+     "external_site_article": "Druckanzug-Flicken sind kleine, dichte Beweisflaechen. Dunkles technisches Gewebe, Nahtband, Stiche, Salzschrammen und Abrieb zeigen, ob ein Anzug gewartet, geliehen, verworfen oder fuer eine letzte Rueckkehr benutzt wurde.\n\nDie Lesart ist physisch. Salz unter einer Kante bedeutet feuchte Druckzyklen. Ein glaenzender Halbmond markiert wiederholten Kontakt mit Leitern, Luken oder Kabeln. Ein Flicken ueber einem Gelenk ist riskanter als einer auf flachem Stoff. Fehlt das Drucktest-Tag, kann Beute zur Gefahr werden.\n\nDer Flicken macht menschliches Ueberleben sichtbar, nicht perfekte Sci-Fi-Heilung.",
+     "field_note": "Ein Flicken kann ehrlich und trotzdem unsicher sein. Testtag vertrauen, dann der Naht misstrauen."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Articulo de campo sobre parche de traje de presion",
+     "scanner": "PARCHE DE TRAJE // Textil oscuro tipo neopreno, cinta de costura reforzada, isla de reparacion cosida, roces de sal, borde gastado y zonas de tela blanco apagado y grafito. Clase desconocida.",
+     "terminal": "NOTA DE TAQUILLA // No entregar traje parcheado sin prueba de presion de costura. Si la linea cruza codo, rodilla, aro de cadera o junta de puño, marcar retorno solo hasta baño de presion.",
+     "audio": "El parche aguantó a una atmosfera. Nunca hicimos la segunda prueba.",
+     "in_game_wiki": "Un parche de traje de presion nunca es tela neutral. Es una decision tomada con el aire bajando, una ruta sin cerrar o un cuerpo que debia volver por una escotilla antes de discutir la custodia. El material puede parecer simple: textil oscuro, cinta de costura, islas cosidas, paneles blanco apagado, bandas de grafito, roces de sal y arcos de abrasion. El orden de esas marcas importa mas que la forma.\n\nUna costura de fabrica tiene cinta regular, puntada uniforme y nada de sal bajo el borde. Un parche de campo es distinto. Puede estar torcido porque se coloco con la manga aun en un brazo. Puede cruzar una articulacion que ningun taller aprobaria. Dos colores de hilo suelen significar una bobina para trajes y otra para bolsas de herramienta. Un borde blanco opaco alrededor de la puntada indica sal tras ciclos de presion. Un creciente oscuro brillante indica roce repetido contra escalera, escotilla o cable.\n\nPara el jugador, la tela reparada es un pequeño registro de supervivencia. Un parche junto a una junta de puño advierte de fallo de guante. Un parche sobre el torax puede significar traje condenado y reutilizado. Cinta sobre una bolsa de herramienta puede marcar costumbre Marauder: conservar la bolsa, confiar en la herramienta, desconfiar del traje.\n\nEl parche separa la urgencia humana de la reparacion automatica. La fibra Atlas puede cerrar heridas sin entender propiedad. Un parche de traje es mas feo y mas claro: alguien vio el daño, encontro material, lo presiono y cosio esperando que el sello durara.",
+     "external_site": "Los parches de traje de presion hacen legible el equipo reparado: cinta, puntadas, sal, abrasion y telas desparejas revelan triage de campo, riesgo de presion y custodia.",
+     "external_site_article": "Los parches de traje de presion son pequeñas superficies de prueba. Tela tecnica oscura, cinta de costura, puntadas, sal y abrasion muestran si un traje fue mantenido, prestado, condenado o usado para un ultimo regreso.\n\nLa lectura es fisica. Sal bajo el borde cosido significa ciclos de presion humedos. Un creciente brillante marca roce repetido con escalera, escotilla o cable. Un parche sobre articulacion es peor que uno sobre tela plana. Sin etiqueta de prueba, el salvamento puede ser peligro.\n\nEl parche mantiene visible la supervivencia humana sin convertirla en curacion perfecta.",
+     "field_note": "Un parche puede ser honesto y seguir siendo inseguro. Confia en la etiqueta de prueba; luego desconfia de la costura."
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Article de terrain sur patch de combinaison pressurisee",
+     "scanner": "PATCH DE COMBINAISON // Textile sombre type neoprene, bande de couture renforcee, ile de reparation cousue, traces de sel, bord use et zones textile blanc eteint et graphite. Classe inconnue.",
+     "terminal": "NOTE DE CASIER // Ne pas delivrer combinaison patchee sans test pression couture. Si la couture croise coude, genou, anneau de hanche ou joint de manchette, statut retour seulement avant bain pression complet.",
+     "audio": "Le patch a tenu a une atmosphere. On n'a jamais eu le second test.",
+     "in_game_wiki": "Un patch de combinaison pressurisee n'est jamais un textile neutre. C'est une decision prise quand l'air baisse, quand la route reste ouverte ou quand un corps doit revenir par une ecoutille avant toute discussion de custody. La matiere peut paraitre simple: textile sombre, bande de couture, ilots cousus, panneaux blanc eteint, bandes graphite, traces de sel et arcs d'abrasion. L'ordre des marques compte plus que la forme.\n\nUne couture d'usine est reguliere: bande droite, points constants, pas de sel sous le bord. Un patch de terrain ne l'est pas. Il peut etre de travers parce qu'il a ete pose sur une manche encore portee. Il peut traverser une articulation qu'aucun atelier n'approuverait. Deux couleurs de fil indiquent souvent une bobine pour combinaisons et une autre pour poches d'outils. Un bord blanc terne autour du point signale du sel apres cycles de pression.\n\nPour le joueur, le tissu repare est un petit journal de survie. Un patch pres d'un joint de poignet avertit d'une fuite de gant. Un patch sur la vessie thoracique peut signaler une combinaison condamnee mais reutilisee. Une bande sur une poche d'outil peut dire: garder la poche, croire l'outil, se mefier de la combinaison.\n\nLe patch separe le tri humain de la reparation automatique. Les fibres Atlas peuvent fermer une plaie sans comprendre la propriete. Un patch de combinaison est plus laid et plus clair: quelqu'un a vu le dommage, trouve de la matiere, l'a plaquee et a espere que la couture tienne assez longtemps.",
+     "external_site": "Les patchs de combinaison rendent lisible l'equipement repare: bande de couture, points, sel, abrasion et textiles depares revelent triage de terrain, risque pression et custody.",
+     "external_site_article": "Les patchs de combinaison pressurisee sont de petites surfaces de preuve. Textile technique sombre, bande de couture, points, sel et abrasion montrent si une combinaison fut entretenue, empruntee, condamnee ou poussee vers un dernier retour.\n\nLa lecture est physique. Le sel sous un bord cousu indique des cycles pression humides. Un croissant brillant marque un frottement repete contre echelle, ecoutille ou cable. Un patch sur articulation est pire que sur tissu plat. Sans etiquette de test, le butin devient danger.\n\nLe patch garde visible la survie humaine, pas une guerison parfaite.",
+     "field_note": "Un patch peut etre honnete et dangereux. Crois l'etiquette de test, puis mefie-toi de la couture."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "מאמר שדה על טלאי חליפת לחץ",
+     "scanner": "טלאי חליפת לחץ // טקסטיל כהה דמוי ניאופרן, סרט תפר מחוזק, אי תיקון תפור, שפשופי מלח, קצה שחוק ואזורי בד לבן עמום וגרפיט. סיווג הטלאי לא ידוע.",
+     "terminal": "הערת ארונית חליפות // אין להנפיק חליפה מטולאת בלי בדיקת לחץ תפר. אם התפר חוצה מרפק, ברך, טבעת ירך או אטם שרוול, לסמן חזרה בלבד עד השריית לחץ מלאה.",
+     "audio": "הטלאי החזיק באטמוספרה אחת. למבחן השני לא הגענו.",
+     "in_game_wiki": "טלאי חליפת לחץ לעולם אינו בד נייטרלי. הוא החלטה שנעשתה כשהאוויר יורד, כשהמסלול לא הושלם, או כשהיה צריך להחזיר גוף דרך פתח לפני ויכוח על חזקה. החומר נראה פשוט: טקסטיל כהה, סרט תפר, איי תיקון תפורים, פנלים לבנים עמומים, אזורי גרפיט, שפשופי מלח וקשתות שחיקה. סדר הסימנים חשוב מן הצורה.\n\nתפר מפעל נקי הוא אחיד, עם סרט ישר וללא מלח מתחת לקצה. טלאי שדה שונה. הוא יכול לשבת עקום כי הונח על שרוול שהיה עדיין על יד. הוא יכול לחצות מפרק ששום סדנה לא היתה מאשרת. שני צבעי חוט אומרים לעיתים שסליל אחד נשאר לחליפות ואחד לכיסי כלים. שפה לבנה עמומה סביב התפר מצביעה על מלח אחרי מחזורי לחץ. סהר כהה מבריק אומר שהצולל שפשף שוב ושוב את האזור בסולם, פתח או כבל.\n\nלשחקן, בד מתוקן הוא יומן הישרדות קטן. טלאי ליד אטם שרוול מזהיר מכשל כפפה קודם. טלאי על שלפוחית החזה יכול לומר שהחליפה נפסלה והשתמשו בה בכל זאת. סרט תפר על כיס כלי מסמן הרגל Marauder: לשמור את הכיס, לסמוך על הכלי, לא על החליפה.\n\nהטלאי מפריד טיפול אנושי מתיקון אוטומטי. סיב Atlas יכול לסגור פצע בלי להבין בעלות. טלאי חליפה מכוער וברור יותר: מישהו ראה נזק, מצא חומר, לחץ אותו ותפר בתקווה שהתפר יחזיק מספיק זמן.",
+     "external_site": "טלאי חליפות לחץ הופכים ציוד מתוקן לקריא: סרט תפר, תפירה, שפשופי מלח, קשתות שחיקה ואזורי טקסטיל לא תואמים חושפים טיפול שדה, סיכון לחץ וחזקה.",
+     "external_site_article": "טלאי תיקון של חליפות לחץ הם משטחי ראיה קטנים. בד טכני כהה, סרט תפר, תפירה, מלח ושחיקה מראים אם חליפה תוחזקה, הושאלה, נפסלה או נדחפה לעוד חזרה אחת.\n\nהקריאה פיזית. מלח תחת קצה תפור אומר מחזורי לחץ רטובים. סהר מבריק מסמן מגע חוזר עם סולם, פתח או כבל. טלאי על מפרק מסוכן יותר מטלאי על בד שטוח. בלי תג בדיקת לחץ, שלל יכול להפוך לסכנה.\n\nהטלאי משאיר את ההישרדות האנושית גלויה.",
+     "field_note": "טלאי יכול להיות כן ועדיין לא בטוח. סמוך על תג הבדיקה, ואז חשוד בתפר."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artikel Lapangan Tambalan Pakaian Tekanan",
+     "scanner": "TAMBALAN PAKAIAN TEKANAN // Tekstil gelap seperti neoprene, pita jahitan diperkuat, pulau perbaikan dijahit, lecet garam, tepi aus, dan zona kain putih kusam serta grafit. Kelas tambalan tidak diketahui.",
+     "terminal": "CATATAN LOKER PAKAIAN // Jangan keluarkan pakaian tambalan tanpa uji tekanan jahitan. Jika garis jahit melintasi siku, lutut, cincin pinggul, atau gasket manset, tandai kembali-saja sampai rendam tekanan penuh.",
+     "audio": "Tambalan tahan di satu atmosfer. Kami tidak pernah sampai ke uji kedua.",
+     "in_game_wiki": "Tambalan pakaian tekanan tidak pernah menjadi kain netral. Itu keputusan saat udara menurun, rute belum selesai, atau tubuh harus kembali lewat palka sebelum orang berdebat soal custody. Bahannya tampak sederhana: tekstil gelap, pita jahitan, pulau tambalan, panel putih kusam, zona grafit, lecet garam, dan busur abrasi. Urutan bekasnya lebih penting daripada bentuk.\n\nJahitan pabrik rapi: pita rata, tusuk teratur, tanpa garam di bawah tepi. Tambalan lapangan berbeda. Ia bisa miring karena dipasang saat lengan masih dipakai. Ia bisa melintasi sendi yang tidak akan disetujui bengkel. Dua warna benang sering berarti satu gulungan untuk pakaian dan satu untuk kantong alat. Rim putih kusam di sekitar tusuk berarti garam kering setelah siklus tekanan. Bulan sabit gelap mengilap berarti area itu terus bergesek dengan tangga, palka, atau kabel.\n\nBagi pemain, kain yang diperbaiki adalah log bertahan hidup kecil. Tambalan dekat gasket manset memperingatkan kegagalan segel sarung tangan. Tambalan di kandung dada bisa berarti pakaian sudah dikutuk tapi dipakai lagi. Pita di kantong alat menandai kebiasaan Marauder: simpan kantongnya, percaya alatnya, curigai pakaiannya.\n\nTambalan memisahkan triase manusia dari perbaikan otomatis. Serat Atlas bisa menutup luka tanpa memahami kepemilikan. Tambalan pakaian lebih buruk rupa dan lebih jelas: seseorang melihat kerusakan, menemukan bahan, menekannya rata, lalu berharap jahitan cukup lama bertahan.",
+     "external_site": "Tambalan pakaian tekanan membuat gear perbaikan bisa dibaca: pita jahitan, tusuk, lecet garam, busur abrasi, dan zona tekstil berbeda mengungkap triase lapangan, risiko tekanan, dan custody.",
+     "external_site_article": "Tambalan pakaian tekanan adalah permukaan bukti kecil. Kain teknis gelap, pita jahitan, tusuk, garam, dan abrasi menunjukkan apakah pakaian dirawat, dipinjam, dikutuk, atau dipaksa untuk satu perjalanan pulang lagi.\n\nPembacaannya fisik. Garam di bawah tepi jahitan berarti siklus tekanan basah. Bulan sabit mengilap menandai gesekan berulang dengan tangga, palka, atau kabel. Tambalan di sendi lebih buruk daripada di kain datar. Tanpa tag uji tekanan, salvage bisa menjadi bahaya.\n\nTambalan menjaga bertahan hidup manusia tetap terlihat.",
+     "field_note": "Tambalan bisa jujur dan tetap tidak aman. Percaya tag uji, lalu curigai jahitan."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "耐圧スーツパッチ・フィールド記事",
+     "scanner": "耐圧スーツパッチ // 暗色のネオプレン状繊維、補強シームテープ、縫われた修理島、塩擦れ、摩耗した縁、くすんだ白とグラファイトの布領域。パッチ等級不明。",
+     "terminal": "スーツロッカー注記 // 縫い目圧力試験なしに補修スーツを支給しないこと。縫線が肘、膝、腰リング、袖口ガスケットを横切る場合、完全圧力浸漬まで帰還専用扱い。",
+     "audio": "パッチは一気圧で保った。二回目の試験には行けなかった。",
+     "in_game_wiki": "耐圧スーツのパッチは中立の布ではない。空気が減り、経路がまだ終わらず、誰かが所有権を論じる前に身体をハッチへ戻さねばならなかった時の決定だ。素材は単純に見える。暗色の技術布、補強シームテープ、縫われた修理島、くすんだ白いパネル、グラファイト帯、塩擦れ、摩耗の弧。形よりも痕跡の順序が重要だ。\n\n工場縫製は均一なテープ、規則的な縫い目、縁下に塩なし。現場パッチは違う。袖が腕にあるまま貼られたため傾いていることがある。正式な工房なら通さない関節を横切ることもある。糸が二色なら、スーツ用と工具ポーチ用の糸を混ぜた可能性が高い。縫い目周囲の鈍い白は圧力サイクル後の塩だ。光る暗い三日月は梯子、ハッチ、ケーブルとの反復接触を示す。\n\nプレイヤーにとって、補修布は小さな生存記録である。袖口ガスケット近くのパッチは、以前の手袋シール不良を示す。胸部袋の上のパッチは、廃棄判定のスーツが再使用されたことを示す。工具ポーチのシームテープは Marauder の癖を示す。ポーチは残す。工具は信じる。スーツは疑う。\n\nこのパッチは人間の応急処置と自動修理を分ける。Atlas 繊維は所有を理解せず傷を閉じることがある。スーツパッチは醜く、明確だ。誰かが損傷を見て、素材を見つけ、押さえ、縫い、縫い目が十分長く持つことを願った。",
+     "external_site": "耐圧スーツのパッチは修理装備を読める証拠にする。シームテープ、縫い目、塩擦れ、摩耗弧、不一致の布領域が現場処置、圧力リスク、回収権を示す。",
+     "external_site_article": "耐圧スーツ修理パッチは、小さく密度の高い証拠表面である。暗色の技術布、シームテープ、縫い目、塩擦れ、摩耗は、スーツが整備品か借用品か廃棄品か、最後の帰還のために押し出された物かを示す。\n\n読み方は物理的だ。縫い縁の下の塩は湿った圧力サイクルを示す。光る三日月は梯子、ハッチ、ケーブルとの反復接触を示す。関節を横切るパッチは平面上のパッチより悪い。圧力試験タグがなければ、戦利品は危険に変わる。\n\nパッチは人間の生存を見えるままにする。",
+     "field_note": "パッチは正直でも安全とは限らない。試験タグを信じ、その後で縫い目を疑え。"
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "압력복 패치 현장 문서",
+     "scanner": "압력복 패치 // 어두운 네오프렌 유사 직물, 강화 봉합 테이프, 봉합된 수리 섬, 소금 긁힘, 마모된 가장자리, 탁한 흰색과 흑연 직물 구역. 패치 등급 불명.",
+     "terminal": "수트 로커 메모 // 봉합 압력 시험 없이 패치 수트를 지급하지 말 것. 봉합선이 팔꿈치, 무릎, 엉덩이 링, 손목 가스켓을 가로지르면 완전 압력 침지 전까지 귀환 전용으로 표시.",
+     "audio": "패치는 1기압에서 버텼다. 두 번째 시험은 못 했다.",
+     "in_game_wiki": "압력복 패치는 중립적인 천이 아니다. 공기가 줄어들고, 길이 아직 끝나지 않았거나, 누군가 custody를 따지기 전에 몸을 해치 안으로 되돌려야 했을 때 내린 결정이다. 재료는 단순해 보인다. 어두운 기술 직물, 강화 봉합 테이프, 봉합된 수리 섬, 탁한 흰 패널, 흑연 띠, 소금 긁힘, 마모 호. 모양보다 흔적의 순서가 중요하다.\n\n공장 봉합은 테이프가 고르고 바느질이 규칙적이며 가장자리 밑에 소금이 없다. 현장 패치는 다르다. 소매가 아직 팔에 있는 상태로 붙였기 때문에 비뚤 수 있다. 어떤 작업장도 승인하지 않을 관절을 가로지를 수 있다. 실 색이 두 가지라면 로커에 수트용 한 타래와 도구 주머니용 한 타래만 남았다는 뜻일 수 있다. 봉합 주변의 탁한 흰 테두리는 압력 사이클 뒤 말라붙은 소금이다. 빛나는 어두운 초승달은 사다리, 해치, 케이블에 반복해서 문질린 자리다.\n\n플레이어에게 수리된 직물은 작은 생존 기록이다. 손목 가스켓 근처 패치는 장갑 씰 실패를 경고한다. 가슴 블래더 위 패치는 폐기 판정 수트가 재사용됐다는 뜻일 수 있다. 도구 주머니 위의 봉합 테이프는 Marauder 습관을 보인다. 주머니는 보존하고, 도구는 믿고, 수트는 의심한다.\n\n패치는 인간의 응급처치와 자동 수리를 나눈다. Atlas 섬유는 소유권을 모른 채 상처를 닫을 수 있다. 수트 패치는 더 추하고 더 명확하다. 누군가 손상을 보고, 재료를 찾고, 눌러 붙이고, 떨리는 층을 꿰매며 봉합이 충분히 오래 버티길 바랐다.",
+     "external_site": "압력복 패치는 수리 장비를 읽게 한다. 봉합 테이프, 바느질, 소금 긁힘, 마모 호, 맞지 않는 직물 구역이 현장 처치, 압력 위험, custody를 드러낸다.",
+     "external_site_article": "압력복 수리 패치는 작지만 밀도 높은 증거 표면이다. 어두운 기술 직물, 봉합 테이프, 바느질, 소금, 마모는 수트가 정비품인지, 빌린 물건인지, 폐기품인지, 마지막 귀환을 위해 밀어붙인 물건인지 보여 준다.\n\n읽기는 물리적이다. 봉합 가장자리 밑의 소금은 젖은 압력 사이클을 뜻한다. 빛나는 초승달은 사다리, 해치, 케이블과의 반복 접촉이다. 관절 위 패치는 평면 패치보다 나쁘다. 압력 시험 태그가 없으면 salvage가 위험이 된다.\n\n패치는 인간의 생존을 보이게 둔다.",
+     "field_note": "패치는 정직하면서도 안전하지 않을 수 있다. 시험 태그를 믿고, 그다음 봉합을 의심하라."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Veldartikel: drukpakreparatiepatch",
+     "scanner": "DRUKPAKPATCH // Donker neopreenachtig textiel, versterkte naadtape, genaaid reparatie-eiland, zoutschuur, afgesleten rand en matte off-white grafietzones. Patchklasse onbekend.",
+     "terminal": "PAKKENLOCKER // Geen gepatcht pak uitgeven zonder naaddruktest. Als steeklijn elleboog, knie, heuprand of manchetpakking kruist, markeer retour-alleen tot volledige drukweektest.",
+     "audio": "De patch hield op een atmosfeer. We haalden de tweede test nooit.",
+     "in_game_wiki": "Een drukpakpatch is nooit neutrale stof. Het is een beslissing genomen terwijl lucht afnam, een route open bleef of een lichaam door een luik terug moest voor iemand over custody kon twisten. Het materiaal lijkt eenvoudig: donker technisch textiel, naadtape, genaaide eilanden, matte witte panelen, grafietzones, zoutschuur en slijtboogjes. De volgorde van die sporen telt meer dan de vorm.\n\nEen fabrieksnaad heeft gelijkmatige tape, regelmatige steken en geen zout onder de rand. Een veldpatch is anders. Hij kan scheef zitten omdat hij op een gedragen mouw werd gezet. Hij kan een gewricht kruisen dat geen werkplaats zou goedkeuren. Twee garenkleuren betekenen vaak: een spoel voor pakken, een voor gereedschapstassen. Een matte witte rand rond de steek is zout na drukcycli. Een glanzende donkere maan toont herhaald contact met ladder, luik of kabel.\n\nVoor de speler is gerepareerde stof een klein overlevingslogboek. Een patch bij een manchetpakking waarschuwt voor handschoenfalen. Een patch over de borstblaas kan betekenen dat het pak werd afgekeurd en toch gebruikt. Tape over een gereedschapstas zegt Marauder-gewoonte: tas houden, gereedschap vertrouwen, pak wantrouwen.\n\nDe patch scheidt menselijke triage van automatische reparatie. Atlas-vezel kan wonden sluiten zonder eigendom te begrijpen. Een pakpatch is lelijker en duidelijker: iemand zag schade, vond materiaal, drukte het vlak en hoopte dat de naad lang genoeg hield.",
+     "external_site": "Drukpakpatches maken gerepareerde uitrusting leesbaar: naadtape, steken, zoutschuur, slijtboogjes en gemengd textiel tonen veldtriage, drukrisico en custody.",
+     "external_site_article": "Drukpakpatches zijn kleine maar dichte bewijsoppervlakken. Donker technisch textiel, naadtape, steken, zout en slijtage tonen of een pak onderhouden, geleend, afgekeurd of voor een laatste terugkeer gebruikt werd.\n\nDe lezing is fysiek. Zout onder een genaaide rand betekent natte drukcycli. Een glanzende boog markeert herhaald contact met ladders, luiken of kabels. Een patch over een gewricht is slechter dan een op vlak textiel. Zonder druktestlabel wordt buit gevaar.\n\nDe patch houdt menselijk overleven zichtbaar.",
+     "field_note": "Een patch kan eerlijk en toch onveilig zijn. Vertrouw het testlabel, wantrouw daarna de naad."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artykul terenowy: lata kombinezonu cisnieniowego",
+     "scanner": "LATA KOMBINEZONU // Ciemna tkanina podobna do neoprenu, wzmocniona tasma szwu, szyta wyspa naprawy, otarcia soli, zuzyta krawedz i matowe bialo-grafitowe strefy. Klasa laty nieznana.",
+     "terminal": "NOTA SZAFKI // Nie wydawac latanego kombinezonu bez testu cisnienia szwu. Jesli linia szycia przecina lokiec, kolano, pierscien biodrowy albo uszczelke mankietu, status tylko powrot do pelnej proby.",
+     "audio": "Lata trzymala przy jednej atmosferze. Drugiego testu nie zdazylismy zrobic.",
+     "in_game_wiki": "Lata kombinezonu cisnieniowego nigdy nie jest neutralna tkanina. To decyzja podjeta przy spadajacym powietrzu, niedokonczonej trasie albo ciele, ktore trzeba bylo wciagnac przez wlaz, zanim ktokolwiek zaczal spor o custody. Material wyglada prosto: ciemna tkanina techniczna, tasma szwu, szyte wyspy, matowe biale panele, grafitowe pasy, otarcia soli i luki zuzycia. Kolejnosc sladow jest wazniejsza niz ksztalt.\n\nSzew fabryczny ma rowna tasme, regularne nici i brak soli pod krawedzia. Lata polowa jest inna. Moze lezec krzywo, bo zakladano ja na rekaw wciaz na rece. Moze przecinac staw, ktorego warsztat by nie zatwierdzil. Dwa kolory nici czesto znacza jedna szpulke do kombinezonow i druga do kieszeni narzedzi. Matowa biala obwodka wokol sciegu to sol po cyklach cisnienia. Blyszczacy ciemny polksiezyc oznacza tarcie o drabine, wlaz albo kabel.\n\nDla gracza naprawiona tkanina to maly dziennik przetrwania. Lata przy mankiecie ostrzega przed awaria uszczelki rekawicy. Lata na pecherzu piersiowym moze znaczyc, ze kombinezon odrzucono i uzyto mimo to. Tasma na kieszeni narzedzi mowi zwyczaj Maraudera: zachowaj kieszen, ufaj narzedziu, nie ufaj kombinezonowi.\n\nLata oddziela ludzka triage od naprawy automatycznej. Wlokno Atlas moze zamknac rane bez rozumienia wlasnosci. Lata jest brzydsza i jasniejsza: ktos zobaczyl uszkodzenie, znalazl material, docisnal go i zszywal z nadzieja, ze szew wytrzyma.",
+     "external_site": "Laty kombinezonow cisnieniowych czynia naprawiony sprzet czytelnym: tasma, sciegi, sol, luki otarc i mieszane tekstylia ujawniaja triage polowy, ryzyko cisnienia i custody.",
+     "external_site_article": "Laty kombinezonow cisnieniowych to male powierzchnie dowodu. Ciemna tkanina techniczna, tasma szwu, sciegi, sol i przetarcia pokazuja, czy kombinezon serwisowano, pozyczono, odrzucono albo przepchnieto przez ostatni powrot.\n\nCzytanie jest fizyczne. Sol pod krawedzia oznacza mokre cykle cisnienia. Blyszczacy luk to powtarzany kontakt z drabina, wlazem lub kablem. Lata na stawie jest gorsza niz na plaskiej tkaninie. Bez znacznika testu lup moze byc zagrozeniem.\n\nLata zostawia ludzkie przetrwanie widoczne.",
+     "field_note": "Lata moze byc uczciwa i niebezpieczna. Ufaj znacznikowi testu, potem nie ufaj szwowi."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Artigo de campo sobre remendo de traje de pressão",
+     "scanner": "REMENDO DE TRAJE // Tecido escuro tipo neoprene, fita de costura reforçada, ilha de reparo costurada, riscos de sal, borda gasta e zonas têxteis branco-fosco e grafite. Classe do remendo desconhecida.",
+     "terminal": "NOTA DO ARMÁRIO // Não emitir traje remendado sem teste de pressão da costura. Se a linha cruza cotovelo, joelho, anel do quadril ou junta do punho, marcar retorno apenas até banho de pressão completo.",
+     "audio": "O remendo segurou a uma atmosfera. Nunca chegamos ao segundo teste.",
+     "in_game_wiki": "Um remendo de traje de pressão nunca é tecido neutro. É uma decisão tomada com o ar caindo, uma rota ainda aberta ou um corpo que precisava voltar por uma escotilha antes de alguém discutir custody. O material parece simples: tecido técnico escuro, fita de costura, ilhas costuradas, painéis branco-foscos, zonas grafite, riscos de sal e arcos de abrasão. A ordem dessas marcas importa mais que o formato.\n\nUma costura de fábrica tem fita regular, ponto uniforme e nada de sal sob a borda. Um remendo de campo é diferente. Pode ficar torto porque foi aplicado com a manga ainda no braço. Pode cruzar uma articulação que nenhuma oficina aprovaria. Duas cores de linha muitas vezes significam uma bobina para trajes e outra para bolsas de ferramentas. Uma borda branca ao redor do ponto indica sal depois de ciclos de pressão. Um crescente escuro brilhante indica atrito repetido contra escada, escotilha ou cabo.\n\nPara o jogador, tecido reparado é um pequeno registro de sobrevivência. Um remendo perto da junta do punho avisa de falha anterior da luva. Um remendo sobre a bexiga torácica pode significar traje condenado e reutilizado. Fita sobre bolsa de ferramenta marca hábito Marauder: guardar a bolsa, confiar na ferramenta, desconfiar do traje.\n\nO remendo separa triagem humana de reparo automático. Fibra Atlas pode fechar feridas sem entender propriedade. Um remendo de traje é mais feio e mais claro: alguém viu o dano, achou material, apertou, costurou e esperou que a costura segurasse tempo suficiente.",
+     "external_site": "Remendos de trajes de pressão tornam equipamento reparado legível: fita, pontos, sal, arcos de abrasão e tecidos desencontrados revelam triagem de campo, risco de pressão e custody.",
+     "external_site_article": "Remendos de trajes de pressão são pequenas superfícies de prova. Tecido técnico escuro, fita de costura, pontos, sal e abrasão mostram se um traje foi mantido, emprestado, condenado ou empurrado por mais uma volta.\n\nA leitura é física. Sal sob a borda costurada significa ciclos úmidos de pressão. Um crescente brilhante marca contato repetido com escadas, escotilhas ou cabos. Remendo sobre articulação é pior que remendo em tecido plano. Sem etiqueta de teste, salvamento vira perigo.\n\nO remendo mantém a sobrevivência humana visível.",
+     "field_note": "Um remendo pode ser honesto e ainda inseguro. Confie na etiqueta de teste, depois desconfie da costura."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Полевая статья о заплате на скафандре",
+     "scanner": "ЗАПЛАТА СКАФАНДРА // Темная неопреновая ткань, усиленная шовная лента, пришитый ремонтный остров, соляные потертости, стертая кромка и приглушенные бело-графитовые зоны ткани. Класс заплаты неизвестен.",
+     "terminal": "ЗАМЕТКА ШКАФА СКАФАНДРОВ // Не выдавать скафандр с заплатой без шовного теста давления. Если строчка пересекает локоть, колено, тазовое кольцо или манжету, пометить как только для возврата до полного теста.",
+     "audio": "Заплата держала на одной атмосфере. До второго теста мы не дошли.",
+     "in_game_wiki": "Заплата на скафандре никогда не бывает нейтральной тканью. Это решение, принятое при падающем воздухе, незавершенном маршруте или теле, которое нужно было вернуть через люк до спора о custody. Материал может выглядеть простым: темная техническая ткань, шовная лента, пришитые острова ремонта, тускло-белые панели, графитовые зоны, соляные потертости и дуги истирания. Порядок этих следов важнее формы.\n\nЗаводской шов ровный: одинаковая лента, регулярная строчка, нет соли под краем. Полевая заплата другая. Она может сидеть криво, потому что ее ставили на рукав, который все еще был на руке. Она может пересекать сустав, который не одобрила бы мастерская. Два цвета нитки часто означают, что в шкафу оставалась одна катушка для костюмов и одна для подсумков. Тусклый белый обод вокруг строчки - соль после циклов давления. Блестящий темный полумесяц - повторное трение о лестницу, люк или кабель.\n\nДля игрока ремонтная ткань - маленький журнал выживания. Заплата у манжеты предупреждает о старом отказе перчаточного уплотнения. Заплата на грудной камере может означать, что скафандр списали, но снова использовали. Лента поверх подсумка говорит о привычке мародера: сохранить карман, доверять инструменту, не доверять скафандру.\n\nЗаплата отделяет человеческий срочный ремонт от автоматического. Волокно Atlas может закрывать раны, не понимая собственности. Заплата скафандра грубее и яснее: кто-то увидел повреждение, нашел материал, прижал его, прошил дрожащий слой и надеялся, что шов продержится достаточно долго.",
+     "external_site": "Заплаты на скафандрах делают ремонтное снаряжение читаемым: шовная лента, строчка, соль, дуги истирания и разные зоны ткани показывают полевой ремонт, риск давления и custody.",
+     "external_site_article": "Заплаты на скафандрах - маленькие, но плотные поверхности доказательства. Темная техническая ткань, шовная лента, строчка, соль и истирание показывают, обслуживали скафандр, одолжили, списали или отправили в еще один возврат.\n\nЧтение физическое. Соль под пришитым краем означает мокрые циклы давления. Блестящий полумесяц отмечает повторный контакт с лестницей, люком или кабелем. Заплата на суставе хуже заплаты на плоской ткани. Без бирки теста трофей становится опасностью.\n\nЗаплата оставляет человеческое выживание видимым, без идеального фантастического лечения.",
+     "field_note": "Заплата может быть честной и все равно опасной. Доверься бирке теста, потом не доверяй шву."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Польова стаття про латку на скафандрі",
+     "scanner": "ЛАТКА СКАФАНДРА // Темна неопренова тканина, посилена шовна стрічка, пришитий ремонтний острів, соляні потертості, стерта кромка і приглушені біло-графітові зони тканини. Клас латки невідомий.",
+     "terminal": "НОТАТКА ШАФИ СКАФАНДРІВ // Не видавати скафандр із латкою без шовного тесту тиску. Якщо строчка перетинає лікоть, коліно, тазове кільце або манжету, позначити як тільки для повернення до повного тесту.",
+     "audio": "Латка тримала на одній атмосфері. До другого тесту ми не дійшли.",
+     "in_game_wiki": "Латка на скафандрі ніколи не є нейтральною тканиною. Це рішення, прийняте при падінні запасу повітря, незавершеному маршруті або тілі, яке треба було повернути через люк до суперечки про custody. Матеріал може здаватися простим: темна технічна тканина, шовна стрічка, пришиті острови ремонту, тьмяно-білі панелі, графітові зони, соляні потертості і дуги стирання. Порядок цих слідів важливіший за форму.\n\nЗаводський шов рівний: однакова стрічка, регулярна строчка, немає солі під краєм. Польова латка інша. Вона може сидіти криво, бо її ставили на рукав, який ще був на руці. Вона може перетинати суглоб, якого не схвалила б майстерня. Два кольори нитки часто означають, що в шафі лишилася одна котушка для костюмів і одна для підсумків. Тьмяний білий обід навколо строчки - сіль після циклів тиску. Блискучий темний півмісяць - повторне тертя об драбину, люк або кабель.\n\nДля гравця ремонтна тканина - малий журнал виживання. Латка біля манжети попереджає про стару відмову рукавичного ущільнення. Латка на грудній камері може означати, що скафандр списали, але використали знову. Стрічка поверх підсумка показує звичку мародера: зберегти кишеню, довіряти інструменту, не довіряти скафандру.\n\nЛатка відділяє людський терміновий ремонт від автоматичного. Волокно Atlas може закривати рани, не розуміючи власності. Латка скафандра грубіша і ясніша: хтось побачив пошкодження, знайшов матеріал, притиснув його, прошив тремтячий шар і сподівався, що шов витримає достатньо довго.",
+     "external_site": "Латки на скафандрах роблять ремонтне спорядження читаним: шовна стрічка, строчка, сіль, дуги стирання і різні зони тканини показують польовий ремонт, ризик тиску і custody.",
+     "external_site_article": "Латки на скафандрах - малі, але щільні поверхні доказу. Темна технічна тканина, шовна стрічка, строчка, сіль і стирання показують, чи обслуговували скафандр, позичили, списали або відправили в ще одне повернення.\n\nЧитання фізичне. Сіль під пришитим краєм означає мокрі цикли тиску. Блискучий півмісяць позначає повторний контакт із драбиною, люком або кабелем. Латка на суглобі гірша за латку на пласкій тканині. Без бірки тесту трофей стає небезпекою.\n\nЛатка лишає людське виживання видимим, без ідеального фантастичного лікування.",
+     "field_note": "Латка може бути чесною і все одно небезпечною. Довірся бірці тесту, потім не довіряй шву."
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "压力服补片现场条目",
+     "scanner": "压力服补片 // 深色类氯丁橡胶技术织物、加固缝带、缝合修补岛、盐磨痕、磨损边缘，以及暗白和石墨色织物区域。补片等级未知。",
+     "terminal": "服装柜备注 // 未做缝线压力测试，不得发放补片压力服。若缝线跨过肘、膝、髋环或袖口密封，标记为仅限返程，直到完成全压浸泡测试。",
+     "audio": "补片在一大气压下撑住了。我们没来得及做第二次测试。",
+     "in_game_wiki": "压力服补片从来不是中性的布。它是在空气下降、路线未完，或者尸体必须先穿过舱口再讨论 custody 时做出的决定。材料看起来简单：深色技术织物、加固缝带、缝合修补岛、暗白面板、石墨色区域、盐磨痕和磨损弧。痕迹顺序比补片形状更重要。\n\n工厂缝线应当胶带均匀、针脚规则、边缘下没有盐。现场补片不同。它可能歪着，因为工人是在袖子还套在手臂上时贴的。它可能跨过正规工坊绝不会批准的关节。两种线色通常意味着柜里只剩一卷给压力服、一卷给工具袋。针脚周围暗白边说明压力循环后盐分干结。发亮的深色月牙说明同一处反复摩擦梯子、舱口或线缆。\n\n对玩家来说，修过的织物是小型生存日志。袖口密封附近的补片警告手套密封曾经失效。胸部气囊上的补片可能说明压力服已被判废却再次使用。工具袋上的缝带显示 Marauder 习惯：保留袋子，相信工具，怀疑压力服。\n\n补片把人类应急处理和自动修复分开。Atlas 纤维可以在不理解所有权的情况下闭合伤口。压力服补片更丑也更清楚：有人看见损伤，找到材料，压平它，穿过颤动的层缝上去，然后希望缝线撑得够久。",
+     "external_site": "压力服补片让修复装备可读：缝带、针脚、盐磨痕、磨损弧和不匹配织物区域揭示现场应急处理、压力风险和 custody。",
+     "external_site_article": "压力服修补片是小而密集的证据表面。深色技术织物、缝带、针脚、盐和磨损显示一件压力服是被维护、借用、判废，还是被推去完成最后一次返程。\n\n读取方式是物理的。缝合边缘下的盐意味着潮湿压力循环。发亮月牙标记与梯子、舱口或线缆的反复接触。跨过关节的补片比平面布料上的补片更糟。没有压力测试标签，打捞品就可能变成危险。\n\n补片让人类的求生痕迹保持可见，而不是变成完美科幻自愈。",
+     "field_note": "补片可以诚实，但仍然不安全。先信测试标签，再怀疑缝线。"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

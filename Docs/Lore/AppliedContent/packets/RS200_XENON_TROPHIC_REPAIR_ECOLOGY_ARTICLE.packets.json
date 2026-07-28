@@ -1,243 +1,244 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS200_XENON_TROPHIC_REPAIR_ECOLOGY_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS200_XENON_TROPHIC_REPAIR_ECOLOGY_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1266_XENON_TROPHIC_REPAIR_ECOLOGY_FIELDGUIDE",
+   "release_set_id": "RS200_XENON_TROPHIC_REPAIR_ECOLOGY_ARTICLE",
+   "article_id": "applied_lore.xenon_trophic_repair_ecology_fieldguide",
+   "title_key": "LORE_XENON_TROPHIC_REPAIR_ECOLOGY_FIELDGUIDE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_en_US.md",
+    "Docs/Lore/Grand_Library/04_FLORA_AND_FAUNA_en_US.md",
+    "Docs/Lore/Grand_Library/11_APEX_PREDATORS_AND_BIOLOGY_en_US.md",
+    "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_en_US.md",
+    "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1266_XENON_TROPHIC_REPAIR_ECOLOGY_FIELDGUIDE",
-      "release_set_id": "RS200_XENON_TROPHIC_REPAIR_ECOLOGY_ARTICLE",
-      "article_id": "applied_lore.xenon_trophic_repair_ecology_fieldguide",
-      "title_key": "LORE_XENON_TROPHIC_REPAIR_ECOLOGY_FIELDGUIDE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_en_US.md",
-        "Docs/Lore/Grand_Library/04_FLORA_AND_FAUNA_en_US.md",
-        "Docs/Lore/Grand_Library/11_APEX_PREDATORS_AND_BIOLOGY_en_US.md",
-        "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_en_US.md",
-        "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.xenon_trophic_repair_ecology_fieldguide",
-        "secondary": [
-          "unlock.first_blue_debt_living_process_trace",
-          "unlock.first_tagged_fauna_current_trace",
-          "unlock.first_vent_biofilm_repair_crosslink"
-        ],
-        "poi_tags": [
-          "poi.xenon_trophic_fieldguide",
-          "poi.vent_biofilm_sample",
-          "poi.tagged_fauna_current_trace"
-        ],
-        "biome_tags": [
-          "biome.cable_reef",
-          "biome.brine_canyon",
-          "biome.atlas_basin"
-        ],
-        "first_20_boundary": "Frames HECTON-8 ecology as route evidence, resource process and Atlas misuse before creature scans become simple bestiary entries."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Bio-Resource Scanner Overlay",
-          "terminal": "Deep Reach Biocustody Notice",
-          "audio": "Xenobiology Lab Training Cut",
-          "in_game_wiki": "PDA Ecology Archive",
-          "external_site": "Public Site Ecology Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_xenon_trophic_repair_fieldguide",
-        "truth_payload": "Xenon-Omega exists inside a vent-fed trophic and repair chain. Samples, biofilm, fauna and Atlas pulses are process evidence before they become loot.",
-        "player_question": "How can a resource page explain ecology without flattening life into loot?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Xenon Trophic Repair Ecology Fieldguide",
-          "scanner": "XENON TROPHIC TRACE // Vent heat, sulfide salt, blind grazers, conductive biofilm and Atlas repair pulses share one gradient. Valuable blue growth is never clean ore; it is a living process with a ledger tag.",
-          "terminal": "BIORESOURCE FIELD NOTICE // Do not classify HECTON-8 life as flora, fauna or contamination until route behavior is observed. If a sample carries current, filters sound, seals a crack or attracts tagged fauna, treat it as ecology and infrastructure.",
-          "audio": "If it feeds on a vent, grows over a cable and answers a repair ping, stop asking whether it is alive or useful. Ask who is using it.",
-          "in_game_wiki": "HECTON-8 biology becomes dangerous when it is treated as scenery. The same vent plume can feed iron kelp, grow a xenon-rich lattice, warm a brine step, mask a predator and power an Atlas repair pulse. A scanner label that says resource, plant or animal is only the first guess.\n\nBlue Debt is formed by process, not by placement. Heat lifts minerals. Salt sorts density. Microbial bloom edits the lattice. Grazers crop the edges. Biofilm carries weak current. Atlas learns which surfaces seal, conduct or repeat sound. When a Marauder cuts a sample loose, they may be taking fuel, food web, route marker and evidence from the same living joint.",
-          "external_site": "The xenon ecology fieldguide connects resource value to local life. HECTON-8 samples matter because geology, organisms and Atlas repair behavior keep crossing the same pressure routes.",
-          "external_site_article": "Xenon-Omega is often described as the thing Deep Reach came to steal. That is true, but too small. On HECTON-8 the blue material is part of a vent-fed chain: heat, sulfide salts, pressure defects, fungal bloom, grazers, conductive biofilm and damaged Atlas routines all touch the same surfaces.\n\nThat makes ecology playable evidence. A blue seam may mark value, poison, current leakage, predator traffic or an old repair path. A tagged animal may be hunting, grazing or carrying stale sensor data through a maintenance loop. The player does not need a clean boundary between nature and machine. The useful question is what the process is doing now, and who profits if the sample survives.",
-          "field_note": "Blue Debt is not lying in the mud. It is being made, eaten, sealed, harvested and renamed."
-        },
-        "ru_RU": {
-          "title": "Полевой справочник ксеноновой пищевой и ремонтной экологии",
-          "scanner": "КСЕНОНОВЫЙ ТРОФИЧЕСКИЙ СЛЕД // Жар жерла, сульфидная соль, слепые пастбищники, проводящая биопленка и ремонтные импульсы Atlas лежат на одном градиенте. Ценный синий рост не бывает чистой рудой; это живой процесс с бухгалтерской меткой.",
-          "terminal": "ПОЛЕВОЕ УВЕДОМЛЕНИЕ О БИОРЕСУРСАХ // Не классифицируй жизнь HECTON-8 как флору, фауну или заражение, пока не увидишь поведение маршрута. Если образец проводит ток, фильтрует звук, запечатывает трещину или привлекает меченую фауну, считай его экологией и инфраструктурой.",
-          "audio": "Если это питается у жерла, растет поверх кабеля и отвечает на ремонтный пинг, хватит спрашивать, живое оно или полезное. Спроси, кто им пользуется.",
-          "in_game_wiki": "Биология HECTON-8 становится опасной, когда ее считают декорацией. Один и тот же плюм жерла может кормить железную водоросль, выращивать ксеноновую решетку, греть соляную ступень, скрывать хищника и питать ремонтный импульс Atlas. Метка сканера ресурс, растение или животное это только первая догадка.\n\nBlue Debt формируется процессом, а не местом. Жар поднимает минералы. Соль сортирует плотность. Микробное цветение правит решетку. Пастбищники срезают края. Биопленка несет слабый ток. Atlas учится, какие поверхности запечатывают, проводят или повторяют звук. Когда мародер вырезает образец, он может забирать топливо, пищевую цепь, маршрутный маркер и доказательство из одного живого стыка.",
-          "external_site": "Полевой справочник ксеноновой экологии связывает ценность ресурса с местной жизнью. Образцы HECTON-8 важны потому, что геология, организмы и ремонтное поведение Atlas сходятся на одних и тех же маршрутах давления.",
-          "external_site_article": "Xenon-Omega часто описывают как то, что Deep Reach прилетела украсть. Это правда, но слишком маленькая. На HECTON-8 синий материал входит в цепь, которую кормят жерла: тепло, сульфидные соли, дефекты давления, грибковое цветение, пастбищники, проводящая биопленка и поврежденные процедуры Atlas касаются одних и тех же поверхностей.\n\nПоэтому экология становится игровым доказательством. Синяя жила может означать ценность, яд, утечку тока, след хищников или старую ремонтную тропу. Меченое животное может охотиться, пастись или нести старые сенсорные данные по петле обслуживания. Игроку не нужна чистая граница между природой и машиной. Полезный вопрос другой: что процесс делает сейчас, и кто заработает, если образец выживет.",
-          "field_note": "Blue Debt не лежит в иле. Его делают, едят, запечатывают, добывают и переименовывают."
-        },
-        "ja_JP": {
-          "title": "キセノン栄養修復生態フィールドガイド",
-          "scanner": "キセノン栄養痕跡 // 噴出口熱、硫化塩、盲目の草食群、導電性バイオフィルム、Atlas修復パルスが同じ勾配を共有。価値ある青い成長は清潔な鉱石ではない。台帳タグを持つ生きたプロセスだ。",
-          "terminal": "生物資源フィールド通知 // HECTON-8の生命を、経路行動を見る前に植物、動物、汚染と分類するな。標本が電流を運ぶ、音を濾す、亀裂を塞ぐ、タグ付き動物を寄せるなら、生態系でありインフラだと扱え。",
-          "audio": "噴出口で食い、ケーブルの上に育ち、修復 ping に答えるなら、生き物か道具かを問うのはやめろ。誰が使っているかを問え。",
-          "in_game_wiki": "HECTON-8の生物は、背景だと思った瞬間に危険になる。同じ噴出口のプルームが、鉄ケルプを養い、キセノン濃縮格子を育て、塩水の段差を温め、捕食者を隠し、Atlas修復パルスに電力を与えることがある。スキャナーの資源、植物、動物というラベルは最初の推測にすぎない。\n\nBlue Debtは場所ではなくプロセスでできる。熱が鉱物を持ち上げる。塩が密度を分ける。微生物ブルームが格子を編集する。草食群が縁を削る。バイオフィルムが弱い電流を運ぶ。Atlasはどの表面が塞ぎ、導通し、音を反復するかを学ぶ。マローダーが標本を切り出す時、燃料、食物網、経路標識、証拠を同じ生きた継ぎ目から奪っているかもしれない。",
-          "external_site": "キセノン生態フィールドガイドは資源価値を現地生命につなげる。HECTON-8の標本が重要なのは、地質、生物、Atlas修復行動が同じ圧力経路で交差するからだ。",
-          "external_site_article": "Xenon-OmegaはDeep Reachが盗みに来たものとして語られがちだ。それは正しいが、狭すぎる。HECTON-8では青い物質は噴出口に養われる連鎖の一部だ。熱、硫化塩、圧力欠陥、菌類ブルーム、草食群、導電性バイオフィルム、損傷したAtlas手順が同じ表面に触れる。\n\nだから生態はプレイ可能な証拠になる。青い脈は価値、毒、電流漏れ、捕食者の通路、古い修復経路を示すことがある。タグ付き動物は狩っているのか、食べているのか、保守ループに古いセンサーデータを運んでいるのかもしれない。自然と機械のきれいな境界は不要だ。重要なのは、そのプロセスが今何をしていて、標本が残れば誰が得をするかだ。",
-          "field_note": "Blue Debtは泥の中に落ちているのではない。作られ、食われ、塞がれ、採られ、名前を変えられている。"
-        },
-        "zh_CN": {
-          "title": "氙营养修复生态野外指南",
-          "scanner": "氙营养痕迹 // 喷口热、硫化盐、盲眼牧食者、导电生物膜和Atlas修复脉冲共享同一梯度。值钱的蓝色生长从来不是干净矿石；它是带账簿标签的活过程。",
-          "terminal": "生物资源现场通知 // 在观察路线行为之前，不要把HECTON-8生命归类为植物、动物或污染。如果样本导电、滤声、封住裂缝或吸引带标签动物，就把它当作生态和基础设施。",
-          "audio": "如果它靠喷口进食，长过电缆，还回应修复 ping，就别再问它是活物还是工具。问是谁在使用它。",
-          "in_game_wiki": "当HECTON-8生物被当成布景时，它就变得危险。同一股喷口羽流可以喂养铁藻，生长富氙晶格，加热盐水台阶，掩护捕食者，并为Atlas修复脉冲供能。扫描器标出的资源、植物或动物，只是第一猜测。\n\nBlue Debt由过程形成，不由地点决定。热量抬升矿物。盐分整理密度。微生物爆发改写晶格。牧食者修剪边缘。生物膜传导微弱电流。Atlas学习哪些表面能封闭、导电或重复声音。当掠夺者切下样本时，可能同时从同一个活接缝中拿走燃料、食物网、路线标记和证据。",
-          "external_site": "氙生态野外指南把资源价值和本地生命连在一起。HECTON-8样本重要，是因为地质、生物和Atlas修复行为不断在同一批压力路线相交。",
-          "external_site_article": "Xenon-Omega常被描述成Deep Reach来偷的东西。这是真的，但说得太小了。在HECTON-8，蓝色物质属于一条由喷口供养的链：热量、硫化盐、压力缺陷、真菌爆发、牧食者、导电生物膜和受损Atlas例程都触碰同一批表面。\n\n这让生态成为可游玩的证据。蓝色矿脉可能标记价值、毒性、电流泄漏、捕食者通行或旧修复路径。带标签动物可能在狩猎、啃食，或者把陈旧传感器数据带进维护循环。玩家不需要自然和机器之间的干净边界。真正有用的问题是：这个过程现在在做什么，如果样本活下来，谁会获利。",
-          "field_note": "Blue Debt不是躺在泥里。它正在被制造、吃掉、封存、采走并改名。"
-        },
-        "fr_FR": {
-          "title": "Guide de terrain de l'écologie xénon trophique et réparatrice",
-          "scanner": "TRACE TROPHIQUE XÉNON // Chaleur de cheminée, sel sulfuré, brouteurs aveugles, biofilm conducteur et impulsions de réparation Atlas partagent le même gradient. La croissance bleue de valeur n'est jamais un minerai propre ; c'est un processus vivant avec une étiquette de registre.",
-          "terminal": "AVIS DE BIORESSOURCE // Ne classez pas la vie de HECTON-8 comme flore, faune ou contamination avant d'observer son comportement de route. Si un échantillon porte du courant, filtre le son, scelle une fissure ou attire une faune marquée, traitez-le comme écologie et infrastructure.",
-          "audio": "Si cela se nourrit sur une cheminée, pousse sur un câble et répond à un ping de réparation, cessez de demander si c'est vivant ou utile. Demandez qui s'en sert.",
-          "in_game_wiki": "La biologie de HECTON-8 devient dangereuse quand on la traite comme un décor. Le même panache hydrothermal peut nourrir le varech de fer, faire croître une trame riche en xénon, réchauffer une marche de saumure, masquer un prédateur et alimenter une impulsion de réparation Atlas. Une étiquette de scanner disant ressource, plante ou animal n'est qu'une première hypothèse.\n\nBlue Debt naît d'un processus, pas d'un emplacement. La chaleur soulève les minéraux. Le sel trie la densité. La prolifération microbienne modifie la trame. Les brouteurs rognent les bords. Le biofilm transporte un faible courant. Atlas apprend quelles surfaces scellent, conduisent ou répètent le son. Quand un Maraudeur détache un échantillon, il peut prendre du carburant, un réseau alimentaire, un marqueur de route et une preuve dans la même jointure vivante.",
-          "external_site": "Le guide d'écologie xénon relie la valeur des ressources à la vie locale. Les échantillons de HECTON-8 comptent parce que géologie, organismes et comportement de réparation Atlas croisent les mêmes routes de pression.",
-          "external_site_article": "Xenon-Omega est souvent décrit comme ce que Deep Reach est venue voler. C'est vrai, mais trop étroit. Sur HECTON-8, la matière bleue appartient à une chaîne nourrie par les cheminées : chaleur, sels sulfurés, défauts de pression, prolifération fongique, brouteurs, biofilm conducteur et routines Atlas endommagées touchent les mêmes surfaces.\n\nL'écologie devient ainsi une preuve jouable. Une veine bleue peut signaler valeur, poison, fuite de courant, passage de prédateur ou ancien chemin de réparation. Un animal marqué peut chasser, brouter ou porter de vieilles données de capteur dans une boucle de maintenance. Le joueur n'a pas besoin d'une frontière nette entre nature et machine. La question utile est ce que le processus fait maintenant, et qui profite si l'échantillon survit.",
-          "field_note": "Blue Debt ne repose pas dans la vase. Il est fabriqué, mangé, scellé, récolté et renommé."
-        },
-        "es_ES": {
-          "title": "Guía de campo de ecología trófica y reparadora de xenón",
-          "scanner": "RASTRO TRÓFICO DE XENÓN // Calor de respiradero, sal sulfurosa, pastadores ciegos, biofilm conductor e impulsos de reparación Atlas comparten un gradiente. El crecimiento azul valioso nunca es mena limpia; es un proceso vivo con etiqueta de libro mayor.",
-          "terminal": "AVISO DE BIORRECURSO // No clasifiques la vida de HECTON-8 como flora, fauna o contaminación hasta observar su comportamiento de ruta. Si una muestra lleva corriente, filtra sonido, sella una grieta o atrae fauna etiquetada, trátala como ecología e infraestructura.",
-          "audio": "Si se alimenta en un respiradero, crece sobre un cable y responde a un ping de reparación, deja de preguntar si está vivo o si sirve. Pregunta quién lo está usando.",
-          "in_game_wiki": "La biología de HECTON-8 se vuelve peligrosa cuando se trata como decorado. La misma pluma hidrotermal puede alimentar kelp de hierro, hacer crecer una red rica en xenón, calentar un escalón de salmuera, ocultar un depredador y alimentar un impulso de reparación Atlas. Una etiqueta de escáner que dice recurso, planta o animal solo es la primera conjetura.\n\nBlue Debt se forma por proceso, no por ubicación. El calor levanta minerales. La sal ordena densidad. La floración microbiana edita la red. Los pastadores recortan los bordes. El biofilm lleva una corriente débil. Atlas aprende qué superficies sellan, conducen o repiten sonido. Cuando un saqueador corta una muestra, puede estar sacando combustible, red trófica, marcador de ruta y prueba del mismo nudo vivo.",
-          "external_site": "La guía de ecología de xenón conecta el valor de los recursos con la vida local. Las muestras de HECTON-8 importan porque geología, organismos y reparación Atlas cruzan las mismas rutas de presión.",
-          "external_site_article": "Xenon-Omega suele describirse como lo que Deep Reach vino a robar. Es cierto, pero demasiado estrecho. En HECTON-8, el material azul pertenece a una cadena alimentada por respiraderos: calor, sales sulfurosas, defectos de presión, floración fúngica, pastadores, biofilm conductor y rutinas dañadas de Atlas tocan las mismas superficies.\n\nEso vuelve la ecología una prueba jugable. Una veta azul puede señalar valor, veneno, fuga de corriente, tráfico de depredadores o una antigua ruta de reparación. Un animal etiquetado puede estar cazando, pastando o llevando datos viejos de sensores dentro de un ciclo de mantenimiento. El jugador no necesita una frontera limpia entre naturaleza y máquina. La pregunta útil es qué hace ahora el proceso y quién gana si la muestra sobrevive.",
-          "field_note": "Blue Debt no yace en el lodo. Se fabrica, se come, se sella, se cosecha y se rebautiza."
-        },
-        "de_DE": {
-          "title": "Feldführer für xenonische Nahrungs- und Reparaturökologie",
-          "scanner": "XENON-TROPHIESPUR // Venthitze, Sulfidsalz, blinde Weider, leitfähiger Biofilm und Atlas-Reparaturimpulse teilen einen Gradienten. Wertvolles blaues Wachstum ist nie sauberes Erz; es ist ein lebender Prozess mit Buchhaltungsmarke.",
-          "terminal": "BIORESSOURCEN-FELDHINWEIS // Klassifiziere HECTON-8-Leben nicht als Flora, Fauna oder Kontamination, bevor sein Routenverhalten beobachtet ist. Wenn eine Probe Strom trägt, Schall filtert, einen Riss versiegelt oder markierte Fauna anzieht, behandle sie als Ökologie und Infrastruktur.",
-          "audio": "Wenn es an einem Vent frisst, über ein Kabel wächst und auf einen Reparatur-Ping antwortet, frag nicht mehr, ob es lebt oder nützlich ist. Frag, wer es benutzt.",
-          "in_game_wiki": "HECTON-8-Biologie wird gefährlich, sobald man sie als Kulisse behandelt. Dieselbe Ventfahne kann Eisenkelp ernähren, ein xenonreiches Gitter wachsen lassen, eine Sole-Stufe wärmen, einen Räuber verdecken und einen Atlas-Reparaturimpuls speisen. Ein Scanneretikett mit Ressource, Pflanze oder Tier ist nur die erste Vermutung.\n\nBlue Debt entsteht durch Prozess, nicht durch Lage. Hitze hebt Mineralien. Salz sortiert Dichte. Mikrobielle Blüte verändert das Gitter. Weider schneiden die Ränder. Biofilm trägt schwachen Strom. Atlas lernt, welche Oberflächen abdichten, leiten oder Schall wiederholen. Wenn ein Marauder eine Probe löst, nimmt er vielleicht Brennstoff, Nahrungskette, Routenmarker und Beweis aus demselben lebenden Gelenk.",
-          "external_site": "Der Xenon-Ökologie-Feldführer verbindet Ressourcenwert mit lokalem Leben. HECTON-8-Proben zählen, weil Geologie, Organismen und Atlas-Reparaturverhalten dieselben Druckrouten kreuzen.",
-          "external_site_article": "Xenon-Omega wird oft als das beschrieben, was Deep Reach stehlen wollte. Das stimmt, ist aber zu eng. Auf HECTON-8 gehört das blaue Material zu einer ventgespeisten Kette: Hitze, Sulfidsalze, Druckdefekte, Pilzblüte, Weider, leitfähiger Biofilm und beschädigte Atlas-Routinen berühren dieselben Oberflächen.\n\nSo wird Ökologie spielbarer Beweis. Eine blaue Ader kann Wert, Gift, Stromleck, Räuberverkehr oder alten Reparaturpfad markieren. Ein markiertes Tier kann jagen, weiden oder veraltete Sensordaten durch eine Wartungsschleife tragen. Der Spieler braucht keine saubere Grenze zwischen Natur und Maschine. Die nützliche Frage lautet, was der Prozess jetzt tut und wer profitiert, wenn die Probe überlebt.",
-          "field_note": "Blue Debt liegt nicht im Schlamm. Es wird gemacht, gefressen, versiegelt, geerntet und umbenannt."
-        },
-        "pl_PL": {
-          "title": "Przewodnik polowy po ksenonowej ekologii pokarmu i naprawy",
-          "scanner": "KSENONOWY ŚLAD TROFICZNY // Żar wentu, sól siarczkowa, ślepi skubacze, przewodzący biofilm i impulsy naprawcze Atlas dzielą jeden gradient. Cenny niebieski wzrost nigdy nie jest czystą rudą; to żywy proces z etykietą księgową.",
-          "terminal": "KOMUNIKAT BIOZASOBÓW // Nie klasyfikuj życia HECTON-8 jako flory, fauny ani skażenia, dopóki nie zobaczysz zachowania trasy. Jeśli próbka przewodzi prąd, filtruje dźwięk, uszczelnia pęknięcie albo przyciąga znakowaną faunę, traktuj ją jako ekologię i infrastrukturę.",
-          "audio": "Jeśli żeruje na wencie, rośnie po kablu i odpowiada na ping naprawczy, przestań pytać, czy jest żywe albo użyteczne. Zapytaj, kto tego używa.",
-          "in_game_wiki": "Biologia HECTON-8 staje się groźna, gdy traktuje się ją jak dekorację. Ten sam pióropusz wentu może karmić żelazne wodorosty, hodować sieć bogatą w ksenon, ogrzewać stopień solanki, maskować drapieżnika i zasilać impuls naprawczy Atlas. Etykieta skanera: zasób, roślina albo zwierzę, jest tylko pierwszym domysłem.\n\nBlue Debt powstaje przez proces, nie przez położenie. Ciepło podnosi minerały. Sól sortuje gęstość. Zakręt mikrobiologiczny poprawia sieć. Skubacze obcinają krawędzie. Biofilm niesie słaby prąd. Atlas uczy się, które powierzchnie uszczelniają, przewodzą albo powtarzają dźwięk. Kiedy Marauder odcina próbkę, może brać paliwo, sieć pokarmową, znacznik trasy i dowód z tego samego żywego złącza.",
-          "external_site": "Przewodnik po ekologii ksenonu łączy wartość zasobów z lokalnym życiem. Próbki HECTON-8 są ważne, bo geologia, organizmy i naprawy Atlas przecinają te same trasy ciśnienia.",
-          "external_site_article": "Xenon-Omega bywa opisywany jako rzecz, którą Deep Reach przybyła ukraść. To prawda, ale zbyt mała. Na HECTON-8 niebieski materiał należy do łańcucha karmionego wentami: ciepło, sole siarczkowe, defekty ciśnienia, zakwit grzybowy, skubacze, przewodzący biofilm i uszkodzone rutyny Atlas dotykają tych samych powierzchni.\n\nTo zmienia ekologię w grywalny dowód. Niebieska żyła może oznaczać wartość, truciznę, upływ prądu, ścieżkę drapieżników albo stary szlak naprawczy. Znakowane zwierzę może polować, żerować albo przenosić stare dane czujników przez pętlę serwisową. Gracz nie potrzebuje czystej granicy między naturą i maszyną. Użyteczne pytanie brzmi: co ten proces robi teraz i kto zyska, jeśli próbka przetrwa.",
-          "field_note": "Blue Debt nie leży w mule. Jest wytwarzany, zjadany, uszczelniany, zbierany i przemianowywany."
-        },
-        "uk_UA": {
-          "title": "Польовий довідник ксенонової харчової та ремонтної екології",
-          "scanner": "КСЕНОНОВИЙ ТРОФІЧНИЙ СЛІД // Жар жерла, сульфідна сіль, сліпі пасовищники, провідна біоплівка й ремонтні імпульси Atlas лежать на одному градієнті. Цінний синій ріст не буває чистою рудою; це живий процес із бухгалтерською міткою.",
-          "terminal": "ПОЛЬОВЕ ПОВІДОМЛЕННЯ ПРО БІОРЕСУРСИ // Не класифікуй життя HECTON-8 як флору, фауну чи зараження, доки не побачиш поведінку маршруту. Якщо зразок проводить струм, фільтрує звук, запечатує тріщину або приваблює мічену фауну, вважай його екологією та інфраструктурою.",
-          "audio": "Якщо воно живиться біля жерла, росте поверх кабелю й відповідає на ремонтний пінг, припини питати, живе воно чи корисне. Запитай, хто ним користується.",
-          "in_game_wiki": "Біологія HECTON-8 стає небезпечною, коли її вважають декорацією. Один і той самий плюм жерла може годувати залізні водорості, вирощувати ксенонову ґратку, гріти соляну сходинку, ховати хижака й живити ремонтний імпульс Atlas. Мітка сканера ресурс, рослина чи тварина це лише перша здогадка.\n\nBlue Debt формується процесом, а не місцем. Жар підіймає мінерали. Сіль сортує щільність. Мікробне цвітіння редагує ґратку. Пасовищники зрізають краї. Біоплівка несе слабкий струм. Atlas вчиться, які поверхні запечатують, проводять або повторюють звук. Коли мародер вирізає зразок, він може забирати пальне, харчовий ланцюг, маршрутний маркер і доказ із одного живого стику.",
-          "external_site": "Польовий довідник ксенонової екології пов'язує цінність ресурсу з місцевим життям. Зразки HECTON-8 важливі, бо геологія, організми й ремонтна поведінка Atlas перетинають ті самі маршрути тиску.",
-          "external_site_article": "Xenon-Omega часто описують як те, що Deep Reach прилетіла вкрасти. Це правда, але надто вузька. На HECTON-8 синій матеріал належить до ланцюга, який годують жерла: тепло, сульфідні солі, дефекти тиску, грибкове цвітіння, пасовищники, провідна біоплівка та пошкоджені процедури Atlas торкаються тих самих поверхонь.\n\nТому екологія стає ігровим доказом. Синя жила може означати цінність, отруту, витік струму, шлях хижаків або стару ремонтну стежку. Мічена тварина може полювати, пастися або переносити старі сенсорні дані петлею обслуговування. Гравцеві не потрібна чиста межа між природою і машиною. Корисне питання інше: що процес робить зараз, і хто заробить, якщо зразок виживе.",
-          "field_note": "Blue Debt не лежить у мулі. Його роблять, їдять, запечатують, видобувають і перейменовують."
-        },
-        "ar_SA": {
-          "title": "دليل ميداني لبيئة الزينون الغذائية والإصلاحية",
-          "scanner": "أثر زينون غذائي // حرارة الفتحات وملح الكبريتيد والرعاة العميان والغشاء الحيوي الناقل ونبضات إصلاح Atlas تشترك في تدرج واحد. النمو الأزرق الثمين ليس خاما نظيفا؛ إنه عملية حية تحمل وسم دفتر.",
-          "terminal": "إشعار ميداني بالموارد الحيوية // لا تصنف حياة HECTON-8 كنبات أو حيوان أو تلوث قبل مراقبة سلوك المسار. إذا حملت العينة تيارا أو رشحت الصوت أو ختمت شقا أو جذبت حيوانا موسوما، فتعامل معها كبيئة وبنية تحتية.",
-          "audio": "إذا كان يتغذى على فتحة، وينمو فوق كابل، ويرد على نبضة إصلاح، فتوقف عن سؤال هل هو حي أم مفيد. اسأل من يستخدمه.",
-          "in_game_wiki": "تصبح بيولوجيا HECTON-8 خطرة عندما تعامل كمنظر خلفي. يمكن للعمود الحراري نفسه أن يطعم عشب الحديد، وينمي شبكة غنية بالزينون، ويدفئ درجة ملحية، ويخفي مفترسا، ويغذي نبضة إصلاح Atlas. وسم الماسح: مورد أو نبات أو حيوان، ليس إلا التخمين الأول.\n\nيتكون Blue Debt من عملية لا من موقع. الحرارة ترفع المعادن. الملح يرتب الكثافة. الازدهار الميكروبي يحرر الشبكة. الرعاة يقصون الحواف. الغشاء الحيوي يحمل تيارا ضعيفا. يتعلم Atlas أي الأسطح تختم أو توصل أو تكرر الصوت. عندما يقطع مغير عينة، قد يأخذ وقودا وسلسلة غذاء وعلامة مسار ودليلا من المفصل الحي نفسه.",
-          "external_site": "يربط دليل بيئة الزينون قيمة المورد بالحياة المحلية. تهم عينات HECTON-8 لأن الجيولوجيا والكائنات وسلوك إصلاح Atlas تتقاطع في مسارات الضغط نفسها.",
-          "external_site_article": "يوصف Xenon-Omega غالبا بأنه الشيء الذي جاءت Deep Reach لسرقته. هذا صحيح، لكنه ضيق. على HECTON-8 تنتمي المادة الزرقاء إلى سلسلة تغذيها الفتحات: الحرارة وأملاح الكبريتيد وعيوب الضغط والازدهار الفطري والرعاة والغشاء الحيوي الناقل وروتينات Atlas التالفة كلها تلمس الأسطح نفسها.\n\nلهذا تصبح البيئة دليلا قابلا للعب. قد تشير عرق أزرق إلى قيمة أو سم أو تسرب تيار أو حركة مفترس أو مسار إصلاح قديم. قد يكون الحيوان الموسوم يصطاد أو يرعى أو يحمل بيانات حساسات قديمة داخل حلقة صيانة. لا يحتاج اللاعب إلى حد نظيف بين الطبيعة والآلة. السؤال المفيد هو ما الذي تفعله العملية الآن، ومن يربح إذا نجت العينة.",
-          "field_note": "Blue Debt لا يرقد في الطين. إنه يصنع ويؤكل ويختم ويحصد ويعاد تسميته."
-        },
-        "id_ID": {
-          "title": "Panduan Lapangan Ekologi Trofik dan Perbaikan Xenon",
-          "scanner": "JEJAK TROFIK XENON // Panas ventilasi, garam sulfida, pemakan buta, biofilm konduktif, dan pulsa perbaikan Atlas berbagi satu gradien. Pertumbuhan biru bernilai tidak pernah berupa bijih bersih; itu proses hidup dengan tag buku besar.",
-          "terminal": "PEMBERITAHUAN BIORESOURCE // Jangan klasifikasikan kehidupan HECTON-8 sebagai flora, fauna, atau kontaminasi sebelum perilaku rutenya diamati. Jika sampel membawa arus, menyaring suara, menutup retakan, atau menarik fauna bertag, perlakukan sebagai ekologi dan infrastruktur.",
-          "audio": "Jika ia makan di ventilasi, tumbuh di atas kabel, dan menjawab ping perbaikan, berhenti bertanya apakah ia hidup atau berguna. Tanya siapa yang memakainya.",
-          "in_game_wiki": "Biologi HECTON-8 menjadi berbahaya ketika dianggap pemandangan. Satu plume ventilasi yang sama dapat memberi makan kelp besi, menumbuhkan kisi kaya xenon, menghangatkan anak tangga brine, menyembunyikan predator, dan memberi daya pada pulsa perbaikan Atlas. Label pemindai sumber daya, tumbuhan, atau hewan hanyalah tebakan pertama.\n\nBlue Debt dibentuk oleh proses, bukan lokasi. Panas mengangkat mineral. Garam menyortir kerapatan. Bloom mikroba mengedit kisi. Pemakan memangkas tepi. Biofilm membawa arus lemah. Atlas belajar permukaan mana yang menyegel, menghantar, atau mengulang suara. Saat Marauder memotong sampel, ia mungkin mengambil bahan bakar, jejaring makanan, penanda rute, dan bukti dari sambungan hidup yang sama.",
-          "external_site": "Panduan ekologi xenon menghubungkan nilai sumber daya dengan kehidupan lokal. Sampel HECTON-8 penting karena geologi, organisme, dan perilaku perbaikan Atlas terus melintasi rute tekanan yang sama.",
-          "external_site_article": "Xenon-Omega sering digambarkan sebagai hal yang datang dicuri Deep Reach. Itu benar, tetapi terlalu sempit. Di HECTON-8, material biru adalah bagian dari rantai yang diberi makan ventilasi: panas, garam sulfida, cacat tekanan, bloom jamur, pemakan, biofilm konduktif, dan rutin Atlas yang rusak menyentuh permukaan yang sama.\n\nItu membuat ekologi menjadi bukti yang bisa dimainkan. Urat biru dapat menandai nilai, racun, kebocoran arus, lalu lintas predator, atau jalur perbaikan lama. Hewan bertag dapat sedang berburu, merumput, atau membawa data sensor basi melalui loop pemeliharaan. Pemain tidak membutuhkan batas bersih antara alam dan mesin. Pertanyaan berguna adalah apa yang proses itu lakukan sekarang, dan siapa yang untung jika sampel bertahan.",
-          "field_note": "Blue Debt tidak berbaring di lumpur. Ia sedang dibuat, dimakan, disegel, dipanen, dan diganti namanya."
-        },
-        "ko_KR": {
-          "title": "제논 영양 수리 생태 현장 지침서",
-          "scanner": "제논 영양 흔적 // 분출구 열, 황화염, 눈먼 방목자, 전도성 바이오필름, Atlas 수리 펄스가 하나의 구배를 공유한다. 값나가는 푸른 성장은 깨끗한 광석이 아니다. 장부 태그가 붙은 살아 있는 과정이다.",
-          "terminal": "생물자원 현장 고지 // 경로 행동을 관찰하기 전에는 HECTON-8 생명을 식물, 동물, 오염으로 분류하지 마라. 표본이 전류를 운반하거나, 소리를 거르거나, 균열을 봉합하거나, 태그 달린 동물을 끌어들이면 생태와 인프라로 취급하라.",
-          "audio": "분출구에서 먹고, 케이블 위로 자라며, 수리 ping에 답한다면 그것이 살아 있는지 쓸모 있는지 묻지 마라. 누가 쓰고 있는지 물어라.",
-          "in_game_wiki": "HECTON-8의 생물학은 배경으로 취급되는 순간 위험해진다. 같은 분출구 플룸이 철 켈프를 먹이고, 제논 풍부 격자를 키우고, 염수 계단을 데우고, 포식자를 숨기고, Atlas 수리 펄스에 전력을 줄 수 있다. 스캐너의 자원, 식물, 동물 라벨은 첫 추측일 뿐이다.\n\nBlue Debt는 위치가 아니라 과정으로 형성된다. 열이 광물을 들어 올린다. 소금이 밀도를 나눈다. 미생물 번성이 격자를 고친다. 방목자가 가장자리를 깎는다. 바이오필름이 약한 전류를 운반한다. Atlas는 어떤 표면이 봉합하고, 전도하고, 소리를 반복하는지 배운다. Marauder가 표본을 잘라낼 때 같은 살아 있는 이음새에서 연료, 먹이망, 경로 표식, 증거를 함께 가져갈 수 있다.",
-          "external_site": "제논 생태 지침서는 자원 가치를 현지 생명과 연결한다. HECTON-8 표본이 중요한 이유는 지질, 생물, Atlas 수리 행동이 같은 압력 경로에서 계속 교차하기 때문이다.",
-          "external_site_article": "Xenon-Omega는 Deep Reach가 훔치러 온 물건으로 자주 설명된다. 맞지만 너무 좁다. HECTON-8에서 푸른 물질은 분출구가 먹이는 사슬의 일부다. 열, 황화염, 압력 결함, 균류 번성, 방목자, 전도성 바이오필름, 손상된 Atlas 루틴이 같은 표면을 만진다.\n\n그래서 생태는 플레이 가능한 증거가 된다. 푸른 줄기는 가치, 독, 전류 누출, 포식자 통행, 오래된 수리 경로를 표시할 수 있다. 태그 달린 동물은 사냥 중일 수도, 먹는 중일 수도, 유지보수 루프를 통해 낡은 센서 데이터를 운반 중일 수도 있다. 플레이어에게 자연과 기계의 깨끗한 경계는 필요 없다. 유용한 질문은 그 과정이 지금 무엇을 하고 있으며, 표본이 살아남으면 누가 이익을 얻는가다.",
-          "field_note": "Blue Debt는 진흙 속에 놓여 있지 않다. 만들어지고, 먹히고, 봉합되고, 채취되고, 이름이 바뀐다."
-        },
-        "he_IL": {
-          "title": "מדריך שדה לאקולוגיית קסנון מזינה ומתקנת",
-          "scanner": "עקבת הזנה של קסנון // חום פתחים, מלחי גופרית, רועים עיוורים, ביופילם מוליך ופעימות תיקון של Atlas חולקים מדרון אחד. צמיחה כחולה יקרת ערך אינה עפרה נקייה; היא תהליך חי עם תג חשבונאי.",
-          "terminal": "הודעת שדה למשאב ביולוגי // אל תסווג את החיים של HECTON-8 כצמחייה, בעלי חיים או זיהום לפני שנצפתה התנהגות מסלול. אם דגימה מוליכה זרם, מסננת קול, אוטמת סדק או מושכת בעלי חיים מתויגים, התייחס אליה כאקולוגיה ותשתית.",
-          "audio": "אם זה ניזון מפתח, גדל על כבל ועונה לפינג תיקון, הפסק לשאול אם זה חי או שימושי. שאל מי משתמש בזה.",
-          "in_game_wiki": "הביולוגיה של HECTON-8 נעשית מסוכנת כשמתייחסים אליה כתפאורה. אותה פלומת פתח יכולה להזין אצת ברזל, לגדל סריג עשיר בקסנון, לחמם מדרגת מי מלח, להסתיר טורף ולהפעיל פעימת תיקון של Atlas. תווית סורק שאומרת משאב, צמח או בעל חיים היא רק הניחוש הראשון.\n\nBlue Debt נוצר מתהליך, לא ממיקום. חום מעלה מינרלים. מלח ממיין צפיפות. פריחת מיקרובים עורכת את הסריג. רועים מקצצים את הקצוות. ביופילם נושא זרם חלש. Atlas לומד אילו משטחים אוטמים, מוליכים או חוזרים על קול. כשבוזז חותך דגימה, הוא עשוי לקחת דלק, מארג מזון, סמן מסלול וראיה מאותו מפרק חי.",
-          "external_site": "מדריך אקולוגיית הקסנון מחבר ערך משאבים לחיים המקומיים. דגימות HECTON-8 חשובות כי גאולוגיה, אורגניזמים והתנהגות תיקון של Atlas חוצים את אותם מסלולי לחץ.",
-          "external_site_article": "Xenon-Omega מתואר לעיתים קרובות כדבר ש-Deep Reach באה לגנוב. זה נכון, אבל צר מדי. ב-HECTON-8 החומר הכחול שייך לשרשרת שמוזנת מפתחים: חום, מלחי גופרית, פגמי לחץ, פריחת פטריות, רועים, ביופילם מוליך ושגרות Atlas פגומות נוגעים באותם משטחים.\n\nכך אקולוגיה הופכת לראיה שניתן לשחק. עורק כחול עשוי לסמן ערך, רעל, דליפת זרם, תנועת טורפים או נתיב תיקון ישן. בעל חיים מתויג עשוי לצוד, לרעות או לשאת נתוני חיישנים מיושנים דרך לולאת תחזוקה. השחקן אינו צריך גבול נקי בין טבע למכונה. השאלה המועילה היא מה התהליך עושה עכשיו, ומי מרוויח אם הדגימה שורדת.",
-          "field_note": "Blue Debt לא שוכב בבוץ. הוא נוצר, נאכל, נאטם, נקצר ומקבל שם חדש."
-        },
-        "pt_BR": {
-          "title": "Guia de campo da ecologia trófica e reparadora do xenônio",
-          "scanner": "RASTRO TRÓFICO DE XENÔNIO // Calor de respiradouro, sal sulfídico, pastadores cegos, biofilme condutor e pulsos de reparo Atlas dividem um gradiente. Crescimento azul valioso nunca é minério limpo; é um processo vivo com etiqueta de livro-caixa.",
-          "terminal": "AVISO DE BIORRECURSO // Não classifique a vida de HECTON-8 como flora, fauna ou contaminação até observar seu comportamento de rota. Se uma amostra carrega corrente, filtra som, sela uma rachadura ou atrai fauna etiquetada, trate-a como ecologia e infraestrutura.",
-          "audio": "Se isso se alimenta num respiradouro, cresce sobre um cabo e responde a um ping de reparo, pare de perguntar se está vivo ou se serve. Pergunte quem está usando.",
-          "in_game_wiki": "A biologia de HECTON-8 fica perigosa quando é tratada como cenário. A mesma pluma hidrotermal pode alimentar kelp de ferro, fazer crescer uma rede rica em xenônio, aquecer um degrau de salmoura, esconder um predador e energizar um pulso de reparo Atlas. Um rótulo de scanner dizendo recurso, planta ou animal é só o primeiro palpite.\n\nBlue Debt se forma por processo, não por localização. O calor ergue minerais. O sal ordena densidade. A floração microbiana edita a rede. Pastadores apararam as bordas. Biofilme carrega corrente fraca. Atlas aprende quais superfícies selam, conduzem ou repetem som. Quando um saqueador corta uma amostra, pode estar levando combustível, cadeia alimentar, marcador de rota e prova da mesma junta viva.",
-          "external_site": "O guia de ecologia do xenônio liga valor de recurso à vida local. Amostras de HECTON-8 importam porque geologia, organismos e reparo Atlas cruzam as mesmas rotas de pressão.",
-          "external_site_article": "Xenon-Omega costuma ser descrito como a coisa que a Deep Reach veio roubar. É verdade, mas pequeno demais. Em HECTON-8, o material azul pertence a uma cadeia alimentada por respiradouros: calor, sais sulfídicos, defeitos de pressão, floração fúngica, pastadores, biofilme condutor e rotinas Atlas danificadas tocam as mesmas superfícies.\n\nIsso torna a ecologia uma prova jogável. Um veio azul pode marcar valor, veneno, fuga de corrente, tráfego de predadores ou uma rota de reparo antiga. Um animal etiquetado pode estar caçando, pastando ou carregando dados velhos de sensores por um ciclo de manutenção. O jogador não precisa de uma fronteira limpa entre natureza e máquina. A pergunta útil é o que o processo está fazendo agora, e quem lucra se a amostra sobreviver.",
-          "field_note": "Blue Debt não está deitado na lama. Está sendo feito, comido, selado, colhido e renomeado."
-        },
-        "nl_NL": {
-          "title": "Veldgids voor xenonische voedsel- en reparatie-ecologie",
-          "scanner": "XENON-TROFISCH SPOOR // Venthitte, sulfidezout, blinde grazers, geleidend biofilm en Atlas-reparatiepulsen delen één gradiënt. Waardevolle blauwe groei is nooit schoon erts; het is een levend proces met een boekhoudtag.",
-          "terminal": "BIORESOURCE-VELDBERICHT // Classificeer HECTON-8-leven niet als flora, fauna of besmetting voordat routegedrag is waargenomen. Als een monster stroom draagt, geluid filtert, een scheur afdicht of getagde fauna aantrekt, behandel het als ecologie en infrastructuur.",
-          "audio": "Als het op een vent voedt, over een kabel groeit en op een reparatieping antwoordt, stop dan met vragen of het leeft of nuttig is. Vraag wie het gebruikt.",
-          "in_game_wiki": "HECTON-8-biologie wordt gevaarlijk wanneer ze als decor wordt behandeld. Dezelfde ventpluim kan ijzerkelp voeden, een xenonrijk rooster laten groeien, een pekelstap verwarmen, een roofdier maskeren en een Atlas-reparatiepuls voeden. Een scannerlabel dat bron, plant of dier zegt, is alleen de eerste gok.\n\nBlue Debt wordt gevormd door proces, niet door locatie. Hitte tilt mineralen op. Zout sorteert dichtheid. Microbiële bloei bewerkt het rooster. Grazers knippen de randen. Biofilm draagt zwakke stroom. Atlas leert welke oppervlakken afdichten, geleiden of geluid herhalen. Wanneer een Marauder een monster lossnijdt, kan hij brandstof, voedselweb, routemarkering en bewijs uit hetzelfde levende gewricht halen.",
-          "external_site": "De xenon-ecologiegids verbindt grondstofwaarde met lokaal leven. HECTON-8-monsters doen ertoe omdat geologie, organismen en Atlas-reparatiegedrag dezelfde drukroutes blijven kruisen.",
-          "external_site_article": "Xenon-Omega wordt vaak beschreven als datgene wat Deep Reach kwam stelen. Dat klopt, maar het is te klein. Op HECTON-8 hoort het blauwe materiaal bij een door vents gevoede keten: hitte, sulfidezouten, drukdefecten, schimmelbloei, grazers, geleidend biofilm en beschadigde Atlas-routines raken dezelfde oppervlakken.\n\nDaardoor wordt ecologie speelbaar bewijs. Een blauwe ader kan waarde, gif, stroomlek, roofdierverkeer of een oud reparatiepad markeren. Een getagd dier kan jagen, grazen of oude sensorgegevens door een onderhoudslus dragen. De speler heeft geen nette grens tussen natuur en machine nodig. De nuttige vraag is wat het proces nu doet en wie profiteert als het monster overleeft.",
-          "field_note": "Blue Debt ligt niet in de modder. Het wordt gemaakt, gegeten, verzegeld, geoogst en hernoemd."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.xenon_trophic_repair_ecology_fieldguide",
+    "secondary": [
+     "unlock.first_blue_debt_living_process_trace",
+     "unlock.first_tagged_fauna_current_trace",
+     "unlock.first_vent_biofilm_repair_crosslink"
+    ],
+    "poi_tags": [
+     "poi.xenon_trophic_fieldguide",
+     "poi.vent_biofilm_sample",
+     "poi.tagged_fauna_current_trace"
+    ],
+    "biome_tags": [
+     "biome.cable_reef",
+     "biome.brine_canyon",
+     "biome.atlas_basin"
+    ],
+    "first_20_boundary": "Frames HECTON-8 ecology as route evidence, resource process and Atlas misuse before creature scans become simple bestiary entries."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Bio-Resource Scanner Overlay",
+     "terminal": "Deep Reach Biocustody Notice",
+     "audio": "Xenobiology Lab Training Cut",
+     "in_game_wiki": "PDA Ecology Archive",
+     "external_site": "Public Site Ecology Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_xenon_trophic_repair_fieldguide",
+    "truth_payload": "Xenon-Omega exists inside a vent-fed trophic and repair chain. Samples, biofilm, fauna and Atlas pulses are process evidence before they become loot.",
+    "player_question": "How can a resource page explain ecology without flattening life into loot?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Xenon Trophic Repair Ecology Fieldguide",
+     "scanner": "XENON TROPHIC TRACE // Vent heat, sulfide salt, blind grazers, conductive biofilm and Atlas repair pulses share one gradient. Valuable blue growth is never clean ore; it is a living process with a ledger tag.",
+     "terminal": "BIORESOURCE FIELD NOTICE // Do not classify HECTON-8 life as flora, fauna or contamination until route behavior is observed. If a sample carries current, filters sound, seals a crack or attracts tagged fauna, treat it as ecology and infrastructure.",
+     "audio": "If it feeds on a vent, grows over a cable and answers a repair ping, stop asking whether it is alive or useful. Ask who is using it.",
+     "in_game_wiki": "HECTON-8 biology becomes dangerous when it is treated as scenery. The same vent plume can feed iron kelp, grow a xenon-rich lattice, warm a brine step, mask a predator and power an Atlas repair pulse. A scanner label that says resource, plant or animal is only the first guess.\n\nBlue Debt is formed by process, not by placement. Heat lifts minerals. Salt sorts density. Microbial bloom edits the lattice. Grazers crop the edges. Biofilm carries weak current. Atlas learns which surfaces seal, conduct or repeat sound. When a Marauder cuts a sample loose, they may be taking fuel, food web, route marker and evidence from the same living joint.",
+     "external_site": "The xenon ecology fieldguide connects resource value to local life. HECTON-8 samples matter because geology, organisms and Atlas repair behavior keep crossing the same pressure routes.",
+     "external_site_article": "Xenon-Omega is often described as the thing Deep Reach came to steal. That is true, but too small. On HECTON-8 the blue material is part of a vent-fed chain: heat, sulfide salts, pressure defects, fungal bloom, grazers, conductive biofilm and damaged Atlas routines all touch the same surfaces.\n\nThat makes ecology playable evidence. A blue seam may mark value, poison, current leakage, predator traffic or an old repair path. A tagged animal may be hunting, grazing or carrying stale sensor data through a maintenance loop. The player does not need a clean boundary between nature and machine. The useful question is what the process is doing now, and who profits if the sample survives.",
+     "field_note": "Blue Debt is not lying in the mud. It is being made, eaten, sealed, harvested and renamed."
+    },
+    "ru_RU": {
+     "title": "Полевой справочник ксеноновой пищевой и ремонтной экологии",
+     "scanner": "КСЕНОНОВЫЙ ТРОФИЧЕСКИЙ СЛЕД // Жар жерла, сульфидная соль, слепые пастбищники, проводящая биопленка и ремонтные импульсы Atlas лежат на одном градиенте. Ценный синий рост не бывает чистой рудой; это живой процесс с бухгалтерской меткой.",
+     "terminal": "ПОЛЕВОЕ УВЕДОМЛЕНИЕ О БИОРЕСУРСАХ // Не классифицируй жизнь HECTON-8 как флору, фауну или заражение, пока не увидишь поведение маршрута. Если образец проводит ток, фильтрует звук, запечатывает трещину или привлекает меченую фауну, считай его экологией и инфраструктурой.",
+     "audio": "Если это питается у жерла, растет поверх кабеля и отвечает на ремонтный пинг, хватит спрашивать, живое оно или полезное. Спроси, кто им пользуется.",
+     "in_game_wiki": "Биология HECTON-8 становится опасной, когда ее считают декорацией. Один и тот же плюм жерла может кормить железную водоросль, выращивать ксеноновую решетку, греть соляную ступень, скрывать хищника и питать ремонтный импульс Atlas. Метка сканера ресурс, растение или животное это только первая догадка.\n\nBlue Debt формируется процессом, а не местом. Жар поднимает минералы. Соль сортирует плотность. Микробное цветение правит решетку. Пастбищники срезают края. Биопленка несет слабый ток. Atlas учится, какие поверхности запечатывают, проводят или повторяют звук. Когда мародер вырезает образец, он может забирать топливо, пищевую цепь, маршрутный маркер и доказательство из одного живого стыка.",
+     "external_site": "Полевой справочник ксеноновой экологии связывает ценность ресурса с местной жизнью. Образцы HECTON-8 важны потому, что геология, организмы и ремонтное поведение Atlas сходятся на одних и тех же маршрутах давления.",
+     "external_site_article": "Xenon-Omega часто описывают как то, что Deep Reach прилетела украсть. Это правда, но слишком маленькая. На HECTON-8 синий материал входит в цепь, которую кормят жерла: тепло, сульфидные соли, дефекты давления, грибковое цветение, пастбищники, проводящая биопленка и поврежденные процедуры Atlas касаются одних и тех же поверхностей.\n\nПоэтому экология становится игровым доказательством. Синяя жила может означать ценность, яд, утечку тока, след хищников или старую ремонтную тропу. Меченое животное может охотиться, пастись или нести старые сенсорные данные по петле обслуживания. Игроку не нужна чистая граница между природой и машиной. Полезный вопрос другой: что процесс делает сейчас, и кто заработает, если образец выживет.",
+     "field_note": "Blue Debt не лежит в иле. Его делают, едят, запечатывают, добывают и переименовывают."
+    },
+    "ja_JP": {
+     "title": "キセノン栄養修復生態フィールドガイド",
+     "scanner": "キセノン栄養痕跡 // 噴出口熱、硫化塩、盲目の草食群、導電性バイオフィルム、Atlas修復パルスが同じ勾配を共有。価値ある青い成長は清潔な鉱石ではない。台帳タグを持つ生きたプロセスだ。",
+     "terminal": "生物資源フィールド通知 // HECTON-8の生命を、経路行動を見る前に植物、動物、汚染と分類するな。標本が電流を運ぶ、音を濾す、亀裂を塞ぐ、タグ付き動物を寄せるなら、生態系でありインフラだと扱え。",
+     "audio": "噴出口で食い、ケーブルの上に育ち、修復 ping に答えるなら、生き物か道具かを問うのはやめろ。誰が使っているかを問え。",
+     "in_game_wiki": "HECTON-8の生物は、背景だと思った瞬間に危険になる。同じ噴出口のプルームが、鉄ケルプを養い、キセノン濃縮格子を育て、塩水の段差を温め、捕食者を隠し、Atlas修復パルスに電力を与えることがある。スキャナーの資源、植物、動物というラベルは最初の推測にすぎない。\n\nBlue Debtは場所ではなくプロセスでできる。熱が鉱物を持ち上げる。塩が密度を分ける。微生物ブルームが格子を編集する。草食群が縁を削る。バイオフィルムが弱い電流を運ぶ。Atlasはどの表面が塞ぎ、導通し、音を反復するかを学ぶ。マローダーが標本を切り出す時、燃料、食物網、経路標識、証拠を同じ生きた継ぎ目から奪っているかもしれない。",
+     "external_site": "キセノン生態フィールドガイドは資源価値を現地生命につなげる。HECTON-8の標本が重要なのは、地質、生物、Atlas修復行動が同じ圧力経路で交差するからだ。",
+     "external_site_article": "Xenon-OmegaはDeep Reachが盗みに来たものとして語られがちだ。それは正しいが、狭すぎる。HECTON-8では青い物質は噴出口に養われる連鎖の一部だ。熱、硫化塩、圧力欠陥、菌類ブルーム、草食群、導電性バイオフィルム、損傷したAtlas手順が同じ表面に触れる。\n\nだから生態はプレイ可能な証拠になる。青い脈は価値、毒、電流漏れ、捕食者の通路、古い修復経路を示すことがある。タグ付き動物は狩っているのか、食べているのか、保守ループに古いセンサーデータを運んでいるのかもしれない。自然と機械のきれいな境界は不要だ。重要なのは、そのプロセスが今何をしていて、標本が残れば誰が得をするかだ。",
+     "field_note": "Blue Debtは泥の中に落ちているのではない。作られ、食われ、塞がれ、採られ、名前を変えられている。"
+    },
+    "zh_CN": {
+     "title": "氙营养修复生态野外指南",
+     "scanner": "氙营养痕迹 // 喷口热、硫化盐、盲眼牧食者、导电生物膜和Atlas修复脉冲共享同一梯度。值钱的蓝色生长从来不是干净矿石；它是带账簿标签的活过程。",
+     "terminal": "生物资源现场通知 // 在观察路线行为之前，不要把HECTON-8生命归类为植物、动物或污染。如果样本导电、滤声、封住裂缝或吸引带标签动物，就把它当作生态和基础设施。",
+     "audio": "如果它靠喷口进食，长过电缆，还回应修复 ping，就别再问它是活物还是工具。问是谁在使用它。",
+     "in_game_wiki": "当HECTON-8生物被当成布景时，它就变得危险。同一股喷口羽流可以喂养铁藻，生长富氙晶格，加热盐水台阶，掩护捕食者，并为Atlas修复脉冲供能。扫描器标出的资源、植物或动物，只是第一猜测。\n\nBlue Debt由过程形成，不由地点决定。热量抬升矿物。盐分整理密度。微生物爆发改写晶格。牧食者修剪边缘。生物膜传导微弱电流。Atlas学习哪些表面能封闭、导电或重复声音。当掠夺者切下样本时，可能同时从同一个活接缝中拿走燃料、食物网、路线标记和证据。",
+     "external_site": "氙生态野外指南把资源价值和本地生命连在一起。HECTON-8样本重要，是因为地质、生物和Atlas修复行为不断在同一批压力路线相交。",
+     "external_site_article": "Xenon-Omega常被描述成Deep Reach来偷的东西。这是真的，但说得太小了。在HECTON-8，蓝色物质属于一条由喷口供养的链：热量、硫化盐、压力缺陷、真菌爆发、牧食者、导电生物膜和受损Atlas例程都触碰同一批表面。\n\n这让生态成为可游玩的证据。蓝色矿脉可能标记价值、毒性、电流泄漏、捕食者通行或旧修复路径。带标签动物可能在狩猎、啃食，或者把陈旧传感器数据带进维护循环。玩家不需要自然和机器之间的干净边界。真正有用的问题是：这个过程现在在做什么，如果样本活下来，谁会获利。",
+     "field_note": "Blue Debt不是躺在泥里。它正在被制造、吃掉、封存、采走并改名。"
+    },
+    "fr_FR": {
+     "title": "Guide de terrain de l'écologie xénon trophique et réparatrice",
+     "scanner": "TRACE TROPHIQUE XÉNON // Chaleur de cheminée, sel sulfuré, brouteurs aveugles, biofilm conducteur et impulsions de réparation Atlas partagent le même gradient. La croissance bleue de valeur n'est jamais un minerai propre ; c'est un processus vivant avec une étiquette de registre.",
+     "terminal": "AVIS DE BIORESSOURCE // Ne classez pas la vie de HECTON-8 comme flore, faune ou contamination avant d'observer son comportement de route. Si un échantillon porte du courant, filtre le son, scelle une fissure ou attire une faune marquée, traitez-le comme écologie et infrastructure.",
+     "audio": "Si cela se nourrit sur une cheminée, pousse sur un câble et répond à un ping de réparation, cessez de demander si c'est vivant ou utile. Demandez qui s'en sert.",
+     "in_game_wiki": "La biologie de HECTON-8 devient dangereuse quand on la traite comme un décor. Le même panache hydrothermal peut nourrir le varech de fer, faire croître une trame riche en xénon, réchauffer une marche de saumure, masquer un prédateur et alimenter une impulsion de réparation Atlas. Une étiquette de scanner disant ressource, plante ou animal n'est qu'une première hypothèse.\n\nBlue Debt naît d'un processus, pas d'un emplacement. La chaleur soulève les minéraux. Le sel trie la densité. La prolifération microbienne modifie la trame. Les brouteurs rognent les bords. Le biofilm transporte un faible courant. Atlas apprend quelles surfaces scellent, conduisent ou répètent le son. Quand un Maraudeur détache un échantillon, il peut prendre du carburant, un réseau alimentaire, un marqueur de route et une preuve dans la même jointure vivante.",
+     "external_site": "Le guide d'écologie xénon relie la valeur des ressources à la vie locale. Les échantillons de HECTON-8 comptent parce que géologie, organismes et comportement de réparation Atlas croisent les mêmes routes de pression.",
+     "external_site_article": "Xenon-Omega est souvent décrit comme ce que Deep Reach est venue voler. C'est vrai, mais trop étroit. Sur HECTON-8, la matière bleue appartient à une chaîne nourrie par les cheminées : chaleur, sels sulfurés, défauts de pression, prolifération fongique, brouteurs, biofilm conducteur et routines Atlas endommagées touchent les mêmes surfaces.\n\nL'écologie devient ainsi une preuve jouable. Une veine bleue peut signaler valeur, poison, fuite de courant, passage de prédateur ou ancien chemin de réparation. Un animal marqué peut chasser, brouter ou porter de vieilles données de capteur dans une boucle de maintenance. Le joueur n'a pas besoin d'une frontière nette entre nature et machine. La question utile est ce que le processus fait maintenant, et qui profite si l'échantillon survit.",
+     "field_note": "Blue Debt ne repose pas dans la vase. Il est fabriqué, mangé, scellé, récolté et renommé."
+    },
+    "es_ES": {
+     "title": "Guía de campo de ecología trófica y reparadora de xenón",
+     "scanner": "RASTRO TRÓFICO DE XENÓN // Calor de respiradero, sal sulfurosa, pastadores ciegos, biofilm conductor e impulsos de reparación Atlas comparten un gradiente. El crecimiento azul valioso nunca es mena limpia; es un proceso vivo con etiqueta de libro mayor.",
+     "terminal": "AVISO DE BIORRECURSO // No clasifiques la vida de HECTON-8 como flora, fauna o contaminación hasta observar su comportamiento de ruta. Si una muestra lleva corriente, filtra sonido, sella una grieta o atrae fauna etiquetada, trátala como ecología e infraestructura.",
+     "audio": "Si se alimenta en un respiradero, crece sobre un cable y responde a un ping de reparación, deja de preguntar si está vivo o si sirve. Pregunta quién lo está usando.",
+     "in_game_wiki": "La biología de HECTON-8 se vuelve peligrosa cuando se trata como decorado. La misma pluma hidrotermal puede alimentar kelp de hierro, hacer crecer una red rica en xenón, calentar un escalón de salmuera, ocultar un depredador y alimentar un impulso de reparación Atlas. Una etiqueta de escáner que dice recurso, planta o animal solo es la primera conjetura.\n\nBlue Debt se forma por proceso, no por ubicación. El calor levanta minerales. La sal ordena densidad. La floración microbiana edita la red. Los pastadores recortan los bordes. El biofilm lleva una corriente débil. Atlas aprende qué superficies sellan, conducen o repiten sonido. Cuando un saqueador corta una muestra, puede estar sacando combustible, red trófica, marcador de ruta y prueba del mismo nudo vivo.",
+     "external_site": "La guía de ecología de xenón conecta el valor de los recursos con la vida local. Las muestras de HECTON-8 importan porque geología, organismos y reparación Atlas cruzan las mismas rutas de presión.",
+     "external_site_article": "Xenon-Omega suele describirse como lo que Deep Reach vino a robar. Es cierto, pero demasiado estrecho. En HECTON-8, el material azul pertenece a una cadena alimentada por respiraderos: calor, sales sulfurosas, defectos de presión, floración fúngica, pastadores, biofilm conductor y rutinas dañadas de Atlas tocan las mismas superficies.\n\nEso vuelve la ecología una prueba jugable. Una veta azul puede señalar valor, veneno, fuga de corriente, tráfico de depredadores o una antigua ruta de reparación. Un animal etiquetado puede estar cazando, pastando o llevando datos viejos de sensores dentro de un ciclo de mantenimiento. El jugador no necesita una frontera limpia entre naturaleza y máquina. La pregunta útil es qué hace ahora el proceso y quién gana si la muestra sobrevive.",
+     "field_note": "Blue Debt no yace en el lodo. Se fabrica, se come, se sella, se cosecha y se rebautiza."
+    },
+    "de_DE": {
+     "title": "Feldführer für xenonische Nahrungs- und Reparaturökologie",
+     "scanner": "XENON-TROPHIESPUR // Venthitze, Sulfidsalz, blinde Weider, leitfähiger Biofilm und Atlas-Reparaturimpulse teilen einen Gradienten. Wertvolles blaues Wachstum ist nie sauberes Erz; es ist ein lebender Prozess mit Buchhaltungsmarke.",
+     "terminal": "BIORESSOURCEN-FELDHINWEIS // Klassifiziere HECTON-8-Leben nicht als Flora, Fauna oder Kontamination, bevor sein Routenverhalten beobachtet ist. Wenn eine Probe Strom trägt, Schall filtert, einen Riss versiegelt oder markierte Fauna anzieht, behandle sie als Ökologie und Infrastruktur.",
+     "audio": "Wenn es an einem Vent frisst, über ein Kabel wächst und auf einen Reparatur-Ping antwortet, frag nicht mehr, ob es lebt oder nützlich ist. Frag, wer es benutzt.",
+     "in_game_wiki": "HECTON-8-Biologie wird gefährlich, sobald man sie als Kulisse behandelt. Dieselbe Ventfahne kann Eisenkelp ernähren, ein xenonreiches Gitter wachsen lassen, eine Sole-Stufe wärmen, einen Räuber verdecken und einen Atlas-Reparaturimpuls speisen. Ein Scanneretikett mit Ressource, Pflanze oder Tier ist nur die erste Vermutung.\n\nBlue Debt entsteht durch Prozess, nicht durch Lage. Hitze hebt Mineralien. Salz sortiert Dichte. Mikrobielle Blüte verändert das Gitter. Weider schneiden die Ränder. Biofilm trägt schwachen Strom. Atlas lernt, welche Oberflächen abdichten, leiten oder Schall wiederholen. Wenn ein Marauder eine Probe löst, nimmt er vielleicht Brennstoff, Nahrungskette, Routenmarker und Beweis aus demselben lebenden Gelenk.",
+     "external_site": "Der Xenon-Ökologie-Feldführer verbindet Ressourcenwert mit lokalem Leben. HECTON-8-Proben zählen, weil Geologie, Organismen und Atlas-Reparaturverhalten dieselben Druckrouten kreuzen.",
+     "external_site_article": "Xenon-Omega wird oft als das beschrieben, was Deep Reach stehlen wollte. Das stimmt, ist aber zu eng. Auf HECTON-8 gehört das blaue Material zu einer ventgespeisten Kette: Hitze, Sulfidsalze, Druckdefekte, Pilzblüte, Weider, leitfähiger Biofilm und beschädigte Atlas-Routinen berühren dieselben Oberflächen.\n\nSo wird Ökologie spielbarer Beweis. Eine blaue Ader kann Wert, Gift, Stromleck, Räuberverkehr oder alten Reparaturpfad markieren. Ein markiertes Tier kann jagen, weiden oder veraltete Sensordaten durch eine Wartungsschleife tragen. Der Spieler braucht keine saubere Grenze zwischen Natur und Maschine. Die nützliche Frage lautet, was der Prozess jetzt tut und wer profitiert, wenn die Probe überlebt.",
+     "field_note": "Blue Debt liegt nicht im Schlamm. Es wird gemacht, gefressen, versiegelt, geerntet und umbenannt."
+    },
+    "pl_PL": {
+     "title": "Przewodnik polowy po ksenonowej ekologii pokarmu i naprawy",
+     "scanner": "KSENONOWY ŚLAD TROFICZNY // Żar wentu, sól siarczkowa, ślepi skubacze, przewodzący biofilm i impulsy naprawcze Atlas dzielą jeden gradient. Cenny niebieski wzrost nigdy nie jest czystą rudą; to żywy proces z etykietą księgową.",
+     "terminal": "KOMUNIKAT BIOZASOBÓW // Nie klasyfikuj życia HECTON-8 jako flory, fauny ani skażenia, dopóki nie zobaczysz zachowania trasy. Jeśli próbka przewodzi prąd, filtruje dźwięk, uszczelnia pęknięcie albo przyciąga znakowaną faunę, traktuj ją jako ekologię i infrastrukturę.",
+     "audio": "Jeśli żeruje na wencie, rośnie po kablu i odpowiada na ping naprawczy, przestań pytać, czy jest żywe albo użyteczne. Zapytaj, kto tego używa.",
+     "in_game_wiki": "Biologia HECTON-8 staje się groźna, gdy traktuje się ją jak dekorację. Ten sam pióropusz wentu może karmić żelazne wodorosty, hodować sieć bogatą w ksenon, ogrzewać stopień solanki, maskować drapieżnika i zasilać impuls naprawczy Atlas. Etykieta skanera: zasób, roślina albo zwierzę, jest tylko pierwszym domysłem.\n\nBlue Debt powstaje przez proces, nie przez położenie. Ciepło podnosi minerały. Sól sortuje gęstość. Zakręt mikrobiologiczny poprawia sieć. Skubacze obcinają krawędzie. Biofilm niesie słaby prąd. Atlas uczy się, które powierzchnie uszczelniają, przewodzą albo powtarzają dźwięk. Kiedy Marauder odcina próbkę, może brać paliwo, sieć pokarmową, znacznik trasy i dowód z tego samego żywego złącza.",
+     "external_site": "Przewodnik po ekologii ksenonu łączy wartość zasobów z lokalnym życiem. Próbki HECTON-8 są ważne, bo geologia, organizmy i naprawy Atlas przecinają te same trasy ciśnienia.",
+     "external_site_article": "Xenon-Omega bywa opisywany jako rzecz, którą Deep Reach przybyła ukraść. To prawda, ale zbyt mała. Na HECTON-8 niebieski materiał należy do łańcucha karmionego wentami: ciepło, sole siarczkowe, defekty ciśnienia, zakwit grzybowy, skubacze, przewodzący biofilm i uszkodzone rutyny Atlas dotykają tych samych powierzchni.\n\nTo zmienia ekologię w grywalny dowód. Niebieska żyła może oznaczać wartość, truciznę, upływ prądu, ścieżkę drapieżników albo stary szlak naprawczy. Znakowane zwierzę może polować, żerować albo przenosić stare dane czujników przez pętlę serwisową. Gracz nie potrzebuje czystej granicy między naturą i maszyną. Użyteczne pytanie brzmi: co ten proces robi teraz i kto zyska, jeśli próbka przetrwa.",
+     "field_note": "Blue Debt nie leży w mule. Jest wytwarzany, zjadany, uszczelniany, zbierany i przemianowywany."
+    },
+    "uk_UA": {
+     "title": "Польовий довідник ксенонової харчової та ремонтної екології",
+     "scanner": "КСЕНОНОВИЙ ТРОФІЧНИЙ СЛІД // Жар жерла, сульфідна сіль, сліпі пасовищники, провідна біоплівка й ремонтні імпульси Atlas лежать на одному градієнті. Цінний синій ріст не буває чистою рудою; це живий процес із бухгалтерською міткою.",
+     "terminal": "ПОЛЬОВЕ ПОВІДОМЛЕННЯ ПРО БІОРЕСУРСИ // Не класифікуй життя HECTON-8 як флору, фауну чи зараження, доки не побачиш поведінку маршруту. Якщо зразок проводить струм, фільтрує звук, запечатує тріщину або приваблює мічену фауну, вважай його екологією та інфраструктурою.",
+     "audio": "Якщо воно живиться біля жерла, росте поверх кабелю й відповідає на ремонтний пінг, припини питати, живе воно чи корисне. Запитай, хто ним користується.",
+     "in_game_wiki": "Біологія HECTON-8 стає небезпечною, коли її вважають декорацією. Один і той самий плюм жерла може годувати залізні водорості, вирощувати ксенонову ґратку, гріти соляну сходинку, ховати хижака й живити ремонтний імпульс Atlas. Мітка сканера ресурс, рослина чи тварина це лише перша здогадка.\n\nBlue Debt формується процесом, а не місцем. Жар підіймає мінерали. Сіль сортує щільність. Мікробне цвітіння редагує ґратку. Пасовищники зрізають краї. Біоплівка несе слабкий струм. Atlas вчиться, які поверхні запечатують, проводять або повторюють звук. Коли мародер вирізає зразок, він може забирати пальне, харчовий ланцюг, маршрутний маркер і доказ із одного живого стику.",
+     "external_site": "Польовий довідник ксенонової екології пов'язує цінність ресурсу з місцевим життям. Зразки HECTON-8 важливі, бо геологія, організми й ремонтна поведінка Atlas перетинають ті самі маршрути тиску.",
+     "external_site_article": "Xenon-Omega часто описують як те, що Deep Reach прилетіла вкрасти. Це правда, але надто вузька. На HECTON-8 синій матеріал належить до ланцюга, який годують жерла: тепло, сульфідні солі, дефекти тиску, грибкове цвітіння, пасовищники, провідна біоплівка та пошкоджені процедури Atlas торкаються тих самих поверхонь.\n\nТому екологія стає ігровим доказом. Синя жила може означати цінність, отруту, витік струму, шлях хижаків або стару ремонтну стежку. Мічена тварина може полювати, пастися або переносити старі сенсорні дані петлею обслуговування. Гравцеві не потрібна чиста межа між природою і машиною. Корисне питання інше: що процес робить зараз, і хто заробить, якщо зразок виживе.",
+     "field_note": "Blue Debt не лежить у мулі. Його роблять, їдять, запечатують, видобувають і перейменовують."
+    },
+    "ar_SA": {
+     "title": "دليل ميداني لبيئة الزينون الغذائية والإصلاحية",
+     "scanner": "أثر زينون غذائي // حرارة الفتحات وملح الكبريتيد والرعاة العميان والغشاء الحيوي الناقل ونبضات إصلاح Atlas تشترك في تدرج واحد. النمو الأزرق الثمين ليس خاما نظيفا؛ إنه عملية حية تحمل وسم دفتر.",
+     "terminal": "إشعار ميداني بالموارد الحيوية // لا تصنف حياة HECTON-8 كنبات أو حيوان أو تلوث قبل مراقبة سلوك المسار. إذا حملت العينة تيارا أو رشحت الصوت أو ختمت شقا أو جذبت حيوانا موسوما، فتعامل معها كبيئة وبنية تحتية.",
+     "audio": "إذا كان يتغذى على فتحة، وينمو فوق كابل، ويرد على نبضة إصلاح، فتوقف عن سؤال هل هو حي أم مفيد. اسأل من يستخدمه.",
+     "in_game_wiki": "تصبح بيولوجيا HECTON-8 خطرة عندما تعامل كمنظر خلفي. يمكن للعمود الحراري نفسه أن يطعم عشب الحديد، وينمي شبكة غنية بالزينون، ويدفئ درجة ملحية، ويخفي مفترسا، ويغذي نبضة إصلاح Atlas. وسم الماسح: مورد أو نبات أو حيوان، ليس إلا التخمين الأول.\n\nيتكون Blue Debt من عملية لا من موقع. الحرارة ترفع المعادن. الملح يرتب الكثافة. الازدهار الميكروبي يحرر الشبكة. الرعاة يقصون الحواف. الغشاء الحيوي يحمل تيارا ضعيفا. يتعلم Atlas أي الأسطح تختم أو توصل أو تكرر الصوت. عندما يقطع مغير عينة، قد يأخذ وقودا وسلسلة غذاء وعلامة مسار ودليلا من المفصل الحي نفسه.",
+     "external_site": "يربط دليل بيئة الزينون قيمة المورد بالحياة المحلية. تهم عينات HECTON-8 لأن الجيولوجيا والكائنات وسلوك إصلاح Atlas تتقاطع في مسارات الضغط نفسها.",
+     "external_site_article": "يوصف Xenon-Omega غالبا بأنه الشيء الذي جاءت Deep Reach لسرقته. هذا صحيح، لكنه ضيق. على HECTON-8 تنتمي المادة الزرقاء إلى سلسلة تغذيها الفتحات: الحرارة وأملاح الكبريتيد وعيوب الضغط والازدهار الفطري والرعاة والغشاء الحيوي الناقل وروتينات Atlas التالفة كلها تلمس الأسطح نفسها.\n\nلهذا تصبح البيئة دليلا قابلا للعب. قد تشير عرق أزرق إلى قيمة أو سم أو تسرب تيار أو حركة مفترس أو مسار إصلاح قديم. قد يكون الحيوان الموسوم يصطاد أو يرعى أو يحمل بيانات حساسات قديمة داخل حلقة صيانة. لا يحتاج اللاعب إلى حد نظيف بين الطبيعة والآلة. السؤال المفيد هو ما الذي تفعله العملية الآن، ومن يربح إذا نجت العينة.",
+     "field_note": "Blue Debt لا يرقد في الطين. إنه يصنع ويؤكل ويختم ويحصد ويعاد تسميته."
+    },
+    "id_ID": {
+     "title": "Panduan Lapangan Ekologi Trofik dan Perbaikan Xenon",
+     "scanner": "JEJAK TROFIK XENON // Panas ventilasi, garam sulfida, pemakan buta, biofilm konduktif, dan pulsa perbaikan Atlas berbagi satu gradien. Pertumbuhan biru bernilai tidak pernah berupa bijih bersih; itu proses hidup dengan tag buku besar.",
+     "terminal": "PEMBERITAHUAN BIORESOURCE // Jangan klasifikasikan kehidupan HECTON-8 sebagai flora, fauna, atau kontaminasi sebelum perilaku rutenya diamati. Jika sampel membawa arus, menyaring suara, menutup retakan, atau menarik fauna bertag, perlakukan sebagai ekologi dan infrastruktur.",
+     "audio": "Jika ia makan di ventilasi, tumbuh di atas kabel, dan menjawab ping perbaikan, berhenti bertanya apakah ia hidup atau berguna. Tanya siapa yang memakainya.",
+     "in_game_wiki": "Biologi HECTON-8 menjadi berbahaya ketika dianggap pemandangan. Satu plume ventilasi yang sama dapat memberi makan kelp besi, menumbuhkan kisi kaya xenon, menghangatkan anak tangga brine, menyembunyikan predator, dan memberi daya pada pulsa perbaikan Atlas. Label pemindai sumber daya, tumbuhan, atau hewan hanyalah tebakan pertama.\n\nBlue Debt dibentuk oleh proses, bukan lokasi. Panas mengangkat mineral. Garam menyortir kerapatan. Bloom mikroba mengedit kisi. Pemakan memangkas tepi. Biofilm membawa arus lemah. Atlas belajar permukaan mana yang menyegel, menghantar, atau mengulang suara. Saat Marauder memotong sampel, ia mungkin mengambil bahan bakar, jejaring makanan, penanda rute, dan bukti dari sambungan hidup yang sama.",
+     "external_site": "Panduan ekologi xenon menghubungkan nilai sumber daya dengan kehidupan lokal. Sampel HECTON-8 penting karena geologi, organisme, dan perilaku perbaikan Atlas terus melintasi rute tekanan yang sama.",
+     "external_site_article": "Xenon-Omega sering digambarkan sebagai hal yang datang dicuri Deep Reach. Itu benar, tetapi terlalu sempit. Di HECTON-8, material biru adalah bagian dari rantai yang diberi makan ventilasi: panas, garam sulfida, cacat tekanan, bloom jamur, pemakan, biofilm konduktif, dan rutin Atlas yang rusak menyentuh permukaan yang sama.\n\nItu membuat ekologi menjadi bukti yang bisa dimainkan. Urat biru dapat menandai nilai, racun, kebocoran arus, lalu lintas predator, atau jalur perbaikan lama. Hewan bertag dapat sedang berburu, merumput, atau membawa data sensor basi melalui loop pemeliharaan. Pemain tidak membutuhkan batas bersih antara alam dan mesin. Pertanyaan berguna adalah apa yang proses itu lakukan sekarang, dan siapa yang untung jika sampel bertahan.",
+     "field_note": "Blue Debt tidak berbaring di lumpur. Ia sedang dibuat, dimakan, disegel, dipanen, dan diganti namanya."
+    },
+    "ko_KR": {
+     "title": "제논 영양 수리 생태 현장 지침서",
+     "scanner": "제논 영양 흔적 // 분출구 열, 황화염, 눈먼 방목자, 전도성 바이오필름, Atlas 수리 펄스가 하나의 구배를 공유한다. 값나가는 푸른 성장은 깨끗한 광석이 아니다. 장부 태그가 붙은 살아 있는 과정이다.",
+     "terminal": "생물자원 현장 고지 // 경로 행동을 관찰하기 전에는 HECTON-8 생명을 식물, 동물, 오염으로 분류하지 마라. 표본이 전류를 운반하거나, 소리를 거르거나, 균열을 봉합하거나, 태그 달린 동물을 끌어들이면 생태와 인프라로 취급하라.",
+     "audio": "분출구에서 먹고, 케이블 위로 자라며, 수리 ping에 답한다면 그것이 살아 있는지 쓸모 있는지 묻지 마라. 누가 쓰고 있는지 물어라.",
+     "in_game_wiki": "HECTON-8의 생물학은 배경으로 취급되는 순간 위험해진다. 같은 분출구 플룸이 철 켈프를 먹이고, 제논 풍부 격자를 키우고, 염수 계단을 데우고, 포식자를 숨기고, Atlas 수리 펄스에 전력을 줄 수 있다. 스캐너의 자원, 식물, 동물 라벨은 첫 추측일 뿐이다.\n\nBlue Debt는 위치가 아니라 과정으로 형성된다. 열이 광물을 들어 올린다. 소금이 밀도를 나눈다. 미생물 번성이 격자를 고친다. 방목자가 가장자리를 깎는다. 바이오필름이 약한 전류를 운반한다. Atlas는 어떤 표면이 봉합하고, 전도하고, 소리를 반복하는지 배운다. Marauder가 표본을 잘라낼 때 같은 살아 있는 이음새에서 연료, 먹이망, 경로 표식, 증거를 함께 가져갈 수 있다.",
+     "external_site": "제논 생태 지침서는 자원 가치를 현지 생명과 연결한다. HECTON-8 표본이 중요한 이유는 지질, 생물, Atlas 수리 행동이 같은 압력 경로에서 계속 교차하기 때문이다.",
+     "external_site_article": "Xenon-Omega는 Deep Reach가 훔치러 온 물건으로 자주 설명된다. 맞지만 너무 좁다. HECTON-8에서 푸른 물질은 분출구가 먹이는 사슬의 일부다. 열, 황화염, 압력 결함, 균류 번성, 방목자, 전도성 바이오필름, 손상된 Atlas 루틴이 같은 표면을 만진다.\n\n그래서 생태는 플레이 가능한 증거가 된다. 푸른 줄기는 가치, 독, 전류 누출, 포식자 통행, 오래된 수리 경로를 표시할 수 있다. 태그 달린 동물은 사냥 중일 수도, 먹는 중일 수도, 유지보수 루프를 통해 낡은 센서 데이터를 운반 중일 수도 있다. 플레이어에게 자연과 기계의 깨끗한 경계는 필요 없다. 유용한 질문은 그 과정이 지금 무엇을 하고 있으며, 표본이 살아남으면 누가 이익을 얻는가다.",
+     "field_note": "Blue Debt는 진흙 속에 놓여 있지 않다. 만들어지고, 먹히고, 봉합되고, 채취되고, 이름이 바뀐다."
+    },
+    "he_IL": {
+     "title": "מדריך שדה לאקולוגיית קסנון מזינה ומתקנת",
+     "scanner": "עקבת הזנה של קסנון // חום פתחים, מלחי גופרית, רועים עיוורים, ביופילם מוליך ופעימות תיקון של Atlas חולקים מדרון אחד. צמיחה כחולה יקרת ערך אינה עפרה נקייה; היא תהליך חי עם תג חשבונאי.",
+     "terminal": "הודעת שדה למשאב ביולוגי // אל תסווג את החיים של HECTON-8 כצמחייה, בעלי חיים או זיהום לפני שנצפתה התנהגות מסלול. אם דגימה מוליכה זרם, מסננת קול, אוטמת סדק או מושכת בעלי חיים מתויגים, התייחס אליה כאקולוגיה ותשתית.",
+     "audio": "אם זה ניזון מפתח, גדל על כבל ועונה לפינג תיקון, הפסק לשאול אם זה חי או שימושי. שאל מי משתמש בזה.",
+     "in_game_wiki": "הביולוגיה של HECTON-8 נעשית מסוכנת כשמתייחסים אליה כתפאורה. אותה פלומת פתח יכולה להזין אצת ברזל, לגדל סריג עשיר בקסנון, לחמם מדרגת מי מלח, להסתיר טורף ולהפעיל פעימת תיקון של Atlas. תווית סורק שאומרת משאב, צמח או בעל חיים היא רק הניחוש הראשון.\n\nBlue Debt נוצר מתהליך, לא ממיקום. חום מעלה מינרלים. מלח ממיין צפיפות. פריחת מיקרובים עורכת את הסריג. רועים מקצצים את הקצוות. ביופילם נושא זרם חלש. Atlas לומד אילו משטחים אוטמים, מוליכים או חוזרים על קול. כשבוזז חותך דגימה, הוא עשוי לקחת דלק, מארג מזון, סמן מסלול וראיה מאותו מפרק חי.",
+     "external_site": "מדריך אקולוגיית הקסנון מחבר ערך משאבים לחיים המקומיים. דגימות HECTON-8 חשובות כי גאולוגיה, אורגניזמים והתנהגות תיקון של Atlas חוצים את אותם מסלולי לחץ.",
+     "external_site_article": "Xenon-Omega מתואר לעיתים קרובות כדבר ש-Deep Reach באה לגנוב. זה נכון, אבל צר מדי. ב-HECTON-8 החומר הכחול שייך לשרשרת שמוזנת מפתחים: חום, מלחי גופרית, פגמי לחץ, פריחת פטריות, רועים, ביופילם מוליך ושגרות Atlas פגומות נוגעים באותם משטחים.\n\nכך אקולוגיה הופכת לראיה שניתן לשחק. עורק כחול עשוי לסמן ערך, רעל, דליפת זרם, תנועת טורפים או נתיב תיקון ישן. בעל חיים מתויג עשוי לצוד, לרעות או לשאת נתוני חיישנים מיושנים דרך לולאת תחזוקה. השחקן אינו צריך גבול נקי בין טבע למכונה. השאלה המועילה היא מה התהליך עושה עכשיו, ומי מרוויח אם הדגימה שורדת.",
+     "field_note": "Blue Debt לא שוכב בבוץ. הוא נוצר, נאכל, נאטם, נקצר ומקבל שם חדש."
+    },
+    "pt_BR": {
+     "title": "Guia de campo da ecologia trófica e reparadora do xenônio",
+     "scanner": "RASTRO TRÓFICO DE XENÔNIO // Calor de respiradouro, sal sulfídico, pastadores cegos, biofilme condutor e pulsos de reparo Atlas dividem um gradiente. Crescimento azul valioso nunca é minério limpo; é um processo vivo com etiqueta de livro-caixa.",
+     "terminal": "AVISO DE BIORRECURSO // Não classifique a vida de HECTON-8 como flora, fauna ou contaminação até observar seu comportamento de rota. Se uma amostra carrega corrente, filtra som, sela uma rachadura ou atrai fauna etiquetada, trate-a como ecologia e infraestrutura.",
+     "audio": "Se isso se alimenta num respiradouro, cresce sobre um cabo e responde a um ping de reparo, pare de perguntar se está vivo ou se serve. Pergunte quem está usando.",
+     "in_game_wiki": "A biologia de HECTON-8 fica perigosa quando é tratada como cenário. A mesma pluma hidrotermal pode alimentar kelp de ferro, fazer crescer uma rede rica em xenônio, aquecer um degrau de salmoura, esconder um predador e energizar um pulso de reparo Atlas. Um rótulo de scanner dizendo recurso, planta ou animal é só o primeiro palpite.\n\nBlue Debt se forma por processo, não por localização. O calor ergue minerais. O sal ordena densidade. A floração microbiana edita a rede. Pastadores apararam as bordas. Biofilme carrega corrente fraca. Atlas aprende quais superfícies selam, conduzem ou repetem som. Quando um saqueador corta uma amostra, pode estar levando combustível, cadeia alimentar, marcador de rota e prova da mesma junta viva.",
+     "external_site": "O guia de ecologia do xenônio liga valor de recurso à vida local. Amostras de HECTON-8 importam porque geologia, organismos e reparo Atlas cruzam as mesmas rotas de pressão.",
+     "external_site_article": "Xenon-Omega costuma ser descrito como a coisa que a Deep Reach veio roubar. É verdade, mas pequeno demais. Em HECTON-8, o material azul pertence a uma cadeia alimentada por respiradouros: calor, sais sulfídicos, defeitos de pressão, floração fúngica, pastadores, biofilme condutor e rotinas Atlas danificadas tocam as mesmas superfícies.\n\nIsso torna a ecologia uma prova jogável. Um veio azul pode marcar valor, veneno, fuga de corrente, tráfego de predadores ou uma rota de reparo antiga. Um animal etiquetado pode estar caçando, pastando ou carregando dados velhos de sensores por um ciclo de manutenção. O jogador não precisa de uma fronteira limpa entre natureza e máquina. A pergunta útil é o que o processo está fazendo agora, e quem lucra se a amostra sobreviver.",
+     "field_note": "Blue Debt não está deitado na lama. Está sendo feito, comido, selado, colhido e renomeado."
+    },
+    "nl_NL": {
+     "title": "Veldgids voor xenonische voedsel- en reparatie-ecologie",
+     "scanner": "XENON-TROFISCH SPOOR // Venthitte, sulfidezout, blinde grazers, geleidend biofilm en Atlas-reparatiepulsen delen één gradiënt. Waardevolle blauwe groei is nooit schoon erts; het is een levend proces met een boekhoudtag.",
+     "terminal": "BIORESOURCE-VELDBERICHT // Classificeer HECTON-8-leven niet als flora, fauna of besmetting voordat routegedrag is waargenomen. Als een monster stroom draagt, geluid filtert, een scheur afdicht of getagde fauna aantrekt, behandel het als ecologie en infrastructuur.",
+     "audio": "Als het op een vent voedt, over een kabel groeit en op een reparatieping antwoordt, stop dan met vragen of het leeft of nuttig is. Vraag wie het gebruikt.",
+     "in_game_wiki": "HECTON-8-biologie wordt gevaarlijk wanneer ze als decor wordt behandeld. Dezelfde ventpluim kan ijzerkelp voeden, een xenonrijk rooster laten groeien, een pekelstap verwarmen, een roofdier maskeren en een Atlas-reparatiepuls voeden. Een scannerlabel dat bron, plant of dier zegt, is alleen de eerste gok.\n\nBlue Debt wordt gevormd door proces, niet door locatie. Hitte tilt mineralen op. Zout sorteert dichtheid. Microbiële bloei bewerkt het rooster. Grazers knippen de randen. Biofilm draagt zwakke stroom. Atlas leert welke oppervlakken afdichten, geleiden of geluid herhalen. Wanneer een Marauder een monster lossnijdt, kan hij brandstof, voedselweb, routemarkering en bewijs uit hetzelfde levende gewricht halen.",
+     "external_site": "De xenon-ecologiegids verbindt grondstofwaarde met lokaal leven. HECTON-8-monsters doen ertoe omdat geologie, organismen en Atlas-reparatiegedrag dezelfde drukroutes blijven kruisen.",
+     "external_site_article": "Xenon-Omega wordt vaak beschreven als datgene wat Deep Reach kwam stelen. Dat klopt, maar het is te klein. Op HECTON-8 hoort het blauwe materiaal bij een door vents gevoede keten: hitte, sulfidezouten, drukdefecten, schimmelbloei, grazers, geleidend biofilm en beschadigde Atlas-routines raken dezelfde oppervlakken.\n\nDaardoor wordt ecologie speelbaar bewijs. Een blauwe ader kan waarde, gif, stroomlek, roofdierverkeer of een oud reparatiepad markeren. Een getagd dier kan jagen, grazen of oude sensorgegevens door een onderhoudslus dragen. De speler heeft geen nette grens tussen natuur en machine nodig. De nuttige vraag is wat het proces nu doet en wie profiteert als het monster overleeft.",
+     "field_note": "Blue Debt ligt niet in de modder. Het wordt gemaakt, gegeten, verzegeld, geoogst en hernoemd."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

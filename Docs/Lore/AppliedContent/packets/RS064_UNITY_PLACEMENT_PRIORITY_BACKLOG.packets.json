@@ -1,792 +1,801 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK",
-      "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
-      "surface_mask": 65,
-      "article_id": "applied_lore.first_hour_placement_priority_lock",
-      "title_key": "applied_lore.first_hour_placement_priority_lock.title",
-      "unlock": {
-        "primary": "unlock.first_hour_placement_priority_lock",
-        "poi_tags": [
-          "poi.first_hour_priority_board",
-          "poi.capsule_p63_anchor_list",
-          "poi.first_lie_trace_pair"
-        ],
-        "biome_tags": [
-          "biome.first_hour",
-          "biome.placement"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "First Hour Evidence Placement Rule",
-          "scanner": "First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "RU LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "RU LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "Первому часу нужны объекты, не абзацы.",
-          "in_game_wiki": "RU LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "Открытие работает, если игрок трогает broken machine before explanation.",
-          "field_note": "RU LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "JP LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "JP LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "JA LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "JP LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "JA LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "JP LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "CN LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "CN LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "ZH LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "CN LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "ZH LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "CN LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "FR LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "FR LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "FR LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "FR LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "FR LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "FR LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "ES LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "ES LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "ES LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "ES LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "ES LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "ES LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "DE LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "DE LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "DE LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "DE LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "DE LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "DE LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "PL LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "PL LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "PL LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "PL LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "PL LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "PL LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "UA LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "UA LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "UK LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "UA LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "UK LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "UA LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "AR LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "AR LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "AR LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "AR LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "AR LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "AR LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "ID LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "ID LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "ID LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "ID LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "ID LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "ID LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "KO LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "KO LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "KO LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "KO LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "KO LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "KO LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "HE LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "HE LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "HE LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "HE LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "HE LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "HE LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "PT LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "PT LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "PT LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "PT LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "PT LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "PT LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: First Hour Evidence Placement Rule",
-          "scanner": "NL LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
-          "terminal": "NL LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
-          "audio": "NL LOC HOLD: The first hour needs objects, not paragraphs.",
-          "in_game_wiki": "NL LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
-          "external_site": "NL LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
-          "field_note": "NL LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P316_FIRST_HOUR_PLACEMENT_PRIORITY_LOCK",
+   "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+   "surface_mask": 65,
+   "article_id": "applied_lore.first_hour_placement_priority_lock",
+   "title_key": "applied_lore.first_hour_placement_priority_lock.title",
+   "unlock": {
+    "primary": "unlock.first_hour_placement_priority_lock",
+    "poi_tags": [
+     "poi.first_hour_priority_board",
+     "poi.capsule_p63_anchor_list",
+     "poi.first_lie_trace_pair"
+    ],
+    "biome_tags": [
+     "biome.first_hour",
+     "biome.placement"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "First Hour Evidence Placement Rule",
+     "scanner": "First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
     },
-    {
-      "packet_id": "P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK",
-      "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
-      "surface_mask": 65,
-      "article_id": "applied_lore.mid_depth_route_placement_priority_lock",
-      "title_key": "applied_lore.mid_depth_route_placement_priority_lock.title",
-      "unlock": {
-        "primary": "unlock.mid_depth_route_placement_priority_lock",
-        "poi_tags": [
-          "poi.mid_depth_priority_board",
-          "poi.brine_ladder_anchor",
-          "poi.route_warning_anchor"
-        ],
-        "biome_tags": [
-          "biome.brine_canyon",
-          "biome.placement"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Mid-Depth Route Evidence Rule",
-          "scanner": "Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "The canyon should teach the route by damage.",
-          "in_game_wiki": "Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "Prefer objects that change navigation or return confidence."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "RU LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "RU LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "Каньон должен учить маршруту повреждением.",
-          "in_game_wiki": "RU LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "Mid-depth HECTON-8 turns route into machine: brine, cable, relay, seal, warning.",
-          "field_note": "Prefer objects that change navigation or return confidence."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "JP LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "JP LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "JA LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "JP LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "JA LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "JA LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "CN LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "CN LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "ZH LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "CN LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "ZH LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "ZH LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "FR LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "FR LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "FR LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "FR LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "FR LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "FR LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "ES LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "ES LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "ES LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "ES LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "ES LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "ES LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "DE LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "DE LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "DE LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "DE LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "DE LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "DE LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "PL LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "PL LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "PL LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "PL LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "PL LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "PL LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "UA LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "UA LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "UK LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "UA LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "UK LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "UK LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "AR LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "AR LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "AR LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "AR LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "AR LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "AR LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "ID LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "ID LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "ID LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "ID LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "ID LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "ID LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "KO LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "KO LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "KO LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "KO LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "KO LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "KO LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "HE LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "HE LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "HE LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "HE LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "HE LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "HE LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "PT LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "PT LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "PT LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "PT LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "PT LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "PT LOC HOLD: Prefer objects that change navigation or return confidence."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Mid-Depth Route Evidence Rule",
-          "scanner": "NL LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
-          "terminal": "NL LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
-          "audio": "NL LOC HOLD: The canyon should teach the route by damage.",
-          "in_game_wiki": "NL LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
-          "external_site": "NL LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
-          "field_note": "NL LOC HOLD: Prefer objects that change navigation or return confidence."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "RU LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "RU LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "Первому часу нужны объекты, не абзацы.",
+     "in_game_wiki": "RU LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "Открытие работает, если игрок трогает broken machine before explanation.",
+     "field_note": "RU LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
     },
-    {
-      "packet_id": "P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK",
-      "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
-      "surface_mask": 65,
-      "article_id": "applied_lore.ecology_scan_placement_priority_lock",
-      "title_key": "applied_lore.ecology_scan_placement_priority_lock.title",
-      "unlock": {
-        "primary": "unlock.ecology_scan_placement_priority_lock",
-        "poi_tags": [
-          "poi.ecology_scan_priority_board",
-          "poi.specimen_route_sign",
-          "poi.atlas_tag_behavior_anchor"
-        ],
-        "biome_tags": [
-          "biome.ecology",
-          "biome.placement"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ecology Scan Evidence Rule",
-          "scanner": "Ecology anchors: scan species that change route judgement.",
-          "terminal": "ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "A creature card earns its place by changing the route.",
-          "in_game_wiki": "Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "RU LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "RU LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "Creature card earns its place by changing the route.",
-          "in_game_wiki": "RU LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "Ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "RU LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "JP LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "JP LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "JA LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "JP LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "JA LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "JP LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "CN LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "CN LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "ZH LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "CN LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "ZH LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "CN LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "FR LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "FR LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "FR LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "FR LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "FR LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "FR LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "ES LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "ES LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "ES LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "ES LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "ES LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "ES LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "DE LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "DE LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "DE LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "DE LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "DE LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "DE LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "PL LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "PL LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "PL LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "PL LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "PL LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "PL LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "UA LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "UA LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "UK LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "UA LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "UK LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "UA LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "AR LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "AR LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "AR LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "AR LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "AR LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "AR LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "ID LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "ID LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "ID LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "ID LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "ID LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "ID LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "KO LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "KO LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "KO LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "KO LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "KO LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "KO LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "HE LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "HE LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "HE LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "HE LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "HE LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "HE LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "PT LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "PT LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "PT LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "PT LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "PT LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "PT LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Ecology Scan Evidence Rule",
-          "scanner": "NL LOC HOLD: Ecology anchors: scan species that change route judgement.",
-          "terminal": "NL LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
-          "audio": "NL LOC HOLD: A creature card earns its place by changing the route.",
-          "in_game_wiki": "NL LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
-          "external_site": "NL LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
-          "field_note": "NL LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
-        }
-      }
+    "ja_JP": {
+     "title": "JP LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "JP LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "JP LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "JA LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "JP LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "JA LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "JP LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
     },
-    {
-      "packet_id": "P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK",
-      "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
-      "surface_mask": 65,
-      "article_id": "applied_lore.final_descent_placement_priority_lock",
-      "title_key": "applied_lore.final_descent_placement_priority_lock.title",
-      "unlock": {
-        "primary": "unlock.final_descent_placement_priority_lock",
-        "poi_tags": [
-          "poi.final_descent_priority_board",
-          "poi.atlas_gate_anchor_list",
-          "poi.payload_authority_anchor"
-        ],
-        "biome_tags": [
-          "biome.final_descent",
-          "biome.placement"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Final Descent Evidence Rule",
-          "scanner": "Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "The bottom should ask through instruments first.",
-          "in_game_wiki": "Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "RU LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "RU LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "Дно сначала спрашивает приборами.",
-          "in_game_wiki": "RU LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "Final approach should feel like machine refusing categories, not boss arena.",
-          "field_note": "RU LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "JP LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "JP LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "JA LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "JP LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "JA LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "JP LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "CN LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "CN LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "ZH LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "CN LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "ZH LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "CN LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "FR LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "FR LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "FR LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "FR LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "FR LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "FR LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "ES LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "ES LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "ES LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "ES LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "ES LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "ES LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "DE LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "DE LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "DE LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "DE LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "DE LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "DE LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "PL LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "PL LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "PL LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "PL LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "PL LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "PL LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "UA LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "UA LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "UK LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "UA LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "UK LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "UA LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "AR LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "AR LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "AR LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "AR LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "AR LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "AR LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "ID LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "ID LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "ID LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "ID LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "ID LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "ID LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "KO LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "KO LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "KO LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "KO LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "KO LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "KO LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "HE LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "HE LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "HE LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "HE LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "HE LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "HE LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "PT LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "PT LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "PT LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "PT LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "PT LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "PT LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Final Descent Evidence Rule",
-          "scanner": "NL LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
-          "terminal": "NL LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
-          "audio": "NL LOC HOLD: The bottom should ask through instruments first.",
-          "in_game_wiki": "NL LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
-          "external_site": "NL LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
-          "field_note": "NL LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
-        }
-      }
+    "zh_CN": {
+     "title": "CN LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "CN LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "CN LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "ZH LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "CN LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "ZH LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "CN LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
     },
-    {
-      "packet_id": "P320_TERMINAL_BACKLOG_TRIAGE_LOCK",
-      "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
-      "surface_mask": 65,
-      "article_id": "applied_lore.terminal_backlog_triage_lock",
-      "title_key": "applied_lore.terminal_backlog_triage_lock.title",
-      "unlock": {
-        "primary": "unlock.terminal_backlog_triage_lock",
-        "poi_tags": [
-          "poi.terminal_backlog_triage_card",
-          "poi.route_decision_terminal_anchor",
-          "poi.text_wall_reject_stamp"
-        ],
-        "biome_tags": [
-          "biome.terminal",
-          "biome.placement"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Terminal Evidence Triage Rule",
-          "scanner": "Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "A terminal earns power by changing the next decision.",
-          "in_game_wiki": "Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "RU LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "Terminal earns power by changing the next decision.",
-          "in_game_wiki": "RU LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "Terminals work best when player already holds broken part or bad route warning.",
-          "field_note": "RU LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "JP LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "JA LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "JA LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "JP LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "JA LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "JP LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "CN LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "ZH LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "ZH LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "CN LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "ZH LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "CN LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "FR LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "FR LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "FR LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "FR LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "FR LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "FR LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "ES LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "ES LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "ES LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "ES LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "ES LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "ES LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "DE LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "DE LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "DE LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "DE LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "DE LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "DE LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "PL LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "PL LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "PL LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "PL LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "PL LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "PL LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "UA LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "UK LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "UK LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "UA LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "UK LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "UA LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "AR LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "AR LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "AR LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "AR LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "AR LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "AR LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "ID LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "ID LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "ID LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "ID LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "ID LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "ID LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "KO LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "KO LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "KO LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "KO LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "KO LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "KO LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "HE LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "HE LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "HE LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "HE LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "HE LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "HE LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "PT LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "PT LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "PT LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "PT LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "PT LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "PT LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Terminal Evidence Triage Rule",
-          "scanner": "NL LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
-          "terminal": "NL LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
-          "audio": "NL LOC HOLD: A terminal earns power by changing the next decision.",
-          "in_game_wiki": "NL LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
-          "external_site": "NL LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
-          "field_note": "NL LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "FR LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "FR LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "FR LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "FR LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "FR LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "FR LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "ES LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "ES LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "ES LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "ES LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "ES LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "ES LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "DE LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "DE LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "DE LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "DE LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "DE LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "DE LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "PL LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "PL LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "PL LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "PL LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "PL LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "PL LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "UA LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "UA LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "UK LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "UA LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "UK LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "UA LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "AR LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "AR LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "AR LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "AR LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "AR LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "AR LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "ID LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "ID LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "ID LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "ID LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "ID LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "ID LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "KO LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "KO LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "KO LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "KO LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "KO LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "KO LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "HE LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "HE LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "HE LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "HE LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "HE LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "HE LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "PT LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "PT LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "PT LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "PT LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "PT LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "PT LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: First Hour Evidence Placement Rule",
+     "scanner": "NL LOC HOLD: First-hour anchors: capsule, P-63 pump, first lie, first repair trace.",
+     "terminal": "NL LOC HOLD: FIRST-HOUR ANCHORS: capsule diagnostics, P-63 work order, sanitized packet, and first Atlas trace come before optional archive rows.",
+     "audio": "NL LOC HOLD: The first hour needs objects, not paragraphs.",
+     "in_game_wiki": "NL LOC HOLD: First Hour Evidence Placement Rule keeps the opening tied to capsule diagnostics, P-63 work, the first lie, and the first repair trace.",
+     "external_site": "NL LOC HOLD: The opening only works if the player touches the broken machine before reading the explanation.",
+     "field_note": "NL LOC HOLD: First-hour evidence begins with objects that change the next decision, not paragraphs detached from play."
     }
-  ]
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P317_MID_DEPTH_ROUTE_PLACEMENT_PRIORITY_LOCK",
+   "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+   "surface_mask": 65,
+   "article_id": "applied_lore.mid_depth_route_placement_priority_lock",
+   "title_key": "applied_lore.mid_depth_route_placement_priority_lock.title",
+   "unlock": {
+    "primary": "unlock.mid_depth_route_placement_priority_lock",
+    "poi_tags": [
+     "poi.mid_depth_priority_board",
+     "poi.brine_ladder_anchor",
+     "poi.route_warning_anchor"
+    ],
+    "biome_tags": [
+     "biome.brine_canyon",
+     "biome.placement"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Mid-Depth Route Evidence Rule",
+     "scanner": "Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "The canyon should teach the route by damage.",
+     "in_game_wiki": "Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "Prefer objects that change navigation or return confidence."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "RU LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "RU LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "Каньон должен учить маршруту повреждением.",
+     "in_game_wiki": "RU LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "Mid-depth HECTON-8 turns route into machine: brine, cable, relay, seal, warning.",
+     "field_note": "Prefer objects that change navigation or return confidence."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "JP LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "JP LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "JA LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "JP LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "JA LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "JA LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "CN LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "CN LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "ZH LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "CN LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "ZH LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "ZH LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "FR LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "FR LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "FR LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "FR LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "FR LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "FR LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "ES LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "ES LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "ES LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "ES LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "ES LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "ES LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "DE LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "DE LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "DE LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "DE LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "DE LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "DE LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "PL LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "PL LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "PL LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "PL LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "PL LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "PL LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "UA LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "UA LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "UK LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "UA LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "UK LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "UK LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "AR LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "AR LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "AR LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "AR LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "AR LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "AR LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "ID LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "ID LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "ID LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "ID LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "ID LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "ID LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "KO LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "KO LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "KO LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "KO LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "KO LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "KO LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "HE LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "HE LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "HE LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "HE LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "HE LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "HE LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "PT LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "PT LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "PT LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "PT LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "PT LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "PT LOC HOLD: Prefer objects that change navigation or return confidence."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Mid-Depth Route Evidence Rule",
+     "scanner": "NL LOC HOLD: Mid-depth anchors: brine ladder, pinger, relay, seal, route warning.",
+     "terminal": "NL LOC HOLD: MID-DEPTH ANCHORS: route-readable objects outrank archive flavor when brine, cable, relay, seal, or warning changes navigation.",
+     "audio": "NL LOC HOLD: The canyon should teach the route by damage.",
+     "in_game_wiki": "NL LOC HOLD: Mid-Depth Route Evidence Rule keeps route progression tied to objects that change navigation and return confidence.",
+     "external_site": "NL LOC HOLD: Mid-depth HECTON-8 is where the route becomes a machine: brine, cable, relay, seal, warning.",
+     "field_note": "NL LOC HOLD: Prefer objects that change navigation or return confidence."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P318_ECOLOGY_SCAN_PLACEMENT_PRIORITY_LOCK",
+   "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+   "surface_mask": 65,
+   "article_id": "applied_lore.ecology_scan_placement_priority_lock",
+   "title_key": "applied_lore.ecology_scan_placement_priority_lock.title",
+   "unlock": {
+    "primary": "unlock.ecology_scan_placement_priority_lock",
+    "poi_tags": [
+     "poi.ecology_scan_priority_board",
+     "poi.specimen_route_sign",
+     "poi.atlas_tag_behavior_anchor"
+    ],
+    "biome_tags": [
+     "biome.ecology",
+     "biome.placement"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ecology Scan Evidence Rule",
+     "scanner": "Ecology anchors: scan species that change route judgement.",
+     "terminal": "ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "A creature card earns its place by changing the route.",
+     "in_game_wiki": "Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "RU LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "RU LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "Creature card earns its place by changing the route.",
+     "in_game_wiki": "RU LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "Ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "RU LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "JP LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "JP LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "JA LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "JP LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "JA LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "JP LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "CN LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "CN LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "ZH LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "CN LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "ZH LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "CN LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "FR LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "FR LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "FR LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "FR LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "FR LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "FR LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "ES LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "ES LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "ES LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "ES LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "ES LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "ES LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "DE LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "DE LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "DE LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "DE LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "DE LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "DE LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "PL LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "PL LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "PL LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "PL LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "PL LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "PL LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "UA LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "UA LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "UK LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "UA LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "UK LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "UA LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "AR LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "AR LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "AR LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "AR LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "AR LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "AR LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "ID LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "ID LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "ID LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "ID LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "ID LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "ID LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "KO LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "KO LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "KO LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "KO LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "KO LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "KO LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "HE LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "HE LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "HE LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "HE LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "HE LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "HE LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "PT LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "PT LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "PT LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "PT LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "PT LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "PT LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Ecology Scan Evidence Rule",
+     "scanner": "NL LOC HOLD: Ecology anchors: scan species that change route judgement.",
+     "terminal": "NL LOC HOLD: ECOLOGY ANCHORS: scan rows bind to route signs: safe pockets, predator silence, false light, density shear, and Atlas tags.",
+     "audio": "NL LOC HOLD: A creature card earns its place by changing the route.",
+     "in_game_wiki": "NL LOC HOLD: Ecology Scan Evidence Rule separates useful specimen cards from decorative bestiary entries.",
+     "external_site": "NL LOC HOLD: HECTON-8 ecology matters when it changes navigation, sound, oxygen, pressure or evidence.",
+     "field_note": "NL LOC HOLD: Codex anchors belong near physical behavior, not menu-only lists."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P319_FINAL_DESCENT_PLACEMENT_PRIORITY_LOCK",
+   "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+   "surface_mask": 65,
+   "article_id": "applied_lore.final_descent_placement_priority_lock",
+   "title_key": "applied_lore.final_descent_placement_priority_lock.title",
+   "unlock": {
+    "primary": "unlock.final_descent_placement_priority_lock",
+    "poi_tags": [
+     "poi.final_descent_priority_board",
+     "poi.atlas_gate_anchor_list",
+     "poi.payload_authority_anchor"
+    ],
+    "biome_tags": [
+     "biome.final_descent",
+     "biome.placement"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Final Descent Evidence Rule",
+     "scanner": "Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "The bottom should ask through instruments first.",
+     "in_game_wiki": "Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "RU LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "RU LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "Дно сначала спрашивает приборами.",
+     "in_game_wiki": "RU LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "Final approach should feel like machine refusing categories, not boss arena.",
+     "field_note": "RU LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "JP LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "JP LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "JA LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "JP LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "JA LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "JP LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "CN LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "CN LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "ZH LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "CN LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "ZH LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "CN LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "FR LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "FR LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "FR LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "FR LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "FR LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "FR LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "ES LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "ES LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "ES LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "ES LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "ES LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "ES LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "DE LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "DE LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "DE LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "DE LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "DE LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "DE LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "PL LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "PL LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "PL LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "PL LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "PL LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "PL LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "UA LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "UA LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "UK LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "UA LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "UK LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "UA LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "AR LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "AR LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "AR LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "AR LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "AR LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "AR LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "ID LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "ID LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "ID LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "ID LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "ID LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "ID LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "KO LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "KO LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "KO LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "KO LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "KO LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "KO LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "HE LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "HE LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "HE LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "HE LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "HE LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "HE LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "PT LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "PT LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "PT LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "PT LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "PT LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "PT LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Final Descent Evidence Rule",
+     "scanner": "NL LOC HOLD: Final-descent anchors: machine field warning, pressure gate, factory-temple, payload check.",
+     "terminal": "NL LOC HOLD: FINAL-DESCENT ANCHORS: warning, gate, threshold, and payload authority come before optional late archive fragments.",
+     "audio": "NL LOC HOLD: The bottom should ask through instruments first.",
+     "in_game_wiki": "NL LOC HOLD: Final Descent Evidence Rule preserves engineering pressure before the final question.",
+     "external_site": "NL LOC HOLD: The final approach should feel like a machine refusing simple categories, not a boss arena.",
+     "field_note": "NL LOC HOLD: Atlas basin anchors take priority only after warning, pressure gate, threshold, and payload authority are bound."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P320_TERMINAL_BACKLOG_TRIAGE_LOCK",
+   "release_set_id": "RS064_UNITY_PLACEMENT_PRIORITY_BACKLOG",
+   "surface_mask": 65,
+   "article_id": "applied_lore.terminal_backlog_triage_lock",
+   "title_key": "applied_lore.terminal_backlog_triage_lock.title",
+   "unlock": {
+    "primary": "unlock.terminal_backlog_triage_lock",
+    "poi_tags": [
+     "poi.terminal_backlog_triage_card",
+     "poi.route_decision_terminal_anchor",
+     "poi.text_wall_reject_stamp"
+    ],
+    "biome_tags": [
+     "biome.terminal",
+     "biome.placement"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Terminal Evidence Triage Rule",
+     "scanner": "Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "A terminal earns power by changing the next decision.",
+     "in_game_wiki": "Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "RU LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "Terminal earns power by changing the next decision.",
+     "in_game_wiki": "RU LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "Terminals work best when player already holds broken part or bad route warning.",
+     "field_note": "RU LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "JP LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "JA LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "JA LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "JP LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "JA LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "JP LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "CN LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "ZH LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "ZH LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "CN LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "ZH LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "CN LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "FR LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "FR LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "FR LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "FR LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "FR LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "FR LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "ES LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "ES LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "ES LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "ES LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "ES LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "ES LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "DE LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "DE LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "DE LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "DE LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "DE LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "DE LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "PL LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "PL LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "PL LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "PL LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "PL LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "PL LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "UA LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "UK LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "UK LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "UA LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "UK LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "UA LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "AR LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "AR LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "AR LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "AR LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "AR LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "AR LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "ID LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "ID LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "ID LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "ID LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "ID LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "ID LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "KO LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "KO LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "KO LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "KO LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "KO LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "KO LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "HE LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "HE LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "HE LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "HE LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "HE LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "HE LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "PT LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "PT LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "PT LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "PT LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "PT LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "PT LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Terminal Evidence Triage Rule",
+     "scanner": "NL LOC HOLD: Terminal anchors come first when they alter route, proof, or ending record.",
+     "terminal": "NL LOC HOLD: TRIAGE: promote terminal anchors only when they change route judgement, prove a lie, unlock a table/card, or affect ending record context.",
+     "audio": "NL LOC HOLD: A terminal earns power by changing the next decision.",
+     "in_game_wiki": "NL LOC HOLD: Terminal Evidence Triage Rule keeps terminal records from becoming walls of detached text.",
+     "external_site": "NL LOC HOLD: HECTON-8 terminals work best when the player is already holding a broken part or a bad route warning.",
+     "field_note": "NL LOC HOLD: A terminal earns placement only when it changes a decision, proves a lie, unlocks a record, or affects an ending context."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

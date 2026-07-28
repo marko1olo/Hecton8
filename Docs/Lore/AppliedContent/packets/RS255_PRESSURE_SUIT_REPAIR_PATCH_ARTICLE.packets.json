@@ -1,11 +1,46 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS255_PRESSURE_SUIT_REPAIR_PATCH_ARTICLE",
-  "title": "Pressure Suit Repair Patch Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS255_PRESSURE_SUIT_REPAIR_PATCH_ARTICLE",
+ "title": "Pressure Suit Repair Patch Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1425_PRESSURE_SUIT_PATCH_LEDGER",
+   "release_set_id": "RS255_PRESSURE_SUIT_REPAIR_PATCH_ARTICLE",
+   "article_id": "applied_lore.pressure_suit_patch_ledger",
+   "title_key": "LORE_PRESSURE_SUIT_PATCH_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": "Narrative",
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -14,251 +49,217 @@
     "data_monolith_ready": false,
     "h8bin_ready": false,
     "unity_placement_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1425_PRESSURE_SUIT_PATCH_LEDGER",
-      "release_set_id": "RS255_PRESSURE_SUIT_REPAIR_PATCH_ARTICLE",
-      "article_id": "applied_lore.pressure_suit_patch_ledger",
-      "title_key": "LORE_PRESSURE_SUIT_PATCH_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": "Narrative",
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.pressure_suit_patch_ledger",
-        "secondary": [
-          "unlock.first_pressure_suit_patch_scan",
-          "unlock.first_cannibalized_suit_trace",
-          "unlock.first_last_dive_repair_read"
-        ],
-        "poi_tags": [
-          "poi.pressure_suit_repair_patch",
-          "poi.cannibalized_suit_material",
-          "poi.salt_under_suit_thread",
-          "poi.emergency_seam_tape"
-        ],
-        "biome_tags": [
-          "biome.old_colony_ruins",
-          "biome.med_bay",
-          "biome.worker_locker_room"
-        ]
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Pressure Suit Patch Scanner",
-          "terminal": "Old Colony Suit Maintenance Readout",
-          "audio": "Marauder Suit Trace Instructor",
-          "in_game_wiki": "PDA Suit Patch Field Guide",
-          "external_site": "Public Site Suit Repair Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_pressure_suit_patch_or_last_dive_trace",
-        "truth_payload": "Pressure suit repair patches reveal triage, stolen kits, donor suits, social access and last-dive work routes.",
-        "player_question": "Which patch held for one more dive, and who had access to make it?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Pressure Suit Repair Patch Ledger",
-          "scanner": "SUIT PATCH // Dark neoprene-like shell, stitched repair island, reinforced seam tape, salt scuff, off-white technical textile strip. Patch grade uneven: field repair, not factory service.",
-          "terminal": "PATCH READ // Cross-stitch over seam tape means emergency closure. Salt under thread means patch applied after exposure. Clean tape over abraded fabric means a later inspection. Two patch colors mean cannibalized suit material.",
-          "audio": "A suit patch is a small vote against drowning.",
-          "in_game_wiki": "Pressure suit patches are human handwriting on a life-support object. Factory panels speak in clean curves and certification marks. Field patches speak in crooked thread, wrong-colored textile, salt under tape and the blunt honesty of somebody fixing a leak before the next pressure cycle.\n\nPatch order matters. Seam tape under cross-stitch means the first repair failed or was not trusted. Salt trapped beneath thread means the suit was already exposed when patched. Abrasion over a patch means the wearer returned to work. Clean tape over old damage means inspection after use. Two fabric colors mean cannibalized material, often from a dead suit or a locker nobody expected to reopen.\n\nFor a Marauder, a patch is not costume detail. It can identify an emergency route, a worker's last task, a triage decision, a stolen kit, or a suit grade that never belonged to the person wearing it. In HECTON-8, survival often looks like ugly stitching that held for one more dive.",
-          "external_site": "Pressure suit repair patches reveal field triage, stolen kits, cannibalized suits and last-dive work routes.",
-          "external_site_article": "A pristine pressure suit belongs in a brochure. HECTON-8 is not a brochure. The suits that matter are patched, rubbed raw at knees and cuffs, salted around seams and repaired with whatever strip could survive one more descent.\n\nThe best suit patch carries social information. Factory repair is even. Supervisor repair uses proper tape but no time. Worker repair uses wrong thread and knows exactly where the body bends. Medical repair seals fast and ugly. Black Keel repair strips identifiers first. A clean patch on a filthy suit can mean the person wearing it mattered to somebody with inventory access.\n\nThat is why suit patches belong in lockers, med bays, flooded changing rooms and abandoned tool benches. They make the colony personal without turning every body into a speech. The patch says: somebody was here, somebody knew the risk, and somebody decided the work still had to continue.",
-          "field_note": "Never read the patch alone. Read the knee, the cuff and the tool pouch with it."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал ремонтных заплат напорного скафандра",
-          "scanner": "ЗАПЛАТА СКАФАНДРА // Темная неопреновая оболочка, пришитый ремонтный остров, усиленная шовная лента, солевая потертость, полоса светлой техткани. Класс ремонта неровный: полевая работа, не заводской сервис.",
-          "terminal": "ЧТЕНИЕ ЗАПЛАТЫ // Крестовая строчка поверх ленты - аварийное закрытие. Соль под нитью - чинили после контакта с водой. Чистая лента поверх стертой ткани - поздний осмотр. Два цвета ткани - материал с другого скафандра.",
-          "audio": "Заплата скафандра - маленький голос против утопления.",
-          "in_game_wiki": "Ремонтные заплаты напорных скафандров - человеческий почерк на предмете жизнеобеспечения. Заводские панели говорят чистыми дугами и сертификацией. Полевые заплаты говорят кривой нитью, чужой тканью, солью под лентой и честностью человека, который закрывает течь до следующего цикла давления.\n\nПорядок заплат важен. Шовная лента под крестовой строчкой значит, что первой починке не доверяли. Соль под нитью говорит, что скафандр уже был в воде. Потертость поверх заплаты значит, что носитель вернулся к работе. Чистая лента поверх старого повреждения - поздний осмотр. Два цвета ткани означают разобранный донорский скафандр, часто из мертвого шкафа.\n\nДля мародера заплата - не украшение костюма. Она может показать аварийный маршрут, последнюю задачу рабочего, медицинский выбор, украденный набор или класс скафандра, который не принадлежал тому, кто его носил. В HECTON-8 выживание часто выглядит как уродливая строчка, выдержавшая еще одно погружение.",
-          "external_site": "Ремонтные заплаты скафандров раскрывают полевую сортировку, украденные наборы, донорские костюмы и маршруты последнего выхода.",
-          "external_site_article": "Идеальный напорный скафандр годится для буклета. HECTON-8 не буклет. Важные скафандры залатаны, стерты на коленях и манжетах, просолены вокруг швов и чинились любой полосой, способной пережить еще один спуск.\n\nХорошая заплата несет социальную информацию. Заводской ремонт ровный. Ремонт начальника использует правильную ленту, но без времени. Ремонт рабочего берет чужую нить и знает, где гнется тело. Медицинский ремонт закрывает быстро и страшно. Ремонт Черного Киля сначала срезает идентификаторы. Чистая заплата на грязном скафандре может значить, что носитель был важен кому-то с доступом к складу.\n\nПоэтому заплаты должны жить в шкафчиках, медотсеках, затопленных раздевалках и на брошенных верстаках. Они делают колонию личной без речи над каждым телом. Заплата говорит: кто-то был здесь, кто-то знал риск, и кто-то решил, что работа все равно продолжится.",
-          "field_note": "Не читай заплату отдельно. Читай вместе с коленом, манжетой и подсумком."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "圧力スーツ補修パッチ台帳",
-          "scanner": "スーツパッチ // 暗いネオプレン状外皮、縫い付けた補修島、補強シームテープ、塩擦れ、淡色技術布の帯。等級が揃わない。工場ではなく現場修理だ。",
-          "terminal": "パッチ読み // シームテープ上の十字縫いは緊急閉鎖。糸の下の塩は曝露後の補修。摩耗布上のきれいなテープは遅い検査。二色の布は別スーツからの流用材。",
-          "audio": "スーツのパッチは、溺死に反対する小さな票だ。",
-          "in_game_wiki": "圧力スーツの補修パッチは、生命維持具に残った人間の筆跡だ。工場パネルは清潔な曲線と認証で語る。現場パッチは曲がった糸、違う色の布、テープ下の塩、次の圧力周期の前に漏れを塞ぐしかなかった人間の正直さで語る。\n\n順序が重要だ。十字縫いの下にシームテープがあるなら、最初の修理は信用されなかった。糸の下の塩は、スーツがすでに水に触れていた証拠だ。パッチ上の摩耗は着用者が仕事に戻った印だ。古い損傷上のきれいなテープは遅い検査。二色の布は、死んだスーツや再開予定のないロッカーから取った材料を示す。\n\nマローダーにとって、パッチは衣装の飾りではない。緊急ルート、作業者の最後の任務、医療判断、盗まれたキット、または着用者に本来ない等級のスーツを示す。HECTON-8での生存は、もう一回の潜行だけ耐えた醜い縫い目に見える。",
-          "external_site": "圧力スーツの補修パッチは、現場トリアージ、盗難キット、流用スーツ、最後の潜行ルートを示す。",
-          "external_site_article": "完璧な圧力スーツはパンフレットのものだ。HECTON-8はパンフレットではない。意味を持つスーツは、膝と袖口が擦れ、縫い目に塩が集まり、もう一度だけ潜るための布で補修されている。\n\n良いパッチは社会情報を持つ。工場修理は均一だ。監督者の修理は正しいテープを使うが時間がない。作業者の修理は違う糸を使い、体が曲がる場所を知っている。医療修理は速く醜い。ブラックキール修理は識別子を先に剥がす。汚れたスーツ上のきれいなパッチは、着用者が在庫権限を持つ誰かにとって重要だったことを示す。\n\nだからパッチはロッカー、医療区画、沈んだ更衣室、放棄された作業台に置くべきだ。すべての死体に演説をさせず、植民地を個人的にする。パッチは語る。誰かがここにいた。危険を知っていた。それでも仕事は続くと決めた。",
-          "field_note": "パッチだけを読むな。膝、袖口、工具ポーチも一緒に読め。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "压力服维修补丁账",
-          "scanner": "压力服补丁 // 深色氯丁橡胶样外壳、缝上去的修补岛、加固缝带、盐擦痕、浅色技术织物条。维修等级不均：现场修，不是工厂服务。",
-          "terminal": "读补丁 // 缝带上有十字针，说明紧急封闭。线下有盐，说明暴露后才补。磨损布上有干净胶带，是后期检查。两种布色说明拆了别的压力服。",
-          "audio": "一块压力服补丁，是反对溺死的一张小票。",
-          "in_game_wiki": "压力服维修补丁是生命维持物上的人类笔迹。工厂面板用干净曲线和认证说话。现场补丁用歪针脚、异色织物、胶带下的盐，以及在下一次压力循环前堵住漏点的那种直白诚实说话。\n\n补丁顺序很重要。十字针下面有缝带，说明第一次修理不被信任。线下有盐，说明压力服已经接触过水。补丁上方有磨损，说明穿戴者又回去工作。旧伤上的干净胶带意味着后期检查。两种布色说明材料来自另一套压力服，往往来自死掉的套装或没人打算再打开的柜子。\n\n对拾荒者来说，补丁不是服装细节。它能指出紧急路线、工人的最后任务、医疗取舍、被偷的维修包，或一套本不属于穿戴者等级的压力服。在HECTON-8，生存常常是一道丑陋针脚，只撑过了下一次下潜。",
-          "external_site": "压力服维修补丁能揭示现场分诊、被偷工具包、拆用压力服和最后一次下潜路线。",
-          "external_site_article": "崭新的压力服属于宣传册。HECTON-8不是宣传册。真正重要的压力服有补丁，膝盖和袖口被磨毛，缝线周围有盐，用任何能再撑一次下潜的布条修过。\n\n好补丁带着社会信息。工厂维修很均匀。主管维修用正确胶带，但没有时间。工人维修用错线，却知道身体在哪里弯。医疗维修快而丑。黑龙骨维修会先剥掉识别信息。脏压力服上的干净补丁可能说明穿戴者对某个有库存权限的人很重要。\n\n所以补丁应该出现在柜子、医疗舱、淹没更衣室和废弃工作台上。它们让殖民地变得私人，而不需要每具尸体都开口说话。补丁说：有人在这里，有人知道风险，有人决定工作仍要继续。",
-          "field_note": "不要只读补丁。膝盖、袖口和工具袋要一起读。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre des patchs de combinaison pressurisée",
-          "scanner": "PATCH DE COMBINAISON // Coque sombre type néoprène, îlot cousu, bande de couture renforcée, éraflure de sel, bande textile claire. Qualité inégale : réparation de terrain, pas service usine.",
-          "terminal": "LECTURE PATCH // Point croisé sur bande : fermeture d'urgence. Sel sous fil : patch après exposition. Bande propre sur tissu usé : inspection tardive. Deux couleurs : combinaison cannibalisée.",
-          "audio": "Un patch de combinaison est un petit vote contre la noyade.",
-          "in_game_wiki": "Les patchs de combinaison pressurisée sont l'écriture humaine sur un objet de survie. Les panneaux d'usine parlent en courbes propres. Les patchs de terrain parlent en fil tordu, tissu de mauvaise couleur, sel sous bande et honnêteté brutale d'une fuite fermée avant le prochain cycle.\n\nL'ordre compte. Bande sous point croisé : première réparation non fiable. Sel sous fil : combinaison déjà exposée. Abrasion sur patch : porteur retourné travailler. Bande propre sur vieux dégât : inspection tardive. Deux tissus : matière prise sur une autre combinaison.\n\nPour un maraudeur, ce n'est pas costume. C'est route d'urgence, dernière tâche, triage, kit volé ou grade de combinaison qui n'appartenait pas à son porteur.",
-          "external_site": "Les patchs de combinaison révèlent triage de terrain, kits volés, combinaisons cannibalisées et dernières sorties.",
-          "external_site_article": "Une combinaison parfaite appartient à une brochure. HECTON-8 n'est pas une brochure. Les combinaisons importantes sont patchées, râpées aux genoux, salées aux coutures et réparées avec la bande qui pouvait survivre une descente de plus.\n\nUn bon patch porte une information sociale. Usine : régulier. Superviseur : bonne bande, pas de temps. Ouvrier : mauvais fil, bonne connaissance du corps. Médical : rapide et laid. Quille Noire : identifiants retirés d'abord.\n\nCes patchs appartiennent aux casiers, infirmeries, vestiaires noyés et établis abandonnés. Ils rendent la colonie personnelle sans donner un discours à chaque corps.",
-          "field_note": "Ne lis jamais le patch seul. Lis genou, manchette et poche d'outil avec lui."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de parches de traje de presión",
-          "scanner": "PARCHE DE TRAJE // Cubierta oscura tipo neopreno, isla de reparación cosida, cinta de costura reforzada, rozadura salina, franja textil clara. Grado desigual: reparación de campo, no servicio de fábrica.",
-          "terminal": "LECTURA DE PARCHE // Puntada cruzada sobre cinta: cierre de emergencia. Sal bajo hilo: parche tras exposición. Cinta limpia sobre tela gastada: inspección tardía. Dos colores: traje canibalizado.",
-          "audio": "Un parche de traje es un pequeño voto contra ahogarse.",
-          "in_game_wiki": "Los parches de traje de presión son escritura humana sobre un objeto de soporte vital. Los paneles de fábrica hablan con curvas limpias. Los parches de campo hablan con hilo torcido, tela equivocada, sal bajo cinta y la honestidad de cerrar una fuga antes del siguiente ciclo.\n\nEl orden importa. Cinta bajo puntada cruzada: primera reparación sin confianza. Sal bajo hilo: traje ya expuesto. Abrasión sobre parche: el portador volvió al trabajo. Cinta limpia sobre daño viejo: inspección tardía. Dos telas: material de otro traje.\n\nPara un saqueador, no es vestuario. Es ruta de emergencia, última tarea, triage, kit robado o grado de traje que no pertenecía a quien lo llevaba.",
-          "external_site": "Los parches de presión revelan triage de campo, kits robados, trajes canibalizados y rutas de último descenso.",
-          "external_site_article": "Un traje perfecto pertenece a un folleto. HECTON-8 no es un folleto. Los trajes importantes están parcheados, gastados en rodillas y puños, salados en costuras y reparados con cualquier tira capaz de aguantar un descenso más.\n\nUn buen parche trae información social. Fábrica: uniforme. Supervisor: cinta correcta, sin tiempo. Trabajador: hilo equivocado, conocimiento del cuerpo. Médico: rápido y feo. Quilla Negra: identificadores primero.\n\nLos parches pertenecen a taquillas, enfermerías, vestuarios inundados y bancos abandonados. Vuelven personal la colonia sin hacer hablar a cada cadáver.",
-          "field_note": "Nunca leas el parche solo. Lee también rodilla, puño y bolsa de herramienta."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Protokoll für Druckanzug-Reparaturflicken",
-          "scanner": "ANZUGFLICKEN // Dunkle neoprenartige Hülle, angenähte Reparaturinsel, verstärktes Nahtband, Salzschramme, heller Technikstoff. Ungleiche Güte: Feldreparatur, kein Werkservice.",
-          "terminal": "FLICKEN LESEN // Kreuzstich über Nahtband: Notverschluss. Salz unter Faden: nach Exposition geflickt. Sauberes Band über Abrieb: späte Kontrolle. Zwei Stofffarben: ausgeschlachteter Anzug.",
-          "audio": "Ein Anzugflicken ist eine kleine Stimme gegen das Ertrinken.",
-          "in_game_wiki": "Druckanzug-Flicken sind menschliche Handschrift auf Lebenserhaltung. Fabrikpaneele sprechen in sauberen Kurven. Feldflicken sprechen in krummem Faden, falschem Stoff, Salz unter Band und der harten Ehrlichkeit, ein Leck vor dem nächsten Druckzyklus zu schließen.\n\nReihenfolge zählt. Nahtband unter Kreuzstich heißt: erster Reparatur misstraut. Salz unter Faden heißt: Anzug war schon draußen. Abrieb über Flicken heißt: Träger arbeitete weiter. Sauberes Band über altem Schaden heißt späte Prüfung. Zwei Stofffarben heißen Spenderanzug.\n\nFür einen Marauder ist das kein Kostüm. Es ist Notroute, letzte Aufgabe, Triage, gestohlener Satz oder ein Anzuggrad, der nicht zum Träger gehörte.",
-          "external_site": "Druckanzug-Flicken zeigen Feldtriage, gestohlene Kits, ausgeschlachtete Anzüge und letzte Tauchwege.",
-          "external_site_article": "Ein perfekter Druckanzug gehört in eine Broschüre. HECTON-8 ist keine Broschüre. Wichtige Anzüge sind geflickt, an Knien und Manschetten wund, an Nähten versalzen und mit jedem Streifen repariert, der einen weiteren Abstieg hielt.\n\nEin guter Flicken trägt soziale Information. Fabrik: gleichmäßig. Aufsicht: richtiges Band, keine Zeit. Arbeiter: falscher Faden, genauer Körperverstand. Medizin: schnell und hässlich. Schwarzer Kiel: Kennung zuerst ab.\n\nFlicken gehören in Spinde, Sanitätsräume, geflutete Umkleiden und verlassene Werkbänke. Sie machen die Kolonie persönlich, ohne jeden Toten sprechen zu lassen.",
-          "field_note": "Lies den Flicken nie allein. Lies Knie, Manschette und Werkzeugtasche mit."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr łatek skafandra ciśnieniowego",
-          "scanner": "ŁATA SKAFANDRA // Ciemna neoprenowa powłoka, przyszyta wyspa naprawy, wzmocniona taśma szwu, słona rysa, jasny pas tkaniny. Nierówna klasa: naprawa polowa, nie fabryka.",
-          "terminal": "CZYTANIE ŁATY // Krzyżowy ścieg na taśmie: awaryjne zamknięcie. Sól pod nicią: łata po ekspozycji. Czysta taśma na przetarciu: późna kontrola. Dwa kolory: materiał z innego skafandra.",
-          "audio": "Łata skafandra to mały głos przeciw utonięciu.",
-          "in_game_wiki": "Łaty skafandrów ciśnieniowych są ludzkim pismem na przedmiocie podtrzymania życia. Fabryczne panele mówią czystym łukiem. Polowe łaty mówią krzywą nicią, obcą tkaniną, solą pod taśmą i szczerością człowieka, który zamyka przeciek przed następnym cyklem.\n\nKolejność ma znaczenie. Taśma pod krzyżowym ściegiem oznacza brak zaufania do pierwszej naprawy. Sól pod nicią: skafander był już wystawiony. Otarcie na łacie: noszący wrócił do pracy. Czysta taśma na starym uszkodzeniu: późna inspekcja. Dwa kolory: dawca.\n\nDla maraudera to nie kostium. To trasa awaryjna, ostatnie zadanie, triage, skradziony zestaw albo klasa skafandra niepasująca do człowieka.",
-          "external_site": "Łaty skafandrów pokazują triage polowy, skradzione zestawy, dawce materiału i ostatnie wyjścia.",
-          "external_site_article": "Idealny skafander należy do broszury. HECTON-8 nie jest broszurą. Ważne skafandry są łatane, starte na kolanach i mankietach, słone przy szwach i naprawione paskiem, który wytrzymał jeszcze jedno zejście.\n\nDobra łata niesie informację społeczną. Fabryka: równo. Nadzór: dobra taśma, brak czasu. Robotnik: zła nić, wiedza o ciele. Medycyna: szybko i brzydko. Czarna Stępka: najpierw identyfikatory.\n\nŁaty należą do szafek, medbayów, zalanych przebieralni i porzuconych stołów. Czynią kolonię osobistą bez przemowy przy każdym ciele.",
-          "field_note": "Nigdy nie czytaj łaty samej. Czytaj z kolanem, mankietem i kieszenią narzędziową."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал ремонтних латок напірного скафандра",
-          "scanner": "ЛАТКА СКАФАНДРА // Темна неопренова оболонка, пришитий ремонтний острів, посилена шовна стрічка, сольова потертість, світла техтканина. Клас нерівний: польовий ремонт, не завод.",
-          "terminal": "ЧИТАННЯ ЛАТКИ // Хрестова строчка поверх стрічки - аварійне закриття. Сіль під ниткою - латали після контакту з водою. Чиста стрічка на стертій тканині - пізній огляд. Два кольори - матеріал з іншого скафандра.",
-          "audio": "Латка скафандра - малий голос проти втоплення.",
-          "in_game_wiki": "Ремонтні латки напірних скафандрів - людський почерк на речі життєзабезпечення. Заводські панелі говорять чистими дугами. Польові латки говорять кривою ниткою, чужою тканиною, сіллю під стрічкою й чесністю людини, що закриває течу до наступного циклу.\n\nПорядок важливий. Стрічка під хрестовою строчкою означає недовіру до першої латки. Сіль під ниткою - скафандр уже був у воді. Потертість поверх латки - носій повернувся до роботи. Чиста стрічка на старому ушкодженні - пізній огляд. Два кольори - донорський скафандр.\n\nДля мародера це не костюм. Це аварійний маршрут, останнє завдання, медичний вибір, украдений набір або клас скафандра, що не належав носію.",
-          "external_site": "Латки скафандрів розкривають польову сортировку, украдені набори, донорські костюми й останні виходи.",
-          "external_site_article": "Ідеальний напірний скафандр належить буклету. HECTON-8 не буклет. Важливі скафандри залатані, стерті на колінах і манжетах, просолені біля швів і чинені будь-якою смугою для ще одного спуску.\n\nДобра латка несе соціальну інформацію. Завод - рівно. Нагляд - правильна стрічка без часу. Робітник - чужа нитка й знання тіла. Медицина - швидко й страшно. Чорний Кіль - спершу ідентифікатори.\n\nЛатки належать шафкам, медвідсікам, затопленим роздягальням і кинутим верстакам. Вони роблять колонію особистою без промови над кожним тілом.",
-          "field_note": "Не читай латку окремо. Читай з коліном, манжетою й підсумком."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل رقع بدلة الضغط",
-          "scanner": "رقعة بدلة // غلاف داكن يشبه النيوبرين، جزيرة إصلاح مخيطة، شريط درز مقوى، خدش ملحي، شريط نسيج تقني فاتح. درجة الإصلاح غير منتظمة: عمل ميداني لا خدمة مصنع.",
-          "terminal": "قراءة الرقعة // خياطة متقاطعة فوق شريط تعني إغلاقا طارئا. ملح تحت الخيط يعني رقعة بعد التعرض. شريط نظيف فوق قماش متآكل يعني فحصا متأخرا. لونان يعنيان مادة من بدلة أخرى.",
-          "audio": "رقعة البدلة صوت صغير ضد الغرق.",
-          "in_game_wiki": "رقع بدلات الضغط خط بشري على شيء يحفظ الحياة. ألواح المصنع تتكلم بمنحنيات نظيفة. رقع الميدان تتكلم بخيط أعوج، قماش من لون آخر، ملح تحت الشريط، وصدق شخص يغلق تسربا قبل دورة الضغط التالية.\n\nالترتيب مهم. شريط تحت خياطة متقاطعة يعني أن الإصلاح الأول لم يوثق به. ملح تحت الخيط يعني أن البدلة كانت قد تعرضت للماء. اهتراء فوق الرقعة يعني أن حاملها عاد للعمل. شريط نظيف على ضرر قديم يعني فحصا متأخرا. لونان يعنيان بدلة مانحة.\n\nبالنسبة إلى المغير، الرقعة ليست زينة. قد تحدد طريق طوارئ، آخر مهمة لعامل، قرار فرز طبي، عدة مسروقة، أو درجة بدلة لا تخص من ارتداها.",
-          "external_site": "رقع بدلات الضغط تكشف فرزا ميدانيا وعددا مسروقة وبدلات مفككة ومسارات غطس أخيرة.",
-          "external_site_article": "بدلة الضغط المثالية تنتمي إلى كتيب. HECTON-8 ليست كتيبا. البدلات المهمة مرقعة، ممسوحة عند الركب والأساور، مملحة حول الدروز، ومصلحة بأي شريط يصمد لغوصة أخرى.\n\nالرقعة الجيدة تحمل معلومة اجتماعية. المصنع منتظم. المشرف يستخدم الشريط الصحيح بلا وقت. العامل يستخدم خيطا خاطئا ويعرف أين ينحني الجسد. الطب يغلق بسرعة وبقبح. الكيل الأسود يزيل المعرفات أولا.\n\nلذلك تنتمي الرقع إلى الخزائن، وغرف العلاج، وغرف تبديل غارقة، وطاولات عمل مهجورة. تجعل المستعمرة شخصية من دون أن يتكلم كل جسد.",
-          "field_note": "لا تقرأ الرقعة وحدها. اقرأ معها الركبة والسوار وجيب الأداة."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Log Tambalan Baju Tekanan",
-          "scanner": "TAMBALAN BAJU // Cangkang gelap mirip neoprene, pulau perbaikan dijahit, pita jahitan diperkuat, gesekan garam, strip tekstil teknis pucat. Mutu tak rata: perbaikan lapangan, bukan servis pabrik.",
-          "terminal": "BACA TAMBALAN // Jahit silang di atas pita berarti penutupan darurat. Garam di bawah benang berarti ditambal setelah paparan. Pita bersih di atas kain aus berarti inspeksi terlambat. Dua warna berarti bahan dari baju lain.",
-          "audio": "Tambalan baju adalah suara kecil melawan tenggelam.",
-          "in_game_wiki": "Tambalan baju tekanan adalah tulisan manusia pada benda penyangga hidup. Panel pabrik bicara dengan kurva bersih. Tambalan lapangan bicara dengan benang bengkok, kain salah warna, garam di bawah pita, dan kejujuran orang yang menutup bocor sebelum siklus tekanan berikutnya.\n\nUrutan tambalan penting. Pita di bawah jahit silang berarti perbaikan pertama tidak dipercaya. Garam di bawah benang berarti baju sudah terpapar. Abrasi di atas tambalan berarti pemakai kembali bekerja. Pita bersih di atas kerusakan lama berarti inspeksi terlambat. Dua warna berarti bahan dari baju donor.\n\nBagi perompak laut-dalam, tambalan bukan kostum. Ia bisa menunjukkan rute darurat, tugas terakhir pekerja, keputusan medis, kit curian, atau kelas baju yang tak cocok dengan pemakainya.",
-          "external_site": "Tambalan baju tekanan mengungkap triase lapangan, kit curian, baju donor, dan rute penyelaman terakhir.",
-          "external_site_article": "Baju tekanan sempurna milik brosur. HECTON-8 bukan brosur. Baju yang penting ditambal, aus di lutut dan manset, asin di jahitan, dan diperbaiki dengan strip apa pun yang mampu bertahan satu turun lagi.\n\nTambalan bagus membawa informasi sosial. Pabrik: rata. Supervisor: pita benar, tanpa waktu. Pekerja: benang salah, paham tubuh. Medis: cepat dan jelek. Black Keel: pengenal dilepas dulu.\n\nTambalan pantas berada di loker, medbay, ruang ganti terendam, dan bangku kerja kosong. Mereka membuat koloni personal tanpa membuat setiap tubuh berpidato.",
-          "field_note": "Jangan baca tambalan sendiri. Baca juga lutut, manset, dan kantong alat."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "압력복 수리 패치 장부",
-          "scanner": "수트 패치 // 어두운 네오프렌 같은 외피, 꿰맨 수리 섬, 보강 이음 테이프, 소금 마모, 밝은 기술 섬유 띠. 등급이 고르지 않다. 공장 서비스가 아니라 현장 수리다.",
-          "terminal": "패치 읽기 // 테이프 위 십자 바느질은 비상 봉합이다. 실 아래 소금은 노출 후 패치다. 마모 천 위 깨끗한 테이프는 늦은 검사다. 두 색 천은 다른 수트를 뜯었다는 뜻이다.",
-          "audio": "수트 패치는 익사에 반대하는 작은 표다.",
-          "in_game_wiki": "압력복 수리 패치는 생명 유지 물건 위의 인간 필적이다. 공장 패널은 깨끗한 곡선과 인증으로 말한다. 현장 패치는 삐뚠 실, 다른 색 천, 테이프 아래 소금, 다음 압력 주기 전에 누수를 막는 사람의 솔직함으로 말한다.\n\n패치 순서가 중요하다. 십자 바느질 아래 이음 테이프는 첫 수리가 믿기지 않았다는 뜻이다. 실 아래 소금은 이미 물에 노출된 수트다. 패치 위 마모는 착용자가 다시 일했다는 뜻이다. 오래된 손상 위 깨끗한 테이프는 늦은 검사다. 두 색 천은 기증 수트다.\n\n마라우더에게 패치는 의상 장식이 아니다. 비상 경로, 노동자의 마지막 임무, 의료 판단, 훔친 키트, 또는 착용자에게 맞지 않는 수트 등급을 보여 준다.",
-          "external_site": "압력복 패치는 현장 분류, 훔친 키트, 뜯어낸 수트, 마지막 잠수 경로를 드러낸다.",
-          "external_site_article": "완벽한 압력복은 브로슈어의 물건이다. HECTON-8은 브로슈어가 아니다. 중요한 수트는 패치가 붙고, 무릎과 소매가 닳고, 이음 주위가 짜며, 한 번 더 내려갈 만큼 버티는 천으로 수리되어 있다.\n\n좋은 패치는 사회 정보를 담는다. 공장은 균일하다. 감독자는 맞는 테이프를 쓰지만 시간이 없다. 노동자는 틀린 실을 쓰고 몸이 굽는 곳을 안다. 의료 수리는 빠르고 못생겼다. 블랙 킬은 식별자를 먼저 벗긴다.\n\n패치는 사물함, 의무실, 잠긴 탈의실, 버려진 작업대에 속한다. 모든 시신에게 연설을 시키지 않고도 식민지를 개인적으로 만든다.",
-          "field_note": "패치만 읽지 마라. 무릎, 소매, 도구 주머니와 함께 읽어라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן טלאי תיקון חליפת לחץ",
-          "scanner": "טלאי חליפה // מעטפת כהה דמוית נאופרן, אי תיקון תפור, סרט תפר מחוזק, שפשוף מלח, רצועת טקסטיל בהירה. איכות לא אחידה: תיקון שטח, לא שירות מפעל.",
-          "terminal": "קריאת טלאי // תפר צלב מעל סרט הוא סגירת חירום. מלח תחת חוט אומר תיקון אחרי חשיפה. סרט נקי על בד שחוק אומר בדיקה מאוחרת. שני צבעים אומרים חומר מחליפה אחרת.",
-          "audio": "טלאי חליפה הוא קול קטן נגד טביעה.",
-          "in_game_wiki": "טלאי חליפות לחץ הם כתב יד אנושי על חפץ שמחזיק חיים. לוחות מפעל מדברים בקווים נקיים. טלאי שטח מדברים בחוט עקום, בד בצבע שגוי, מלח תחת סרט והכנות של מי שסוגר דליפה לפני מחזור הלחץ הבא.\n\nסדר הטלאים חשוב. סרט תחת תפר צלב אומר שהתיקון הראשון לא זכה לאמון. מלח תחת חוט אומר שהחליפה כבר נחשפה. שחיקה מעל טלאי אומרת שהלובש חזר לעבוד. סרט נקי על נזק ישן אומר בדיקה מאוחרת. שני צבעי בד אומרים חליפה תורמת.\n\nלמראודר, טלאי אינו קישוט. הוא יכול להראות נתיב חירום, משימה אחרונה, החלטת טריאז', ערכה גנובה או דרגת חליפה שלא התאימה ללובש.",
-          "external_site": "טלאי חליפות לחץ חושפים טריאז' שטח, ערכות גנובות, חליפות מפורקות ונתיבי צלילה אחרונים.",
-          "external_site_article": "חליפת לחץ מושלמת שייכת לחוברת. HECTON-8 אינה חוברת. החליפות החשובות מטולאות, שחוקות בברכיים ובשרוולים, מלוחות סביב התפרים ומתוקנות בכל רצועה שיכלה להחזיק עוד ירידה.\n\nטלאי טוב נושא מידע חברתי. מפעל: אחיד. מפקח: סרט נכון בלי זמן. עובד: חוט שגוי והבנה של הגוף. רפואה: מהר ומכוער. הקיל השחור: מזהים מוסרים קודם.\n\nטלאים שייכים לארוניות, מרפאות, חדרי החלפה מוצפים ושולחנות עבודה נטושים. הם הופכים את המושבה לאישית בלי שכל גוף ינאם.",
-          "field_note": "אל תקרא את הטלאי לבד. קרא איתו את הברך, השרוול וכיס הכלים."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro de Remendos de Roupa de Pressão",
-          "scanner": "REMENDO DE ROUPA // Casca escura tipo neoprene, ilha costurada de reparo, fita de costura reforçada, arranhão salino, faixa têxtil clara. Grau irregular: reparo de campo, não serviço de fábrica.",
-          "terminal": "LEITURA DO REMENDO // Ponto cruzado sobre fita: fechamento de emergência. Sal sob linha: remendo após exposição. Fita limpa sobre tecido gasto: inspeção tardia. Duas cores: material de outra roupa.",
-          "audio": "Um remendo de roupa é um pequeno voto contra afogar.",
-          "in_game_wiki": "Remendos de roupa de pressão são caligrafia humana num objeto de suporte vital. Painéis de fábrica falam em curvas limpas. Remendos de campo falam com linha torta, tecido de cor errada, sal sob fita e a honestidade de fechar vazamento antes do próximo ciclo.\n\nA ordem importa. Fita sob ponto cruzado significa primeira reparação sem confiança. Sal sob linha significa roupa já exposta. Abrasão sobre remendo significa retorno ao trabalho. Fita limpa sobre dano velho significa inspeção tardia. Duas cores significam roupa doadora.\n\nPara um saqueador, remendo não é figurino. Pode indicar rota de emergência, última tarefa, triagem, kit roubado ou grau de roupa que não pertencia ao usuário.",
-          "external_site": "Remendos de roupa de pressão revelam triagem de campo, kits roubados, roupas doadoras e rotas de último mergulho.",
-          "external_site_article": "Uma roupa de pressão perfeita pertence a folheto. HECTON-8 não é folheto. As roupas importantes são remendadas, gastas nos joelhos e punhos, salgadas nas costuras e consertadas com qualquer tira que aguentasse mais uma descida.\n\nUm bom remendo carrega informação social. Fábrica: uniforme. Supervisor: fita certa, sem tempo. Trabalhador: linha errada, conhecimento do corpo. Médico: rápido e feio. Quilha Negra: identificadores primeiro.\n\nRemendos pertencem a armários, enfermarias, vestiários inundados e bancadas abandonadas. Tornam a colônia pessoal sem fazer cada corpo discursar.",
-          "field_note": "Nunca leia o remendo sozinho. Leia joelho, punho e bolsa de ferramenta junto."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Log van drukpak-reparatiepatches",
-          "scanner": "PAKPATCH // Donkere neopreenachtige huid, gestikt reparatie-eiland, versterkte naadband, zoutschuur, lichte technische textielstrook. Ongelijke klasse: veldreparatie, geen fabriek.",
-          "terminal": "PATCH LEZEN // Kruissteek over naadband: noodsluiting. Zout onder draad: patch na blootstelling. Schone tape over versleten stof: late inspectie. Twee kleuren: materiaal uit ander pak.",
-          "audio": "Een pakpatch is een kleine stem tegen verdrinken.",
-          "in_game_wiki": "Reparatiepatches op drukpakken zijn menselijk handschrift op levensonderhoud. Fabriekspanelen spreken in schone bochten. Veldpatches spreken in krom draad, verkeerde stofkleur, zout onder tape en de eerlijkheid van iemand die een lek sluit voor de volgende drukcyclus.\n\nPatchvolgorde telt. Naadband onder kruissteek betekent dat de eerste reparatie niet vertrouwd werd. Zout onder draad betekent dat het pak al blootgesteld was. Slijtage op de patch betekent dat de drager terug werkte. Schone tape op oude schade betekent late inspectie. Twee stofkleuren betekenen donor-pak.\n\nVoor een marauder is een patch geen kostuumdetail. Het kan noodroute, laatste taak, triage, gestolen kit of een pakklasse tonen die niet bij de drager hoorde.",
-          "external_site": "Drukpakpatches tonen veldtriage, gestolen kits, donor-pakken en laatste duikroutes.",
-          "external_site_article": "Een perfect drukpak hoort in een brochure. HECTON-8 is geen brochure. Belangrijke pakken zijn gepatcht, rauw aan knieën en manchetten, zout rond naden en gerepareerd met elke strook die nog één afdaling hield.\n\nEen goede patch draagt sociale informatie. Fabriek: gelijkmatig. Supervisor: juiste tape, geen tijd. Arbeider: verkeerde draad, lichaamskennis. Medisch: snel en lelijk. Zwarte Kiel: eerst identificatie weg.\n\nPatches horen in lockers, medbays, overstroomde kleedkamers en verlaten werkbanken. Ze maken de kolonie persoonlijk zonder elk lichaam een toespraak te geven.",
-          "field_note": "Lees de patch nooit alleen. Lees knie, manchet en gereedschapstas mee."
-        }
-      }
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.pressure_suit_patch_ledger",
+    "secondary": [
+     "unlock.first_pressure_suit_patch_scan",
+     "unlock.first_cannibalized_suit_trace",
+     "unlock.first_last_dive_repair_read"
+    ],
+    "poi_tags": [
+     "poi.pressure_suit_repair_patch",
+     "poi.cannibalized_suit_material",
+     "poi.salt_under_suit_thread",
+     "poi.emergency_seam_tape"
+    ],
+    "biome_tags": [
+     "biome.old_colony_ruins",
+     "biome.med_bay",
+     "biome.worker_locker_room"
+    ]
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Pressure Suit Patch Scanner",
+     "terminal": "Old Colony Suit Maintenance Readout",
+     "audio": "Marauder Suit Trace Instructor",
+     "in_game_wiki": "PDA Suit Patch Field Guide",
+     "external_site": "Public Site Suit Repair Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_pressure_suit_patch_or_last_dive_trace",
+    "truth_payload": "Pressure suit repair patches reveal triage, stolen kits, donor suits, social access and last-dive work routes.",
+    "player_question": "Which patch held for one more dive, and who had access to make it?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Pressure Suit Repair Patch Ledger",
+     "scanner": "SUIT PATCH // Dark neoprene-like shell, stitched repair island, reinforced seam tape, salt scuff, off-white technical textile strip. Patch grade uneven: field repair, not factory service.",
+     "terminal": "PATCH READ // Cross-stitch over seam tape means emergency closure. Salt under thread means patch applied after exposure. Clean tape over abraded fabric means a later inspection. Two patch colors mean cannibalized suit material.",
+     "audio": "A suit patch is a small vote against drowning.",
+     "in_game_wiki": "Pressure suit patches are human handwriting on a life-support object. Factory panels speak in clean curves and certification marks. Field patches speak in crooked thread, wrong-colored textile, salt under tape and the blunt honesty of somebody fixing a leak before the next pressure cycle.\n\nPatch order matters. Seam tape under cross-stitch means the first repair failed or was not trusted. Salt trapped beneath thread means the suit was already exposed when patched. Abrasion over a patch means the wearer returned to work. Clean tape over old damage means inspection after use. Two fabric colors mean cannibalized material, often from a dead suit or a locker nobody expected to reopen.\n\nFor a Marauder, a patch is not costume detail. It can identify an emergency route, a worker's last task, a triage decision, a stolen kit, or a suit grade that never belonged to the person wearing it. In HECTON-8, survival often looks like ugly stitching that held for one more dive.",
+     "external_site": "Pressure suit repair patches reveal field triage, stolen kits, cannibalized suits and last-dive work routes.",
+     "external_site_article": "A pristine pressure suit belongs in a brochure. HECTON-8 is not a brochure. The suits that matter are patched, rubbed raw at knees and cuffs, salted around seams and repaired with whatever strip could survive one more descent.\n\nThe best suit patch carries social information. Factory repair is even. Supervisor repair uses proper tape but no time. Worker repair uses wrong thread and knows exactly where the body bends. Medical repair seals fast and ugly. Black Keel repair strips identifiers first. A clean patch on a filthy suit can mean the person wearing it mattered to somebody with inventory access.\n\nThat is why suit patches belong in lockers, med bays, flooded changing rooms and abandoned tool benches. They make the colony personal without turning every body into a speech. The patch says: somebody was here, somebody knew the risk, and somebody decided the work still had to continue.",
+     "field_note": "Never read the patch alone. Read the knee, the cuff and the tool pouch with it."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал ремонтных заплат напорного скафандра",
+     "scanner": "ЗАПЛАТА СКАФАНДРА // Темная неопреновая оболочка, пришитый ремонтный остров, усиленная шовная лента, солевая потертость, полоса светлой техткани. Класс ремонта неровный: полевая работа, не заводской сервис.",
+     "terminal": "ЧТЕНИЕ ЗАПЛАТЫ // Крестовая строчка поверх ленты - аварийное закрытие. Соль под нитью - чинили после контакта с водой. Чистая лента поверх стертой ткани - поздний осмотр. Два цвета ткани - материал с другого скафандра.",
+     "audio": "Заплата скафандра - маленький голос против утопления.",
+     "in_game_wiki": "Ремонтные заплаты напорных скафандров - человеческий почерк на предмете жизнеобеспечения. Заводские панели говорят чистыми дугами и сертификацией. Полевые заплаты говорят кривой нитью, чужой тканью, солью под лентой и честностью человека, который закрывает течь до следующего цикла давления.\n\nПорядок заплат важен. Шовная лента под крестовой строчкой значит, что первой починке не доверяли. Соль под нитью говорит, что скафандр уже был в воде. Потертость поверх заплаты значит, что носитель вернулся к работе. Чистая лента поверх старого повреждения - поздний осмотр. Два цвета ткани означают разобранный донорский скафандр, часто из мертвого шкафа.\n\nДля мародера заплата - не украшение костюма. Она может показать аварийный маршрут, последнюю задачу рабочего, медицинский выбор, украденный набор или класс скафандра, который не принадлежал тому, кто его носил. В HECTON-8 выживание часто выглядит как уродливая строчка, выдержавшая еще одно погружение.",
+     "external_site": "Ремонтные заплаты скафандров раскрывают полевую сортировку, украденные наборы, донорские костюмы и маршруты последнего выхода.",
+     "external_site_article": "Идеальный напорный скафандр годится для буклета. HECTON-8 не буклет. Важные скафандры залатаны, стерты на коленях и манжетах, просолены вокруг швов и чинились любой полосой, способной пережить еще один спуск.\n\nХорошая заплата несет социальную информацию. Заводской ремонт ровный. Ремонт начальника использует правильную ленту, но без времени. Ремонт рабочего берет чужую нить и знает, где гнется тело. Медицинский ремонт закрывает быстро и страшно. Ремонт Черного Киля сначала срезает идентификаторы. Чистая заплата на грязном скафандре может значить, что носитель был важен кому-то с доступом к складу.\n\nПоэтому заплаты должны жить в шкафчиках, медотсеках, затопленных раздевалках и на брошенных верстаках. Они делают колонию личной без речи над каждым телом. Заплата говорит: кто-то был здесь, кто-то знал риск, и кто-то решил, что работа все равно продолжится.",
+     "field_note": "Не читай заплату отдельно. Читай вместе с коленом, манжетой и подсумком."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "圧力スーツ補修パッチ台帳",
+     "scanner": "スーツパッチ // 暗いネオプレン状外皮、縫い付けた補修島、補強シームテープ、塩擦れ、淡色技術布の帯。等級が揃わない。工場ではなく現場修理だ。",
+     "terminal": "パッチ読み // シームテープ上の十字縫いは緊急閉鎖。糸の下の塩は曝露後の補修。摩耗布上のきれいなテープは遅い検査。二色の布は別スーツからの流用材。",
+     "audio": "スーツのパッチは、溺死に反対する小さな票だ。",
+     "in_game_wiki": "圧力スーツの補修パッチは、生命維持具に残った人間の筆跡だ。工場パネルは清潔な曲線と認証で語る。現場パッチは曲がった糸、違う色の布、テープ下の塩、次の圧力周期の前に漏れを塞ぐしかなかった人間の正直さで語る。\n\n順序が重要だ。十字縫いの下にシームテープがあるなら、最初の修理は信用されなかった。糸の下の塩は、スーツがすでに水に触れていた証拠だ。パッチ上の摩耗は着用者が仕事に戻った印だ。古い損傷上のきれいなテープは遅い検査。二色の布は、死んだスーツや再開予定のないロッカーから取った材料を示す。\n\nマローダーにとって、パッチは衣装の飾りではない。緊急ルート、作業者の最後の任務、医療判断、盗まれたキット、または着用者に本来ない等級のスーツを示す。HECTON-8での生存は、もう一回の潜行だけ耐えた醜い縫い目に見える。",
+     "external_site": "圧力スーツの補修パッチは、現場トリアージ、盗難キット、流用スーツ、最後の潜行ルートを示す。",
+     "external_site_article": "完璧な圧力スーツはパンフレットのものだ。HECTON-8はパンフレットではない。意味を持つスーツは、膝と袖口が擦れ、縫い目に塩が集まり、もう一度だけ潜るための布で補修されている。\n\n良いパッチは社会情報を持つ。工場修理は均一だ。監督者の修理は正しいテープを使うが時間がない。作業者の修理は違う糸を使い、体が曲がる場所を知っている。医療修理は速く醜い。ブラックキール修理は識別子を先に剥がす。汚れたスーツ上のきれいなパッチは、着用者が在庫権限を持つ誰かにとって重要だったことを示す。\n\nだからパッチはロッカー、医療区画、沈んだ更衣室、放棄された作業台に置くべきだ。すべての死体に演説をさせず、植民地を個人的にする。パッチは語る。誰かがここにいた。危険を知っていた。それでも仕事は続くと決めた。",
+     "field_note": "パッチだけを読むな。膝、袖口、工具ポーチも一緒に読め。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "压力服维修补丁账",
+     "scanner": "压力服补丁 // 深色氯丁橡胶样外壳、缝上去的修补岛、加固缝带、盐擦痕、浅色技术织物条。维修等级不均：现场修，不是工厂服务。",
+     "terminal": "读补丁 // 缝带上有十字针，说明紧急封闭。线下有盐，说明暴露后才补。磨损布上有干净胶带，是后期检查。两种布色说明拆了别的压力服。",
+     "audio": "一块压力服补丁，是反对溺死的一张小票。",
+     "in_game_wiki": "压力服维修补丁是生命维持物上的人类笔迹。工厂面板用干净曲线和认证说话。现场补丁用歪针脚、异色织物、胶带下的盐，以及在下一次压力循环前堵住漏点的那种直白诚实说话。\n\n补丁顺序很重要。十字针下面有缝带，说明第一次修理不被信任。线下有盐，说明压力服已经接触过水。补丁上方有磨损，说明穿戴者又回去工作。旧伤上的干净胶带意味着后期检查。两种布色说明材料来自另一套压力服，往往来自死掉的套装或没人打算再打开的柜子。\n\n对拾荒者来说，补丁不是服装细节。它能指出紧急路线、工人的最后任务、医疗取舍、被偷的维修包，或一套本不属于穿戴者等级的压力服。在HECTON-8，生存常常是一道丑陋针脚，只撑过了下一次下潜。",
+     "external_site": "压力服维修补丁能揭示现场分诊、被偷工具包、拆用压力服和最后一次下潜路线。",
+     "external_site_article": "崭新的压力服属于宣传册。HECTON-8不是宣传册。真正重要的压力服有补丁，膝盖和袖口被磨毛，缝线周围有盐，用任何能再撑一次下潜的布条修过。\n\n好补丁带着社会信息。工厂维修很均匀。主管维修用正确胶带，但没有时间。工人维修用错线，却知道身体在哪里弯。医疗维修快而丑。黑龙骨维修会先剥掉识别信息。脏压力服上的干净补丁可能说明穿戴者对某个有库存权限的人很重要。\n\n所以补丁应该出现在柜子、医疗舱、淹没更衣室和废弃工作台上。它们让殖民地变得私人，而不需要每具尸体都开口说话。补丁说：有人在这里，有人知道风险，有人决定工作仍要继续。",
+     "field_note": "不要只读补丁。膝盖、袖口和工具袋要一起读。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre des patchs de combinaison pressurisée",
+     "scanner": "PATCH DE COMBINAISON // Coque sombre type néoprène, îlot cousu, bande de couture renforcée, éraflure de sel, bande textile claire. Qualité inégale : réparation de terrain, pas service usine.",
+     "terminal": "LECTURE PATCH // Point croisé sur bande : fermeture d'urgence. Sel sous fil : patch après exposition. Bande propre sur tissu usé : inspection tardive. Deux couleurs : combinaison cannibalisée.",
+     "audio": "Un patch de combinaison est un petit vote contre la noyade.",
+     "in_game_wiki": "Les patchs de combinaison pressurisée sont l'écriture humaine sur un objet de survie. Les panneaux d'usine parlent en courbes propres. Les patchs de terrain parlent en fil tordu, tissu de mauvaise couleur, sel sous bande et honnêteté brutale d'une fuite fermée avant le prochain cycle.\n\nL'ordre compte. Bande sous point croisé : première réparation non fiable. Sel sous fil : combinaison déjà exposée. Abrasion sur patch : porteur retourné travailler. Bande propre sur vieux dégât : inspection tardive. Deux tissus : matière prise sur une autre combinaison.\n\nPour un maraudeur, ce n'est pas costume. C'est route d'urgence, dernière tâche, triage, kit volé ou grade de combinaison qui n'appartenait pas à son porteur.",
+     "external_site": "Les patchs de combinaison révèlent triage de terrain, kits volés, combinaisons cannibalisées et dernières sorties.",
+     "external_site_article": "Une combinaison parfaite appartient à une brochure. HECTON-8 n'est pas une brochure. Les combinaisons importantes sont patchées, râpées aux genoux, salées aux coutures et réparées avec la bande qui pouvait survivre une descente de plus.\n\nUn bon patch porte une information sociale. Usine : régulier. Superviseur : bonne bande, pas de temps. Ouvrier : mauvais fil, bonne connaissance du corps. Médical : rapide et laid. Quille Noire : identifiants retirés d'abord.\n\nCes patchs appartiennent aux casiers, infirmeries, vestiaires noyés et établis abandonnés. Ils rendent la colonie personnelle sans donner un discours à chaque corps.",
+     "field_note": "Ne lis jamais le patch seul. Lis genou, manchette et poche d'outil avec lui."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de parches de traje de presión",
+     "scanner": "PARCHE DE TRAJE // Cubierta oscura tipo neopreno, isla de reparación cosida, cinta de costura reforzada, rozadura salina, franja textil clara. Grado desigual: reparación de campo, no servicio de fábrica.",
+     "terminal": "LECTURA DE PARCHE // Puntada cruzada sobre cinta: cierre de emergencia. Sal bajo hilo: parche tras exposición. Cinta limpia sobre tela gastada: inspección tardía. Dos colores: traje canibalizado.",
+     "audio": "Un parche de traje es un pequeño voto contra ahogarse.",
+     "in_game_wiki": "Los parches de traje de presión son escritura humana sobre un objeto de soporte vital. Los paneles de fábrica hablan con curvas limpias. Los parches de campo hablan con hilo torcido, tela equivocada, sal bajo cinta y la honestidad de cerrar una fuga antes del siguiente ciclo.\n\nEl orden importa. Cinta bajo puntada cruzada: primera reparación sin confianza. Sal bajo hilo: traje ya expuesto. Abrasión sobre parche: el portador volvió al trabajo. Cinta limpia sobre daño viejo: inspección tardía. Dos telas: material de otro traje.\n\nPara un saqueador, no es vestuario. Es ruta de emergencia, última tarea, triage, kit robado o grado de traje que no pertenecía a quien lo llevaba.",
+     "external_site": "Los parches de presión revelan triage de campo, kits robados, trajes canibalizados y rutas de último descenso.",
+     "external_site_article": "Un traje perfecto pertenece a un folleto. HECTON-8 no es un folleto. Los trajes importantes están parcheados, gastados en rodillas y puños, salados en costuras y reparados con cualquier tira capaz de aguantar un descenso más.\n\nUn buen parche trae información social. Fábrica: uniforme. Supervisor: cinta correcta, sin tiempo. Trabajador: hilo equivocado, conocimiento del cuerpo. Médico: rápido y feo. Quilla Negra: identificadores primero.\n\nLos parches pertenecen a taquillas, enfermerías, vestuarios inundados y bancos abandonados. Vuelven personal la colonia sin hacer hablar a cada cadáver.",
+     "field_note": "Nunca leas el parche solo. Lee también rodilla, puño y bolsa de herramienta."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Protokoll für Druckanzug-Reparaturflicken",
+     "scanner": "ANZUGFLICKEN // Dunkle neoprenartige Hülle, angenähte Reparaturinsel, verstärktes Nahtband, Salzschramme, heller Technikstoff. Ungleiche Güte: Feldreparatur, kein Werkservice.",
+     "terminal": "FLICKEN LESEN // Kreuzstich über Nahtband: Notverschluss. Salz unter Faden: nach Exposition geflickt. Sauberes Band über Abrieb: späte Kontrolle. Zwei Stofffarben: ausgeschlachteter Anzug.",
+     "audio": "Ein Anzugflicken ist eine kleine Stimme gegen das Ertrinken.",
+     "in_game_wiki": "Druckanzug-Flicken sind menschliche Handschrift auf Lebenserhaltung. Fabrikpaneele sprechen in sauberen Kurven. Feldflicken sprechen in krummem Faden, falschem Stoff, Salz unter Band und der harten Ehrlichkeit, ein Leck vor dem nächsten Druckzyklus zu schließen.\n\nReihenfolge zählt. Nahtband unter Kreuzstich heißt: erster Reparatur misstraut. Salz unter Faden heißt: Anzug war schon draußen. Abrieb über Flicken heißt: Träger arbeitete weiter. Sauberes Band über altem Schaden heißt späte Prüfung. Zwei Stofffarben heißen Spenderanzug.\n\nFür einen Marauder ist das kein Kostüm. Es ist Notroute, letzte Aufgabe, Triage, gestohlener Satz oder ein Anzuggrad, der nicht zum Träger gehörte.",
+     "external_site": "Druckanzug-Flicken zeigen Feldtriage, gestohlene Kits, ausgeschlachtete Anzüge und letzte Tauchwege.",
+     "external_site_article": "Ein perfekter Druckanzug gehört in eine Broschüre. HECTON-8 ist keine Broschüre. Wichtige Anzüge sind geflickt, an Knien und Manschetten wund, an Nähten versalzen und mit jedem Streifen repariert, der einen weiteren Abstieg hielt.\n\nEin guter Flicken trägt soziale Information. Fabrik: gleichmäßig. Aufsicht: richtiges Band, keine Zeit. Arbeiter: falscher Faden, genauer Körperverstand. Medizin: schnell und hässlich. Schwarzer Kiel: Kennung zuerst ab.\n\nFlicken gehören in Spinde, Sanitätsräume, geflutete Umkleiden und verlassene Werkbänke. Sie machen die Kolonie persönlich, ohne jeden Toten sprechen zu lassen.",
+     "field_note": "Lies den Flicken nie allein. Lies Knie, Manschette und Werkzeugtasche mit."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr łatek skafandra ciśnieniowego",
+     "scanner": "ŁATA SKAFANDRA // Ciemna neoprenowa powłoka, przyszyta wyspa naprawy, wzmocniona taśma szwu, słona rysa, jasny pas tkaniny. Nierówna klasa: naprawa polowa, nie fabryka.",
+     "terminal": "CZYTANIE ŁATY // Krzyżowy ścieg na taśmie: awaryjne zamknięcie. Sól pod nicią: łata po ekspozycji. Czysta taśma na przetarciu: późna kontrola. Dwa kolory: materiał z innego skafandra.",
+     "audio": "Łata skafandra to mały głos przeciw utonięciu.",
+     "in_game_wiki": "Łaty skafandrów ciśnieniowych są ludzkim pismem na przedmiocie podtrzymania życia. Fabryczne panele mówią czystym łukiem. Polowe łaty mówią krzywą nicią, obcą tkaniną, solą pod taśmą i szczerością człowieka, który zamyka przeciek przed następnym cyklem.\n\nKolejność ma znaczenie. Taśma pod krzyżowym ściegiem oznacza brak zaufania do pierwszej naprawy. Sól pod nicią: skafander był już wystawiony. Otarcie na łacie: noszący wrócił do pracy. Czysta taśma na starym uszkodzeniu: późna inspekcja. Dwa kolory: dawca.\n\nDla maraudera to nie kostium. To trasa awaryjna, ostatnie zadanie, triage, skradziony zestaw albo klasa skafandra niepasująca do człowieka.",
+     "external_site": "Łaty skafandrów pokazują triage polowy, skradzione zestawy, dawce materiału i ostatnie wyjścia.",
+     "external_site_article": "Idealny skafander należy do broszury. HECTON-8 nie jest broszurą. Ważne skafandry są łatane, starte na kolanach i mankietach, słone przy szwach i naprawione paskiem, który wytrzymał jeszcze jedno zejście.\n\nDobra łata niesie informację społeczną. Fabryka: równo. Nadzór: dobra taśma, brak czasu. Robotnik: zła nić, wiedza o ciele. Medycyna: szybko i brzydko. Czarna Stępka: najpierw identyfikatory.\n\nŁaty należą do szafek, medbayów, zalanych przebieralni i porzuconych stołów. Czynią kolonię osobistą bez przemowy przy każdym ciele.",
+     "field_note": "Nigdy nie czytaj łaty samej. Czytaj z kolanem, mankietem i kieszenią narzędziową."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал ремонтних латок напірного скафандра",
+     "scanner": "ЛАТКА СКАФАНДРА // Темна неопренова оболонка, пришитий ремонтний острів, посилена шовна стрічка, сольова потертість, світла техтканина. Клас нерівний: польовий ремонт, не завод.",
+     "terminal": "ЧИТАННЯ ЛАТКИ // Хрестова строчка поверх стрічки - аварійне закриття. Сіль під ниткою - латали після контакту з водою. Чиста стрічка на стертій тканині - пізній огляд. Два кольори - матеріал з іншого скафандра.",
+     "audio": "Латка скафандра - малий голос проти втоплення.",
+     "in_game_wiki": "Ремонтні латки напірних скафандрів - людський почерк на речі життєзабезпечення. Заводські панелі говорять чистими дугами. Польові латки говорять кривою ниткою, чужою тканиною, сіллю під стрічкою й чесністю людини, що закриває течу до наступного циклу.\n\nПорядок важливий. Стрічка під хрестовою строчкою означає недовіру до першої латки. Сіль під ниткою - скафандр уже був у воді. Потертість поверх латки - носій повернувся до роботи. Чиста стрічка на старому ушкодженні - пізній огляд. Два кольори - донорський скафандр.\n\nДля мародера це не костюм. Це аварійний маршрут, останнє завдання, медичний вибір, украдений набір або клас скафандра, що не належав носію.",
+     "external_site": "Латки скафандрів розкривають польову сортировку, украдені набори, донорські костюми й останні виходи.",
+     "external_site_article": "Ідеальний напірний скафандр належить буклету. HECTON-8 не буклет. Важливі скафандри залатані, стерті на колінах і манжетах, просолені біля швів і чинені будь-якою смугою для ще одного спуску.\n\nДобра латка несе соціальну інформацію. Завод - рівно. Нагляд - правильна стрічка без часу. Робітник - чужа нитка й знання тіла. Медицина - швидко й страшно. Чорний Кіль - спершу ідентифікатори.\n\nЛатки належать шафкам, медвідсікам, затопленим роздягальням і кинутим верстакам. Вони роблять колонію особистою без промови над кожним тілом.",
+     "field_note": "Не читай латку окремо. Читай з коліном, манжетою й підсумком."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل رقع بدلة الضغط",
+     "scanner": "رقعة بدلة // غلاف داكن يشبه النيوبرين، جزيرة إصلاح مخيطة، شريط درز مقوى، خدش ملحي، شريط نسيج تقني فاتح. درجة الإصلاح غير منتظمة: عمل ميداني لا خدمة مصنع.",
+     "terminal": "قراءة الرقعة // خياطة متقاطعة فوق شريط تعني إغلاقا طارئا. ملح تحت الخيط يعني رقعة بعد التعرض. شريط نظيف فوق قماش متآكل يعني فحصا متأخرا. لونان يعنيان مادة من بدلة أخرى.",
+     "audio": "رقعة البدلة صوت صغير ضد الغرق.",
+     "in_game_wiki": "رقع بدلات الضغط خط بشري على شيء يحفظ الحياة. ألواح المصنع تتكلم بمنحنيات نظيفة. رقع الميدان تتكلم بخيط أعوج، قماش من لون آخر، ملح تحت الشريط، وصدق شخص يغلق تسربا قبل دورة الضغط التالية.\n\nالترتيب مهم. شريط تحت خياطة متقاطعة يعني أن الإصلاح الأول لم يوثق به. ملح تحت الخيط يعني أن البدلة كانت قد تعرضت للماء. اهتراء فوق الرقعة يعني أن حاملها عاد للعمل. شريط نظيف على ضرر قديم يعني فحصا متأخرا. لونان يعنيان بدلة مانحة.\n\nبالنسبة إلى المغير، الرقعة ليست زينة. قد تحدد طريق طوارئ، آخر مهمة لعامل، قرار فرز طبي، عدة مسروقة، أو درجة بدلة لا تخص من ارتداها.",
+     "external_site": "رقع بدلات الضغط تكشف فرزا ميدانيا وعددا مسروقة وبدلات مفككة ومسارات غطس أخيرة.",
+     "external_site_article": "بدلة الضغط المثالية تنتمي إلى كتيب. HECTON-8 ليست كتيبا. البدلات المهمة مرقعة، ممسوحة عند الركب والأساور، مملحة حول الدروز، ومصلحة بأي شريط يصمد لغوصة أخرى.\n\nالرقعة الجيدة تحمل معلومة اجتماعية. المصنع منتظم. المشرف يستخدم الشريط الصحيح بلا وقت. العامل يستخدم خيطا خاطئا ويعرف أين ينحني الجسد. الطب يغلق بسرعة وبقبح. الكيل الأسود يزيل المعرفات أولا.\n\nلذلك تنتمي الرقع إلى الخزائن، وغرف العلاج، وغرف تبديل غارقة، وطاولات عمل مهجورة. تجعل المستعمرة شخصية من دون أن يتكلم كل جسد.",
+     "field_note": "لا تقرأ الرقعة وحدها. اقرأ معها الركبة والسوار وجيب الأداة."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Log Tambalan Baju Tekanan",
+     "scanner": "TAMBALAN BAJU // Cangkang gelap mirip neoprene, pulau perbaikan dijahit, pita jahitan diperkuat, gesekan garam, strip tekstil teknis pucat. Mutu tak rata: perbaikan lapangan, bukan servis pabrik.",
+     "terminal": "BACA TAMBALAN // Jahit silang di atas pita berarti penutupan darurat. Garam di bawah benang berarti ditambal setelah paparan. Pita bersih di atas kain aus berarti inspeksi terlambat. Dua warna berarti bahan dari baju lain.",
+     "audio": "Tambalan baju adalah suara kecil melawan tenggelam.",
+     "in_game_wiki": "Tambalan baju tekanan adalah tulisan manusia pada benda penyangga hidup. Panel pabrik bicara dengan kurva bersih. Tambalan lapangan bicara dengan benang bengkok, kain salah warna, garam di bawah pita, dan kejujuran orang yang menutup bocor sebelum siklus tekanan berikutnya.\n\nUrutan tambalan penting. Pita di bawah jahit silang berarti perbaikan pertama tidak dipercaya. Garam di bawah benang berarti baju sudah terpapar. Abrasi di atas tambalan berarti pemakai kembali bekerja. Pita bersih di atas kerusakan lama berarti inspeksi terlambat. Dua warna berarti bahan dari baju donor.\n\nBagi perompak laut-dalam, tambalan bukan kostum. Ia bisa menunjukkan rute darurat, tugas terakhir pekerja, keputusan medis, kit curian, atau kelas baju yang tak cocok dengan pemakainya.",
+     "external_site": "Tambalan baju tekanan mengungkap triase lapangan, kit curian, baju donor, dan rute penyelaman terakhir.",
+     "external_site_article": "Baju tekanan sempurna milik brosur. HECTON-8 bukan brosur. Baju yang penting ditambal, aus di lutut dan manset, asin di jahitan, dan diperbaiki dengan strip apa pun yang mampu bertahan satu turun lagi.\n\nTambalan bagus membawa informasi sosial. Pabrik: rata. Supervisor: pita benar, tanpa waktu. Pekerja: benang salah, paham tubuh. Medis: cepat dan jelek. Black Keel: pengenal dilepas dulu.\n\nTambalan pantas berada di loker, medbay, ruang ganti terendam, dan bangku kerja kosong. Mereka membuat koloni personal tanpa membuat setiap tubuh berpidato.",
+     "field_note": "Jangan baca tambalan sendiri. Baca juga lutut, manset, dan kantong alat."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "압력복 수리 패치 장부",
+     "scanner": "수트 패치 // 어두운 네오프렌 같은 외피, 꿰맨 수리 섬, 보강 이음 테이프, 소금 마모, 밝은 기술 섬유 띠. 등급이 고르지 않다. 공장 서비스가 아니라 현장 수리다.",
+     "terminal": "패치 읽기 // 테이프 위 십자 바느질은 비상 봉합이다. 실 아래 소금은 노출 후 패치다. 마모 천 위 깨끗한 테이프는 늦은 검사다. 두 색 천은 다른 수트를 뜯었다는 뜻이다.",
+     "audio": "수트 패치는 익사에 반대하는 작은 표다.",
+     "in_game_wiki": "압력복 수리 패치는 생명 유지 물건 위의 인간 필적이다. 공장 패널은 깨끗한 곡선과 인증으로 말한다. 현장 패치는 삐뚠 실, 다른 색 천, 테이프 아래 소금, 다음 압력 주기 전에 누수를 막는 사람의 솔직함으로 말한다.\n\n패치 순서가 중요하다. 십자 바느질 아래 이음 테이프는 첫 수리가 믿기지 않았다는 뜻이다. 실 아래 소금은 이미 물에 노출된 수트다. 패치 위 마모는 착용자가 다시 일했다는 뜻이다. 오래된 손상 위 깨끗한 테이프는 늦은 검사다. 두 색 천은 기증 수트다.\n\n마라우더에게 패치는 의상 장식이 아니다. 비상 경로, 노동자의 마지막 임무, 의료 판단, 훔친 키트, 또는 착용자에게 맞지 않는 수트 등급을 보여 준다.",
+     "external_site": "압력복 패치는 현장 분류, 훔친 키트, 뜯어낸 수트, 마지막 잠수 경로를 드러낸다.",
+     "external_site_article": "완벽한 압력복은 브로슈어의 물건이다. HECTON-8은 브로슈어가 아니다. 중요한 수트는 패치가 붙고, 무릎과 소매가 닳고, 이음 주위가 짜며, 한 번 더 내려갈 만큼 버티는 천으로 수리되어 있다.\n\n좋은 패치는 사회 정보를 담는다. 공장은 균일하다. 감독자는 맞는 테이프를 쓰지만 시간이 없다. 노동자는 틀린 실을 쓰고 몸이 굽는 곳을 안다. 의료 수리는 빠르고 못생겼다. 블랙 킬은 식별자를 먼저 벗긴다.\n\n패치는 사물함, 의무실, 잠긴 탈의실, 버려진 작업대에 속한다. 모든 시신에게 연설을 시키지 않고도 식민지를 개인적으로 만든다.",
+     "field_note": "패치만 읽지 마라. 무릎, 소매, 도구 주머니와 함께 읽어라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן טלאי תיקון חליפת לחץ",
+     "scanner": "טלאי חליפה // מעטפת כהה דמוית נאופרן, אי תיקון תפור, סרט תפר מחוזק, שפשוף מלח, רצועת טקסטיל בהירה. איכות לא אחידה: תיקון שטח, לא שירות מפעל.",
+     "terminal": "קריאת טלאי // תפר צלב מעל סרט הוא סגירת חירום. מלח תחת חוט אומר תיקון אחרי חשיפה. סרט נקי על בד שחוק אומר בדיקה מאוחרת. שני צבעים אומרים חומר מחליפה אחרת.",
+     "audio": "טלאי חליפה הוא קול קטן נגד טביעה.",
+     "in_game_wiki": "טלאי חליפות לחץ הם כתב יד אנושי על חפץ שמחזיק חיים. לוחות מפעל מדברים בקווים נקיים. טלאי שטח מדברים בחוט עקום, בד בצבע שגוי, מלח תחת סרט והכנות של מי שסוגר דליפה לפני מחזור הלחץ הבא.\n\nסדר הטלאים חשוב. סרט תחת תפר צלב אומר שהתיקון הראשון לא זכה לאמון. מלח תחת חוט אומר שהחליפה כבר נחשפה. שחיקה מעל טלאי אומרת שהלובש חזר לעבוד. סרט נקי על נזק ישן אומר בדיקה מאוחרת. שני צבעי בד אומרים חליפה תורמת.\n\nלמראודר, טלאי אינו קישוט. הוא יכול להראות נתיב חירום, משימה אחרונה, החלטת טריאז', ערכה גנובה או דרגת חליפה שלא התאימה ללובש.",
+     "external_site": "טלאי חליפות לחץ חושפים טריאז' שטח, ערכות גנובות, חליפות מפורקות ונתיבי צלילה אחרונים.",
+     "external_site_article": "חליפת לחץ מושלמת שייכת לחוברת. HECTON-8 אינה חוברת. החליפות החשובות מטולאות, שחוקות בברכיים ובשרוולים, מלוחות סביב התפרים ומתוקנות בכל רצועה שיכלה להחזיק עוד ירידה.\n\nטלאי טוב נושא מידע חברתי. מפעל: אחיד. מפקח: סרט נכון בלי זמן. עובד: חוט שגוי והבנה של הגוף. רפואה: מהר ומכוער. הקיל השחור: מזהים מוסרים קודם.\n\nטלאים שייכים לארוניות, מרפאות, חדרי החלפה מוצפים ושולחנות עבודה נטושים. הם הופכים את המושבה לאישית בלי שכל גוף ינאם.",
+     "field_note": "אל תקרא את הטלאי לבד. קרא איתו את הברך, השרוול וכיס הכלים."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro de Remendos de Roupa de Pressão",
+     "scanner": "REMENDO DE ROUPA // Casca escura tipo neoprene, ilha costurada de reparo, fita de costura reforçada, arranhão salino, faixa têxtil clara. Grau irregular: reparo de campo, não serviço de fábrica.",
+     "terminal": "LEITURA DO REMENDO // Ponto cruzado sobre fita: fechamento de emergência. Sal sob linha: remendo após exposição. Fita limpa sobre tecido gasto: inspeção tardia. Duas cores: material de outra roupa.",
+     "audio": "Um remendo de roupa é um pequeno voto contra afogar.",
+     "in_game_wiki": "Remendos de roupa de pressão são caligrafia humana num objeto de suporte vital. Painéis de fábrica falam em curvas limpas. Remendos de campo falam com linha torta, tecido de cor errada, sal sob fita e a honestidade de fechar vazamento antes do próximo ciclo.\n\nA ordem importa. Fita sob ponto cruzado significa primeira reparação sem confiança. Sal sob linha significa roupa já exposta. Abrasão sobre remendo significa retorno ao trabalho. Fita limpa sobre dano velho significa inspeção tardia. Duas cores significam roupa doadora.\n\nPara um saqueador, remendo não é figurino. Pode indicar rota de emergência, última tarefa, triagem, kit roubado ou grau de roupa que não pertencia ao usuário.",
+     "external_site": "Remendos de roupa de pressão revelam triagem de campo, kits roubados, roupas doadoras e rotas de último mergulho.",
+     "external_site_article": "Uma roupa de pressão perfeita pertence a folheto. HECTON-8 não é folheto. As roupas importantes são remendadas, gastas nos joelhos e punhos, salgadas nas costuras e consertadas com qualquer tira que aguentasse mais uma descida.\n\nUm bom remendo carrega informação social. Fábrica: uniforme. Supervisor: fita certa, sem tempo. Trabalhador: linha errada, conhecimento do corpo. Médico: rápido e feio. Quilha Negra: identificadores primeiro.\n\nRemendos pertencem a armários, enfermarias, vestiários inundados e bancadas abandonadas. Tornam a colônia pessoal sem fazer cada corpo discursar.",
+     "field_note": "Nunca leia o remendo sozinho. Leia joelho, punho e bolsa de ferramenta junto."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Log van drukpak-reparatiepatches",
+     "scanner": "PAKPATCH // Donkere neopreenachtige huid, gestikt reparatie-eiland, versterkte naadband, zoutschuur, lichte technische textielstrook. Ongelijke klasse: veldreparatie, geen fabriek.",
+     "terminal": "PATCH LEZEN // Kruissteek over naadband: noodsluiting. Zout onder draad: patch na blootstelling. Schone tape over versleten stof: late inspectie. Twee kleuren: materiaal uit ander pak.",
+     "audio": "Een pakpatch is een kleine stem tegen verdrinken.",
+     "in_game_wiki": "Reparatiepatches op drukpakken zijn menselijk handschrift op levensonderhoud. Fabriekspanelen spreken in schone bochten. Veldpatches spreken in krom draad, verkeerde stofkleur, zout onder tape en de eerlijkheid van iemand die een lek sluit voor de volgende drukcyclus.\n\nPatchvolgorde telt. Naadband onder kruissteek betekent dat de eerste reparatie niet vertrouwd werd. Zout onder draad betekent dat het pak al blootgesteld was. Slijtage op de patch betekent dat de drager terug werkte. Schone tape op oude schade betekent late inspectie. Twee stofkleuren betekenen donor-pak.\n\nVoor een marauder is een patch geen kostuumdetail. Het kan noodroute, laatste taak, triage, gestolen kit of een pakklasse tonen die niet bij de drager hoorde.",
+     "external_site": "Drukpakpatches tonen veldtriage, gestolen kits, donor-pakken en laatste duikroutes.",
+     "external_site_article": "Een perfect drukpak hoort in een brochure. HECTON-8 is geen brochure. Belangrijke pakken zijn gepatcht, rauw aan knieën en manchetten, zout rond naden en gerepareerd met elke strook die nog één afdaling hield.\n\nEen goede patch draagt sociale informatie. Fabriek: gelijkmatig. Supervisor: juiste tape, geen tijd. Arbeider: verkeerde draad, lichaamskennis. Medisch: snel en lelijk. Zwarte Kiel: eerst identificatie weg.\n\nPatches horen in lockers, medbays, overstroomde kleedkamers en verlaten werkbanken. Ze maken de kolonie persoonlijk zonder elk lichaam een toespraak te geven.",
+     "field_note": "Lees de patch nooit alleen. Lees knie, manchet en gereedschapstas mee."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

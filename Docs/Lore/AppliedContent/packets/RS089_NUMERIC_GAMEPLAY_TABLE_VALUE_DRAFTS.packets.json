@@ -1,787 +1,792 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P441_RESOURCE_YIELD_VALUE_DRAFT_ROWS",
-      "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
-      "article_id": "applied_lore.resource_yield_value_draft_rows",
-      "title_key": "applied_lore.resource_yield_value_draft_rows.title",
-      "unlock": {
-        "primary": "unlock.resource_yield_value_draft_rows",
-        "poi_tags": [
-          "poi.resource_yield_table_draft",
-          "poi.blue_debt_receipt_math",
-          "poi.vent_sample_yield_note"
-        ],
-        "biome_tags": [
-          "biome.resource_tables",
-          "biome.brine_canyon"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Resource Yield Value Draft Rows",
-          "scanner": "Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "ru_RU": {
-          "title": "Черновые строки ценности добычи ресурсов",
-          "scanner": "Черновик таблицы: добыча ресурсов делится на следовые, рабочие, custody-grade и Atlas-compatible диапазоны.",
-          "terminal": "YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade и contamination stage обязательны до чисел.",
-          "audio": "Полевое правило: считай то, что пережило давление, а не то, что блестит под фонарем.",
-          "in_game_wiki": "Тюнинг добычи должен делать salvage HECTON-8 физическим. Мелкая сульфидная соскобка, brine lot, pressure glass и blue debt не могут жить на одной логике цены.",
-          "external_site": "Публичные статьи могут говорить, что ценность зависит от pressure history, custody и containment. Точные числа остаются за gameplay tables.",
-          "field_note": "Черновые bands: обычная геология дает много дешевых единиц; сертифицированный pressure glass дает мало полезных деталей; blue debt дает малый счетчик, тяжелую custody и сильное давление на концовку."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "JA LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "JA LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "JA LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "JA LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "JA LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "JA LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "ZH LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "ZH LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "ZH LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "ZH LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "ZH LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "ZH LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "FR LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "FR LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "FR LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "FR LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "FR LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "FR LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "ES LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "ES LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "ES LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "ES LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "ES LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "ES LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "DE LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "DE LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "DE LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "DE LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "DE LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "DE LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "PL LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "PL LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "PL LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "PL LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "PL LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "PL LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "UK LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "UK LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "UK LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "UK LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "UK LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "UK LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "AR LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "AR LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "AR LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "AR LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "AR LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "AR LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "ID LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "ID LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "ID LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "ID LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "ID LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "ID LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "KO LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "KO LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "KO LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "KO LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "KO LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "KO LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "HE LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "HE LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "HE LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "HE LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "HE LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "HE LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "PT LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "PT LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "PT LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "PT LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "PT LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "PT LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Resource Yield Value Draft Rows",
-          "scanner": "NL LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
-          "terminal": "NL LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
-          "audio": "NL LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
-          "in_game_wiki": "NL LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
-          "external_site": "NL LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
-          "field_note": "NL LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P441_RESOURCE_YIELD_VALUE_DRAFT_ROWS",
+   "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
+   "article_id": "applied_lore.resource_yield_value_draft_rows",
+   "title_key": "applied_lore.resource_yield_value_draft_rows.title",
+   "unlock": {
+    "primary": "unlock.resource_yield_value_draft_rows",
+    "poi_tags": [
+     "poi.resource_yield_table_draft",
+     "poi.blue_debt_receipt_math",
+     "poi.vent_sample_yield_note"
+    ],
+    "biome_tags": [
+     "biome.resource_tables",
+     "biome.brine_canyon"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Resource Yield Value Draft Rows",
+     "scanner": "Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
     },
-    {
-      "packet_id": "P442_STACK_LIMIT_VALUE_DRAFT_ROWS",
-      "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
-      "article_id": "applied_lore.stack_limit_value_draft_rows",
-      "title_key": "applied_lore.stack_limit_value_draft_rows.title",
-      "unlock": {
-        "primary": "unlock.stack_limit_value_draft_rows",
-        "poi_tags": [
-          "poi.stack_limit_table_draft",
-          "poi.containment_case_label",
-          "poi.lien_mass_warning"
-        ],
-        "biome_tags": [
-          "biome.resource_tables",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Stack Limit Value Draft Rows",
-          "scanner": "Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "ru_RU": {
-          "title": "Черновые строки лимитов стаков",
-          "scanner": "Черновик таблицы: лимиты стаков связывают vessel type, pressure rating, contamination stage и lien mass.",
-          "terminal": "STACK DRAFT: scrap можно сжимать; sealed samples нельзя. Строкой владеют pressure vessels, certified cases и carrier mass windows.",
-          "audio": "Бухгалтерия Black Keel: грамм вне custody может весить как тонна внутри claim.",
-          "in_game_wiki": "Инвентарь тоже работает на fiction. Критические samples должны быть малочисленными, тяжелыми по custody и плохо смешиваемыми между pressure/contamination class.",
-          "external_site": "Экономика ресурсов HECTON-8 трактует stack size как логику мира: контейнеры, seals, certification и orbital mass windows имеют значение.",
-          "field_note": "Черновые bands: loose scrap стакуется высоко; rated seals стакуются kits; brine lots по sealed jar; blue debt только по pressure case и custody chain."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "JA LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "JA LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "JA LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "JA LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "JA LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "JA LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "ZH LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "ZH LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "ZH LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "ZH LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "ZH LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "ZH LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "FR LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "FR LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "FR LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "FR LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "FR LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "FR LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "ES LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "ES LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "ES LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "ES LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "ES LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "ES LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "DE LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "DE LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "DE LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "DE LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "DE LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "DE LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "PL LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "PL LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "PL LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "PL LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "PL LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "PL LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "UK LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "UK LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "UK LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "UK LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "UK LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "UK LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "AR LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "AR LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "AR LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "AR LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "AR LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "AR LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "ID LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "ID LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "ID LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "ID LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "ID LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "ID LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "KO LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "KO LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "KO LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "KO LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "KO LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "KO LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "HE LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "HE LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "HE LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "HE LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "HE LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "HE LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "PT LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "PT LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "PT LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "PT LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "PT LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "PT LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Stack Limit Value Draft Rows",
-          "scanner": "NL LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
-          "terminal": "NL LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
-          "audio": "NL LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
-          "in_game_wiki": "NL LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
-          "external_site": "NL LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
-          "field_note": "NL LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
-        }
-      }
+    "ru_RU": {
+     "title": "Черновые строки ценности добычи ресурсов",
+     "scanner": "Черновик таблицы: добыча ресурсов делится на следовые, рабочие, custody-grade и Atlas-compatible диапазоны.",
+     "terminal": "YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade и contamination stage обязательны до чисел.",
+     "audio": "Полевое правило: считай то, что пережило давление, а не то, что блестит под фонарем.",
+     "in_game_wiki": "Тюнинг добычи должен делать salvage HECTON-8 физическим. Мелкая сульфидная соскобка, brine lot, pressure glass и blue debt не могут жить на одной логике цены.",
+     "external_site": "Публичные статьи могут говорить, что ценность зависит от pressure history, custody и containment. Точные числа остаются за gameplay tables.",
+     "field_note": "Черновые bands: обычная геология дает много дешевых единиц; сертифицированный pressure glass дает мало полезных деталей; blue debt дает малый счетчик, тяжелую custody и сильное давление на концовку."
     },
-    {
-      "packet_id": "P443_ESCAPE_RECIPE_VALUE_DRAFT_ROWS",
-      "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
-      "article_id": "applied_lore.escape_recipe_value_draft_rows",
-      "title_key": "applied_lore.escape_recipe_value_draft_rows.title",
-      "unlock": {
-        "primary": "unlock.escape_recipe_value_draft_rows",
-        "poi_tags": [
-          "poi.escape_recipe_table_draft",
-          "poi.ascent_part_cost_card",
-          "poi.p63_reject_reason"
-        ],
-        "biome_tags": [
-          "biome.escape_chain",
-          "biome.atlas_basin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Escape Recipe Value Draft Rows",
-          "scanner": "Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "ru_RU": {
-          "title": "Черновые строки стоимости escape recipes",
-          "scanner": "Черновик таблицы: escape recipes требуют bands для relay, seal, guidance, ascent energy и legal handshake.",
-          "terminal": "ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified и Atlas-authority строки нельзя смешивать.",
-          "audio": "Заметка fabricator: patch может спасти комнату. Он не сертифицирует ascent.",
-          "in_game_wiki": "Escape crafting не должен становиться одним rescue item. Каждая строка отвечает за физический blocker и custody blocker.",
-          "external_site": "Escape chain - это hard sci-fi gameplay: signal, pressure, timing, energy и receiver legality имеют значение.",
-          "field_note": "Черновые bands: shallow survival recipes дешевые; rated repairs на mid-depth; containment-grade в brine/vent; ascent-qualified требуют pressure glass; Atlas-authority rows требуют deep proof."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "JA LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "JA LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "JA LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "JA LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "JA LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "JA LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "ZH LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "ZH LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "ZH LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "ZH LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "ZH LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "ZH LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "FR LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "FR LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "FR LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "FR LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "FR LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "FR LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "ES LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "ES LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "ES LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "ES LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "ES LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "ES LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "DE LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "DE LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "DE LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "DE LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "DE LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "DE LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "PL LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "PL LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "PL LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "PL LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "PL LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "PL LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "UK LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "UK LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "UK LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "UK LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "UK LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "UK LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "AR LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "AR LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "AR LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "AR LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "AR LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "AR LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "ID LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "ID LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "ID LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "ID LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "ID LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "ID LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "KO LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "KO LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "KO LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "KO LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "KO LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "KO LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "HE LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "HE LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "HE LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "HE LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "HE LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "HE LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "PT LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "PT LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "PT LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "PT LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "PT LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "PT LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Escape Recipe Value Draft Rows",
-          "scanner": "NL LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
-          "terminal": "NL LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
-          "audio": "NL LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
-          "in_game_wiki": "NL LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
-          "external_site": "NL LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
-          "field_note": "NL LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
-        }
-      }
+    "ja_JP": {
+     "title": "JA LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "JA LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "JA LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "JA LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "JA LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "JA LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "JA LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
     },
-    {
-      "packet_id": "P444_CONTRACT_RISK_REWARD_VALUE_DRAFT_ROWS",
-      "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
-      "article_id": "applied_lore.contract_risk_reward_value_draft_rows",
-      "title_key": "applied_lore.contract_risk_reward_value_draft_rows.title",
-      "unlock": {
-        "primary": "unlock.contract_risk_reward_value_draft_rows",
-        "poi_tags": [
-          "poi.contract_risk_table_draft",
-          "poi.replay_seed_weight_card",
-          "poi.lien_severity_note"
-        ],
-        "biome_tags": [
-          "biome.contract_layer",
-          "biome.replay"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Contract Risk Reward Value Draft Rows",
-          "scanner": "Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "ru_RU": {
-          "title": "Черновые строки риска и награды контрактов",
-          "scanner": "Черновик таблицы: contract rows требуют lien severity, storm/orbit window, custody grade, evidence order и clause weight.",
-          "terminal": "CONTRACT DRAFT: payout ceiling растет только вместе с timing, custody, quarantine, receiver risk или evidence depth.",
-          "audio": "Contract board: легкие деньги часто означают delayed rescue с более чистым языком.",
-          "in_game_wiki": "Replay contracts должны менять route pressure и evidence order. Они не должны превращать dossier в inherited equipment power.",
-          "external_site": "Replayability HECTON-8 строится на seed pressure: geology, contracts, custody, route order и partial exits.",
-          "field_note": "Черновые bands: quiet salvage низкий hazard/жесткая custody; storm rush высокий payout/низкий slack; evidence-first lower payout/high proof; Recovery bait высокий payout/high Deep Reach pressure."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "JA LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "JA LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "JA LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "JA LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "JA LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "JA LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "ZH LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "ZH LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "ZH LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "ZH LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "ZH LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "ZH LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "FR LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "FR LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "FR LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "FR LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "FR LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "FR LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "ES LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "ES LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "ES LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "ES LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "ES LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "ES LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "DE LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "DE LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "DE LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "DE LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "DE LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "DE LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "PL LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "PL LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "PL LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "PL LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "PL LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "PL LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "UK LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "UK LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "UK LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "UK LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "UK LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "UK LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "AR LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "AR LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "AR LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "AR LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "AR LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "AR LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "ID LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "ID LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "ID LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "ID LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "ID LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "ID LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "KO LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "KO LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "KO LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "KO LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "KO LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "KO LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "HE LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "HE LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "HE LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "HE LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "HE LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "HE LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "PT LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "PT LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "PT LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "PT LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "PT LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "PT LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Contract Risk Reward Value Draft Rows",
-          "scanner": "NL LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
-          "terminal": "NL LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
-          "audio": "NL LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
-          "in_game_wiki": "NL LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
-          "external_site": "NL LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
-          "field_note": "NL LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
-        }
-      }
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "ZH LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "ZH LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "ZH LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "ZH LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "ZH LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "ZH LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
     },
-    {
-      "packet_id": "P445_ENDING_PAYOUT_VALUE_DRAFT_ROWS",
-      "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
-      "article_id": "applied_lore.ending_payout_value_draft_rows",
-      "title_key": "applied_lore.ending_payout_value_draft_rows.title",
-      "unlock": {
-        "primary": "unlock.ending_payout_value_draft_rows",
-        "poi_tags": [
-          "poi.ending_payout_table_draft",
-          "poi.after_action_value_card",
-          "poi.receiver_cost_warning"
-        ],
-        "biome_tags": [
-          "biome.spoiler_gate",
-          "biome.ending_records"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ending Payout Value Draft Rows",
-          "scanner": "Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "Dossier note: payout is not clearance.",
-          "in_game_wiki": "Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "ru_RU": {
-          "title": "Черновые строки выплат концовок",
-          "scanner": "Черновик таблицы: ending payouts - это receiver/custody rows, не victory score.",
-          "terminal": "PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment и post-ending warning обязательны.",
-          "audio": "Заметка dossier: payout не равен clearance.",
-          "in_game_wiki": "Ценности концовок должны делать каждый outcome записываемым и горьким. Деньги, evidence, Atlas continuity и public proof - разные currencies.",
-          "external_site": "Spoiler ending articles должны объяснять custody и consequence, а не ранжировать endings как good/bad.",
-          "field_note": "Черновые bands: coordinate sale платит высоко и гасит truth; public ledger платит низко, но хранит proof; severance платит freedom/uncertainty; preserve/quarantine платит custody risk; withholding почти не платит, но слепит Deep Reach."
-        },
-        "ja_JP": {
-          "title": "JA LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "JA LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "JA LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "JA LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "JA LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "JA LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "JA LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "zh_CN": {
-          "title": "ZH LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "ZH LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "ZH LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "ZH LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "ZH LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "ZH LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "ZH LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "FR LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "FR LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "FR LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "FR LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "FR LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "FR LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "ES LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "ES LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "ES LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "ES LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "ES LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "ES LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "DE LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "DE LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "DE LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "DE LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "DE LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "DE LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "PL LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "PL LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "PL LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "PL LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "PL LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "PL LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "uk_UA": {
-          "title": "UK LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "UK LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "UK LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "UK LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "UK LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "UK LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "UK LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "AR LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "AR LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "AR LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "AR LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "AR LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "AR LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "ID LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "ID LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "ID LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "ID LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "ID LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "ID LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "KO LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "KO LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "KO LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "KO LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "KO LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "KO LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "HE LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "HE LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "HE LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "HE LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "HE LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "HE LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "PT LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "PT LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "PT LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "PT LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "PT LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "PT LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Ending Payout Value Draft Rows",
-          "scanner": "NL LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
-          "terminal": "NL LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
-          "audio": "NL LOC HOLD: Dossier note: payout is not clearance.",
-          "in_game_wiki": "NL LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
-          "external_site": "NL LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
-          "field_note": "NL LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "FR LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "FR LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "FR LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "FR LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "FR LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "FR LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "ES LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "ES LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "ES LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "ES LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "ES LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "ES LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "DE LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "DE LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "DE LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "DE LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "DE LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "DE LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "PL LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "PL LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "PL LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "PL LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "PL LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "PL LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "UK LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "UK LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "UK LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "UK LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "UK LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "UK LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "AR LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "AR LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "AR LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "AR LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "AR LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "AR LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "ID LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "ID LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "ID LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "ID LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "ID LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "ID LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "KO LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "KO LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "KO LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "KO LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "KO LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "KO LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "HE LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "HE LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "HE LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "HE LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "HE LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "HE LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "PT LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "PT LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "PT LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "PT LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "PT LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "PT LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Resource Yield Value Draft Rows",
+     "scanner": "NL LOC HOLD: Table draft: resource yield rows separate trace, viable, custody-grade and Atlas-compatible recovery bands.",
+     "terminal": "NL LOC HOLD: YIELD DRAFT: family, depth band, pressure class, depletion behavior, sample quality, custody grade and contamination stage are required before numeric yield.",
+     "audio": "NL LOC HOLD: Field note: count what survives pressure, not what sparkles under the lamp.",
+     "in_game_wiki": "NL LOC HOLD: Resource yield tuning should make HECTON-8 salvage physical. A shallow sulfide scrape, a brine lot, pressure glass and blue debt must not share the same value logic.",
+     "external_site": "NL LOC HOLD: Public resource articles can say that value depends on pressure history, custody and containment. Exact yield numbers remain gameplay-table owned.",
+     "field_note": "NL LOC HOLD: Draft bands: common geology uses many low-value units; certified pressure glass uses few high-utility parts; blue debt uses low count, high custody burden and high ending pressure."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P442_STACK_LIMIT_VALUE_DRAFT_ROWS",
+   "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
+   "article_id": "applied_lore.stack_limit_value_draft_rows",
+   "title_key": "applied_lore.stack_limit_value_draft_rows.title",
+   "unlock": {
+    "primary": "unlock.stack_limit_value_draft_rows",
+    "poi_tags": [
+     "poi.stack_limit_table_draft",
+     "poi.containment_case_label",
+     "poi.lien_mass_warning"
+    ],
+    "biome_tags": [
+     "biome.resource_tables",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Stack Limit Value Draft Rows",
+     "scanner": "Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "ru_RU": {
+     "title": "Черновые строки лимитов стаков",
+     "scanner": "Черновик таблицы: лимиты стаков связывают vessel type, pressure rating, contamination stage и lien mass.",
+     "terminal": "STACK DRAFT: scrap можно сжимать; sealed samples нельзя. Строкой владеют pressure vessels, certified cases и carrier mass windows.",
+     "audio": "Бухгалтерия Black Keel: грамм вне custody может весить как тонна внутри claim.",
+     "in_game_wiki": "Инвентарь тоже работает на fiction. Критические samples должны быть малочисленными, тяжелыми по custody и плохо смешиваемыми между pressure/contamination class.",
+     "external_site": "Экономика ресурсов HECTON-8 трактует stack size как логику мира: контейнеры, seals, certification и orbital mass windows имеют значение.",
+     "field_note": "Черновые bands: loose scrap стакуется высоко; rated seals стакуются kits; brine lots по sealed jar; blue debt только по pressure case и custody chain."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "JA LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "JA LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "JA LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "JA LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "JA LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "JA LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "ZH LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "ZH LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "ZH LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "ZH LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "ZH LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "ZH LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "FR LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "FR LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "FR LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "FR LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "FR LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "FR LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "ES LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "ES LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "ES LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "ES LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "ES LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "ES LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "DE LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "DE LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "DE LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "DE LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "DE LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "DE LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "PL LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "PL LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "PL LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "PL LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "PL LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "PL LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "UK LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "UK LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "UK LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "UK LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "UK LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "UK LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "AR LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "AR LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "AR LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "AR LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "AR LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "AR LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "ID LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "ID LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "ID LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "ID LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "ID LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "ID LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "KO LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "KO LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "KO LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "KO LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "KO LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "KO LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "HE LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "HE LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "HE LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "HE LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "HE LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "HE LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "PT LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "PT LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "PT LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "PT LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "PT LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "PT LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Stack Limit Value Draft Rows",
+     "scanner": "NL LOC HOLD: Table draft: stack limits must bind vessel type, pressure rating, contamination stage and lien mass.",
+     "terminal": "NL LOC HOLD: STACK DRAFT: scrap can compress; sealed samples cannot. Pressure vessels, certified cases and carrier mass windows own the row.",
+     "audio": "NL LOC HOLD: Black Keel accounting: a gram outside custody can weigh like a tonne inside the claim.",
+     "in_game_wiki": "NL LOC HOLD: Inventory pressure is part of the fiction. Critical samples should be few, heavy in custody, and hard to mix across pressure or contamination class.",
+     "external_site": "NL LOC HOLD: HECTON-8's resource economy treats stack size as world logic: containers, seals, certification and orbital mass windows matter.",
+     "field_note": "NL LOC HOLD: Draft bands: loose scrap can stack high; rated seals stack by kit; brine lots stack by sealed jar; blue debt stacks by pressure case and custody chain only."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P443_ESCAPE_RECIPE_VALUE_DRAFT_ROWS",
+   "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
+   "article_id": "applied_lore.escape_recipe_value_draft_rows",
+   "title_key": "applied_lore.escape_recipe_value_draft_rows.title",
+   "unlock": {
+    "primary": "unlock.escape_recipe_value_draft_rows",
+    "poi_tags": [
+     "poi.escape_recipe_table_draft",
+     "poi.ascent_part_cost_card",
+     "poi.p63_reject_reason"
+    ],
+    "biome_tags": [
+     "biome.escape_chain",
+     "biome.atlas_basin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Escape Recipe Value Draft Rows",
+     "scanner": "Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "ru_RU": {
+     "title": "Черновые строки стоимости escape recipes",
+     "scanner": "Черновик таблицы: escape recipes требуют bands для relay, seal, guidance, ascent energy и legal handshake.",
+     "terminal": "ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified и Atlas-authority строки нельзя смешивать.",
+     "audio": "Заметка fabricator: patch может спасти комнату. Он не сертифицирует ascent.",
+     "in_game_wiki": "Escape crafting не должен становиться одним rescue item. Каждая строка отвечает за физический blocker и custody blocker.",
+     "external_site": "Escape chain - это hard sci-fi gameplay: signal, pressure, timing, energy и receiver legality имеют значение.",
+     "field_note": "Черновые bands: shallow survival recipes дешевые; rated repairs на mid-depth; containment-grade в brine/vent; ascent-qualified требуют pressure glass; Atlas-authority rows требуют deep proof."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "JA LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "JA LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "JA LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "JA LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "JA LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "JA LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "ZH LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "ZH LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "ZH LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "ZH LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "ZH LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "ZH LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "FR LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "FR LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "FR LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "FR LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "FR LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "FR LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "ES LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "ES LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "ES LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "ES LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "ES LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "ES LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "DE LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "DE LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "DE LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "DE LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "DE LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "DE LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "PL LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "PL LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "PL LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "PL LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "PL LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "PL LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "UK LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "UK LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "UK LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "UK LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "UK LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "UK LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "AR LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "AR LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "AR LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "AR LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "AR LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "AR LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "ID LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "ID LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "ID LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "ID LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "ID LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "ID LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "KO LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "KO LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "KO LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "KO LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "KO LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "KO LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "HE LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "HE LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "HE LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "HE LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "HE LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "HE LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "PT LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "PT LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "PT LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "PT LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "PT LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "PT LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Escape Recipe Value Draft Rows",
+     "scanner": "NL LOC HOLD: Table draft: escape recipe rows require relay, seal, guidance, ascent energy and legal handshake bands.",
+     "terminal": "NL LOC HOLD: ESCAPE DRAFT: emergency patch, rated repair, containment-grade, ascent-qualified and Atlas-authority rows must remain distinct.",
+     "audio": "NL LOC HOLD: Fabricator note: a patch can save a room. It cannot certify an ascent.",
+     "in_game_wiki": "NL LOC HOLD: Escape crafting should never become a single rescue item. Each row must answer a physical blocker and a custody blocker.",
+     "external_site": "NL LOC HOLD: The escape chain is hard sci-fi gameplay: signal, pressure, timing, energy and receiver legality all matter.",
+     "field_note": "NL LOC HOLD: Draft bands: shallow survival recipes cheap; rated repairs mid-depth; containment-grade recipes brine/vent; ascent-qualified recipes require pressure glass; Atlas-authority rows require deep proof."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P444_CONTRACT_RISK_REWARD_VALUE_DRAFT_ROWS",
+   "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
+   "article_id": "applied_lore.contract_risk_reward_value_draft_rows",
+   "title_key": "applied_lore.contract_risk_reward_value_draft_rows.title",
+   "unlock": {
+    "primary": "unlock.contract_risk_reward_value_draft_rows",
+    "poi_tags": [
+     "poi.contract_risk_table_draft",
+     "poi.replay_seed_weight_card",
+     "poi.lien_severity_note"
+    ],
+    "biome_tags": [
+     "biome.contract_layer",
+     "biome.replay"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Contract Risk Reward Value Draft Rows",
+     "scanner": "Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "ru_RU": {
+     "title": "Черновые строки риска и награды контрактов",
+     "scanner": "Черновик таблицы: contract rows требуют lien severity, storm/orbit window, custody grade, evidence order и clause weight.",
+     "terminal": "CONTRACT DRAFT: payout ceiling растет только вместе с timing, custody, quarantine, receiver risk или evidence depth.",
+     "audio": "Contract board: легкие деньги часто означают delayed rescue с более чистым языком.",
+     "in_game_wiki": "Replay contracts должны менять route pressure и evidence order. Они не должны превращать dossier в inherited equipment power.",
+     "external_site": "Replayability HECTON-8 строится на seed pressure: geology, contracts, custody, route order и partial exits.",
+     "field_note": "Черновые bands: quiet salvage низкий hazard/жесткая custody; storm rush высокий payout/низкий slack; evidence-first lower payout/high proof; Recovery bait высокий payout/high Deep Reach pressure."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "JA LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "JA LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "JA LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "JA LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "JA LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "JA LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "ZH LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "ZH LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "ZH LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "ZH LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "ZH LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "ZH LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "FR LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "FR LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "FR LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "FR LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "FR LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "FR LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "ES LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "ES LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "ES LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "ES LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "ES LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "ES LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "DE LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "DE LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "DE LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "DE LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "DE LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "DE LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "PL LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "PL LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "PL LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "PL LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "PL LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "PL LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "UK LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "UK LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "UK LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "UK LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "UK LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "UK LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "AR LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "AR LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "AR LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "AR LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "AR LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "AR LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "ID LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "ID LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "ID LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "ID LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "ID LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "ID LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "KO LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "KO LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "KO LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "KO LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "KO LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "KO LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "HE LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "HE LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "HE LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "HE LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "HE LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "HE LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "PT LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "PT LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "PT LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "PT LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "PT LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "PT LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Contract Risk Reward Value Draft Rows",
+     "scanner": "NL LOC HOLD: Table draft: contract rows need lien severity, storm/orbit window, custody grade, evidence order and clause weight.",
+     "terminal": "NL LOC HOLD: CONTRACT DRAFT: payout ceiling rises only when timing, custody, quarantine, receiver risk or evidence depth rise with it.",
+     "audio": "NL LOC HOLD: Contract board: easy money is usually delayed rescue with cleaner language.",
+     "in_game_wiki": "NL LOC HOLD: Replay contracts should change route pressure and evidence order. They must not turn the dossier into inherited equipment power.",
+     "external_site": "NL LOC HOLD: HECTON-8 replayability comes from seed pressure: geology, contracts, custody, route order and partial exits.",
+     "field_note": "NL LOC HOLD: Draft bands: quiet salvage low hazard/high custody; storm rush high payout/low slack; evidence-first lower payout/high proof; Recovery bait high payout/high Deep Reach pressure."
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P445_ENDING_PAYOUT_VALUE_DRAFT_ROWS",
+   "release_set_id": "RS089_NUMERIC_GAMEPLAY_TABLE_VALUE_DRAFTS",
+   "article_id": "applied_lore.ending_payout_value_draft_rows",
+   "title_key": "applied_lore.ending_payout_value_draft_rows.title",
+   "unlock": {
+    "primary": "unlock.ending_payout_value_draft_rows",
+    "poi_tags": [
+     "poi.ending_payout_table_draft",
+     "poi.after_action_value_card",
+     "poi.receiver_cost_warning"
+    ],
+    "biome_tags": [
+     "biome.spoiler_gate",
+     "biome.ending_records"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ending Payout Value Draft Rows",
+     "scanner": "Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "Dossier note: payout is not clearance.",
+     "in_game_wiki": "Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "ru_RU": {
+     "title": "Черновые строки выплат концовок",
+     "scanner": "Черновик таблицы: ending payouts - это receiver/custody rows, не victory score.",
+     "terminal": "PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment и post-ending warning обязательны.",
+     "audio": "Заметка dossier: payout не равен clearance.",
+     "in_game_wiki": "Ценности концовок должны делать каждый outcome записываемым и горьким. Деньги, evidence, Atlas continuity и public proof - разные currencies.",
+     "external_site": "Spoiler ending articles должны объяснять custody и consequence, а не ранжировать endings как good/bad.",
+     "field_note": "Черновые bands: coordinate sale платит высоко и гасит truth; public ledger платит низко, но хранит proof; severance платит freedom/uncertainty; preserve/quarantine платит custody risk; withholding почти не платит, но слепит Deep Reach."
+    },
+    "ja_JP": {
+     "title": "JA LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "JA LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "JA LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "JA LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "JA LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "JA LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "JA LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "zh_CN": {
+     "title": "ZH LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "ZH LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "ZH LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "ZH LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "ZH LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "ZH LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "ZH LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "FR LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "FR LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "FR LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "FR LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "FR LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "FR LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "ES LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "ES LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "ES LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "ES LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "ES LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "ES LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "DE LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "DE LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "DE LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "DE LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "DE LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "DE LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "PL LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "PL LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "PL LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "PL LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "PL LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "PL LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "uk_UA": {
+     "title": "UK LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "UK LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "UK LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "UK LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "UK LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "UK LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "UK LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "AR LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "AR LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "AR LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "AR LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "AR LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "AR LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "ID LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "ID LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "ID LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "ID LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "ID LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "ID LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "KO LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "KO LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "KO LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "KO LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "KO LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "KO LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "HE LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "HE LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "HE LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "HE LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "HE LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "HE LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "PT LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "PT LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "PT LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "PT LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "PT LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "PT LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Ending Payout Value Draft Rows",
+     "scanner": "NL LOC HOLD: Table draft: ending payouts are receiver/custody rows, not victory scores.",
+     "terminal": "NL LOC HOLD: PAYOUT DRAFT: route, receiver, payload mass, proof custody, Atlas continuity, ecological damage, lien adjustment and post-ending warning required.",
+     "audio": "NL LOC HOLD: Dossier note: payout is not clearance.",
+     "in_game_wiki": "NL LOC HOLD: Ending values should make every outcome recordable and bitter. Money, evidence, Atlas continuity and public proof are separate currencies.",
+     "external_site": "NL LOC HOLD: Spoiler ending articles should explain custody and consequence, not rank endings as good or bad.",
+     "field_note": "NL LOC HOLD: Draft bands: coordinate sale pays high and suppresses truth; public ledger pays low but preserves proof; severance pays in freedom/uncertainty; preserve/quarantine pays in custody risk; withholding pays almost nothing but denies Deep Reach."
+    }
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

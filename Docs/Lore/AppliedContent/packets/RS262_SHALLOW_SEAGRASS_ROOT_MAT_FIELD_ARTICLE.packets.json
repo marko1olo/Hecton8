@@ -1,254 +1,255 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS262_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS262_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE",
+   "release_set_id": "RS262_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE",
+   "article_id": "applied_lore.shallow_seagrass_root_mat_field_article",
+   "title_key": "LORE_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/SourceArticles/SA003_PHOTIC_SHELF_PRESSURE_ECOLOGY.md",
+    "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE",
-      "release_set_id": "RS262_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE",
-      "article_id": "applied_lore.shallow_seagrass_root_mat_field_article",
-      "title_key": "LORE_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/SourceArticles/SA003_PHOTIC_SHELF_PRESSURE_ECOLOGY.md",
-        "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.shallow_seagrass_root_mat_field_article",
-        "secondary": [
-          "unlock.first_shallow_root_mat",
-          "unlock.first_pinger_line_snag",
-          "unlock.first_soft_silt_under_photic_mat"
-        ],
-        "poi_tags": [
-          "poi.shallow_root_mat",
-          "poi.shell_grit_root_knot",
-          "poi.pinger_line_snag",
-          "poi.soft_silt_under_mat",
-          "poi.oxygen_film_patch",
-          "poi.old_pipe_root_bind"
-        ],
-        "biome_tags": [
-          "biome.photic_shelf",
-          "biome.photic_shallows",
-          "biome.first_route_shelf",
-          "biome.shallow_annex"
-        ],
-        "first_20_boundary": "Makes photic root mats readable as living substrate: roots bind shell grit, hide soft silt, snag route pingers and show where oxygen, current and old colony hardware meet."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Photic Substrate Scanner",
-          "terminal": "P-63 Intake Survey Note",
-          "audio": "Shallow Shelf Recorder Fragment",
-          "in_game_wiki": "PDA Root-Mat Primer",
-          "external_site": "Public Site Root-Mat Article",
-          "field_note": "Marauder Field Annotation"
-        },
-        "writer_note": "Call it seagrass-like only when needed. HECTON-8 root mats are alien photic substrate, not Earth grass pasted into the ocean. They are beauty, oxygen risk, route clue and evidence trap."
-      },
-      "localized": {
-        "en_US": {
-          "title": "Shallow Seagrass Root-Mat Substrate",
-          "scanner": "SHALLOW ROOT-MAT SUBSTRATE // Seagrass-like photic growth over shell sand and pale rubble. Roots bind the top layer but can hide soft silt below. Snagged pinger line detected in the mat edge.",
-          "terminal": "P-63 intake note: root mats are not just flora. They oxygenate the shelf, trap shell grit, conceal old cable and mark current direction. Do not step into dark green knots without probing.",
-          "audio": "The mat looks soft until it holds your boot. Then it looks alive. Then you notice the route line braided through it, and you know someone used this patch more than once.",
-          "in_game_wiki": "Shallow root mats grow where light, carbonate sand, mild current and old nutrient runoff meet. They resemble seagrass from a distance, but the useful part is below the blades: dark root fibers stitching shell grit, coral analogue dust and pale limestone crumbs into a springy skin. That skin can save a diver by holding loose sediment in place, or betray a diver by hiding soft silt under a stable-looking surface. Root knots trap route pingers, tool cord, broken shell clamps and old pipe edges. A clean pale gap in the mat may be grazer work, recent foot traffic or a current lane. Probe before trusting it.",
-          "external_site": "HECTON-8 root mats make the photic shelf feel alive before it feels safe: oxygen film above, soft silt below, and old human hardware braided through the roots.",
-          "external_site_article": "The shallow root mat is one of the first living systems a new diver learns to read. It is bright enough to look welcoming and dense enough to lie. The upper layer catches Aegir light and releases a thin oxygen film during productive windows. Beneath that, the roots bind shell grit, limestone crumbs and broken coral analogues into a surface that behaves like a woven floor until weight, current or trapped gas changes the rule.\n\nDeep Reach crews used root-mat edges as cheap route memory. Pinger lines snag there and stay visible. Old intake pipes become root anchors. A mat grown around a latch ring can keep a path readable after the sign is gone. That same habit makes the substrate dangerous. A route pinger braided into roots may show repeated safe passage, or it may show that the current kept dragging failed attempts into the same living knot.\n\nRead color and tension together. Bright green blades over pale sand suggest active flow. Dark knots mean trapped silt, old metal or stagnant water. Shell grit aligned in one direction shows the current lane. A mat edge lifted like a lip may hide a hollow. The first lesson is simple: the shelf is readable because life is busy there, not because it is safe.",
-          "field_note": "If the mat holds your boot, it has held other things. Find out what before you cut it.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Мелководный корневой мат",
-          "scanner": "МЕЛКОВОДНЫЙ КОРНЕВОЙ МАТ // Фотический рост, похожий на морскую траву, поверх ракушечного песка и бледной осыпи. Корни держат верхний слой, но могут прятать мягкий ил ниже. На краю мата обнаружена зацепленная линия пингера.",
-          "terminal": "Заметка P-63: корневые маты — не просто флора. Они насыщают полку кислородом, ловят ракушечную крошку, скрывают старый кабель и показывают направление течения. Не наступать в темно-зеленые узлы без щупа.",
-          "audio": "Мат кажется мягким, пока не держит ботинок. Потом кажется живым. Потом замечаешь маршрутную линию, вплетенную в корни, и понимаешь: этим местом пользовались не раз.",
-          "in_game_wiki": "Мелководные корневые маты растут там, где встречаются свет, карбонатный песок, мягкое течение и старый питательный сток колонии. Издалека они похожи на морскую траву, но главное находится под листьями: темные корневые волокна прошивают ракушечную крошку, пыль коралловых аналогов и бледные куски известняка в пружинящую кожу. Такая кожа может спасти, удержав рыхлый осадок, или предать, спрятав мягкий ил под стабильной поверхностью. Корневые узлы ловят пингеры, шнуры инструмента, створчатые зажимы и края старых труб. Чистый бледный разрыв в мате может быть работой скребцов, следом прохода или дорожкой течения. Проверяй, прежде чем доверять.",
-          "external_site": "Корневые маты HECTON-8 делают фотическую полку живой раньше, чем безопасной: сверху кислородная пленка, снизу мягкий ил, а между ними старое железо, вплетенное в корни.",
-          "external_site_article": "Мелководный корневой мат — одна из первых живых систем, которую учится читать новый ныряльщик. Он достаточно яркий, чтобы казаться приветливым, и достаточно плотный, чтобы врать. Верхний слой ловит свет Aegir и в продуктивные окна выпускает тонкую кислородную пленку. Ниже корни связывают ракушечную крошку, известняковую пыль и обломки коралловых аналогов в поверхность, которая ведет себя как плетеный пол, пока вес, течение или запертый газ не меняют правило.\n\nЭкипажи Deep Reach использовали края таких матов как дешевую память маршрута. Линии пингеров цепляются там и остаются видимыми. Старые заборные трубы становятся якорями для корней. Мат, выросший вокруг кольца защелки, может держать путь читаемым после исчезновения знака. Та же привычка опасна: пингер, вплетенный в корни, может означать повторный безопасный проход, а может означать, что течение снова и снова тащило провалы в один живой узел.\n\nЧитай цвет и натяжение вместе. Ярко-зеленые ленты на бледном песке говорят об активном потоке. Темные узлы говорят о запертом иле, старом металле или застое. Ракушечная крошка, выстроенная в одну сторону, показывает дорожку течения. Край мата, поднятый губой, может скрывать пустоту. Первый урок прост: полка читаема потому, что жизнь там занята работой, а не потому, что она безопасна.",
-          "field_note": "Если мат держит твой ботинок, он держал и другие вещи. Узнай какие, прежде чем резать.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Мілководний кореневий мат",
-          "scanner": "МІЛКОВОДНИЙ КОРЕНЕВИЙ МАТ // Фотичний ріст, схожий на морську траву, поверх мушлевого піску і блідого осипу. Корені тримають верхній шар, але можуть ховати м'який мул нижче. На краю мата виявлено зачеплену лінію пінгера.",
-          "terminal": "Нотатка P-63: кореневі мати — не просто флора. Вони дають кисень полиці, ловлять мушлеву крихту, ховають старий кабель і показують напрям течії. Не ступати в темно-зелені вузли без щупа.",
-          "audio": "Мат здається м'яким, доки не тримає черевик. Потім здається живим. Потім бачиш маршрутну лінію, вплетену в корені, і розумієш: цим місцем ходили не раз.",
-          "in_game_wiki": "Мілководні кореневі мати ростуть там, де сходяться світло, карбонатний пісок, м'яка течія і старий живильний стік колонії. Здалеку вони схожі на морську траву, але важливе лежить під листям: темні кореневі волокна прошивають мушлеву крихту, пил коралових аналогів і бліді уламки вапняку в пружну шкіру. Вона може врятувати, втримавши пухкий осад, або зрадити, сховавши м'який мул. Кореневі вузли ловлять пінгери, шнури інструментів, стулкові затискачі і краї старих труб.",
-          "external_site": "Кореневі мати HECTON-8 роблять фотичну полицю живою раніше, ніж безпечною: згори киснева плівка, знизу м'який мул, а між ними старе людське залізо в коренях.",
-          "external_site_article": "Мілководний кореневий мат — одна з перших живих систем, яку вчиться читати новий нирець. Він досить яскравий, щоб здаватися дружнім, і досить щільний, щоб брехати. Верхній шар ловить світло Aegir і в продуктивні вікна випускає тонку кисневу плівку. Нижче корені зв'язують мушлеву крихту, вапняковий пил і уламки коралових аналогів у поверхню, схожу на плетену підлогу, доки вага, течія чи замкнений газ не змінять правило.\n\nDeep Reach використовували краї матів як дешеву пам'ять маршруту. Лінії пінгерів чіпляються там і лишаються видимими. Старі труби стають якорями для коренів. Мат навколо кільця може тримати шлях читабельним після зникнення знака. Але це небезпечно: вплетений пінгер може означати повторний безпечний прохід, а може — що течія знову тягнула невдачі в один живий вузол.",
-          "field_note": "Якщо мат тримає твій черевик, він тримав і інші речі. Дізнайся які, перш ніж різати.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Flacher Seegras-Wurzelfilz",
-          "scanner": "FLACHER WURZELFILZ // Seegrasartige photische Schicht über Muschelsand und hellem Schutt. Wurzeln binden die Oberfläche, können aber weichen Silt darunter verbergen. Eine Pinger-Leine hängt am Rand.",
-          "terminal": "P-63-Notiz: Wurzelfilze sind nicht nur Flora. Sie versorgen das Shelf mit Sauerstoff, fangen Muschelgrus, verdecken alte Kabel und zeigen Strömungsrichtung. Dunkelgrüne Knoten erst sondieren.",
-          "audio": "Der Filz wirkt weich, bis er deinen Stiefel hält. Dann wirkt er lebendig. Dann siehst du die Routenleine in den Wurzeln und weißt, dass hier jemand öfter langging.",
-          "in_game_wiki": "Flache Wurzelfilze wachsen dort, wo Licht, Karbonatsand, milde Strömung und alter Kolonieabfluss zusammentreffen. Aus der Ferne erinnern sie an Seegras; wichtig ist jedoch die Schicht darunter. Dunkle Wurzelfasern vernähen Muschelgrus, Korallanalog-Staub und helle Kalkkrümel zu einer federnden Haut. Diese Haut kann lockeres Sediment halten oder weichen Silt unter einer stabil wirkenden Oberfläche verbergen. Wurzelknoten fangen Pinger, Werkzeugleinen, Shell-Clamps und alte Rohrkanten.",
-          "external_site": "HECTON-8-Wurzelfilze machen das photische Shelf zuerst lebendig und erst viel später sicher: Sauerstofffilm oben, weicher Silt unten, alte Hardware in den Wurzeln.",
-          "external_site_article": "Der flache Wurzelfilz ist eines der ersten lebenden Systeme, das ein neuer Taucher lesen muss. Er ist hell genug, um freundlich zu wirken, und dicht genug, um zu lügen. Die obere Schicht nimmt Aegir-Licht auf und gibt in produktiven Fenstern einen dünnen Sauerstofffilm ab. Darunter binden Wurzeln Muschelgrus, Kalkstaub und gebrochene Korallanaloga zu einer Oberfläche, die sich wie ein geflochtener Boden verhält, bis Gewicht, Strömung oder eingeschlossenes Gas die Regeln ändern.\n\nDeep-Reach-Crews nutzten Filzränder als billiges Routengedächtnis. Pinger-Leinen bleiben dort hängen. Alte Rohre werden zu Wurzelankern. Ein Filz um einen Ring kann eine Route lesbar halten, nachdem das Schild verschwunden ist. Aber derselbe Mechanismus ist gefährlich: Eine geflochtene Pinger-Leine kann sichere Wiederholung bedeuten, oder viele gescheiterte Versuche, die die Strömung in denselben Knoten zog.",
-          "field_note": "Wenn der Filz deinen Stiefel hält, hielt er andere Dinge. Erst lesen, dann schneiden.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Sustrato somero de raíces marinas",
-          "scanner": "SUSTRATO DE RAÍZ SOMERA // Crecimiento fótico parecido a hierba marina sobre arena de concha y escombro pálido. Las raíces atan la capa superior, pero pueden esconder limo blando debajo. Línea de pinger enganchada en el borde.",
-          "terminal": "Nota P-63: los tapetes de raíz no son solo flora. Oxigenan la plataforma, atrapan arenilla de concha, ocultan cable viejo y marcan la corriente. No pises nudos verde oscuro sin sondear.",
-          "audio": "El tapete parece blando hasta que te sujeta la bota. Entonces parece vivo. Luego ves la línea de ruta trenzada en él y sabes que alguien pasó por aquí más de una vez.",
-          "in_game_wiki": "Los tapetes de raíz someros crecen donde se juntan luz, arena carbonatada, corriente suave y viejo aporte nutritivo de la colonia. De lejos parecen hierba marina; lo útil está bajo las hojas. Fibras oscuras cosen arenilla de concha, polvo de coral análogo y migas de caliza en una piel elástica. Puede salvar al mantener el sedimento, o traicionar al esconder limo blando. Los nudos atrapan pingers, cables de herramienta, abrazaderas de concha y bordes de tubería.",
-          "external_site": "Los tapetes de raíz de HECTON-8 hacen que la plataforma fótica parezca viva antes de parecer segura: película de oxígeno arriba, limo blando abajo y hardware humano viejo trenzado en medio.",
-          "external_site_article": "El tapete de raíz somero es uno de los primeros sistemas vivos que aprende a leer un buzo. Es lo bastante brillante para parecer amable y lo bastante denso para mentir. La capa alta recoge luz de Aegir y libera una fina película de oxígeno en ventanas productivas. Abajo, las raíces atan arenilla, polvo calizo y fragmentos de coral análogo en una superficie que se comporta como suelo tejido hasta que peso, corriente o gas atrapado cambian la regla.\n\nLas cuadrillas de Deep Reach usaron los bordes como memoria barata de ruta. Las líneas de pinger se enganchan y quedan visibles. Las tuberías viejas se vuelven anclas de raíz. Un tapete alrededor de un anillo puede mantener legible un camino después de perder la señal. También puede mentir: una línea trenzada puede ser paso seguro repetido o fracasos arrastrados al mismo nudo vivo.",
-          "field_note": "Si el tapete sujeta tu bota, ha sujetado otras cosas. Averigua cuáles antes de cortarlo.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Tapis racinaire d'herbier peu profond",
-          "scanner": "TAPIS RACINAIRE PEU PROFOND // Croissance photique proche d'un herbier sur sable coquillier et gravats pâles. Les racines tiennent la couche haute mais peuvent cacher du limon mou. Ligne de pinger accrochée au bord.",
-          "terminal": "Note P-63 : les tapis racinaires ne sont pas seulement de la flore. Ils oxygènent le plateau, piègent le grit de coquille, cachent de vieux câbles et indiquent le courant. Sonde les noeuds vert sombre.",
-          "audio": "Le tapis semble doux jusqu'à ce qu'il tienne ta botte. Alors il semble vivant. Puis tu vois la ligne de route tressée dedans, et tu sais qu'on est passé ici plus d'une fois.",
-          "in_game_wiki": "Les tapis racinaires peu profonds poussent là où lumière, sable carbonaté, courant doux et ancien ruissellement de colonie se rencontrent. De loin ils ressemblent à un herbier, mais l'essentiel est sous les brins. Des fibres sombres cousent grit de coquille, poussière de corail analogue et miettes de calcaire en une peau souple. Elle peut retenir un sédiment instable ou cacher du limon mou. Les noeuds piègent pingers, câbles d'outil, shell-clamps et bords de vieux tuyaux.",
-          "external_site": "Sur HECTON-8, les tapis racinaires rendent le plateau photique vivant avant de le rendre sûr : film d'oxygène dessus, limon mou dessous, vieux métal humain dans les racines.",
-          "external_site_article": "Le tapis racinaire peu profond est l'un des premiers systèmes vivants qu'un plongeur apprend à lire. Il est assez lumineux pour paraître accueillant et assez dense pour mentir. La couche haute capte la lumière d'Aegir et libère un mince film d'oxygène pendant les fenêtres productives. En dessous, les racines lient grit, poussière calcaire et fragments de corail analogue en une surface qui ressemble à un sol tressé, jusqu'à ce que poids, courant ou gaz enfermé changent la règle.\n\nLes équipes Deep Reach utilisaient les bords comme mémoire de route bon marché. Les lignes de pinger s'y accrochent. Les vieux tuyaux deviennent des ancres. Un tapis autour d'un anneau peut garder un chemin lisible après la disparition du panneau. Mais une ligne tressée peut indiquer un passage sûr répété ou des échecs ramenés sans cesse au même noeud vivant.",
-          "field_note": "Si le tapis tient ta botte, il a tenu autre chose. Lis avant de couper.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Płytki korzeniowy kobierzec morski",
-          "scanner": "PŁYTKI KOBIERCIEC KORZENIOWY // Fotyczny wzrost podobny do trawy morskiej na piasku muszlowym i bladym rumoszu. Korzenie wiążą górę, ale mogą chować miękki muł. Linia pingera zaczepiona na krawędzi.",
-          "terminal": "Notatka P-63: kobierce korzeniowe to nie tylko flora. Dają tlen, łapią grys muszlowy, kryją stare kable i pokazują prąd. Ciemnozielone węzły sondować przed krokiem.",
-          "audio": "Kobierzec wygląda miękko, dopóki nie trzyma buta. Wtedy wygląda żywo. Potem widzisz linię trasy splecioną z korzeniami i wiesz, że ktoś użył tego miejsca więcej niż raz.",
-          "in_game_wiki": "Płytkie kobierce korzeniowe rosną tam, gdzie spotykają się światło, piasek węglanowy, łagodny prąd i dawny odpływ kolonii. Z daleka przypominają trawę morską, ale najważniejsze jest pod źdźbłami. Ciemne włókna zszywają grys muszlowy, pył koralowych analogów i okruchy wapienia w sprężystą skórę. Może utrzymać osad albo ukryć miękki muł. Węzły łapią pingery, przewody narzędzi, shell-clampy i stare rury.",
-          "external_site": "Kobierce korzeniowe HECTON-8 sprawiają, że fotyczna półka jest żywa wcześniej niż bezpieczna: film tlenowy u góry, miękki muł pod spodem, stare żelazo w korzeniach.",
-          "external_site_article": "Płytki kobierzec korzeniowy jest jednym z pierwszych żywych systemów, które nurek musi czytać. Jest dość jasny, by zapraszać, i dość gęsty, by kłamać. Górna warstwa zbiera światło Aegir i w dobrych oknach oddaje cienki film tlenu. Niżej korzenie wiążą grys, pył wapienny i koralowe fragmenty w powierzchnię podobną do plecionej podłogi, dopóki ciężar, prąd albo uwięziony gaz nie zmienią zasad.\n\nDeep Reach używało krawędzi kobierców jako taniej pamięci trasy. Linie pingerów zaczepiają się tam. Stare rury stają się kotwami. Kobierzec wokół pierścienia utrzymuje drogę czytelną po utracie znaku. Ale ta sama cecha jest zdradliwa: spleciona linia może oznaczać bezpieczne powroty albo porażki wciągane w ten sam żywy węzeł.",
-          "field_note": "Jeśli kobierzec trzyma but, trzymał inne rzeczy. Sprawdź jakie, zanim tniesz.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Tapete raso de raízes marinhas",
-          "scanner": "TAPETE RASO DE RAÍZ // Crescimento fótico parecido com erva marinha sobre areia de concha e entulho claro. Raízes prendem a camada de cima, mas podem esconder lodo macio. Linha de pinger presa na borda.",
-          "terminal": "Nota P-63: tapetes de raiz não são só flora. Oxigenam a plataforma, prendem grãos de concha, escondem cabo velho e mostram corrente. Não pise em nós verde-escuros sem sondar.",
-          "audio": "O tapete parece macio até segurar sua bota. Então parece vivo. Depois você vê a linha de rota trançada nele e entende que alguém passou ali mais de uma vez.",
-          "in_game_wiki": "Tapetes rasos de raiz crescem onde luz, areia carbonatada, corrente leve e velho escoamento colonial se encontram. De longe parecem erva marinha, mas o útil fica sob as folhas. Fibras escuras costuram grãos de concha, poeira de coral análogo e migalhas de calcário numa pele elástica. Ela pode segurar sedimento solto ou esconder lodo macio. Nós de raiz prendem pingers, cabos de ferramenta, shell-clamps e bordas de tubos antigos.",
-          "external_site": "Os tapetes de raiz de HECTON-8 fazem a plataforma fótica parecer viva antes de parecer segura: filme de oxigênio em cima, lodo macio embaixo e ferragem humana velha nas raízes.",
-          "external_site_article": "O tapete raso de raiz é um dos primeiros sistemas vivos que um mergulhador aprende a ler. É claro o bastante para parecer acolhedor e denso o bastante para mentir. A camada superior pega luz de Aegir e libera uma película fina de oxigênio nas janelas produtivas. Abaixo, raízes prendem grãos, pó calcário e fragmentos de coral análogo numa superfície que parece piso trançado até peso, corrente ou gás preso mudarem a regra.\n\nEquipes da Deep Reach usavam bordas de tapete como memória barata de rota. Linhas de pinger ficam presas ali. Tubos antigos viram âncoras. Um tapete em volta de um anel mantém o caminho legível depois que a placa some. A mesma coisa engana: uma linha trançada pode ser passagem segura repetida ou fracassos arrastados para o mesmo nó vivo.",
-          "field_note": "Se o tapete segura sua bota, segurou outras coisas. Descubra quais antes de cortar.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Ondiep zeegras-wortelmat-substraat",
-          "scanner": "ONDIEPE WORTELMAT // Zeegrasachtige fotische groei op schelpzand en bleek puin. Wortels binden de bovenlaag, maar kunnen zachte slib eronder verbergen. Pingerlijn vast in de rand.",
-          "terminal": "P-63-notitie: wortelmatten zijn niet alleen flora. Ze geven zuurstof, vangen schelpgruis, verbergen oude kabels en tonen stroming. Donkergroene knopen eerst peilen.",
-          "audio": "De mat lijkt zacht tot hij je laars vasthoudt. Dan lijkt hij levend. Daarna zie je de routelijn erin gevlochten en weet je dat iemand hier vaker kwam.",
-          "in_game_wiki": "Ondiepe wortelmatten groeien waar licht, carbonaatzand, milde stroming en oude kolonierunoff samenkomen. Van ver lijken ze op zeegras, maar het nuttige deel zit onder de bladen. Donkere wortelvezels naaien schelpgruis, koraalanaloogstof en kalkkruimels tot een veerkrachtige huid. Die huid kan los sediment vasthouden of zachte slib verbergen. Wortelknopen vangen pingers, gereedschapskabels, shell-clamps en oude pijpranden.",
-          "external_site": "HECTON-8-wortelmatten maken het fotische shelf levend voordat het veilig wordt: zuurstoffilm boven, zachte slib onder, oude menselijke hardware door de wortels.",
-          "external_site_article": "De ondiepe wortelmat is een van de eerste levende systemen die een duiker leert lezen. Ze is helder genoeg om vriendelijk te lijken en dicht genoeg om te liegen. De bovenlaag vangt Aegir-licht en geeft in productieve vensters een dunne zuurstoffilm af. Daaronder binden wortels gruis, kalkstof en koraalachtige breuk tot een oppervlak dat zich gedraagt als gevlochten vloer tot gewicht, stroming of opgesloten gas de regel verandert.\n\nDeep Reach gebruikte matranden als goedkope routeherinnering. Pingerlijnen blijven daar hangen. Oude buizen worden wortelankers. Een mat rond een ring houdt een pad leesbaar nadat het bord weg is. Maar een gevlochten lijn kan ook mislukte pogingen betekenen die de stroming steeds naar dezelfde levende knoop trok.",
-          "field_note": "Als de mat je laars houdt, hield hij andere dingen. Lees eerst, snijd later.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Substrat Mat Akar Dangkal",
-          "scanner": "SUBSTRAT MAT AKAR DANGKAL // Pertumbuhan fotik mirip lamun di atas pasir cangkang dan puing pucat. Akar mengikat lapisan atas, tapi bisa menyembunyikan lumpur lunak. Garis pinger tersangkut di tepi mat.",
-          "terminal": "Catatan P-63: mat akar bukan sekadar flora. Ia memberi oksigen, menangkap grit cangkang, menyembunyikan kabel lama, dan menunjukkan arah arus. Jangan injak simpul hijau gelap tanpa probe.",
-          "audio": "Mat itu tampak lembut sampai menahan sepatu. Lalu tampak hidup. Lalu kau melihat garis rute teranyam di dalamnya, dan tahu seseorang memakai tempat ini lebih dari sekali.",
-          "in_game_wiki": "Mat akar dangkal tumbuh di tempat cahaya, pasir karbonat, arus ringan, dan limpasan nutrisi koloni lama bertemu. Dari jauh ia mirip lamun, tetapi bagian penting ada di bawah daun. Serat akar gelap menjahit grit cangkang, debu analog karang, dan remah batu kapur menjadi kulit kenyal. Kulit itu bisa menahan sedimen, atau menyembunyikan lumpur lunak. Simpul akar menangkap pinger, kabel alat, shell-clamp, dan tepi pipa tua.",
-          "external_site": "Mat akar HECTON-8 membuat rak fotik terasa hidup sebelum aman: film oksigen di atas, lumpur lunak di bawah, dan perangkat manusia lama teranyam di akar.",
-          "external_site_article": "Mat akar dangkal adalah salah satu sistem hidup pertama yang dipelajari penyelam baru. Ia cukup terang untuk terlihat ramah dan cukup rapat untuk berbohong. Lapisan atas menangkap cahaya Aegir dan melepaskan film oksigen tipis pada jendela produktif. Di bawahnya, akar mengikat grit, debu kapur, dan pecahan analog karang menjadi lantai anyam sampai berat, arus, atau gas terperangkap mengubah aturan.\n\nAwak Deep Reach memakai tepi mat sebagai memori rute murah. Garis pinger tersangkut di sana. Pipa lama menjadi jangkar akar. Mat di sekitar cincin bisa menjaga jalur tetap terbaca setelah tanda hilang. Tetapi garis teranyam bisa berarti jalur aman berulang, atau kegagalan yang terus diseret arus ke simpul hidup yang sama.",
-          "field_note": "Jika mat menahan sepatumu, ia pernah menahan hal lain. Cari tahu sebelum memotong.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "浅瀬の根マット基質",
-          "scanner": "浅瀬の根マット基質 // 貝殻砂と淡い瓦礫の上に広がる海草状の有光成長。根は上層を縛るが、その下の柔らかいシルトを隠すことがある。マット端にピンガー線の絡まりを検出。",
-          "terminal": "P-63メモ: 根マットは単なる植物ではない。棚に酸素を与え、貝殻砂を捕らえ、古いケーブルを隠し、流れの向きを示す。暗緑の結び目は探針なしに踏むな。",
-          "audio": "マットは靴を捕まえるまで柔らかく見える。すると生きているように見える。そこに経路線が編み込まれているのを見て、誰かが何度も通ったとわかる。",
-          "in_game_wiki": "浅瀬の根マットは、光、炭酸塩砂、穏やかな流れ、古い植民地流出物が重なる場所に育つ。遠くからは海草に似ているが、重要なのは葉の下だ。暗い根繊維が貝殻砂、サンゴ類似体の粉、石灰岩片を縫い合わせ、弾む皮を作る。その皮は沈殿物を支えることも、柔らかいシルトを隠すこともある。根の結び目はピンガー、工具コード、シェルクランプ、古い配管縁を捕らえる。",
-          "external_site": "HECTON-8の根マットは、有光棚を安全にする前に生きているものとして感じさせる。上には酸素膜、下には柔らかいシルト、根の中には古い人間の道具。",
-          "external_site_article": "浅瀬の根マットは、新しい潜水者が最初に読む生きたシステムの一つだ。歓迎するほど明るく、嘘をつくほど密だ。上層はAegirの光を受け、生産窓では薄い酸素膜を放つ。下では根が貝殻砂、石灰粉、サンゴ類似片を結び、編まれた床のような表面を作る。重量、流れ、閉じ込められたガスが規則を変えるまでは。\n\nDeep Reachの作業員はマットの端を安い経路記憶として使った。ピンガー線はそこに引っかかる。古い管は根の錨になる。輪の周りに育ったマットは標識が消えた後も道を読ませる。しかし編み込まれた線は、繰り返された安全な通行か、同じ生きた結び目へ流された失敗かもしれない。",
-          "field_note": "マットが靴を捕まえるなら、他のものも捕まえている。切る前に読め。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "얕은 뿌리 매트 기질",
-          "scanner": "얕은 뿌리 매트 기질 // 조개 모래와 옅은 잔해 위의 해초 같은 유광층 성장. 뿌리는 윗층을 묶지만 아래의 부드러운 실트를 숨길 수 있다. 매트 가장자리에 피ン거 라인이 걸려 있다.",
-          "terminal": "P-63 기록: 뿌리 매트는 단순한 식물이 아니다. 산소를 만들고 조개 입자를 잡고 오래된 케이블을 숨기며 흐름 방향을 보인다. 어두운 초록 매듭은 찔러 보기 전 밟지 말 것.",
-          "audio": "매트는 부츠를 잡을 때까지 부드러워 보인다. 그 다음에는 살아 보인다. 그 안에 경로선이 엮인 것을 보면, 누군가 이곳을 여러 번 썼다는 걸 안다.",
-          "in_game_wiki": "얕은 뿌리 매트는 빛, 탄산염 모래, 약한 흐름, 오래된 식민지 영양 유출이 만나는 곳에서 자란다. 멀리서는 해초처럼 보이지만 중요한 부분은 잎 아래다. 어두운 뿌리 섬유가 조개 입자, 산호 유사체 가루, 석회암 조각을 꿰매 탄력 있는 피부를 만든다. 그 피부는 느슨한 퇴적물을 붙들 수도 있고 부드러운 실트를 숨길 수도 있다. 뿌리 매듭은 피ン거, 도구 코드, 셸 클램프, 오래된 파이프 가장자리를 잡는다.",
-          "external_site": "HECTON-8의 뿌리 매트는 유광층 선반을 안전하기 전에 살아 있게 만든다. 위에는 산소막, 아래에는 부드러운 실트, 뿌리 사이에는 오래된 인간 장비가 있다.",
-          "external_site_article": "얕은 뿌리 매트는 새 잠수자가 처음 배우는 살아 있는 시스템 중 하나다. 환영해 보일 만큼 밝고, 거짓말할 만큼 빽빽하다. 윗층은 Aegir 빛을 받아 생산 창에 얇은 산소막을 낸다. 아래에서는 뿌리가 조개 입자, 석회 가루, 산호 유사 조각을 엮어 짠 바닥 같은 표면을 만든다. 무게, 흐름, 갇힌 가스가 규칙을 바꾸기 전까지는.\n\nDeep Reach 작업자들은 매트 가장자리를 싼 경로 기억으로 썼다. 피ン거 라인은 거기에 걸린다. 오래된 파이프는 뿌리 닻이 된다. 고리 주변의 매트는 표지판이 사라진 뒤에도 길을 읽게 한다. 하지만 엮인 라인은 반복된 안전 통로일 수도, 흐름이 같은 살아 있는 매듭으로 끌고 온 실패일 수도 있다.",
-          "field_note": "매트가 부츠를 잡는다면 다른 것도 잡았다. 자르기 전에 읽어라.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-        "title": "浅水海草根毯基质",
-          "scanner": "浅水根毯基质 // 覆在贝壳砂和浅色碎屑上的海草状有光层生长。根系固定上层，却可能掩盖下方软泥。根毯边缘检测到被缠住的声呐信标线。",
-          "terminal": "P-63 记录：根毯不只是植物。它给台地供氧，捕捉贝壳砂，隐藏旧电缆，并显示水流方向。不要在未探测时踩进深绿色根结。",
-          "audio": "根毯看起来很软，直到它抓住你的靴子。然后它看起来像活物。再然后你看见路线线缆编进根里，就知道有人不止一次走过这里。",
-          "in_game_wiki": "浅水根毯生长在光、碳酸盐砂、温和水流和旧殖民营养流汇合处。远看像海草，但真正有用的部分在叶片下方。深色根纤维把贝壳砂、类珊瑚粉尘和石灰岩碎屑缝成一层有弹性的皮。这层皮能固定松散沉积，也能把软泥藏在稳定表面下面。根结会缠住信标线、工具线、壳夹和旧管边。",
-          "external_site": "HECTON-8 的根毯让有光层台地先显得活着，然后才显得安全：上方有氧膜，下方有软泥，根里还编着旧人类设备。",
-          "external_site_article": "浅水根毯是新潜水员最早学会阅读的活系统之一。它明亮得像欢迎，也密实得足以说谎。上层接住 Aegir 的光，在生产窗口释放薄薄氧膜。下方根系把贝壳砂、石灰粉和类珊瑚碎片绑定成像编织地板一样的表面，直到重量、水流或困住的气体改变规则。\n\nDeep Reach 船员把根毯边缘当成廉价路线记忆。信标线会缠在那里。旧管道变成根锚。围绕锁环生长的根毯能在标志消失后继续让道路可读。但同一特性也会欺骗你：编进根里的线可能意味着反复安全通过，也可能意味着水流把失败一次次拖进同一个活结。",
-          "field_note": "如果根毯抓住你的靴子，它也抓住过别的东西。切割前先读清楚。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "ركيزة حصيرة جذور ضحلة",
-          "scanner": "ركيزة حصيرة جذور ضحلة // نمو مضاء يشبه العشب البحري فوق رمل الأصداف والركام الشاحب. الجذور تثبت الطبقة العليا لكنها قد تخفي طميا ناعما تحتها. تم رصد خط pinger عالق عند الحافة.",
-          "terminal": "ملاحظة P-63: حصائر الجذور ليست نباتا فقط. إنها تعطي الرف أكسجينا، وتحبس حبيبات الأصداف، وتخفي كابلا قديما، وتدل على اتجاه التيار. لا تطأ العقد الخضراء الداكنة بلا مجس.",
-          "audio": "تبدو الحصيرة ناعمة حتى تمسك حذاءك. عندها تبدو حية. ثم ترى خط المسار منسوجا فيها، وتعرف أن أحدا استخدم هذه البقعة أكثر من مرة.",
-          "in_game_wiki": "تنمو حصائر الجذور الضحلة حيث يلتقي الضوء ورمل الكربونات والتيار الخفيف وجريان المغذيات القديم من المستعمرة. من بعيد تشبه العشب البحري، لكن المفيد تحت الأوراق. ألياف الجذر الداكنة تخيط حبيبات الأصداف وغبار المرجان النظير وفتات الحجر الكلسي في جلد مرن. قد يمسك هذا الجلد الرسوب، أو يخفي طميا ناعما. عقد الجذور تلتقط خطوط pinger وأسلاك الأدوات ومشابك الأصداف وحواف الأنابيب القديمة.",
-          "external_site": "حصائر جذور HECTON-8 تجعل الرف المضاء حيا قبل أن تجعله آمنا: فيلم أكسجين في الأعلى، وطمي ناعم في الأسفل، ومعدات بشرية قديمة بين الجذور.",
-          "external_site_article": "حصيرة الجذور الضحلة من أول الأنظمة الحية التي يتعلم الغواص قراءتها. هي مشرقة بما يكفي لتبدو مرحبة، وكثيفة بما يكفي لتكذب. الطبقة العليا تمسك ضوء Aegir وتطلق طبقة أكسجين رقيقة في النوافذ المنتجة. تحتها تربط الجذور الحبيبات وغبار الكلس وقطع المرجان النظير في سطح يشبه أرضية منسوجة، إلى أن يغير الوزن أو التيار أو الغاز المحبوس القاعدة.\n\nاستخدمت أطقم Deep Reach حواف الحصائر كذاكرة مسار رخيصة. خطوط pinger تعلق هناك. الأنابيب القديمة تصبح مراسي للجذور. حصيرة حول حلقة قفل قد تبقي الطريق مقروءا بعد اختفاء العلامة. لكن الخط المنسوج قد يعني عبورا آمنا متكررا، أو إخفاقات ظل التيار يسحبها إلى العقدة الحية نفسها.",
-          "field_note": "إذا أمسكت الحصيرة حذاءك فقد أمسكت أشياء أخرى. اعرفها قبل القطع.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "מצע שטיח שורשים רדוד",
-          "scanner": "מצע שטיח שורשים רדוד // צמיחה פוטית דמוית עשב ים מעל חול קונכיות ושברים בהירים. השורשים קושרים את השכבה העליונה אך עלולים להסתיר טין רך מתחת. קו pinger נתפס בשפה.",
-          "terminal": "הערת P-63: שטיחי שורשים אינם רק פלורה. הם מחמצנים את המדף, לוכדים גרגרי קונכייה, מסתירים כבל ישן ומראים כיוון זרם. אל תדרוך בקשרים ירוקים כהים בלי בדיקה.",
-          "audio": "השטיח נראה רך עד שהוא מחזיק את המגף שלך. אז הוא נראה חי. ואז אתה רואה קו מסלול שזור בתוכו, ויודע שמישהו השתמש במקום הזה יותר מפעם אחת.",
-          "in_game_wiki": "שטיחי שורשים רדודים גדלים במקום שבו אור, חול פחמתי, זרם עדין ונגר תזונתי ישן של המושבה נפגשים. מרחוק הם דומים לעשב ים, אבל החלק החשוב נמצא מתחת לעלים. סיבי שורש כהים תופרים גרגרי קונכייה, אבק אלמוגים מקביל ופירורי גיר לעור קפיצי. העור הזה יכול להחזיק משקע רופף או להסתיר טין רך. קשרי שורש תופסים pingers, כבלי כלים, shell-clamps ושפות צינור ישן.",
-          "external_site": "שטיחי השורשים של HECTON-8 גורמים למדף הפוטי להיראות חי לפני שהוא בטוח: סרט חמצן למעלה, טין רך למטה, וחומרה אנושית ישנה בתוך השורשים.",
-          "external_site_article": "שטיח השורשים הרדוד הוא אחת המערכות החיות הראשונות שצולל לומד לקרוא. הוא בהיר מספיק כדי להיראות מזמין וצפוף מספיק כדי לשקר. השכבה העליונה קולטת אור Aegir ומשחררת סרט חמצן דק בחלונות יצרניים. מתחתיה השורשים קושרים גרגרים, אבק גיר ושברי אלמוגים מקבילים למשטח שמתנהג כמו רצפה ארוגה, עד שמשקל, זרם או גז כלוא משנים את הכלל.\n\nצוותי Deep Reach השתמשו בשפות השטיח כזיכרון מסלול זול. קווי pinger נתקעים שם. צינורות ישנים נעשים עוגני שורש. שטיח סביב טבעת יכול להשאיר דרך קריאה אחרי שהשלט נעלם. אבל קו שזור יכול להיות מעבר בטוח חוזר, או כישלונות שהזרם גרר שוב לאותו קשר חי.",
-          "field_note": "אם השטיח מחזיק את המגף שלך, הוא החזיק דברים אחרים. גלה מה לפני החיתוך.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.shallow_seagrass_root_mat_field_article",
+    "secondary": [
+     "unlock.first_shallow_root_mat",
+     "unlock.first_pinger_line_snag",
+     "unlock.first_soft_silt_under_photic_mat"
+    ],
+    "poi_tags": [
+     "poi.shallow_root_mat",
+     "poi.shell_grit_root_knot",
+     "poi.pinger_line_snag",
+     "poi.soft_silt_under_mat",
+     "poi.oxygen_film_patch",
+     "poi.old_pipe_root_bind"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.photic_shallows",
+     "biome.first_route_shelf",
+     "biome.shallow_annex"
+    ],
+    "first_20_boundary": "Makes photic root mats readable as living substrate: roots bind shell grit, hide soft silt, snag route pingers and show where oxygen, current and old colony hardware meet."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Photic Substrate Scanner",
+     "terminal": "P-63 Intake Survey Note",
+     "audio": "Shallow Shelf Recorder Fragment",
+     "in_game_wiki": "PDA Root-Mat Primer",
+     "external_site": "Public Site Root-Mat Article",
+     "field_note": "Marauder Field Annotation"
+    },
+    "writer_note": "Call it seagrass-like only when needed. HECTON-8 root mats are alien photic substrate, not Earth grass pasted into the ocean. They are beauty, oxygen risk, route clue and evidence trap."
+   },
+   "localized": {
+    "en_US": {
+     "title": "Shallow Seagrass Root-Mat Substrate",
+     "scanner": "SHALLOW ROOT-MAT SUBSTRATE // Seagrass-like photic growth over shell sand and pale rubble. Roots bind the top layer but can hide soft silt below. Snagged pinger line detected in the mat edge.",
+     "terminal": "P-63 intake note: root mats are not just flora. They oxygenate the shelf, trap shell grit, conceal old cable and mark current direction. Do not step into dark green knots without probing.",
+     "audio": "The mat looks soft until it holds your boot. Then it looks alive. Then you notice the route line braided through it, and you know someone used this patch more than once.",
+     "in_game_wiki": "Shallow root mats grow where light, carbonate sand, mild current and old nutrient runoff meet. They resemble seagrass from a distance, but the useful part is below the blades: dark root fibers stitching shell grit, coral analogue dust and pale limestone crumbs into a springy skin. That skin can save a diver by holding loose sediment in place, or betray a diver by hiding soft silt under a stable-looking surface. Root knots trap route pingers, tool cord, broken shell clamps and old pipe edges. A clean pale gap in the mat may be grazer work, recent foot traffic or a current lane. Probe before trusting it.",
+     "external_site": "HECTON-8 root mats make the photic shelf feel alive before it feels safe: oxygen film above, soft silt below, and old human hardware braided through the roots.",
+     "external_site_article": "The shallow root mat is one of the first living systems a new diver learns to read. It is bright enough to look welcoming and dense enough to lie. The upper layer catches Aegir light and releases a thin oxygen film during productive windows. Beneath that, the roots bind shell grit, limestone crumbs and broken coral analogues into a surface that behaves like a woven floor until weight, current or trapped gas changes the rule.\n\nDeep Reach crews used root-mat edges as cheap route memory. Pinger lines snag there and stay visible. Old intake pipes become root anchors. A mat grown around a latch ring can keep a path readable after the sign is gone. That same habit makes the substrate dangerous. A route pinger braided into roots may show repeated safe passage, or it may show that the current kept dragging failed attempts into the same living knot.\n\nRead color and tension together. Bright green blades over pale sand suggest active flow. Dark knots mean trapped silt, old metal or stagnant water. Shell grit aligned in one direction shows the current lane. A mat edge lifted like a lip may hide a hollow. The first lesson is simple: the shelf is readable because life is busy there, not because it is safe.",
+     "field_note": "If the mat holds your boot, it has held other things. Find out what before you cut it.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Мелководный корневой мат",
+     "scanner": "МЕЛКОВОДНЫЙ КОРНЕВОЙ МАТ // Фотический рост, похожий на морскую траву, поверх ракушечного песка и бледной осыпи. Корни держат верхний слой, но могут прятать мягкий ил ниже. На краю мата обнаружена зацепленная линия пингера.",
+     "terminal": "Заметка P-63: корневые маты — не просто флора. Они насыщают полку кислородом, ловят ракушечную крошку, скрывают старый кабель и показывают направление течения. Не наступать в темно-зеленые узлы без щупа.",
+     "audio": "Мат кажется мягким, пока не держит ботинок. Потом кажется живым. Потом замечаешь маршрутную линию, вплетенную в корни, и понимаешь: этим местом пользовались не раз.",
+     "in_game_wiki": "Мелководные корневые маты растут там, где встречаются свет, карбонатный песок, мягкое течение и старый питательный сток колонии. Издалека они похожи на морскую траву, но главное находится под листьями: темные корневые волокна прошивают ракушечную крошку, пыль коралловых аналогов и бледные куски известняка в пружинящую кожу. Такая кожа может спасти, удержав рыхлый осадок, или предать, спрятав мягкий ил под стабильной поверхностью. Корневые узлы ловят пингеры, шнуры инструмента, створчатые зажимы и края старых труб. Чистый бледный разрыв в мате может быть работой скребцов, следом прохода или дорожкой течения. Проверяй, прежде чем доверять.",
+     "external_site": "Корневые маты HECTON-8 делают фотическую полку живой раньше, чем безопасной: сверху кислородная пленка, снизу мягкий ил, а между ними старое железо, вплетенное в корни.",
+     "external_site_article": "Мелководный корневой мат — одна из первых живых систем, которую учится читать новый ныряльщик. Он достаточно яркий, чтобы казаться приветливым, и достаточно плотный, чтобы врать. Верхний слой ловит свет Aegir и в продуктивные окна выпускает тонкую кислородную пленку. Ниже корни связывают ракушечную крошку, известняковую пыль и обломки коралловых аналогов в поверхность, которая ведет себя как плетеный пол, пока вес, течение или запертый газ не меняют правило.\n\nЭкипажи Deep Reach использовали края таких матов как дешевую память маршрута. Линии пингеров цепляются там и остаются видимыми. Старые заборные трубы становятся якорями для корней. Мат, выросший вокруг кольца защелки, может держать путь читаемым после исчезновения знака. Та же привычка опасна: пингер, вплетенный в корни, может означать повторный безопасный проход, а может означать, что течение снова и снова тащило провалы в один живой узел.\n\nЧитай цвет и натяжение вместе. Ярко-зеленые ленты на бледном песке говорят об активном потоке. Темные узлы говорят о запертом иле, старом металле или застое. Ракушечная крошка, выстроенная в одну сторону, показывает дорожку течения. Край мата, поднятый губой, может скрывать пустоту. Первый урок прост: полка читаема потому, что жизнь там занята работой, а не потому, что она безопасна.",
+     "field_note": "Если мат держит твой ботинок, он держал и другие вещи. Узнай какие, прежде чем резать.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Мілководний кореневий мат",
+     "scanner": "МІЛКОВОДНИЙ КОРЕНЕВИЙ МАТ // Фотичний ріст, схожий на морську траву, поверх мушлевого піску і блідого осипу. Корені тримають верхній шар, але можуть ховати м'який мул нижче. На краю мата виявлено зачеплену лінію пінгера.",
+     "terminal": "Нотатка P-63: кореневі мати — не просто флора. Вони дають кисень полиці, ловлять мушлеву крихту, ховають старий кабель і показують напрям течії. Не ступати в темно-зелені вузли без щупа.",
+     "audio": "Мат здається м'яким, доки не тримає черевик. Потім здається живим. Потім бачиш маршрутну лінію, вплетену в корені, і розумієш: цим місцем ходили не раз.",
+     "in_game_wiki": "Мілководні кореневі мати ростуть там, де сходяться світло, карбонатний пісок, м'яка течія і старий живильний стік колонії. Здалеку вони схожі на морську траву, але важливе лежить під листям: темні кореневі волокна прошивають мушлеву крихту, пил коралових аналогів і бліді уламки вапняку в пружну шкіру. Вона може врятувати, втримавши пухкий осад, або зрадити, сховавши м'який мул. Кореневі вузли ловлять пінгери, шнури інструментів, стулкові затискачі і краї старих труб.",
+     "external_site": "Кореневі мати HECTON-8 роблять фотичну полицю живою раніше, ніж безпечною: згори киснева плівка, знизу м'який мул, а між ними старе людське залізо в коренях.",
+     "external_site_article": "Мілководний кореневий мат — одна з перших живих систем, яку вчиться читати новий нирець. Він досить яскравий, щоб здаватися дружнім, і досить щільний, щоб брехати. Верхній шар ловить світло Aegir і в продуктивні вікна випускає тонку кисневу плівку. Нижче корені зв'язують мушлеву крихту, вапняковий пил і уламки коралових аналогів у поверхню, схожу на плетену підлогу, доки вага, течія чи замкнений газ не змінять правило.\n\nDeep Reach використовували краї матів як дешеву пам'ять маршруту. Лінії пінгерів чіпляються там і лишаються видимими. Старі труби стають якорями для коренів. Мат навколо кільця може тримати шлях читабельним після зникнення знака. Але це небезпечно: вплетений пінгер може означати повторний безпечний прохід, а може — що течія знову тягнула невдачі в один живий вузол.",
+     "field_note": "Якщо мат тримає твій черевик, він тримав і інші речі. Дізнайся які, перш ніж різати.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Flacher Seegras-Wurzelfilz",
+     "scanner": "FLACHER WURZELFILZ // Seegrasartige photische Schicht über Muschelsand und hellem Schutt. Wurzeln binden die Oberfläche, können aber weichen Silt darunter verbergen. Eine Pinger-Leine hängt am Rand.",
+     "terminal": "P-63-Notiz: Wurzelfilze sind nicht nur Flora. Sie versorgen das Shelf mit Sauerstoff, fangen Muschelgrus, verdecken alte Kabel und zeigen Strömungsrichtung. Dunkelgrüne Knoten erst sondieren.",
+     "audio": "Der Filz wirkt weich, bis er deinen Stiefel hält. Dann wirkt er lebendig. Dann siehst du die Routenleine in den Wurzeln und weißt, dass hier jemand öfter langging.",
+     "in_game_wiki": "Flache Wurzelfilze wachsen dort, wo Licht, Karbonatsand, milde Strömung und alter Kolonieabfluss zusammentreffen. Aus der Ferne erinnern sie an Seegras; wichtig ist jedoch die Schicht darunter. Dunkle Wurzelfasern vernähen Muschelgrus, Korallanalog-Staub und helle Kalkkrümel zu einer federnden Haut. Diese Haut kann lockeres Sediment halten oder weichen Silt unter einer stabil wirkenden Oberfläche verbergen. Wurzelknoten fangen Pinger, Werkzeugleinen, Shell-Clamps und alte Rohrkanten.",
+     "external_site": "HECTON-8-Wurzelfilze machen das photische Shelf zuerst lebendig und erst viel später sicher: Sauerstofffilm oben, weicher Silt unten, alte Hardware in den Wurzeln.",
+     "external_site_article": "Der flache Wurzelfilz ist eines der ersten lebenden Systeme, das ein neuer Taucher lesen muss. Er ist hell genug, um freundlich zu wirken, und dicht genug, um zu lügen. Die obere Schicht nimmt Aegir-Licht auf und gibt in produktiven Fenstern einen dünnen Sauerstofffilm ab. Darunter binden Wurzeln Muschelgrus, Kalkstaub und gebrochene Korallanaloga zu einer Oberfläche, die sich wie ein geflochtener Boden verhält, bis Gewicht, Strömung oder eingeschlossenes Gas die Regeln ändern.\n\nDeep-Reach-Crews nutzten Filzränder als billiges Routengedächtnis. Pinger-Leinen bleiben dort hängen. Alte Rohre werden zu Wurzelankern. Ein Filz um einen Ring kann eine Route lesbar halten, nachdem das Schild verschwunden ist. Aber derselbe Mechanismus ist gefährlich: Eine geflochtene Pinger-Leine kann sichere Wiederholung bedeuten, oder viele gescheiterte Versuche, die die Strömung in denselben Knoten zog.",
+     "field_note": "Wenn der Filz deinen Stiefel hält, hielt er andere Dinge. Erst lesen, dann schneiden.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Sustrato somero de raíces marinas",
+     "scanner": "SUSTRATO DE RAÍZ SOMERA // Crecimiento fótico parecido a hierba marina sobre arena de concha y escombro pálido. Las raíces atan la capa superior, pero pueden esconder limo blando debajo. Línea de pinger enganchada en el borde.",
+     "terminal": "Nota P-63: los tapetes de raíz no son solo flora. Oxigenan la plataforma, atrapan arenilla de concha, ocultan cable viejo y marcan la corriente. No pises nudos verde oscuro sin sondear.",
+     "audio": "El tapete parece blando hasta que te sujeta la bota. Entonces parece vivo. Luego ves la línea de ruta trenzada en él y sabes que alguien pasó por aquí más de una vez.",
+     "in_game_wiki": "Los tapetes de raíz someros crecen donde se juntan luz, arena carbonatada, corriente suave y viejo aporte nutritivo de la colonia. De lejos parecen hierba marina; lo útil está bajo las hojas. Fibras oscuras cosen arenilla de concha, polvo de coral análogo y migas de caliza en una piel elástica. Puede salvar al mantener el sedimento, o traicionar al esconder limo blando. Los nudos atrapan pingers, cables de herramienta, abrazaderas de concha y bordes de tubería.",
+     "external_site": "Los tapetes de raíz de HECTON-8 hacen que la plataforma fótica parezca viva antes de parecer segura: película de oxígeno arriba, limo blando abajo y hardware humano viejo trenzado en medio.",
+     "external_site_article": "El tapete de raíz somero es uno de los primeros sistemas vivos que aprende a leer un buzo. Es lo bastante brillante para parecer amable y lo bastante denso para mentir. La capa alta recoge luz de Aegir y libera una fina película de oxígeno en ventanas productivas. Abajo, las raíces atan arenilla, polvo calizo y fragmentos de coral análogo en una superficie que se comporta como suelo tejido hasta que peso, corriente o gas atrapado cambian la regla.\n\nLas cuadrillas de Deep Reach usaron los bordes como memoria barata de ruta. Las líneas de pinger se enganchan y quedan visibles. Las tuberías viejas se vuelven anclas de raíz. Un tapete alrededor de un anillo puede mantener legible un camino después de perder la señal. También puede mentir: una línea trenzada puede ser paso seguro repetido o fracasos arrastrados al mismo nudo vivo.",
+     "field_note": "Si el tapete sujeta tu bota, ha sujetado otras cosas. Averigua cuáles antes de cortarlo.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Tapis racinaire d'herbier peu profond",
+     "scanner": "TAPIS RACINAIRE PEU PROFOND // Croissance photique proche d'un herbier sur sable coquillier et gravats pâles. Les racines tiennent la couche haute mais peuvent cacher du limon mou. Ligne de pinger accrochée au bord.",
+     "terminal": "Note P-63 : les tapis racinaires ne sont pas seulement de la flore. Ils oxygènent le plateau, piègent le grit de coquille, cachent de vieux câbles et indiquent le courant. Sonde les noeuds vert sombre.",
+     "audio": "Le tapis semble doux jusqu'à ce qu'il tienne ta botte. Alors il semble vivant. Puis tu vois la ligne de route tressée dedans, et tu sais qu'on est passé ici plus d'une fois.",
+     "in_game_wiki": "Les tapis racinaires peu profonds poussent là où lumière, sable carbonaté, courant doux et ancien ruissellement de colonie se rencontrent. De loin ils ressemblent à un herbier, mais l'essentiel est sous les brins. Des fibres sombres cousent grit de coquille, poussière de corail analogue et miettes de calcaire en une peau souple. Elle peut retenir un sédiment instable ou cacher du limon mou. Les noeuds piègent pingers, câbles d'outil, shell-clamps et bords de vieux tuyaux.",
+     "external_site": "Sur HECTON-8, les tapis racinaires rendent le plateau photique vivant avant de le rendre sûr : film d'oxygène dessus, limon mou dessous, vieux métal humain dans les racines.",
+     "external_site_article": "Le tapis racinaire peu profond est l'un des premiers systèmes vivants qu'un plongeur apprend à lire. Il est assez lumineux pour paraître accueillant et assez dense pour mentir. La couche haute capte la lumière d'Aegir et libère un mince film d'oxygène pendant les fenêtres productives. En dessous, les racines lient grit, poussière calcaire et fragments de corail analogue en une surface qui ressemble à un sol tressé, jusqu'à ce que poids, courant ou gaz enfermé changent la règle.\n\nLes équipes Deep Reach utilisaient les bords comme mémoire de route bon marché. Les lignes de pinger s'y accrochent. Les vieux tuyaux deviennent des ancres. Un tapis autour d'un anneau peut garder un chemin lisible après la disparition du panneau. Mais une ligne tressée peut indiquer un passage sûr répété ou des échecs ramenés sans cesse au même noeud vivant.",
+     "field_note": "Si le tapis tient ta botte, il a tenu autre chose. Lis avant de couper.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Płytki korzeniowy kobierzec morski",
+     "scanner": "PŁYTKI KOBIERCIEC KORZENIOWY // Fotyczny wzrost podobny do trawy morskiej na piasku muszlowym i bladym rumoszu. Korzenie wiążą górę, ale mogą chować miękki muł. Linia pingera zaczepiona na krawędzi.",
+     "terminal": "Notatka P-63: kobierce korzeniowe to nie tylko flora. Dają tlen, łapią grys muszlowy, kryją stare kable i pokazują prąd. Ciemnozielone węzły sondować przed krokiem.",
+     "audio": "Kobierzec wygląda miękko, dopóki nie trzyma buta. Wtedy wygląda żywo. Potem widzisz linię trasy splecioną z korzeniami i wiesz, że ktoś użył tego miejsca więcej niż raz.",
+     "in_game_wiki": "Płytkie kobierce korzeniowe rosną tam, gdzie spotykają się światło, piasek węglanowy, łagodny prąd i dawny odpływ kolonii. Z daleka przypominają trawę morską, ale najważniejsze jest pod źdźbłami. Ciemne włókna zszywają grys muszlowy, pył koralowych analogów i okruchy wapienia w sprężystą skórę. Może utrzymać osad albo ukryć miękki muł. Węzły łapią pingery, przewody narzędzi, shell-clampy i stare rury.",
+     "external_site": "Kobierce korzeniowe HECTON-8 sprawiają, że fotyczna półka jest żywa wcześniej niż bezpieczna: film tlenowy u góry, miękki muł pod spodem, stare żelazo w korzeniach.",
+     "external_site_article": "Płytki kobierzec korzeniowy jest jednym z pierwszych żywych systemów, które nurek musi czytać. Jest dość jasny, by zapraszać, i dość gęsty, by kłamać. Górna warstwa zbiera światło Aegir i w dobrych oknach oddaje cienki film tlenu. Niżej korzenie wiążą grys, pył wapienny i koralowe fragmenty w powierzchnię podobną do plecionej podłogi, dopóki ciężar, prąd albo uwięziony gaz nie zmienią zasad.\n\nDeep Reach używało krawędzi kobierców jako taniej pamięci trasy. Linie pingerów zaczepiają się tam. Stare rury stają się kotwami. Kobierzec wokół pierścienia utrzymuje drogę czytelną po utracie znaku. Ale ta sama cecha jest zdradliwa: spleciona linia może oznaczać bezpieczne powroty albo porażki wciągane w ten sam żywy węzeł.",
+     "field_note": "Jeśli kobierzec trzyma but, trzymał inne rzeczy. Sprawdź jakie, zanim tniesz.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Tapete raso de raízes marinhas",
+     "scanner": "TAPETE RASO DE RAÍZ // Crescimento fótico parecido com erva marinha sobre areia de concha e entulho claro. Raízes prendem a camada de cima, mas podem esconder lodo macio. Linha de pinger presa na borda.",
+     "terminal": "Nota P-63: tapetes de raiz não são só flora. Oxigenam a plataforma, prendem grãos de concha, escondem cabo velho e mostram corrente. Não pise em nós verde-escuros sem sondar.",
+     "audio": "O tapete parece macio até segurar sua bota. Então parece vivo. Depois você vê a linha de rota trançada nele e entende que alguém passou ali mais de uma vez.",
+     "in_game_wiki": "Tapetes rasos de raiz crescem onde luz, areia carbonatada, corrente leve e velho escoamento colonial se encontram. De longe parecem erva marinha, mas o útil fica sob as folhas. Fibras escuras costuram grãos de concha, poeira de coral análogo e migalhas de calcário numa pele elástica. Ela pode segurar sedimento solto ou esconder lodo macio. Nós de raiz prendem pingers, cabos de ferramenta, shell-clamps e bordas de tubos antigos.",
+     "external_site": "Os tapetes de raiz de HECTON-8 fazem a plataforma fótica parecer viva antes de parecer segura: filme de oxigênio em cima, lodo macio embaixo e ferragem humana velha nas raízes.",
+     "external_site_article": "O tapete raso de raiz é um dos primeiros sistemas vivos que um mergulhador aprende a ler. É claro o bastante para parecer acolhedor e denso o bastante para mentir. A camada superior pega luz de Aegir e libera uma película fina de oxigênio nas janelas produtivas. Abaixo, raízes prendem grãos, pó calcário e fragmentos de coral análogo numa superfície que parece piso trançado até peso, corrente ou gás preso mudarem a regra.\n\nEquipes da Deep Reach usavam bordas de tapete como memória barata de rota. Linhas de pinger ficam presas ali. Tubos antigos viram âncoras. Um tapete em volta de um anel mantém o caminho legível depois que a placa some. A mesma coisa engana: uma linha trançada pode ser passagem segura repetida ou fracassos arrastados para o mesmo nó vivo.",
+     "field_note": "Se o tapete segura sua bota, segurou outras coisas. Descubra quais antes de cortar.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Ondiep zeegras-wortelmat-substraat",
+     "scanner": "ONDIEPE WORTELMAT // Zeegrasachtige fotische groei op schelpzand en bleek puin. Wortels binden de bovenlaag, maar kunnen zachte slib eronder verbergen. Pingerlijn vast in de rand.",
+     "terminal": "P-63-notitie: wortelmatten zijn niet alleen flora. Ze geven zuurstof, vangen schelpgruis, verbergen oude kabels en tonen stroming. Donkergroene knopen eerst peilen.",
+     "audio": "De mat lijkt zacht tot hij je laars vasthoudt. Dan lijkt hij levend. Daarna zie je de routelijn erin gevlochten en weet je dat iemand hier vaker kwam.",
+     "in_game_wiki": "Ondiepe wortelmatten groeien waar licht, carbonaatzand, milde stroming en oude kolonierunoff samenkomen. Van ver lijken ze op zeegras, maar het nuttige deel zit onder de bladen. Donkere wortelvezels naaien schelpgruis, koraalanaloogstof en kalkkruimels tot een veerkrachtige huid. Die huid kan los sediment vasthouden of zachte slib verbergen. Wortelknopen vangen pingers, gereedschapskabels, shell-clamps en oude pijpranden.",
+     "external_site": "HECTON-8-wortelmatten maken het fotische shelf levend voordat het veilig wordt: zuurstoffilm boven, zachte slib onder, oude menselijke hardware door de wortels.",
+     "external_site_article": "De ondiepe wortelmat is een van de eerste levende systemen die een duiker leert lezen. Ze is helder genoeg om vriendelijk te lijken en dicht genoeg om te liegen. De bovenlaag vangt Aegir-licht en geeft in productieve vensters een dunne zuurstoffilm af. Daaronder binden wortels gruis, kalkstof en koraalachtige breuk tot een oppervlak dat zich gedraagt als gevlochten vloer tot gewicht, stroming of opgesloten gas de regel verandert.\n\nDeep Reach gebruikte matranden als goedkope routeherinnering. Pingerlijnen blijven daar hangen. Oude buizen worden wortelankers. Een mat rond een ring houdt een pad leesbaar nadat het bord weg is. Maar een gevlochten lijn kan ook mislukte pogingen betekenen die de stroming steeds naar dezelfde levende knoop trok.",
+     "field_note": "Als de mat je laars houdt, hield hij andere dingen. Lees eerst, snijd later.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Substrat Mat Akar Dangkal",
+     "scanner": "SUBSTRAT MAT AKAR DANGKAL // Pertumbuhan fotik mirip lamun di atas pasir cangkang dan puing pucat. Akar mengikat lapisan atas, tapi bisa menyembunyikan lumpur lunak. Garis pinger tersangkut di tepi mat.",
+     "terminal": "Catatan P-63: mat akar bukan sekadar flora. Ia memberi oksigen, menangkap grit cangkang, menyembunyikan kabel lama, dan menunjukkan arah arus. Jangan injak simpul hijau gelap tanpa probe.",
+     "audio": "Mat itu tampak lembut sampai menahan sepatu. Lalu tampak hidup. Lalu kau melihat garis rute teranyam di dalamnya, dan tahu seseorang memakai tempat ini lebih dari sekali.",
+     "in_game_wiki": "Mat akar dangkal tumbuh di tempat cahaya, pasir karbonat, arus ringan, dan limpasan nutrisi koloni lama bertemu. Dari jauh ia mirip lamun, tetapi bagian penting ada di bawah daun. Serat akar gelap menjahit grit cangkang, debu analog karang, dan remah batu kapur menjadi kulit kenyal. Kulit itu bisa menahan sedimen, atau menyembunyikan lumpur lunak. Simpul akar menangkap pinger, kabel alat, shell-clamp, dan tepi pipa tua.",
+     "external_site": "Mat akar HECTON-8 membuat rak fotik terasa hidup sebelum aman: film oksigen di atas, lumpur lunak di bawah, dan perangkat manusia lama teranyam di akar.",
+     "external_site_article": "Mat akar dangkal adalah salah satu sistem hidup pertama yang dipelajari penyelam baru. Ia cukup terang untuk terlihat ramah dan cukup rapat untuk berbohong. Lapisan atas menangkap cahaya Aegir dan melepaskan film oksigen tipis pada jendela produktif. Di bawahnya, akar mengikat grit, debu kapur, dan pecahan analog karang menjadi lantai anyam sampai berat, arus, atau gas terperangkap mengubah aturan.\n\nAwak Deep Reach memakai tepi mat sebagai memori rute murah. Garis pinger tersangkut di sana. Pipa lama menjadi jangkar akar. Mat di sekitar cincin bisa menjaga jalur tetap terbaca setelah tanda hilang. Tetapi garis teranyam bisa berarti jalur aman berulang, atau kegagalan yang terus diseret arus ke simpul hidup yang sama.",
+     "field_note": "Jika mat menahan sepatumu, ia pernah menahan hal lain. Cari tahu sebelum memotong.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "浅瀬の根マット基質",
+     "scanner": "浅瀬の根マット基質 // 貝殻砂と淡い瓦礫の上に広がる海草状の有光成長。根は上層を縛るが、その下の柔らかいシルトを隠すことがある。マット端にピンガー線の絡まりを検出。",
+     "terminal": "P-63メモ: 根マットは単なる植物ではない。棚に酸素を与え、貝殻砂を捕らえ、古いケーブルを隠し、流れの向きを示す。暗緑の結び目は探針なしに踏むな。",
+     "audio": "マットは靴を捕まえるまで柔らかく見える。すると生きているように見える。そこに経路線が編み込まれているのを見て、誰かが何度も通ったとわかる。",
+     "in_game_wiki": "浅瀬の根マットは、光、炭酸塩砂、穏やかな流れ、古い植民地流出物が重なる場所に育つ。遠くからは海草に似ているが、重要なのは葉の下だ。暗い根繊維が貝殻砂、サンゴ類似体の粉、石灰岩片を縫い合わせ、弾む皮を作る。その皮は沈殿物を支えることも、柔らかいシルトを隠すこともある。根の結び目はピンガー、工具コード、シェルクランプ、古い配管縁を捕らえる。",
+     "external_site": "HECTON-8の根マットは、有光棚を安全にする前に生きているものとして感じさせる。上には酸素膜、下には柔らかいシルト、根の中には古い人間の道具。",
+     "external_site_article": "浅瀬の根マットは、新しい潜水者が最初に読む生きたシステムの一つだ。歓迎するほど明るく、嘘をつくほど密だ。上層はAegirの光を受け、生産窓では薄い酸素膜を放つ。下では根が貝殻砂、石灰粉、サンゴ類似片を結び、編まれた床のような表面を作る。重量、流れ、閉じ込められたガスが規則を変えるまでは。\n\nDeep Reachの作業員はマットの端を安い経路記憶として使った。ピンガー線はそこに引っかかる。古い管は根の錨になる。輪の周りに育ったマットは標識が消えた後も道を読ませる。しかし編み込まれた線は、繰り返された安全な通行か、同じ生きた結び目へ流された失敗かもしれない。",
+     "field_note": "マットが靴を捕まえるなら、他のものも捕まえている。切る前に読め。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "얕은 뿌리 매트 기질",
+     "scanner": "얕은 뿌리 매트 기질 // 조개 모래와 옅은 잔해 위의 해초 같은 유광층 성장. 뿌리는 윗층을 묶지만 아래의 부드러운 실트를 숨길 수 있다. 매트 가장자리에 피ン거 라인이 걸려 있다.",
+     "terminal": "P-63 기록: 뿌리 매트는 단순한 식물이 아니다. 산소를 만들고 조개 입자를 잡고 오래된 케이블을 숨기며 흐름 방향을 보인다. 어두운 초록 매듭은 찔러 보기 전 밟지 말 것.",
+     "audio": "매트는 부츠를 잡을 때까지 부드러워 보인다. 그 다음에는 살아 보인다. 그 안에 경로선이 엮인 것을 보면, 누군가 이곳을 여러 번 썼다는 걸 안다.",
+     "in_game_wiki": "얕은 뿌리 매트는 빛, 탄산염 모래, 약한 흐름, 오래된 식민지 영양 유출이 만나는 곳에서 자란다. 멀리서는 해초처럼 보이지만 중요한 부분은 잎 아래다. 어두운 뿌리 섬유가 조개 입자, 산호 유사체 가루, 석회암 조각을 꿰매 탄력 있는 피부를 만든다. 그 피부는 느슨한 퇴적물을 붙들 수도 있고 부드러운 실트를 숨길 수도 있다. 뿌리 매듭은 피ン거, 도구 코드, 셸 클램프, 오래된 파이프 가장자리를 잡는다.",
+     "external_site": "HECTON-8의 뿌리 매트는 유광층 선반을 안전하기 전에 살아 있게 만든다. 위에는 산소막, 아래에는 부드러운 실트, 뿌리 사이에는 오래된 인간 장비가 있다.",
+     "external_site_article": "얕은 뿌리 매트는 새 잠수자가 처음 배우는 살아 있는 시스템 중 하나다. 환영해 보일 만큼 밝고, 거짓말할 만큼 빽빽하다. 윗층은 Aegir 빛을 받아 생산 창에 얇은 산소막을 낸다. 아래에서는 뿌리가 조개 입자, 석회 가루, 산호 유사 조각을 엮어 짠 바닥 같은 표면을 만든다. 무게, 흐름, 갇힌 가스가 규칙을 바꾸기 전까지는.\n\nDeep Reach 작업자들은 매트 가장자리를 싼 경로 기억으로 썼다. 피ン거 라인은 거기에 걸린다. 오래된 파이프는 뿌리 닻이 된다. 고리 주변의 매트는 표지판이 사라진 뒤에도 길을 읽게 한다. 하지만 엮인 라인은 반복된 안전 통로일 수도, 흐름이 같은 살아 있는 매듭으로 끌고 온 실패일 수도 있다.",
+     "field_note": "매트가 부츠를 잡는다면 다른 것도 잡았다. 자르기 전에 읽어라.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "浅水海草根毯基质",
+     "scanner": "浅水根毯基质 // 覆在贝壳砂和浅色碎屑上的海草状有光层生长。根系固定上层，却可能掩盖下方软泥。根毯边缘检测到被缠住的声呐信标线。",
+     "terminal": "P-63 记录：根毯不只是植物。它给台地供氧，捕捉贝壳砂，隐藏旧电缆，并显示水流方向。不要在未探测时踩进深绿色根结。",
+     "audio": "根毯看起来很软，直到它抓住你的靴子。然后它看起来像活物。再然后你看见路线线缆编进根里，就知道有人不止一次走过这里。",
+     "in_game_wiki": "浅水根毯生长在光、碳酸盐砂、温和水流和旧殖民营养流汇合处。远看像海草，但真正有用的部分在叶片下方。深色根纤维把贝壳砂、类珊瑚粉尘和石灰岩碎屑缝成一层有弹性的皮。这层皮能固定松散沉积，也能把软泥藏在稳定表面下面。根结会缠住信标线、工具线、壳夹和旧管边。",
+     "external_site": "HECTON-8 的根毯让有光层台地先显得活着，然后才显得安全：上方有氧膜，下方有软泥，根里还编着旧人类设备。",
+     "external_site_article": "浅水根毯是新潜水员最早学会阅读的活系统之一。它明亮得像欢迎，也密实得足以说谎。上层接住 Aegir 的光，在生产窗口释放薄薄氧膜。下方根系把贝壳砂、石灰粉和类珊瑚碎片绑定成像编织地板一样的表面，直到重量、水流或困住的气体改变规则。\n\nDeep Reach 船员把根毯边缘当成廉价路线记忆。信标线会缠在那里。旧管道变成根锚。围绕锁环生长的根毯能在标志消失后继续让道路可读。但同一特性也会欺骗你：编进根里的线可能意味着反复安全通过，也可能意味着水流把失败一次次拖进同一个活结。",
+     "field_note": "如果根毯抓住你的靴子，它也抓住过别的东西。切割前先读清楚。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "ركيزة حصيرة جذور ضحلة",
+     "scanner": "ركيزة حصيرة جذور ضحلة // نمو مضاء يشبه العشب البحري فوق رمل الأصداف والركام الشاحب. الجذور تثبت الطبقة العليا لكنها قد تخفي طميا ناعما تحتها. تم رصد خط pinger عالق عند الحافة.",
+     "terminal": "ملاحظة P-63: حصائر الجذور ليست نباتا فقط. إنها تعطي الرف أكسجينا، وتحبس حبيبات الأصداف، وتخفي كابلا قديما، وتدل على اتجاه التيار. لا تطأ العقد الخضراء الداكنة بلا مجس.",
+     "audio": "تبدو الحصيرة ناعمة حتى تمسك حذاءك. عندها تبدو حية. ثم ترى خط المسار منسوجا فيها، وتعرف أن أحدا استخدم هذه البقعة أكثر من مرة.",
+     "in_game_wiki": "تنمو حصائر الجذور الضحلة حيث يلتقي الضوء ورمل الكربونات والتيار الخفيف وجريان المغذيات القديم من المستعمرة. من بعيد تشبه العشب البحري، لكن المفيد تحت الأوراق. ألياف الجذر الداكنة تخيط حبيبات الأصداف وغبار المرجان النظير وفتات الحجر الكلسي في جلد مرن. قد يمسك هذا الجلد الرسوب، أو يخفي طميا ناعما. عقد الجذور تلتقط خطوط pinger وأسلاك الأدوات ومشابك الأصداف وحواف الأنابيب القديمة.",
+     "external_site": "حصائر جذور HECTON-8 تجعل الرف المضاء حيا قبل أن تجعله آمنا: فيلم أكسجين في الأعلى، وطمي ناعم في الأسفل، ومعدات بشرية قديمة بين الجذور.",
+     "external_site_article": "حصيرة الجذور الضحلة من أول الأنظمة الحية التي يتعلم الغواص قراءتها. هي مشرقة بما يكفي لتبدو مرحبة، وكثيفة بما يكفي لتكذب. الطبقة العليا تمسك ضوء Aegir وتطلق طبقة أكسجين رقيقة في النوافذ المنتجة. تحتها تربط الجذور الحبيبات وغبار الكلس وقطع المرجان النظير في سطح يشبه أرضية منسوجة، إلى أن يغير الوزن أو التيار أو الغاز المحبوس القاعدة.\n\nاستخدمت أطقم Deep Reach حواف الحصائر كذاكرة مسار رخيصة. خطوط pinger تعلق هناك. الأنابيب القديمة تصبح مراسي للجذور. حصيرة حول حلقة قفل قد تبقي الطريق مقروءا بعد اختفاء العلامة. لكن الخط المنسوج قد يعني عبورا آمنا متكررا، أو إخفاقات ظل التيار يسحبها إلى العقدة الحية نفسها.",
+     "field_note": "إذا أمسكت الحصيرة حذاءك فقد أمسكت أشياء أخرى. اعرفها قبل القطع.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "מצע שטיח שורשים רדוד",
+     "scanner": "מצע שטיח שורשים רדוד // צמיחה פוטית דמוית עשב ים מעל חול קונכיות ושברים בהירים. השורשים קושרים את השכבה העליונה אך עלולים להסתיר טין רך מתחת. קו pinger נתפס בשפה.",
+     "terminal": "הערת P-63: שטיחי שורשים אינם רק פלורה. הם מחמצנים את המדף, לוכדים גרגרי קונכייה, מסתירים כבל ישן ומראים כיוון זרם. אל תדרוך בקשרים ירוקים כהים בלי בדיקה.",
+     "audio": "השטיח נראה רך עד שהוא מחזיק את המגף שלך. אז הוא נראה חי. ואז אתה רואה קו מסלול שזור בתוכו, ויודע שמישהו השתמש במקום הזה יותר מפעם אחת.",
+     "in_game_wiki": "שטיחי שורשים רדודים גדלים במקום שבו אור, חול פחמתי, זרם עדין ונגר תזונתי ישן של המושבה נפגשים. מרחוק הם דומים לעשב ים, אבל החלק החשוב נמצא מתחת לעלים. סיבי שורש כהים תופרים גרגרי קונכייה, אבק אלמוגים מקביל ופירורי גיר לעור קפיצי. העור הזה יכול להחזיק משקע רופף או להסתיר טין רך. קשרי שורש תופסים pingers, כבלי כלים, shell-clamps ושפות צינור ישן.",
+     "external_site": "שטיחי השורשים של HECTON-8 גורמים למדף הפוטי להיראות חי לפני שהוא בטוח: סרט חמצן למעלה, טין רך למטה, וחומרה אנושית ישנה בתוך השורשים.",
+     "external_site_article": "שטיח השורשים הרדוד הוא אחת המערכות החיות הראשונות שצולל לומד לקרוא. הוא בהיר מספיק כדי להיראות מזמין וצפוף מספיק כדי לשקר. השכבה העליונה קולטת אור Aegir ומשחררת סרט חמצן דק בחלונות יצרניים. מתחתיה השורשים קושרים גרגרים, אבק גיר ושברי אלמוגים מקבילים למשטח שמתנהג כמו רצפה ארוגה, עד שמשקל, זרם או גז כלוא משנים את הכלל.\n\nצוותי Deep Reach השתמשו בשפות השטיח כזיכרון מסלול זול. קווי pinger נתקעים שם. צינורות ישנים נעשים עוגני שורש. שטיח סביב טבעת יכול להשאיר דרך קריאה אחרי שהשלט נעלם. אבל קו שזור יכול להיות מעבר בטוח חוזר, או כישלונות שהזרם גרר שוב לאותו קשר חי.",
+     "field_note": "אם השטיח מחזיק את המגף שלך, הוא החזיק דברים אחרים. גלה מה לפני החיתוך.",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

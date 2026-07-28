@@ -1,11 +1,55 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS256_STORM_BENT_RELAY_MAST_ARTICLE",
-  "title": "Storm-Bent Relay Mast Article",
-  "date": "2026-06-08",
-  "status": "source_ready",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS256_STORM_BENT_RELAY_MAST_ARTICLE",
+ "title": "Storm-Bent Relay Mast Article",
+ "date": "2026-06-08",
+ "status": "source_ready",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "locales": [
+  "en_US",
+  "ru_RU",
+  "ja_JP",
+  "zh_CN",
+  "fr_FR",
+  "es_ES",
+  "de_DE",
+  "pl_PL",
+  "uk_UA",
+  "ar_SA",
+  "id_ID",
+  "ko_KR",
+  "he_IL",
+  "pt_BR",
+  "nl_NL"
+ ],
+ "packets": [
+  {
+   "packet_id": "P1426_STORM_BENT_RELAY_MAST_LEDGER",
+   "release_set_id": "RS256_STORM_BENT_RELAY_MAST_ARTICLE",
+   "article_id": "applied_lore.storm_bent_relay_mast_ledger",
+   "title_key": "LORE_STORM_BENT_RELAY_MAST_LEDGER_TITLE",
+   "status": "source_ready",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Aegir_System_Game_Texture.md",
+    "Docs/Lore/Gameable_World_Packets.md",
+    "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
@@ -13,263 +57,220 @@
     "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "locales": [
-    "en_US",
-    "ru_RU",
-    "ja_JP",
-    "zh_CN",
-    "fr_FR",
-    "es_ES",
-    "de_DE",
-    "pl_PL",
-    "uk_UA",
-    "ar_SA",
-    "id_ID",
-    "ko_KR",
-    "he_IL",
-    "pt_BR",
-    "nl_NL"
-  ],
-  "packets": [
-    {
-      "packet_id": "P1426_STORM_BENT_RELAY_MAST_LEDGER",
-      "release_set_id": "RS256_STORM_BENT_RELAY_MAST_ARTICLE",
-      "article_id": "applied_lore.storm_bent_relay_mast_ledger",
-      "title_key": "LORE_STORM_BENT_RELAY_MAST_LEDGER_TITLE",
-      "status": "source_ready",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Aegir_System_Game_Texture.md",
-        "Docs/Lore/Gameable_World_Packets.md",
-        "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "native_localization_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.storm_bent_relay_mast_ledger",
-        "secondary": [
-          "unlock.first_repaired_uplink_confidence",
-          "unlock.first_signal_not_rescue_reading",
-          "unlock.first_black_keel_packet_choice"
-        ],
-        "poi_tags": [
-          "poi.storm_bent_relay_mast",
-          "poi.salted_azimuth_hinge",
-          "poi.uplink_confidence_meter",
-          "poi.black_keel_packet_buffer"
-        ],
-        "biome_tags": [
-          "biome.crash_shelf",
-          "biome.surface_weather",
-          "biome.carrier_link",
-          "biome.storm_shelf"
-        ],
-        "first_20_boundary": "Turns the first physical antenna repair into a lore and gameplay rule: better uplink confidence improves packet delivery, but rescue still waits on Aegir weather, custody confidence, carrier geometry and mass allocation."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Signal Mast Scanner",
-          "terminal": "Uplink Confidence Diagnostic",
-          "audio": "Marauder Radio Rule",
-          "in_game_wiki": "PDA Signal Mast Primer",
-          "external_site": "Public Site Relay Mast Article",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "runtime_layer": "Narrative",
-        "route_moment": "first_signal_mast_repair_or_black_keel_packet_choice",
-        "truth_payload": "A repaired relay mast increases packet confidence and makes Black Keel easier to hear, but it does not create rescue priority; extraction still depends on sky windows, custody routing, quarantine and mass.",
-        "player_question": "Why does fixing the antenna improve contact without making rescue arrive?"
-      },
-      "localized": {
-        "en_US": {
-          "localization_status": "source_authority",
-          "title": "Storm-Bent Relay Mast Ledger",
-          "scanner": "SIGNAL MAST ROOT // Salted hinge, cracked ceramic bushings, antenna still holding Aegir azimuth. Repair raises packet confidence, not rescue priority.",
-          "terminal": "UPLINK CONFIDENCE DIAGNOSTIC // Mast brace accepted. Packet confidence 27 to 64 percent. Carrier acknowledgement possible. Body recovery remains gated by sky window, custody confidence, quarantine receiver and lift mass.",
-          "audio": "A mast is not a ladder. It lets them hear you better. It does not make them come.",
-          "in_game_wiki": "The first useful antenna on HECTON-8 usually looks pathetic: a storm-bent mast, a salted hinge, cracked ceramic, cable jacket patched with the wrong tape, and a direction mark that still points at Aegir because somebody kept tightening it after every storm. That is why it matters. It is not heroic technology. It is tired infrastructure that has not forgotten which way the sky is.\n\nRepairing the mast changes the game, but not in the simple way a stranded person wants. A cleaner uplink can lift packet confidence, restore a broken handshake, or let Black Keel admit that the operator is alive. It can also make the carrier ask for claim state, sample state, coordinates, and evidence before it offers anything that sounds like rescue. The mast improves the sentence. It does not improve the listener.\n\nThis is the first lesson of orbital survival: communication is not extraction. A good brace, a clean contact pad, and a corrected azimuth can buy one packet before a storm band rolls over the relay. The player still has to choose what rides that packet: medical status, evidence hash, sample telemetry, location, or a lie. Black Keel can hear all of those differently. The mast only makes sure the argument leaves the ocean.",
-          "external_site": "A storm-bent relay mast is the first honest contact tool: it can raise packet confidence and restore Black Keel acknowledgement, but it cannot turn a signal window into rescue.",
-          "external_site_article": "The relay mast is one of HECTON-8's cleanest pieces of world logic. It gives the player a thing to fix, a visible direction to the sky, and a cruel result: better contact without guaranteed rescue. That result is not a trick. It is the core difference between being heard and being recoverable.\n\nIn fiction terms, the mast is local infrastructure. It knows Aegir azimuth, old relay timing, weather noise and packet confidence. It does not own carrier priorities, quarantine receivers, custody law or lift mass. Repair can make a message less broken, but it cannot force Black Keel to spend an ascent opportunity.\n\nThat makes the first packet choice matter. A weak window turns every line into cargo: proof, body, sample, debt, coordinates, apology. The mast is the tool that lets the player send something into the system. The horror is that the system may answer clearly.",
-          "field_note": "Fix the mast because silence kills. Do not trust it because voices do too."
-        },
-        "ru_RU": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал штормового релейного мачтового узла",
-          "scanner": "КОРЕНЬ СИГНАЛЬНОЙ МАЧТЫ // Соленый шарнир, треснувшие керамические втулки, антенна все еще держит азимут Aegir. Ремонт поднимает уверенность packet, а не приоритет спасения.",
-          "terminal": "ДИАГНОСТИКА УВЕРЕННОСТИ UPLINK // Распорка мачты принята. Уверенность packet 27 до 64 процентов. Подтверждение carrier возможно. Возврат тела все еще ограничен sky window, уверенностью custody, карантинным приемником и массой подъема.",
-          "audio": "Мачта не лестница. Она помогает им лучше слышать тебя. Она не заставляет их прийти.",
-          "in_game_wiki": "Первая полезная антенна на HECTON-8 обычно выглядит жалко: согнутая штормом мачта, соленый шарнир, треснувшая керамика, кабельная рубашка, залатанная не той лентой, и метка направления, которая все еще смотрит на Aegir, потому что кто-то подтягивал ее после каждого шторма. Поэтому она и важна. Это не героическая технология. Это уставшая инфраструктура, которая не забыла, где небо.\n\nРемонт мачты меняет игру, но не так просто, как хочется застрявшему человеку. Более чистый uplink может поднять уверенность packet, восстановить сломанное рукопожатие или позволить Black Keel признать, что оператор жив. Он может также заставить carrier спросить о claim state, sample state, координатах и доказательствах до того, как прозвучит что-то похожее на спасение. Мачта улучшает фразу. Она не улучшает слушателя.\n\nЭто первый урок орбитального выживания: связь не равна извлечению. Хорошая распорка, чистый контакт и поправленный азимут могут купить один packet до того, как штормовая полоса накроет реле. Игрок все еще выбирает, что поедет в этом packet: медицинский статус, hash доказательств, телеметрию образца, координаты или ложь. Black Keel слышит все это по-разному. Мачта лишь гарантирует, что спор покинет океан.",
-          "external_site": "Согнутая штормом релейная мачта это первый честный инструмент связи: она поднимает уверенность packet и возвращает подтверждение Black Keel, но не превращает окно сигнала в спасение.",
-          "external_site_article": "Релейная мачта это один из самых чистых элементов логики мира HECTON-8. Она дает игроку предмет для ремонта, видимое направление к небу и жестокий результат: связь лучше, спасение не гарантировано. Это не трюк. Это главная разница между тем, что тебя услышали, и тем, что тебя можно забрать.\n\nВ лоре мачта локальная инфраструктура. Она знает азимут Aegir, старый тайминг реле, погодный шум и уверенность packet. Она не владеет приоритетами carrier, карантинными приемниками, custody law или массой подъема. Ремонт может сделать сообщение менее сломанным, но не может заставить Black Keel потратить возможность ascent.\n\nПоэтому первый выбор packet важен. Слабое окно превращает каждую строку в груз: доказательство, тело, образец, долг, координаты, извинение. Мачта это инструмент, которым игрок отправляет что-то в систему. Ужас в том, что система может ответить ясно.",
-          "field_note": "Чини мачту, потому что тишина убивает. Не доверяй ей, потому что голоса тоже умеют."
-        },
-        "ja_JP": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "嵐曲がりリレーマスト台帳",
-          "scanner": "信号マスト基部 // 塩に固まったヒンジ、割れたセラミックブッシュ、アンテナはまだAegir方位を保持。修理で上がるのはpacket信頼度であり、救助優先度ではない。",
-          "terminal": "UPLINK信頼度診断 // マスト支柱受理。packet信頼度27から64パーセント。carrier確認応答は可能。身体回収はなおsky window、custody信頼度、隔離受信者、lift質量に制限される。",
-          "audio": "マストは梯子ではない。向こうが君を聞き取りやすくなるだけだ。来させる力はない。",
-          "in_game_wiki": "HECTON-8で最初に役立つアンテナは、たいてい哀れに見える。嵐で曲がったマスト、塩づいたヒンジ、割れたセラミック、間違ったテープで巻かれたケーブル外皮、それでもAegirを指す方向印。誰かが嵐のたびに締め直していたからだ。だから重要なのだ。英雄的な技術ではない。空の向きを忘れていない疲れたインフラだ。\n\nマストを直すとゲームは変わるが、遭難者が望むほど単純ではない。よりきれいなuplinkはpacket信頼度を上げ、壊れたhandshakeを戻し、Black Keelにオペレーターが生存していると認めさせるかもしれない。同時にcarrierは救助らしい言葉の前に、claim state、sample state、座標、証拠を要求することもある。マストは文章を良くする。聞き手を良くするわけではない。\n\nこれが軌道サバイバルの最初の教訓だ。通信は回収ではない。よい支柱、清掃した接点、修正された方位は、嵐帯がリレーを覆う前に一つのpacketを買う。プレイヤーはそのpacketに何を乗せるか選ばなければならない。医療状態、証拠hash、試料テレメトリ、位置、あるいは嘘。Black Keelはそれぞれを違うものとして聞く。マストが保証するのは、議論が海を離れることだけだ。",
-          "external_site": "嵐で曲がったリレーマストは最初の正直な接触道具だ。packet信頼度とBlack Keelの確認を戻せるが、信号窓を救助に変えることはできない。",
-          "external_site_article": "リレーマストはHECTON-8の世界論理の中でもっとも明快な部品の一つだ。プレイヤーに直す物、空への見える方向、そして残酷な結果を与える。接触は良くなるが救助は保証されない。その結果はトリックではない。聞かれることと回収可能であることの差だ。\n\n設定上、マストは局地インフラである。Aegir方位、古いリレータイミング、天候ノイズ、packet信頼度を知っている。carrier優先度、隔離受信者、custody law、lift質量は所有しない。修理はメッセージを壊れにくくするが、Black Keelにascent機会を使わせることはできない。\n\nだから最初のpacket選択が重い。弱い窓ではすべての行が貨物になる。証拠、身体、試料、債務、座標、謝罪。マストはプレイヤーが何かをシステムへ送る道具だ。恐ろしいのは、そのシステムがはっきり返事をするかもしれないことだ。",
-          "field_note": "沈黙は殺すからマストを直せ。声も殺すから信用するな。"
-        },
-        "zh_CN": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "风暴折弯中继桅杆账册",
-          "scanner": "信号桅杆根部 // 盐蚀铰链，裂开的陶瓷衬套，天线仍保持Aegir方位。修理提高的是packet可信度，不是救援优先级。",
-          "terminal": "UPLINK可信度诊断 // 桅杆支撑已接受。packet可信度27到64%。carrier确认可能。身体回收仍受sky window、custody可信度、隔离接收方和升力质量限制。",
-          "audio": "桅杆不是梯子。它只让他们更容易听见你。它不会让他们来。",
-          "in_game_wiki": "HECTON-8上第一根有用天线通常很寒酸：被风暴折弯的桅杆、结盐的铰链、开裂的陶瓷、用错胶带修补的电缆外皮，以及仍指向Aegir的方向刻线。有人每次风暴后都把它重新拧紧，所以它才重要。它不是英雄科技。它是疲惫的基础设施，还记得天空在哪边。\n\n修理桅杆会改变游戏，但不是被困者想要的那种简单改变。更干净的uplink可以提高packet可信度，恢复破损的握手，或者让Black Keel承认操作员还活着。它也可能让carrier在任何像救援的话之前，先询问claim state、sample state、坐标和证据。桅杆改善句子。它不会改善听话的人。\n\n这是轨道生存的第一课：通信不是撤离。一个好支撑、干净触点和校正方位，可以在风暴带压过中继前买到一个packet。玩家仍要选择这个packet承载什么：医疗状态、证据hash、样本遥测、位置，或者谎言。Black Keel会以不同方式听见这些。桅杆只保证争论离开海洋。",
-          "external_site": "被风暴折弯的中继桅杆是第一个诚实的联络工具：它能提高packet可信度并恢复Black Keel确认，但不能把信号窗口变成救援。",
-          "external_site_article": "中继桅杆是HECTON-8最清楚的世界逻辑之一。它给玩家一个要修的东西，一个指向天空的可见方向，以及一个残酷结果：联络变好，但救援没有保证。这不是花招。这是被听见和可回收之间的核心差别。\n\n在设定中，桅杆是本地基础设施。它知道Aegir方位、旧中继时序、天气噪声和packet可信度。它不拥有carrier优先级、隔离接收方、custody law或升力质量。修理能让消息少一点破碎，但不能强迫Black Keel花掉一次ascent机会。\n\n这让第一个packet选择变得重要。弱窗口会把每一行都变成货物：证据、身体、样本、债务、坐标、道歉。桅杆是玩家把某件东西送入系统的工具。恐怖之处在于，系统可能会清楚地回答。",
-          "field_note": "修桅杆，因为沉默会杀人。别信它，因为声音也会。"
-        },
-        "fr_FR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registre du mât relais tordu par l'orage",
-          "scanner": "RACINE DE MAT SIGNAL // Charnière salée, bagues céramiques fissurées, antenne tenant encore l'azimut Aegir. La réparation augmente la confiance packet, pas la priorité de sauvetage.",
-          "terminal": "DIAGNOSTIC DE CONFIANCE UPLINK // Renfort de mât accepté. Confiance packet de 27 à 64 pour cent. Accusé carrier possible. Récupération du corps toujours bloquée par sky window, confiance custody, récepteur de quarantaine et masse de levage.",
-          "audio": "Un mât n'est pas une échelle. Il les aide à mieux vous entendre. Il ne les fait pas venir.",
-          "in_game_wiki": "La première antenne utile de HECTON-8 a souvent l'air pitoyable : un mât plié par l'orage, une charnière salée, de la céramique fissurée, une gaine de câble rapiécée avec le mauvais ruban, et une marque de direction qui pointe encore vers Aegir parce que quelqu'un la resserrait après chaque tempête. Voilà pourquoi elle compte. Ce n'est pas une technologie héroïque. C'est une infrastructure fatiguée qui n'a pas oublié où se trouve le ciel.\n\nRéparer le mât change la partie, mais pas de la manière simple qu'une personne coincée voudrait. Un uplink plus propre peut augmenter la confiance packet, restaurer un handshake cassé ou permettre à Black Keel d'admettre que l'opérateur est vivant. Il peut aussi pousser le carrier à demander claim state, sample state, coordonnées et preuves avant d'offrir quoi que ce soit qui ressemble à du sauvetage. Le mât améliore la phrase. Il n'améliore pas l'auditeur.\n\nC'est la première leçon de survie orbitale : communiquer n'est pas extraire. Un bon renfort, un contact propre et un azimut corrigé peuvent acheter un packet avant que la bande d'orage ne roule sur le relais. Le joueur doit encore choisir ce qui monte dans ce packet : état médical, hash de preuve, télémétrie d'échantillon, position ou mensonge. Black Keel entend chacun différemment. Le mât garantit seulement que la dispute quitte l'océan.",
-          "external_site": "Un mât relais tordu par l'orage est le premier outil de contact honnête : il peut augmenter la confiance packet et restaurer l'accusé de Black Keel, mais pas transformer une fenêtre de signal en sauvetage.",
-          "external_site_article": "Le mât relais est l'une des logiques les plus nettes de HECTON-8. Il donne au joueur quelque chose à réparer, une direction visible vers le ciel et un résultat cruel : meilleur contact sans sauvetage garanti. Ce résultat n'est pas un tour. C'est la différence centrale entre être entendu et être récupérable.\n\nDans la fiction, le mât est une infrastructure locale. Il connaît l'azimut Aegir, les anciens timings relais, le bruit météo et la confiance packet. Il ne possède pas les priorités carrier, les récepteurs de quarantaine, la custody law ni la masse de levage. La réparation peut rendre un message moins cassé, mais elle ne peut pas forcer Black Keel à dépenser une opportunité d'ascension.\n\nC'est pourquoi le premier choix de packet compte. Une fenêtre faible transforme chaque ligne en cargaison : preuve, corps, échantillon, dette, coordonnées, excuse. Le mât est l'outil qui permet au joueur d'envoyer quelque chose dans le système. L'horreur est que le système peut répondre clairement.",
-          "field_note": "Répare le mât parce que le silence tue. Ne lui fais pas confiance parce que les voix tuent aussi."
-        },
-        "es_ES": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro del mástil de relevo doblado por tormenta",
-          "scanner": "RAIZ DEL MASTIL DE SEÑAL // Bisagra salada, bujes cerámicos agrietados, antena aún sosteniendo el acimut Aegir. La reparación sube confianza packet, no prioridad de rescate.",
-          "terminal": "DIAGNOSTICO DE CONFIANZA UPLINK // Refuerzo de mástil aceptado. Confianza packet de 27 a 64 por ciento. Acuse carrier posible. Recuperación corporal aún bloqueada por sky window, confianza custody, receptor de cuarentena y masa de lift.",
-          "audio": "Un mástil no es una escalera. Hace que te oigan mejor. No hace que vengan.",
-          "in_game_wiki": "La primera antena útil de HECTON-8 suele verse patética: un mástil doblado por tormenta, una bisagra salada, cerámica rota, cubierta de cable remendada con la cinta equivocada y una marca de dirección que todavía apunta a Aegir porque alguien la apretó después de cada tormenta. Por eso importa. No es tecnología heroica. Es infraestructura cansada que no ha olvidado dónde está el cielo.\n\nReparar el mástil cambia la partida, pero no de la forma simple que quiere una persona varada. Un uplink más limpio puede subir la confianza packet, restaurar un handshake roto o permitir que Black Keel admita que el operador vive. También puede hacer que el carrier pregunte por claim state, sample state, coordenadas y evidencia antes de ofrecer algo que suene a rescate. El mástil mejora la frase. No mejora al oyente.\n\nEsta es la primera lección de supervivencia orbital: comunicación no es extracción. Un buen refuerzo, un contacto limpio y un acimut corregido pueden comprar un packet antes de que la banda de tormenta cubra el relevo. El jugador aún debe elegir qué viaja en ese packet: estado médico, hash de evidencia, telemetría de muestra, ubicación o mentira. Black Keel oye cada cosa de manera distinta. El mástil solo asegura que la discusión salga del océano.",
-          "external_site": "Un mástil de relevo doblado por tormenta es la primera herramienta honesta de contacto: puede subir confianza packet y restaurar acuse de Black Keel, pero no convertir una ventana de señal en rescate.",
-          "external_site_article": "El mástil de relevo es una de las lógicas de mundo más limpias de HECTON-8. Da al jugador algo que reparar, una dirección visible hacia el cielo y un resultado cruel: mejor contacto sin rescate garantizado. Ese resultado no es un truco. Es la diferencia central entre ser escuchado y ser recuperable.\n\nEn la ficción, el mástil es infraestructura local. Conoce el acimut Aegir, viejos tiempos de relevo, ruido meteorológico y confianza packet. No posee prioridades carrier, receptores de cuarentena, custody law ni masa de lift. Reparar puede hacer que un mensaje llegue menos roto, pero no puede forzar a Black Keel a gastar una oportunidad de ascenso.\n\nPor eso importa la primera elección de packet. Una ventana débil convierte cada línea en carga: prueba, cuerpo, muestra, deuda, coordenadas, disculpa. El mástil es la herramienta que permite al jugador enviar algo al sistema. El horror es que el sistema puede contestar con claridad.",
-          "field_note": "Arregla el mástil porque el silencio mata. No confíes en él porque las voces también."
-        },
-        "de_DE": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Sturmverbogener Relaismast-Ledger",
-          "scanner": "SIGNALMASTWURZEL // Versalztes Scharnier, gerissene Keramikbuchsen, Antenne hält noch Aegir-Azimut. Reparatur erhöht packet confidence, nicht Rettungspriorität.",
-          "terminal": "UPLINK-VERTRAUENSDIAGNOSE // Maststrebe akzeptiert. Packet confidence 27 auf 64 Prozent. Carrier-Bestätigung möglich. Körperbergung bleibt durch sky window, custody confidence, Quarantäneempfänger und Hubmasse begrenzt.",
-          "audio": "Ein Mast ist keine Leiter. Er lässt sie dich besser hören. Er lässt sie nicht kommen.",
-          "in_game_wiki": "Die erste brauchbare Antenne auf HECTON-8 sieht meist erbärmlich aus: ein sturmverbogener Mast, ein versalztes Scharnier, gerissene Keramik, Kabelmantel mit falschem Band geflickt und eine Richtungsmarke, die noch auf Aegir zeigt, weil jemand sie nach jedem Sturm nachgezogen hat. Darum zählt sie. Das ist keine Heldentechnik. Das ist müde Infrastruktur, die nicht vergessen hat, wo der Himmel ist.\n\nDen Mast zu reparieren ändert das Spiel, aber nicht auf die einfache Art, die ein Gestrandeter will. Ein saubererer uplink kann packet confidence erhöhen, einen gebrochenen handshake wiederherstellen oder Black Keel zugeben lassen, dass der Operator lebt. Er kann den carrier auch nach claim state, sample state, Koordinaten und Beweisen fragen lassen, bevor irgendetwas nach Rettung klingt. Der Mast verbessert den Satz. Er verbessert nicht den Zuhörer.\n\nDas ist die erste Lektion orbitalen Überlebens: Kommunikation ist keine Extraktion. Eine gute Strebe, ein sauberer Kontakt und ein korrigierter Azimut können ein packet kaufen, bevor der Sturmstreifen über das Relais rollt. Der Spieler muss noch wählen, was dieses packet trägt: medizinischen Status, Beweishash, Probentelemetrie, Standort oder Lüge. Black Keel hört all das unterschiedlich. Der Mast sorgt nur dafür, dass der Streit den Ozean verlässt.",
-          "external_site": "Ein sturmverbogener Relaismast ist das erste ehrliche Kontaktwerkzeug: Er kann packet confidence und Black-Keel-Bestätigung erhöhen, aber kein Signalfenster in Rettung verwandeln.",
-          "external_site_article": "Der Relaismast ist eines der klarsten Weltlogikstücke von HECTON-8. Er gibt dem Spieler etwas zu reparieren, eine sichtbare Richtung zum Himmel und ein grausames Ergebnis: besseren Kontakt ohne garantierte Rettung. Dieses Ergebnis ist kein Trick. Es ist der Kernunterschied zwischen gehört werden und bergbar sein.\n\nIn der Fiktion ist der Mast lokale Infrastruktur. Er kennt Aegir-Azimut, altes Relais-Timing, Wetterrauschen und packet confidence. Er besitzt keine carrier-Prioritäten, Quarantäneempfänger, custody law oder Hubmasse. Reparatur kann eine Nachricht weniger gebrochen machen, aber Black Keel nicht zwingen, eine ascent opportunity auszugeben.\n\nDarum zählt die erste packet-Wahl. Ein schwaches Fenster macht jede Zeile zu Fracht: Beweis, Körper, Probe, Schuld, Koordinaten, Entschuldigung. Der Mast ist das Werkzeug, mit dem der Spieler etwas ins System sendet. Der Schrecken ist, dass das System klar antworten kann.",
-          "field_note": "Repariere den Mast, weil Stille tötet. Vertraue ihm nicht, weil Stimmen das auch tun."
-        },
-        "pl_PL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Rejestr masztu przekaźnikowego zgiętego burzą",
-          "scanner": "KORZEŃ MASZTU SYGNAŁOWEGO // Zasolony zawias, pęknięte tuleje ceramiczne, antena nadal trzyma azymut Aegir. Naprawa podnosi zaufanie packet, nie priorytet ratunku.",
-          "terminal": "DIAGNOSTYKA ZAUFANIA UPLINK // Wspornik masztu przyjęty. Zaufanie packet 27 do 64 procent. Potwierdzenie carrier możliwe. Odzysk ciała nadal bramkowany przez sky window, zaufanie custody, odbiornik kwarantanny i masę podnoszenia.",
-          "audio": "Maszt nie jest drabiną. Pozwala im lepiej cię słyszeć. Nie sprawia, że przyjdą.",
-          "in_game_wiki": "Pierwsza użyteczna antena na HECTON-8 zwykle wygląda żałośnie: maszt zgięty przez burzę, zasolony zawias, pęknięta ceramika, płaszcz kabla naprawiony złą taśmą i znak kierunku, który nadal wskazuje Aegir, bo ktoś dokręcał go po każdej burzy. Dlatego ma znaczenie. To nie heroiczna technologia. To zmęczona infrastruktura, która nie zapomniała, gdzie jest niebo.\n\nNaprawa masztu zmienia grę, ale nie tak prosto, jak chce uwięziony człowiek. Czystszy uplink może podnieść zaufanie packet, przywrócić zerwany handshake albo pozwolić Black Keel przyznać, że operator żyje. Może też sprawić, że carrier zapyta o claim state, sample state, współrzędne i dowody, zanim zaoferuje cokolwiek brzmiącego jak ratunek. Maszt poprawia zdanie. Nie poprawia słuchacza.\n\nTo pierwsza lekcja przetrwania orbitalnego: komunikacja nie jest ekstrakcją. Dobry wspornik, czysty styk i skorygowany azymut mogą kupić jeden packet, zanim pas burzy przewali się przez przekaźnik. Gracz wciąż wybiera, co jedzie tym packet: stan medyczny, hash dowodu, telemetria próbki, lokalizacja albo kłamstwo. Black Keel słyszy je różnie. Maszt tylko pilnuje, by spór opuścił ocean.",
-          "external_site": "Maszt przekaźnikowy zgięty przez burzę to pierwsze uczciwe narzędzie kontaktu: może podnieść zaufanie packet i przywrócić potwierdzenie Black Keel, ale nie zmieni okna sygnału w ratunek.",
-          "external_site_article": "Maszt przekaźnikowy jest jednym z najczystszych elementów logiki świata HECTON-8. Daje graczowi coś do naprawy, widoczny kierunek ku niebu i okrutny wynik: lepszy kontakt bez gwarantowanego ratunku. To nie sztuczka. To zasadnicza różnica między byciem usłyszanym a byciem odzyskiwalnym.\n\nW fikcji maszt jest lokalną infrastrukturą. Zna azymut Aegir, stare czasy przekaźników, szum pogody i zaufanie packet. Nie posiada priorytetów carrier, odbiorników kwarantanny, custody law ani masy podnoszenia. Naprawa może sprawić, że wiadomość będzie mniej złamana, ale nie może zmusić Black Keel do wydania okazji ascent.\n\nDlatego pierwszy wybór packet ma wagę. Słabe okno zamienia każdą linię w ładunek: dowód, ciało, próbkę, dług, współrzędne, przeprosiny. Maszt jest narzędziem, którym gracz wysyła coś do systemu. Groza polega na tym, że system może odpowiedzieć jasno.",
-          "field_note": "Napraw maszt, bo cisza zabija. Nie ufaj mu, bo głosy też potrafią."
-        },
-        "uk_UA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Журнал релейної щогли, зігнутої штормом",
-          "scanner": "КОРІНЬ СИГНАЛЬНОЇ ЩОГЛИ // Засолений шарнір, тріснуті керамічні втулки, антена ще тримає азимут Aegir. Ремонт піднімає довіру packet, а не пріоритет порятунку.",
-          "terminal": "ДІАГНОСТИКА ДОВІРИ UPLINK // Розпірку щогли прийнято. Довіра packet 27 до 64 відсотків. Підтвердження carrier можливе. Повернення тіла все ще обмежене sky window, довірою custody, карантинним приймачем і масою підйому.",
-          "audio": "Щогла не драбина. Вона допомагає їм краще тебе чути. Вона не змушує їх прийти.",
-          "in_game_wiki": "Перша корисна антена на HECTON-8 зазвичай виглядає жалюгідно: зігнута штормом щогла, солоний шарнір, тріснута кераміка, кабельна оболонка, залатана не тією стрічкою, і мітка напряму, яка все ще дивиться на Aegir, бо хтось підтягував її після кожного шторму. Тому вона важлива. Це не героїчна технологія. Це втомлена інфраструктура, яка не забула, де небо.\n\nРемонт щогли змінює гру, але не так просто, як хоче застрягла людина. Чистіший uplink може підняти довіру packet, відновити зламаний handshake або дозволити Black Keel визнати, що оператор живий. Він може також змусити carrier запитати про claim state, sample state, координати й докази до того, як прозвучить щось схоже на порятунок. Щогла покращує речення. Вона не покращує слухача.\n\nЦе перший урок орбітального виживання: зв'язок не є витягненням. Добра розпірка, чистий контакт і поправлений азимут можуть купити один packet до того, як штормова смуга накриє реле. Гравець усе ще вибирає, що їде в цьому packet: медичний стан, hash доказів, телеметрія зразка, координати або брехня. Black Keel чує це по-різному. Щогла лише гарантує, що суперечка залишить океан.",
-          "external_site": "Релейна щогла, зігнута штормом, це перший чесний інструмент контакту: вона піднімає довіру packet і повертає підтвердження Black Keel, але не перетворює сигнальне вікно на порятунок.",
-          "external_site_article": "Релейна щогла є одним із найчистіших елементів логіки світу HECTON-8. Вона дає гравцеві предмет для ремонту, видимий напрямок до неба і жорстокий результат: кращий контакт без гарантованого порятунку. Це не трюк. Це головна різниця між тим, що тебе почули, і тим, що тебе можна повернути.\n\nУ лорі щогла є локальною інфраструктурою. Вона знає азимут Aegir, старий таймінг реле, погодний шум і довіру packet. Вона не володіє пріоритетами carrier, карантинними приймачами, custody law або масою підйому. Ремонт може зробити повідомлення менш зламаним, але не може змусити Black Keel витратити ascent opportunity.\n\nТому перший вибір packet важливий. Слабке вікно перетворює кожен рядок на вантаж: доказ, тіло, зразок, борг, координати, вибачення. Щогла це інструмент, яким гравець надсилає щось у систему. Жах у тому, що система може відповісти чітко.",
-          "field_note": "Чини щоглу, бо тиша вбиває. Не довіряй їй, бо голоси теж."
-        },
-        "ar_SA": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "سجل صاري ترحيل مثني بالعاصفة",
-          "scanner": "جذر صاري الإشارة // مفصل مملح، جلب خزفية متشققة، والهوائي ما زال يمسك سمت Aegir. الإصلاح يرفع ثقة packet، لا أولوية الإنقاذ.",
-          "terminal": "تشخيص ثقة UPLINK // تم قبول دعامة الصاري. ثقة packet من 27 إلى 64 بالمئة. إقرار carrier ممكن. استرجاع الجسد ما زال محكوما ب sky window وثقة custody ومستقبل الحجر وكتلة الرفع.",
-          "audio": "الصاري ليس سلما. إنه يجعلهم يسمعونك أفضل. لا يجعلهم يأتون.",
-          "in_game_wiki": "أول هوائي نافع على HECTON-8 يبدو غالبا مثيرا للشفقة: صاري ثنته العاصفة، ومفصل مملح، وخزف متشقق، وغلاف كابل مرقع بشريط خاطئ، وعلامة اتجاه ما زالت تشير إلى Aegir لأن أحدا كان يشدها بعد كل عاصفة. لهذا يهم. هذه ليست تقنية بطولية. إنها بنية تحتية متعبة لم تنس أين تقع السماء.\n\nإصلاح الصاري يغير اللعبة، لكن ليس بالطريقة البسيطة التي يريدها شخص عالق. uplink أنظف قد يرفع ثقة packet، أو يعيد handshake مكسورا، أو يجعل Black Keel يعترف بأن المشغل حي. وقد يجعل carrier يسأل عن claim state وsample state والإحداثيات والدليل قبل أن يقدم أي شيء يشبه الإنقاذ. الصاري يحسن الجملة. لا يحسن المستمع.\n\nهذه أول دروس البقاء المداري: الاتصال ليس استخراجا. دعامة جيدة، ونقطة تماس نظيفة، وسمت مصحح قد تشتري packet واحدا قبل أن تمر حزمة العاصفة فوق المرحل. ما زال على اللاعب أن يختار ما يركب ذلك packet: حالة طبية، hash دليل، قياس عينة، موقع، أو كذبة. Black Keel يسمع كل ذلك بطرق مختلفة. الصاري يضمن فقط أن الجدال يغادر المحيط.",
-          "external_site": "صاري ترحيل مثني بالعاصفة هو أول أداة اتصال صادقة: يمكنه رفع ثقة packet وإعادة إقرار Black Keel، لكنه لا يحول نافذة إشارة إلى إنقاذ.",
-          "external_site_article": "صاري الترحيل من أنظف منطق العالم في HECTON-8. يمنح اللاعب شيئا يصلحه، واتجاها مرئيا نحو السماء، ونتيجة قاسية: اتصال أفضل بلا إنقاذ مضمون. هذه ليست خدعة. إنها الفرق الأساسي بين أن يسمعك أحد وأن تكون قابلا للاسترجاع.\n\nفي الحكاية، الصاري بنية تحتية محلية. يعرف سمت Aegir، وتوقيت الترحيل القديم، وضجيج الطقس، وثقة packet. لا يملك أولويات carrier، ولا مستقبلات الحجر، ولا custody law، ولا كتلة الرفع. الإصلاح قد يجعل الرسالة أقل تكسرا، لكنه لا يجبر Black Keel على إنفاق فرصة ascent.\n\nلذلك يهم أول اختيار packet. نافذة ضعيفة تحول كل سطر إلى حمولة: دليل، جسد، عينة، دين، إحداثيات، اعتذار. الصاري هو الأداة التي تسمح للاعب بإرسال شيء إلى النظام. الرعب أن النظام قد يجيب بوضوح.",
-          "field_note": "أصلح الصاري لأن الصمت يقتل. لا تثق به لأن الأصوات تفعل أيضا."
-        },
-        "id_ID": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Buku Tiang Relay Bengkok Badai",
-          "scanner": "AKAR TIANG SINYAL // Engsel asin, bushing keramik retak, antena masih memegang azimut Aegir. Perbaikan menaikkan kepercayaan packet, bukan prioritas penyelamatan.",
-          "terminal": "DIAGNOSTIK KEPERCAYAAN UPLINK // Penyangga tiang diterima. Kepercayaan packet 27 ke 64 persen. Pengakuan carrier mungkin. Pemulihan tubuh tetap dibatasi sky window, kepercayaan custody, penerima karantina, dan massa lift.",
-          "audio": "Tiang bukan tangga. Ia membuat mereka mendengarmu lebih baik. Ia tidak membuat mereka datang.",
-          "in_game_wiki": "Antena pertama yang berguna di HECTON-8 biasanya tampak menyedihkan: tiang bengkok badai, engsel bergaram, keramik retak, jaket kabel ditambal dengan pita yang salah, dan tanda arah yang masih menunjuk Aegir karena seseorang terus mengencangkannya setelah tiap badai. Itu sebabnya ia penting. Ini bukan teknologi heroik. Ini infrastruktur lelah yang belum lupa arah langit.\n\nMemperbaiki tiang mengubah permainan, tetapi tidak dengan cara sederhana yang diinginkan orang terdampar. Uplink yang lebih bersih bisa menaikkan kepercayaan packet, memulihkan handshake rusak, atau membuat Black Keel mengakui operator masih hidup. Ia juga bisa membuat carrier menanyakan claim state, sample state, koordinat, dan bukti sebelum menawarkan apa pun yang terdengar seperti penyelamatan. Tiang memperbaiki kalimat. Ia tidak memperbaiki pendengar.\n\nIni pelajaran pertama bertahan hidup orbital: komunikasi bukan ekstraksi. Penyangga bagus, kontak bersih, dan azimut terkoreksi bisa membeli satu packet sebelum pita badai menutup relay. Pemain masih harus memilih apa yang ikut packet itu: status medis, hash bukti, telemetri sampel, lokasi, atau kebohongan. Black Keel mendengar semuanya berbeda. Tiang hanya memastikan argumen meninggalkan samudra.",
-          "external_site": "Tiang relay bengkok badai adalah alat kontak jujur pertama: ia bisa menaikkan kepercayaan packet dan memulihkan pengakuan Black Keel, tetapi tidak mengubah jendela sinyal menjadi penyelamatan.",
-          "external_site_article": "Tiang relay adalah salah satu logika dunia HECTON-8 yang paling bersih. Ia memberi pemain sesuatu untuk diperbaiki, arah terlihat ke langit, dan hasil kejam: kontak lebih baik tanpa jaminan penyelamatan. Hasil itu bukan trik. Itu perbedaan inti antara didengar dan dapat dipulihkan.\n\nDalam fiksi, tiang adalah infrastruktur lokal. Ia tahu azimut Aegir, timing relay lama, derau cuaca, dan kepercayaan packet. Ia tidak memiliki prioritas carrier, penerima karantina, custody law, atau massa lift. Perbaikan bisa membuat pesan tidak terlalu rusak, tetapi tidak bisa memaksa Black Keel menghabiskan peluang ascent.\n\nKarena itu pilihan packet pertama penting. Jendela lemah mengubah setiap baris menjadi muatan: bukti, tubuh, sampel, utang, koordinat, permintaan maaf. Tiang adalah alat yang membuat pemain mengirim sesuatu ke sistem. Horornya adalah sistem itu mungkin menjawab dengan jelas.",
-          "field_note": "Perbaiki tiang karena diam membunuh. Jangan percaya padanya karena suara juga bisa."
-        },
-        "ko_KR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "폭풍에 휜 릴레이 마스트 장부",
-          "scanner": "신호 마스트 뿌리 // 소금 낀 경첩, 금 간 세라믹 부싱, 안테나는 아직 Aegir 방위를 잡고 있다. 수리는 packet 신뢰도를 올리지 구조 우선순위를 올리지 않는다.",
-          "terminal": "UPLINK 신뢰 진단 // 마스트 버팀대 승인. packet 신뢰도 27에서 64퍼센트. carrier 확인 응답 가능. 몸 회수는 여전히 sky window, custody 신뢰, 격리 수신자, 리프트 질량에 묶여 있다.",
-          "audio": "마스트는 사다리가 아니다. 저들이 너를 더 잘 듣게 할 뿐이다. 오게 만들지는 못한다.",
-          "in_game_wiki": "HECTON-8에서 처음 쓸 만한 안테나는 대개 초라하다. 폭풍에 휜 마스트, 소금에 절은 경첩, 금 간 세라믹, 엉뚱한 테이프로 감은 케이블 재킷, 그리고 아직 Aegir를 가리키는 방향 표시. 누군가 매 폭풍 뒤에 다시 조였기 때문이다. 그래서 중요하다. 영웅적인 기술이 아니다. 하늘이 어느 쪽인지 잊지 않은 지친 인프라다.\n\n마스트를 고치면 게임은 바뀐다. 하지만 고립된 사람이 원하는 단순한 방식은 아니다. 더 깨끗한 uplink는 packet 신뢰도를 올리고, 깨진 handshake를 복구하거나, Black Keel이 조작자가 살아 있다고 인정하게 할 수 있다. 동시에 carrier는 구조처럼 들리는 말보다 먼저 claim state, sample state, 좌표, 증거를 물을 수 있다. 마스트는 문장을 개선한다. 듣는 쪽을 개선하지는 않는다.\n\n이것이 궤도 생존의 첫 교훈이다. 통신은 추출이 아니다. 좋은 버팀대, 깨끗한 접점, 보정된 방위는 폭풍대가 릴레이를 덮기 전 packet 하나를 살 수 있다. 플레이어는 그 packet에 무엇을 태울지 선택해야 한다. 의료 상태, 증거 hash, 샘플 원격측정, 위치, 거짓말. Black Keel은 그것들을 다르게 듣는다. 마스트는 논쟁이 바다를 떠나게 할 뿐이다.",
-          "external_site": "폭풍에 휜 릴레이 마스트는 첫 정직한 접촉 도구다. packet 신뢰도와 Black Keel 확인을 회복할 수 있지만 신호 창을 구조로 바꾸지는 못한다.",
-          "external_site_article": "릴레이 마스트는 HECTON-8의 가장 선명한 세계 논리 중 하나다. 플레이어에게 고칠 물건, 하늘을 향한 보이는 방향, 그리고 잔혹한 결과를 준다. 접촉은 나아지지만 구조는 보장되지 않는다. 이것은 속임수가 아니다. 들리는 것과 회수 가능한 것의 핵심 차이다.\n\n설정상 마스트는 지역 인프라다. Aegir 방위, 오래된 릴레이 시간, 날씨 잡음, packet 신뢰도를 안다. carrier 우선순위, 격리 수신자, custody law, 리프트 질량은 소유하지 않는다. 수리는 메시지를 덜 깨지게 만들 수 있지만 Black Keel이 ascent 기회를 쓰게 강제할 수 없다.\n\n그래서 첫 packet 선택이 중요하다. 약한 창은 모든 줄을 화물로 만든다. 증거, 몸, 샘플, 빚, 좌표, 사과. 마스트는 플레이어가 무언가를 시스템에 보내게 하는 도구다. 공포는 그 시스템이 또렷하게 답할 수 있다는 데 있다.",
-          "field_note": "침묵은 죽이니 마스트를 고쳐라. 목소리도 죽이니 믿지는 마라."
-        },
-        "he_IL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "יומן תורן ממסר שכופף בסערה",
-          "scanner": "שורש תורן אות // ציר מלוח, תותבי קרמיקה סדוקים, האנטנה עדיין מחזיקה אזימוט Aegir. תיקון מעלה אמון packet, לא עדיפות חילוץ.",
-          "terminal": "אבחון אמון UPLINK // תמיכת תורן התקבלה. אמון packet מ-27 ל-64 אחוז. אישור carrier אפשרי. השבת גוף עדיין חסומה ב-sky window, אמון custody, מקלט הסגר ומסת הרמה.",
-          "audio": "תורן אינו סולם. הוא נותן להם לשמוע אותך טוב יותר. הוא לא גורם להם לבוא.",
-          "in_game_wiki": "האנטנה השימושית הראשונה ב-HECTON-8 נראית בדרך כלל עלובה: תורן שכופף בסערה, ציר מלוח, קרמיקה סדוקה, מעטפת כבל שתוקנה בסרט הלא נכון, וסימון כיוון שעדיין מצביע אל Aegir כי מישהו הידק אותו אחרי כל סערה. לכן הוא חשוב. זו לא טכנולוגיה הירואית. זו תשתית עייפה שלא שכחה איפה השמים.\n\nתיקון התורן משנה את המשחק, אבל לא בדרך הפשוטה שאדם תקוע רוצה. uplink נקי יותר יכול להעלות אמון packet, לשחזר handshake שבור, או לגרום ל-Black Keel להודות שהמפעיל חי. הוא גם יכול לגרום ל-carrier לשאול על claim state, sample state, קואורדינטות וראיות לפני שהוא מציע משהו שנשמע כמו חילוץ. התורן משפר את המשפט. הוא לא משפר את המאזין.\n\nזה השיעור הראשון בהישרדות מסלולית: תקשורת אינה חילוץ. תמיכה טובה, מגע נקי ואזימוט מתוקן יכולים לקנות packet אחד לפני שרצועת הסערה תכסה את הממסר. השחקן עדיין צריך לבחור מה נוסע ב-packet הזה: מצב רפואי, hash ראיות, טלמטריית דגימה, מיקום או שקר. Black Keel שומע כל אחד אחרת. התורן רק מבטיח שהוויכוח יעזוב את האוקיינוס.",
-          "external_site": "תורן ממסר שכופף בסערה הוא כלי הקשר הישר הראשון: הוא יכול להעלות אמון packet ולהחזיר אישור Black Keel, אבל לא להפוך חלון אות לחילוץ.",
-          "external_site_article": "תורן הממסר הוא אחד מחלקי ההיגיון הנקיים ביותר של HECTON-8. הוא נותן לשחקן משהו לתקן, כיוון נראה אל השמים ותוצאה אכזרית: קשר טוב יותר בלי חילוץ מובטח. זו אינה תחבולה. זה ההבדל המרכזי בין להישמע לבין להיות בר-השבה.\n\nבסיפור, התורן הוא תשתית מקומית. הוא יודע אזימוט Aegir, תזמון ממסר ישן, רעש מזג אוויר ואמון packet. הוא אינו מחזיק עדיפויות carrier, מקלטי הסגר, custody law או מסת הרמה. תיקון יכול להפוך הודעה לפחות שבורה, אבל הוא לא יכול לאלץ את Black Keel לבזבז הזדמנות ascent.\n\nלכן בחירת ה-packet הראשונה חשובה. חלון חלש הופך כל שורה למטען: ראיה, גוף, דגימה, חוב, קואורדינטות, התנצלות. התורן הוא הכלי שנותן לשחקן לשלוח משהו אל המערכת. האימה היא שהמערכת עלולה לענות בבירור.",
-          "field_note": "תקן את התורן כי שקט הורג. אל תבטח בו כי גם קולות יודעים."
-        },
-        "pt_BR": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Registro do Mastro de Relay Entortado por Tempestade",
-          "scanner": "RAIZ DO MASTRO DE SINAL // Dobradiça salgada, buchas cerâmicas rachadas, antena ainda segurando azimute Aegir. Reparo aumenta confiança packet, não prioridade de resgate.",
-          "terminal": "DIAGNOSTICO DE CONFIANCA UPLINK // Escora do mastro aceita. Confiança packet de 27 para 64 por cento. Ack do carrier possível. Recuperação do corpo continua barrada por sky window, confiança custody, receptor de quarentena e massa de lift.",
-          "audio": "Um mastro não é uma escada. Ele deixa eles te ouvirem melhor. Não faz eles virem.",
-          "in_game_wiki": "A primeira antena útil em HECTON-8 costuma parecer patética: um mastro entortado por tempestade, dobradiça salgada, cerâmica rachada, jaqueta de cabo remendada com a fita errada e uma marca de direção ainda apontada para Aegir porque alguém a reapertou depois de cada tempestade. É por isso que ela importa. Não é tecnologia heroica. É infraestrutura cansada que não esqueceu onde fica o céu.\n\nReparar o mastro muda o jogo, mas não do jeito simples que uma pessoa presa quer. Um uplink mais limpo pode aumentar confiança packet, restaurar um handshake quebrado ou deixar Black Keel admitir que o operador está vivo. Também pode fazer o carrier perguntar por claim state, sample state, coordenadas e prova antes de oferecer qualquer coisa que soe como resgate. O mastro melhora a frase. Não melhora o ouvinte.\n\nEsta é a primeira lição de sobrevivência orbital: comunicação não é extração. Uma boa escora, um contato limpo e um azimute corrigido podem comprar um packet antes que a faixa de tempestade cubra o relay. O jogador ainda precisa escolher o que vai nesse packet: estado médico, hash de prova, telemetria de amostra, localização ou mentira. Black Keel ouve cada um de forma diferente. O mastro só garante que a discussão saia do oceano.",
-          "external_site": "Um mastro de relay entortado por tempestade é a primeira ferramenta honesta de contato: pode aumentar confiança packet e restaurar ack da Black Keel, mas não transformar janela de sinal em resgate.",
-          "external_site_article": "O mastro de relay é uma das peças mais limpas de lógica de mundo em HECTON-8. Ele dá ao jogador algo para consertar, uma direção visível para o céu e um resultado cruel: contato melhor sem resgate garantido. Esse resultado não é truque. É a diferença central entre ser ouvido e ser recuperável.\n\nNa ficção, o mastro é infraestrutura local. Ele conhece azimute Aegir, timing antigo de relay, ruído do clima e confiança packet. Ele não possui prioridades carrier, receptores de quarentena, custody law nem massa de lift. O reparo pode tornar uma mensagem menos quebrada, mas não pode forçar Black Keel a gastar uma oportunidade ascent.\n\nPor isso a primeira escolha de packet importa. Uma janela fraca transforma cada linha em carga: prova, corpo, amostra, dívida, coordenadas, desculpa. O mastro é a ferramenta que deixa o jogador enviar algo ao sistema. O horror é que o sistema pode responder com clareza.",
-          "field_note": "Conserte o mastro porque silêncio mata. Não confie nele porque vozes também."
-        },
-        "nl_NL": {
-          "localization_status": "draft_machine_or_llm",
-          "title": "Stormgebogen Relaismastlog",
-          "scanner": "SIGNAALMASTWORTEL // Zout scharnier, gebarsten keramische bussen, antenne houdt nog Aegir-azimut. Reparatie verhoogt packetvertrouwen, niet reddingsprioriteit.",
-          "terminal": "UPLINKVERTROUWENDIAGNOSE // Maststeun geaccepteerd. Packetvertrouwen 27 naar 64 procent. Carrierbevestiging mogelijk. Lichaamsrecovery blijft begrensd door sky window, custodyvertrouwen, quarantainereceiver en liftmassa.",
-          "audio": "Een mast is geen ladder. Hij laat ze je beter horen. Hij laat ze niet komen.",
-          "in_game_wiki": "De eerste bruikbare antenne op HECTON-8 ziet er meestal zielig uit: een door storm gebogen mast, zout scharnier, gebarsten keramiek, kabelmantel geplakt met de verkeerde tape en een richtingsmarkering die nog altijd naar Aegir wijst omdat iemand hem na elke storm bleef aandraaien. Daarom doet hij ertoe. Dit is geen heldentechnologie. Het is vermoeide infrastructuur die niet vergeten is waar de hemel staat.\n\nDe mast repareren verandert het spel, maar niet op de simpele manier die een gestrand mens wil. Een schonere uplink kan packetvertrouwen verhogen, een gebroken handshake herstellen of Black Keel laten toegeven dat de operator leeft. Hij kan de carrier ook laten vragen naar claim state, sample state, coördinaten en bewijs voordat er iets komt dat als redding klinkt. De mast verbetert de zin. Hij verbetert de luisteraar niet.\n\nDit is de eerste les van orbitale overleving: communicatie is geen extractie. Een goede steun, schoon contact en gecorrigeerde azimut kunnen één packet kopen voordat de stormband over het relais rolt. De speler moet nog kiezen wat in dat packet meegaat: medische status, bewijshash, sampletelemetrie, locatie of leugen. Black Keel hoort ze allemaal anders. De mast zorgt er alleen voor dat de ruzie de oceaan verlaat.",
-          "external_site": "Een stormgebogen relaismast is het eerste eerlijke contactgereedschap: hij kan packetvertrouwen verhogen en Black Keel-bevestiging herstellen, maar geen signaalvenster in redding veranderen.",
-          "external_site_article": "De relaismast is een van de zuiverste stukken wereldlogica van HECTON-8. Hij geeft de speler iets om te repareren, een zichtbare richting naar de hemel en een wreed resultaat: beter contact zonder gegarandeerde redding. Dat resultaat is geen truc. Het is het kernverschil tussen gehoord worden en terughaalbaar zijn.\n\nIn de fictie is de mast lokale infrastructuur. Hij kent Aegir-azimut, oude relaistiming, weerruis en packetvertrouwen. Hij bezit geen carrierprioriteiten, quarantainereceivers, custody law of liftmassa. Reparatie kan een bericht minder kapot maken, maar Black Keel niet dwingen een ascent opportunity uit te geven.\n\nDaarom telt de eerste packetkeuze. Een zwak venster maakt van elke regel lading: bewijs, lichaam, sample, schuld, coördinaten, excuus. De mast is het gereedschap waarmee de speler iets het systeem in stuurt. De horror is dat het systeem duidelijk kan antwoorden.",
-          "field_note": "Repareer de mast omdat stilte doodt. Vertrouw hem niet omdat stemmen dat ook doen."
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.storm_bent_relay_mast_ledger",
+    "secondary": [
+     "unlock.first_repaired_uplink_confidence",
+     "unlock.first_signal_not_rescue_reading",
+     "unlock.first_black_keel_packet_choice"
+    ],
+    "poi_tags": [
+     "poi.storm_bent_relay_mast",
+     "poi.salted_azimuth_hinge",
+     "poi.uplink_confidence_meter",
+     "poi.black_keel_packet_buffer"
+    ],
+    "biome_tags": [
+     "biome.crash_shelf",
+     "biome.surface_weather",
+     "biome.carrier_link",
+     "biome.storm_shelf"
+    ],
+    "first_20_boundary": "Turns the first physical antenna repair into a lore and gameplay rule: better uplink confidence improves packet delivery, but rescue still waits on Aegir weather, custody confidence, carrier geometry and mass allocation."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Signal Mast Scanner",
+     "terminal": "Uplink Confidence Diagnostic",
+     "audio": "Marauder Radio Rule",
+     "in_game_wiki": "PDA Signal Mast Primer",
+     "external_site": "Public Site Relay Mast Article",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "runtime_layer": "Narrative",
+    "route_moment": "first_signal_mast_repair_or_black_keel_packet_choice",
+    "truth_payload": "A repaired relay mast increases packet confidence and makes Black Keel easier to hear, but it does not create rescue priority; extraction still depends on sky windows, custody routing, quarantine and mass.",
+    "player_question": "Why does fixing the antenna improve contact without making rescue arrive?"
+   },
+   "localized": {
+    "en_US": {
+     "localization_status": "source_authority",
+     "title": "Storm-Bent Relay Mast Ledger",
+     "scanner": "SIGNAL MAST ROOT // Salted hinge, cracked ceramic bushings, antenna still holding Aegir azimuth. Repair raises packet confidence, not rescue priority.",
+     "terminal": "UPLINK CONFIDENCE DIAGNOSTIC // Mast brace accepted. Packet confidence 27 to 64 percent. Carrier acknowledgement possible. Body recovery remains gated by sky window, custody confidence, quarantine receiver and lift mass.",
+     "audio": "A mast is not a ladder. It lets them hear you better. It does not make them come.",
+     "in_game_wiki": "The first useful antenna on HECTON-8 usually looks pathetic: a storm-bent mast, a salted hinge, cracked ceramic, cable jacket patched with the wrong tape, and a direction mark that still points at Aegir because somebody kept tightening it after every storm. That is why it matters. It is not heroic technology. It is tired infrastructure that has not forgotten which way the sky is.\n\nRepairing the mast changes the game, but not in the simple way a stranded person wants. A cleaner uplink can lift packet confidence, restore a broken handshake, or let Black Keel admit that the operator is alive. It can also make the carrier ask for claim state, sample state, coordinates, and evidence before it offers anything that sounds like rescue. The mast improves the sentence. It does not improve the listener.\n\nThis is the first lesson of orbital survival: communication is not extraction. A good brace, a clean contact pad, and a corrected azimuth can buy one packet before a storm band rolls over the relay. The player still has to choose what rides that packet: medical status, evidence hash, sample telemetry, location, or a lie. Black Keel can hear all of those differently. The mast only makes sure the argument leaves the ocean.",
+     "external_site": "A storm-bent relay mast is the first honest contact tool: it can raise packet confidence and restore Black Keel acknowledgement, but it cannot turn a signal window into rescue.",
+     "external_site_article": "The relay mast is one of HECTON-8's cleanest pieces of world logic. It gives the player a thing to fix, a visible direction to the sky, and a cruel result: better contact without guaranteed rescue. That result is not a trick. It is the core difference between being heard and being recoverable.\n\nIn fiction terms, the mast is local infrastructure. It knows Aegir azimuth, old relay timing, weather noise and packet confidence. It does not own carrier priorities, quarantine receivers, custody law or lift mass. Repair can make a message less broken, but it cannot force Black Keel to spend an ascent opportunity.\n\nThat makes the first packet choice matter. A weak window turns every line into cargo: proof, body, sample, debt, coordinates, apology. The mast is the tool that lets the player send something into the system. The horror is that the system may answer clearly.",
+     "field_note": "Fix the mast because silence kills. Do not trust it because voices do too."
+    },
+    "ru_RU": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал штормового релейного мачтового узла",
+     "scanner": "КОРЕНЬ СИГНАЛЬНОЙ МАЧТЫ // Соленый шарнир, треснувшие керамические втулки, антенна все еще держит азимут Aegir. Ремонт поднимает уверенность packet, а не приоритет спасения.",
+     "terminal": "ДИАГНОСТИКА УВЕРЕННОСТИ UPLINK // Распорка мачты принята. Уверенность packet 27 до 64 процентов. Подтверждение carrier возможно. Возврат тела все еще ограничен sky window, уверенностью custody, карантинным приемником и массой подъема.",
+     "audio": "Мачта не лестница. Она помогает им лучше слышать тебя. Она не заставляет их прийти.",
+     "in_game_wiki": "Первая полезная антенна на HECTON-8 обычно выглядит жалко: согнутая штормом мачта, соленый шарнир, треснувшая керамика, кабельная рубашка, залатанная не той лентой, и метка направления, которая все еще смотрит на Aegir, потому что кто-то подтягивал ее после каждого шторма. Поэтому она и важна. Это не героическая технология. Это уставшая инфраструктура, которая не забыла, где небо.\n\nРемонт мачты меняет игру, но не так просто, как хочется застрявшему человеку. Более чистый uplink может поднять уверенность packet, восстановить сломанное рукопожатие или позволить Black Keel признать, что оператор жив. Он может также заставить carrier спросить о claim state, sample state, координатах и доказательствах до того, как прозвучит что-то похожее на спасение. Мачта улучшает фразу. Она не улучшает слушателя.\n\nЭто первый урок орбитального выживания: связь не равна извлечению. Хорошая распорка, чистый контакт и поправленный азимут могут купить один packet до того, как штормовая полоса накроет реле. Игрок все еще выбирает, что поедет в этом packet: медицинский статус, hash доказательств, телеметрию образца, координаты или ложь. Black Keel слышит все это по-разному. Мачта лишь гарантирует, что спор покинет океан.",
+     "external_site": "Согнутая штормом релейная мачта это первый честный инструмент связи: она поднимает уверенность packet и возвращает подтверждение Black Keel, но не превращает окно сигнала в спасение.",
+     "external_site_article": "Релейная мачта это один из самых чистых элементов логики мира HECTON-8. Она дает игроку предмет для ремонта, видимое направление к небу и жестокий результат: связь лучше, спасение не гарантировано. Это не трюк. Это главная разница между тем, что тебя услышали, и тем, что тебя можно забрать.\n\nВ лоре мачта локальная инфраструктура. Она знает азимут Aegir, старый тайминг реле, погодный шум и уверенность packet. Она не владеет приоритетами carrier, карантинными приемниками, custody law или массой подъема. Ремонт может сделать сообщение менее сломанным, но не может заставить Black Keel потратить возможность ascent.\n\nПоэтому первый выбор packet важен. Слабое окно превращает каждую строку в груз: доказательство, тело, образец, долг, координаты, извинение. Мачта это инструмент, которым игрок отправляет что-то в систему. Ужас в том, что система может ответить ясно.",
+     "field_note": "Чини мачту, потому что тишина убивает. Не доверяй ей, потому что голоса тоже умеют."
+    },
+    "ja_JP": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "嵐曲がりリレーマスト台帳",
+     "scanner": "信号マスト基部 // 塩に固まったヒンジ、割れたセラミックブッシュ、アンテナはまだAegir方位を保持。修理で上がるのはpacket信頼度であり、救助優先度ではない。",
+     "terminal": "UPLINK信頼度診断 // マスト支柱受理。packet信頼度27から64パーセント。carrier確認応答は可能。身体回収はなおsky window、custody信頼度、隔離受信者、lift質量に制限される。",
+     "audio": "マストは梯子ではない。向こうが君を聞き取りやすくなるだけだ。来させる力はない。",
+     "in_game_wiki": "HECTON-8で最初に役立つアンテナは、たいてい哀れに見える。嵐で曲がったマスト、塩づいたヒンジ、割れたセラミック、間違ったテープで巻かれたケーブル外皮、それでもAegirを指す方向印。誰かが嵐のたびに締め直していたからだ。だから重要なのだ。英雄的な技術ではない。空の向きを忘れていない疲れたインフラだ。\n\nマストを直すとゲームは変わるが、遭難者が望むほど単純ではない。よりきれいなuplinkはpacket信頼度を上げ、壊れたhandshakeを戻し、Black Keelにオペレーターが生存していると認めさせるかもしれない。同時にcarrierは救助らしい言葉の前に、claim state、sample state、座標、証拠を要求することもある。マストは文章を良くする。聞き手を良くするわけではない。\n\nこれが軌道サバイバルの最初の教訓だ。通信は回収ではない。よい支柱、清掃した接点、修正された方位は、嵐帯がリレーを覆う前に一つのpacketを買う。プレイヤーはそのpacketに何を乗せるか選ばなければならない。医療状態、証拠hash、試料テレメトリ、位置、あるいは嘘。Black Keelはそれぞれを違うものとして聞く。マストが保証するのは、議論が海を離れることだけだ。",
+     "external_site": "嵐で曲がったリレーマストは最初の正直な接触道具だ。packet信頼度とBlack Keelの確認を戻せるが、信号窓を救助に変えることはできない。",
+     "external_site_article": "リレーマストはHECTON-8の世界論理の中でもっとも明快な部品の一つだ。プレイヤーに直す物、空への見える方向、そして残酷な結果を与える。接触は良くなるが救助は保証されない。その結果はトリックではない。聞かれることと回収可能であることの差だ。\n\n設定上、マストは局地インフラである。Aegir方位、古いリレータイミング、天候ノイズ、packet信頼度を知っている。carrier優先度、隔離受信者、custody law、lift質量は所有しない。修理はメッセージを壊れにくくするが、Black Keelにascent機会を使わせることはできない。\n\nだから最初のpacket選択が重い。弱い窓ではすべての行が貨物になる。証拠、身体、試料、債務、座標、謝罪。マストはプレイヤーが何かをシステムへ送る道具だ。恐ろしいのは、そのシステムがはっきり返事をするかもしれないことだ。",
+     "field_note": "沈黙は殺すからマストを直せ。声も殺すから信用するな。"
+    },
+    "zh_CN": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "风暴折弯中继桅杆账册",
+     "scanner": "信号桅杆根部 // 盐蚀铰链，裂开的陶瓷衬套，天线仍保持Aegir方位。修理提高的是packet可信度，不是救援优先级。",
+     "terminal": "UPLINK可信度诊断 // 桅杆支撑已接受。packet可信度27到64%。carrier确认可能。身体回收仍受sky window、custody可信度、隔离接收方和升力质量限制。",
+     "audio": "桅杆不是梯子。它只让他们更容易听见你。它不会让他们来。",
+     "in_game_wiki": "HECTON-8上第一根有用天线通常很寒酸：被风暴折弯的桅杆、结盐的铰链、开裂的陶瓷、用错胶带修补的电缆外皮，以及仍指向Aegir的方向刻线。有人每次风暴后都把它重新拧紧，所以它才重要。它不是英雄科技。它是疲惫的基础设施，还记得天空在哪边。\n\n修理桅杆会改变游戏，但不是被困者想要的那种简单改变。更干净的uplink可以提高packet可信度，恢复破损的握手，或者让Black Keel承认操作员还活着。它也可能让carrier在任何像救援的话之前，先询问claim state、sample state、坐标和证据。桅杆改善句子。它不会改善听话的人。\n\n这是轨道生存的第一课：通信不是撤离。一个好支撑、干净触点和校正方位，可以在风暴带压过中继前买到一个packet。玩家仍要选择这个packet承载什么：医疗状态、证据hash、样本遥测、位置，或者谎言。Black Keel会以不同方式听见这些。桅杆只保证争论离开海洋。",
+     "external_site": "被风暴折弯的中继桅杆是第一个诚实的联络工具：它能提高packet可信度并恢复Black Keel确认，但不能把信号窗口变成救援。",
+     "external_site_article": "中继桅杆是HECTON-8最清楚的世界逻辑之一。它给玩家一个要修的东西，一个指向天空的可见方向，以及一个残酷结果：联络变好，但救援没有保证。这不是花招。这是被听见和可回收之间的核心差别。\n\n在设定中，桅杆是本地基础设施。它知道Aegir方位、旧中继时序、天气噪声和packet可信度。它不拥有carrier优先级、隔离接收方、custody law或升力质量。修理能让消息少一点破碎，但不能强迫Black Keel花掉一次ascent机会。\n\n这让第一个packet选择变得重要。弱窗口会把每一行都变成货物：证据、身体、样本、债务、坐标、道歉。桅杆是玩家把某件东西送入系统的工具。恐怖之处在于，系统可能会清楚地回答。",
+     "field_note": "修桅杆，因为沉默会杀人。别信它，因为声音也会。"
+    },
+    "fr_FR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registre du mât relais tordu par l'orage",
+     "scanner": "RACINE DE MAT SIGNAL // Charnière salée, bagues céramiques fissurées, antenne tenant encore l'azimut Aegir. La réparation augmente la confiance packet, pas la priorité de sauvetage.",
+     "terminal": "DIAGNOSTIC DE CONFIANCE UPLINK // Renfort de mât accepté. Confiance packet de 27 à 64 pour cent. Accusé carrier possible. Récupération du corps toujours bloquée par sky window, confiance custody, récepteur de quarantaine et masse de levage.",
+     "audio": "Un mât n'est pas une échelle. Il les aide à mieux vous entendre. Il ne les fait pas venir.",
+     "in_game_wiki": "La première antenne utile de HECTON-8 a souvent l'air pitoyable : un mât plié par l'orage, une charnière salée, de la céramique fissurée, une gaine de câble rapiécée avec le mauvais ruban, et une marque de direction qui pointe encore vers Aegir parce que quelqu'un la resserrait après chaque tempête. Voilà pourquoi elle compte. Ce n'est pas une technologie héroïque. C'est une infrastructure fatiguée qui n'a pas oublié où se trouve le ciel.\n\nRéparer le mât change la partie, mais pas de la manière simple qu'une personne coincée voudrait. Un uplink plus propre peut augmenter la confiance packet, restaurer un handshake cassé ou permettre à Black Keel d'admettre que l'opérateur est vivant. Il peut aussi pousser le carrier à demander claim state, sample state, coordonnées et preuves avant d'offrir quoi que ce soit qui ressemble à du sauvetage. Le mât améliore la phrase. Il n'améliore pas l'auditeur.\n\nC'est la première leçon de survie orbitale : communiquer n'est pas extraire. Un bon renfort, un contact propre et un azimut corrigé peuvent acheter un packet avant que la bande d'orage ne roule sur le relais. Le joueur doit encore choisir ce qui monte dans ce packet : état médical, hash de preuve, télémétrie d'échantillon, position ou mensonge. Black Keel entend chacun différemment. Le mât garantit seulement que la dispute quitte l'océan.",
+     "external_site": "Un mât relais tordu par l'orage est le premier outil de contact honnête : il peut augmenter la confiance packet et restaurer l'accusé de Black Keel, mais pas transformer une fenêtre de signal en sauvetage.",
+     "external_site_article": "Le mât relais est l'une des logiques les plus nettes de HECTON-8. Il donne au joueur quelque chose à réparer, une direction visible vers le ciel et un résultat cruel : meilleur contact sans sauvetage garanti. Ce résultat n'est pas un tour. C'est la différence centrale entre être entendu et être récupérable.\n\nDans la fiction, le mât est une infrastructure locale. Il connaît l'azimut Aegir, les anciens timings relais, le bruit météo et la confiance packet. Il ne possède pas les priorités carrier, les récepteurs de quarantaine, la custody law ni la masse de levage. La réparation peut rendre un message moins cassé, mais elle ne peut pas forcer Black Keel à dépenser une opportunité d'ascension.\n\nC'est pourquoi le premier choix de packet compte. Une fenêtre faible transforme chaque ligne en cargaison : preuve, corps, échantillon, dette, coordonnées, excuse. Le mât est l'outil qui permet au joueur d'envoyer quelque chose dans le système. L'horreur est que le système peut répondre clairement.",
+     "field_note": "Répare le mât parce que le silence tue. Ne lui fais pas confiance parce que les voix tuent aussi."
+    },
+    "es_ES": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro del mástil de relevo doblado por tormenta",
+     "scanner": "RAIZ DEL MASTIL DE SEÑAL // Bisagra salada, bujes cerámicos agrietados, antena aún sosteniendo el acimut Aegir. La reparación sube confianza packet, no prioridad de rescate.",
+     "terminal": "DIAGNOSTICO DE CONFIANZA UPLINK // Refuerzo de mástil aceptado. Confianza packet de 27 a 64 por ciento. Acuse carrier posible. Recuperación corporal aún bloqueada por sky window, confianza custody, receptor de cuarentena y masa de lift.",
+     "audio": "Un mástil no es una escalera. Hace que te oigan mejor. No hace que vengan.",
+     "in_game_wiki": "La primera antena útil de HECTON-8 suele verse patética: un mástil doblado por tormenta, una bisagra salada, cerámica rota, cubierta de cable remendada con la cinta equivocada y una marca de dirección que todavía apunta a Aegir porque alguien la apretó después de cada tormenta. Por eso importa. No es tecnología heroica. Es infraestructura cansada que no ha olvidado dónde está el cielo.\n\nReparar el mástil cambia la partida, pero no de la forma simple que quiere una persona varada. Un uplink más limpio puede subir la confianza packet, restaurar un handshake roto o permitir que Black Keel admita que el operador vive. También puede hacer que el carrier pregunte por claim state, sample state, coordenadas y evidencia antes de ofrecer algo que suene a rescate. El mástil mejora la frase. No mejora al oyente.\n\nEsta es la primera lección de supervivencia orbital: comunicación no es extracción. Un buen refuerzo, un contacto limpio y un acimut corregido pueden comprar un packet antes de que la banda de tormenta cubra el relevo. El jugador aún debe elegir qué viaja en ese packet: estado médico, hash de evidencia, telemetría de muestra, ubicación o mentira. Black Keel oye cada cosa de manera distinta. El mástil solo asegura que la discusión salga del océano.",
+     "external_site": "Un mástil de relevo doblado por tormenta es la primera herramienta honesta de contacto: puede subir confianza packet y restaurar acuse de Black Keel, pero no convertir una ventana de señal en rescate.",
+     "external_site_article": "El mástil de relevo es una de las lógicas de mundo más limpias de HECTON-8. Da al jugador algo que reparar, una dirección visible hacia el cielo y un resultado cruel: mejor contacto sin rescate garantizado. Ese resultado no es un truco. Es la diferencia central entre ser escuchado y ser recuperable.\n\nEn la ficción, el mástil es infraestructura local. Conoce el acimut Aegir, viejos tiempos de relevo, ruido meteorológico y confianza packet. No posee prioridades carrier, receptores de cuarentena, custody law ni masa de lift. Reparar puede hacer que un mensaje llegue menos roto, pero no puede forzar a Black Keel a gastar una oportunidad de ascenso.\n\nPor eso importa la primera elección de packet. Una ventana débil convierte cada línea en carga: prueba, cuerpo, muestra, deuda, coordenadas, disculpa. El mástil es la herramienta que permite al jugador enviar algo al sistema. El horror es que el sistema puede contestar con claridad.",
+     "field_note": "Arregla el mástil porque el silencio mata. No confíes en él porque las voces también."
+    },
+    "de_DE": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Sturmverbogener Relaismast-Ledger",
+     "scanner": "SIGNALMASTWURZEL // Versalztes Scharnier, gerissene Keramikbuchsen, Antenne hält noch Aegir-Azimut. Reparatur erhöht packet confidence, nicht Rettungspriorität.",
+     "terminal": "UPLINK-VERTRAUENSDIAGNOSE // Maststrebe akzeptiert. Packet confidence 27 auf 64 Prozent. Carrier-Bestätigung möglich. Körperbergung bleibt durch sky window, custody confidence, Quarantäneempfänger und Hubmasse begrenzt.",
+     "audio": "Ein Mast ist keine Leiter. Er lässt sie dich besser hören. Er lässt sie nicht kommen.",
+     "in_game_wiki": "Die erste brauchbare Antenne auf HECTON-8 sieht meist erbärmlich aus: ein sturmverbogener Mast, ein versalztes Scharnier, gerissene Keramik, Kabelmantel mit falschem Band geflickt und eine Richtungsmarke, die noch auf Aegir zeigt, weil jemand sie nach jedem Sturm nachgezogen hat. Darum zählt sie. Das ist keine Heldentechnik. Das ist müde Infrastruktur, die nicht vergessen hat, wo der Himmel ist.\n\nDen Mast zu reparieren ändert das Spiel, aber nicht auf die einfache Art, die ein Gestrandeter will. Ein saubererer uplink kann packet confidence erhöhen, einen gebrochenen handshake wiederherstellen oder Black Keel zugeben lassen, dass der Operator lebt. Er kann den carrier auch nach claim state, sample state, Koordinaten und Beweisen fragen lassen, bevor irgendetwas nach Rettung klingt. Der Mast verbessert den Satz. Er verbessert nicht den Zuhörer.\n\nDas ist die erste Lektion orbitalen Überlebens: Kommunikation ist keine Extraktion. Eine gute Strebe, ein sauberer Kontakt und ein korrigierter Azimut können ein packet kaufen, bevor der Sturmstreifen über das Relais rollt. Der Spieler muss noch wählen, was dieses packet trägt: medizinischen Status, Beweishash, Probentelemetrie, Standort oder Lüge. Black Keel hört all das unterschiedlich. Der Mast sorgt nur dafür, dass der Streit den Ozean verlässt.",
+     "external_site": "Ein sturmverbogener Relaismast ist das erste ehrliche Kontaktwerkzeug: Er kann packet confidence und Black-Keel-Bestätigung erhöhen, aber kein Signalfenster in Rettung verwandeln.",
+     "external_site_article": "Der Relaismast ist eines der klarsten Weltlogikstücke von HECTON-8. Er gibt dem Spieler etwas zu reparieren, eine sichtbare Richtung zum Himmel und ein grausames Ergebnis: besseren Kontakt ohne garantierte Rettung. Dieses Ergebnis ist kein Trick. Es ist der Kernunterschied zwischen gehört werden und bergbar sein.\n\nIn der Fiktion ist der Mast lokale Infrastruktur. Er kennt Aegir-Azimut, altes Relais-Timing, Wetterrauschen und packet confidence. Er besitzt keine carrier-Prioritäten, Quarantäneempfänger, custody law oder Hubmasse. Reparatur kann eine Nachricht weniger gebrochen machen, aber Black Keel nicht zwingen, eine ascent opportunity auszugeben.\n\nDarum zählt die erste packet-Wahl. Ein schwaches Fenster macht jede Zeile zu Fracht: Beweis, Körper, Probe, Schuld, Koordinaten, Entschuldigung. Der Mast ist das Werkzeug, mit dem der Spieler etwas ins System sendet. Der Schrecken ist, dass das System klar antworten kann.",
+     "field_note": "Repariere den Mast, weil Stille tötet. Vertraue ihm nicht, weil Stimmen das auch tun."
+    },
+    "pl_PL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Rejestr masztu przekaźnikowego zgiętego burzą",
+     "scanner": "KORZEŃ MASZTU SYGNAŁOWEGO // Zasolony zawias, pęknięte tuleje ceramiczne, antena nadal trzyma azymut Aegir. Naprawa podnosi zaufanie packet, nie priorytet ratunku.",
+     "terminal": "DIAGNOSTYKA ZAUFANIA UPLINK // Wspornik masztu przyjęty. Zaufanie packet 27 do 64 procent. Potwierdzenie carrier możliwe. Odzysk ciała nadal bramkowany przez sky window, zaufanie custody, odbiornik kwarantanny i masę podnoszenia.",
+     "audio": "Maszt nie jest drabiną. Pozwala im lepiej cię słyszeć. Nie sprawia, że przyjdą.",
+     "in_game_wiki": "Pierwsza użyteczna antena na HECTON-8 zwykle wygląda żałośnie: maszt zgięty przez burzę, zasolony zawias, pęknięta ceramika, płaszcz kabla naprawiony złą taśmą i znak kierunku, który nadal wskazuje Aegir, bo ktoś dokręcał go po każdej burzy. Dlatego ma znaczenie. To nie heroiczna technologia. To zmęczona infrastruktura, która nie zapomniała, gdzie jest niebo.\n\nNaprawa masztu zmienia grę, ale nie tak prosto, jak chce uwięziony człowiek. Czystszy uplink może podnieść zaufanie packet, przywrócić zerwany handshake albo pozwolić Black Keel przyznać, że operator żyje. Może też sprawić, że carrier zapyta o claim state, sample state, współrzędne i dowody, zanim zaoferuje cokolwiek brzmiącego jak ratunek. Maszt poprawia zdanie. Nie poprawia słuchacza.\n\nTo pierwsza lekcja przetrwania orbitalnego: komunikacja nie jest ekstrakcją. Dobry wspornik, czysty styk i skorygowany azymut mogą kupić jeden packet, zanim pas burzy przewali się przez przekaźnik. Gracz wciąż wybiera, co jedzie tym packet: stan medyczny, hash dowodu, telemetria próbki, lokalizacja albo kłamstwo. Black Keel słyszy je różnie. Maszt tylko pilnuje, by spór opuścił ocean.",
+     "external_site": "Maszt przekaźnikowy zgięty przez burzę to pierwsze uczciwe narzędzie kontaktu: może podnieść zaufanie packet i przywrócić potwierdzenie Black Keel, ale nie zmieni okna sygnału w ratunek.",
+     "external_site_article": "Maszt przekaźnikowy jest jednym z najczystszych elementów logiki świata HECTON-8. Daje graczowi coś do naprawy, widoczny kierunek ku niebu i okrutny wynik: lepszy kontakt bez gwarantowanego ratunku. To nie sztuczka. To zasadnicza różnica między byciem usłyszanym a byciem odzyskiwalnym.\n\nW fikcji maszt jest lokalną infrastrukturą. Zna azymut Aegir, stare czasy przekaźników, szum pogody i zaufanie packet. Nie posiada priorytetów carrier, odbiorników kwarantanny, custody law ani masy podnoszenia. Naprawa może sprawić, że wiadomość będzie mniej złamana, ale nie może zmusić Black Keel do wydania okazji ascent.\n\nDlatego pierwszy wybór packet ma wagę. Słabe okno zamienia każdą linię w ładunek: dowód, ciało, próbkę, dług, współrzędne, przeprosiny. Maszt jest narzędziem, którym gracz wysyła coś do systemu. Groza polega na tym, że system może odpowiedzieć jasno.",
+     "field_note": "Napraw maszt, bo cisza zabija. Nie ufaj mu, bo głosy też potrafią."
+    },
+    "uk_UA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Журнал релейної щогли, зігнутої штормом",
+     "scanner": "КОРІНЬ СИГНАЛЬНОЇ ЩОГЛИ // Засолений шарнір, тріснуті керамічні втулки, антена ще тримає азимут Aegir. Ремонт піднімає довіру packet, а не пріоритет порятунку.",
+     "terminal": "ДІАГНОСТИКА ДОВІРИ UPLINK // Розпірку щогли прийнято. Довіра packet 27 до 64 відсотків. Підтвердження carrier можливе. Повернення тіла все ще обмежене sky window, довірою custody, карантинним приймачем і масою підйому.",
+     "audio": "Щогла не драбина. Вона допомагає їм краще тебе чути. Вона не змушує їх прийти.",
+     "in_game_wiki": "Перша корисна антена на HECTON-8 зазвичай виглядає жалюгідно: зігнута штормом щогла, солоний шарнір, тріснута кераміка, кабельна оболонка, залатана не тією стрічкою, і мітка напряму, яка все ще дивиться на Aegir, бо хтось підтягував її після кожного шторму. Тому вона важлива. Це не героїчна технологія. Це втомлена інфраструктура, яка не забула, де небо.\n\nРемонт щогли змінює гру, але не так просто, як хоче застрягла людина. Чистіший uplink може підняти довіру packet, відновити зламаний handshake або дозволити Black Keel визнати, що оператор живий. Він може також змусити carrier запитати про claim state, sample state, координати й докази до того, як прозвучить щось схоже на порятунок. Щогла покращує речення. Вона не покращує слухача.\n\nЦе перший урок орбітального виживання: зв'язок не є витягненням. Добра розпірка, чистий контакт і поправлений азимут можуть купити один packet до того, як штормова смуга накриє реле. Гравець усе ще вибирає, що їде в цьому packet: медичний стан, hash доказів, телеметрія зразка, координати або брехня. Black Keel чує це по-різному. Щогла лише гарантує, що суперечка залишить океан.",
+     "external_site": "Релейна щогла, зігнута штормом, це перший чесний інструмент контакту: вона піднімає довіру packet і повертає підтвердження Black Keel, але не перетворює сигнальне вікно на порятунок.",
+     "external_site_article": "Релейна щогла є одним із найчистіших елементів логіки світу HECTON-8. Вона дає гравцеві предмет для ремонту, видимий напрямок до неба і жорстокий результат: кращий контакт без гарантованого порятунку. Це не трюк. Це головна різниця між тим, що тебе почули, і тим, що тебе можна повернути.\n\nУ лорі щогла є локальною інфраструктурою. Вона знає азимут Aegir, старий таймінг реле, погодний шум і довіру packet. Вона не володіє пріоритетами carrier, карантинними приймачами, custody law або масою підйому. Ремонт може зробити повідомлення менш зламаним, але не може змусити Black Keel витратити ascent opportunity.\n\nТому перший вибір packet важливий. Слабке вікно перетворює кожен рядок на вантаж: доказ, тіло, зразок, борг, координати, вибачення. Щогла це інструмент, яким гравець надсилає щось у систему. Жах у тому, що система може відповісти чітко.",
+     "field_note": "Чини щоглу, бо тиша вбиває. Не довіряй їй, бо голоси теж."
+    },
+    "ar_SA": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "سجل صاري ترحيل مثني بالعاصفة",
+     "scanner": "جذر صاري الإشارة // مفصل مملح، جلب خزفية متشققة، والهوائي ما زال يمسك سمت Aegir. الإصلاح يرفع ثقة packet، لا أولوية الإنقاذ.",
+     "terminal": "تشخيص ثقة UPLINK // تم قبول دعامة الصاري. ثقة packet من 27 إلى 64 بالمئة. إقرار carrier ممكن. استرجاع الجسد ما زال محكوما ب sky window وثقة custody ومستقبل الحجر وكتلة الرفع.",
+     "audio": "الصاري ليس سلما. إنه يجعلهم يسمعونك أفضل. لا يجعلهم يأتون.",
+     "in_game_wiki": "أول هوائي نافع على HECTON-8 يبدو غالبا مثيرا للشفقة: صاري ثنته العاصفة، ومفصل مملح، وخزف متشقق، وغلاف كابل مرقع بشريط خاطئ، وعلامة اتجاه ما زالت تشير إلى Aegir لأن أحدا كان يشدها بعد كل عاصفة. لهذا يهم. هذه ليست تقنية بطولية. إنها بنية تحتية متعبة لم تنس أين تقع السماء.\n\nإصلاح الصاري يغير اللعبة، لكن ليس بالطريقة البسيطة التي يريدها شخص عالق. uplink أنظف قد يرفع ثقة packet، أو يعيد handshake مكسورا، أو يجعل Black Keel يعترف بأن المشغل حي. وقد يجعل carrier يسأل عن claim state وsample state والإحداثيات والدليل قبل أن يقدم أي شيء يشبه الإنقاذ. الصاري يحسن الجملة. لا يحسن المستمع.\n\nهذه أول دروس البقاء المداري: الاتصال ليس استخراجا. دعامة جيدة، ونقطة تماس نظيفة، وسمت مصحح قد تشتري packet واحدا قبل أن تمر حزمة العاصفة فوق المرحل. ما زال على اللاعب أن يختار ما يركب ذلك packet: حالة طبية، hash دليل، قياس عينة، موقع، أو كذبة. Black Keel يسمع كل ذلك بطرق مختلفة. الصاري يضمن فقط أن الجدال يغادر المحيط.",
+     "external_site": "صاري ترحيل مثني بالعاصفة هو أول أداة اتصال صادقة: يمكنه رفع ثقة packet وإعادة إقرار Black Keel، لكنه لا يحول نافذة إشارة إلى إنقاذ.",
+     "external_site_article": "صاري الترحيل من أنظف منطق العالم في HECTON-8. يمنح اللاعب شيئا يصلحه، واتجاها مرئيا نحو السماء، ونتيجة قاسية: اتصال أفضل بلا إنقاذ مضمون. هذه ليست خدعة. إنها الفرق الأساسي بين أن يسمعك أحد وأن تكون قابلا للاسترجاع.\n\nفي الحكاية، الصاري بنية تحتية محلية. يعرف سمت Aegir، وتوقيت الترحيل القديم، وضجيج الطقس، وثقة packet. لا يملك أولويات carrier، ولا مستقبلات الحجر، ولا custody law، ولا كتلة الرفع. الإصلاح قد يجعل الرسالة أقل تكسرا، لكنه لا يجبر Black Keel على إنفاق فرصة ascent.\n\nلذلك يهم أول اختيار packet. نافذة ضعيفة تحول كل سطر إلى حمولة: دليل، جسد، عينة، دين، إحداثيات، اعتذار. الصاري هو الأداة التي تسمح للاعب بإرسال شيء إلى النظام. الرعب أن النظام قد يجيب بوضوح.",
+     "field_note": "أصلح الصاري لأن الصمت يقتل. لا تثق به لأن الأصوات تفعل أيضا."
+    },
+    "id_ID": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Buku Tiang Relay Bengkok Badai",
+     "scanner": "AKAR TIANG SINYAL // Engsel asin, bushing keramik retak, antena masih memegang azimut Aegir. Perbaikan menaikkan kepercayaan packet, bukan prioritas penyelamatan.",
+     "terminal": "DIAGNOSTIK KEPERCAYAAN UPLINK // Penyangga tiang diterima. Kepercayaan packet 27 ke 64 persen. Pengakuan carrier mungkin. Pemulihan tubuh tetap dibatasi sky window, kepercayaan custody, penerima karantina, dan massa lift.",
+     "audio": "Tiang bukan tangga. Ia membuat mereka mendengarmu lebih baik. Ia tidak membuat mereka datang.",
+     "in_game_wiki": "Antena pertama yang berguna di HECTON-8 biasanya tampak menyedihkan: tiang bengkok badai, engsel bergaram, keramik retak, jaket kabel ditambal dengan pita yang salah, dan tanda arah yang masih menunjuk Aegir karena seseorang terus mengencangkannya setelah tiap badai. Itu sebabnya ia penting. Ini bukan teknologi heroik. Ini infrastruktur lelah yang belum lupa arah langit.\n\nMemperbaiki tiang mengubah permainan, tetapi tidak dengan cara sederhana yang diinginkan orang terdampar. Uplink yang lebih bersih bisa menaikkan kepercayaan packet, memulihkan handshake rusak, atau membuat Black Keel mengakui operator masih hidup. Ia juga bisa membuat carrier menanyakan claim state, sample state, koordinat, dan bukti sebelum menawarkan apa pun yang terdengar seperti penyelamatan. Tiang memperbaiki kalimat. Ia tidak memperbaiki pendengar.\n\nIni pelajaran pertama bertahan hidup orbital: komunikasi bukan ekstraksi. Penyangga bagus, kontak bersih, dan azimut terkoreksi bisa membeli satu packet sebelum pita badai menutup relay. Pemain masih harus memilih apa yang ikut packet itu: status medis, hash bukti, telemetri sampel, lokasi, atau kebohongan. Black Keel mendengar semuanya berbeda. Tiang hanya memastikan argumen meninggalkan samudra.",
+     "external_site": "Tiang relay bengkok badai adalah alat kontak jujur pertama: ia bisa menaikkan kepercayaan packet dan memulihkan pengakuan Black Keel, tetapi tidak mengubah jendela sinyal menjadi penyelamatan.",
+     "external_site_article": "Tiang relay adalah salah satu logika dunia HECTON-8 yang paling bersih. Ia memberi pemain sesuatu untuk diperbaiki, arah terlihat ke langit, dan hasil kejam: kontak lebih baik tanpa jaminan penyelamatan. Hasil itu bukan trik. Itu perbedaan inti antara didengar dan dapat dipulihkan.\n\nDalam fiksi, tiang adalah infrastruktur lokal. Ia tahu azimut Aegir, timing relay lama, derau cuaca, dan kepercayaan packet. Ia tidak memiliki prioritas carrier, penerima karantina, custody law, atau massa lift. Perbaikan bisa membuat pesan tidak terlalu rusak, tetapi tidak bisa memaksa Black Keel menghabiskan peluang ascent.\n\nKarena itu pilihan packet pertama penting. Jendela lemah mengubah setiap baris menjadi muatan: bukti, tubuh, sampel, utang, koordinat, permintaan maaf. Tiang adalah alat yang membuat pemain mengirim sesuatu ke sistem. Horornya adalah sistem itu mungkin menjawab dengan jelas.",
+     "field_note": "Perbaiki tiang karena diam membunuh. Jangan percaya padanya karena suara juga bisa."
+    },
+    "ko_KR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "폭풍에 휜 릴레이 마스트 장부",
+     "scanner": "신호 마스트 뿌리 // 소금 낀 경첩, 금 간 세라믹 부싱, 안테나는 아직 Aegir 방위를 잡고 있다. 수리는 packet 신뢰도를 올리지 구조 우선순위를 올리지 않는다.",
+     "terminal": "UPLINK 신뢰 진단 // 마스트 버팀대 승인. packet 신뢰도 27에서 64퍼센트. carrier 확인 응답 가능. 몸 회수는 여전히 sky window, custody 신뢰, 격리 수신자, 리프트 질량에 묶여 있다.",
+     "audio": "마스트는 사다리가 아니다. 저들이 너를 더 잘 듣게 할 뿐이다. 오게 만들지는 못한다.",
+     "in_game_wiki": "HECTON-8에서 처음 쓸 만한 안테나는 대개 초라하다. 폭풍에 휜 마스트, 소금에 절은 경첩, 금 간 세라믹, 엉뚱한 테이프로 감은 케이블 재킷, 그리고 아직 Aegir를 가리키는 방향 표시. 누군가 매 폭풍 뒤에 다시 조였기 때문이다. 그래서 중요하다. 영웅적인 기술이 아니다. 하늘이 어느 쪽인지 잊지 않은 지친 인프라다.\n\n마스트를 고치면 게임은 바뀐다. 하지만 고립된 사람이 원하는 단순한 방식은 아니다. 더 깨끗한 uplink는 packet 신뢰도를 올리고, 깨진 handshake를 복구하거나, Black Keel이 조작자가 살아 있다고 인정하게 할 수 있다. 동시에 carrier는 구조처럼 들리는 말보다 먼저 claim state, sample state, 좌표, 증거를 물을 수 있다. 마스트는 문장을 개선한다. 듣는 쪽을 개선하지는 않는다.\n\n이것이 궤도 생존의 첫 교훈이다. 통신은 추출이 아니다. 좋은 버팀대, 깨끗한 접점, 보정된 방위는 폭풍대가 릴레이를 덮기 전 packet 하나를 살 수 있다. 플레이어는 그 packet에 무엇을 태울지 선택해야 한다. 의료 상태, 증거 hash, 샘플 원격측정, 위치, 거짓말. Black Keel은 그것들을 다르게 듣는다. 마스트는 논쟁이 바다를 떠나게 할 뿐이다.",
+     "external_site": "폭풍에 휜 릴레이 마스트는 첫 정직한 접촉 도구다. packet 신뢰도와 Black Keel 확인을 회복할 수 있지만 신호 창을 구조로 바꾸지는 못한다.",
+     "external_site_article": "릴레이 마스트는 HECTON-8의 가장 선명한 세계 논리 중 하나다. 플레이어에게 고칠 물건, 하늘을 향한 보이는 방향, 그리고 잔혹한 결과를 준다. 접촉은 나아지지만 구조는 보장되지 않는다. 이것은 속임수가 아니다. 들리는 것과 회수 가능한 것의 핵심 차이다.\n\n설정상 마스트는 지역 인프라다. Aegir 방위, 오래된 릴레이 시간, 날씨 잡음, packet 신뢰도를 안다. carrier 우선순위, 격리 수신자, custody law, 리프트 질량은 소유하지 않는다. 수리는 메시지를 덜 깨지게 만들 수 있지만 Black Keel이 ascent 기회를 쓰게 강제할 수 없다.\n\n그래서 첫 packet 선택이 중요하다. 약한 창은 모든 줄을 화물로 만든다. 증거, 몸, 샘플, 빚, 좌표, 사과. 마스트는 플레이어가 무언가를 시스템에 보내게 하는 도구다. 공포는 그 시스템이 또렷하게 답할 수 있다는 데 있다.",
+     "field_note": "침묵은 죽이니 마스트를 고쳐라. 목소리도 죽이니 믿지는 마라."
+    },
+    "he_IL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "יומן תורן ממסר שכופף בסערה",
+     "scanner": "שורש תורן אות // ציר מלוח, תותבי קרמיקה סדוקים, האנטנה עדיין מחזיקה אזימוט Aegir. תיקון מעלה אמון packet, לא עדיפות חילוץ.",
+     "terminal": "אבחון אמון UPLINK // תמיכת תורן התקבלה. אמון packet מ-27 ל-64 אחוז. אישור carrier אפשרי. השבת גוף עדיין חסומה ב-sky window, אמון custody, מקלט הסגר ומסת הרמה.",
+     "audio": "תורן אינו סולם. הוא נותן להם לשמוע אותך טוב יותר. הוא לא גורם להם לבוא.",
+     "in_game_wiki": "האנטנה השימושית הראשונה ב-HECTON-8 נראית בדרך כלל עלובה: תורן שכופף בסערה, ציר מלוח, קרמיקה סדוקה, מעטפת כבל שתוקנה בסרט הלא נכון, וסימון כיוון שעדיין מצביע אל Aegir כי מישהו הידק אותו אחרי כל סערה. לכן הוא חשוב. זו לא טכנולוגיה הירואית. זו תשתית עייפה שלא שכחה איפה השמים.\n\nתיקון התורן משנה את המשחק, אבל לא בדרך הפשוטה שאדם תקוע רוצה. uplink נקי יותר יכול להעלות אמון packet, לשחזר handshake שבור, או לגרום ל-Black Keel להודות שהמפעיל חי. הוא גם יכול לגרום ל-carrier לשאול על claim state, sample state, קואורדינטות וראיות לפני שהוא מציע משהו שנשמע כמו חילוץ. התורן משפר את המשפט. הוא לא משפר את המאזין.\n\nזה השיעור הראשון בהישרדות מסלולית: תקשורת אינה חילוץ. תמיכה טובה, מגע נקי ואזימוט מתוקן יכולים לקנות packet אחד לפני שרצועת הסערה תכסה את הממסר. השחקן עדיין צריך לבחור מה נוסע ב-packet הזה: מצב רפואי, hash ראיות, טלמטריית דגימה, מיקום או שקר. Black Keel שומע כל אחד אחרת. התורן רק מבטיח שהוויכוח יעזוב את האוקיינוס.",
+     "external_site": "תורן ממסר שכופף בסערה הוא כלי הקשר הישר הראשון: הוא יכול להעלות אמון packet ולהחזיר אישור Black Keel, אבל לא להפוך חלון אות לחילוץ.",
+     "external_site_article": "תורן הממסר הוא אחד מחלקי ההיגיון הנקיים ביותר של HECTON-8. הוא נותן לשחקן משהו לתקן, כיוון נראה אל השמים ותוצאה אכזרית: קשר טוב יותר בלי חילוץ מובטח. זו אינה תחבולה. זה ההבדל המרכזי בין להישמע לבין להיות בר-השבה.\n\nבסיפור, התורן הוא תשתית מקומית. הוא יודע אזימוט Aegir, תזמון ממסר ישן, רעש מזג אוויר ואמון packet. הוא אינו מחזיק עדיפויות carrier, מקלטי הסגר, custody law או מסת הרמה. תיקון יכול להפוך הודעה לפחות שבורה, אבל הוא לא יכול לאלץ את Black Keel לבזבז הזדמנות ascent.\n\nלכן בחירת ה-packet הראשונה חשובה. חלון חלש הופך כל שורה למטען: ראיה, גוף, דגימה, חוב, קואורדינטות, התנצלות. התורן הוא הכלי שנותן לשחקן לשלוח משהו אל המערכת. האימה היא שהמערכת עלולה לענות בבירור.",
+     "field_note": "תקן את התורן כי שקט הורג. אל תבטח בו כי גם קולות יודעים."
+    },
+    "pt_BR": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Registro do Mastro de Relay Entortado por Tempestade",
+     "scanner": "RAIZ DO MASTRO DE SINAL // Dobradiça salgada, buchas cerâmicas rachadas, antena ainda segurando azimute Aegir. Reparo aumenta confiança packet, não prioridade de resgate.",
+     "terminal": "DIAGNOSTICO DE CONFIANCA UPLINK // Escora do mastro aceita. Confiança packet de 27 para 64 por cento. Ack do carrier possível. Recuperação do corpo continua barrada por sky window, confiança custody, receptor de quarentena e massa de lift.",
+     "audio": "Um mastro não é uma escada. Ele deixa eles te ouvirem melhor. Não faz eles virem.",
+     "in_game_wiki": "A primeira antena útil em HECTON-8 costuma parecer patética: um mastro entortado por tempestade, dobradiça salgada, cerâmica rachada, jaqueta de cabo remendada com a fita errada e uma marca de direção ainda apontada para Aegir porque alguém a reapertou depois de cada tempestade. É por isso que ela importa. Não é tecnologia heroica. É infraestrutura cansada que não esqueceu onde fica o céu.\n\nReparar o mastro muda o jogo, mas não do jeito simples que uma pessoa presa quer. Um uplink mais limpo pode aumentar confiança packet, restaurar um handshake quebrado ou deixar Black Keel admitir que o operador está vivo. Também pode fazer o carrier perguntar por claim state, sample state, coordenadas e prova antes de oferecer qualquer coisa que soe como resgate. O mastro melhora a frase. Não melhora o ouvinte.\n\nEsta é a primeira lição de sobrevivência orbital: comunicação não é extração. Uma boa escora, um contato limpo e um azimute corrigido podem comprar um packet antes que a faixa de tempestade cubra o relay. O jogador ainda precisa escolher o que vai nesse packet: estado médico, hash de prova, telemetria de amostra, localização ou mentira. Black Keel ouve cada um de forma diferente. O mastro só garante que a discussão saia do oceano.",
+     "external_site": "Um mastro de relay entortado por tempestade é a primeira ferramenta honesta de contato: pode aumentar confiança packet e restaurar ack da Black Keel, mas não transformar janela de sinal em resgate.",
+     "external_site_article": "O mastro de relay é uma das peças mais limpas de lógica de mundo em HECTON-8. Ele dá ao jogador algo para consertar, uma direção visível para o céu e um resultado cruel: contato melhor sem resgate garantido. Esse resultado não é truque. É a diferença central entre ser ouvido e ser recuperável.\n\nNa ficção, o mastro é infraestrutura local. Ele conhece azimute Aegir, timing antigo de relay, ruído do clima e confiança packet. Ele não possui prioridades carrier, receptores de quarentena, custody law nem massa de lift. O reparo pode tornar uma mensagem menos quebrada, mas não pode forçar Black Keel a gastar uma oportunidade ascent.\n\nPor isso a primeira escolha de packet importa. Uma janela fraca transforma cada linha em carga: prova, corpo, amostra, dívida, coordenadas, desculpa. O mastro é a ferramenta que deixa o jogador enviar algo ao sistema. O horror é que o sistema pode responder com clareza.",
+     "field_note": "Conserte o mastro porque silêncio mata. Não confie nele porque vozes também."
+    },
+    "nl_NL": {
+     "localization_status": "draft_machine_or_llm",
+     "title": "Stormgebogen Relaismastlog",
+     "scanner": "SIGNAALMASTWORTEL // Zout scharnier, gebarsten keramische bussen, antenne houdt nog Aegir-azimut. Reparatie verhoogt packetvertrouwen, niet reddingsprioriteit.",
+     "terminal": "UPLINKVERTROUWENDIAGNOSE // Maststeun geaccepteerd. Packetvertrouwen 27 naar 64 procent. Carrierbevestiging mogelijk. Lichaamsrecovery blijft begrensd door sky window, custodyvertrouwen, quarantainereceiver en liftmassa.",
+     "audio": "Een mast is geen ladder. Hij laat ze je beter horen. Hij laat ze niet komen.",
+     "in_game_wiki": "De eerste bruikbare antenne op HECTON-8 ziet er meestal zielig uit: een door storm gebogen mast, zout scharnier, gebarsten keramiek, kabelmantel geplakt met de verkeerde tape en een richtingsmarkering die nog altijd naar Aegir wijst omdat iemand hem na elke storm bleef aandraaien. Daarom doet hij ertoe. Dit is geen heldentechnologie. Het is vermoeide infrastructuur die niet vergeten is waar de hemel staat.\n\nDe mast repareren verandert het spel, maar niet op de simpele manier die een gestrand mens wil. Een schonere uplink kan packetvertrouwen verhogen, een gebroken handshake herstellen of Black Keel laten toegeven dat de operator leeft. Hij kan de carrier ook laten vragen naar claim state, sample state, coördinaten en bewijs voordat er iets komt dat als redding klinkt. De mast verbetert de zin. Hij verbetert de luisteraar niet.\n\nDit is de eerste les van orbitale overleving: communicatie is geen extractie. Een goede steun, schoon contact en gecorrigeerde azimut kunnen één packet kopen voordat de stormband over het relais rolt. De speler moet nog kiezen wat in dat packet meegaat: medische status, bewijshash, sampletelemetrie, locatie of leugen. Black Keel hoort ze allemaal anders. De mast zorgt er alleen voor dat de ruzie de oceaan verlaat.",
+     "external_site": "Een stormgebogen relaismast is het eerste eerlijke contactgereedschap: hij kan packetvertrouwen verhogen en Black Keel-bevestiging herstellen, maar geen signaalvenster in redding veranderen.",
+     "external_site_article": "De relaismast is een van de zuiverste stukken wereldlogica van HECTON-8. Hij geeft de speler iets om te repareren, een zichtbare richting naar de hemel en een wreed resultaat: beter contact zonder gegarandeerde redding. Dat resultaat is geen truc. Het is het kernverschil tussen gehoord worden en terughaalbaar zijn.\n\nIn de fictie is de mast lokale infrastructuur. Hij kent Aegir-azimut, oude relaistiming, weerruis en packetvertrouwen. Hij bezit geen carrierprioriteiten, quarantainereceivers, custody law of liftmassa. Reparatie kan een bericht minder kapot maken, maar Black Keel niet dwingen een ascent opportunity uit te geven.\n\nDaarom telt de eerste packetkeuze. Een zwak venster maakt van elke regel lading: bewijs, lichaam, sample, schuld, coördinaten, excuus. De mast is het gereedschap waarmee de speler iets het systeem in stuurt. De horror is dat het systeem duidelijk kan antwoorden.",
+     "field_note": "Repareer de mast omdat stilte doodt. Vertrouw hem niet omdat stemmen dat ook doen."
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

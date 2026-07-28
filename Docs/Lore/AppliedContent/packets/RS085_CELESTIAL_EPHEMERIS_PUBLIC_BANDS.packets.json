@@ -1,924 +1,930 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
-  "status": "production_article_source_candidate_pending_importer_admission_route_card_bake_and_unity_placement",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true,
-    "runtime_ready": false,
-    "native_localization_ready": false,
-    "data_monolith_ready": false,
-    "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
-      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
-      "article_id": "applied_lore.ran_aegir_public_distance_band",
-      "title_key": "applied_lore.ran_aegir_public_distance_band.title",
-      "unlock": {
-        "primary": "unlock.ran_aegir_public_distance_band",
-        "poi_tags": [
-          "poi.ran_aegir_distance_band",
-          "poi.no_ftl_route_index",
-          "poi.public_ephemeris_note"
-        ],
-        "biome_tags": [
-          "biome.human_space",
-          "biome.publication"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ran/Aegir Distance Band",
-          "scanner": "Public band: Ran/Aegir is a ten-light-year-class no-FTL route from Sol.",
-          "terminal": "EPHEMERIS BAND: Use the ten-light-year class for public prose until celestial constants are table-frozen. No FTL rescue exists on this route.",
-          "audio": "Ten light-years is close on a map and brutal for a contract.",
-          "in_game_wiki": "The Ran/Aegir distance band keeps the setting readable without pretending the current prose is final simulation data. Aegir is reachable by probes, freight and debt-backed settlement, but not by casual rescue once a room starts flooding.",
-          "external_site": "The Aegir system sits in a reachable but punishing no-FTL band: close enough for industry, far enough for abandonment to matter.",
-          "field_note": "Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Диапазон расстояния Ran/Aegir",
-          "scanner": "Draft ru_RU localization pending native pass. Публичный диапазон: Ran/Aegir - маршрут без FTL примерно десятисветолетнего класса от Sol.",
-          "terminal": "Draft ru_RU localization pending native pass. ДИАПАЗОН ЭФЕМЕРИД: для публичного текста использовать десятисветолетний класс до заморозки небесных констант в таблицах. FTL-спасения на маршруте нет.",
-          "audio": "Draft ru_RU localization pending native pass. Десять световых лет близко на карте и жестоко в контракте.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. Диапазон расстояния Ran/Aegir делает сеттинг читаемым, не выдавая прозу за финальные simulation data. Aegir достижим для зондов, грузов и debt-backed settlement, но не для случайного спасения, когда комната уже тонет.",
-          "external_site": "Draft ru_RU localization pending native pass. Система Aegir лежит в достижимом, но жестком no-FTL диапазоне: достаточно близко для индустрии, достаточно далеко, чтобы заброшенность имела вес.",
-          "field_note": "Draft ru_RU localization pending native pass. Публичная астрономическая запись: диапазоны расстояния и маршрутные карты являются объяснительными интервалами, а не финальными константами эфемерид.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. Ran/Aegir距離帯",
-          "scanner": "Draft ja_JP localization pending native pass. 公開帯域: Ran/AegirはSolから十光年級のFTLなし航路。",
-          "terminal": "Draft ja_JP localization pending native pass. EPHEMERIS BAND: 天体定数が表で固定されるまで、公開文では十光年級を使う。この航路にFTL救助は存在しない。",
-          "audio": "Draft ja_JP localization pending native pass. 十光年は地図では近く、契約では残酷だ。",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. Ran/Aegir距離帯は、散文を最終simulation dataに見せずに設定を読めるものにする。Aegirは探査機、貨物、debt-backed settlementには届くが、部屋が浸水し始めてからの気軽な救助には届かない。",
-          "external_site": "Draft ja_JP localization pending native pass. Aegir系は到達可能だが厳しいno-FTL帯にある。産業には近く、放棄が意味を持つほど遠い。",
-          "field_note": "Draft ja_JP localization pending native pass. 公開天文学記録: 距離帯と航路図は説明用の範囲であり、最終ephemeris constantsではない。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. Ran/Aegir距离带",
-          "scanner": "Draft zh_CN localization pending native pass. 公共带：Ran/Aegir是从Sol出发的十光年级无FTL航线。",
-          "terminal": "Draft zh_CN localization pending native pass. 星历带：在天体常数被表格冻结前，公共文本使用十光年级。此航线不存在FTL救援。",
-          "audio": "Draft zh_CN localization pending native pass. 十光年在地图上很近，在合同里很残酷。",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. Ran/Aegir距离带让设定可读，同时不把叙述伪装成最终simulation data。Aegir可由探测器、货运和debt-backed settlement抵达，但当房间开始进水时，它不支持随手救援。",
-          "external_site": "Draft zh_CN localization pending native pass. Aegir系统处在可达但严厉的no-FTL范围：近到能发展工业，远到被抛弃仍有重量。",
-          "field_note": "Draft zh_CN localization pending native pass. 公共天文记录：距离带和航线图是解释范围，不是最终星历常数。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Bande de distance Ran/Aegir",
-          "scanner": "Draft fr_FR localization pending native pass. Bande publique : Ran/Aegir est une route sans FTL de classe dix années-lumière depuis Sol.",
-          "terminal": "Draft fr_FR localization pending native pass. BANDE D'ÉPHÉMÉRIDES : utiliser la classe dix années-lumière jusqu'au gel des constantes célestes en table. Aucun secours FTL n'existe sur cette route.",
-          "audio": "Draft fr_FR localization pending native pass. Dix années-lumière sont proches sur une carte et brutales dans un contrat.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. La bande de distance Ran/Aegir garde le cadre lisible sans faire passer la prose pour des simulation data finales. Aegir est atteignable par sondes, fret et colonisation adossée à la dette, pas par sauvetage improvisé quand une pièce se noie.",
-          "external_site": "Draft fr_FR localization pending native pass. Le système Aegir se trouve dans une bande no-FTL atteignable mais punitive : assez proche pour l'industrie, assez loin pour que l'abandon compte.",
-          "field_note": "Draft fr_FR localization pending native pass. Archive astronomique publique : les bandes de distance et cartes de route sont des plages explicatives, pas des constantes finales.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Banda de distancia Ran/Aegir",
-          "scanner": "Draft es_ES localization pending native pass. Banda pública: Ran/Aegir es una ruta sin FTL de clase diez años luz desde Sol.",
-          "terminal": "Draft es_ES localization pending native pass. BANDA DE EFEMÉRIDES: usar la clase diez años luz en la prosa pública hasta congelar constantes celestes en tablas. No existe rescate FTL en esta ruta.",
-          "audio": "Draft es_ES localization pending native pass. Diez años luz es cerca en un mapa y brutal en un contrato.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. La banda de distancia Ran/Aegir mantiene legible el marco sin fingir que la prosa es simulation data final. Aegir está al alcance de sondas, carga y asentamiento con deuda, no de rescate casual cuando una sala se inunda.",
-          "external_site": "Draft es_ES localization pending native pass. El sistema Aegir está en una banda no-FTL alcanzable pero punitiva: cerca para la industria, lejos para que el abandono importe.",
-          "field_note": "Draft es_ES localization pending native pass. Registro astronómico público: bandas de distancia y mapas de ruta son rangos explicativos, no constantes finales.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Ran/Aegir-Distanzband",
-          "scanner": "Draft de_DE localization pending native pass. Öffentliches Band: Ran/Aegir ist eine zehn-Lichtjahre-Klasse-No-FTL-Route von Sol.",
-          "terminal": "Draft de_DE localization pending native pass. EPHEMERIS-BAND: In öffentlicher Prosa die Zehn-Lichtjahre-Klasse nutzen, bis Himmelskonstanten tabellengefroren sind. Keine FTL-Rettung existiert auf dieser Route.",
-          "audio": "Draft de_DE localization pending native pass. Zehn Lichtjahre sind nah auf der Karte und brutal im Vertrag.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. Das Ran/Aegir-Distanzband hält den Rahmen lesbar, ohne aktuelle Prosa als finale simulation data auszugeben. Aegir ist für Sonden, Fracht und schuldgestützte Siedlung erreichbar, nicht für beiläufige Rettung, wenn ein Raum flutet.",
-          "external_site": "Draft de_DE localization pending native pass. Das Aegir-System liegt in einem erreichbaren, aber strafenden No-FTL-Band: nah genug für Industrie, fern genug, damit Verlassenheit zählt.",
-          "field_note": "Draft de_DE localization pending native pass. Öffentlicher Astronomiedatensatz: Distanzbänder und Routenkarten sind erklärende Bereiche, keine finalen Ephemeridenkonstanten.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Pas odległości Ran/Aegir",
-          "scanner": "Draft pl_PL localization pending native pass. Pas publiczny: Ran/Aegir to trasa bez FTL klasy dziesięciu lat świetlnych od Sol.",
-          "terminal": "Draft pl_PL localization pending native pass. PAS EFEMERYD: w prozie publicznej używać klasy dziesięciu lat świetlnych, dopóki stałe nie zostaną zamrożone w tabelach. Brak ratunku FTL.",
-          "audio": "Draft pl_PL localization pending native pass. Dziesięć lat świetlnych jest blisko na mapie i brutalne w kontrakcie.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. Pas odległości Ran/Aegir utrzymuje setting czytelny bez udawania, że proza jest final simulation data. Aegir osiągają sondy, fracht i osadnictwo dłużne, nie szybki ratunek, gdy pomieszczenie tonie.",
-          "external_site": "Draft pl_PL localization pending native pass. System Aegir leży w osiągalnym, lecz karzącym paśmie no-FTL: blisko dla przemysłu, daleko dla sensu porzucenia.",
-          "field_note": "Draft pl_PL localization pending native pass. Publiczny zapis astronomiczny: pasy odległości i mapy tras są zakresami wyjaśniającymi, nie końcowymi stałymi efemeryd.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Діапазон відстані Ran/Aegir",
-          "scanner": "Draft uk_UA localization pending native pass. Публічний діапазон: Ran/Aegir - маршрут без FTL приблизно десятисвітлорічного класу від Sol.",
-          "terminal": "Draft uk_UA localization pending native pass. ДІАПАЗОН ЕФЕМЕРИД: для публічного тексту використовувати клас десяти світлових років до замороження небесних констант у таблицях. FTL-порятунку на маршруті немає.",
-          "audio": "Draft uk_UA localization pending native pass. Десять світлових років близько на мапі й жорстоко в контракті.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. Діапазон відстані Ran/Aegir робить сетинг читабельним, не видаючи прозу за фінальні simulation data. Aegir досяжний для зондів, вантажів і debt-backed settlement, але не для випадкового порятунку, коли кімната вже тоне.",
-          "external_site": "Draft uk_UA localization pending native pass. Система Aegir лежить у досяжному, але жорсткому no-FTL діапазоні: досить близько для індустрії, досить далеко, щоб покинутість мала вагу.",
-          "field_note": "Draft uk_UA localization pending native pass. Публічний астрономічний запис: діапазони відстані й маршрутні карти є пояснювальними інтервалами, не фінальними константами ефемерид.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. نطاق مسافة Ran/Aegir",
-          "scanner": "Draft ar_SA localization pending native pass. النطاق العام: Ran/Aegir طريق بلا FTL من فئة عشر سنوات ضوئية من Sol.",
-          "terminal": "Draft ar_SA localization pending native pass. نطاق التقويم السماوي: استخدم فئة عشر سنوات ضوئية في النص العام حتى تثبت الثوابت السماوية في الجداول. لا يوجد إنقاذ FTL على هذا الطريق.",
-          "audio": "Draft ar_SA localization pending native pass. عشر سنوات ضوئية قريبة على الخريطة وقاسية في العقد.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. يحافظ نطاق مسافة Ran/Aegir على قابلية قراءة العالم من دون ادعاء أن النص الحالي simulation data نهائية. يمكن الوصول إلى Aegir بالمجسات والشحن والاستيطان المدعوم بالدين، لا بإنقاذ عابر عندما تبدأ غرفة بالغرق.",
-          "external_site": "Draft ar_SA localization pending native pass. يقع نظام Aegir في نطاق no-FTL ممكن لكنه معاقب: قريب بما يكفي للصناعة، وبعيد بما يكفي ليهم التخلي.",
-          "field_note": "Draft ar_SA localization pending native pass. سجل فلكي عام: نطاقات المسافة وخرائط الطرق مجالات تفسيرية، لا ثوابت تقويمية نهائية.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Pita Jarak Ran/Aegir",
-          "scanner": "Draft id_ID localization pending native pass. Pita publik: Ran/Aegir adalah rute tanpa FTL kelas sepuluh tahun cahaya dari Sol.",
-          "terminal": "Draft id_ID localization pending native pass. PITA EPHEMERIS: gunakan kelas sepuluh tahun cahaya untuk teks publik sampai konstanta langit dibekukan di tabel. Tidak ada penyelamatan FTL di rute ini.",
-          "audio": "Draft id_ID localization pending native pass. Sepuluh tahun cahaya dekat di peta dan kejam di kontrak.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. Pita jarak Ran/Aegir menjaga setting tetap terbaca tanpa berpura-pura prosa saat ini adalah simulation data final. Aegir dapat dicapai probe, freight dan debt-backed settlement, tetapi bukan rescue santai saat sebuah ruangan mulai banjir.",
-          "external_site": "Draft id_ID localization pending native pass. Sistem Aegir berada di pita no-FTL yang dapat dicapai tapi menghukum: cukup dekat untuk industri, cukup jauh agar abandonment berarti.",
-          "field_note": "Draft id_ID localization pending native pass. Catatan astronomi publik: pita jarak dan peta rute adalah rentang penjelas, bukan konstanta ephemeris final.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Ran/Aegir 거리 대역",
-          "scanner": "Draft ko_KR localization pending native pass. 공개 대역: Ran/Aegir는 Sol에서 온 10광년급 no-FTL 항로다.",
-          "terminal": "Draft ko_KR localization pending native pass. EPHEMERIS BAND: 천체 상수가 테이블에서 고정될 때까지 공개 문장에는 10광년급을 사용한다. 이 항로에는 FTL rescue가 없다.",
-          "audio": "Draft ko_KR localization pending native pass. 10광년은 지도에서는 가깝고 계약에서는 잔혹하다.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. Ran/Aegir 거리 대역은 현재 산문을 최종 simulation data처럼 꾸미지 않고 설정을 읽기 쉽게 만든다. Aegir는 probe, freight, debt-backed settlement로 닿을 수 있지만 방이 침수되기 시작한 뒤의 가벼운 구조로는 닿지 않는다.",
-          "external_site": "Draft ko_KR localization pending native pass. Aegir 시스템은 도달 가능하지만 가혹한 no-FTL 대역에 있다. 산업에는 충분히 가깝고, abandonment가 의미를 갖기엔 충분히 멀다.",
-          "field_note": "Draft ko_KR localization pending native pass. 공개 천문 기록: 거리 대역과 항로 지도는 설명 범위이며 최종 ephemeris constants가 아니다.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. רצועת מרחק Ran/Aegir",
-          "scanner": "Draft he_IL localization pending native pass. רצועה ציבורית: Ran/Aegir הוא נתיב no-FTL ברמת עשר שנות אור מ-Sol.",
-          "terminal": "Draft he_IL localization pending native pass. EPHEMERIS BAND: להשתמש ברמת עשר שנות אור בפרוזה ציבורית עד שקבועי השמים מוקפאים בטבלאות. אין FTL rescue בנתיב הזה.",
-          "audio": "Draft he_IL localization pending native pass. עשר שנות אור קרובות במפה ואכזריות בחוזה.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. רצועת המרחק Ran/Aegir שומרת על הקריאות בלי להעמיד פנים שהפרוזה היא simulation data סופית. Aegir נגיש לגשושים, freight ו-debt-backed settlement, לא לחילוץ מזדמן כשהחדר מתחיל לטבוע.",
-          "external_site": "Draft he_IL localization pending native pass. מערכת Aegir נמצאת ברצועת no-FTL נגישה אך מענישה: קרובה מספיק לתעשייה, רחוקה מספיק כדי שנטישה תהיה משמעותית.",
-          "field_note": "Draft he_IL localization pending native pass. רשומת אסטרונומיה ציבורית: רצועות מרחק ומפות נתיב הן טווחי הסבר, לא קבועי אפמריס סופיים.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Faixa de distância Ran/Aegir",
-          "scanner": "Draft pt_BR localization pending native pass. Faixa pública: Ran/Aegir é uma rota sem FTL de classe dez anos-luz a partir de Sol.",
-          "terminal": "Draft pt_BR localization pending native pass. FAIXA DE EFEMÉRIDES: usar a classe dez anos-luz na prosa pública até as constantes celestes serem congeladas em tabela. Não há resgate FTL nesta rota.",
-          "audio": "Draft pt_BR localization pending native pass. Dez anos-luz é perto no mapa e brutal no contrato.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. A faixa de distância Ran/Aegir mantém o cenário legível sem fingir que a prosa atual é simulation data final. Aegir é alcançável por sondas, carga e debt-backed settlement, mas não por resgate casual quando uma sala começa a inundar.",
-          "external_site": "Draft pt_BR localization pending native pass. O sistema Aegir fica numa faixa no-FTL alcançável, mas punitiva: perto o bastante para indústria, longe o bastante para abandono importar.",
-          "field_note": "Draft pt_BR localization pending native pass. Registro astronômico público: faixas de distância e mapas de rota são intervalos explicativos, não constantes finais de efemérides.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Ran/Aegir-afstandsband",
-          "scanner": "Draft nl_NL localization pending native pass. Publieke band: Ran/Aegir is een no-FTL-route van de tien-lichtjaar-klasse vanaf Sol.",
-          "terminal": "Draft nl_NL localization pending native pass. EFEMERIDENBAND: gebruik de tien-lichtjaar-klasse in publieke tekst tot hemelconstanten in tabellen zijn bevroren. Geen FTL-redding op deze route.",
-          "audio": "Draft nl_NL localization pending native pass. Tien lichtjaar is dichtbij op een kaart en bruut in een contract.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. De Ran/Aegir-afstandsband houdt de setting leesbaar zonder te doen alsof de huidige tekst finale simulation data is. Aegir is bereikbaar voor sondes, vracht en debt-backed settlement, maar niet voor losse redding zodra een kamer overstroomt.",
-          "external_site": "Draft nl_NL localization pending native pass. Het Aegir-systeem ligt in een bereikbare maar straffende no-FTL-band: dichtbij genoeg voor industrie, ver genoeg om verlatenheid te laten tellen.",
-          "field_note": "Draft nl_NL localization pending native pass. Publiek astronomisch record: afstandsbanden en routekaarten zijn verklarende bereiken, geen finale efemeridenconstanten.",
-          "localization_status": "source_draft_pending_native_review"
-        }
-      },
-      "metadata": {
-        "spoiler_tier": "1",
-        "source_voice_by_surface": {
-          "scanner": "Instrument Scan",
-          "terminal": "Recovered Ephemeris/Route Terminal",
-          "audio": "Damaged Playback",
-          "in_game_wiki": "Recovered Operational Note",
-          "external_site": "Website Public",
-          "field_note": "Marauder Field Note"
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+ "status": "production_article_source_candidate_pending_importer_admission_route_card_bake_and_unity_placement",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P421_RAN_AEGIR_PUBLIC_DISTANCE_BAND",
+   "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+   "article_id": "applied_lore.ran_aegir_public_distance_band",
+   "title_key": "applied_lore.ran_aegir_public_distance_band.title",
+   "unlock": {
+    "primary": "unlock.ran_aegir_public_distance_band",
+    "poi_tags": [
+     "poi.ran_aegir_distance_band",
+     "poi.no_ftl_route_index",
+     "poi.public_ephemeris_note"
+    ],
+    "biome_tags": [
+     "biome.human_space",
+     "biome.publication"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ran/Aegir Distance Band",
+     "scanner": "Public band: Ran/Aegir is a ten-light-year-class no-FTL route from Sol.",
+     "terminal": "EPHEMERIS BAND: Use the ten-light-year class for public prose until celestial constants are table-frozen. No FTL rescue exists on this route.",
+     "audio": "Ten light-years is close on a map and brutal for a contract.",
+     "in_game_wiki": "The Ran/Aegir distance band keeps the setting readable without pretending the current prose is final simulation data. Aegir is reachable by probes, freight and debt-backed settlement, but not by casual rescue once a room starts flooding.",
+     "external_site": "The Aegir system sits in a reachable but punishing no-FTL band: close enough for industry, far enough for abandonment to matter.",
+     "field_note": "Public astronomy record: distance bands and route maps are explanatory ranges, not final ephemeris constants.",
+     "localization_status": "source_authority"
     },
-    {
-      "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
-      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
-      "article_id": "applied_lore.aegir_local_window_band_table",
-      "title_key": "applied_lore.aegir_local_window_band_table.title",
-      "unlock": {
-        "primary": "unlock.aegir_local_window_band_table",
-        "poi_tags": [
-          "poi.local_window_band_table",
-          "poi.carrier_phase_clock",
-          "poi.relay_weather_gate"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.upper_atmosphere"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Aegir Window Bands",
-          "scanner": "Local band: ascent waits on hours-to-days windows, not instant rescue.",
-          "terminal": "WINDOW BAND: shutter, eclipse, relay, storm, carrier phase and legal handshake must align before safe transfer.",
-          "audio": "The carrier can hear you and still be in the wrong sky.",
-          "in_game_wiki": "Aegir local windows turn orbital mechanics into pressure the player can feel. A repaired capsule still needs weather, relay angle, carrier position and legal acceptance before it becomes a real exit.",
-          "external_site": "Aegir traffic is governed by narrow transfer bands around radiation, eclipse, storm and relay geometry.",
-          "field_note": "Window band record: Black Keel timing, local orbit labels and spoiler-light system pages share the same transfer constraints.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Оконные диапазоны Aegir",
-          "scanner": "Draft ru_RU localization pending native pass. Локальный диапазон: подъем ждет окна в часы или дни, а не мгновенное спасение.",
-          "terminal": "Draft ru_RU localization pending native pass. ОКОННЫЙ ДИАПАЗОН: заслонка, затмение, реле, шторм, фаза carrier и юридический handshake должны совпасть для безопасного transfer.",
-          "audio": "Draft ru_RU localization pending native pass. Carrier может слышать тебя и все равно быть в неправильном небе.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. Локальные окна Aegir превращают орбитальную механику в ощутимое давление. Даже отремонтированной капсуле нужны погода, угол реле, позиция carrier и юридическое принятие.",
-          "external_site": "Draft ru_RU localization pending native pass. Трафик Aegir управляется узкими transfer bands вокруг радиации, затмений, штормов и геометрии реле.",
-          "field_note": "Draft ru_RU localization pending native pass. Запись оконного диапазона: timing Black Keel, локальные метки орбит и spoiler-light страницы системы используют одни transfer constraints.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. Aegir窓帯",
-          "scanner": "Draft ja_JP localization pending native pass. 局所帯域: 上昇は即時救助ではなく、数時間から数日の窓を待つ。",
-          "terminal": "Draft ja_JP localization pending native pass. WINDOW BAND: shutter、eclipse、relay、storm、carrier phase、legal handshakeが安全transfer前に揃う必要がある。",
-          "audio": "Draft ja_JP localization pending native pass. Carrierは君を聞けても、空の位置が間違っていることがある。",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. Aegirの局所窓は軌道力学をプレイヤーが感じる圧力にする。修理済みcapsuleにも、天候、リレー角、carrier位置、法的受け入れが必要だ。",
-          "external_site": "Draft ja_JP localization pending native pass. Aegir交通は放射線、食、嵐、relay geometry周りの狭いtransfer bandsに支配される。",
-          "field_note": "Draft ja_JP localization pending native pass. 窓帯記録: Black Keel timing、局所軌道ラベル、spoiler-light system pagesは同じtransfer constraintsを共有する。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. Aegir本地窗口带",
-          "scanner": "Draft zh_CN localization pending native pass. 本地带：上升等待的是数小时到数天的窗口，不是即时救援。",
-          "terminal": "Draft zh_CN localization pending native pass. 窗口带：shutter、eclipse、relay、storm、carrier phase和legal handshake必须对齐，才能安全transfer。",
-          "audio": "Draft zh_CN localization pending native pass. Carrier可以听见你，却仍在错误的天空。",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. Aegir本地窗口把轨道力学变成玩家能感到的压力。修好的capsule仍需要天气、relay角度、carrier位置和法律接收。",
-          "external_site": "Draft zh_CN localization pending native pass. Aegir交通受围绕辐射、食、风暴和relay geometry的狭窄transfer bands支配。",
-          "field_note": "Draft zh_CN localization pending native pass. 窗口带记录：Black Keel timing、本地轨道标签和spoiler-light系统页面共享同一套transfer constraints。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Bandes de fenêtre d'Aegir",
-          "scanner": "Draft fr_FR localization pending native pass. Bande locale : l'ascension attend des fenêtres d'heures ou de jours, pas un secours instantané.",
-          "terminal": "Draft fr_FR localization pending native pass. BANDE DE FENÊTRE : shutter, eclipse, relay, storm, phase carrier et legal handshake doivent s'aligner avant un transfert sûr.",
-          "audio": "Draft fr_FR localization pending native pass. Le carrier peut t'entendre et rester dans le mauvais ciel.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. Les fenêtres locales d'Aegir transforment la mécanique orbitale en pression sensible. Une capsule réparée a encore besoin de météo, d'angle relais, de position carrier et d'acceptation légale.",
-          "external_site": "Draft fr_FR localization pending native pass. Le trafic d'Aegir est gouverné par des transfer bands étroites autour du rayonnement, des éclipses, des tempêtes et de la géométrie relais.",
-          "field_note": "Draft fr_FR localization pending native pass. Archive de fenêtre : Black Keel timing, labels d'orbite locale et pages spoiler-light partagent les mêmes contraintes.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Bandas de ventana de Aegir",
-          "scanner": "Draft es_ES localization pending native pass. Banda local: el ascenso espera ventanas de horas o días, no rescate instantáneo.",
-          "terminal": "Draft es_ES localization pending native pass. BANDA DE VENTANA: shutter, eclipse, relay, storm, fase carrier y legal handshake deben alinearse antes de un transfer seguro.",
-          "audio": "Draft es_ES localization pending native pass. El carrier puede oírte y seguir en el cielo equivocado.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. Las ventanas locales de Aegir convierten la mecánica orbital en presión jugable. Una cápsula reparada aún necesita clima, ángulo relay, posición carrier y aceptación legal.",
-          "external_site": "Draft es_ES localization pending native pass. El tráfico de Aegir se rige por transfer bands estrechas alrededor de radiación, eclipse, tormenta y geometría relay.",
-          "field_note": "Draft es_ES localization pending native pass. Registro de ventana: Black Keel timing, etiquetas orbitales locales y páginas spoiler-light comparten las mismas restricciones.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Aegir-Fensterbänder",
-          "scanner": "Draft de_DE localization pending native pass. Lokales Band: Aufstieg wartet auf Stunden-bis-Tage-Fenster, nicht auf Sofortrettung.",
-          "terminal": "Draft de_DE localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase und legal handshake müssen vor sicherem transfer passen.",
-          "audio": "Draft de_DE localization pending native pass. Der carrier kann dich hören und trotzdem im falschen Himmel stehen.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. Aegir-Lokalfenster machen Orbitalmechanik zu spürbarem Druck. Eine reparierte capsule braucht noch Wetter, Relaiswinkel, carrier-Position und rechtliche Annahme.",
-          "external_site": "Draft de_DE localization pending native pass. Aegir-Verkehr wird durch enge transfer bands um Strahlung, Eclipse, Sturm und relay geometry gesteuert.",
-          "field_note": "Draft de_DE localization pending native pass. Fensterbanddatensatz: Black Keel timing, lokale Orbitlabels und spoiler-light-Systemseiten teilen dieselben transfer constraints.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Pasy okien Aegir",
-          "scanner": "Draft pl_PL localization pending native pass. Pas lokalny: wynurzenie czeka na okna godzin lub dni, nie na natychmiastowy ratunek.",
-          "terminal": "Draft pl_PL localization pending native pass. PAS OKNA: shutter, eclipse, relay, storm, faza carrier i legal handshake muszą się zgrać przed bezpiecznym transfer.",
-          "audio": "Draft pl_PL localization pending native pass. Carrier może cię słyszeć i nadal być w złym niebie.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. Lokalne okna Aegir zmieniają mechanikę orbitalną w odczuwalną presję. Naprawiona capsule nadal potrzebuje pogody, kąta relay, pozycji carrier i akceptacji prawnej.",
-          "external_site": "Draft pl_PL localization pending native pass. Ruch Aegir rządzi się wąskimi transfer bands wokół promieniowania, zaćmień, burz i relay geometry.",
-          "field_note": "Draft pl_PL localization pending native pass. Zapis pasa okna: Black Keel timing, lokalne etykiety orbit i strony spoiler-light mają te same transfer constraints.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Віконні діапазони Aegir",
-          "scanner": "Draft uk_UA localization pending native pass. Локальний діапазон: підйом чекає на вікна в години або дні, а не на миттєвий порятунок.",
-          "terminal": "Draft uk_UA localization pending native pass. ВІКОННИЙ ДІАПАЗОН: shutter, eclipse, relay, storm, фаза carrier і legal handshake мають збігтися перед безпечним transfer.",
-          "audio": "Draft uk_UA localization pending native pass. Carrier може чути тебе й усе одно бути в неправильному небі.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. Локальні вікна Aegir перетворюють орбітальну механіку на відчутний тиск. Навіть repaired capsule потребує погоди, кута relay, позиції carrier і legal acceptance.",
-          "external_site": "Draft uk_UA localization pending native pass. Трафік Aegir керується вузькими transfer bands навколо радіації, затемнень, штормів і relay geometry.",
-          "field_note": "Draft uk_UA localization pending native pass. Запис віконного діапазону: Black Keel timing, локальні мітки орбіт і spoiler-light сторінки системи мають ті самі transfer constraints.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. نطاقات نوافذ Aegir",
-          "scanner": "Draft ar_SA localization pending native pass. النطاق المحلي: الصعود ينتظر نوافذ من ساعات إلى أيام، لا إنقاذا فوريا.",
-          "terminal": "Draft ar_SA localization pending native pass. نطاق النافذة: shutter وeclipse وrelay وstorm ومرحلة carrier وlegal handshake يجب أن تصطف قبل transfer آمن.",
-          "audio": "Draft ar_SA localization pending native pass. قد يسمعك carrier ويبقى في السماء الخطأ.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. تحول نوافذ Aegir المحلية الميكانيكا المدارية إلى ضغط يشعر به اللاعب. حتى capsule مصلحة تحتاج طقسا وزاوية relay وموقع carrier وقبولا قانونيا.",
-          "external_site": "Draft ar_SA localization pending native pass. تخضع حركة Aegir إلى transfer bands ضيقة حول الإشعاع والكسوف والعواصف وrelay geometry.",
-          "field_note": "Draft ar_SA localization pending native pass. سجل نطاق النافذة: Black Keel timing وتسميات المدار المحلي وصفحات spoiler-light تشترك في transfer constraints نفسها.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Pita Jendela Aegir",
-          "scanner": "Draft id_ID localization pending native pass. Pita lokal: ascent menunggu jendela jam-ke-hari, bukan penyelamatan instan.",
-          "terminal": "Draft id_ID localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase dan legal handshake harus sejajar sebelum transfer aman.",
-          "audio": "Draft id_ID localization pending native pass. Carrier bisa mendengarmu dan tetap berada di langit yang salah.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. Jendela lokal Aegir mengubah mekanika orbit menjadi tekanan yang terasa. Capsule yang sudah diperbaiki masih butuh cuaca, sudut relay, posisi carrier dan penerimaan legal.",
-          "external_site": "Draft id_ID localization pending native pass. Lalu lintas Aegir diatur transfer bands sempit di sekitar radiasi, gerhana, badai dan relay geometry.",
-          "field_note": "Draft id_ID localization pending native pass. Catatan pita jendela: Black Keel timing, label orbit lokal dan halaman spoiler-light berbagi transfer constraints yang sama.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Aegir 창 대역",
-          "scanner": "Draft ko_KR localization pending native pass. 현지 대역: ascent는 즉시 구조가 아니라 몇 시간에서 며칠짜리 window를 기다린다.",
-          "terminal": "Draft ko_KR localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase, legal handshake가 안전 transfer 전에 맞아야 한다.",
-          "audio": "Draft ko_KR localization pending native pass. Carrier는 너를 들을 수 있어도 틀린 하늘에 있을 수 있다.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. Aegir 현지 window는 궤도역학을 플레이어가 느끼는 압력으로 만든다. 수리된 capsule도 날씨, relay angle, carrier position, legal acceptance가 필요하다.",
-          "external_site": "Draft ko_KR localization pending native pass. Aegir traffic은 radiation, eclipse, storm, relay geometry 주변의 좁은 transfer bands가 지배한다.",
-          "field_note": "Draft ko_KR localization pending native pass. Window band record: Black Keel timing, 현지 orbit label, spoiler-light system pages는 같은 transfer constraints를 공유한다.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. רצועות חלון Aegir",
-          "scanner": "Draft he_IL localization pending native pass. רצועה מקומית: ascent מחכה לחלונות של שעות עד ימים, לא לחילוץ מיידי.",
-          "terminal": "Draft he_IL localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase ו-legal handshake חייבים להסתדר לפני transfer בטוח.",
-          "audio": "Draft he_IL localization pending native pass. ה-carrier יכול לשמוע אותך ועדיין להיות בשמים הלא נכונים.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. החלונות המקומיים של Aegir הופכים מכניקה מסלולית ללחץ שהשחקן מרגיש. גם capsule מתוקנת צריכה מזג אוויר, relay angle, carrier position וקבלה משפטית.",
-          "external_site": "Draft he_IL localization pending native pass. התנועה של Aegir נשלטת בידי transfer bands צרות סביב קרינה, ליקוי, storm ו-relay geometry.",
-          "field_note": "Draft he_IL localization pending native pass. רשומת רצועת חלון: Black Keel timing, תוויות מסלול מקומיות ועמודי spoiler-light חולקים אותם transfer constraints.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Faixas de janela de Aegir",
-          "scanner": "Draft pt_BR localization pending native pass. Faixa local: a ascensão espera janelas de horas a dias, não resgate instantâneo.",
-          "terminal": "Draft pt_BR localization pending native pass. FAIXA DE JANELA: shutter, eclipse, relay, storm, carrier phase e legal handshake precisam alinhar antes de um transfer seguro.",
-          "audio": "Draft pt_BR localization pending native pass. O carrier pode ouvir você e ainda estar no céu errado.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. Janelas locais de Aegir transformam mecânica orbital em pressão sentida pelo jogador. Uma capsule reparada ainda precisa de clima, ângulo relay, posição carrier e aceitação legal.",
-          "external_site": "Draft pt_BR localization pending native pass. O tráfego de Aegir é governado por transfer bands estreitas em torno de radiação, eclipse, storm e relay geometry.",
-          "field_note": "Draft pt_BR localization pending native pass. Registro de faixa de janela: Black Keel timing, rótulos orbitais locais e páginas spoiler-light compartilham as mesmas transfer constraints.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Aegir-vensterbanden",
-          "scanner": "Draft nl_NL localization pending native pass. Lokale band: ascent wacht op vensters van uren tot dagen, niet op directe redding.",
-          "terminal": "Draft nl_NL localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase en legal handshake moeten uitlijnen voor veilige transfer.",
-          "audio": "Draft nl_NL localization pending native pass. De carrier kan je horen en toch in de verkeerde hemel zitten.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. Lokale Aegir-vensters maken orbitale mechanica voelbare druk. Een gerepareerde capsule heeft nog weer, relay angle, carrier position en juridische acceptatie nodig.",
-          "external_site": "Draft nl_NL localization pending native pass. Aegir-verkeer wordt gestuurd door smalle transfer bands rond straling, eclipse, storm en relay geometry.",
-          "field_note": "Draft nl_NL localization pending native pass. Vensterbandrecord: Black Keel timing, lokale orbit labels en spoiler-light system pages delen dezelfde transfer constraints.",
-          "localization_status": "source_draft_pending_native_review"
-        }
-      },
-      "metadata": {
-        "spoiler_tier": "1",
-        "source_voice_by_surface": {
-          "scanner": "Instrument Scan",
-          "terminal": "Recovered Ephemeris/Route Terminal",
-          "audio": "Damaged Playback",
-          "in_game_wiki": "Recovered Operational Note",
-          "external_site": "Website Public",
-          "field_note": "Marauder Field Note"
-        }
-      }
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Диапазон расстояния Ran/Aegir",
+     "scanner": "Draft ru_RU localization pending native pass. Публичный диапазон: Ran/Aegir - маршрут без FTL примерно десятисветолетнего класса от Sol.",
+     "terminal": "Draft ru_RU localization pending native pass. ДИАПАЗОН ЭФЕМЕРИД: для публичного текста использовать десятисветолетний класс до заморозки небесных констант в таблицах. FTL-спасения на маршруте нет.",
+     "audio": "Draft ru_RU localization pending native pass. Десять световых лет близко на карте и жестоко в контракте.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. Диапазон расстояния Ran/Aegir делает сеттинг читаемым, не выдавая прозу за финальные simulation data. Aegir достижим для зондов, грузов и debt-backed settlement, но не для случайного спасения, когда комната уже тонет.",
+     "external_site": "Draft ru_RU localization pending native pass. Система Aegir лежит в достижимом, но жестком no-FTL диапазоне: достаточно близко для индустрии, достаточно далеко, чтобы заброшенность имела вес.",
+     "field_note": "Draft ru_RU localization pending native pass. Публичная астрономическая запись: диапазоны расстояния и маршрутные карты являются объяснительными интервалами, а не финальными константами эфемерид.",
+     "localization_status": "source_draft_pending_native_review"
     },
-    {
-      "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
-      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
-      "article_id": "applied_lore.hecton8_moon_ladder_public_band",
-      "title_key": "applied_lore.hecton8_moon_ladder_public_band.title",
-      "unlock": {
-        "primary": "unlock.hecton8_moon_ladder_public_band",
-        "poi_tags": [
-          "poi.moon_ladder_public_band",
-          "poi.hecton8_mid_orbit_card",
-          "poi.aegir_moon_role_index"
-        ],
-        "biome_tags": [
-          "biome.aegir_system",
-          "biome.publication"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "HECTON-8 Moon Ladder",
-          "scanner": "Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
-          "terminal": "MOON LADDER: public role labels only; exact orbital elements remain table-owned data.",
-          "audio": "Other moons are not side quests. They are why the route has teeth.",
-          "in_game_wiki": "The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8. Nearby bodies shape relays, ice-scatter, quarantine timing, salvage traffic and silence windows without promising extra playable moons.",
-          "external_site": "HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
-          "field_note": "Moon ladder record: public maps can show Aegir scale without promising playable moons.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Лунная лестница HECTON-8",
-          "scanner": "Draft ru_RU localization pending native pass. Лунная лестница: HECTON-8 - один claim, а не вся система Aegir.",
-          "terminal": "Draft ru_RU localization pending native pass. MOON LADDER: только публичные role labels; точные orbital elements остаются table-owned data.",
-          "audio": "Draft ru_RU localization pending native pass. Другие луны не side quests. Они причина, по которой у маршрута есть зубы.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. Лунная лестница дает Aegir масштаб, сохраняя кампанию на HECTON-8. Соседние тела формируют реле, ледяную пыль, quarantine timing, salvage traffic и silence windows, не обещая дополнительные playable moons.",
-          "external_site": "Draft ru_RU localization pending native pass. HECTON-8 находится внутри рабочей multi-moon claim system, где важны реле, ice-scatter, quarantine и salvage traffic.",
-          "field_note": "Draft ru_RU localization pending native pass. Запись лунной лестницы: публичные карты могут показывать масштаб Aegir без обещания playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. HECTON-8月梯子",
-          "scanner": "Draft ja_JP localization pending native pass. 月梯子: HECTON-8は一つのclaimであり、Aegir系全体ではない。",
-          "terminal": "Draft ja_JP localization pending native pass. MOON LADDER: 公開role labelsのみ。正確なorbital elementsはtable-owned dataに残る。",
-          "audio": "Draft ja_JP localization pending native pass. 他の月はside questsではない。航路に牙を与える理由だ。",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. 月梯子はAegirに規模を与えつつ、playable campaignをHECTON-8に集中させる。近隣天体はrelay、ice-scatter、quarantine timing、salvage traffic、silence windowsを形作るが、追加playable moonsを約束しない。",
-          "external_site": "Draft ja_JP localization pending native pass. HECTON-8は、relay、ice-scatter、quarantine、salvage trafficが重要なmulti-moon claim systemの中にある。",
-          "field_note": "Draft ja_JP localization pending native pass. 月梯子記録: 公開マップはplayable moonsを約束せずにAegir規模を示せる。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. HECTON-8月梯",
-          "scanner": "Draft zh_CN localization pending native pass. 月梯：HECTON-8是一项claim，不是整个Aegir系统。",
-          "terminal": "Draft zh_CN localization pending native pass. 月梯：仅使用公共role labels；精确orbital elements保留为table-owned data。",
-          "audio": "Draft zh_CN localization pending native pass. 其他月球不是side quests。它们是航线有牙齿的原因。",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. 月梯让Aegir有尺度，同时让可玩战役集中在HECTON-8。邻近天体影响relay、ice-scatter、quarantine timing、salvage traffic和silence windows，但不承诺额外playable moons。",
-          "external_site": "Draft zh_CN localization pending native pass. HECTON-8位于运作中的multi-moon claim system内，其中relay、ice-scatter、quarantine和salvage traffic都重要。",
-          "field_note": "Draft zh_CN localization pending native pass. 月梯记录：公共地图可以展示Aegir尺度，而不承诺可玩的月球。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Échelle lunaire HECTON-8",
-          "scanner": "Draft fr_FR localization pending native pass. Échelle lunaire : HECTON-8 est une claim, pas tout le système Aegir.",
-          "terminal": "Draft fr_FR localization pending native pass. MOON LADDER : rôles publics seulement ; les orbital elements exacts restent table-owned data.",
-          "audio": "Draft fr_FR localization pending native pass. Les autres lunes ne sont pas des side quests. Elles donnent des dents à la route.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. L'échelle lunaire donne l'ampleur d'Aegir tout en gardant la campagne jouable sur HECTON-8. Les corps proches modèlent relais, ice-scatter, quarantine timing, salvage traffic et silence windows sans promettre d'autres lunes jouables.",
-          "external_site": "Draft fr_FR localization pending native pass. HECTON-8 appartient à un multi-moon claim system où relay, ice-scatter, quarantine et salvage traffic comptent.",
-          "field_note": "Draft fr_FR localization pending native pass. Archive d'échelle lunaire : les cartes publiques peuvent montrer Aegir sans promettre des playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Escalera lunar HECTON-8",
-          "scanner": "Draft es_ES localization pending native pass. Escalera lunar: HECTON-8 es una claim, no todo el sistema Aegir.",
-          "terminal": "Draft es_ES localization pending native pass. MOON LADDER: solo role labels públicos; los orbital elements exactos siguen como table-owned data.",
-          "audio": "Draft es_ES localization pending native pass. Las otras lunas no son side quests. Son la razón de que la ruta tenga dientes.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. La escalera lunar da escala a Aegir manteniendo la campaña jugable en HECTON-8. Los cuerpos cercanos moldean relay, ice-scatter, quarantine timing, salvage traffic y silence windows sin prometer lunas jugables extra.",
-          "external_site": "Draft es_ES localization pending native pass. HECTON-8 está dentro de un multi-moon claim system donde importan relay, ice-scatter, quarantine y salvage traffic.",
-          "field_note": "Draft es_ES localization pending native pass. Registro de escalera lunar: los mapas públicos pueden mostrar escala de Aegir sin prometer playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. HECTON-8-Mondleiter",
-          "scanner": "Draft de_DE localization pending native pass. Mondleiter: HECTON-8 ist ein claim, nicht das ganze Aegir-System.",
-          "terminal": "Draft de_DE localization pending native pass. MOON LADDER: nur öffentliche role labels; exakte orbital elements bleiben table-owned data.",
-          "audio": "Draft de_DE localization pending native pass. Andere Monde sind keine side quests. Sie geben der Route Zähne.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. Die Mondleiter gibt Aegir Maßstab und hält die spielbare Kampagne auf HECTON-8. Nahe Körper formen relay, ice-scatter, quarantine timing, salvage traffic und silence windows ohne zusätzliche playable moons zu versprechen.",
-          "external_site": "Draft de_DE localization pending native pass. HECTON-8 liegt in einem aktiven multi-moon claim system, in dem relay, ice-scatter, quarantine und salvage traffic zählen.",
-          "field_note": "Draft de_DE localization pending native pass. Mondleiterdatensatz: Öffentliche Karten können Aegir-Maßstab zeigen, ohne playable moons zu versprechen.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Drabina księżyców HECTON-8",
-          "scanner": "Draft pl_PL localization pending native pass. Drabina księżyców: HECTON-8 to jeden claim, nie cały system Aegir.",
-          "terminal": "Draft pl_PL localization pending native pass. MOON LADDER: tylko publiczne role labels; dokładne orbital elements zostają table-owned data.",
-          "audio": "Draft pl_PL localization pending native pass. Inne księżyce nie są side quests. To przez nie trasa ma zęby.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. Drabina księżyców daje Aegir skalę, ale kampania zostaje na HECTON-8. Sąsiednie ciała kształtują relay, ice-scatter, quarantine timing, salvage traffic i silence windows bez obietnicy dodatkowych playable moons.",
-          "external_site": "Draft pl_PL localization pending native pass. HECTON-8 leży w działającym multi-moon claim system, gdzie relay, ice-scatter, quarantine i salvage traffic mają znaczenie.",
-          "field_note": "Draft pl_PL localization pending native pass. Zapis drabiny: mapy publiczne mogą pokazać skalę Aegir bez obiecywania playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Місячна драбина HECTON-8",
-          "scanner": "Draft uk_UA localization pending native pass. Місячна драбина: HECTON-8 - один claim, а не вся система Aegir.",
-          "terminal": "Draft uk_UA localization pending native pass. MOON LADDER: лише публічні role labels; точні orbital elements лишаються table-owned data.",
-          "audio": "Draft uk_UA localization pending native pass. Інші місяці не side quests. Вони причина, чому маршрут має зуби.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. Місячна драбина дає Aegir масштаб, лишаючи кампанію на HECTON-8. Сусідні тіла формують relay, ice-scatter, quarantine timing, salvage traffic і silence windows без обіцянки додаткових playable moons.",
-          "external_site": "Draft uk_UA localization pending native pass. HECTON-8 перебуває всередині робочої multi-moon claim system, де важливі relay, ice-scatter, quarantine і salvage traffic.",
-          "field_note": "Draft uk_UA localization pending native pass. Запис місячної драбини: публічні карти можуть показувати масштаб Aegir без обіцянки playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. سلم أقمار HECTON-8",
-          "scanner": "Draft ar_SA localization pending native pass. سلم الأقمار: HECTON-8 هو claim واحد، وليس نظام Aegir كله.",
-          "terminal": "Draft ar_SA localization pending native pass. MOON LADDER: role labels عامة فقط؛ orbital elements الدقيقة تبقى table-owned data.",
-          "audio": "Draft ar_SA localization pending native pass. الأقمار الأخرى ليست side quests. إنها سبب أن للطريق أسنانا.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. يعطي سلم الأقمار Aegir حجما مع إبقاء الحملة القابلة للعب على HECTON-8. الأجسام القريبة تشكل relay وice-scatter وquarantine timing وsalvage traffic وsilence windows من دون وعد بأقمار قابلة للعب إضافية.",
-          "external_site": "Draft ar_SA localization pending native pass. يقع HECTON-8 داخل multi-moon claim system عامل حيث تهم relay وice-scatter وquarantine وsalvage traffic.",
-          "field_note": "Draft ar_SA localization pending native pass. سجل سلم الأقمار: الخرائط العامة يمكن أن تظهر حجم Aegir من دون وعد بـ playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Tangga Bulan HECTON-8",
-          "scanner": "Draft id_ID localization pending native pass. Tangga bulan: HECTON-8 adalah satu claim, bukan seluruh sistem Aegir.",
-          "terminal": "Draft id_ID localization pending native pass. MOON LADDER: hanya role labels publik; orbital elements tepat tetap menjadi table-owned data.",
-          "audio": "Draft id_ID localization pending native pass. Bulan lain bukan side quests. Mereka alasan rute ini punya gigi.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. Tangga bulan memberi skala pada Aegir sambil menjaga kampanye tetap fokus pada HECTON-8. Benda dekat membentuk relay, ice-scatter, quarantine timing, salvage traffic dan silence windows tanpa menjanjikan playable moons tambahan.",
-          "external_site": "Draft id_ID localization pending native pass. HECTON-8 berada dalam multi-moon claim system aktif tempat relay, ice-scatter, quarantine dan salvage traffic berarti.",
-          "field_note": "Draft id_ID localization pending native pass. Catatan tangga bulan: peta publik dapat menunjukkan skala Aegir tanpa menjanjikan playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. HECTON-8 달 사다리",
-          "scanner": "Draft ko_KR localization pending native pass. 달 사다리: HECTON-8은 하나의 claim이지 Aegir system 전체가 아니다.",
-          "terminal": "Draft ko_KR localization pending native pass. MOON LADDER: 공개 role labels만 사용한다. 정확한 orbital elements는 table-owned data로 남는다.",
-          "audio": "Draft ko_KR localization pending native pass. 다른 달은 side quests가 아니다. 항로에 이빨이 있는 이유다.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. 달 사다리는 Aegir에 규모를 주면서 playable campaign을 HECTON-8에 묶어 둔다. 주변 천체는 relay, ice-scatter, quarantine timing, salvage traffic, silence windows를 만들지만 추가 playable moons를 약속하지 않는다.",
-          "external_site": "Draft ko_KR localization pending native pass. HECTON-8은 relay, ice-scatter, quarantine, salvage traffic이 중요한 multi-moon claim system 안에 있다.",
-          "field_note": "Draft ko_KR localization pending native pass. Moon ladder record: 공개 지도는 playable moons를 약속하지 않고 Aegir 규모를 보여 줄 수 있다.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. סולם ירחי HECTON-8",
-          "scanner": "Draft he_IL localization pending native pass. סולם ירחי: HECTON-8 הוא claim אחד, לא כל מערכת Aegir.",
-          "terminal": "Draft he_IL localization pending native pass. MOON LADDER: role labels ציבוריים בלבד; orbital elements מדויקים נשארים table-owned data.",
-          "audio": "Draft he_IL localization pending native pass. ירחים אחרים אינם side quests. הם הסיבה שלנתיב יש שיניים.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. סולם הירחים נותן ל-Aegir קנה מידה ומחזיק את הקמפיין על HECTON-8. גופים קרובים מעצבים relay, ice-scatter, quarantine timing, salvage traffic ו-silence windows בלי להבטיח playable moons נוספים.",
-          "external_site": "Draft he_IL localization pending native pass. HECTON-8 נמצא בתוך multi-moon claim system פעיל שבו relay, ice-scatter, quarantine ו-salvage traffic חשובים.",
-          "field_note": "Draft he_IL localization pending native pass. רשומת סולם ירחים: מפות ציבוריות יכולות להראות את קנה המידה של Aegir בלי להבטיח playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Escada lunar HECTON-8",
-          "scanner": "Draft pt_BR localization pending native pass. Escada lunar: HECTON-8 é uma claim, não todo o sistema Aegir.",
-          "terminal": "Draft pt_BR localization pending native pass. MOON LADDER: apenas role labels públicos; orbital elements exatos permanecem table-owned data.",
-          "audio": "Draft pt_BR localization pending native pass. Outras luas não são side quests. São por isso que a rota tem dentes.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. A escada lunar dá escala a Aegir mantendo a campanha jogável focada em HECTON-8. Corpos próximos moldam relay, ice-scatter, quarantine timing, salvage traffic e silence windows sem prometer playable moons extras.",
-          "external_site": "Draft pt_BR localization pending native pass. HECTON-8 fica dentro de um multi-moon claim system funcional onde relay, ice-scatter, quarantine e salvage traffic importam.",
-          "field_note": "Draft pt_BR localization pending native pass. Registro de escada lunar: mapas públicos podem mostrar a escala de Aegir sem prometer playable moons.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. HECTON-8-maanladder",
-          "scanner": "Draft nl_NL localization pending native pass. Maanladder: HECTON-8 is één claim, niet het hele Aegir-systeem.",
-          "terminal": "Draft nl_NL localization pending native pass. MOON LADDER: alleen publieke role labels; exacte orbital elements blijven table-owned data.",
-          "audio": "Draft nl_NL localization pending native pass. Andere manen zijn geen side quests. Zij geven de route tanden.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. De maanladder geeft Aegir schaal terwijl de speelbare campagne op HECTON-8 blijft. Nabije lichamen vormen relay, ice-scatter, quarantine timing, salvage traffic en silence windows zonder extra playable moons te beloven.",
-          "external_site": "Draft nl_NL localization pending native pass. HECTON-8 zit in een werkend multi-moon claim system waar relay, ice-scatter, quarantine en salvage traffic tellen.",
-          "field_note": "Draft nl_NL localization pending native pass. Maanladderrecord: publieke kaarten kunnen Aegir-schaal tonen zonder playable moons te beloven.",
-          "localization_status": "source_draft_pending_native_review"
-        }
-      },
-      "metadata": {
-        "spoiler_tier": "1",
-        "source_voice_by_surface": {
-          "scanner": "Instrument Scan",
-          "terminal": "Recovered Ephemeris/Route Terminal",
-          "audio": "Damaged Playback",
-          "in_game_wiki": "Recovered Operational Note",
-          "external_site": "Website Public",
-          "field_note": "Marauder Field Note"
-        }
-      }
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. Ran/Aegir距離帯",
+     "scanner": "Draft ja_JP localization pending native pass. 公開帯域: Ran/AegirはSolから十光年級のFTLなし航路。",
+     "terminal": "Draft ja_JP localization pending native pass. EPHEMERIS BAND: 天体定数が表で固定されるまで、公開文では十光年級を使う。この航路にFTL救助は存在しない。",
+     "audio": "Draft ja_JP localization pending native pass. 十光年は地図では近く、契約では残酷だ。",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. Ran/Aegir距離帯は、散文を最終simulation dataに見せずに設定を読めるものにする。Aegirは探査機、貨物、debt-backed settlementには届くが、部屋が浸水し始めてからの気軽な救助には届かない。",
+     "external_site": "Draft ja_JP localization pending native pass. Aegir系は到達可能だが厳しいno-FTL帯にある。産業には近く、放棄が意味を持つほど遠い。",
+     "field_note": "Draft ja_JP localization pending native pass. 公開天文学記録: 距離帯と航路図は説明用の範囲であり、最終ephemeris constantsではない。",
+     "localization_status": "source_draft_pending_native_review"
     },
-    {
-      "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
-      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
-      "article_id": "applied_lore.black_keel_transfer_orbit_band",
-      "title_key": "applied_lore.black_keel_transfer_orbit_band.title",
-      "unlock": {
-        "primary": "unlock.black_keel_transfer_orbit_band",
-        "poi_tags": [
-          "poi.black_keel_transfer_band",
-          "poi.carrier_custody_orbit",
-          "poi.bathydrop_return_limit"
-        ],
-        "biome_tags": [
-          "biome.black_keel_orbit",
-          "biome.claim_admin"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Black Keel Transfer Band",
-          "scanner": "Carrier band: Black Keel loiters high, not above HECTON-8.",
-          "terminal": "CARRIER ORBIT: high custody lane; descent mass is limited and weather-gated.",
-          "audio": "It is not parked above you. It is waiting where insurance allows it to wait.",
-          "in_game_wiki": "Black Keel's transfer band explains why contact, payload pickup and human extraction are different problems. A carrier can hear, price and accept cargo before it can safely spend mass on a person.",
-          "external_site": "Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
-          "field_note": "Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Трансферный диапазон Black Keel",
-          "scanner": "Draft ru_RU localization pending native pass. Диапазон carrier: Black Keel держится высоко, не над HECTON-8.",
-          "terminal": "Draft ru_RU localization pending native pass. ОРБИТА CARRIER: высокая custody lane; descent mass ограничена и gated погодой.",
-          "audio": "Draft ru_RU localization pending native pass. Он не припаркован над тобой. Он ждет там, где позволяет страховка.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. Трансферный диапазон Black Keel объясняет, почему контакт, pickup груза и extraction человека - разные задачи. Carrier может слышать, оценивать и принимать cargo раньше, чем безопасно потратит массу на человека.",
-          "external_site": "Draft ru_RU localization pending native pass. Black Keel - контрактный carrier на custody route. Он может принимать payloads раньше, чем безопасно забирать человека.",
-          "field_note": "Draft ru_RU localization pending native pass. Запись орбиты carrier: Black Keel может принять payloads раньше людей; этот разрыв питает partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. Black Keel転送帯",
-          "scanner": "Draft ja_JP localization pending native pass. Carrier帯域: Black Keelは高く待機し、HECTON-8の真上にはいない。",
-          "terminal": "Draft ja_JP localization pending native pass. CARRIER ORBIT: 高いcustody lane。descent massは制限され、天候でgatedされる。",
-          "audio": "Draft ja_JP localization pending native pass. それは君の上に駐車していない。保険が許す場所で待っている。",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. Black Keelの転送帯は、接触、payload pickup、人間のextractionが別問題である理由を説明する。Carrierは人間に質量を使う前に、cargoを聞き、価格化し、受け入れられる。",
-          "external_site": "Draft ja_JP localization pending native pass. Black Keelはcustody route上の契約carrierであり、人間を安全に回収する前にpayloadsを受け取れる。",
-          "field_note": "Draft ja_JP localization pending native pass. Carrier軌道記録: Black Keelは人間より先にpayloadsを受け取れる。その差がpartial-exit logicを駆動する。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. Black Keel转移带",
-          "scanner": "Draft zh_CN localization pending native pass. Carrier带：Black Keel在高处徘徊，不在HECTON-8正上方。",
-          "terminal": "Draft zh_CN localization pending native pass. CARRIER ORBIT：高custody lane；descent mass受限，并被天气gated。",
-          "audio": "Draft zh_CN localization pending native pass. 它没有停在你头顶。它在保险允许的地方等待。",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. Black Keel转移带解释了为什么联系、payload pickup和人类extraction是不同问题。Carrier可以先听见、定价并接收cargo，再安全地把质量花在人身上。",
-          "external_site": "Draft zh_CN localization pending native pass. Black Keel是custody route上的合同carrier。它能先接收payloads，之后才可能安全回收人员。",
-          "field_note": "Draft zh_CN localization pending native pass. Carrier轨道记录：Black Keel可以先接收payloads，再接人；这个差距驱动partial-exit logic。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Bande de transfert Black Keel",
-          "scanner": "Draft fr_FR localization pending native pass. Bande carrier : Black Keel attend haut, pas au-dessus de HECTON-8.",
-          "terminal": "Draft fr_FR localization pending native pass. CARRIER ORBIT : custody lane haute ; descent mass limitée et weather-gated.",
-          "audio": "Draft fr_FR localization pending native pass. Il n'est pas garé au-dessus de toi. Il attend où l'assurance lui permet d'attendre.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. La bande de transfert Black Keel explique pourquoi contact, payload pickup et extraction humaine sont des problèmes distincts. Un carrier peut entendre, tarifer et accepter le cargo avant de dépenser sûrement de la masse sur une personne.",
-          "external_site": "Draft fr_FR localization pending native pass. Black Keel est un carrier contractuel sur une custody route. Il peut recevoir des payloads avant de récupérer une personne en sécurité.",
-          "field_note": "Draft fr_FR localization pending native pass. Archive d'orbite carrier : Black Keel peut recevoir des payloads avant les personnes ; cet écart nourrit la partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Banda de transferencia Black Keel",
-          "scanner": "Draft es_ES localization pending native pass. Banda carrier: Black Keel espera alto, no sobre HECTON-8.",
-          "terminal": "Draft es_ES localization pending native pass. CARRIER ORBIT: custody lane alta; descent mass limitada y weather-gated.",
-          "audio": "Draft es_ES localization pending native pass. No está aparcado sobre ti. Espera donde el seguro le permite esperar.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. La banda de transferencia de Black Keel explica por qué contacto, payload pickup y extraction humana son problemas distintos. Un carrier puede oír, tasar y aceptar cargo antes de gastar masa con seguridad en una persona.",
-          "external_site": "Draft es_ES localization pending native pass. Black Keel es un carrier contractual en una custody route. Puede recibir payloads antes de recuperar a una persona con seguridad.",
-          "field_note": "Draft es_ES localization pending native pass. Registro orbital carrier: Black Keel puede recibir payloads antes que personas; esa brecha impulsa partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Black-Keel-Transferband",
-          "scanner": "Draft de_DE localization pending native pass. Carrier-Band: Black Keel lauert hoch, nicht über HECTON-8.",
-          "terminal": "Draft de_DE localization pending native pass. CARRIER ORBIT: hohe custody lane; descent mass ist begrenzt und weather-gated.",
-          "audio": "Draft de_DE localization pending native pass. Es parkt nicht über dir. Es wartet dort, wo Versicherung es warten lässt.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. Black Keels Transferband erklärt, warum Kontakt, payload pickup und menschliche extraction verschiedene Probleme sind. Ein carrier kann hören, bepreisen und cargo annehmen, bevor er sicher Masse für einen Menschen ausgibt.",
-          "external_site": "Draft de_DE localization pending native pass. Black Keel ist ein Vertrags-carrier auf einer custody route. Er kann payloads empfangen, bevor er sicher eine Person birgt.",
-          "field_note": "Draft de_DE localization pending native pass. Carrier-Orbitdatensatz: Black Keel kann payloads vor Menschen empfangen; diese Lücke treibt partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Pas transferowy Black Keel",
-          "scanner": "Draft pl_PL localization pending native pass. Pas carrier: Black Keel krąży wysoko, nie nad HECTON-8.",
-          "terminal": "Draft pl_PL localization pending native pass. CARRIER ORBIT: wysoka custody lane; descent mass ograniczona i weather-gated.",
-          "audio": "Draft pl_PL localization pending native pass. Nie parkuje nad tobą. Czeka tam, gdzie pozwala ubezpieczenie.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. Pas transferowy Black Keel wyjaśnia, czemu kontakt, payload pickup i human extraction to różne problemy. Carrier może usłyszeć, wycenić i przyjąć cargo, zanim bezpiecznie wyda masę na człowieka.",
-          "external_site": "Draft pl_PL localization pending native pass. Black Keel to kontraktowy carrier na custody route. Może przyjąć payloads wcześniej niż bezpiecznie podjąć osobę.",
-          "field_note": "Draft pl_PL localization pending native pass. Zapis orbity carrier: Black Keel może przyjąć payloads przed ludźmi; ta luka napędza partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Трансферний діапазон Black Keel",
-          "scanner": "Draft uk_UA localization pending native pass. Діапазон carrier: Black Keel тримається високо, не над HECTON-8.",
-          "terminal": "Draft uk_UA localization pending native pass. CARRIER ORBIT: висока custody lane; descent mass обмежена й weather-gated.",
-          "audio": "Draft uk_UA localization pending native pass. Він не припаркований над тобою. Він чекає там, де дозволяє страхування.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. Трансферний діапазон Black Keel пояснює, чому контакт, payload pickup і human extraction є різними задачами. Carrier може чути, оцінювати й приймати cargo раніше, ніж безпечно витратить масу на людину.",
-          "external_site": "Draft uk_UA localization pending native pass. Black Keel - контрактний carrier на custody route. Він може приймати payloads раніше, ніж безпечно забирати людину.",
-          "field_note": "Draft uk_UA localization pending native pass. Запис орбіти carrier: Black Keel може прийняти payloads раніше за людей; цей розрив рухає partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. نطاق نقل Black Keel",
-          "scanner": "Draft ar_SA localization pending native pass. نطاق carrier: Black Keel ينتظر عاليا، لا فوق HECTON-8.",
-          "terminal": "Draft ar_SA localization pending native pass. CARRIER ORBIT: custody lane عالية؛ descent mass محدودة وweather-gated.",
-          "audio": "Draft ar_SA localization pending native pass. إنه ليس متوقفا فوقك. ينتظر حيث يسمح التأمين.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. يفسر نطاق نقل Black Keel لماذا الاتصال وpayload pickup وhuman extraction مسائل مختلفة. يمكن لـ carrier أن يسمع ويسعر ويقبل cargo قبل أن ينفق كتلة بأمان على شخص.",
-          "external_site": "Draft ar_SA localization pending native pass. Black Keel هو carrier تعاقدي على custody route. يمكنه استقبال payloads قبل أن يستعيد شخصا بأمان.",
-          "field_note": "Draft ar_SA localization pending native pass. سجل مدار carrier: يستطيع Black Keel استقبال payloads قبل الناس؛ هذه الفجوة تدفع partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Pita Transfer Black Keel",
-          "scanner": "Draft id_ID localization pending native pass. Pita carrier: Black Keel menunggu tinggi, bukan di atas HECTON-8.",
-          "terminal": "Draft id_ID localization pending native pass. CARRIER ORBIT: custody lane tinggi; descent mass terbatas dan weather-gated.",
-          "audio": "Draft id_ID localization pending native pass. Ia tidak parkir di atasmu. Ia menunggu di tempat yang diizinkan asuransi.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. Pita transfer Black Keel menjelaskan mengapa kontak, payload pickup dan human extraction adalah masalah berbeda. Carrier bisa mendengar, menilai dan menerima cargo sebelum aman menghabiskan massa untuk seseorang.",
-          "external_site": "Draft id_ID localization pending native pass. Black Keel adalah carrier kontrak di custody route. Ia dapat menerima payloads sebelum aman mengambil manusia.",
-          "field_note": "Draft id_ID localization pending native pass. Catatan orbit carrier: Black Keel bisa menerima payloads sebelum manusia; celah itu menggerakkan partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Black Keel 전송 대역",
-          "scanner": "Draft ko_KR localization pending native pass. Carrier 대역: Black Keel은 HECTON-8 위가 아니라 높은 곳에 머문다.",
-          "terminal": "Draft ko_KR localization pending native pass. CARRIER ORBIT: 높은 custody lane. descent mass는 제한되고 weather-gated다.",
-          "audio": "Draft ko_KR localization pending native pass. 그것은 네 위에 주차되어 있지 않다. 보험이 허락하는 곳에서 기다린다.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. Black Keel transfer band는 contact, payload pickup, human extraction이 왜 다른 문제인지 설명한다. Carrier는 사람에게 mass를 쓰기 전에 cargo를 듣고 가격을 매기고 받을 수 있다.",
-          "external_site": "Draft ko_KR localization pending native pass. Black Keel은 custody route 위의 계약 carrier다. 사람을 안전하게 회수하기 전에 payloads를 받을 수 있다.",
-          "field_note": "Draft ko_KR localization pending native pass. Carrier orbit record: Black Keel은 사람보다 먼저 payloads를 받을 수 있고, 그 틈이 partial-exit logic을 만든다.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. רצועת העברה Black Keel",
-          "scanner": "Draft he_IL localization pending native pass. רצועת carrier: Black Keel ממתין גבוה, לא מעל HECTON-8.",
-          "terminal": "Draft he_IL localization pending native pass. CARRIER ORBIT: custody lane גבוהה; descent mass מוגבלת ו-weather-gated.",
-          "audio": "Draft he_IL localization pending native pass. הוא לא חונה מעליך. הוא מחכה במקום שהביטוח מרשה לו לחכות.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. רצועת ההעברה של Black Keel מסבירה למה contact, payload pickup ו-human extraction הן בעיות שונות. Carrier יכול לשמוע, לתמחר ולקבל cargo לפני שהוא מוציא מסה בבטחה על אדם.",
-          "external_site": "Draft he_IL localization pending native pass. Black Keel הוא carrier חוזי על custody route. הוא יכול לקבל payloads לפני שהוא יכול להשיב אדם בבטחה.",
-          "field_note": "Draft he_IL localization pending native pass. רשומת מסלול carrier: Black Keel יכול לקבל payloads לפני אנשים; הפער הזה מניע partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Faixa de transferência Black Keel",
-          "scanner": "Draft pt_BR localization pending native pass. Faixa carrier: Black Keel paira alto, não acima de HECTON-8.",
-          "terminal": "Draft pt_BR localization pending native pass. CARRIER ORBIT: custody lane alta; descent mass limitada e weather-gated.",
-          "audio": "Draft pt_BR localization pending native pass. Ele não está estacionado acima de você. Está esperando onde o seguro permite esperar.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. A faixa de transferência Black Keel explica por que contato, payload pickup e human extraction são problemas diferentes. Um carrier pode ouvir, precificar e aceitar cargo antes de gastar massa com segurança em uma pessoa.",
-          "external_site": "Draft pt_BR localization pending native pass. Black Keel é um carrier contratual em uma custody route. Pode receber payloads antes de recuperar uma pessoa com segurança.",
-          "field_note": "Draft pt_BR localization pending native pass. Registro de órbita carrier: Black Keel pode receber payloads antes de pessoas; essa lacuna move a partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Black Keel-transferband",
-          "scanner": "Draft nl_NL localization pending native pass. Carrierband: Black Keel hangt hoog, niet boven HECTON-8.",
-          "terminal": "Draft nl_NL localization pending native pass. CARRIER ORBIT: hoge custody lane; descent mass is beperkt en weather-gated.",
-          "audio": "Draft nl_NL localization pending native pass. Hij staat niet boven je geparkeerd. Hij wacht waar verzekering hem laat wachten.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. De Black Keel-transferband legt uit waarom contact, payload pickup en human extraction verschillende problemen zijn. Een carrier kan horen, prijzen en cargo aannemen voordat hij veilig massa aan een persoon besteedt.",
-          "external_site": "Draft nl_NL localization pending native pass. Black Keel is een contractcarrier op een custody route. Hij kan payloads ontvangen voordat hij veilig een persoon terughaalt.",
-          "field_note": "Draft nl_NL localization pending native pass. Carrier-orbitrecord: Black Keel kan payloads ontvangen vóór mensen; die kloof drijft partial-exit logic.",
-          "localization_status": "source_draft_pending_native_review"
-        }
-      },
-      "metadata": {
-        "spoiler_tier": "1",
-        "source_voice_by_surface": {
-          "scanner": "Instrument Scan",
-          "terminal": "Recovered Ephemeris/Route Terminal",
-          "audio": "Damaged Playback",
-          "in_game_wiki": "Recovered Operational Note",
-          "external_site": "Website Public",
-          "field_note": "Marauder Field Note"
-        }
-      }
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. Ran/Aegir距离带",
+     "scanner": "Draft zh_CN localization pending native pass. 公共带：Ran/Aegir是从Sol出发的十光年级无FTL航线。",
+     "terminal": "Draft zh_CN localization pending native pass. 星历带：在天体常数被表格冻结前，公共文本使用十光年级。此航线不存在FTL救援。",
+     "audio": "Draft zh_CN localization pending native pass. 十光年在地图上很近，在合同里很残酷。",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. Ran/Aegir距离带让设定可读，同时不把叙述伪装成最终simulation data。Aegir可由探测器、货运和debt-backed settlement抵达，但当房间开始进水时，它不支持随手救援。",
+     "external_site": "Draft zh_CN localization pending native pass. Aegir系统处在可达但严厉的no-FTL范围：近到能发展工业，远到被抛弃仍有重量。",
+     "field_note": "Draft zh_CN localization pending native pass. 公共天文记录：距离带和航线图是解释范围，不是最终星历常数。",
+     "localization_status": "source_draft_pending_native_review"
     },
-    {
-      "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
-      "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
-      "article_id": "applied_lore.public_ephemeris_table_handoff_rule",
-      "title_key": "applied_lore.public_ephemeris_table_handoff_rule.title",
-      "unlock": {
-        "primary": "unlock.public_ephemeris_table_handoff_rule",
-        "poi_tags": [
-          "poi.ephemeris_handoff_rule",
-          "poi.celestial_table_boundary",
-          "poi.public_numbers_guard"
-        ],
-        "biome_tags": [
-          "biome.authoring",
-          "biome.aegir_system"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ephemeris Data Boundary Rule",
-          "scanner": "Data boundary: prose owns bands; final orbital numbers stay table-owned.",
-          "terminal": "DATA BOUNDARY: prose may state roles, hazards and bands. Exact orbital values stay out of narrative copy.",
-          "audio": "Numbers are allowed when the table owns them.",
-          "in_game_wiki": "This boundary keeps hard-sci-fi lore useful without freezing simulation constants inside prose. Public copy can explain what a moon, route or window does while final numbers remain in data tables.",
-          "external_site": "Public pages can explain Aegir, HECTON-8, transfer windows and route hazards without freezing exact orbital constants in prose.",
-          "field_note": "Ephemeris records explain route logic while exact constants remain table-owned data.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Draft ru_RU localization pending native pass. Правило границы данных эфемерид",
-          "scanner": "Draft ru_RU localization pending native pass. Граница данных: проза владеет диапазонами; финальные орбитальные числа остаются table-owned.",
-          "terminal": "Draft ru_RU localization pending native pass. DATA BOUNDARY: проза может указывать роли, угрозы и диапазоны. Точные orbital values не входят в narrative copy.",
-          "audio": "Draft ru_RU localization pending native pass. Числа разрешены, когда ими владеет таблица.",
-          "in_game_wiki": "Draft ru_RU localization pending native pass. Эта граница сохраняет hard-sci-fi лор полезным, не замораживая simulation constants внутри прозы. Публичный текст объясняет роль луны, маршрута или окна, пока финальные числа остаются в таблицах.",
-          "external_site": "Draft ru_RU localization pending native pass. Публичные страницы могут объяснять Aegir, HECTON-8, transfer windows и route hazards без заморозки точных orbital constants.",
-          "field_note": "Draft ru_RU localization pending native pass. Записи эфемерид объясняют логику маршрута, а точные константы остаются table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ja_JP": {
-          "title": "Draft ja_JP localization pending native pass. エフェメリスデータ境界規則",
-          "scanner": "Draft ja_JP localization pending native pass. データ境界: 散文は帯域を持ち、最終軌道数値は表が持つ。",
-          "terminal": "Draft ja_JP localization pending native pass. DATA BOUNDARY: 散文は役割、危険、帯域を述べてよい。正確なorbital valuesはnarrative copyに入れない。",
-          "audio": "Draft ja_JP localization pending native pass. 数値は表が所有するとき許される。",
-          "in_game_wiki": "Draft ja_JP localization pending native pass. この境界は、simulation constantsを散文内に凍結せずにhard-sci-fi loreを有用に保つ。公開文は月、航路、窓が何をするかを説明し、最終数値はdata tablesに残す。",
-          "external_site": "Draft ja_JP localization pending native pass. 公開ページはAegir、HECTON-8、transfer windows、route hazardsを説明できるが、正確なorbital constantsは固定しない。",
-          "field_note": "Draft ja_JP localization pending native pass. Ephemeris recordsは航路論理を説明し、正確な定数はtable-owned dataに残る。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "zh_CN": {
-          "title": "Draft zh_CN localization pending native pass. 星历数据边界规则",
-          "scanner": "Draft zh_CN localization pending native pass. 数据边界：叙述拥有范围；最终轨道数字由表格拥有。",
-          "terminal": "Draft zh_CN localization pending native pass. DATA BOUNDARY：叙述可以说明角色、危险和范围。精确orbital values不进入narrative copy。",
-          "audio": "Draft zh_CN localization pending native pass. 当数字属于表格时，数字才被允许。",
-          "in_game_wiki": "Draft zh_CN localization pending native pass. 这个边界让硬科幻 lore 有用，同时不把simulation constants冻进叙述。公共文本可以解释一颗月球、航线或窗口的作用，最终数值留在data tables中。",
-          "external_site": "Draft zh_CN localization pending native pass. 公共页面可以解释Aegir、HECTON-8、transfer windows和route hazards，而不冻结精确orbital constants。",
-          "field_note": "Draft zh_CN localization pending native pass. 星历记录解释航线逻辑，精确常数仍为table-owned data。",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "fr_FR": {
-          "title": "Draft fr_FR localization pending native pass. Règle de frontière des éphémérides",
-          "scanner": "Draft fr_FR localization pending native pass. Frontière de données : la prose possède les bandes ; les nombres orbitaux finaux restent table-owned.",
-          "terminal": "Draft fr_FR localization pending native pass. DATA BOUNDARY : la prose peut dire rôles, dangers et bandes. Les orbital values exactes restent hors narrative copy.",
-          "audio": "Draft fr_FR localization pending native pass. Les nombres sont permis quand la table les possède.",
-          "in_game_wiki": "Draft fr_FR localization pending native pass. Cette frontière garde le hard-sci-fi lore utile sans figer les simulation constants dans la prose. Le texte public explique ce que fait une lune, une route ou une fenêtre pendant que les nombres finaux restent dans les data tables.",
-          "external_site": "Draft fr_FR localization pending native pass. Les pages publiques peuvent expliquer Aegir, HECTON-8, transfer windows et route hazards sans figer les orbital constants exactes.",
-          "field_note": "Draft fr_FR localization pending native pass. Les éphémérides expliquent la logique de route ; les constantes exactes restent table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "es_ES": {
-          "title": "Draft es_ES localization pending native pass. Regla de frontera de datos de efemérides",
-          "scanner": "Draft es_ES localization pending native pass. Frontera de datos: la prosa posee bandas; los números orbitales finales siguen en tablas.",
-          "terminal": "Draft es_ES localization pending native pass. DATA BOUNDARY: la prosa puede indicar roles, peligros y bandas. Los orbital values exactos quedan fuera de narrative copy.",
-          "audio": "Draft es_ES localization pending native pass. Los números están permitidos cuando la tabla los posee.",
-          "in_game_wiki": "Draft es_ES localization pending native pass. Esta frontera mantiene útil el hard-sci-fi lore sin congelar simulation constants en la prosa. El texto público explica qué hace una luna, ruta o ventana mientras los números finales quedan en data tables.",
-          "external_site": "Draft es_ES localization pending native pass. Las páginas públicas pueden explicar Aegir, HECTON-8, transfer windows y route hazards sin congelar orbital constants exactas.",
-          "field_note": "Draft es_ES localization pending native pass. Los registros de efemérides explican lógica de ruta mientras las constantes exactas siguen como table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "de_DE": {
-          "title": "Draft de_DE localization pending native pass. Ephemeriden-Datengrenzregel",
-          "scanner": "Draft de_DE localization pending native pass. Datengrenze: Prosa besitzt Bänder; finale Orbitalzahlen bleiben table-owned.",
-          "terminal": "Draft de_DE localization pending native pass. DATA BOUNDARY: Prosa darf Rollen, Gefahren und Bänder nennen. Exakte orbital values bleiben aus narrative copy heraus.",
-          "audio": "Draft de_DE localization pending native pass. Zahlen sind erlaubt, wenn die Tabelle sie besitzt.",
-          "in_game_wiki": "Draft de_DE localization pending native pass. Diese Grenze hält hard-sci-fi lore nützlich, ohne simulation constants in Prosa einzufrieren. Öffentliche Texte erklären Mond, Route oder Fenster, während finale Zahlen in data tables bleiben.",
-          "external_site": "Draft de_DE localization pending native pass. Öffentliche Seiten können Aegir, HECTON-8, transfer windows und route hazards erklären, ohne exakte orbital constants einzufrieren.",
-          "field_note": "Draft de_DE localization pending native pass. Ephemeridendatensätze erklären Routenlogik; exakte Konstanten bleiben table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pl_PL": {
-          "title": "Draft pl_PL localization pending native pass. Reguła granicy danych efemeryd",
-          "scanner": "Draft pl_PL localization pending native pass. Granica danych: proza posiada pasy; końcowe liczby orbitalne zostają table-owned.",
-          "terminal": "Draft pl_PL localization pending native pass. DATA BOUNDARY: proza może podawać role, zagrożenia i pasy. Dokładne orbital values nie trafiają do narrative copy.",
-          "audio": "Draft pl_PL localization pending native pass. Liczby są dozwolone, gdy posiada je tabela.",
-          "in_game_wiki": "Draft pl_PL localization pending native pass. Ta granica zachowuje hard-sci-fi lore użyteczny bez zamrażania simulation constants w prozie. Tekst publiczny wyjaśnia, co robi księżyc, trasa albo okno, a liczby zostają w data tables.",
-          "external_site": "Draft pl_PL localization pending native pass. Strony publiczne mogą wyjaśniać Aegir, HECTON-8, transfer windows i route hazards bez zamrażania dokładnych orbital constants.",
-          "field_note": "Draft pl_PL localization pending native pass. Zapisy efemeryd wyjaśniają logikę trasy; dokładne stałe pozostają table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "uk_UA": {
-          "title": "Draft uk_UA localization pending native pass. Правило межі даних ефемерид",
-          "scanner": "Draft uk_UA localization pending native pass. Межа даних: проза володіє діапазонами; фінальні орбітальні числа лишаються table-owned.",
-          "terminal": "Draft uk_UA localization pending native pass. DATA BOUNDARY: проза може вказувати ролі, загрози й діапазони. Точні orbital values не входять у narrative copy.",
-          "audio": "Draft uk_UA localization pending native pass. Числа дозволені, коли ними володіє таблиця.",
-          "in_game_wiki": "Draft uk_UA localization pending native pass. Ця межа зберігає hard-sci-fi lore корисним, не заморожуючи simulation constants у прозі. Публічний текст пояснює роль місяця, маршруту або вікна, поки фінальні числа лишаються в data tables.",
-          "external_site": "Draft uk_UA localization pending native pass. Публічні сторінки можуть пояснювати Aegir, HECTON-8, transfer windows і route hazards без замороження точних orbital constants.",
-          "field_note": "Draft uk_UA localization pending native pass. Записи ефемерид пояснюють логіку маршруту, а точні константи лишаються table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ar_SA": {
-          "title": "Draft ar_SA localization pending native pass. قاعدة حدود بيانات التقويم السماوي",
-          "scanner": "Draft ar_SA localization pending native pass. حدود البيانات: النص يملك النطاقات؛ الأرقام المدارية النهائية تبقى table-owned.",
-          "terminal": "Draft ar_SA localization pending native pass. DATA BOUNDARY: يمكن للنص ذكر الأدوار والمخاطر والنطاقات. orbital values الدقيقة تبقى خارج narrative copy.",
-          "audio": "Draft ar_SA localization pending native pass. الأرقام مسموحة عندما تملكها الجداول.",
-          "in_game_wiki": "Draft ar_SA localization pending native pass. تحافظ هذه الحدود على hard-sci-fi lore مفيدا من دون تجميد simulation constants داخل النص. يمكن للنص العام شرح دور القمر أو الطريق أو النافذة بينما تبقى الأرقام النهائية في data tables.",
-          "external_site": "Draft ar_SA localization pending native pass. يمكن للصفحات العامة شرح Aegir وHECTON-8 وtransfer windows وroute hazards من دون تجميد orbital constants الدقيقة.",
-          "field_note": "Draft ar_SA localization pending native pass. سجلات التقويم تشرح منطق الطريق بينما تبقى الثوابت الدقيقة table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "id_ID": {
-          "title": "Draft id_ID localization pending native pass. Aturan Batas Data Ephemeris",
-          "scanner": "Draft id_ID localization pending native pass. Batas data: prosa memiliki pita; angka orbit final tetap table-owned.",
-          "terminal": "Draft id_ID localization pending native pass. DATA BOUNDARY: prosa boleh menyatakan peran, bahaya dan pita. Orbital values tepat tetap keluar dari narrative copy.",
-          "audio": "Draft id_ID localization pending native pass. Angka diizinkan saat tabel memilikinya.",
-          "in_game_wiki": "Draft id_ID localization pending native pass. Batas ini menjaga hard-sci-fi lore tetap berguna tanpa membekukan simulation constants di dalam prosa. Teks publik menjelaskan fungsi bulan, rute atau jendela sementara angka final tetap di data tables.",
-          "external_site": "Draft id_ID localization pending native pass. Halaman publik dapat menjelaskan Aegir, HECTON-8, transfer windows dan route hazards tanpa membekukan orbital constants tepat.",
-          "field_note": "Draft id_ID localization pending native pass. Catatan ephemeris menjelaskan logika rute sementara konstanta tepat tetap table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "ko_KR": {
-          "title": "Draft ko_KR localization pending native pass. Ephemeris 데이터 경계 규칙",
-          "scanner": "Draft ko_KR localization pending native pass. 데이터 경계: 산문은 대역을 갖고 최종 궤도 숫자는 table-owned로 남는다.",
-          "terminal": "Draft ko_KR localization pending native pass. DATA BOUNDARY: 산문은 역할, 위험, 대역을 말할 수 있다. 정확한 orbital values는 narrative copy 밖에 둔다.",
-          "audio": "Draft ko_KR localization pending native pass. 숫자는 테이블이 소유할 때 허용된다.",
-          "in_game_wiki": "Draft ko_KR localization pending native pass. 이 경계는 simulation constants를 산문 속에 얼리지 않으면서 hard-sci-fi lore를 유용하게 유지한다. 공개 텍스트는 달, 항로, window가 무엇을 하는지 설명하고 최종 숫자는 data tables에 남긴다.",
-          "external_site": "Draft ko_KR localization pending native pass. 공개 페이지는 Aegir, HECTON-8, transfer windows, route hazards를 설명하되 정확한 orbital constants를 고정하지 않는다.",
-          "field_note": "Draft ko_KR localization pending native pass. Ephemeris records는 항로 논리를 설명하고 정확한 상수는 table-owned data로 남는다.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "he_IL": {
-          "title": "Draft he_IL localization pending native pass. כלל גבול נתוני אפמריס",
-          "scanner": "Draft he_IL localization pending native pass. גבול נתונים: הפרוזה מחזיקה רצועות; המספרים המסלוליים הסופיים נשארים table-owned.",
-          "terminal": "Draft he_IL localization pending native pass. DATA BOUNDARY: פרוזה יכולה לציין תפקידים, סכנות ורצועות. orbital values מדויקים נשארים מחוץ ל-narrative copy.",
-          "audio": "Draft he_IL localization pending native pass. מספרים מותרים כשהטבלה מחזיקה אותם.",
-          "in_game_wiki": "Draft he_IL localization pending native pass. הגבול הזה שומר את hard-sci-fi lore שימושי בלי להקפיא simulation constants בתוך פרוזה. טקסט ציבורי מסביר מה ירח, נתיב או חלון עושים, והמספרים הסופיים נשארים ב-data tables.",
-          "external_site": "Draft he_IL localization pending native pass. עמודים ציבוריים יכולים להסביר את Aegir, HECTON-8, transfer windows ו-route hazards בלי להקפיא orbital constants מדויקים.",
-          "field_note": "Draft he_IL localization pending native pass. רשומות אפמריס מסבירות לוגיקת נתיב; הקבועים המדויקים נשארים table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "pt_BR": {
-          "title": "Draft pt_BR localization pending native pass. Regra de fronteira de dados de efemérides",
-          "scanner": "Draft pt_BR localization pending native pass. Fronteira de dados: a prosa possui faixas; números orbitais finais ficam table-owned.",
-          "terminal": "Draft pt_BR localization pending native pass. DATA BOUNDARY: a prosa pode indicar papéis, perigos e faixas. Orbital values exatos ficam fora da narrative copy.",
-          "audio": "Draft pt_BR localization pending native pass. Números são permitidos quando a tabela os possui.",
-          "in_game_wiki": "Draft pt_BR localization pending native pass. Essa fronteira mantém o hard-sci-fi lore útil sem congelar simulation constants na prosa. Texto público explica o que uma lua, rota ou janela faz enquanto números finais ficam em data tables.",
-          "external_site": "Draft pt_BR localization pending native pass. Páginas públicas podem explicar Aegir, HECTON-8, transfer windows e route hazards sem congelar orbital constants exatos.",
-          "field_note": "Draft pt_BR localization pending native pass. Registros de efemérides explicam lógica de rota enquanto constantes exatas permanecem table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        },
-        "nl_NL": {
-          "title": "Draft nl_NL localization pending native pass. Efemeridendata-grensregel",
-          "scanner": "Draft nl_NL localization pending native pass. Datagrens: proza bezit banden; finale orbitale getallen blijven table-owned.",
-          "terminal": "Draft nl_NL localization pending native pass. DATA BOUNDARY: proza mag rollen, gevaren en banden noemen. Exacte orbital values blijven uit narrative copy.",
-          "audio": "Draft nl_NL localization pending native pass. Getallen zijn toegestaan wanneer de tabel ze bezit.",
-          "in_game_wiki": "Draft nl_NL localization pending native pass. Deze grens houdt hard-sci-fi lore nuttig zonder simulation constants in proza vast te zetten. Publieke tekst legt uit wat een maan, route of venster doet terwijl finale getallen in data tables blijven.",
-          "external_site": "Draft nl_NL localization pending native pass. Publieke pagina's kunnen Aegir, HECTON-8, transfer windows en route hazards uitleggen zonder exacte orbital constants te bevriezen.",
-          "field_note": "Draft nl_NL localization pending native pass. Efemeridenrecords leggen routelogica uit; exacte constanten blijven table-owned data.",
-          "localization_status": "source_draft_pending_native_review"
-        }
-      },
-      "metadata": {
-        "spoiler_tier": "1",
-        "source_voice_by_surface": {
-          "scanner": "Instrument Scan",
-          "terminal": "Recovered Ephemeris/Route Terminal",
-          "audio": "Damaged Playback",
-          "in_game_wiki": "Recovered Operational Note",
-          "external_site": "Website Public",
-          "field_note": "Marauder Field Note"
-        }
-      }
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Bande de distance Ran/Aegir",
+     "scanner": "Draft fr_FR localization pending native pass. Bande publique : Ran/Aegir est une route sans FTL de classe dix années-lumière depuis Sol.",
+     "terminal": "Draft fr_FR localization pending native pass. BANDE D'ÉPHÉMÉRIDES : utiliser la classe dix années-lumière jusqu'au gel des constantes célestes en table. Aucun secours FTL n'existe sur cette route.",
+     "audio": "Draft fr_FR localization pending native pass. Dix années-lumière sont proches sur une carte et brutales dans un contrat.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. La bande de distance Ran/Aegir garde le cadre lisible sans faire passer la prose pour des simulation data finales. Aegir est atteignable par sondes, fret et colonisation adossée à la dette, pas par sauvetage improvisé quand une pièce se noie.",
+     "external_site": "Draft fr_FR localization pending native pass. Le système Aegir se trouve dans une bande no-FTL atteignable mais punitive : assez proche pour l'industrie, assez loin pour que l'abandon compte.",
+     "field_note": "Draft fr_FR localization pending native pass. Archive astronomique publique : les bandes de distance et cartes de route sont des plages explicatives, pas des constantes finales.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Banda de distancia Ran/Aegir",
+     "scanner": "Draft es_ES localization pending native pass. Banda pública: Ran/Aegir es una ruta sin FTL de clase diez años luz desde Sol.",
+     "terminal": "Draft es_ES localization pending native pass. BANDA DE EFEMÉRIDES: usar la clase diez años luz en la prosa pública hasta congelar constantes celestes en tablas. No existe rescate FTL en esta ruta.",
+     "audio": "Draft es_ES localization pending native pass. Diez años luz es cerca en un mapa y brutal en un contrato.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. La banda de distancia Ran/Aegir mantiene legible el marco sin fingir que la prosa es simulation data final. Aegir está al alcance de sondas, carga y asentamiento con deuda, no de rescate casual cuando una sala se inunda.",
+     "external_site": "Draft es_ES localization pending native pass. El sistema Aegir está en una banda no-FTL alcanzable pero punitiva: cerca para la industria, lejos para que el abandono importe.",
+     "field_note": "Draft es_ES localization pending native pass. Registro astronómico público: bandas de distancia y mapas de ruta son rangos explicativos, no constantes finales.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Ran/Aegir-Distanzband",
+     "scanner": "Draft de_DE localization pending native pass. Öffentliches Band: Ran/Aegir ist eine zehn-Lichtjahre-Klasse-No-FTL-Route von Sol.",
+     "terminal": "Draft de_DE localization pending native pass. EPHEMERIS-BAND: In öffentlicher Prosa die Zehn-Lichtjahre-Klasse nutzen, bis Himmelskonstanten tabellengefroren sind. Keine FTL-Rettung existiert auf dieser Route.",
+     "audio": "Draft de_DE localization pending native pass. Zehn Lichtjahre sind nah auf der Karte und brutal im Vertrag.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. Das Ran/Aegir-Distanzband hält den Rahmen lesbar, ohne aktuelle Prosa als finale simulation data auszugeben. Aegir ist für Sonden, Fracht und schuldgestützte Siedlung erreichbar, nicht für beiläufige Rettung, wenn ein Raum flutet.",
+     "external_site": "Draft de_DE localization pending native pass. Das Aegir-System liegt in einem erreichbaren, aber strafenden No-FTL-Band: nah genug für Industrie, fern genug, damit Verlassenheit zählt.",
+     "field_note": "Draft de_DE localization pending native pass. Öffentlicher Astronomiedatensatz: Distanzbänder und Routenkarten sind erklärende Bereiche, keine finalen Ephemeridenkonstanten.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Pas odległości Ran/Aegir",
+     "scanner": "Draft pl_PL localization pending native pass. Pas publiczny: Ran/Aegir to trasa bez FTL klasy dziesięciu lat świetlnych od Sol.",
+     "terminal": "Draft pl_PL localization pending native pass. PAS EFEMERYD: w prozie publicznej używać klasy dziesięciu lat świetlnych, dopóki stałe nie zostaną zamrożone w tabelach. Brak ratunku FTL.",
+     "audio": "Draft pl_PL localization pending native pass. Dziesięć lat świetlnych jest blisko na mapie i brutalne w kontrakcie.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. Pas odległości Ran/Aegir utrzymuje setting czytelny bez udawania, że proza jest final simulation data. Aegir osiągają sondy, fracht i osadnictwo dłużne, nie szybki ratunek, gdy pomieszczenie tonie.",
+     "external_site": "Draft pl_PL localization pending native pass. System Aegir leży w osiągalnym, lecz karzącym paśmie no-FTL: blisko dla przemysłu, daleko dla sensu porzucenia.",
+     "field_note": "Draft pl_PL localization pending native pass. Publiczny zapis astronomiczny: pasy odległości i mapy tras są zakresami wyjaśniającymi, nie końcowymi stałymi efemeryd.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Діапазон відстані Ran/Aegir",
+     "scanner": "Draft uk_UA localization pending native pass. Публічний діапазон: Ran/Aegir - маршрут без FTL приблизно десятисвітлорічного класу від Sol.",
+     "terminal": "Draft uk_UA localization pending native pass. ДІАПАЗОН ЕФЕМЕРИД: для публічного тексту використовувати клас десяти світлових років до замороження небесних констант у таблицях. FTL-порятунку на маршруті немає.",
+     "audio": "Draft uk_UA localization pending native pass. Десять світлових років близько на мапі й жорстоко в контракті.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. Діапазон відстані Ran/Aegir робить сетинг читабельним, не видаючи прозу за фінальні simulation data. Aegir досяжний для зондів, вантажів і debt-backed settlement, але не для випадкового порятунку, коли кімната вже тоне.",
+     "external_site": "Draft uk_UA localization pending native pass. Система Aegir лежить у досяжному, але жорсткому no-FTL діапазоні: досить близько для індустрії, досить далеко, щоб покинутість мала вагу.",
+     "field_note": "Draft uk_UA localization pending native pass. Публічний астрономічний запис: діапазони відстані й маршрутні карти є пояснювальними інтервалами, не фінальними константами ефемерид.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. نطاق مسافة Ran/Aegir",
+     "scanner": "Draft ar_SA localization pending native pass. النطاق العام: Ran/Aegir طريق بلا FTL من فئة عشر سنوات ضوئية من Sol.",
+     "terminal": "Draft ar_SA localization pending native pass. نطاق التقويم السماوي: استخدم فئة عشر سنوات ضوئية في النص العام حتى تثبت الثوابت السماوية في الجداول. لا يوجد إنقاذ FTL على هذا الطريق.",
+     "audio": "Draft ar_SA localization pending native pass. عشر سنوات ضوئية قريبة على الخريطة وقاسية في العقد.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. يحافظ نطاق مسافة Ran/Aegir على قابلية قراءة العالم من دون ادعاء أن النص الحالي simulation data نهائية. يمكن الوصول إلى Aegir بالمجسات والشحن والاستيطان المدعوم بالدين، لا بإنقاذ عابر عندما تبدأ غرفة بالغرق.",
+     "external_site": "Draft ar_SA localization pending native pass. يقع نظام Aegir في نطاق no-FTL ممكن لكنه معاقب: قريب بما يكفي للصناعة، وبعيد بما يكفي ليهم التخلي.",
+     "field_note": "Draft ar_SA localization pending native pass. سجل فلكي عام: نطاقات المسافة وخرائط الطرق مجالات تفسيرية، لا ثوابت تقويمية نهائية.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Pita Jarak Ran/Aegir",
+     "scanner": "Draft id_ID localization pending native pass. Pita publik: Ran/Aegir adalah rute tanpa FTL kelas sepuluh tahun cahaya dari Sol.",
+     "terminal": "Draft id_ID localization pending native pass. PITA EPHEMERIS: gunakan kelas sepuluh tahun cahaya untuk teks publik sampai konstanta langit dibekukan di tabel. Tidak ada penyelamatan FTL di rute ini.",
+     "audio": "Draft id_ID localization pending native pass. Sepuluh tahun cahaya dekat di peta dan kejam di kontrak.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. Pita jarak Ran/Aegir menjaga setting tetap terbaca tanpa berpura-pura prosa saat ini adalah simulation data final. Aegir dapat dicapai probe, freight dan debt-backed settlement, tetapi bukan rescue santai saat sebuah ruangan mulai banjir.",
+     "external_site": "Draft id_ID localization pending native pass. Sistem Aegir berada di pita no-FTL yang dapat dicapai tapi menghukum: cukup dekat untuk industri, cukup jauh agar abandonment berarti.",
+     "field_note": "Draft id_ID localization pending native pass. Catatan astronomi publik: pita jarak dan peta rute adalah rentang penjelas, bukan konstanta ephemeris final.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Ran/Aegir 거리 대역",
+     "scanner": "Draft ko_KR localization pending native pass. 공개 대역: Ran/Aegir는 Sol에서 온 10광년급 no-FTL 항로다.",
+     "terminal": "Draft ko_KR localization pending native pass. EPHEMERIS BAND: 천체 상수가 테이블에서 고정될 때까지 공개 문장에는 10광년급을 사용한다. 이 항로에는 FTL rescue가 없다.",
+     "audio": "Draft ko_KR localization pending native pass. 10광년은 지도에서는 가깝고 계약에서는 잔혹하다.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. Ran/Aegir 거리 대역은 현재 산문을 최종 simulation data처럼 꾸미지 않고 설정을 읽기 쉽게 만든다. Aegir는 probe, freight, debt-backed settlement로 닿을 수 있지만 방이 침수되기 시작한 뒤의 가벼운 구조로는 닿지 않는다.",
+     "external_site": "Draft ko_KR localization pending native pass. Aegir 시스템은 도달 가능하지만 가혹한 no-FTL 대역에 있다. 산업에는 충분히 가깝고, abandonment가 의미를 갖기엔 충분히 멀다.",
+     "field_note": "Draft ko_KR localization pending native pass. 공개 천문 기록: 거리 대역과 항로 지도는 설명 범위이며 최종 ephemeris constants가 아니다.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. רצועת מרחק Ran/Aegir",
+     "scanner": "Draft he_IL localization pending native pass. רצועה ציבורית: Ran/Aegir הוא נתיב no-FTL ברמת עשר שנות אור מ-Sol.",
+     "terminal": "Draft he_IL localization pending native pass. EPHEMERIS BAND: להשתמש ברמת עשר שנות אור בפרוזה ציבורית עד שקבועי השמים מוקפאים בטבלאות. אין FTL rescue בנתיב הזה.",
+     "audio": "Draft he_IL localization pending native pass. עשר שנות אור קרובות במפה ואכזריות בחוזה.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. רצועת המרחק Ran/Aegir שומרת על הקריאות בלי להעמיד פנים שהפרוזה היא simulation data סופית. Aegir נגיש לגשושים, freight ו-debt-backed settlement, לא לחילוץ מזדמן כשהחדר מתחיל לטבוע.",
+     "external_site": "Draft he_IL localization pending native pass. מערכת Aegir נמצאת ברצועת no-FTL נגישה אך מענישה: קרובה מספיק לתעשייה, רחוקה מספיק כדי שנטישה תהיה משמעותית.",
+     "field_note": "Draft he_IL localization pending native pass. רשומת אסטרונומיה ציבורית: רצועות מרחק ומפות נתיב הן טווחי הסבר, לא קבועי אפמריס סופיים.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Faixa de distância Ran/Aegir",
+     "scanner": "Draft pt_BR localization pending native pass. Faixa pública: Ran/Aegir é uma rota sem FTL de classe dez anos-luz a partir de Sol.",
+     "terminal": "Draft pt_BR localization pending native pass. FAIXA DE EFEMÉRIDES: usar a classe dez anos-luz na prosa pública até as constantes celestes serem congeladas em tabela. Não há resgate FTL nesta rota.",
+     "audio": "Draft pt_BR localization pending native pass. Dez anos-luz é perto no mapa e brutal no contrato.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. A faixa de distância Ran/Aegir mantém o cenário legível sem fingir que a prosa atual é simulation data final. Aegir é alcançável por sondas, carga e debt-backed settlement, mas não por resgate casual quando uma sala começa a inundar.",
+     "external_site": "Draft pt_BR localization pending native pass. O sistema Aegir fica numa faixa no-FTL alcançável, mas punitiva: perto o bastante para indústria, longe o bastante para abandono importar.",
+     "field_note": "Draft pt_BR localization pending native pass. Registro astronômico público: faixas de distância e mapas de rota são intervalos explicativos, não constantes finais de efemérides.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Ran/Aegir-afstandsband",
+     "scanner": "Draft nl_NL localization pending native pass. Publieke band: Ran/Aegir is een no-FTL-route van de tien-lichtjaar-klasse vanaf Sol.",
+     "terminal": "Draft nl_NL localization pending native pass. EFEMERIDENBAND: gebruik de tien-lichtjaar-klasse in publieke tekst tot hemelconstanten in tabellen zijn bevroren. Geen FTL-redding op deze route.",
+     "audio": "Draft nl_NL localization pending native pass. Tien lichtjaar is dichtbij op een kaart en bruut in een contract.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. De Ran/Aegir-afstandsband houdt de setting leesbaar zonder te doen alsof de huidige tekst finale simulation data is. Aegir is bereikbaar voor sondes, vracht en debt-backed settlement, maar niet voor losse redding zodra een kamer overstroomt.",
+     "external_site": "Draft nl_NL localization pending native pass. Het Aegir-systeem ligt in een bereikbare maar straffende no-FTL-band: dichtbij genoeg voor industrie, ver genoeg om verlatenheid te laten tellen.",
+     "field_note": "Draft nl_NL localization pending native pass. Publiek astronomisch record: afstandsbanden en routekaarten zijn verklarende bereiken, geen finale efemeridenconstanten.",
+     "localization_status": "source_draft_pending_native_review"
     }
-  ]
+   },
+   "metadata": {
+    "spoiler_tier": "1",
+    "source_voice_by_surface": {
+     "scanner": "Instrument Scan",
+     "terminal": "Recovered Ephemeris/Route Terminal",
+     "audio": "Damaged Playback",
+     "in_game_wiki": "Recovered Operational Note",
+     "external_site": "Website Public",
+     "field_note": "Marauder Field Note"
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P422_AEGIR_LOCAL_WINDOW_BAND_TABLE",
+   "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+   "article_id": "applied_lore.aegir_local_window_band_table",
+   "title_key": "applied_lore.aegir_local_window_band_table.title",
+   "unlock": {
+    "primary": "unlock.aegir_local_window_band_table",
+    "poi_tags": [
+     "poi.local_window_band_table",
+     "poi.carrier_phase_clock",
+     "poi.relay_weather_gate"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.upper_atmosphere"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Aegir Window Bands",
+     "scanner": "Local band: ascent waits on hours-to-days windows, not instant rescue.",
+     "terminal": "WINDOW BAND: shutter, eclipse, relay, storm, carrier phase and legal handshake must align before safe transfer.",
+     "audio": "The carrier can hear you and still be in the wrong sky.",
+     "in_game_wiki": "Aegir local windows turn orbital mechanics into pressure the player can feel. A repaired capsule still needs weather, relay angle, carrier position and legal acceptance before it becomes a real exit.",
+     "external_site": "Aegir traffic is governed by narrow transfer bands around radiation, eclipse, storm and relay geometry.",
+     "field_note": "Window band record: Black Keel timing, local orbit labels and spoiler-light system pages share the same transfer constraints.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Оконные диапазоны Aegir",
+     "scanner": "Draft ru_RU localization pending native pass. Локальный диапазон: подъем ждет окна в часы или дни, а не мгновенное спасение.",
+     "terminal": "Draft ru_RU localization pending native pass. ОКОННЫЙ ДИАПАЗОН: заслонка, затмение, реле, шторм, фаза carrier и юридический handshake должны совпасть для безопасного transfer.",
+     "audio": "Draft ru_RU localization pending native pass. Carrier может слышать тебя и все равно быть в неправильном небе.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. Локальные окна Aegir превращают орбитальную механику в ощутимое давление. Даже отремонтированной капсуле нужны погода, угол реле, позиция carrier и юридическое принятие.",
+     "external_site": "Draft ru_RU localization pending native pass. Трафик Aegir управляется узкими transfer bands вокруг радиации, затмений, штормов и геометрии реле.",
+     "field_note": "Draft ru_RU localization pending native pass. Запись оконного диапазона: timing Black Keel, локальные метки орбит и spoiler-light страницы системы используют одни transfer constraints.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. Aegir窓帯",
+     "scanner": "Draft ja_JP localization pending native pass. 局所帯域: 上昇は即時救助ではなく、数時間から数日の窓を待つ。",
+     "terminal": "Draft ja_JP localization pending native pass. WINDOW BAND: shutter、eclipse、relay、storm、carrier phase、legal handshakeが安全transfer前に揃う必要がある。",
+     "audio": "Draft ja_JP localization pending native pass. Carrierは君を聞けても、空の位置が間違っていることがある。",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. Aegirの局所窓は軌道力学をプレイヤーが感じる圧力にする。修理済みcapsuleにも、天候、リレー角、carrier位置、法的受け入れが必要だ。",
+     "external_site": "Draft ja_JP localization pending native pass. Aegir交通は放射線、食、嵐、relay geometry周りの狭いtransfer bandsに支配される。",
+     "field_note": "Draft ja_JP localization pending native pass. 窓帯記録: Black Keel timing、局所軌道ラベル、spoiler-light system pagesは同じtransfer constraintsを共有する。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. Aegir本地窗口带",
+     "scanner": "Draft zh_CN localization pending native pass. 本地带：上升等待的是数小时到数天的窗口，不是即时救援。",
+     "terminal": "Draft zh_CN localization pending native pass. 窗口带：shutter、eclipse、relay、storm、carrier phase和legal handshake必须对齐，才能安全transfer。",
+     "audio": "Draft zh_CN localization pending native pass. Carrier可以听见你，却仍在错误的天空。",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. Aegir本地窗口把轨道力学变成玩家能感到的压力。修好的capsule仍需要天气、relay角度、carrier位置和法律接收。",
+     "external_site": "Draft zh_CN localization pending native pass. Aegir交通受围绕辐射、食、风暴和relay geometry的狭窄transfer bands支配。",
+     "field_note": "Draft zh_CN localization pending native pass. 窗口带记录：Black Keel timing、本地轨道标签和spoiler-light系统页面共享同一套transfer constraints。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Bandes de fenêtre d'Aegir",
+     "scanner": "Draft fr_FR localization pending native pass. Bande locale : l'ascension attend des fenêtres d'heures ou de jours, pas un secours instantané.",
+     "terminal": "Draft fr_FR localization pending native pass. BANDE DE FENÊTRE : shutter, eclipse, relay, storm, phase carrier et legal handshake doivent s'aligner avant un transfert sûr.",
+     "audio": "Draft fr_FR localization pending native pass. Le carrier peut t'entendre et rester dans le mauvais ciel.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. Les fenêtres locales d'Aegir transforment la mécanique orbitale en pression sensible. Une capsule réparée a encore besoin de météo, d'angle relais, de position carrier et d'acceptation légale.",
+     "external_site": "Draft fr_FR localization pending native pass. Le trafic d'Aegir est gouverné par des transfer bands étroites autour du rayonnement, des éclipses, des tempêtes et de la géométrie relais.",
+     "field_note": "Draft fr_FR localization pending native pass. Archive de fenêtre : Black Keel timing, labels d'orbite locale et pages spoiler-light partagent les mêmes contraintes.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Bandas de ventana de Aegir",
+     "scanner": "Draft es_ES localization pending native pass. Banda local: el ascenso espera ventanas de horas o días, no rescate instantáneo.",
+     "terminal": "Draft es_ES localization pending native pass. BANDA DE VENTANA: shutter, eclipse, relay, storm, fase carrier y legal handshake deben alinearse antes de un transfer seguro.",
+     "audio": "Draft es_ES localization pending native pass. El carrier puede oírte y seguir en el cielo equivocado.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. Las ventanas locales de Aegir convierten la mecánica orbital en presión jugable. Una cápsula reparada aún necesita clima, ángulo relay, posición carrier y aceptación legal.",
+     "external_site": "Draft es_ES localization pending native pass. El tráfico de Aegir se rige por transfer bands estrechas alrededor de radiación, eclipse, tormenta y geometría relay.",
+     "field_note": "Draft es_ES localization pending native pass. Registro de ventana: Black Keel timing, etiquetas orbitales locales y páginas spoiler-light comparten las mismas restricciones.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Aegir-Fensterbänder",
+     "scanner": "Draft de_DE localization pending native pass. Lokales Band: Aufstieg wartet auf Stunden-bis-Tage-Fenster, nicht auf Sofortrettung.",
+     "terminal": "Draft de_DE localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase und legal handshake müssen vor sicherem transfer passen.",
+     "audio": "Draft de_DE localization pending native pass. Der carrier kann dich hören und trotzdem im falschen Himmel stehen.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. Aegir-Lokalfenster machen Orbitalmechanik zu spürbarem Druck. Eine reparierte capsule braucht noch Wetter, Relaiswinkel, carrier-Position und rechtliche Annahme.",
+     "external_site": "Draft de_DE localization pending native pass. Aegir-Verkehr wird durch enge transfer bands um Strahlung, Eclipse, Sturm und relay geometry gesteuert.",
+     "field_note": "Draft de_DE localization pending native pass. Fensterbanddatensatz: Black Keel timing, lokale Orbitlabels und spoiler-light-Systemseiten teilen dieselben transfer constraints.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Pasy okien Aegir",
+     "scanner": "Draft pl_PL localization pending native pass. Pas lokalny: wynurzenie czeka na okna godzin lub dni, nie na natychmiastowy ratunek.",
+     "terminal": "Draft pl_PL localization pending native pass. PAS OKNA: shutter, eclipse, relay, storm, faza carrier i legal handshake muszą się zgrać przed bezpiecznym transfer.",
+     "audio": "Draft pl_PL localization pending native pass. Carrier może cię słyszeć i nadal być w złym niebie.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. Lokalne okna Aegir zmieniają mechanikę orbitalną w odczuwalną presję. Naprawiona capsule nadal potrzebuje pogody, kąta relay, pozycji carrier i akceptacji prawnej.",
+     "external_site": "Draft pl_PL localization pending native pass. Ruch Aegir rządzi się wąskimi transfer bands wokół promieniowania, zaćmień, burz i relay geometry.",
+     "field_note": "Draft pl_PL localization pending native pass. Zapis pasa okna: Black Keel timing, lokalne etykiety orbit i strony spoiler-light mają te same transfer constraints.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Віконні діапазони Aegir",
+     "scanner": "Draft uk_UA localization pending native pass. Локальний діапазон: підйом чекає на вікна в години або дні, а не на миттєвий порятунок.",
+     "terminal": "Draft uk_UA localization pending native pass. ВІКОННИЙ ДІАПАЗОН: shutter, eclipse, relay, storm, фаза carrier і legal handshake мають збігтися перед безпечним transfer.",
+     "audio": "Draft uk_UA localization pending native pass. Carrier може чути тебе й усе одно бути в неправильному небі.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. Локальні вікна Aegir перетворюють орбітальну механіку на відчутний тиск. Навіть repaired capsule потребує погоди, кута relay, позиції carrier і legal acceptance.",
+     "external_site": "Draft uk_UA localization pending native pass. Трафік Aegir керується вузькими transfer bands навколо радіації, затемнень, штормів і relay geometry.",
+     "field_note": "Draft uk_UA localization pending native pass. Запис віконного діапазону: Black Keel timing, локальні мітки орбіт і spoiler-light сторінки системи мають ті самі transfer constraints.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. نطاقات نوافذ Aegir",
+     "scanner": "Draft ar_SA localization pending native pass. النطاق المحلي: الصعود ينتظر نوافذ من ساعات إلى أيام، لا إنقاذا فوريا.",
+     "terminal": "Draft ar_SA localization pending native pass. نطاق النافذة: shutter وeclipse وrelay وstorm ومرحلة carrier وlegal handshake يجب أن تصطف قبل transfer آمن.",
+     "audio": "Draft ar_SA localization pending native pass. قد يسمعك carrier ويبقى في السماء الخطأ.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. تحول نوافذ Aegir المحلية الميكانيكا المدارية إلى ضغط يشعر به اللاعب. حتى capsule مصلحة تحتاج طقسا وزاوية relay وموقع carrier وقبولا قانونيا.",
+     "external_site": "Draft ar_SA localization pending native pass. تخضع حركة Aegir إلى transfer bands ضيقة حول الإشعاع والكسوف والعواصف وrelay geometry.",
+     "field_note": "Draft ar_SA localization pending native pass. سجل نطاق النافذة: Black Keel timing وتسميات المدار المحلي وصفحات spoiler-light تشترك في transfer constraints نفسها.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Pita Jendela Aegir",
+     "scanner": "Draft id_ID localization pending native pass. Pita lokal: ascent menunggu jendela jam-ke-hari, bukan penyelamatan instan.",
+     "terminal": "Draft id_ID localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase dan legal handshake harus sejajar sebelum transfer aman.",
+     "audio": "Draft id_ID localization pending native pass. Carrier bisa mendengarmu dan tetap berada di langit yang salah.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. Jendela lokal Aegir mengubah mekanika orbit menjadi tekanan yang terasa. Capsule yang sudah diperbaiki masih butuh cuaca, sudut relay, posisi carrier dan penerimaan legal.",
+     "external_site": "Draft id_ID localization pending native pass. Lalu lintas Aegir diatur transfer bands sempit di sekitar radiasi, gerhana, badai dan relay geometry.",
+     "field_note": "Draft id_ID localization pending native pass. Catatan pita jendela: Black Keel timing, label orbit lokal dan halaman spoiler-light berbagi transfer constraints yang sama.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Aegir 창 대역",
+     "scanner": "Draft ko_KR localization pending native pass. 현지 대역: ascent는 즉시 구조가 아니라 몇 시간에서 며칠짜리 window를 기다린다.",
+     "terminal": "Draft ko_KR localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase, legal handshake가 안전 transfer 전에 맞아야 한다.",
+     "audio": "Draft ko_KR localization pending native pass. Carrier는 너를 들을 수 있어도 틀린 하늘에 있을 수 있다.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. Aegir 현지 window는 궤도역학을 플레이어가 느끼는 압력으로 만든다. 수리된 capsule도 날씨, relay angle, carrier position, legal acceptance가 필요하다.",
+     "external_site": "Draft ko_KR localization pending native pass. Aegir traffic은 radiation, eclipse, storm, relay geometry 주변의 좁은 transfer bands가 지배한다.",
+     "field_note": "Draft ko_KR localization pending native pass. Window band record: Black Keel timing, 현지 orbit label, spoiler-light system pages는 같은 transfer constraints를 공유한다.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. רצועות חלון Aegir",
+     "scanner": "Draft he_IL localization pending native pass. רצועה מקומית: ascent מחכה לחלונות של שעות עד ימים, לא לחילוץ מיידי.",
+     "terminal": "Draft he_IL localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase ו-legal handshake חייבים להסתדר לפני transfer בטוח.",
+     "audio": "Draft he_IL localization pending native pass. ה-carrier יכול לשמוע אותך ועדיין להיות בשמים הלא נכונים.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. החלונות המקומיים של Aegir הופכים מכניקה מסלולית ללחץ שהשחקן מרגיש. גם capsule מתוקנת צריכה מזג אוויר, relay angle, carrier position וקבלה משפטית.",
+     "external_site": "Draft he_IL localization pending native pass. התנועה של Aegir נשלטת בידי transfer bands צרות סביב קרינה, ליקוי, storm ו-relay geometry.",
+     "field_note": "Draft he_IL localization pending native pass. רשומת רצועת חלון: Black Keel timing, תוויות מסלול מקומיות ועמודי spoiler-light חולקים אותם transfer constraints.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Faixas de janela de Aegir",
+     "scanner": "Draft pt_BR localization pending native pass. Faixa local: a ascensão espera janelas de horas a dias, não resgate instantâneo.",
+     "terminal": "Draft pt_BR localization pending native pass. FAIXA DE JANELA: shutter, eclipse, relay, storm, carrier phase e legal handshake precisam alinhar antes de um transfer seguro.",
+     "audio": "Draft pt_BR localization pending native pass. O carrier pode ouvir você e ainda estar no céu errado.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. Janelas locais de Aegir transformam mecânica orbital em pressão sentida pelo jogador. Uma capsule reparada ainda precisa de clima, ângulo relay, posição carrier e aceitação legal.",
+     "external_site": "Draft pt_BR localization pending native pass. O tráfego de Aegir é governado por transfer bands estreitas em torno de radiação, eclipse, storm e relay geometry.",
+     "field_note": "Draft pt_BR localization pending native pass. Registro de faixa de janela: Black Keel timing, rótulos orbitais locais e páginas spoiler-light compartilham as mesmas transfer constraints.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Aegir-vensterbanden",
+     "scanner": "Draft nl_NL localization pending native pass. Lokale band: ascent wacht op vensters van uren tot dagen, niet op directe redding.",
+     "terminal": "Draft nl_NL localization pending native pass. WINDOW BAND: shutter, eclipse, relay, storm, carrier phase en legal handshake moeten uitlijnen voor veilige transfer.",
+     "audio": "Draft nl_NL localization pending native pass. De carrier kan je horen en toch in de verkeerde hemel zitten.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. Lokale Aegir-vensters maken orbitale mechanica voelbare druk. Een gerepareerde capsule heeft nog weer, relay angle, carrier position en juridische acceptatie nodig.",
+     "external_site": "Draft nl_NL localization pending native pass. Aegir-verkeer wordt gestuurd door smalle transfer bands rond straling, eclipse, storm en relay geometry.",
+     "field_note": "Draft nl_NL localization pending native pass. Vensterbandrecord: Black Keel timing, lokale orbit labels en spoiler-light system pages delen dezelfde transfer constraints.",
+     "localization_status": "source_draft_pending_native_review"
+    }
+   },
+   "metadata": {
+    "spoiler_tier": "1",
+    "source_voice_by_surface": {
+     "scanner": "Instrument Scan",
+     "terminal": "Recovered Ephemeris/Route Terminal",
+     "audio": "Damaged Playback",
+     "in_game_wiki": "Recovered Operational Note",
+     "external_site": "Website Public",
+     "field_note": "Marauder Field Note"
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P423_HECTON8_MOON_LADDER_PUBLIC_BAND",
+   "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+   "article_id": "applied_lore.hecton8_moon_ladder_public_band",
+   "title_key": "applied_lore.hecton8_moon_ladder_public_band.title",
+   "unlock": {
+    "primary": "unlock.hecton8_moon_ladder_public_band",
+    "poi_tags": [
+     "poi.moon_ladder_public_band",
+     "poi.hecton8_mid_orbit_card",
+     "poi.aegir_moon_role_index"
+    ],
+    "biome_tags": [
+     "biome.aegir_system",
+     "biome.publication"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "HECTON-8 Moon Ladder",
+     "scanner": "Moon ladder: HECTON-8 is one claim, not the whole Aegir system.",
+     "terminal": "MOON LADDER: public role labels only; exact orbital elements remain table-owned data.",
+     "audio": "Other moons are not side quests. They are why the route has teeth.",
+     "in_game_wiki": "The moon ladder gives Aegir scale while keeping the playable campaign focused on HECTON-8. Nearby bodies shape relays, ice-scatter, quarantine timing, salvage traffic and silence windows without promising extra playable moons.",
+     "external_site": "HECTON-8 sits inside a working multi-moon claim system where relay, ice-scatter, quarantine and salvage traffic matter.",
+     "field_note": "Moon ladder record: public maps can show Aegir scale without promising playable moons.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Лунная лестница HECTON-8",
+     "scanner": "Draft ru_RU localization pending native pass. Лунная лестница: HECTON-8 - один claim, а не вся система Aegir.",
+     "terminal": "Draft ru_RU localization pending native pass. MOON LADDER: только публичные role labels; точные orbital elements остаются table-owned data.",
+     "audio": "Draft ru_RU localization pending native pass. Другие луны не side quests. Они причина, по которой у маршрута есть зубы.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. Лунная лестница дает Aegir масштаб, сохраняя кампанию на HECTON-8. Соседние тела формируют реле, ледяную пыль, quarantine timing, salvage traffic и silence windows, не обещая дополнительные playable moons.",
+     "external_site": "Draft ru_RU localization pending native pass. HECTON-8 находится внутри рабочей multi-moon claim system, где важны реле, ice-scatter, quarantine и salvage traffic.",
+     "field_note": "Draft ru_RU localization pending native pass. Запись лунной лестницы: публичные карты могут показывать масштаб Aegir без обещания playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. HECTON-8月梯子",
+     "scanner": "Draft ja_JP localization pending native pass. 月梯子: HECTON-8は一つのclaimであり、Aegir系全体ではない。",
+     "terminal": "Draft ja_JP localization pending native pass. MOON LADDER: 公開role labelsのみ。正確なorbital elementsはtable-owned dataに残る。",
+     "audio": "Draft ja_JP localization pending native pass. 他の月はside questsではない。航路に牙を与える理由だ。",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. 月梯子はAegirに規模を与えつつ、playable campaignをHECTON-8に集中させる。近隣天体はrelay、ice-scatter、quarantine timing、salvage traffic、silence windowsを形作るが、追加playable moonsを約束しない。",
+     "external_site": "Draft ja_JP localization pending native pass. HECTON-8は、relay、ice-scatter、quarantine、salvage trafficが重要なmulti-moon claim systemの中にある。",
+     "field_note": "Draft ja_JP localization pending native pass. 月梯子記録: 公開マップはplayable moonsを約束せずにAegir規模を示せる。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. HECTON-8月梯",
+     "scanner": "Draft zh_CN localization pending native pass. 月梯：HECTON-8是一项claim，不是整个Aegir系统。",
+     "terminal": "Draft zh_CN localization pending native pass. 月梯：仅使用公共role labels；精确orbital elements保留为table-owned data。",
+     "audio": "Draft zh_CN localization pending native pass. 其他月球不是side quests。它们是航线有牙齿的原因。",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. 月梯让Aegir有尺度，同时让可玩战役集中在HECTON-8。邻近天体影响relay、ice-scatter、quarantine timing、salvage traffic和silence windows，但不承诺额外playable moons。",
+     "external_site": "Draft zh_CN localization pending native pass. HECTON-8位于运作中的multi-moon claim system内，其中relay、ice-scatter、quarantine和salvage traffic都重要。",
+     "field_note": "Draft zh_CN localization pending native pass. 月梯记录：公共地图可以展示Aegir尺度，而不承诺可玩的月球。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Échelle lunaire HECTON-8",
+     "scanner": "Draft fr_FR localization pending native pass. Échelle lunaire : HECTON-8 est une claim, pas tout le système Aegir.",
+     "terminal": "Draft fr_FR localization pending native pass. MOON LADDER : rôles publics seulement ; les orbital elements exacts restent table-owned data.",
+     "audio": "Draft fr_FR localization pending native pass. Les autres lunes ne sont pas des side quests. Elles donnent des dents à la route.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. L'échelle lunaire donne l'ampleur d'Aegir tout en gardant la campagne jouable sur HECTON-8. Les corps proches modèlent relais, ice-scatter, quarantine timing, salvage traffic et silence windows sans promettre d'autres lunes jouables.",
+     "external_site": "Draft fr_FR localization pending native pass. HECTON-8 appartient à un multi-moon claim system où relay, ice-scatter, quarantine et salvage traffic comptent.",
+     "field_note": "Draft fr_FR localization pending native pass. Archive d'échelle lunaire : les cartes publiques peuvent montrer Aegir sans promettre des playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Escalera lunar HECTON-8",
+     "scanner": "Draft es_ES localization pending native pass. Escalera lunar: HECTON-8 es una claim, no todo el sistema Aegir.",
+     "terminal": "Draft es_ES localization pending native pass. MOON LADDER: solo role labels públicos; los orbital elements exactos siguen como table-owned data.",
+     "audio": "Draft es_ES localization pending native pass. Las otras lunas no son side quests. Son la razón de que la ruta tenga dientes.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. La escalera lunar da escala a Aegir manteniendo la campaña jugable en HECTON-8. Los cuerpos cercanos moldean relay, ice-scatter, quarantine timing, salvage traffic y silence windows sin prometer lunas jugables extra.",
+     "external_site": "Draft es_ES localization pending native pass. HECTON-8 está dentro de un multi-moon claim system donde importan relay, ice-scatter, quarantine y salvage traffic.",
+     "field_note": "Draft es_ES localization pending native pass. Registro de escalera lunar: los mapas públicos pueden mostrar escala de Aegir sin prometer playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. HECTON-8-Mondleiter",
+     "scanner": "Draft de_DE localization pending native pass. Mondleiter: HECTON-8 ist ein claim, nicht das ganze Aegir-System.",
+     "terminal": "Draft de_DE localization pending native pass. MOON LADDER: nur öffentliche role labels; exakte orbital elements bleiben table-owned data.",
+     "audio": "Draft de_DE localization pending native pass. Andere Monde sind keine side quests. Sie geben der Route Zähne.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. Die Mondleiter gibt Aegir Maßstab und hält die spielbare Kampagne auf HECTON-8. Nahe Körper formen relay, ice-scatter, quarantine timing, salvage traffic und silence windows ohne zusätzliche playable moons zu versprechen.",
+     "external_site": "Draft de_DE localization pending native pass. HECTON-8 liegt in einem aktiven multi-moon claim system, in dem relay, ice-scatter, quarantine und salvage traffic zählen.",
+     "field_note": "Draft de_DE localization pending native pass. Mondleiterdatensatz: Öffentliche Karten können Aegir-Maßstab zeigen, ohne playable moons zu versprechen.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Drabina księżyców HECTON-8",
+     "scanner": "Draft pl_PL localization pending native pass. Drabina księżyców: HECTON-8 to jeden claim, nie cały system Aegir.",
+     "terminal": "Draft pl_PL localization pending native pass. MOON LADDER: tylko publiczne role labels; dokładne orbital elements zostają table-owned data.",
+     "audio": "Draft pl_PL localization pending native pass. Inne księżyce nie są side quests. To przez nie trasa ma zęby.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. Drabina księżyców daje Aegir skalę, ale kampania zostaje na HECTON-8. Sąsiednie ciała kształtują relay, ice-scatter, quarantine timing, salvage traffic i silence windows bez obietnicy dodatkowych playable moons.",
+     "external_site": "Draft pl_PL localization pending native pass. HECTON-8 leży w działającym multi-moon claim system, gdzie relay, ice-scatter, quarantine i salvage traffic mają znaczenie.",
+     "field_note": "Draft pl_PL localization pending native pass. Zapis drabiny: mapy publiczne mogą pokazać skalę Aegir bez obiecywania playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Місячна драбина HECTON-8",
+     "scanner": "Draft uk_UA localization pending native pass. Місячна драбина: HECTON-8 - один claim, а не вся система Aegir.",
+     "terminal": "Draft uk_UA localization pending native pass. MOON LADDER: лише публічні role labels; точні orbital elements лишаються table-owned data.",
+     "audio": "Draft uk_UA localization pending native pass. Інші місяці не side quests. Вони причина, чому маршрут має зуби.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. Місячна драбина дає Aegir масштаб, лишаючи кампанію на HECTON-8. Сусідні тіла формують relay, ice-scatter, quarantine timing, salvage traffic і silence windows без обіцянки додаткових playable moons.",
+     "external_site": "Draft uk_UA localization pending native pass. HECTON-8 перебуває всередині робочої multi-moon claim system, де важливі relay, ice-scatter, quarantine і salvage traffic.",
+     "field_note": "Draft uk_UA localization pending native pass. Запис місячної драбини: публічні карти можуть показувати масштаб Aegir без обіцянки playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. سلم أقمار HECTON-8",
+     "scanner": "Draft ar_SA localization pending native pass. سلم الأقمار: HECTON-8 هو claim واحد، وليس نظام Aegir كله.",
+     "terminal": "Draft ar_SA localization pending native pass. MOON LADDER: role labels عامة فقط؛ orbital elements الدقيقة تبقى table-owned data.",
+     "audio": "Draft ar_SA localization pending native pass. الأقمار الأخرى ليست side quests. إنها سبب أن للطريق أسنانا.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. يعطي سلم الأقمار Aegir حجما مع إبقاء الحملة القابلة للعب على HECTON-8. الأجسام القريبة تشكل relay وice-scatter وquarantine timing وsalvage traffic وsilence windows من دون وعد بأقمار قابلة للعب إضافية.",
+     "external_site": "Draft ar_SA localization pending native pass. يقع HECTON-8 داخل multi-moon claim system عامل حيث تهم relay وice-scatter وquarantine وsalvage traffic.",
+     "field_note": "Draft ar_SA localization pending native pass. سجل سلم الأقمار: الخرائط العامة يمكن أن تظهر حجم Aegir من دون وعد بـ playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Tangga Bulan HECTON-8",
+     "scanner": "Draft id_ID localization pending native pass. Tangga bulan: HECTON-8 adalah satu claim, bukan seluruh sistem Aegir.",
+     "terminal": "Draft id_ID localization pending native pass. MOON LADDER: hanya role labels publik; orbital elements tepat tetap menjadi table-owned data.",
+     "audio": "Draft id_ID localization pending native pass. Bulan lain bukan side quests. Mereka alasan rute ini punya gigi.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. Tangga bulan memberi skala pada Aegir sambil menjaga kampanye tetap fokus pada HECTON-8. Benda dekat membentuk relay, ice-scatter, quarantine timing, salvage traffic dan silence windows tanpa menjanjikan playable moons tambahan.",
+     "external_site": "Draft id_ID localization pending native pass. HECTON-8 berada dalam multi-moon claim system aktif tempat relay, ice-scatter, quarantine dan salvage traffic berarti.",
+     "field_note": "Draft id_ID localization pending native pass. Catatan tangga bulan: peta publik dapat menunjukkan skala Aegir tanpa menjanjikan playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. HECTON-8 달 사다리",
+     "scanner": "Draft ko_KR localization pending native pass. 달 사다리: HECTON-8은 하나의 claim이지 Aegir system 전체가 아니다.",
+     "terminal": "Draft ko_KR localization pending native pass. MOON LADDER: 공개 role labels만 사용한다. 정확한 orbital elements는 table-owned data로 남는다.",
+     "audio": "Draft ko_KR localization pending native pass. 다른 달은 side quests가 아니다. 항로에 이빨이 있는 이유다.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. 달 사다리는 Aegir에 규모를 주면서 playable campaign을 HECTON-8에 묶어 둔다. 주변 천체는 relay, ice-scatter, quarantine timing, salvage traffic, silence windows를 만들지만 추가 playable moons를 약속하지 않는다.",
+     "external_site": "Draft ko_KR localization pending native pass. HECTON-8은 relay, ice-scatter, quarantine, salvage traffic이 중요한 multi-moon claim system 안에 있다.",
+     "field_note": "Draft ko_KR localization pending native pass. Moon ladder record: 공개 지도는 playable moons를 약속하지 않고 Aegir 규모를 보여 줄 수 있다.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. סולם ירחי HECTON-8",
+     "scanner": "Draft he_IL localization pending native pass. סולם ירחי: HECTON-8 הוא claim אחד, לא כל מערכת Aegir.",
+     "terminal": "Draft he_IL localization pending native pass. MOON LADDER: role labels ציבוריים בלבד; orbital elements מדויקים נשארים table-owned data.",
+     "audio": "Draft he_IL localization pending native pass. ירחים אחרים אינם side quests. הם הסיבה שלנתיב יש שיניים.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. סולם הירחים נותן ל-Aegir קנה מידה ומחזיק את הקמפיין על HECTON-8. גופים קרובים מעצבים relay, ice-scatter, quarantine timing, salvage traffic ו-silence windows בלי להבטיח playable moons נוספים.",
+     "external_site": "Draft he_IL localization pending native pass. HECTON-8 נמצא בתוך multi-moon claim system פעיל שבו relay, ice-scatter, quarantine ו-salvage traffic חשובים.",
+     "field_note": "Draft he_IL localization pending native pass. רשומת סולם ירחים: מפות ציבוריות יכולות להראות את קנה המידה של Aegir בלי להבטיח playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Escada lunar HECTON-8",
+     "scanner": "Draft pt_BR localization pending native pass. Escada lunar: HECTON-8 é uma claim, não todo o sistema Aegir.",
+     "terminal": "Draft pt_BR localization pending native pass. MOON LADDER: apenas role labels públicos; orbital elements exatos permanecem table-owned data.",
+     "audio": "Draft pt_BR localization pending native pass. Outras luas não são side quests. São por isso que a rota tem dentes.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. A escada lunar dá escala a Aegir mantendo a campanha jogável focada em HECTON-8. Corpos próximos moldam relay, ice-scatter, quarantine timing, salvage traffic e silence windows sem prometer playable moons extras.",
+     "external_site": "Draft pt_BR localization pending native pass. HECTON-8 fica dentro de um multi-moon claim system funcional onde relay, ice-scatter, quarantine e salvage traffic importam.",
+     "field_note": "Draft pt_BR localization pending native pass. Registro de escada lunar: mapas públicos podem mostrar a escala de Aegir sem prometer playable moons.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. HECTON-8-maanladder",
+     "scanner": "Draft nl_NL localization pending native pass. Maanladder: HECTON-8 is één claim, niet het hele Aegir-systeem.",
+     "terminal": "Draft nl_NL localization pending native pass. MOON LADDER: alleen publieke role labels; exacte orbital elements blijven table-owned data.",
+     "audio": "Draft nl_NL localization pending native pass. Andere manen zijn geen side quests. Zij geven de route tanden.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. De maanladder geeft Aegir schaal terwijl de speelbare campagne op HECTON-8 blijft. Nabije lichamen vormen relay, ice-scatter, quarantine timing, salvage traffic en silence windows zonder extra playable moons te beloven.",
+     "external_site": "Draft nl_NL localization pending native pass. HECTON-8 zit in een werkend multi-moon claim system waar relay, ice-scatter, quarantine en salvage traffic tellen.",
+     "field_note": "Draft nl_NL localization pending native pass. Maanladderrecord: publieke kaarten kunnen Aegir-schaal tonen zonder playable moons te beloven.",
+     "localization_status": "source_draft_pending_native_review"
+    }
+   },
+   "metadata": {
+    "spoiler_tier": "1",
+    "source_voice_by_surface": {
+     "scanner": "Instrument Scan",
+     "terminal": "Recovered Ephemeris/Route Terminal",
+     "audio": "Damaged Playback",
+     "in_game_wiki": "Recovered Operational Note",
+     "external_site": "Website Public",
+     "field_note": "Marauder Field Note"
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P424_BLACK_KEEL_TRANSFER_ORBIT_BAND",
+   "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+   "article_id": "applied_lore.black_keel_transfer_orbit_band",
+   "title_key": "applied_lore.black_keel_transfer_orbit_band.title",
+   "unlock": {
+    "primary": "unlock.black_keel_transfer_orbit_band",
+    "poi_tags": [
+     "poi.black_keel_transfer_band",
+     "poi.carrier_custody_orbit",
+     "poi.bathydrop_return_limit"
+    ],
+    "biome_tags": [
+     "biome.black_keel_orbit",
+     "biome.claim_admin"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Black Keel Transfer Band",
+     "scanner": "Carrier band: Black Keel loiters high, not above HECTON-8.",
+     "terminal": "CARRIER ORBIT: high custody lane; descent mass is limited and weather-gated.",
+     "audio": "It is not parked above you. It is waiting where insurance allows it to wait.",
+     "in_game_wiki": "Black Keel's transfer band explains why contact, payload pickup and human extraction are different problems. A carrier can hear, price and accept cargo before it can safely spend mass on a person.",
+     "external_site": "Black Keel is a contract carrier on a custody route. It can receive payloads before it can safely retrieve a person.",
+     "field_note": "Carrier orbit record: Black Keel can receive payloads before it can retrieve people; that gap drives partial-exit logic.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Трансферный диапазон Black Keel",
+     "scanner": "Draft ru_RU localization pending native pass. Диапазон carrier: Black Keel держится высоко, не над HECTON-8.",
+     "terminal": "Draft ru_RU localization pending native pass. ОРБИТА CARRIER: высокая custody lane; descent mass ограничена и gated погодой.",
+     "audio": "Draft ru_RU localization pending native pass. Он не припаркован над тобой. Он ждет там, где позволяет страховка.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. Трансферный диапазон Black Keel объясняет, почему контакт, pickup груза и extraction человека - разные задачи. Carrier может слышать, оценивать и принимать cargo раньше, чем безопасно потратит массу на человека.",
+     "external_site": "Draft ru_RU localization pending native pass. Black Keel - контрактный carrier на custody route. Он может принимать payloads раньше, чем безопасно забирать человека.",
+     "field_note": "Draft ru_RU localization pending native pass. Запись орбиты carrier: Black Keel может принять payloads раньше людей; этот разрыв питает partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. Black Keel転送帯",
+     "scanner": "Draft ja_JP localization pending native pass. Carrier帯域: Black Keelは高く待機し、HECTON-8の真上にはいない。",
+     "terminal": "Draft ja_JP localization pending native pass. CARRIER ORBIT: 高いcustody lane。descent massは制限され、天候でgatedされる。",
+     "audio": "Draft ja_JP localization pending native pass. それは君の上に駐車していない。保険が許す場所で待っている。",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. Black Keelの転送帯は、接触、payload pickup、人間のextractionが別問題である理由を説明する。Carrierは人間に質量を使う前に、cargoを聞き、価格化し、受け入れられる。",
+     "external_site": "Draft ja_JP localization pending native pass. Black Keelはcustody route上の契約carrierであり、人間を安全に回収する前にpayloadsを受け取れる。",
+     "field_note": "Draft ja_JP localization pending native pass. Carrier軌道記録: Black Keelは人間より先にpayloadsを受け取れる。その差がpartial-exit logicを駆動する。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. Black Keel转移带",
+     "scanner": "Draft zh_CN localization pending native pass. Carrier带：Black Keel在高处徘徊，不在HECTON-8正上方。",
+     "terminal": "Draft zh_CN localization pending native pass. CARRIER ORBIT：高custody lane；descent mass受限，并被天气gated。",
+     "audio": "Draft zh_CN localization pending native pass. 它没有停在你头顶。它在保险允许的地方等待。",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. Black Keel转移带解释了为什么联系、payload pickup和人类extraction是不同问题。Carrier可以先听见、定价并接收cargo，再安全地把质量花在人身上。",
+     "external_site": "Draft zh_CN localization pending native pass. Black Keel是custody route上的合同carrier。它能先接收payloads，之后才可能安全回收人员。",
+     "field_note": "Draft zh_CN localization pending native pass. Carrier轨道记录：Black Keel可以先接收payloads，再接人；这个差距驱动partial-exit logic。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Bande de transfert Black Keel",
+     "scanner": "Draft fr_FR localization pending native pass. Bande carrier : Black Keel attend haut, pas au-dessus de HECTON-8.",
+     "terminal": "Draft fr_FR localization pending native pass. CARRIER ORBIT : custody lane haute ; descent mass limitée et weather-gated.",
+     "audio": "Draft fr_FR localization pending native pass. Il n'est pas garé au-dessus de toi. Il attend où l'assurance lui permet d'attendre.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. La bande de transfert Black Keel explique pourquoi contact, payload pickup et extraction humaine sont des problèmes distincts. Un carrier peut entendre, tarifer et accepter le cargo avant de dépenser sûrement de la masse sur une personne.",
+     "external_site": "Draft fr_FR localization pending native pass. Black Keel est un carrier contractuel sur une custody route. Il peut recevoir des payloads avant de récupérer une personne en sécurité.",
+     "field_note": "Draft fr_FR localization pending native pass. Archive d'orbite carrier : Black Keel peut recevoir des payloads avant les personnes ; cet écart nourrit la partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Banda de transferencia Black Keel",
+     "scanner": "Draft es_ES localization pending native pass. Banda carrier: Black Keel espera alto, no sobre HECTON-8.",
+     "terminal": "Draft es_ES localization pending native pass. CARRIER ORBIT: custody lane alta; descent mass limitada y weather-gated.",
+     "audio": "Draft es_ES localization pending native pass. No está aparcado sobre ti. Espera donde el seguro le permite esperar.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. La banda de transferencia de Black Keel explica por qué contacto, payload pickup y extraction humana son problemas distintos. Un carrier puede oír, tasar y aceptar cargo antes de gastar masa con seguridad en una persona.",
+     "external_site": "Draft es_ES localization pending native pass. Black Keel es un carrier contractual en una custody route. Puede recibir payloads antes de recuperar a una persona con seguridad.",
+     "field_note": "Draft es_ES localization pending native pass. Registro orbital carrier: Black Keel puede recibir payloads antes que personas; esa brecha impulsa partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Black-Keel-Transferband",
+     "scanner": "Draft de_DE localization pending native pass. Carrier-Band: Black Keel lauert hoch, nicht über HECTON-8.",
+     "terminal": "Draft de_DE localization pending native pass. CARRIER ORBIT: hohe custody lane; descent mass ist begrenzt und weather-gated.",
+     "audio": "Draft de_DE localization pending native pass. Es parkt nicht über dir. Es wartet dort, wo Versicherung es warten lässt.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. Black Keels Transferband erklärt, warum Kontakt, payload pickup und menschliche extraction verschiedene Probleme sind. Ein carrier kann hören, bepreisen und cargo annehmen, bevor er sicher Masse für einen Menschen ausgibt.",
+     "external_site": "Draft de_DE localization pending native pass. Black Keel ist ein Vertrags-carrier auf einer custody route. Er kann payloads empfangen, bevor er sicher eine Person birgt.",
+     "field_note": "Draft de_DE localization pending native pass. Carrier-Orbitdatensatz: Black Keel kann payloads vor Menschen empfangen; diese Lücke treibt partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Pas transferowy Black Keel",
+     "scanner": "Draft pl_PL localization pending native pass. Pas carrier: Black Keel krąży wysoko, nie nad HECTON-8.",
+     "terminal": "Draft pl_PL localization pending native pass. CARRIER ORBIT: wysoka custody lane; descent mass ograniczona i weather-gated.",
+     "audio": "Draft pl_PL localization pending native pass. Nie parkuje nad tobą. Czeka tam, gdzie pozwala ubezpieczenie.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. Pas transferowy Black Keel wyjaśnia, czemu kontakt, payload pickup i human extraction to różne problemy. Carrier może usłyszeć, wycenić i przyjąć cargo, zanim bezpiecznie wyda masę na człowieka.",
+     "external_site": "Draft pl_PL localization pending native pass. Black Keel to kontraktowy carrier na custody route. Może przyjąć payloads wcześniej niż bezpiecznie podjąć osobę.",
+     "field_note": "Draft pl_PL localization pending native pass. Zapis orbity carrier: Black Keel może przyjąć payloads przed ludźmi; ta luka napędza partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Трансферний діапазон Black Keel",
+     "scanner": "Draft uk_UA localization pending native pass. Діапазон carrier: Black Keel тримається високо, не над HECTON-8.",
+     "terminal": "Draft uk_UA localization pending native pass. CARRIER ORBIT: висока custody lane; descent mass обмежена й weather-gated.",
+     "audio": "Draft uk_UA localization pending native pass. Він не припаркований над тобою. Він чекає там, де дозволяє страхування.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. Трансферний діапазон Black Keel пояснює, чому контакт, payload pickup і human extraction є різними задачами. Carrier може чути, оцінювати й приймати cargo раніше, ніж безпечно витратить масу на людину.",
+     "external_site": "Draft uk_UA localization pending native pass. Black Keel - контрактний carrier на custody route. Він може приймати payloads раніше, ніж безпечно забирати людину.",
+     "field_note": "Draft uk_UA localization pending native pass. Запис орбіти carrier: Black Keel може прийняти payloads раніше за людей; цей розрив рухає partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. نطاق نقل Black Keel",
+     "scanner": "Draft ar_SA localization pending native pass. نطاق carrier: Black Keel ينتظر عاليا، لا فوق HECTON-8.",
+     "terminal": "Draft ar_SA localization pending native pass. CARRIER ORBIT: custody lane عالية؛ descent mass محدودة وweather-gated.",
+     "audio": "Draft ar_SA localization pending native pass. إنه ليس متوقفا فوقك. ينتظر حيث يسمح التأمين.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. يفسر نطاق نقل Black Keel لماذا الاتصال وpayload pickup وhuman extraction مسائل مختلفة. يمكن لـ carrier أن يسمع ويسعر ويقبل cargo قبل أن ينفق كتلة بأمان على شخص.",
+     "external_site": "Draft ar_SA localization pending native pass. Black Keel هو carrier تعاقدي على custody route. يمكنه استقبال payloads قبل أن يستعيد شخصا بأمان.",
+     "field_note": "Draft ar_SA localization pending native pass. سجل مدار carrier: يستطيع Black Keel استقبال payloads قبل الناس؛ هذه الفجوة تدفع partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Pita Transfer Black Keel",
+     "scanner": "Draft id_ID localization pending native pass. Pita carrier: Black Keel menunggu tinggi, bukan di atas HECTON-8.",
+     "terminal": "Draft id_ID localization pending native pass. CARRIER ORBIT: custody lane tinggi; descent mass terbatas dan weather-gated.",
+     "audio": "Draft id_ID localization pending native pass. Ia tidak parkir di atasmu. Ia menunggu di tempat yang diizinkan asuransi.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. Pita transfer Black Keel menjelaskan mengapa kontak, payload pickup dan human extraction adalah masalah berbeda. Carrier bisa mendengar, menilai dan menerima cargo sebelum aman menghabiskan massa untuk seseorang.",
+     "external_site": "Draft id_ID localization pending native pass. Black Keel adalah carrier kontrak di custody route. Ia dapat menerima payloads sebelum aman mengambil manusia.",
+     "field_note": "Draft id_ID localization pending native pass. Catatan orbit carrier: Black Keel bisa menerima payloads sebelum manusia; celah itu menggerakkan partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Black Keel 전송 대역",
+     "scanner": "Draft ko_KR localization pending native pass. Carrier 대역: Black Keel은 HECTON-8 위가 아니라 높은 곳에 머문다.",
+     "terminal": "Draft ko_KR localization pending native pass. CARRIER ORBIT: 높은 custody lane. descent mass는 제한되고 weather-gated다.",
+     "audio": "Draft ko_KR localization pending native pass. 그것은 네 위에 주차되어 있지 않다. 보험이 허락하는 곳에서 기다린다.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. Black Keel transfer band는 contact, payload pickup, human extraction이 왜 다른 문제인지 설명한다. Carrier는 사람에게 mass를 쓰기 전에 cargo를 듣고 가격을 매기고 받을 수 있다.",
+     "external_site": "Draft ko_KR localization pending native pass. Black Keel은 custody route 위의 계약 carrier다. 사람을 안전하게 회수하기 전에 payloads를 받을 수 있다.",
+     "field_note": "Draft ko_KR localization pending native pass. Carrier orbit record: Black Keel은 사람보다 먼저 payloads를 받을 수 있고, 그 틈이 partial-exit logic을 만든다.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. רצועת העברה Black Keel",
+     "scanner": "Draft he_IL localization pending native pass. רצועת carrier: Black Keel ממתין גבוה, לא מעל HECTON-8.",
+     "terminal": "Draft he_IL localization pending native pass. CARRIER ORBIT: custody lane גבוהה; descent mass מוגבלת ו-weather-gated.",
+     "audio": "Draft he_IL localization pending native pass. הוא לא חונה מעליך. הוא מחכה במקום שהביטוח מרשה לו לחכות.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. רצועת ההעברה של Black Keel מסבירה למה contact, payload pickup ו-human extraction הן בעיות שונות. Carrier יכול לשמוע, לתמחר ולקבל cargo לפני שהוא מוציא מסה בבטחה על אדם.",
+     "external_site": "Draft he_IL localization pending native pass. Black Keel הוא carrier חוזי על custody route. הוא יכול לקבל payloads לפני שהוא יכול להשיב אדם בבטחה.",
+     "field_note": "Draft he_IL localization pending native pass. רשומת מסלול carrier: Black Keel יכול לקבל payloads לפני אנשים; הפער הזה מניע partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Faixa de transferência Black Keel",
+     "scanner": "Draft pt_BR localization pending native pass. Faixa carrier: Black Keel paira alto, não acima de HECTON-8.",
+     "terminal": "Draft pt_BR localization pending native pass. CARRIER ORBIT: custody lane alta; descent mass limitada e weather-gated.",
+     "audio": "Draft pt_BR localization pending native pass. Ele não está estacionado acima de você. Está esperando onde o seguro permite esperar.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. A faixa de transferência Black Keel explica por que contato, payload pickup e human extraction são problemas diferentes. Um carrier pode ouvir, precificar e aceitar cargo antes de gastar massa com segurança em uma pessoa.",
+     "external_site": "Draft pt_BR localization pending native pass. Black Keel é um carrier contratual em uma custody route. Pode receber payloads antes de recuperar uma pessoa com segurança.",
+     "field_note": "Draft pt_BR localization pending native pass. Registro de órbita carrier: Black Keel pode receber payloads antes de pessoas; essa lacuna move a partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Black Keel-transferband",
+     "scanner": "Draft nl_NL localization pending native pass. Carrierband: Black Keel hangt hoog, niet boven HECTON-8.",
+     "terminal": "Draft nl_NL localization pending native pass. CARRIER ORBIT: hoge custody lane; descent mass is beperkt en weather-gated.",
+     "audio": "Draft nl_NL localization pending native pass. Hij staat niet boven je geparkeerd. Hij wacht waar verzekering hem laat wachten.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. De Black Keel-transferband legt uit waarom contact, payload pickup en human extraction verschillende problemen zijn. Een carrier kan horen, prijzen en cargo aannemen voordat hij veilig massa aan een persoon besteedt.",
+     "external_site": "Draft nl_NL localization pending native pass. Black Keel is een contractcarrier op een custody route. Hij kan payloads ontvangen voordat hij veilig een persoon terughaalt.",
+     "field_note": "Draft nl_NL localization pending native pass. Carrier-orbitrecord: Black Keel kan payloads ontvangen vóór mensen; die kloof drijft partial-exit logic.",
+     "localization_status": "source_draft_pending_native_review"
+    }
+   },
+   "metadata": {
+    "spoiler_tier": "1",
+    "source_voice_by_surface": {
+     "scanner": "Instrument Scan",
+     "terminal": "Recovered Ephemeris/Route Terminal",
+     "audio": "Damaged Playback",
+     "in_game_wiki": "Recovered Operational Note",
+     "external_site": "Website Public",
+     "field_note": "Marauder Field Note"
+    }
+   },
+   "content_class": "in_world_artifact"
+  },
+  {
+   "packet_id": "P425_PUBLIC_EPHEMERIS_TABLE_HANDOFF_RULE",
+   "release_set_id": "RS085_CELESTIAL_EPHEMERIS_PUBLIC_BANDS",
+   "article_id": "applied_lore.public_ephemeris_table_handoff_rule",
+   "title_key": "applied_lore.public_ephemeris_table_handoff_rule.title",
+   "unlock": {
+    "primary": "unlock.public_ephemeris_table_handoff_rule",
+    "poi_tags": [
+     "poi.ephemeris_handoff_rule",
+     "poi.celestial_table_boundary",
+     "poi.public_numbers_guard"
+    ],
+    "biome_tags": [
+     "biome.authoring",
+     "biome.aegir_system"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ephemeris Data Boundary Rule",
+     "scanner": "Data boundary: prose owns bands; final orbital numbers stay table-owned.",
+     "terminal": "DATA BOUNDARY: prose may state roles, hazards and bands. Exact orbital values stay out of narrative copy.",
+     "audio": "Numbers are allowed when the table owns them.",
+     "in_game_wiki": "This boundary keeps hard-sci-fi lore useful without freezing simulation constants inside prose. Public copy can explain what a moon, route or window does while final numbers remain in data tables.",
+     "external_site": "Public pages can explain Aegir, HECTON-8, transfer windows and route hazards without freezing exact orbital constants in prose.",
+     "field_note": "Ephemeris records explain route logic while exact constants remain table-owned data.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Draft ru_RU localization pending native pass. Правило границы данных эфемерид",
+     "scanner": "Draft ru_RU localization pending native pass. Граница данных: проза владеет диапазонами; финальные орбитальные числа остаются table-owned.",
+     "terminal": "Draft ru_RU localization pending native pass. DATA BOUNDARY: проза может указывать роли, угрозы и диапазоны. Точные orbital values не входят в narrative copy.",
+     "audio": "Draft ru_RU localization pending native pass. Числа разрешены, когда ими владеет таблица.",
+     "in_game_wiki": "Draft ru_RU localization pending native pass. Эта граница сохраняет hard-sci-fi лор полезным, не замораживая simulation constants внутри прозы. Публичный текст объясняет роль луны, маршрута или окна, пока финальные числа остаются в таблицах.",
+     "external_site": "Draft ru_RU localization pending native pass. Публичные страницы могут объяснять Aegir, HECTON-8, transfer windows и route hazards без заморозки точных orbital constants.",
+     "field_note": "Draft ru_RU localization pending native pass. Записи эфемерид объясняют логику маршрута, а точные константы остаются table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ja_JP": {
+     "title": "Draft ja_JP localization pending native pass. エフェメリスデータ境界規則",
+     "scanner": "Draft ja_JP localization pending native pass. データ境界: 散文は帯域を持ち、最終軌道数値は表が持つ。",
+     "terminal": "Draft ja_JP localization pending native pass. DATA BOUNDARY: 散文は役割、危険、帯域を述べてよい。正確なorbital valuesはnarrative copyに入れない。",
+     "audio": "Draft ja_JP localization pending native pass. 数値は表が所有するとき許される。",
+     "in_game_wiki": "Draft ja_JP localization pending native pass. この境界は、simulation constantsを散文内に凍結せずにhard-sci-fi loreを有用に保つ。公開文は月、航路、窓が何をするかを説明し、最終数値はdata tablesに残す。",
+     "external_site": "Draft ja_JP localization pending native pass. 公開ページはAegir、HECTON-8、transfer windows、route hazardsを説明できるが、正確なorbital constantsは固定しない。",
+     "field_note": "Draft ja_JP localization pending native pass. Ephemeris recordsは航路論理を説明し、正確な定数はtable-owned dataに残る。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "zh_CN": {
+     "title": "Draft zh_CN localization pending native pass. 星历数据边界规则",
+     "scanner": "Draft zh_CN localization pending native pass. 数据边界：叙述拥有范围；最终轨道数字由表格拥有。",
+     "terminal": "Draft zh_CN localization pending native pass. DATA BOUNDARY：叙述可以说明角色、危险和范围。精确orbital values不进入narrative copy。",
+     "audio": "Draft zh_CN localization pending native pass. 当数字属于表格时，数字才被允许。",
+     "in_game_wiki": "Draft zh_CN localization pending native pass. 这个边界让硬科幻 lore 有用，同时不把simulation constants冻进叙述。公共文本可以解释一颗月球、航线或窗口的作用，最终数值留在data tables中。",
+     "external_site": "Draft zh_CN localization pending native pass. 公共页面可以解释Aegir、HECTON-8、transfer windows和route hazards，而不冻结精确orbital constants。",
+     "field_note": "Draft zh_CN localization pending native pass. 星历记录解释航线逻辑，精确常数仍为table-owned data。",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "fr_FR": {
+     "title": "Draft fr_FR localization pending native pass. Règle de frontière des éphémérides",
+     "scanner": "Draft fr_FR localization pending native pass. Frontière de données : la prose possède les bandes ; les nombres orbitaux finaux restent table-owned.",
+     "terminal": "Draft fr_FR localization pending native pass. DATA BOUNDARY : la prose peut dire rôles, dangers et bandes. Les orbital values exactes restent hors narrative copy.",
+     "audio": "Draft fr_FR localization pending native pass. Les nombres sont permis quand la table les possède.",
+     "in_game_wiki": "Draft fr_FR localization pending native pass. Cette frontière garde le hard-sci-fi lore utile sans figer les simulation constants dans la prose. Le texte public explique ce que fait une lune, une route ou une fenêtre pendant que les nombres finaux restent dans les data tables.",
+     "external_site": "Draft fr_FR localization pending native pass. Les pages publiques peuvent expliquer Aegir, HECTON-8, transfer windows et route hazards sans figer les orbital constants exactes.",
+     "field_note": "Draft fr_FR localization pending native pass. Les éphémérides expliquent la logique de route ; les constantes exactes restent table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "es_ES": {
+     "title": "Draft es_ES localization pending native pass. Regla de frontera de datos de efemérides",
+     "scanner": "Draft es_ES localization pending native pass. Frontera de datos: la prosa posee bandas; los números orbitales finales siguen en tablas.",
+     "terminal": "Draft es_ES localization pending native pass. DATA BOUNDARY: la prosa puede indicar roles, peligros y bandas. Los orbital values exactos quedan fuera de narrative copy.",
+     "audio": "Draft es_ES localization pending native pass. Los números están permitidos cuando la tabla los posee.",
+     "in_game_wiki": "Draft es_ES localization pending native pass. Esta frontera mantiene útil el hard-sci-fi lore sin congelar simulation constants en la prosa. El texto público explica qué hace una luna, ruta o ventana mientras los números finales quedan en data tables.",
+     "external_site": "Draft es_ES localization pending native pass. Las páginas públicas pueden explicar Aegir, HECTON-8, transfer windows y route hazards sin congelar orbital constants exactas.",
+     "field_note": "Draft es_ES localization pending native pass. Los registros de efemérides explican lógica de ruta mientras las constantes exactas siguen como table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "de_DE": {
+     "title": "Draft de_DE localization pending native pass. Ephemeriden-Datengrenzregel",
+     "scanner": "Draft de_DE localization pending native pass. Datengrenze: Prosa besitzt Bänder; finale Orbitalzahlen bleiben table-owned.",
+     "terminal": "Draft de_DE localization pending native pass. DATA BOUNDARY: Prosa darf Rollen, Gefahren und Bänder nennen. Exakte orbital values bleiben aus narrative copy heraus.",
+     "audio": "Draft de_DE localization pending native pass. Zahlen sind erlaubt, wenn die Tabelle sie besitzt.",
+     "in_game_wiki": "Draft de_DE localization pending native pass. Diese Grenze hält hard-sci-fi lore nützlich, ohne simulation constants in Prosa einzufrieren. Öffentliche Texte erklären Mond, Route oder Fenster, während finale Zahlen in data tables bleiben.",
+     "external_site": "Draft de_DE localization pending native pass. Öffentliche Seiten können Aegir, HECTON-8, transfer windows und route hazards erklären, ohne exakte orbital constants einzufrieren.",
+     "field_note": "Draft de_DE localization pending native pass. Ephemeridendatensätze erklären Routenlogik; exakte Konstanten bleiben table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pl_PL": {
+     "title": "Draft pl_PL localization pending native pass. Reguła granicy danych efemeryd",
+     "scanner": "Draft pl_PL localization pending native pass. Granica danych: proza posiada pasy; końcowe liczby orbitalne zostają table-owned.",
+     "terminal": "Draft pl_PL localization pending native pass. DATA BOUNDARY: proza może podawać role, zagrożenia i pasy. Dokładne orbital values nie trafiają do narrative copy.",
+     "audio": "Draft pl_PL localization pending native pass. Liczby są dozwolone, gdy posiada je tabela.",
+     "in_game_wiki": "Draft pl_PL localization pending native pass. Ta granica zachowuje hard-sci-fi lore użyteczny bez zamrażania simulation constants w prozie. Tekst publiczny wyjaśnia, co robi księżyc, trasa albo okno, a liczby zostają w data tables.",
+     "external_site": "Draft pl_PL localization pending native pass. Strony publiczne mogą wyjaśniać Aegir, HECTON-8, transfer windows i route hazards bez zamrażania dokładnych orbital constants.",
+     "field_note": "Draft pl_PL localization pending native pass. Zapisy efemeryd wyjaśniają logikę trasy; dokładne stałe pozostają table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "uk_UA": {
+     "title": "Draft uk_UA localization pending native pass. Правило межі даних ефемерид",
+     "scanner": "Draft uk_UA localization pending native pass. Межа даних: проза володіє діапазонами; фінальні орбітальні числа лишаються table-owned.",
+     "terminal": "Draft uk_UA localization pending native pass. DATA BOUNDARY: проза може вказувати ролі, загрози й діапазони. Точні orbital values не входять у narrative copy.",
+     "audio": "Draft uk_UA localization pending native pass. Числа дозволені, коли ними володіє таблиця.",
+     "in_game_wiki": "Draft uk_UA localization pending native pass. Ця межа зберігає hard-sci-fi lore корисним, не заморожуючи simulation constants у прозі. Публічний текст пояснює роль місяця, маршруту або вікна, поки фінальні числа лишаються в data tables.",
+     "external_site": "Draft uk_UA localization pending native pass. Публічні сторінки можуть пояснювати Aegir, HECTON-8, transfer windows і route hazards без замороження точних orbital constants.",
+     "field_note": "Draft uk_UA localization pending native pass. Записи ефемерид пояснюють логіку маршруту, а точні константи лишаються table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ar_SA": {
+     "title": "Draft ar_SA localization pending native pass. قاعدة حدود بيانات التقويم السماوي",
+     "scanner": "Draft ar_SA localization pending native pass. حدود البيانات: النص يملك النطاقات؛ الأرقام المدارية النهائية تبقى table-owned.",
+     "terminal": "Draft ar_SA localization pending native pass. DATA BOUNDARY: يمكن للنص ذكر الأدوار والمخاطر والنطاقات. orbital values الدقيقة تبقى خارج narrative copy.",
+     "audio": "Draft ar_SA localization pending native pass. الأرقام مسموحة عندما تملكها الجداول.",
+     "in_game_wiki": "Draft ar_SA localization pending native pass. تحافظ هذه الحدود على hard-sci-fi lore مفيدا من دون تجميد simulation constants داخل النص. يمكن للنص العام شرح دور القمر أو الطريق أو النافذة بينما تبقى الأرقام النهائية في data tables.",
+     "external_site": "Draft ar_SA localization pending native pass. يمكن للصفحات العامة شرح Aegir وHECTON-8 وtransfer windows وroute hazards من دون تجميد orbital constants الدقيقة.",
+     "field_note": "Draft ar_SA localization pending native pass. سجلات التقويم تشرح منطق الطريق بينما تبقى الثوابت الدقيقة table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "id_ID": {
+     "title": "Draft id_ID localization pending native pass. Aturan Batas Data Ephemeris",
+     "scanner": "Draft id_ID localization pending native pass. Batas data: prosa memiliki pita; angka orbit final tetap table-owned.",
+     "terminal": "Draft id_ID localization pending native pass. DATA BOUNDARY: prosa boleh menyatakan peran, bahaya dan pita. Orbital values tepat tetap keluar dari narrative copy.",
+     "audio": "Draft id_ID localization pending native pass. Angka diizinkan saat tabel memilikinya.",
+     "in_game_wiki": "Draft id_ID localization pending native pass. Batas ini menjaga hard-sci-fi lore tetap berguna tanpa membekukan simulation constants di dalam prosa. Teks publik menjelaskan fungsi bulan, rute atau jendela sementara angka final tetap di data tables.",
+     "external_site": "Draft id_ID localization pending native pass. Halaman publik dapat menjelaskan Aegir, HECTON-8, transfer windows dan route hazards tanpa membekukan orbital constants tepat.",
+     "field_note": "Draft id_ID localization pending native pass. Catatan ephemeris menjelaskan logika rute sementara konstanta tepat tetap table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "ko_KR": {
+     "title": "Draft ko_KR localization pending native pass. Ephemeris 데이터 경계 규칙",
+     "scanner": "Draft ko_KR localization pending native pass. 데이터 경계: 산문은 대역을 갖고 최종 궤도 숫자는 table-owned로 남는다.",
+     "terminal": "Draft ko_KR localization pending native pass. DATA BOUNDARY: 산문은 역할, 위험, 대역을 말할 수 있다. 정확한 orbital values는 narrative copy 밖에 둔다.",
+     "audio": "Draft ko_KR localization pending native pass. 숫자는 테이블이 소유할 때 허용된다.",
+     "in_game_wiki": "Draft ko_KR localization pending native pass. 이 경계는 simulation constants를 산문 속에 얼리지 않으면서 hard-sci-fi lore를 유용하게 유지한다. 공개 텍스트는 달, 항로, window가 무엇을 하는지 설명하고 최종 숫자는 data tables에 남긴다.",
+     "external_site": "Draft ko_KR localization pending native pass. 공개 페이지는 Aegir, HECTON-8, transfer windows, route hazards를 설명하되 정확한 orbital constants를 고정하지 않는다.",
+     "field_note": "Draft ko_KR localization pending native pass. Ephemeris records는 항로 논리를 설명하고 정확한 상수는 table-owned data로 남는다.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "he_IL": {
+     "title": "Draft he_IL localization pending native pass. כלל גבול נתוני אפמריס",
+     "scanner": "Draft he_IL localization pending native pass. גבול נתונים: הפרוזה מחזיקה רצועות; המספרים המסלוליים הסופיים נשארים table-owned.",
+     "terminal": "Draft he_IL localization pending native pass. DATA BOUNDARY: פרוזה יכולה לציין תפקידים, סכנות ורצועות. orbital values מדויקים נשארים מחוץ ל-narrative copy.",
+     "audio": "Draft he_IL localization pending native pass. מספרים מותרים כשהטבלה מחזיקה אותם.",
+     "in_game_wiki": "Draft he_IL localization pending native pass. הגבול הזה שומר את hard-sci-fi lore שימושי בלי להקפיא simulation constants בתוך פרוזה. טקסט ציבורי מסביר מה ירח, נתיב או חלון עושים, והמספרים הסופיים נשארים ב-data tables.",
+     "external_site": "Draft he_IL localization pending native pass. עמודים ציבוריים יכולים להסביר את Aegir, HECTON-8, transfer windows ו-route hazards בלי להקפיא orbital constants מדויקים.",
+     "field_note": "Draft he_IL localization pending native pass. רשומות אפמריס מסבירות לוגיקת נתיב; הקבועים המדויקים נשארים table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "pt_BR": {
+     "title": "Draft pt_BR localization pending native pass. Regra de fronteira de dados de efemérides",
+     "scanner": "Draft pt_BR localization pending native pass. Fronteira de dados: a prosa possui faixas; números orbitais finais ficam table-owned.",
+     "terminal": "Draft pt_BR localization pending native pass. DATA BOUNDARY: a prosa pode indicar papéis, perigos e faixas. Orbital values exatos ficam fora da narrative copy.",
+     "audio": "Draft pt_BR localization pending native pass. Números são permitidos quando a tabela os possui.",
+     "in_game_wiki": "Draft pt_BR localization pending native pass. Essa fronteira mantém o hard-sci-fi lore útil sem congelar simulation constants na prosa. Texto público explica o que uma lua, rota ou janela faz enquanto números finais ficam em data tables.",
+     "external_site": "Draft pt_BR localization pending native pass. Páginas públicas podem explicar Aegir, HECTON-8, transfer windows e route hazards sem congelar orbital constants exatos.",
+     "field_note": "Draft pt_BR localization pending native pass. Registros de efemérides explicam lógica de rota enquanto constantes exatas permanecem table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    },
+    "nl_NL": {
+     "title": "Draft nl_NL localization pending native pass. Efemeridendata-grensregel",
+     "scanner": "Draft nl_NL localization pending native pass. Datagrens: proza bezit banden; finale orbitale getallen blijven table-owned.",
+     "terminal": "Draft nl_NL localization pending native pass. DATA BOUNDARY: proza mag rollen, gevaren en banden noemen. Exacte orbital values blijven uit narrative copy.",
+     "audio": "Draft nl_NL localization pending native pass. Getallen zijn toegestaan wanneer de tabel ze bezit.",
+     "in_game_wiki": "Draft nl_NL localization pending native pass. Deze grens houdt hard-sci-fi lore nuttig zonder simulation constants in proza vast te zetten. Publieke tekst legt uit wat een maan, route of venster doet terwijl finale getallen in data tables blijven.",
+     "external_site": "Draft nl_NL localization pending native pass. Publieke pagina's kunnen Aegir, HECTON-8, transfer windows en route hazards uitleggen zonder exacte orbital constants te bevriezen.",
+     "field_note": "Draft nl_NL localization pending native pass. Efemeridenrecords leggen routelogica uit; exacte constanten blijven table-owned data.",
+     "localization_status": "source_draft_pending_native_review"
+    }
+   },
+   "metadata": {
+    "spoiler_tier": "1",
+    "source_voice_by_surface": {
+     "scanner": "Instrument Scan",
+     "terminal": "Recovered Ephemeris/Route Terminal",
+     "audio": "Damaged Playback",
+     "in_game_wiki": "Recovered Operational Note",
+     "external_site": "Website Public",
+     "field_note": "Marauder Field Note"
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  }
+ ]
 }

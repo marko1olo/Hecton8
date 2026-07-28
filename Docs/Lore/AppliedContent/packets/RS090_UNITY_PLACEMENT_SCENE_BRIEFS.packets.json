@@ -1,792 +1,802 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
-  "status": "production_facing_draft_pending_native_localization",
-  "runtime_contract": {
-    "runtime_reads_json": false,
-    "runtime_reads_markdown": false,
-    "runtime_uses_baked_static_data": true
-  },
-  "packets": [
-    {
-      "packet_id": "P446_FIRST_HOUR_PLACEMENT_BRIEF",
-      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.first_hour_placement_brief",
-      "title_key": "applied_lore.first_hour_placement_brief.title",
-      "unlock": {
-        "primary": "unlock.first_hour_placement_brief",
-        "poi_tags": [
-          "poi.first_hour_anchor_batch",
-          "poi.capsule_p63_lie_trace",
-          "poi.unity_scene_anchor_brief"
-        ],
-        "biome_tags": [
-          "biome.first_hour",
-          "biome.shallow_annex"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "First Hour Evidence Anchor Brief",
-          "scanner": "First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "RU LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "RU LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "RU LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "RU LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "RU LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "JP LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "JA LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "JP LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "JP LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "JP LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "JP LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "CN LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "ZH LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "CN LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "CN LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "CN LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "CN LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "FR LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "FR LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "FR LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "FR LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "FR LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "FR LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "ES LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "ES LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "ES LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "ES LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "ES LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "ES LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "DE LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "DE LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "DE LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "DE LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "DE LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "DE LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "PL LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "PL LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "PL LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "PL LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "PL LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "PL LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "UA LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "UK LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "UA LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "UA LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "UA LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "UA LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "AR LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "AR LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "AR LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "AR LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "AR LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "AR LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "ID LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "ID LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "ID LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "ID LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "ID LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "ID LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "KO LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "KO LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "KO LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "KO LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "KO LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "KO LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "HE LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "HE LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "HE LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "HE LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "HE LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "HE LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "PT LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "PT LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "PT LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "PT LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "PT LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "PT LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: First Hour Evidence Anchor Brief",
-          "scanner": "NL LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
-          "terminal": "NL LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
-          "audio": "NL LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
-          "in_game_wiki": "NL LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
-          "external_site": "NL LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
-          "field_note": "NL LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
-        }
-      }
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+ "status": "production_facing_draft_pending_native_localization",
+ "runtime_contract": {
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_uses_baked_static_data": true
+ },
+ "packets": [
+  {
+   "packet_id": "P446_FIRST_HOUR_PLACEMENT_BRIEF",
+   "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.first_hour_placement_brief",
+   "title_key": "applied_lore.first_hour_placement_brief.title",
+   "unlock": {
+    "primary": "unlock.first_hour_placement_brief",
+    "poi_tags": [
+     "poi.first_hour_anchor_batch",
+     "poi.capsule_p63_lie_trace",
+     "poi.unity_scene_anchor_brief"
+    ],
+    "biome_tags": [
+     "biome.first_hour",
+     "biome.shallow_annex"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "First Hour Evidence Anchor Brief",
+     "scanner": "First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
     },
-    {
-      "packet_id": "P447_MID_DEPTH_ROUTE_PLACEMENT_BRIEF",
-      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.mid_depth_route_placement_brief",
-      "title_key": "applied_lore.mid_depth_route_placement_brief.title",
-      "unlock": {
-        "primary": "unlock.mid_depth_route_placement_brief",
-        "poi_tags": [
-          "poi.mid_depth_route_anchor_batch",
-          "poi.brine_relay_seal_objects",
-          "poi.route_cost_brief"
-        ],
-        "biome_tags": [
-          "biome.brine_canyon",
-          "biome.cable_reef"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Mid-Depth Route Evidence Brief",
-          "scanner": "Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "RU LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "Route note: если комната доказывает delay, terminal может быть коротким.",
-          "in_game_wiki": "Mid-depth placement должен делать culpability Deep Reach читаемой через route damage, не через monologues.",
-          "external_site": "RU LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "RU LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "JP LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "JA LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "JA LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "JA LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "JP LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "JP LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "CN LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "ZH LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "ZH LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "ZH LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "CN LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "CN LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "FR LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "FR LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "FR LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "FR LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "FR LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "FR LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "ES LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "ES LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "ES LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "ES LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "ES LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "ES LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "DE LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "DE LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "DE LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "DE LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "DE LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "DE LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "PL LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "PL LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "PL LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "PL LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "PL LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "PL LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "UA LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "UK LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "UK LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "UK LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "UA LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "UA LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "AR LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "AR LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "AR LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "AR LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "AR LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "AR LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "ID LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "ID LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "ID LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "ID LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "ID LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "ID LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "KO LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "KO LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "KO LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "KO LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "KO LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "KO LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "HE LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "HE LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "HE LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "HE LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "HE LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "HE LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "PT LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "PT LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "PT LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "PT LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "PT LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "PT LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Mid-Depth Route Evidence Brief",
-          "scanner": "NL LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
-          "terminal": "NL LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
-          "audio": "NL LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
-          "in_game_wiki": "NL LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
-          "external_site": "NL LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
-          "field_note": "NL LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
-        }
-      }
+    "ru_RU": {
+     "title": "RU LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "RU LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "RU LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "RU LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "RU LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "RU LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
     },
-    {
-      "packet_id": "P448_ECOLOGY_SCAN_PLACEMENT_BRIEF",
-      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.ecology_scan_placement_brief",
-      "title_key": "applied_lore.ecology_scan_placement_brief.title",
-      "unlock": {
-        "primary": "unlock.ecology_scan_placement_brief",
-        "poi_tags": [
-          "poi.ecology_scan_anchor_batch",
-          "poi.fauna_route_grammar_anchor",
-          "poi.repair_network_scan_brief"
-        ],
-        "biome_tags": [
-          "biome.deep_ecology",
-          "biome.scanner_ui"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Ecology Scan Evidence Brief",
-          "scanner": "Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "RU LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "Scan rule: creature является хорошим content только если меняет следующее действие игрока.",
-          "in_game_wiki": "RU LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "RU LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "RU LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "JP LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "JA LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "JA LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "JP LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "JP LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "JP LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "CN LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "ZH LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "ZH LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "CN LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "CN LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "CN LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "FR LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "FR LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "FR LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "FR LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "FR LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "FR LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "ES LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "ES LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "ES LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "ES LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "ES LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "ES LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "DE LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "DE LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "DE LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "DE LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "DE LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "DE LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "PL LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "PL LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "PL LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "PL LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "PL LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "PL LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "UA LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "UK LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "UK LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "UA LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "UA LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "UA LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "AR LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "AR LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "AR LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "AR LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "AR LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "AR LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "ID LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "ID LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "ID LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "ID LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "ID LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "ID LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "KO LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "KO LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "KO LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "KO LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "KO LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "KO LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "HE LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "HE LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "HE LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "HE LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "HE LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "HE LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "PT LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "PT LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "PT LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "PT LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "PT LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "PT LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Ecology Scan Evidence Brief",
-          "scanner": "NL LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
-          "terminal": "NL LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
-          "audio": "NL LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
-          "in_game_wiki": "NL LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
-          "external_site": "NL LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
-          "field_note": "NL LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
-        }
-      }
+    "ja_JP": {
+     "title": "JP LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "JP LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "JA LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "JP LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "JP LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "JP LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "JP LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
     },
-    {
-      "packet_id": "P449_FINAL_DESCENT_PLACEMENT_BRIEF",
-      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.final_descent_placement_brief",
-      "title_key": "applied_lore.final_descent_placement_brief.title",
-      "unlock": {
-        "primary": "unlock.final_descent_placement_brief",
-        "poi_tags": [
-          "poi.final_descent_anchor_batch",
-          "poi.atlas_basin_gate_brief",
-          "poi.payload_receiver_socket_brief"
-        ],
-        "biome_tags": [
-          "biome.atlas_basin",
-          "biome.abyssal_machine_field"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Final Descent Evidence Brief",
-          "scanner": "Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "RU LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "Bottom rule: final question должен выглядеть как industrial connection, не dialogue wheel.",
-          "in_game_wiki": "Atlas basin должен ощущаться как factory ship, который стал shrine только потому что maintenance потерял categories.",
-          "external_site": "RU LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "RU LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "JP LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "JA LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "JA LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "JA LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "JP LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "JP LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "CN LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "ZH LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "ZH LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "ZH LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "CN LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "CN LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "FR LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "FR LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "FR LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "FR LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "FR LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "FR LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "ES LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "ES LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "ES LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "ES LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "ES LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "ES LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "DE LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "DE LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "DE LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "DE LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "DE LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "DE LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "PL LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "PL LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "PL LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "PL LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "PL LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "PL LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "UA LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "UK LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "UK LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "UK LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "UA LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "UA LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "AR LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "AR LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "AR LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "AR LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "AR LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "AR LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "ID LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "ID LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "ID LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "ID LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "ID LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "ID LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "KO LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "KO LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "KO LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "KO LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "KO LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "KO LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "HE LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "HE LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "HE LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "HE LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "HE LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "HE LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "PT LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "PT LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "PT LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "PT LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "PT LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "PT LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Final Descent Evidence Brief",
-          "scanner": "NL LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
-          "terminal": "NL LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
-          "audio": "NL LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
-          "in_game_wiki": "NL LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
-          "external_site": "NL LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
-          "field_note": "NL LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
-        }
-      }
+    "zh_CN": {
+     "title": "CN LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "CN LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "ZH LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "CN LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "CN LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "CN LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "CN LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
     },
-    {
-      "packet_id": "P450_TERMINAL_SLOT_PROMOTION_BRIEF",
-      "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
-      "surface_mask": 65,
-      "article_id": "applied_lore.terminal_slot_promotion_brief",
-      "title_key": "applied_lore.terminal_slot_promotion_brief.title",
-      "unlock": {
-        "primary": "unlock.terminal_slot_promotion_brief",
-        "poi_tags": [
-          "poi.terminal_slot_promotion_brief",
-          "poi.message_terminal_triage",
-          "poi.narrative_discovery_backlog_rule"
-        ],
-        "biome_tags": [
-          "biome.authoring",
-          "biome.terminal_ui"
-        ]
-      },
-      "localized": {
-        "en_US": {
-          "title": "Terminal Slot Promotion Rule",
-          "scanner": "Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "ru_RU": {
-          "title": "RU LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "RU LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "PROMOTE TERMINAL: если меняет immediate action, доказывает lie, открывает route или меняет ending custody. Иначе оставить NarrativeDiscovery.",
-          "audio": "Operator rule: hardware space - это claim. Не тратить его на decoration.",
-          "in_game_wiki": "RU LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "RU LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "RU LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "ja_JP": {
-          "title": "JP LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "JP LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "JA LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "JA LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "JP LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "JP LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "JP LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "zh_CN": {
-          "title": "CN LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "CN LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "ZH LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "ZH LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "CN LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "CN LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "CN LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "fr_FR": {
-          "title": "FR LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "FR LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "FR LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "FR LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "FR LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "FR LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "FR LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "es_ES": {
-          "title": "ES LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "ES LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "ES LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "ES LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "ES LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "ES LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "ES LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "de_DE": {
-          "title": "DE LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "DE LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "DE LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "DE LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "DE LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "DE LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "DE LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "pl_PL": {
-          "title": "PL LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "PL LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "PL LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "PL LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "PL LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "PL LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "PL LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "uk_UA": {
-          "title": "UA LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "UA LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "UK LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "UK LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "UA LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "UA LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "UA LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "ar_SA": {
-          "title": "AR LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "AR LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "AR LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "AR LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "AR LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "AR LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "AR LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "id_ID": {
-          "title": "ID LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "ID LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "ID LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "ID LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "ID LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "ID LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "ID LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "ko_KR": {
-          "title": "KO LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "KO LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "KO LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "KO LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "KO LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "KO LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "KO LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "he_IL": {
-          "title": "HE LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "HE LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "HE LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "HE LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "HE LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "HE LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "HE LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "pt_BR": {
-          "title": "PT LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "PT LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "PT LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "PT LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "PT LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "PT LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "PT LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        },
-        "nl_NL": {
-          "title": "NL LOC HOLD: Terminal Slot Promotion Rule",
-          "scanner": "NL LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
-          "terminal": "NL LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
-          "audio": "NL LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
-          "in_game_wiki": "NL LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
-          "external_site": "NL LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
-          "field_note": "NL LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
-        }
-      }
+    "fr_FR": {
+     "title": "FR LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "FR LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "FR LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "FR LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "FR LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "FR LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "FR LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "ES LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "ES LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "ES LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "ES LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "ES LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "ES LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "DE LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "DE LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "DE LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "DE LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "DE LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "DE LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "PL LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "PL LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "PL LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "PL LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "PL LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "PL LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "UA LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "UK LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "UA LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "UA LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "UA LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "UA LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "AR LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "AR LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "AR LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "AR LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "AR LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "AR LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "ID LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "ID LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "ID LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "ID LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "ID LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "ID LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "KO LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "KO LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "KO LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "KO LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "KO LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "KO LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "HE LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "HE LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "HE LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "HE LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "HE LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "HE LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "PT LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "PT LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "PT LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "PT LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "PT LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "PT LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: First Hour Evidence Anchor Brief",
+     "scanner": "NL LOC HOLD: First-hour anchors: capsule scar, P-63 pump and fabricator, first Deep Reach lie, first Atlas repair trace.",
+     "terminal": "NL LOC HOLD: PLACE FIRST: damaged bathydrop, manual pump, cold seal patch, pinger spool, P-63 fabricator, sanitized packet panel, useful-wrong repair growth.",
+     "audio": "NL LOC HOLD: Opening rule: make the player fix something before the world starts talking.",
+     "in_game_wiki": "NL LOC HOLD: The first hour needs objects, not lore walls. Each anchor teaches an action and contradicts a clean corporate surface.",
+     "external_site": "NL LOC HOLD: Opening imagery should show pressure repair, route sound, beautiful shallows, and real damage in the same frame.",
+     "field_note": "NL LOC HOLD: Opening anchors carry the route identity. Broad encyclopedia text waits until damaged bathydrop, pump, pinger, fabricator, lie panel, and wrong-useful growth exist in the route."
     }
-  ]
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P447_MID_DEPTH_ROUTE_PLACEMENT_BRIEF",
+   "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.mid_depth_route_placement_brief",
+   "title_key": "applied_lore.mid_depth_route_placement_brief.title",
+   "unlock": {
+    "primary": "unlock.mid_depth_route_placement_brief",
+    "poi_tags": [
+     "poi.mid_depth_route_anchor_batch",
+     "poi.brine_relay_seal_objects",
+     "poi.route_cost_brief"
+    ],
+    "biome_tags": [
+     "biome.brine_canyon",
+     "biome.cable_reef"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Mid-Depth Route Evidence Brief",
+     "scanner": "Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "RU LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "Route note: если комната доказывает delay, terminal может быть коротким.",
+     "in_game_wiki": "Mid-depth placement должен делать culpability Deep Reach читаемой через route damage, не через monologues.",
+     "external_site": "RU LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "RU LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "JP LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "JA LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "JA LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "JA LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "JP LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "JP LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "CN LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "ZH LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "ZH LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "ZH LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "CN LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "CN LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "FR LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "FR LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "FR LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "FR LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "FR LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "FR LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "ES LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "ES LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "ES LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "ES LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "ES LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "ES LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "DE LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "DE LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "DE LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "DE LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "DE LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "DE LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "PL LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "PL LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "PL LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "PL LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "PL LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "PL LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "UA LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "UK LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "UK LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "UK LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "UA LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "UA LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "AR LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "AR LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "AR LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "AR LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "AR LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "AR LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "ID LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "ID LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "ID LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "ID LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "ID LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "ID LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "KO LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "KO LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "KO LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "KO LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "KO LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "KO LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "HE LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "HE LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "HE LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "HE LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "HE LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "HE LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "PT LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "PT LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "PT LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "PT LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "PT LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "PT LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Mid-Depth Route Evidence Brief",
+     "scanner": "NL LOC HOLD: Mid-depth anchors: pinger loss, brine density errors, relay scars, evacuation clocks, and seal-rate failures.",
+     "terminal": "NL LOC HOLD: PLACE MID: cable reef relay yard, brine pump cathedral, queue terminal, clamp-ring reject tray, density-ladder sample cabinet.",
+     "audio": "NL LOC HOLD: Route note: if the room proves a delay, the terminal can stay short.",
+     "in_game_wiki": "NL LOC HOLD: Mid-depth placement should make Deep Reach culpability readable through route damage, not through monologues.",
+     "external_site": "NL LOC HOLD: Mid-depth imagery should show brine machinery, failed evacuation timing, relay damage, and practical route evidence together.",
+     "field_note": "NL LOC HOLD: Mid-depth objects should combine route affordance and proof. A prop that adds no route judgment stays lower priority."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P448_ECOLOGY_SCAN_PLACEMENT_BRIEF",
+   "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.ecology_scan_placement_brief",
+   "title_key": "applied_lore.ecology_scan_placement_brief.title",
+   "unlock": {
+    "primary": "unlock.ecology_scan_placement_brief",
+    "poi_tags": [
+     "poi.ecology_scan_anchor_batch",
+     "poi.fauna_route_grammar_anchor",
+     "poi.repair_network_scan_brief"
+    ],
+    "biome_tags": [
+     "biome.deep_ecology",
+     "biome.scanner_ui"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ecology Scan Evidence Brief",
+     "scanner": "Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "RU LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "Scan rule: creature является хорошим content только если меняет следующее действие игрока.",
+     "in_game_wiki": "RU LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "RU LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "RU LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "JP LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "JA LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "JA LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "JP LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "JP LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "JP LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "CN LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "ZH LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "ZH LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "CN LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "CN LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "CN LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "FR LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "FR LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "FR LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "FR LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "FR LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "FR LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "ES LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "ES LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "ES LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "ES LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "ES LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "ES LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "DE LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "DE LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "DE LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "DE LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "DE LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "DE LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "PL LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "PL LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "PL LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "PL LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "PL LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "PL LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "UA LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "UK LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "UK LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "UA LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "UA LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "UA LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "AR LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "AR LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "AR LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "AR LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "AR LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "AR LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "ID LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "ID LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "ID LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "ID LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "ID LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "ID LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "KO LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "KO LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "KO LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "KO LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "KO LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "KO LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "HE LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "HE LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "HE LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "HE LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "HE LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "HE LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "PT LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "PT LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "PT LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "PT LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "PT LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "PT LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Ecology Scan Evidence Brief",
+     "scanner": "NL LOC HOLD: Ecology anchors qualify when they change sound, route safety, resource handling, or Atlas-contamination suspicion.",
+     "terminal": "NL LOC HOLD: PLACE ECOLOGY: photic mat oxygen risk, glass grazer clearing, lantern false-safe, brine vane current marker, sensor-tagged fauna route echo.",
+     "audio": "NL LOC HOLD: Scan rule: the creature is good content only if it changes what the player does next.",
+     "in_game_wiki": "NL LOC HOLD: Ecology behaves as route grammar. A scan card earns its codex entry through a physical decision.",
+     "external_site": "NL LOC HOLD: Public ecology articles should show beauty under pressure and the later intrusion of Atlas repair logic.",
+     "field_note": "NL LOC HOLD: Ecology anchors belong by decision pressure, not species checklist. Absence, sound, and route deformation can matter before a full reveal."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P449_FINAL_DESCENT_PLACEMENT_BRIEF",
+   "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.final_descent_placement_brief",
+   "title_key": "applied_lore.final_descent_placement_brief.title",
+   "unlock": {
+    "primary": "unlock.final_descent_placement_brief",
+    "poi_tags": [
+     "poi.final_descent_anchor_batch",
+     "poi.atlas_basin_gate_brief",
+     "poi.payload_receiver_socket_brief"
+    ],
+    "biome_tags": [
+     "biome.atlas_basin",
+     "biome.abyssal_machine_field"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Final Descent Evidence Brief",
+     "scanner": "Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "RU LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "Bottom rule: final question должен выглядеть как industrial connection, не dialogue wheel.",
+     "in_game_wiki": "Atlas basin должен ощущаться как factory ship, который стал shrine только потому что maintenance потерял categories.",
+     "external_site": "RU LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "RU LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "JP LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "JA LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "JA LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "JA LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "JP LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "JP LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "CN LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "ZH LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "ZH LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "ZH LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "CN LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "CN LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "FR LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "FR LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "FR LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "FR LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "FR LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "FR LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "ES LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "ES LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "ES LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "ES LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "ES LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "ES LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "DE LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "DE LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "DE LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "DE LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "DE LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "DE LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "PL LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "PL LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "PL LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "PL LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "PL LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "PL LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "UA LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "UK LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "UK LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "UK LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "UA LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "UA LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "AR LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "AR LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "AR LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "AR LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "AR LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "AR LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "ID LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "ID LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "ID LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "ID LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "ID LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "ID LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "KO LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "KO LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "KO LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "KO LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "KO LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "KO LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "HE LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "HE LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "HE LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "HE LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "HE LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "HE LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "PT LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "PT LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "PT LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "PT LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "PT LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "PT LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Final Descent Evidence Brief",
+     "scanner": "NL LOC HOLD: Final-descent anchors: warning, pressure gate, factory threshold, service basin, and payload receiver sockets before ending text.",
+     "terminal": "NL LOC HOLD: PLACE FINAL: machine-field warning sign, Atlas basin pressure gate, fused service rail, payload receiver panel, severance/preserve/public-ledger sockets.",
+     "audio": "NL LOC HOLD: Bottom rule: make the final question look like an industrial connection, not a dialogue wheel.",
+     "in_game_wiki": "NL LOC HOLD: The Atlas basin should feel like a factory ship that became a shrine only because maintenance lost its categories.",
+     "external_site": "NL LOC HOLD: Spoiler-gated imagery should show custody hardware, pressure scale, and living industrial tissue without explaining final outcomes publicly.",
+     "field_note": "NL LOC HOLD: Final anchors support multiple receiver endings. No single moral pedestal: industrial sockets carry consequences."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  },
+  {
+   "packet_id": "P450_TERMINAL_SLOT_PROMOTION_BRIEF",
+   "release_set_id": "RS090_UNITY_PLACEMENT_SCENE_BRIEFS",
+   "surface_mask": 65,
+   "article_id": "applied_lore.terminal_slot_promotion_brief",
+   "title_key": "applied_lore.terminal_slot_promotion_brief.title",
+   "unlock": {
+    "primary": "unlock.terminal_slot_promotion_brief",
+    "poi_tags": [
+     "poi.terminal_slot_promotion_brief",
+     "poi.message_terminal_triage",
+     "poi.narrative_discovery_backlog_rule"
+    ],
+    "biome_tags": [
+     "biome.authoring",
+     "biome.terminal_ui"
+    ]
+   },
+   "localized": {
+    "en_US": {
+     "title": "Terminal Slot Promotion Rule",
+     "scanner": "Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "ru_RU": {
+     "title": "RU LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "RU LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "PROMOTE TERMINAL: если меняет immediate action, доказывает lie, открывает route или меняет ending custody. Иначе оставить NarrativeDiscovery.",
+     "audio": "Operator rule: hardware space - это claim. Не тратить его на decoration.",
+     "in_game_wiki": "RU LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "RU LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "RU LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "ja_JP": {
+     "title": "JP LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "JP LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "JA LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "JA LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "JP LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "JP LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "JP LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "zh_CN": {
+     "title": "CN LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "CN LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "ZH LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "ZH LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "CN LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "CN LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "CN LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "fr_FR": {
+     "title": "FR LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "FR LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "FR LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "FR LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "FR LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "FR LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "FR LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "es_ES": {
+     "title": "ES LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "ES LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "ES LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "ES LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "ES LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "ES LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "ES LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "de_DE": {
+     "title": "DE LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "DE LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "DE LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "DE LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "DE LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "DE LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "DE LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "pl_PL": {
+     "title": "PL LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "PL LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "PL LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "PL LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "PL LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "PL LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "PL LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "uk_UA": {
+     "title": "UA LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "UA LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "UK LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "UK LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "UA LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "UA LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "UA LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "ar_SA": {
+     "title": "AR LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "AR LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "AR LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "AR LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "AR LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "AR LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "AR LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "id_ID": {
+     "title": "ID LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "ID LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "ID LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "ID LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "ID LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "ID LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "ID LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "ko_KR": {
+     "title": "KO LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "KO LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "KO LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "KO LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "KO LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "KO LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "KO LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "he_IL": {
+     "title": "HE LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "HE LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "HE LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "HE LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "HE LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "HE LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "HE LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "pt_BR": {
+     "title": "PT LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "PT LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "PT LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "PT LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "PT LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "PT LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "PT LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    },
+    "nl_NL": {
+     "title": "NL LOC HOLD: Terminal Slot Promotion Rule",
+     "scanner": "NL LOC HOLD: Terminal promotion is reserved for first-hour orders, legal contradictions, receiver choices, and proof chains.",
+     "terminal": "NL LOC HOLD: PROMOTE TERMINAL: if it changes immediate action, proves a lie, opens a route, or alters ending custody. Otherwise keep it as NarrativeDiscovery.",
+     "audio": "NL LOC HOLD: Operator rule: hardware space is a claim. Do not spend it on decoration.",
+     "in_game_wiki": "NL LOC HOLD: Terminal slots stay diegetic and useful. The backlog can hold codex facts; real terminals must affect a decision.",
+     "external_site": "NL LOC HOLD: HECTON-8 terminals are instruments and records, not lore dump billboards.",
+     "field_note": "NL LOC HOLD: A terminal slot is spent only when the record changes immediate action, proves a lie, opens a route, or alters ending custody."
+    }
+   },
+   "content_class": "production_metadata",
+   "content_class_reason": "packet describes a production or UI specification, not a document that exists inside the world of 2190"
+  }
+ ]
 }

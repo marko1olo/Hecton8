@@ -1,271 +1,272 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS284_AEGIR_SKY_WINDOW_MACHINE",
-  "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS284_AEGIR_SKY_WINDOW_MACHINE",
+ "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P6802_AEGIR_SKY_WINDOW_MACHINE",
+   "release_set_id": "RS284_AEGIR_SKY_WINDOW_MACHINE",
+   "article_id": "applied_lore.aegir_sky_window_machine",
+   "title_key": "LORE_AEGIR_SKY_WINDOW_MACHINE_TITLE",
+   "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/AppliedContent/README.md",
+    "Docs/Lore/Codex_Delivery_Map.md",
+    "Docs/Lore/Website_Publication_Map.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P014_AEGIR_ROUTE_WINDOW.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P016_AEGIR_HOST_STAR.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P621_AEGIR_RECOVERY_WINDOW_GEOMETRY.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P622_KESTREL_RELAY_SHADOW_CHART.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1095_AEGIR_MOON_LADDER_ORBITAL_HAZARDS.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P1423_AEGIR_SKY_WEATHER_SURVIVAL_LEDGER.md",
+    "Docs/Lore/AppliedContent/external_site/en_US/P6801_BLACK_KEEL_NEARLIGHT_WAKE.md",
+    ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
+    ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
+    ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P6802_AEGIR_SKY_WINDOW_MACHINE",
-      "release_set_id": "RS284_AEGIR_SKY_WINDOW_MACHINE",
-      "article_id": "applied_lore.aegir_sky_window_machine",
-      "title_key": "LORE_AEGIR_SKY_WINDOW_MACHINE_TITLE",
-      "status": "source_candidate_pending_native_localization_route_card_bake_and_unity_placement",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/AppliedContent/README.md",
-        "Docs/Lore/Codex_Delivery_Map.md",
-        "Docs/Lore/Website_Publication_Map.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P014_AEGIR_ROUTE_WINDOW.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P016_AEGIR_HOST_STAR.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P621_AEGIR_RECOVERY_WINDOW_GEOMETRY.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P622_KESTREL_RELAY_SHADOW_CHART.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1095_AEGIR_MOON_LADDER_ORBITAL_HAZARDS.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P1423_AEGIR_SKY_WEATHER_SURVIVAL_LEDGER.md",
-        "Docs/Lore/AppliedContent/external_site/en_US/P6801_BLACK_KEEL_NEARLIGHT_WAKE.md",
-        ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt",
-        ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
-        ".agents-skills/QA_Evidence_Text_Filter_Audit.txt"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.aegir_sky_window_machine",
-        "secondary": [
-          "unlock.first_clear_sky_window",
-          "unlock.first_kestrel_shadow_notice",
-          "unlock.first_storm_ceiling_conflict",
-          "unlock.first_carrier_window_receipt"
-        ],
-        "poi_tags": [
-          "poi.aegir_sky_window_plate",
-          "poi.radiation_count_strip",
-          "poi.moon_shadow_tide_card",
-          "poi.black_keel_window_timer",
-          "poi.p63_relay_board"
-        ],
-        "biome_tags": [
-          "biome.aegir_sky",
-          "biome.storm_shelf",
-          "biome.surface_relay",
-          "biome.carrier_link",
-          "biome.photic_shelf"
-        ],
-        "first_20_boundary": "Explains why a visible clear sky is not a rescue promise: moon shadows, storm ceiling, radiation, tide and carrier mass gates must align."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "Suit Sky-Window Classifier",
-          "terminal": "Aegir Route Plate",
-          "audio": "Relay Confidence Tone",
-          "in_game_wiki": "Recovered Sky-Route Engineering Note",
-          "external_site": "Public Site Aegir Astronomy Primer",
-          "field_note": "Marauder Field Note"
-        },
-        "spoiler_tier": "1",
-        "depth_band": "surface_to_photic_shelf",
-        "route_moment": "first_clear_sky_window_after_black_keel_receipt",
-        "truth_payload": "Aegir sky is route machinery: moon shadows, storm ceiling, radiation, tide load and carrier phase can make a visible window useful for packets but unsafe for body recovery.",
-        "player_question": "Why can the sky look open while the route stays closed?"
-      },
-      "localized": {
-        "en_US": {
-          "title": "Aegir Sky Window Machine",
-          "scanner": "SKY WINDOW READ // Clear visual sky is not rescue clearance. Kestrel shadow, storm ceiling, radiation count, tide load and carrier phase disagree.",
-          "terminal": "AEGIR ROUTE PLATE // Window state is partial. Packet line may be open while ascent body, quarantine and tonne-window mass remain closed.",
-          "audio": "Relay note: sky bright, route dirty. Send packet only; hold ascent until moon tag, storm ceiling and mass line agree.",
-          "in_game_wiki": "Aegir's visible sky is route machinery, not scenery. Moon shadows can break relay confidence, storms can shield the body while killing upload, and a clear carrier line can still fail radiation, tide, quarantine or mass checks. Read sky windows as stacked gates: packet, body, proof and salvage may not share the same pass.",
-          "external_site": "A longform primer on Aegir's sky as a survival machine: moons, relay shadows, charged weather, tide load and carrier windows decide why an open-looking sky can still deny rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/en_US_external_site.md",
-          "field_note": "The sky can be open to a packet and closed to your body. Check the whole machine before you celebrate.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Машина небесного окна Aegir",
-          "scanner": "ЧТЕНИЕ SKY WINDOW // Чистое видимое небо не является rescue clearance. Тень Kestrel, storm ceiling, radiation count, tide load и carrier phase расходятся.",
-          "terminal": "ROUTE PLATE AEGIR // Состояние окна частичное. Packet line может быть открыт, пока ascent body, quarantine и tonne-window mass закрыты.",
-          "audio": "Заметка relay: небо яркое, маршрут грязный. Отправляй только packet; держи ascent, пока moon tag, storm ceiling и mass line не согласятся.",
-          "in_game_wiki": "Видимое небо Aegir это маршрутная машина, а не декорация. Лунные тени ломают relay confidence, штормы могут прикрыть тело и убить upload, а чистая carrier line все еще может провалить radiation, tide, quarantine или mass checks. Читай sky windows как сложенные ворота: packet, body, proof и salvage не обязаны делить один проход.",
-          "external_site": "Большой primer о небе Aegir как survival machine: луны, relay shadows, заряженная погода, tide load и carrier windows решают, почему открытое на вид небо все еще может отказать rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/ru_RU_external_site.md",
-          "field_note": "Небо может быть открыто для packet и закрыто для твоего тела. Проверь всю машину, прежде чем радоваться.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "Aegir Sky Window Machine",
-          "scanner": "SKY WINDOW READ // 目視で晴れた空は rescue clearance ではない。Kestrel 影、storm ceiling、radiation count、tide load、carrier phase が一致しない。",
-          "terminal": "AEGIR ROUTE PLATE // 窓状態は部分的。packet line が開いていても ascent body、quarantine、tonne-window mass は閉じたままの場合がある。",
-          "audio": "Relay note: 空は明るいが route は汚れている。packet だけ送れ。moon tag、storm ceiling、mass line が一致するまで ascent は保留。",
-          "in_game_wiki": "Aegir の見える空は route machinery であり、背景ではない。月影は relay confidence を壊し、嵐は body を守りながら upload を殺し、きれいな carrier line でも radiation、tide、quarantine、mass checks に失敗することがある。sky window は積み重なった gate として読む。packet、body、proof、salvage が同じ pass を共有するとは限らない。",
-          "external_site": "Aegir の空を survival machine として読む長文 primer。月、relay shadow、荷電天候、tide load、carrier window が、開いて見える空でも rescue を拒む理由を決める。",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/ja_JP_external_site.md",
-          "field_note": "空は packet に開いていても、あなたの body には閉じていることがある。喜ぶ前に機械全体を確認しろ。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "Aegir 天空窗口机器",
-          "scanner": "SKY WINDOW 读数 // 肉眼晴空不等于 rescue clearance。Kestrel 阴影、storm ceiling、radiation count、tide load 和 carrier phase 彼此不一致。",
-          "terminal": "AEGIR ROUTE PLATE // 窗口状态是部分的。packet line 可以开启，而 ascent body、quarantine 和 tonne-window mass 仍然关闭。",
-          "audio": "Relay note：天空明亮，route 很脏。只发送 packet；等 moon tag、storm ceiling 和 mass line 同意后再考虑 ascent。",
-          "in_game_wiki": "Aegir 的可见天空是 route machinery，不是布景。月影会破坏 relay confidence，风暴能保护 body 同时杀死 upload，干净的 carrier line 仍可能在 radiation、tide、quarantine 或 mass checks 上失败。把 sky windows 读成叠在一起的 gate：packet、body、proof 和 salvage 不一定共享同一次 pass。",
-          "external_site": "一篇长文 primer，把 Aegir 的天空解释为 survival machine：群月、relay shadows、带电天气、tide load 和 carrier windows 决定为什么看似开放的天空仍会拒绝 rescue。",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/zh_CN_external_site.md",
-          "field_note": "天空可以向 packet 打开，却对你的 body 关闭。庆祝前先检查整台机器。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Machine de fenêtre céleste d'Aegir",
-          "scanner": "LECTURE SKY WINDOW // Un ciel visuellement clair n'est pas une rescue clearance. Ombre Kestrel, storm ceiling, radiation count, tide load et carrier phase divergent.",
-          "terminal": "ROUTE PLATE AEGIR // L'état de fenêtre est partiel. La packet line peut être ouverte tandis que ascent body, quarantaine et tonne-window mass restent fermées.",
-          "audio": "Note relais: ciel brillant, route sale. Envoie seulement le packet; garde l'ascent jusqu'à accord entre moon tag, storm ceiling et mass line.",
-          "in_game_wiki": "Le ciel visible d'Aegir est une route machinery, pas un décor. Les ombres lunaires peuvent casser la relay confidence, les tempêtes peuvent protéger le body tout en tuant l'upload, et une carrier line claire peut encore échouer aux contrôles radiation, tide, quarantaine ou mass. Lis les sky windows comme des portes empilées: packet, body, proof et salvage ne partagent pas forcément le même pass.",
-          "external_site": "Un primer longform sur le ciel d'Aegir comme survival machine: lunes, relay shadows, météo chargée, tide load et carrier windows expliquent pourquoi un ciel ouvert en apparence peut encore refuser le rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/fr_FR_external_site.md",
-          "field_note": "Le ciel peut être ouvert au packet et fermé à ton body. Vérifie toute la machine avant de célébrer.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Máquina de ventana celeste de Aegir",
-          "scanner": "LECTURA SKY WINDOW // Un cielo visualmente claro no es rescue clearance. Sombra Kestrel, storm ceiling, radiation count, tide load y carrier phase no coinciden.",
-          "terminal": "ROUTE PLATE AEGIR // El estado de ventana es parcial. La packet line puede estar abierta mientras ascent body, cuarentena y tonne-window mass siguen cerradas.",
-          "audio": "Nota de relé: cielo brillante, ruta sucia. Envía solo packet; retén ascent hasta que moon tag, storm ceiling y mass line coincidan.",
-          "in_game_wiki": "El cielo visible de Aegir es route machinery, no decorado. Las sombras lunares pueden romper relay confidence, las tormentas pueden proteger el body mientras matan el upload, y una carrier line limpia aún puede fallar por radiation, tide, cuarentena o mass checks. Lee las sky windows como compuertas apiladas: packet, body, proof y salvage quizá no compartan el mismo pass.",
-          "external_site": "Un primer longform sobre el cielo de Aegir como survival machine: lunas, relay shadows, clima cargado, tide load y carrier windows explican por qué un cielo que parece abierto aún puede negar rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/es_ES_external_site.md",
-          "field_note": "El cielo puede abrirse al packet y cerrarse a tu body. Revisa toda la máquina antes de celebrar.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Aegir Sky Window Machine",
-          "scanner": "SKY-WINDOW-READ // Sichtbar klarer Himmel ist keine rescue clearance. Kestrel-Schatten, storm ceiling, radiation count, tide load und carrier phase widersprechen sich.",
-          "terminal": "AEGIR ROUTE PLATE // Fensterstatus ist teilweise. Packet line kann offen sein, während ascent body, Quarantäne und tonne-window mass geschlossen bleiben.",
-          "audio": "Relaisnotiz: Himmel hell, Route schmutzig. Nur packet senden; ascent halten, bis moon tag, storm ceiling und mass line zustimmen.",
-          "in_game_wiki": "Aegirs sichtbarer Himmel ist route machinery, keine Kulisse. Mondschatten können relay confidence brechen, Stürme können den body schützen und upload töten, und eine klare carrier line kann noch an radiation, tide, Quarantäne oder mass checks scheitern. Lies sky windows als gestapelte Tore: packet, body, proof und salvage teilen nicht zwingend denselben pass.",
-          "external_site": "Ein Longform-Primer über Aegirs Himmel als survival machine: Monde, relay shadows, geladenes Wetter, tide load und carrier windows erklären, warum ein offen wirkender Himmel rescue weiter verweigern kann.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/de_DE_external_site.md",
-          "field_note": "Der Himmel kann für ein packet offen und für deinen body geschlossen sein. Prüfe die ganze Maschine, bevor du feierst.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Maszyna okna nieba Aegir",
-          "scanner": "ODCZYT SKY WINDOW // Wizualnie czyste niebo nie jest rescue clearance. Cień Kestrel, storm ceiling, radiation count, tide load i carrier phase nie zgadzają się.",
-          "terminal": "ROUTE PLATE AEGIR // Stan okna jest częściowy. Packet line może być otwarta, gdy ascent body, kwarantanna i tonne-window mass pozostają zamknięte.",
-          "audio": "Notatka relaya: niebo jasne, route brudna. Wyślij tylko packet; wstrzymaj ascent, aż moon tag, storm ceiling i mass line się zgodzą.",
-          "in_game_wiki": "Widzialne niebo Aegir jest route machinery, nie dekoracją. Cienie księżyców mogą łamać relay confidence, sztormy mogą chronić body i zabijać upload, a czysta carrier line nadal może zawieść przez radiation, tide, kwarantannę lub mass checks. Czytaj sky windows jak ułożone bramy: packet, body, proof i salvage nie muszą dzielić tego samego pass.",
-          "external_site": "Długi primer o niebie Aegir jako survival machine: księżyce, relay shadows, naładowana pogoda, tide load i carrier windows wyjaśniają, czemu otwarte z wyglądu niebo nadal może odmówić rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/pl_PL_external_site.md",
-          "field_note": "Niebo może być otwarte dla packetu i zamknięte dla twojego body. Sprawdź całą maszynę, zanim zaczniesz świętować.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Машина небесного вікна Aegir",
-          "scanner": "ЧИТАННЯ SKY WINDOW // Видиме ясне небо не є rescue clearance. Тінь Kestrel, storm ceiling, radiation count, tide load і carrier phase не сходяться.",
-          "terminal": "ROUTE PLATE AEGIR // Стан вікна частковий. Packet line може бути відкритою, поки ascent body, quarantine і tonne-window mass залишаються закритими.",
-          "audio": "Нотатка relay: небо яскраве, route брудний. Надсилай тільки packet; тримай ascent, доки moon tag, storm ceiling і mass line не погодяться.",
-          "in_game_wiki": "Видиме небо Aegir це route machinery, а не декорація. Місячні тіні можуть ламати relay confidence, шторми можуть захистити body і вбити upload, а чиста carrier line все ще може провалити radiation, tide, quarantine або mass checks. Читай sky windows як складені ворота: packet, body, proof і salvage не мусять ділити один pass.",
-          "external_site": "Великий primer про небо Aegir як survival machine: місяці, relay shadows, заряджена погода, tide load і carrier windows пояснюють, чому відкрите на вигляд небо все ще може відмовити rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/uk_UA_external_site.md",
-          "field_note": "Небо може бути відкритим для packet і закритим для твого body. Перевір усю машину, перш ніж радіти.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "آلة نافذة سماء Aegir",
-          "scanner": "قراءة SKY WINDOW // السماء الصافية بصريا ليست rescue clearance. ظل Kestrel وstorm ceiling وradiation count وtide load وcarrier phase غير متفقة.",
-          "terminal": "لوحة طريق AEGIR // حالة النافذة جزئية. قد تكون packet line مفتوحة بينما تبقى ascent body وquarantine وtonne-window mass مغلقة.",
-          "audio": "ملاحظة relay: السماء مضيئة، route قذر. أرسل packet فقط؛ أوقف ascent حتى يتفق moon tag وstorm ceiling وmass line.",
-          "in_game_wiki": "سماء Aegir المرئية هي route machinery وليست منظرا. قد تكسر ظلال الأقمار relay confidence، وقد تحمي العواصف body وهي تقتل upload، وقد تفشل carrier line نظيفة في radiation أو tide أو quarantine أو mass checks. اقرأ sky windows كبوابات مكدسة: قد لا يشترك packet وbody وproof وsalvage في pass واحد.",
-          "external_site": "Primer طويل عن سماء Aegir كـ survival machine: الأقمار وrelay shadows والطقس المشحون وtide load وcarrier windows تشرح لماذا قد ترفض السماء التي تبدو مفتوحة rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/ar_SA_external_site.md",
-          "field_note": "قد تكون السماء مفتوحة أمام packet ومغلقة أمام body. افحص الآلة كلها قبل أن تحتفل.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Mesin Jendela Langit Aegir",
-          "scanner": "BACAAN SKY WINDOW // Langit yang tampak cerah bukan rescue clearance. Bayangan Kestrel, storm ceiling, radiation count, tide load, dan carrier phase tidak sepakat.",
-          "terminal": "ROUTE PLATE AEGIR // Status jendela parsial. Packet line bisa terbuka sementara ascent body, karantina, dan tonne-window mass tetap tertutup.",
-          "audio": "Catatan relai: langit terang, route kotor. Kirim packet saja; tahan ascent sampai moon tag, storm ceiling, dan mass line sepakat.",
-          "in_game_wiki": "Langit Aegir yang terlihat adalah route machinery, bukan pemandangan. Bayangan bulan bisa merusak relay confidence, badai bisa melindungi body sambil membunuh upload, dan carrier line yang bersih masih bisa gagal pada radiation, tide, karantina, atau mass checks. Baca sky windows sebagai gerbang bertumpuk: packet, body, proof, dan salvage tidak selalu berbagi pass yang sama.",
-          "external_site": "Primer panjang tentang langit Aegir sebagai survival machine: bulan, relay shadows, cuaca bermuatan, tide load, dan carrier windows menjelaskan mengapa langit yang terlihat terbuka tetap bisa menolak rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/id_ID_external_site.md",
-          "field_note": "Langit bisa terbuka bagi packet dan tertutup bagi body-mu. Periksa seluruh mesin sebelum merayakan.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "Aegir 하늘 창 기계",
-          "scanner": "SKY WINDOW 판독 // 눈에 보이는 맑은 하늘은 rescue clearance가 아니다. Kestrel 그림자, storm ceiling, radiation count, tide load, carrier phase가 어긋난다.",
-          "terminal": "AEGIR ROUTE PLATE // 창 상태는 부분적이다. packet line은 열려도 ascent body, quarantine, tonne-window mass는 닫힌 채일 수 있다.",
-          "audio": "Relay note: 하늘은 밝고 route는 더럽다. packet만 보내라. moon tag, storm ceiling, mass line이 일치할 때까지 ascent는 보류.",
-          "in_game_wiki": "Aegir의 보이는 하늘은 route machinery이지 배경이 아니다. 달 그림자는 relay confidence를 깨고, 폭풍은 body를 보호하면서 upload를 죽일 수 있으며, 깨끗한 carrier line도 radiation, tide, quarantine, mass checks에서 실패할 수 있다. sky windows를 쌓인 문으로 읽어라. packet, body, proof, salvage가 같은 pass를 공유한다고 보장할 수 없다.",
-          "external_site": "Aegir 하늘을 survival machine으로 설명하는 장문 primer: 달, relay shadows, 전하를 띤 날씨, tide load, carrier windows가 열린 것처럼 보이는 하늘이 왜 rescue를 거부하는지 결정한다.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/ko_KR_external_site.md",
-          "field_note": "하늘은 packet에는 열리고 네 body에는 닫혀 있을 수 있다. 축하하기 전에 기계 전체를 확인해라.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "מכונת חלון השמיים של Aegir",
-          "scanner": "קריאת SKY WINDOW // שמיים נקיים לעין אינם rescue clearance. צל Kestrel, storm ceiling, radiation count, tide load ו-carrier phase אינם מסכימים.",
-          "terminal": "AEGIR ROUTE PLATE // מצב החלון חלקי. packet line עשויה להיות פתוחה בזמן ש-ascent body, quarantine ו-tonne-window mass נשארים סגורים.",
-          "audio": "הערת relay: השמיים בהירים, route מלוכלך. שלח packet בלבד; החזק ascent עד ש-moon tag, storm ceiling ו-mass line יסכימו.",
-          "in_game_wiki": "השמיים הנראים של Aegir הם route machinery, לא תפאורה. צללי ירחים יכולים לשבור relay confidence, סערות יכולות להגן על body בזמן שהן הורגות upload, ו-carrier line נקייה עדיין יכולה להיכשל ב-radiation, tide, quarantine או mass checks. קרא sky windows כשערים נערמים: packet, body, proof ו-salvage אינם חייבים לחלוק אותו pass.",
-          "external_site": "Primer ארוך על שמי Aegir כ-survival machine: ירחים, relay shadows, מזג טעון, tide load ו-carrier windows מסבירים מדוע שמיים שנראים פתוחים עדיין יכולים לסרב ל-rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/he_IL_external_site.md",
-          "field_note": "השמיים יכולים להיות פתוחים ל-packet וסגורים ל-body שלך. בדוק את כל המכונה לפני שאתה חוגג.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Máquina de janela do céu de Aegir",
-          "scanner": "LEITURA SKY WINDOW // Céu visualmente limpo não é rescue clearance. Sombra Kestrel, storm ceiling, radiation count, tide load e carrier phase discordam.",
-          "terminal": "ROUTE PLATE AEGIR // Estado de janela é parcial. Packet line pode estar aberta enquanto ascent body, quarentena e tonne-window mass seguem fechadas.",
-          "audio": "Nota de relé: céu claro, route suja. Envie só packet; segure ascent até moon tag, storm ceiling e mass line concordarem.",
-          "in_game_wiki": "O céu visível de Aegir é route machinery, não cenário. Sombras lunares podem quebrar relay confidence, tempestades podem proteger body enquanto matam upload, e uma carrier line limpa ainda pode falhar em radiation, tide, quarentena ou mass checks. Leia sky windows como portões empilhados: packet, body, proof e salvage talvez não compartilhem o mesmo pass.",
-          "external_site": "Um primer longo sobre o céu de Aegir como survival machine: luas, relay shadows, clima carregado, tide load e carrier windows explicam por que um céu que parece aberto ainda pode negar rescue.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/pt_BR_external_site.md",
-          "field_note": "O céu pode estar aberto para packet e fechado para seu body. Verifique a máquina inteira antes de comemorar.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Aegir Sky Window Machine",
-          "scanner": "SKY-WINDOW-LEZING // Visueel heldere hemel is geen rescue clearance. Kestrel-schaduw, stormplafond, radiation count, tide load en carrier phase spreken elkaar tegen.",
-          "terminal": "AEGIR ROUTE PLATE // Vensterstatus is gedeeltelijk. Packet line kan open zijn terwijl ascent body, quarantaine en tonne-window mass gesloten blijven.",
-          "audio": "Relaisnotitie: hemel helder, route vuil. Stuur alleen packet; houd ascent vast tot moon tag, storm ceiling en mass line akkoord zijn.",
-          "in_game_wiki": "Aegirs zichtbare hemel is route machinery, geen decor. Maanschaduwen kunnen relay confidence breken, stormen kunnen body beschermen terwijl ze upload doden, en een heldere carrier line kan nog falen op radiation, tide, quarantaine of mass checks. Lees sky windows als gestapelde poorten: packet, body, proof en salvage delen niet noodzakelijk dezelfde pass.",
-          "external_site": "Een lange primer over Aegirs hemel als survival machine: manen, relay shadows, geladen weer, tide load en carrier windows verklaren waarom een open lijkende hemel rescue nog kan weigeren.",
-          "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/nl_NL_external_site.md",
-          "field_note": "De hemel kan open zijn voor packet en gesloten voor je body. Controleer de hele machine voordat je viert.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.aegir_sky_window_machine",
+    "secondary": [
+     "unlock.first_clear_sky_window",
+     "unlock.first_kestrel_shadow_notice",
+     "unlock.first_storm_ceiling_conflict",
+     "unlock.first_carrier_window_receipt"
+    ],
+    "poi_tags": [
+     "poi.aegir_sky_window_plate",
+     "poi.radiation_count_strip",
+     "poi.moon_shadow_tide_card",
+     "poi.black_keel_window_timer",
+     "poi.p63_relay_board"
+    ],
+    "biome_tags": [
+     "biome.aegir_sky",
+     "biome.storm_shelf",
+     "biome.surface_relay",
+     "biome.carrier_link",
+     "biome.photic_shelf"
+    ],
+    "first_20_boundary": "Explains why a visible clear sky is not a rescue promise: moon shadows, storm ceiling, radiation, tide and carrier mass gates must align."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "Suit Sky-Window Classifier",
+     "terminal": "Aegir Route Plate",
+     "audio": "Relay Confidence Tone",
+     "in_game_wiki": "Recovered Sky-Route Engineering Note",
+     "external_site": "Public Site Aegir Astronomy Primer",
+     "field_note": "Marauder Field Note"
+    },
+    "spoiler_tier": "1",
+    "depth_band": "surface_to_photic_shelf",
+    "route_moment": "first_clear_sky_window_after_black_keel_receipt",
+    "truth_payload": "Aegir sky is route machinery: moon shadows, storm ceiling, radiation, tide load and carrier phase can make a visible window useful for packets but unsafe for body recovery.",
+    "player_question": "Why can the sky look open while the route stays closed?"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Aegir Sky Window Machine",
+     "scanner": "SKY WINDOW READ // Clear visual sky is not rescue clearance. Kestrel shadow, storm ceiling, radiation count, tide load and carrier phase disagree.",
+     "terminal": "AEGIR ROUTE PLATE // Window state is partial. Packet line may be open while ascent body, quarantine and tonne-window mass remain closed.",
+     "audio": "Relay note: sky bright, route dirty. Send packet only; hold ascent until moon tag, storm ceiling and mass line agree.",
+     "in_game_wiki": "Aegir's visible sky is route machinery, not scenery. Moon shadows can break relay confidence, storms can shield the body while killing upload, and a clear carrier line can still fail radiation, tide, quarantine or mass checks. Read sky windows as stacked gates: packet, body, proof and salvage may not share the same pass.",
+     "external_site": "A longform primer on Aegir's sky as a survival machine: moons, relay shadows, charged weather, tide load and carrier windows decide why an open-looking sky can still deny rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/en_US_external_site.md",
+     "field_note": "The sky can be open to a packet and closed to your body. Check the whole machine before you celebrate.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Машина небесного окна Aegir",
+     "scanner": "ЧТЕНИЕ SKY WINDOW // Чистое видимое небо не является rescue clearance. Тень Kestrel, storm ceiling, radiation count, tide load и carrier phase расходятся.",
+     "terminal": "ROUTE PLATE AEGIR // Состояние окна частичное. Packet line может быть открыт, пока ascent body, quarantine и tonne-window mass закрыты.",
+     "audio": "Заметка relay: небо яркое, маршрут грязный. Отправляй только packet; держи ascent, пока moon tag, storm ceiling и mass line не согласятся.",
+     "in_game_wiki": "Видимое небо Aegir это маршрутная машина, а не декорация. Лунные тени ломают relay confidence, штормы могут прикрыть тело и убить upload, а чистая carrier line все еще может провалить radiation, tide, quarantine или mass checks. Читай sky windows как сложенные ворота: packet, body, proof и salvage не обязаны делить один проход.",
+     "external_site": "Большой primer о небе Aegir как survival machine: луны, relay shadows, заряженная погода, tide load и carrier windows решают, почему открытое на вид небо все еще может отказать rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/ru_RU_external_site.md",
+     "field_note": "Небо может быть открыто для packet и закрыто для твоего тела. Проверь всю машину, прежде чем радоваться.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "Aegir Sky Window Machine",
+     "scanner": "SKY WINDOW READ // 目視で晴れた空は rescue clearance ではない。Kestrel 影、storm ceiling、radiation count、tide load、carrier phase が一致しない。",
+     "terminal": "AEGIR ROUTE PLATE // 窓状態は部分的。packet line が開いていても ascent body、quarantine、tonne-window mass は閉じたままの場合がある。",
+     "audio": "Relay note: 空は明るいが route は汚れている。packet だけ送れ。moon tag、storm ceiling、mass line が一致するまで ascent は保留。",
+     "in_game_wiki": "Aegir の見える空は route machinery であり、背景ではない。月影は relay confidence を壊し、嵐は body を守りながら upload を殺し、きれいな carrier line でも radiation、tide、quarantine、mass checks に失敗することがある。sky window は積み重なった gate として読む。packet、body、proof、salvage が同じ pass を共有するとは限らない。",
+     "external_site": "Aegir の空を survival machine として読む長文 primer。月、relay shadow、荷電天候、tide load、carrier window が、開いて見える空でも rescue を拒む理由を決める。",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/ja_JP_external_site.md",
+     "field_note": "空は packet に開いていても、あなたの body には閉じていることがある。喜ぶ前に機械全体を確認しろ。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "Aegir 天空窗口机器",
+     "scanner": "SKY WINDOW 读数 // 肉眼晴空不等于 rescue clearance。Kestrel 阴影、storm ceiling、radiation count、tide load 和 carrier phase 彼此不一致。",
+     "terminal": "AEGIR ROUTE PLATE // 窗口状态是部分的。packet line 可以开启，而 ascent body、quarantine 和 tonne-window mass 仍然关闭。",
+     "audio": "Relay note：天空明亮，route 很脏。只发送 packet；等 moon tag、storm ceiling 和 mass line 同意后再考虑 ascent。",
+     "in_game_wiki": "Aegir 的可见天空是 route machinery，不是布景。月影会破坏 relay confidence，风暴能保护 body 同时杀死 upload，干净的 carrier line 仍可能在 radiation、tide、quarantine 或 mass checks 上失败。把 sky windows 读成叠在一起的 gate：packet、body、proof 和 salvage 不一定共享同一次 pass。",
+     "external_site": "一篇长文 primer，把 Aegir 的天空解释为 survival machine：群月、relay shadows、带电天气、tide load 和 carrier windows 决定为什么看似开放的天空仍会拒绝 rescue。",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/zh_CN_external_site.md",
+     "field_note": "天空可以向 packet 打开，却对你的 body 关闭。庆祝前先检查整台机器。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Machine de fenêtre céleste d'Aegir",
+     "scanner": "LECTURE SKY WINDOW // Un ciel visuellement clair n'est pas une rescue clearance. Ombre Kestrel, storm ceiling, radiation count, tide load et carrier phase divergent.",
+     "terminal": "ROUTE PLATE AEGIR // L'état de fenêtre est partiel. La packet line peut être ouverte tandis que ascent body, quarantaine et tonne-window mass restent fermées.",
+     "audio": "Note relais: ciel brillant, route sale. Envoie seulement le packet; garde l'ascent jusqu'à accord entre moon tag, storm ceiling et mass line.",
+     "in_game_wiki": "Le ciel visible d'Aegir est une route machinery, pas un décor. Les ombres lunaires peuvent casser la relay confidence, les tempêtes peuvent protéger le body tout en tuant l'upload, et une carrier line claire peut encore échouer aux contrôles radiation, tide, quarantaine ou mass. Lis les sky windows comme des portes empilées: packet, body, proof et salvage ne partagent pas forcément le même pass.",
+     "external_site": "Un primer longform sur le ciel d'Aegir comme survival machine: lunes, relay shadows, météo chargée, tide load et carrier windows expliquent pourquoi un ciel ouvert en apparence peut encore refuser le rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/fr_FR_external_site.md",
+     "field_note": "Le ciel peut être ouvert au packet et fermé à ton body. Vérifie toute la machine avant de célébrer.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Máquina de ventana celeste de Aegir",
+     "scanner": "LECTURA SKY WINDOW // Un cielo visualmente claro no es rescue clearance. Sombra Kestrel, storm ceiling, radiation count, tide load y carrier phase no coinciden.",
+     "terminal": "ROUTE PLATE AEGIR // El estado de ventana es parcial. La packet line puede estar abierta mientras ascent body, cuarentena y tonne-window mass siguen cerradas.",
+     "audio": "Nota de relé: cielo brillante, ruta sucia. Envía solo packet; retén ascent hasta que moon tag, storm ceiling y mass line coincidan.",
+     "in_game_wiki": "El cielo visible de Aegir es route machinery, no decorado. Las sombras lunares pueden romper relay confidence, las tormentas pueden proteger el body mientras matan el upload, y una carrier line limpia aún puede fallar por radiation, tide, cuarentena o mass checks. Lee las sky windows como compuertas apiladas: packet, body, proof y salvage quizá no compartan el mismo pass.",
+     "external_site": "Un primer longform sobre el cielo de Aegir como survival machine: lunas, relay shadows, clima cargado, tide load y carrier windows explican por qué un cielo que parece abierto aún puede negar rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/es_ES_external_site.md",
+     "field_note": "El cielo puede abrirse al packet y cerrarse a tu body. Revisa toda la máquina antes de celebrar.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Aegir Sky Window Machine",
+     "scanner": "SKY-WINDOW-READ // Sichtbar klarer Himmel ist keine rescue clearance. Kestrel-Schatten, storm ceiling, radiation count, tide load und carrier phase widersprechen sich.",
+     "terminal": "AEGIR ROUTE PLATE // Fensterstatus ist teilweise. Packet line kann offen sein, während ascent body, Quarantäne und tonne-window mass geschlossen bleiben.",
+     "audio": "Relaisnotiz: Himmel hell, Route schmutzig. Nur packet senden; ascent halten, bis moon tag, storm ceiling und mass line zustimmen.",
+     "in_game_wiki": "Aegirs sichtbarer Himmel ist route machinery, keine Kulisse. Mondschatten können relay confidence brechen, Stürme können den body schützen und upload töten, und eine klare carrier line kann noch an radiation, tide, Quarantäne oder mass checks scheitern. Lies sky windows als gestapelte Tore: packet, body, proof und salvage teilen nicht zwingend denselben pass.",
+     "external_site": "Ein Longform-Primer über Aegirs Himmel als survival machine: Monde, relay shadows, geladenes Wetter, tide load und carrier windows erklären, warum ein offen wirkender Himmel rescue weiter verweigern kann.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/de_DE_external_site.md",
+     "field_note": "Der Himmel kann für ein packet offen und für deinen body geschlossen sein. Prüfe die ganze Maschine, bevor du feierst.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Maszyna okna nieba Aegir",
+     "scanner": "ODCZYT SKY WINDOW // Wizualnie czyste niebo nie jest rescue clearance. Cień Kestrel, storm ceiling, radiation count, tide load i carrier phase nie zgadzają się.",
+     "terminal": "ROUTE PLATE AEGIR // Stan okna jest częściowy. Packet line może być otwarta, gdy ascent body, kwarantanna i tonne-window mass pozostają zamknięte.",
+     "audio": "Notatka relaya: niebo jasne, route brudna. Wyślij tylko packet; wstrzymaj ascent, aż moon tag, storm ceiling i mass line się zgodzą.",
+     "in_game_wiki": "Widzialne niebo Aegir jest route machinery, nie dekoracją. Cienie księżyców mogą łamać relay confidence, sztormy mogą chronić body i zabijać upload, a czysta carrier line nadal może zawieść przez radiation, tide, kwarantannę lub mass checks. Czytaj sky windows jak ułożone bramy: packet, body, proof i salvage nie muszą dzielić tego samego pass.",
+     "external_site": "Długi primer o niebie Aegir jako survival machine: księżyce, relay shadows, naładowana pogoda, tide load i carrier windows wyjaśniają, czemu otwarte z wyglądu niebo nadal może odmówić rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/pl_PL_external_site.md",
+     "field_note": "Niebo może być otwarte dla packetu i zamknięte dla twojego body. Sprawdź całą maszynę, zanim zaczniesz świętować.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Машина небесного вікна Aegir",
+     "scanner": "ЧИТАННЯ SKY WINDOW // Видиме ясне небо не є rescue clearance. Тінь Kestrel, storm ceiling, radiation count, tide load і carrier phase не сходяться.",
+     "terminal": "ROUTE PLATE AEGIR // Стан вікна частковий. Packet line може бути відкритою, поки ascent body, quarantine і tonne-window mass залишаються закритими.",
+     "audio": "Нотатка relay: небо яскраве, route брудний. Надсилай тільки packet; тримай ascent, доки moon tag, storm ceiling і mass line не погодяться.",
+     "in_game_wiki": "Видиме небо Aegir це route machinery, а не декорація. Місячні тіні можуть ламати relay confidence, шторми можуть захистити body і вбити upload, а чиста carrier line все ще може провалити radiation, tide, quarantine або mass checks. Читай sky windows як складені ворота: packet, body, proof і salvage не мусять ділити один pass.",
+     "external_site": "Великий primer про небо Aegir як survival machine: місяці, relay shadows, заряджена погода, tide load і carrier windows пояснюють, чому відкрите на вигляд небо все ще може відмовити rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/uk_UA_external_site.md",
+     "field_note": "Небо може бути відкритим для packet і закритим для твого body. Перевір усю машину, перш ніж радіти.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "آلة نافذة سماء Aegir",
+     "scanner": "قراءة SKY WINDOW // السماء الصافية بصريا ليست rescue clearance. ظل Kestrel وstorm ceiling وradiation count وtide load وcarrier phase غير متفقة.",
+     "terminal": "لوحة طريق AEGIR // حالة النافذة جزئية. قد تكون packet line مفتوحة بينما تبقى ascent body وquarantine وtonne-window mass مغلقة.",
+     "audio": "ملاحظة relay: السماء مضيئة، route قذر. أرسل packet فقط؛ أوقف ascent حتى يتفق moon tag وstorm ceiling وmass line.",
+     "in_game_wiki": "سماء Aegir المرئية هي route machinery وليست منظرا. قد تكسر ظلال الأقمار relay confidence، وقد تحمي العواصف body وهي تقتل upload، وقد تفشل carrier line نظيفة في radiation أو tide أو quarantine أو mass checks. اقرأ sky windows كبوابات مكدسة: قد لا يشترك packet وbody وproof وsalvage في pass واحد.",
+     "external_site": "Primer طويل عن سماء Aegir كـ survival machine: الأقمار وrelay shadows والطقس المشحون وtide load وcarrier windows تشرح لماذا قد ترفض السماء التي تبدو مفتوحة rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/ar_SA_external_site.md",
+     "field_note": "قد تكون السماء مفتوحة أمام packet ومغلقة أمام body. افحص الآلة كلها قبل أن تحتفل.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Mesin Jendela Langit Aegir",
+     "scanner": "BACAAN SKY WINDOW // Langit yang tampak cerah bukan rescue clearance. Bayangan Kestrel, storm ceiling, radiation count, tide load, dan carrier phase tidak sepakat.",
+     "terminal": "ROUTE PLATE AEGIR // Status jendela parsial. Packet line bisa terbuka sementara ascent body, karantina, dan tonne-window mass tetap tertutup.",
+     "audio": "Catatan relai: langit terang, route kotor. Kirim packet saja; tahan ascent sampai moon tag, storm ceiling, dan mass line sepakat.",
+     "in_game_wiki": "Langit Aegir yang terlihat adalah route machinery, bukan pemandangan. Bayangan bulan bisa merusak relay confidence, badai bisa melindungi body sambil membunuh upload, dan carrier line yang bersih masih bisa gagal pada radiation, tide, karantina, atau mass checks. Baca sky windows sebagai gerbang bertumpuk: packet, body, proof, dan salvage tidak selalu berbagi pass yang sama.",
+     "external_site": "Primer panjang tentang langit Aegir sebagai survival machine: bulan, relay shadows, cuaca bermuatan, tide load, dan carrier windows menjelaskan mengapa langit yang terlihat terbuka tetap bisa menolak rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/id_ID_external_site.md",
+     "field_note": "Langit bisa terbuka bagi packet dan tertutup bagi body-mu. Periksa seluruh mesin sebelum merayakan.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "Aegir 하늘 창 기계",
+     "scanner": "SKY WINDOW 판독 // 눈에 보이는 맑은 하늘은 rescue clearance가 아니다. Kestrel 그림자, storm ceiling, radiation count, tide load, carrier phase가 어긋난다.",
+     "terminal": "AEGIR ROUTE PLATE // 창 상태는 부분적이다. packet line은 열려도 ascent body, quarantine, tonne-window mass는 닫힌 채일 수 있다.",
+     "audio": "Relay note: 하늘은 밝고 route는 더럽다. packet만 보내라. moon tag, storm ceiling, mass line이 일치할 때까지 ascent는 보류.",
+     "in_game_wiki": "Aegir의 보이는 하늘은 route machinery이지 배경이 아니다. 달 그림자는 relay confidence를 깨고, 폭풍은 body를 보호하면서 upload를 죽일 수 있으며, 깨끗한 carrier line도 radiation, tide, quarantine, mass checks에서 실패할 수 있다. sky windows를 쌓인 문으로 읽어라. packet, body, proof, salvage가 같은 pass를 공유한다고 보장할 수 없다.",
+     "external_site": "Aegir 하늘을 survival machine으로 설명하는 장문 primer: 달, relay shadows, 전하를 띤 날씨, tide load, carrier windows가 열린 것처럼 보이는 하늘이 왜 rescue를 거부하는지 결정한다.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/ko_KR_external_site.md",
+     "field_note": "하늘은 packet에는 열리고 네 body에는 닫혀 있을 수 있다. 축하하기 전에 기계 전체를 확인해라.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "מכונת חלון השמיים של Aegir",
+     "scanner": "קריאת SKY WINDOW // שמיים נקיים לעין אינם rescue clearance. צל Kestrel, storm ceiling, radiation count, tide load ו-carrier phase אינם מסכימים.",
+     "terminal": "AEGIR ROUTE PLATE // מצב החלון חלקי. packet line עשויה להיות פתוחה בזמן ש-ascent body, quarantine ו-tonne-window mass נשארים סגורים.",
+     "audio": "הערת relay: השמיים בהירים, route מלוכלך. שלח packet בלבד; החזק ascent עד ש-moon tag, storm ceiling ו-mass line יסכימו.",
+     "in_game_wiki": "השמיים הנראים של Aegir הם route machinery, לא תפאורה. צללי ירחים יכולים לשבור relay confidence, סערות יכולות להגן על body בזמן שהן הורגות upload, ו-carrier line נקייה עדיין יכולה להיכשל ב-radiation, tide, quarantine או mass checks. קרא sky windows כשערים נערמים: packet, body, proof ו-salvage אינם חייבים לחלוק אותו pass.",
+     "external_site": "Primer ארוך על שמי Aegir כ-survival machine: ירחים, relay shadows, מזג טעון, tide load ו-carrier windows מסבירים מדוע שמיים שנראים פתוחים עדיין יכולים לסרב ל-rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/he_IL_external_site.md",
+     "field_note": "השמיים יכולים להיות פתוחים ל-packet וסגורים ל-body שלך. בדוק את כל המכונה לפני שאתה חוגג.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Máquina de janela do céu de Aegir",
+     "scanner": "LEITURA SKY WINDOW // Céu visualmente limpo não é rescue clearance. Sombra Kestrel, storm ceiling, radiation count, tide load e carrier phase discordam.",
+     "terminal": "ROUTE PLATE AEGIR // Estado de janela é parcial. Packet line pode estar aberta enquanto ascent body, quarentena e tonne-window mass seguem fechadas.",
+     "audio": "Nota de relé: céu claro, route suja. Envie só packet; segure ascent até moon tag, storm ceiling e mass line concordarem.",
+     "in_game_wiki": "O céu visível de Aegir é route machinery, não cenário. Sombras lunares podem quebrar relay confidence, tempestades podem proteger body enquanto matam upload, e uma carrier line limpa ainda pode falhar em radiation, tide, quarentena ou mass checks. Leia sky windows como portões empilhados: packet, body, proof e salvage talvez não compartilhem o mesmo pass.",
+     "external_site": "Um primer longo sobre o céu de Aegir como survival machine: luas, relay shadows, clima carregado, tide load e carrier windows explicam por que um céu que parece aberto ainda pode negar rescue.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/pt_BR_external_site.md",
+     "field_note": "O céu pode estar aberto para packet e fechado para seu body. Verifique a máquina inteira antes de comemorar.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Aegir Sky Window Machine",
+     "scanner": "SKY-WINDOW-LEZING // Visueel heldere hemel is geen rescue clearance. Kestrel-schaduw, stormplafond, radiation count, tide load en carrier phase spreken elkaar tegen.",
+     "terminal": "AEGIR ROUTE PLATE // Vensterstatus is gedeeltelijk. Packet line kan open zijn terwijl ascent body, quarantaine en tonne-window mass gesloten blijven.",
+     "audio": "Relaisnotitie: hemel helder, route vuil. Stuur alleen packet; houd ascent vast tot moon tag, storm ceiling en mass line akkoord zijn.",
+     "in_game_wiki": "Aegirs zichtbare hemel is route machinery, geen decor. Maanschaduwen kunnen relay confidence breken, stormen kunnen body beschermen terwijl ze upload doden, en een heldere carrier line kan nog falen op radiation, tide, quarantaine of mass checks. Lees sky windows als gestapelde poorten: packet, body, proof en salvage delen niet noodzakelijk dezelfde pass.",
+     "external_site": "Een lange primer over Aegirs hemel als survival machine: manen, relay shadows, geladen weer, tide load en carrier windows verklaren waarom een open lijkende hemel rescue nog kan weigeren.",
+     "external_site_article_path": "articles/RS284_AEGIR_SKY_WINDOW_MACHINE/nl_NL_external_site.md",
+     "field_note": "De hemel kan open zijn voor packet en gesloten voor je body. Controleer de hele machine voordat je viert.",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }

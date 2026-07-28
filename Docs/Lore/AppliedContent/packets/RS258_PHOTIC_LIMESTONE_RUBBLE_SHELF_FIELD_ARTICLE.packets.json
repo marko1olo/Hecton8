@@ -1,254 +1,255 @@
 {
-  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
-  "release_set_id": "RS258_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE",
-  "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-  "evidence_class": "STATIC_SOURCE",
-  "runtime_contract": {
+ "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+ "release_set_id": "RS258_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE",
+ "status": "canonical_source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+ "evidence_class": "STATIC_SOURCE",
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+ },
+ "packets": [
+  {
+   "packet_id": "P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE",
+   "release_set_id": "RS258_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE",
+   "article_id": "applied_lore.photic_limestone_rubble_shelf_field_article",
+   "title_key": "LORE_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE_TITLE",
+   "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+   "canon_owner": [
+    "Docs/Lore/Canon_Locks.md",
+    "Docs/Lore/Lore_Bible.md",
+    "Docs/Lore/Lore_Content_System.md",
+    "Docs/Lore/Lore_Localization_Model.md",
+    "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
+    "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
+    "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
+   ],
+   "runtime_contract": {
     "authoring_only": true,
     "runtime_reads_json": false,
     "runtime_reads_markdown": false,
     "runtime_ready": false,
-    "native_localization_ready": false,
     "data_monolith_ready": false,
     "h8bin_ready": false,
-    "unity_placement_ready": false,
-    "generated_page_ready": false,
-    "publication_ready": false
-  },
-  "packets": [
-    {
-      "packet_id": "P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE",
-      "release_set_id": "RS258_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE",
-      "article_id": "applied_lore.photic_limestone_rubble_shelf_field_article",
-      "title_key": "LORE_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE_TITLE",
-      "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
-      "canon_owner": [
-        "Docs/Lore/Canon_Locks.md",
-        "Docs/Lore/Lore_Bible.md",
-        "Docs/Lore/Lore_Content_System.md",
-        "Docs/Lore/Lore_Localization_Model.md",
-        "Docs/Lore/Lore_Multilingual_Content_Architecture.md",
-        "Docs/Lore/Grand_Library/04_HECTON8_AND_LOCAL_SCIENCE_en_US.md",
-        "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_en_US.md"
-      ],
-      "runtime_contract": {
-        "authoring_only": true,
-        "runtime_reads_json": false,
-        "runtime_reads_markdown": false,
-        "runtime_ready": false,
-        "data_monolith_ready": false,
-        "h8bin_ready": false,
-        "unity_placement_ready": false
-      },
-      "surfaces": [
-        "scanner",
-        "terminal",
-        "audio",
-        "in_game_wiki",
-        "external_site",
-        "field_note"
-      ],
-      "unlock": {
-        "primary": "unlock.photic_limestone_rubble_shelf_field_article",
-        "secondary": [
-          "unlock.first_photic_limestone_shelf",
-          "unlock.first_shell_grit_crack",
-          "unlock.first_shallow_rubble_route"
-        ],
-        "poi_tags": [
-          "poi.photic_limestone_rubble_shelf",
-          "poi.eroded_limestone_plate",
-          "poi.shell_grit_crack",
-          "poi.olive_algae_pore",
-          "poi.shallow_route_ledge",
-          "poi.old_quarry_scuff"
-        ],
-        "biome_tags": [
-          "biome.photic_shallows",
-          "biome.first_route_shelf",
-          "biome.limestone_ledge",
-          "biome.shallow_salvage_path"
-        ],
-        "first_20_boundary": "Makes bright shallow limestone readable as route and material history: pale plates, shell grit, algae pores and broken ledges show current, quarry scars and safe footholds."
-      },
-      "metadata": {
-        "source_voice_by_surface": {
-          "scanner": "PDA Shallow Geology Scanner",
-          "terminal": "Route Survey Note",
-          "audio": "First Shelf Recorder Fragment",
-          "in_game_wiki": "PDA Limestone Shelf Primer",
-          "external_site": "Public Site Photic Shelf Article",
-          "field_note": "Marauder Field Annotation"
-        },
-        "writer_note": "Keep the shelf bright but not harmless. It should teach readable shallow terrain, material extraction scars and route literacy before deep brine or abyssal geology."
-      },
-      "localized": {
-        "en_US": {
-          "title": "Photic Limestone Rubble Shelf",
-          "scanner": "PHOTIC LIMESTONE SHELF // Pale calcium plates, shell grit and broken colonial-rubble fragments. Bright water makes it look simple. The cracks are the map: current, quarry cuts, collapse edges and safe boot holds all collect different sediment.",
-          "terminal": "Survey note: do not route by brightness alone. Shell grit in a crack means recent wash. Olive stain in pores means stable shelter. Clean white fracture means a fresh break or a scavenger cut.",
-          "audio": "The first shelf fools everyone. You see light and think safe. Then the rubble moves under your boots and the ocean tells you it has been counting longer than you have.",
-          "in_game_wiki": "The photic limestone rubble shelf is the first place many crews mistake visibility for safety. In shallow HECTON-8 water, calcium plates reflect Aegir-filtered light and turn the sea floor pale enough to read from a distance. That is useful, but incomplete. Shell grit collects where small currents still work. Olive algae stains protected pores where the surface has stayed stable long enough for life to hold. Bright white fractures mark fresh breakage, old quarry scuffs or recent salvage. A shelf that looks smooth from above may hide undercut edges and loose rubble pockets. Walk it like a ledger, not a beach.",
-          "external_site": "The bright limestone shelves of HECTON-8 are the player's first geology lesson: readable, beautiful and never quite innocent.",
-          "external_site_article": "Photic shelves sit where light still has authority. At this depth the ocean is not dark enough to hide everything, and not gentle enough to forgive careless feet. Limestone plates form from old biogenic calcium, pressure-worn shell grit and mineral cement. The rubble on top is a mixed record: natural breakage, colonial extraction, storm surge, crawler traffic and the patient work of small organisms that turn cracks into shelter.\n\nThe useful reading is local. Shell grit gathered in a seam means water is still sorting the floor. Fine pale dust on a ledge means recent fracture. Olive stain inside pores means the surface stayed protected through multiple cycles. A clean circular scuff may be a tool foot, anchor pad or old quarry clamp. If the player only sees brightness, the shelf feels like a safe tutorial. If the player reads the surface, it becomes the first honest map: which ledge holds, which crack drains, which rubble pocket will slide, and where the colony stole stone before pretending the shallows were untouched.",
-          "field_note": "Bright stone is not safety. It is just evidence you can see before it punishes you.",
-          "localization_status": "source_authority"
-        },
-        "ru_RU": {
-          "title": "Световая известняковая осыпная полка",
-          "scanner": "СВЕТОВАЯ ИЗВЕСТНЯКОВАЯ ПОЛКА // Бледные кальциевые плиты, ракушечная крошка и обломки колониального рифового материала. Светлая вода делает ее простой на вид. Карта находится в трещинах: течение, выемки, обвалы и надежные ступени собирают разный осадок.",
-          "terminal": "Заметка съемки: не строй маршрут только по яркости. Ракушечная крошка в трещине означает свежую промывку. Оливковый налет в порах — стабильное укрытие. Чистый белый излом — свежий скол или рез мародера.",
-          "audio": "Первая полка обманывает всех. Видишь свет и думаешь: безопасно. Потом осыпь едет под ботинком, и океан напоминает, что считает дольше тебя.",
-          "in_game_wiki": "Световая известняковая осыпная полка — первое место, где экипажи путают видимость с безопасностью. В мелкой воде HECTON-8 кальциевые плиты отражают свет, прошедший через Aegir, и дно становится достаточно бледным, чтобы читать его издалека. Это полезно, но недостаточно. Ракушечная крошка собирается там, где еще работает мелкое течение. Оливковый налет держится в защищенных порах, где поверхность стабильна достаточно долго. Ярко-белые изломы отмечают свежий скол, старую карьерную метку или недавний разбор. Полка, гладкая сверху, может прятать подмытый край и карманы рыхлой осыпи. Иди по ней как по ведомости, а не как по пляжу.",
-          "external_site": "Светлые известняковые полки HECTON-8 — первый урок геологии для игрока: красиво, читаемо и совсем не невинно.",
-          "external_site_article": "Световые полки лежат там, где свет еще имеет власть. На этой глубине океан не так темен, чтобы все спрятать, и не так мягок, чтобы прощать небрежные ноги. Известняковые плиты складываются из старого биогенного кальция, перемолотой ракушечной крошки и минерального цемента. Осыпь сверху — смешанная запись: естественные сколы, колониальная добыча, штормовой сгон, следы гусениц и тихая работа малых организмов, превращающих трещины в укрытия.\n\nЧитать нужно рядом с собой. Крошка в шве значит, что вода все еще сортирует дно. Бледная пыль на уступе значит свежий излом. Оливковое пятно в порах значит стабильность через несколько циклов. Чистый круглый след может быть лапой инструмента, анкерной плитой или старым карьерным зажимом. Если игрок видит только яркость, полка кажется безопасным обучением. Если он читает поверхность, это первая честная карта: какой уступ держит, какая трещина дренирует, какой карман поедет и где колония крала камень, притворяясь, что мелководье нетронуто.",
-          "field_note": "Светлый камень — не безопасность. Это просто улика, которую видно до того, как она накажет.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "uk_UA": {
-          "title": "Світлова вапнякова осипна полиця",
-          "scanner": "СВІТЛОВА ВАПНЯКОВА ПОЛИЦЯ // Бліді кальцієві плити, мушлева крихта і уламки колоніального рифового матеріалу. Світла вода робить її простою на вигляд. Карта в тріщинах: течія, виїмки, обвали і надійні ступені збирають різний осад.",
-          "terminal": "Нотатка зйомки: не веди маршрут лише за яскравістю. Мушлева крихта в тріщині означає свіжу промивку. Оливковий наліт у порах — стабільний захист. Чистий білий злам — свіжий скол або різак мародера.",
-          "audio": "Перша полиця обманює всіх. Бачиш світло й думаєш: безпечно. Потім осип їде під черевиком, і океан нагадує, що рахував довше за тебе.",
-          "in_game_wiki": "Світлова вапнякова осипна полиця — перше місце, де екіпажі плутають видимість із безпекою. На мілководді HECTON-8 кальцієві плити відбивають світло, профільтроване Aegir, і дно стає досить блідим, щоб читати його здалеку. Але цього мало. Мушлева крихта збирається там, де ще працює дрібна течія. Оливковий наліт тримається у захищених порах. Яскраво-білі злами позначають свіжий скол, стару кар'єрну мітку або недавній розбір. Гладка згори полиця може ховати підмитий край і кишені рухомого осипу.",
-          "external_site": "Світлі вапнякові полиці HECTON-8 — перший геологічний урок: красиво, читабельно і ніколи не невинно.",
-          "external_site_article": "Світлові полиці лежать там, де світло ще має владу. На цій глибині океан не досить темний, щоб усе сховати, і не досить лагідний, щоб пробачити необережний крок. Вапнякові плити складаються зі старого біогенного кальцію, перемеленої мушлевої крихти і мінерального цементу. Осип згори — змішаний запис: природні сколи, колоніальний видобуток, штормовий згін, сліди техніки і тиха робота малих організмів.\n\nЧитати треба локально. Крихта в шві означає, що вода ще сортує дно. Блідий пил на уступі означає свіжий злам. Оливкова пляма в порах означає стабільність. Чистий круглий слід може бути лапою інструмента або старим кар'єрним затискачем. Якщо бачити лише яскравість, полиця здається безпечним вступом. Якщо читати поверхню, вона стає першою чесною мапою: який уступ тримає, яка тріщина дренує, яка кишеня поїде.",
-          "field_note": "Світлий камінь — не безпека. Це доказ, який видно до покарання.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "de_DE": {
-          "title": "Photic-Kalkstein-Schuttschelf",
-          "scanner": "PHOTIC-KALKSTEINSHELF // Helle Calciumplatten, Muschelgrus und gebrochene Kolonialrubble-Fragmente. Das helle Wasser macht es einfach wirkend. Die Karte liegt in den Rissen: Strömung, Abbaukanten, Einsturzränder und sichere Tritte sammeln verschiedene Sedimente.",
-          "terminal": "Vermessungsnotiz: nicht nach Helligkeit routen. Muschelgrus im Riss bedeutet frische Spülung. Olivfarbene Poren bedeuten stabile Deckung. Sauberer weißer Bruch bedeutet frischer Abbruch oder Bergungsschnitt.",
-          "audio": "Das erste Shelf täuscht alle. Du siehst Licht und denkst sicher. Dann rutscht der Schutt unter dem Stiefel, und der Ozean erinnert dich, dass er länger zählt.",
-          "in_game_wiki": "Das photische Kalkstein-Schuttschelf ist der erste Ort, an dem Crews Sichtbarkeit mit Sicherheit verwechseln. Flache HECTON-8-Wasser lassen Calciumplatten Aegir-gefiltertes Licht reflektieren; der Boden wirkt aus der Ferne lesbar. Doch Sichtbarkeit reicht nicht. Muschelgrus sammelt sich dort, wo kleine Strömungen noch sortieren. Olivfarbene Algenflecken sitzen in Poren, die lange stabil blieben. Helle weiße Brüche markieren frischen Schaden, alte Abbauspuren oder Bergung. Ein von oben glattes Shelf kann unterspülte Kanten und lockere Schuttaschen verbergen.",
-          "external_site": "Die hellen Kalksteinshelfs von HECTON-8 sind die erste Geologiestunde des Spielers: lesbar, schön und nie ganz harmlos.",
-          "external_site_article": "Photische Shelfs liegen dort, wo Licht noch Autorität besitzt. In dieser Tiefe ist der Ozean nicht dunkel genug, um alles zu verbergen, und nicht sanft genug, um unvorsichtige Schritte zu vergeben. Kalksteinplatten entstehen aus altem biogenem Calcium, Muschelgrus und mineralischem Zement. Der Schutt darüber ist gemischte Aufzeichnung: natürliche Brüche, Kolonialabbau, Sturmstoß, Fahrzeugspuren und kleine Organismen, die Risse zu Schutzräumen machen.\n\nDas Lesen ist lokal. Grus in einer Naht bedeutet, dass Wasser den Boden noch sortiert. Heller Staub auf einer Stufe bedeutet frischer Bruch. Oliv in Poren bedeutet geschütztes Alter. Ein sauberer runder Abrieb kann Werkzeugfuß, Ankerpad oder alter Steinbruchklemmring sein. Wer nur Helligkeit sieht, bekommt ein falsches Tutorial. Wer die Oberfläche liest, erhält die erste ehrliche Karte.",
-          "field_note": "Heller Stein ist keine Sicherheit. Er ist nur Beweis, den du früh genug sehen kannst.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "es_ES": {
-          "title": "Plataforma fótica de escombro calizo",
-          "scanner": "PLATAFORMA CALIZA FÓTICA // Placas pálidas de calcio, arenilla de concha y fragmentos de escombro colonial. El agua clara la hace parecer simple. El mapa está en las grietas: corriente, cortes de cantera, bordes caídos y apoyos seguros juntan sedimentos distintos.",
-          "terminal": "Nota de estudio: no traces ruta por brillo. Arenilla en una grieta significa lavado reciente. Mancha oliva en poros significa refugio estable. Fractura blanca limpia significa rotura fresca o corte de saqueo.",
-          "audio": "La primera plataforma engaña a todos. Ves luz y piensas seguro. Luego el escombro se mueve bajo la bota y el océano te recuerda que lleva más tiempo contando.",
-          "in_game_wiki": "La plataforma fótica de escombro calizo es el primer lugar donde muchas tripulaciones confunden visibilidad con seguridad. En aguas someras de HECTON-8, las placas de calcio reflejan luz filtrada por Aegir y vuelven el suelo legible desde lejos. Eso ayuda, pero no basta. La arenilla de concha se junta donde aún trabaja la corriente. Las manchas oliva viven en poros protegidos. Las fracturas blancas marcan rotura fresca, cantera antigua o saqueo reciente. Una plataforma lisa desde arriba puede esconder bordes socavados y bolsas de escombro suelto.",
-          "external_site": "Las plataformas calizas claras de HECTON-8 son la primera lección geológica del jugador: legibles, bellas y nunca inocentes.",
-          "external_site_article": "Las plataformas fóticas existen donde la luz aún manda. A esta profundidad el océano no es tan oscuro como para esconderlo todo ni tan amable como para perdonar pasos torpes. Las placas calizas nacen de calcio biogénico antiguo, arenilla de concha y cemento mineral. El escombro encima mezcla roturas naturales, extracción colonial, oleaje de tormenta, tráfico de máquinas y organismos pequeños que vuelven refugio cada grieta.\n\nLa lectura útil es local. Arenilla en una junta significa que el agua sigue ordenando el suelo. Polvo pálido en un borde significa fractura reciente. Mancha oliva en poros significa estabilidad. Una marca circular limpia puede ser pie de herramienta, placa de anclaje o mordaza de cantera. Si solo ves brillo, parece una zona segura. Si lees la superficie, es el primer mapa honesto.",
-          "field_note": "La piedra clara no es seguridad. Es evidencia visible antes del castigo.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "fr_FR": {
-          "title": "Plateau photique de gravats calcaires",
-          "scanner": "PLATEAU CALCAIRE PHOTIQUE // Plaques de calcium pâle, grit de coquille et fragments coloniaux brisés. L'eau claire le rend simple. La carte est dans les fissures : courant, coupes d'extraction, bords d'effondrement et appuis sûrs gardent des sédiments différents.",
-          "terminal": "Note de relevé : ne trace pas par luminosité seule. Grit de coquille dans une fissure signifie lavage récent. Tache olive en pore signifie abri stable. Cassure blanche propre signifie rupture fraîche ou coupe de récupération.",
-          "audio": "Le premier plateau trompe tout le monde. Tu vois de la lumière et tu penses sécurité. Puis les gravats glissent sous la botte, et l'océan rappelle qu'il compte depuis plus longtemps.",
-          "in_game_wiki": "Le plateau photique de gravats calcaires est le premier lieu où les équipages confondent visibilité et sécurité. Dans les eaux peu profondes de HECTON-8, les plaques calcaires reflètent la lumière filtrée par Aegir et rendent le fond lisible de loin. Utile, mais incomplet. Le grit de coquille s'accumule là où le courant trie encore. Les taches olive vivent dans les pores protégés. Les cassures blanches marquent rupture récente, ancienne extraction ou récupération. Un plateau lisse vu d'en haut peut cacher bords sapés et poches de gravats mobiles.",
-          "external_site": "Les plateaux calcaires clairs de HECTON-8 sont la première leçon de géologie du joueur : lisibles, beaux, jamais innocents.",
-          "external_site_article": "Les plateaux photiques se trouvent là où la lumière a encore autorité. À cette profondeur, l'océan n'est pas assez noir pour tout cacher ni assez doux pour pardonner les pas négligents. Les plaques calcaires viennent d'ancien calcium biogène, de grit de coquille et de ciment minéral. Les gravats portent un relevé mêlé : cassures naturelles, extraction coloniale, poussée de tempête, passage de machines et travail patient des petits organismes.\n\nLa lecture utile reste locale. Du grit dans une jointure dit que l'eau trie encore le sol. Une poussière pâle sur une marche dit une fracture récente. De l'olive dans les pores dit une stabilité protégée. Une trace circulaire propre peut être pied d'outil, plaque d'ancrage ou ancienne pince de carrière. Si le joueur ne voit que la lumière, le plateau ment. S'il lit la surface, il devient la première carte honnête.",
-          "field_note": "La pierre claire n'est pas la sécurité. C'est une preuve visible avant la sanction.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pl_PL": {
-          "title": "Fotyczna półka wapiennego rumoszu",
-          "scanner": "FOTYCZNA PÓŁKA WAPIENNA // Blade płyty wapnia, grys muszlowy i połamany rumosz kolonialny. Jasna woda udaje prostotę. Mapa leży w pęknięciach: prąd, wyrobiska, krawędzie obsuwu i pewne stopnie zbierają różny osad.",
-          "terminal": "Notatka pomiarowa: nie prowadź trasy samą jasnością. Grys w szczelinie oznacza świeże płukanie. Oliwkowa plama w porach oznacza stabilne schronienie. Czysty biały przełom to świeże pęknięcie albo cięcie szabrownika.",
-          "audio": "Pierwsza półka oszukuje każdego. Widzisz światło i myślisz: bezpiecznie. Potem rumosz rusza pod butem, a ocean przypomina, że liczy dłużej od ciebie.",
-          "in_game_wiki": "Fotyczna półka wapiennego rumoszu to pierwsze miejsce, gdzie załogi mylą widoczność z bezpieczeństwem. W płytkiej wodzie HECTON-8 płyty wapienne odbijają światło filtrowane przez Aegir i dno da się czytać z daleka. To pomaga, ale nie wystarcza. Grys muszlowy zbiera się tam, gdzie prąd nadal sortuje podłoże. Oliwkowe plamy siedzą w chronionych porach. Białe przełomy znaczą świeżą rysę, dawną eksploatację lub niedawny demontaż. Gładka półka może ukrywać podmyty brzeg i luźny rumosz.",
-          "external_site": "Jasne półki wapienne HECTON-8 są pierwszą lekcją geologii: czytelne, piękne i nigdy niewinne.",
-          "external_site_article": "Półki fotyczne leżą tam, gdzie światło nadal ma władzę. Na tej głębokości ocean nie jest dość ciemny, by wszystko ukryć, ani dość łagodny, by wybaczać kroki. Płyty wapienne powstają ze starego wapnia biogenicznego, grysu muszlowego i cementu mineralnego. Rumosz na wierzchu jest zapisem mieszanym: naturalne pęknięcia, kolonialne wydobycie, sztorm, ślady maszyn i praca małych organizmów.\n\nCzyta się lokalnie. Grys w spoinie mówi, że woda nadal sortuje dno. Blady pył na krawędzi mówi o świeżym pęknięciu. Oliwka w porach mówi o stabilności. Czysty okrągły ślad może być stopą narzędzia, płytą kotwy albo dawnym zaciskiem kamieniołomu. Kto widzi tylko jasność, dostaje fałszywy samouczek. Kto czyta powierzchnię, dostaje pierwszą uczciwą mapę.",
-          "field_note": "Jasny kamień nie jest bezpieczeństwem. To dowód, który widać przed karą.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "pt_BR": {
-          "title": "Plataforma fótica de entulho calcário",
-          "scanner": "PLATAFORMA CALCÁRIA FÓTICA // Placas pálidas de cálcio, grãos de concha e fragmentos coloniais quebrados. A água clara faz parecer simples. O mapa está nas rachaduras: corrente, cortes de extração, bordas caídas e apoios seguros juntam sedimentos diferentes.",
-          "terminal": "Nota de levantamento: não roteie só por brilho. Grão de concha em rachadura significa lavagem recente. Mancha oliva em poros significa abrigo estável. Fratura branca limpa significa quebra fresca ou corte de saque.",
-          "audio": "A primeira plataforma engana todo mundo. Você vê luz e pensa que é seguro. Depois o entulho mexe sob a bota e o oceano lembra que conta há mais tempo que você.",
-          "in_game_wiki": "A plataforma fótica de entulho calcário é o primeiro lugar onde equipes confundem visibilidade com segurança. Em água rasa de HECTON-8, placas de cálcio refletem luz filtrada por Aegir e deixam o fundo legível de longe. Ajuda, mas não basta. Grãos de concha se juntam onde pequenas correntes ainda trabalham. Mancha oliva fica em poros protegidos. Fraturas brancas marcam quebra fresca, antiga extração ou saque recente. Uma superfície lisa vista de cima pode esconder borda socavada e bolsões soltos.",
-          "external_site": "As plataformas calcárias claras de HECTON-8 são a primeira aula de geologia do jogador: legíveis, bonitas e nunca inocentes.",
-          "external_site_article": "Plataformas fóticas ficam onde a luz ainda manda. Nessa profundidade, o oceano não é escuro o bastante para esconder tudo nem gentil o bastante para perdoar passos descuidados. As placas calcárias vêm de cálcio biogênico antigo, grãos de concha e cimento mineral. O entulho em cima mistura quebra natural, extração colonial, ressaca, tráfego de máquinas e organismos pequenos trabalhando nas rachaduras.\n\nA leitura útil é local. Grão numa junta significa que a água ainda ordena o chão. Pó pálido numa borda significa fratura nova. Oliva nos poros significa estabilidade protegida. Uma marca circular limpa pode ser pé de ferramenta, placa de ancoragem ou grampo de pedreira. Se o jogador vê só brilho, parece tutorial seguro. Se lê a superfície, vira o primeiro mapa honesto.",
-          "field_note": "Pedra clara não é segurança. É prova visível antes da punição.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "nl_NL": {
-          "title": "Fotische kalksteenpuinplaat",
-          "scanner": "FOTISCHE KALKSTEENPLAAT // Bleke calciumplaten, schelpgruis en gebroken koloniaal puin. Helder water laat het eenvoudig lijken. De kaart zit in de scheuren: stroming, groevesneden, instortkanten en veilige treden verzamelen ander sediment.",
-          "terminal": "Survey-notitie: routeer niet op helderheid alleen. Schelpgruis in een scheur betekent recente spoeling. Olijfkleur in poriën betekent stabiele beschutting. Witte breuk betekent verse schade of bergingssnede.",
-          "audio": "De eerste plaat misleidt iedereen. Je ziet licht en denkt veilig. Dan schuift het puin onder je laars en herinnert de oceaan je eraan dat hij langer telt.",
-          "in_game_wiki": "De fotische kalksteenpuinplaat is de eerste plek waar crews zichtbaarheid verwarren met veiligheid. In ondiep HECTON-8-water reflecteren calciumplaten door Aegir gefilterd licht, waardoor de bodem van ver leesbaar wordt. Dat helpt, maar is niet genoeg. Schelpgruis verzamelt waar kleine stroming nog sorteert. Olijfkleurige vlekken zitten in beschermde poriën. Witte breuken tonen verse schade, oude winning of recente berging. Een gladde plaat kan onderspoelde randen en losse puinzakken verbergen.",
-          "external_site": "De heldere kalksteenplaten van HECTON-8 zijn de eerste geologieles: leesbaar, mooi en nooit onschuldig.",
-          "external_site_article": "Fotische platen liggen waar licht nog gezag heeft. Op deze diepte is de oceaan niet donker genoeg om alles te verbergen en niet zacht genoeg om slordige stappen te vergeven. Kalksteenplaten ontstaan uit oud biogeen calcium, schelpgruis en mineraal cement. Het puin erboven is gemengd verslag: natuurlijke breuk, koloniale winning, stormslag, machineverkeer en kleine organismen die scheuren tot schuilplaatsen maken.\n\nNuttig lezen is lokaal. Gruis in een naad betekent dat water de bodem nog sorteert. Bleek stof op een rand betekent verse breuk. Olijfkleur in poriën betekent beschermde stabiliteit. Een schone ronde schuurplek kan gereedschapsvoet, ankerplaat of oude groeveklem zijn. Wie alleen helderheid ziet, krijgt een vals lesje. Wie het oppervlak leest, krijgt de eerste eerlijke kaart.",
-          "field_note": "Heldere steen is geen veiligheid. Het is bewijs dat je vroeg genoeg kunt zien.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "id_ID": {
-          "title": "Rak Puing Batu Kapur Fotik",
-          "scanner": "RAK BATU KAPUR FOTIK // Lempeng kalsium pucat, grit cangkang, dan pecahan puing kolonial. Air terang membuatnya tampak sederhana. Peta ada di retakan: arus, bekas tambang, tepi runtuh, dan pijakan aman mengumpulkan sedimen berbeda.",
-          "terminal": "Catatan survei: jangan membuat rute hanya dari terang. Grit cangkang di retakan berarti cucian baru. Noda zaitun di pori berarti lindungan stabil. Patahan putih bersih berarti pecah baru atau potongan penjarah.",
-          "audio": "Rak pertama menipu semua orang. Kau melihat cahaya dan mengira aman. Lalu puing bergerak di bawah sepatu, dan laut mengingatkan bahwa ia sudah menghitung lebih lama.",
-          "in_game_wiki": "Rak puing batu kapur fotik adalah tempat pertama kru menyamakan terlihat jelas dengan aman. Di air dangkal HECTON-8, lempeng kalsium memantulkan cahaya tersaring Aegir dan membuat dasar laut terbaca dari jauh. Itu berguna, tapi belum cukup. Grit cangkang berkumpul di arus kecil yang masih menyortir lantai. Noda zaitun tinggal di pori terlindung. Patahan putih menandai pecah baru, bekas tambang lama, atau salvage baru. Permukaan yang halus dari atas bisa menyembunyikan tepi tergerus dan kantong puing longgar.",
-          "external_site": "Rak batu kapur terang HECTON-8 adalah pelajaran geologi pertama: terbaca, indah, dan tidak pernah polos.",
-          "external_site_article": "Rak fotik berada di tempat cahaya masih berkuasa. Pada kedalaman ini laut tidak cukup gelap untuk menyembunyikan semua, dan tidak cukup lembut untuk memaafkan langkah ceroboh. Lempeng batu kapur terbentuk dari kalsium biogenik tua, grit cangkang, dan semen mineral. Puing di atasnya adalah catatan campuran: patahan alami, ekstraksi koloni, dorongan badai, jejak kendaraan, dan organisme kecil yang mengubah retakan menjadi tempat berlindung.\n\nPembacaan yang berguna selalu lokal. Grit di sambungan berarti air masih menyortir lantai. Debu pucat di tepi berarti patahan baru. Zaitun dalam pori berarti stabilitas. Bekas lingkaran bersih bisa berarti kaki alat, pelat jangkar, atau klem tambang lama. Jika pemain hanya melihat terang, rak ini terasa aman. Jika membaca permukaan, ia menjadi peta jujur pertama.",
-          "field_note": "Batu terang bukan keamanan. Itu bukti yang terlihat sebelum menghukummu.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ja_JP": {
-          "title": "有光層石灰岩瓦礫棚",
-          "scanner": "有光層石灰岩棚 // 淡いカルシウム板、貝殻砂、壊れた群体瓦礫片。明るい水は単純に見せる。地図は割れ目にある。流れ、採石痕、崩落縁、安全な足場は、それぞれ別の堆積物を集める。",
-          "terminal": "調査メモ: 明るさだけで経路を選ぶな。割れ目の貝殻砂は最近の洗い流しを示す。孔のオリーブ色は安定した保護を示す。白い新鮮な割れは、新しい破断か回収者の切断だ。",
-          "audio": "最初の棚は皆をだます。光が見えると安全だと思う。だが靴の下で瓦礫が動き、海は自分の方が長く数えてきたと告げる。",
-          "in_game_wiki": "有光層石灰岩瓦礫棚は、乗員が視界と安全を最初に取り違える場所だ。HECTON-8の浅水では、カルシウム板がAegirで濾された光を反射し、遠くからでも底が読める。だがそれだけでは足りない。貝殻砂は小さな流れがまだ働く場所に集まる。オリーブ色の染みは保護された孔に残る。白い割れは新しい破断、古い採石、最近の回収を示す。上から滑らかに見える棚も、削られた縁や緩い瓦礫袋を隠す。",
-          "external_site": "HECTON-8の明るい石灰岩棚は、最初の地質学の授業だ。読めて、美しく、無垢ではない。",
-          "external_site_article": "有光層の棚は、光がまだ権威を持つ深さにある。この深度の海は、すべてを隠すほど暗くなく、雑な足取りを許すほど優しくもない。石灰岩板は古い生物由来カルシウム、貝殻砂、鉱物セメントからできる。その上の瓦礫は、自然破断、植民地採取、嵐、機械の通行、小さな生物の働きが混ざった記録だ。\n\n読むべきものは足元にある。継ぎ目の砂は、水がまだ床を選別していることを示す。棚の淡い粉は新しい破断を示す。孔のオリーブ色は保護された安定を示す。きれいな円形の擦れは工具の足、アンカー板、古い採石クランプかもしれない。明るさだけを見るなら安全な導入に見える。表面を読むなら、最初の正直な地図になる。",
-          "field_note": "明るい石は安全ではない。罰の前に見える証拠だ。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ko_KR": {
-          "title": "유광층 석회암 잔해 선반",
-          "scanner": "유광층 석회암 선반 // 옅은 칼슘 판, 조개 입자, 부서진 군체 잔해. 밝은 물은 단순해 보이게 만든다. 지도는 균열 안에 있다. 흐름, 채석 자국, 붕괴 가장자리, 안전한 발판은 서로 다른 퇴적물을 모은다.",
-          "terminal": "조사 기록: 밝기만 보고 경로를 잡지 말 것. 균열 속 조개 입자는 최근 세척을 뜻한다. 구멍 속 올리브 얼룩은 안정된 보호를 뜻한다. 깨끗한 흰 파단은 새 파손 또는 회수자 절단이다.",
-          "audio": "첫 선반은 모두를 속인다. 빛을 보고 안전하다고 생각한다. 그러다 발밑 잔해가 움직이고, 바다는 너보다 오래 세어 왔다고 말한다.",
-          "in_game_wiki": "유광층 석회암 잔해 선반은 승무원이 가시성과 안전을 처음 혼동하는 장소다. 얕은 HECTON-8 물에서는 칼슘 판이 Aegir를 거친 빛을 반사해 바닥이 멀리서도 읽힌다. 유용하지만 충분하지 않다. 조개 입자는 작은 흐름이 아직 바닥을 분류하는 곳에 모인다. 올리브 얼룩은 보호된 구멍에 남는다. 흰 파단은 새 파손, 오래된 채석, 최근 회수를 나타낸다. 위에서 매끈해 보이는 선반도 깎인 가장자리와 느슨한 잔해 주머니를 숨길 수 있다.",
-          "external_site": "HECTON-8의 밝은 석회암 선반은 첫 지질학 수업이다. 읽을 수 있고 아름답지만 결코 순진하지 않다.",
-          "external_site_article": "유광층 선반은 빛이 아직 권위를 가진 곳에 있다. 이 깊이의 바다는 모든 것을 숨길 만큼 어둡지 않고, 부주의한 발을 용서할 만큼 부드럽지도 않다. 석회암 판은 오래된 생물성 칼슘, 조개 입자, 광물 시멘트로 만들어진다. 위의 잔해는 자연 파손, 식민지 채굴, 폭풍, 차량 흔적, 균열을 은신처로 만드는 작은 생물의 일이 섞인 기록이다.\n\n읽기는 가까운 곳에서 한다. 이음매 속 입자는 물이 아직 바닥을 분류한다는 뜻이다. 턱 위의 옅은 먼지는 새 파단이다. 구멍 속 올리브색은 보호된 안정이다. 깨끗한 원형 마모는 도구 발, 앵커 패드, 오래된 채석 클램프일 수 있다. 밝기만 보면 안전한 시작처럼 보인다. 표면을 읽으면 첫 번째 정직한 지도가 된다.",
-          "field_note": "밝은 돌은 안전이 아니다. 벌받기 전에 보이는 증거일 뿐이다.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "zh_CN": {
-          "title": "有光层石灰岩碎屑台地",
-          "scanner": "有光层石灰岩台地 // 苍白钙质板、贝壳砂和破碎群体残骸。明亮海水让它看起来简单。地图藏在裂缝里：水流、采切痕、塌落边和安全落脚点会收集不同沉积物。",
-          "terminal": "调查记录：不要只按亮度选路。裂缝里的贝壳砂表示近期冲刷。孔隙中的橄榄色污痕表示稳定庇护。干净白色断面表示新鲜破裂或打捞切割。",
-          "audio": "第一片台地会骗过所有人。你看见光，就以为安全。然后碎屑在靴底下滑动，海洋提醒你：它计数的时间比你长。",
-          "in_game_wiki": "有光层石灰岩碎屑台地，是许多船员第一次把可见度误认成安全的地方。在 HECTON-8 的浅水中，钙质板反射经 Aegir 过滤的光，使海底从远处也能读取。这有用，但不完整。贝壳砂聚集在小水流仍在整理底面的地方。橄榄色污痕留在受保护的孔隙里。亮白断面表示新鲜破裂、旧采石痕或近期打捞。上方看似平滑的台地，可能藏着被掏空的边缘和松动碎屑袋。",
-          "external_site": "HECTON-8 明亮的石灰岩台地，是玩家的第一堂地质课：可读、美丽，但从不无辜。",
-          "external_site_article": "有光层台地位于光仍有权威的深度。这里的海不够黑，不能把一切藏起；也不够温柔，不会原谅粗心的脚步。石灰岩板由古老生物钙、贝壳砂和矿物胶结形成。上方碎屑是一份混合记录：自然破裂、殖民开采、风暴冲击、车辆痕迹，以及把裂缝变成庇护的小型生物。\n\n有用的读取总是局部的。缝中的砂说明水仍在整理底面。台阶上的苍白粉尘说明新破裂。孔隙中的橄榄色说明受保护的稳定。干净圆形擦痕可能是工具脚、锚板或旧采石夹具。如果玩家只看见亮度，它像安全教学区。如果玩家阅读表面，它就是第一张诚实地图。",
-          "field_note": "明亮石头不是安全。它只是惩罚到来前能看见的证据。",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "ar_SA": {
-          "title": "رف ركام حجر كلسي مضاء",
-          "scanner": "رف حجر كلسي مضاء // صفائح كالسيوم شاحبة، حبيبات أصداف، وقطع ركام استعمارية مكسورة. الماء المضيء يجعله يبدو بسيطا. الخريطة في الشقوق: التيار، قطوع المحجر، حواف الانهيار، ومواضع القدم الآمنة تجمع رواسب مختلفة.",
-          "terminal": "ملاحظة مسح: لا تبن المسار على السطوع وحده. حبيبات الأصداف في شق تعني غسلا حديثا. بقعة زيتونية في المسام تعني ملجأ مستقرا. كسر أبيض نظيف يعني كسرا جديدا أو قطع منقب.",
-          "audio": "الرف الأول يخدع الجميع. ترى الضوء فتظنه آمنا. ثم يتحرك الركام تحت الحذاء، ويذكرك المحيط أنه يحسب منذ زمن أطول منك.",
-          "in_game_wiki": "رف الركام الكلسي المضاء هو أول مكان تخلط فيه الطواقم بين الرؤية والسلامة. في مياه HECTON-8 الضحلة تعكس صفائح الكالسيوم ضوءا مرشحا عبر Aegir فيصبح القاع مقروءا من بعيد. هذا مفيد لكنه غير كاف. حبيبات الأصداف تتجمع حيث لا يزال التيار الصغير يفرز الأرض. البقعة الزيتونية تبقى في المسام المحمية. الكسور البيضاء تشير إلى كسر جديد أو محجر قديم أو إنقاذ حديث. سطح ناعم من الأعلى قد يخفي حافة منحوتة وجيوب ركام سائبة.",
-          "external_site": "الرفوف الكلسية المضيئة في HECTON-8 هي أول درس جيولوجيا للاعب: مقروءة وجميلة وليست بريئة أبدا.",
-          "external_site_article": "توجد الرفوف المضيئة حيث ما زال للضوء سلطة. عند هذا العمق لا يكون المحيط مظلما بما يكفي ليخفي كل شيء، ولا رحيما بما يكفي ليغفر خطوة مهملة. تتكون الصفائح الكلسية من كالسيوم حيوي قديم وحبيبات أصداف وإسمنت معدني. الركام فوقها سجل مختلط: كسور طبيعية، استخراج استعماري، دفع عاصفة، آثار مركبات، وعمل كائنات صغيرة تحول الشقوق إلى ملاجئ.\n\nالقراءة المفيدة محلية. الحبيبات في الفاصل تعني أن الماء ما زال يفرز القاع. غبار شاحب على الحافة يعني كسرا حديثا. الزيتوني في المسام يعني استقرارا محميا. أثر دائري نظيف قد يكون قدم أداة أو صفيحة مرساة أو مشبك محجر قديم. إذا رأى اللاعب السطوع وحده بدا الرف آمنا. إذا قرأ السطح صار أول خريطة صادقة.",
-          "field_note": "الحجر المضيء ليس أمانا. إنه دليل تراه قبل أن يعاقبك.",
-          "localization_status": "draft_machine_or_llm"
-        },
-        "he_IL": {
-          "title": "מדף גיר מואר מלא שברים",
-          "scanner": "מדף גיר פוטי // לוחות סידן חיוורים, גרגרי קונכייה ושברי חומר מושבתי. המים הבהירים גורמים לו להיראות פשוט. המפה נמצאת בסדקים: זרם, חתכי מחצבה, קצות קריסה ואחיזות בטוחות אוספים משקע אחר.",
-          "terminal": "הערת סקר: אל תנווט לפי בהירות בלבד. גרגרי קונכייה בסדק אומרים שטיפה חדשה. כתם זית בנקבוביות אומר מחסה יציב. שבר לבן נקי אומר שבירה חדשה או חיתוך של מחלץ.",
-          "audio": "המדף הראשון מרמה את כולם. אתה רואה אור וחושב בטוח. ואז השברים זזים מתחת למגף, והאוקיינוס מזכיר שהוא סופר יותר זמן ממך.",
-          "in_game_wiki": "מדף הגיר המואר הוא המקום הראשון שבו צוותים מבלבלים בין ראות לבין בטיחות. במים הרדודים של HECTON-8 לוחות הסידן מחזירים אור שעבר דרך Aegir והקרקע נראית קריאה מרחוק. זה עוזר, אבל לא מספיק. גרגרי קונכייה נאספים במקום שבו זרם קטן עדיין ממיין את הקרקע. כתמי זית יושבים בנקבוביות מוגנות. שברים לבנים מסמנים נזק חדש, חציבה ישנה או חילוץ טרי. מדף חלק מלמעלה יכול להסתיר קצה חתור וכיסי שברים רופפים.",
-          "external_site": "מדפי הגיר הבהירים של HECTON-8 הם שיעור הגאולוגיה הראשון של השחקן: קריאים, יפים, ולעולם לא תמימים.",
-          "external_site_article": "מדפים פוטיים נמצאים במקום שבו לאור עדיין יש סמכות. בעומק הזה האוקיינוס אינו חשוך מספיק כדי להסתיר הכל, ואינו רך מספיק כדי לסלוח על צעד רשלני. לוחות הגיר נוצרים מסידן ביוגני ישן, גרגרי קונכייה ומלט מינרלי. השברים מעליהם הם רישום מעורב: שבירה טבעית, כרייה מושבתית, סערה, תנועת כלים ועבודה של יצורים קטנים שהופכים סדקים למחסה.\n\nהקריאה המועילה היא מקומית. גרגרים בתפר אומרים שהמים עדיין ממיינים את הרצפה. אבק חיוור על מדרגה אומר שבר חדש. זית בנקבוביות אומר יציבות מוגנת. סימן עגול נקי יכול להיות רגל כלי, לוח עוגן או מהדק מחצבה. אם השחקן רואה רק בהירות, המדף משקר. אם הוא קורא את המשטח, זו המפה הכנה הראשונה.",
-          "field_note": "אבן בהירה אינה בטיחות. היא רק ראיה שרואים לפני העונש.",
-          "localization_status": "draft_machine_or_llm"
-        }
-      }
+    "unity_placement_ready": false
+   },
+   "surfaces": [
+    "scanner",
+    "terminal",
+    "audio",
+    "in_game_wiki",
+    "external_site",
+    "field_note"
+   ],
+   "unlock": {
+    "primary": "unlock.photic_limestone_rubble_shelf_field_article",
+    "secondary": [
+     "unlock.first_photic_limestone_shelf",
+     "unlock.first_shell_grit_crack",
+     "unlock.first_shallow_rubble_route"
+    ],
+    "poi_tags": [
+     "poi.photic_limestone_rubble_shelf",
+     "poi.eroded_limestone_plate",
+     "poi.shell_grit_crack",
+     "poi.olive_algae_pore",
+     "poi.shallow_route_ledge",
+     "poi.old_quarry_scuff"
+    ],
+    "biome_tags": [
+     "biome.photic_shallows",
+     "biome.first_route_shelf",
+     "biome.limestone_ledge",
+     "biome.shallow_salvage_path"
+    ],
+    "first_20_boundary": "Makes bright shallow limestone readable as route and material history: pale plates, shell grit, algae pores and broken ledges show current, quarry scars and safe footholds."
+   },
+   "metadata": {
+    "source_voice_by_surface": {
+     "scanner": "PDA Shallow Geology Scanner",
+     "terminal": "Route Survey Note",
+     "audio": "First Shelf Recorder Fragment",
+     "in_game_wiki": "PDA Limestone Shelf Primer",
+     "external_site": "Public Site Photic Shelf Article",
+     "field_note": "Marauder Field Annotation"
+    },
+    "writer_note": "Keep the shelf bright but not harmless. It should teach readable shallow terrain, material extraction scars and route literacy before deep brine or abyssal geology."
+   },
+   "localized": {
+    "en_US": {
+     "title": "Photic Limestone Rubble Shelf",
+     "scanner": "PHOTIC LIMESTONE SHELF // Pale calcium plates, shell grit and broken colonial-rubble fragments. Bright water makes it look simple. The cracks are the map: current, quarry cuts, collapse edges and safe boot holds all collect different sediment.",
+     "terminal": "Survey note: do not route by brightness alone. Shell grit in a crack means recent wash. Olive stain in pores means stable shelter. Clean white fracture means a fresh break or a scavenger cut.",
+     "audio": "The first shelf fools everyone. You see light and think safe. Then the rubble moves under your boots and the ocean tells you it has been counting longer than you have.",
+     "in_game_wiki": "The photic limestone rubble shelf is the first place many crews mistake visibility for safety. In shallow HECTON-8 water, calcium plates reflect Aegir-filtered light and turn the sea floor pale enough to read from a distance. That is useful, but incomplete. Shell grit collects where small currents still work. Olive algae stains protected pores where the surface has stayed stable long enough for life to hold. Bright white fractures mark fresh breakage, old quarry scuffs or recent salvage. A shelf that looks smooth from above may hide undercut edges and loose rubble pockets. Walk it like a ledger, not a beach.",
+     "external_site": "The bright limestone shelves of HECTON-8 are the player's first geology lesson: readable, beautiful and never quite innocent.",
+     "external_site_article": "Photic shelves sit where light still has authority. At this depth the ocean is not dark enough to hide everything, and not gentle enough to forgive careless feet. Limestone plates form from old biogenic calcium, pressure-worn shell grit and mineral cement. The rubble on top is a mixed record: natural breakage, colonial extraction, storm surge, crawler traffic and the patient work of small organisms that turn cracks into shelter.\n\nThe useful reading is local. Shell grit gathered in a seam means water is still sorting the floor. Fine pale dust on a ledge means recent fracture. Olive stain inside pores means the surface stayed protected through multiple cycles. A clean circular scuff may be a tool foot, anchor pad or old quarry clamp. If the player only sees brightness, the shelf feels like a safe tutorial. If the player reads the surface, it becomes the first honest map: which ledge holds, which crack drains, which rubble pocket will slide, and where the colony stole stone before pretending the shallows were untouched.",
+     "field_note": "Bright stone is not safety. It is just evidence you can see before it punishes you.",
+     "localization_status": "source_authority"
+    },
+    "ru_RU": {
+     "title": "Световая известняковая осыпная полка",
+     "scanner": "СВЕТОВАЯ ИЗВЕСТНЯКОВАЯ ПОЛКА // Бледные кальциевые плиты, ракушечная крошка и обломки колониального рифового материала. Светлая вода делает ее простой на вид. Карта находится в трещинах: течение, выемки, обвалы и надежные ступени собирают разный осадок.",
+     "terminal": "Заметка съемки: не строй маршрут только по яркости. Ракушечная крошка в трещине означает свежую промывку. Оливковый налет в порах — стабильное укрытие. Чистый белый излом — свежий скол или рез мародера.",
+     "audio": "Первая полка обманывает всех. Видишь свет и думаешь: безопасно. Потом осыпь едет под ботинком, и океан напоминает, что считает дольше тебя.",
+     "in_game_wiki": "Световая известняковая осыпная полка — первое место, где экипажи путают видимость с безопасностью. В мелкой воде HECTON-8 кальциевые плиты отражают свет, прошедший через Aegir, и дно становится достаточно бледным, чтобы читать его издалека. Это полезно, но недостаточно. Ракушечная крошка собирается там, где еще работает мелкое течение. Оливковый налет держится в защищенных порах, где поверхность стабильна достаточно долго. Ярко-белые изломы отмечают свежий скол, старую карьерную метку или недавний разбор. Полка, гладкая сверху, может прятать подмытый край и карманы рыхлой осыпи. Иди по ней как по ведомости, а не как по пляжу.",
+     "external_site": "Светлые известняковые полки HECTON-8 — первый урок геологии для игрока: красиво, читаемо и совсем не невинно.",
+     "external_site_article": "Световые полки лежат там, где свет еще имеет власть. На этой глубине океан не так темен, чтобы все спрятать, и не так мягок, чтобы прощать небрежные ноги. Известняковые плиты складываются из старого биогенного кальция, перемолотой ракушечной крошки и минерального цемента. Осыпь сверху — смешанная запись: естественные сколы, колониальная добыча, штормовой сгон, следы гусениц и тихая работа малых организмов, превращающих трещины в укрытия.\n\nЧитать нужно рядом с собой. Крошка в шве значит, что вода все еще сортирует дно. Бледная пыль на уступе значит свежий излом. Оливковое пятно в порах значит стабильность через несколько циклов. Чистый круглый след может быть лапой инструмента, анкерной плитой или старым карьерным зажимом. Если игрок видит только яркость, полка кажется безопасным обучением. Если он читает поверхность, это первая честная карта: какой уступ держит, какая трещина дренирует, какой карман поедет и где колония крала камень, притворяясь, что мелководье нетронуто.",
+     "field_note": "Светлый камень — не безопасность. Это просто улика, которую видно до того, как она накажет.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "uk_UA": {
+     "title": "Світлова вапнякова осипна полиця",
+     "scanner": "СВІТЛОВА ВАПНЯКОВА ПОЛИЦЯ // Бліді кальцієві плити, мушлева крихта і уламки колоніального рифового матеріалу. Світла вода робить її простою на вигляд. Карта в тріщинах: течія, виїмки, обвали і надійні ступені збирають різний осад.",
+     "terminal": "Нотатка зйомки: не веди маршрут лише за яскравістю. Мушлева крихта в тріщині означає свіжу промивку. Оливковий наліт у порах — стабільний захист. Чистий білий злам — свіжий скол або різак мародера.",
+     "audio": "Перша полиця обманює всіх. Бачиш світло й думаєш: безпечно. Потім осип їде під черевиком, і океан нагадує, що рахував довше за тебе.",
+     "in_game_wiki": "Світлова вапнякова осипна полиця — перше місце, де екіпажі плутають видимість із безпекою. На мілководді HECTON-8 кальцієві плити відбивають світло, профільтроване Aegir, і дно стає досить блідим, щоб читати його здалеку. Але цього мало. Мушлева крихта збирається там, де ще працює дрібна течія. Оливковий наліт тримається у захищених порах. Яскраво-білі злами позначають свіжий скол, стару кар'єрну мітку або недавній розбір. Гладка згори полиця може ховати підмитий край і кишені рухомого осипу.",
+     "external_site": "Світлі вапнякові полиці HECTON-8 — перший геологічний урок: красиво, читабельно і ніколи не невинно.",
+     "external_site_article": "Світлові полиці лежать там, де світло ще має владу. На цій глибині океан не досить темний, щоб усе сховати, і не досить лагідний, щоб пробачити необережний крок. Вапнякові плити складаються зі старого біогенного кальцію, перемеленої мушлевої крихти і мінерального цементу. Осип згори — змішаний запис: природні сколи, колоніальний видобуток, штормовий згін, сліди техніки і тиха робота малих організмів.\n\nЧитати треба локально. Крихта в шві означає, що вода ще сортує дно. Блідий пил на уступі означає свіжий злам. Оливкова пляма в порах означає стабільність. Чистий круглий слід може бути лапою інструмента або старим кар'єрним затискачем. Якщо бачити лише яскравість, полиця здається безпечним вступом. Якщо читати поверхню, вона стає першою чесною мапою: який уступ тримає, яка тріщина дренує, яка кишеня поїде.",
+     "field_note": "Світлий камінь — не безпека. Це доказ, який видно до покарання.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "de_DE": {
+     "title": "Photic-Kalkstein-Schuttschelf",
+     "scanner": "PHOTIC-KALKSTEINSHELF // Helle Calciumplatten, Muschelgrus und gebrochene Kolonialrubble-Fragmente. Das helle Wasser macht es einfach wirkend. Die Karte liegt in den Rissen: Strömung, Abbaukanten, Einsturzränder und sichere Tritte sammeln verschiedene Sedimente.",
+     "terminal": "Vermessungsnotiz: nicht nach Helligkeit routen. Muschelgrus im Riss bedeutet frische Spülung. Olivfarbene Poren bedeuten stabile Deckung. Sauberer weißer Bruch bedeutet frischer Abbruch oder Bergungsschnitt.",
+     "audio": "Das erste Shelf täuscht alle. Du siehst Licht und denkst sicher. Dann rutscht der Schutt unter dem Stiefel, und der Ozean erinnert dich, dass er länger zählt.",
+     "in_game_wiki": "Das photische Kalkstein-Schuttschelf ist der erste Ort, an dem Crews Sichtbarkeit mit Sicherheit verwechseln. Flache HECTON-8-Wasser lassen Calciumplatten Aegir-gefiltertes Licht reflektieren; der Boden wirkt aus der Ferne lesbar. Doch Sichtbarkeit reicht nicht. Muschelgrus sammelt sich dort, wo kleine Strömungen noch sortieren. Olivfarbene Algenflecken sitzen in Poren, die lange stabil blieben. Helle weiße Brüche markieren frischen Schaden, alte Abbauspuren oder Bergung. Ein von oben glattes Shelf kann unterspülte Kanten und lockere Schuttaschen verbergen.",
+     "external_site": "Die hellen Kalksteinshelfs von HECTON-8 sind die erste Geologiestunde des Spielers: lesbar, schön und nie ganz harmlos.",
+     "external_site_article": "Photische Shelfs liegen dort, wo Licht noch Autorität besitzt. In dieser Tiefe ist der Ozean nicht dunkel genug, um alles zu verbergen, und nicht sanft genug, um unvorsichtige Schritte zu vergeben. Kalksteinplatten entstehen aus altem biogenem Calcium, Muschelgrus und mineralischem Zement. Der Schutt darüber ist gemischte Aufzeichnung: natürliche Brüche, Kolonialabbau, Sturmstoß, Fahrzeugspuren und kleine Organismen, die Risse zu Schutzräumen machen.\n\nDas Lesen ist lokal. Grus in einer Naht bedeutet, dass Wasser den Boden noch sortiert. Heller Staub auf einer Stufe bedeutet frischer Bruch. Oliv in Poren bedeutet geschütztes Alter. Ein sauberer runder Abrieb kann Werkzeugfuß, Ankerpad oder alter Steinbruchklemmring sein. Wer nur Helligkeit sieht, bekommt ein falsches Tutorial. Wer die Oberfläche liest, erhält die erste ehrliche Karte.",
+     "field_note": "Heller Stein ist keine Sicherheit. Er ist nur Beweis, den du früh genug sehen kannst.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "es_ES": {
+     "title": "Plataforma fótica de escombro calizo",
+     "scanner": "PLATAFORMA CALIZA FÓTICA // Placas pálidas de calcio, arenilla de concha y fragmentos de escombro colonial. El agua clara la hace parecer simple. El mapa está en las grietas: corriente, cortes de cantera, bordes caídos y apoyos seguros juntan sedimentos distintos.",
+     "terminal": "Nota de estudio: no traces ruta por brillo. Arenilla en una grieta significa lavado reciente. Mancha oliva en poros significa refugio estable. Fractura blanca limpia significa rotura fresca o corte de saqueo.",
+     "audio": "La primera plataforma engaña a todos. Ves luz y piensas seguro. Luego el escombro se mueve bajo la bota y el océano te recuerda que lleva más tiempo contando.",
+     "in_game_wiki": "La plataforma fótica de escombro calizo es el primer lugar donde muchas tripulaciones confunden visibilidad con seguridad. En aguas someras de HECTON-8, las placas de calcio reflejan luz filtrada por Aegir y vuelven el suelo legible desde lejos. Eso ayuda, pero no basta. La arenilla de concha se junta donde aún trabaja la corriente. Las manchas oliva viven en poros protegidos. Las fracturas blancas marcan rotura fresca, cantera antigua o saqueo reciente. Una plataforma lisa desde arriba puede esconder bordes socavados y bolsas de escombro suelto.",
+     "external_site": "Las plataformas calizas claras de HECTON-8 son la primera lección geológica del jugador: legibles, bellas y nunca inocentes.",
+     "external_site_article": "Las plataformas fóticas existen donde la luz aún manda. A esta profundidad el océano no es tan oscuro como para esconderlo todo ni tan amable como para perdonar pasos torpes. Las placas calizas nacen de calcio biogénico antiguo, arenilla de concha y cemento mineral. El escombro encima mezcla roturas naturales, extracción colonial, oleaje de tormenta, tráfico de máquinas y organismos pequeños que vuelven refugio cada grieta.\n\nLa lectura útil es local. Arenilla en una junta significa que el agua sigue ordenando el suelo. Polvo pálido en un borde significa fractura reciente. Mancha oliva en poros significa estabilidad. Una marca circular limpia puede ser pie de herramienta, placa de anclaje o mordaza de cantera. Si solo ves brillo, parece una zona segura. Si lees la superficie, es el primer mapa honesto.",
+     "field_note": "La piedra clara no es seguridad. Es evidencia visible antes del castigo.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "fr_FR": {
+     "title": "Plateau photique de gravats calcaires",
+     "scanner": "PLATEAU CALCAIRE PHOTIQUE // Plaques de calcium pâle, grit de coquille et fragments coloniaux brisés. L'eau claire le rend simple. La carte est dans les fissures : courant, coupes d'extraction, bords d'effondrement et appuis sûrs gardent des sédiments différents.",
+     "terminal": "Note de relevé : ne trace pas par luminosité seule. Grit de coquille dans une fissure signifie lavage récent. Tache olive en pore signifie abri stable. Cassure blanche propre signifie rupture fraîche ou coupe de récupération.",
+     "audio": "Le premier plateau trompe tout le monde. Tu vois de la lumière et tu penses sécurité. Puis les gravats glissent sous la botte, et l'océan rappelle qu'il compte depuis plus longtemps.",
+     "in_game_wiki": "Le plateau photique de gravats calcaires est le premier lieu où les équipages confondent visibilité et sécurité. Dans les eaux peu profondes de HECTON-8, les plaques calcaires reflètent la lumière filtrée par Aegir et rendent le fond lisible de loin. Utile, mais incomplet. Le grit de coquille s'accumule là où le courant trie encore. Les taches olive vivent dans les pores protégés. Les cassures blanches marquent rupture récente, ancienne extraction ou récupération. Un plateau lisse vu d'en haut peut cacher bords sapés et poches de gravats mobiles.",
+     "external_site": "Les plateaux calcaires clairs de HECTON-8 sont la première leçon de géologie du joueur : lisibles, beaux, jamais innocents.",
+     "external_site_article": "Les plateaux photiques se trouvent là où la lumière a encore autorité. À cette profondeur, l'océan n'est pas assez noir pour tout cacher ni assez doux pour pardonner les pas négligents. Les plaques calcaires viennent d'ancien calcium biogène, de grit de coquille et de ciment minéral. Les gravats portent un relevé mêlé : cassures naturelles, extraction coloniale, poussée de tempête, passage de machines et travail patient des petits organismes.\n\nLa lecture utile reste locale. Du grit dans une jointure dit que l'eau trie encore le sol. Une poussière pâle sur une marche dit une fracture récente. De l'olive dans les pores dit une stabilité protégée. Une trace circulaire propre peut être pied d'outil, plaque d'ancrage ou ancienne pince de carrière. Si le joueur ne voit que la lumière, le plateau ment. S'il lit la surface, il devient la première carte honnête.",
+     "field_note": "La pierre claire n'est pas la sécurité. C'est une preuve visible avant la sanction.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pl_PL": {
+     "title": "Fotyczna półka wapiennego rumoszu",
+     "scanner": "FOTYCZNA PÓŁKA WAPIENNA // Blade płyty wapnia, grys muszlowy i połamany rumosz kolonialny. Jasna woda udaje prostotę. Mapa leży w pęknięciach: prąd, wyrobiska, krawędzie obsuwu i pewne stopnie zbierają różny osad.",
+     "terminal": "Notatka pomiarowa: nie prowadź trasy samą jasnością. Grys w szczelinie oznacza świeże płukanie. Oliwkowa plama w porach oznacza stabilne schronienie. Czysty biały przełom to świeże pęknięcie albo cięcie szabrownika.",
+     "audio": "Pierwsza półka oszukuje każdego. Widzisz światło i myślisz: bezpiecznie. Potem rumosz rusza pod butem, a ocean przypomina, że liczy dłużej od ciebie.",
+     "in_game_wiki": "Fotyczna półka wapiennego rumoszu to pierwsze miejsce, gdzie załogi mylą widoczność z bezpieczeństwem. W płytkiej wodzie HECTON-8 płyty wapienne odbijają światło filtrowane przez Aegir i dno da się czytać z daleka. To pomaga, ale nie wystarcza. Grys muszlowy zbiera się tam, gdzie prąd nadal sortuje podłoże. Oliwkowe plamy siedzą w chronionych porach. Białe przełomy znaczą świeżą rysę, dawną eksploatację lub niedawny demontaż. Gładka półka może ukrywać podmyty brzeg i luźny rumosz.",
+     "external_site": "Jasne półki wapienne HECTON-8 są pierwszą lekcją geologii: czytelne, piękne i nigdy niewinne.",
+     "external_site_article": "Półki fotyczne leżą tam, gdzie światło nadal ma władzę. Na tej głębokości ocean nie jest dość ciemny, by wszystko ukryć, ani dość łagodny, by wybaczać kroki. Płyty wapienne powstają ze starego wapnia biogenicznego, grysu muszlowego i cementu mineralnego. Rumosz na wierzchu jest zapisem mieszanym: naturalne pęknięcia, kolonialne wydobycie, sztorm, ślady maszyn i praca małych organizmów.\n\nCzyta się lokalnie. Grys w spoinie mówi, że woda nadal sortuje dno. Blady pył na krawędzi mówi o świeżym pęknięciu. Oliwka w porach mówi o stabilności. Czysty okrągły ślad może być stopą narzędzia, płytą kotwy albo dawnym zaciskiem kamieniołomu. Kto widzi tylko jasność, dostaje fałszywy samouczek. Kto czyta powierzchnię, dostaje pierwszą uczciwą mapę.",
+     "field_note": "Jasny kamień nie jest bezpieczeństwem. To dowód, który widać przed karą.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "pt_BR": {
+     "title": "Plataforma fótica de entulho calcário",
+     "scanner": "PLATAFORMA CALCÁRIA FÓTICA // Placas pálidas de cálcio, grãos de concha e fragmentos coloniais quebrados. A água clara faz parecer simples. O mapa está nas rachaduras: corrente, cortes de extração, bordas caídas e apoios seguros juntam sedimentos diferentes.",
+     "terminal": "Nota de levantamento: não roteie só por brilho. Grão de concha em rachadura significa lavagem recente. Mancha oliva em poros significa abrigo estável. Fratura branca limpa significa quebra fresca ou corte de saque.",
+     "audio": "A primeira plataforma engana todo mundo. Você vê luz e pensa que é seguro. Depois o entulho mexe sob a bota e o oceano lembra que conta há mais tempo que você.",
+     "in_game_wiki": "A plataforma fótica de entulho calcário é o primeiro lugar onde equipes confundem visibilidade com segurança. Em água rasa de HECTON-8, placas de cálcio refletem luz filtrada por Aegir e deixam o fundo legível de longe. Ajuda, mas não basta. Grãos de concha se juntam onde pequenas correntes ainda trabalham. Mancha oliva fica em poros protegidos. Fraturas brancas marcam quebra fresca, antiga extração ou saque recente. Uma superfície lisa vista de cima pode esconder borda socavada e bolsões soltos.",
+     "external_site": "As plataformas calcárias claras de HECTON-8 são a primeira aula de geologia do jogador: legíveis, bonitas e nunca inocentes.",
+     "external_site_article": "Plataformas fóticas ficam onde a luz ainda manda. Nessa profundidade, o oceano não é escuro o bastante para esconder tudo nem gentil o bastante para perdoar passos descuidados. As placas calcárias vêm de cálcio biogênico antigo, grãos de concha e cimento mineral. O entulho em cima mistura quebra natural, extração colonial, ressaca, tráfego de máquinas e organismos pequenos trabalhando nas rachaduras.\n\nA leitura útil é local. Grão numa junta significa que a água ainda ordena o chão. Pó pálido numa borda significa fratura nova. Oliva nos poros significa estabilidade protegida. Uma marca circular limpa pode ser pé de ferramenta, placa de ancoragem ou grampo de pedreira. Se o jogador vê só brilho, parece tutorial seguro. Se lê a superfície, vira o primeiro mapa honesto.",
+     "field_note": "Pedra clara não é segurança. É prova visível antes da punição.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "nl_NL": {
+     "title": "Fotische kalksteenpuinplaat",
+     "scanner": "FOTISCHE KALKSTEENPLAAT // Bleke calciumplaten, schelpgruis en gebroken koloniaal puin. Helder water laat het eenvoudig lijken. De kaart zit in de scheuren: stroming, groevesneden, instortkanten en veilige treden verzamelen ander sediment.",
+     "terminal": "Survey-notitie: routeer niet op helderheid alleen. Schelpgruis in een scheur betekent recente spoeling. Olijfkleur in poriën betekent stabiele beschutting. Witte breuk betekent verse schade of bergingssnede.",
+     "audio": "De eerste plaat misleidt iedereen. Je ziet licht en denkt veilig. Dan schuift het puin onder je laars en herinnert de oceaan je eraan dat hij langer telt.",
+     "in_game_wiki": "De fotische kalksteenpuinplaat is de eerste plek waar crews zichtbaarheid verwarren met veiligheid. In ondiep HECTON-8-water reflecteren calciumplaten door Aegir gefilterd licht, waardoor de bodem van ver leesbaar wordt. Dat helpt, maar is niet genoeg. Schelpgruis verzamelt waar kleine stroming nog sorteert. Olijfkleurige vlekken zitten in beschermde poriën. Witte breuken tonen verse schade, oude winning of recente berging. Een gladde plaat kan onderspoelde randen en losse puinzakken verbergen.",
+     "external_site": "De heldere kalksteenplaten van HECTON-8 zijn de eerste geologieles: leesbaar, mooi en nooit onschuldig.",
+     "external_site_article": "Fotische platen liggen waar licht nog gezag heeft. Op deze diepte is de oceaan niet donker genoeg om alles te verbergen en niet zacht genoeg om slordige stappen te vergeven. Kalksteenplaten ontstaan uit oud biogeen calcium, schelpgruis en mineraal cement. Het puin erboven is gemengd verslag: natuurlijke breuk, koloniale winning, stormslag, machineverkeer en kleine organismen die scheuren tot schuilplaatsen maken.\n\nNuttig lezen is lokaal. Gruis in een naad betekent dat water de bodem nog sorteert. Bleek stof op een rand betekent verse breuk. Olijfkleur in poriën betekent beschermde stabiliteit. Een schone ronde schuurplek kan gereedschapsvoet, ankerplaat of oude groeveklem zijn. Wie alleen helderheid ziet, krijgt een vals lesje. Wie het oppervlak leest, krijgt de eerste eerlijke kaart.",
+     "field_note": "Heldere steen is geen veiligheid. Het is bewijs dat je vroeg genoeg kunt zien.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "id_ID": {
+     "title": "Rak Puing Batu Kapur Fotik",
+     "scanner": "RAK BATU KAPUR FOTIK // Lempeng kalsium pucat, grit cangkang, dan pecahan puing kolonial. Air terang membuatnya tampak sederhana. Peta ada di retakan: arus, bekas tambang, tepi runtuh, dan pijakan aman mengumpulkan sedimen berbeda.",
+     "terminal": "Catatan survei: jangan membuat rute hanya dari terang. Grit cangkang di retakan berarti cucian baru. Noda zaitun di pori berarti lindungan stabil. Patahan putih bersih berarti pecah baru atau potongan penjarah.",
+     "audio": "Rak pertama menipu semua orang. Kau melihat cahaya dan mengira aman. Lalu puing bergerak di bawah sepatu, dan laut mengingatkan bahwa ia sudah menghitung lebih lama.",
+     "in_game_wiki": "Rak puing batu kapur fotik adalah tempat pertama kru menyamakan terlihat jelas dengan aman. Di air dangkal HECTON-8, lempeng kalsium memantulkan cahaya tersaring Aegir dan membuat dasar laut terbaca dari jauh. Itu berguna, tapi belum cukup. Grit cangkang berkumpul di arus kecil yang masih menyortir lantai. Noda zaitun tinggal di pori terlindung. Patahan putih menandai pecah baru, bekas tambang lama, atau salvage baru. Permukaan yang halus dari atas bisa menyembunyikan tepi tergerus dan kantong puing longgar.",
+     "external_site": "Rak batu kapur terang HECTON-8 adalah pelajaran geologi pertama: terbaca, indah, dan tidak pernah polos.",
+     "external_site_article": "Rak fotik berada di tempat cahaya masih berkuasa. Pada kedalaman ini laut tidak cukup gelap untuk menyembunyikan semua, dan tidak cukup lembut untuk memaafkan langkah ceroboh. Lempeng batu kapur terbentuk dari kalsium biogenik tua, grit cangkang, dan semen mineral. Puing di atasnya adalah catatan campuran: patahan alami, ekstraksi koloni, dorongan badai, jejak kendaraan, dan organisme kecil yang mengubah retakan menjadi tempat berlindung.\n\nPembacaan yang berguna selalu lokal. Grit di sambungan berarti air masih menyortir lantai. Debu pucat di tepi berarti patahan baru. Zaitun dalam pori berarti stabilitas. Bekas lingkaran bersih bisa berarti kaki alat, pelat jangkar, atau klem tambang lama. Jika pemain hanya melihat terang, rak ini terasa aman. Jika membaca permukaan, ia menjadi peta jujur pertama.",
+     "field_note": "Batu terang bukan keamanan. Itu bukti yang terlihat sebelum menghukummu.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ja_JP": {
+     "title": "有光層石灰岩瓦礫棚",
+     "scanner": "有光層石灰岩棚 // 淡いカルシウム板、貝殻砂、壊れた群体瓦礫片。明るい水は単純に見せる。地図は割れ目にある。流れ、採石痕、崩落縁、安全な足場は、それぞれ別の堆積物を集める。",
+     "terminal": "調査メモ: 明るさだけで経路を選ぶな。割れ目の貝殻砂は最近の洗い流しを示す。孔のオリーブ色は安定した保護を示す。白い新鮮な割れは、新しい破断か回収者の切断だ。",
+     "audio": "最初の棚は皆をだます。光が見えると安全だと思う。だが靴の下で瓦礫が動き、海は自分の方が長く数えてきたと告げる。",
+     "in_game_wiki": "有光層石灰岩瓦礫棚は、乗員が視界と安全を最初に取り違える場所だ。HECTON-8の浅水では、カルシウム板がAegirで濾された光を反射し、遠くからでも底が読める。だがそれだけでは足りない。貝殻砂は小さな流れがまだ働く場所に集まる。オリーブ色の染みは保護された孔に残る。白い割れは新しい破断、古い採石、最近の回収を示す。上から滑らかに見える棚も、削られた縁や緩い瓦礫袋を隠す。",
+     "external_site": "HECTON-8の明るい石灰岩棚は、最初の地質学の授業だ。読めて、美しく、無垢ではない。",
+     "external_site_article": "有光層の棚は、光がまだ権威を持つ深さにある。この深度の海は、すべてを隠すほど暗くなく、雑な足取りを許すほど優しくもない。石灰岩板は古い生物由来カルシウム、貝殻砂、鉱物セメントからできる。その上の瓦礫は、自然破断、植民地採取、嵐、機械の通行、小さな生物の働きが混ざった記録だ。\n\n読むべきものは足元にある。継ぎ目の砂は、水がまだ床を選別していることを示す。棚の淡い粉は新しい破断を示す。孔のオリーブ色は保護された安定を示す。きれいな円形の擦れは工具の足、アンカー板、古い採石クランプかもしれない。明るさだけを見るなら安全な導入に見える。表面を読むなら、最初の正直な地図になる。",
+     "field_note": "明るい石は安全ではない。罰の前に見える証拠だ。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ko_KR": {
+     "title": "유광층 석회암 잔해 선반",
+     "scanner": "유광층 석회암 선반 // 옅은 칼슘 판, 조개 입자, 부서진 군체 잔해. 밝은 물은 단순해 보이게 만든다. 지도는 균열 안에 있다. 흐름, 채석 자국, 붕괴 가장자리, 안전한 발판은 서로 다른 퇴적물을 모은다.",
+     "terminal": "조사 기록: 밝기만 보고 경로를 잡지 말 것. 균열 속 조개 입자는 최근 세척을 뜻한다. 구멍 속 올리브 얼룩은 안정된 보호를 뜻한다. 깨끗한 흰 파단은 새 파손 또는 회수자 절단이다.",
+     "audio": "첫 선반은 모두를 속인다. 빛을 보고 안전하다고 생각한다. 그러다 발밑 잔해가 움직이고, 바다는 너보다 오래 세어 왔다고 말한다.",
+     "in_game_wiki": "유광층 석회암 잔해 선반은 승무원이 가시성과 안전을 처음 혼동하는 장소다. 얕은 HECTON-8 물에서는 칼슘 판이 Aegir를 거친 빛을 반사해 바닥이 멀리서도 읽힌다. 유용하지만 충분하지 않다. 조개 입자는 작은 흐름이 아직 바닥을 분류하는 곳에 모인다. 올리브 얼룩은 보호된 구멍에 남는다. 흰 파단은 새 파손, 오래된 채석, 최근 회수를 나타낸다. 위에서 매끈해 보이는 선반도 깎인 가장자리와 느슨한 잔해 주머니를 숨길 수 있다.",
+     "external_site": "HECTON-8의 밝은 석회암 선반은 첫 지질학 수업이다. 읽을 수 있고 아름답지만 결코 순진하지 않다.",
+     "external_site_article": "유광층 선반은 빛이 아직 권위를 가진 곳에 있다. 이 깊이의 바다는 모든 것을 숨길 만큼 어둡지 않고, 부주의한 발을 용서할 만큼 부드럽지도 않다. 석회암 판은 오래된 생물성 칼슘, 조개 입자, 광물 시멘트로 만들어진다. 위의 잔해는 자연 파손, 식민지 채굴, 폭풍, 차량 흔적, 균열을 은신처로 만드는 작은 생물의 일이 섞인 기록이다.\n\n읽기는 가까운 곳에서 한다. 이음매 속 입자는 물이 아직 바닥을 분류한다는 뜻이다. 턱 위의 옅은 먼지는 새 파단이다. 구멍 속 올리브색은 보호된 안정이다. 깨끗한 원형 마모는 도구 발, 앵커 패드, 오래된 채석 클램프일 수 있다. 밝기만 보면 안전한 시작처럼 보인다. 표면을 읽으면 첫 번째 정직한 지도가 된다.",
+     "field_note": "밝은 돌은 안전이 아니다. 벌받기 전에 보이는 증거일 뿐이다.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "zh_CN": {
+     "title": "有光层石灰岩碎屑台地",
+     "scanner": "有光层石灰岩台地 // 苍白钙质板、贝壳砂和破碎群体残骸。明亮海水让它看起来简单。地图藏在裂缝里：水流、采切痕、塌落边和安全落脚点会收集不同沉积物。",
+     "terminal": "调查记录：不要只按亮度选路。裂缝里的贝壳砂表示近期冲刷。孔隙中的橄榄色污痕表示稳定庇护。干净白色断面表示新鲜破裂或打捞切割。",
+     "audio": "第一片台地会骗过所有人。你看见光，就以为安全。然后碎屑在靴底下滑动，海洋提醒你：它计数的时间比你长。",
+     "in_game_wiki": "有光层石灰岩碎屑台地，是许多船员第一次把可见度误认成安全的地方。在 HECTON-8 的浅水中，钙质板反射经 Aegir 过滤的光，使海底从远处也能读取。这有用，但不完整。贝壳砂聚集在小水流仍在整理底面的地方。橄榄色污痕留在受保护的孔隙里。亮白断面表示新鲜破裂、旧采石痕或近期打捞。上方看似平滑的台地，可能藏着被掏空的边缘和松动碎屑袋。",
+     "external_site": "HECTON-8 明亮的石灰岩台地，是玩家的第一堂地质课：可读、美丽，但从不无辜。",
+     "external_site_article": "有光层台地位于光仍有权威的深度。这里的海不够黑，不能把一切藏起；也不够温柔，不会原谅粗心的脚步。石灰岩板由古老生物钙、贝壳砂和矿物胶结形成。上方碎屑是一份混合记录：自然破裂、殖民开采、风暴冲击、车辆痕迹，以及把裂缝变成庇护的小型生物。\n\n有用的读取总是局部的。缝中的砂说明水仍在整理底面。台阶上的苍白粉尘说明新破裂。孔隙中的橄榄色说明受保护的稳定。干净圆形擦痕可能是工具脚、锚板或旧采石夹具。如果玩家只看见亮度，它像安全教学区。如果玩家阅读表面，它就是第一张诚实地图。",
+     "field_note": "明亮石头不是安全。它只是惩罚到来前能看见的证据。",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "ar_SA": {
+     "title": "رف ركام حجر كلسي مضاء",
+     "scanner": "رف حجر كلسي مضاء // صفائح كالسيوم شاحبة، حبيبات أصداف، وقطع ركام استعمارية مكسورة. الماء المضيء يجعله يبدو بسيطا. الخريطة في الشقوق: التيار، قطوع المحجر، حواف الانهيار، ومواضع القدم الآمنة تجمع رواسب مختلفة.",
+     "terminal": "ملاحظة مسح: لا تبن المسار على السطوع وحده. حبيبات الأصداف في شق تعني غسلا حديثا. بقعة زيتونية في المسام تعني ملجأ مستقرا. كسر أبيض نظيف يعني كسرا جديدا أو قطع منقب.",
+     "audio": "الرف الأول يخدع الجميع. ترى الضوء فتظنه آمنا. ثم يتحرك الركام تحت الحذاء، ويذكرك المحيط أنه يحسب منذ زمن أطول منك.",
+     "in_game_wiki": "رف الركام الكلسي المضاء هو أول مكان تخلط فيه الطواقم بين الرؤية والسلامة. في مياه HECTON-8 الضحلة تعكس صفائح الكالسيوم ضوءا مرشحا عبر Aegir فيصبح القاع مقروءا من بعيد. هذا مفيد لكنه غير كاف. حبيبات الأصداف تتجمع حيث لا يزال التيار الصغير يفرز الأرض. البقعة الزيتونية تبقى في المسام المحمية. الكسور البيضاء تشير إلى كسر جديد أو محجر قديم أو إنقاذ حديث. سطح ناعم من الأعلى قد يخفي حافة منحوتة وجيوب ركام سائبة.",
+     "external_site": "الرفوف الكلسية المضيئة في HECTON-8 هي أول درس جيولوجيا للاعب: مقروءة وجميلة وليست بريئة أبدا.",
+     "external_site_article": "توجد الرفوف المضيئة حيث ما زال للضوء سلطة. عند هذا العمق لا يكون المحيط مظلما بما يكفي ليخفي كل شيء، ولا رحيما بما يكفي ليغفر خطوة مهملة. تتكون الصفائح الكلسية من كالسيوم حيوي قديم وحبيبات أصداف وإسمنت معدني. الركام فوقها سجل مختلط: كسور طبيعية، استخراج استعماري، دفع عاصفة، آثار مركبات، وعمل كائنات صغيرة تحول الشقوق إلى ملاجئ.\n\nالقراءة المفيدة محلية. الحبيبات في الفاصل تعني أن الماء ما زال يفرز القاع. غبار شاحب على الحافة يعني كسرا حديثا. الزيتوني في المسام يعني استقرارا محميا. أثر دائري نظيف قد يكون قدم أداة أو صفيحة مرساة أو مشبك محجر قديم. إذا رأى اللاعب السطوع وحده بدا الرف آمنا. إذا قرأ السطح صار أول خريطة صادقة.",
+     "field_note": "الحجر المضيء ليس أمانا. إنه دليل تراه قبل أن يعاقبك.",
+     "localization_status": "draft_machine_or_llm"
+    },
+    "he_IL": {
+     "title": "מדף גיר מואר מלא שברים",
+     "scanner": "מדף גיר פוטי // לוחות סידן חיוורים, גרגרי קונכייה ושברי חומר מושבתי. המים הבהירים גורמים לו להיראות פשוט. המפה נמצאת בסדקים: זרם, חתכי מחצבה, קצות קריסה ואחיזות בטוחות אוספים משקע אחר.",
+     "terminal": "הערת סקר: אל תנווט לפי בהירות בלבד. גרגרי קונכייה בסדק אומרים שטיפה חדשה. כתם זית בנקבוביות אומר מחסה יציב. שבר לבן נקי אומר שבירה חדשה או חיתוך של מחלץ.",
+     "audio": "המדף הראשון מרמה את כולם. אתה רואה אור וחושב בטוח. ואז השברים זזים מתחת למגף, והאוקיינוס מזכיר שהוא סופר יותר זמן ממך.",
+     "in_game_wiki": "מדף הגיר המואר הוא המקום הראשון שבו צוותים מבלבלים בין ראות לבין בטיחות. במים הרדודים של HECTON-8 לוחות הסידן מחזירים אור שעבר דרך Aegir והקרקע נראית קריאה מרחוק. זה עוזר, אבל לא מספיק. גרגרי קונכייה נאספים במקום שבו זרם קטן עדיין ממיין את הקרקע. כתמי זית יושבים בנקבוביות מוגנות. שברים לבנים מסמנים נזק חדש, חציבה ישנה או חילוץ טרי. מדף חלק מלמעלה יכול להסתיר קצה חתור וכיסי שברים רופפים.",
+     "external_site": "מדפי הגיר הבהירים של HECTON-8 הם שיעור הגאולוגיה הראשון של השחקן: קריאים, יפים, ולעולם לא תמימים.",
+     "external_site_article": "מדפים פוטיים נמצאים במקום שבו לאור עדיין יש סמכות. בעומק הזה האוקיינוס אינו חשוך מספיק כדי להסתיר הכל, ואינו רך מספיק כדי לסלוח על צעד רשלני. לוחות הגיר נוצרים מסידן ביוגני ישן, גרגרי קונכייה ומלט מינרלי. השברים מעליהם הם רישום מעורב: שבירה טבעית, כרייה מושבתית, סערה, תנועת כלים ועבודה של יצורים קטנים שהופכים סדקים למחסה.\n\nהקריאה המועילה היא מקומית. גרגרים בתפר אומרים שהמים עדיין ממיינים את הרצפה. אבק חיוור על מדרגה אומר שבר חדש. זית בנקבוביות אומר יציבות מוגנת. סימן עגול נקי יכול להיות רגל כלי, לוח עוגן או מהדק מחצבה. אם השחקן רואה רק בהירות, המדף משקר. אם הוא קורא את המשטח, זו המפה הכנה הראשונה.",
+     "field_note": "אבן בהירה אינה בטיחות. היא רק ראיה שרואים לפני העונש.",
+     "localization_status": "draft_machine_or_llm"
     }
-  ]
+   },
+   "content_class": "in_world_artifact"
+  }
+ ]
 }
